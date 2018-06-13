@@ -771,6 +771,9 @@ namespace Microsoft.FSharp.Core
         let anyToStringShowingNull x = anyToString "null" x
 
         module HashCompare = 
+            //-------------------------------------------------------------------------
+            // LanguagePrimitives.HashCompare: HASHING.  
+            //------------------------------------------------------------------------- 
             let defaultHashNodes = 18 
 
             /// The implementation of IEqualityComparer, using depth-limited for hashing and PER semantics for NaN equality.
@@ -800,7 +803,106 @@ namespace Microsoft.FSharp.Core
 
             /// The unique object for unlimited depth for hashing and PER semantics for equality.
             let fsEqualityComparerUnlimitedHashingPER = UnlimitedHasherPER()
-        
+                     
+            let inline HashCombine nr x y = (x <<< 1) + y + 631 * nr
+
+            let GenericHashObjArray (iec : System.Collections.IEqualityComparer) (x: obj[]) : int =
+                  let len = x.Length 
+                  let mutable i = len - 1 
+                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
+                  let mutable acc = 0   
+                  while (i >= 0) do 
+                      // NOTE: GenericHash* call decreases nr 
+                      acc <- HashCombine i acc (iec.GetHashCode(x.GetValue(i)));
+                      i <- i - 1
+                  acc
+
+            // optimized case - byte arrays 
+            let GenericHashByteArray (x: byte[]) : int =
+                  let len = length x 
+                  let mutable i = len - 1 
+                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
+                  let mutable acc = 0   
+                  while (i >= 0) do 
+                      acc <- HashCombine i acc (intOfByte (get x i));
+                      i <- i - 1
+                  acc
+
+            // optimized case - int arrays 
+            let GenericHashInt32Array (x: int[]) : int =
+                  let len = length x 
+                  let mutable i = len - 1 
+                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
+                  let mutable acc = 0   
+                  while (i >= 0) do 
+                      acc <- HashCombine i acc (get x i);
+                      i <- i - 1
+                  acc
+
+            // optimized case - int arrays 
+            let GenericHashInt64Array (x: int64[]) : int =
+                  let len = length x 
+                  let mutable i = len - 1 
+                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
+                  let mutable acc = 0   
+                  while (i >= 0) do 
+                      acc <- HashCombine i acc (int32 (get x i));
+                      i <- i - 1
+                  acc
+
+            // special case - arrays do not by default have a decent structural hashing function
+            let GenericHashArbArray (iec : System.Collections.IEqualityComparer) (x: System.Array) : int =
+                  match x.Rank  with 
+                  | 1 -> 
+                    let b = x.GetLowerBound(0) 
+                    let len = x.Length 
+                    let mutable i = b + len - 1 
+                    if i > b + defaultHashNodes  then i <- b + defaultHashNodes  // limit the hash
+                    let mutable acc = 0                  
+                    while (i >= b) do 
+                        // NOTE: GenericHash* call decreases nr 
+                        acc <- HashCombine i acc (iec.GetHashCode(x.GetValue(i)));
+                        i <- i - 1
+                    acc
+                  | _ -> 
+                     HashCombine 10 (x.GetLength(0)) (x.GetLength(1)) 
+
+            // Core implementation of structural hashing, corresponds to pseudo-code in the 
+            // F# Language spec.  Searches for the IStructuralHash interface, otherwise uses GetHashCode().
+            // Arrays are structurally hashed through a separate technique.
+            //
+            // "iec" is either fsEqualityComparerUnlimitedHashingER, fsEqualityComparerUnlimitedHashingPER or a CountLimitedHasherPER.
+            let rec GenericHashParamObj (iec : System.Collections.IEqualityComparer) (x: obj) : int =
+                  match x with 
+                  | null -> 0 
+                  | (:? System.Array as a) -> 
+                      match a with 
+                      | :? (obj[]) as oa -> GenericHashObjArray iec oa 
+                      | :? (byte[]) as ba -> GenericHashByteArray ba 
+                      | :? (int[]) as ba -> GenericHashInt32Array ba 
+                      | :? (int64[]) as ba -> GenericHashInt64Array ba 
+                      | _ -> GenericHashArbArray iec a 
+                  | :? IStructuralEquatable as a ->    
+                      a.GetHashCode(iec)
+                  | _ -> 
+                      x.GetHashCode()
+
+            /// Direct call to GetHashCode on the string type
+            let inline HashString (s:string) = 
+                 match s with 
+                 | null -> 0 
+                 | _ -> (# "call instance int32 [mscorlib]System.String::GetHashCode()" s : int #)
+                    
+            // from mscorlib v4.0.30319
+            let inline HashChar (x:char) = (# "or" (# "shl" x 16 : int #) x : int #)
+            let inline HashSByte (x:sbyte) = (# "xor" (# "shl" x 8 : int #) x : int #)
+            let inline HashInt16 (x:int16) = (# "or" (# "conv.u2" x : int #) (# "shl" x 16 : int #) : int #)
+            let inline HashInt64 (x:int64) = (# "xor" (# "conv.i4" x : int #) (# "conv.i4" (# "shr" x 32 : int #) : int #) : int #)
+            let inline HashUInt64 (x:uint64) = (# "xor" (# "conv.i4" x : int #) (# "conv.i4" (# "shr.un" x 32 : int #) : int #) : int #)
+            let inline HashIntPtr (x:nativeint) = (# "conv.i4" (# "conv.u8" x : uint64 #) : int #)
+            let inline HashUIntPtr (x:unativeint) = (# "and" (# "conv.i4" (# "conv.u8" x : uint64 #) : int #) 0x7fffffff : int #)
+
+
             //-------------------------------------------------------------------------
             // LanguagePrimitives.HashCompare: Physical Equality
             //------------------------------------------------------------------------- 
@@ -1580,6 +1682,8 @@ namespace Microsoft.FSharp.Core
                             true 
                             && ty.IsSealed  // covers enum and value types
                             && not ty.IsArray
+                            && not (ty.Equals typeof<String>)
+                            && not (ty.Equals typeof<Decimal>)
                             && not (ty.Equals typeof<float>)
                             && not (ty.Equals typeof<float32>)
                             && isValidGenericType true "System.Nullable`1"
@@ -1597,60 +1701,141 @@ namespace Microsoft.FSharp.Core
 
                 recurse 0 [|ty|]
 
-            // The FSharp compiler will not insert a tail call when this is used (this might be "fixed"
-            // in a future release)
-            let inline avoid_tail_call_bool f = match f () with true -> true | _ -> false
-            let inline avoid_tail_call_int f = 0 + f ()
-
-            type GenericEqualityTCall<'T> = Func<'T, 'T, bool>
-
-            let tryGetGenericEqualityTCall (er:bool) (ty:Type) : obj =
+            let tryGetFSharpEqualityComparer (er:bool) (ty:Type) : obj =
                 match er, ty with
-                | _, ty when ty.Equals typeof<string>      -> box (GenericEqualityTCall<string>     (fun x y -> System.String.Equals((# "" x : string #),(# "" y : string #))))
-                | _, ty when ty.Equals typeof<decimal>     -> box (GenericEqualityTCall<decimal>    (fun x y -> System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))))
-                | _, ty when ty.Equals typeof<bool>        -> box (GenericEqualityTCall<bool>       (fun x y -> (# "ceq" x y : bool #)))
-                | _, ty when ty.Equals typeof<sbyte>       -> box (GenericEqualityTCall<sbyte>      (fun x y -> (# "ceq" x y : bool #)))
-                | _, ty when ty.Equals typeof<int16>       -> box (GenericEqualityTCall<int16>      (fun x y -> (# "ceq" x y : bool #)))
-                | _, ty when ty.Equals typeof<int32>       -> box (GenericEqualityTCall<int32>      (fun x y -> (# "ceq" x y : bool #)))
-                | _, ty when ty.Equals typeof<int64>       -> box (GenericEqualityTCall<int64>      (fun x y -> (# "ceq" x y : bool #)))
-                | _, ty when ty.Equals typeof<byte>        -> box (GenericEqualityTCall<byte>       (fun x y -> (# "ceq" x y : bool #)))
-                | _, ty when ty.Equals typeof<uint16>      -> box (GenericEqualityTCall<uint16>     (fun x y -> (# "ceq" x y : bool #)))
-                | _, ty when ty.Equals typeof<uint32>      -> box (GenericEqualityTCall<uint32>     (fun x y -> (# "ceq" x y : bool #)))
-                | _, ty when ty.Equals typeof<uint64>      -> box (GenericEqualityTCall<uint64>     (fun x y -> (# "ceq" x y : bool #)))
-                | _, ty when ty.Equals typeof<nativeint>   -> box (GenericEqualityTCall<nativeint>  (fun x y -> (# "ceq" x y : bool #)))
-                | _, ty when ty.Equals typeof<unativeint>  -> box (GenericEqualityTCall<unativeint> (fun x y -> (# "ceq" x y : bool #)))
-                | _, ty when ty.Equals typeof<char>        -> box (GenericEqualityTCall<char>       (fun x y -> (# "ceq" x y : bool #)))
-                | false, ty when ty.Equals typeof<float>   -> box (GenericEqualityTCall<float>      (fun x y -> (# "ceq" x y : bool #)))
-                | false, ty when ty.Equals typeof<float32> -> box (GenericEqualityTCall<float32>    (fun x y -> (# "ceq" x y : bool #)))
-                | true, ty when ty.Equals typeof<float>    -> box (GenericEqualityTCall<float>      (fun x y -> (# "ceq" x y : bool #) || (not ((# "ceq" x x : bool #) || (# "ceq" y y : bool #)))))
-                | true, ty when ty.Equals typeof<float32>  -> box (GenericEqualityTCall<float32>    (fun x y -> (# "ceq" x y : bool #) || (not ((# "ceq" x x : bool #) || (# "ceq" y y : bool #)))))
+                | _, ty when ty.Equals typeof<string> -> box {
+                    new EqualityComparer<string>() with
+                        member __.Equals (x,y) = System.String.Equals (x, y)
+                        member __.GetHashCode x = HashString x }
+
+                | _, ty when ty.Equals typeof<decimal> -> box {
+                    new EqualityComparer<decimal>() with
+                        member __.Equals (x,y) = System.Decimal.op_Equality (x, y)
+                        member __.GetHashCode x = x.GetHashCode () }
+
+                | _, ty when ty.Equals typeof<bool> -> box {
+                    new EqualityComparer<bool>() with
+                        member __.Equals (x,y) = (# "ceq" x y : bool #)
+                        member __.GetHashCode x = (# "" x : int #) }
+
+                | _, ty when ty.Equals typeof<sbyte> -> box {
+                    new EqualityComparer<sbyte>() with
+                        member __.Equals (x,y) = (# "ceq" x y : bool #)
+                        member __.GetHashCode x = HashSByte x }
+
+                | _, ty when ty.Equals typeof<int16> -> box {
+                    new EqualityComparer<int16>() with
+                        member __.Equals (x,y) = (# "ceq" x y : bool #)
+                        member __.GetHashCode x = HashInt16 x }
+
+                | _, ty when ty.Equals typeof<int32> -> box {
+                    new EqualityComparer<int32>() with
+                        member __.Equals (x,y) = (# "ceq" x y : bool #)
+                        member __.GetHashCode x = (# "" x : int #) }
+
+                | _, ty when ty.Equals typeof<int64> -> box {
+                    new EqualityComparer<int64>() with
+                        member __.Equals (x,y) = (# "ceq" x y : bool #)
+                        member __.GetHashCode x = HashInt64 x }
+
+                | _, ty when ty.Equals typeof<byte> -> box {
+                    new EqualityComparer<byte>() with
+                        member __.Equals (x,y) = (# "ceq" x y : bool #)
+                        member __.GetHashCode x = (# "" x : int #) }
+
+                | _, ty when ty.Equals typeof<uint16> -> box {
+                    new EqualityComparer<uint16>() with
+                        member __.Equals (x,y) = (# "ceq" x y : bool #)
+                        member __.GetHashCode x = (# "" x : int #) }
+
+                | _, ty when ty.Equals typeof<uint32> -> box {
+                    new EqualityComparer<uint32>() with
+                        member __.Equals (x,y) = (# "ceq" x y : bool #)
+                        member __.GetHashCode x = (# "" x : int #) }
+
+                | _, ty when ty.Equals typeof<uint64> -> box {
+                    new EqualityComparer<uint64>() with
+                        member __.Equals (x,y) = (# "ceq" x y : bool #)
+                        member __.GetHashCode x = HashUInt64 x }
+
+                | _, ty when ty.Equals typeof<nativeint> -> box {
+                    new EqualityComparer<nativeint>() with
+                        member __.Equals (x,y) = (# "ceq" x y : bool #)
+                        member __.GetHashCode x = HashIntPtr x }
+
+                | _, ty when ty.Equals typeof<unativeint> -> box {
+                    new EqualityComparer<unativeint>() with
+                        member __.Equals (x,y) = (# "ceq" x y : bool #)
+                        member __.GetHashCode x = HashUIntPtr x }
+
+                | _, ty when ty.Equals typeof<char> -> box {
+                    new EqualityComparer<char>() with
+                        member __.Equals (x,y) = (# "ceq" x y : bool #)
+                        member __.GetHashCode x = HashChar x }
+
+                | false, ty when ty.Equals typeof<float> -> box {
+                    new EqualityComparer<float>() with
+                        member __.Equals (x,y) = (# "ceq" x y : bool #)
+                        member __.GetHashCode x = x.GetHashCode () }
+
+                | false, ty when ty.Equals typeof<float32> -> box {
+                    new EqualityComparer<float32>() with
+                        member __.Equals (x,y) = (# "ceq" x y : bool #)
+                        member __.GetHashCode x = x.GetHashCode () }
+
+                | true, ty when ty.Equals typeof<float> -> box {
+                    new EqualityComparer<float>() with
+                        member __.Equals (x,y) = (# "ceq" x y : bool #) || (not ((# "ceq" x x : bool #) || (# "ceq" y y : bool #)))
+                        member __.GetHashCode x = x.GetHashCode () }
+
+                | true, ty when ty.Equals typeof<float32> -> box {
+                    new EqualityComparer<float32>() with
+                        member __.Equals (x,y) = (# "ceq" x y : bool #) || (not ((# "ceq" x x : bool #) || (# "ceq" y y : bool #)))
+                        member __.GetHashCode x = x.GetHashCode () }
+
                 | _ -> null
 
+            let genericFSharpEqualityComparer_ER<'T> () = {
+                new EqualityComparer<'T>() with
+                    member __.Equals (x,y) = GenericEqualityObj true fsEqualityComparerUnlimitedHashingER (box x, box y)
+                    member __.GetHashCode x = GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box x)
+            }
+
+            let genericFSharpEqualityComparer_PER<'T> () = {
+                new EqualityComparer<'T>() with
+                    member __.Equals (x,y) = GenericEqualityObj false fsEqualityComparerUnlimitedHashingPER (box x, box y)
+                    member __.GetHashCode x = GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box x)
+            }
+
             let getGenericEquality<'T> er =
-                match tryGetGenericEqualityTCall er typeof<'T> with
-                | :? GenericEqualityTCall<'T> as call -> call
-                | _ when canUseDefaultEqualityComparer typeof<'T> -> 
-                    let comparer = System.Collections.Generic.EqualityComparer<'T>.Default
-                    GenericEqualityTCall<'T> (fun x y -> avoid_tail_call_bool (fun () -> comparer.Equals (x, y)))
-                | _ when er -> 
-                    GenericEqualityTCall<'T> (fun x y -> GenericEqualityObj true  fsEqualityComparerNoHashingER  (box x, box y))
-                | _ ->
-                    GenericEqualityTCall<'T> (fun x y -> GenericEqualityObj false fsEqualityComparerNoHashingPER (box x, box y))
+                match tryGetFSharpEqualityComparer er typeof<'T> with
+                | :? EqualityComparer<'T> as call -> call
+                | _ when canUseDefaultEqualityComparer typeof<'T> -> EqualityComparer<'T>.Default
+                | _ when er -> genericFSharpEqualityComparer_ER<'T> ()
+                | _ -> genericFSharpEqualityComparer_PER<'T> ()
 
-            type GenericEqualityT_ER<'T> private () =
-                static let f = getGenericEquality<'T> true
-                static member inline Equals (x, y) = f.Invoke (x, y)
+            type FSharpEqualityComparer_ER<'T> private () =
+                static let comparer = getGenericEquality<'T> true
 
-            type GenericEqualityT_PER<'T> private () =
-                static let f = getGenericEquality<'T> false
-                static member inline Equals (x, y) = f.Invoke (x, y)
+                static member Comparer = comparer
+
+                static member inline Equals (x, y) = comparer.Equals (x, y)
+                static member inline GetHashCode x = comparer.GetHashCode x
+
+            type FSharpEqualityComparer_PER<'T> private () =
+                static let comparer = getGenericEquality<'T> false
+
+                static member Comparer = comparer
+
+                static member inline Equals (x, y) = comparer.Equals (x, y)
+                static member inline GetHashCode x = comparer.GetHashCode x
 
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
             // The compiler optimizer is aware of this function  (see use of generic_equality_per_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
-                avoid_tail_call_bool (fun () -> GenericEqualityT_PER<'T>.Equals (x, y))
+                FSharpEqualityComparer_PER<'T>.Equals (x, y)
                 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
             //
@@ -1659,7 +1844,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function (see use of generic_equality_er_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
-                avoid_tail_call_bool (fun () -> GenericEqualityT_ER<'T>.Equals (x, y))
+                FSharpEqualityComparer_ER<'T>.Equals (x, y)
                 
             /// Implements generic equality between two values using "comp" for recursive calls.
             //
@@ -1668,9 +1853,9 @@ namespace Microsoft.FSharp.Core
             // is either fsEqualityComparerNoHashingER or fsEqualityComparerNoHashingPER.
             let GenericEqualityWithComparerIntrinsic (comp : System.Collections.IEqualityComparer) (x : 'T) (y : 'T) : bool =
                 if obj.ReferenceEquals (comp, fsEqualityComparerUnlimitedHashingPER) || obj.ReferenceEquals (comp, fsEqualityComparerNoHashingPER) then
-                    avoid_tail_call_bool (fun () -> GenericEqualityT_PER<'T>.Equals (x, y))
+                    FSharpEqualityComparer_PER<'T>.Equals (x, y)
                 elif obj.ReferenceEquals (comp, fsEqualityComparerNoHashingER) then
-                    avoid_tail_call_bool (fun () -> GenericEqualityT_ER<'T>.Equals (x, y))
+                    FSharpEqualityComparer_ER<'T>.Equals (x, y)
                 else
                     comp.Equals (box x, box y)
 
@@ -1758,95 +1943,6 @@ namespace Microsoft.FSharp.Core
             let inline GenericInequalityFast (x:'T) (y:'T) = (not(GenericEqualityFast x y) : bool)
             let inline GenericInequalityERFast (x:'T) (y:'T) = (not(GenericEqualityERFast x y) : bool)
 
-
-            //-------------------------------------------------------------------------
-            // LanguagePrimitives.HashCompare: HASHING.  
-            //------------------------------------------------------------------------- 
-             
-            let inline HashCombine nr x y = (x <<< 1) + y + 631 * nr
-
-            let GenericHashObjArray (iec : System.Collections.IEqualityComparer) (x: obj[]) : int =
-                  let len = x.Length 
-                  let mutable i = len - 1 
-                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
-                  let mutable acc = 0   
-                  while (i >= 0) do 
-                      // NOTE: GenericHash* call decreases nr 
-                      acc <- HashCombine i acc (iec.GetHashCode(x.GetValue(i)));
-                      i <- i - 1
-                  acc
-
-            // optimized case - byte arrays 
-            let GenericHashByteArray (x: byte[]) : int =
-                  let len = length x 
-                  let mutable i = len - 1 
-                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
-                  let mutable acc = 0   
-                  while (i >= 0) do 
-                      acc <- HashCombine i acc (intOfByte (get x i));
-                      i <- i - 1
-                  acc
-
-            // optimized case - int arrays 
-            let GenericHashInt32Array (x: int[]) : int =
-                  let len = length x 
-                  let mutable i = len - 1 
-                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
-                  let mutable acc = 0   
-                  while (i >= 0) do 
-                      acc <- HashCombine i acc (get x i);
-                      i <- i - 1
-                  acc
-
-            // optimized case - int arrays 
-            let GenericHashInt64Array (x: int64[]) : int =
-                  let len = length x 
-                  let mutable i = len - 1 
-                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
-                  let mutable acc = 0   
-                  while (i >= 0) do 
-                      acc <- HashCombine i acc (int32 (get x i));
-                      i <- i - 1
-                  acc
-
-            // special case - arrays do not by default have a decent structural hashing function
-            let GenericHashArbArray (iec : System.Collections.IEqualityComparer) (x: System.Array) : int =
-                  match x.Rank  with 
-                  | 1 -> 
-                    let b = x.GetLowerBound(0) 
-                    let len = x.Length 
-                    let mutable i = b + len - 1 
-                    if i > b + defaultHashNodes  then i <- b + defaultHashNodes  // limit the hash
-                    let mutable acc = 0                  
-                    while (i >= b) do 
-                        // NOTE: GenericHash* call decreases nr 
-                        acc <- HashCombine i acc (iec.GetHashCode(x.GetValue(i)));
-                        i <- i - 1
-                    acc
-                  | _ -> 
-                     HashCombine 10 (x.GetLength(0)) (x.GetLength(1)) 
-
-            // Core implementation of structural hashing, corresponds to pseudo-code in the 
-            // F# Language spec.  Searches for the IStructuralHash interface, otherwise uses GetHashCode().
-            // Arrays are structurally hashed through a separate technique.
-            //
-            // "iec" is either fsEqualityComparerUnlimitedHashingER, fsEqualityComparerUnlimitedHashingPER or a CountLimitedHasherPER.
-            let rec GenericHashParamObj (iec : System.Collections.IEqualityComparer) (x: obj) : int =
-                  match x with 
-                  | null -> 0 
-                  | (:? System.Array as a) -> 
-                      match a with 
-                      | :? (obj[]) as oa -> GenericHashObjArray iec oa 
-                      | :? (byte[]) as ba -> GenericHashByteArray ba 
-                      | :? (int[]) as ba -> GenericHashInt32Array ba 
-                      | :? (int64[]) as ba -> GenericHashInt64Array ba 
-                      | _ -> GenericHashArbArray iec a 
-                  | :? IStructuralEquatable as a ->    
-                      a.GetHashCode(iec)
-                  | _ -> 
-                      x.GetHashCode()
-
-
             /// Fill in the implementation of CountLimitedHasherPER
             type CountLimitedHasherPER with
                 
@@ -1873,59 +1969,12 @@ namespace Microsoft.FSharp.Core
                     override iec.Equals(x:obj,y:obj) = GenericEqualityObj false iec (x,y)
                     override iec.GetHashCode(x:obj) = GenericHashParamObj iec x
 
-            /// Direct call to GetHashCode on the string type
-            let inline HashString (s:string) = 
-                 match s with 
-                 | null -> 0 
-                 | _ -> (# "call instance int32 [mscorlib]System.String::GetHashCode()" s : int #)
-                    
-            // from mscorlib v4.0.30319
-            let inline HashChar (x:char) = (# "or" (# "shl" x 16 : int #) x : int #)
-            let inline HashSByte (x:sbyte) = (# "xor" (# "shl" x 8 : int #) x : int #)
-            let inline HashInt16 (x:int16) = (# "or" (# "conv.u2" x : int #) (# "shl" x 16 : int #) : int #)
-            let inline HashInt64 (x:int64) = (# "xor" (# "conv.i4" x : int #) (# "conv.i4" (# "shr" x 32 : int #) : int #) : int #)
-            let inline HashUInt64 (x:uint64) = (# "xor" (# "conv.i4" x : int #) (# "conv.i4" (# "shr.un" x 32 : int #) : int #) : int #)
-            let inline HashIntPtr (x:nativeint) = (# "conv.i4" (# "conv.u8" x : uint64 #) : int #)
-            let inline HashUIntPtr (x:unativeint) = (# "and" (# "conv.i4" (# "conv.u8" x : uint64 #) : int #) 0x7fffffff : int #)
-
-            type GenericHashTCall<'T> = Func<'T, int>
-
-            let tryGetGenericHashTCall (ty:Type) : obj =
-                match ty with
-                | ty when ty.Equals typeof<bool>       -> box (GenericHashTCall<bool>       (fun x -> (# "" x : int #)))
-                | ty when ty.Equals typeof<int32>      -> box (GenericHashTCall<int32>      (fun x -> (# "" x : int #)))
-                | ty when ty.Equals typeof<byte>       -> box (GenericHashTCall<byte>       (fun x -> (# "" x : int #)))
-                | ty when ty.Equals typeof<uint32>     -> box (GenericHashTCall<uint32>     (fun x -> (# "" x : int #)))
-                | ty when ty.Equals typeof<char>       -> box (GenericHashTCall<char>       HashChar)
-                | ty when ty.Equals typeof<sbyte>      -> box (GenericHashTCall<sbyte>      HashSByte)
-                | ty when ty.Equals typeof<int16>      -> box (GenericHashTCall<int16>      HashInt16)
-                | ty when ty.Equals typeof<int64>      -> box (GenericHashTCall<int64>      HashInt64)
-                | ty when ty.Equals typeof<uint64>     -> box (GenericHashTCall<uint64>     HashUInt64)
-                | ty when ty.Equals typeof<nativeint>  -> box (GenericHashTCall<nativeint>  HashIntPtr)
-                | ty when ty.Equals typeof<unativeint> -> box (GenericHashTCall<unativeint> HashUIntPtr)
-                | ty when ty.Equals typeof<uint16>     -> box (GenericHashTCall<uint16>     (fun x -> (# "" x : int #)))
-                | ty when ty.Equals typeof<string>     -> box (GenericHashTCall<string>     HashString)
-                | _ -> null
-
-            let getGenericHashTCall<'T> () =
-                match tryGetGenericHashTCall typeof<'T> with
-                | :? GenericHashTCall<'T> as call -> call
-                | _ when canUseDefaultEqualityComparer typeof<'T> ->
-                    let comparer = System.Collections.Generic.EqualityComparer<'T>.Default
-                    GenericHashTCall<'T> (fun x -> avoid_tail_call_int (fun () -> comparer.GetHashCode x))
-                | _ ->
-                    GenericHashTCall<'T> (fun x -> GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box x))
-
-            type GenericHashT<'T> private () =
-                static let f = getGenericHashTCall<'T> ()
-                static member inline GetHashCode x = f.Invoke x
-
             /// Intrinsic for calls to depth-unlimited structural hashing that were not optimized by static conditionals.
             //
             // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_inner_vref in opt.fs)
             // and devirtualizes calls to it based on type "T".
             let GenericHashIntrinsic input =
-                avoid_tail_call_int (fun () -> GenericHashT<'T>.GetHashCode input)
+                FSharpEqualityComparer_PER<'T>.GetHashCode input
 
             /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
             let LimitedGenericHashIntrinsic limit input = GenericHashParamObj (CountLimitedHasherPER(limit)) (box input)
@@ -1939,7 +1988,7 @@ namespace Microsoft.FSharp.Core
             // and devirtualizes calls to it based on type "T".
             let GenericHashWithComparerIntrinsic<'T> (comp : System.Collections.IEqualityComparer) (input : 'T) : int =
                 if obj.ReferenceEquals (comp, fsEqualityComparerUnlimitedHashingPER) then
-                    avoid_tail_call_int (fun () -> GenericHashT<'T>.GetHashCode input)
+                    FSharpEqualityComparer_PER<'T>.GetHashCode input
                 else
                     GenericHashParamObj comp (box input)
                 
@@ -2216,59 +2265,12 @@ namespace Microsoft.FSharp.Core
                   member self.GetHashCode(x) = GenericLimitedHash limit x 
                   member self.Equals(x,y) = GenericEquality x y }
 
-        let BoolIEquality    = MakeGenericEqualityComparer<bool>()
-        let CharIEquality    = MakeGenericEqualityComparer<char>()
-        let StringIEquality  = MakeGenericEqualityComparer<string>()
-        let SByteIEquality   = MakeGenericEqualityComparer<sbyte>()
-        let Int16IEquality   = MakeGenericEqualityComparer<int16>()
-        let Int32IEquality   = MakeGenericEqualityComparer<int32>()
-        let Int64IEquality   = MakeGenericEqualityComparer<int64>()
-        let IntPtrIEquality  = MakeGenericEqualityComparer<nativeint>()
-        let ByteIEquality    = MakeGenericEqualityComparer<byte>()
-        let UInt16IEquality  = MakeGenericEqualityComparer<uint16>()
-        let UInt32IEquality  = MakeGenericEqualityComparer<uint32>()
-        let UInt64IEquality  = MakeGenericEqualityComparer<uint64>()
-        let UIntPtrIEquality = MakeGenericEqualityComparer<unativeint>()
-        let FloatIEquality   = MakeGenericEqualityComparer<float>()
-        let Float32IEquality = MakeGenericEqualityComparer<float32>()
-        let DecimalIEquality = MakeGenericEqualityComparer<decimal>()
-
-        let tryGetFastGenericEqualityComparerTable (ty:Type) =
-            // TODO: Remove the ones that don't have special handling and thus just used default
-            match ty with 
-            | ty when ty.Equals typeof<bool>       -> box BoolIEquality
-            | ty when ty.Equals typeof<byte>       -> box ByteIEquality
-            | ty when ty.Equals typeof<int32>      -> box Int32IEquality
-            | ty when ty.Equals typeof<uint32>     -> box UInt32IEquality
-            | ty when ty.Equals typeof<char>       -> box CharIEquality
-            | ty when ty.Equals typeof<sbyte>      -> box SByteIEquality
-            | ty when ty.Equals typeof<int16>      -> box Int16IEquality
-            | ty when ty.Equals typeof<int64>      -> box Int64IEquality
-            | ty when ty.Equals typeof<nativeint>  -> box IntPtrIEquality
-            | ty when ty.Equals typeof<uint16>     -> box UInt16IEquality
-            | ty when ty.Equals typeof<uint64>     -> box UInt64IEquality
-            | ty when ty.Equals typeof<unativeint> -> box UIntPtrIEquality
-            | ty when ty.Equals typeof<float>      -> box FloatIEquality
-            | ty when ty.Equals typeof<float32>    -> box Float32IEquality
-            | ty when ty.Equals typeof<decimal>    -> box DecimalIEquality
-            | ty when ty.Equals typeof<string>     -> box StringIEquality
-            | _ -> null
-
-        let getFastGenericEqualityComparerTable<'T> () =
-            let ty = typeof<'T>
-            match tryGetFastGenericEqualityComparerTable ty with
-            | :? System.Collections.Generic.IEqualityComparer<'T> as comp -> comp
-            | _ when HashCompare.canUseDefaultEqualityComparer ty-> 
-                unboxPrim (box System.Collections.Generic.EqualityComparer<'T>.Default)
-            | _ ->
-                MakeGenericEqualityComparer<'T>()
-
         [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]     
         type FastGenericEqualityComparerTable<'T>() =
-            static let f = getFastGenericEqualityComparerTable<'T> ()
+            static let f = HashCompare.FSharpEqualityComparer_PER<'T>.Comparer
             static member Function  = f
 
-        let FastGenericEqualityComparerFromTable<'T> = FastGenericEqualityComparerTable<'T>.Function
+        let FastGenericEqualityComparerFromTable<'T> = FastGenericEqualityComparerTable<'T>.Function :> IEqualityComparer<'T>
 
         // This is the implementation of HashIdentity.Structural.  In most cases this just becomes
         // FastGenericEqualityComparerFromTable.
