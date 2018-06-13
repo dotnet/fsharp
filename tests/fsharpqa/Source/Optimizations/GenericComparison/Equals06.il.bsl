@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 4:4:1:0
 }
 .assembly Equals06
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Equals06
 {
-  // Offset: 0x00000000 Length: 0x0000089A
+  // Offset: 0x00000000 Length: 0x00000896
 }
 .mresource public FSharpOptimizationData.Equals06
 {
-  // Offset: 0x000008A0 Length: 0x00000696
+  // Offset: 0x000008A0 Length: 0x0000068E
 }
 .module Equals06.dll
-// MVID: {5B1B6346-0759-31EC-A745-038346631B5B}
+// MVID: {59B18AEE-0759-31EC-A745-0383EE8AB159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02B30000
+// Image base: 0x01B90000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -187,7 +187,7 @@
                  [4] !a V_4,
                  [5] !a V_5)
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 16707566,16707566 : 0,0 'C:\\src\\manofstick\\visualfsharp-nobox\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Equals06.fsx'
+        .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Equals06.fsx'
         IL_0000:  ldarg.0
         IL_0001:  ldnull
         IL_0002:  cgt.un
@@ -633,7 +633,7 @@
               instance bool  Equals(object obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       20 (0x14)
+        // Code size       22 (0x16)
         .maxstack  4
         .locals init ([0] class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0)
         .line 4,4 : 10,20 ''
@@ -641,17 +641,18 @@
         IL_0001:  isinst     class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
         IL_0006:  stloc.0
         IL_0007:  ldloc.0
-        IL_0008:  brfalse.s  IL_0012
+        IL_0008:  brfalse.s  IL_0014
 
         .line 16707566,16707566 : 0,0 ''
         IL_000a:  ldarg.0
         IL_000b:  ldloc.0
-        IL_000c:  callvirt   instance bool class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::Equals(class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!0>)
-        IL_0011:  ret
+        IL_000c:  tail.
+        IL_000e:  callvirt   instance bool class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::Equals(class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!0>)
+        IL_0013:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0012:  ldc.i4.0
-        IL_0013:  ret
+        IL_0014:  ldc.i4.0
+        IL_0015:  ret
       } // end of method GenericKey`1::Equals
 
       .property instance int32 Tag()
