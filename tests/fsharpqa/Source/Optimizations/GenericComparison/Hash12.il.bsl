@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 4:4:1:0
 }
 .assembly Hash12
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Hash12
 {
-  // Offset: 0x00000000 Length: 0x00000A9C
+  // Offset: 0x00000000 Length: 0x00000A98
 }
 .mresource public FSharpOptimizationData.Hash12
 {
   // Offset: 0x00000AA0 Length: 0x00000585
 }
 .module Hash12.dll
-// MVID: {5B1B6346-9661-796E-A745-038346631B5B}
+// MVID: {59B18AEE-9661-796E-A745-0383EE8AB159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02810000
+// Image base: 0x01080000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -187,7 +187,7 @@
                  [4] int32 V_4,
                  [5] int32 V_5)
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 16707566,16707566 : 0,0 'C:\\src\\manofstick\\visualfsharp-nobox\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Hash12.fsx'
+        .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Hash12.fsx'
         IL_0000:  ldarg.0
         IL_0001:  ldnull
         IL_0002:  cgt.un
@@ -1330,7 +1330,7 @@
               instance bool  Equals(object obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       20 (0x14)
+        // Code size       22 (0x16)
         .maxstack  4
         .locals init ([0] class Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys V_0)
         .line 5,5 : 10,26 ''
@@ -1338,17 +1338,18 @@
         IL_0001:  isinst     Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys
         IL_0006:  stloc.0
         IL_0007:  ldloc.0
-        IL_0008:  brfalse.s  IL_0012
+        IL_0008:  brfalse.s  IL_0014
 
         .line 16707566,16707566 : 0,0 ''
         IL_000a:  ldarg.0
         IL_000b:  ldloc.0
-        IL_000c:  callvirt   instance bool Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::Equals(class Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys)
-        IL_0011:  ret
+        IL_000c:  tail.
+        IL_000e:  callvirt   instance bool Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::Equals(class Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys)
+        IL_0013:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0012:  ldc.i4.0
-        IL_0013:  ret
+        IL_0014:  ldc.i4.0
+        IL_0015:  ret
       } // end of method KeyWithInnerKeys::Equals
 
       .property instance int32 Tag()
