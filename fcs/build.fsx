@@ -77,11 +77,12 @@ Target "Restore" (fun _ ->
     // We assume a paket restore has already been run
     runDotnet __SOURCE_DIRECTORY__ "restore FSharp.Compiler.Service.sln -v n"
     for p in [ "../packages.config" ] do
-        ExecProcess (fun info ->
-            info.FileName <- FullName @"./../.nuget/NuGet.exe"
-            info.WorkingDirectory <- FullName @"./.."
-            info.Arguments <- sprintf "restore %s -PackagesDirectory \"%s\" -ConfigFile \"%s\""   (FullName p) (FullName "./../packages") (FullName "./../NuGet.Config")) TimeSpan.MaxValue
-        |> assertExitCodeZero           
+        let executeProcess () =
+            ExecProcess (fun info ->
+                info.FileName <- FullName @"./../.nuget/NuGet.exe"
+                info.WorkingDirectory <- FullName @"./.."
+                info.Arguments <- sprintf "restore %s -PackagesDirectory \"%s\" -ConfigFile \"%s\""   (FullName p) (FullName "./../packages") (FullName "./../NuGet.Config")) TimeSpan.MaxValue
+        if executeProcess () <> 0 then executeProcess () |> assertExitCodeZero
 )
 
 Target "BuildVersion" (fun _ ->
