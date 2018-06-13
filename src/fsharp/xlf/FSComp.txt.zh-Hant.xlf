@@ -7042,6 +7042,11 @@
         <target state="new">Struct members cannot return the address of fields of the struct by reference</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTypeDoesNotInheritAttribute">
+        <source>This type is not an attribute</source>
+        <target state="new">This type is not an attribute</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

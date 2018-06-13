@@ -10655,6 +10655,7 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
 
     let ad = env.eAccessRights
 
+    if not (ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap mAttr ty cenv.g.tcref_System_Attribute) then errorR(Error(FSComp.SR.tcTypeDoesNotInheritAttribute(), mAttr))
     if not (IsTypeAccessible cenv.g cenv.amap mAttr ad ty) then errorR(Error(FSComp.SR.tcTypeIsInaccessible(), mAttr))
 
     let tcref = tcrefOfAppTy cenv.g ty

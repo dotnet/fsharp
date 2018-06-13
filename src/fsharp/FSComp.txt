@@ -1436,3 +1436,4 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3231,tastValueMustBeLocal,"A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'"
 3232,tcIsReadOnlyNotStruct,"A type annotated with IsReadOnly must also be a struct. Consider adding the [<Struct>] attribute to the type."
 3234,chkStructsMayNotReturnAddressesOfContents,"Struct members cannot return the address of fields of the struct by reference"
+3235,tcTypeDoesNotInheritAttribute,"This type is not an attribute"
