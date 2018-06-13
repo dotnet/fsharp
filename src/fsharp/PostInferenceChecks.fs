@@ -24,7 +24,6 @@ open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.TypeRelations
-open FSComp
 
 //--------------------------------------------------------------------------
 // TestHooks - for dumping range to support source transforms
@@ -623,6 +622,10 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: Perm
         if isCallOfConstructorOfAbstractType then 
             errorR(Error(FSComp.SR.tcAbstractTypeCannotBeInstantiated(),m))
 
+        // This is used to handle this case:
+        //     let x = 1
+        //     let y = &x
+        //     &y
         let isReturnExprBuiltUsingStackReferringByRefLike = 
             context.PermitOnlyReturnable &&
             (HasLimitFlag LimitFlags.LocalByRef limit ||
@@ -684,17 +687,17 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv:cenv) expr =
             | _ -> ()
         | _ -> ()
 
-and CheckLimitArgs cenv m (returnTy: TType) limitArgs (context: PermitByRefExpr) =
-    // If return is a byref, and being used as a return, then all arguments must be usable as byref-like returns
-    // If return is a span-like, and being used as a return, then all arguments must be usable as span-like returns
+and CheckCallLimitArgs cenv m (returnTy: TType) limitArgs (context: PermitByRefExpr) =
     let isByref = isByrefTy cenv.g returnTy
     let isSpanLike = isSpanLikeTy cenv.g m returnTy
 
+    // If return is a byref, and being used as a return, then a single argument cannot be a local-byref or a stack referring span-like.
     let isLimitedByRef = 
         isByref && 
         (HasLimitFlag LimitFlags.LocalByRef limitArgs || 
          HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs)
 
+    // If return is a byref, and being used as a return, then a single argument cnanot be a stack referring span-like or a local-byref of a stack referring span-like.
     let isLimitedSpanLike = 
         isSpanLike && 
         (HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs ||
@@ -704,12 +707,14 @@ and CheckLimitArgs cenv m (returnTy: TType) limitArgs (context: PermitByRefExpr)
         if context.PermitOnlyReturnable && (isLimitedByRef || isLimitedSpanLike) then
             errorR(Error(FSComp.SR.chkNoByrefLikeReturnFromFunction(), m))
 
-        let canErrorOnCall =  
+        // You cannot call a function that takes a byref of a span-like (not stack referring) and 
+        //     either a stack referring spanlike or a local-byref of a stack referring span-like.
+        let isCallLimited =  
             HasLimitFlag LimitFlags.ByRefOfSpanLike limitArgs && 
             (HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs || 
              HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limitArgs)
 
-        if canErrorOnCall then
+        if isCallLimited then
             errorR(Error(FSComp.SR.chkNoByrefLikeFunctionCall(), m))
 
     if isLimitedByRef then
@@ -742,15 +747,15 @@ and CheckLimitArgs cenv m (returnTy: TType) limitArgs (context: PermitByRefExpr)
 /// Check call arguments, including the return argument.
 and CheckCall cenv env m returnTy args contexts context =
     let limitArgs = CheckExprs cenv env args contexts
-    CheckLimitArgs cenv m returnTy limitArgs context
+    CheckCallLimitArgs cenv m returnTy limitArgs context
 
 and CheckCallPermitReturnableByRef cenv env m returnTy args =
     let limitArgs = CheckExprsPermitReturnableByRef cenv env args
-    CheckLimitArgs cenv m returnTy limitArgs PermitByRefExpr.YesReturnable
+    CheckCallLimitArgs cenv m returnTy limitArgs PermitByRefExpr.YesReturnable
 
 and CheckCallPermitByRefLike cenv env m returnTy args =
     let limitArgs = CheckExprsPermitByRefLike cenv env args
-    CheckLimitArgs cenv m returnTy limitArgs PermitByRefExpr.Yes
+    CheckCallLimitArgs cenv m returnTy limitArgs PermitByRefExpr.Yes
 
 /// Check an expression, given information about the position of the expression
 and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : LimitFlags =    
