@@ -82,10 +82,8 @@ Target "Restore" (fun _ ->
                 info.FileName <- FullName @"./../.nuget/NuGet.exe"
                 info.WorkingDirectory <- FullName @"./.."
                 info.Arguments <- sprintf "restore %s -PackagesDirectory \"%s\" -ConfigFile \"%s\""   (FullName p) (FullName "./../packages") (FullName "./../NuGet.Config")) TimeSpan.MaxValue
-            if result <> 0 && count > 1 then  executeProcess (count - 1) else 0
+            if result <> 0 && count > 1 then  executeProcess (count - 1) else result
         (executeProcess 5) |> assertExitCodeZero
-
-
 )
 
 Target "BuildVersion" (fun _ ->
