@@ -4345,4 +4345,7 @@
   <data name="chkStructsMayNotReturnAddressesOfContents" xml:space="preserve">
     <value>Struct members cannot return the address of fields of the struct by reference</value>
   </data>
+  <data name="tcTypeDoesNotInheritAttribute" xml:space="preserve">
+    <value>This type is not an attribute</value>
+  </data>
 </root>

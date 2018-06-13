@@ -4342,6 +4342,9 @@ type internal SR private() =
     /// Struct members cannot return the address of fields of the struct by reference
     /// (Originally from ..\FSComp.txt:1438)
     static member chkStructsMayNotReturnAddressesOfContents() = (3234, GetStringFunc("chkStructsMayNotReturnAddressesOfContents",",,,") )
+    /// This type is not an attribute
+    /// (Originally from ..\FSComp.txt:1439)
+    static member tcTypeDoesNotInheritAttribute() = (3235, GetStringFunc("tcTypeDoesNotInheritAttribute",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5754,4 +5757,5 @@ type internal SR private() =
         ignore(GetString("tastValueMustBeLocal"))
         ignore(GetString("tcIsReadOnlyNotStruct"))
         ignore(GetString("chkStructsMayNotReturnAddressesOfContents"))
+        ignore(GetString("tcTypeDoesNotInheritAttribute"))
         ()
