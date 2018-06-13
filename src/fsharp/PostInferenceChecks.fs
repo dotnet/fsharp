@@ -125,6 +125,7 @@ let BindTypars g env (tps:Typar list) =
 let BindArgVals env (vs: Val list) = 
     { env with argVals = ValMap.OfList (List.map (fun v -> (v,())) vs) }
 
+/// Limit flags represent a type(s) from an expression(s) that is interesting to impose rules on.
 [<Flags>]
 type LimitFlags =
     | None                               = 0b000000
@@ -152,18 +153,19 @@ type cenv =
       mutable usesQuotations : bool
       mutable entryPointGiven:bool  }
 
-/// Checks if the value is an argument of a function
+/// Check if the value is an argument of a function
 let IsValArgument env (v: Val) =
     env.argVals.ContainsVal(v)
 
-/// Checks if the value is a local, not an argument of a function.
+/// Check if the value is a local, not an argument of a function.
 let IsValLocal env (v: Val) =
     v.ValReprInfo.IsNone && not (IsValArgument env v)
 
+/// Check if the limit has the target limit.
 let inline HasLimitFlag targetLimit limit =
     limit &&& targetLimit = targetLimit
 
-/// Gets the limit of the val.
+/// Get the limit of the val.
 let GetLimitVal cenv env m (v: Val) =
     let limit =
         match cenv.limitVals.TryGetValue(v.Stamp) with
@@ -198,6 +200,7 @@ let GetLimitVal cenv env m (v: Val) =
     else
         LimitFlags.None
 
+/// Get the limit of the val by reference.
 let GetLimitValByRef cenv env m v =
     let limit = GetLimitVal cenv env m v
 
@@ -749,10 +752,12 @@ and CheckCall cenv env m returnTy args contexts context =
     let limitArgs = CheckExprs cenv env args contexts
     CheckCallLimitArgs cenv m returnTy limitArgs context
 
+/// Check call arguments, including the return argument. Permits returnable byref.
 and CheckCallPermitReturnableByRef cenv env m returnTy args =
     let limitArgs = CheckExprsPermitReturnableByRef cenv env args
     CheckCallLimitArgs cenv m returnTy limitArgs PermitByRefExpr.YesReturnable
 
+/// Check call arguments, including the return argument. Permits byref.
 and CheckCallPermitByRefLike cenv env m returnTy args =
     let limitArgs = CheckExprsPermitByRefLike cenv env args
     CheckCallLimitArgs cenv m returnTy limitArgs PermitByRefExpr.Yes
