@@ -9,6 +9,7 @@
     <CreateVsixContainer>false</CreateVsixContainer>
     <NoWarn>$(NoWarn);47;75</NoWarn>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <OtherFlags>$(OtherFlags) --subsystemversion:6.00</OtherFlags>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
