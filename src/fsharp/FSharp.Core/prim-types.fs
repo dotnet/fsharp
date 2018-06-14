@@ -1666,146 +1666,67 @@ namespace Microsoft.FSharp.Core
             let canUseDefaultEqualityComparer (ty:Type) =
                 let processed = System.Collections.Generic.HashSet ()
 
-                let rec recurse idx (types:array<Type>) =
+                let rec checkType idx (types:Type[]) =
                     if idx = types.Length then true
                     else
                         let ty = get types idx
                         if not (processed.Add ty) then
-                            recurse (idx+1) types
+                            checkType (idx+1) types
                         else
                             let isValidGenericType ifNotType fullname =
                                 if not (ty.IsGenericType && ty.GetGenericTypeDefinition().FullName.Equals fullname)
                                 then ifNotType
-                                else recurse 0 (ty.GetGenericArguments ())
+                                else checkType 0 (ty.GetGenericArguments ())
+                            let isTypeAndGenericArgumentsOK fullname            = isValidGenericType false fullname
+                            let isNotTypeOrIsTypeAndGenericArgumentsOK fullname = isValidGenericType true  fullname
                     
                             // avoid any types that need special handling in GenericEqualityObj
-                            true 
-                            && ty.IsSealed  // covers enum and value types
+                            // GenericEqualityObj handles string as a special cases, but internally routes to same equality
+
+                            ty.IsSealed  // covers enum and value types
+                                         // ref types need to be sealed as derived class might implement  IStructuralEquatable
                             && not ty.IsArray
-                            && not (ty.Equals typeof<String>)
-                            && not (ty.Equals typeof<Decimal>)
                             && not (ty.Equals typeof<float>)
                             && not (ty.Equals typeof<float32>)
-                            && isValidGenericType true "System.Nullable`1"
+                            && isNotTypeOrIsTypeAndGenericArgumentsOK "System.Nullable`1"
                             && not (typeof<IStructuralEquatable>.IsAssignableFrom ty
-                                    && not (false
-                                            || isValidGenericType false "System.ValueTuple`1"
-                                            || isValidGenericType false "System.ValueTuple`2"
-                                            || isValidGenericType false "System.ValueTuple`3"
-                                            || isValidGenericType false "System.ValueTuple`4"
-                                            || isValidGenericType false "System.ValueTuple`5"
-                                            || isValidGenericType false "System.ValueTuple`6"
-                                            || isValidGenericType false "System.ValueTuple`7"
-                                            || isValidGenericType false "System.ValueTuple`8"))
-                            && recurse (idx+1) types
+                                    // we accept ValueTuple even though it supports IStructuralEquatable 
+                                    // if all generic arguements pass check
+                                    && not (   isTypeAndGenericArgumentsOK "System.ValueTuple`1"
+                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`2"
+                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`3"
+                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`4"
+                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`5"
+                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`6"
+                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`7"
+                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`8"))
+                            && checkType (idx+1) types
 
-                recurse 0 [|ty|]
+                checkType 0 [|ty|]
 
             let tryGetFSharpEqualityComparer (er:bool) (ty:Type) : obj =
                 match er, ty with
-                | _, ty when ty.Equals typeof<string> -> box {
-                    new EqualityComparer<string>() with
-                        member __.Equals (x,y) = System.String.Equals (x, y)
-                        member __.GetHashCode x = HashString x }
-
-                | _, ty when ty.Equals typeof<decimal> -> box {
-                    new EqualityComparer<decimal>() with
-                        member __.Equals (x,y) = System.Decimal.op_Equality (x, y)
-                        member __.GetHashCode x = x.GetHashCode () }
-
-                | _, ty when ty.Equals typeof<bool> -> box {
-                    new EqualityComparer<bool>() with
-                        member __.Equals (x,y) = (# "ceq" x y : bool #)
-                        member __.GetHashCode x = (# "" x : int #) }
-
-                | _, ty when ty.Equals typeof<sbyte> -> box {
-                    new EqualityComparer<sbyte>() with
-                        member __.Equals (x,y) = (# "ceq" x y : bool #)
-                        member __.GetHashCode x = HashSByte x }
-
-                | _, ty when ty.Equals typeof<int16> -> box {
-                    new EqualityComparer<int16>() with
-                        member __.Equals (x,y) = (# "ceq" x y : bool #)
-                        member __.GetHashCode x = HashInt16 x }
-
-                | _, ty when ty.Equals typeof<int32> -> box {
-                    new EqualityComparer<int32>() with
-                        member __.Equals (x,y) = (# "ceq" x y : bool #)
-                        member __.GetHashCode x = (# "" x : int #) }
-
-                | _, ty when ty.Equals typeof<int64> -> box {
-                    new EqualityComparer<int64>() with
-                        member __.Equals (x,y) = (# "ceq" x y : bool #)
-                        member __.GetHashCode x = HashInt64 x }
-
-                | _, ty when ty.Equals typeof<byte> -> box {
-                    new EqualityComparer<byte>() with
-                        member __.Equals (x,y) = (# "ceq" x y : bool #)
-                        member __.GetHashCode x = (# "" x : int #) }
-
-                | _, ty when ty.Equals typeof<uint16> -> box {
-                    new EqualityComparer<uint16>() with
-                        member __.Equals (x,y) = (# "ceq" x y : bool #)
-                        member __.GetHashCode x = (# "" x : int #) }
-
-                | _, ty when ty.Equals typeof<uint32> -> box {
-                    new EqualityComparer<uint32>() with
-                        member __.Equals (x,y) = (# "ceq" x y : bool #)
-                        member __.GetHashCode x = (# "" x : int #) }
-
-                | _, ty when ty.Equals typeof<uint64> -> box {
-                    new EqualityComparer<uint64>() with
-                        member __.Equals (x,y) = (# "ceq" x y : bool #)
-                        member __.GetHashCode x = HashUInt64 x }
-
-                | _, ty when ty.Equals typeof<nativeint> -> box {
-                    new EqualityComparer<nativeint>() with
-                        member __.Equals (x,y) = (# "ceq" x y : bool #)
-                        member __.GetHashCode x = HashIntPtr x }
-
-                | _, ty when ty.Equals typeof<unativeint> -> box {
-                    new EqualityComparer<unativeint>() with
-                        member __.Equals (x,y) = (# "ceq" x y : bool #)
-                        member __.GetHashCode x = HashUIntPtr x }
-
-                | _, ty when ty.Equals typeof<char> -> box {
-                    new EqualityComparer<char>() with
-                        member __.Equals (x,y) = (# "ceq" x y : bool #)
-                        member __.GetHashCode x = HashChar x }
-
-                | false, ty when ty.Equals typeof<float> -> box {
-                    new EqualityComparer<float>() with
-                        member __.Equals (x,y) = (# "ceq" x y : bool #)
-                        member __.GetHashCode x = x.GetHashCode () }
-
-                | false, ty when ty.Equals typeof<float32> -> box {
-                    new EqualityComparer<float32>() with
-                        member __.Equals (x,y) = (# "ceq" x y : bool #)
-                        member __.GetHashCode x = x.GetHashCode () }
-
-                | true, ty when ty.Equals typeof<float> -> box {
-                    new EqualityComparer<float>() with
-                        member __.Equals (x,y) = (# "ceq" x y : bool #) || (not ((# "ceq" x x : bool #) || (# "ceq" y y : bool #)))
-                        member __.GetHashCode x = x.GetHashCode () }
-
-                | true, ty when ty.Equals typeof<float32> -> box {
-                    new EqualityComparer<float32>() with
-                        member __.Equals (x,y) = (# "ceq" x y : bool #) || (not ((# "ceq" x x : bool #) || (# "ceq" y y : bool #)))
-                        member __.GetHashCode x = x.GetHashCode () }
-
+                | false, ty when ty.Equals typeof<float> ->
+                    box { new EqualityComparer<float>() with
+                            member __.Equals (x,y) = (# "ceq" x y : bool #)
+                            member __.GetHashCode x = x.GetHashCode () }
+                | false, ty when ty.Equals typeof<float32> ->
+                    box { new EqualityComparer<float32>() with
+                            member __.Equals (x,y) = (# "ceq" x y : bool #)
+                            member __.GetHashCode x = x.GetHashCode () }
+                | true, ty when ty.Equals typeof<float>   -> box EqualityComparer<float>.Default
+                | true, ty when ty.Equals typeof<float32> -> box EqualityComparer<float32>.Default
                 | _ -> null
 
-            let genericFSharpEqualityComparer_ER<'T> () = {
-                new EqualityComparer<'T>() with
+            let genericFSharpEqualityComparer_ER<'T> () =
+                { new EqualityComparer<'T>() with
                     member __.Equals (x,y) = GenericEqualityObj true fsEqualityComparerUnlimitedHashingER (box x, box y)
-                    member __.GetHashCode x = GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box x)
-            }
+                    member __.GetHashCode x = GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box x) }
 
-            let genericFSharpEqualityComparer_PER<'T> () = {
-                new EqualityComparer<'T>() with
+            let genericFSharpEqualityComparer_PER<'T> () =
+                { new EqualityComparer<'T>() with
                     member __.Equals (x,y) = GenericEqualityObj false fsEqualityComparerUnlimitedHashingPER (box x, box y)
-                    member __.GetHashCode x = GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box x)
-            }
+                    member __.GetHashCode x = GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box x) }
 
             let getGenericEquality<'T> er =
                 match tryGetFSharpEqualityComparer er typeof<'T> with
@@ -1977,7 +1898,8 @@ namespace Microsoft.FSharp.Core
                 FSharpEqualityComparer_PER<'T>.GetHashCode input
 
             /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
-            let LimitedGenericHashIntrinsic limit input = GenericHashParamObj (CountLimitedHasherPER(limit)) (box input)
+            let LimitedGenericHashIntrinsic limit input =
+                GenericHashParamObj (CountLimitedHasherPER(limit)) (box input)
 
             /// Intrinsic for a recursive call to structural hashing that was not optimized by static conditionals.
             //
@@ -2252,7 +2174,6 @@ namespace Microsoft.FSharp.Core
         // LanguagePrimitives: PUBLISH IEqualityComparer AND IComparer OBJECTS
         //------------------------------------------------------------------------- 
 
-
         let inline MakeGenericEqualityComparer<'T>() = 
             // type-specialize some common cases to generate more efficient functions 
             { new System.Collections.Generic.IEqualityComparer<'T> with 
@@ -2265,12 +2186,8 @@ namespace Microsoft.FSharp.Core
                   member self.GetHashCode(x) = GenericLimitedHash limit x 
                   member self.Equals(x,y) = GenericEquality x y }
 
-        [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]     
-        type FastGenericEqualityComparerTable<'T>() =
-            static let f = HashCompare.FSharpEqualityComparer_PER<'T>.Comparer
-            static member Function  = f
-
-        let FastGenericEqualityComparerFromTable<'T> = FastGenericEqualityComparerTable<'T>.Function :> IEqualityComparer<'T>
+        let FastGenericEqualityComparerFromTable<'T> =
+            HashCompare.FSharpEqualityComparer_PER<'T>.Comparer :> IEqualityComparer<'T>
 
         // This is the implementation of HashIdentity.Structural.  In most cases this just becomes
         // FastGenericEqualityComparerFromTable.
