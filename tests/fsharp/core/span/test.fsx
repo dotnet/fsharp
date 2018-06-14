@@ -1,6 +1,9 @@
 #r @"..\..\..\..\packages\System.Memory.4.5.0-rc1\lib\netstandard2.0\System.Memory.dll"
 #r @"..\..\..\..\packages\NETStandard.Library.NETFramework.2.0.0-preview2-25405-01\build\net461\ref\netstandard.dll"
 
+#nowarn "9"
+#nowarn "51"
+
 namespace System.Runtime.CompilerServices
 
     open System
@@ -340,9 +343,9 @@ namespace Tests
             // this is allowed
             m2(&stackReferring3) <- stackReferringBecauseMutable2
 
-#if NEGATIVE2
+#if NEGATIVE
             // this is NOT allowed
-            m1(&param1) <- stackReferringBecauseMutable2
+            m2(&param1) <- stackReferringBecauseMutable2
 
             // this is NOT allowed
             param1 <- stackReferring3
@@ -380,22 +383,20 @@ namespace Tests
 
 #if NOT_YET
 
+#if NEGATIVE
+
     // Disallow this:
     [<IsReadOnly; Struct>]
     type DisallowedIsReadOnlyStruct  = 
         [<DefaultValue>]
         val mutable X : int
 
-
-    // Allow this:
-    [<IsByRefLike; Struct>]
-    type ByRefLikeStructWithSpanField(count1: Span, count2: int) = 
-        member x.Count1 = count1
-        member x.Count2 = count2
-
-    [<IsByRefLike; Struct>]
-    type ByRefLikeStructWithByrefField(count1: Span<int>, count2: int) = 
-        member x.Count1 = count1
-        member x.Count2 = count2
 #endif
 
+    // Allow this:
+    [<IsReadOnly; IsByRefLike; Struct>]
+    type ByRefLikeStructWithSpanField(count1: Span<int>, count2: int) = 
+        member x.Count1 = count1
+        member x.Count2 = count2
+
+#endif

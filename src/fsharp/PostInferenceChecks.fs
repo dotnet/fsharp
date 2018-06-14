@@ -125,7 +125,7 @@ let BindTypars g env (tps:Typar list) =
 let BindArgVals env (vs: Val list) = 
     { env with argVals = ValMap.OfList (List.map (fun v -> (v,())) vs) }
 
-/// Limit flags represent a type(s) from an expression(s) that is interesting to impose rules on.
+/// Limit flags represent a type(s) returned from checking an expression(s) that is interesting to impose rules on.
 [<Flags>]
 type LimitFlags =
     | None                               = 0b000000
@@ -501,7 +501,7 @@ let CheckType permitByRefLike (cenv:cenv) env m ty =
             match permitByRefLike with
             | PermitByRefType.None when isByrefLikeTyconRef cenv.g m tcref ->
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
-            | PermitByRefType.OuterSpanLike when (isInner && isByrefTyconRef cenv.g tcref) || not (isSpanLikeTyconRef cenv.g m tcref) ->
+            | PermitByRefType.OuterSpanLike when isInner && isByrefTyconRef cenv.g tcref ->
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
             | PermitByRefType.OuterByRefLike when isInner && isByrefTyconRef cenv.g tcref ->
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))

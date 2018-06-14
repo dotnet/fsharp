@@ -213,6 +213,8 @@ module CoreTests =
 
             fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
+            singleNegTest cfg "test"
+
             // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
             //exec cfg ("." ++ "test.exe") ""
 
