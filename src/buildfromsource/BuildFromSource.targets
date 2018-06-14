@@ -3,7 +3,7 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <FSCoreVersion>4.4.3.0</FSCoreVersion>
+    <FSCoreVersion>4.5.0.0</FSCoreVersion>
     <OutputPath>$(MSBuildThisFileDirectory)../../BuildFromSource/$(Configuration)/bin</OutputPath>
     <FSharpSourcesRoot>$(MSBuildThisFileDirectory)..</FSharpSourcesRoot>
 
