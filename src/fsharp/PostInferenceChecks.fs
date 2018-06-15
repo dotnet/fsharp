@@ -422,11 +422,8 @@ type PermitByRefType =
     /// Don't permit any byref or byref-like types
     | None 
 
-    /// Permit only an outermost Span or IsByRefLike type
-    | OuterSpanLike 
-
-    /// Permit only an outermost Span, IsByRefLike, inref, outref or byref type
-    | OuterByRefLike 
+    /// Permit only a Span or IsByRefLike type
+    | SpanLike
 
     /// Permit all byref and byref-like types
     | All
@@ -496,14 +493,12 @@ let CheckType permitByRefLike (cenv:cenv) env m ty =
              else
                errorR (Error(FSComp.SR.checkNotSufficientlyGenericBecauseOfScope(tp.DisplayName),m))
 
-        let visitTyconRef isInner tcref = 
+        let visitTyconRef _isInner tcref = 
 
             match permitByRefLike with
             | PermitByRefType.None when isByrefLikeTyconRef cenv.g m tcref ->
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
-            | PermitByRefType.OuterSpanLike when isInner && isByrefTyconRef cenv.g tcref ->
-                errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
-            | PermitByRefType.OuterByRefLike when isInner && isByrefTyconRef cenv.g tcref ->
+            | PermitByRefType.SpanLike when isByrefTyconRef cenv.g tcref ->
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
             | _ -> ()
 
@@ -537,11 +532,8 @@ let CheckType permitByRefLike (cenv:cenv) env m ty =
 /// The additional byref checks are to catch "byref instantiations" - one place were byref are not permitted.  
 let CheckTypeNoByrefs (cenv:cenv) env m ty = CheckType PermitByRefType.None cenv env m ty
 
-/// Check types occurring in TAST but allow an outer byref.
-let CheckTypePermitOuterByRefLike (cenv:cenv) env m ty = CheckType PermitByRefType.OuterByRefLike cenv env m ty
-
-/// Check types occurring in TAST but allow an outer Span or similar
-let CheckTypePermitOuterSpanLike (cenv:cenv) env m ty = CheckType PermitByRefType.OuterSpanLike cenv env m ty
+/// Check types occurring in TAST but allow a Span or similar
+let CheckTypePermitSpanLike (cenv:cenv) env m ty = CheckType PermitByRefType.SpanLike cenv env m ty
 
 /// Check types occurring in TAST but allow all byrefs.  Only used on internally-generated types
 let CheckTypePermitAllByrefs (cenv:cenv) env m ty = CheckType PermitByRefType.All cenv env m ty
@@ -794,7 +786,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : LimitFl
         CheckExpr cenv env body context
 
     | Expr.Const (_,m,ty) -> 
-        CheckTypePermitOuterByRefLike cenv env m ty 
+        CheckTypePermitAllByrefs cenv env m ty 
         LimitFlags.None
             
     | Expr.Val (vref,vFlags,m) -> 
@@ -1690,7 +1682,7 @@ let CheckRecdField isUnion cenv env (tycon:Tycon) (rfield:RecdField) =
 
     if TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref then 
         // Permit Span fields in IsByRefLike types
-        CheckTypePermitOuterSpanLike cenv env m rfield.FormalType
+        CheckTypePermitSpanLike cenv env m rfield.FormalType
         if cenv.reportErrors then
             CheckForByrefType cenv env rfield.FormalType (fun () -> errorR(Error(FSComp.SR.chkCantStoreByrefValue(), tycon.Range)))
     else
@@ -1930,8 +1922,8 @@ let CheckEntityDefn cenv env (tycon:Entity) =
             let env = BindTypars g env tps
             for argtys in argtysl do 
                 for (argty, _) in argtys do 
-                     CheckTypePermitOuterByRefLike cenv env m argty
-            CheckTypePermitOuterByRefLike cenv env m rty
+                     CheckTypePermitAllByrefs cenv env m argty
+            CheckTypePermitAllByrefs cenv env m rty
                 
         | None -> ()
 
