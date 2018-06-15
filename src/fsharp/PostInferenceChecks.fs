@@ -627,7 +627,13 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: Perm
              HasLimitFlag LimitFlags.StackReferringSpanLike limit)
 
         if isReturnExprBuiltUsingStackReferringByRefLike then
-            errorR(Error(FSComp.SR.chkNoByrefAddressOfLocal(vref.DisplayName), m))
+            let isSpanLike = isSpanLikeTy g m vref.Type
+            let isCompGen = vref.IsCompilerGenerated
+            match isSpanLike, isCompGen with
+            | true, true -> errorR(Error(FSComp.SR.chkNoSpanLikeValueFromExpression(), m))
+            | true, false -> errorR(Error(FSComp.SR.chkNoSpanLikeVariable(vref.DisplayName), m))
+            | false, true -> errorR(Error(FSComp.SR.chkNoByrefAddressOfValueFromExpression(), m))
+            | false, false -> errorR(Error(FSComp.SR.chkNoByrefAddressOfLocal(vref.DisplayName), m))
           
         let isReturnOfStructThis = 
             context.PermitOnlyReturnable && 
@@ -683,24 +689,27 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv:cenv) expr =
         | _ -> ()
 
 and CheckCallLimitArgs cenv m (returnTy: TType) limitArgs (context: PermitByRefExpr) =
-    let isByref = isByrefTy cenv.g returnTy
-    let isSpanLike = isSpanLikeTy cenv.g m returnTy
+    let isReturnByref = isByrefTy cenv.g returnTy
+    let isReturnSpanLike = isSpanLikeTy cenv.g m returnTy
 
     // If return is a byref, and being used as a return, then a single argument cannot be a local-byref or a stack referring span-like.
-    let isLimitedByRef = 
-        isByref && 
+    let isReturnLimitedByRef = 
+        isReturnByref && 
         (HasLimitFlag LimitFlags.LocalByRef limitArgs || 
          HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs)
 
-    // If return is a byref, and being used as a return, then a single argument cnanot be a stack referring span-like or a local-byref of a stack referring span-like.
-    let isLimitedSpanLike = 
-        isSpanLike && 
+    // If return is a byref, and being used as a return, then a single argument cannot be a stack referring span-like or a local-byref of a stack referring span-like.
+    let isReturnLimitedSpanLike = 
+        isReturnSpanLike && 
         (HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs ||
          HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limitArgs)
 
     if cenv.reportErrors then
-        if context.PermitOnlyReturnable && (isLimitedByRef || isLimitedSpanLike) then
-            errorR(Error(FSComp.SR.chkNoByrefLikeReturnFromFunction(), m))
+        if context.PermitOnlyReturnable && (isReturnLimitedByRef || isReturnLimitedSpanLike) then
+            if isReturnLimitedSpanLike then
+                errorR(Error(FSComp.SR.chkNoSpanLikeValueFromExpression(), m))
+            else
+                errorR(Error(FSComp.SR.chkNoByrefAddressOfValueFromExpression(), m))
 
         // You cannot call a function that takes a byref of a span-like (not stack referring) and 
         //     either a stack referring spanlike or a local-byref of a stack referring span-like.
@@ -712,7 +721,7 @@ and CheckCallLimitArgs cenv m (returnTy: TType) limitArgs (context: PermitByRefE
         if isCallLimited then
             errorR(Error(FSComp.SR.chkNoByrefLikeFunctionCall(), m))
 
-    if isLimitedByRef then
+    if isReturnLimitedByRef then
         if isSpanLikeTy cenv.g m (destByrefTy cenv.g returnTy) then
             let isStackReferring =
                 HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs ||
@@ -724,16 +733,16 @@ and CheckCallLimitArgs cenv m (returnTy: TType) limitArgs (context: PermitByRefE
         else
             LimitFlags.LocalByRef
 
-    elif isLimitedSpanLike then
+    elif isReturnLimitedSpanLike then
         LimitFlags.StackReferringSpanLike
 
-    elif isByref then
+    elif isReturnByref then
         if isSpanLikeTy cenv.g m (destByrefTy cenv.g returnTy) then
             LimitFlags.ByRefOfSpanLike
         else
             LimitFlags.None
 
-    elif isSpanLike then
+    elif isReturnSpanLike then
         LimitFlags.SpanLike
 
     else
@@ -1017,7 +1026,10 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
                 IsValLocal env vref.Deref
             
             if returningAddrOfLocal then 
-                errorR(Error(FSComp.SR.chkNoByrefAddressOfLocal(vref.DisplayName), m))
+                if vref.IsCompilerGenerated then
+                    errorR(Error(FSComp.SR.chkNoByrefAddressOfValueFromExpression(), m))
+                else
+                    errorR(Error(FSComp.SR.chkNoByrefAddressOfLocal(vref.DisplayName), m))
 
         let limit1 = GetLimitValByRef cenv env m vref.Deref
         let limit2 = CheckExprsNoByRefLike cenv env args
@@ -1035,12 +1047,10 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         if HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limit then
 
             if cenv.reportErrors && context.PermitOnlyReturnable then
-                // If the valref is compiler generated, we most likely got it from a function that returned
-                //     a byref with an implicit de-reference.
                 if vref.IsCompilerGenerated then
-                    errorR(Error(FSComp.SR.chkNoByrefLikeReturnFromFunction(), m))
+                    errorR(Error(FSComp.SR.chkNoSpanLikeValueFromExpression(), m))
                 else
-                    errorR(Error(FSComp.SR.chkNoByrefAddressOfLocal(vref.DisplayName), m))
+                    errorR(Error(FSComp.SR.chkNoSpanLikeVariable(vref.DisplayName), m))
 
             LimitFlags.StackReferringSpanLike
         elif HasLimitFlag LimitFlags.LocalByRefOfSpanLike limit then

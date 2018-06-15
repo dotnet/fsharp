@@ -4324,9 +4324,9 @@ type internal SR private() =
     /// A type annotated with IsByRefLike must also be a struct. Consider adding the [<Struct>] attribute to the type.
     /// (Originally from ..\FSComp.txt:1432)
     static member tcByRefLikeNotStruct() = (3227, GetStringFunc("tcByRefLikeNotStruct",",,,") )
-    /// The address returned from the function cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
+    /// The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
     /// (Originally from ..\FSComp.txt:1433)
-    static member chkNoByrefLikeReturnFromFunction() = (3228, GetStringFunc("chkNoByrefLikeReturnFromFunction",",,,") )
+    static member chkNoByrefAddressOfValueFromExpression() = (3228, GetStringFunc("chkNoByrefAddressOfValueFromExpression",",,,") )
     /// The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.
     /// (Originally from ..\FSComp.txt:1434)
     static member chkNoReturnOfLimitedSpan() = (3229, GetStringFunc("chkNoReturnOfLimitedSpan",",,,") )
@@ -4345,6 +4345,12 @@ type internal SR private() =
     /// The function call cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
     /// (Originally from ..\FSComp.txt:1439)
     static member chkNoByrefLikeFunctionCall() = (3235, GetStringFunc("chkNoByrefLikeFunctionCall",",,,") )
+    /// The IsByRefLike variable '%s' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
+    /// (Originally from ..\FSComp.txt:1440)
+    static member chkNoSpanLikeVariable(a0 : System.String) = (3236, GetStringFunc("chkNoSpanLikeVariable",",,,%s,,,") a0)
+    /// An IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.
+    /// (Originally from ..\FSComp.txt:1441)
+    static member chkNoSpanLikeValueFromExpression() = (3237, GetStringFunc("chkNoSpanLikeValueFromExpression",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5751,11 +5757,13 @@ type internal SR private() =
         ignore(GetString("readOnlyAttributeOnStructWithMutableField"))
         ignore(GetString("tcByrefReturnImplicitlyDereferenced"))
         ignore(GetString("tcByRefLikeNotStruct"))
-        ignore(GetString("chkNoByrefLikeReturnFromFunction"))
+        ignore(GetString("chkNoByrefAddressOfValueFromExpression"))
         ignore(GetString("chkNoReturnOfLimitedSpan"))
         ignore(GetString("chkNoWriteToLimitedSpan"))
         ignore(GetString("tastValueMustBeLocal"))
         ignore(GetString("tcIsReadOnlyNotStruct"))
         ignore(GetString("chkStructsMayNotReturnAddressesOfContents"))
         ignore(GetString("chkNoByrefLikeFunctionCall"))
+        ignore(GetString("chkNoSpanLikeVariable"))
+        ignore(GetString("chkNoSpanLikeValueFromExpression"))
         ()

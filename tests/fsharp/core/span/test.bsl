@@ -13,4 +13,4 @@ test.fsx(354,14,354,29): typecheck error FS3209: The address of the variable 'st
 
 test.fsx(376,18,376,19): typecheck error FS3209: The address of the variable 'x' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
-test.fsx(380,18,380,33): typecheck error FS3228: The address returned from the function cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
+test.fsx(380,18,380,33): typecheck error FS3228: The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
