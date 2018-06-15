@@ -3,7 +3,7 @@
 #if INTERACTIVE
 #load "../utils/ResizeArray.fs" "../absil/illib.fs" "../fsharp/ReferenceResolver.fs"
 #else
-module internal Microsoft.FSharp.Compiler.SimulatedMSBuildReferenceResolver 
+module internal Microsoft.FSharp.Compiler.SimulatedMSBuildReferenceResolver
 #endif
 
 open System
@@ -15,21 +15,27 @@ open Microsoft.FSharp.Compiler.ReferenceResolver
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 let internal SimulatedMSBuildResolver =
+    let supportedFrameworks = [|
+        "v4.7.2";
+        "v4.7.1";
+        "v4.7";
+        "v4.6.2";
+        "v4.6.1";
+        "v4.6"; 
+        "v4.5.1";
+        "v4.5"; 
+        "v4.0"
+    |]
     { new Resolver with 
-        member x.HighestInstalledNetFrameworkVersion() = 
+        member x.HighestInstalledNetFrameworkVersion() =
+        
             let root = x.DotNetFrameworkReferenceAssembliesRootDirectory
-            if Directory.Exists(Path.Combine(root,"v4.7.1")) then "v4.7.2"
-            elif Directory.Exists(Path.Combine(root,"v4.7.1")) then "v4.7.1"
-            elif Directory.Exists(Path.Combine(root,"v4.7")) then "v4.7"
-            elif Directory.Exists(Path.Combine(root,"v4.6.2")) then "v4.6.2"
-            elif Directory.Exists(Path.Combine(root,"v4.6.1")) then "v4.6.1"
-            elif Directory.Exists(Path.Combine(root,"v4.6")) then "v4.6"
-            elif Directory.Exists(Path.Combine(root,"v4.5.1")) then "v4.5.1"
-            elif Directory.Exists(Path.Combine(root,"v4.5")) then "v4.5"
-            elif Directory.Exists(Path.Combine(root,"v4.0")) then "v4.0"
-            else "v4.5"
+            let fwOpt = supportedFrameworks |> Seq.tryFind(fun fw -> Directory.Exists(Path.Combine(root, fw) ))
+            match fwOpt with
+            | Some fw -> fw
+            | None -> "v4.5"
 
-        member __.DotNetFrameworkReferenceAssembliesRootDirectory = 
+        member __.DotNetFrameworkReferenceAssembliesRootDirectory =
 #if !FX_RESHAPED_MSBUILD
             if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then 
                 let PF = 
@@ -41,7 +47,7 @@ let internal SimulatedMSBuildResolver =
 #endif
                 ""
 
-        member __.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,                
+        member __.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,
                             fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarningOrError) =
 
 #if !FX_NO_WIN_REGISTRY
