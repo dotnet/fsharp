@@ -1260,6 +1260,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
 
         // Check the body of the lambda
         if isTop && not g.compilingFslib && isByrefLikeTy g m bodyty then
+            // allow byref to occur as return position for byref-typed top level function or method
             CheckExprPermitReturnableByRef cenv env body |> ignore
         else
             CheckExprNoByrefs cenv env body

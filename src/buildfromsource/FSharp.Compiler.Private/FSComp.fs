@@ -4342,7 +4342,7 @@ type internal SR private() =
     /// Struct members cannot return the address of fields of the struct by reference
     /// (Originally from ..\FSComp.txt:1438)
     static member chkStructsMayNotReturnAddressesOfContents() = (3234, GetStringFunc("chkStructsMayNotReturnAddressesOfContents",",,,") )
-    /// The function call cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
+    /// The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.
     /// (Originally from ..\FSComp.txt:1439)
     static member chkNoByrefLikeFunctionCall() = (3235, GetStringFunc("chkNoByrefLikeFunctionCall",",,,") )
     /// The Span or IsByRefLike variable '%s' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
