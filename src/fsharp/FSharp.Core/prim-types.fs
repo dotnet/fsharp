@@ -1663,7 +1663,7 @@ namespace Microsoft.FSharp.Core
                     override iec.Equals(x:obj,y:obj) = GenericEqualityObj true iec (x,y)  // ER Semantics
                     override iec.GetHashCode(x:obj) = raise (InvalidOperationException (SR.GetString(SR.notUsedForHashing))) }
 
-            let canUseDefaultEqualityComparer (ty:Type) =
+            let canUseDefaultEqualityComparer er (rootType:Type) =
                 let processed = System.Collections.Generic.HashSet ()
 
                 let rec checkType idx (types:Type[]) =
@@ -1686,8 +1686,8 @@ namespace Microsoft.FSharp.Core
                             ty.IsSealed  // covers enum and value types
                                          // ref types need to be sealed as derived class might implement  IStructuralEquatable
                             && not ty.IsArray
-                            && not (ty.Equals typeof<float>)
-                            && not (ty.Equals typeof<float32>)
+                            && (er || (not (ty.Equals typeof<float>)))
+                            && (er || (not (ty.Equals typeof<float32>)))
                             && isNotTypeOrIsTypeAndGenericArgumentsOK "System.Nullable`1"
                             && not (typeof<IStructuralEquatable>.IsAssignableFrom ty
                                     // we accept ValueTuple even though it supports IStructuralEquatable 
@@ -1699,10 +1699,16 @@ namespace Microsoft.FSharp.Core
                                             || isTypeAndGenericArgumentsOK "System.ValueTuple`5"
                                             || isTypeAndGenericArgumentsOK "System.ValueTuple`6"
                                             || isTypeAndGenericArgumentsOK "System.ValueTuple`7"
-                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`8"))
+                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`8"
+                                            || isTypeAndGenericArgumentsOK "Microsoft.FSharp.Collections.FSharpList`1"
+                                            || isTypeAndGenericArgumentsOK "Microsoft.FSharp.Core.FSharpOption`1"
+                                            || isTypeAndGenericArgumentsOK "Microsoft.FSharp.Core.FSharpValueOption`1"
+                                            || isTypeAndGenericArgumentsOK "Microsoft.FSharp.Core.FSharpResult`2"
+                                           )
+                                   )
                             && checkType (idx+1) types
 
-                checkType 0 [|ty|]
+                checkType 0 [|rootType|]
 
             let tryGetFSharpEqualityComparer (er:bool) (ty:Type) : obj =
                 match er, ty with
@@ -1731,7 +1737,7 @@ namespace Microsoft.FSharp.Core
             let getGenericEquality<'T> er =
                 match tryGetFSharpEqualityComparer er typeof<'T> with
                 | :? EqualityComparer<'T> as call -> call
-                | _ when canUseDefaultEqualityComparer typeof<'T> -> EqualityComparer<'T>.Default
+                | _ when canUseDefaultEqualityComparer er typeof<'T> -> EqualityComparer<'T>.Default
                 | _ when er -> genericFSharpEqualityComparer_ER<'T> ()
                 | _ -> genericFSharpEqualityComparer_PER<'T> ()
 
