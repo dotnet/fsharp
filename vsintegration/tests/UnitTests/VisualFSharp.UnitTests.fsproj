@@ -24,10 +24,9 @@
     </Compile>
     <Compile Include="TestLib.Utils.fs" />
     <Compile Include="TestLib.Salsa.fs" />
-<!-- TODO:  Fix this test
     <Compile Include="TestLib.LanguageService.fs" />
     <Compile Include="TestLib.ProjectSystem.fs" />
--->    <Compile Include="Tests.InternalCollections.fs" />
+    <Compile Include="Tests.InternalCollections.fs" />
     <Compile Include="Tests.Build.fs" />
     <Compile Include="Tests.TaskReporter.fs" />
     <Compile Include="Tests.Watson.fs" />
@@ -84,30 +83,24 @@
     <Compile Include="..\..\..\tests\service\ExprTests.fs">
       <Link>CompilerService\ExprTests.fs</Link>
     </Compile>
-<!-- TODO:  Fix this test
     <Compile Include="..\..\..\tests\service\CSharpProjectAnalysis.fs">
       <Link>CompilerService\CSharpProjectAnalysis.fs</Link>
     </Compile>
--->
     <Compile Include="..\..\..\tests\service\ProjectOptionsTests.fs">
       <Link>CompilerService\ProjectOptionsTests.fs</Link>
     </Compile>
     <Compile Include="..\..\..\tests\service\StructureTests.fs">
       <Link>CompilerService\StructureTests.fs</Link>
     </Compile>
-<!-- TODO:  Fix this test
     <Compile Include="..\..\..\tests\service\AssemblyContentProviderTests.fs">
       <Link>CompilerService\AssemblyContentProviderTests.fs</Link>
     </Compile>
--->
     <Compile Include="..\..\..\tests\service\ServiceUntypedParseTests.fs">
       <Link>CompilerService\ServiceUntypedParseTests.fs</Link>
     </Compile>
-<!-- TODO:  Fix this test
     <Compile Include="UnusedOpensTests.fs">
       <Link>CompilerService\UnusedOpensTests.fs</Link>
     </Compile>
--->
     <Compile Include="SyntacticColorizationServiceTests.fs">
       <Link>Roslyn\SyntacticColorizationServiceTests.fs</Link>
     </Compile>
@@ -115,9 +108,11 @@
     <Compile Include="SemanticColorizationServiceTests.fs">
       <Link>Roslyn\SemanticColorizationServiceTests.fs</Link>
     </Compile>
+-->
     <Compile Include="BraceMatchingServiceTests.fs">
       <Link>Roslyn\BraceMatchingServiceTests.fs</Link>
     </Compile>
+<!-- TODO:  Fix this test
     <Compile Include="HelpContextServiceTests.fs">
       <Link>Roslyn\HelpContextServiceTests.fs</Link>
     </Compile>
@@ -125,22 +120,18 @@
     <Compile Include="EditorFormattingServiceTests.fs">
       <Link>Roslyn\EditorFormattingServiceTests.fs</Link>
     </Compile>
-<!-- TODO:  Fix this test
     <Compile Include="IndentationServiceTests.fs">
       <Link>Roslyn\IndentationServiceTests.fs</Link>
     </Compile>
     <Compile Include="BreakpointResolutionService.fs">
       <Link>Roslyn\BreakpointResolutionService.fs</Link>
     </Compile>
--->
     <Compile Include="LanguageDebugInfoServiceTests.fs">
       <Link>Roslyn\LanguageDebugInfoServiceTests.fs</Link>
     </Compile>
-<!-- TODO:  Fix this test
     <Compile Include="DocumentDiagnosticAnalyzerTests.fs">
       <Link>Roslyn\DocumentDiagnosticAnalyzerTests.fs</Link>
     </Compile>
--->
     <Compile Include="ProjectDiagnosticAnalyzerTests.fs">
       <Link>Roslyn\ProjectDiagnosticAnalyzerTests.fs</Link>
     </Compile>
@@ -148,9 +139,11 @@
     <Compile Include="CompletionProviderTests.fs">
       <Link>Roslyn\CompletionProviderTests.fs</Link>
     </Compile>
+-->
     <Compile Include="SignatureHelpProviderTests.fs">
       <Link>Roslyn\SignatureHelpProviderTests.fs</Link>
     </Compile>
+<!-- TODO:  Fix this test
     <Compile Include="GoToDefinitionServiceTests.fs">
       <Link>Roslyn\GoToDefinitionServiceTests.fs</Link>
     </Compile>
