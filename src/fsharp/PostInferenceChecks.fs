@@ -1036,9 +1036,10 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         limit1 ||| limit2
 
     | TOp.LValueOp(LByrefSet,vref),_,[arg] -> 
-        let isVrefLimited = HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike (GetLimitVal cenv env m vref.Deref)
+        let limit = GetLimitVal cenv env m vref.Deref
+        let isVrefLimited = not (HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limit)
         let isArgLimited = HasLimitFlag LimitFlags.StackReferringSpanLike (CheckExprPermitByRefLike cenv env arg)
-        if not isVrefLimited && isArgLimited then 
+        if isVrefLimited && isArgLimited then 
             errorR(Error(FSComp.SR.chkNoWriteToLimitedSpan(vref.DisplayName), m))
         LimitFlags.None
 
@@ -1059,9 +1060,9 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
             LimitFlags.None
 
     | TOp.LValueOp(LSet _, vref),_,[arg] -> 
-        let isVrefLimited = HasLimitFlag LimitFlags.StackReferringSpanLike (GetLimitVal cenv env m vref.Deref)
+        let isVrefLimited = not (HasLimitFlag LimitFlags.StackReferringSpanLike (GetLimitVal cenv env m vref.Deref))
         let isArgLimited = HasLimitFlag LimitFlags.StackReferringSpanLike (CheckExprPermitByRefLike cenv env arg)
-        if not isVrefLimited && isArgLimited then 
+        if isVrefLimited && isArgLimited then 
             errorR(Error(FSComp.SR.chkNoWriteToLimitedSpan(vref.DisplayName), m))
         LimitFlags.None
 
@@ -1075,11 +1076,18 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         // Property getters on mutable structs come through here. 
         CheckExprsPermitByRefLike cenv env [arg1]          
 
-    | TOp.ValFieldSet _rf,_,[arg1;arg2] -> 
+    | TOp.ValFieldSet rf,_,[arg1;arg2] -> 
         CheckTypeInstNoByrefs cenv env m tyargs
         // See mkRecdFieldSetViaExprAddr -- byref arg1 when #args=2 
         // Field setters on mutable structs come through here
-        CheckExprsPermitByRefLike cenv env [arg1; arg2]    
+        let limit1 = CheckExprPermitByRefLike cenv env arg1
+        let limit2 = CheckExprPermitByRefLike cenv env arg2
+
+        let isLhsLimited = not (HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limit1)
+        let isRhsLimited = HasLimitFlag LimitFlags.StackReferringSpanLike limit2
+        if isLhsLimited && isRhsLimited then
+            errorR(Error(FSComp.SR.chkNoWriteToLimitedSpan(rf.FieldName), m))
+        LimitFlags.None
 
     | TOp.Coerce,[tgty;srcty],[x] ->
         if TypeRelations.TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgty srcty then
@@ -1195,7 +1203,11 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
     | TOp.TraitCall _,_,_ ->
         CheckTypeInstNoByrefs cenv env m tyargs
         // allow args to be byref here 
-        CheckExprsPermitByRefLike cenv env args 
+        CheckExprsPermitByRefLike cenv env args
+        
+    | TOp.Recd(_, _), _, _ ->
+        CheckTypeInstNoByrefs cenv env m tyargs
+        CheckExprsPermitByRefLike cenv env args
 
     | _ -> 
         CheckTypeInstNoByrefs cenv env m tyargs

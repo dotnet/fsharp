@@ -4331,7 +4331,7 @@
     <value>The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</value>
   </data>
   <data name="chkNoReturnOfLimitedSpan" xml:space="preserve">
-    <value>The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</value>
+    <value>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</value>
   </data>
   <data name="chkNoWriteToLimitedSpan" xml:space="preserve">
     <value>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</value>
@@ -4349,9 +4349,9 @@
     <value>The function call cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</value>
   </data>
   <data name="chkNoSpanLikeVariable" xml:space="preserve">
-    <value>The IsByRefLike variable '{0}' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</value>
+    <value>The Span or IsByRefLike variable '{0}' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</value>
   </data>
   <data name="chkNoSpanLikeValueFromExpression" xml:space="preserve">
-    <value>An IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</value>
+    <value>A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</value>
   </data>
 </root>

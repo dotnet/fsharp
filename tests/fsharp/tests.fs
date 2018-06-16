@@ -221,19 +221,18 @@ module CoreTests =
             //testOkFile.CheckExists()
         end
 
-        // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
-        //begin
-        //    use testOkFile = fileguard cfg "test.ok"
-        //    fsi cfg "" ["test.fsx"]
-        //    testOkFile.CheckExists()
-        //end
+        begin
+            use testOkFile = fileguard cfg "test2.ok"
 
-        // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
-        //begin
-        //    use testOkFile = fileguard cfg "test.ok"
-        //    fsiAnyCpu cfg "" ["test.fsx"]
-        //    testOkFile.CheckExists()
-        //end
+            fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
+
+            singleNegTest cfg "test2"
+
+            // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
+            //exec cfg ("." ++ "test.exe") ""
+
+            //testOkFile.CheckExists()
+        end
 
     [<Test>]
     let asyncStackTraces () = 
