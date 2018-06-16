@@ -1663,6 +1663,9 @@ namespace Microsoft.FSharp.Core
                     override iec.Equals(x:obj,y:obj) = GenericEqualityObj true iec (x,y)  // ER Semantics
                     override iec.GetHashCode(x:obj) = raise (InvalidOperationException (SR.GetString(SR.notUsedForHashing))) }
 
+            let isStructuralEquatable (ty:Type) = typeof<IStructuralEquatable>.IsAssignableFrom ty
+            let isArray (ty:Type) = ty.IsArray || (typeof<System.Array>.IsAssignableFrom ty)
+
             let canUseDefaultEqualityComparer er (rootType:Type) =
                 let processed = System.Collections.Generic.HashSet ()
 
@@ -1685,11 +1688,11 @@ namespace Microsoft.FSharp.Core
 
                             ty.IsSealed  // covers enum and value types
                                          // ref types need to be sealed as derived class might implement  IStructuralEquatable
-                            && not ty.IsArray
+                            && not (isArray ty)
                             && (er || (not (ty.Equals typeof<float>)))
                             && (er || (not (ty.Equals typeof<float32>)))
                             && isNotTypeOrIsTypeAndGenericArgumentsOK "System.Nullable`1"
-                            && not (typeof<IStructuralEquatable>.IsAssignableFrom ty
+                            && not (isStructuralEquatable ty
                                     // we accept ValueTuple even though it supports IStructuralEquatable 
                                     // if all generic arguements pass check
                                     && not (   isTypeAndGenericArgumentsOK "System.ValueTuple`1"
@@ -1724,22 +1727,67 @@ namespace Microsoft.FSharp.Core
                 | true, ty when ty.Equals typeof<float32> -> box EqualityComparer<float32>.Default
                 | _ -> null
 
-            let genericFSharpEqualityComparer_ER<'T> () =
-                { new EqualityComparer<'T>() with
-                    member __.Equals (x,y) = GenericEqualityObj true fsEqualityComparerUnlimitedHashingER (box x, box y)
-                    member __.GetHashCode x = GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box x) }
+            let arrayEqualityComparer<'T> er comparer =
+                let arrayEquals (er:bool) (iec:System.Collections.IEqualityComparer) (xobj:obj) (yobj:obj) : bool = 
+                    match xobj,yobj with 
+                    | null, null -> true
+                    | null, _ -> false
+                    | _, null -> false
+                    | (:? (obj[])      as arr1), (:? (obj[])      as arr2) -> GenericEqualityObjArray    er iec arr1 arr2
+                    | (:? (byte[])     as arr1), (:? (byte[])     as arr2) -> GenericEqualityByteArray          arr1 arr2
+                    | (:? (int32[])    as arr1), (:? (int32[])    as arr2) -> GenericEqualityInt32Array         arr1 arr2
+                    | (:? (int64[])    as arr1), (:? (int64[])    as arr2) -> GenericEqualityInt64Array         arr1 arr2
+                    | (:? (char[])     as arr1), (:? (char[])     as arr2) -> GenericEqualityCharArray          arr1 arr2
+                    | (:? (float32[])  as arr1), (:? (float32[])  as arr2) -> GenericEqualitySingleArray er     arr1 arr2
+                    | (:? (float[])    as arr1), (:? (float[])    as arr2) -> GenericEqualityDoubleArray er     arr1 arr2
+                    | (:? System.Array as arr1), (:? System.Array as arr2) -> GenericEqualityArbArray    er iec arr1 arr2
+                    | _ -> raise (Exception "invalid logic - expected array")
 
-            let genericFSharpEqualityComparer_PER<'T> () =
+                let getHashCode iec (xobj:obj)  =
+                  match xobj with 
+                  | null -> 0 
+                  | :? (obj[])      as oa -> GenericHashObjArray iec oa 
+                  | :? (byte[])     as ba -> GenericHashByteArray ba 
+                  | :? (int[])      as ba -> GenericHashInt32Array ba 
+                  | :? (int64[])    as ba -> GenericHashInt64Array ba 
+                  | :? System.Array as a  -> GenericHashArbArray iec a 
+                  | _ -> raise (Exception "invalid logic - expected array")
+
                 { new EqualityComparer<'T>() with
-                    member __.Equals (x,y) = GenericEqualityObj false fsEqualityComparerUnlimitedHashingPER (box x, box y)
+                    member __.Equals (x, y) = arrayEquals er comparer (box x) (box y)
+                    member __.GetHashCode x = getHashCode fsEqualityComparerUnlimitedHashingPER (box x) }
+
+            let structuralEqualityComparer<'T> comparer =
+                { new EqualityComparer<'T>() with
+                    member __.Equals (x,y) =
+                        match box x, box y with 
+                        | null, null -> true
+                        | null, _    -> false
+                        | _,    null -> false
+                        | (:? IStructuralEquatable as x1), yobj -> x1.Equals (yobj, comparer)
+                        | _ -> raise (Exception "invalid logic - expected IStructuralEquatable")
+
+                    member __.GetHashCode x =
+                        match box x with 
+                        | null -> 0 
+                        | :? IStructuralEquatable as a -> a.GetHashCode fsEqualityComparerUnlimitedHashingPER
+                        | _ -> raise (Exception "invalid logic - expected IStructuralEquatable") }
+
+            let unknownEqualityComparer<'T> er comparer =
+                { new EqualityComparer<'T>() with
+                    member __.Equals (x,y) = GenericEqualityObj er comparer (box x, box y)
                     member __.GetHashCode x = GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box x) }
 
             let getGenericEquality<'T> er =
                 match tryGetFSharpEqualityComparer er typeof<'T> with
                 | :? EqualityComparer<'T> as call -> call
                 | _ when canUseDefaultEqualityComparer er typeof<'T> -> EqualityComparer<'T>.Default
-                | _ when er -> genericFSharpEqualityComparer_ER<'T> ()
-                | _ -> genericFSharpEqualityComparer_PER<'T> ()
+                | _ when isArray typeof<'T> && er                    -> arrayEqualityComparer true  fsEqualityComparerUnlimitedHashingER
+                | _ when isArray typeof<'T>                          -> arrayEqualityComparer false fsEqualityComparerUnlimitedHashingPER
+                | _ when isStructuralEquatable typeof<'T> && er      -> structuralEqualityComparer fsEqualityComparerUnlimitedHashingER
+                | _ when isStructuralEquatable typeof<'T>            -> structuralEqualityComparer fsEqualityComparerUnlimitedHashingPER
+                | _ when er                                          -> unknownEqualityComparer true fsEqualityComparerUnlimitedHashingER
+                | _                                                  -> unknownEqualityComparer false fsEqualityComparerUnlimitedHashingPER
 
             type FSharpEqualityComparer_ER<'T> private () =
                 static let comparer = getGenericEquality<'T> true
