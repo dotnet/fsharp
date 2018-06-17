@@ -155,8 +155,24 @@ let rec pathEq p1 p2 =
     | PathEmpty(_), PathEmpty(_) -> true
     | _ -> false
 
-//// (Temporarily copy-pasted from TypeChecker.fs)
-let TcFieldInit lit = 
+
+//---------------------------------------------------------------------------
+// Counter example generation 
+//---------------------------------------------------------------------------
+
+type RefutedSet = 
+    /// A value RefutedInvestigation(path,discrim) indicates that the value at the given path is known 
+    /// to NOT be matched by the given discriminator
+    | RefutedInvestigation of Path * DecisionTreeTest list
+    /// A value RefutedWhenClause indicates that a 'when' clause failed
+    | RefutedWhenClause
+
+let notNullText = "some-non-null-value"
+let otherSubtypeText = "some-other-subtype"
+
+/// Create a TAST const value from an IL-initialized field read from .NET metadata
+// (Originally moved from TcFieldInit in TypeChecker.fs -- feel free to move this somewhere more appropriate)
+let ilFieldToTastConst lit =
     match lit with 
     | ILFieldInit.String s -> Const.String s
     | ILFieldInit.Null -> Const.Zero
@@ -172,21 +188,6 @@ let TcFieldInit lit =
     | ILFieldInit.UInt64 x -> Const.UInt64 x
     | ILFieldInit.Single f -> Const.Single f
     | ILFieldInit.Double f -> Const.Double f 
-
-
-//---------------------------------------------------------------------------
-// Counter example generation 
-//---------------------------------------------------------------------------
-
-type RefutedSet = 
-    /// A value RefutedInvestigation(path,discrim) indicates that the value at the given path is known 
-    /// to NOT be matched by the given discriminator
-    | RefutedInvestigation of Path * DecisionTreeTest list
-    /// A value RefutedWhenClause indicates that a 'when' clause failed
-    | RefutedWhenClause
-
-let notNullText = "some-non-null-value"
-let otherSubtypeText = "some-other-subtype"
 
 exception CannotRefute
 let RefuteDiscrimSet g m path discrims = 
@@ -264,7 +265,7 @@ let RefuteDiscrimSet g m path discrims =
                             |> Seq.choose (fun ilField ->
                                 if ilField.IsStatic then
                                     ilField.LiteralValue |> Option.map (fun ilValue ->
-                                        ilField.Name, TcFieldInit ilValue)
+                                        ilField.Name, ilFieldToTastConst ilValue)
                                 else None)
                         else
                             tcref.AllFieldsArray |> Seq.choose (fun fsField ->
