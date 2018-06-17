@@ -258,6 +258,7 @@ let RefuteDiscrimSet g m path discrims =
             | Some c ->
                 match tryDestAppTy g ty with
                 | Some tcref when tcref.IsEnumTycon ->
+                    // We must distinguish between F#-defined enums and other .NET enums, as they are represented differently in the TAST
                     let enumValues =
                         if tcref.IsILEnumTycon then
                             let (TILObjectReprData(_, _, tdef)) = tcref.ILTyconInfo
