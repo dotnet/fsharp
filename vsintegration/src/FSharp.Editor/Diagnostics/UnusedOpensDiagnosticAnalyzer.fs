@@ -35,6 +35,7 @@ type internal UnusedOpensDiagnosticAnalyzer() =
             isEnabledByDefault = true, 
             customTags = DiagnosticCustomTags.Unnecessary)
 
+    override __.Priority = 90 // Default = 50
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
     override this.AnalyzeSyntaxAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
 

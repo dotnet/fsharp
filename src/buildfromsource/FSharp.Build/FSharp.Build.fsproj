@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>netcoreapp1.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>FSharp.Build</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -26,40 +26,23 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharpEmbedResXSource.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\WriteCodeFragment.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\CreateFSharpManifestResourceName.fs" />
-    <CopyAndSubstituteText Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.Targets">
-        <TargetFilename>Microsoft.FSharp.Targets</TargetFilename>
-        <Pattern1>{BuildSuffix}</Pattern1>
-        <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.Portable.FSharp.Targets">
-      <TargetFilename>Microsoft.Portable.FSharp.Targets</TargetFilename>
-      <Pattern1>{BuildSuffix}</Pattern1>
-      <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.NetSdk.props">
-        <TargetFilename>Microsoft.FSharp.NetSdk.props</TargetFilename>
-        <Pattern1>{BuildSuffix}</Pattern1>
-        <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.NetSdk.targets">
-        <TargetFilename>Microsoft.FSharp.NetSdk.targets</TargetFilename>
-        <Pattern1>{BuildSuffix}</Pattern1>
-        <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.Overrides.NetSdk.targets">
-        <TargetFilename>Microsoft.FSharp.Overrides.NetSdk.targets</TargetFilename>
-        <Pattern1>{BuildSuffix}</Pattern1>
-        <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
+    <None Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.Portable.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
-    <PackageReference Include="Microsoft.Build" Version="15.1.548"></PackageReference>
-    <PackageReference Include="Microsoft.Build.Framework" Version="15.1.548"></PackageReference>
-    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="15.1.548"></PackageReference>
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.1.548"></PackageReference>
-    <PackageReference Include="Microsoft.Win32.Registry" Version="4.3.0"></PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildPackageVersion)" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildFrameworkPackageVersion)" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildTasksCorePackageVersion)" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildUtilitiesCorePackageVersion)" />
+    <PackageReference Include="Microsoft.Win32.Registry" Version="$(MicrosoftWin32RegistryPackageVersion)" />
   </ItemGroup>
 
 </Project>

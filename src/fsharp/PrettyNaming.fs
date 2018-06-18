@@ -136,13 +136,15 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
 
     /// Returns `true` if given string is an operator display name, e.g. ( |>> )
     let IsOperatorName (name: string) =
-        let name = if name.StartsWith "( " && name.EndsWith " )" then name.[2..name.Length - 3] else name
+        let name =
+            if name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )") then
+                name.[2 .. name.Length - 3]
+            else name
         // there is single operator containing a space - range operator with step: `.. ..`
-        let res = name = ".. .." || name |> Seq.forall (fun c -> opCharSet.Contains c && c <> ' ')
-        res
+        name = ".. .." || name |> Seq.forall (fun c -> c <> ' ' && opCharSet.Contains c)
 
     let IsMangledOpName (n:string) =
-        n.StartsWith (opNamePrefix, StringComparison.Ordinal)
+        n.StartsWithOrdinal(opNamePrefix)
 
     /// Compiles a custom operator into a mangled operator name.
     /// For example, "!%" becomes "op_DereferencePercent".
@@ -427,7 +429,7 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
         // This function recognises these "infix operator" names.
         let s = DecompileOpName s
         let skipIgnoredChars = s.TrimStart(ignoredChars)
-        let afterSkipStartsWith prefix   = skipIgnoredChars.StartsWith(prefix,StringComparison.Ordinal)
+        let afterSkipStartsWith prefix   = skipIgnoredChars.StartsWithOrdinal(prefix)
         let afterSkipStarts     prefixes = Array.exists afterSkipStartsWith prefixes
         // The following conditions follow the declExpr infix clauses.
         // The test corresponds to the lexer definition for the token.
@@ -468,7 +470,7 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
         if IsCompilerGeneratedName nm then nm else nm+compilerGeneratedMarker
 
     let GetBasicNameOfPossibleCompilerGeneratedName (name:string) =
-            match name.IndexOf compilerGeneratedMarker with 
+            match name.IndexOf(compilerGeneratedMarker, StringComparison.Ordinal) with 
             | -1 | 0 -> name
             | n -> name.[0..n-1]
 
@@ -518,13 +520,13 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
     let TryChopPropertyName (s: string) =
         // extract the logical name from any mangled name produced by MakeMemberDataAndMangledNameForMemberVal
         if s.Length <= 4 then None else
-        if s.StartsWith("get_", StringComparison.Ordinal) ||
-           s.StartsWith("set_", StringComparison.Ordinal)
+        if s.StartsWithOrdinal("get_") ||
+           s.StartsWithOrdinal("set_")
         then Some (s.Substring(4, s.Length - 4))
         else
         let s = chopStringTo s '.'
-        if s.StartsWith("get_", StringComparison.Ordinal) ||
-           s.StartsWith("set_", StringComparison.Ordinal)
+        if s.StartsWithOrdinal("get_") ||
+           s.StartsWithOrdinal("set_")
         then Some (s.Substring(4, s.Length - 4))
         else None
 
@@ -537,7 +539,7 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
         | Some res -> res
 
     let SplitNamesForILPath (s : string) : string list = 
-        if s.StartsWith("``",StringComparison.Ordinal) && s.EndsWith("``",StringComparison.Ordinal) && s.Length > 4 then [s.Substring(2, s.Length-4)] // identifier is enclosed in `` .. ``, so it is only a single element (this is very approximate)
+        if s.StartsWithOrdinal("``") && s.EndsWithOrdinal("``") && s.Length > 4 then [s.Substring(2, s.Length-4)] // identifier is enclosed in `` .. ``, so it is only a single element (this is very approximate)
         else s.Split [| '.' ; '`' |] |> Array.toList      // '.' chops members / namespaces / modules; '`' chops generic parameters for .NET types
         
     /// Return a string array delimited by the given separator.

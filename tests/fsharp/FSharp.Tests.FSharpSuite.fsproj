@@ -34,10 +34,12 @@
       <Link>NunitHelpers.fs</Link>
     </Compile>
     <Compile Include="single-test.fs" />
+
     <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
     <Content Include="packages.config" />
     <None Include="app.config" />
+    <None Include="update.base.line.with.actuals.fsx" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

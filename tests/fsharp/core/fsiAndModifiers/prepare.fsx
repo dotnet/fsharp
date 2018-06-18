@@ -31,4 +31,6 @@ try
 
     asmBuilder.Save(filename)
     exit 0
-with _ -> exit 1
+with err -> 
+    printfn "Error: %A" err
+    exit 1

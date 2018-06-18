@@ -19,12 +19,12 @@
     <EmbeddedResource Include="$(FsCoreDir)\FSCore.resx">
       <Link>FSCore.resx</Link>
     </EmbeddedResource>
-    <Compile Include="$(FsCoreDir)\prim-types-prelude.fsi">
+    <CompileBefore Include="$(FsCoreDir)\prim-types-prelude.fsi">
       <Link>Primitives/prim-types-prelude.fsi</Link>
-    </Compile>
-    <Compile Include="$(FsCoreDir)\prim-types-prelude.fs">
+    </CompileBefore>
+    <CompileBefore Include="$(FsCoreDir)\prim-types-prelude.fs">
       <Link>Primitives/prim-types-prelude.fs</Link>
-    </Compile>
+    </CompileBefore>
     <Compile Include="$(FsCoreDir)\SR.fs">
       <Link>Primitives/SR.fs</Link>
     </Compile>
@@ -121,12 +121,6 @@
     <Compile Include="$(FsCoreDir)\reflect.fs">
       <Link>Reflection/reflect.fs</Link>
     </Compile>
-    <Compile Include="$(FsCoreDir)\event.fsi">
-      <Link>Event/event.fsi</Link>
-    </Compile>
-    <Compile Include="$(FsCoreDir)\event.fs">
-      <Link>Event/event.fs</Link>
-    </Compile>
     <Compile Include="$(FsCoreDir)\math\n.fsi">
       <Link>Numerics/n.fsi</Link>
     </Compile>
@@ -163,11 +157,35 @@
     <Compile Include="$(FsCoreDir)\nativeptr.fs">
       <Link>NativeInterop/nativeptr.fs</Link>
     </Compile>
-    <Compile Include="$(FsCoreDir)\control.fsi">
-      <Link>Async/control.fsi</Link>
+    <Compile Include="$(FsCoreDir)\event.fsi">
+      <Link>Control/event.fsi</Link>
     </Compile>
-    <Compile Include="$(FsCoreDir)\control.fs">
-      <Link>Async/control.fs</Link>
+    <Compile Include="$(FsCoreDir)\event.fs">
+      <Link>Control/event.fs</Link>
+    </Compile>
+    <Compile Include="$(FsCoreDir)\async.fsi">
+      <Link>Control/async.fsi</Link>
+    </Compile>
+    <Compile Include="$(FsCoreDir)\async.fs">
+      <Link>Control/async.fs</Link>
+    </Compile>
+    <Compile Include="$(FsCoreDir)\eventmodule.fsi">
+      <Link>Control/eventmodule.fsi</Link>
+    </Compile>
+    <Compile Include="$(FsCoreDir)\eventmodule.fs">
+      <Link>Control/eventmodule.fs</Link>
+    </Compile>
+    <Compile Include="$(FsCoreDir)\observable.fsi">
+      <Link>Control/observable.fsi</Link>
+    </Compile>
+    <Compile Include="$(FsCoreDir)\observable.fs">
+      <Link>Control/observable.fs</Link>
+    </Compile>
+    <Compile Include="$(FsCoreDir)\mailbox.fsi">
+      <Link>MailboxProcessor/mailbox.fsi</Link>
+    </Compile>
+    <Compile Include="$(FsCoreDir)\mailbox.fs">
+      <Link>MailboxProcessor/mailbox.fs</Link>
     </Compile>
     <Compile Include="$(FsCoreDir)\Linq.fsi">
       <Link>Queries/Linq.fsi</Link>
@@ -200,11 +218,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Linq.Queryable" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Net.Requests" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Threading.Thread" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Threading.ThreadPool" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqQueryablePackageVersion)" />
+    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsPackageVersion)" />
+    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadPackageVersion)" />
+    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolPackageVersion)" />
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelPackageVersion)" />
   </ItemGroup>
 
   <!-- Hook compilation phase to do custom work -->

@@ -134,7 +134,7 @@
       </trans-unit>
       <trans-unit id="fsiExceptionDuringPrettyPrinting">
         <source>\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</source>
-        <target state="translated">\n\nException déclenchée durant l'impression automatique.\nSignalez ce problème afin qu'il soit corrigé.\nTrace : {0}\n</target>
+        <target state="translated">\n\nException déclenchée durant l'impression en mode Pretty.\nSignalez ce problème afin qu'il soit corrigé.\nTrace : {0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">

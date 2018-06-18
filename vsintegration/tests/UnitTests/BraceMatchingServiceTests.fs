@@ -19,6 +19,7 @@ type BraceMatchingServiceTests()  =
     let fileName = "C:\\test.fs"
     let projectOptions: FSharpProjectOptions = { 
         ProjectFileName = "C:\\test.fsproj"
+        ProjectId = None
         SourceFiles =  [| fileName |]
         ReferencedProjects = [| |]
         OtherOptions = [| |]
@@ -160,26 +161,23 @@ let main argv =
     0 // return an integer exit code"""
         this.VerifyBraceMatch(code, "(printfn", ")endBrace")
         
-    [<TestCase ("let a1 = [ 0 .. 100 ]", [|9;10;20;21|])>]
-    [<TestCase ("let a2 = [| 0 .. 100 |]", [|9;10;11;21;22;23|])>]
-    [<TestCase ("let a3 = <@ 0 @>", [|9;10;11;14;15;16|])>]
-    [<TestCase ("let a4 = <@@ 0 @@>", [|9;10;11;12;15;15;16;17|])>]
-    [<TestCase ("let a6 = (  ()  )", [|9;10;16;17|])>]
-    [<TestCase ("[<ReflectedDefinition>]\nlet a7 = 70", [|0;1;2;21;22;23|])>]
-    [<TestCase ("let a8 = seq { yield() }", [|13;14;23;24|])>]
-    member this.BraceMatchingBothSides_Bug2092(fileContents: string, matchingPositions: int[]) =
-        // https://github.com/Microsoft/visualfsharp/issues/2092
+    [<TestCase ("let a1 = [ 0 .. 100 ]", [|9;20|])>]
+    [<TestCase ("let a2 = [| 0 .. 100 |]", [|9;10;22|])>]
+    [<TestCase ("let a3 = <@ 0 @>", [|9;10;15|])>]
+    [<TestCase ("let a4 = <@@ 0 @@>", [|9;10;11;15;16|])>]
+    [<TestCase ("let a6 = (  ()  )", [|9;16|])>]
+    [<TestCase ("[<ReflectedDefinition>]\nlet a7 = 70", [|0;1;22|])>]
+    [<TestCase ("let a8 = seq { yield() }", [|13;23|])>]
+    member this.DoNotMatchOnInnerSide(fileContents: string, matchingPositions: int[]) =
         let sourceText = SourceText.From(fileContents)
-
         let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
-        matchingPositions
-        |> Array.iter (fun position ->
+        
+        for position in matchingPositions do
             match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest") |> Async.RunSynchronously with
             | Some _ -> ()
             | None ->
                 match position with
                 | 0 -> ""
                 | _ -> fileContents.[position - 1] |> sprintf " (previous character '%c')"
-                |> sprintf "Didn't find a matching brace at position '%d', character '%c'%s" position fileContents.[position]
+                |> sprintf "Didn't find a matching brace at position '%d' %s" position
                 |> Assert.Fail
-            )

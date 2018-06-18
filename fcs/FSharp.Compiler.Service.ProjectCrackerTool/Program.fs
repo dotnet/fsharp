@@ -10,8 +10,8 @@ module Program =
     let addMSBuildv14BackupResolution () =
         let onResolveEvent = new ResolveEventHandler(fun sender evArgs ->
             let requestedAssembly = AssemblyName(evArgs.Name)
-            if requestedAssembly.Name.StartsWith("Microsoft.Build") &&
-                not (requestedAssembly.Name.EndsWith(".resources")) && 
+            if requestedAssembly.Name.StartsWith("Microsoft.Build", StringComparison.Ordinal) &&
+                not (requestedAssembly.Name.EndsWith(".resources", StringComparison.Ordinal)) && 
                 not (requestedAssembly.Version.ToString().Contains("12.0.0.0")) 
             then
                 // If the version of MSBuild that we're using wasn't present on the machine, then 

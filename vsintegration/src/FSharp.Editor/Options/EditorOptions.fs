@@ -9,7 +9,6 @@ open SettingsPersistence
 open OptionsUIHelpers
 
 module DefaultTuning = 
-    let SemanticClassificationInitialDelay = 0 (* milliseconds *)
     let UnusedDeclarationsAnalyzerInitialDelay = 0 (* 1000 *) (* milliseconds *)
     let UnusedOpensAnalyzerInitialDelay = 0 (* 2000 *) (* milliseconds *)
     let SimplifyNameInitialDelay = 2000 (* milliseconds *)
@@ -44,6 +43,7 @@ type CodeFixesOptions =
 [<CLIMutable>]
 type LanguageServicePerformanceOptions = 
     { EnableInMemoryCrossProjectReferences: bool
+      TimeUntilStaleCompletion: int
       ProjectCheckCacheSize: int }
 
 [<CLIMutable>]
@@ -74,6 +74,7 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
 
         store.RegisterDefault
             { EnableInMemoryCrossProjectReferences = true
+              TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
               ProjectCheckCacheSize = 200 }
 
         store.RegisterDefault

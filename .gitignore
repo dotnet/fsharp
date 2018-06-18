@@ -63,6 +63,8 @@ scripts/*.patch
 /tests/fsharpqa/Source/CodeGen/EmittedIL/StaticInit/StaticInit_Module01.dll
 /tests/fsharpqa/Source/CodeGen/EmittedIL/StaticInit/StaticInit_Module01.pdb
 /tests/Xnet40-fsharpqa-suite-failures.log.*
+/tests/fsharp/typeProviders/splitAssemblyTools/provider.dll
+/tests/fsharp/typeProviders/splitAssemblyTypeproviders/provider.dll
 /vsintegration/src/service/FsPkgs/FSharp.Project/FS/FSharp.ProjectSystem.FSharp.fsi
 /vsintegration/src/service/FsPkgs/FSharp.Project/FS/ctofiles/
 /tests/fsharpqa/Source/CodeGen/EmittedIL/QueryExpressionStepping/Utils.dll
@@ -97,7 +99,6 @@ ossreadme*.txt
 *.csproj.user
 *.fsproj.user
 *.sln.DotSettings.user
-*.ide
 *.log
 *.jrs
 *.chk

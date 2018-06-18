@@ -107,14 +107,14 @@ type internal InterfaceData =
     | ObjExpr of SynType * SynBinding list
     member x.Range =
         match x with
-        | InterfaceData.Interface(typ, _) -> 
-            typ.Range
-        | InterfaceData.ObjExpr(typ, _) -> 
-            typ.Range
+        | InterfaceData.Interface(ty, _) -> 
+            ty.Range
+        | InterfaceData.ObjExpr(ty, _) -> 
+            ty.Range
     member x.TypeParameters = 
         match x with
-        | InterfaceData.Interface(typ, _)
-        | InterfaceData.ObjExpr(typ, _) ->
+        | InterfaceData.Interface(ty, _)
+        | InterfaceData.ObjExpr(ty, _) ->
             let rec (|RationalConst|) = function
                 | SynRationalConst.Integer i ->
                     string i
@@ -161,7 +161,7 @@ type internal InterfaceData =
                     Some (sprintf "%s/%s" numerator denominator)
                 | _ -> 
                     None
-            match typ with
+            match ty with
             | SynType.App(_, _, ts, _, _, _, _)
             | SynType.LongIdentApp(_, _, _, ts, _, _, _) ->
                 ts |> Seq.choose (|TypeIdent|_|) |> Seq.toArray
@@ -203,8 +203,8 @@ module internal InterfaceStubGenerator =
     let internal bracket (str: string) = 
         if str.Contains(" ") then "(" + str + ")" else str
 
-    let internal formatType ctx (typ: FSharpType) =
-        let genericDefinition = typ.Instantiate(Seq.toList ctx.ArgInstantiations).Format(ctx.DisplayContext)
+    let internal formatType ctx (ty: FSharpType) =
+        let genericDefinition = ty.Instantiate(Seq.toList ctx.ArgInstantiations).Format(ctx.DisplayContext)
         (genericDefinition, ctx.TypeInstantations)
         ||> Map.fold (fun s k v -> s.Replace(k, v))
 
@@ -269,11 +269,11 @@ module internal InterfaceStubGenerator =
 
         let retType = 
             match retType with
-            | Some typ ->
-                let coreType = formatType ctx typ
+            | Some ty ->
+                let coreType = formatType ctx ty
                 if v.IsEvent then
                     let isEventHandler = 
-                        typ.BaseType 
+                        ty.BaseType 
                         |> Option.bind (fun t -> 
                             if t.HasTypeDefinition then
                                 t.TypeDefinition.TryGetFullName()
@@ -289,8 +289,8 @@ module internal InterfaceStubGenerator =
     /// Convert a getter/setter to its canonical form
     let internal normalizePropertyName (v: FSharpMemberOrFunctionOrValue) =
         let displayName = v.DisplayName
-        if (v.IsPropertyGetterMethod && displayName.StartsWith("get_")) || 
-            (v.IsPropertySetterMethod && displayName.StartsWith("set_")) then
+        if (v.IsPropertyGetterMethod && displayName.StartsWithOrdinal("get_")) || 
+            (v.IsPropertySetterMethod && displayName.StartsWithOrdinal("set_")) then
             displayName.[4..]
         else displayName
 
@@ -308,7 +308,7 @@ module internal InterfaceStubGenerator =
                 | _  -> formatArgsUsage ctx verboseMode v argInfos
              
             if String.IsNullOrWhiteSpace(args) then "" 
-            elif args.StartsWith("(") then args
+            elif args.StartsWithOrdinal("(") then args
             elif v.CurriedParameterGroups.Count > 1 && (not verboseMode) then " " + args
             else sprintf "(%s)" args
             , namesWithIndices
@@ -321,7 +321,7 @@ module internal InterfaceStubGenerator =
                 | _, _, ".ctor", _ -> "new" + parArgs
                 // Properties (skipping arguments)
                 | _, true, _, name when v.IsPropertyGetterMethod || v.IsPropertySetterMethod -> 
-                    if name.StartsWith("get_") || name.StartsWith("set_") then name.[4..] else name
+                    if name.StartsWithOrdinal("get_") || name.StartsWithOrdinal("set_") then name.[4..] else name
                 // Ordinary instance members
                 | _, true, _, name -> name + parArgs
                 // Ordinary functions or values
@@ -435,31 +435,31 @@ module internal InterfaceStubGenerator =
                 writer |> closeDeclaration
                 writer |> writeImplementation
 
-    let rec internal getNonAbbreviatedType (typ: FSharpType) =
-        if typ.HasTypeDefinition && typ.TypeDefinition.IsFSharpAbbreviation then
-            getNonAbbreviatedType typ.AbbreviatedType
-        else typ
+    let rec internal getNonAbbreviatedType (ty: FSharpType) =
+        if ty.HasTypeDefinition && ty.TypeDefinition.IsFSharpAbbreviation then
+            getNonAbbreviatedType ty.AbbreviatedType
+        else ty
 
     // Sometimes interface members are stored in the form of `IInterface<'T> -> ...`,
     // so we need to get the 2nd generic argument
-    let internal (|MemberFunctionType|_|) (typ: FSharpType) =
-        if typ.IsFunctionType && typ.GenericArguments.Count = 2 then
-            Some typ.GenericArguments.[1]
+    let internal (|MemberFunctionType|_|) (ty: FSharpType) =
+        if ty.IsFunctionType && ty.GenericArguments.Count = 2 then
+            Some ty.GenericArguments.[1]
         else None
 
     let internal (|TypeOfMember|_|) (m: FSharpMemberOrFunctionOrValue) =
         match m.FullTypeSafe with
-        | Some (MemberFunctionType typ) when m.IsProperty && m.DeclaringEntity.IsSome && m.DeclaringEntity.Value.IsFSharp ->
-            Some typ
-        | Some typ -> Some typ
+        | Some (MemberFunctionType ty) when m.IsProperty && m.DeclaringEntity.IsSome && m.DeclaringEntity.Value.IsFSharp ->
+            Some ty
+        | Some ty -> Some ty
         | None -> None
 
-    let internal (|EventFunctionType|_|) (typ: FSharpType) =
-        match typ with
-        | MemberFunctionType typ ->
-            if typ.IsFunctionType && typ.GenericArguments.Count = 2 then
-                let retType = typ.GenericArguments.[0]
-                let argType = typ.GenericArguments.[1]
+    let internal (|EventFunctionType|_|) (ty: FSharpType) =
+        match ty with
+        | MemberFunctionType ty ->
+            if ty.IsFunctionType && ty.GenericArguments.Count = 2 then
+                let retType = ty.GenericArguments.[0]
+                let argType = ty.GenericArguments.[1]
                 if argType.GenericArguments.Count = 2 then
                     Some (argType.GenericArguments.[0], retType)
                 else None
@@ -473,9 +473,9 @@ module internal InterfaceStubGenerator =
     /// Filter out duplicated interfaces in inheritance chain
     let rec internal getInterfaces (e: FSharpEntity) = 
         seq { for iface in e.AllInterfaces ->
-                let typ = getNonAbbreviatedType iface
+                let ty = getNonAbbreviatedType iface
                 // Argument should be kept lazy so that it is only evaluated when instantiating a new type
-                typ.TypeDefinition, Seq.zip typ.TypeDefinition.GenericParameters typ.GenericArguments
+                ty.TypeDefinition, Seq.zip ty.TypeDefinition.GenericParameters ty.GenericArguments
         }
         |> Seq.distinct
 
@@ -509,10 +509,10 @@ module internal InterfaceStubGenerator =
     let internal (|MemberNameAndRange|_|) = function
         | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
                     _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = MemberKind.PropertyGet ->
-            if name.StartsWith("get_") then Some(name, range) else Some("get_" + name, range)
+            if name.StartsWithOrdinal("get_") then Some(name, range) else Some("get_" + name, range)
         | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
                     _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = MemberKind.PropertySet ->
-            if name.StartsWith("set_") then Some(name, range) else Some("set_" + name, range)
+            if name.StartsWithOrdinal("set_") then Some(name, range) else Some("set_" + name, range)
         | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, LongIdentPattern(name, range), 
                     _retTy, _expr, _bindingRange, _seqPoint) ->
             Some(name, range)
@@ -535,8 +535,8 @@ module internal InterfaceStubGenerator =
 
     let internal normalizeEventName (m: FSharpMemberOrFunctionOrValue) =
         let name = m.DisplayName
-        if name.StartsWith("add_") then name.[4..]
-        elif name.StartsWith("remove_")  then name.[7..]
+        if name.StartsWithOrdinal("add_") then name.[4..]
+        elif name.StartsWithOrdinal("remove_")  then name.[7..]
         else name
 
     /// Ideally this info should be returned in error symbols from FCS. 
@@ -553,8 +553,8 @@ module internal InterfaceStubGenerator =
                     // Events don't have overloads so we use only display names for comparison
                     let signature = normalizeEventName m
                     Some [signature]
-                | Some typ ->
-                    let signature = removeWhitespace (sprintf "%s:%s" m.DisplayName (typ.Format(displayContext)))
+                | Some ty ->
+                    let signature = removeWhitespace (sprintf "%s:%s" m.DisplayName (ty.Format(displayContext)))
                     Some [signature]
                 | None ->
                     None
@@ -590,9 +590,9 @@ module internal InterfaceStubGenerator =
                 |> Map.ofSeq
             // A simple hack to handle instantiation of type alias 
             if e.IsFSharpAbbreviation then
-                let typ = getNonAbbreviatedType e.AbbreviatedType
-                (typ.TypeDefinition.GenericParameters |> Seq.map getTypeParameterName, 
-                    typ.GenericArguments |> Seq.map (fun typ -> typ.Format(displayContext)))
+                let ty = getNonAbbreviatedType e.AbbreviatedType
+                (ty.TypeDefinition.GenericParameters |> Seq.map getTypeParameterName, 
+                    ty.GenericArguments |> Seq.map (fun ty -> ty.Format(displayContext)))
                 ||> Seq.zip
                 |> Seq.fold (fun acc (x, y) -> Map.add x y acc) insts
             else insts
@@ -604,8 +604,8 @@ module internal InterfaceStubGenerator =
                 match m with
                 | _ when isEventMember m  ->
                     Some (normalizeEventName m)
-                | TypeOfMember typ ->
-                    let signature = removeWhitespace (sprintf "%s:%s" m.DisplayName (formatType { ctx with ArgInstantiations = insts } typ))
+                | TypeOfMember ty ->
+                    let signature = removeWhitespace (sprintf "%s:%s" m.DisplayName (formatType { ctx with ArgInstantiations = insts } ty))
                     Some signature 
                 | _ -> 
                     //debug "FullType throws exceptions due to bugs in FCS."
@@ -840,15 +840,20 @@ module internal InterfaceStubGenerator =
 
                 | SynExpr.Ident(_ident) ->
                     None
+
                 | SynExpr.LongIdent(_, _longIdent, _altNameRefCell, _range) -> 
                     None
 
                 | SynExpr.LongIdentSet(_longIdent, synExpr, _range) ->
                     walkExpr synExpr
+
                 | SynExpr.DotGet(synExpr, _dotm, _longIdent, _range) -> 
                     walkExpr synExpr
 
                 | SynExpr.DotSet(synExpr1, _longIdent, synExpr2, _range) ->
+                    List.tryPick walkExpr [synExpr1; synExpr2]
+
+                | SynExpr.Set(synExpr1, synExpr2, _range) ->
                     List.tryPick walkExpr [synExpr1; synExpr2]
 
                 | SynExpr.DotIndexedGet(synExpr, IndexerArgList synExprList, _range, _range2) -> 

@@ -37,19 +37,18 @@ open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.IlxGen
 
 open Microsoft.FSharp.Compiler.AccessibilityLogic
+open Microsoft.FSharp.Compiler.AttributeChecking
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.CompileOptions
 open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.DiagnosticMessage
-open Microsoft.FSharp.Compiler.Optimizer
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.TypeChecker
+open Microsoft.FSharp.Compiler.Lib
+open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
+open Microsoft.FSharp.Compiler.TypeChecker
 
 #if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
@@ -1164,7 +1163,7 @@ module StaticLinker =
                   reduceMemoryUsage = tcConfig.reduceMemoryUsage
                   metadataOnly = MetadataOnlyFlag.No
                   tryGetMetadataSnapshot = (fun _ -> None)
-                  pdbPath = None  } 
+                  pdbDirPath = None  } 
             ILBinaryReader.OpenILModuleReader mscorlib40 opts
               
         let tdefs1 = ilxMainModule.TypeDefs.AsList  |> List.filter (fun td -> not (MainModuleBuilder.injectedCompatTypes.Contains(td.Name)))
@@ -1250,7 +1249,7 @@ module StaticLinker =
 
                                 let fileName = dllInfo.FileName
                                 let modul = 
-                                    let pdbPathOption = 
+                                    let pdbDirPathOption = 
                                         // We open the pdb file if one exists parallel to the binary we 
                                         // are reading, so that --standalone will preserve debug information. 
                                         if tcConfig.openDebugInformationForLaterStaticLinking then 
@@ -1268,7 +1267,7 @@ module StaticLinker =
                                         { ilGlobals = ilGlobals
                                           metadataOnly = MetadataOnlyFlag.No // turn this off here as we need the actual IL code
                                           reduceMemoryUsage = tcConfig.reduceMemoryUsage
-                                          pdbPath = pdbPathOption
+                                          pdbDirPath = pdbDirPathOption
                                           tryGetMetadataSnapshot = (fun _ -> None) } 
 
                                     let reader = ILBinaryReader.OpenILModuleReader dllInfo.FileName opts
@@ -2001,7 +2000,7 @@ let main2b (tcImportsCapture,dynamicAssemblyCreator) (Args (ctok, tcConfig: TcCo
 
     let codegenResults = GenerateIlxCode ((if Option.isSome dynamicAssemblyCreator then IlReflectBackend else IlWriteBackend), Option.isSome dynamicAssemblyCreator, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator)
     let casApplied = new Dictionary<Stamp, bool>()
-    let securityAttrs, topAssemblyAttrs = topAttrs.assemblyAttrs |> List.partition (fun a -> TypeChecker.IsSecurityAttribute tcGlobals (tcImports.GetImportMap()) casApplied a rangeStartup)
+    let securityAttrs, topAssemblyAttrs = topAttrs.assemblyAttrs |> List.partition (fun a -> IsSecurityAttribute tcGlobals (tcImports.GetImportMap()) casApplied a rangeStartup)
 
     // remove any security attributes from the top-level assembly attribute list
     let topAttrs = {topAttrs with assemblyAttrs=topAssemblyAttrs}
@@ -2011,12 +2010,12 @@ let main2b (tcImportsCapture,dynamicAssemblyCreator) (Args (ctok, tcConfig: TcCo
     let ilxMainModule = MainModuleBuilder.CreateMainModule (ctok, tcConfig, tcGlobals, tcImports, pdbfile, assemblyName, outfile, topAttrs, idata, optDataResources, codegenResults, assemVerFromAttrib, metadataVersion, secDecls)
 
     AbortOnError(errorLogger, exiter)
-    
+
     // Pass on only the minimum information required for the next phase
-    Args (ctok, tcConfig, tcGlobals, errorLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter)
+    Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter)
 
 /// Phase 3: static linking
-let main3(Args (ctok, tcConfig, tcGlobals, errorLogger: ErrorLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter:Exiter)) = 
+let main3(Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter:Exiter)) = 
         
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
 
@@ -2030,10 +2029,10 @@ let main3(Args (ctok, tcConfig, tcGlobals, errorLogger: ErrorLogger, staticLinke
     AbortOnError(errorLogger, exiter)
         
     // Pass on only the minimum information required for the next phase
-    Args (ctok, tcConfig, errorLogger, tcGlobals, ilxMainModule, outfile, pdbfile, signingInfo, exiter)
+    Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger, ilxMainModule, outfile, pdbfile, signingInfo, exiter)
 
 /// Phase 4: write the binaries
-let main4 dynamicAssemblyCreator (Args (ctok, tcConfig, errorLogger: ErrorLogger, tcGlobals: TcGlobals, ilxMainModule, outfile, pdbfile, signingInfo, exiter: Exiter)) = 
+let main4 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, tcGlobals: TcGlobals, errorLogger: ErrorLogger, ilxMainModule, outfile, pdbfile, signingInfo, exiter: Exiter)) = 
     ReportTime tcConfig "Write .NET Binary"
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
     let outfile = tcConfig.MakePathAbsolute outfile
@@ -2041,6 +2040,14 @@ let main4 dynamicAssemblyCreator (Args (ctok, tcConfig, errorLogger: ErrorLogger
     DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
     let pdbfile = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
+
+    let normalizeAssemblyRefs (aref:ILAssemblyRef) = 
+        match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, aref.Name, lookupOnly=false) with 
+        | Some dllInfo ->
+            match dllInfo.ILScopeRef with 
+            | ILScopeRef.Assembly ref -> ref
+            | _ -> aref
+        | None -> aref
 
     match dynamicAssemblyCreator with 
     | None -> 
@@ -2060,7 +2067,9 @@ let main4 dynamicAssemblyCreator (Args (ctok, tcConfig, errorLogger: ErrorLogger
                     sourceLink = tcConfig.sourceLink
                     signer = GetStrongNameSigner signingInfo
                     dumpDebugInfo = tcConfig.dumpDebugInfo }, 
-                  ilxMainModule)
+                  ilxMainModule,
+                  normalizeAssemblyRefs
+                  )
             with Failure msg -> 
                 error(Error(FSComp.SR.fscProblemWritingBinary(outfile, msg), rangeCmdArgs))
         with e -> 

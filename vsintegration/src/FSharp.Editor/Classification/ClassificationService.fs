@@ -19,6 +19,8 @@ open Microsoft.CodeAnalysis.Text
 // IVT, we'll maintain the status quo.
 #nowarn "44"
 
+open Microsoft.FSharp.Compiler.SourceCodeServices
+
 [<ExportLanguageService(typeof<IEditorClassificationService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpClassificationService
     [<ImportingConstructor>]
@@ -34,6 +36,8 @@ type internal FSharpClassificationService
         
         member __.AddSyntacticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             async {
+                use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Syntactic)
+
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let! sourceText = document.GetTextAsync(cancellationToken)  |> Async.AwaitTask
                 result.AddRange(Tokenizer.getClassifiedSpans(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
@@ -41,8 +45,8 @@ type internal FSharpClassificationService
 
         member __.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             asyncMaybe {
-                do Trace.TraceInformation("{0:n3} (start) SemanticColorization", DateTime.Now.TimeOfDay.TotalSeconds)
-                do! Async.Sleep DefaultTuning.SemanticClassificationInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
+                use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Semantic)
+
                 let! _, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = false, userOpName=userOpName) 
@@ -54,13 +58,15 @@ type internal FSharpClassificationService
                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                     | None -> ()
                     | Some span -> 
-                        let span = Tokenizer.fixupSpan(sourceText, span)
+                        let span = 
+                            match classificationType with
+                            | SemanticClassificationType.Printf -> span
+                            | _ -> Tokenizer.fixupSpan(sourceText, span)
                         result.Add(ClassifiedSpan(span, FSharpClassificationTypes.getClassificationTypeName(classificationType)))
             } 
             |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask cancellationToken
 
         // Do not perform classification if we don't have project options (#defines matter)
         member __.AdjustStaleClassification(_: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan = classifiedSpan
-
 
 
