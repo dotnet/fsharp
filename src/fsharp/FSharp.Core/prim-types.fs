@@ -1484,8 +1484,8 @@ namespace Microsoft.FSharp.Core
             // Run in either PER or ER mode.  In PER mode, equality involving a NaN returns "false".
             // In ER mode, equality on two NaNs returns "true".
             //
-            // If "er" is true the "iec" is fsEqualityComparerNoHashingER
-            // If "er" is false the "iec" is fsEqualityComparerNoHashingPER
+            // If "er" is true the "iec" is fsEqualityComparerUnlimitedHashingER
+            // If "er" is false the "iec" is fsEqualityComparerUnlimitedHashingPER
             let rec GenericEqualityObj (er:bool) (iec:System.Collections.IEqualityComparer) ((xobj:obj),(yobj:obj)) : bool = 
                 (*if objEq xobj yobj then true else  *)
                 match xobj,yobj with 
@@ -1648,21 +1648,6 @@ namespace Microsoft.FSharp.Core
                         else i <- i + 1
                     res
 
-
-            /// One of the two unique instances of System.Collections.IEqualityComparer. Implements PER semantics
-            /// where equality on NaN returns "false".
-            let fsEqualityComparerNoHashingPER = 
-                { new System.Collections.IEqualityComparer with
-                    override iec.Equals(x:obj,y:obj) = GenericEqualityObj false iec (x,y)  // PER Semantics
-                    override iec.GetHashCode(x:obj) = raise (InvalidOperationException (SR.GetString(SR.notUsedForHashing))) }
-                    
-            /// One of the two unique instances of System.Collections.IEqualityComparer. Implements ER semantics
-            /// where equality on NaN returns "true".
-            let fsEqualityComparerNoHashingER = 
-                { new System.Collections.IEqualityComparer with
-                    override iec.Equals(x:obj,y:obj) = GenericEqualityObj true iec (x,y)  // ER Semantics
-                    override iec.GetHashCode(x:obj) = raise (InvalidOperationException (SR.GetString(SR.notUsedForHashing))) }
-
             let isStructuralEquatable (ty:Type) = typeof<IStructuralEquatable>.IsAssignableFrom ty
             let isArray (ty:Type) = ty.IsArray || (typeof<System.Array>.IsAssignableFrom ty)
 
@@ -1791,26 +1776,18 @@ namespace Microsoft.FSharp.Core
 
             type FSharpEqualityComparer_ER<'T> private () =
                 static let comparer = getGenericEquality<'T> true
-
                 static member Comparer = comparer
-
-                static member inline Equals (x, y) = comparer.Equals (x, y)
-                static member inline GetHashCode x = comparer.GetHashCode x
 
             type FSharpEqualityComparer_PER<'T> private () =
                 static let comparer = getGenericEquality<'T> false
-
                 static member Comparer = comparer
-
-                static member inline Equals (x, y) = comparer.Equals (x, y)
-                static member inline GetHashCode x = comparer.GetHashCode x
 
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
             // The compiler optimizer is aware of this function  (see use of generic_equality_per_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
-                FSharpEqualityComparer_PER<'T>.Equals (x, y)
+                FSharpEqualityComparer_PER<'T>.Comparer.Equals (x, y)
                 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
             //
@@ -1819,18 +1796,18 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function (see use of generic_equality_er_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
-                FSharpEqualityComparer_ER<'T>.Equals (x, y)
+                FSharpEqualityComparer_ER<'T>.Comparer.Equals (x, y)
                 
             /// Implements generic equality between two values using "comp" for recursive calls.
             //
             // The compiler optimizer is aware of this function  (see use of generic_equality_withc_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T", and under the assumption that "comp" 
-            // is either fsEqualityComparerNoHashingER or fsEqualityComparerNoHashingPER.
+            // is either fsEqualityComparerUnlimitedHashingER or fsEqualityComparerUnlimitedHashingPER.
             let GenericEqualityWithComparerIntrinsic (comp : System.Collections.IEqualityComparer) (x : 'T) (y : 'T) : bool =
-                if obj.ReferenceEquals (comp, fsEqualityComparerUnlimitedHashingPER) || obj.ReferenceEquals (comp, fsEqualityComparerNoHashingPER) then
-                    FSharpEqualityComparer_PER<'T>.Equals (x, y)
-                elif obj.ReferenceEquals (comp, fsEqualityComparerNoHashingER) then
-                    FSharpEqualityComparer_ER<'T>.Equals (x, y)
+                if obj.ReferenceEquals (comp, fsEqualityComparerUnlimitedHashingPER) then
+                    FSharpEqualityComparer_PER<'T>.Comparer.Equals (x, y)
+                elif obj.ReferenceEquals (comp, fsEqualityComparerUnlimitedHashingER) then
+                    FSharpEqualityComparer_ER<'T>.Comparer.Equals (x, y)
                 else
                     comp.Equals (box x, box y)
 
@@ -1949,7 +1926,7 @@ namespace Microsoft.FSharp.Core
             // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_inner_vref in opt.fs)
             // and devirtualizes calls to it based on type "T".
             let GenericHashIntrinsic input =
-                FSharpEqualityComparer_PER<'T>.GetHashCode input
+                FSharpEqualityComparer_PER<'T>.Comparer.GetHashCode input
 
             /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
             let LimitedGenericHashIntrinsic limit input =
@@ -1964,7 +1941,7 @@ namespace Microsoft.FSharp.Core
             // and devirtualizes calls to it based on type "T".
             let GenericHashWithComparerIntrinsic<'T> (comp : System.Collections.IEqualityComparer) (input : 'T) : int =
                 if obj.ReferenceEquals (comp, fsEqualityComparerUnlimitedHashingPER) then
-                    FSharpEqualityComparer_PER<'T>.GetHashCode input
+                    FSharpEqualityComparer_PER<'T>.Comparer.GetHashCode input
                 else
                     GenericHashParamObj comp (box input)
                 
