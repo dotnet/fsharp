@@ -2,8 +2,9 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler.Ast
 open System.Collections.Generic
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 
@@ -223,10 +224,14 @@ module Structure =
             | SynExpr.InferredUpcast (e,_)
             | SynExpr.DotGet (e,_,_,_)
             | SynExpr.Do (e,_)
-            | SynExpr.DotSet (e,_,_,_)
             | SynExpr.Typed (e,_,_)
-            | SynExpr.DotIndexedGet (e,_,_,_)
-            | SynExpr.DotIndexedSet (e,_,_,_,_,_) -> parseExpr e
+            | SynExpr.DotIndexedGet (e,_,_,_) -> 
+                parseExpr e
+            | SynExpr.Set (e1,e2,_)
+            | SynExpr.DotSet (e1,_,e2,_)
+            | SynExpr.DotIndexedSet (e1,_,e2,_,_,_) -> 
+                parseExpr e1
+                parseExpr e2
             | SynExpr.New (_,_,expr,r) ->
                 rcheck Scope.New Collapse.Below r expr.Range
                 parseExpr expr
@@ -620,8 +625,8 @@ module Structure =
 
         /// Determine if a line is a single line or xml docummentation comment
         let (|Comment|_|) (line: string) =
-            if line.StartsWith "///" then Some XmlDoc
-            elif line.StartsWith "//" then Some SingleLine
+            if line.StartsWithOrdinal("///") then Some XmlDoc
+            elif line.StartsWithOrdinal("//") then Some SingleLine
             else None
 
         let getCommentRanges (lines: string[]) =

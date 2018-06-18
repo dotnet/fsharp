@@ -143,7 +143,7 @@ type FSLibPaths =
     { FSCOREDLLPATH : string }
 
 let requireFile nm = 
-    if Commands.fileExists __SOURCE_DIRECTORY__ nm |> Option.isSome then nm else failwith (sprintf "couldn't find %s" nm)
+    if Commands.fileExists __SOURCE_DIRECTORY__ nm |> Option.isSome then nm else failwith (sprintf "couldn't find %s. Running 'build test' once might solve this issue" nm)
 
 let config configurationName envVars =
 
@@ -272,9 +272,11 @@ type public InitializeSuiteAttribute () =
     inherit TestActionAttribute()
 
     override x.BeforeTest details =
-        if details.IsSuite 
-        then suiteHelpers.Force() |> ignore
-
+        try
+            if details.IsSuite 
+            then suiteHelpers.Force() |> ignore
+        with
+        | e -> raise (Exception("failed test suite initialization, debug code in InitializeSuiteAttribute", e))
     override x.AfterTest _details =
         ()
 

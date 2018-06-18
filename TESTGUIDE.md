@@ -39,7 +39,11 @@ The F# tests are split as follows:
 This is compiled using [tests\fsharp\FSharp.Tests.FSharpSuite.fsproj](tests/fsharp/FSharp.Tests.FSharpSuite.fsproj) to a unit test DLL which acts as a driver script. Each individual test is an NUnit test case, and so you can run it like any other NUnit test.
 
 Tests are grouped in folders per area. Each test compiles and executes a `test.fsx|fs` file in its folder using some combination of compiler or FSI flags specified in the FSharpSuite test project.  
-If the compilation and execution encounter no errors, the test is considered to have passed.
+If the compilation and execution encounter no errors, the test is considered to have passed. 
+
+There are also negative tests checking code expected to fail compilation.
+
+See note about baseline under "Other Tips" bellow for tests checking expectations against "baseline" files.
 
 ### FSharpQA Suite
 
@@ -81,9 +85,22 @@ All test execution logs and result files will be dropped into the `tests\TestRes
 
 ### Other Tips
 
-* Run as Administrator, or a handful of tests will fail
+#### Run as Administrator
 
-* Making the tests run faster
-  * NGen-ing the F# bits (fsc, fsi, FSharp.Core, etc) will result in tests executing much faster. Make sure you run `src\update.cmd` with the `-ngen` flag before running tests.
-  * The FSharp and FSharpQA suites will run test cases in parallel by default. You can comment out the relevant line (look for `PARALLEL_ARG`) to disable this.
-  * By default, tests from the FSharpQA suite are run using a persistent, hosted version of the compiler. This speeds up test execution, as there is no need for the `fsc.exe` process to spin up repeatedly. To disable this, uncomment the relevant line (look for `HOSTED_COMPILER`).
+Do this, or a handful of tests will fail.
+
+#### Making the tests run faster
+
+* NGen-ing the F# bits (fsc, fsi, FSharp.Core, etc) will result in tests executing much faster. Make sure you run `src\update.cmd` with the `-ngen` flag before running tests.
+* The FSharp and FSharpQA suites will run test cases in parallel by default. You can comment out the relevant line (look for `PARALLEL_ARG`) to disable this.
+* By default, tests from the FSharpQA suite are run using a persistent, hosted version of the compiler. This speeds up test execution, as there is no need for the `fsc.exe` process to spin up repeatedly. To disable this, uncomment the relevant line (look for `HOSTED_COMPILER`).
+
+#### Test outcome against baseline
+
+FSharp Test Suite works with couples of .bsl (or .bslpp) files considered "expected" and called baseline, those are matched against the actual output which resides under .err or .vserr files of same name at the during test execution.
+
+When working on changes generating conflicts with the baseline, you can use the helper script [tests/fsharp/update.base.line.with.actuals.fsx](tests/fsharp/update.base.line.with.actuals.fsx) to update all .bsl based on the matching .err file.
+
+When doing so keep in mind to carefully review the diff before comitting updated baseline files.
+
+.bslpp (baseline pre-process) files are specially designed to enable substitution of certain tokens to generate the .bsl file. You can look further about the pre-processing logic under [tests/fsharp/TypeProviderTests.fs](tests/fsharp/TypeProviderTests.fs), this is used only for type provider tests for now.

@@ -66,7 +66,7 @@ module Extensions =
             try x.MembersFunctionsAndValues with _ -> [||] :> _
 
     let isOperator (name: string) =
-        name.StartsWith "( " && name.EndsWith " )" && name.Length > 4
+        name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )") && name.Length > 4
             && name.Substring (2, name.Length - 4) 
                |> String.forall (fun c -> c <> ' ' && not (Char.IsLetter c))
 
@@ -111,7 +111,8 @@ type AssemblySymbol =
       TopRequireQualifiedAccessParent: Idents option
       AutoOpenParent: Idents option
       Symbol: FSharpSymbol
-      Kind: LookupType -> EntityKind }
+      Kind: LookupType -> EntityKind
+      UnresolvedSymbol: UnresolvedSymbol }
     override x.ToString() = sprintf "%A" x  
 
 type AssemblyPath = string
@@ -186,14 +187,33 @@ type IAssemblyContentCache =
 module AssemblyContentProvider =
     open System.IO
 
-    let private createEntity ns (parent: Parent) (entity: FSharpEntity) =
+    let unresolvedSymbol (topRequireQualifiedAccessParent: Idents option) (cleanedIdents: Idents) (fullName: string) =
+        let getNamespace (idents: Idents) = 
+            if idents.Length > 1 then Some idents.[..idents.Length - 2] else None
+
+        let ns = 
+            topRequireQualifiedAccessParent 
+            |> Option.bind getNamespace 
+            |> Option.orElseWith (fun () -> getNamespace cleanedIdents)
+            |> Option.defaultValue [||]
+
+        let displayName = 
+            let nameIdents = if cleanedIdents.Length > ns.Length then cleanedIdents |> Array.skip ns.Length else cleanedIdents
+            nameIdents |> String.concat "."
+                
+        { FullName = fullName
+          DisplayName = displayName
+          Namespace = ns }
+
+    let createEntity ns (parent: Parent) (entity: FSharpEntity) =
         parent.FormatEntityFullName entity
         |> Option.map (fun (fullName, cleanIdents) ->
+            let topRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
             { FullName = fullName
               CleanedIdents = cleanIdents
               Namespace = ns
               NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
-              TopRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
+              TopRequireQualifiedAccessParent = topRequireQualifiedAccessParent
               AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
               Symbol = entity
               Kind = fun lookupType ->
@@ -208,21 +228,26 @@ module AssemblyContentProvider =
                     match entity with
                     | Symbol.Attribute -> EntityKind.Attribute 
                     | _ -> EntityKind.Type
+              UnresolvedSymbol = unresolvedSymbol topRequireQualifiedAccessParent cleanIdents fullName
             })
 
-    let private traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
+    let traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
+        let topRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
+        let autoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
         membersFunctionsAndValues
         |> Seq.filter (fun x -> not x.IsInstanceMember && not x.IsPropertyGetterMethod && not x.IsPropertySetterMethod)
         |> Seq.collect (fun func ->
             let processIdents fullName idents = 
+                let cleanedIdentes = parent.FixParentModuleSuffix idents
                 { FullName = fullName
-                  CleanedIdents = parent.FixParentModuleSuffix idents
+                  CleanedIdents = cleanedIdentes
                   Namespace = ns
                   NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
-                  TopRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
-                  AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
+                  TopRequireQualifiedAccessParent = topRequireQualifiedAccessParent
+                  AutoOpenParent = autoOpenParent
                   Symbol = func
-                  Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern }
+                  Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern
+                  UnresolvedSymbol = unresolvedSymbol topRequireQualifiedAccessParent cleanedIdentes fullName }
 
             [ yield! func.TryGetFullDisplayName() 
                      |> Option.map (fun fullDisplayName -> processIdents func.FullName (fullDisplayName.Split '.'))
@@ -241,7 +266,7 @@ module AssemblyContentProvider =
                           processIdents (fullCompiledIdents |> String.concat ".") fullCompiledIdents)
                      |> Option.toList ])
 
-    let rec private traverseEntity contentType (parent: Parent) (entity: FSharpEntity) = 
+    let rec traverseEntity contentType (parent: Parent) (entity: FSharpEntity) = 
 
         seq { 
 #if !NO_EXTENSIONTYPING 
@@ -308,7 +333,7 @@ module AssemblyContentProvider =
         |> Seq.distinctBy (fun {FullName = fullName; CleanedIdents = cleanIdents} -> (fullName, cleanIdents))
         |> Seq.toList
 
-    let private getAssemblySignaturesContent contentType (assemblies: FSharpAssembly list) = 
+    let getAssemblySignaturesContent contentType (assemblies: FSharpAssembly list) = 
         assemblies |> List.collect (fun asm -> getAssemblySignatureContent contentType asm.Contents)
 
     let getAssemblyContent (withCache: (IAssemblyContentCache -> _) -> _) contentType (fileName: string option) (assemblies: FSharpAssembly list) =
@@ -663,6 +688,9 @@ module ParsedInput =
                 walkExpr e1
                 addLongIdentWithDots idents
                 walkExpr e2
+            | SynExpr.Set (e1, e2, _) ->
+                walkExpr e1
+                walkExpr e2
             | SynExpr.DotIndexedGet (e, args, _, _) ->
                 walkExpr e
                 List.iter walkIndexerArg args
@@ -979,7 +1007,8 @@ module ParsedInput =
                 if ctx.Pos.Line > 1 then
                     // it's an implicit module without any open declarations    
                     let line = getLineStr (ctx.Pos.Line - 2)
-                    let isImpliciteTopLevelModule = not (line.StartsWith "module" && not (line.EndsWith "="))
+                    let isImpliciteTopLevelModule =
+                        not (line.StartsWithOrdinal("module") && not (line.EndsWithOrdinal("=")))
                     if isImpliciteTopLevelModule then 1 else ctx.Pos.Line
                 else 1
             | ScopeKind.Namespace ->
@@ -988,7 +1017,7 @@ module ParsedInput =
                     [0..ctx.Pos.Line - 1]
                     |> List.mapi (fun i line -> i, getLineStr line)
                     |> List.tryPick (fun (i, lineStr) -> 
-                        if lineStr.StartsWith "namespace" then Some i
+                        if lineStr.StartsWithOrdinal("namespace") then Some i
                         else None)
                     |> function
                         // move to the next line below "namespace" and convert it to F# 1-based line number
@@ -999,8 +1028,11 @@ module ParsedInput =
 
         mkPos line ctx.Pos.Column
     
-    let tryFindNearestPointToInsertOpenDeclaration (currentLine: int) (ast: ParsedInput) (entity: Idents) (insertionPoint: OpenStatementInsertionPoint) =
+    let findNearestPointToInsertOpenDeclaration (currentLine: int) (ast: ParsedInput) (entity: Idents) (insertionPoint: OpenStatementInsertionPoint) =
         match tryFindNearestPointAndModules currentLine ast insertionPoint with
         | Some (scope, _, point), modules -> 
-            Some (findBestPositionToInsertOpenDeclaration modules scope point entity)
-        | _ -> None
+            findBestPositionToInsertOpenDeclaration modules scope point entity
+        | _ ->
+            // we failed to find insertion point because ast is empty for some reason, return top left point in this case  
+            { ScopeKind = ScopeKind.TopModule
+              Pos = mkPos 1 0 }

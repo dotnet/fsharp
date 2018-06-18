@@ -6,6 +6,7 @@
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
     <ProjectLanguage>FSharp</ProjectLanguage>
     <BuildWith Condition=" '$(Configuration)' == 'Proto' ">LKG</BuildWith>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
 
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
@@ -16,6 +17,7 @@
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Core</AssemblyName>
     <DefineConstants>FSHARP_CORE;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(Configuration)' == 'Proto'">BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <BaseAddress>0x05000000</BaseAddress>
     <CompilingFsLib>true</CompilingFsLib>
@@ -149,12 +151,6 @@
     <Compile Include="reflect.fs">
       <Link>Reflection/reflect.fs</Link>
     </Compile>
-    <Compile Include="event.fsi">
-      <Link>Event/event.fsi</Link>
-    </Compile>
-    <Compile Include="event.fs">
-      <Link>Event/event.fs</Link>
-    </Compile>
     <Compile Include="math\n.fsi">
       <Link>Numerics/n.fsi</Link>
     </Compile>
@@ -191,11 +187,35 @@
     <Compile Include="nativeptr.fs">
       <Link>NativeInterop/nativeptr.fs</Link>
     </Compile>
-    <Compile Include="control.fsi">
-      <Link>Async/control.fsi</Link>
+    <Compile Include="event.fsi">
+      <Link>Control/event.fsi</Link>
     </Compile>
-    <Compile Include="control.fs">
-      <Link>Async/control.fs</Link>
+    <Compile Include="event.fs">
+      <Link>Control/event.fs</Link>
+    </Compile>
+    <Compile Include="async.fsi">
+      <Link>Control/async.fsi</Link>
+    </Compile>
+    <Compile Include="async.fs">
+      <Link>Control/async.fs</Link>
+    </Compile>
+    <Compile Include="eventmodule.fsi">
+      <Link>Control/eventmodule.fsi</Link>
+    </Compile>
+    <Compile Include="eventmodule.fs">
+      <Link>Control/eventmodule.fs</Link>
+    </Compile>
+    <Compile Include="observable.fsi">
+      <Link>Control/observable.fsi</Link>
+    </Compile>
+    <Compile Include="observable.fs">
+      <Link>Control/observable.fs</Link>
+    </Compile>
+    <Compile Include="mailbox.fsi">
+      <Link>MailboxProcessor/mailbox.fsi</Link>
+    </Compile>
+    <Compile Include="mailbox.fs">
+      <Link>MailboxProcessor/mailbox.fs</Link>
     </Compile>
     <Compile Include="Linq.fsi">
       <Link>Queries/Linq.fsi</Link>

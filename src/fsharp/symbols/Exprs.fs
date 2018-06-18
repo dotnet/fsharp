@@ -183,7 +183,7 @@ module FSharpExprConvert =
         rfref.RecdField.IsCompilerGenerated && 
         rfref.RecdField.IsStatic &&
         rfref.RecdField.IsMutable &&
-        rfref.RecdField.Name.StartsWith "init" 
+        rfref.RecdField.Name.StartsWithOrdinal("init") 
 
         // Match "if [AI_clt](init@41, 6) then IntrinsicFunctions.FailStaticInit () else ()"
     let (|StaticInitializationCheck|_|) e = 
@@ -289,8 +289,8 @@ module FSharpExprConvert =
             | _ -> None
         | _ -> None
 
-    let ConvType cenv typ = FSharpType(cenv, typ)
-    let ConvTypes cenv typs = List.map (ConvType cenv) typs
+    let ConvType cenv ty = FSharpType(cenv, ty)
+    let ConvTypes cenv tys = List.map (ConvType cenv) tys
     let ConvILTypeRefApp (cenv:SymbolEnv) m tref tyargs = 
         let tcref = Import.ImportILTypeRef cenv.amap m tref
         ConvType cenv (mkAppTy tcref tyargs)
@@ -302,10 +302,10 @@ module FSharpExprConvert =
         match expr with 
         | Expr.Op(op, tyargs, args, m) -> 
             match op, args, tyargs  with
-            | TOp.LValueOp(LGetAddr, vref), _, _ -> exprForValRef m vref
-            | TOp.ValFieldGetAddr(rfref), [], _ -> mkStaticRecdFieldGet(rfref, tyargs, m)
-            | TOp.ValFieldGetAddr(rfref), [arg], _ -> mkRecdFieldGetViaExprAddr(exprOfExprAddr cenv arg, rfref, tyargs, m)
-            | TOp.UnionCaseFieldGetAddr(uref, n), [arg], _ -> mkUnionCaseFieldGetProvenViaExprAddr(exprOfExprAddr cenv arg, uref, tyargs, n, m)
+            | TOp.LValueOp(LAddrOf _, vref), _, _ -> exprForValRef m vref
+            | TOp.ValFieldGetAddr(rfref, _), [], _ -> mkStaticRecdFieldGet(rfref, tyargs, m)
+            | TOp.ValFieldGetAddr(rfref, _), [arg], _ -> mkRecdFieldGetViaExprAddr(exprOfExprAddr cenv arg, rfref, tyargs, m)
+            | TOp.UnionCaseFieldGetAddr(uref, n, _), [arg], _ -> mkUnionCaseFieldGetProvenViaExprAddr(exprOfExprAddr cenv arg, uref, tyargs, n, m)
             | TOp.ILAsm([ I_ldflda(fspec) ], rtys), [arg], _  -> mkAsmExpr([ mkNormalLdfld(fspec) ], tyargs, [exprOfExprAddr cenv arg], rtys, m)
             | TOp.ILAsm([ I_ldsflda(fspec) ], rtys), _, _  -> mkAsmExpr([ mkNormalLdsfld(fspec) ], tyargs, args, rtys, m)
             | TOp.ILAsm(([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ] ), _), (arr::idxs), [elemty]  -> 
@@ -422,7 +422,7 @@ module FSharpExprConvert =
         // Check to see if there aren't enough arguments or if there is a tuple-arity mismatch
         // If so, adjust and try again
         if curriedArgs.Length < curriedArgInfos.Length ||
-            ((List.take curriedArgInfos.Length curriedArgs, curriedArgInfos) ||> List.exists2 (fun arg argInfo -> (argInfo.Length > (tryDestRefTupleExpr arg).Length))) then
+            ((List.truncate curriedArgInfos.Length curriedArgs, curriedArgInfos) ||> List.exists2 (fun arg argInfo -> (argInfo.Length > (tryDestRefTupleExpr arg).Length))) then
 
             // Too few arguments or incorrect tupling? Convert to a lambda and beta-reduce the 
             // partially applied arguments to 'let' bindings 
@@ -437,7 +437,7 @@ module FSharpExprConvert =
             ConvExprPrimLinear cenv env splitCallExpr contf
 
         else        
-            let curriedArgs, laterArgs = List.chop curriedArgInfos.Length curriedArgs 
+            let curriedArgs, laterArgs = List.splitAt curriedArgInfos.Length curriedArgs 
 
             // detuple the args
             let untupledCurriedArgs = 
@@ -523,7 +523,7 @@ module FSharpExprConvert =
             let env = env.BindTypars (Seq.zip tps gps |> Seq.toList)
             E.TypeLambda(gps, ConvExpr cenv env b) 
 
-        | Expr.Obj (_, typ, _, _, [TObjExprMethod(TSlotSig(_, ctyp, _, _, _, _), _, tps, [tmvs], e, _) as tmethod], _, m) when isDelegateTy cenv.g typ -> 
+        | Expr.Obj (_, ty, _, _, [TObjExprMethod(TSlotSig(_, ctyp, _, _, _, _), _, tps, [tmvs], e, _) as tmethod], _, m) when isDelegateTy cenv.g ty -> 
             let f = mkLambdas m tps tmvs (e, GetFSharpViewOfReturnType cenv.g (returnTyOfMethod cenv.g tmethod))
             let fR = ConvExpr cenv env f 
             let tyargR = ConvType cenv ctyp 
@@ -535,7 +535,7 @@ module FSharpExprConvert =
         | Expr.TyChoose _  -> 
             ConvExprPrim cenv env (ChooseTyparSolutionsForFreeChoiceTypars cenv.g cenv.amap expr)
 
-        | Expr.Obj (_lambdaId, typ, _basev, basecall, overrides, iimpls, _m)      -> 
+        | Expr.Obj (_lambdaId, ty, _basev, basecall, overrides, iimpls, _m)      -> 
             let basecallR = ConvExpr cenv env basecall
             let ConvertMethods methods = 
                 [ for (TObjExprMethod(slotsig, _, tps, tmvs, body, _)) in methods -> 
@@ -547,9 +547,9 @@ module FSharpExprConvert =
                     let bodyR = ConvExpr cenv env body
                     FSharpObjectExprOverride(sgn, tpsR, vslR, bodyR) ]
             let overridesR = ConvertMethods overrides 
-            let iimplsR = List.map (fun (ty, impls) -> ConvType cenv ty, ConvertMethods impls) iimpls
+            let iimplsR = List.map (fun (ity, impls) -> ConvType cenv ity, ConvertMethods impls) iimpls
 
-            E.ObjectExpr(ConvType cenv typ, basecallR, overridesR, iimplsR)
+            E.ObjectExpr(ConvType cenv ty, basecallR, overridesR, iimplsR)
 
         | Expr.Op(op, tyargs, args, m) -> 
             match op, tyargs, args with 
@@ -581,10 +581,10 @@ module FSharpExprConvert =
                 let projR = FSharpField(cenv, ucref, n)
                 E.UnionCaseSet(ConvExpr cenv env e1, typR, mkR, projR, ConvExpr cenv env e2) 
 
-            | TOp.UnionCaseFieldGetAddr (_ucref, _n), _tyargs, _ ->
+            | TOp.UnionCaseFieldGetAddr _, _tyargs, _ ->
                 E.AddressOf(ConvLValueExpr cenv env expr) 
 
-            | TOp.ValFieldGetAddr(_rfref), _tyargs, _ -> 
+            | TOp.ValFieldGetAddr _, _tyargs, _ -> 
                 E.AddressOf(ConvLValueExpr cenv env expr)
 
             | TOp.ValFieldGet(rfref), tyargs, [] ->
@@ -755,7 +755,7 @@ module FSharpExprConvert =
                 // rebuild reraise<T>() and Convert 
                 mkReraiseLibCall cenv.g toTy m |> ConvExprPrim cenv env 
 
-            | TOp.LValueOp(LGetAddr, vref), [], [] -> 
+            | TOp.LValueOp(LAddrOf _, vref), [], [] -> 
                 E.AddressOf(ConvExpr cenv env (exprForValRef m vref)) 
 
             | TOp.LValueOp(LByrefSet, vref), [], [e] -> 
@@ -815,8 +815,8 @@ module FSharpExprConvert =
                 let argsR = ConvExprs cenv env args
                 E.TraitCall(tysR, nm, memFlags, argtysR, tyargsR, argsR) 
 
-            | TOp.RefAddrGet, [ty], [e]  -> 
-                let replExpr = mkRecdFieldGetAddrViaExprAddr(e, mkRefCellContentsRef cenv.g, [ty], m)
+            | TOp.RefAddrGet readonly, [ty], [e]  -> 
+                let replExpr = mkRecdFieldGetAddrViaExprAddr(readonly, e, mkRefCellContentsRef cenv.g, [ty], m)
                 ConvExprPrim cenv env replExpr
 
             | _ -> wfail (sprintf "unhandled construct in AST", m)
@@ -857,8 +857,8 @@ module FSharpExprConvert =
     and ConvILCall (cenv:SymbolEnv) env (isNewObj, valUseFlags, ilMethRef, enclTypeArgs, methTypeArgs, callArgs, m) =
         let isNewObj = (isNewObj || (match valUseFlags with CtorValUsedAsSuperInit | CtorValUsedAsSelfInit -> true | _ -> false))
         let methName = ilMethRef.Name
-        let isPropGet = methName.StartsWith("get_", System.StringComparison.Ordinal)
-        let isPropSet = methName.StartsWith("set_", System.StringComparison.Ordinal)
+        let isPropGet = methName.StartsWithOrdinal("get_")
+        let isPropSet = methName.StartsWithOrdinal("set_")
         let isProp = isPropGet || isPropSet
         
         let tcref, subClass = 
@@ -916,8 +916,8 @@ module FSharpExprConvert =
                         let vr = VRefLocal v
                         makeFSCall isMember vr
                     | [] ->
-                        let isPropGet = vName.StartsWith("get_", System.StringComparison.Ordinal)
-                        let isPropSet = vName.StartsWith("set_", System.StringComparison.Ordinal)
+                        let isPropGet = vName.StartsWithOrdinal("get_")
+                        let isPropSet = vName.StartsWithOrdinal("set_")
                         if isPropGet || isPropSet then
                             let name = PrettyNaming.ChopPropertyName vName          
                             let findByName =
@@ -956,12 +956,12 @@ module FSharpExprConvert =
                     if vName = "GetTag" || vName = "get_Tag" then
                         let objR = ConvExpr cenv env callArgs.Head
                         E.UnionCaseTag(objR, typR) 
-                    elif vName.StartsWith("New") then
+                    elif vName.StartsWithOrdinal("New") then
                         let name = vName.Substring(3)
                         let mkR = ConvUnionCaseRef cenv (UCRef(tcref, name))
                         let argsR = ConvExprs cenv env callArgs
                         E.NewUnionCase(typR, mkR, argsR)
-                    elif vName.StartsWith("Is") then
+                    elif vName.StartsWithOrdinal("Is") then
                         let name = vName.Substring(2)
                         let mkR = ConvUnionCaseRef cenv (UCRef(tcref, name))
                         let objR = ConvExpr cenv env callArgs.Head
@@ -1040,7 +1040,7 @@ module FSharpExprConvert =
                 let linkageType = 
                     let ty = mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtys) rty
                     let ty = if isStatic then ty else mkFunTy enclosingType ty 
-                    tryMkForallTy (typars1 @ typars2) ty
+                    mkForallTyIfNeeded (typars1 @ typars2) ty
 
                 let argCount = List.sum (List.map List.length argtys)  + (if isStatic then 0 else 1)
                 let key = ValLinkageFullKey({ MemberParentMangledName=memberParentName; MemberIsOverride=false; LogicalName=logicalName; TotalArgCount= argCount }, Some linkageType)

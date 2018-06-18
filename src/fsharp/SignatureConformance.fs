@@ -183,7 +183,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 let unimpl = ListSet.subtract (fun fity aity -> typeAEquiv g aenv aity fity) fintfs aintfs
                 (unimpl |> List.forall (fun ity -> errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName, NicePrint.minimalStringOfType denv ity),m)); false)) &&
                 let hidden = ListSet.subtract (typeAEquiv g aenv) aintfsUser fintfs
-                hidden |> List.iter (fun ity -> (if implTycon.IsFSharpInterfaceTycon then error else warning) (InterfaceNotRevealed(denv,ity,implTycon.Range)))
+                let warningOrError = if implTycon.IsFSharpInterfaceTycon then error else warning
+                hidden |> List.iter (fun ity -> warningOrError (InterfaceNotRevealed(denv,ity,implTycon.Range)))
 
                 let aNull = IsUnionTypeWithNullAsTrueValue g implTycon
                 let fNull = IsUnionTypeWithNullAsTrueValue g sigTycon
@@ -231,14 +232,15 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             | Some (ValReprInfo (implTyparNames,implArgInfos,implRetInfo) as implValInfo), Some (ValReprInfo (sigTyparNames,sigArgInfos,sigRetInfo) as sigValInfo) ->
                 let ntps = implTyparNames.Length
                 let mtps = sigTyparNames.Length
+                let nSigArgInfos = sigArgInfos.Length
                 if ntps <> mtps then
                   err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityGenericParametersDiffer(x, y, z, string mtps, string ntps))
                 elif implValInfo.KindsOfTypars <> sigValInfo.KindsOfTypars then
                   err(FSComp.SR.ValueNotContainedMutabilityGenericParametersAreDifferentKinds)
-                elif not (sigArgInfos.Length <= implArgInfos.Length && List.forall2 (fun x y -> List.length x <= List.length y) sigArgInfos (fst (List.chop sigArgInfos.Length implArgInfos))) then 
-                  err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityAritiesDiffer(x, y, z, id.idText, string sigArgInfos.Length, id.idText, id.idText))
+                elif not (nSigArgInfos <= implArgInfos.Length && List.forall2 (fun x y -> List.length x <= List.length y) sigArgInfos (fst (List.splitAt nSigArgInfos implArgInfos))) then 
+                  err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityAritiesDiffer(x, y, z, id.idText, string nSigArgInfos, id.idText, id.idText))
                 else 
-                  let implArgInfos = implArgInfos |> List.take sigArgInfos.Length  
+                  let implArgInfos = implArgInfos |> List.truncate nSigArgInfos
                   let implArgInfos = (implArgInfos, sigArgInfos) ||> List.map2 (fun l1 l2 -> l1 |> List.take l2.Length)
                   // Propagate some information signature to implementation. 
 
@@ -550,9 +552,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                        Printf.bprintf os "%s" fx.DisplayName),m))
             
             let valuesPartiallyMatch (av:Val) (fv:Val) =
-                (av.LinkagePartialKey.MemberParentMangledName = fv.LinkagePartialKey.MemberParentMangledName) &&
-                (av.LinkagePartialKey.LogicalName = fv.LinkagePartialKey.LogicalName) &&
-                (av.LinkagePartialKey.TotalArgCount = fv.LinkagePartialKey.TotalArgCount)    
+                let akey = av.GetLinkagePartialKey()
+                let fkey = fv.GetLinkagePartialKey()
+                (akey.MemberParentMangledName = fkey.MemberParentMangledName) &&
+                (akey.LogicalName = fkey.LogicalName) &&
+                (akey.TotalArgCount = fkey.TotalArgCount)    
                                        
             (implModType.AllValsAndMembersByLogicalNameUncached, signModType.AllValsAndMembersByLogicalNameUncached)
               ||> NameMap.suball2 

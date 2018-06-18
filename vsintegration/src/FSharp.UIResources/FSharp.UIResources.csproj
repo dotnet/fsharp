@@ -5,6 +5,7 @@
   <PropertyGroup>
     <TargetFramework>net46</TargetFramework>
     <OutputType>Library</OutputType>
+    <NoWarn>$(NoWarn);1591</NoWarn>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <RootNamespace>Microsoft.VisualStudio.FSharp.UIResources</RootNamespace>
     <NoWarn>$(NoWarn);1591</NoWarn>
@@ -20,27 +21,24 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="System.Xaml" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows" />
-    <Reference Include="System.Xaml" />
-    <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
   </ItemGroup>
 
   <!-- The following are hacks to allow WPF to build. -->
   <ItemGroup>
-    <!-- <ApplicationDefinition Include="App.xaml" SubType="Designer" Generator="MSBuild:Compile" /> -->
-    <!-- <Page Include="**\*.xaml" SubType="Designer" Generator="MSBuild:Compile" Exclude="App.xaml" /> -->
     <Page Include="**\*.xaml" SubType="Designer" Generator="MSBuild:Compile" />
     <None Include="@(Page)" />
     <None Include="@(Resource)" />
     <Compile Update="**\*.xaml.cs" SubType="Designer" DependentUpon="%(Filename)" />
     <Compile Update="$(IntermediateOutputPath)**\*.g.cs" Visible="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Strings.resx">
+      <Generator></Generator>
+    </EmbeddedResource>
   </ItemGroup>
 
   <PropertyGroup>
