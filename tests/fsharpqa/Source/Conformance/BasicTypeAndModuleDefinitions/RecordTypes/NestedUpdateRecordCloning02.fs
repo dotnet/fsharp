@@ -1,43 +1,31 @@
 // #Conformance #TypesAndModules #Records
 #light
 
-// Verify cloning and updating of fields accessed through Module or TypeName using nested copy and update syntax
+// Verify cloning and updating of fields accessed through TypeName using nested copy and update syntax
 
-    module M =
-        type AnotherNestedRecTy = { A : int; }
+type AnotherNestedRecTy = { A : int; }
 
-        type NestdRecTy = { B : string; C : AnotherNestedRecTy; }
+type NestdRecTy = { B : string; C : AnotherNestedRecTy; }
 
-        type RecTy = { D : NestdRecTy; E : string option; }
+type RecTy = { D : NestdRecTy; E : string option; }
 
-
-
-let t1 = { M.RecTy.D = { M.B = "t1"; M.C = { M.A = 1; } }; M.E = None; }
-
-// Module.FieldName access
-let t2 = { t1 with M.D.B = "t2"; M.D.C.A = 2; }
-
-// Module.TypeName.FieldName access
-let t3 = { t1 with M.RecTy.E = Some "t3"; M.RecTy.D.B = "t3"; }
-
-open M
+let t1 = { D = { B = "t1"; C = { A = 1; } }; E = None; }
 
 // TypeName.FieldName access
-let t4 = { t3 with RecTy.D.B = "t4"; RecTy.E = None; }
+let t2 = { t1 with RecTy.D.B = "t2"; }
 
-// Changed Fields
-if t1.D.B <> "t1" || t2.D.B <> "t2" || t3.D.B <> "t3" || t4.D.B <> "t4" then exit 1
+let t3 = { t2 with RecTy.D.B = "t3"; RecTy.D.C.A = 3; }
 
-if t2.D.C.A <> 2 then exit 1
+// Changed Fields t1 to t2
+if t1.D.B <> "t1" || t2.D.B <> "t2" then exit 1
 
-if t2
 // Fields Cloned t1 to t2
-if t1.D.C <> t2.D.C || t1.E <> t2.E then exit 1
+if t2.D.C.A <> t1.D.C.A || t2.E <> t1.E then exit 1
+
+// Changed Fields t2 to t3
+if t3.D.B <> "t3" || t2.D.C.A <> 1 || t3.D.C.A <> 3 then exit 1
 
 // Fields Cloned t2 to t3
-if t2.D.C <> t3.D.C || t2.E <> t3.E then exit 1
-
-// Fields Cloned t3 to t4
-if t3.D.C <> t4.D.C || t3.E <> t4.E then exit 1
+if t3.E <> t2.E then exit 1
 
 exit 0
