@@ -124,6 +124,24 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Enable stale results in IntelliSense completion lists.
+        /// </summary>
+        public static string Enable_Stale_IntelliSense_Results {
+            get {
+                return ResourceManager.GetString("Enable_Stale_IntelliSense_Results", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IntelliSense Performance Options.
+        /// </summary>
+        public static string IntelliSense_Performance {
+            get {
+                return ResourceManager.GetString("IntelliSense_Performance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Performance.
         /// </summary>
         public static string Language_Service_Performance {
@@ -156,6 +174,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Project_check_cache_size {
             get {
                 return ResourceManager.GetString("Project_check_cache_size", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to F# Project and Caching Performance Options.
+        /// </summary>
+        public static string Project_Performance {
+            get {
+                return ResourceManager.GetString("Project_Performance", resourceCulture);
             }
         }
         

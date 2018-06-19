@@ -183,4 +183,13 @@
   <data name="Time_until_stale_completion" xml:space="preserve">
     <value>Time until stale results for completion (in milliseconds)</value>
   </data>
+  <data name="IntelliSense_Performance" xml:space="preserve">
+    <value>IntelliSense Performance Options</value>
+  </data>
+  <data name="Project_Performance" xml:space="preserve">
+    <value>F# Project and Caching Performance Options</value>
+  </data>
+  <data name="Enable_Stale_IntelliSense_Results" xml:space="preserve">
+    <value>Enable stale results in IntelliSense completion lists</value>
+  </data>
 </root>

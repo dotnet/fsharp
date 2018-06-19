@@ -112,6 +112,21 @@
         <target state="new">Time until stale results for completion (in milliseconds)</target>
         <note />
       </trans-unit>
+      <trans-unit id="IntelliSense_Performance">
+        <source>IntelliSense Performance Options</source>
+        <target state="new">IntelliSense Performance Options</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project_Performance">
+        <source>F# Project and Caching Performance Options</source>
+        <target state="new">F# Project and Caching Performance Options</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Stale_IntelliSense_Results">
+        <source>Enable stale results in IntelliSense completion lists</source>
+        <target state="new">Enable stale results in IntelliSense completion lists</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
