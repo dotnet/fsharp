@@ -277,7 +277,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Data from projects is kept in memory to enable cross-project IDE features. Higher values use more memory. Lower values incur more computational work..
+        ///   Looks up a localized string similar to Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions..
         /// </summary>
         public static string Tooltip_project_check_cache_size {
             get {

@@ -23,7 +23,7 @@
                                   IsChecked="{Binding EnableInMemoryCrossProjectReferences}"
                                   Content="{x:Static local:Strings.Enable_in_memory_cross_project_references}"
                                   ToolTip="{x:Static local:Strings.Tooltip_in_memory_cross_project_references}"/>
-                        <Grid IsEnabled="{Binding IsChecked, ElementName=enableInMemoryCrossProjectReferences}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="auto"/>
                                 <ColumnDefinition Width="70" />

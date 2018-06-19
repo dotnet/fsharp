@@ -196,6 +196,6 @@
     <value>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</value>
   </data>
   <data name="Tooltip_project_check_cache_size" xml:space="preserve">
-    <value>Data from projects is kept in memory to enable cross-project IDE features. Higher values use more memory. Lower values incur more computational work.</value>
+    <value>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</value>
   </data>
 </root>
