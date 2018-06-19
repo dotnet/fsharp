@@ -3136,6 +3136,34 @@ let ResolveFieldPrim sink (ncenv:NameResolver) nenv ad ty (mp,id:Ident) allField
 
         [(resInfo,item)]
 
+/// Resolve a long identifier representing a nested record field
+let ResolveNestedField sink (ncenv:NameResolver) nenv ad (lid : Ident list) =
+    let typeNameResInfo = TypeNameResolutionInfo.Default
+    let tyconSearch ad () =
+        match lid with
+        | tn :: id :: rest ->
+            let m = tn.idRange
+            let tcrefs = LookupTypeNameInEnvNoArity OpenQualified tn.idText nenv
+            if isNil tcrefs then NoResultsOrUsefulErrors else
+            let tcrefs = tcrefs |> List.map (fun tcref -> (ResolutionInfo.Empty,tcref))
+            let t = ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 m ad id rest typeNameResInfo tn.idRange tcrefs
+            t
+            |?> List.choose (function (_,Item.RecdField(RecdFieldInfo(_,rfref)),_) -> Some(FieldResolution(rfref,false)) | _ -> None)
+        | _ -> NoResultsOrUsefulErrors
+
+    let moduleOrNsSearch ad () =
+        match lid with
+        | [] -> NoResultsOrUsefulErrors
+        | id :: rest ->
+            let m = id.idRange
+            let t = ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m OpenQualified nenv ad id rest false
+                        (ResolveFieldInModuleOrNamespace ncenv nenv ad)
+            t |?> List.map (fun (_, fld, _) -> fld)
+
+    moduleOrNsSearch ad () +++ tyconSearch ad +++ moduleOrNsSearch AccessibleFromSomeFSharpCode +++ tyconSearch AccessibleFromSomeFSharpCode
+    |> ForceRaise
+
+
 let ResolveField sink ncenv nenv ad ty (mp,id) allFields =
     let res = ResolveFieldPrim sink ncenv nenv ad ty (mp,id) allFields
     // Register the results of any field paths "Module.Type" in "Module.Type.field" as a name resolution. (Note, the path resolution

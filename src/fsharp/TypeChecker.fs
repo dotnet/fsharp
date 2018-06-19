@@ -7016,8 +7016,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
 
 
         let rec synExprRecd copyInfo id idRng ids =
-            Some(SynExpr.Record((None, (copyInfo id), [
-                                                        match ids with 
+            Some(SynExpr.Record((None, (copyInfo id), [ match ids with 
                                                         | [] -> yield ((LongIdentWithDots ([], []), true), v, None)
                                                         | [(_, fld)] -> yield ((LongIdentWithDots ([fld],[]), true), v, None)
                                                         | (_, h) :: t -> yield ((LongIdentWithDots ([h], []), true), (synExprRecd copyInfo h h.idRange t), None)], idRng)))
@@ -7036,12 +7035,16 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                         let ids, rest = combineIdsUpToNextFld id t
                         let f, b = List.frontAndBack ids
                         success ((f, b), b, id.idRange, rest)
-                    | Undefined id ->  raze (UndefinedName(0, FSComp.SR.undefinedNameRecordLabelOrNamespace, id, NoSuggestions))
+                    | Undefined id ->
+                        raze (UndefinedName(0, FSComp.SR.undefinedNameRecordLabelOrNamespace, id, NoSuggestions))
                     |> ForceRaise
                 
                 match rst with
                 | [] -> yield (lid, v)
-                | _ ->  yield (lid, synExprRecd (recdExprCopyInfo ids optOrigExpr) id rng rst)
+                | _ ->  
+                    let t = ResolveNestedField cenv.tcSink cenv.nameResolver env.eNameResEnv env.eAccessRights lidwd.Lid
+                    printfn "%A" t
+                    yield (lid, synExprRecd (recdExprCopyInfo ids optOrigExpr) id rng rst)
         ]
 
     let grpMultipleNstdUpdates flds =
