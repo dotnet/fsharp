@@ -1,32 +1,30 @@
 // #Conformance #TypesAndModules #Records
 #light
 
-// Verify cloning and updating of fields accessed through ModuleName using nested copy and update syntax
-module Test =
-    module M =
-        type AnotherNestedRecTy = { A : int; }
+// Verify cloning and updating of fields with ambiguities between TypeName and FieldName using nested copy and update syntax
 
-        type NestdRecTy = { B : string; C : AnotherNestedRecTy; }
+type AnotherNestedRecTy = { A : int; }
 
-        type RecTy = { D : NestdRecTy; E : string option; }
+type NestdRecTy = { B : string; AnotherNestedRecTy : AnotherNestedRecTy; }
+
+type RecTy = { NestdRecTy : NestdRecTy; E : string option; }
 
 
-    let t1 = { M.RecTy.D = { M.B = "t1"; M.C = { M.A = 1; } }; M.E = None; }
+let t1 = { RecTy.NestdRecTy = { B = "t1"; AnotherNestedRecTy = { A = 1; } }; E = None; }
 
-    // Module.FieldName access
-    let t2 = { t1 with M.D.B = "t2"; M.D.C.A = 2; }
+// Ambiguous access
+let t2 = { t1 with NestdRecTy.B = "t2" }
 
-    // Module.TypeName.FieldName access
-    let t3 = { t1 with M.RecTy.E = Some "t3"; M.RecTy.D.B = "t3"; }
+let t3 = { t2 with NestdRecTy.AnotherNestedRecTy.A = 3 }
 
-    // Changed Fields t1 to t2
-    if t1.D.B <> "t1" || t2.D.B <> "t2" || t2.D.C.A <> 2 || t1.D.C.A <> 1 then exit 1
+// Changed Fields t1 to t2
+if t1.NestdRecTy.B <> "t1" || t2.NestdRecTy.B <> "t2" then exit 1
 
-    // Fields Cloned t1 to t2
-    if t2.E <> t1.E then exit 1
+// Fields Cloned t1 to t2
+if t2.E <> t1.E || t2.NestdRecTy.AnotherNestedRecTy.A <> t1.NestdRecTy.AnotherNestedRecTy.A then exit 1
 
-    // Fields Cloned t2 to t3
-    if t2.E <> None || t3.E <> Some "t3" || t2.D.B <> "t3" then exit 1
+// Changed Fields t2 to t3
+if t2.NestdRecTy.AnotherNestedRecTy.A <> 3 then exit 1
 
-    // Fields Cloned t2 to t3
-    if t3.D.C <> t2.D.C then exit 1
+// Fields Cloned t2 to t3
+if t3.E <> t2.E || t3.NestdRecTy.B <> t2.NestdRecTy.B then exit 1
