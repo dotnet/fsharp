@@ -124,7 +124,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Enable stale results in IntelliSense completion lists.
+        ///   Looks up a localized string similar to Enable stale data for IntelliSense features.
         /// </summary>
         public static string Enable_Stale_IntelliSense_Results {
             get {
@@ -169,7 +169,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Project check cache size.
+        ///   Looks up a localized string similar to Number of projects whose data is cached in memory.
         /// </summary>
         public static string Project_check_cache_size {
             get {
@@ -259,11 +259,29 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Time until stale results for completion (in milliseconds).
+        ///   Looks up a localized string similar to Time until stale results are used (in milliseconds).
         /// </summary>
         public static string Time_until_stale_completion {
             get {
                 return ResourceManager.GetString("Time_until_stale_completion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to In-memory cross-project references store project-level data in memory to allow IDE features to work across projects..
+        /// </summary>
+        public static string Tooltip_in_memory_cross_project_references {
+            get {
+                return ResourceManager.GetString("Tooltip_in_memory_cross_project_references", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Data from projects is kept in memory to enable cross-project IDE features. Higher values use more memory. Lower values incur more computational work..
+        /// </summary>
+        public static string Tooltip_project_check_cache_size {
+            get {
+                return ResourceManager.GetString("Tooltip_project_check_cache_size", resourceCulture);
             }
         }
         

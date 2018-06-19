@@ -58,8 +58,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Project_check_cache_size">
-        <source>Project check cache size</source>
-        <target state="new">Project check cache size</target>
+        <source>Number of projects whose data is cached in memory</source>
+        <target state="new">Number of projects whose data is cached in memory</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -108,8 +108,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Time_until_stale_completion">
-        <source>Time until stale results for completion (in milliseconds)</source>
-        <target state="new">Time until stale results for completion (in milliseconds)</target>
+        <source>Time until stale results are used (in milliseconds)</source>
+        <target state="new">Time until stale results are used (in milliseconds)</target>
         <note />
       </trans-unit>
       <trans-unit id="IntelliSense_Performance">
@@ -123,8 +123,18 @@
         <note />
       </trans-unit>
       <trans-unit id="Enable_Stale_IntelliSense_Results">
-        <source>Enable stale results in IntelliSense completion lists</source>
-        <target state="new">Enable stale results in IntelliSense completion lists</target>
+        <source>Enable stale data for IntelliSense features</source>
+        <target state="new">Enable stale data for IntelliSense features</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_in_memory_cross_project_references">
+        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
+        <target state="new">In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_project_check_cache_size">
+        <source>Data from projects is kept in memory to enable cross-project IDE features. Higher values use more memory. Lower values incur more computational work.</source>
+        <target state="new">Data from projects is kept in memory to enable cross-project IDE features. Higher values use more memory. Lower values incur more computational work.</target>
         <note />
       </trans-unit>
     </body>
