@@ -208,6 +208,8 @@ module CoreTests =
 
         let cfg = testConfig "core/span"
 
+        let cfg = { cfg with fsc_flags = sprintf "%s --test:StackSpan" cfg.fsc_flags}
+
         begin
             use testOkFile = fileguard cfg "test.ok"
 

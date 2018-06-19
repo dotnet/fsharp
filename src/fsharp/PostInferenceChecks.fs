@@ -149,6 +149,7 @@ type cenv =
       viewCcu : CcuThunk
       reportErrors: bool
       isLastCompiland : bool*bool
+      isInternalTestSpanStackReferring: bool
       // outputs
       mutable usesQuotations : bool
       mutable entryPointGiven:bool  }
@@ -175,7 +176,7 @@ let GetLimitVal cenv env m (v: Val) =
     if isSpanLikeTy cenv.g m v.Type then
         // The value is a limited Span or might have become one through mutation
         let isLocal = IsValLocal env v
-        let isMutableLocal = isLocal && v.IsMutable 
+        let isMutableLocal = isLocal && v.IsMutable && cenv.isInternalTestSpanStackReferring
         let isLimitedLocal = isLocal && HasLimitFlag LimitFlags.StackReferringSpanLike limit
         if isMutableLocal || isLimitedLocal then
             LimitFlags.StackReferringSpanLike
@@ -2068,7 +2069,7 @@ and CheckModuleSpec cenv env x =
         let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
         CheckDefnInModule cenv env rhs 
 
-let CheckTopImpl (g,amap,reportErrors,infoReader,internalsVisibleToPaths,viewCcu,denv ,mexpr,extraAttribs,(isLastCompiland:bool*bool)) =
+let CheckTopImpl (g,amap,reportErrors,infoReader,internalsVisibleToPaths,viewCcu,denv ,mexpr,extraAttribs,(isLastCompiland:bool*bool),isInternalTestSpanStackReferring) =
     let cenv = 
         { g =g  
           reportErrors=reportErrors 
@@ -2081,7 +2082,8 @@ let CheckTopImpl (g,amap,reportErrors,infoReader,internalsVisibleToPaths,viewCcu
           amap=amap 
           denv=denv 
           viewCcu= viewCcu
-          isLastCompiland=isLastCompiland 
+          isLastCompiland=isLastCompiland
+          isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
           entryPointGiven=false}
     
     // Certain type equality checks go faster if these TyconRefs are pre-resolved.
