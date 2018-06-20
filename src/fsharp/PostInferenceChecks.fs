@@ -1037,7 +1037,9 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         CheckTypeInstNoByrefs cenv env m methTypeArgs
         CheckTypeInstPermitAllByrefs cenv env m tys // permit byref returns
 
-        let hasReceiver = methRef.CallingConv.IsInstance || methRef.CallingConv.IsInstanceExplicit
+        let hasReceiver = 
+            (methRef.CallingConv.IsInstance || methRef.CallingConv.IsInstanceExplicit) &&
+            not args.IsEmpty
 
         let returnTy = tyOfExpr g expr
         match tys with
