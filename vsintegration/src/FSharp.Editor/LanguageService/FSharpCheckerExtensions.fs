@@ -9,10 +9,6 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-type CheckResults =
-    | Ready of (FSharpParseFileResults * FSharpCheckFileResults) option
-    | StillRunning of Async<(FSharpParseFileResults * FSharpCheckFileResults) option>
-    
 type FSharpChecker with
     member checker.ParseDocument(document: Document, parsingOptions: FSharpParsingOptions, sourceText: string, userOpName: string) =
         asyncMaybe {
@@ -35,15 +31,14 @@ type FSharpChecker with
                         Some (parseResults, checkFileResults)
             }
 
-        let tryGetFreshResultsWithTimeout() : Async<CheckResults> =
-            async {
-                try
-                    let! worker = Async.StartChild(parseAndCheckFile, 2000)
-                    let! result = worker 
-                    return Ready result
-                with :? TimeoutException ->
-                    return StillRunning parseAndCheckFile
-            }
+            let tryGetFreshResultsWithTimeout() =
+                async {
+                    let! worker = Async.StartChild(parseAndCheckFile, millisecondsTimeout=Settings.LanguageServicePerformance.TimeUntilStaleCompletion)
+                    try
+                        return! worker
+                    with :? TimeoutException ->
+                        return None // worker is cancelled at this point, we cannot return it and wait its completion anymore
+                }
 
         let bindParsedInput(results: (FSharpParseFileResults * FSharpCheckFileResults) option) =
             match results with
@@ -59,18 +54,20 @@ type FSharpChecker with
                     
                 let! results =
                     match freshResults with
-                    | Ready x -> async.Return x
-                    | StillRunning worker ->
+                    | Some x -> async.Return (Some x)
+                    | None ->
                         async {
                             match checker.TryGetRecentCheckResultsForFile(filePath, options) with
                             | Some (parseResults, checkFileResults, _) ->
                                 return Some (parseResults, checkFileResults)
                             | None ->
-                                return! worker
+                                return! parseAndCheckFile
                         }
                 return bindParsedInput results
-            }
-        else parseAndCheckFile |> Async.map bindParsedInput
+            else 
+                let! results = parseAndCheckFile
+                return bindParsedInput results
+        }
 
 
     member checker.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, allowStaleResults: bool, userOpName: string, ?sourceText: SourceText) =
