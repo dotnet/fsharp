@@ -756,10 +756,14 @@ and CheckCall cenv env m returnTy args contexts context =
 
 /// Check call arguments, including the return argument. The receiver argument is handled differently.
 and CheckCallWithReceiver cenv env m returnTy args contexts context =
-    match args, contexts with
-    | [], _
-    | _, [] -> failwith "CheckCallWithReceiver: Argument list is empty."
-    | receiverArg :: args, receiverContext :: contexts ->
+    match args with
+    | [] -> failwith "CheckCallWithReceiver: Argument list is empty."
+    | receiverArg :: args ->
+
+        let receiverContext, contexts =
+            match contexts with
+            | [] -> PermitByRefExpr.No, []
+            | context :: contexts -> context, contexts
 
         let receiverLimit = CheckExpr cenv env receiverArg receiverContext
         let limitArgs = 
