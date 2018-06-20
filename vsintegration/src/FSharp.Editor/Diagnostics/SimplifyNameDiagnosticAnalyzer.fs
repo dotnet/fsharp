@@ -62,7 +62,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                 | _ ->
                     let! sourceText = document.GetTextAsync()
                     let checker = getChecker document
-                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = true, userOpName=userOpName)
+                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = Settings.LanguageServicePerformance.AllowStaleCompletionResults, userOpName=userOpName)
                     let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
                     let mutable result = ResizeArray()
                     let symbolUses =
