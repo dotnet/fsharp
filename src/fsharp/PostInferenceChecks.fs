@@ -842,9 +842,9 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
             NoLimit
 
     | Expr.Let ((TBind(v,_,_) as bind),body,_,_) ->  
-        let limit = CheckBinding cenv env false bind  
+        let limit = CheckBinding { cenv with scope = cenv.scope + 1 } env false bind  
         BindVal cenv env v
-        LimitVal cenv v { limit with maxScope = cenv.scope }
+        LimitVal cenv v { limit with maxScope = if limit.flags = LimitFlags.None then cenv.scope else limit.maxScope }
         CheckExpr cenv env body context
 
     | Expr.Const (_,m,ty) -> 
@@ -1370,7 +1370,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
         let limit = 
             if not inlined && (isByrefLikeTy g m ety || isNativePtrTy g ety) then
                 // allow byref to occur as RHS of byref binding. 
-                CheckExprPermitByRefLike cenv env e
+                CheckExprPermitReturnableByRef cenv env e
             else 
                 CheckExprNoByrefs cenv env e
                 NoLimit
