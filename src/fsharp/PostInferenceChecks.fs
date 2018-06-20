@@ -733,7 +733,7 @@ and CheckCallLimitArgs cenv m (returnTy: TType) limitArgs (context: PermitByRefE
          HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limitArgs)
 
     if cenv.reportErrors then
-        if context.PermitOnlyReturnable && (isReturnLimitedByRef || isReturnLimitedSpanLike) then
+        if context.PermitOnlyReturnable && (isReturnLimitedByRef || isReturnLimitedSpanLike) && limitArgs.maxScope >= cenv.scope then
             if isReturnLimitedSpanLike then
                 errorR(Error(FSComp.SR.chkNoSpanLikeValueFromExpression(), m))
             else
