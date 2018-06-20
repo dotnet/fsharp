@@ -188,6 +188,12 @@ namespace Tests
 
 #endif
 
+        let should_not_work33 (x: int) = &x
+
+        let should_not_work34 (x: int) =
+            let y = &x
+            &y
+
 #endif
 
         let should_work1 () =
@@ -310,3 +316,9 @@ namespace Tests
             srl.value <- s
 
 #endif
+
+        let should_work27 (s: Span<int>) = &s.[0]
+
+        let should_work28 (s: Span<int>) =
+            let y = &s.[0]
+            &y
