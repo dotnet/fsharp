@@ -4,6 +4,7 @@
 /// is complete.
 module internal Microsoft.FSharp.Compiler.PostTypeCheckSemanticChecks
 
+open System
 open System.Collections.Generic
 
 open Microsoft.FSharp.Compiler
