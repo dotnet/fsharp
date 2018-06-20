@@ -930,7 +930,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : LimitFl
 
         let hasReceiver =
             match f with
-            | Expr.Val(vref, _, _) when vref.IsInstanceMember -> true
+            | Expr.Val(vref, _, _) when vref.IsInstanceMember && not argsl.IsEmpty -> true
             | _ -> false
 
         let returnTy = tyOfExpr g expr
