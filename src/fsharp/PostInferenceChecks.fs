@@ -208,7 +208,7 @@ let GetLimitValByRef cenv env m v =
     if HasLimitFlag LimitFlags.StackReferringSpanLike limit then
         LimitFlags.LocalByRefOfStackReferringSpanLike
 
-    elif IsValLocal env v then
+    elif IsValLocal env v || IsValArgument env v then
         if HasLimitFlag LimitFlags.SpanLike limit then
             LimitFlags.LocalByRefOfSpanLike
         else
@@ -754,15 +754,40 @@ and CheckCall cenv env m returnTy args contexts context =
     let limitArgs = CheckExprs cenv env args contexts
     CheckCallLimitArgs cenv m returnTy limitArgs context
 
+/// Check call arguments, including the return argument. The receiver argument is handled differently.
+and CheckCallWithReceiver cenv env m returnTy args contexts context =
+    match args, contexts with
+    | [], _
+    | _, [] -> failwith "CheckCallWithReceiver: Argument list is empty."
+    | receiverArg :: args, receiverContext :: contexts ->
+
+        let receiverLimit = CheckExpr cenv env receiverArg receiverContext
+        let limitArgs = 
+            let limitArgs = CheckExprs cenv env args contexts
+            // We do not include the receiver's limit in the limit args unless the receiver is a stack referring span-like.
+            if HasLimitFlag LimitFlags.StackReferringSpanLike receiverLimit || HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike receiverLimit then
+                limitArgs ||| receiverLimit
+            else
+                limitArgs
+        CheckCallLimitArgs cenv m returnTy limitArgs context
+
 /// Check call arguments, including the return argument. Permits returnable byref.
 and CheckCallPermitReturnableByRef cenv env m returnTy args =
-    let limitArgs = CheckExprsPermitReturnableByRef cenv env args
+    let limitArgs = CheckExprsPermitByRefLike cenv env args
     CheckCallLimitArgs cenv m returnTy limitArgs PermitByRefExpr.YesReturnable
+
+/// Check call arguments, including the return argument. The receiver argument is handled differently. Permits returnable byref.
+and CheckCallWithReceiverPermitReturnableByRef cenv env m returnTy args =
+    CheckCallWithReceiver cenv env m returnTy args (List.init args.Length (fun _ -> PermitByRefExpr.Yes)) PermitByRefExpr.YesReturnable
 
 /// Check call arguments, including the return argument. Permits byref.
 and CheckCallPermitByRefLike cenv env m returnTy args =
     let limitArgs = CheckExprsPermitByRefLike cenv env args
     CheckCallLimitArgs cenv m returnTy limitArgs PermitByRefExpr.Yes
+
+/// Check call arguments, including the return argument. The receiver argument is handled differently. Permits byref.
+and CheckCallWithReceiverPermitByRefLike cenv env m returnTy args =
+    CheckCallWithReceiver cenv env m returnTy args (List.init args.Length (fun _ -> PermitByRefExpr.Yes)) PermitByRefExpr.Yes
 
 /// Check an expression, given information about the position of the expression
 and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : LimitFlags =    
@@ -898,7 +923,18 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : LimitFl
     | Expr.App(f,_fty,tyargs,argsl,m) ->
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprNoByrefs cenv env f
-        CheckCall cenv env m (tyOfExpr g expr) argsl (mkArgsForAppliedExpr false argsl f) context
+
+        let hasReceiver =
+            match f with
+            | Expr.Val(vref, _, _) when vref.IsInstanceMember -> true
+            | _ -> false
+
+        let returnTy = tyOfExpr g expr
+        let contexts = mkArgsForAppliedExpr false argsl f
+        if hasReceiver then
+            CheckCallWithReceiver cenv env m returnTy argsl contexts context
+        else
+            CheckCall cenv env m returnTy argsl contexts context
 
     | Expr.Lambda(_,_ctorThisValOpt,_baseValOpt,argvs,_,m,rty) -> 
         let topValInfo = ValReprInfo ([],[argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)],ValReprInfo.unnamedRetVal) 
@@ -991,17 +1027,26 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         let limit2 = CheckExpr cenv env e3 context // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
         limit1 ||| limit2
         
-    | TOp.ILCall (_,_,_,_,_,_,_,_,enclTypeArgs,methTypeArgs,tys),_,_ ->
+    | TOp.ILCall (_,_,_,_,_,_,_,methRef,enclTypeArgs,methTypeArgs,tys),_,_ ->
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckTypeInstNoByrefs cenv env m enclTypeArgs
         CheckTypeInstNoByrefs cenv env m methTypeArgs
         CheckTypeInstPermitAllByrefs cenv env m tys // permit byref returns
 
+        let hasReceiver = methRef.CallingConv.IsInstance || methRef.CallingConv.IsInstanceExplicit
+
         let returnTy = tyOfExpr g expr
-        // if return is a byref, and being used as a return, then all arguments must be usable as byref returns	
         match tys with
-        | [ty] when context.PermitOnlyReturnable && isByrefLikeTy g m ty -> CheckCallPermitReturnableByRef cenv env m returnTy args
-        | _ -> CheckCallPermitByRefLike cenv env m returnTy args
+        | [ty] when context.PermitOnlyReturnable && isByrefLikeTy g m ty -> 
+            if hasReceiver then
+                CheckCallWithReceiverPermitReturnableByRef cenv env m returnTy args
+            else
+                CheckCallPermitReturnableByRef cenv env m returnTy args
+        | _ -> 
+            if hasReceiver then
+                CheckCallWithReceiverPermitByRefLike cenv env m returnTy args
+            else
+                CheckCallPermitByRefLike cenv env m returnTy args
 
     | TOp.Tuple tupInfo,_,_ when not (evalTupInfoIsStruct tupInfo) ->           
         match context with 
@@ -1017,6 +1062,10 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
             CheckExprsNoByRefLike cenv env args 
 
     | TOp.LValueOp(LAddrOf _,vref),_,_ -> 
+        let limit1 = GetLimitValByRef cenv env m vref.Deref
+        let limit2 = CheckExprsNoByRefLike cenv env args
+        let limit = limit1 ||| limit2
+
         if cenv.reportErrors  then 
 
             if context.Disallow then 
@@ -1024,7 +1073,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
             
             let returningAddrOfLocal = 
                 context.PermitOnlyReturnable && 
-                IsValLocal env vref.Deref
+                HasLimitFlag LimitFlags.LocalByRef limit
             
             if returningAddrOfLocal then 
                 if vref.IsCompilerGenerated then
@@ -1032,9 +1081,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
                 else
                     errorR(Error(FSComp.SR.chkNoByrefAddressOfLocal(vref.DisplayName), m))
 
-        let limit1 = GetLimitValByRef cenv env m vref.Deref
-        let limit2 = CheckExprsNoByRefLike cenv env args
-        limit1 ||| limit2
+        limit
 
     | TOp.LValueOp(LByrefSet,vref),_,[arg] -> 
         let limit = GetLimitVal cenv env m vref.Deref
