@@ -194,7 +194,7 @@ let GetLimitVal cenv env m (v: Val) =
     let limit =
         match cenv.limitVals.TryGetValue(v.Stamp) with
         | true, limit -> limit
-        | _ -> NoLimit
+        | _ -> { NoLimit with maxScope = cenv.scope }
 
     if isSpanLikeTy cenv.g m v.Type then
         // The value is a limited Span or might have become one through mutation
@@ -232,16 +232,19 @@ let GetLimitValByRef cenv env m v =
         { limit with flags = LimitFlags.LocalByRefOfStackReferringSpanLike }
 
     elif IsValLocal env v || IsValArgument env v then
+        let scope = 
+            if IsValArgument env v then 1
+            else limit.maxScope
         if HasLimitFlag LimitFlags.SpanLike limit then
-            { limit with flags = LimitFlags.LocalByRefOfSpanLike }
+            { maxScope = scope; flags = LimitFlags.LocalByRefOfSpanLike }
         else
-            { limit with flags = LimitFlags.LocalByRef }
+            { maxScope = scope; flags = LimitFlags.LocalByRef }
 
     elif HasLimitFlag LimitFlags.SpanLike limit then
-        { limit with flags = LimitFlags.ByRefOfSpanLike }
+        { maxScope = 0; flags = LimitFlags.ByRefOfSpanLike }
 
     else
-        { limit with flags = LimitFlags.None }
+        { maxScope = 0; flags = LimitFlags.None }
 
 let LimitVal cenv (v:Val) limit = 
     cenv.limitVals.[v.Stamp] <- limit
@@ -648,7 +651,8 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: Perm
         let isReturnExprBuiltUsingStackReferringByRefLike = 
             context.PermitOnlyReturnable &&
             (HasLimitFlag LimitFlags.LocalByRef limit ||
-             HasLimitFlag LimitFlags.StackReferringSpanLike limit)
+             HasLimitFlag LimitFlags.StackReferringSpanLike limit) &&
+             limit.maxScope >= cenv.scope
 
         if isReturnExprBuiltUsingStackReferringByRefLike then
             let isSpanLike = isSpanLikeTy g m vref.Type
@@ -839,12 +843,8 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
 
     | Expr.Let ((TBind(v,_,_) as bind),body,_,_) ->  
         let limit = CheckBinding cenv env false bind  
-
         BindVal cenv env v
-
-        if limit.maxScope > 0 || limit.flags <> LimitFlags.None then
-            LimitVal cenv v limit
-
+        LimitVal cenv v { limit with maxScope = cenv.scope }
         CheckExpr cenv env body context
 
     | Expr.Const (_,m,ty) -> 
@@ -1103,7 +1103,8 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
             
             let returningAddrOfLocal = 
                 context.PermitOnlyReturnable && 
-                HasLimitFlag LimitFlags.LocalByRef limit
+                HasLimitFlag LimitFlags.LocalByRef limit &&
+                limit.maxScope >= cenv.scope
             
             if returningAddrOfLocal then 
                 if vref.IsCompilerGenerated then
