@@ -57,10 +57,10 @@ type FSharpChecker with
                     | Some x -> async.Return (Some x)
                     | None ->
                         async {
-                            match allowStaleResults, checker.TryGetRecentCheckResultsForFile(filePath, options) with
-                            | true, Some (parseResults, checkFileResults, _) ->
+                            match checker.TryGetRecentCheckResultsForFile(filePath, options) with
+                            | Some (parseResults, checkFileResults, _) ->
                                 return Some (parseResults, checkFileResults)
-                            | _ ->
+                            | None ->
                                 return! parseAndCheckFile
                         }
                 return bindParsedInput results
