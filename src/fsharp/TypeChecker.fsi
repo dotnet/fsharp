@@ -39,14 +39,14 @@ val EmptyTopAttrs : TopAttribs
 val CombineTopAttrs : TopAttribs -> TopAttribs -> TopAttribs
 
 val TypeCheckOneImplFile : 
-      TcGlobals * NiceNameGenerator * ImportMap * CcuThunk * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink
+      TcGlobals * NiceNameGenerator * ImportMap * CcuThunk * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink * bool
       -> TcEnv 
       -> Tast.ModuleOrNamespaceType option
       -> ParsedImplFileInput
       -> Eventually<TopAttribs * Tast.TypedImplFile * ModuleOrNamespaceType * TcEnv * bool>
 
 val TypeCheckOneSigFile : 
-      TcGlobals * NiceNameGenerator * ImportMap * CcuThunk  * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink 
+      TcGlobals * NiceNameGenerator * ImportMap * CcuThunk  * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink * bool
       -> TcEnv                             
       -> ParsedSigFileInput
       -> Eventually<TcEnv * ModuleOrNamespaceType * bool>

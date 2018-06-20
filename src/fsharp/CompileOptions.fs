@@ -832,6 +832,7 @@ let advancedFlagsFsc tcConfigB =
 let testFlag tcConfigB = 
         CompilerOption("test", tagString, OptionString (fun s -> 
                                             match s with
+                                            | "StackSpan"        -> tcConfigB.internalTestSpanStackReferring <- true
                                             | "ErrorRanges"      -> tcConfigB.errorStyle <- ErrorStyle.TestErrors
                                             | "MemberBodyRanges" -> PostTypeCheckSemanticChecks.testFlagMemberBody := true
                                             | "Tracking"         -> Lib.tracking := true (* general purpose on/off diagnostics flag *)
