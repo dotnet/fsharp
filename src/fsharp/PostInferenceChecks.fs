@@ -172,6 +172,7 @@ type cenv =
       reportErrors: bool
       isLastCompiland : bool*bool
       isInternalTestSpanStackReferring: bool
+      scope: int
       // outputs
       mutable usesQuotations : bool
       mutable entryPointGiven:bool  }
@@ -965,12 +966,12 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
     | Expr.Lambda(_,_ctorThisValOpt,_baseValOpt,argvs,_,m,rty) -> 
         let topValInfo = ValReprInfo ([],[argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)],ValReprInfo.unnamedRetVal) 
         let ty = mkMultiLambdaTy m argvs rty in 
-        CheckLambdas false None cenv env false topValInfo false expr m ty
+        CheckLambdas false None { cenv with scope = cenv.scope + 1 } env false topValInfo false expr m ty
 
     | Expr.TyLambda(_,tps,_,m,rty)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps,[],ValReprInfo.unnamedRetVal) 
         let ty = mkForallTyIfNeeded tps rty in 
-        CheckLambdas false None cenv env false topValInfo false expr m ty
+        CheckLambdas false None { cenv with scope = cenv.scope + 1 } env false topValInfo false expr m ty
 
     | Expr.TyChoose(tps,e1,_)  -> 
         let env = BindTypars g env tps 
@@ -978,9 +979,10 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
         NoLimit
 
     | Expr.Match(_,_,dtree,targets,m,ty) -> 
+        let cenv = { cenv with scope = cenv.scope + 1 }
         CheckTypePermitAllByrefs cenv env m ty // computed byrefs allowed at each branch
         CheckDecisionTree cenv env dtree
-        CheckDecisionTreeTargets cenv env targets context
+        CheckDecisionTreeTargets cenv env targets PermitByRefExpr.YesReturnable
 
     | Expr.LetRec (binds,e,_,_) ->  
         BindVals cenv env (valsOfBinds binds)
@@ -1300,6 +1302,8 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
 
     | Expr.Lambda (_,_,_,_,_,m,_)  
     | Expr.TyLambda(_,_,_,m,_) ->
+
+        let cenv = { cenv with scope = cenv.scope + 1 }
 
         let tps,ctorThisValOpt,baseValOpt,vsl,body,bodyty = destTopLambda g cenv.amap topValInfo (e, ety) in
         let env = BindTypars g env tps 
@@ -2159,6 +2163,7 @@ let CheckTopImpl (g,amap,reportErrors,infoReader,internalsVisibleToPaths,viewCcu
           viewCcu= viewCcu
           isLastCompiland=isLastCompiland
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
+          scope = 0
           entryPointGiven=false}
     
     // Certain type equality checks go faster if these TyconRefs are pre-resolved.
