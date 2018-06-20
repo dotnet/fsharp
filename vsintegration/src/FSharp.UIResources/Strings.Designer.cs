@@ -169,6 +169,24 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Enable stale data for IntelliSense features.
+        /// </summary>
+        public static string Enable_Stale_IntelliSense_Results {
+            get {
+                return ResourceManager.GetString("Enable_Stale_IntelliSense_Results", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IntelliSense Performance Options.
+        /// </summary>
+        public static string IntelliSense_Performance {
+            get {
+                return ResourceManager.GetString("IntelliSense_Performance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Performance.
         /// </summary>
         public static string Language_Service_Performance {
@@ -196,11 +214,20 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Project check cache size.
+        ///   Looks up a localized string similar to Number of projects whose data is cached in memory.
         /// </summary>
         public static string Project_check_cache_size {
             get {
                 return ResourceManager.GetString("Project_check_cache_size", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to F# Project and Caching Performance Options.
+        /// </summary>
+        public static string Project_Performance {
+            get {
+                return ResourceManager.GetString("Project_Performance", resourceCulture);
             }
         }
         
@@ -273,6 +300,33 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Solid_underline {
             get {
                 return ResourceManager.GetString("Solid_underline", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Time until stale results are used (in milliseconds).
+        /// </summary>
+        public static string Time_until_stale_completion {
+            get {
+                return ResourceManager.GetString("Time_until_stale_completion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to In-memory cross-project references store project-level data in memory to allow IDE features to work across projects..
+        /// </summary>
+        public static string Tooltip_in_memory_cross_project_references {
+            get {
+                return ResourceManager.GetString("Tooltip_in_memory_cross_project_references", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions..
+        /// </summary>
+        public static string Tooltip_project_check_cache_size {
+            get {
+                return ResourceManager.GetString("Tooltip_project_check_cache_size", resourceCulture);
             }
         }
         
