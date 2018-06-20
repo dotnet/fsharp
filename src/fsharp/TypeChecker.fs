@@ -507,10 +507,11 @@ type cenv =
       /// The set of active conditional defines
       conditionalDefines: string list
             
+      isInternalTestSpanStackReferring: bool
     } 
 
     /// Create a new compilation environment
-    static member Create (g, isScript, niceNameGen, amap, topCcu, isSig, haveSig, conditionalDefines, tcSink, tcVal) =
+    static member Create (g, isScript, niceNameGen, amap, topCcu, isSig, haveSig, conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring) =
         let infoReader = new InfoReader(g, amap)
         let instantiationGenerator m tpsorig = ConstraintSolver.FreshenTypars m tpsorig
         let nameResolver = new NameResolver(g, amap, infoReader, instantiationGenerator)
@@ -530,7 +531,8 @@ type cenv =
           isSig = isSig
           haveSig = haveSig
           compilingCanonicalFslibModuleType = (isSig || not haveSig) && g.compilingFslib
-          conditionalDefines = conditionalDefines }
+          conditionalDefines = conditionalDefines
+          isInternalTestSpanStackReferring = isInternalTestSpanStackReferring }
 
     override __.ToString() = "cenv(...)"
 
@@ -17222,13 +17224,13 @@ let CheckModuleSignature g cenv m denvAtEnd rootSigOpt implFileTypePriorToSig im
 /// Typecheck, then close the inference scope and then check the file meets its signature (if any)
 let TypeCheckOneImplFile 
        // checkForErrors: A function to help us stop reporting cascading errors 
-       (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink) 
+       (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) 
        env 
        (rootSigOpt : ModuleOrNamespaceType option)
        (ParsedImplFileInput(_, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland)) =
 
  eventually {
-    let cenv = cenv.Create (g, isScript, niceNameGen, amap, topCcu, false, Option.isSome rootSigOpt, conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g))    
+    let cenv = cenv.Create (g, isScript, niceNameGen, amap, topCcu, false, Option.isSome rootSigOpt, conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring)    
 
     let envinner, mtypeAcc = MakeInitialEnv env 
 
@@ -17292,7 +17294,7 @@ let TypeCheckOneImplFile
         conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
             try  
                 let reportErrors = not (checkForErrors())
-                PostTypeCheckSemanticChecks.CheckTopImpl (g, cenv.amap, reportErrors, cenv.infoReader, env.eInternalsVisibleCompPaths, cenv.topCcu, envAtEnd.DisplayEnv, implFileExprAfterSig, extraAttribs, isLastCompiland)
+                PostTypeCheckSemanticChecks.CheckTopImpl (g, cenv.amap, reportErrors, cenv.infoReader, env.eInternalsVisibleCompPaths, cenv.topCcu, envAtEnd.DisplayEnv, implFileExprAfterSig, extraAttribs, isLastCompiland, isInternalTestSpanStackReferring)
             with e -> 
                 errorRecovery e m
                 false)
@@ -17320,9 +17322,9 @@ let TypeCheckOneImplFile
 
 
 /// Check an entire signature file
-let TypeCheckOneSigFile  (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink) tcEnv (ParsedSigFileInput(_, qualNameOfFile, _, _, sigFileFrags)) = 
+let TypeCheckOneSigFile  (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput(_, qualNameOfFile, _, _, sigFileFrags)) = 
  eventually {     
-    let cenv = cenv.Create (g, false, niceNameGen, amap, topCcu, true, false, conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g))
+    let cenv = cenv.Create (g, false, niceNameGen, amap, topCcu, true, false, conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring)
     let envinner, mtypeAcc = MakeInitialEnv tcEnv 
 
     let specs = [ for x in sigFileFrags -> SynModuleSigDecl.NamespaceFragment(x) ]
