@@ -17,19 +17,24 @@
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <GroupBox Header="{x:Static local:Strings.Language_Service_Performance}">
+                <GroupBox Header="{x:Static local:Strings.Project_Performance}">
                     <StackPanel>
-                        <CheckBox x:Name="enableInMemoryCrossProjectReferences" IsChecked="{Binding EnableInMemoryCrossProjectReferences}"
-                      Content="{x:Static local:Strings.Enable_in_memory_cross_project_references}"/>
+                        <CheckBox x:Name="enableInMemoryCrossProjectReferences"
+                                  IsChecked="{Binding EnableInMemoryCrossProjectReferences}"
+                                  Content="{x:Static local:Strings.Enable_in_memory_cross_project_references}"
+                                  ToolTip="{x:Static local:Strings.Tooltip_in_memory_cross_project_references}"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="auto"/>
                                 <ColumnDefinition Width="70" />
                             </Grid.ColumnDefinitions>
-                            <Label Grid.Column="0" x:Name="projectCheckCacheSizeLabel" Content="{x:Static local:Strings.Project_check_cache_size}"/>
+                            <Label Grid.Column="0"
+                                   x:Name="projectCheckCacheSizeLabel"
+                                   Content="{x:Static local:Strings.Project_check_cache_size}"
+                                   ToolTip="{x:Static local:Strings.Tooltip_project_check_cache_size}"/>
                             <TextBox Grid.Column="1" 
-                                HorizontalContentAlignment="Right" 
-                                VerticalContentAlignment="Center">
+                                     HorizontalContentAlignment="Right" 
+                                     VerticalContentAlignment="Center">
                                 <TextBox.Text>
                                     <Binding UpdateSourceTrigger="PropertyChanged" Path="ProjectCheckCacheSize">
                                         <Binding.ValidationRules>
@@ -38,6 +43,35 @@
                                     </Binding>
                                 </TextBox.Text>
                             </TextBox>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.IntelliSense_Performance}">
+                    <StackPanel>
+                        <CheckBox x:Name="enableStaleIntelliSenseResults"
+                                  IsChecked="{Binding AllowStaleCompletionResults}"
+                                  Content="{x:Static local:Strings.Enable_Stale_IntelliSense_Results}"/>
+                        <Grid IsEnabled="{Binding IsChecked, ElementName=enableStaleIntelliSenseResults}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="auto"/>
+                                <ColumnDefinition Width="70" />
+                            </Grid.ColumnDefinitions>
+                                <Label Grid.Column="0"
+                                   x:Name="timeUntilStaleIntelliSenseLabel"
+                                   Content="{x:Static local:Strings.Time_until_stale_completion}"
+                                   Margin="15 0 0 0"/>
+                                <TextBox Grid.Column="1"
+                                     HorizontalContentAlignment="Right" 
+                                     VerticalContentAlignment="Center">
+                                    <TextBox.Text>
+                                        <Binding UpdateSourceTrigger="PropertyChanged" Path="TimeUntilStaleCompletion">
+                                            <Binding.ValidationRules>
+                                                <local:IntegerRangeValidationRule Min="0" Max="10000"/>
+                                                <!-- If people truly want more than 10 seconds before stale results come in, they can open an issue on VisualFSharp. -->
+                                            </Binding.ValidationRules>
+                                        </Binding>
+                                    </TextBox.Text>
+                                </TextBox>
                         </Grid>
                     </StackPanel>
                 </GroupBox>
