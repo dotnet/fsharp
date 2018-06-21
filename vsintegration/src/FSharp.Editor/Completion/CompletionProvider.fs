@@ -103,7 +103,7 @@ type internal FSharpCompletionProvider
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, 
                                              textVersionHash: int, getAllSymbols: FSharpCheckFileResults -> AssemblySymbol list) = 
         asyncMaybe {
-            let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true, userOpName = userOpName)
+            let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = Settings.LanguageServicePerformance.AllowStaleCompletionResults, userOpName = userOpName)
 
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(caretPosition)

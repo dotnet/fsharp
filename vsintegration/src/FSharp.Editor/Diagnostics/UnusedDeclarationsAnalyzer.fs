@@ -110,7 +110,7 @@ type internal UnusedDeclarationsAnalyzer() =
             | Some (_parsingOptions, projectOptions) ->
                 let! sourceText = document.GetTextAsync()
                 let checker = getChecker document
-                let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
+                let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = Settings.LanguageServicePerformance.AllowStaleCompletionResults, userOpName = userOpName)
                 let! allSymbolUsesInFile = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
                 let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile (isScriptFile document.FilePath)
                 return

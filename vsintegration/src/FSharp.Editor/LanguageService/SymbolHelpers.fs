@@ -33,7 +33,7 @@ module internal SymbolHelpers =
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document) 
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document.FilePath, textVersionHash, sourceText.ToString(), projectOptions, allowStaleResults = true, userOpName = userOpName) 
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document.FilePath, textVersionHash, sourceText.ToString(), projectOptions, allowStaleResults = Settings.LanguageServicePerformance.AllowStaleCompletionResults, userOpName = userOpName) 
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=userOpName)
             let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol) |> liftAsync
             return symbolUses
@@ -106,7 +106,7 @@ module internal SymbolHelpers =
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, symbolSpan.Start, document.FilePath, defines, SymbolLookupKind.Greedy, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = true, userOpName = userOpName)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = Settings.LanguageServicePerformance.AllowStaleCompletionResults, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(symbolSpan.Start)
             let textLinePos = sourceText.Lines.GetLinePosition(symbolSpan.Start)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line

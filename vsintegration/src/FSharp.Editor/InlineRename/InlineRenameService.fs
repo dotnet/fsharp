@@ -149,7 +149,7 @@ type internal InlineRenameService
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true, userOpName = userOpName)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = Settings.LanguageServicePerformance.AllowStaleCompletionResults, userOpName = userOpName)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland, userOpName=userOpName)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
 
