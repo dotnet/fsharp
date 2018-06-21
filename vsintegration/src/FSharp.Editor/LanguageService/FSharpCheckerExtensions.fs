@@ -20,16 +20,17 @@ type FSharpChecker with
         checker.ParseDocument(document, parsingOptions, sourceText=sourceText.ToString(), userOpName=userOpName)
 
     member checker.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, allowStaleResults: bool, userOpName: string) =
-        let parseAndCheckFile =
-            async {
-                let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options, userOpName=userOpName)
-                return
-                    match checkFileAnswer with
-                    | FSharpCheckFileAnswer.Aborted -> 
-                        None
-                    | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
-                        Some (parseResults, checkFileResults)
-            }
+        async {
+            let parseAndCheckFile =
+                async {
+                    let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options, userOpName=userOpName)
+                    return
+                        match checkFileAnswer with
+                        | FSharpCheckFileAnswer.Aborted -> 
+                            None
+                        | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
+                            Some (parseResults, checkFileResults)
+                }
 
             let tryGetFreshResultsWithTimeout() =
                 async {
@@ -40,16 +41,15 @@ type FSharpChecker with
                         return None // worker is cancelled at this point, we cannot return it and wait its completion anymore
                 }
 
-        let bindParsedInput(results: (FSharpParseFileResults * FSharpCheckFileResults) option) =
-            match results with
-            | Some(parseResults, checkResults) ->
-                match parseResults.ParseTree with
-                | Some parsedInput -> Some (parseResults, parsedInput, checkResults)
+            let bindParsedInput(results: (FSharpParseFileResults * FSharpCheckFileResults) option) =
+                match results with
+                | Some(parseResults, checkResults) ->
+                    match parseResults.ParseTree with
+                    | Some parsedInput -> Some (parseResults, parsedInput, checkResults)
+                    | None -> None
                 | None -> None
-            | None -> None
 
-        if allowStaleResults then
-            async {
+            if allowStaleResults then
                 let! freshResults = tryGetFreshResultsWithTimeout()
                     
                 let! results =
@@ -68,7 +68,6 @@ type FSharpChecker with
                 let! results = parseAndCheckFile
                 return bindParsedInput results
         }
-
 
     member checker.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, allowStaleResults: bool, userOpName: string, ?sourceText: SourceText) =
         async {
