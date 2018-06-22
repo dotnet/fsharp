@@ -54,6 +54,8 @@ Each test case runs an optional "pre command," compiles a given set of source fi
 
 If all of these steps complete without issue, the test is considered to have passed.
 
+Read more at [tests/fsharpqa/readme.md](tests/fsharpqa/readme.md).
+
 #### Test lists
 
 For the FSharpQA suite, the list of test areas and their associated "tags" is stored at
