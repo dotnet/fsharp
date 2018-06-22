@@ -188,7 +188,7 @@ module ResponseFile =
         let parseLine (l: string) =
             match l with
             | s when String.IsNullOrWhiteSpace(s) -> None
-            | s when l.StartsWith("#") -> Some (ResponseFileLine.Comment (s.TrimStart('#')))
+            | s when l.StartsWithOrdinal("#") -> Some (ResponseFileLine.Comment (s.TrimStart('#')))
             | s -> Some (ResponseFileLine.CompilerOptionSpec (s.Trim()))
 
         try
@@ -224,7 +224,7 @@ let ParseCompilerOptions (collectOtherArgument : string -> unit, blocks: Compile
       if opt.Length = 2 || isSlashOpt opt then
         opt <- opt.[1 ..]
       // else, it should be a non-abbreviated option starting with "--"
-      elif opt.Length > 3 && opt.StartsWith("--") then
+      elif opt.Length > 3 && opt.StartsWithOrdinal("--") then
         opt <- opt.[2 ..]
       else
         opt <- ""
@@ -247,19 +247,19 @@ let ParseCompilerOptions (collectOtherArgument : string -> unit, blocks: Compile
   
   let getSwitchOpt (opt : string) =
     // if opt is a switch, strip the  '+' or '-'
-    if opt <> "--" && opt.Length > 1 && (opt.EndsWith("+",StringComparison.Ordinal) || opt.EndsWith("-",StringComparison.Ordinal)) then
+    if opt <> "--" && opt.Length > 1 && (opt.EndsWithOrdinal("+") || opt.EndsWithOrdinal("-")) then
       opt.[0 .. opt.Length - 2]
     else
       opt
       
   let getSwitch (s: string) = 
     let s = (s.Split([|':'|])).[0]
-    if s <> "--" && s.EndsWith("-",StringComparison.Ordinal) then OptionSwitch.Off else OptionSwitch.On
+    if s <> "--" && s.EndsWithOrdinal("-") then OptionSwitch.Off else OptionSwitch.On
 
   let rec processArg args =    
     match args with 
     | [] -> ()
-    | ((rsp: string) :: t) when rsp.StartsWith("@") ->
+    | ((rsp: string) :: t) when rsp.StartsWithOrdinal("@") ->
         let responseFileOptions =
             let fullpath =
                 try
@@ -555,7 +555,7 @@ let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
 //---------------------------------
 
 let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) = 
-    let trimFS (s:string) = if s.StartsWith("FS", StringComparison.Ordinal) = true then s.Substring(2) else s
+    let trimFS (s:string) = if s.StartsWithOrdinal("FS") = true then s.Substring(2) else s
     let trimFStoInt (s:string) =
         try
             Some (int32 (trimFS s))
@@ -832,6 +832,7 @@ let advancedFlagsFsc tcConfigB =
 let testFlag tcConfigB = 
         CompilerOption("test", tagString, OptionString (fun s -> 
                                             match s with
+                                            | "StackSpan"        -> tcConfigB.internalTestSpanStackReferring <- true
                                             | "ErrorRanges"      -> tcConfigB.errorStyle <- ErrorStyle.TestErrors
                                             | "MemberBodyRanges" -> PostTypeCheckSemanticChecks.testFlagMemberBody := true
                                             | "Tracking"         -> Lib.tracking := true (* general purpose on/off diagnostics flag *)

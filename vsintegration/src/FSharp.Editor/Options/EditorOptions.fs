@@ -43,6 +43,8 @@ type CodeFixesOptions =
 [<CLIMutable>]
 type LanguageServicePerformanceOptions = 
     { EnableInMemoryCrossProjectReferences: bool
+      AllowStaleCompletionResults: bool
+      TimeUntilStaleCompletion: int
       ProjectCheckCacheSize: int }
 
 [<CLIMutable>]
@@ -73,6 +75,8 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
 
         store.RegisterDefault
             { EnableInMemoryCrossProjectReferences = true
+              AllowStaleCompletionResults = true
+              TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
               ProjectCheckCacheSize = 200 }
 
         store.RegisterDefault

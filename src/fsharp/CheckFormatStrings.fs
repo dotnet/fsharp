@@ -10,6 +10,7 @@ open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.ConstraintSolver
+open Microsoft.FSharp.Compiler.NameResolution
 
 type FormatItem = Simple of TType | FuncAndVal 
 
@@ -47,27 +48,21 @@ let newInfo ()=
     addZeros       = false
     precision      = false}
 
-let parseFormatStringInternal (m:range) (g: TcGlobals) (source: string option) fmt bty cty = 
+let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringCheckContext option) fmt bty cty = 
     // Offset is used to adjust ranges depending on whether input string is regular, verbatim or triple-quote.
     // We construct a new 'fmt' string since the current 'fmt' string doesn't distinguish between "\n" and escaped "\\n".
     let (offset, fmt) = 
-        match source with
-        | Some source ->
-            let source = source.Replace("\r\n", "\n").Replace("\r", "\n")
-            let positions =
-                source.Split('\n')
-                |> Seq.map (fun s -> String.length s + 1)
-                |> Seq.scan (+) 0
-                |> Seq.toArray
-            let length = source.Length
-            if m.EndLine < positions.Length then
-                let startIndex = positions.[m.StartLine-1] + m.StartColumn
-                let endIndex = positions.[m.EndLine-1] + m.EndColumn - 1
-                if startIndex < length-3 && source.[startIndex..startIndex+2] = "\"\"\"" then
-                    (3, source.[startIndex+3..endIndex-3])
-                elif startIndex < length-2 && source.[startIndex..startIndex+1] = "@\"" then
-                    (2, source.[startIndex+2..endIndex-1])
-                else (1, source.[startIndex+1..endIndex-1])
+        match context with
+        | Some context ->
+            let length = context.NormalizedSource.Length
+            if m.EndLine < context.LineEndPositions.Length then
+                let startIndex = context.LineEndPositions.[m.StartLine-1] + m.StartColumn
+                let endIndex = context.LineEndPositions.[m.EndLine-1] + m.EndColumn - 1
+                if startIndex < length-3 && context.NormalizedSource.[startIndex..startIndex+2] = "\"\"\"" then
+                    (3, context.NormalizedSource.[startIndex+3..endIndex-3])
+                elif startIndex < length-2 && context.NormalizedSource.[startIndex..startIndex+1] = "@\"" then
+                    (2, context.NormalizedSource.[startIndex+2..endIndex-1])
+                else (1, context.NormalizedSource.[startIndex+1..endIndex-1])
             else (1, fmt)
         | None -> (1, fmt)
 
@@ -292,8 +287,8 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (source: string option) f
     let results = parseLoop [] (0, 0, m.StartColumn)
     results, Seq.toList specifierLocations
 
-let ParseFormatString m g source fmt bty cty dty = 
-    let argtys, specifierLocations = parseFormatStringInternal m g source fmt bty cty
+let ParseFormatString m g formatStringCheckContext fmt bty cty dty = 
+    let argtys, specifierLocations = parseFormatStringInternal m g formatStringCheckContext fmt bty cty
     let aty = List.foldBack (-->) argtys dty
     let ety = mkRefTupledTy g argtys
     (aty, ety), specifierLocations 
