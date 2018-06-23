@@ -2333,7 +2333,10 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
         match tcref.GeneratedHashAndEqualsValues with 
         | Some (_, vref)  -> Some (DevirtualizeApplication cenv env vref ty tyargs args m)
         | _ ->
-            Some (DevirtualizeApplication cenv env cenv.g.fsharpEqualityComparer_ER_Equals_vref ty tyargsOriginal args m)
+            // if type of generic argument has no generated equality operators, covert to "FSharpEqualityComparer_ER<'T>.EqualityComparer.Equals"
+            match cenv.g.fsharpEqualityComparer_ER_Equals_vref.TryDeref with
+            | ValueNone -> None // referencing old version of FSharp.Core.dll
+            | _ -> Some (DevirtualizeApplication cenv env cenv.g.fsharpEqualityComparer_ER_Equals_vref ty tyargsOriginal args m)
 
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparerFast
     | Expr.Val(v, _, _), [ty], _ when CanDevirtualizeApplication cenv v cenv.g.generic_equality_withc_inner_vref ty args ->
@@ -2354,7 +2357,10 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
            let args2 = [x; mkRefTupledNoTypes cenv.g m [mkCoerceExpr(y, cenv.g.obj_ty, m, ty); (mkCallGetGenericPEREqualityComparer cenv.g m)]]
            Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
        | _ ->
-           Some (DevirtualizeApplication cenv env cenv.g.fsharpEqualityComparer_PER_Equals_vref ty tyargsOriginal args m)
+           // if type of generic argument has no generated equality operators, covert to "FSharpEqualityComparer_PER<'T>.EqualityComparer.Equals"
+           match cenv.g.fsharpEqualityComparer_PER_Equals_vref.TryDeref with
+           | ValueNone -> None // referencing old version of FSharp.Core.dll
+           | _ -> Some (DevirtualizeApplication cenv env cenv.g.fsharpEqualityComparer_PER_Equals_vref ty tyargsOriginal args m)
     
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericHashIntrinsic
     | Expr.Val(v, _, _), [ty], _ when CanDevirtualizeApplication cenv v cenv.g.generic_hash_inner_vref ty args ->
@@ -2364,8 +2370,11 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
         | Some (_, withcGetHashCodeVal, _), [x] -> 
             let args2 = [x; mkCallGetGenericEREqualityComparer cenv.g m]
             Some (DevirtualizeApplication cenv env withcGetHashCodeVal ty tyargs args2 m)
-        | _ -> 
-            Some (DevirtualizeApplication cenv env cenv.g.fsharpEqualityComparer_GetHashCode_vref ty tyargsOriginal args m)
+        | _ ->
+            // if type of generic argument has no generated equality operators, covert to "FSharpEqualityComparer_PER<'T>.EqualityComparer.GetHashCode"
+            match cenv.g.fsharpEqualityComparer_GetHashCode_vref.TryDeref with
+            | ValueNone -> None // referencing old version of FSharp.Core.dll
+            | _ -> Some (DevirtualizeApplication cenv env cenv.g.fsharpEqualityComparer_GetHashCode_vref ty tyargsOriginal args m)
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericHashWithComparerIntrinsic
     | Expr.Val(v, _, _), [ty], _ when  CanDevirtualizeApplication cenv v cenv.g.generic_hash_withc_inner_vref ty args ->
@@ -2421,14 +2430,23 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
         | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs (mkCallGetGenericPEREqualityComparer cenv.g m :: args) m)            
         | None -> None
 
+    // "GenericEqualityIntrinsic" when found in a generic context, convert to "FSharpEqualityComparer_PER<'T>.EqualityComparer.Equals"
     | Expr.Val(v, _, _), [(TType_var t) as ty], _ when (not cenv.g.compilingFslib) && valRefEq cenv.g v cenv.g.generic_equality_per_inner_vref && t.Rigidity = TyparRigidity.Rigid ->
-        Some (DevirtualizeApplication cenv env cenv.g.fsharpEqualityComparer_PER_Equals_vref ty tyargs args m)
+        match cenv.g.fsharpEqualityComparer_PER_Equals_vref.TryDeref with
+        | ValueNone -> None // referencing old version of FSharp.Core.dll
+        | _ -> Some (DevirtualizeApplication cenv env cenv.g.fsharpEqualityComparer_PER_Equals_vref ty tyargs args m)
 
+    // "GenericEqualityERIntrinsic" when found in a generic context, convert to "FSharpEqualityComparer_ER<'T>.EqualityComparer.Equals"
     | Expr.Val(v, _, _), [(TType_var t) as ty], _ when (not cenv.g.compilingFslib) && valRefEq cenv.g v cenv.g.generic_equality_er_inner_vref && t.Rigidity = TyparRigidity.Rigid ->
-        Some (DevirtualizeApplication cenv env cenv.g.fsharpEqualityComparer_ER_Equals_vref ty tyargs args m)
+        match cenv.g.fsharpEqualityComparer_ER_Equals_vref.TryDeref with
+        | ValueNone -> None // referencing old version of FSharp.Core.dll
+        | _ -> Some (DevirtualizeApplication cenv env cenv.g.fsharpEqualityComparer_ER_Equals_vref ty tyargs args m)
         
+    // "GenericHashIntrinsic"  when found in a generic context, convert to "FSharpEqualityComparer_PER<'T>.EqualityComparer.GetHashCode"
     | Expr.Val(v, _, _), [(TType_var t) as ty], _ when (not cenv.g.compilingFslib) && valRefEq cenv.g v cenv.g.generic_hash_inner_vref && t.Rigidity = TyparRigidity.Rigid ->
-        Some (DevirtualizeApplication cenv env cenv.g.fsharpEqualityComparer_GetHashCode_vref ty tyargs args m)
+        match cenv.g.fsharpEqualityComparer_GetHashCode_vref.TryDeref with
+        | ValueNone -> None // referencing old version of FSharp.Core.dll
+        | _ -> Some (DevirtualizeApplication cenv env cenv.g.fsharpEqualityComparer_GetHashCode_vref ty tyargs args m)
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericComparisonWithComparerIntrinsic for tuple types
     | Expr.Val(v, _, _), [ty], _ when  valRefEq cenv.g v cenv.g.generic_comparison_withc_inner_vref && isRefTupleTy cenv.g ty ->
