@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:4:3:0
 }
 .assembly StaticInit_Struct01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.StaticInit_Struct01
 {
-  // Offset: 0x00000000 Length: 0x000007B1
+  // Offset: 0x00000000 Length: 0x000007B5
 }
 .mresource public FSharpOptimizationData.StaticInit_Struct01
 {
-  // Offset: 0x000007B8 Length: 0x0000021F
+  // Offset: 0x000007C0 Length: 0x0000021F
 }
 .module StaticInit_Struct01.dll
-// MVID: {59B19250-05F6-D6CB-A745-03835092B159}
+// MVID: {5B2D78C5-05F6-D6CB-A745-0383C5782D5B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02BA0000
+// Image base: 0x02C80000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -71,7 +71,7 @@
       .maxstack  5
       .locals init ([0] valuetype StaticInit_Struct01/C& V_0)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 4,4 : 6,7 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Struct01.fs'
+      .line 4,4 : 6,7 'C:\\src\\manofstick\\visualfsharp-nobox\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Struct01.fs'
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
@@ -256,20 +256,33 @@
             instance bool  Equals(valuetype StaticInit_Struct01/C obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       23 (0x17)
-      .maxstack  4
-      .locals init ([0] valuetype StaticInit_Struct01/C& V_0)
+      // Code size       38 (0x26)
+      .maxstack  5
+      .locals init ([0] valuetype StaticInit_Struct01/C& V_0,
+               [1] valuetype [mscorlib]System.DateTime V_1,
+               [2] valuetype [mscorlib]System.DateTime V_2,
+               [3] valuetype [mscorlib]System.DateTime V_3,
+               [4] valuetype [mscorlib]System.DateTime V_4)
       .line 4,4 : 6,7 ''
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  ldarg.0
       IL_0004:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
-      IL_0009:  ldloc.0
-      IL_000a:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
-      IL_000f:  tail.
-      IL_0011:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityERIntrinsic<valuetype [mscorlib]System.DateTime>(!!0,
-                                                                                                                                                                   !!0)
-      IL_0016:  ret
+      IL_0009:  stloc.1
+      IL_000a:  ldloc.0
+      IL_000b:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
+      IL_0010:  stloc.2
+      IL_0011:  ldloc.1
+      IL_0012:  stloc.3
+      IL_0013:  ldloc.2
+      IL_0014:  stloc.s    V_4
+      IL_0016:  call       class [mscorlib]System.Collections.Generic.EqualityComparer`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare/FSharpEqualityComparer_ER`1<valuetype [mscorlib]System.DateTime>::get_EqualityComparer()
+      IL_001b:  ldloc.3
+      IL_001c:  ldloc.s    V_4
+      IL_001e:  tail.
+      IL_0020:  callvirt   instance bool class [mscorlib]System.Collections.Generic.EqualityComparer`1<valuetype [mscorlib]System.DateTime>::Equals(!0,
+                                                                                                                                                    !0)
+      IL_0025:  ret
     } // end of method C::Equals
 
     .method public hidebysig virtual final 
