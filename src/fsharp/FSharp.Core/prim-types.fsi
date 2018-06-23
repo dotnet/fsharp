@@ -1238,6 +1238,26 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>The F# compiler emits calls to some of the functions in this module as part of the compiled form of some language constructs</summary>
         module HashCompare =
+            [<AbstractClass; Sealed>]
+            type FSharpEqualityComparer_ER<'T> =
+                static member EqualityComparer : System.Collections.Generic.EqualityComparer<'T>
+
+            [<AbstractClass; Sealed>]
+            type FSharpEqualityComparer_PER<'T> =
+                static member EqualityComparer : System.Collections.Generic.EqualityComparer<'T>
+
+            /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
+            [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
+            val inline FSharpEqualityComparer_ER_Equals : x:'T -> y:'T -> bool
+
+            /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
+            [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
+            val inline FSharpEqualityComparer_PER_Equals : x:'T -> y:'T -> bool
+
+            /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
+            [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
+            val inline FSharpEqualityComparer_GetHashCode : x:'T -> int
+
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
             val PhysicalHashIntrinsic : input:'T -> int when 'T : not struct
