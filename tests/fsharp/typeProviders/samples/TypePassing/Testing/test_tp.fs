@@ -21,7 +21,7 @@ type TypePassingTp(config: TypeProviderConfig) as this =
 
     let createRecordOfArrays (name : string) (t : Type) : ProvidedTypeDefinition =
         let fields = t.GetFields()
-        let fieldCount = field.Length
+        let fieldCount = fields.Length
 
         let underlyingType =
             fields
@@ -45,14 +45,6 @@ type TypePassingTp(config: TypeProviderConfig) as this =
 
         let replaceTypeOnCall (t : Type) = function
             | Call(o,mi,args) ->
-                let newMI = mi.GetGenericMethodDefinition().MakeGenericMethod([|t|])
-                match o with
-                | Some o -> Expr.Call(o,newMI,args)
-                | None -> Expr.Call(newMI, args)
-            | _ -> failwith "Called on a non-Call Expr"
-
-        let replaceTypeOnPropertyGet (t : Type) = function
-            | PropertyGet(o,mi,args) ->
                 let newMI = mi.GetGenericMethodDefinition().MakeGenericMethod([|t|])
                 match o with
                 | Some o -> Expr.Call(o,newMI,args)
