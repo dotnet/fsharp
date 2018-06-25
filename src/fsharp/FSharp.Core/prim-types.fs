@@ -1719,12 +1719,26 @@ namespace Microsoft.FSharp.Core
                     | null, _ -> false
                     | _, null -> false
                     | (:? (obj[])      as arr1), (:? (obj[])      as arr2) -> GenericEqualityObjArray    er iec arr1 arr2
+                    | _ ->
+                    match xobj,yobj with 
                     | (:? (byte[])     as arr1), (:? (byte[])     as arr2) -> GenericEqualityByteArray          arr1 arr2
+                    | _ ->
+                    match xobj,yobj with 
                     | (:? (int32[])    as arr1), (:? (int32[])    as arr2) -> GenericEqualityInt32Array         arr1 arr2
+                    | _ ->
+                    match xobj,yobj with 
                     | (:? (int64[])    as arr1), (:? (int64[])    as arr2) -> GenericEqualityInt64Array         arr1 arr2
+                    | _ ->
+                    match xobj,yobj with 
                     | (:? (char[])     as arr1), (:? (char[])     as arr2) -> GenericEqualityCharArray          arr1 arr2
+                    | _ ->
+                    match xobj,yobj with 
                     | (:? (float32[])  as arr1), (:? (float32[])  as arr2) -> GenericEqualitySingleArray er     arr1 arr2
+                    | _ ->
+                    match xobj,yobj with 
                     | (:? (float[])    as arr1), (:? (float[])    as arr2) -> GenericEqualityDoubleArray er     arr1 arr2
+                    | _ ->
+                    match xobj,yobj with 
                     | (:? System.Array as arr1), (:? System.Array as arr2) -> GenericEqualityArbArray    er iec arr1 arr2
                     | _ -> raise (Exception "invalid logic - expected array")
 
