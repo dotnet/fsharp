@@ -845,10 +845,15 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
             CheckExprNoByrefs cenv {env with ctorLimitedZone=false} e2
             NoLimit
 
-    | Expr.Let ((TBind(v,_,_) as bind),body,_,_) ->  
+    | Expr.Let ((TBind(v,bindRhs,_) as bind),body,_,_) ->
+        let _isRhsCompilerGenerated =
+            match bindRhs with
+            | Expr.Let((TBind(v,_,_)),_,_,_) -> v.IsCompilerGenerated
+            | _ -> false
+
         let limit = CheckBinding cenv { env with currentScope = env.currentScope + 1 } false bind  
         BindVal cenv env v
-        LimitVal cenv v { limit with scope = if v.IsCompilerGenerated then 0 elif isByrefTy cenv.g v.Type then limit.scope else env.currentScope }
+        LimitVal cenv v { limit with scope = if isByrefTy cenv.g v.Type then limit.scope else env.currentScope }
         CheckExpr cenv env body context
 
     | Expr.Const (_,m,ty) -> 
@@ -986,7 +991,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
         let env = { env with currentScope = env.currentScope + 1 }
         CheckTypePermitAllByrefs cenv env m ty // computed byrefs allowed at each branch
         CheckDecisionTree cenv env dtree
-        CheckDecisionTreeTargets cenv env targets PermitByRefExpr.YesReturnable
+        CheckDecisionTreeTargets cenv env targets context
 
     | Expr.LetRec (binds,e,_,_) ->  
         BindVals cenv env (valsOfBinds binds)
