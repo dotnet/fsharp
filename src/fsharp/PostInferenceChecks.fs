@@ -236,7 +236,7 @@ let GetLimitValByRef cenv env m v =
 
     elif IsValLocal env v || IsValArgument env v then
         let scope = 
-            if IsValArgument env v then 1
+            if IsValArgument env v then 0
             else limit.scope
         if HasLimitFlag LimitFlags.SpanLike limit then
             { scope = scope; flags = LimitFlags.LocalByRefOfSpanLike }
@@ -244,10 +244,10 @@ let GetLimitValByRef cenv env m v =
             { scope = scope; flags = LimitFlags.LocalByRef }
 
     elif HasLimitFlag LimitFlags.SpanLike limit then
-        { scope = 0; flags = LimitFlags.ByRefOfSpanLike }
+        { limit with flags = LimitFlags.ByRefOfSpanLike }
 
     else
-        { scope = 0; flags = LimitFlags.None }
+        { limit with flags = LimitFlags.None }
 
 let LimitVal cenv (v:Val) limit = 
     cenv.limitVals.[v.Stamp] <- limit
@@ -846,20 +846,25 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
             NoLimit
 
     | Expr.Let ((TBind(v,bindRhs,_) as bind),body,_,_) ->
-        let isRhsCompilerGenerated =
-            match bindRhs with
-            | Expr.Let((TBind(v,_,_)),_,_,_) -> v.IsCompilerGenerated
-            | _ -> false
+        let isByRef = isByrefTy cenv.g v.Type
 
         let bindingContext =
-            if isRhsCompilerGenerated && context.PermitOnlyReturnable then
-                PermitByRefExpr.Yes
+            if isByRef then
+                let isRhsCompilerGenerated =
+                    match bindRhs with
+                    | Expr.Let((TBind(v,_,_)),_,_,_) -> v.IsCompilerGenerated
+                    | _ -> false
+
+                if isRhsCompilerGenerated || v.IsCompilerGenerated then
+                    PermitByRefExpr.Yes
+                else
+                    PermitByRefExpr.YesReturnable
             else
-                context
+                PermitByRefExpr.Yes
 
         let limit = CheckBinding cenv { env with returnScope = env.returnScope + 1 } false bindingContext bind  
         BindVal cenv env v
-        LimitVal cenv v { limit with scope = if isByrefTy cenv.g v.Type then limit.scope else env.returnScope }
+        LimitVal cenv v { limit with scope = if isByRef then limit.scope else env.returnScope }
         CheckExpr cenv env body context
 
     | Expr.Const (_,m,ty) -> 
@@ -1775,13 +1780,7 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
         with e -> errorRecovery e v.Range 
     end
 
-    let context =
-        if v.IsCompilerGenerated then
-            PermitByRefExpr.Yes
-        else
-            PermitByRefExpr.YesReturnable
-
-    CheckBinding cenv env true context bind |> ignore
+    CheckBinding cenv env true PermitByRefExpr.Yes bind |> ignore
 
 let CheckModuleBindings cenv env binds = 
     binds |> List.iter (CheckModuleBinding cenv env)
