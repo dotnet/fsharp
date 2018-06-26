@@ -3865,6 +3865,9 @@ and
     /// Get the signature range of the record field 
     member x.SigRange = x.RecdField.SigRange
 
+    /// The type of the record field
+    member x.FormalType = x.RecdField.FormalType
+
     member x.Index =
         let (RFRef(tcref,id)) = x
         try 
