@@ -1649,6 +1649,7 @@ namespace Microsoft.FSharp.Core
                     res
 
             let isStructuralEquatable (ty:Type) = typeof<IStructuralEquatable>.IsAssignableFrom ty
+            let isValueTypeStructuralEquatable (ty:Type) = isStructuralEquatable ty && ty.IsValueType
             let isArray (ty:Type) = ty.IsArray || (typeof<System.Array>.IsAssignableFrom ty)
 
             let canUseDefaultEqualityComparer er (rootType:Type) =
@@ -1772,6 +1773,11 @@ namespace Microsoft.FSharp.Core
                         | :? IStructuralEquatable as a -> a.GetHashCode fsEqualityComparerUnlimitedHashingPER
                         | _ -> raise (Exception "invalid logic - expected IStructuralEquatable") }
 
+            let structuralEqualityComparerValueType<'T> comparer =
+                { new EqualityComparer<'T>() with
+                    member __.Equals (x,y)  = ((box x):?>IStructuralEquatable).Equals (y, comparer)
+                    member __.GetHashCode x = ((box x):?>IStructuralEquatable).GetHashCode fsEqualityComparerUnlimitedHashingPER }
+
             let unknownEqualityComparer<'T> er comparer =
                 { new EqualityComparer<'T>() with
                     member __.Equals (x,y) = GenericEqualityObj er comparer (box x, box y)
@@ -1779,14 +1785,16 @@ namespace Microsoft.FSharp.Core
 
             let getGenericEquality<'T> er =
                 match tryGetFSharpEqualityComparer er typeof<'T> with
-                | :? EqualityComparer<'T> as call -> call
-                | _ when canUseDefaultEqualityComparer er typeof<'T> -> EqualityComparer<'T>.Default
-                | _ when isArray typeof<'T> && er                    -> arrayEqualityComparer true  fsEqualityComparerUnlimitedHashingER
-                | _ when isArray typeof<'T>                          -> arrayEqualityComparer false fsEqualityComparerUnlimitedHashingPER
-                | _ when isStructuralEquatable typeof<'T> && er      -> structuralEqualityComparer fsEqualityComparerUnlimitedHashingER
-                | _ when isStructuralEquatable typeof<'T>            -> structuralEqualityComparer fsEqualityComparerUnlimitedHashingPER
-                | _ when er                                          -> unknownEqualityComparer true fsEqualityComparerUnlimitedHashingER
-                | _                                                  -> unknownEqualityComparer false fsEqualityComparerUnlimitedHashingPER
+                | :? EqualityComparer<'T> as call                        -> call
+                | _ when canUseDefaultEqualityComparer er typeof<'T>     -> EqualityComparer<'T>.Default
+                | _ when isArray typeof<'T> && er                        -> arrayEqualityComparer true  fsEqualityComparerUnlimitedHashingER
+                | _ when isArray typeof<'T>                              -> arrayEqualityComparer false fsEqualityComparerUnlimitedHashingPER
+                | _ when isValueTypeStructuralEquatable typeof<'T> && er -> structuralEqualityComparerValueType fsEqualityComparerUnlimitedHashingER
+                | _ when isValueTypeStructuralEquatable typeof<'T>       -> structuralEqualityComparerValueType fsEqualityComparerUnlimitedHashingPER
+                | _ when isStructuralEquatable typeof<'T> && er          -> structuralEqualityComparer fsEqualityComparerUnlimitedHashingER
+                | _ when isStructuralEquatable typeof<'T>                -> structuralEqualityComparer fsEqualityComparerUnlimitedHashingPER
+                | _ when er                                              -> unknownEqualityComparer true fsEqualityComparerUnlimitedHashingER
+                | _                                                      -> unknownEqualityComparer false fsEqualityComparerUnlimitedHashingPER
 
             [<AbstractClass; Sealed>]
             type FSharpEqualityComparer_ER<'T> private () =
