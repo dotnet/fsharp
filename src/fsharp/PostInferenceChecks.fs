@@ -845,17 +845,17 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
             CheckExprNoByrefs cenv {env with ctorLimitedZone=false} e2
             NoLimit
 
-    | Expr.Let ((TBind(v,bindRhs,_) as bind),body,_,_) ->
+    | Expr.Let ((TBind(v,_bindRhs,_) as bind),body,_,_) ->
         let isByRef = isByrefTy cenv.g v.Type
 
         let bindingContext =
             if isByRef then
-                let isRhsCompilerGenerated =
-                    match bindRhs with
-                    | Expr.Let((TBind(v,_,_)),_,_,_) -> v.IsCompilerGenerated
-                    | _ -> false
+                //let isRhsCompilerGenerated =
+                //    match bindRhs with
+                //    | Expr.Let((TBind(v,_,_)),_,_,_) -> v.IsCompilerGenerated
+                //    | _ -> false
 
-                if isRhsCompilerGenerated || v.IsCompilerGenerated then
+                if v.IsCompilerGenerated then
                     PermitByRefExpr.Yes
                 else
                     PermitByRefExpr.YesReturnable
