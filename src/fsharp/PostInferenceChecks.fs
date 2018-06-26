@@ -852,10 +852,10 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
             | _ -> false
 
         let bindingContext =
-            if isRhsCompilerGenerated then
+            if isRhsCompilerGenerated && context.PermitOnlyReturnable then
                 PermitByRefExpr.Yes
             else
-                PermitByRefExpr.YesReturnable
+                context
 
         let limit = CheckBinding cenv { env with returnScope = env.returnScope + 1 } false bindingContext bind  
         BindVal cenv env v
@@ -981,12 +981,12 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
     | Expr.Lambda(_,_ctorThisValOpt,_baseValOpt,argvs,_,m,rty) -> 
         let topValInfo = ValReprInfo ([],[argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)],ValReprInfo.unnamedRetVal) 
         let ty = mkMultiLambdaTy m argvs rty in 
-        CheckLambdas false None cenv env false topValInfo false expr m ty PermitByRefExpr.YesReturnable
+        CheckLambdas false None cenv env false topValInfo false expr m ty PermitByRefExpr.Yes
 
     | Expr.TyLambda(_,tps,_,m,rty)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps,[],ValReprInfo.unnamedRetVal) 
         let ty = mkForallTyIfNeeded tps rty in 
-        CheckLambdas false None cenv env false topValInfo false expr m ty PermitByRefExpr.YesReturnable
+        CheckLambdas false None cenv env false topValInfo false expr m ty PermitByRefExpr.Yes
 
     | Expr.TyChoose(tps,e1,_)  -> 
         let env = BindTypars g env tps 
@@ -1647,7 +1647,7 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v,bindRhs,_) as bi
     CheckLambdas isTop v.MemberInfo cenv env v.MustInline topValInfo alwaysCheckNoReraise bindRhs v.Range v.Type context
 
 and CheckBindings cenv env xs = 
-    xs |> List.iter (CheckBinding cenv env false PermitByRefExpr.YesReturnable >> ignore)
+    xs |> List.iter (CheckBinding cenv env false PermitByRefExpr.Yes >> ignore)
 
 // Top binds introduce expression, check they are reraise free.
 let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
@@ -1775,7 +1775,13 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
         with e -> errorRecovery e v.Range 
     end
 
-    CheckBinding cenv env true PermitByRefExpr.YesReturnable bind |> ignore
+    let context =
+        if v.IsCompilerGenerated then
+            PermitByRefExpr.Yes
+        else
+            PermitByRefExpr.YesReturnable
+
+    CheckBinding cenv env true context bind |> ignore
 
 let CheckModuleBindings cenv env binds = 
     binds |> List.iter (CheckModuleBinding cenv env)
