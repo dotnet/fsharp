@@ -182,6 +182,8 @@ module CoreTests =
 
             fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
+            singleNegTest cfg "test"
+
             exec cfg ("." ++ "test.exe") ""
 
             testOkFile.CheckExists()
