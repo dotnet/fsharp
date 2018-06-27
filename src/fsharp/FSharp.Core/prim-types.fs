@@ -1378,105 +1378,30 @@ namespace Microsoft.FSharp.Core
                 when 'T : char       = not (# "clt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_GreaterThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
 
-
             //-------------------------------------------------------------------------
             // LanguagePrimitives.HashCompare: EQUALITY
             //------------------------------------------------------------------------- 
 
-
-            /// optimized case: Core implementation of structural equality on arrays.
-            let GenericEqualityByteArray (x:byte[]) (y:byte[]) : bool=
+            let inline ArrayEquality<'T> (f:'T->'T->bool) (x:'T[]) (y:'T[])  : bool =
                 let lenx = x.Length 
                 let leny = y.Length 
-                let c = (lenx = leny)
-                if not c then c 
-                else
-                    let mutable i = 0 
-                    let mutable res = true
-                    while i < lenx do 
-                        let c = byteEq (get x i) (get y i) 
-                        if not c then (res <- false; i <- lenx) 
-                        else i <- i + 1
-                    res
+                let  rec loop i =
+                    if i = lenx then true
+                    elif f (get x i) (get y i) then loop (i+1)
+                    else false
+                (lenx = leny) && loop 0
 
-            /// optimized case: Core implementation of structural equality on arrays.
-            let GenericEqualityInt32Array (x:int[]) (y:int[]) : bool=
-                let lenx = x.Length 
-                let leny = y.Length 
-                let c = (lenx = leny)
-                if not c then c 
-                else
-                    let mutable i = 0 
-                    let mutable res = true
-                    while i < lenx do 
-                        let c = int32Eq (get x i) (get y i) 
-                        if not c then (res <- false; i <- lenx) 
-                        else i <- i + 1
-                    res
+            let inline ArrayEqualityWithERFlag<'T> (er:bool) (f:'T->'T->bool) (x:'T[]) (y:'T[]) : bool =
+                if er
+                then ArrayEquality (fun x y -> (not (f x x) && not (f y y)) || (f x y)) x y
+                else ArrayEquality f x y
 
-            /// optimized case: Core implementation of structural equality on arrays
-            let GenericEqualitySingleArray er (x:float32[]) (y:float32[]) : bool=
-                let lenx = x.Length 
-                let leny = y.Length 
-                let f32eq x y = if er && not(float32Eq x x) && not(float32Eq y y) then true else (float32Eq x y)
-                let c = (lenx = leny)
-                if not c then c 
-                else
-                    let mutable i = 0 
-                    let mutable res = true
-                    while i < lenx do 
-                        let c = f32eq (get x i) (get y i) 
-                        if not c then (res <- false; i <- lenx) 
-                        else i <- i + 1
-                    res
-
-            /// optimized case: Core implementation of structural equality on arrays.
-            let GenericEqualityDoubleArray er (x:float[]) (y:float[]) : bool=
-                let lenx = x.Length 
-                let leny = y.Length 
-                let c = (lenx = leny)
-                let feq x y = if er && not(floatEq x x) && not(floatEq y y) then true else (floatEq x y)
-                if not c then c 
-                else
-                    let mutable i = 0 
-                    let mutable res = true
-                    while i < lenx do 
-                        let c = feq (get x i) (get y i) 
-                        if not c then (res <- false; i <- lenx) 
-                        else i <- i + 1
-                    res
-
-            /// optimized case: Core implementation of structural equality on arrays.
-            let GenericEqualityCharArray (x:char[]) (y:char[]) : bool=
-                let lenx = x.Length 
-                let leny = y.Length 
-                let c = (lenx = leny)
-                if not c then c 
-                else
-                    let mutable i = 0 
-                    let mutable res = true
-                    while i < lenx do 
-                        let c = charEq (get x i) (get y i) 
-                        if not c then (res <- false; i <- lenx) 
-                        else i <- i + 1
-                    res
-
-            /// optimized case: Core implementation of structural equality on arrays.
-            let GenericEqualityInt64Array (x:int64[]) (y:int64[]) : bool=
-                let lenx = x.Length 
-                let leny = y.Length 
-                let c = (lenx = leny)
-                if not c then c 
-                else
-                    let mutable i = 0 
-                    let mutable res = true
-                    while i < lenx do 
-                        let c = int64Eq (get x i) (get y i) 
-                        if not c then (res <- false; i <- lenx) 
-                        else i <- i + 1
-                    res
-
-
+            let GenericEqualityByteArray      x y = ArrayEquality              byteEq    x y
+            let GenericEqualityInt32Array     x y = ArrayEquality              int32Eq   x y
+            let GenericEqualitySingleArray er x y = ArrayEqualityWithERFlag er float32Eq x y
+            let GenericEqualityDoubleArray er x y = ArrayEqualityWithERFlag er floatEq   x y
+            let GenericEqualityCharArray      x y = ArrayEquality              charEq    x y
+            let GenericEqualityInt64Array     x y = ArrayEquality              int64Eq   x y
 
             /// The core implementation of generic equality between two objects.  This corresponds
             /// to th e pseudo-code in the F# language spec.
@@ -1634,19 +1559,8 @@ namespace Microsoft.FSharp.Core
 #endif                    
               
             /// optimized case: Core implementation of structural equality on object arrays.
-            and GenericEqualityObjArray er iec (x:obj[]) (y:obj[]) : bool =
-                let lenx = x.Length 
-                let leny = y.Length 
-                let c = (lenx = leny )
-                if not c then c 
-                else
-                    let mutable i = 0
-                    let mutable res = true
-                    while i < lenx do 
-                        let c = GenericEqualityObj er iec ((get x i),(get y i))
-                        if not c then (res <- false; i <- lenx) 
-                        else i <- i + 1
-                    res
+            and GenericEqualityObjArray er iec (xarray:obj[]) (yarray:obj[]) : bool =
+                ArrayEquality (fun x y -> GenericEqualityObj er iec (x, y)) xarray yarray
 
             let isStructuralEquatable (ty:Type) = typeof<IStructuralEquatable>.IsAssignableFrom ty
             let isValueTypeStructuralEquatable (ty:Type) = isStructuralEquatable ty && ty.IsValueType
