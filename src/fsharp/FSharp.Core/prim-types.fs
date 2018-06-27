@@ -1657,7 +1657,7 @@ namespace Microsoft.FSharp.Core
                     | (:? System.Array as arr1), (:? System.Array as arr2) -> GenericEqualityArbArray    er iec arr1 arr2
                     | _ -> raise (Exception "invalid logic - expected array")
 
-                let getHashCode iec (xobj:obj)  =
+                let getHashCode (iec, xobj:obj)  =
                   match xobj with 
                   | null -> 0 
                   | :? (obj[])      as oa -> GenericHashObjArray iec oa 
@@ -1669,7 +1669,7 @@ namespace Microsoft.FSharp.Core
 
                 { new EqualityComparer<'T>() with
                     member __.Equals (x, y) = arrayEquals er comparer (box x) (box y)
-                    member __.GetHashCode x = getHashCode fsEqualityComparerUnlimitedHashingPER (box x) }
+                    member __.GetHashCode x = getHashCode (fsEqualityComparerUnlimitedHashingPER, box x) }
 
             let structuralEqualityComparer<'T> comparer =
                 { new EqualityComparer<'T>() with
