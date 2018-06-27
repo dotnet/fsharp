@@ -63,59 +63,7 @@ module ByrefNegativeTests =
 
     module UseOfLibraryOnly =
         type C() = 
-            static member f1 (x: byref<'T, 'U>) = 1
-
-    module Scoping =
-
-        let test1 doIt =
-            let mutable x = 42
-            let r =
-                if doIt then
-                    let mutable y = 1
-                    &y // not allowed
-                else
-                    &x
-
-            let c = 
-                if doIt then
-                    let mutable z = 2
-                    &z // not allowed
-                else
-                    &x
-
-            x + r + c
-
-        let test2 () =
-            let x =
-                let mutable x = 1
-                &x // not allowed
-
-            let y =
-                let mutable y = 2
-                &y // not allowed
-
-            x + y
-
-        let test3 () =
-            let x = &1 // not allowed
-            let y = &2 // not allowed
-            x + y
-
-        let test4 doIt =
-            let mutable x = 1
-            if doIt then
-                &x // not allowed
-            else
-                &1 // not allowed
-
-        let test5 doIt =
-            let mutable x = 1
-            let y =
-                if doIt then
-                    &x
-                else
-                    &1 // not allowed
-            &y // not allowed            
+            static member f1 (x: byref<'T, 'U>) = 1         
 #endif
 
 // Test a simple ref  argument
