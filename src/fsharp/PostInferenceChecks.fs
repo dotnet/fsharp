@@ -105,7 +105,7 @@ type env =
       /// Are we in an extern declaration?
       external : bool 
     
-      /// Current scope of the expr.
+      /// Current return scope of the expr.
       returnScope : int } 
 
 let BindTypar env (tp:Typar) = 
@@ -850,11 +850,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
 
         let bindingContext =
             if isByRef then
-                //let isRhsCompilerGenerated =
-                //    match bindRhs with
-                //    | Expr.Let((TBind(v,_,_)),_,_,_) -> v.IsCompilerGenerated
-                //    | _ -> false
-
+                // Don't apply scoped returns for compiler generated values.
                 if v.IsCompilerGenerated then
                     PermitByRefExpr.Yes
                 else
@@ -1437,7 +1433,7 @@ and CheckDecisionTree cenv env x =
     | TDSuccess (es,_) -> 
         CheckExprsNoByRefLike cenv env es |> ignore
     | TDBind(bind,rest) -> 
-        CheckBinding cenv env false PermitByRefExpr.YesReturnable bind |> ignore
+        CheckBinding cenv env false PermitByRefExpr.Yes bind |> ignore
         CheckDecisionTree cenv env rest 
     | TDSwitch (e,cases,dflt,m) -> 
         CheckDecisionTreeSwitch cenv env (e,cases,dflt,m)
