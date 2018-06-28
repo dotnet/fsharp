@@ -19,7 +19,7 @@ let check2 s expected actual = check s actual expected
 
 // POST INFERENCE CHECKS
 #if NEGATIVE
-module NegativeScoping =
+module NegativeTests =
 
     let test1 doIt =
         let mutable x = 42
@@ -69,8 +69,77 @@ module NegativeScoping =
                 &x
             else
                 &1 // not allowed
-        &y // not allowed 
+        &y // not allowed
+
+    type Coolio() =
+
+        static member Cool(x: inref<int>) = &x
+
+    let test6 () =
+
+        let y =
+            let x = 1
+            &Coolio.Cool(x) // not allowed
+
+        () 
+
+    let test7 () =
+
+        let y =
+            let mutable x = 1
+            &Coolio.Cool(x) // not allowed
+
+        () 
+
+    let test8 () =
+        let mutable x = 1
+        let f = fun () -> &x // not allowed
+        
+        ()
 #endif
+
+module Tests =
+
+    type ByRefInterface =
+
+        abstract Test : byref<int> * byref<int> -> byref<int>
+
+    type Test() =
+
+        member __.Beef() =
+            let mutable a = Unchecked.defaultof<ByRefInterface>
+            let obj = { new ByRefInterface with
+
+                member __.Test(x,y) =
+                    let mutable x = 1
+                    let obj2 =
+                        { new ByRefInterface with
+
+                            member __.Test(_x,y) = &x } // is allowed
+                    a <- obj2
+                    &y
+            }
+            let mutable x = 500
+            let mutable y = 500
+            obj.Test(&x, &y) |> ignore
+            a
+
+    let test1 () =
+        let x = 1
+        let f = fun () ->
+            let y = &x // is allowed
+            ()
+
+        let g = fun () ->
+            let y = &x // is allowed
+            ()
+        ()
+
+    type Beef = delegate of unit-> byref<int>
+    let test2 () =
+        let mutable x = 1
+        let f = Beef(fun () -> &x) // is allowed
+        ()
 
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 

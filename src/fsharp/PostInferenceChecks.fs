@@ -854,12 +854,9 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
         let isByRef = isByrefTy cenv.g v.Type
 
         let bindingContext =
-            if isByRef then
-                // Don't apply scoped returns for compiler generated values.
-                if v.IsCompilerGenerated then
-                    PermitByRefExpr.Yes
-                else
-                    PermitByRefExpr.YesReturnable
+            // Don't apply scoped returns on binding for compiler generated values.
+            if isByRef && not v.IsCompilerGenerated then
+                PermitByRefExpr.YesReturnable
             else
                 PermitByRefExpr.Yes
 
