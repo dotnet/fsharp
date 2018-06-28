@@ -1358,7 +1358,7 @@ module UntypedParseImpl =
                       else None)
              else
                 // Paired [< and >] were not found, try to determine that we are after [< without closing >]
-                match lineStr.LastIndexOf "[<" with
+                match lineStr.LastIndexOf("[<", StringComparison.Ordinal) with
                 | -1 -> None
                 | openParenIndex when pos.Column >= openParenIndex + 2 -> 
                     let str = lineStr.[openParenIndex + 2..pos.Column - 1].TrimStart()

@@ -101,8 +101,8 @@
     <!-- Frozen FSharp.Core package being built with this build -->
     <FSharpCore41TargetPackageVersion>4.1.19</FSharpCore41TargetPackageVersion>
     <FSharpCore41TargetMajorVersion>4.1</FSharpCore41TargetMajorVersion>
-    <FSharpCoreLatestTargetPackageVersion>4.5.0</FSharpCoreLatestTargetPackageVersion>
-    <FSharpCoreLatestTargetMajorVersion>4.5</FSharpCoreLatestTargetMajorVersion>
+    <FSharpCoreTargetPackageVersion>4.5.0</FSharpCoreTargetPackageVersion>
+    <FSharpCoreTargetMajorVersion>4.5</FSharpCoreTargetMajorVersion>
 
     <!-- Always qualify the IntermediateOutputPath by the TargetDotnetProfile if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetDotnetProfile)\</IntermediateOutputPath>

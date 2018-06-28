@@ -6,6 +6,7 @@
     <RoslynPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\..\RoslynPackageVersion.txt').Trim())</RoslynPackageVersion>
 
     <!-- System.* packages -->
+    <SystemRuntimeCachingPackageVersion>1.5.0</SystemRuntimeCachingPackageVersion>
     <SystemCollectionsImmutablePackageVersion>1.5.0</SystemCollectionsImmutablePackageVersion>
 
     <!-- Roslyn packages -->

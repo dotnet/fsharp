@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
-        <target state="needs-review-translation">Toutes les branches d'une expression comportant des critères spéciaux doivent avoir le même type. Cette expression était censée avoir le type '{0}', mais elle a ici le type '{1}'.</target>
+        <target state="translated">Toutes les branches d'une expression comportant des critères spéciaux doivent retourner des valeurs du même type. La première branche a retourné une valeur de type '{0}', mais cette branche a retourné une valeur de type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -5434,7 +5434,7 @@
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
         <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="translated">Un {0} a spécifié la version '{1}', mais cette valeur n'est pas valide et a été ignorée</target>
+        <target state="translated">L'attribut {0} a spécifié la version '{1}', mais cette valeur est non valide et a été ignorée</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">
@@ -6974,7 +6974,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionMatchBang">
         <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
-        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <target state="translated">Permet dans les expressions de calcul d'appliquer directement des critères spéciaux au résultat d'une autre expression de calcul.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">

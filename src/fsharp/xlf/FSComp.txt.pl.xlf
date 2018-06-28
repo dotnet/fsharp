@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
-        <target state="needs-review-translation">Wszystkie gałęzie wyrażenia dopasowania do wzorca muszą mieć ten sam typ. Oczekiwano, że to wyrażenie będzie miało typ „{0}”, ale tutaj ma typ „{1}”.</target>
+        <target state="translated">Wszystkie gałęzie wyrażenia dopasowania do wzorca muszą zwracać wartości tego samego typu. Pierwsza gałąź zwróciła wartość typu „{0}”, ale ta gałąź zwróciła wartość typu „{1}”</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -5434,7 +5434,7 @@
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
         <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="translated">Element {0} określił wersję „{1}”, ale ta wartość jest nieprawidłowa i została zignorowana</target>
+        <target state="translated">Atrybut {0} określił wersję „{1}”, ale ta wartość jest nieprawidłowa i została zignorowana</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">
@@ -6974,7 +6974,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionMatchBang">
         <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
-        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <target state="translated">Używane w wyrażeniach obliczenia do dopasowania do wzorca bezpośrednio w wyniku innego wyrażenia obliczenia.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">
