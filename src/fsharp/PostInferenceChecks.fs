@@ -739,10 +739,8 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (context: PermitByRefExpr) 
         (HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs ||
          HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limitArgs)
 
-    let hasPotentialByRefEscapeScope = limitArgs.scope >= env.returnScope
-
     if cenv.reportErrors then
-        if context.PermitOnlyReturnable && ((isReturnLimitedByRef && hasPotentialByRefEscapeScope) || isReturnLimitedSpanLike) then
+        if context.PermitOnlyReturnable && ((isReturnLimitedByRef && limitArgs.scope >= env.returnScope) || isReturnLimitedSpanLike) then
             if isReturnLimitedSpanLike then
                 errorR(Error(FSComp.SR.chkNoSpanLikeValueFromExpression(), m))
             else
