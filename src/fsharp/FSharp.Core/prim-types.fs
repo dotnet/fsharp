@@ -806,66 +806,29 @@ namespace Microsoft.FSharp.Core
                      
             let inline HashCombine nr x y = (x <<< 1) + y + 631 * nr
 
-            let GenericHashObjArray (iec : System.Collections.IEqualityComparer) (x: obj[]) : int =
-                  let len = x.Length 
-                  let mutable i = len - 1 
-                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
-                  let mutable acc = 0   
-                  while (i >= 0) do 
-                      // NOTE: GenericHash* call decreases nr 
-                      acc <- HashCombine i acc (iec.GetHashCode(x.GetValue(i)));
-                      i <- i - 1
-                  acc
+            let inline ArrayHashing<'element,'array when 'array :> System.Array> get lowerBound (f:'element->int) (x:'array) : int =
+                let rec loop acc i =
+                    if i < lowerBound then acc
+                    else loop (HashCombine i acc (f (get x i))) (i-1)
+                
+                let lastIdx =
+                    let upperBound = lowerBound+defaultHashNodes
+                    match lowerBound+x.Length-1 with
+                    | oversized when oversized > upperBound -> upperBound
+                    | good -> good
 
-            // optimized case - byte arrays 
-            let GenericHashByteArray (x: byte[]) : int =
-                  let len = length x 
-                  let mutable i = len - 1 
-                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
-                  let mutable acc = 0   
-                  while (i >= 0) do 
-                      acc <- HashCombine i acc (intOfByte (get x i));
-                      i <- i - 1
-                  acc
+                loop 0 lastIdx 
 
-            // optimized case - int arrays 
-            let GenericHashInt32Array (x: int[]) : int =
-                  let len = length x 
-                  let mutable i = len - 1 
-                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
-                  let mutable acc = 0   
-                  while (i >= 0) do 
-                      acc <- HashCombine i acc (get x i);
-                      i <- i - 1
-                  acc
-
-            // optimized case - int arrays 
-            let GenericHashInt64Array (x: int64[]) : int =
-                  let len = length x 
-                  let mutable i = len - 1 
-                  if i > defaultHashNodes then i <- defaultHashNodes // limit the hash
-                  let mutable acc = 0   
-                  while (i >= 0) do 
-                      acc <- HashCombine i acc (int32 (get x i));
-                      i <- i - 1
-                  acc
+            let GenericHashObjArray   (iec:System.Collections.IEqualityComparer) (x:obj[]) = ArrayHashing get 0 iec.GetHashCode x
+            let GenericHashByteArray  (x:byte[])  = ArrayHashing get 0 intOfByte x
+            let GenericHashInt32Array (x:int32[]) = ArrayHashing get 0 (fun x -> x) x
+            let GenericHashInt64Array (x:int64[]) = ArrayHashing get 0 int32 x
 
             // special case - arrays do not by default have a decent structural hashing function
             let GenericHashArbArray (iec : System.Collections.IEqualityComparer) (x: System.Array) : int =
-                  match x.Rank  with 
-                  | 1 -> 
-                    let b = x.GetLowerBound(0) 
-                    let len = x.Length 
-                    let mutable i = b + len - 1 
-                    if i > b + defaultHashNodes  then i <- b + defaultHashNodes  // limit the hash
-                    let mutable acc = 0                  
-                    while (i >= b) do 
-                        // NOTE: GenericHash* call decreases nr 
-                        acc <- HashCombine i acc (iec.GetHashCode(x.GetValue(i)));
-                        i <- i - 1
-                    acc
-                  | _ -> 
-                     HashCombine 10 (x.GetLength(0)) (x.GetLength(1)) 
+                match x.Rank with 
+                | 1 -> ArrayHashing (fun a i -> a.GetValue i) (x.GetLowerBound 0) iec.GetHashCode x
+                | _ -> HashCombine 10 (x.GetLength(0)) (x.GetLength(1)) 
 
             // Core implementation of structural hashing, corresponds to pseudo-code in the 
             // F# Language spec.  Searches for the IStructuralHash interface, otherwise uses GetHashCode().
