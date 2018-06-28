@@ -131,13 +131,12 @@ let BindArgVals env (vs: Val list) =
 /// Limit flags represent a type(s) returned from checking an expression(s) that is interesting to impose rules on.
 [<Flags>]
 type LimitFlags =
-    | None                               = 0b000000
-    | LocalByRef                         = 0b000001
-    | LocalByRefOfSpanLike               = 0b000011
-    | LocalByRefOfStackReferringSpanLike = 0b000101
-    | SpanLike                           = 0b001000
-    | StackReferringSpanLike             = 0b010000
-    | ByRefOfSpanLike                    = 0b100000
+    | None                          = 0b00000
+    | ByRef                         = 0b00001
+    | ByRefOfSpanLike               = 0b00011
+    | ByRefOfStackReferringSpanLike = 0b00101
+    | SpanLike                      = 0b01000
+    | StackReferringSpanLike        = 0b10000
 
 [<Struct>]
 type Limit =
@@ -146,6 +145,8 @@ type Limit =
         flags: LimitFlags
     }
 
+    member this.IsLocal = this.scope >= 1
+
 /// Check if the limit has the target limit.
 let inline HasLimitFlag targetLimit (limit: Limit) =
     limit.flags &&& targetLimit = targetLimit
@@ -153,10 +154,17 @@ let inline HasLimitFlag targetLimit (limit: Limit) =
 let NoLimit = { scope = 0; flags = LimitFlags.None }
 
 let CombineTwoLimits limit1 limit2 = 
-    if HasLimitFlag LimitFlags.LocalByRef limit2 then
+    let isLimited1 = HasLimitFlag LimitFlags.ByRef limit1 || HasLimitFlag LimitFlags.StackReferringSpanLike limit1 
+    let isLimited2 = HasLimitFlag LimitFlags.ByRef limit2 || HasLimitFlag LimitFlags.StackReferringSpanLike limit2
+    match isLimited1, isLimited2 with
+    | true, true ->
         { scope = Math.Max(limit1.scope, limit2.scope); flags = limit1.flags ||| limit2.flags }
-    else
+    | true, false ->
         { limit1 with flags = limit1.flags ||| limit2.flags }
+    | false, true ->
+        { limit2 with flags = limit1.flags ||| limit2.flags }
+    | _ ->
+        { scope = 0; flags = limit1.flags ||| limit2.flags }
 
 let CombineLimits limits =
     (NoLimit, limits)
@@ -197,32 +205,32 @@ let GetLimitVal cenv env m (v: Val) =
     let limit =
         match cenv.limitVals.TryGetValue(v.Stamp) with
         | true, limit -> limit
-        | _ -> { NoLimit with scope = env.returnScope }
+        | _ ->
+            if IsValLocal env v then
+                { scope = env.returnScope; flags = LimitFlags.None }
+            else
+                NoLimit
 
     if isSpanLikeTy cenv.g m v.Type then
         // The value is a limited Span or might have become one through mutation
-        let isLocal = IsValLocal env v
-        let isMutableLocal = isLocal && v.IsMutable && cenv.isInternalTestSpanStackReferring
-        let isLimitedLocal = isLocal && HasLimitFlag LimitFlags.StackReferringSpanLike limit
-        if isMutableLocal || isLimitedLocal then
+        let isMutable = v.IsMutable && cenv.isInternalTestSpanStackReferring
+        let isLimited = HasLimitFlag LimitFlags.StackReferringSpanLike limit
+
+        if isMutable || isLimited then
             { limit with flags = LimitFlags.StackReferringSpanLike }
         else
             { limit with flags = LimitFlags.SpanLike }
 
     elif isByrefTy cenv.g v.Type then
-        let isLocal = IsValLocal env v
-        let isLimitedLocal = isLocal && HasLimitFlag LimitFlags.LocalByRef limit
         let isByRefOfSpanLike = isSpanLikeTy cenv.g m (destByrefTy cenv.g v.Type)
         
-        match isLimitedLocal, isByRefOfSpanLike with
-        | true, false -> { limit with flags = LimitFlags.LocalByRef }
-        | true, true ->
-            if HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limit then
-                { limit with flags = LimitFlags.LocalByRefOfStackReferringSpanLike }
+        if isByRefOfSpanLike then
+            if HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limit then
+                { limit with flags = LimitFlags.ByRefOfStackReferringSpanLike }
             else
-                { limit with flags = LimitFlags.LocalByRefOfSpanLike }
-        | false, true -> { limit with flags = LimitFlags.ByRefOfSpanLike }
-        | _ -> { limit with flags = LimitFlags.None }
+                { limit with flags = LimitFlags.ByRefOfSpanLike }
+        else
+            { limit with flags = LimitFlags.ByRef }
 
     else
         { limit with flags = LimitFlags.None }
@@ -231,23 +239,20 @@ let GetLimitVal cenv env m (v: Val) =
 let GetLimitValByRef cenv env m v =
     let limit = GetLimitVal cenv env m v
 
-    if HasLimitFlag LimitFlags.StackReferringSpanLike limit then
-        { limit with flags = LimitFlags.LocalByRefOfStackReferringSpanLike }
+    let scope =
+        // Getting the address of an argument will always be a scope of 1.
+        if IsValArgument env v then 1
+        else limit.scope
 
-    elif IsValLocal env v || IsValArgument env v then
-        let scope = 
-            if IsValArgument env v then 0
-            else limit.scope
-        if HasLimitFlag LimitFlags.SpanLike limit then
-            { scope = scope; flags = LimitFlags.LocalByRefOfSpanLike }
+    let flags =
+        if HasLimitFlag LimitFlags.StackReferringSpanLike limit then
+            LimitFlags.ByRefOfStackReferringSpanLike
+        elif HasLimitFlag LimitFlags.SpanLike limit then
+            LimitFlags.ByRefOfSpanLike
         else
-            { scope = scope; flags = LimitFlags.LocalByRef }
+            LimitFlags.ByRef
 
-    elif HasLimitFlag LimitFlags.SpanLike limit then
-        { limit with flags = LimitFlags.ByRefOfSpanLike }
-
-    else
-        { limit with flags = LimitFlags.None }
+    { scope = scope; flags = flags }
 
 let LimitVal cenv (v:Val) limit = 
     cenv.limitVals.[v.Stamp] <- limit
@@ -653,7 +658,7 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: Perm
         //     &y
         let isReturnExprBuiltUsingStackReferringByRefLike = 
             context.PermitOnlyReturnable &&
-            ((HasLimitFlag LimitFlags.LocalByRef limit && limit.scope >= env.returnScope) ||
+            ((HasLimitFlag LimitFlags.ByRef limit && limit.scope >= env.returnScope) ||
              HasLimitFlag LimitFlags.StackReferringSpanLike limit)
 
         if isReturnExprBuiltUsingStackReferringByRefLike then
@@ -718,21 +723,21 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv:cenv) expr =
             | _ -> ()
         | _ -> ()
 
-and CheckCallLimitArgs cenv env m (returnTy: TType) limitArgs (context: PermitByRefExpr) =
+and CheckCallLimitArgs cenv env m returnTy limitArgs (context: PermitByRefExpr) =
     let isReturnByref = isByrefTy cenv.g returnTy
     let isReturnSpanLike = isSpanLikeTy cenv.g m returnTy
 
     // If return is a byref, and being used as a return, then a single argument cannot be a local-byref or a stack referring span-like.
     let isReturnLimitedByRef = 
         isReturnByref && 
-        (HasLimitFlag LimitFlags.LocalByRef limitArgs || 
+        (HasLimitFlag LimitFlags.ByRef limitArgs || 
          HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs)
 
     // If return is a byref, and being used as a return, then a single argument cannot be a stack referring span-like or a local-byref of a stack referring span-like.
     let isReturnLimitedSpanLike = 
         isReturnSpanLike && 
         (HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs ||
-         HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limitArgs)
+         HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limitArgs)
 
     let hasPotentialByRefEscapeScope = limitArgs.scope >= env.returnScope
 
@@ -748,7 +753,7 @@ and CheckCallLimitArgs cenv env m (returnTy: TType) limitArgs (context: PermitBy
         let isCallLimited =  
             HasLimitFlag LimitFlags.ByRefOfSpanLike limitArgs && 
             (HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs || 
-             HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limitArgs)
+             HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limitArgs)
 
         if isCallLimited then
             errorR(Error(FSComp.SR.chkNoByrefLikeFunctionCall(), m))
@@ -757,13 +762,13 @@ and CheckCallLimitArgs cenv env m (returnTy: TType) limitArgs (context: PermitBy
         if isSpanLikeTy cenv.g m (destByrefTy cenv.g returnTy) then
             let isStackReferring =
                 HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs ||
-                HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limitArgs
+                HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limitArgs
             if isStackReferring then
-                { limitArgs with flags = LimitFlags.LocalByRefOfStackReferringSpanLike }
+                { limitArgs with flags = LimitFlags.ByRefOfStackReferringSpanLike }
             else
-                { limitArgs with flags = LimitFlags.LocalByRefOfSpanLike }
+                { limitArgs with flags = LimitFlags.ByRefOfSpanLike }
         else
-            { limitArgs with flags = LimitFlags.LocalByRef }
+            { limitArgs with flags = LimitFlags.ByRef }
 
     elif isReturnLimitedSpanLike then
         { scope = env.returnScope; flags = LimitFlags.StackReferringSpanLike }
@@ -800,7 +805,7 @@ and CheckCallWithReceiver cenv env m returnTy args contexts context =
         let limitArgs = 
             let limitArgs = CheckExprs cenv env args contexts
             // We do not include the receiver's limit in the limit args unless the receiver is a stack referring span-like.
-            if HasLimitFlag LimitFlags.StackReferringSpanLike receiverLimit || HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike receiverLimit then
+            if HasLimitFlag LimitFlags.StackReferringSpanLike receiverLimit || HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike receiverLimit then
                 CombineTwoLimits limitArgs receiverLimit
             else
                 limitArgs
@@ -1118,7 +1123,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
             
             let returningAddrOfLocal = 
                 context.PermitOnlyReturnable && 
-                HasLimitFlag LimitFlags.LocalByRef limit &&
+                HasLimitFlag LimitFlags.ByRef limit &&
                 limit.scope >= env.returnScope
             
             if returningAddrOfLocal then 
@@ -1131,7 +1136,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
 
     | TOp.LValueOp(LByrefSet,vref),_,[arg] -> 
         let limit = GetLimitVal cenv env m vref.Deref
-        let isVrefLimited = not (HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limit)
+        let isVrefLimited = not (HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limit)
         let isArgLimited = HasLimitFlag LimitFlags.StackReferringSpanLike (CheckExprPermitByRefLike cenv env arg)
         if isVrefLimited && isArgLimited then 
             errorR(Error(FSComp.SR.chkNoWriteToLimitedSpan(vref.DisplayName), m))
@@ -1139,7 +1144,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
 
     | TOp.LValueOp(LByrefGet,vref),_,[] -> 
         let limit = GetLimitVal cenv env m vref.Deref
-        if HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limit then
+        if HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limit then
 
             if cenv.reportErrors && context.PermitOnlyReturnable then
                 if vref.IsCompilerGenerated then
@@ -1148,7 +1153,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
                     errorR(Error(FSComp.SR.chkNoSpanLikeVariable(vref.DisplayName), m))
 
             { limit with flags = LimitFlags.StackReferringSpanLike }
-        elif HasLimitFlag LimitFlags.LocalByRefOfSpanLike limit then
+        elif HasLimitFlag LimitFlags.ByRefOfSpanLike limit then
             { limit with flags = LimitFlags.SpanLike }
         else
             { limit with flags = LimitFlags.None }
@@ -1177,7 +1182,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         let limit1 = CheckExprPermitByRefLike cenv env arg1
         let limit2 = CheckExprPermitByRefLike cenv env arg2
 
-        let isLhsLimited = not (HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limit1)
+        let isLhsLimited = not (HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limit1)
         let isRhsLimited = HasLimitFlag LimitFlags.StackReferringSpanLike limit2
         if isLhsLimited && isRhsLimited then
             errorR(Error(FSComp.SR.chkNoWriteToLimitedSpan(rf.FieldName), m))
@@ -1776,7 +1781,7 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
         with e -> errorRecovery e v.Range 
     end
 
-    CheckBinding cenv env true PermitByRefExpr.Yes bind |> ignore
+    CheckBinding cenv { env with returnScope = env.returnScope + 1 } true PermitByRefExpr.Yes bind |> ignore
 
 let CheckModuleBindings cenv env binds = 
     binds |> List.iter (CheckModuleBinding cenv env)

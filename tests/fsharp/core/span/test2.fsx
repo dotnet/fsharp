@@ -194,6 +194,10 @@ namespace Tests
             let y = &x
             &y
 
+        let should_not_work35 (x: byref<Span<int>>) =
+            let mutable y = Span.Empty
+            x <- y
+
 #endif
 
         let should_work1 () =
