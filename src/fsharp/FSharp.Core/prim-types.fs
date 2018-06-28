@@ -1590,49 +1590,55 @@ namespace Microsoft.FSharp.Core
                 | true, ty when ty.Equals typeof<float32> -> box EqualityComparer<float32>.Default
                 | _ -> null
 
+            let inline nullableEqualityComparer<'a when 'a : null> equals getHashCode = 
+                box { new EqualityComparer<'a>() with
+                        member __.Equals (x,y)  =
+                            match x, y with
+                            | null, null -> true
+                            | null, _ -> false
+                            | _, null -> false
+                            | _ -> equals x y
+
+                        member __.GetHashCode x =
+                            match x with
+                            | null -> 0
+                            | _ -> getHashCode x }
+
+            let tryGetFSharpArrayEqualityComparer (ty:Type) er comparer : obj =
+                if   ty.Equals typeof<obj[]>   then nullableEqualityComparer (fun x y -> GenericEqualityObjArray er comparer x y) (GenericHashObjArray fsEqualityComparerUnlimitedHashingPER)
+                elif ty.Equals typeof<byte[]>  then nullableEqualityComparer GenericEqualityByteArray               GenericHashByteArray
+                elif ty.Equals typeof<int32[]> then nullableEqualityComparer GenericEqualityInt32Array              GenericHashInt32Array
+                elif ty.Equals typeof<int64[]> then nullableEqualityComparer GenericEqualityInt64Array              GenericHashInt64Array
+                else null
+
             let arrayEqualityComparer<'T> er comparer =
-                let arrayEquals (er:bool) (iec:System.Collections.IEqualityComparer) (xobj:obj) (yobj:obj) : bool = 
-                    match xobj,yobj with 
-                    | null, null -> true
-                    | null, _ -> false
-                    | _, null -> false
-                    | (:? (obj[])      as arr1), (:? (obj[])      as arr2) -> GenericEqualityObjArray    er iec arr1 arr2
-                    | _ ->
-                    match xobj,yobj with 
-                    | (:? (byte[])     as arr1), (:? (byte[])     as arr2) -> GenericEqualityByteArray          arr1 arr2
-                    | _ ->
-                    match xobj,yobj with 
-                    | (:? (int32[])    as arr1), (:? (int32[])    as arr2) -> GenericEqualityInt32Array         arr1 arr2
-                    | _ ->
-                    match xobj,yobj with 
-                    | (:? (int64[])    as arr1), (:? (int64[])    as arr2) -> GenericEqualityInt64Array         arr1 arr2
-                    | _ ->
-                    match xobj,yobj with 
-                    | (:? (char[])     as arr1), (:? (char[])     as arr2) -> GenericEqualityCharArray          arr1 arr2
-                    | _ ->
-                    match xobj,yobj with 
-                    | (:? (float32[])  as arr1), (:? (float32[])  as arr2) -> GenericEqualitySingleArray er     arr1 arr2
-                    | _ ->
-                    match xobj,yobj with 
-                    | (:? (float[])    as arr1), (:? (float[])    as arr2) -> GenericEqualityDoubleArray er     arr1 arr2
-                    | _ ->
-                    match xobj,yobj with 
-                    | (:? System.Array as arr1), (:? System.Array as arr2) -> GenericEqualityArbArray    er iec arr1 arr2
-                    | _ -> raise (Exception "invalid logic - expected array")
+                match tryGetFSharpArrayEqualityComparer typeof<'T> er comparer with
+                | :? EqualityComparer<'T> as arrayComparer -> arrayComparer
+                | _ -> 
+                    { new EqualityComparer<'T>() with
+                        member __.Equals (x, y) =
+                            let xobj, yobj = box x, box y
+                            match xobj,yobj with 
+                            | null, null -> true
+                            | null, _ -> false
+                            | _, null -> false
+                            | (:? (char[]) as arr1), (:? (char[]) as arr2) -> GenericEqualityCharArray arr1 arr2
+                            | _ ->
+                            match xobj,yobj with 
+                            | (:? (float32[]) as arr1), (:? (float32[]) as arr2) -> GenericEqualitySingleArray er arr1 arr2
+                            | _ ->
+                            match xobj,yobj with 
+                            | (:? (float[]) as arr1), (:? (float[])as arr2) -> GenericEqualityDoubleArray er arr1 arr2
+                            | _ ->
+                            match xobj,yobj with 
+                            | (:? System.Array as arr1), (:? System.Array as arr2) -> GenericEqualityArbArray er comparer arr1 arr2
+                            | _ -> raise (Exception "invalid logic - expected array")
 
-                let getHashCode (iec, xobj:obj)  =
-                  match xobj with 
-                  | null -> 0 
-                  | :? (obj[])      as oa -> GenericHashObjArray iec oa 
-                  | :? (byte[])     as ba -> GenericHashByteArray ba 
-                  | :? (int[])      as ba -> GenericHashInt32Array ba 
-                  | :? (int64[])    as ba -> GenericHashInt64Array ba 
-                  | :? System.Array as a  -> GenericHashArbArray iec a 
-                  | _ -> raise (Exception "invalid logic - expected array")
-
-                { new EqualityComparer<'T>() with
-                    member __.Equals (x, y) = arrayEquals er comparer (box x) (box y)
-                    member __.GetHashCode x = getHashCode (fsEqualityComparerUnlimitedHashingPER, box x) }
+                        member __.GetHashCode x = 
+                            match box x with 
+                            | null -> 0 
+                            | :? System.Array as a -> GenericHashArbArray fsEqualityComparerUnlimitedHashingPER a 
+                            | _ -> raise (Exception "invalid logic - expected array") }
 
             let structuralEqualityComparer<'T> comparer =
                 { new EqualityComparer<'T>() with
