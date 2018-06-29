@@ -748,6 +748,10 @@ and [<RequireQualifiedAccess; StructuralEquality; StructuralComparison; Structur
         match x with 
         | ILType.TypeVar _ -> true | _ -> false
 
+    member x.IsByrefTy =
+        match x with
+        | ILType.Byref _ -> true | _ -> false
+
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
