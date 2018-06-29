@@ -789,7 +789,7 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (context: PermitByRefExpr) 
             { limitArgs with flags = LimitFlags.ByRef }
 
     elif isReturnLimitedSpanLike then
-        { scope = env.returnScope; flags = LimitFlags.StackReferringSpanLike }
+        { scope = 1; flags = LimitFlags.StackReferringSpanLike }
 
     elif isReturnByref then
         if isSpanLikeTy cenv.g m (destByrefTy cenv.g returnTy) then
@@ -798,10 +798,10 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (context: PermitByRefExpr) 
             { limitArgs with flags = LimitFlags.ByRef }
 
     elif isReturnSpanLike then
-        { scope = env.returnScope; flags = LimitFlags.SpanLike }
+        { scope = 1; flags = LimitFlags.SpanLike }
 
     else
-        { scope = env.returnScope; flags = LimitFlags.None }
+        { scope = 1; flags = LimitFlags.None }
 
 /// Check call arguments, including the return argument.
 and CheckCall cenv env m returnTy args contexts context =
@@ -1168,11 +1168,11 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
                 else
                     errorR(Error(FSComp.SR.chkNoSpanLikeVariable(vref.DisplayName), m))
 
-            { limit with flags = LimitFlags.StackReferringSpanLike }
+            { scope = 1; flags = LimitFlags.StackReferringSpanLike }
         elif HasLimitFlag LimitFlags.ByRefOfSpanLike limit then
-            { limit with flags = LimitFlags.SpanLike }
+            { scope = 1; flags = LimitFlags.SpanLike }
         else
-            { limit with flags = LimitFlags.None }
+            { scope = 1; flags = LimitFlags.None }
 
     | TOp.LValueOp(LSet _, vref),_,[arg] -> 
         let isVrefLimited = not (HasLimitFlag LimitFlags.StackReferringSpanLike (GetLimitVal cenv env m vref.Deref))

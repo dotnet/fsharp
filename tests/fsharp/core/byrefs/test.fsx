@@ -63,7 +63,15 @@ module ByrefNegativeTests =
 
     module UseOfLibraryOnly =
         type C() = 
-            static member f1 (x: byref<'T, 'U>) = 1         
+            static member f1 (x: byref<'T, 'U>) = 1
+
+    module CantTakeAddress =
+
+        let test1 () =
+            let x = &1 // not allowed
+            let y = &2 // not allowed
+            x + y
+             
 #endif
 
 // Test a simple ref  argument

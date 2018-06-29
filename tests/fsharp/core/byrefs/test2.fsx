@@ -50,32 +50,29 @@ module NegativeTests =
 
         x + y
 
-    let test3 () =
-        let x = &1 // not allowed
-        let y = &2 // not allowed
-        x + y
-
-    let test4 doIt =
+    let test3 doIt =
         let mutable x = 1
         if doIt then
             &x // not allowed
         else
-            &1 // not allowed
+            let mutable y = 1
+            &y // not allowed
 
-    let test5 doIt =
+    let test4 doIt =
         let mutable x = 1
         let y =
             if doIt then
                 &x
             else
-                &1 // not allowed
+                let mutable z = 1
+                &z // not allowed
         &y // not allowed
 
     type Coolio() =
 
         static member Cool(x: inref<int>) = &x
 
-    let test6 () =
+    let test5 () =
 
         let y =
             let x = 1
@@ -83,7 +80,7 @@ module NegativeTests =
 
         () 
 
-    let test7 () =
+    let test6 () =
 
         let y =
             let mutable x = 1
@@ -91,7 +88,7 @@ module NegativeTests =
 
         () 
 
-    let test8 () =
+    let test7 () =
         let mutable x = 1
         let f = fun () -> &x // not allowed
         

@@ -4007,6 +4007,14 @@ let buildApp cenv expr resultTy arg m =
         let resultTy = 
             let argTy = tyOfExpr g arg
             if readonly then
+
+                match arg with
+                | Expr.Val _
+                | Expr.Op(TOp.LValueOp(LByrefGet _, _), _, _, _)
+                | Expr.Let(_, Expr.Op(TOp.LValueOp(LByrefGet _, _), _, _, _), _, _) -> ()
+                | _ -> 
+                    errorR(Error(FSComp.SR.tcCantTakeAddressOfExpression(), arg.Range))
+
                 mkInByrefTy g argTy
 
             // "`outref<'T>` types are never introduced implicitly by F#.", see rationale in RFC FS-1053

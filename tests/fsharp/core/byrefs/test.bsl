@@ -42,3 +42,7 @@ The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'
 test.fsx(66,34,66,47): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
 
 test.fsx(66,34,66,47): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
+
+test.fsx(71,22,71,23): typecheck error FS3238: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
+
+test.fsx(72,22,72,23): typecheck error FS3238: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
