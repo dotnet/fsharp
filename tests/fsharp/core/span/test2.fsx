@@ -326,3 +326,17 @@ namespace Tests
         let should_work28 (s: Span<int>) =
             let y = &s.[0]
             &y
+
+        let should_work29_helper (x: Span<int>) (y: byref<int>) = &y
+
+        let should_work29 () =
+            let yopac =
+                let mutable s = Span.Empty
+                &should_work29_helper s &beef // this looks like it's out of scope, but this is coming from a stack referring span-like type.
+            ()
+
+        let should_work30 () =
+            let yopac =
+                let mutable s = Span.Empty
+                &s.[0] // this looks like it's out of scope, but this is coming from a stack referring span-like type.
+            ()

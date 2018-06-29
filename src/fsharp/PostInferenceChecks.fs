@@ -153,26 +153,46 @@ let inline HasLimitFlag targetLimit (limit: Limit) =
 
 let NoLimit = { scope = 0; flags = LimitFlags.None }
 
+// Combining two limits will result in both limit flags merged.
+// If none of the limits are limited by a by-ref or a stack referring span-like
+//   the scope will be 0.
 let CombineTwoLimits limit1 limit2 = 
-    let isLimited1 = HasLimitFlag LimitFlags.ByRef limit1 || HasLimitFlag LimitFlags.StackReferringSpanLike limit1 
-    let isLimited2 = HasLimitFlag LimitFlags.ByRef limit2 || HasLimitFlag LimitFlags.StackReferringSpanLike limit2
+    let isByRef1 = HasLimitFlag LimitFlags.ByRef limit1
+    let isByRef2 = HasLimitFlag LimitFlags.ByRef limit2
+    let isStackSpan1 = HasLimitFlag LimitFlags.StackReferringSpanLike limit1
+    let isStackSpan2 = HasLimitFlag LimitFlags.StackReferringSpanLike limit2
+    let isLimited1 = isByRef1 || isStackSpan1
+    let isLimited2 = isByRef2 || isStackSpan2
+
+    // A limit that has a stack referring span-like but not a by-ref,
+    //   we force the scope to 1. This is to handle call sites
+    //   that return a by-ref and have stack referring span-likes as arguments.
+    //   This is to ensure we can only prevent out of scope at the method level rather than visibility.
+    let limit1 =
+        if isStackSpan1 && not isByRef1 then
+            { limit1 with scope = 1 }
+        else
+            limit1
+
+    let limit2 =
+        if isStackSpan2 && not isByRef2 then
+            { limit2 with scope = 1 }
+        else
+            limit2
+
     match isLimited1, isLimited2 with
+    | false, false ->
+        { scope = 0; flags = limit1.flags ||| limit2.flags }
     | true, true ->
         { scope = Math.Max(limit1.scope, limit2.scope); flags = limit1.flags ||| limit2.flags }
     | true, false ->
         { limit1 with flags = limit1.flags ||| limit2.flags }
     | false, true ->
         { limit2 with flags = limit1.flags ||| limit2.flags }
-    | _ ->
-        { scope = 0; flags = limit1.flags ||| limit2.flags }
 
 let CombineLimits limits =
     (NoLimit, limits)
     ||> List.fold CombineTwoLimits
-
-let CombineLimitsArray limits =
-    (NoLimit, limits)
-    ||> Array.fold CombineTwoLimits
 
 type cenv = 
     { boundVals: Dictionary<Stamp, int> // really a hash set
@@ -213,7 +233,7 @@ let GetLimitVal cenv env m (v: Val) =
 
     if isSpanLikeTy cenv.g m v.Type then
         // The value is a limited Span or might have become one through mutation
-        let isMutable = v.IsMutable && cenv.isInternalTestSpanStackReferring
+        let isMutable = v.IsMutable //&& cenv.isInternalTestSpanStackReferring
         let isLimited = HasLimitFlag LimitFlags.StackReferringSpanLike limit
 
         if isMutable || isLimited then
@@ -803,8 +823,9 @@ and CheckCallWithReceiver cenv env m returnTy args contexts context =
         let limitArgs = 
             let limitArgs = CheckExprs cenv env args contexts
             // We do not include the receiver's limit in the limit args unless the receiver is a stack referring span-like.
-            if HasLimitFlag LimitFlags.StackReferringSpanLike receiverLimit || HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike receiverLimit then
-                CombineTwoLimits limitArgs receiverLimit
+            if HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike receiverLimit then
+                // Scope is 1 to ensure any by-refs returned can only be prevented for out of scope of the function/method, not visibility.
+                CombineTwoLimits limitArgs { receiverLimit with scope = 1 }
             else
                 limitArgs
         CheckCallLimitArgs cenv env m returnTy limitArgs context
@@ -1421,7 +1442,7 @@ and CheckExprPermitReturnableByRef cenv env expr : Limit =
 and CheckDecisionTreeTargets cenv env targets context = 
     targets 
     |> Array.map (CheckDecisionTreeTarget cenv env context) 
-    |> CombineLimitsArray
+    |> (CombineLimits << List.ofArray)
 
 and CheckDecisionTreeTarget cenv env context (TTarget(vs,e,_)) = 
     BindVals cenv env vs 
