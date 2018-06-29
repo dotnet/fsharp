@@ -174,13 +174,17 @@ type internal FSharpCodeLensService
                             return Some (taggedText, navigation)
                         else return None
                     with e -> 
+#if DEBUG
                         logErrorf "Error in lazy line lens computation. %A" e
+#endif
                         return None
                 }
             
             let inline setNewResultsAndWarnIfOverriden fullDeclarationText value = 
                 if newResults.ContainsKey fullDeclarationText then
+#if DEBUG
                     logWarningf "New results already contains: %A" fullDeclarationText
+#endif
                 newResults.[fullDeclarationText] <- value
             for symbolUse in symbolUses do
                 if symbolUse.IsFromDefinition then
@@ -281,7 +285,10 @@ type internal FSharpCodeLensService
                             textSnapshot.CreateTrackingSpan(declarationSpan, SpanTrackingMode.EdgeExclusive)
                         codeLensToAdd.Add (trackingSpan, res)
                         newResults.[fullDeclarationText] <- (trackingSpan, res)
-                    with e -> logExceptionWithContext (e, "Line Lens tracking tag span creation")
+                    with e -> 
+#if DEBUG
+                        logExceptionWithContext (e, "Line Lens tracking tag span creation")
+#endif
                 ()
             lastResults <- newResults
             do! Async.SwitchToContext uiContext |> liftAsync
@@ -306,16 +313,15 @@ type internal FSharpCodeLensService
                             lineLens.RelayoutRequested.Enqueue ()
                             sb.Begin()
                         else
+#if DEBUG
                             logWarningf "Couldn't retrieve code lens information for %A" codeLens.FullTypeSignature
-                        // logInfo "Adding text box!"
+#endif
                     } |> (RoslynHelpers.StartAsyncSafe CancellationToken.None) "UIElement creation"
 
             for value in tagsToUpdate do
                 let trackingSpan, (newTrackingSpan, _, codeLens) = value.Key, value.Value
-                // logInfof "Adding ui element for %A" (codeLens.TaggedText)
                 lineLens.RemoveCodeLens trackingSpan |> ignore
                 let Grid = lineLens.AddCodeLens newTrackingSpan
-                // logInfof "Trackingspan %A is being added." trackingSpan 
                 if codeLens.Computed && (isNull codeLens.UiElement |> not) then
                     let uiElement = codeLens.UiElement
                     lineLens.AddUiElementToCodeLensOnce (newTrackingSpan, uiElement)
@@ -334,7 +340,6 @@ type internal FSharpCodeLensService
 
             for oldResult in oldResults do
                 let trackingSpan, _ = oldResult.Value
-                // logInfof "removing trackingSpan %A" trackingSpan
                 lineLens.RemoveCodeLens trackingSpan |> ignore
             
             if not firstTimeChecked then
@@ -351,8 +356,11 @@ type internal FSharpCodeLensService
                       do! executeCodeLenseAsync()
                       do! Async.Sleep(1000)
                   with
-                  | e -> logErrorf "Line Lens startup failed with: %A" e
-                         numberOfFails <- numberOfFails + 1
+                  | e -> 
+#if DEBUG
+                    logErrorf "Line Lens startup failed with: %A" e
+#endif
+                    numberOfFails <- numberOfFails + 1
            } |> Async.Start
         end
 
