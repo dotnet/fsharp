@@ -38,6 +38,8 @@ is not compatible with type
     'byref<'a>'    
 .
 
+neg106.fs(17,59,17,61): typecheck error FS3238: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
+
 neg106.fs(17,14,17,68): typecheck error FS0041: No overloads match for method 'CompareExchange'. The available overloads are shown below.
 neg106.fs(17,14,17,68): typecheck error FS0041: Possible overload: 'System.Threading.Interlocked.CompareExchange(location1: byref<int>, value: int, comparand: int) : int'. Type constraint mismatch. The type 
     'inref<int>'    
@@ -133,6 +135,8 @@ but given a
     'inref<'T>'    
 The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
 
+neg106.fs(94,35,94,39): typecheck error FS3238: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
+
 neg106.fs(94,35,94,39): typecheck error FS0001: Type mismatch. Expecting a
     'byref<int>'    
 but given a
@@ -146,6 +150,8 @@ but given a
 The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'
 
 neg106.fs(102,37,102,40): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+
+neg106.fs(102,36,102,40): typecheck error FS3238: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
 
 neg106.fs(102,36,102,40): typecheck error FS0001: Type mismatch. Expecting a
     'outref<'a>'    
@@ -161,6 +167,8 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
 
 neg106.fs(112,39,112,42): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
+neg106.fs(112,38,112,42): typecheck error FS3238: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
+
 neg106.fs(112,38,112,42): typecheck error FS0001: Type mismatch. Expecting a
     'byref<'a>'    
 but given a
@@ -174,6 +182,8 @@ but given a
 The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'
 
 neg106.fs(122,39,122,42): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+
+neg106.fs(122,38,122,42): typecheck error FS3238: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
 
 neg106.fs(122,38,122,42): typecheck error FS0001: Type mismatch. Expecting a
     'outref<'a>'    
@@ -189,6 +199,8 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
 
 neg106.fs(132,39,132,42): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
+neg106.fs(132,38,132,42): typecheck error FS3238: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
+
 neg106.fs(132,38,132,42): typecheck error FS0001: Type mismatch. Expecting a
     'byref<'a>'    
 but given a
@@ -202,6 +214,8 @@ but given a
 The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'
 
 neg106.fs(142,39,142,42): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+
+neg106.fs(142,38,142,42): typecheck error FS3238: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
 
 neg106.fs(142,38,142,42): typecheck error FS0001: Type mismatch. Expecting a
     'outref<'a>'    

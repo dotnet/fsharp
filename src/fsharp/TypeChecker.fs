@@ -4013,7 +4013,7 @@ let buildApp cenv expr resultTy arg m =
                 | Expr.Op(TOp.LValueOp(LByrefGet _, _), _, _, _)
                 | Expr.Let(_, Expr.Op(TOp.LValueOp(LByrefGet _, _), _, _, _), _, _) -> ()
                 | _ -> 
-                    errorR(Error(FSComp.SR.tcCantTakeAddressOfExpression(), arg.Range))
+                    errorR(Error(FSComp.SR.tcCantTakeAddressOfExpression(), m))
 
                 mkInByrefTy g argTy
 
