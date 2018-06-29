@@ -881,7 +881,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
 
         let limit = CheckBinding cenv { env with returnScope = env.returnScope + 1 } false bindingContext bind  
         BindVal cenv env v
-        LimitVal cenv v { limit with scope = if isByRef then limit.scope else env.returnScope }
+        LimitVal cenv v { limit with scope = if v.IsCompilerGenerated then 1 elif isByRef then limit.scope else env.returnScope }
         CheckExpr cenv env body context
 
     | Expr.Const (_,m,ty) -> 
