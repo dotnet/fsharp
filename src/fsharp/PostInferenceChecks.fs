@@ -233,7 +233,7 @@ let GetLimitVal cenv env m (v: Val) =
 
     if isSpanLikeTy cenv.g m v.Type then
         // The value is a limited Span or might have become one through mutation
-        let isMutable = v.IsMutable //&& cenv.isInternalTestSpanStackReferring
+        let isMutable = v.IsMutable && cenv.isInternalTestSpanStackReferring
         let isLimited = HasLimitFlag LimitFlags.StackReferringSpanLike limit
 
         if isMutable || isLimited then
@@ -795,7 +795,7 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (context: PermitByRefExpr) 
         if isSpanLikeTy cenv.g m (destByrefTy cenv.g returnTy) then
             { limitArgs with flags = LimitFlags.ByRefOfSpanLike }
         else
-            { limitArgs with flags = LimitFlags.None }
+            { limitArgs with flags = LimitFlags.ByRef }
 
     elif isReturnSpanLike then
         { scope = env.returnScope; flags = LimitFlags.SpanLike }
