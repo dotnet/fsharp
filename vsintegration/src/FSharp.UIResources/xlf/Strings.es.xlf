@@ -103,8 +103,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Show_Outlining">
-        <source>Show outlining and collapsable nodes for F# code</source>
-        <target state="needs-review-translation">Mostrar los nodos de esquematización y contraíbles del código F#</target>
+        <source>Show outlining and collapsible nodes for F# code</source>
+        <target state="translated">Mostrar los nodos de esquematización y contraíbles del código F#</target>
         <note />
       </trans-unit>
       <trans-unit id="Time_until_stale_completion">
