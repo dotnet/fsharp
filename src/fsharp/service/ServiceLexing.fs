@@ -379,7 +379,13 @@ module internal LexerStateEncoding =
 
     let bitOfBool b = if b then 1 else 0
     let boolOfBit n = (n = 1L)
-        
+
+    let inline colorStateOfLexState (state: FSharpTokenizerLexState) =
+        enum<FSharpTokenizerColorState> (int32 ((state &&& lexstateMask) >>> lexstateStart))
+
+    let inline lexStateOfColorState (state: FSharpTokenizerColorState) =
+        (int64 state <<< lexstateStart) &&& lexstateMask
+
     let encodeLexCont (colorState:FSharpTokenizerColorState) ncomments (b:pos) ifdefStack light = 
         let mutable ifdefStackCount = 0
         let mutable ifdefStackBits = 0
@@ -390,8 +396,7 @@ module internal LexerStateEncoding =
                     ifdefStackBits <- (ifdefStackBits ||| (1 <<< ifdefStackCount))
             ifdefStackCount <- ifdefStackCount + 1
 
-        let lexstate = int64 colorState
-        ((lexstate <<< lexstateStart)  &&& lexstateMask)
+        lexStateOfColorState colorState
         ||| ((ncomments <<< ncommentsStart) &&& ncommentsMask)
         ||| ((resize32 b.Encoding <<< startPosStart) &&& startPosMask)
         ||| ((resize32 (bitOfBool light) <<< hardwhitePosStart) &&& hardwhitePosMask)
@@ -408,7 +413,7 @@ module internal LexerStateEncoding =
                 let mask = 1 <<< bit
                 let ifDef = (if ifdefStack &&& mask = 0 then IfDefIf else IfDefElse)
                 ifDefs<-(ifDef,range0)::ifDefs
-        enum<FSharpTokenizerColorState> (int32 ((state &&& lexstateMask)  >>> lexstateStart)),
+        colorStateOfLexState state,
         (int32) ((state &&& ncommentsMask) >>> ncommentsStart),
         pos.Decode (int32 ((state &&& startPosMask) >>> startPosStart)),
         ifDefs,
@@ -740,16 +745,11 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
             
         tokenDataOption, lexintFinal
 
-    static member ColorStateOfLexState (lexState: FSharpTokenizerLexState) = 
-        let tag,_ncomments,_position,_ifdefStack,_lightSyntaxStatusInital = LexerStateEncoding.decodeLexCont lexState 
-        tag
+    static member ColorStateOfLexState(lexState: FSharpTokenizerLexState) = 
+        LexerStateEncoding.colorStateOfLexState lexState
 
-    static member LexStateOfColorState (colorState: FSharpTokenizerColorState) = 
-        let ncomments = 0L
-        let position = pos0 
-        let ifdefStack = []
-        let light = true
-        LexerStateEncoding.encodeLexCont colorState ncomments position ifdefStack light
+    static member LexStateOfColorState(colorState: FSharpTokenizerColorState) = 
+        LexerStateEncoding.lexStateOfColorState colorState
 
 [<Sealed>]
 type FSharpSourceTokenizer(defineConstants : string list, filename : Option<string>) =     
