@@ -159,15 +159,12 @@ module private FSharpQuickInfo =
 
 type internal FSharpAsyncQuickInfoSource
     (
-        serviceProvider: IServiceProvider,
+        statusBar: StatusBar,
+        xmlMemberIndexService: IVsXMLMemberIndexService,
         checkerProvider:FSharpCheckerProvider,
         projectInfoManager:FSharpProjectOptionsManager,
         textBuffer:ITextBuffer
     ) =
-
-    // GetService calls must be made on the UI thread
-    let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
-    let xmlMemberIndexService = serviceProvider.XMLMemberIndexService
 
     // test helper
     static member ProvideQuickInfo(checker:FSharpChecker, documentId:DocumentId, sourceText:SourceText, filePath:string, position:int, parsingOptions:FSharpParsingOptions, options:FSharpProjectOptions, textVersionHash:int) =
@@ -190,7 +187,7 @@ type internal FSharpAsyncQuickInfoSource
     interface IAsyncQuickInfoSource with
         override __.Dispose() = () // no cleanup necessary
 
-        // this method can be called from the background thread.
+        // This method can be called from the background thread.
         // Do not call IServiceProvider.GetService here.
         override __.GetQuickInfoItemAsync(session:IAsyncQuickInfoSession, cancellationToken:CancellationToken) : Task<QuickInfoItem> =
             let triggerPoint = session.GetTriggerPoint(textBuffer.CurrentSnapshot)
@@ -266,6 +263,11 @@ type internal FSharpAsyncQuickInfoSourceProvider
         checkerProvider:FSharpCheckerProvider,
         projectInfoManager:FSharpProjectOptionsManager
     ) =
+
     interface IAsyncQuickInfoSourceProvider with
         override __.TryCreateQuickInfoSource(textBuffer:ITextBuffer) : IAsyncQuickInfoSource =
-            new FSharpAsyncQuickInfoSource(serviceProvider, checkerProvider, projectInfoManager, textBuffer) :> IAsyncQuickInfoSource
+            // GetService calls must be made on the UI thread
+            // It is safe to do it here (see #4713)
+            let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
+            let xmlMemberIndexService = serviceProvider.XMLMemberIndexService
+            new FSharpAsyncQuickInfoSource(statusBar, xmlMemberIndexService, checkerProvider, projectInfoManager, textBuffer) :> IAsyncQuickInfoSource
