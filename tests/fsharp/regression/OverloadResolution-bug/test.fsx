@@ -28,3 +28,8 @@ module TestOfObj =
             match x with
             | :? ITest1 as one -> Methods.ofObject one
             | :? obj as one -> Methods.ofObject one
+            | _ -> None
+
+
+    System.IO.File.WriteAllText("test.ok","ok")
+    printfn "Succeeded"
