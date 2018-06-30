@@ -103,7 +103,7 @@
         <note />
       </trans-unit>
       <trans-unit id="Show_Outlining">
-        <source>Show outlining and collapsable nodes for F# code</source>
+        <source>Show outlining and collapsible nodes for F# code</source>
         <target state="translated">Pokaż konspekt i węzły z możliwością zwijania dla kodu języka F#</target>
         <note />
       </trans-unit>

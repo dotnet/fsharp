@@ -103,7 +103,7 @@
         <note />
       </trans-unit>
       <trans-unit id="Show_Outlining">
-        <source>Show outlining and collapsable nodes for F# code</source>
+        <source>Show outlining and collapsible nodes for F# code</source>
         <target state="translated">F# 코드에 대한 개요 및 축소 가능한 노드 표시</target>
         <note />
       </trans-unit>

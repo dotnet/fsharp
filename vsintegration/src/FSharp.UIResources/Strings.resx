@@ -178,7 +178,7 @@
     <value>Outlining</value>
   </data>
   <data name="Show_Outlining" xml:space="preserve">
-    <value>Show outlining and collapsable nodes for F# code</value>
+    <value>Show outlining and collapsible nodes for F# code</value>
   </data>
   <data name="Time_until_stale_completion" xml:space="preserve">
     <value>Time until stale results are used (in milliseconds)</value>
