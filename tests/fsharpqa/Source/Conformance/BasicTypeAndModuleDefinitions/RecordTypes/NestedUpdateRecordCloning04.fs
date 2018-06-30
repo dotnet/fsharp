@@ -30,3 +30,5 @@ module Test =
 
     // Fields Cloned t2 to t3
     if t3.D.C <> t2.D.C then exit 1
+
+    exit 0
