@@ -834,8 +834,8 @@ namespace Microsoft.FSharp.Core
                        match arr1,yobj with 
                        // Fast path
                        | (:? (obj[]) as arr1), (:? (obj[]) as arr2)      -> GenericComparisonObjArrayWithComparer comp arr1 arr2
-                       // Fast path
-                       | (:? (byte[]) as arr1), (:? (byte[]) as arr2)     -> GenericComparisonByteArray arr1 arr2
+                       // Fast path. We cannot use `:? byte[]` because this would match both byte and sbyte arrays.
+                       | _ when xobj.GetType().Equals typedefof<byte[]> && yobj.GetType().Equals typedefof<byte[]> -> GenericComparisonByteArray (xobj :?> byte[]) (yobj :?> byte[])
                        | _                   , (:? System.Array as arr2) -> GenericComparisonArbArrayWithComparer comp arr1 arr2
                        | _ -> FailGenericComparison xobj
                    // Check for IStructuralComparable
