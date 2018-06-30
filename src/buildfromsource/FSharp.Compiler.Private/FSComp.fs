@@ -4352,8 +4352,8 @@ type internal SR private() =
     /// (Originally from ..\FSComp.txt:1441)
     static member chkNoSpanLikeValueFromExpression() = (3237, GetStringFunc("chkNoSpanLikeValueFromExpression",",,,") )
     /// This type is not an attribute
-    /// (Originally from ..\FSComp.txt:1439)
-    static member tcTypeDoesNotInheritAttribute() = (3235, GetStringFunc("tcTypeDoesNotInheritAttribute",",,,") )
+    /// (Originally from ..\FSComp.txt:1442)
+    static member tcTypeDoesNotInheritAttribute() = (3238, GetStringFunc("tcTypeDoesNotInheritAttribute",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
