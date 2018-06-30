@@ -4007,15 +4007,6 @@ let buildApp cenv expr resultTy arg m =
         let resultTy = 
             let argTy = tyOfExpr g arg
             if readonly then
-
-                match arg with
-                | Expr.Val _
-                | Expr.Op(TOp.LValueOp(LByrefGet _, _), _, _, _)
-                | Expr.Let(_, Expr.Op(TOp.LValueOp(LByrefGet _, _), _, _, _), _, _)
-                | Expr.Let(_, Expr.Let(_, Expr.Op(TOp.LValueOp(LByrefGet _, _), _, _, _), _, _), _, _) -> ()
-                | _ -> 
-                    errorR(Error(FSComp.SR.tcCantTakeAddressOfExpression(), m))
-
                 mkInByrefTy g argTy
 
             // "`outref<'T>` types are never introduced implicitly by F#.", see rationale in RFC FS-1053
@@ -9799,9 +9790,11 @@ and TcMethodApplication
        if isByrefTy g calledArgTy && isRefCellTy g callerArgTy then 
            None, Expr.Op(TOp.RefAddrGet false, [destRefCellTy g callerArgTy], [callerArgExpr], m) 
 
+#if IMPLICIT_ADDRESS_OF
        elif isInByrefTy g calledArgTy && not (isByrefTy cenv.g callerArgTy) then 
            let wrap, callerArgExprAddress, _readonly, _writeonly = mkExprAddrOfExpr g true false NeverMutates callerArgExpr None m
            Some wrap, callerArgExprAddress
+#endif
 
        elif isDelegateTy cenv.g calledArgTy && isFunTy cenv.g callerArgTy then 
            None, CoerceFromFSharpFuncToDelegate cenv.g cenv.amap cenv.infoReader ad callerArgTy m callerArgExpr calledArgTy

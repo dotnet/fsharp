@@ -4354,7 +4354,7 @@
   <data name="chkNoSpanLikeValueFromExpression" xml:space="preserve">
     <value>A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</value>
   </data>
-  <data name="tcCantTakeAddressOfExpression" xml:space="preserve">
+  <data name="tastCantTakeAddressOfExpression" xml:space="preserve">
     <value>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</value>
   </data>
 </root>
