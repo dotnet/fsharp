@@ -52,7 +52,7 @@ type internal FSharpFindUsagesService
             let! sourceText = document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask |> liftAsync
             let checker = checkerProvider.Checker
             let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = Settings.LanguageServicePerformance.AllowStaleCompletionResults, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(position).ToString()
             let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions

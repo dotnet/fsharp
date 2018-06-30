@@ -4324,10 +4324,10 @@ type internal SR private() =
     /// A type annotated with IsByRefLike must also be a struct. Consider adding the [<Struct>] attribute to the type.
     /// (Originally from ..\FSComp.txt:1432)
     static member tcByRefLikeNotStruct() = (3227, GetStringFunc("tcByRefLikeNotStruct",",,,") )
-    /// The address of the variable '%s' or a related expression cannot be used at this point. The address may not be passed to a call that returns an address. This is to ensure the address of the local value does not escape its scope.
+    /// The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
     /// (Originally from ..\FSComp.txt:1433)
-    static member chkNoByrefReturnOfLocal(a0 : System.String) = (3228, GetStringFunc("chkNoByrefReturnOfLocal",",,,%s,,,") a0)
-    /// The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.
+    static member chkNoByrefAddressOfValueFromExpression() = (3228, GetStringFunc("chkNoByrefAddressOfValueFromExpression",",,,") )
+    /// The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.
     /// (Originally from ..\FSComp.txt:1434)
     static member chkNoReturnOfLimitedSpan() = (3229, GetStringFunc("chkNoReturnOfLimitedSpan",",,,") )
     /// This value can't be assigned because the target '%s' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.
@@ -4342,6 +4342,15 @@ type internal SR private() =
     /// Struct members cannot return the address of fields of the struct by reference
     /// (Originally from ..\FSComp.txt:1438)
     static member chkStructsMayNotReturnAddressesOfContents() = (3234, GetStringFunc("chkStructsMayNotReturnAddressesOfContents",",,,") )
+    /// The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.
+    /// (Originally from ..\FSComp.txt:1439)
+    static member chkNoByrefLikeFunctionCall() = (3235, GetStringFunc("chkNoByrefLikeFunctionCall",",,,") )
+    /// The Span or IsByRefLike variable '%s' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
+    /// (Originally from ..\FSComp.txt:1440)
+    static member chkNoSpanLikeVariable(a0 : System.String) = (3236, GetStringFunc("chkNoSpanLikeVariable",",,,%s,,,") a0)
+    /// A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.
+    /// (Originally from ..\FSComp.txt:1441)
+    static member chkNoSpanLikeValueFromExpression() = (3237, GetStringFunc("chkNoSpanLikeValueFromExpression",",,,") )
     /// This type is not an attribute
     /// (Originally from ..\FSComp.txt:1439)
     static member tcTypeDoesNotInheritAttribute() = (3235, GetStringFunc("tcTypeDoesNotInheritAttribute",",,,") )
@@ -5751,11 +5760,14 @@ type internal SR private() =
         ignore(GetString("readOnlyAttributeOnStructWithMutableField"))
         ignore(GetString("tcByrefReturnImplicitlyDereferenced"))
         ignore(GetString("tcByRefLikeNotStruct"))
-        ignore(GetString("chkNoByrefReturnOfLocal"))
+        ignore(GetString("chkNoByrefAddressOfValueFromExpression"))
         ignore(GetString("chkNoReturnOfLimitedSpan"))
         ignore(GetString("chkNoWriteToLimitedSpan"))
         ignore(GetString("tastValueMustBeLocal"))
         ignore(GetString("tcIsReadOnlyNotStruct"))
         ignore(GetString("chkStructsMayNotReturnAddressesOfContents"))
+        ignore(GetString("chkNoByrefLikeFunctionCall"))
+        ignore(GetString("chkNoSpanLikeVariable"))
+        ignore(GetString("chkNoSpanLikeValueFromExpression"))
         ignore(GetString("tcTypeDoesNotInheritAttribute"))
         ()
