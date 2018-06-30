@@ -481,6 +481,9 @@ val internal ResolveTypeLongIdentInTyconRef         : TcResultsSink -> NameResol
 /// Resolve a long identifier to a type definition
 val internal ResolveTypeLongIdent                   : TcResultsSink -> NameResolver -> ItemOccurence -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> TypeNameResolutionStaticArgsInfo -> PermitDirectReferenceToGeneratedType -> ResultOrException<TyconRef>
 
+/// Resolve a long identifier to a nested field
+val internal ResolveNestedField                     : TcResultsSink -> NameResolver -> NameResolutionEnv -> AccessorDomain -> TType -> Ident list -> Ident list * FieldResolution list
+
 /// Resolve a long identifier to a field
 val internal ResolveField                           : TcResultsSink -> NameResolver -> NameResolutionEnv -> AccessorDomain -> TType -> Ident list * Ident -> Ident list -> FieldResolution list
 
