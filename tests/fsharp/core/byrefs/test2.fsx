@@ -76,7 +76,7 @@ module NegativeTests =
 
         let y =
             let x = 1
-            &Coolio.Cool(x) // not allowed
+            &Coolio.Cool(&x) // not allowed
 
         () 
 
@@ -84,7 +84,7 @@ module NegativeTests =
 
         let y =
             let mutable x = 1
-            &Coolio.Cool(x) // not allowed
+            &Coolio.Cool(&x) // not allowed
 
         () 
 

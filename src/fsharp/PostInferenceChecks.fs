@@ -1797,7 +1797,7 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
         with e -> errorRecovery e v.Range 
     end
 
-    CheckBinding cenv { env with returnScope = env.returnScope + 1 } true PermitByRefExpr.Yes bind |> ignore
+    CheckBinding cenv { env with returnScope = 1 } true PermitByRefExpr.Yes bind |> ignore
 
 let CheckModuleBindings cenv env binds = 
     binds |> List.iter (CheckModuleBinding cenv env)

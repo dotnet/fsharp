@@ -71,6 +71,19 @@ module ByrefNegativeTests =
             let x = &1 // not allowed
             let y = &2 // not allowed
             x + y
+
+        let test2_helper (x: byref<int>) = x
+        let test2 () =
+            let mutable x = 1
+            let y = &test2_helper &x // not allowed
+            ()
+
+    module InRefParam_DateTime = 
+        type C() = 
+            static member M(x: inref<System.DateTime>) = x
+        let w = System.DateTime.Now
+        let v =  C.M(w) // not allowed
+        check "cweweoiwe51btw" v w
              
 #endif
 
@@ -330,7 +343,7 @@ module InRefParamOverload_ImplicitAddressOfAtCallSite2  =
         check "cweweoiwe51btw2" v2 (res.AddDays(1.0))
     Test()
 
-
+#if IMPLICIT_ADDRESS_OF
 module InRefParam_DateTime   = 
     type C() = 
          static member M(x: inref<System.DateTime>) = x
@@ -364,6 +377,7 @@ module InRefParam_DateTime_ImplicitAddressOfAtCallSite4  =
     let w = [| date |]
     let v =  C.M(w.[0])
     check "lmvjvwo1" v date
+#endif
 
 module InRefParam_Generic_ExplicitAddressOfAttCallSite1 = 
     type C() = 

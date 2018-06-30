@@ -15,9 +15,9 @@ test2.fsx(68,18,68,19): typecheck error FS3209: The address of the variable 'z' 
 
 test2.fsx(69,10,69,11): typecheck error FS3209: The address of the variable 'y' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
-test2.fsx(79,14,79,28): typecheck error FS3228: The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
+test2.fsx(79,14,79,29): typecheck error FS3228: The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
-test2.fsx(87,14,87,28): typecheck error FS3228: The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
+test2.fsx(87,14,87,29): typecheck error FS3228: The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
 test2.fsx(93,28,93,29): typecheck error FS0421: The address of the variable 'x' cannot be used at this point
 
