@@ -436,7 +436,7 @@ let private AnalyzeTypeOfMemberVal isCSharpExt g (ty,vref:ValRef) =
         [],memberAllTypars,retTy,[]
     else
         let parentTyArgs = argsOfAppTy g ty
-        let memberParentTypars,memberMethodTypars = List.chop parentTyArgs.Length memberAllTypars
+        let memberParentTypars,memberMethodTypars = List.splitAt parentTyArgs.Length memberAllTypars
         memberParentTypars,memberMethodTypars,retTy,parentTyArgs
 
 /// Get the object type for a member value which is an extension method  (C#-style or F#-style)
@@ -1477,7 +1477,7 @@ type MethInfo =
             // A slot signature is w.r.t. the type variables of the type it is associated with.
             // So we have to rename from the member type variables to the type variables of the type.
             let formalEnclosingTypars = x.ApparentEnclosingTyconRef.Typars(m)
-            let formalEnclosingTyparsFromMethod,formalMethTypars = List.chop formalEnclosingTypars.Length allTyparsFromMethod
+            let formalEnclosingTyparsFromMethod,formalMethTypars = List.splitAt formalEnclosingTypars.Length allTyparsFromMethod
             let methodToParentRenaming,_ = mkTyparToTyparRenaming formalEnclosingTyparsFromMethod formalEnclosingTypars
             let formalParams = 
                 GetArgInfosOfMember x.IsCSharpStyleExtensionMember g vref 

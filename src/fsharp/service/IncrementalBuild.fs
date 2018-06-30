@@ -1745,7 +1745,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             let tcConfigB, sourceFilesNew = 
 
                 let getSwitchValue switchstring =
-                    match commandLineArgs |> Seq.tryFindIndex(fun s -> s.StartsWith(switchstring)) with
+                    match commandLineArgs |> Seq.tryFindIndex(fun s -> s.StartsWithOrdinal(switchstring)) with
                     | Some idx -> Some(commandLineArgs.[idx].Substring(switchstring.Length))
                     | _ -> None
 

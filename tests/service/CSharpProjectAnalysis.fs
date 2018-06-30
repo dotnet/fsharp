@@ -146,3 +146,53 @@ let _ = CSharpClass(0)
         Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsEffectivelySameAs ctor) members |> should be True
     | None -> failwith "Expected Some for DeclaringEntity"
 
+let getEntitiesUses source =
+    let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
+    let results, _ = getProjectReferences(source, [csharpAssembly], None, None)
+    results.GetAllUsesOfAllSymbols()
+    |> Async.RunSynchronously
+    |> Seq.choose (fun su ->
+        match su.Symbol with
+        | :? FSharpEntity as entity -> Some entity
+        | _ -> None)
+    |> List.ofSeq
+
+[<Test>]
+#if NETCOREAPP2_0
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
+let ``Different types with the same short name equality check`` () =
+    let source = """
+module CtorTest
+
+let (s1: System.String) = null
+let (s2: FSharp.Compiler.Service.Tests.String) = null
+"""
+
+    let stringSymbols =
+        getEntitiesUses source
+        |> List.filter (fun entity -> entity.LogicalName = "String")
+
+    match stringSymbols with
+    | e1 :: e2 :: [] -> e1.IsEffectivelySameAs(e2) |> should be False
+    | _ -> sprintf "Expecting two symbols, got %A" stringSymbols |> failwith
+
+[<Test>]
+#if NETCOREAPP2_0
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
+let ``Different namespaces with the same short name equality check`` () =
+    let source = """
+module CtorTest
+
+open System.Linq
+open FSharp.Compiler.Service.Tests.Linq
+"""
+
+    let stringSymbols =
+        getEntitiesUses source
+        |> List.filter (fun entity -> entity.LogicalName = "Linq")
+
+    match stringSymbols with
+    | e1 :: e2 :: [] -> e1.IsEffectivelySameAs(e2) |> should be False
+    | _ -> sprintf "Expecting two symbols, got %A" stringSymbols |> failwith

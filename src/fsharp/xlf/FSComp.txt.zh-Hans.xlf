@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
-        <target state="needs-review-translation">模式匹配表达式的所有分支必须具有同一类型。此表达式的类型应为“{0}”，但此处类型为“{1}”。</target>
+        <target state="translated">模式匹配表达式的所有分支必须返回相同类型的值。第一个分支返回“{0}”类型的值，但此分支返回“{1}”类型的值。</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -5434,7 +5434,7 @@
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
         <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="translated">{0} 指定的版本“{1}”，但此值无效，已被忽略</target>
+        <target state="translated">属性 {0} 指定版本“{1}”，但此值无效，已被忽略</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">
@@ -6974,7 +6974,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionMatchBang">
         <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
-        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <target state="translated">在计算表达式中用于直接对另一个计算表达式的结果进行模式匹配。</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">
