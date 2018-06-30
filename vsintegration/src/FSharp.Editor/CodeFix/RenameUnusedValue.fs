@@ -58,7 +58,7 @@ type internal FSharpRenameUnusedValueCodeFixProvider
             // where backtickes are replaced with parens.
             if not (PrettyNaming.IsOperatorOrBacktickedName ident) && not (ident.StartsWith "``") then
                 let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
-                let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = true, sourceText = sourceText, userOpName=userOpName)
+                let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = Settings.LanguageServicePerformance.AllowStaleCompletionResults, sourceText = sourceText, userOpName=userOpName)
                 let m = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
                 let! lexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, context.Span.Start, document.FilePath, defines, SymbolLookupKind.Greedy, false)

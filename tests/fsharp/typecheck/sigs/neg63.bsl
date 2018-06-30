@@ -11,4 +11,4 @@ neg63.fs(14,8,14,9): typecheck error FS3155: A quotation may not involve an assi
 
 neg63.fs(18,6,18,7): typecheck error FS3209: The address of the variable 'x' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
-neg63.fs(26,6,26,10): typecheck error FS3228: The address of the variable 'addr' or a related expression cannot be used at this point. The address may not be passed to a call that returns an address. This is to ensure the address of the local value does not escape its scope.
+neg63.fs(26,6,26,10): typecheck error FS3209: The address of the variable 'addr' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
