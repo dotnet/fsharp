@@ -991,7 +991,7 @@ module internal Array =
     open System
 
     let inline fastComparerForArraySort<'t when 't : comparison> () =
-        LanguagePrimitives.FastGenericComparerCanBeNull<'t>
+        LanguagePrimitives.FastGenericComparerInternal<'t>
 
     // The input parameter should be checked by callers if necessary
     let inline zeroCreateUnchecked (count:int) = 
@@ -1141,13 +1141,12 @@ module internal Array =
         let len = array.Length 
         if len < 2 then () 
         else
-            let cFast = LanguagePrimitives.FastGenericComparerCanBeNull<'T>
-            match cFast with 
-            | null -> 
+            let cFast = LanguagePrimitives.FastGenericComparerInternal<'T>
+            if obj.ReferenceEquals (cFast, System.Collections.Generic.Comparer<'T>.Default) then
                 // An optimization for the cases where the keys and values coincide and do not have identity, e.g. are integers
                 // In this case an unstable sort is just as good as a stable sort (and faster)
                 Array.Sort<_,_>(array, null)
-            | _ -> 
+            else
                 // 'keys' is an array storing the projected keys
                 let keys = (array.Clone() :?> array<'T>)
                 stableSortWithKeys array keys
