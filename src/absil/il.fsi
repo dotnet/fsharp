@@ -720,6 +720,7 @@ type ILMethodBody =
 [<RequireQualifiedAccess>]
 type ILMemberAccess = 
     | Assembly
+    | CompilerControlled
     | FamilyAndAssembly
     | FamilyOrAssembly
     | Family
