@@ -6906,8 +6906,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                 
             match optOrigExpr with 
             | Some (SynExpr.Ident origId, (sepRange, _)) ->
-                let flds = ids |> List.map (fun (FieldResolution(rfref, _)) -> rfref.RecdField.Id)
-                let lid, rng = upToId sepRange id (origId :: flds)
+                let lid, rng = upToId sepRange id (origId :: ids)
                 Some (SynExpr.LongIdent (false, LongIdentWithDots(lid, rng), None, totalRange origId id), (id.idRange, None)) // TODO: id.idRange should be the range of the next separator
             | _ -> None
 
@@ -6915,13 +6914,10 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
         let rec synExprRecd copyInfo id flds =
             Some(SynExpr.Record((None, (copyInfo id), [ match flds with 
                                                         | [] -> yield ((LongIdentWithDots ([], []), true), v, None)
-                                                        | [FieldResolution(rfref, _)] ->
-                                                            let fldId = rfref.RecdField.Id
-                                                            yield ((LongIdentWithDots ([fldId],[]), true), v, None)
-                                                        | FieldResolution(rfref, _) :: t -> 
-                                                            let fldId = rfref.RecdField.Id
+                                                        | [fldId] -> yield ((LongIdentWithDots ([fldId],[]), true), v, None)
+                                                        | fldId :: rest -> 
                                                             let nestedFld = synExprRecd copyInfo fldId
-                                                            yield ((LongIdentWithDots ([fldId], []), true), nestedFld t, None)], id.idRange)))
+                                                            yield ((LongIdentWithDots ([fldId], []), true), nestedFld rest, None)], id.idRange)))
 
         let access, flds = lidwd.Lid |> ResolveNestedField cenv.tcSink cenv.nameResolver env.eNameResEnv env.eAccessRights overallTy
 
@@ -6929,11 +6925,10 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
             [
                 match (access, flds) with
                 | [],  [] -> ()
-                | ids, [] -> yield (ids |> List.frontAndBack), v
-                | ids, [FieldResolution(rfref, _)] -> yield ((ids@[rfref.RecdField.Id]) |> List.frontAndBack), v
-                | ids, FieldResolution(rfref, _) :: rest ->
-                    let id = rfref.RecdField.Id
-                    yield (ids, id), synExprRecd (recdExprCopyInfo flds optOrigExpr) id rest
+                | accessIds, [] -> yield (accessIds |> List.frontAndBack), v
+                | accessIds, [fldId] -> yield ((accessIds@[fldId]) |> List.frontAndBack), v
+                | accessIds, fldId :: rest ->
+                    yield (accessIds, fldId), synExprRecd (recdExprCopyInfo flds optOrigExpr) fldId rest
             ]
 
         expanded

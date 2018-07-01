@@ -3180,61 +3180,64 @@ let ResolveNestedField sink (ncenv:NameResolver) nenv ad ty (lid : Ident list) =
         else 
             lookup()
 
-    match lid with
-    | [] -> [], []
-    | [id] -> [], lookupFld ty id |> ForceRaise
-    | id :: _ ->
-        let fldSearch () =
-            match lid with
-            | id :: rest ->
-                let fldSearch = lookupFld ty id
-                let fldSearch = fldSearch |?> List.map (fun (FieldResolution(rfref, dep)) -> FieldResolution(rfref, dep), rfref.FieldName, rfref.FormalType, rest)
-                fldSearch
-            | _ -> NoResultsOrUsefulErrors
+    let access, flds =
+        match lid with
+        | [] -> [], []
+        | [id] -> [], lookupFld ty id |> ForceRaise
+        | id :: _ ->
+            let fldSearch () =
+                match lid with
+                | id :: rest ->
+                    let fldSearch = lookupFld ty id
+                    let fldSearch = fldSearch |?> List.map (fun (FieldResolution(rfref, dep)) -> FieldResolution(rfref, dep), rfref.FieldName, rfref.FormalType, rest)
+                    fldSearch
+                | _ -> NoResultsOrUsefulErrors
 
-        let tyconSearch ad () =
-            match lid with
-            | tn :: id :: rest ->
-                let m = tn.idRange
-                let tcrefs = LookupTypeNameInEnvNoArity OpenQualified tn.idText nenv
-                if isNil tcrefs then NoResultsOrUsefulErrors else
-                let tcrefs = tcrefs |> List.map (fun tcref -> (ResolutionInfo.Empty,tcref))
-                let tyconSearch = ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 m ad id rest typeNameResInfo tn.idRange tcrefs
-                let tyconSearch = tyconSearch |?> List.choose (function (_, Item.RecdField(RecdFieldInfo(_,rfref)), rest) -> Some(FieldResolution(rfref,false), rfref.FieldName, rfref.FormalType, rest) | _ -> None)
-                tyconSearch
-            | _ -> NoResultsOrUsefulErrors
+            let tyconSearch ad () =
+                match lid with
+                | tn :: id :: rest ->
+                    let m = tn.idRange
+                    let tcrefs = LookupTypeNameInEnvNoArity OpenQualified tn.idText nenv
+                    if isNil tcrefs then NoResultsOrUsefulErrors else
+                    let tcrefs = tcrefs |> List.map (fun tcref -> (ResolutionInfo.Empty,tcref))
+                    let tyconSearch = ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 m ad id rest typeNameResInfo tn.idRange tcrefs
+                    let tyconSearch = tyconSearch |?> List.choose (function (_, Item.RecdField(RecdFieldInfo(_,rfref)), rest) -> Some(FieldResolution(rfref,false), rfref.FieldName, rfref.FormalType, rest) | _ -> None)
+                    tyconSearch
+                | _ -> NoResultsOrUsefulErrors
 
-        let moduleOrNsSearch ad () =
-            match lid with
-            | [] -> NoResultsOrUsefulErrors
-            | id :: rest ->
-                let m = id.idRange
-                let t = ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m OpenQualified nenv ad id rest false
-                            (ResolveFieldInModuleOrNamespace ncenv nenv ad)
-                t |?> List.map (fun (_, FieldResolution(rfref, dep), rest) -> (FieldResolution(rfref, dep), rfref.FieldName, rfref.FormalType, rest))
+            let moduleOrNsSearch ad () =
+                match lid with
+                | [] -> NoResultsOrUsefulErrors
+                | id :: rest ->
+                    let m = id.idRange
+                    let t = ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m OpenQualified nenv ad id rest false
+                                (ResolveFieldInModuleOrNamespace ncenv nenv ad)
+                    t |?> List.map (fun (_, FieldResolution(rfref, dep), rest) -> (FieldResolution(rfref, dep), rfref.FieldName, rfref.FormalType, rest))
 
-        let item, fldIdText, fldTy, rest =
-            fldSearch () +++ moduleOrNsSearch ad +++ tyconSearch ad +++ moduleOrNsSearch AccessibleFromSomeFSharpCode +++ tyconSearch AccessibleFromSomeFSharpCode
-            |> AtMostOneResult id.idRange
-            |> ForceRaise
+            let item, fldIdText, fldTy, rest =
+                fldSearch () +++ moduleOrNsSearch ad +++ tyconSearch ad +++ moduleOrNsSearch AccessibleFromSomeFSharpCode +++ tyconSearch AccessibleFromSomeFSharpCode
+                |> AtMostOneResult id.idRange
+                |> ForceRaise
 
-        let idsBeforeField = lid |> List.takeWhile (fun id -> id.idText <> fldIdText)
+            let idsBeforeField = lid |> List.takeWhile (fun id -> id.idText <> fldIdText)
 
-        match rest with
-        | [] -> idsBeforeField, [item]
-        | _ ->  
-            let rec nestedFieldSearch flds ty =
-                function
-                | [] -> flds
-                | id :: rest -> 
-                    let resolved = lookupFld ty id |> ForceRaise
-                    let fldTy =
-                        match resolved with
-                        | [FieldResolution(rfref, _)] -> rfref.FormalType
-                        | _ -> ty
-                    nestedFieldSearch (flds @ resolved) fldTy rest
+            match rest with
+            | [] -> idsBeforeField, [item]
+            | _ ->  
+                let rec nestedFieldSearch flds ty =
+                    function
+                    | [] -> flds
+                    | id :: rest -> 
+                        let resolved = lookupFld ty id |> ForceRaise
+                        let fldTy =
+                            match resolved with
+                            | [FieldResolution(rfref, _)] -> rfref.FormalType
+                            | _ -> ty
+                        nestedFieldSearch (flds @ resolved) fldTy rest
 
-            idsBeforeField, item::(nestedFieldSearch [] fldTy rest)
+                idsBeforeField, item::(nestedFieldSearch [] fldTy rest)
+
+    access, flds |> List.map (fun (FieldResolution(rfref, _)) -> lid |> List.find (fun id -> id.idText = rfref.FieldName))
 
 let ResolveField sink ncenv nenv ad ty (mp,id) allFields =
     let res = ResolveFieldPrim sink ncenv nenv ad ty (mp,id) allFields
