@@ -227,7 +227,7 @@ let GetLimitVal cenv env m (v: Val) =
         | true, limit -> limit
         | _ ->
             if IsValLocal env v then
-                { scope = env.returnScope; flags = LimitFlags.None }
+                { scope = 1; flags = LimitFlags.None }
             else
                 NoLimit
 
@@ -873,15 +873,14 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
         let isByRef = isByrefTy cenv.g v.Type
 
         let bindingContext =
-            // Don't apply scoped returns on binding for compiler generated values.
-            if isByRef && not v.IsCompilerGenerated then
+            if isByRef then
                 PermitByRefExpr.YesReturnable
             else
                 PermitByRefExpr.Yes
 
         let limit = CheckBinding cenv { env with returnScope = env.returnScope + 1 } false bindingContext bind  
         BindVal cenv env v
-        LimitVal cenv v { limit with scope = if v.IsCompilerGenerated then 1 elif isByRef then limit.scope else env.returnScope }
+        LimitVal cenv v { limit with scope = if isByRef then limit.scope else env.returnScope }
         CheckExpr cenv env body context
 
     | Expr.Const (_,m,ty) -> 
