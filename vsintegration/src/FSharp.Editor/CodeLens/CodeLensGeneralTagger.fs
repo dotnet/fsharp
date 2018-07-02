@@ -49,16 +49,17 @@ type CodeLensGeneralTagger (view, buffer) as self =
 #if DEBUG
                         logErrorf "Incorrect return from geometry measure"
 #else
-            ()
+                        ()
 #endif 
                         Canvas.GetLeft ui, g.Top
                     else 
                         g.Left, g.Top
-                with e -> 
 #if DEBUG
+                with e -> 
                     logExceptionWithContext (e, "Error in layout ui element on line")
 #else
-            ()
+                with _ ->
+                    ()
 #endif 
                     Canvas.GetLeft ui, Canvas.GetTop ui
         Canvas.SetLeft(ui, left)
@@ -96,11 +97,12 @@ type CodeLensGeneralTagger (view, buffer) as self =
                                         self, stackPanel, AdornmentRemovedCallback(fun _ _ -> ())) |> ignore
                                     self.AddedAdornments.Add stackPanel |> ignore
                         | _ -> ()
-                    with e ->
 #if DEBUG
+                    with e ->
                             logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
 #else
-            ()
+                    with _ ->
+                            ()
 #endif 
             } |> Async.Ignore
     

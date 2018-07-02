@@ -173,9 +173,11 @@ type internal FSharpCodeLensService
                             // Because the data is available notify that this line should be updated, displaying the results
                             return Some (taggedText, navigation)
                         else return None
-                    with e -> 
 #if DEBUG
+                    with e -> 
                         logErrorf "Error in lazy line lens computation. %A" e
+#else
+                    with _ ->
 #endif
                         return None
                 }
@@ -184,6 +186,8 @@ type internal FSharpCodeLensService
                 if newResults.ContainsKey fullDeclarationText then
 #if DEBUG
                     logWarningf "New results already contains: %A" fullDeclarationText
+#else
+                    ()
 #endif
                 newResults.[fullDeclarationText] <- value
             for symbolUse in symbolUses do
@@ -285,11 +289,13 @@ type internal FSharpCodeLensService
                             textSnapshot.CreateTrackingSpan(declarationSpan, SpanTrackingMode.EdgeExclusive)
                         codeLensToAdd.Add (trackingSpan, res)
                         newResults.[fullDeclarationText] <- (trackingSpan, res)
-                    with e -> 
 #if DEBUG
+                    with e -> 
                         logExceptionWithContext (e, "Line Lens tracking tag span creation")
+#else
+                    with _ ->
+                        ()
 #endif
-                ()
             lastResults <- newResults
             do! Async.SwitchToContext uiContext |> liftAsync
             let createCodeLensUIElement (codeLens:CodeLens) trackingSpan _ =
@@ -315,7 +321,9 @@ type internal FSharpCodeLensService
                         else
 #if DEBUG
                             logWarningf "Couldn't retrieve code lens information for %A" codeLens.FullTypeSignature
-#endif
+#else
+                            ()
+#endif 
                     } |> (RoslynHelpers.StartAsyncSafe CancellationToken.None) "UIElement creation"
 
             for value in tagsToUpdate do
@@ -356,9 +364,11 @@ type internal FSharpCodeLensService
                       do! executeCodeLenseAsync()
                       do! Async.Sleep(1000)
                   with
-                  | e -> 
 #if DEBUG
+                  | e -> 
                     logErrorf "Line Lens startup failed with: %A" e
+#else
+                  | _ ->
 #endif
                     numberOfFails <- numberOfFails + 1
            } |> Async.Start

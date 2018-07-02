@@ -1196,8 +1196,10 @@ module private PrintTastMemberOrVals =
                         stat --- (nameL ^^ wordL (tagPunctuation ":") ^^ (tauL --- (WordL.keywordWith ^^ WordL.keywordSet)))
                 prettyTyparInst, resL
                 
-    let private prettyLayoutOfMemberShort denv typarInst (v:Val) = prettyLayoutOfMemberShortOption denv typarInst v false
+    let private prettyLayoutOfMemberShort denv typarInst (v:Val) = prettyLayoutOfMemberShortOption denv typarInst v true
     
+    let prettyLayoutOfMember denv typarInst (v:Val) = prettyLayoutOfMemberShortOption denv typarInst v true
+
     let prettyLayoutOfMemberNoInstShort denv v = 
         prettyLayoutOfMemberShortOption denv emptyTyparInst v true |> snd
 

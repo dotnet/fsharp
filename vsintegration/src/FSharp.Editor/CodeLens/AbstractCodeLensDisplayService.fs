@@ -197,7 +197,7 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
 #if DEBUG
                 logWarningf "No tracking span is accociated with this line number %d!" lineNumber
 #else
-            ()
+                ()
 #endif 
             if self.TrackingSpans.[lineNumber].Count = 0 then
                 self.TrackingSpans.Remove lineNumber |> ignore
@@ -264,7 +264,7 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
 #if DEBUG
                         logErrorf "Error in non visible lines iteration %A" e
 #else
-            ()
+                        ()
 #endif 
                 for lineNumber in newVisibleLineNumbers do
                     try
@@ -279,7 +279,7 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
 #if DEBUG
                      logErrorf "Error in new visible lines iteration %A" e
 #else
-            ()
+                    ()
 #endif 
             if not e.VerticalTranslation && e.NewViewState.ViewportHeight <> e.OldViewState.ViewportHeight then
                 self.RelayoutRequested.Enqueue() // Unfortunately zooming requires a relayout too, to ensure that no weird layout happens due to unkown reasons.

@@ -65,10 +65,11 @@ type internal LineLensDisplayService (view, buffer) =
                                     view.GetTextViewLineContainingBufferPosition l.Start
                                 self.LayoutUIElementOnLine view line grid
                             )
-            with e -> 
 #if DEBUG
+            with e -> 
                 logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
 #else
-            ()
+            with _ ->
+                ()
 #endif 
         } |> Async.Ignore
