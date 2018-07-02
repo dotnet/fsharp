@@ -1200,38 +1200,73 @@ namespace Microsoft.FSharp.Core
 
                 checkType 0 [|rootType|]
 
-            let tryGetFSharpComparer (externalUse:bool) (er:bool) (ty:Type) : obj =
-                match externalUse, er, ty with
-                | _, false, ty when ty.Equals typeof<float> ->
+            type ComparisonUsage = 
+            | NormalUsage       = 0
+            | LessThanUsage     = 1
+            | GreaterThanUsage  = 2
+
+            let tryGetFSharpComparer (usage:ComparisonUsage) (externalUse:bool) (er:bool) (ty:Type) : obj =
+                match usage, externalUse, er, ty with
+                | ComparisonUsage.NormalUsage, _, false, ty when ty.Equals typeof<float> ->
                     box { new Comparer<float>() with
                             member __.Compare (x,y) =
                                 if   (# "clt" x y : bool #) then -1
                                 elif (# "cgt" x y : bool #) then 1
                                 elif (# "ceq" x y : bool #) then 0
                                 else raise NaNException }
-                | _, false, ty when ty.Equals typeof<float32> ->
+                | ComparisonUsage.LessThanUsage, _, false, ty when ty.Equals typeof<float> ->
+                    box { new Comparer<float>() with
+                            member __.Compare (x,y) =
+                                if   (# "clt" x y : bool #) then -1
+                                elif (# "cgt" x y : bool #) then 1
+                                elif (# "ceq" x y : bool #) then 0
+                                else 1 }
+                | ComparisonUsage.GreaterThanUsage, _, false, ty when ty.Equals typeof<float> ->
+                    System.Console.WriteLine "ComparisonUsage.GreaterThanUsage"
+                    box { new Comparer<float>() with
+                            member __.Compare (x,y) =
+                                if   (# "clt" x y : bool #) then -1
+                                elif (# "cgt" x y : bool #) then 1
+                                elif (# "ceq" x y : bool #) then 0
+                                else -1 }
+                | ComparisonUsage.NormalUsage, _, false, ty when ty.Equals typeof<float32> ->
                     box { new Comparer<float32>() with
                             member __.Compare (x,y) =
                                 if   (# "clt" x y : bool #) then -1
                                 elif (# "cgt" x y : bool #) then 1
                                 elif (# "ceq" x y : bool #) then 0
                                 else raise NaNException }
-                | _, true, ty when ty.Equals typeof<float>   -> box Comparer<float>.Default
-                | _, true, ty when ty.Equals typeof<float32> -> box Comparer<float32>.Default
+                | ComparisonUsage.LessThanUsage, _, false, ty when ty.Equals typeof<float32> ->
+                    box { new Comparer<float32>() with
+                            member __.Compare (x,y) =
+                                if   (# "clt" x y : bool #) then -1
+                                elif (# "cgt" x y : bool #) then 1
+                                elif (# "ceq" x y : bool #) then 0
+                                else 1 }
+                | ComparisonUsage.GreaterThanUsage, _, false, ty when ty.Equals typeof<float32> ->
+                    box { new Comparer<float32>() with
+                            member __.Compare (x,y) =
+                                if   (# "clt" x y : bool #) then -1
+                                elif (# "cgt" x y : bool #) then 1
+                                elif (# "ceq" x y : bool #) then 0
+                                else -1 }
+
+                | _, _, true, ty when ty.Equals typeof<float>   -> box Comparer<float>.Default
+                | _, _, true, ty when ty.Equals typeof<float32> -> box Comparer<float32>.Default
 
                 // the implemention of Comparer<string>.Default returns a current culture specific comparer
-                | _, _, ty when ty.Equals typeof<string> -> box { new Comparer<string>() with member __.Compare (x,y) = System.String.CompareOrdinal(x, y) }
+                | _, _, _, ty when ty.Equals typeof<string> -> box { new Comparer<string>() with member __.Compare (x,y) = System.String.CompareOrdinal(x, y) }
 
-                | _, _, ty when ty.Equals typeof<unativeint> -> box { new Comparer<unativeint>() with member __.Compare (x,y) = if (# "clt.un" x y : bool #) then -1 else (# "cgt.un" x y : int #) }
-                | _, _, ty when ty.Equals typeof<nativeint>  -> box { new Comparer<nativeint>()  with member __.Compare (x,y) = if (# "clt" x y : bool #)    then -1 else (# "cgt" x y : int #) }
+                | _, _, _, ty when ty.Equals typeof<unativeint> -> box { new Comparer<unativeint>() with member __.Compare (x,y) = if (# "clt.un" x y : bool #) then -1 else (# "cgt.un" x y : int #) }
+                | _, _, _, ty when ty.Equals typeof<nativeint>  -> box { new Comparer<nativeint>()  with member __.Compare (x,y) = if (# "clt" x y : bool #)    then -1 else (# "cgt" x y : int #) }
 
                 // the implemention of the following comparers with Comparer<'T>.Default returns
                 // (int x)-(int y) rather than (sign (int x)-(int y))
-                | true, _, ty when ty.Equals typeof<char>   -> box { new Comparer<char>()   with member __.Compare (x,y) = if (# "clt.un" x y : bool #) then -1 else (# "cgt.un" x y : int #) }
-                | true, _, ty when ty.Equals typeof<byte>   -> box { new Comparer<byte>()   with member __.Compare (x,y) = if (# "clt.un" x y : bool #) then -1 else (# "cgt.un" x y : int #) }
-                | true, _, ty when ty.Equals typeof<uint16> -> box { new Comparer<uint16>() with member __.Compare (x,y) = if (# "clt.un" x y : bool #) then -1 else (# "cgt.un" x y : int #) }
-                | true, _, ty when ty.Equals typeof<sbyte>  -> box { new Comparer<sbyte>()  with member __.Compare (x,y) = if (# "clt" x y : bool #)    then -1 else (# "cgt" x y : int #) }
-                | true, _, ty when ty.Equals typeof<int16>  -> box { new Comparer<int16>()  with member __.Compare (x,y) = if (# "clt" x y : bool #)    then -1 else (# "cgt" x y : int #) }
+                | _, true, _, ty when ty.Equals typeof<char>   -> box { new Comparer<char>()   with member __.Compare (x,y) = if (# "clt.un" x y : bool #) then -1 else (# "cgt.un" x y : int #) }
+                | _, true, _, ty when ty.Equals typeof<byte>   -> box { new Comparer<byte>()   with member __.Compare (x,y) = if (# "clt.un" x y : bool #) then -1 else (# "cgt.un" x y : int #) }
+                | _, true, _, ty when ty.Equals typeof<uint16> -> box { new Comparer<uint16>() with member __.Compare (x,y) = if (# "clt.un" x y : bool #) then -1 else (# "cgt.un" x y : int #) }
+                | _, true, _, ty when ty.Equals typeof<sbyte>  -> box { new Comparer<sbyte>()  with member __.Compare (x,y) = if (# "clt" x y : bool #)    then -1 else (# "cgt" x y : int #) }
+                | _, true, _, ty when ty.Equals typeof<int16>  -> box { new Comparer<int16>()  with member __.Compare (x,y) = if (# "clt" x y : bool #)    then -1 else (# "cgt" x y : int #) }
                 
                 | _ -> null
 
@@ -1280,32 +1315,63 @@ namespace Microsoft.FSharp.Core
                 { new Comparer<'T>() with
                     member __.Compare (x,y) = GenericCompare comparer (box x, box y) }
 
-            let getGenericComparison<'T> externalUse er =
-                match tryGetFSharpComparer externalUse er typeof<'T> with
-                | :? Comparer<'T> as call                                 -> call
-                | _ when canUseDefaultComparer er typeof<'T>              -> Comparer<'T>.Default
-                | _ when isArray typeof<'T> && er                         -> arrayComparer fsComparerER
-                | _ when isArray typeof<'T>                               -> arrayComparer fsComparerPER
-                | _ when isValueTypeStructuralComparable typeof<'T> && er -> structuralComparerValueType fsComparerER
-                | _ when isValueTypeStructuralComparable typeof<'T>       -> structuralComparerValueType fsComparerPER
-                | _ when isStructuralComparable typeof<'T> && er          -> structuralComparer fsComparerER
-                | _ when isStructuralComparable typeof<'T>                -> structuralComparer fsComparerPER
-                | _ when er                                               -> unknownComparer fsComparerER
-                | _                                                       -> unknownComparer fsComparerPER
+            let getGenericComparison<'T> usage externalUse er =
+                match tryGetFSharpComparer usage externalUse er typeof<'T> with
+                | :? Comparer<'T> as comparer                -> comparer
+                | _ when canUseDefaultComparer er typeof<'T> -> Comparer<'T>.Default
+                | _ ->
+                    if er then
+                        if   isArray typeof<'T>                         then arrayComparer fsComparerER
+                        elif isValueTypeStructuralComparable typeof<'T> then structuralComparerValueType fsComparerER
+                        elif isStructuralComparable typeof<'T>          then structuralComparer fsComparerER
+                        else                                                 unknownComparer fsComparerER
+                    else
+                        let comparer  =
+                            if   isArray typeof<'T>                         then arrayComparer fsComparerPER
+                            elif isValueTypeStructuralComparable typeof<'T> then structuralComparerValueType fsComparerPER
+                            elif isStructuralComparable typeof<'T>          then structuralComparer fsComparerPER
+                            else                                                 unknownComparer fsComparerPER
+
+                        match usage with
+                        | ComparisonUsage.LessThanUsage ->
+                            { new Comparer<'T>() with
+                                member __.Compare (x,y) =
+                                    try
+                                        comparer.Compare (x,y)
+                                    with
+                                        e when System.Runtime.CompilerServices.RuntimeHelpers.Equals(e, NaNException) -> 1 }
+                        | ComparisonUsage.GreaterThanUsage ->
+                            { new Comparer<'T>() with
+                                member __.Compare (x,y) =
+                                    try
+                                        comparer.Compare (x,y)
+                                    with
+                                        e when System.Runtime.CompilerServices.RuntimeHelpers.Equals(e, NaNException) -> -1 }
+                        | _ -> comparer
 
             [<AbstractClass; Sealed>]
             type FSharpComparer_ER<'T> private () =
-                static let comparer = getGenericComparison<'T> true true
+                static let comparer = getGenericComparison<'T> ComparisonUsage.NormalUsage true true
                 static member Comparer = comparer
 
             [<AbstractClass; Sealed>]
             type FSharpComparer_InternalUse_ER<'T> private () =
-                static let comparer = getGenericComparison<'T> false true
+                static let comparer = getGenericComparison<'T> ComparisonUsage.NormalUsage false true
                 static member Comparer = comparer
 
             [<AbstractClass; Sealed>]
             type FSharpComparer_PER<'T> private () =
-                static let comparer = getGenericComparison<'T> false false
+                static let comparer = getGenericComparison<'T> ComparisonUsage.NormalUsage false false
+                static member Comparer = comparer
+
+            [<AbstractClass; Sealed>]
+            type FSharpComparer_ForLessThanComparison<'T> private () =
+                static let comparer = getGenericComparison<'T> ComparisonUsage.LessThanUsage false false
+                static member Comparer = comparer
+
+            [<AbstractClass; Sealed>]
+            type FSharpComparer_ForGreaterThanComparison<'T> private () =
+                static let comparer = getGenericComparison<'T> ComparisonUsage.GreaterThanUsage false false
                 static member Comparer = comparer
 
             /// Compare two values of the same generic type, using "comp".
@@ -1363,37 +1429,21 @@ namespace Microsoft.FSharp.Core
             let GenericComparisonIntrinsic<'T> (x:'T) (y:'T) : int = 
                 FSharpComparer_ER.Comparer.Compare (x, y)
 
-            /// Generic less-than. Uses comparison implementation in PER mode but catches 
-            /// the local exception that is thrown when NaN's are compared.
+            /// Generic less-than.
             let GenericLessThanIntrinsic (x:'T) (y:'T) = 
-                try
-                    (# "clt" (FSharpComparer_PER.Comparer.Compare (x, y)) 0 : bool #)
-                with
-                    | e when System.Runtime.CompilerServices.RuntimeHelpers.Equals(e, NaNException) -> false
+                (# "clt" (FSharpComparer_ForLessThanComparison.Comparer.Compare (x, y)) 0 : bool #)
             
-            /// Generic greater-than. Uses comparison implementation in PER mode but catches 
-            /// the local exception that is thrown when NaN's are compared.
+            /// Generic greater-than.
             let GenericGreaterThanIntrinsic (x:'T) (y:'T) = 
-                try
-                    (# "cgt" (FSharpComparer_PER.Comparer.Compare (x, y)) 0 : bool #)
-                with
-                    | e when System.Runtime.CompilerServices.RuntimeHelpers.Equals(e, NaNException) -> false
+                (# "cgt" (FSharpComparer_ForGreaterThanComparison.Comparer.Compare (x, y)) 0 : bool #)
              
-            /// Generic greater-than-or-equal. Uses comparison implementation in PER mode but catches 
-            /// the local exception that is thrown when NaN's are compared.
+            /// Generic greater-than-or-equal.
             let GenericGreaterOrEqualIntrinsic (x:'T) (y:'T) = 
-                try
-                    (# "cgt" (FSharpComparer_PER.Comparer.Compare (x, y)) (-1) : bool #)
-                with
-                    | e when System.Runtime.CompilerServices.RuntimeHelpers.Equals(e, NaNException) -> false
+                (# "cgt" (FSharpComparer_ForGreaterThanComparison.Comparer.Compare (x, y)) -1 : bool #)
             
-            /// Generic less-than-or-equal. Uses comparison implementation in PER mode but catches 
-            /// the local exception that is thrown when NaN's are compared.
+            /// Generic less-than-or-equal.
             let GenericLessOrEqualIntrinsic (x:'T) (y:'T) = 
-                try
-                    (# "clt" (FSharpComparer_PER.Comparer.Compare (x, y)) 1 : bool #)
-                with
-                    | e when System.Runtime.CompilerServices.RuntimeHelpers.Equals(e, NaNException) -> false
+                (# "clt" (FSharpComparer_ForLessThanComparison.Comparer.Compare (x, y)) 1 : bool #)
 
             /// Compare two values of the same generic type, in ER mode, with static optimizations 
             /// for known cases.
