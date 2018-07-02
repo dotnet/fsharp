@@ -105,9 +105,9 @@ module NoSubsumptionForLists2 =
     let pBB = (new B(),new B())
     let pAB = (new A(),new B())
     let pBA = (new B(),new A())
-    pBB |> Data   // permitted
-    pAB |> Data   // permitted
-    pBA |> Data   // permitted
+    pBB |> Data   // not permitted (questionable)
+    pAB |> Data   // not permitted (questionable)
+    pBA |> Data   // not permitted (questionable)
     pBB |> data   // permitted
     pAB |> data   // permitted
     pBA |> data   // permitted
