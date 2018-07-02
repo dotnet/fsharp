@@ -7057,6 +7057,11 @@
         <target state="translated">O valor Span ou IsByRefLike retornado da expressão não pode ser utilizado neste ponto. Isso tem como objetivo garantir que o endereço do valor local não escape de seu escopo.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tastCantTakeAddressOfExpression">
+        <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
+        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

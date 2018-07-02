@@ -7057,6 +7057,11 @@
         <target state="translated">此时无法使用从表达式返回的 Span 或 IsByRefLike 值。这是为了确保本地值的地址不超出其范围。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tastCantTakeAddressOfExpression">
+        <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
+        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
