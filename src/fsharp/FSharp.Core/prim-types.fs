@@ -1205,34 +1205,33 @@ namespace Microsoft.FSharp.Core
                 | _, false, ty when ty.Equals typeof<float> ->
                     box { new Comparer<float>() with
                             member __.Compare (x,y) =
-                                if   (# "clt" x y : bool #) then (-1)
-                                elif (# "cgt" x y : bool #) then (1)
-                                elif (# "ceq" x y : bool #) then (0)
-                                else (fsComparerPER:>IComparer).Compare (box x, box y) }
+                                if   (# "clt" x y : bool #) then -1
+                                elif (# "cgt" x y : bool #) then 1
+                                elif (# "ceq" x y : bool #) then 0
+                                else raise NaNException }
                 | _, false, ty when ty.Equals typeof<float32> ->
                     box { new Comparer<float32>() with
                             member __.Compare (x,y) =
-                                if   (# "clt" x y : bool #) then (-1)
-                                elif (# "cgt" x y : bool #) then (1)
-                                elif (# "ceq" x y : bool #) then (0)
-                                else (fsComparerPER:>IComparer).Compare (box x, box y) }
+                                if   (# "clt" x y : bool #) then -1
+                                elif (# "cgt" x y : bool #) then 1
+                                elif (# "ceq" x y : bool #) then 0
+                                else raise NaNException }
                 | _, true, ty when ty.Equals typeof<float>   -> box Comparer<float>.Default
                 | _, true, ty when ty.Equals typeof<float32> -> box Comparer<float32>.Default
 
                 // the implemention of Comparer<string>.Default returns a current culture specific comparer
-                | _, _, ty when ty.Equals typeof<string> ->
-                    box { new Comparer<string>() with
-                            member __.Compare (x,y) = System.String.CompareOrdinal(x, y) }
+                | _, _, ty when ty.Equals typeof<string> -> box { new Comparer<string>() with member __.Compare (x,y) = System.String.CompareOrdinal(x, y) }
+
+                | _, _, ty when ty.Equals typeof<unativeint> -> box { new Comparer<unativeint>() with member __.Compare (x,y) = if (# "clt.un" x y : bool #) then -1 else (# "cgt.un" x y : int #) }
+                | _, _, ty when ty.Equals typeof<nativeint>  -> box { new Comparer<nativeint>()  with member __.Compare (x,y) = if (# "clt" x y : bool #)    then -1 else (# "cgt" x y : int #) }
 
                 // the implemention of the following comparers with Comparer<'T>.Default returns
                 // (int x)-(int y) rather than (sign (int x)-(int y))
-                | true, _, ty when ty.Equals typeof<char>       -> box { new Comparer<char>()       with member __.Compare (x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #) }
-                | true, _, ty when ty.Equals typeof<byte>       -> box { new Comparer<byte>()       with member __.Compare (x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #) }
-                | true, _, ty when ty.Equals typeof<uint16>     -> box { new Comparer<uint16>()     with member __.Compare (x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #) }
-                | _,    _, ty when ty.Equals typeof<unativeint> -> box { new Comparer<unativeint>() with member __.Compare (x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #) }
-                | true, _, ty when ty.Equals typeof<sbyte>      -> box { new Comparer<sbyte>()      with member __.Compare (x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #) }
-                | true, _, ty when ty.Equals typeof<int16>      -> box { new Comparer<int16>()      with member __.Compare (x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #) }
-                | _,    _, ty when ty.Equals typeof<nativeint>  -> box { new Comparer<nativeint>()  with member __.Compare (x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #) }
+                | true, _, ty when ty.Equals typeof<char>   -> box { new Comparer<char>()   with member __.Compare (x,y) = if (# "clt.un" x y : bool #) then -1 else (# "cgt.un" x y : int #) }
+                | true, _, ty when ty.Equals typeof<byte>   -> box { new Comparer<byte>()   with member __.Compare (x,y) = if (# "clt.un" x y : bool #) then -1 else (# "cgt.un" x y : int #) }
+                | true, _, ty when ty.Equals typeof<uint16> -> box { new Comparer<uint16>() with member __.Compare (x,y) = if (# "clt.un" x y : bool #) then -1 else (# "cgt.un" x y : int #) }
+                | true, _, ty when ty.Equals typeof<sbyte>  -> box { new Comparer<sbyte>()  with member __.Compare (x,y) = if (# "clt" x y : bool #)    then -1 else (# "cgt" x y : int #) }
+                | true, _, ty when ty.Equals typeof<int16>  -> box { new Comparer<int16>()  with member __.Compare (x,y) = if (# "clt" x y : bool #)    then -1 else (# "cgt" x y : int #) }
                 
                 | _ -> null
 
@@ -1306,11 +1305,6 @@ namespace Microsoft.FSharp.Core
 
             [<AbstractClass; Sealed>]
             type FSharpComparer_PER<'T> private () =
-                static let comparer = getGenericComparison<'T> true false
-                static member Comparer = comparer
-
-            [<AbstractClass; Sealed>]
-            type FSharpComparer_InternalUse_PER<'T> private () =
                 static let comparer = getGenericComparison<'T> false false
                 static member Comparer = comparer
 
@@ -1324,7 +1318,7 @@ namespace Microsoft.FSharp.Core
                 if obj.ReferenceEquals (comp, fsComparerER) then
                     FSharpComparer_InternalUse_ER.Comparer.Compare (x, y)
                 elif obj.ReferenceEquals (comp, fsComparerPER) then
-                    FSharpComparer_InternalUse_PER.Comparer.Compare (x, y)
+                    FSharpComparer_PER.Comparer.Compare (x, y)
                 else
                     comp.Compare (box x, box y)
 
