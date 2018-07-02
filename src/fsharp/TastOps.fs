@@ -5864,7 +5864,9 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             if isStructTy g ty then 
                 match mut with 
                 | NeverMutates -> ()
-                | AddressOfOp -> () // we get an inref
+                | AddressOfOp -> 
+                    // we get an inref
+                    errorR(Error(FSComp.SR.tastCantTakeAddressOfExpression(), m))
                 | DefinitelyMutates -> 
                     // Give a nice error message for mutating something we can't take the address of
                     errorR(Error(FSComp.SR.tastInvalidMutationOfConstant(), m))

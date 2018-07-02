@@ -182,6 +182,8 @@ module CoreTests =
 
             fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
+            singleNegTest cfg "test"
+
             exec cfg ("." ++ "test.exe") ""
 
             testOkFile.CheckExists()
@@ -199,6 +201,18 @@ module CoreTests =
             use testOkFile = fileguard cfg "test.ok"
 
             fsiAnyCpu cfg "" ["test.fsx"]
+
+            testOkFile.CheckExists()
+        end
+
+        begin
+            use testOkFile = fileguard cfg "test2.ok"
+
+            fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
+
+            singleNegTest cfg "test2"
+
+            exec cfg ("." ++ "test2.exe") ""
 
             testOkFile.CheckExists()
         end
