@@ -250,6 +250,19 @@ module CoreTests =
             //testOkFile.CheckExists()
         end
 
+        begin
+            use testOkFile = fileguard cfg "test3.ok"
+
+            fsc cfg "%s -o:test3.exe -g" cfg.fsc_flags ["test3.fsx"]
+
+            singleNegTest cfg "test3"
+
+            // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
+            //exec cfg ("." ++ "test.exe") ""
+
+            //testOkFile.CheckExists()
+        end
+
     [<Test>]
     let asyncStackTraces () = 
         let cfg = testConfig "core/asyncStackTraces"
