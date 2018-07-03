@@ -104,11 +104,9 @@
     <Compile Include="SyntacticColorizationServiceTests.fs">
       <Link>Roslyn\SyntacticColorizationServiceTests.fs</Link>
     </Compile>
-<!-- TODO:  Fix this test
     <Compile Include="SemanticColorizationServiceTests.fs">
       <Link>Roslyn\SemanticColorizationServiceTests.fs</Link>
     </Compile>
--->
     <Compile Include="BraceMatchingServiceTests.fs">
       <Link>Roslyn\BraceMatchingServiceTests.fs</Link>
     </Compile>
@@ -135,11 +133,9 @@
     <Compile Include="ProjectDiagnosticAnalyzerTests.fs">
       <Link>Roslyn\ProjectDiagnosticAnalyzerTests.fs</Link>
     </Compile>
-<!-- TODO:  Fix this test
     <Compile Include="CompletionProviderTests.fs">
       <Link>Roslyn\CompletionProviderTests.fs</Link>
     </Compile>
--->
     <Compile Include="SignatureHelpProviderTests.fs">
       <Link>Roslyn\SignatureHelpProviderTests.fs</Link>
     </Compile>
