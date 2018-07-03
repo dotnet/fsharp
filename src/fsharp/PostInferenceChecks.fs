@@ -540,6 +540,7 @@ let rec mkArgsForAppliedExpr isBaseCall argsl x =
 
 /// Check types occurring in the TAST.
 let CheckType permitByRefLike (cenv:cenv) env m ty =
+    let ty = stripTyEqns cenv.g ty
     if cenv.reportErrors then 
         let visitTyar (env,tp) = 
           if not (env.boundTypars.ContainsKey tp) then 
@@ -1809,22 +1810,23 @@ let CheckRecdField isUnion cenv env (tycon:Tycon) (rfield:RecdField) =
     let g = cenv.g
     let tcref = mkLocalTyconRef tycon
     let m = rfield.Range
+    let fieldTy = stripTyEqns cenv.g rfield.FormalType
     let isHidden = 
         IsHiddenTycon env.sigToImplRemapInfo tycon || 
         IsHiddenTyconRepr env.sigToImplRemapInfo tycon || 
         (not isUnion && IsHiddenRecdField env.sigToImplRemapInfo (tcref.MakeNestedRecdFieldRef rfield))
     let access = AdjustAccess isHidden (fun () -> tycon.CompilationPath) rfield.Accessibility
-    CheckTypeForAccess cenv env (fun () -> rfield.Name) access m rfield.FormalType
+    CheckTypeForAccess cenv env (fun () -> rfield.Name) access m fieldTy
 
     if TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref then 
         // Permit Span fields in IsByRefLike types
-        CheckTypePermitSpanLike cenv env m rfield.FormalType
+        CheckTypePermitSpanLike cenv env m fieldTy
         if cenv.reportErrors then
-            CheckForByrefType cenv env rfield.FormalType (fun () -> errorR(Error(FSComp.SR.chkCantStoreByrefValue(), tycon.Range)))
+            CheckForByrefType cenv env fieldTy (fun () -> errorR(Error(FSComp.SR.chkCantStoreByrefValue(), tycon.Range)))
     else
-        CheckTypeNoByrefs cenv env m rfield.FormalType
+        CheckTypeNoByrefs cenv env m fieldTy
         if cenv.reportErrors then 
-            CheckForByrefLikeType cenv env m rfield.FormalType (fun () -> errorR(Error(FSComp.SR.chkCantStoreByrefValue(), tycon.Range)))
+            CheckForByrefLikeType cenv env m fieldTy (fun () -> errorR(Error(FSComp.SR.chkCantStoreByrefValue(), tycon.Range)))
 
     CheckAttribs cenv env rfield.PropertyAttribs
     CheckAttribs cenv env rfield.FieldAttribs
