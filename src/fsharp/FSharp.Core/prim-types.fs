@@ -917,6 +917,17 @@ namespace Microsoft.FSharp.Core
             /// This exception should never be observed by user code.
             let NaNException = new System.Exception()                                                 
                     
+            let inline ArrayComparison<'T> (f:'T->'T->int) (x:'T[]) (y:'T[]) : int =
+                let lenx = x.Length 
+                let leny = y.Length 
+                let rec loop c i =
+                    if c <> 0 then Math.Sign c
+                    elif i = lenx then 0
+                    else loop (f (get x i) (get y i)) (i+1)
+                loop (lenx-leny) 0
+
+            let GenericComparisonByteArray (x:byte[]) (y:byte[]) : int = ArrayComparison (fun x y -> (# "conv.i4" x : int32 #)-(# "conv.i4" y : int32 #)) x y
+
             /// Implements generic comparison between two objects. This corresponds to the pseudo-code in the F#
             /// specification.  The treatment of NaNs is governed by "comp".
             let rec GenericCompare (comp:GenericComparer) (xobj:obj,yobj:obj) =
@@ -930,10 +941,13 @@ namespace Microsoft.FSharp.Core
                    // Permit structural comparison on arrays
                    | (:? System.Array as arr1),_ -> 
                        match arr1,yobj with 
-                       // Fast path
-                       | (:? (obj[]) as arr1), (:? (obj[]) as arr2)      -> GenericComparisonObjArrayWithComparer comp arr1 arr2
-                       // Fast path
-                       | (:? (byte[]) as arr1), (:? (byte[]) as arr2)     -> GenericComparisonByteArray arr1 arr2
+                       | (:? (obj[]) as arr1), (:? (obj[]) as arr2)-> GenericComparisonObjArrayWithComparer comp arr1 arr2
+
+                       // The additional equality check is required here because .net treats byte[] and sbyte[] as cast-compatible
+                       // (but comparison is different)
+                       | (:? (byte[]) as arr1), (:? (byte[]) as arr2) 
+                            when typeof<byte[]>.Equals (arr1.GetType ()) && typeof<byte[]>.Equals (arr2.GetType ()) -> GenericComparisonByteArray arr1 arr2
+
                        | _                   , (:? System.Array as arr2) -> GenericComparisonArbArrayWithComparer comp arr1 arr2
                        | _ -> FailGenericComparison xobj
                    // Check for IStructuralComparable
@@ -1108,35 +1122,8 @@ namespace Microsoft.FSharp.Core
                     check 0
 #endif                
               
-            /// optimized case: Core implementation of structural comparison on object arrays.
-            and GenericComparisonObjArrayWithComparer (comp:GenericComparer) (x:obj[]) (y:obj[]) : int  =
-                let lenx = x.Length 
-                let leny = y.Length 
-                let c = intOrder lenx leny 
-                if c <> 0 then c 
-                else
-                    let mutable i = 0
-                    let mutable res = 0  
-                    while i < lenx do 
-                        let c = GenericCompare comp ((get x i), (get y i)) 
-                        if c <> 0 then (res <- c; i <- lenx) 
-                        else i <- i + 1
-                    res
-
-            /// optimized case: Core implementation of structural comparison on arrays.
-            and GenericComparisonByteArray (x:byte[]) (y:byte[]) : int =
-                let lenx = x.Length 
-                let leny = y.Length 
-                let c = intOrder lenx leny 
-                if c <> 0 then c 
-                else
-                    let mutable i = 0 
-                    let mutable res = 0 
-                    while i < lenx do 
-                        let c = byteOrder (get x i) (get y i) 
-                        if c <> 0 then (res <- c; i <- lenx) 
-                        else i <- i + 1
-                    res
+            and GenericComparisonObjArrayWithComparer (comp:GenericComparer) (x:obj[]) (y:obj[]) : int =
+                ArrayComparison (fun x y -> GenericCompare comp (x, y)) x y
 
             type GenericComparer with
                 interface System.Collections.IComparer with
