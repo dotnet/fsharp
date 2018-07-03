@@ -4,6 +4,7 @@ namespace Tests.LanguageService.Script
 
 open System
 open System.IO
+open System.Reflection
 open NUnit.Framework
 open Salsa.Salsa
 open Salsa.VsOpsUtils
@@ -1337,10 +1338,7 @@ type UsingMSBuild() as this =
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
         let fsVersion = "10.1.1.0"
-        let binariesFolder = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with
-                             | Some(x) -> x
-                             | None -> failwith "Location of binaries folder cannot be found"
-
+        let binariesFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
         PlaceIntoProjectFileBeforeImport
             (project, sprintf @"
                 <ItemGroup>
