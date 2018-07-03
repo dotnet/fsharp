@@ -540,7 +540,6 @@ let rec mkArgsForAppliedExpr isBaseCall argsl x =
 
 /// Check types occurring in the TAST.
 let CheckType permitByRefLike (cenv:cenv) env m ty =
-    let ty = stripTyEqns cenv.g ty
     if cenv.reportErrors then 
         let visitTyar (env,tp) = 
           if not (env.boundTypars.ContainsKey tp) then 
