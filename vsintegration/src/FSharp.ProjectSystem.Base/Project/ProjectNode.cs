@@ -36,7 +36,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.Build.Execution;
 
-using Microsoft.VisualStudio.FSharp.LanguageService;
 using Microsoft.VisualStudio.TextManager.Interop;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem

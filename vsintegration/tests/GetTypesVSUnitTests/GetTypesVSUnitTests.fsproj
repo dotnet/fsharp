@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net46</TargetFramework>
+    <OutputType>Library</OutputType>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <NoMsbuild>true</NoMsbuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="GetTypesVSUnitTests.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="$(NUnitPackageVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
+
+</Project>

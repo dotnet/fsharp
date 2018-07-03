@@ -1268,6 +1268,7 @@ for i in 0..a."]
         AssertCtrlSpaceCompleteContains code "? y." ["Chars"; "Length"] ["abs"]
 
     [<Test>]
+    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
     member public this.``Query.ForKeywordCanCompleteIntoIdentifier``() = 
         let code = 
             [
@@ -2069,6 +2070,7 @@ let x = new MyClass2(0)
           []
 
     [<Test;Category("Repro")>]
+    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
     member public this.``CurriedArguments.Regression1``() = 
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak  
            ["let fffff x y = 1"
@@ -6904,6 +6906,7 @@ let rec f l =
 
     //Regression test for bug 65740 Fsharp: dot completion is mission after a '#' statement
     [<Test>]
+    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
     member this.``Identifier.In#Statement``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
