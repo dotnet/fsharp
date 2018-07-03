@@ -1,3 +1,5 @@
+namespace Microsoft.VisualStudio.FSharp
+
 open NUnit.Framework
 open System
 open System.IO
@@ -6,7 +8,7 @@ open System.Reflection
 module AssemblyResolver =
     open System.Globalization
 
-    let vsInstallDir () =
+    let vsInstallDir =
         // use the environment variable to find the VS installdir
         let vsvar = 
             let var = Environment.GetEnvironmentVariable("VS150COMNTOOLS")
@@ -15,19 +17,19 @@ module AssemblyResolver =
         if String.IsNullOrEmpty vsvar then failwith "VS150COMNTOOLS and VSAPPIDDIR environment variables not found."
         Path.Combine(vsvar, "..")
 
-    let probingPaths () = [|
-        Path.Combine(vsInstallDir (), @"IDE\CommonExtensions\Microsoft\Editor")
-        Path.Combine(vsInstallDir (), @"IDE\PublicAssemblies")
-        Path.Combine(vsInstallDir (), @"IDE\PrivateAssemblies")
-        Path.Combine(vsInstallDir (), @"IDE\CommonExtensions\Microsoft\ManagedLanguages\VBCSharp\LanguageServices")
-        Path.Combine(vsInstallDir (), @"IDE\Extensions\Microsoft\CodeSense\Framework")
-        Path.Combine(vsInstallDir (), @"IDE")
+    let probingPaths = [|
+        Path.Combine(vsInstallDir, @"IDE\CommonExtensions\Microsoft\Editor")
+        Path.Combine(vsInstallDir, @"IDE\PublicAssemblies")
+        Path.Combine(vsInstallDir, @"IDE\PrivateAssemblies")
+        Path.Combine(vsInstallDir, @"IDE\CommonExtensions\Microsoft\ManagedLanguages\VBCSharp\LanguageServices")
+        Path.Combine(vsInstallDir, @"IDE\Extensions\Microsoft\CodeSense\Framework")
+        Path.Combine(vsInstallDir, @"IDE")
     |]
 
     let addResolver () =
         AppDomain.CurrentDomain.add_AssemblyResolve(fun h args ->
         let found () =
-            (probingPaths () ) |> Seq.tryPick(fun p -> 
+            (probingPaths ) |> Seq.tryPick(fun p -> 
                 try
                     let name = AssemblyName(args.Name)
                     let codebase = Path.GetFullPath(Path.Combine(p, name.Name) + ".dll")
