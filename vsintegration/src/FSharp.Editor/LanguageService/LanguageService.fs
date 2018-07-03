@@ -149,7 +149,6 @@ type internal FSharpProjectOptionsManager
     member this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, fileContents) =
         async {
             let extraProjectInfo = Some(box workspace)
-            let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject |> Option.map(fun (_, _, projectOptions) -> projectOptions)
             if SourceFile.MustBeSingleFileProject(fileName) then 
                 // NOTE: we don't use a unique stamp for single files, instead comparing options structurally.
                 // This is because we repeatedly recompute the options.
@@ -159,12 +158,12 @@ type internal FSharpProjectOptionsManager
                 // compiled and #r will refer to files on disk
                 let referencedProjectFileNames = [| |] 
                 let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, options)
-                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, options.ExtraProjectInfo, Some projectOptionsTable)
+                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, options.ExtraProjectInfo, Some projectOptionsTable)
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
                 return (deps, parsingOptions, projectOptions)
             else
                 let site = ProjectSitesAndFiles.ProjectSiteOfSingleFile(fileName)
-                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, extraProjectInfo, Some projectOptionsTable)
+                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, extraProjectInfo, Some projectOptionsTable)
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
                 return (deps, parsingOptions, projectOptions)
         }
@@ -174,8 +173,7 @@ type internal FSharpProjectOptionsManager
         Logger.Log LogEditorFunctionId.LanguageService_UpdateProjectInfo
         projectOptionsTable.AddOrUpdateProject(projectId, (fun isRefresh ->
             let extraProjectInfo = Some(box workspace)
-            let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject |> Option.map(fun (_, _, projectOptions) -> projectOptions)
-            let referencedProjects, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, Some(projectId), site.ProjectFileName, extraProjectInfo,  Some projectOptionsTable)
+            let referencedProjects, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, Some(projectId), site.ProjectFileName, extraProjectInfo,  Some projectOptionsTable)
             if invalidateConfig then checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = not isRefresh, userOpName = userOpName + ".UpdateProjectInfo")
             let referencedProjectIds = referencedProjects |> Array.choose tryGetOrCreateProjectId
             let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
@@ -610,7 +608,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                                                 optionsAssociation.Remove(projectContext) |> ignore
                                                 project.Disconnect()))
 
-                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites(site, this.SystemServiceProvider, Some (this.Workspace :>obj), Some projectInfoManager.FSharpOptions ) do
+                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites(Some projectId, site, this.SystemServiceProvider, Some (this.Workspace :>obj), Some projectInfoManager.FSharpOptions ) do
                     setup referencedSite
 
         setup (siteProvider.GetProjectSite()) 
