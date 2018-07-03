@@ -3338,13 +3338,13 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
         let currentExpr, currentTy = BuildPossiblyConditionalMethodCall cenv env DefinitelyMutates m true get_Current_minfo   NormalValUse get_Current_minst [enumeratorExpr] []
         let currentExpr            = mkCoerceExpr(currentExpr, enumElemTy, currentExpr.Range, currentTy)
         let currentExpr, enumElemTy =
-            // Deference byref for expr 'for x in ...'
+            // Dereference byref for expr 'for x in ...'
             if isByrefTy cenv.g currentTy then
                 let v, _ = mkCompGenLocal m "byrefReturn" enumElemTy
                 let expr = mkCompGenLet currentExpr.Range v currentExpr (mkAddrGet m (mkLocalValRef v))
                 expr, destByrefTy cenv.g enumElemTy
             else
-                currentExpr, currentTy
+                currentExpr, enumElemTy
 
         Result(enumeratorVar, enumeratorExpr, retTypeOfGetEnumerator, enumElemTy, getEnumExpr, getEnumTy, guardExpr, guardTy, currentExpr)
 
