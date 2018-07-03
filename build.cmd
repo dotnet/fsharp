@@ -1160,8 +1160,8 @@ if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
         set OUTPUTARG=--output:"!OUTPUTFILE!" 
     )
 
-   rem Verify that VisualFSharp.UnitTests.dll can be loaded by nunit.  Report load errors.
-   pushd !FSCBINPATH!
+    rem Verify that VisualFSharp.UnitTests.dll can be loaded by nunit.  Report load errors.
+    pushd !FSCBINPATH!
     echo "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\GetTypesVSUnitTests.dll" !WHERE_ARG_NUNIT!
          "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\GetTypesVSUnitTests.dll" !WHERE_ARG_NUNIT!
     popd
@@ -1170,8 +1170,6 @@ if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
         goto :failure
     )
 
-    set SAVED_FSHARP_COMPILER_BIN=%FSHARP_COMPILER_BIN%
-    set FSHARP_COMPILER_BIN=!FSCBINPATH!
     pushd !FSCBINPATH!
     echo "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\VisualFSharp.UnitTests.dll" !WHERE_ARG_NUNIT!
          "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\VisualFSharp.UnitTests.dll" !WHERE_ARG_NUNIT!
@@ -1186,11 +1184,8 @@ if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
         echo -------end vs-ide-unit errors ------------------------
         echo Error: Running tests vs-ideunit failed, see logs above, search for "Errors and Failures"  -- FAILED
         echo ----------------------------------------------------------------------------------------------------
-        set FSHARP_COMPILER_BIN=%SAVED_FSHARP_COMPILER_BIN%
         goto :failure
     )
-
-    set FSHARP_COMPILER_BIN=%SAVED_FSHARP_COMPILER_BIN%
 )
 
 goto :success
