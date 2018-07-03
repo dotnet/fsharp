@@ -30,4 +30,22 @@ open System
             for x in s do
                 x <- 5
                 ()
+
+    module ForEachDereferenceSpanElementSeqCheck =
+        let doSomething () =
+            seq {
+                let s = Span<int>.Empty
+                for x in s do
+                    x <- 5
+                    yield x
+            }
+
+    module ForEachDereferenceSpanElementAsyncCheck =
+        let doSomething () =
+            async {
+                let s = Span<int>.Empty
+                for x in s do
+                    x <- 5
+                    ()
+            }
 #endif
