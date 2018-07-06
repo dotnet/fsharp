@@ -134,6 +134,7 @@ type ILCallingConv =
     member BasicConv: ILArgConvention
 
     static member Instance: ILCallingConv
+    static member InstanceExplicit: ILCallingConv
     static member Static  : ILCallingConv
 
 /// Array shapes. For most purposes the rank is the only thing that matters. 

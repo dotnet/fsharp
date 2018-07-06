@@ -549,18 +549,18 @@ type ILCallingConv =
     member x.IsStatic           = match x.ThisConv with ILThisConvention.Static -> true | _ -> false
 
     static member Instance = ILCallingConvStatics.Instance
-
+    static member InstanceExplicit = ILCallingConvStatics.InstanceExplicit
     static member Static = ILCallingConvStatics.Static
 
 /// Static storage to amortize the allocation of <c>ILCallingConv.Instance</c> and <c>ILCallingConv.Static</c>.
 and ILCallingConvStatics() = 
 
     static let instanceCallConv = Callconv(ILThisConvention.Instance, ILArgConvention.Default)
-
+    static let instanceExplicitCallConv = Callconv(ILThisConvention.InstanceExplicit, ILArgConvention.Default)
     static let staticCallConv =  Callconv(ILThisConvention.Static, ILArgConvention.Default)
 
     static member Instance = instanceCallConv
-
+    static member InstanceExplicit = instanceExplicitCallConv
     static member Static = staticCallConv
 
 type ILBoxity = 

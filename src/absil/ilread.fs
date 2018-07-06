@@ -2230,7 +2230,15 @@ and byteAsCallConv b =
         elif ccMaxked = e_IMAGE_CEE_CS_CALLCONV_VARARG then ILArgConvention.VarArg 
         else  ILArgConvention.Default
     let generic = (b &&& e_IMAGE_CEE_CS_CALLCONV_GENERIC) <> 0x0uy
-    generic, Callconv (byteAsHasThis b, cc) 
+    let callConv =
+        if cc = ILArgConvention.Default then
+            let hasthis_masked = b &&& 0x60uy
+            if hasthis_masked = e_IMAGE_CEE_CS_CALLCONV_INSTANCE then ILCallingConv.Instance
+            elif hasthis_masked = e_IMAGE_CEE_CS_CALLCONV_INSTANCE_EXPLICIT then ILCallingConv.InstanceExplicit 
+            else ILCallingConv.Static
+        else
+            Callconv (byteAsHasThis b, cc)
+    generic, callConv
       
 and seekReadMemberRefAsMethodData ctxt numtypars idx : VarArgMethodData = 
     ctxt.seekReadMemberRefAsMethodData (MemberRefAsMspecIdx (numtypars, idx))
