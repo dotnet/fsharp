@@ -1245,12 +1245,21 @@ namespace Microsoft.FSharp.Core
 
 #if !FX_NO_REFLECTION_ONLY
             val internal tryFindCompilationMappingAttributeFromData : System.Collections.Generic.IList<System.Reflection.CustomAttributeData> * byref<SourceConstructFlags*int*int> -> bool
+            val internal findCompilationMappingAttributeFromData : System.Collections.Generic.IList<System.Reflection.CustomAttributeData> -> SourceConstructFlags*int*int
 #endif
 
             val internal tryFindCompilationMappingAttribute : obj[] * byref<SourceConstructFlags*int*int> -> bool
+            val internal findCompilationMappingAttribute : obj[] -> SourceConstructFlags*int*int
             val internal tryFindCompilationMappingAttributeFromType : Type * byref<SourceConstructFlags*int*int> -> bool
+            val internal tryFindCompilationMappingAttributeFromMemberInfo : System.Reflection.MemberInfo * byref<SourceConstructFlags*int*int> -> bool
+            val internal findCompilationMappingAttributeFromMemberInfo : System.Reflection.MemberInfo -> SourceConstructFlags*int*int
             val internal tryFindSourceConstructFlagsOfType : Type * byref<SourceConstructFlags> -> bool
+            val internal sequenceNumberOfMember : System.Reflection.MemberInfo -> int
+            val internal variantNumberOfMember : System.Reflection.MemberInfo -> int
+            val internal isFieldProperty : System.Reflection.PropertyInfo -> bool
+            val internal fieldPropsOfRecordType : Type * System.Reflection.BindingFlags -> System.Reflection.PropertyInfo[]
             val internal isRecordType : Type * System.Reflection.BindingFlags -> bool
+            val internal isUnionType : Type * System.Reflection.BindingFlags -> bool
 
         /// <summary>The F# compiler emits calls to some of the functions in this module as part of the compiled form of some language constructs</summary>
         module HashCompare =
