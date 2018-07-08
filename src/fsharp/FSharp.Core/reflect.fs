@@ -89,25 +89,16 @@ module internal Impl =
         then Some result
         else None
 
-    let findCompilationMappingAttribute (attrs:obj[]) =
-      match tryFindCompilationMappingAttribute attrs with
-      | None -> failwith "no compilation mapping attribute"
-      | Some a -> a
+    let findCompilationMappingAttribute (attrs:obj[]) = LanguagePrimitives.Reflection.findCompilationMappingAttribute attrs
 
 #if !FX_NO_REFLECTION_ONLY
-    let assemblyName = typeof<CompilationMappingAttribute>.Assembly.GetName().Name 
-    let _ = assert (assemblyName = "FSharp.Core")
-    
     let tryFindCompilationMappingAttributeFromData (attrs:System.Collections.Generic.IList<CustomAttributeData>) =
         let mutable result = Unchecked.defaultof<_>
         if LanguagePrimitives.Reflection.tryFindCompilationMappingAttributeFromData (attrs, &result)
         then Some result
         else None
 
-    let findCompilationMappingAttributeFromData attrs =
-      match tryFindCompilationMappingAttributeFromData attrs with
-      | None -> failwith "no compilation mapping attribute"
-      | Some a -> a
+    let findCompilationMappingAttributeFromData attrs = LanguagePrimitives.Reflection.findCompilationMappingAttributeFromData attrs
 #endif 
 
     let tryFindCompilationMappingAttributeFromType (typ:Type) = 
@@ -117,32 +108,19 @@ module internal Impl =
         else None
 
     let tryFindCompilationMappingAttributeFromMemberInfo (info:MemberInfo) = 
-#if !FX_NO_REFLECTION_ONLY
-        let assem = info.DeclaringType.Assembly
-        if (not (isNull assem)) && assem.ReflectionOnly then 
-           tryFindCompilationMappingAttributeFromData (info.GetCustomAttributesData())
-        else
-#endif
-        tryFindCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
+        let mutable result = Unchecked.defaultof<_>
+        if LanguagePrimitives.Reflection.tryFindCompilationMappingAttributeFromMemberInfo (info, &result)
+        then Some result
+        else None
 
-    let    findCompilationMappingAttributeFromMemberInfo (info:MemberInfo) =    
-#if !FX_NO_REFLECTION_ONLY
-        let assem = info.DeclaringType.Assembly
-        if (not (isNull assem)) && assem.ReflectionOnly then 
-            findCompilationMappingAttributeFromData (info.GetCustomAttributesData())
-        else
-#endif
-        findCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
+    let findCompilationMappingAttributeFromMemberInfo (info:MemberInfo) = LanguagePrimitives.Reflection.findCompilationMappingAttributeFromMemberInfo info
 
-    let sequenceNumberOfMember          (x: MemberInfo) = let (_,n,_) = findCompilationMappingAttributeFromMemberInfo x in n
-    let variantNumberOfMember           (x: MemberInfo) = let (_,_,vn) = findCompilationMappingAttributeFromMemberInfo x in vn
+    let sequenceNumberOfMember (x:MemberInfo) = LanguagePrimitives.Reflection.sequenceNumberOfMember x
+    let variantNumberOfMember  (x:MemberInfo) = LanguagePrimitives.Reflection.variantNumberOfMember x
 
     let sortFreshArray f arr = Array.sortInPlaceWith f arr; arr
 
-    let isFieldProperty (prop : PropertyInfo) =
-        match tryFindCompilationMappingAttributeFromMemberInfo(prop) with
-        | None -> false
-        | Some (flags,_n,_vn) -> (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.Field
+    let isFieldProperty (prop : PropertyInfo) = LanguagePrimitives.Reflection.isFieldProperty prop
 
     let tryFindSourceConstructFlagsOfType (typ:Type) =
         let mutable res = Unchecked.defaultof<_>
@@ -226,17 +204,11 @@ module internal Impl =
           (fun tag -> tagfieldmap.[tag])
 
     let isUnionType (typ:Type,bindingFlags:BindingFlags) = 
+        // isOptionType & isListType are not necessary. There were here before the code was refactored into prim-types
+        // presumably as an optimization, so have not been removed (no performance testing run at this time)
         isOptionType typ || 
-        isListType typ || 
-        match tryFindSourceConstructFlagsOfType(typ) with 
-        | None -> false
-        | Some(flags) ->
-          (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.SumType &&
-          // We see private representations only if BindingFlags.NonPublic is set
-          (if (flags &&& SourceConstructFlags.NonPublicRepresentation) <> enum(0) then 
-              (bindingFlags &&& BindingFlags.NonPublic) <> enum(0)
-           else 
-              true)
+        isListType typ ||
+        LanguagePrimitives.Reflection.isUnionType (typ, bindingFlags)
 
     // Check the base type - if it is also an F# type then
     // for the moment we know it is a Discriminated Union
@@ -564,10 +536,7 @@ module internal Impl =
     
     let isRecordType (typ:Type,bindingFlags:BindingFlags) = LanguagePrimitives.Reflection.isRecordType (typ, bindingFlags)
 
-    let fieldPropsOfRecordType(typ:Type,bindingFlags) =
-      typ.GetProperties(instancePropertyFlags ||| bindingFlags) 
-      |> Array.filter isFieldProperty
-      |> sortFreshArray (fun p1 p2 -> compare (sequenceNumberOfMember p1) (sequenceNumberOfMember p2))
+    let fieldPropsOfRecordType (typ:Type, bindingFlags) = LanguagePrimitives.Reflection.fieldPropsOfRecordType (typ, bindingFlags)
 
     let getRecordReader(typ:Type,bindingFlags) = 
         let props = fieldPropsOfRecordType(typ,bindingFlags)
