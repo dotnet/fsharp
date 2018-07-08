@@ -1239,6 +1239,19 @@ namespace Microsoft.FSharp.Core
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
             val inline SetArray4D : target:'T[,,,] -> index1:int -> index2:int -> index3:int -> index4:int -> value:'T -> unit  
 
+        module internal Reflection =
+            val internal tupleNames : string []
+            val internal isTupleType : Type -> bool
+
+#if !FX_NO_REFLECTION_ONLY
+            val internal tryFindCompilationMappingAttributeFromData : System.Collections.Generic.IList<System.Reflection.CustomAttributeData> * byref<SourceConstructFlags*int*int> -> bool
+#endif
+
+            val internal tryFindCompilationMappingAttribute : obj[] * byref<SourceConstructFlags*int*int> -> bool
+            val internal tryFindCompilationMappingAttributeFromType : Type * byref<SourceConstructFlags*int*int> -> bool
+            val internal tryFindSourceConstructFlagsOfType : Type * byref<SourceConstructFlags> -> bool
+            val internal isRecordType : Type * System.Reflection.BindingFlags -> bool
+
         /// <summary>The F# compiler emits calls to some of the functions in this module as part of the compiled form of some language constructs</summary>
         module HashCompare =
             [<AbstractClass; Sealed>]

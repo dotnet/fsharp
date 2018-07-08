@@ -83,11 +83,11 @@ module internal Impl =
     //-----------------------------------------------------------------
     // ATTRIBUTE DECOMPILATION
 
-    let tryFindCompilationMappingAttribute (attrs:obj[]) =
-      match attrs with
-      | null | [| |] -> None
-      | [| res |] -> let a = (res :?> CompilationMappingAttribute) in Some (a.SourceConstructFlags, a.SequenceNumber, a.VariantNumber)
-      | _ -> raise <| System.InvalidOperationException (SR.GetString(SR.multipleCompilationMappings))
+    let tryFindCompilationMappingAttribute (attrs:obj[]) = 
+        let mutable result = Unchecked.defaultof<_>
+        if LanguagePrimitives.Reflection.tryFindCompilationMappingAttribute (attrs, &result)
+        then Some result
+        else None
 
     let findCompilationMappingAttribute (attrs:obj[]) =
       match tryFindCompilationMappingAttribute attrs with
@@ -95,26 +95,14 @@ module internal Impl =
       | Some a -> a
 
 #if !FX_NO_REFLECTION_ONLY
-    let cmaName = typeof<CompilationMappingAttribute>.FullName
     let assemblyName = typeof<CompilationMappingAttribute>.Assembly.GetName().Name 
     let _ = assert (assemblyName = "FSharp.Core")
     
     let tryFindCompilationMappingAttributeFromData (attrs:System.Collections.Generic.IList<CustomAttributeData>) =
-        match attrs with
-        | null -> None
-        | _ -> 
-            let mutable res = None
-            for a in attrs do
-                if a.Constructor.DeclaringType.FullName = cmaName then 
-                    let args = a.ConstructorArguments
-                    let flags = 
-                         match args.Count  with 
-                         | 1 -> ((let x = args.[0] in x.Value :?> SourceConstructFlags), 0, 0)
-                         | 2 -> ((let x = args.[0] in x.Value :?> SourceConstructFlags), (let x = args.[1] in x.Value :?> int), 0)
-                         | 3 -> ((let x = args.[0] in x.Value :?> SourceConstructFlags), (let x = args.[1] in x.Value :?> int), (let x = args.[2] in x.Value :?> int))
-                         | _ -> (enum 0, 0, 0)
-                    res <- Some flags
-            res
+        let mutable result = Unchecked.defaultof<_>
+        if LanguagePrimitives.Reflection.tryFindCompilationMappingAttributeFromData (attrs, &result)
+        then Some result
+        else None
 
     let findCompilationMappingAttributeFromData attrs =
       match tryFindCompilationMappingAttributeFromData attrs with
@@ -122,14 +110,11 @@ module internal Impl =
       | Some a -> a
 #endif 
 
-    let tryFindCompilationMappingAttributeFromType       (typ:Type)        = 
-#if !FX_NO_REFLECTION_ONLY
-        let assem = typ.Assembly
-        if (not (isNull assem)) && assem.ReflectionOnly then 
-           tryFindCompilationMappingAttributeFromData ( typ.GetCustomAttributesData())
-        else
-#endif
-        tryFindCompilationMappingAttribute ( typ.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
+    let tryFindCompilationMappingAttributeFromType (typ:Type) = 
+        let mutable result = Unchecked.defaultof<_>
+        if LanguagePrimitives.Reflection.tryFindCompilationMappingAttributeFromType (typ, &result)
+        then Some result
+        else None
 
     let tryFindCompilationMappingAttributeFromMemberInfo (info:MemberInfo) = 
 #if !FX_NO_REFLECTION_ONLY
@@ -159,10 +144,12 @@ module internal Impl =
         | None -> false
         | Some (flags,_n,_vn) -> (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.Field
 
-    let tryFindSourceConstructFlagsOfType (typ:Type) = 
-      match tryFindCompilationMappingAttributeFromType typ with 
-      | None -> None
-      | Some (flags,_n,_vn) -> Some flags
+    let tryFindSourceConstructFlagsOfType (typ:Type) =
+        let mutable res = Unchecked.defaultof<_>
+        if LanguagePrimitives.Reflection.tryFindSourceConstructFlagsOfType (typ, &res) then
+            Some res
+        else
+            None
 
     //-----------------------------------------------------------------
     // UNION DECOMPILATION   
@@ -349,32 +336,9 @@ module internal Impl =
 
     //-----------------------------------------------------------------
     // TUPLE DECOMPILATION
-    let tupleNames = [|
-        "System.Tuple`1";      "System.Tuple`2";      "System.Tuple`3";
-        "System.Tuple`4";      "System.Tuple`5";      "System.Tuple`6";
-        "System.Tuple`7";      "System.Tuple`8";      "System.Tuple"
-        "System.ValueTuple`1"; "System.ValueTuple`2"; "System.ValueTuple`3";
-        "System.ValueTuple`4"; "System.ValueTuple`5"; "System.ValueTuple`6";
-        "System.ValueTuple`7"; "System.ValueTuple`8"; "System.ValueTuple" |]
+    let tupleNames = LanguagePrimitives.Reflection.tupleNames
 
-    let simpleTupleNames = [|
-        "Tuple`1";      "Tuple`2";      "Tuple`3";
-        "Tuple`4";      "Tuple`5";      "Tuple`6";
-        "Tuple`7";      "Tuple`8";      
-        "ValueTuple`1"; "ValueTuple`2"; "ValueTuple`3";
-        "ValueTuple`4"; "ValueTuple`5"; "ValueTuple`6";
-        "ValueTuple`7"; "ValueTuple`8"; |]
-
-    let isTupleType (typ:Type) = 
-      // We need to be careful that we only rely typ.IsGenericType, typ.Namespace and typ.Name here.
-      //
-      // Historically the FSharp.Core reflection utilities get used on implementations of 
-      // System.Type that don't have functionality such as .IsEnum and .FullName fully implemented.
-      // This happens particularly over TypeBuilderInstantiation types in the ProvideTypes implementation of System.TYpe
-      // used in F# type providers.
-      typ.IsGenericType &&
-      typ.Namespace = "System" && 
-      simpleTupleNames |> Seq.exists typ.Name.StartsWith
+    let isTupleType (typ:Type) = LanguagePrimitives.Reflection.isTupleType typ
 
     let maxTuple = 8
     // Which field holds the nested tuple?
@@ -598,16 +562,7 @@ module internal Impl =
     //-----------------------------------------------------------------
     // RECORD DECOMPILATION
     
-    let isRecordType (typ:Type,bindingFlags:BindingFlags) = 
-      match tryFindSourceConstructFlagsOfType(typ) with 
-      | None -> false 
-      | Some(flags) ->
-        (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.RecordType &&
-        // We see private representations only if BindingFlags.NonPublic is set
-        (if (flags &&& SourceConstructFlags.NonPublicRepresentation) <> enum(0) then 
-            (bindingFlags &&& BindingFlags.NonPublic) <> enum(0)
-         else 
-            true)
+    let isRecordType (typ:Type,bindingFlags:BindingFlags) = LanguagePrimitives.Reflection.isRecordType (typ, bindingFlags)
 
     let fieldPropsOfRecordType(typ:Type,bindingFlags) =
       typ.GetProperties(instancePropertyFlags ||| bindingFlags) 
