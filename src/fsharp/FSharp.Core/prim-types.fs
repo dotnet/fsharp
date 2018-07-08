@@ -770,6 +770,105 @@ namespace Microsoft.FSharp.Core
 
         let anyToStringShowingNull x = anyToString "null" x
 
+        module internal Reflection =
+            let tupleNames = [|
+                "System.Tuple`1";      "System.Tuple`2";      "System.Tuple`3";
+                "System.Tuple`4";      "System.Tuple`5";      "System.Tuple`6";
+                "System.Tuple`7";      "System.Tuple`8";      "System.Tuple"
+                "System.ValueTuple`1"; "System.ValueTuple`2"; "System.ValueTuple`3";
+                "System.ValueTuple`4"; "System.ValueTuple`5"; "System.ValueTuple`6";
+                "System.ValueTuple`7"; "System.ValueTuple`8"; "System.ValueTuple" |]
+
+            let simpleTupleNames = [|
+                "Tuple`1";      "Tuple`2";      "Tuple`3";
+                "Tuple`4";      "Tuple`5";      "Tuple`6";
+                "Tuple`7";      "Tuple`8";      
+                "ValueTuple`1"; "ValueTuple`2"; "ValueTuple`3";
+                "ValueTuple`4"; "ValueTuple`5"; "ValueTuple`6";
+                "ValueTuple`7"; "ValueTuple`8"; |]
+
+            let isTupleType (typ:Type) = 
+              // We need to be careful that we only rely typ.IsGenericType, typ.Namespace and typ.Name here.
+              //
+              // Historically the FSharp.Core reflection utilities get used on implementations of 
+              // System.Type that don't have functionality such as .IsEnum and .FullName fully implemented.
+              // This happens particularly over TypeBuilderInstantiation types in the ProvideTypes implementation of System.TYpe
+              // used in F# type providers.
+              typ.IsGenericType &&
+              System.String.Equals(typ.Namespace, "System") && 
+              Array.Exists (simpleTupleNames, Predicate typ.Name.StartsWith)
+
+#if !FX_NO_REFLECTION_ONLY
+            let cmaName = typeof<CompilationMappingAttribute>.FullName
+            
+            let tryFindCompilationMappingAttributeFromData (attrs:System.Collections.Generic.IList<CustomAttributeData>, res:byref<SourceConstructFlags*int*int>) : bool =
+                match attrs with
+                | null -> false
+                | _ -> 
+                    let mutable found = false
+                    for a in attrs do
+                        if a.Constructor.DeclaringType.FullName.Equals cmaName then 
+                            let args = a.ConstructorArguments
+                            let flags = 
+                                 match args.Count  with 
+                                 | 1 -> ((let x = args.[0] in x.Value :?> SourceConstructFlags), 0, 0)
+                                 | 2 -> ((let x = args.[0] in x.Value :?> SourceConstructFlags), (let x = args.[1] in x.Value :?> int), 0)
+                                 | 3 -> ((let x = args.[0] in x.Value :?> SourceConstructFlags), (let x = args.[1] in x.Value :?> int), (let x = args.[2] in x.Value :?> int))
+                                 | _ -> (SourceConstructFlags.None, 0, 0)
+                            res <- flags
+                            found <- true
+                    found
+#endif
+
+            let tryFindCompilationMappingAttribute (attrs:obj[], res:byref<SourceConstructFlags*int*int>) : bool =
+              match attrs with
+              | null | [||] -> false
+              | [| :? CompilationMappingAttribute as a |] ->
+                res <- a.SourceConstructFlags, a.SequenceNumber, a.VariantNumber
+                true
+              | _ -> raise (System.InvalidOperationException (SR.GetString(SR.multipleCompilationMappings)))
+
+            let tryFindCompilationMappingAttributeFromType (typ:Type, res:byref<SourceConstructFlags*int*int>) : bool =
+#if !FX_NO_REFLECTION_ONLY
+                let assem = typ.Assembly
+                if (not (obj.ReferenceEquals(assem, null))) && assem.ReflectionOnly then 
+                   tryFindCompilationMappingAttributeFromData (typ.GetCustomAttributesData(), &res)
+                else
+#endif
+                tryFindCompilationMappingAttribute (typ.GetCustomAttributes (typeof<CompilationMappingAttribute>,false), &res)
+
+            let tryFindSourceConstructFlagsOfType (typ:Type, res:byref<SourceConstructFlags>) : bool =
+              let mutable x = unsafeDefault<_>
+              if tryFindCompilationMappingAttributeFromType (typ, &x) then
+                let flags,_n,_vn = x
+                res <- flags
+                true
+              else
+                false
+
+            let inline flagsAnd<'a> (lhs:'a) (rhs:'a) =
+                (# "and" lhs rhs : 'a #)
+
+            let inline flagsContains<'a when 'a : equality> (flags:'a) (mask:'a) (value:'a) =
+                (flagsAnd flags mask).Equals value
+
+            let inline flagsIsSet<'a when 'a : equality> (flags:'a) (value:'a) =
+                flagsContains flags value value
+
+            let isRecordType (typ:Type, bindingFlags:BindingFlags) = 
+                let mutable flags = unsafeDefault<_>
+                match tryFindSourceConstructFlagsOfType (typ, &flags) with 
+                | false -> false 
+                | true ->
+                  (flagsContains flags SourceConstructFlags.KindMask SourceConstructFlags.RecordType) &&
+                  // We see private representations only if BindingFlags.NonPublic is set
+                  (if flagsIsSet flags SourceConstructFlags.NonPublicRepresentation then 
+                      flagsIsSet bindingFlags BindingFlags.NonPublic
+                   else 
+                      true)
+
+
+
         module HashCompare = 
             //-------------------------------------------------------------------------
             // LanguagePrimitives.HashCompare: HASHING.  
