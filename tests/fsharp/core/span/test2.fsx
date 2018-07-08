@@ -204,6 +204,16 @@ namespace Tests
                 for x in s do
                     yield x
             }
+            
+        type Nope = {
+            Funcn : ReadOnlySpan<byte> -> int
+            }
+
+        type FuncType = ReadOnlySpan<byte> -> int
+        type Nope2 = {
+            Funcn : FuncType
+            }
+
 #endif
 
         let should_work1 () =
