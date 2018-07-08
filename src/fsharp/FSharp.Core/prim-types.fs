@@ -771,6 +771,72 @@ namespace Microsoft.FSharp.Core
         let anyToStringShowingNull x = anyToString "null" x
 
         module internal Reflection =
+            let inline flagsOr<'a> (lhs:'a) (rhs:'a) =
+                (# "or" lhs rhs : 'a #)
+
+            let inline flagsAnd<'a> (lhs:'a) (rhs:'a) =
+                (# "and" lhs rhs : 'a #)
+
+            let inline flagsContains<'a when 'a : equality> (flags:'a) (mask:'a) (value:'a) =
+                (flagsAnd flags mask).Equals value
+
+            let inline flagsIsSet<'a when 'a : equality> (flags:'a) (value:'a) =
+                flagsContains flags value value
+
+#if FX_RESHAPED_REFLECTION
+            module internal ReflectionAdapters =
+                let toArray<'a> (s:System.Collections.Generic.IEnumerable<'a>) =
+                    (System.Collections.Generic.List<'a> s).ToArray ()
+
+                open System
+
+                let inline hasFlag (flag : BindingFlags) f  = flagsIsSet f flag
+                let isDeclaredFlag  f    = hasFlag BindingFlags.DeclaredOnly f
+                let isPublicFlag    f    = hasFlag BindingFlags.Public f
+                let isStaticFlag    f    = hasFlag BindingFlags.Static f
+                let isInstanceFlag  f    = hasFlag BindingFlags.Instance f
+                let isNonPublicFlag f    = hasFlag BindingFlags.NonPublic f
+
+                let isAcceptable bindingFlags isStatic isPublic =
+                    // 1. check if member kind (static\instance) was specified in flags
+                    ((isStaticFlag bindingFlags && isStatic) || (isInstanceFlag bindingFlags && not isStatic)) && 
+                    // 2. check if member accessibility was specified in flags
+                    ((isPublicFlag bindingFlags && isPublic) || (isNonPublicFlag bindingFlags && not isPublic))
+
+                type System.Type with
+                    // use different sources based on Declared flag
+                    member this.GetProperties (bindingFlags) = 
+                        let properties =
+                            if isDeclaredFlag bindingFlags then
+                                this.GetTypeInfo().DeclaredProperties
+                            else
+                                this.GetRuntimeProperties ()
+
+                        Array.FindAll (toArray properties, Predicate (fun pi -> 
+                            let mi =
+                                match pi.GetMethod with
+                                | null -> pi.SetMethod
+                                | _    -> pi.GetMethod
+                            if obj.ReferenceEquals (mi, null) then
+                                false
+                            else
+                                isAcceptable bindingFlags mi.IsStatic mi.IsPublic))
+                        
+                type System.Reflection.MemberInfo with
+                    member this.GetCustomAttributes(attrTy, inherits) : obj[] =
+                        downcast box(toArray (CustomAttributeExtensions.GetCustomAttributes(this, attrTy, inherits)))
+
+            open ReflectionAdapters
+            open PrimReflectionAdapters
+#endif
+
+
+#if FX_RESHAPED_REFLECTION
+            let instancePropertyFlags = BindingFlags.Instance 
+#else    
+            let instancePropertyFlags = flagsOr BindingFlags.GetProperty BindingFlags.Instance 
+#endif
+
             let tupleNames = [|
                 "System.Tuple`1";      "System.Tuple`2";      "System.Tuple`3";
                 "System.Tuple`4";      "System.Tuple`5";      "System.Tuple`6";
@@ -799,6 +865,8 @@ namespace Microsoft.FSharp.Core
               Array.Exists (simpleTupleNames, Predicate typ.Name.StartsWith)
 
 #if !FX_NO_REFLECTION_ONLY
+            let assemblyName = typeof<CompilationMappingAttribute>.Assembly.GetName().Name 
+            let _ = assert (System.String.Equals (assemblyName, "FSharp.Core"))
             let cmaName = typeof<CompilationMappingAttribute>.FullName
             
             let tryFindCompilationMappingAttributeFromData (attrs:System.Collections.Generic.IList<CustomAttributeData>, res:byref<SourceConstructFlags*int*int>) : bool =
@@ -818,6 +886,12 @@ namespace Microsoft.FSharp.Core
                             res <- flags
                             found <- true
                     found
+
+            let findCompilationMappingAttributeFromData attrs =
+                let mutable x = unsafeDefault<_>
+                match tryFindCompilationMappingAttributeFromData (attrs, &x) with
+                | false -> raise (Exception "no compilation mapping attribute")
+                | true -> x
 #endif
 
             let tryFindCompilationMappingAttribute (attrs:obj[], res:byref<SourceConstructFlags*int*int>) : bool =
@@ -828,6 +902,12 @@ namespace Microsoft.FSharp.Core
                 true
               | _ -> raise (System.InvalidOperationException (SR.GetString(SR.multipleCompilationMappings)))
 
+            let findCompilationMappingAttribute (attrs:obj[]) =
+                let mutable x = unsafeDefault<_>
+                match tryFindCompilationMappingAttribute (attrs, &x) with
+                | false -> raise (Exception "no compilation mapping attribute")
+                | true -> x
+
             let tryFindCompilationMappingAttributeFromType (typ:Type, res:byref<SourceConstructFlags*int*int>) : bool =
 #if !FX_NO_REFLECTION_ONLY
                 let assem = typ.Assembly
@@ -837,6 +917,24 @@ namespace Microsoft.FSharp.Core
 #endif
                 tryFindCompilationMappingAttribute (typ.GetCustomAttributes (typeof<CompilationMappingAttribute>,false), &res)
 
+            let tryFindCompilationMappingAttributeFromMemberInfo (info:MemberInfo, res:byref<SourceConstructFlags*int*int>) : bool =
+#if !FX_NO_REFLECTION_ONLY
+                let assem = info.DeclaringType.Assembly
+                if (not (obj.ReferenceEquals (assem, null))) && assem.ReflectionOnly then 
+                   tryFindCompilationMappingAttributeFromData (info.GetCustomAttributesData(), &res)
+                else
+#endif
+                tryFindCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>,false), &res)
+
+            let findCompilationMappingAttributeFromMemberInfo (info:MemberInfo) =    
+#if !FX_NO_REFLECTION_ONLY
+                let assem = info.DeclaringType.Assembly
+                if (not (obj.ReferenceEquals (assem, null))) && assem.ReflectionOnly then 
+                    findCompilationMappingAttributeFromData (info.GetCustomAttributesData())
+                else
+#endif
+                findCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
+
             let tryFindSourceConstructFlagsOfType (typ:Type, res:byref<SourceConstructFlags>) : bool =
               let mutable x = unsafeDefault<_>
               if tryFindCompilationMappingAttributeFromType (typ, &x) then
@@ -845,15 +943,6 @@ namespace Microsoft.FSharp.Core
                 true
               else
                 false
-
-            let inline flagsAnd<'a> (lhs:'a) (rhs:'a) =
-                (# "and" lhs rhs : 'a #)
-
-            let inline flagsContains<'a when 'a : equality> (flags:'a) (mask:'a) (value:'a) =
-                (flagsAnd flags mask).Equals value
-
-            let inline flagsIsSet<'a when 'a : equality> (flags:'a) (value:'a) =
-                flagsContains flags value value
 
             let isRecordType (typ:Type, bindingFlags:BindingFlags) = 
                 let mutable flags = unsafeDefault<_>
@@ -867,7 +956,43 @@ namespace Microsoft.FSharp.Core
                    else 
                       true)
 
+            let isFieldProperty (prop : PropertyInfo) =
+                let mutable res = unsafeDefault<_>
+                match tryFindCompilationMappingAttributeFromMemberInfo(prop:>MemberInfo, &res) with
+                | false -> false
+                | true -> 
+                    let (flags,_n,_vn) = res
+                    flagsContains flags SourceConstructFlags.KindMask SourceConstructFlags.Field
 
+            let sequenceNumberOfMember (x:MemberInfo) = let (_,n,_)  = findCompilationMappingAttributeFromMemberInfo x in n
+            let variantNumberOfMember  (x:MemberInfo) = let (_,_,vn) = findCompilationMappingAttributeFromMemberInfo x in vn
+
+            // Although this funciton is called sortFreshArray (and was so in it's previously life in reflect.fs)
+            // it does not create a fresh array, but rather uses the existing array.
+            let sortFreshArray (f:'a->int) (arr:'a[]) =
+                let comparer = System.Collections.Generic.Comparer<int>.Default
+                System.Array.Sort (arr, {
+                    new IComparer<'a> with
+                        member __.Compare (lhs:'a, rhs:'a) =
+                            comparer.Compare (f lhs, f rhs) })
+                arr
+
+            let fieldPropsOfRecordType (typ:Type, bindingFlags) =
+                let properties = typ.GetProperties (flagsOr instancePropertyFlags bindingFlags) 
+                let fields = System.Array.FindAll (properties, Predicate isFieldProperty)
+                sortFreshArray sequenceNumberOfMember fields
+
+            let isUnionType (typ:Type,bindingFlags:BindingFlags) = 
+                let mutable flags = unsafeDefault<_>
+                match tryFindSourceConstructFlagsOfType(typ, &flags) with 
+                | false -> false
+                | true ->
+                  (flagsContains flags SourceConstructFlags.KindMask SourceConstructFlags.SumType) &&
+                  // We see private representations only if BindingFlags.NonPublic is set
+                  (if flagsIsSet flags SourceConstructFlags.NonPublicRepresentation then 
+                      flagsIsSet bindingFlags BindingFlags.NonPublic
+                   else 
+                      true)
 
         module HashCompare = 
             //-------------------------------------------------------------------------
