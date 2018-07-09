@@ -26,7 +26,6 @@ open Microsoft.Build.Framework
         
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 open NUnit.Framework
-
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers

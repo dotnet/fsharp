@@ -6984,77 +6984,82 @@
       </trans-unit>
       <trans-unit id="writeToReadOnlyByref">
         <source>The byref pointer is readonly, so this write is not permitted.</source>
-        <target state="new">The byref pointer is readonly, so this write is not permitted.</target>
+        <target state="translated">byref 指標為唯讀指標，所以不允許此寫入。</target>
         <note />
       </trans-unit>
       <trans-unit id="tastValueMustBeMutable">
         <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
-        <target state="new">A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</target>
+        <target state="translated">值必須是可變動的，才能變動內容或接受實值類型的位址，例如 'let mutable x = ...'</target>
         <note />
       </trans-unit>
       <trans-unit id="readOnlyAttributeOnStructWithMutableField">
         <source>A ReadOnly attribute has been applied to a struct type with a mutable field.</source>
-        <target state="new">A ReadOnly attribute has been applied to a struct type with a mutable field.</target>
+        <target state="translated">已將 ReadOnly 屬性套用至具備可變動欄位的結構類型。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefReturnImplicitlyDereferenced">
         <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
-        <target state="new">A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</target>
+        <target state="translated">函式或方法所傳回的 byref 指標，隱含會取值為 F# 4.5。如需將傳回值擷取為指標，請使用 address-of 運算子，例如 '&amp;f(x)' 或 '&amp;obj.Method(arg1, arg2)'。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByRefLikeNotStruct">
         <source>A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
-        <target state="new">A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</target>
+        <target state="translated">標註有 IsByRefLike 的類型，必須是結構。請考慮對該類型新增 [&lt;Struct&gt;] 屬性。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefAddressOfLocal">
         <source>The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="new">The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
+        <target state="translated">此時不可使用變數 '{0}' 或相關運算式的位址。如此可確保本機值的位址不會逸出其範圍。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoReturnOfLimitedSpan">
         <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <target state="translated">無法從此函式或方法傳回 Span 或 IsByRefLike 運算式，因為其使用可能會逸出其範圍的項目撰寫。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
-        <target state="new">This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</target>
+        <target state="translated">因為目標 '{0}' 會參考非本機堆疊的記憶體，所以無法指派此值。而目前所指派的運算式則評定為可能會參考本機堆疊的記憶體。如此可有助於避免進入受堆疊拘束記憶體的指標會逸出其範圍。</target>
         <note />
       </trans-unit>
       <trans-unit id="tastValueMustBeLocal">
         <source>A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</source>
-        <target state="new">A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</target>
+        <target state="translated">模組中定義的值必須可以變動，才可取用其位址，例如 'let mutable x = ...'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIsReadOnlyNotStruct">
         <source>A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
-        <target state="new">A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</target>
+        <target state="translated">標註有 IsReadOnly 的類型，必須是結構。請考慮對該類型新增 [&lt;Struct&gt;] 屬性。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkStructsMayNotReturnAddressesOfContents">
         <source>Struct members cannot return the address of fields of the struct by reference</source>
-        <target state="new">Struct members cannot return the address of fields of the struct by reference</target>
+        <target state="translated">結構成員無法經由參考方式，傳回結構欄位的位址</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefLikeFunctionCall">
         <source>The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="new">The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.</target>
+        <target state="translated">此時不可使用函式或方法呼叫，原因是非本機堆疊 Span 或 IsByRefLike 類型的 byref 引數，目前與本機堆疊 Span 或 IsByRefLike 類型的引數一起使用。如此可確保本機值的位址不會逸出其範圍。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefAddressOfValueFromExpression">
         <source>The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="new">The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
+        <target state="translated">此時不可使用運算式傳回值的位址。如此可確保本機值的位址不會逸出其範圍。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoSpanLikeVariable">
         <source>The Span or IsByRefLike variable '{0}' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="new">The Span or IsByRefLike variable '{0}' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
+        <target state="translated">此時不可使用 Span 或 IsByRefLike 變數 '{0}'。如此可確保本機值的位址不會逸出其範圍。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoSpanLikeValueFromExpression">
         <source>A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="new">A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</target>
+        <target state="translated">此時不可使用運算式傳回值的 Span 或 IsByRefLike。如此可確保本機值的位址不會逸出其範圍。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastCantTakeAddressOfExpression">
+        <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
+        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
         <note />
       </trans-unit>
     </body>

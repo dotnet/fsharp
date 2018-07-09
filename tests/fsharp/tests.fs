@@ -205,6 +205,18 @@ module CoreTests =
             testOkFile.CheckExists()
         end
 
+        begin
+            use testOkFile = fileguard cfg "test2.ok"
+
+            fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
+
+            singleNegTest cfg "test2"
+
+            exec cfg ("." ++ "test2.exe") ""
+
+            testOkFile.CheckExists()
+        end
+
     [<Test>]
     let span () = 
 

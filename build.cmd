@@ -1185,6 +1185,16 @@ if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
         set OUTPUTARG=--output:"!OUTPUTFILE!" 
     )
 
+    rem Verify that VisualFSharp.UnitTests.dll can be loaded by nunit.  Report load errors.
+    pushd !FSCBINPATH!
+    echo "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\GetTypesVSUnitTests.dll" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\GetTypesVSUnitTests.dll" !WHERE_ARG_NUNIT!
+    popd
+
+    if errorlevel 1 (
+        goto :failure
+    )
+
     pushd !FSCBINPATH!
     echo "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\VisualFSharp.UnitTests.dll" !WHERE_ARG_NUNIT!
          "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\VisualFSharp.UnitTests.dll" !WHERE_ARG_NUNIT!

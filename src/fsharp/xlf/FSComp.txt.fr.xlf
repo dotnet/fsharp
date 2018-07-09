@@ -6984,77 +6984,82 @@
       </trans-unit>
       <trans-unit id="writeToReadOnlyByref">
         <source>The byref pointer is readonly, so this write is not permitted.</source>
-        <target state="new">The byref pointer is readonly, so this write is not permitted.</target>
+        <target state="translated">Le pointeur byref étant en lecture seule, cette écriture n'est pas autorisée.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastValueMustBeMutable">
         <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
-        <target state="new">A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</target>
+        <target state="translated">Une valeur doit être mutable pour pouvoir muter le contenu ou accepter l'adresse d'un type valeur, par exemple 'let mutable x = ...'</target>
         <note />
       </trans-unit>
       <trans-unit id="readOnlyAttributeOnStructWithMutableField">
         <source>A ReadOnly attribute has been applied to a struct type with a mutable field.</source>
-        <target state="new">A ReadOnly attribute has been applied to a struct type with a mutable field.</target>
+        <target state="translated">Un attribut ReadOnly a été appliqué à un type struct avec un champ mutable.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefReturnImplicitlyDereferenced">
         <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
-        <target state="new">A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</target>
+        <target state="translated">Un pointeur byref retourné par une fonction ou une méthode est déréférencé implicitement à compter de F# 4.5. Pour acquérir la valeur de retour comme pointeur, utilisez l'opérateur &amp;. Par exemple : '&amp;f(x)' ou '&amp;obj.Method(arg1, arg2)'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByRefLikeNotStruct">
         <source>A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
-        <target state="new">A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</target>
+        <target state="translated">Un type annoté avec IsByRefLike doit également être un struct. Ajoutez l'attribut [&lt;Struct&gt;] au type.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefAddressOfLocal">
         <source>The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="new">The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
+        <target state="translated">L'adresse de la variable '{0}' ou une expression associée ne peut pas être utilisée à ce stade. Cela permet de s'assurer que l'adresse de la valeur locale ne sort pas de sa portée.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoReturnOfLimitedSpan">
         <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <target state="translated">L'expression Span ou IsByRefLike ne peut pas être retournée à partir de cette fonction ou méthode, car elle est composée d'éléments qui peuvent sortir de leur portée.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
-        <target state="new">This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</target>
+        <target state="translated">Impossible d’affecter cette valeur car la cible '{0}' peut faire référence à une mémoire non locale (hors de la pile), tandis que l'expression en cours d’affectation est évaluée comme faisant potentiellement référence à une mémoire locale (dans la pile). Cela permet d'éviter que les pointeurs vers la mémoire liée à la pile ne sortent de leur portée.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastValueMustBeLocal">
         <source>A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</source>
-        <target state="new">A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</target>
+        <target state="translated">Une valeur définie dans un module doit être mutable pour prendre son adresse. Par exemple : 'let mutable x = ...'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIsReadOnlyNotStruct">
         <source>A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
-        <target state="new">A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</target>
+        <target state="translated">Un type annoté avec IsReadOnly doit également être un struct. Ajoutez l'attribut [&lt;Struct&gt;] au type.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkStructsMayNotReturnAddressesOfContents">
         <source>Struct members cannot return the address of fields of the struct by reference</source>
-        <target state="new">Struct members cannot return the address of fields of the struct by reference</target>
+        <target state="translated">Les membres du struct ne peuvent pas retourner l'adresse des champs du struct par référence</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefLikeFunctionCall">
         <source>The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="new">The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.</target>
+        <target state="translated">Impossible d’utiliser l'appel de fonction ou de méthode à ce stade, car un argument qui est un byref d'un type Span ou IsByRefLike non local (hors de la pile) est utilisé avec un autre argument de type Span ou IsByRefLike local (dans la pile). Cela permet d'éviter que l'adresse de la valeur locale ne sorte de sa portée.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefAddressOfValueFromExpression">
         <source>The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="new">The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
+        <target state="translated">L'adresse d'une valeur retournée par l'expression ne peut pas être utilisée à ce stade. Cela permet d'éviter que l'adresse de la valeur locale ne sorte de sa portée.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoSpanLikeVariable">
         <source>The Span or IsByRefLike variable '{0}' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="new">The Span or IsByRefLike variable '{0}' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
+        <target state="translated">Impossible d’utiliser la variable Span ou IsByRefLike '{0}' à ce stade. Cela permet d'éviter que l'adresse de la valeur locale ne sorte de sa portée.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoSpanLikeValueFromExpression">
         <source>A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="new">A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</target>
+        <target state="translated">Impossible d’utiliser une valeur Span ou IsByRefLike retournée par l'expression à ce stade. Cela permet d'éviter que l'adresse de la valeur locale ne sorte de sa portée.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastCantTakeAddressOfExpression">
+        <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
+        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
         <note />
       </trans-unit>
     </body>
