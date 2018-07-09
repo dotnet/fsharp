@@ -14,6 +14,7 @@ echo    update.cmd debug   [-ngen]
 echo    update.cmd release [-ngen]
 exit /b 1
 
+
 :ok
 
 set BINDIR=%~dp0..\%1\net40\bin
