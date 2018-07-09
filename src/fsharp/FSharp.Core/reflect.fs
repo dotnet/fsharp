@@ -83,45 +83,6 @@ module internal Impl =
     //-----------------------------------------------------------------
     // ATTRIBUTE DECOMPILATION
 
-    let tryFindCompilationMappingAttribute (attrs:obj[]) = 
-        let mutable result = Unchecked.defaultof<_>
-        if LanguagePrimitives.Reflection.tryFindCompilationMappingAttribute (attrs, &result)
-        then Some result
-        else None
-
-    let findCompilationMappingAttribute (attrs:obj[]) = LanguagePrimitives.Reflection.findCompilationMappingAttribute attrs
-
-#if !FX_NO_REFLECTION_ONLY
-    let tryFindCompilationMappingAttributeFromData (attrs:System.Collections.Generic.IList<CustomAttributeData>) =
-        let mutable result = Unchecked.defaultof<_>
-        if LanguagePrimitives.Reflection.tryFindCompilationMappingAttributeFromData (attrs, &result)
-        then Some result
-        else None
-
-    let findCompilationMappingAttributeFromData attrs = LanguagePrimitives.Reflection.findCompilationMappingAttributeFromData attrs
-#endif 
-
-    let tryFindCompilationMappingAttributeFromType (typ:Type) = 
-        let mutable result = Unchecked.defaultof<_>
-        if LanguagePrimitives.Reflection.tryFindCompilationMappingAttributeFromType (typ, &result)
-        then Some result
-        else None
-
-    let tryFindCompilationMappingAttributeFromMemberInfo (info:MemberInfo) = 
-        let mutable result = Unchecked.defaultof<_>
-        if LanguagePrimitives.Reflection.tryFindCompilationMappingAttributeFromMemberInfo (info, &result)
-        then Some result
-        else None
-
-    let findCompilationMappingAttributeFromMemberInfo (info:MemberInfo) = LanguagePrimitives.Reflection.findCompilationMappingAttributeFromMemberInfo info
-
-    let sequenceNumberOfMember (x:MemberInfo) = LanguagePrimitives.Reflection.sequenceNumberOfMember x
-    let variantNumberOfMember  (x:MemberInfo) = LanguagePrimitives.Reflection.variantNumberOfMember x
-
-    let sortFreshArray f arr = Array.sortInPlaceWith f arr; arr
-
-    let isFieldProperty (prop : PropertyInfo) = LanguagePrimitives.Reflection.isFieldProperty prop
-
     let tryFindSourceConstructFlagsOfType (typ:Type) =
         let mutable res = Unchecked.defaultof<_>
         if LanguagePrimitives.Reflection.tryFindSourceConstructFlagsOfType (typ, &res) then
@@ -133,8 +94,6 @@ module internal Impl =
     // UNION DECOMPILATION   
 
     let getUnionTypeTagNameMap (typ:Type,bindingFlags) = LanguagePrimitives.Reflection.getUnionTypeTagNameMap (typ, bindingFlags)
-
-    let getUnionCaseTyp (typ: Type, tag: int, bindingFlags) = LanguagePrimitives.Reflection.getUnionCaseTyp (typ, tag, bindingFlags)
 
     let getUnionTagConverter (typ:Type,bindingFlags) = 
         if isOptionType typ then (fun tag -> match tag with 0 -> "None" | 1 -> "Some" | _ -> invalidArg "tag" (SR.GetString(SR.outOfRange)))
