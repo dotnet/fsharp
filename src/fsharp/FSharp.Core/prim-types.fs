@@ -953,6 +953,13 @@ namespace Microsoft.FSharp.Core
                 | false -> raise (Exception "no compilation mapping attribute")
                 | true -> x
 #endif
+            let hasCustomEquality (typ:Type) =
+                let arr = typ.GetCustomAttributes (typeof<CustomEqualityAttribute>, false)
+                arr.Length > 0
+
+            let hasCustomComparison (typ:Type) =
+                let arr = typ.GetCustomAttributes (typeof<CustomComparisonAttribute>, false)
+                arr.Length > 0
 
             let tryFindCompilationMappingAttribute (attrs:obj[], res:byref<SourceConstructFlags*int*int>) : bool =
               match attrs with
@@ -1128,7 +1135,79 @@ namespace Microsoft.FSharp.Core
                    else 
                       true)
 
-        module HashCompare = 
+        module HashCompare =
+#if FX_RESHAPED_REFLECTION
+            open Reflection.SystemAdapters
+#endif
+            let isArray (ty:Type) =
+                ty.IsArray || (typeof<System.Array>.IsAssignableFrom ty)
+
+            let canUseDotnetDefaultComparisonOrEquality isCustom hasStructuralInterface stringsRequireHandling er (rootType:Type) =
+                let processed = System.Collections.Generic.HashSet ()
+
+                let bindingPublicOrNonPublic =
+                    Reflection.flagsOr BindingFlags.Public BindingFlags.NonPublic
+
+                let rec isSuitableNullableTypeOrNotNullable (ty:Type) =
+                    // although nullables not explicitly handled previously, they need special handling
+                    // due to the implicit casting to their underlying generic type (i.e. could be a float)
+                    let isNullableType = 
+                        ty.IsGenericType
+                        && ty.GetGenericTypeDefinition().Equals typedefof<Nullable<_>>
+                    if isNullableType then
+                        checkType 0 (ty.GetGenericArguments ())
+                    else 
+                        true
+
+                and isSuitableTupleType (ty:Type) =
+                    Reflection.isTupleType ty
+                    && ty.IsValueType // Tuple<...> don't have implementation, but ValueTuple<...> does
+                    && checkType 0 (ty.GetGenericArguments ())
+
+                and isSuitableRecordType (ty:Type) =
+                    Reflection.isRecordType (ty, bindingPublicOrNonPublic) &&
+                    (not (isCustom ty)) &&
+                    ( let fields = Reflection.fieldPropsOfRecordType (ty, bindingPublicOrNonPublic)
+                      let fieldTypes = Array.ConvertAll (fields, Converter (fun f -> f.PropertyType))
+                      checkType 0 fieldTypes)
+
+                and isSuitableUnionType (ty:Type) =
+                    Reflection.isUnionType (ty, bindingPublicOrNonPublic) &&
+                    (not (isCustom ty)) &&
+                    ( let cases = Reflection.getUnionTypeTagNameMap (ty, bindingPublicOrNonPublic)
+                      let rec checkCases idx =
+                          if idx = cases.Length then true
+                          else
+                              let tag,_ = get cases idx
+                              let fields = Reflection.fieldsPropsOfUnionCase (ty, tag, bindingPublicOrNonPublic)
+                              let fieldTypes = Array.ConvertAll (fields, Converter (fun f -> f.PropertyType))
+                              if checkType 0 fieldTypes then
+                                  checkCases (idx+1)
+                              else
+                                  false
+                      checkCases 0)
+
+                and checkType idx (types:Type[]) =
+                    if idx = types.Length then true
+                    else
+                        let ty = get types idx
+                        if not (processed.Add ty) then
+                            checkType (idx+1) types
+                        else
+                            ty.IsSealed // covers enum and value types; derived ref types might implement from hasStructuralInterface
+                            && not (isArray ty)
+                            && (not stringsRequireHandling || (not (ty.Equals typeof<string>)))
+                            && (er || (not (ty.Equals typeof<float>)))
+                            && (er || (not (ty.Equals typeof<float32>)))
+                            && isSuitableNullableTypeOrNotNullable ty
+                            && (   isSuitableTupleType ty
+                                || isSuitableRecordType ty
+                                || isSuitableUnionType ty
+                                || not (hasStructuralInterface ty))
+                            && checkType (idx+1) types
+
+                checkType 0 [|rootType|]
+
             //-------------------------------------------------------------------------
             // LanguagePrimitives.HashCompare: HASHING.  
             //------------------------------------------------------------------------- 
@@ -1495,55 +1574,10 @@ namespace Microsoft.FSharp.Core
 
             let isStructuralComparable (ty:Type) = typeof<IStructuralComparable>.IsAssignableFrom ty
             let isValueTypeStructuralComparable (ty:Type) = isStructuralComparable ty && ty.IsValueType
-            let isArray (ty:Type) = ty.IsArray || (typeof<System.Array>.IsAssignableFrom ty)
 
-            let canUseDefaultComparer er (rootType:Type) =
-                let processed = System.Collections.Generic.HashSet ()
-
-                let rec checkType idx (types:Type[]) =
-                    if idx = types.Length then true
-                    else
-                        let ty = get types idx
-                        if not (processed.Add ty) then
-                            checkType (idx+1) types
-                        else
-                            let isValidGenericType ifNotType fullname =
-                                if not (ty.IsGenericType && ty.GetGenericTypeDefinition().FullName.Equals fullname)
-                                then ifNotType
-                                else checkType 0 (ty.GetGenericArguments ())
-                            let isTypeAndGenericArgumentsOK fullname            = isValidGenericType false fullname
-                            let isNotTypeOrIsTypeAndGenericArgumentsOK fullname = isValidGenericType true  fullname
-                    
-                            // avoid any types that need special handling in GenericEqualityObj
-                            // GenericEqualityObj handles string as a special cases, but internally routes to same equality
-
-                            ty.IsSealed  // covers enum and value types
-                                         // ref types need to be sealed as derived class might implement  IStructuralEquatable
-                            && not (isArray ty)
-                            && not (ty.Equals typeof<string>)
-                            && (er || (not (ty.Equals typeof<float>)))
-                            && (er || (not (ty.Equals typeof<float32>)))
-                            && isNotTypeOrIsTypeAndGenericArgumentsOK "System.Nullable`1"
-                            && not (isStructuralComparable ty
-                                    // we accept ValueTuple even though it supports IStructuralEquatable 
-                                    // if all generic arguements pass check
-                                    && not (   isTypeAndGenericArgumentsOK "System.ValueTuple`1"
-                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`2"
-                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`3"
-                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`4"
-                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`5"
-                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`6"
-                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`7"
-                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`8"
-                                            || isTypeAndGenericArgumentsOK "Microsoft.FSharp.Collections.FSharpList`1"
-                                            || isTypeAndGenericArgumentsOK "Microsoft.FSharp.Core.FSharpOption`1"
-                                            || isTypeAndGenericArgumentsOK "Microsoft.FSharp.Core.FSharpValueOption`1"
-                                            || isTypeAndGenericArgumentsOK "Microsoft.FSharp.Core.FSharpResult`2"
-                                           )
-                                   )
-                            && checkType (idx+1) types
-
-                checkType 0 [|rootType|]
+            let canUseDefaultComparer er (rootType:Type) = 
+                // "Default" equality for strings is culturally sensitive, so needs special handling
+                canUseDotnetDefaultComparisonOrEquality Reflection.hasCustomComparison isStructuralComparable true er rootType
 
             type ComparisonUsage = 
             | ERUsage           = 0
@@ -2099,51 +2133,8 @@ namespace Microsoft.FSharp.Core
             let isValueTypeStructuralEquatable (ty:Type) = isStructuralEquatable ty && ty.IsValueType
 
             let canUseDefaultEqualityComparer er (rootType:Type) =
-                let processed = System.Collections.Generic.HashSet ()
-
-                let rec checkType idx (types:Type[]) =
-                    if idx = types.Length then true
-                    else
-                        let ty = get types idx
-                        if not (processed.Add ty) then
-                            checkType (idx+1) types
-                        else
-                            let isValidGenericType ifNotType fullname =
-                                if not (ty.IsGenericType && ty.GetGenericTypeDefinition().FullName.Equals fullname)
-                                then ifNotType
-                                else checkType 0 (ty.GetGenericArguments ())
-                            let isTypeAndGenericArgumentsOK fullname            = isValidGenericType false fullname
-                            let isNotTypeOrIsTypeAndGenericArgumentsOK fullname = isValidGenericType true  fullname
-                    
-                            // avoid any types that need special handling in GenericEqualityObj
-                            // GenericEqualityObj handles string as a special cases, but internally routes to same equality
-
-                            ty.IsSealed  // covers enum and value types
-                                         // ref types need to be sealed as derived class might implement  IStructuralEquatable
-                            && not (isArray ty)
-                            && (er || (not (ty.Equals typeof<float>)))
-                            && (er || (not (ty.Equals typeof<float32>)))
-                            && isNotTypeOrIsTypeAndGenericArgumentsOK "System.Nullable`1"
-                            && not (isStructuralEquatable ty
-                                    // we accept ValueTuple even though it supports IStructuralEquatable 
-                                    // if all generic arguements pass check
-                                    && not (   isTypeAndGenericArgumentsOK "System.ValueTuple`1"
-                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`2"
-                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`3"
-                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`4"
-                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`5"
-                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`6"
-                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`7"
-                                            || isTypeAndGenericArgumentsOK "System.ValueTuple`8"
-                                            || isTypeAndGenericArgumentsOK "Microsoft.FSharp.Collections.FSharpList`1"
-                                            || isTypeAndGenericArgumentsOK "Microsoft.FSharp.Core.FSharpOption`1"
-                                            || isTypeAndGenericArgumentsOK "Microsoft.FSharp.Core.FSharpValueOption`1"
-                                            || isTypeAndGenericArgumentsOK "Microsoft.FSharp.Core.FSharpResult`2"
-                                           )
-                                   )
-                            && checkType (idx+1) types
-
-                checkType 0 [|rootType|]
+                // "Default" equality for strings is by ordinal, so needs special handling required
+                canUseDotnetDefaultComparisonOrEquality Reflection.hasCustomEquality isStructuralEquatable false er rootType
 
             let tryGetFSharpEqualityComparer (er:bool) (ty:Type) : obj =
                 match er, ty with
