@@ -1259,6 +1259,9 @@ namespace Microsoft.FSharp.Core
             val internal isFieldProperty : System.Reflection.PropertyInfo -> bool
             val internal fieldPropsOfRecordType : Type * System.Reflection.BindingFlags -> System.Reflection.PropertyInfo[]
             val internal isRecordType : Type * System.Reflection.BindingFlags -> bool
+            val internal getUnionTypeTagNameMap : Type * System.Reflection.BindingFlags -> (int*string)[]
+            val internal getUnionCaseTyp : Type * int * System.Reflection.BindingFlags -> Type
+            val internal fieldsPropsOfUnionCase : Type * int* System.Reflection.BindingFlags -> System.Reflection.PropertyInfo[]
             val internal isUnionType : Type * System.Reflection.BindingFlags -> bool
 
         /// <summary>The F# compiler emits calls to some of the functions in this module as part of the compiled form of some language constructs</summary>

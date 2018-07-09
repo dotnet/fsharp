@@ -132,69 +132,9 @@ module internal Impl =
     //-----------------------------------------------------------------
     // UNION DECOMPILATION   
 
-    // Get the type where the type definitions are stored
-    let getUnionCasesTyp (typ: Type, _bindingFlags) = 
-#if CASES_IN_NESTED_CLASS
-       let casesTyp = typ.GetNestedType("Cases", bindingFlags)
-       if casesTyp.IsGenericTypeDefinition then casesTyp.MakeGenericType(typ.GetGenericArguments())
-       else casesTyp
-#else
-       typ
-#endif
-            
-    let getUnionTypeTagNameMap (typ:Type,bindingFlags) = 
-        let enumTyp = typ.GetNestedType("Tags", bindingFlags)
-        // Unions with a singleton case do not get a Tags type (since there is only one tag), hence enumTyp may be null in this case
-        match enumTyp with
-        | null -> 
-            typ.GetMethods(staticMethodFlags ||| bindingFlags) 
-            |> Array.choose (fun minfo -> 
-                match tryFindCompilationMappingAttributeFromMemberInfo(minfo) with
-                | None -> None
-                | Some (flags,n,_vn) -> 
-                    if (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.UnionCase then 
-                        let nm = minfo.Name 
-                        // chop "get_" or  "New" off the front 
-                        let nm = 
-                            if not (isListType typ) && not (isOptionType typ) then 
-                                if   nm.Length > 4 && nm.[0..3] = "get_" then nm.[4..] 
-                                elif nm.Length > 3 && nm.[0..2] = "New" then nm.[3..]
-                                else nm
-                            else nm
-                        Some (n, nm)
-                    else
-                        None) 
-        | _ -> 
-            enumTyp.GetFields(staticFieldFlags ||| bindingFlags) 
-            |> Array.filter (fun (f:FieldInfo) -> f.IsStatic && f.IsLiteral) 
-            |> sortFreshArray (fun f1 f2 -> compare (f1.GetValue(null) :?> int) (f2.GetValue(null) :?> int))
-            |> Array.map (fun tagfield -> (tagfield.GetValue(null) :?> int),tagfield.Name)
+    let getUnionTypeTagNameMap (typ:Type,bindingFlags) = LanguagePrimitives.Reflection.getUnionTypeTagNameMap (typ, bindingFlags)
 
-    let getUnionCaseTyp (typ: Type, tag: int, bindingFlags) = 
-        let tagFields = getUnionTypeTagNameMap(typ,bindingFlags)
-        let tagField = tagFields |> Array.pick (fun (i,f) -> if i = tag then Some f else None)
-        if tagFields.Length = 1 then 
-            typ
-        else
-            // special case: two-cased DU annotated with CompilationRepresentation(UseNullAsTrueValue)
-            // in this case it will be compiled as one class: return self type for non-nullary case and null for nullary
-            let isTwoCasedDU =
-                if tagFields.Length = 2 then
-                    match typ.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false) with
-                    | [|:? CompilationRepresentationAttribute as attr|] -> 
-                        (attr.Flags &&& CompilationRepresentationFlags.UseNullAsTrueValue) = CompilationRepresentationFlags.UseNullAsTrueValue
-                    | _ -> false
-                else
-                    false
-            if isTwoCasedDU then
-                typ
-            else
-            let casesTyp = getUnionCasesTyp (typ, bindingFlags)
-            let caseTyp = casesTyp.GetNestedType(tagField, bindingFlags) // if this is null then the union is nullary
-            match caseTyp with 
-            | null -> null
-            | _ when caseTyp.IsGenericTypeDefinition -> caseTyp.MakeGenericType(casesTyp.GetGenericArguments())
-            | _ -> caseTyp
+    let getUnionCaseTyp (typ: Type, tag: int, bindingFlags) = LanguagePrimitives.Reflection.getUnionCaseTyp (typ, tag, bindingFlags)
 
     let getUnionTagConverter (typ:Type,bindingFlags) = 
         if isOptionType typ then (fun tag -> match tag with 0 -> "None" | 1 -> "Some" | _ -> invalidArg "tag" (SR.GetString(SR.outOfRange)))
@@ -232,14 +172,7 @@ module internal Impl =
             | 1 (* Cons *) -> getInstancePropertyInfos (typ,[| "Head"; "Tail" |],bindingFlags) 
             | _ -> failwith "fieldsPropsOfUnionCase"
         else
-            // Lookup the type holding the fields for the union case
-            let caseTyp = getUnionCaseTyp (typ, tag, bindingFlags)
-            let caseTyp = match caseTyp with null ->  typ | _ -> caseTyp
-            caseTyp.GetProperties(instancePropertyFlags ||| bindingFlags) 
-            |> Array.filter isFieldProperty
-            |> Array.filter (fun prop -> variantNumberOfMember prop = tag)
-            |> sortFreshArray (fun p1 p2 -> compare (sequenceNumberOfMember p1) (sequenceNumberOfMember p2))
-                
+            LanguagePrimitives.Reflection.fieldsPropsOfUnionCase (typ, tag, bindingFlags)
 
     let getUnionCaseRecordReader (typ:Type,tag:int,bindingFlags) = 
         let props = fieldsPropsOfUnionCase(typ,tag,bindingFlags)
