@@ -825,6 +825,13 @@ namespace Microsoft.FSharp.Core
                                     f ()
                         f ()
 
+                    member this.GetConstructors(bindingFlags) = 
+                        // type initializer will also be included in resultset
+                        let constructors = this.GetTypeInfo().DeclaredConstructors 
+
+                        Array.FindAll (toArray constructors, Predicate (fun ci ->
+                            isAcceptable bindingFlags ci.IsStatic ci.IsPublic))
+
                     // use different sources based on Declared flag
                     member this.GetMethods (bindingFlags) =
                         let methods = 
@@ -1011,17 +1018,21 @@ namespace Microsoft.FSharp.Core
               else
                 false
 
-            let isRecordType (typ:Type, bindingFlags:BindingFlags) = 
+            let isKnownType (typ:Type, bindingFlags:BindingFlags, knownType:SourceConstructFlags) =
                 let mutable flags = unsafeDefault<_>
                 match tryFindSourceConstructFlagsOfType (typ, &flags) with 
                 | false -> false 
                 | true ->
-                  (flagsContains flags SourceConstructFlags.KindMask SourceConstructFlags.RecordType) &&
+                  (flagsContains flags SourceConstructFlags.KindMask knownType) &&
                   // We see private representations only if BindingFlags.NonPublic is set
                   (if flagsIsSet flags SourceConstructFlags.NonPublicRepresentation then 
                       flagsIsSet bindingFlags BindingFlags.NonPublic
                    else 
                       true)
+
+            let isRecordType (typ:Type, bindingFlags:BindingFlags) = isKnownType (typ, bindingFlags, SourceConstructFlags.RecordType)
+            let isObjectType (typ:Type, bindingFlags:BindingFlags) = isKnownType (typ, bindingFlags, SourceConstructFlags.ObjectType)
+            let isUnionType  (typ:Type, bindingFlags:BindingFlags) = isKnownType (typ, bindingFlags, SourceConstructFlags.SumType)
 
             let isFieldProperty (prop : PropertyInfo) =
                 let mutable res = unsafeDefault<_>
@@ -1123,17 +1134,13 @@ namespace Microsoft.FSharp.Core
                 let filtered = Array.FindAll (properties, Predicate (fun p -> if isFieldProperty p then (variantNumberOfMember (p:>MemberInfo)) = tag else false))
                 sortFreshArray (fun (p:PropertyInfo) -> sequenceNumberOfMember p) filtered
 
-            let isUnionType (typ:Type,bindingFlags:BindingFlags) = 
-                let mutable flags = unsafeDefault<_>
-                match tryFindSourceConstructFlagsOfType(typ, &flags) with 
-                | false -> false
-                | true ->
-                  (flagsContains flags SourceConstructFlags.KindMask SourceConstructFlags.SumType) &&
-                  // We see private representations only if BindingFlags.NonPublic is set
-                  (if flagsIsSet flags SourceConstructFlags.NonPublicRepresentation then 
-                      flagsIsSet bindingFlags BindingFlags.NonPublic
-                   else 
-                      true)
+            let tryGetSingleConstructorArgumentTypes (typ:Type, types:byref<Type[]>) =
+                match typ.GetConstructors (flagsOr BindingFlags.Instance (flagsOr BindingFlags.Public BindingFlags.NonPublic)) with
+                | [| single |] ->
+                    types <- Array.ConvertAll (single.GetParameters (), Converter (fun p -> p.ParameterType))
+                    true
+                | _ ->
+                    false
 
         module HashCompare =
 #if FX_RESHAPED_REFLECTION
@@ -1163,6 +1170,14 @@ namespace Microsoft.FSharp.Core
                     Reflection.isTupleType ty
                     && ty.IsValueType // Tuple<...> don't have implementation, but ValueTuple<...> does
                     && checkType 0 (ty.GetGenericArguments ())
+
+                and isSuitableStructType (ty:Type) =
+                    Reflection.isObjectType (ty, bindingPublicOrNonPublic) &&
+                    ty.IsValueType &&
+                    (not (isCustom ty)) &&
+                    ( let mutable types = unsafeDefault<_> 
+                      Reflection.tryGetSingleConstructorArgumentTypes (ty, &types)
+                      && checkType 0 types)
 
                 and isSuitableRecordType (ty:Type) =
                     Reflection.isRecordType (ty, bindingPublicOrNonPublic) &&
@@ -1201,6 +1216,7 @@ namespace Microsoft.FSharp.Core
                             && (er || (not (ty.Equals typeof<float32>)))
                             && isSuitableNullableTypeOrNotNullable ty
                             && (   isSuitableTupleType ty
+                                || isSuitableStructType ty
                                 || isSuitableRecordType ty
                                 || isSuitableUnionType ty
                                 || not (hasStructuralInterface ty))
