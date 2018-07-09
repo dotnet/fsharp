@@ -28,10 +28,12 @@ open NUnit.Framework
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
+open Microsoft.VisualStudio.FSharp
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open UnitTests.TestLib.LanguageService
 
+let _ = AssemblyResolver.addResolver ()
 let filePath = "C:\\test.fs"
 
 let internal projectOptions = { 
