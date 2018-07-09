@@ -1198,7 +1198,7 @@ module private PrintTastMemberOrVals =
                 
     let private prettyLayoutOfMemberShort denv typarInst (v:Val) = prettyLayoutOfMemberShortOption denv typarInst v true
     
-    let prettyLayoutOfMember denv typarInst (v:Val) = prettyLayoutOfMemberShortOption denv typarInst v true
+    let prettyLayoutOfMember denv typarInst (v:Val) = prettyLayoutOfMemberShortOption denv typarInst v false
 
     let prettyLayoutOfMemberNoInstShort denv v = 
         prettyLayoutOfMemberShortOption denv emptyTyparInst v true |> snd
