@@ -804,6 +804,49 @@ namespace Microsoft.FSharp.Core
                     ((isPublicFlag bindingFlags && isPublic) || (isNonPublicFlag bindingFlags && not isPublic))
 
                 type System.Type with
+                    member this.GetNestedType (name, bindingFlags) = 
+                        // MSDN: http://msdn.microsoft.com/en-us/library/0dcb3ad5.aspx
+                        // The following BindingFlags filter flags can be used to define which nested types to include in the search:
+                        // You must specify either BindingFlags.Public or BindingFlags.NonPublic to get a return.
+                        // Specify BindingFlags.Public to include public nested types in the search.
+                        // Specify BindingFlags.NonPublic to include non-public nested types (that is, private, internal, and protected nested types) in the search.
+                        // This method returns only the nested types of the current type. It does not search the base classes of the current type. 
+                        // To find types that are nested in base classes, you must walk the inheritance hierarchy, calling GetNestedType at each level.
+                        let e = this.GetTypeInfo().DeclaredNestedTypes.GetEnumerator ()
+                        let rec f () =
+                            if not (e.MoveNext ()) then null
+                            else
+                                let nestedTy = e.Current
+                                if (String.Equals (nestedTy.Name, name)) &&
+                                       ((isPublicFlag bindingFlags && nestedTy.IsNestedPublic) || 
+                                        (isNonPublicFlag bindingFlags && (nestedTy.IsNestedPrivate || nestedTy.IsNestedFamily || nestedTy.IsNestedAssembly || nestedTy.IsNestedFamORAssem || nestedTy.IsNestedFamANDAssem))) then
+                                    nestedTy.AsType ()
+                                else
+                                    f ()
+                        f ()
+
+                    // use different sources based on Declared flag
+                    member this.GetMethods (bindingFlags) =
+                        let methods = 
+                            if isDeclaredFlag bindingFlags then
+                                this.GetTypeInfo().DeclaredMethods
+                            else
+                                this.GetRuntimeMethods()
+
+                        Array.FindAll (toArray methods, Predicate (fun m ->
+                            isAcceptable bindingFlags m.IsStatic m.IsPublic))
+
+                    // use different sources based on Declared flag
+                    member this.GetFields (bindingFlags) = 
+                        let fields = 
+                            if isDeclaredFlag bindingFlags then
+                                this.GetTypeInfo().DeclaredFields
+                            else
+                                this.GetRuntimeFields()
+
+                        Array.FindAll (toArray fields, Predicate (fun f ->
+                            isAcceptable bindingFlags f.IsStatic f.IsPublic))
+
                     // use different sources based on Declared flag
                     member this.GetProperties (bindingFlags) = 
                         let properties =
@@ -821,20 +864,37 @@ namespace Microsoft.FSharp.Core
                                 false
                             else
                                 isAcceptable bindingFlags mi.IsStatic mi.IsPublic))
+
+                    member this.IsGenericTypeDefinition = this.GetTypeInfo().IsGenericTypeDefinition
                         
                 type System.Reflection.MemberInfo with
                     member this.GetCustomAttributes(attrTy, inherits) : obj[] =
                         downcast box(toArray (CustomAttributeExtensions.GetCustomAttributes(this, attrTy, inherits)))
 
-            open ReflectionAdapters
+            module internal SystemAdapters =
+                type Converter<'TInput, 'TOutput> = delegate of 'TInput -> 'TOutput
+
+                type System.Array with
+                    static member ConvertAll<'TInput, 'TOutput>(input:'TInput[], conv:Converter<'TInput, 'TOutput>) =
+                        let output = (# "newarr !0" type ('TOutput) input.Length : 'TOutput array #)
+                        for i = 0 to input.Length-1 do
+                            set output i (conv.Invoke (get input i))
+                        output
+
             open PrimReflectionAdapters
+            open ReflectionAdapters
+            open SystemAdapters
 #endif
 
 
 #if FX_RESHAPED_REFLECTION
             let instancePropertyFlags = BindingFlags.Instance 
+            let staticFieldFlags = BindingFlags.Static 
+            let staticMethodFlags = BindingFlags.Static 
 #else    
             let instancePropertyFlags = flagsOr BindingFlags.GetProperty BindingFlags.Instance 
+            let staticFieldFlags = flagsOr BindingFlags.GetField BindingFlags.Static 
+            let staticMethodFlags = BindingFlags.Static 
 #endif
 
             let tupleNames = [|
@@ -981,6 +1041,80 @@ namespace Microsoft.FSharp.Core
                 let properties = typ.GetProperties (flagsOr instancePropertyFlags bindingFlags) 
                 let fields = System.Array.FindAll (properties, Predicate isFieldProperty)
                 sortFreshArray sequenceNumberOfMember fields
+
+            let getUnionTypeTagNameMap (typ:Type,bindingFlags:BindingFlags) : (int*string)[] = 
+                let enumTyp = typ.GetNestedType ("Tags", bindingFlags)
+                // Unions with a singleton case do not get a Tags type (since there is only one tag), hence enumTyp may be null in this case
+                match enumTyp with
+                | null -> 
+                    let methods = typ.GetMethods (flagsOr staticMethodFlags bindingFlags) 
+                    let maybeTagNames = 
+                        Array.ConvertAll (methods, Converter (fun minfo -> 
+                            let mutable res = unsafeDefault<_>
+                            match tryFindCompilationMappingAttributeFromMemberInfo (minfo:>MemberInfo, &res) with
+                            | false -> unsafeDefault<_>
+                            | true -> 
+                                let flags,n,_vn = res
+                                if flagsContains flags SourceConstructFlags.KindMask SourceConstructFlags.UnionCase then 
+                                    // chop "get_" or  "New" off the front 
+                                    let nm = 
+                                        let nm = minfo.Name
+                                        if   nm.StartsWith "get_" then nm.Substring 4
+                                        elif nm.StartsWith "New"  then nm.Substring 3
+                                        else nm
+                                    (n, nm)
+                                else
+                                    unsafeDefault<_> ))
+                    Array.FindAll (maybeTagNames, Predicate (fun maybeTagName -> not (obj.ReferenceEquals (maybeTagName, null))))
+                | _ -> 
+                    let fields = enumTyp.GetFields (flagsOr staticFieldFlags bindingFlags) 
+                    let filtered = Array.FindAll (fields, (fun (f:FieldInfo) -> f.IsStatic && f.IsLiteral))
+                    let sorted = sortFreshArray (fun (f:FieldInfo) -> (f.GetValue null) :?> int) filtered
+                    Array.ConvertAll (sorted, Converter (fun tagfield -> (tagfield.GetValue(null) :?> int),tagfield.Name))
+
+            let getUnionCasesTyp (typ: Type, _bindingFlags) = 
+#if CASES_IN_NESTED_CLASS
+                let casesTyp = typ.GetNestedType("Cases", bindingFlags)
+                if casesTyp.IsGenericTypeDefinition then casesTyp.MakeGenericType(typ.GetGenericArguments())
+                else casesTyp
+#else
+                typ
+#endif
+
+            let getUnionCaseTyp (typ: Type, tag: int, bindingFlags) = 
+                let tagFields = getUnionTypeTagNameMap(typ,bindingFlags)
+                let tagField = let _,f = Array.Find (tagFields, Predicate (fun (i,_) -> i = tag)) in f
+                    
+                if tagFields.Length = 1 then 
+                    typ
+                else
+                    // special case: two-cased DU annotated with CompilationRepresentation(UseNullAsTrueValue)
+                    // in this case it will be compiled as one class: return self type for non-nullary case and null for nullary
+                    let isTwoCasedDU =
+                        if tagFields.Length = 2 then
+                            match typ.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false) with
+                            | [|:? CompilationRepresentationAttribute as attr|] -> 
+                                flagsIsSet attr.Flags CompilationRepresentationFlags.UseNullAsTrueValue
+                            | _ -> false
+                        else
+                            false
+                    if isTwoCasedDU then
+                        typ
+                    else
+                    let casesTyp = getUnionCasesTyp (typ, bindingFlags)
+                    let caseTyp = casesTyp.GetNestedType(tagField, bindingFlags) // if this is null then the union is nullary
+                    match caseTyp with 
+                    | null -> null
+                    | _ when caseTyp.IsGenericTypeDefinition -> caseTyp.MakeGenericType(casesTyp.GetGenericArguments())
+                    | _ -> caseTyp
+
+            let fieldsPropsOfUnionCase(typ:Type, tag:int, bindingFlags) =
+                // Lookup the type holding the fields for the union case
+                let caseTyp = getUnionCaseTyp (typ, tag, bindingFlags)
+                let caseTyp = match caseTyp with null ->  typ | _ -> caseTyp
+                let properties = caseTyp.GetProperties (flagsOr instancePropertyFlags bindingFlags) 
+                let filtered = Array.FindAll (properties, Predicate (fun p -> if isFieldProperty p then (variantNumberOfMember (p:>MemberInfo)) = tag else false))
+                sortFreshArray (fun (p:PropertyInfo) -> sequenceNumberOfMember p) filtered
 
             let isUnionType (typ:Type,bindingFlags:BindingFlags) = 
                 let mutable flags = unsafeDefault<_>
