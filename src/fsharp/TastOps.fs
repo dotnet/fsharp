@@ -2956,8 +2956,16 @@ let isByrefLikeTyconRef (g: TcGlobals) m (tcref: TyconRef) =
        tcref.SetIsByRefLike res
        res
 
+let isSpanLikeTyconRef g m tcref =
+    isByrefLikeTyconRef g m tcref &&
+    not (isByrefTyconRef g tcref)
+
 let isByrefLikeTy g m ty = 
     ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isByrefLikeTyconRef g m tcref          | _ -> false) 
+
+let isSpanLikeTy g m ty =
+    isByrefLikeTy g m ty && 
+    not (isByrefTy g ty) 
 
 //-------------------------------------------------------------------------
 // List and reference types...
@@ -5856,7 +5864,9 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             if isStructTy g ty then 
                 match mut with 
                 | NeverMutates -> ()
-                | AddressOfOp -> () // we get an inref
+                | AddressOfOp -> 
+                    // we get an inref
+                    errorR(Error(FSComp.SR.tastCantTakeAddressOfExpression(), m))
                 | DefinitelyMutates -> 
                     // Give a nice error message for mutating something we can't take the address of
                     errorR(Error(FSComp.SR.tastInvalidMutationOfConstant(), m))

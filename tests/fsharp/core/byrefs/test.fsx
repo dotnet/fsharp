@@ -17,7 +17,75 @@ let check s actual expected =
     if actual = expected then printfn "%s: OK" s
     else report_failure (sprintf "%s: FAILED, expected %A, got %A" s expected actual)
 
-let check2 s expected actual = check s actual expected 
+let check2 s expected actual = check s actual expected
+
+[<Struct>]
+type S = 
+    [<DefaultValue(true)>]
+    val mutable X : int 
+
+#if NEGATIVE
+module ByrefNegativeTests =
+
+    module WriteToInRef = 
+        let f1 (x: inref<int>) = x <- 1 // not allowed
+
+    module WriteToInRefStructInner = 
+        let f1 (x: inref<S>) = x.X <- 1 //not allowed
+
+    module InRefToByRef = 
+        let f1 (x: byref<'T>) = 1
+        let f2 (x: inref<'T>) = f1 &x    // not allowed 
+
+    module InRefToOutRef = 
+        let f1 (x: outref<'T>) = 1
+        let f2 (x: inref<'T>) = f1 &x     // not allowed
+
+    module InRefToByRefClassMethod = 
+        type C() = 
+            static member f1 (x: byref<'T>) = 1
+        let f2 (x: inref<'T>) = C.f1 &x // not allowed
+
+    module InRefToOutRefClassMethod =
+        type C() = 
+            static member f1 (x: outref<'T>) = 1 // not allowed (not yet)
+        let f2 (x: inref<'T>) = C.f1 &x // not allowed
+
+    module InRefToByRefClassMethod2 = 
+        type C() = 
+            static member f1 (x: byref<'T>) = 1
+        let f2 (x: inref<'T>) = C.f1(&x) // not allowed
+
+    module InRefToOutRefClassMethod2 =
+        type C() = 
+            static member f1 (x: outref<'T>) = 1 // not allowed (not yet)
+        let f2 (x: inref<'T>) = C.f1(&x) // not allowed
+
+    module UseOfLibraryOnly =
+        type C() = 
+            static member f1 (x: byref<'T, 'U>) = 1
+
+    module CantTakeAddress =
+
+        let test1 () =
+            let x = &1 // not allowed
+            let y = &2 // not allowed
+            x + y
+
+        let test2_helper (x: byref<int>) = x
+        let test2 () =
+            let mutable x = 1
+            let y = &test2_helper &x // not allowed
+            ()
+
+    module InRefParam_DateTime = 
+        type C() = 
+            static member M(x: inref<System.DateTime>) = x
+        let w = System.DateTime.Now
+        let v =  C.M(w) // not allowed
+        check "cweweoiwe51btw" v w
+             
+#endif
 
 // Test a simple ref  argument
 module CompareExchangeTests = 
@@ -275,7 +343,7 @@ module InRefParamOverload_ImplicitAddressOfAtCallSite2  =
         check "cweweoiwe51btw2" v2 (res.AddDays(1.0))
     Test()
 
-
+#if IMPLICIT_ADDRESS_OF
 module InRefParam_DateTime   = 
     type C() = 
          static member M(x: inref<System.DateTime>) = x
@@ -309,6 +377,7 @@ module InRefParam_DateTime_ImplicitAddressOfAtCallSite4  =
     let w = [| date |]
     let v =  C.M(w.[0])
     check "lmvjvwo1" v date
+#endif
 
 module InRefParam_Generic_ExplicitAddressOfAttCallSite1 = 
     type C() = 
@@ -1244,11 +1313,6 @@ module ByrefReturnMemberTests =
         test()
 
     module MatrixOfTests = 
-        [<Struct>]
-        type S = 
-            [<DefaultValue(true)>]
-            val mutable X : int
-
 
         module ReturnAddressOfByRef = 
             let f1 (x: byref<int>) = &x 
@@ -1285,22 +1349,12 @@ module ByrefReturnMemberTests =
         module WriteToByRef = 
             let f1 (x: byref<int>) = x <- 1
 
-#if NEGATIVE
-        module WriteToInRef = 
-            let f1 (x: inref<int>) = x <- 1 // not allowed
-#endif
-
         module WriteToOutRef = 
             let f1 (x: outref<int>) = x <- 1
 
         //-----
         module WriteToByRefStructInner = 
             let f1 (x: byref<S>) = x.X <- 1
-
-#if NEGATIVE
-        module WriteToInRefStructInner = 
-            let f1 (x: inref<S>) = x.X <- 1 //not allowed
-#endif
 
         module WriteToOutRefStructInner = 
             let f1 (x: outref<S>) = x.X <- 1
@@ -1309,12 +1363,6 @@ module ByrefReturnMemberTests =
         module OutRefToByRef = 
             let f1 (x: byref<'T>) = 1
             let f2 (x: outref<'T>) = f1 &x 
-
-#if NEGATIVE
-        module InRefToByRef = 
-            let f1 (x: byref<'T>) = 1
-            let f2 (x: inref<'T>) = f1 &x    // not allowed 
-#endif
 
         module ByRefToByRef = 
             let f1 (x: byref<'T>) = 1
@@ -1327,12 +1375,6 @@ module ByrefReturnMemberTests =
         module OutRefToOutRef = 
             let f1 (x: outref<'T>) = 1
             let f2 (x: outref<'T>) = f1 &x        
-
-#if NEGATIVE
-        module InRefToOutRef = 
-            let f1 (x: outref<'T>) = 1
-            let f2 (x: inref<'T>) = f1 &x     // not allowed   
-#endif
 
         module ByRefToInRef = 
             let f1 (x: inref<'T>) = 1
@@ -1352,13 +1394,6 @@ module ByrefReturnMemberTests =
                 static member f1 (x: byref<'T>) = 1
             let f2 (x: outref<'T>) = C.f1 &x
 
-#if NEGATIVE
-        module InRefToByRefClassMethod = 
-            type C() = 
-                static member f1 (x: byref<'T>) = 1
-            let f2 (x: inref<'T>) = C.f1 &x // not allowed   
-#endif
-
         module ByRefToByRefClassMethod =
             type C() = 
                 static member f1 (x: byref<'T>) = 1
@@ -1373,13 +1408,6 @@ module ByrefReturnMemberTests =
             type C() = 
                 static member f1 (x: outref<'T>) = 1
             let f2 (x: outref<'T>) = C.f1 &x        
-
-#if NEGATIVE
-        module InRefToOutRefClassMethod =
-            type C() = 
-                static member f1 (x: outref<'T>) = 1 // not allowed
-            let f2 (x: inref<'T>) = C.f1 &x        
-#endif
 
         module ByRefToInRefClassMethod =
             type C() = 
@@ -1402,13 +1430,6 @@ module ByrefReturnMemberTests =
                 static member f1 (x: byref<'T>) = 1
             let f2 (x: outref<'T>) = C.f1(&x)
 
-#if NEGATIVE
-        module InRefToByRefClassMethod2 = 
-            type C() = 
-                static member f1 (x: byref<'T>) = 1
-            let f2 (x: inref<'T>) = C.f1(&x) // not allowed   
-#endif
-
         module ByRefToByRefClassMethod2 =
             type C() = 
                 static member f1 (x: byref<'T>) = 1
@@ -1424,13 +1445,6 @@ module ByrefReturnMemberTests =
                 static member f1 (x: outref<'T>) = 1
             let f2 (x: outref<'T>) = C.f1(&x)        
 
-#if NEGATIVE
-        module InRefToOutRefClassMethod2 =
-            type C() = 
-                static member f1 (x: outref<'T>) = 1 // not allowed
-            let f2 (x: inref<'T>) = C.f1(&x)        
-#endif
-
         module ByRefToInRefClassMethod2 =
             type C() = 
                 static member f1 (x: inref<'T>) = 1
@@ -1445,12 +1459,6 @@ module ByrefReturnMemberTests =
             type C() = 
                 static member f1 (x: inref<'T>) = 1
             let f2 (x: outref<'T>) = C.f1(&x)        
-
-#if NEGATIVE
-        module UseOfLibraryOnly =
-            type C() = 
-                static member f1 (x: byref<'T, 'U>) = 1
-#endif
     
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 

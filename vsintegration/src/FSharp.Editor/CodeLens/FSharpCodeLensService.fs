@@ -4,26 +4,32 @@ namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 
 open System
+open System.Collections.Generic
+open System.Threading
+open System.Windows
 open System.Windows.Controls
 open System.Windows.Media
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Formatting
+open System.Windows.Media.Animation
+
 open Microsoft.CodeAnalysis
-open System.Threading
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open System.Windows
-open System.Collections.Generic
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Ast
 open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Classification
-open Internal.Utilities.StructuredFormat
-open System.Windows.Media.Animation
+
+open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Ast
+open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.Range
 
 open Microsoft.VisualStudio.FSharp.Editor.Logging
+
+open Microsoft.VisualStudio.Shell.Interop
+
+open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Classification
+open Microsoft.VisualStudio.Text.Formatting
+
+open Internal.Utilities.StructuredFormat
 
 type internal CodeLens(taggedText, computed, fullTypeSignature, uiElement) =
     member val TaggedText: Async<(ResizeArray<Layout.TaggedText> * QuickInfoNavigation) option> = taggedText
@@ -159,19 +165,23 @@ type internal FSharpCodeLensService
                         let textSnapshot = buffer.CurrentSnapshot
                         let lineNumber = Line.toZ func.DeclarationLocation.StartLine
                         if (lineNumber >= 0 || lineNumber < textSnapshot.LineCount) then
-                            let! displayEnv = checkFileResults.GetDisplayEnvForPos func.DeclarationLocation.Start
-                            let displayContext =
-                                match displayEnv with
-                                | Some denv -> FSharpDisplayContext(fun _ -> denv)
-                                | None -> displayContext
+                            match func.FullTypeSafe with
+                            | Some _ ->
+                                let! displayEnv = checkFileResults.GetDisplayEnvForPos func.DeclarationLocation.Start
+                                let displayContext =
+                                    match displayEnv with
+                                    | Some denv -> FSharpDisplayContext(fun _ -> denv)
+                                    | None -> displayContext
 
-                            let typeLayout = func.FormatLayout displayContext
-                            let taggedText = ResizeArray()
-                                    
-                            Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
-                            let navigation = QuickInfoNavigation(serviceProvider, checker, projectInfoManager, document, realPosition)
-                            // Because the data is available notify that this line should be updated, displaying the results
-                            return Some (taggedText, navigation)
+                                let typeLayout = func.FormatLayout displayContext
+                                let taggedText = ResizeArray()        
+                                Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
+                                let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar, IVsStatusbar>()) 
+                                let navigation = QuickInfoNavigation(statusBar, checker, projectInfoManager, document, realPosition)
+                                // Because the data is available notify that this line should be updated, displaying the results
+                            | None -> 
+                                logWarningf "Couldn't acquire CodeLens data for function %A" func
+                                return None
                         else return None
 #if DEBUG
                     with e -> 

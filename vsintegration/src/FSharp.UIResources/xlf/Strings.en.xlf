@@ -58,8 +58,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Project_check_cache_size">
-        <source>Project check cache size</source>
-        <target state="new">Project check cache size</target>
+        <source>Number of projects whose data is cached in memory</source>
+        <target state="new">Number of projects whose data is cached in memory</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -103,8 +103,38 @@
         <note />
       </trans-unit>
       <trans-unit id="Show_Outlining">
-        <source>Show outlining and collapsable nodes for F# code</source>
-        <target state="new">Show outlining and collapsable nodes for F# code</target>
+        <source>Show outlining and collapsible nodes for F# code</source>
+        <target state="new">Show outlining and collapsible nodes for F# code</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Time_until_stale_completion">
+        <source>Time until stale results are used (in milliseconds)</source>
+        <target state="new">Time until stale results are used (in milliseconds)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IntelliSense_Performance">
+        <source>IntelliSense Performance Options</source>
+        <target state="new">IntelliSense Performance Options</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project_Performance">
+        <source>F# Project and Caching Performance Options</source>
+        <target state="new">F# Project and Caching Performance Options</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Stale_IntelliSense_Results">
+        <source>Enable stale data for IntelliSense features</source>
+        <target state="new">Enable stale data for IntelliSense features</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_in_memory_cross_project_references">
+        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
+        <target state="new">In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_project_check_cache_size">
+        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
+        <target state="new">Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens">

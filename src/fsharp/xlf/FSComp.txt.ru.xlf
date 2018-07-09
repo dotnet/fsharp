@@ -6517,11 +6517,6 @@
         <target state="translated">Не удалось найти в ссылках метод System.Runtime.CompilerServices.OffsetToStringData при создании выражения "fixed".</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoByrefReturnOfLocal">
-        <source>The address of the variable '{0}' or a related expression cannot be used at this point. The address may not be passed to a call that returns an address. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="needs-review-translation">Адрес переменной "{0}" сейчас невозможно использовать. Метод или функция могут не возвратить адрес этого локального значения.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcNamedActivePattern">
         <source>{0} is an active pattern and cannot be treated as a discriminated union case with named fields.</source>
         <target state="translated">{0} является активным шаблоном и не может обрабатываться как различаемая ветвь объединения с именованными полями.</target>
@@ -7018,8 +7013,8 @@
         <note />
       </trans-unit>
       <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="new">The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
+        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
@@ -7040,6 +7035,31 @@
       <trans-unit id="chkStructsMayNotReturnAddressesOfContents">
         <source>Struct members cannot return the address of fields of the struct by reference</source>
         <target state="new">Struct members cannot return the address of fields of the struct by reference</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefLikeFunctionCall">
+        <source>The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="new">The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefAddressOfValueFromExpression">
+        <source>The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="new">The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoSpanLikeVariable">
+        <source>The Span or IsByRefLike variable '{0}' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="new">The Span or IsByRefLike variable '{0}' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoSpanLikeValueFromExpression">
+        <source>A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="new">A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastCantTakeAddressOfExpression">
+        <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
+        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
         <note />
       </trans-unit>
     </body>

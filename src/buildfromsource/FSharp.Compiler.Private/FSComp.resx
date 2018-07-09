@@ -4327,11 +4327,11 @@
   <data name="tcByRefLikeNotStruct" xml:space="preserve">
     <value>A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</value>
   </data>
-  <data name="chkNoByrefReturnOfLocal" xml:space="preserve">
-    <value>The address of the variable '{0}' or a related expression cannot be used at this point. The address may not be passed to a call that returns an address. This is to ensure the address of the local value does not escape its scope.</value>
+  <data name="chkNoByrefAddressOfValueFromExpression" xml:space="preserve">
+    <value>The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</value>
   </data>
   <data name="chkNoReturnOfLimitedSpan" xml:space="preserve">
-    <value>The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</value>
+    <value>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</value>
   </data>
   <data name="chkNoWriteToLimitedSpan" xml:space="preserve">
     <value>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</value>
@@ -4344,5 +4344,17 @@
   </data>
   <data name="chkStructsMayNotReturnAddressesOfContents" xml:space="preserve">
     <value>Struct members cannot return 'this' or fields by reference</value>
+  </data>
+  <data name="chkNoByrefLikeFunctionCall" xml:space="preserve">
+    <value>The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.</value>
+  </data>
+  <data name="chkNoSpanLikeVariable" xml:space="preserve">
+    <value>The Span or IsByRefLike variable '{0}' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</value>
+  </data>
+  <data name="chkNoSpanLikeValueFromExpression" xml:space="preserve">
+    <value>A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</value>
+  </data>
+  <data name="tastCantTakeAddressOfExpression" xml:space="preserve">
+    <value>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</value>
   </data>
 </root>

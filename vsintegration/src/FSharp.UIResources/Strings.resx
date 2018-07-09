@@ -151,7 +151,7 @@
     <value>_Enable in-memory cross project references</value>
   </data>
   <data name="Project_check_cache_size" xml:space="preserve">
-    <value>Project check cache size</value>
+    <value>Number of projects whose data is cached in memory</value>
   </data>
   <data name="Show_navigation_links_as" xml:space="preserve">
     <value>S_how navigation links as</value>
@@ -178,7 +178,25 @@
     <value>Outlining</value>
   </data>
   <data name="Show_Outlining" xml:space="preserve">
-    <value>Show outlining and collapsable nodes for F# code</value>
+    <value>Show outlining and collapsible nodes for F# code</value>
+  </data>
+  <data name="Time_until_stale_completion" xml:space="preserve">
+    <value>Time until stale results are used (in milliseconds)</value>
+  </data>
+  <data name="IntelliSense_Performance" xml:space="preserve">
+    <value>IntelliSense Performance Options</value>
+  </data>
+  <data name="Project_Performance" xml:space="preserve">
+    <value>F# Project and Caching Performance Options</value>
+  </data>
+  <data name="Enable_Stale_IntelliSense_Results" xml:space="preserve">
+    <value>Enable stale data for IntelliSense features</value>
+  </data>
+  <data name="Tooltip_in_memory_cross_project_references" xml:space="preserve">
+    <value>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</value>
+  </data>
+  <data name="Tooltip_project_check_cache_size" xml:space="preserve">
+    <value>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</value>
   </data>
   <data name="CodeLens" xml:space="preserve">
     <value>CodeLens</value>
