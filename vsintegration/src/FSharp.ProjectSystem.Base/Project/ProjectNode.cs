@@ -1945,17 +1945,17 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.ProjectMgr = this;
                 this.isNewProject = false;
 
-				if ((flags & (uint)__VSCREATEPROJFLAGS.CPF_CLONEFILE) == (uint)__VSCREATEPROJFLAGS.CPF_CLONEFILE)
-				{
-					// we need to generate a new guid for the project
-					this.projectIdGuid = Guid.NewGuid();
-				}
-				else
-				{
-					this.SetProjectGuidFromProjectFile(false);
-				}
+                if ((flags & (uint)__VSCREATEPROJFLAGS.CPF_CLONEFILE) == (uint)__VSCREATEPROJFLAGS.CPF_CLONEFILE)
+                {
+                // we need to generate a new guid for the project
+                    this.projectIdGuid = Guid.NewGuid();
+                }
+                else
+                {
+                    this.SetProjectGuidFromProjectFile(false);
+                }
 
-				this.buildEngine = Utilities.InitializeMsBuildEngine(this.buildEngine);
+                this.buildEngine = Utilities.InitializeMsBuildEngine(this.buildEngine);
 
                 // based on the passed in flags, this either reloads/loads a project, or tries to create a new one
                 // now we create a new project... we do that by loading the template and then saving under a new name
@@ -1967,7 +1967,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     this.isNewProject = true;
 
                     // This should be a very fast operation if the build project is already initialized by the Factory.
-                    SetBuildProject(Utilities.ReinitializeMsBuildProject(this.buildEngine, fileName, this.buildProject));
+                    SetBuildProject(Utilities.ReinitializeMsBuildProject(this.buildEngine, fileName, this.ProjectGlobalPropertiesThatAllProjectSystemsMustSet, this.buildProject));
 
 
                     // Compute the file name
@@ -2876,7 +2876,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.isClosed = false;
                 this.eventTriggeringFlag = ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents | ProjectNode.EventTriggering.DoNotTriggerTrackerEvents;
 
-                SetBuildProject(Utilities.ReinitializeMsBuildProject(this.buildEngine, this.filename, this.buildProject));
+                SetBuildProject(Utilities.ReinitializeMsBuildProject(this.buildEngine, this.filename, this.ProjectGlobalPropertiesThatAllProjectSystemsMustSet, this.buildProject));
                 
                 // Load the guid
                 this.SetProjectGuidFromProjectFile(true);
@@ -3099,16 +3099,19 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
+        internal IDictionary<string, string> ProjectGlobalPropertiesThatAllProjectSystemsMustSet { get; set; }
+
         void SetupProjectGlobalPropertiesThatAllProjectSystemsMustSet()
         {
             // Much of the code for this method is stolen from GlobalPropertyHandler.cs.  That file is dev-9 only;
             // whereas this code is for dev10 and specific to the actual contract for project systems in dev10.
             UIThread.MustBeCalledFromUIThread();
-            
+
             // Solution properties
             IVsSolution solution = this.Site.GetService(typeof(SVsSolution)) as IVsSolution;
             Debug.Assert(solution != null, "Could not retrieve the solution service from the global service provider");
 
+/*
             string solutionDirectory, solutionFile, userOptionsFile;
 
             // We do not want to throw. If we cannot set the solution related constants we set them to empty string.
@@ -3141,7 +3144,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionFileName.ToString(), solutionFileName);
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionName.ToString(), solutionName);
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionExt.ToString(), solutionExtension);
-
+*/
             // Other misc properties
             this.buildProject.SetGlobalProperty(GlobalProperty.BuildingInsideVisualStudio.ToString(), "true");
             this.buildProject.SetGlobalProperty(GlobalProperty.Configuration.ToString(), "");
@@ -3172,6 +3175,21 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 
             this.buildProject.SetGlobalProperty(GlobalProperty.DevEnvDir.ToString(), installDir);
+
+            this.ProjectGlobalPropertiesThatAllProjectSystemsMustSet = new Dictionary<string, string>()
+            {
+/*
+                { GlobalProperty.SolutionDir.ToString(), solutionDirectory },
+                { GlobalProperty.SolutionPath.ToString(), solutionFile },
+                { GlobalProperty.SolutionFileName.ToString(), solutionFileName },
+                { GlobalProperty.SolutionName.ToString(), solutionName },
+                { GlobalProperty.SolutionExt.ToString(), solutionExtension },
+*/
+                { GlobalProperty.BuildingInsideVisualStudio.ToString(), "true" },
+                { GlobalProperty.Configuration.ToString(), "" },
+                { GlobalProperty.Platform.ToString(), "" },
+                { GlobalProperty.DevEnvDir.ToString(), installDir }
+            };
         }
 
         private class BuildAccessorAccess

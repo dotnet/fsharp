@@ -122,7 +122,7 @@ type Miscellaneous() =
         printfn "here1"
         let buildEngine = Utilities.InitializeMsBuildEngine(null)
         printfn "here2"
-        let buildProject = Utilities.InitializeMsBuildProject(buildEngine, fsproj)
+        let buildProject = Utilities.InitializeMsBuildProject(buildEngine, fsproj, null)
         printfn "here3"
         let package = new FSharpProjectPackage()
         let project = new UnitTestingFSharpProjectNode(package)
@@ -438,6 +438,23 @@ type Miscellaneous() =
             let targetDir = project.GetBuildMacroValue("TargetDir")
             let expectedTargetDir = Path.Combine(Path.GetDirectoryName(file), @"bin\Debug\")
             AssertEqual expectedTargetDir targetDir
+
+            // Verify Solution values
+            let solutionDir = project.GetBuildMacroValue("SolutionDir")
+            Assert.IsNotNull (solutionDir)
+            Assert.IsNotEmpty (solutionDir)
+
+            let solutionFileName = project.GetBuildMacroValue("SolutionFileName")
+            Assert.IsNotNull (solutionFileName)
+            Assert.IsNotEmpty (solutionFileName)
+
+            let solutionName = project.GetBuildMacroValue("SolutionName")
+            Assert.IsNotNull (solutionName)
+            Assert.IsNotEmpty (solutionName)
+
+            let solutionExt = project.GetBuildMacroValue("SolutionExt")
+            Assert.IsNotNull (solutionExt)
+            Assert.IsNotEmpty (solutionExt)
         )
      
     [<Test>]
