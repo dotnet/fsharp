@@ -112,7 +112,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
 
-/*
             // Solution properties
             IVsSolution solution = this.Site.GetService(typeof(SVsSolution)) as IVsSolution;
             Debug.Assert(solution != null, "Could not retrieve the solution service from the global service provider");
@@ -131,7 +130,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             string solutionFileName = (solutionFile.Length == 0) ? String.Empty : Path.GetFileName(solutionFile);
             string solutionName = (solutionFile.Length == 0) ? String.Empty : Path.GetFileNameWithoutExtension(solutionFile);
             var solutionExtension = Path.GetExtension(solutionFile);
- */
+
             // DevEnvDir property
             IVsShell shell = this.Site.GetService(typeof(SVsShell)) as IVsShell;
             Debug.Assert(shell != null, "Could not retrieve the IVsShell service from the global service provider");
@@ -195,7 +194,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             IVsSolution solution = this.Site.GetService(typeof(SVsSolution)) as IVsSolution;
             Debug.Assert(solution != null, "Could not retrieve the solution service from the global service provider");
 
-/*
             // We do not want to throw.If we cannot set the solution related constants we set them to empty string.
             string solutionDirectory, solutionFile, userOptionsFile;
             solution.GetSolutionInfo(out solutionDirectory, out solutionFile, out userOptionsFile);
@@ -214,7 +212,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 solutionExtension = Path.GetExtension(solutionFile);
             }
-*/
 
             //DevEnvDir property
             IVsShell shell = this.Site.GetService(typeof(SVsShell)) as IVsShell;
@@ -239,13 +236,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             var projectGlobalPropertiesThatAllProjectSystemsMustSet = new Dictionary<string, string>()
             {
-/*
                 { GlobalProperty.SolutionDir.ToString(), solutionDirectory },
                 { GlobalProperty.SolutionPath.ToString(), solutionFile },
                 { GlobalProperty.SolutionFileName.ToString(), solutionFileName },
                 { GlobalProperty.SolutionName.ToString(), solutionName },
                 { GlobalProperty.SolutionExt.ToString(), solutionExtension },
-*/
                 { GlobalProperty.BuildingInsideVisualStudio.ToString(), "true" },
                 { GlobalProperty.Configuration.ToString(), "" },
                 { GlobalProperty.Platform.ToString(), "" },

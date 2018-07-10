@@ -589,10 +589,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         private Dictionary<Type, Guid> catidMapping = new Dictionary<Type, Guid>();
 
-		/// <summary>
-		/// The public package implementation.
-		/// </summary>
-		private ProjectPackage package;
+        /// <summary>
+        /// The public package implementation.
+        /// </summary>
+        private ProjectPackage package;
 
         private bool isDisposed;
 
@@ -3111,7 +3111,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             IVsSolution solution = this.Site.GetService(typeof(SVsSolution)) as IVsSolution;
             Debug.Assert(solution != null, "Could not retrieve the solution service from the global service provider");
 
-/*
             string solutionDirectory, solutionFile, userOptionsFile;
 
             // We do not want to throw. If we cannot set the solution related constants we set them to empty string.
@@ -3144,7 +3143,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionFileName.ToString(), solutionFileName);
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionName.ToString(), solutionName);
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionExt.ToString(), solutionExtension);
-*/
+
             // Other misc properties
             this.buildProject.SetGlobalProperty(GlobalProperty.BuildingInsideVisualStudio.ToString(), "true");
             this.buildProject.SetGlobalProperty(GlobalProperty.Configuration.ToString(), "");
@@ -3178,13 +3177,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             this.ProjectGlobalPropertiesThatAllProjectSystemsMustSet = new Dictionary<string, string>()
             {
-/*
                 { GlobalProperty.SolutionDir.ToString(), solutionDirectory },
                 { GlobalProperty.SolutionPath.ToString(), solutionFile },
                 { GlobalProperty.SolutionFileName.ToString(), solutionFileName },
                 { GlobalProperty.SolutionName.ToString(), solutionName },
                 { GlobalProperty.SolutionExt.ToString(), solutionExtension },
-*/
                 { GlobalProperty.BuildingInsideVisualStudio.ToString(), "true" },
                 { GlobalProperty.Configuration.ToString(), "" },
                 { GlobalProperty.Platform.ToString(), "" },
