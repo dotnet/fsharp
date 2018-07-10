@@ -188,15 +188,31 @@ namespace Tests
 
 #endif
 
-        let should_not_work33 (x: int) = &x
+        let should_not_work23 (x: int) = &x
 
-        let should_not_work34 (x: int) =
+        let should_not_work24 (x: int) =
             let y = &x
             &y
 
-        let should_not_work35 (x: byref<Span<int>>) =
+        let should_not_work25 (x: byref<Span<int>>) =
             let mutable y = Span.Empty
             x <- y
+
+        let should_not_work26 () =
+            seq {
+                let s = Span<int>.Empty
+                for x in s do
+                    yield x
+            }
+            
+        type Nope = {
+            Funcn : ReadOnlySpan<byte> -> int
+            }
+
+        type FuncType = ReadOnlySpan<byte> -> int
+        type Nope2 = {
+            Funcn : FuncType
+            }
 
 #endif
 
