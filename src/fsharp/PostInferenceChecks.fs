@@ -496,6 +496,7 @@ type PermitByRefExpr =
     /// Context allows for byref typed expr, but the byref must be returnable
     | YesReturnable
 
+    /// Context allows for byref typed expr, but the byref must be returnable and a non-local
     | YesReturnableNonLocal
 
     /// General (address-of expr and byref values not allowed) 
@@ -842,24 +843,6 @@ and CheckCallWithReceiver cenv env m returnTy args contexts context =
                 limitArgs
         CheckCallLimitArgs cenv env m returnTy limitArgs context
 
-/// Check call arguments, including the return argument. Permits returnable byref.
-and CheckCallPermitReturnableByRef cenv env m returnTy args =
-    let limitArgs = CheckExprsPermitByRefLike cenv env args
-    CheckCallLimitArgs cenv env m returnTy limitArgs PermitByRefExpr.YesReturnable
-
-/// Check call arguments, including the return argument. The receiver argument is handled differently. Permits returnable byref.
-and CheckCallWithReceiverPermitReturnableByRef cenv env m returnTy args =
-    CheckCallWithReceiver cenv env m returnTy args (List.init args.Length (fun _ -> PermitByRefExpr.Yes)) PermitByRefExpr.YesReturnable
-
-/// Check call arguments, including the return argument. Permits byref.
-and CheckCallPermitByRefLike cenv env m returnTy args =
-    let limitArgs = CheckExprsPermitByRefLike cenv env args
-    CheckCallLimitArgs cenv env m returnTy limitArgs PermitByRefExpr.Yes
-
-/// Check call arguments, including the return argument. The receiver argument is handled differently. Permits byref.
-and CheckCallWithReceiverPermitByRefLike cenv env m returnTy args =
-    CheckCallWithReceiver cenv env m returnTy args (List.init args.Length (fun _ -> PermitByRefExpr.Yes)) PermitByRefExpr.Yes
-
 /// Check an expression, given information about the position of the expression
 and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =    
     let g = cenv.g
@@ -1111,17 +1094,20 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
             not args.IsEmpty
 
         let returnTy = tyOfExpr g expr
+
+        let argContexts = List.init args.Length (fun _ -> PermitByRefExpr.Yes)
+
         match tys with
         | [ty] when context.PermitOnlyReturnable && isByrefLikeTy g m ty -> 
             if hasReceiver then
-                CheckCallWithReceiverPermitReturnableByRef cenv env m returnTy args
+                CheckCallWithReceiver cenv env m returnTy args argContexts context
             else
-                CheckCallPermitReturnableByRef cenv env m returnTy args
+                CheckCall cenv env m returnTy args argContexts context
         | _ -> 
             if hasReceiver then
-                CheckCallWithReceiverPermitByRefLike cenv env m returnTy args
+                CheckCallWithReceiver cenv env m returnTy args argContexts PermitByRefExpr.Yes
             else
-                CheckCallPermitByRefLike cenv env m returnTy args
+                CheckCall cenv env m returnTy args argContexts PermitByRefExpr.Yes
 
     | TOp.Tuple tupInfo,_,_ when not (evalTupInfoIsStruct tupInfo) ->           
         match context with 

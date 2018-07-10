@@ -72,3 +72,7 @@ test2.fsx(208,14,208,18): typecheck error FS0437: A type would store a byref typ
 test2.fsx(214,13,214,18): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
 test2.fsx(213,14,213,19): typecheck error FS0437: A type would store a byref typed value. This is not permitted by Common IL.
+
+test2.fsx(222,18,222,23): typecheck error FS3228: The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
+
+test2.fsx(231,17,231,18): typecheck error FS3234: The Span or IsByRefLike variable 's' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.

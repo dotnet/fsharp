@@ -119,7 +119,7 @@ module NegativeTests =
             a
             
     type Beef = delegate of unit-> byref<int>
-    let test2 () =
+    let testBeef () =
         let mutable x = 1
         let f = Beef(fun () -> &x) // is not allowed
         ()

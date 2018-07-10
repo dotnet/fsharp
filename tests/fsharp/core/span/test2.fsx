@@ -214,6 +214,23 @@ namespace Tests
             Funcn : FuncType
             }
 
+        type TestDelegate_should_not_work27 = delegate of unit -> byref<int>
+
+        let should_not_work27 () =
+            let f = TestDelegate_should_not_work27(fun () ->
+                let mutable s = Span.Empty
+                &s.[0]
+            )
+            ()
+
+        type TestDelegate_should_not_work28 = delegate of unit -> Span<int>
+
+        let should_not_work28 () =
+            let f = TestDelegate_should_not_work28(fun () ->
+                let mutable s = Span.Empty
+                s
+            )
+            ()
 #endif
 
         let should_work1 () =
@@ -355,4 +372,22 @@ namespace Tests
             let yopac =
                 let mutable s = Span.Empty
                 &s.[0] // this looks like it's out of scope, but this is coming from a stack referring span-like type.
+            ()
+
+        type TestDelegate_should_work31 = delegate of unit -> byref<int>
+
+        let should_work31 () =
+            let f = TestDelegate_should_work31(fun () ->
+                let s = Span.Empty
+                &s.[0]
+            )
+            ()
+
+        type TestDelegate_should_work32 = delegate of unit -> Span<int>
+
+        let should_work32 () =
+            let f = TestDelegate_should_work32(fun () ->
+                let s = Span.Empty
+                s
+            )
             ()
