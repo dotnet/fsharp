@@ -32,7 +32,6 @@
     <Compile Include="Tests.TaskReporter.fs" />
     <Compile Include="Tests.Watson.fs" />
     <Compile Include="Tests.XmlDocComments.fs" />
-
     <Compile Include="LegacyLanguageService\Tests.LanguageService.General.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.Completion.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.IncrementalBuild.fs" />
@@ -110,7 +109,7 @@
     <Compile Include="BraceMatchingServiceTests.fs">
       <Link>Roslyn\BraceMatchingServiceTests.fs</Link>
     </Compile>
-<!-- TODO:  Fix this test
+<!--
     <Compile Include="HelpContextServiceTests.fs">
       <Link>Roslyn\HelpContextServiceTests.fs</Link>
     </Compile>
@@ -139,17 +138,17 @@
     <Compile Include="SignatureHelpProviderTests.fs">
       <Link>Roslyn\SignatureHelpProviderTests.fs</Link>
     </Compile>
-<!-- TODO:  Fix this test
     <Compile Include="GoToDefinitionServiceTests.fs">
       <Link>Roslyn\GoToDefinitionServiceTests.fs</Link>
     </Compile>
+<!--
     <Compile Include="QuickInfoProviderTests.fs">
       <Link>Roslyn\QuickInfoProviderTests.fs</Link>
     </Compile>
+-->
     <Compile Include="DocumentHighlightsServiceTests.fs">
       <Link>Roslyn\DocumentHighlightsServiceTests.fs</Link>
     </Compile>
--->
     <None Include="App.config" CopyToOutputDirectory="None" />
     <None Include="app.runsettings" />
   </ItemGroup>

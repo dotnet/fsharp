@@ -12,7 +12,6 @@
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesWpfPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesWpfPackageVersion>
     <MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>
     <MicrosoftVisualStudioLanguageServicesPackageVersion>$(RoslynPackageVersion)</MicrosoftVisualStudioLanguageServicesPackageVersion>
 
