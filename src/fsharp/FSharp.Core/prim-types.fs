@@ -825,13 +825,6 @@ namespace Microsoft.FSharp.Core
                                     f ()
                         f ()
 
-                    member this.GetConstructors(bindingFlags) = 
-                        // type initializer will also be included in resultset
-                        let constructors = this.GetTypeInfo().DeclaredConstructors 
-
-                        Array.FindAll (toArray constructors, Predicate (fun ci ->
-                            isAcceptable bindingFlags ci.IsStatic ci.IsPublic))
-
                     // use different sources based on Declared flag
                     member this.GetMethods (bindingFlags) =
                         let methods = 
@@ -1134,13 +1127,9 @@ namespace Microsoft.FSharp.Core
                 let filtered = Array.FindAll (properties, Predicate (fun p -> if isFieldProperty p then (variantNumberOfMember (p:>MemberInfo)) = tag else false))
                 sortFreshArray (fun (p:PropertyInfo) -> sequenceNumberOfMember p) filtered
 
-            let tryGetSingleConstructorArgumentTypes (typ:Type, types:byref<Type[]>) =
-                match typ.GetConstructors (flagsOr BindingFlags.Instance (flagsOr BindingFlags.Public BindingFlags.NonPublic)) with
-                | [| single |] ->
-                    types <- Array.ConvertAll (single.GetParameters (), Converter (fun p -> p.ParameterType))
-                    true
-                | _ ->
-                    false
+            let getAllInstanceFields (typ:Type) =
+                let fields = typ.GetFields (flagsOr BindingFlags.Instance (flagsOr BindingFlags.Public BindingFlags.NonPublic))
+                Array.ConvertAll (fields, Converter (fun p -> p.FieldType))
 
         module HashCompare =
 #if FX_RESHAPED_REFLECTION
@@ -1175,9 +1164,7 @@ namespace Microsoft.FSharp.Core
                     Reflection.isObjectType (ty, bindingPublicOrNonPublic) &&
                     ty.IsValueType &&
                     (not (isCustom ty)) &&
-                    ( let mutable types = unsafeDefault<_> 
-                      Reflection.tryGetSingleConstructorArgumentTypes (ty, &types)
-                      && checkType 0 types)
+                    checkType 0 (Reflection.getAllInstanceFields ty)
 
                 and isSuitableRecordType (ty:Type) =
                     Reflection.isRecordType (ty, bindingPublicOrNonPublic) &&
