@@ -520,7 +520,7 @@ type PermitByRefExpr =
         | PermitByRefExpr.YesReturnableNonLocal -> true
         | _ -> false
 
-let inline IsLimitOutsideScope env (context: PermitByRefExpr) limit =
+let inline IsLimitEscapingScope env (context: PermitByRefExpr) limit =
     (limit.scope >= env.returnScope || (limit.IsLocal && context.PermitOnlyReturnableNonLocal))
 
 let mkArgsPermit n = 
@@ -691,7 +691,7 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: Perm
         //     &y
         let isReturnExprBuiltUsingStackReferringByRefLike = 
             context.PermitOnlyReturnable &&
-            ((HasLimitFlag LimitFlags.ByRef limit && IsLimitOutsideScope env context limit) ||
+            ((HasLimitFlag LimitFlags.ByRef limit && IsLimitEscapingScope env context limit) ||
              HasLimitFlag LimitFlags.StackReferringSpanLike limit)
 
         if isReturnExprBuiltUsingStackReferringByRefLike then
@@ -773,7 +773,7 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (context: PermitByRefExpr) 
          HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limitArgs)
 
     if cenv.reportErrors then
-        if context.PermitOnlyReturnable && ((isReturnLimitedByRef && IsLimitOutsideScope env context limitArgs) || isReturnLimitedSpanLike) then
+        if context.PermitOnlyReturnable && ((isReturnLimitedByRef && IsLimitEscapingScope env context limitArgs) || isReturnLimitedSpanLike) then
             if isReturnLimitedSpanLike then
                 errorR(Error(FSComp.SR.chkNoSpanLikeValueFromExpression(), m))
             else
@@ -1135,7 +1135,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
             let returningAddrOfLocal = 
                 context.PermitOnlyReturnable && 
                 HasLimitFlag LimitFlags.ByRef limit &&
-                IsLimitOutsideScope env context limit
+                IsLimitEscapingScope env context limit
             
             if returningAddrOfLocal then 
                 if vref.IsCompilerGenerated then
