@@ -3111,10 +3111,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             IVsSolution solution = this.Site.GetService(typeof(SVsSolution)) as IVsSolution;
             Debug.Assert(solution != null, "Could not retrieve the solution service from the global service provider");
 
-            string solutionDirectory, solutionFile, userOptionsFile;
+            string solutionDirectory, solutionPath, userOptionsFile;
 
             // We do not want to throw. If we cannot set the solution related constants we set them to empty string.
-            solution.GetSolutionInfo(out solutionDirectory, out solutionFile, out userOptionsFile);
+            solution.GetSolutionInfo(out solutionDirectory, out solutionPath, out userOptionsFile);
 
             if (solutionDirectory == null)
             {
@@ -3122,24 +3122,24 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 
 
-            if (solutionFile == null)
+            if (solutionPath == null)
             {
-                solutionFile = String.Empty;
+                solutionPath = String.Empty;
             }
 
 
-            string solutionFileName = (solutionFile.Length == 0) ? String.Empty : Path.GetFileName(solutionFile);
+            string solutionFileName = (solutionPath.Length == 0) ? String.Empty : Path.GetFileName(solutionPath);
 
-            string solutionName = (solutionFile.Length == 0) ? String.Empty : Path.GetFileNameWithoutExtension(solutionFile);
+            string solutionName = (solutionPath.Length == 0) ? String.Empty : Path.GetFileNameWithoutExtension(solutionPath);
 
             string solutionExtension = String.Empty;
-            if (solutionFile.Length > 0 && Path.HasExtension(solutionFile))
+            if (solutionPath.Length > 0 && Path.HasExtension(solutionPath))
             {
-                solutionExtension = Path.GetExtension(solutionFile);
+                solutionExtension = Path.GetExtension(solutionPath);
             }
 
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionDir.ToString(), solutionDirectory);
-            this.buildProject.SetGlobalProperty(GlobalProperty.SolutionPath.ToString(), solutionFile);
+            this.buildProject.SetGlobalProperty(GlobalProperty.SolutionPath.ToString(), solutionPath);
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionFileName.ToString(), solutionFileName);
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionName.ToString(), solutionName);
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionExt.ToString(), solutionExtension);
@@ -3178,7 +3178,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.ProjectGlobalPropertiesThatAllProjectSystemsMustSet = new Dictionary<string, string>()
             {
                 { GlobalProperty.SolutionDir.ToString(), solutionDirectory },
-                { GlobalProperty.SolutionPath.ToString(), solutionFile },
+                { GlobalProperty.SolutionPath.ToString(), solutionPath },
                 { GlobalProperty.SolutionFileName.ToString(), solutionFileName },
                 { GlobalProperty.SolutionName.ToString(), solutionName },
                 { GlobalProperty.SolutionExt.ToString(), solutionExtension },

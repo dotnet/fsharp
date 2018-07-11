@@ -117,19 +117,19 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             Debug.Assert(solution != null, "Could not retrieve the solution service from the global service provider");
 
             // We do not want to throw. If we cannot set the solution related constants we set them to empty string.
-            string solutionDirectory, solutionFile, userOptionsFile;
-            solution.GetSolutionInfo(out solutionDirectory, out solutionFile, out userOptionsFile);
+            string solutionDirectory, solutionPath, userOptionsFile;
+            solution.GetSolutionInfo(out solutionDirectory, out solutionPath, out userOptionsFile);
             if (solutionDirectory == null)
             {
                 solutionDirectory = String.Empty;
             }
-            if (solutionFile == null)
+            if (solutionPath == null)
             {
-                solutionFile = String.Empty;
+                solutionPath = String.Empty;
             }
-            string solutionFileName = (solutionFile.Length == 0) ? String.Empty : Path.GetFileName(solutionFile);
-            string solutionName = (solutionFile.Length == 0) ? String.Empty : Path.GetFileNameWithoutExtension(solutionFile);
-            var solutionExtension = Path.GetExtension(solutionFile);
+            string solutionFileName = (solutionPath.Length == 0) ? String.Empty : Path.GetFileName(solutionPath);
+            string solutionName = (solutionPath.Length == 0) ? String.Empty : Path.GetFileNameWithoutExtension(solutionPath);
+            var solutionExtension = Path.GetExtension(solutionPath);
 
             // DevEnvDir property
             IVsShell shell = this.Site.GetService(typeof(SVsShell)) as IVsShell;
@@ -195,22 +195,22 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             Debug.Assert(solution != null, "Could not retrieve the solution service from the global service provider");
 
             // We do not want to throw.If we cannot set the solution related constants we set them to empty string.
-            string solutionDirectory, solutionFile, userOptionsFile;
-            solution.GetSolutionInfo(out solutionDirectory, out solutionFile, out userOptionsFile);
+            string solutionDirectory, solutionPath, userOptionsFile;
+            solution.GetSolutionInfo(out solutionDirectory, out solutionPath, out userOptionsFile);
             if (solutionDirectory == null)
             {
                 solutionDirectory = String.Empty;
             }
-            if (solutionFile == null)
+            if (solutionPath == null)
             {
-                solutionFile = String.Empty;
+                solutionPath = String.Empty;
             }
-            string solutionFileName = (solutionFile.Length == 0) ? String.Empty : Path.GetFileName(solutionFile);
-            string solutionName = (solutionFile.Length == 0) ? String.Empty : Path.GetFileNameWithoutExtension(solutionFile);
+            string solutionFileName = (solutionPath.Length == 0) ? String.Empty : Path.GetFileName(solutionPath);
+            string solutionName = (solutionPath.Length == 0) ? String.Empty : Path.GetFileNameWithoutExtension(solutionPath);
             string solutionExtension = String.Empty;
-            if (solutionFile.Length > 0 && Path.HasExtension(solutionFile))
+            if (solutionPath.Length > 0 && Path.HasExtension(solutionPath))
             {
-                solutionExtension = Path.GetExtension(solutionFile);
+                solutionExtension = Path.GetExtension(solutionPath);
             }
 
             //DevEnvDir property
@@ -237,7 +237,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             var projectGlobalPropertiesThatAllProjectSystemsMustSet = new Dictionary<string, string>()
             {
                 { GlobalProperty.SolutionDir.ToString(), solutionDirectory },
-                { GlobalProperty.SolutionPath.ToString(), solutionFile },
+                { GlobalProperty.SolutionPath.ToString(), solutionPath },
                 { GlobalProperty.SolutionFileName.ToString(), solutionFileName },
                 { GlobalProperty.SolutionName.ToString(), solutionName },
                 { GlobalProperty.SolutionExt.ToString(), solutionExtension },
