@@ -839,6 +839,12 @@ namespace Microsoft.FSharp.Core
                   match x with 
                   | null -> 0 
                   | (:? System.Array as a) -> 
+                      // due to the rules of the CLI type system, array casts are "assignment compatible"
+                      // see: https://blogs.msdn.microsoft.com/ericlippert/2009/09/24/why-is-covariance-of-value-typed-arrays-inconsistent/
+                      // this means that the cast and comparison for byte will also handle sbyte, int32 handle uint32, 
+                      // and int64 handle uint64. The hash code of an individual array element is different for the different
+                      // types, but it is irrelevant for the creation of the hash code - but this is to be replicated in
+                      // the tryGetFSharpArrayEqualityComparer function.
                       match a with 
                       | :? (obj[]) as oa -> GenericHashObjArray iec oa 
                       | :? (byte[]) as ba -> GenericHashByteArray ba 
@@ -1383,10 +1389,12 @@ namespace Microsoft.FSharp.Core
                  | (:? string as xs),(:? string as ys) -> System.String.Equals(xs,ys)
                  // Permit structural equality on arrays
                  | (:? System.Array as arr1),_ -> 
+                     // due to the rules of the CLI type system, array casts are "assignment compatible"
+                     // see: https://blogs.msdn.microsoft.com/ericlippert/2009/09/24/why-is-covariance-of-value-typed-arrays-inconsistent/
+                     // this means that the cast and comparison for byte will also handle sbyte, int32 handle uint32, 
+                     // and int64 handle uint64. Equality will still be correct.
                      match arr1,yobj with 
-                     // Fast path
                      | (:? (obj[]) as arr1),    (:? (obj[]) as arr2)      -> GenericEqualityObjArray er iec arr1 arr2
-                     // Fast path
                      | (:? (byte[]) as arr1),    (:? (byte[]) as arr2)     -> GenericEqualityByteArray arr1 arr2
                      | (:? (int32[]) as arr1),   (:? (int32[]) as arr2)   -> GenericEqualityInt32Array arr1 arr2
                      | (:? (int64[]) as arr1),   (:? (int64[]) as arr2)   -> GenericEqualityInt64Array arr1 arr2
@@ -1604,11 +1612,21 @@ namespace Microsoft.FSharp.Core
                             | null -> 0
                             | _ -> getHashCode x }
 
+            let inline castNullableEqualityComparer<'fromType, 'toType when 'toType : null and 'fromType : null> (equals:'toType->'toType->bool) (getHashCode:'toType->int) =
+                let castEquals (lhs:'fromType) (rhs:'fromType) = equals (unboxPrim lhs) (unboxPrim rhs)
+                let castGetHashCode (o:'fromType) = getHashCode (unboxPrim o)
+                nullableEqualityComparer castEquals castGetHashCode
+
             let tryGetFSharpArrayEqualityComparer (ty:Type) er comparer : obj =
-                if   ty.Equals typeof<obj[]>   then nullableEqualityComparer (fun x y -> GenericEqualityObjArray er comparer x y) (GenericHashObjArray fsEqualityComparerUnlimitedHashingPER)
-                elif ty.Equals typeof<byte[]>  then nullableEqualityComparer GenericEqualityByteArray               GenericHashByteArray
-                elif ty.Equals typeof<int32[]> then nullableEqualityComparer GenericEqualityInt32Array              GenericHashInt32Array
-                elif ty.Equals typeof<int64[]> then nullableEqualityComparer GenericEqualityInt64Array              GenericHashInt64Array
+                // the casts here between byte+sbyte, int32+uint32 and int64+uint64 are here to replicate the behaviour
+                // in GenericHashParamObj
+                if   ty.Equals typeof<obj[]>    then nullableEqualityComparer (fun x y -> GenericEqualityObjArray er comparer x y) (GenericHashObjArray fsEqualityComparerUnlimitedHashingPER)
+                elif ty.Equals typeof<byte[]>   then nullableEqualityComparer                 GenericEqualityByteArray              GenericHashByteArray
+                elif ty.Equals typeof<sbyte[]>  then castNullableEqualityComparer<sbyte[],_>  GenericEqualityByteArray              GenericHashByteArray
+                elif ty.Equals typeof<int32[]>  then nullableEqualityComparer                 GenericEqualityInt32Array             GenericHashInt32Array
+                elif ty.Equals typeof<uint32[]> then castNullableEqualityComparer<uint32[],_> GenericEqualityInt32Array             GenericHashInt32Array
+                elif ty.Equals typeof<int64[]>  then nullableEqualityComparer                 GenericEqualityInt64Array             GenericHashInt64Array
+                elif ty.Equals typeof<uint64[]> then castNullableEqualityComparer<uint64[],_> GenericEqualityInt64Array             GenericHashInt64Array
                 else null
 
             let arrayEqualityComparer<'T> er comparer =
