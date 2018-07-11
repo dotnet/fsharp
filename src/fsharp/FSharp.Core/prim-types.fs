@@ -1156,13 +1156,13 @@ namespace Microsoft.FSharp.Core
                         true
 
                 and isSuitableTupleType (ty:Type) =
-                    Reflection.isTupleType ty
-                    && ty.IsValueType // Tuple<...> don't have implementation, but ValueTuple<...> does
-                    && checkType 0 (ty.GetGenericArguments ())
+                    ty.IsValueType && // Tuple<...> don't have implementation, but ValueTuple<...> does
+                    Reflection.isTupleType ty && 
+                    checkType 0 (ty.GetGenericArguments ())
 
                 and isSuitableStructType (ty:Type) =
-                    Reflection.isObjectType (ty, bindingPublicOrNonPublic) &&
                     ty.IsValueType &&
+                    Reflection.isObjectType (ty, bindingPublicOrNonPublic) &&
                     (not (isCustom ty)) &&
                     checkType 0 (Reflection.getAllInstanceFields ty)
 
@@ -1202,11 +1202,11 @@ namespace Microsoft.FSharp.Core
                             && (er || (not (ty.Equals typeof<float>)))
                             && (er || (not (ty.Equals typeof<float32>)))
                             && isSuitableNullableTypeOrNotNullable ty
-                            && (   isSuitableTupleType ty
+                            && ((not (hasStructuralInterface ty))
+                                || isSuitableTupleType ty
                                 || isSuitableStructType ty
                                 || isSuitableRecordType ty
-                                || isSuitableUnionType ty
-                                || not (hasStructuralInterface ty))
+                                || isSuitableUnionType ty)
                             && checkType (idx+1) types
 
                 checkType 0 [|rootType|]
