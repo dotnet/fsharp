@@ -3,6 +3,7 @@
   <Import Project="..\..\netfx.props" />
   <PropertyGroup>
     <TargetFrameworks>net46</TargetFrameworks>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
