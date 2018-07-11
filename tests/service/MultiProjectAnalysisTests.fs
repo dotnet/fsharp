@@ -1020,7 +1020,4 @@ let ``Projects creating generated types should not utilize cross-project-referen
     printfn "Errors: %A" fileCheckResults.Errors
     fileCheckResults.Errors |> Array.exists (fun error -> error.Severity = FSharpErrorSeverity.Error) |> shouldEqual false
 
-
-
-
 //------------------------------------------------------------------------------------
