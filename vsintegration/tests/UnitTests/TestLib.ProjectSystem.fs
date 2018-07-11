@@ -122,7 +122,7 @@ type TheTests() =
     static member internal CreateProject(filename : string, forceUTF8 : string, configChangeNotifier, serviceProvider) =
         UIStuff.SetupSynchronizationContext()
         let buildEngine = Utilities.InitializeMsBuildEngine(null)
-        let buildProject = Utilities.InitializeMsBuildProject(buildEngine, filename)
+        let buildProject = Utilities.InitializeMsBuildProject(buildEngine, filename, null)
         let package = new FSharpProjectPackage()
         let project = new UnitTestingFSharpProjectNode(package)
         try
