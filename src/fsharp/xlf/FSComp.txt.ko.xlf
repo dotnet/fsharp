@@ -7062,6 +7062,11 @@
         <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTypeDoesNotInheritAttribute">
+        <source>This type is not an attribute</source>
+        <target state="new">This type is not an attribute</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

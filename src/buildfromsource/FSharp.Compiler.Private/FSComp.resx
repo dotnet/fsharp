@@ -4357,4 +4357,7 @@
   <data name="tastCantTakeAddressOfExpression" xml:space="preserve">
     <value>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</value>
   </data>
+  <data name="tcTypeDoesNotInheritAttribute" xml:space="preserve">
+    <value>This type does not inherit Attribute, it will not work correctly with other .NET languages.</value>
+  </data>
 </root>
