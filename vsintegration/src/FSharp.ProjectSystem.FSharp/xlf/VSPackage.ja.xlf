@@ -204,7 +204,7 @@
       </trans-unit>
       <trans-unit id="5014">
         <source>Console Application (.NET Framework)</source>
-        <target state="needs-review-translation">コンソール アプリケーション</target>
+        <target state="translated">コンソール アプリケーション (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5015">
@@ -214,7 +214,7 @@
       </trans-unit>
       <trans-unit id="5016">
         <source>Library (.NET Framework)</source>
-        <target state="needs-review-translation">ライブラリ</target>
+        <target state="translated">ライブラリ (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5017">
@@ -224,7 +224,7 @@
       </trans-unit>
       <trans-unit id="5018">
         <source>Tutorial (.NET Framework)</source>
-        <target state="needs-review-translation">チュートリアル</target>
+        <target state="translated">チュートリアル (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5019">
@@ -329,7 +329,7 @@
       </trans-unit>
       <trans-unit id="5040">
         <source>A project item for consuming a .NET Managed Resources File (Resx) using ResxFile type provider.</source>
-        <target state="translated">ResxFile 型プロバイダーを使用して .NET マネージ リソース ファイル (Resx) を使用するためのプロジェクト アイテムです。</target>
+        <target state="translated">ResxFile 型プロバイダーを使用して .NET マネージド リソース ファイル (Resx) を使用するためのプロジェクト アイテムです。</target>
         <note />
       </trans-unit>
       <trans-unit id="5041">
@@ -409,7 +409,7 @@
       </trans-unit>
       <trans-unit id="6001">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# インタラクティブ</target>
         <note />
       </trans-unit>
       <trans-unit id="6002">
@@ -434,12 +434,12 @@
       </trans-unit>
       <trans-unit id="ProductDetails">
         <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="needs-review-translation">Microsoft Visual F# Tools 10.1 for F# 4.1</target>
+        <target state="translated">Microsoft Visual F# Tools 10.2 for F# 4.5</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
         <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="needs-review-translation">Microsoft Visual F# Tools 10.1 for F# 4.1</target>
+        <target state="translated">Microsoft Visual F# Tools 10.2 for F# 4.5</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -454,12 +454,12 @@
       </trans-unit>
       <trans-unit id="9001">
         <source>Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="needs-review-translation">Visual F# Tools 10.1 for F# 4.1</target>
+        <target state="translated">Visual F# Tools 10.2 for F# 4.5</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# インタラクティブ</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductRegistryName">
@@ -509,7 +509,7 @@
       </trans-unit>
       <trans-unit id="6005">
         <source>Change path and command line arguments passed to the F# Interactive</source>
-        <target state="translated">F# Interactive に渡されるパスとコマンド ライン引数を変更します</target>
+        <target state="translated">F# インタラクティブに渡されるパスとコマンド ライン引数を変更します</target>
         <note />
       </trans-unit>
       <trans-unit id="6006">
