@@ -332,12 +332,6 @@ namespace Microsoft.FSharp.Collections
         let toArray m = m |> toList |> Array.ofList
         let ofList comparer l = List.fold (fun acc (k,v) -> add comparer k v acc) empty l
 
-        let rec mkFromEnumerator comparer acc (e : IEnumerator<_>) = 
-            if e.MoveNext() then 
-                let (x,y) = e.Current 
-                mkFromEnumerator comparer (add comparer x y acc) e
-            else acc
-          
         let ofArray comparer (arr : array<_>) =
             let mutable res = empty
             for (x,y) in arr do
@@ -348,10 +342,7 @@ namespace Microsoft.FSharp.Collections
             match c with 
             | :? array<'Key * 'T> as xs -> ofArray comparer xs
             | :? list<'Key * 'T> as xs -> ofList comparer xs
-            | _ -> 
-                use ie = c.GetEnumerator()
-                mkFromEnumerator comparer empty ie 
-
+            | _ -> Seq.fold (fun acc (k,v) -> add comparer k v acc) empty c
           
         let copyToArray s (arr: _[]) i =
             let j = ref i 

@@ -82,6 +82,7 @@ open System.Collections.Generic
 
 
 module internal List = 
+    open Microsoft.FSharp.Collections.SeqComposition
 
     let arrayZeroCreate (n:int) = (# "newarr !0" type ('T) n : 'T array #)
 
@@ -540,10 +541,36 @@ module internal List =
             res <- arr.[i] :: res
         res
 
+    /// A consumer that collects elements as a list
+    type ConsumeToList<'T> () =
+        inherit SeqConsumer<'T, list<'T>>([])
+
+        let mutable first = true
+        let mutable cons = Unchecked.defaultof<_>
+
+        override this.ProcessNext input =
+            if first then
+                first <- false
+                this.Result <- freshConsNoTail input
+                cons <- this.Result
+            else
+                let cons2 = freshConsNoTail input
+                setFreshConsTail cons cons2
+                cons <- cons2
+            true (* result unused in fold *)
+
+        override this.ChainComplete _ =
+            if not first then
+                setFreshConsTail cons []
+
+    let ofConsumableSeq (s : IConsumableSeq<'T>) =
+        s.Consume (fun _ -> upcast ConsumeToList())
+
     let inline ofSeq (e : IEnumerable<'T>) =
         match e with
         | :? list<'T> as l -> l
         | :? ('T[]) as arr -> ofArray arr
+        | :? IConsumableSeq<'T> as s -> ofConsumableSeq s
         | _ ->
             use ie = e.GetEnumerator()
             if not (ie.MoveNext()) then []
@@ -984,6 +1011,8 @@ module internal List =
 module internal Array = 
 
     open System
+    open System.Collections.Generic
+    open Microsoft.FSharp.Collections.SeqComposition
 
     let inline fastComparerForArraySort<'t when 't : comparison> () =
         LanguagePrimitives.FastGenericComparerCanBeNull<'t>
@@ -1077,7 +1106,7 @@ module internal Array =
             res.[i - start] <- state
         res
 
-    let unstableSortInPlaceBy (projection: 'T -> 'U) (array : array<'T>) =
+    let unstableSortInPlaceBy (projection: 'T -> 'U) (array : 'T[]) =
         let len = array.Length 
         if len < 2 then () 
         else
@@ -1086,19 +1115,19 @@ module internal Array =
                 keys.[i] <- projection array.[i]
             Array.Sort<_,_>(keys, array, fastComparerForArraySort())
 
-    let unstableSortInPlace (array : array<'T>) = 
+    let unstableSortInPlace (array : 'T[]) = 
         let len = array.Length 
         if len < 2 then () 
         else Array.Sort<_>(array, fastComparerForArraySort())
 
-    let stableSortWithKeysAndComparer (cFast:IComparer<'Key>) (c:IComparer<'Key>) (array:array<'T>) (keys:array<'Key>)  =
+    let stableSortWithKeysAndComparer (cFast:IComparer<'Key>) (c:IComparer<'Key>) (array:'T[]) (keys:array<'Key>)  =
         // 'places' is an array or integers storing the permutation performed by the sort
         let places = zeroCreateUnchecked array.Length 
         for i = 0 to array.Length - 1 do 
             places.[i] <- i 
         System.Array.Sort<_,_>(keys, places, cFast)
         // 'array2' is a copy of the original values
-        let array2 = (array.Clone() :?> array<'T>)
+        let array2 = (array.Clone() :?> 'T[])
 
         // Walk through any chunks where the keys are equal
         let mutable i = 0
@@ -1117,12 +1146,12 @@ module internal Array =
                 Array.Sort<_,_>(places, array, i, j-i, intCompare)
             i <- j
 
-    let stableSortWithKeys (array:array<'T>) (keys:array<'Key>) =
+    let stableSortWithKeys (array:'T[]) (keys:array<'Key>) =
         let cFast = fastComparerForArraySort()
         let c = LanguagePrimitives.FastGenericComparer<'Key>
         stableSortWithKeysAndComparer cFast c array keys
 
-    let stableSortInPlaceBy (projection: 'T -> 'U) (array : array<'T>) =
+    let stableSortInPlaceBy (projection: 'T -> 'U) (array : 'T[]) =
         let len = array.Length 
         if len < 2 then () 
         else
@@ -1132,7 +1161,7 @@ module internal Array =
                 keys.[i] <- projection array.[i]
             stableSortWithKeys array keys
 
-    let stableSortInPlace (array : array<'T>) =
+    let stableSortInPlace (array : 'T[]) =
         let len = array.Length 
         if len < 2 then () 
         else
@@ -1144,13 +1173,13 @@ module internal Array =
                 Array.Sort<_,_>(array, null)
             | _ -> 
                 // 'keys' is an array storing the projected keys
-                let keys = (array.Clone() :?> array<'T>)
+                let keys = (array.Clone() :?> 'T[])
                 stableSortWithKeys array keys
 
-    let stableSortInPlaceWith (comparer:'T -> 'T -> int) (array : array<'T>) =
+    let stableSortInPlaceWith (comparer:'T -> 'T -> int) (array : 'T[]) =
         let len = array.Length
         if len > 1 then
-            let keys = (array.Clone() :?> array<'T>)
+            let keys = (array.Clone() :?> 'T[])
             let comparer = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(comparer)
             let c = { new IComparer<'T> with member __.Compare(x,y) = comparer.Invoke(x,y) }
             stableSortWithKeysAndComparer c c array keys
@@ -1172,11 +1201,65 @@ module internal Array =
             let count = min count len
             let res = zeroCreateUnchecked count : 'T[][]
             let minChunkSize = len / count
-            let startIndex = ref 0
+            let mutable startIndex = 0
             for i = 0 to len % count - 1 do
-                res.[i] <- subUnchecked !startIndex (minChunkSize + 1) array
-                startIndex := !startIndex + minChunkSize + 1
+                res.[i] <- subUnchecked startIndex (minChunkSize + 1) array
+                startIndex <- startIndex + minChunkSize + 1
             for i = len % count to count - 1 do
-                res.[i] <- subUnchecked !startIndex minChunkSize array
-                startIndex := !startIndex + minChunkSize
+                res.[i] <- subUnchecked startIndex minChunkSize array
+                startIndex <- startIndex + minChunkSize
             res
+
+    type ConsumeToArray<'T> () =
+        inherit SeqConsumer<'T, 'T[]>(Unchecked.defaultof<_>)
+
+        let mutable tmp = ResizeArray ()
+
+        override this.ProcessNext input =
+            tmp.Add input
+            true (* result unused *)
+
+        override this.ChainComplete _ =
+            this.Result <- tmp.ToArray ()
+
+    let ofConsumableSeq (s : IConsumableSeq<'T>) =
+        s.Consume (fun _ -> upcast ConsumeToArray())
+
+    let ofSeq (source : seq<'T>)  =
+        match source with
+        | :? ('T[]) as res -> (res.Clone() :?> 'T[])
+        | :? ('T list) as res -> List.toArray res
+        | :? ICollection<'T> as res ->
+            // Directly create an array and copy ourselves.
+            // This avoids an extra copy if using ResizeArray in fallback below.
+            let arr = zeroCreateUnchecked res.Count
+            res.CopyTo(arr, 0)
+            arr
+        | :? IConsumableSeq<'T> as s -> ofConsumableSeq s
+        | :? IReadOnlyCollection<'T> as col ->
+            let res = zeroCreateUnchecked col.Count : 'T[]
+            let mutable idx = 0
+            for x in source do
+                res.[idx] <- x
+                idx <- idx + 1
+            res
+        | _ ->
+            let res = ResizeArray source
+            res.ToArray()
+
+    let toSeq (source : 'T[]) : seq<'T> =
+        { new IEnumerable<'T> with
+              member this.GetEnumerator(): Collections.IEnumerator = 
+                  (source:>System.Collections.IEnumerable).GetEnumerator ()
+              member this.GetEnumerator(): IEnumerator<'T> = 
+                  (source:>IEnumerable<'T>).GetEnumerator () }
+
+module internal IConsumableSeq =
+    open Microsoft.FSharp.Collections.SeqComposition
+
+    let length (source:IConsumableSeq<_>) =
+        source.Consume (fun _ ->
+            { new SeqConsumer<'T,int>(0) with
+                override this.ProcessNext v =
+                    this.Result <- this.Result + 1
+                    Unchecked.defaultof<_> (* return value unused in Fold context *) })

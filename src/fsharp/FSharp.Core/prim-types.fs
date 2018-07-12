@@ -3021,6 +3021,68 @@ namespace Microsoft.FSharp.Core
 
     and 'T voption = ValueOption<'T>
 
+namespace Microsoft.FSharp.Collections.SeqComposition
+    open System
+    open System.Collections
+    open System.Collections.Generic
+    open Microsoft.FSharp.Core
+    open BasicInlinedOperations
+    open LanguagePrimitives.IntrinsicOperators
+
+    type PipeIdx = int
+
+    type ISeqConsumer =
+        abstract StopFurtherProcessing : PipeIdx -> unit
+        abstract ListenForStopFurtherProcessing : Action<PipeIdx> -> unit
+
+    [<AbstractClass>]
+    type SeqConsumerActivity() =
+        abstract ChainComplete : PipeIdx -> unit
+        abstract ChainDispose  : unit -> unit
+
+    [<AbstractClass>]
+    type SeqConsumerActivity<'T> () =
+        inherit SeqConsumerActivity()
+        abstract ProcessNext : input:'T -> bool
+
+    [<AbstractClass>]
+    type SeqConsumerActivity<'T,'U> () =
+        inherit SeqConsumerActivity<'T>()
+
+    [<AbstractClass>]
+    type SeqConsumer<'T,'Result>(initalResult:'Result) =
+        inherit SeqConsumerActivity<'T,'T>()
+
+        let mutable listeners = BasicInlinedOperations.unsafeDefault<Action<PipeIdx>>
+        let mutable result = initalResult
+        let mutable haltedIdx = 0
+
+        member __.Result with get() = result and set value = result <- value
+        member __.HaltedIdx = haltedIdx
+
+        interface ISeqConsumer with
+            member this.StopFurtherProcessing pipeIdx = 
+                let currentIdx = haltedIdx
+                haltedIdx <- pipeIdx
+                if currentIdx = 0 && haltedIdx <> 0 then
+                    match listeners with
+                    | null -> ()
+                    | a -> a.Invoke pipeIdx
+
+            member this.ListenForStopFurtherProcessing action =
+                listeners <- Delegate.Combine (listeners, action) :?> Action<PipeIdx>
+
+        override this.ChainComplete _ = ()
+        override this.ChainDispose () = ()
+
+    type ISeqTransform<'T,'U> =
+        abstract Compose<'V> : ISeqConsumer -> PipeIdx -> SeqConsumerActivity<'U,'V> -> SeqConsumerActivity<'T,'V>
+
+    type IConsumableSeq<'T> =
+        inherit IEnumerable<'T>
+        abstract member Transform<'U> : ISeqTransform<'T,'U> -> IConsumableSeq<'U>
+        abstract member Consume<'Result> : getConsumer:(PipeIdx->SeqConsumer<'T,'Result>) -> 'Result
+
 namespace Microsoft.FSharp.Collections
 
     //-------------------------------------------------------------------------
@@ -3034,6 +3096,7 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions
     open Microsoft.FSharp.Core.BasicInlinedOperations
+    open Microsoft.FSharp.Collections.SeqComposition
 
     [<DefaultAugmentation(false)>]
     [<DebuggerTypeProxyAttribute(typedefof<ListDebugView<_>>)>]
@@ -3044,6 +3107,7 @@ namespace Microsoft.FSharp.Collections
     type List<'T> = 
        | ([])  :                  'T list
        | (::)  : Head: 'T * Tail: 'T list -> 'T list
+       interface Microsoft.FSharp.Collections.SeqComposition.IConsumableSeq<'T>
        interface System.Collections.Generic.IEnumerable<'T>
        interface System.Collections.IEnumerable
        interface System.Collections.Generic.IReadOnlyCollection<'T>
@@ -3095,6 +3159,7 @@ namespace Microsoft.FSharp.Collections
         let notStarted() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
         let alreadyFinished() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
         let outOfRange() = raise (System.IndexOutOfRangeException(SR.GetString(SR.indexOutOfBounds)))
+        let noReset() = raise (new System.NotSupportedException(SR.GetString(SR.resetNotSupported)))
 
         let nonempty x = match x with [] -> false | _ -> true
         // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
@@ -3190,6 +3255,92 @@ namespace Microsoft.FSharp.Collections
                 | [] -> outOfRange()
             loop n l
 
+    module ListSeqImplementation =
+        type CompositionTransform<'T,'U,'V> private (first:ISeqTransform<'T,'U>, second:ISeqTransform<'U,'V>) =
+            interface ISeqTransform<'T,'V> with
+                member this.Compose<'W> (outOfBand:ISeqConsumer) (pipeIdx:PipeIdx) (next:SeqConsumerActivity<'V,'W>) : SeqConsumerActivity<'T,'W> =
+                    first.Compose outOfBand (pipeIdx-1) (second.Compose outOfBand pipeIdx next)
+
+            static member Combine (first:ISeqTransform<'T,'U>) (second:ISeqTransform<'U,'V>) : ISeqTransform<'T,'V> =
+                upcast CompositionTransform(first, second)
+
+        type Result<'T>() =
+            inherit SeqConsumer<'T,'T>(unsafeDefault<'T>)
+
+            member val SeqState = 1(*NotStarted*) with get, set
+
+            override this.ProcessNext (input:'T) : bool =
+                this.Result <- input
+                true
+
+        type ListEnumerator<'T,'U>(alist:list<'T>, activity:SeqConsumerActivity<'T,'U>, result:Result<'U>) =
+            let mutable list = alist
+
+            let rec moveNext current =
+                match result.HaltedIdx, current with
+                | 0, head::tail ->
+                    if activity.ProcessNext head then
+                        list <- tail
+                        true
+                    else
+                        moveNext tail
+                | _ ->
+                    result.SeqState <- 2(*Finished*)
+                    activity.ChainComplete result.HaltedIdx
+                    false
+
+            interface System.IDisposable with
+                member __.Dispose () : unit =
+                    activity.ChainDispose ()
+
+            interface System.Collections.IEnumerator with
+                member this.Current : obj = box (this :> IEnumerator<'U>).Current
+                member __.MoveNext () =
+                    result.SeqState <- 0(*InProcess*)
+                    moveNext list
+
+                member __.Reset () : unit = PrivateListHelpers.noReset ()
+
+            interface IEnumerator<'U> with
+                member __.Current =
+                    if result.SeqState = 0(*InProcess*) then result.Result
+                    elif result.SeqState = 1(*NotStarted*) then PrivateListHelpers.notStarted()
+                    else PrivateListHelpers.alreadyFinished()
+                        
+        type ListEnumerable<'T,'U>(alist:list<'T>, transform:ISeqTransform<'T,'U>, pipeIdx:PipeIdx) =
+            interface System.Collections.IEnumerable with
+                member this.GetEnumerator () : System.Collections.IEnumerator =
+                    upcast (this :> IEnumerable<'U>).GetEnumerator ()
+
+            interface System.Collections.Generic.IEnumerable<'U> with
+                member this.GetEnumerator () : System.Collections.Generic.IEnumerator<'U> =
+                    let result = Result<'U> ()
+                    let activity = transform.Compose (result :> ISeqConsumer) pipeIdx result
+                    upcast (new ListEnumerator<'T,'U>(alist, activity, result))
+
+            interface IConsumableSeq<'U> with
+                member __.Transform (next:ISeqTransform<'U,'V>) : IConsumableSeq<'V> =
+                    upcast (new ListEnumerable<'T,'V>(alist, CompositionTransform.Combine transform next, pipeIdx+1))
+
+                member this.Consume<'Result> (createFolder:PipeIdx->SeqConsumer<'U,'Result>) =
+                    let result = createFolder (pipeIdx+1)
+                    let consumer = transform.Compose (result :> ISeqConsumer) pipeIdx result
+                    try
+                        let mutable lst = alist
+                        while
+                          ( match lst with
+                            | hd :: tl when result.HaltedIdx = 0 ->
+                                ignore (consumer.ProcessNext hd)
+                                lst <- tl
+                                true
+                            | _ -> false
+                          ) do ()
+
+                        consumer.ChainComplete result.HaltedIdx
+                    finally
+                        consumer.ChainDispose ()
+                    result.Result
+
     type List<'T> with
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         member l.Length = PrivateListHelpers.lengthAcc 0 l
@@ -3230,6 +3381,28 @@ namespace Microsoft.FSharp.Collections
                 if i > j then [] else
                 PrivateListHelpers.sliceTake (j-i) (PrivateListHelpers.sliceSkip i l)
 
+        interface IConsumableSeq<'T> with
+            member this.Transform<'U> (next:ISeqTransform<'T,'U>) =
+                upcast (new ListSeqImplementation.ListEnumerable<'T,'U>(this, next, 1))
+
+            member this.Consume<'Result> (createFolder:PipeIdx->SeqConsumer<'T,'Result>) =
+                let result = createFolder 1
+                try
+                    let mutable lst = this
+                    while 
+                      ( match lst with
+                        | hd :: tl when result.HaltedIdx = 0 ->
+                            ignore (result.ProcessNext hd)
+                            lst <- tl
+                            true
+                        | _ -> false
+                      ) do ()
+
+                    result.ChainComplete result.HaltedIdx
+                finally
+                    result.ChainDispose ()
+                result.Result
+
         interface IEnumerable<'T> with
             member l.GetEnumerator() = PrivateListHelpers.mkListEnumerator l
 
@@ -3244,11 +3417,10 @@ namespace Microsoft.FSharp.Collections
 
     type seq<'T> = IEnumerable<'T>
 
-        
+       
 //-------------------------------------------------------------------------
 // Operators
 //-------------------------------------------------------------------------
-
 
 namespace Microsoft.FSharp.Core
 
@@ -3262,8 +3434,7 @@ namespace Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions
     open Microsoft.FSharp.Core.BasicInlinedOperations
     open Microsoft.FSharp.Collections
-
-
+    open Microsoft.FSharp.Collections.SeqComposition
 
     [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1046:DoNotOverloadOperatorEqualsOnReferenceTypes")>]
     module Operators = 
@@ -4579,6 +4750,99 @@ namespace Microsoft.FSharp.Core
                 | Running = 1
                 | Finished = 2
 
+            type CompositionTransform<'T,'U,'V> private (first:ISeqTransform<'T,'U>, second:ISeqTransform<'U,'V>) =
+                interface ISeqTransform<'T,'V> with
+                    member this.Compose<'W> (outOfBand:ISeqConsumer) (pipeIdx:PipeIdx) (next:SeqConsumerActivity<'V,'W>) : SeqConsumerActivity<'T,'W> =
+                        first.Compose outOfBand (pipeIdx-1) (second.Compose outOfBand pipeIdx next)
+
+                static member Combine (first:ISeqTransform<'T,'U>) (second:ISeqTransform<'U,'V>) : ISeqTransform<'T,'V> =
+                    upcast CompositionTransform(first, second)
+
+            type IdentityTransform<'T> private () =
+                static let singleton : ISeqTransform<'T,'T> = upcast (IdentityTransform<'T>())
+                static member Instance = singleton
+                interface ISeqTransform<'T,'T> with
+                    member __.Compose<'V> (_outOfBand:ISeqConsumer) (_pipeIdx:PipeIdx) (next:SeqConsumerActivity<'T,'V>) : SeqConsumerActivity<'T,'V> = next
+
+            type SetResultToInput<'T>() =
+                inherit SeqConsumer<'T,'T>(Unchecked.defaultof<'T>)
+                override this.ProcessNext (input:'T) : bool =
+                    this.Result <- input
+                    true
+
+            type SeqSourceEnumerator<'T,'U>(source:IEnumerator<'T>, activity:SeqConsumerActivity<'T,'U>, folder:SetResultToInput<'U>) =
+                let mutable state = Mode.NotStarted
+
+                let rec moveNext () =
+                    if (folder.HaltedIdx = 0) && source.MoveNext () then
+                        if activity.ProcessNext source.Current then
+                            true
+                        else
+                            moveNext ()
+                    else
+                        state <- Mode.Finished
+                        activity.ChainComplete folder.HaltedIdx
+                        false
+
+                interface IEnumerator with
+                    member this.Current : obj = box (this :> IEnumerator<'U>).Current
+                    member __.Reset () : unit = source.Reset ()
+                    member __.MoveNext () =
+                        state <- Mode.Running
+                        moveNext ()
+
+                interface IEnumerator<'U> with
+                    member __.Current =
+                        if state = Mode.Running then folder.Result
+                        else
+                            match state with
+                            | Mode.NotStarted -> notStarted()
+                            | Mode.Finished -> alreadyFinished()
+                            | _ -> failwith "library implementation error: all states should have been handled"
+
+                interface IDisposable with
+                    member __.Dispose () =
+                        try
+                            source.Dispose ()
+                        finally
+                            activity.ChainDispose ()
+
+            type IConsumableSeqSource<'T> =
+                abstract member GetEnumerator : unit -> IEnumerator<'T>
+                abstract member Consume<'Result,'U> : f:(PipeIdx->SeqConsumer<'U,'Result>) -> ISeqTransform<'T,'U> -> PipeIdx -> 'Result
+
+            type SeqSourceEnumerable<'T,'U>(source:IConsumableSeqSource<'T>, current:ISeqTransform<'T,'U>, pipeIdx:PipeIdx) =
+                interface IEnumerable<'U> with
+                    member __.GetEnumerator () =
+                        let folder = SetResultToInput<'U>()
+                        upcast (new SeqSourceEnumerator<'T,'U>(source.GetEnumerator (), current.Compose (folder :> ISeqConsumer) pipeIdx folder, folder))
+
+                interface IEnumerable with
+                    member __.GetEnumerator () =
+                        let folder = SetResultToInput<'U>()
+                        upcast (new SeqSourceEnumerator<'T,'U>(source.GetEnumerator (), current.Compose (folder :> ISeqConsumer) pipeIdx folder, folder))
+
+                interface IConsumableSeq<'U> with
+                    member __.Transform (next:ISeqTransform<'U,'V>) : IConsumableSeq<'V> =
+                        upcast (new SeqSourceEnumerable<'T,'V>(source, CompositionTransform.Combine current next, pipeIdx+1))
+
+                    member this.Consume<'Result> (f:PipeIdx->SeqConsumer<'U,'Result>) =
+                        source.Consume f current pipeIdx
+
+            type SeqSourceEnumerableThin<'U>(source:IConsumableSeqSource<'U>) =
+                interface IEnumerable<'U> with
+                    member __.GetEnumerator () = source.GetEnumerator ()
+
+                interface IEnumerable with
+                    member __.GetEnumerator () = upcast (source.GetEnumerator ())
+
+                interface IConsumableSeq<'U> with
+                    member __.Transform (next:ISeqTransform<'U,'V>) : IConsumableSeq<'V> =
+                        upcast (new SeqSourceEnumerable<'U,'V>(source, next, 1))
+
+                    member this.Consume<'Result> (f:PipeIdx->SeqConsumer<'U,'Result>) =
+                        source.Consume f IdentityTransform.Instance 1
+
             [<AbstractClass>]
             type BaseRangeEnumerator<'T>() =
                 // Generate enumerator from mutable state "z".
@@ -4793,11 +5057,24 @@ namespace Microsoft.FSharp.Core
                                     false
                                 else false }
 
-                    { new IEnumerable<'T> with
+                    let source = 
+                      { new IConsumableSeqSource<'T> with
                         member __.GetEnumerator () = singleStepRangeEnumerator ()
+                        member __.Consume<'Result,'Output> (createFolder:PipeIdx->SeqConsumer<'Output,'Result>) (transform:ISeqTransform<'T,'Output>) pipeIdx : 'Result =
+                            let result = createFolder (pipeIdx+1)
+                            let consumer = transform.Compose (result :> ISeqConsumer) pipeIdx result
+                            try
+                                let mutable i : 'T = n
+                                while result.HaltedIdx = 0 && i <= m do
+                                    consumer.ProcessNext i |> ignore
+                                    i <- i + LanguagePrimitives.GenericOne
 
-                      interface IEnumerable with
-                        member __.GetEnumerator () = (singleStepRangeEnumerator ()) :> IEnumerator }
+                                consumer.ChainComplete result.HaltedIdx
+                                result.Result
+                            finally
+                                consumer.ChainDispose () }
+
+                    upcast (SeqSourceEnumerableThin<'T> source)
 
             // For RangeStepGeneric, zero and add are functions representing the static resolution of GenericZero and (+)
             // for the particular static type. 

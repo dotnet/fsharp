@@ -6,54 +6,139 @@ namespace Microsoft.FSharp.Collections
     open System.Collections.Generic
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
-    module internal IEnumerator =
-        val noReset : unit -> 'a
-        val notStarted : unit -> 'a
-        val alreadyFinished : unit -> 'a
-        val check : started:bool -> unit
-        val dispose : r:System.IDisposable -> unit
-        val cast :
-            e:System.Collections.IEnumerator ->
-            System.Collections.Generic.IEnumerator<'T>
-        [<SealedAttribute ()>]
-        type EmptyEnumerator<'T> =
-            class
-            interface System.IDisposable
-            interface System.Collections.IEnumerator
-            interface System.Collections.Generic.IEnumerator<'T>
-            new : unit -> EmptyEnumerator<'T>
-            end
-        val Empty : unit -> System.Collections.Generic.IEnumerator<'T>
-        [<NoEqualityAttribute (); NoComparisonAttribute ()>]
-        type EmptyEnumerable<'T> =
-            | EmptyEnumerable
-            with
-            interface System.Collections.IEnumerable
-            interface System.Collections.Generic.IEnumerable<'T>
-            end
 
-        val readAndClear : r:'a option ref -> 'a option
-        val generateWhileSome :
-            openf:(unit -> 'a) ->
-            compute:('a -> 'U option) ->
-                closef:('a -> unit) -> System.Collections.Generic.IEnumerator<'U>
-        [<SealedAttribute ()>]
-        type Singleton<'T> =
-            class
-            interface System.IDisposable
-            interface System.Collections.IEnumerator
-            interface System.Collections.Generic.IEnumerator<'T>
-            new : v:'T -> Singleton<'T>
-            end
+    module internal IEnumerator =
+
+        val noReset : unit -> 'T
+
+        val notStarted : unit -> 'T
+
+        val alreadyFinished : unit -> 'T
+
+        val check : started:bool -> unit
+
+        val dispose : r:System.IDisposable -> unit
+
+        val cast : e:System.Collections.IEnumerator -> System.Collections.Generic.IEnumerator<'T>
+
+        val Empty : unit -> System.Collections.Generic.IEnumerator<'T>
+
         val Singleton : x:'T -> System.Collections.Generic.IEnumerator<'T>
-        val EnumerateThenFinally :
-            f:(unit -> unit) ->
-            e:System.Collections.Generic.IEnumerator<'T> ->
-                System.Collections.Generic.IEnumerator<'T>
-        val inline checkNonNull : argName:string -> arg:'a -> unit
-        val mkSeq :
-            f:(unit -> System.Collections.Generic.IEnumerator<'U>) ->
-            System.Collections.Generic.IEnumerable<'U>
+
+        val EnumerateThenFinally : f:(unit -> unit) -> e:System.Collections.Generic.IEnumerator<'T> -> System.Collections.Generic.IEnumerator<'T>
+
+        val inline checkNonNull : argName:string -> arg:'T -> unit
+
+        val mkSeq : f:(unit -> System.Collections.Generic.IEnumerator<'U>) -> System.Collections.Generic.IEnumerable<'U>
+
+
+namespace Microsoft.FSharp.Collections.SeqComposition
+  open System
+  open System.Collections
+  open System.Collections.Generic
+  open Microsoft.FSharp.Core
+  open Microsoft.FSharp.Collections
+  open Microsoft.FSharp.Collections.SeqComposition
+
+  module Core = 
+    [<Struct; NoComparison; NoEquality>]
+    type NoValue = struct end
+
+    [<AbstractClass>]
+    type internal EnumerableBase<'T> =
+        new : unit -> EnumerableBase<'T>
+        abstract member Append : IConsumableSeq<'T> -> IConsumableSeq<'T>
+        abstract member Length : unit -> int
+        abstract member GetRaw : unit -> seq<'T>
+        default Append : IConsumableSeq<'T> -> IConsumableSeq<'T>
+        default Length : unit -> int
+        default GetRaw : unit -> seq<'T>
+        interface IConsumableSeq<'T>
+
+    [<AbstractClass>]
+    type internal EnumerableWithTransform<'T,'U> =
+        inherit EnumerableBase<'U>
+        new : ISeqTransform<'T,'U> * PipeIdx -> EnumerableWithTransform<'T,'U>
+
+    [<Class>]
+    type internal IdentityTransform<'T> =
+        interface ISeqTransform<'T,'T> 
+        static member Instance : ISeqTransform<'T,'T> 
+
+    type internal ISkipable =
+        // Seq.init(Infinite)? lazily uses Current. The only IConsumableSeq component that can do that is Skip
+        // and it can only do it at the start of a sequence
+        abstract CanSkip : unit -> bool
+
+    type internal ThinConcatEnumerable<'T, 'Sources, 'Collection when 'Collection :> IConsumableSeq<'T>> =
+        inherit EnumerableBase<'T>
+        new : 'Sources * ('Sources->IConsumableSeq<'Collection>) -> ThinConcatEnumerable<'T, 'Sources, 'Collection>
+        interface IConsumableSeq<'T>
+
+    type internal AppendEnumerable<'T> =
+        inherit ThinConcatEnumerable<'T, list<IConsumableSeq<'T>>, IConsumableSeq<'T>>
+        new : list<IConsumableSeq<'T>> -> AppendEnumerable<'T>
+        override Append : IConsumableSeq<'T> -> IConsumableSeq<'T>
+
+    type internal ResizeArrayEnumerable<'T,'U> = 
+        inherit EnumerableWithTransform<'T,'U>
+        new : ResizeArray<'T> * ISeqTransform<'T,'U> * PipeIdx -> ResizeArrayEnumerable<'T,'U>
+        interface IConsumableSeq<'U>
+
+    type internal ThinResizeArrayEnumerable<'T> =
+        inherit ResizeArrayEnumerable<'T,'T>
+        new : ResizeArray<'T> -> ThinResizeArrayEnumerable<'T>
+
+    type internal ArrayEnumerable<'T,'U> =
+        inherit EnumerableWithTransform<'T,'U>
+        new : array<'T> * ISeqTransform<'T,'U> * PipeIdx -> ArrayEnumerable<'T,'U>
+        interface IConsumableSeq<'U>
+
+    type internal ThinArrayEnumerable<'T> =
+        inherit ArrayEnumerable<'T, 'T>
+        new : array<'T> -> ThinArrayEnumerable<'T>
+        interface IEnumerable<'T>
+
+    type internal VanillaEnumerable<'T,'U> =
+        inherit EnumerableWithTransform<'T,'U>
+        new : IEnumerable<'T> * ISeqTransform<'T,'U> * PipeIdx -> VanillaEnumerable<'T,'U>
+        interface IConsumableSeq<'U>
+
+    type internal ThinEnumerable<'T> =
+        inherit VanillaEnumerable<'T,'T>
+        new : IEnumerable<'T> -> ThinEnumerable<'T>
+        interface IEnumerable<'T>
+
+    type internal UnfoldEnumerable<'T,'U,'GeneratorState> =
+        inherit EnumerableWithTransform<'T,'U>
+        new : ('GeneratorState->option<'T*'GeneratorState>)*'GeneratorState*ISeqTransform<'T,'U>*PipeIdx -> UnfoldEnumerable<'T,'U,'GeneratorState>
+        interface IConsumableSeq<'U>
+
+    type internal InitEnumerableDecider<'T> =
+        inherit EnumerableBase<'T>
+        new : Nullable<int>* (int->'T) * PipeIdx -> InitEnumerableDecider<'T>
+        interface IConsumableSeq<'T>
+        
+    type internal SingletonEnumerable<'T> =
+        inherit EnumerableBase<'T>
+        new : 'T -> SingletonEnumerable<'T>
+        interface IConsumableSeq<'T>
+
+    type internal InitEnumerable<'T,'U> =
+        inherit EnumerableWithTransform<'T,'U>
+        new : Nullable<int> * (int->'T) * ISeqTransform<'T,'U> * PipeIdx -> InitEnumerable<'T,'U>
+        interface IConsumableSeq<'U>
+
+    type internal DelayedEnumerable<'T> =
+        inherit EnumerableBase<'T>
+        new : (unit->IConsumableSeq<'T>) * PipeIdx -> DelayedEnumerable<'T>
+        interface IConsumableSeq<'T>
+
+    type internal EmptyEnumerable<'T> =
+        inherit EnumerableBase<'T>
+        private new : unit -> EmptyEnumerable<'T>
+        static member Instance : IConsumableSeq<'T>
+        interface IConsumableSeq<'T>
 
 namespace Microsoft.FSharp.Core.CompilerServices
 
@@ -66,12 +151,6 @@ namespace Microsoft.FSharp.Core.CompilerServices
     [<RequireQualifiedAccess>]
     /// <summary>A group of functions used as part of the compiled representation of F# sequence expressions.</summary>
     module RuntimeHelpers = 
-
-        [<Struct; NoComparison; NoEquality>]
-        type internal StructBox<'T when 'T : equality> = 
-            new : value:'T -> StructBox<'T>
-            member Value : 'T
-            static member Comparer : IEqualityComparer<StructBox<'T>>
 
         val internal mkConcatSeq : sources:(seq<#seq<'T>>) -> seq<'T>
 
@@ -124,6 +203,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     [<AbstractClass>]
     /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
     type GeneratedSequenceBase<'T> =
+        inherit SeqComposition.Core.EnumerableBase<'T>
         /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
         ///
         /// <returns>A new sequence generator for the expression.</returns>
@@ -149,3 +229,4 @@ namespace Microsoft.FSharp.Core.CompilerServices
         interface IEnumerator<'T> 
         interface IEnumerator 
         interface IDisposable 
+        interface SeqComposition.IConsumableSeq<'T>
