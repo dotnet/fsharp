@@ -125,7 +125,8 @@ let VerifyNoCompletionList(fileContents: string, marker: string) =
 [<OneTimeSetUp>]
 let usingDefaultSettings() = 
     SettingsPersistence.setSettings { ShowAfterCharIsTyped = true; ShowAfterCharIsDeleted = false; ShowAllSymbols = true }
-    
+    SettingsPersistence.setSettings { EnableInMemoryCrossProjectReferences = true; AllowStaleCompletionResults = true; TimeUntilStaleCompletion = 2000; ProjectCheckCacheSize = 200 }
+
 [<Test>]
 let ShouldTriggerCompletionAtCorrectMarkers() =
     let testCases = 

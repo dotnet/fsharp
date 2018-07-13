@@ -2593,7 +2593,7 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
                 let nDetupArgsL = detupArgsL.Length
                 let nShapes = min nargs nDetupArgsL 
                 let detupArgsShapesL = 
-                    List.take nShapes detupArgsL 
+                    List.truncate nShapes detupArgsL 
                     |> List.map (fun detupArgs -> 
                         match detupArgs with 
                         | [] | [_] -> UnknownValue

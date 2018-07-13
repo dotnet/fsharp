@@ -182,6 +182,8 @@ module CoreTests =
 
             fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
+            singleNegTest cfg "test"
+
             exec cfg ("." ++ "test.exe") ""
 
             testOkFile.CheckExists()
@@ -203,15 +205,31 @@ module CoreTests =
             testOkFile.CheckExists()
         end
 
+        begin
+            use testOkFile = fileguard cfg "test2.ok"
+
+            fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
+
+            singleNegTest cfg "test2"
+
+            exec cfg ("." ++ "test2.exe") ""
+
+            testOkFile.CheckExists()
+        end
+
     [<Test>]
     let span () = 
 
         let cfg = testConfig "core/span"
 
+        let cfg = { cfg with fsc_flags = sprintf "%s --test:StackSpan" cfg.fsc_flags}
+
         begin
             use testOkFile = fileguard cfg "test.ok"
 
             fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+
+            singleNegTest cfg "test"
 
             // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
             //exec cfg ("." ++ "test.exe") ""
@@ -219,19 +237,18 @@ module CoreTests =
             //testOkFile.CheckExists()
         end
 
-        // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
-        //begin
-        //    use testOkFile = fileguard cfg "test.ok"
-        //    fsi cfg "" ["test.fsx"]
-        //    testOkFile.CheckExists()
-        //end
+        begin
+            use testOkFile = fileguard cfg "test2.ok"
 
-        // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
-        //begin
-        //    use testOkFile = fileguard cfg "test.ok"
-        //    fsiAnyCpu cfg "" ["test.fsx"]
-        //    testOkFile.CheckExists()
-        //end
+            fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
+
+            singleNegTest cfg "test2"
+
+            // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
+            //exec cfg ("." ++ "test.exe") ""
+
+            //testOkFile.CheckExists()
+        end
 
     [<Test>]
     let asyncStackTraces () = 

@@ -58,8 +58,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Project_check_cache_size">
-        <source>Project check cache size</source>
-        <target state="translated">Размер кэша проверки проекта</target>
+        <source>Number of projects whose data is cached in memory</source>
+        <target state="translated">Число проектов, данные которых кэшируются в памяти</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -103,8 +103,38 @@
         <note />
       </trans-unit>
       <trans-unit id="Show_Outlining">
-        <source>Show outlining and collapsable nodes for F# code</source>
+        <source>Show outlining and collapsible nodes for F# code</source>
         <target state="translated">Показать структурирование и сворачиваемые узлы для кода F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Time_until_stale_completion">
+        <source>Time until stale results are used (in milliseconds)</source>
+        <target state="translated">Используются результаты времени до устаревания (в мс)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IntelliSense_Performance">
+        <source>IntelliSense Performance Options</source>
+        <target state="translated">Параметры производительности IntelliSense</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project_Performance">
+        <source>F# Project and Caching Performance Options</source>
+        <target state="translated">Проект F# и параметры производительности кэширования</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Stale_IntelliSense_Results">
+        <source>Enable stale data for IntelliSense features</source>
+        <target state="translated">Включение устаревших данных для функций IntelliSense</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_in_memory_cross_project_references">
+        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
+        <target state="translated">Перекрестные ссылки между проектами в памяти хранят данные уровня проекта в памяти, поэтому функции и компоненты IDE могут работать в разных проектах.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_project_check_cache_size">
+        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
+        <target state="translated">Для функций и компонентов IDE используются кэшированные данные проекта. Более высокие значения потребляют больший объем памяти, так как кэшируется больше проектов. Настройка этого значения не должна влиять на решения небольших или средних размеров.</target>
         <note />
       </trans-unit>
     </body>
