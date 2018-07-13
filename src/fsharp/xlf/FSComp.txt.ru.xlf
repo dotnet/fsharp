@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
-        <target state="needs-review-translation">Все ветви выражения сопоставления шаблона должны иметь один и тот же тип. В этом выражении ожидалось использование типа "{0}", но используется тип "{1}".</target>
+        <target state="translated">Все ветви выражения сопоставления шаблонов должны возвращать значения одного типа. Первая ветвь возвратила значение типа "{0}", а эта ветвь — типа "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -5434,7 +5434,7 @@
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
         <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="translated">В {0} была указана версия "{1}", однако это значение является недопустимым и было проигнорировано</target>
+        <target state="translated">В атрибуте {0} указана версия "{1}", однако это значение недопустимо и было проигнорировано</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">
@@ -6974,7 +6974,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionMatchBang">
         <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
-        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <target state="translated">Используется в выражениях вычислений для сопоставления шаблонов непосредственно с результатом другого выражения вычислений.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">
@@ -6984,77 +6984,77 @@
       </trans-unit>
       <trans-unit id="writeToReadOnlyByref">
         <source>The byref pointer is readonly, so this write is not permitted.</source>
-        <target state="new">The byref pointer is readonly, so this write is not permitted.</target>
+        <target state="translated">Указатель byref доступен только для чтения, поэтому операция записи запрещена.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastValueMustBeMutable">
         <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
-        <target state="new">A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</target>
+        <target state="translated">Чтобы изменить содержимое или получить адрес типа значения, значение должно быть изменяемым, например, "let mutable x = ..."</target>
         <note />
       </trans-unit>
       <trans-unit id="readOnlyAttributeOnStructWithMutableField">
         <source>A ReadOnly attribute has been applied to a struct type with a mutable field.</source>
-        <target state="new">A ReadOnly attribute has been applied to a struct type with a mutable field.</target>
+        <target state="translated">Атрибут ReadOnly был применен к типу структуры с изменяемым полем.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefReturnImplicitlyDereferenced">
         <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
-        <target state="new">A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</target>
+        <target state="translated">Указатель byref, возвращаемый функцией или методом, неявным образом разыменовывается в F# 4.5. Для получения возвращаемого значения в виде указателя используйте оператор address-of, например &amp;f(x) или &amp;obj.Method(arg1, arg2).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByRefLikeNotStruct">
         <source>A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
-        <target state="new">A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</target>
+        <target state="translated">Тип с аннотацией IsByRefLike также должен быть структурой. Рекомендуется добавить к типу атрибут [&lt;Struct&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefAddressOfLocal">
         <source>The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="new">The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
+        <target state="translated">На этом этапе невозможно использовать адрес переменной "{0}" или связанного выражения. В этом случае гарантируется, что адрес локального значения не обходит свою область.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
-        <target state="new">This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</target>
+        <target state="translated">Это значение не может быть назначено, так как целевой элемент "{0}" может ссылаться на отличную от локальной для стека память, тогда как назначаемое выражение оценивается как потенциально ссылающееся на локальную для стека память. В этом случае гарантируется, что указатели на привязанную к стеку память не обходят свою область.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastValueMustBeLocal">
         <source>A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</source>
-        <target state="new">A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</target>
+        <target state="translated">Чтобы получить свой адрес, значение, определенное в модуле, должно быть изменяемым, например "let mutable x = ...".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIsReadOnlyNotStruct">
         <source>A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
-        <target state="new">A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</target>
+        <target state="translated">Тип с аннотацией IsReadOnly также должен быть структурой. Рекомендуется добавить к типу атрибут [&lt;Struct&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="chkStructsMayNotReturnAddressesOfContents">
         <source>Struct members cannot return the address of fields of the struct by reference</source>
-        <target state="new">Struct members cannot return the address of fields of the struct by reference</target>
+        <target state="translated">Члены структуры не могут возвращать адрес полей структуры по ссылке</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefLikeFunctionCall">
         <source>The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="new">The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.</target>
+        <target state="translated">На этом этапе невозможно использовать вызов функции или метода, так как один аргумент, представляющий собой byref с отличным от локального для стека типом Span или IsByRefLike, используется с другим аргументом, имеющим локальный для стека тип Span или IsByRefLike. В этом случае гарантируется, что адрес локального значения не обходит свою область.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefAddressOfValueFromExpression">
         <source>The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="new">The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
+        <target state="translated">На этом этапе невозможно использовать адрес значения, возвращаемого выражением. В этом случае гарантируется, что адрес локального значения не обходит свою область.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoSpanLikeVariable">
         <source>The Span or IsByRefLike variable '{0}' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="new">The Span or IsByRefLike variable '{0}' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
+        <target state="translated">На этом этапе невозможно использовать переменную Span или IsByRefLike "{0}". В этом случае гарантируется, что адрес локального значения не обходит свою область.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoSpanLikeValueFromExpression">
         <source>A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="new">A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</target>
+        <target state="translated">На этом этапе невозможно использовать значение Span или IsByRefLike, возвращаемое выражением. В этом случае гарантируется, что адрес локального значения не обходит свою область.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastCantTakeAddressOfExpression">
         <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
-        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
+        <target state="translated">Невозможно получить адрес значения, возвращенного из выражения. Используйте возвращенное значение в качестве значения с привязкой let, прежде чем получить адрес.</target>
         <note />
       </trans-unit>
     </body>

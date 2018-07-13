@@ -204,7 +204,7 @@
       </trans-unit>
       <trans-unit id="5014">
         <source>Console Application (.NET Framework)</source>
-        <target state="needs-review-translation">主控台應用程式</target>
+        <target state="translated">主控台應用程式 (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5015">
@@ -214,7 +214,7 @@
       </trans-unit>
       <trans-unit id="5016">
         <source>Library (.NET Framework)</source>
-        <target state="needs-review-translation">程式庫</target>
+        <target state="translated">程式庫 (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5017">
@@ -224,7 +224,7 @@
       </trans-unit>
       <trans-unit id="5018">
         <source>Tutorial (.NET Framework)</source>
-        <target state="needs-review-translation">教學課程</target>
+        <target state="translated">教學課程 (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5019">
@@ -409,7 +409,7 @@
       </trans-unit>
       <trans-unit id="6001">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# 互動</target>
         <note />
       </trans-unit>
       <trans-unit id="6002">
@@ -434,12 +434,12 @@
       </trans-unit>
       <trans-unit id="ProductDetails">
         <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="needs-review-translation">Microsoft Visual F# Tools 10.1 for F# 4.1</target>
+        <target state="translated">Microsoft Visual F# Tools 10.2 for F# 4.5</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
         <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="needs-review-translation">Microsoft Visual F# Tools 10.1 for F# 4.1</target>
+        <target state="translated">Microsoft Visual F# Tools 10.2 for F# 4.5</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -454,12 +454,12 @@
       </trans-unit>
       <trans-unit id="9001">
         <source>Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="needs-review-translation">Visual F# Tools 10.1 for F# 4.1</target>
+        <target state="translated">Visual F# Tools 10.2 for F# 4.5</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# 互動</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductRegistryName">
@@ -509,7 +509,7 @@
       </trans-unit>
       <trans-unit id="6005">
         <source>Change path and command line arguments passed to the F# Interactive</source>
-        <target state="translated">變更傳遞到 F# Interactive 的路徑和命令列引數</target>
+        <target state="translated">變更傳遞到 F# 互動的路徑和命令列引數</target>
         <note />
       </trans-unit>
       <trans-unit id="6006">
