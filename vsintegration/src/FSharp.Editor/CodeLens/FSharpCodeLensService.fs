@@ -179,6 +179,7 @@ type internal FSharpCodeLensService
                                 let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar, IVsStatusbar>()) 
                                 let navigation = QuickInfoNavigation(statusBar, checker, projectInfoManager, document, realPosition)
                                 // Because the data is available notify that this line should be updated, displaying the results
+                                return Some (taggedText, navigation)
                             | None -> 
                                 logWarningf "Couldn't acquire CodeLens data for function %A" func
                                 return None
