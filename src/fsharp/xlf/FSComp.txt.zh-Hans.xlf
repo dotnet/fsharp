@@ -7059,7 +7059,7 @@
       </trans-unit>
       <trans-unit id="tastCantTakeAddressOfExpression">
         <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
-        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
+        <target state="translated">无法采用从表达式返回的地址值。在采用地址前将返回值分配给 let 绑定值。</target>
         <note />
       </trans-unit>
     </body>

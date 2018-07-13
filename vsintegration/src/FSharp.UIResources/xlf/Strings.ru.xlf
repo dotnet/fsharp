@@ -104,7 +104,7 @@
       </trans-unit>
       <trans-unit id="Show_Outlining">
         <source>Show outlining and collapsible nodes for F# code</source>
-        <target state="translated">Показать структурирование и сворачиваемые узлы для кода F#</target>
+        <target state="translated">Показать структурирование и свертываемые узлы для кода F#</target>
         <note />
       </trans-unit>
       <trans-unit id="Time_until_stale_completion">
@@ -139,27 +139,27 @@
       </trans-unit>
       <trans-unit id="CodeLens">
         <source>CodeLens</source>
-        <target state="new">CodeLens</target>
+        <target state="translated">CodeLens</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_Replace_LineLens">
         <source>Show annotations to the right instead of above the line</source>
-        <target state="new">Show annotations to the right instead of above the line</target>
+        <target state="translated">Показать примечания справа от строки, а не над ней</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_Switch">
         <source>Enable CodeLens (Experimental)</source>
-        <target state="new">Enable CodeLens (Experimental)</target>
+        <target state="translated">Включить CodeLens (экспериментальная функция)</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_Prefix">
         <source>Annotation prefix</source>
-        <target state="new">Annotation prefix</target>
+        <target state="translated">Префикс примечания</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_UseColors">
         <source>Use colors in annotations</source>
-        <target state="new">Use colors in annotations</target>
+        <target state="translated">Использовать цветные примечания</target>
         <note />
       </trans-unit>
     </body>

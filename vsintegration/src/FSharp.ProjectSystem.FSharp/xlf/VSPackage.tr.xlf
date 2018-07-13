@@ -204,7 +204,7 @@
       </trans-unit>
       <trans-unit id="5014">
         <source>Console Application (.NET Framework)</source>
-        <target state="needs-review-translation">Konsol Uygulaması</target>
+        <target state="translated">Konsol Uygulaması (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5015">
@@ -214,7 +214,7 @@
       </trans-unit>
       <trans-unit id="5016">
         <source>Library (.NET Framework)</source>
-        <target state="needs-review-translation">Kitaplık</target>
+        <target state="translated">Kitaplık (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5017">
@@ -224,7 +224,7 @@
       </trans-unit>
       <trans-unit id="5018">
         <source>Tutorial (.NET Framework)</source>
-        <target state="needs-review-translation">Öğretici</target>
+        <target state="translated">Öğretici (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5019">
@@ -409,7 +409,7 @@
       </trans-unit>
       <trans-unit id="6001">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# Etkileşimli</target>
         <note />
       </trans-unit>
       <trans-unit id="6002">
@@ -434,12 +434,12 @@
       </trans-unit>
       <trans-unit id="ProductDetails">
         <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="needs-review-translation">F# 4.1 için Microsoft Visual F# Tools 10.1</target>
+        <target state="translated">F# 4.5 için Microsoft Visual F# Tools 10.2</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
         <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="needs-review-translation">F# 4.1 için Microsoft Visual F# Tools 10.1</target>
+        <target state="translated">F# 4.5 için Microsoft Visual F# Tools 10.2</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -454,12 +454,12 @@
       </trans-unit>
       <trans-unit id="9001">
         <source>Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="needs-review-translation">F# 4.1 için Visual F# Araçları 10.1</target>
+        <target state="translated">F# 4.5 için Visual F# Tools 10.2</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# Etkileşimli</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductRegistryName">
@@ -509,7 +509,7 @@
       </trans-unit>
       <trans-unit id="6005">
         <source>Change path and command line arguments passed to the F# Interactive</source>
-        <target state="translated">Yolu ve F# Interactive'e geçirilen komut satırı bağımsız değişkenlerini değiştir</target>
+        <target state="translated">Yolu ve F# Etkileşimli'ye geçirilen komut satırı bağımsız değişkenlerini değiştir</target>
         <note />
       </trans-unit>
       <trans-unit id="6006">
