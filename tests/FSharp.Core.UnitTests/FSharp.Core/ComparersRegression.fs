@@ -1742,7 +1742,7 @@ module ComparersRegression =
             make_result_set f items (Some expected) |> ignore
         with
         | ValidationException(lhs=lhs; rhs=rhs; expected=expected; received=received) ->
-            failwith <| sprintf "args(%O, %O) Expected=%O. Received=%O." lhs rhs expected received
+            failwith <| String.Format("args({0}, {1}) Expected={2}. Received={3}.", lhs, rhs, expected, received)
 
 open ComparersRegression
 

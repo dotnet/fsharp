@@ -935,7 +935,7 @@ type SeqModule() =
         Assert.AreEqual("E", foldStr)
         
         // single element
-        let funcStr2 elem acc = sprintf "%s%s" elem acc
+        let funcStr2 elem acc = String.Format("{0}{1}", elem, acc)
         let strSeq2 = seq [ "A" ]
         let foldStr2 = Seq.foldBack funcStr2 strSeq2 "X"
         Assert.AreEqual("AX", foldStr2)
@@ -965,7 +965,7 @@ type SeqModule() =
         Assert.AreEqual(164, resultInt)
 
         // string Seq
-        let funcStr = sprintf "%s%s%s"
+        let funcStr x y z = String.Format("{0}{1}{2}", x, y, z)
         let strSeq = seq [ "A"; "B"; "C"; "D" ]
         let resultStr = Seq.foldBack2  funcStr strSeq (seq [ "a"; "b"; "c"; "d"]) "*"
         Assert.AreEqual("AaBbCcDd*", resultStr)

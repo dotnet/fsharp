@@ -470,7 +470,7 @@ type SeqModule2() =
         Assert.AreEqual(105, resultIntAcc)
 
         // string Seq
-        let funcStr acc (x:string) = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let funcStr acc (x:string) = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), String.Format("{0}{1}", acc, x)
         let resultStr,resultStrAcc = Seq.mapFold funcStr "" <| seq [ "";"BB";"C";"" ]
         VerifySeqsEqual (seq [ "empty";"bb";"c";"empty" ]) resultStr
         Assert.AreEqual("BBC", resultStrAcc)
@@ -495,7 +495,7 @@ type SeqModule2() =
         Assert.AreEqual(106, resultIntAcc)
 
         // string Seq
-        let funcStr (x:string) acc = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let funcStr (x:string) acc = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), String.Format("{0}{1}", acc, x)
         let resultStr,resultStrAcc = Seq.mapFoldBack funcStr (seq [ "";"BB";"C";"" ]) ""
         VerifySeqsEqual (seq [ "empty";"bb";"c";"empty" ]) resultStr
         Assert.AreEqual("CBB", resultStrAcc)
@@ -1021,7 +1021,7 @@ type SeqModule2() =
         Assert.AreEqual("E", reduceStr)
         
         // string Seq
-        let funcStr2 elem acc = sprintf "%s%s" elem acc
+        let funcStr2 elem acc = String.Format("{0}{1}", elem, acc)
         let strSeq2 = seq [ "A" ]
         let reduceStr2 = Seq.reduceBack  funcStr2 strSeq2
         Assert.AreEqual("A", reduceStr2)

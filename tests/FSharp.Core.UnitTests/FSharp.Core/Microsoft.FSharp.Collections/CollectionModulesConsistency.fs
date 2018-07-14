@@ -15,8 +15,8 @@ let smallerSizeCheck testable = Check.One({ Config.QuickThrowOnFailure with EndS
 
 /// helper function that creates labeled FsCheck properties for equality comparisons
 let consistency name sqs ls arr =
-    (sqs = arr) |@ (sprintf  "Seq.%s = '%A', Array.%s = '%A'" name sqs name arr) .&. 
-    (ls  = arr) |@ (sprintf "List.%s = '%A', Array.%s = '%A'" name ls name arr)
+    (sqs = arr) |@ (String.Format("Seq.{0} = '{1}', Array.{0} = '{2}'", name, sqs, arr)) .&. 
+    (ls  = arr) |@ (String.Format("List.{0} = '{1}', Array.{0} = '{2}'", name, ls, arr))
 
 
 let allPairs<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =

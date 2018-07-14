@@ -228,7 +228,7 @@ type ListModule02() =
         Assert.AreEqual(101, resultIntAcc)
 
         // string List
-        let funcStr acc (x:string) = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let funcStr acc (x:string) = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), String.Format("{0}{1}", acc, x)
         let resultStr,resultStrAcc = List.mapFold funcStr "" ["";"BB";"C";""]
         Assert.AreEqual(["empty";"bb";"c";"empty"], resultStr)
         Assert.AreEqual("BBC", resultStrAcc)
@@ -254,7 +254,7 @@ type ListModule02() =
         Assert.AreEqual(102, resultIntAcc)
 
         // string List
-        let funcStr (x:string) acc = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let funcStr (x:string) acc = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), String.Format("{0}{1}", acc, x)
         let resultStr,resultStrAcc = List.mapFoldBack funcStr ["";"BB";"C";""] ""
         Assert.AreEqual(["empty";"bb";"c";"empty"], resultStr)
         Assert.AreEqual("CBB", resultStrAcc)

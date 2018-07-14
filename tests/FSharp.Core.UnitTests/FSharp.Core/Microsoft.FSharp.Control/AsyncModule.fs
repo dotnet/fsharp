@@ -112,7 +112,7 @@ module ChoiceUtils =
             verifyIndex index
             match ops.[index] with
             | SomeResultAfter timeout -> Assert.AreEqual(getMinTime(), timeout)
-            | op -> Assert.Fail <| sprintf "Should be 'Some' but got %A" op
+            | op -> Assert.Fail <| String.Format("Should be 'Some' but got {0}", op)
 
         | Choice1Of2 None ->
             Assert.True(ops |> List.forall (function NoneResultAfter _ -> true | _ -> false))
@@ -126,9 +126,9 @@ module ChoiceUtils =
             verifyIndex index
             match ops.[index] with
             | ExceptionAfter timeout -> Assert.AreEqual(getMinTime(), timeout)
-            | op -> Assert.Fail <| sprintf "Should be 'Exception' but got %A" op
+            | op -> Assert.Fail <| String.Format("Should be 'Exception' but got {0}", op)
 
-        | Choice2Of2 e -> Assert.Fail(sprintf "Unexpected exception %O" e)
+        | Choice2Of2 e -> Assert.Fail(String.Format("Unexpected exception {0}", e))
 
         // Step 3b. check that nested cancellation happens as expected
         if not <| List.isEmpty ops then
@@ -238,7 +238,7 @@ type AsyncModule() =
 
         let endTime = DateTime.UtcNow
         let delta = endTime - startTime
-        Assert.IsTrue(delta.TotalMilliseconds < 1100.0, sprintf "Expected faster timeout than %.0f ms" delta.TotalMilliseconds)
+        Assert.IsTrue(delta.TotalMilliseconds < 1100.0, String.Format("Expected faster timeout than {0:F0} ms", delta.TotalMilliseconds))
 
     [<Test>]
     member this.``AwaitWaitHandle.TimeoutWithCancellation``() = 
@@ -275,10 +275,10 @@ type AsyncModule() =
         let test = async {
             try
                 let! timeout = Async.AwaitWaitHandle wh
-                Assert.Fail(sprintf "Unexpected success %A" timeout)
+                Assert.Fail(String.Format("Unexpected success {0}", timeout))
             with
                 | :? ObjectDisposedException -> ()
-                | e -> Assert.Fail(sprintf "Unexpected error %A" e)
+                | e -> Assert.Fail(String.Format("Unexpected error {0}", e))
             }
         Async.RunSynchronously test
     

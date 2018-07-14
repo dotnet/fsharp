@@ -15,10 +15,10 @@ open NUnit.Framework
 let CheckThrowsExn<'a when 'a :> exn> (f : unit -> unit) =
     try
         let _ = f ()
-        sprintf "Expected %O exception, got no exception" typeof<'a> |> Assert.Fail 
+        String.Format("Expected {0} exception, got no exception", typeof<'a>) |> Assert.Fail 
     with
     | :? 'a -> ()
-    | e -> sprintf "Expected %O exception, got: %O" typeof<'a> e |> Assert.Fail
+    | e -> String.Format("Expected {0} exception, got: {1}", typeof<'a>, e) |> Assert.Fail
 
 let private CheckThrowsExn2<'a when 'a :> exn> s (f : unit -> unit) =
     let funcThrowsAsExpected =
@@ -102,10 +102,10 @@ module SurfaceArea =
                 } |> Array.ofSeq
 
             getMembers t
-            |> Array.map (fun (ty, m) -> sprintf "%s: %s" (ty.ToString()) (m.ToString()))
+            |> Array.map (fun (ty, m) -> String.Format("{0}: {1}", ty, m))
 #else
             t.GetMembers()
-            |> Array.map (fun v -> sprintf "%s: %s" (v.ReflectedType.ToString()) (v.ToString()))
+            |> Array.map (fun v -> String.Format("{0}: {1}", v.ReflectedType, v))
 #endif
             
         let actual =
@@ -143,7 +143,7 @@ module SurfaceArea =
 
         let logFile =
             let workDir = TestContext.CurrentContext.WorkDirectory
-            sprintf "%s\\CoreUnit_%s_Xml.xml" workDir platform
+            String.Format("{0}\\CoreUnit_{1}_Xml.xml", workDir, platform)
 
         // The surface areas don't match; prepare an easily-readable output message.
         let msg =

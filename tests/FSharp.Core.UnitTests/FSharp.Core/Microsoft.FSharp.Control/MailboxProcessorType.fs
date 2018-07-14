@@ -92,7 +92,7 @@ type MailboxProcessorType() =
 
                     while true do
                         let! (msg : int) = inbox.Receive ()
-                        addMsg (sprintf "Received %i" msg)
+                        addMsg (String.Format("Received {0}", msg))
                 }, cancellationToken = cts.Token)
 
         mb.Post 1
@@ -125,7 +125,7 @@ type MailboxProcessorType() =
 
                     while true do
                         let! (msg : int) = inbox.Receive (100000)
-                        addMsg (sprintf "Received %i" msg)
+                        addMsg (String.Format("Received {0}", msg))
                 }, cancellationToken = cts.Token)
 
         mb.Post 1
@@ -158,7 +158,7 @@ type MailboxProcessorType() =
 
                     while true do
                         let! (msg : int) = inbox.Scan (fun msg -> Some(async { return msg }) )
-                        addMsg (sprintf "Scanned %i" msg)
+                        addMsg (String.Format("Scanned {0}", msg))
                 }, cancellationToken = cts.Token)
 
         mb.Post 1
