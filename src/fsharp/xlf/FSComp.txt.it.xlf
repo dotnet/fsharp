@@ -7012,11 +7012,6 @@
         <target state="translated">In questo punto non è possibile usare l'indirizzo della variabile '{0}' o un'espressione correlata. Questo serve ad assicurare che l'indirizzo del valore locale non ignori il relativo ambito.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="translated">Questa funzione o questo metodo non può restituire l'espressione Span o IsByRefLike perché è composta usando elementi che potrebbero ignorare il relativo ambito.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
         <target state="translated">Non è possibile assegnare questo valore perché l'elemento '{0}' di destinazione può fare riferimento alla memoria locale non stack, mentre l'espressione da assegnare viene valutata in modo da fare potenzialmente riferimento alla memoria locale stack. Tale comportamento consente di evitare puntatori a memoria associata allo stack che ignorano il relativo ambito.</target>

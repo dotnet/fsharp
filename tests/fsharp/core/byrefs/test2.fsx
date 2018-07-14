@@ -93,10 +93,7 @@ module NegativeTests =
         let f = fun () -> &x // not allowed
         
         ()
-#endif
-
-module Tests =
-
+        
     type ByRefInterface =
 
         abstract Test : byref<int> * byref<int> -> byref<int>
@@ -112,7 +109,7 @@ module Tests =
                     let obj2 =
                         { new ByRefInterface with
 
-                            member __.Test(_x,y) = &x } // is allowed
+                            member __.Test(_x,y) = &x } // is not allowed
                     a <- obj2
                     &y
             }
@@ -120,6 +117,15 @@ module Tests =
             let mutable y = 500
             obj.Test(&x, &y) |> ignore
             a
+            
+    type Beef = delegate of unit-> byref<int>
+    let testBeef () =
+        let mutable x = 1
+        let f = Beef(fun () -> &x) // is not allowed
+        ()
+#endif
+
+module Tests =
 
     let test1 () =
         let x = 1
@@ -130,12 +136,6 @@ module Tests =
         let g = fun () ->
             let y = &x // is allowed
             ()
-        ()
-
-    type Beef = delegate of unit-> byref<int>
-    let test2 () =
-        let mutable x = 1
-        let f = Beef(fun () -> &x) // is allowed
         ()
 
 let aa =

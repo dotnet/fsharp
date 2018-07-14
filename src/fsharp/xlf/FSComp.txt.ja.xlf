@@ -7012,11 +7012,6 @@
         <target state="translated">現時点で、変数 '{0}' または関連する式のアドレスは使用できません。これは、ローカル値のアドレスがスコープを回避しないようにするためです。</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="translated">この関数またはメソッドから Span または IsByRefLike 式を返すことはできません。スコープを回避できる要素を使用してその式が作成されているためです。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
         <target state="translated">この値をターゲット '{0}' に割り当てることはできません。このターゲットは非スタック ローカルのメモリを参照できるのに対して、割り当てられる式はスタック ローカルのメモリに評価される可能性があるためです。これは、スタックにバインドされたメモリへのポインターが自身のスコープを回避することを防止するために役立ちます。</target>
