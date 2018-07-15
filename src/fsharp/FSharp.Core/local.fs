@@ -756,12 +756,13 @@ module internal List =
             truncateToFreshConsTail cons2 (count-1) t
 
     let truncate count list =
-        match list with
-        | [] -> list
-        | _ :: ([] as nil) -> if count > 0 then list else nil
-        | h::t ->
-            if count <= 0 then []
-            else
+        if count <= 0 then 
+            []
+        else
+            match list with
+            | []
+            | [_] -> list
+            | h::t ->
                 let cons = freshConsNoTail h
                 truncateToFreshConsTail cons (count-1) t
                 cons
