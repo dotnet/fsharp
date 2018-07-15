@@ -24,3 +24,7 @@ test2.fsx(93,28,93,29): typecheck error FS0421: The address of the variable 'x' 
 test2.fsx(93,17,93,29): typecheck error FS0425: The type of a first-class function cannot contain byrefs
 
 test2.fsx(93,17,93,29): typecheck error FS0425: The type of a first-class function cannot contain byrefs
+
+test2.fsx(112,53,112,54): typecheck error FS3209: The address of the variable 'x' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
+
+test2.fsx(124,33,124,34): typecheck error FS3209: The address of the variable 'x' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.

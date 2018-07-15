@@ -7012,11 +7012,6 @@
         <target state="translated">Bu noktada '{0}' değişkeninin veya ilgili bir değişkenin adresi kullanılamaz. Bunun amacı, yerel değerin adresinin kapsamı dışına kaçmasını engellemektir.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="translated">Span veya IsByRefLike ifadesi kapsamından kaçabilecek öğeler kullanılarak oluşturulduğundan, bu işlev veya metottan döndürülemez.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
         <target state="translated">'{0}' hedefi yığında yerel olmayan belleğe başvurabileceğinden ve atanmakta olan ifadenin yığında yerel belleğe başvurma olasılığının olduğu tespit edildiğinden bu değer atanamaz. Bunun amacı, yığınla sınırlı belleğe yönelik işaretçilerin kapsamlarından kaçmasının önlenmesine yardımcı olmaktır.</target>

@@ -7012,11 +7012,6 @@
         <target state="translated">На этом этапе невозможно использовать адрес переменной "{0}" или связанного выражения. В этом случае гарантируется, что адрес локального значения не обходит свою область.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="translated">Выражение Span или IsByRefLike не может быть возвращено этой функцией или методом, так как оно создано с помощью элементов, которые могут обходить свою область.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
         <target state="translated">Это значение не может быть назначено, так как целевой элемент "{0}" может ссылаться на отличную от локальной для стека память, тогда как назначаемое выражение оценивается как потенциально ссылающееся на локальную для стека память. В этом случае гарантируется, что указатели на привязанную к стеку память не обходят свою область.</target>
