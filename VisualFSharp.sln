@@ -145,6 +145,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSharp.PatternMatcher", "vs
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Legacy", "Legacy", "{CCAB6E50-34C6-42AF-A6B0-567C29FCD91B}"
 EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "GetTypesVSUnitTests", "vsintegration\tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj", "{6D93CEBD-4540-4D96-A153-B440A661FD09}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -569,6 +571,14 @@ Global
 		{18227628-DF90-4C47-AF3D-CC72D2EDD986}.Release|Any CPU.Build.0 = Release|Any CPU
 		{18227628-DF90-4C47-AF3D-CC72D2EDD986}.Release|x86.ActiveCfg = Release|Any CPU
 		{18227628-DF90-4C47-AF3D-CC72D2EDD986}.Release|x86.Build.0 = Release|Any CPU
+		{6D93CEBD-4540-4D96-A153-B440A661FD09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D93CEBD-4540-4D96-A153-B440A661FD09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D93CEBD-4540-4D96-A153-B440A661FD09}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6D93CEBD-4540-4D96-A153-B440A661FD09}.Debug|x86.Build.0 = Debug|Any CPU
+		{6D93CEBD-4540-4D96-A153-B440A661FD09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D93CEBD-4540-4D96-A153-B440A661FD09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D93CEBD-4540-4D96-A153-B440A661FD09}.Release|x86.ActiveCfg = Release|Any CPU
+		{6D93CEBD-4540-4D96-A153-B440A661FD09}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -634,6 +644,7 @@ Global
 		{B0689A4E-07D8-494D-A0C8-791CB1D74E54} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 		{18227628-DF90-4C47-AF3D-CC72D2EDD986} = {4C7B48D7-19AF-4AE7-9D1D-3BB289D5480D}
 		{CCAB6E50-34C6-42AF-A6B0-567C29FCD91B} = {4C7B48D7-19AF-4AE7-9D1D-3BB289D5480D}
+		{6D93CEBD-4540-4D96-A153-B440A661FD09} = {F7876C9B-FB6A-4EFB-B058-D6967DB75FB2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {48EDBBBE-C8EE-4E3C-8B19-97184A487B37}

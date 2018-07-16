@@ -907,23 +907,7 @@ let TcConst cenv ty m env c =
     | SynConst.Bytes _ -> error (InternalError(FSComp.SR.tcUnexpectedConstByteArray(), m))
  
 /// Convert an Abstract IL ILFieldInit value read from .NET metadata to a TAST constant
-let TcFieldInit (_m:range) lit = 
-    match lit with 
-    | ILFieldInit.String s -> Const.String s
-    | ILFieldInit.Null -> Const.Zero
-    | ILFieldInit.Bool b -> Const.Bool b
-    | ILFieldInit.Char c -> Const.Char (char (int c))
-    | ILFieldInit.Int8 x -> Const.SByte x
-    | ILFieldInit.Int16 x -> Const.Int16 x
-    | ILFieldInit.Int32 x -> Const.Int32 x
-    | ILFieldInit.Int64 x -> Const.Int64 x
-    | ILFieldInit.UInt8 x -> Const.Byte x
-    | ILFieldInit.UInt16 x -> Const.UInt16 x
-    | ILFieldInit.UInt32 x -> Const.UInt32 x
-    | ILFieldInit.UInt64 x -> Const.UInt64 x
-    | ILFieldInit.Single f -> Const.Single f
-    | ILFieldInit.Double f -> Const.Double f 
-
+let TcFieldInit (_m:range) lit = PatternMatchCompilation.ilFieldToTastConst lit
 
 //-------------------------------------------------------------------------
 // Arities. These serve two roles in the system: 
@@ -9790,9 +9774,11 @@ and TcMethodApplication
        if isByrefTy g calledArgTy && isRefCellTy g callerArgTy then 
            None, Expr.Op(TOp.RefAddrGet false, [destRefCellTy g callerArgTy], [callerArgExpr], m) 
 
+#if IMPLICIT_ADDRESS_OF
        elif isInByrefTy g calledArgTy && not (isByrefTy cenv.g callerArgTy) then 
            let wrap, callerArgExprAddress, _readonly, _writeonly = mkExprAddrOfExpr g true false NeverMutates callerArgExpr None m
            Some wrap, callerArgExprAddress
+#endif
 
        elif isDelegateTy cenv.g calledArgTy && isFunTy cenv.g callerArgTy then 
            None, CoerceFromFSharpFuncToDelegate cenv.g cenv.amap cenv.infoReader ad callerArgTy m callerArgExpr calledArgTy
