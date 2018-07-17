@@ -14,7 +14,7 @@ rem Build typeprovider package with desktop compiler
 rem Test it with both desktop and coreclr compilers
 rem
 
-if not '%NUGET_PACKAGES%' == '' rd %NUGET_PACKAGES%\basicprovider /s /q
+if not '%NUGET_PACKAGES%' == '' rd %NUGET_PACKAGES%\ComboProvider /s /q
 
 @echo %__scriptpath%..\..\..\tools\dotnet20\dotnet.exe pack ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:FSharpTestCompilerVersion=net40
 %__scriptpath%..\..\..\tools\dotnet20\dotnet.exe pack ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:FSharpTestCompilerVersion=net40
@@ -32,10 +32,10 @@ rem
 rem Build typeprovider package with coreclr compiler
 rem Test it with both desktop and coreclr compilers
 rem
-if not '%NUGET_PACKAGES%' == '' rd %NUGET_PACKAGES%\basicprovider /s /q
+if not '%NUGET_PACKAGES%' == '' rd %NUGET_PACKAGES%\ComboProvider /s /q
 
 @echo %__scriptpath%..\..\..\tools\dotnet20\dotnet.exe pack ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:FSharpTestCompilerVersion=coreclr
-%__scriptpath%..\..\..\tools\dotnet20\dotnet.exe pack ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c release -v minimal FSharpTestCompilerVersion
+%__scriptpath%..\..\..\tools\dotnet20\dotnet.exe pack ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:FSharpTestCompilerVersion=coreclr
 @if ERRORLEVEL 1 echo Error: ComboProviderProvider failed  && goto :failure
 
 @echo%__scriptpath%..\..\..\tools\dotnet20\dotnet.exe test ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=net461 -p:FSharpTestCompilerVersion=net40
