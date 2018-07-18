@@ -280,7 +280,7 @@ type CancellationType() =
 
         try
             let res = t.Wait(1000)
-            Assert.Fail (sprintf "Excepted TimeoutException wrapped in an AggregateException, but got %A" res)
+            Assert.Fail (String.Format("Excepted TimeoutException wrapped in an AggregateException, but got {0}", res))
         with :? AggregateException as agg -> ()
 
     [<Test>]

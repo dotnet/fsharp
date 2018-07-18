@@ -165,7 +165,7 @@ type ArrayModule2() =
         Assert.AreEqual(105, resultIntAcc)
 
         // string array
-        let funcStr acc (x:string) = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let funcStr acc (x:string) = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), String.Format("{0}{1}", acc, x)
         let resultStr,resultStrAcc = Array.mapFold funcStr "" [| "";"BB";"C";"" |]
         if resultStr <> [| "empty";"bb";"c";"empty" |] then Assert.Fail()
         Assert.AreEqual("BBC", resultStrAcc)
@@ -190,7 +190,7 @@ type ArrayModule2() =
         Assert.AreEqual(106, resultIntAcc)
 
         // string array
-        let funcStr (x:string) acc = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let funcStr (x:string) acc = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), String.Format("{0}{1}", acc, x)
         let resultStr,resultStrAcc = Array.mapFoldBack funcStr [| "";"BB";"C";"" |] ""
         if resultStr <> [| "empty";"bb";"c";"empty" |] then Assert.Fail()
         Assert.AreEqual("CBB", resultStrAcc)

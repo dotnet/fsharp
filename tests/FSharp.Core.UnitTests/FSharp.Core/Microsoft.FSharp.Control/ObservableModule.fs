@@ -278,8 +278,8 @@ type ObservableModule() =
                                                           else          Choice2Of2(i.ToString(), i.ToString()))
                  
         let lastResult = ref ""
-        positiveEvent.Add(fun (msg, i)    -> lastResult := sprintf "Positive [%s][%d]" msg i)
-        negativeEvent.Add(fun (msg, msg2) -> lastResult := sprintf "Negative [%s][%s]" msg msg2)
+        positiveEvent.Add(fun (msg, i)    -> lastResult := String.Format("Positive [{0}][{1}]", msg, i))
+        negativeEvent.Add(fun (msg, msg2) -> lastResult := String.Format("Negative [{0}][{1}]", msg, msg2))
         
         numEvent.Trigger(10)
         Assert.AreEqual("Positive [10][10]", !lastResult)
