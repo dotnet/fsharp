@@ -954,6 +954,9 @@ namespace Microsoft.FSharp.Core
         /// <summary>Make an F# comparer object for the given type, where it can be null if System.Collections.Generic.Comparer&lt;'T&gt;.Default</summary>
         val internal FastGenericComparerInternal<'T>  : System.Collections.Generic.Comparer<'T> when 'T : comparison 
 
+        /// As an optimization, determine if a fast unstable sort can be used with equivalent results
+        val internal EquivalentForStableAndUnstableSort<'T> : bool
+
         /// <summary>Make an F# hash/equality object for the given type</summary>
         val inline FastGenericEqualityComparer<'T> : System.Collections.Generic.IEqualityComparer<'T> when 'T : equality
 
