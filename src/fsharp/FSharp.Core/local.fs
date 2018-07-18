@@ -1141,8 +1141,7 @@ module internal Array =
         let len = array.Length 
         if len < 2 then () 
         else
-            let cFast = LanguagePrimitives.FastGenericComparerInternal<'T>
-            if obj.ReferenceEquals (cFast, System.Collections.Generic.Comparer<'T>.Default) then
+            if LanguagePrimitives.EquivalentForStableAndUnstableSort<'T> then
                 // An optimization for the cases where the keys and values coincide and do not have identity, e.g. are integers
                 // In this case an unstable sort is just as good as a stable sort (and faster)
                 Array.Sort<_,_>(array, null)
