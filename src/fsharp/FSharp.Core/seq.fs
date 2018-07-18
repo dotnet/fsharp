@@ -1032,6 +1032,8 @@ namespace Microsoft.FSharp.Collections
         let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (seq:seq<'T>) =
             checkNonNull "seq" seq
 
+            if isEmpty seq then empty else
+
             let dict = Dictionary<_,ResizeArray<_>> comparer
 
             // Previously this was 1, but I think this is rather stingy, considering that we are already paying
