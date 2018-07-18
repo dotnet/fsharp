@@ -1330,6 +1330,21 @@ namespace Microsoft.FSharp.Core
                         | ComparisonUsage.GreaterThanUsage -> maybeNaNExceptionComparer comparer GreaterThanUsageReturnFalse
                         | _ -> comparer
 
+            /// As an optimization, determine if a fast unstable sort can be used with equivalent results
+            let equivalentForStableAndUnstableSort (ty:Type) =
+                ty.Equals(typeof<byte>)      
+                || ty.Equals(typeof<char>)      
+                || ty.Equals(typeof<sbyte>)      
+                || ty.Equals(typeof<int16>)     
+                || ty.Equals(typeof<int32>)     
+                || ty.Equals(typeof<int64>)     
+                || ty.Equals(typeof<uint16>)    
+                || ty.Equals(typeof<uint32>)    
+                || ty.Equals(typeof<uint64>)    
+                || ty.Equals(typeof<float>)     
+                || ty.Equals(typeof<float32>)   
+                || ty.Equals(typeof<decimal>)   
+
             [<AbstractClass; Sealed>]
             type FSharpComparer_ER<'T> private () =
                 static let comparer = getGenericComparison<'T> ComparisonUsage.ERUsage true
@@ -1337,8 +1352,10 @@ namespace Microsoft.FSharp.Core
 
             [<AbstractClass; Sealed>]
             type FSharpComparer_InternalUse_ER<'T> private () =
+                static let equivalentForStableAndUnstableSort = equivalentForStableAndUnstableSort typeof<'T>
                 static let comparer = getGenericComparison<'T> ComparisonUsage.ERUsage false
                 static member Comparer = comparer
+                static member EquivalentForStableAndUnstableSort = equivalentForStableAndUnstableSort
 
             [<AbstractClass; Sealed>]
             type FSharpComparer_PER<'T> private () =
@@ -2410,6 +2427,8 @@ namespace Microsoft.FSharp.Core
             
         let FastGenericComparerInternal<'T> : Comparer<'T> = 
             HashCompare.FSharpComparer_InternalUse_ER<'T>.Comparer
+        let EquivalentForStableAndUnstableSort<'T> : bool = 
+            HashCompare.FSharpComparer_InternalUse_ER<'T>.EquivalentForStableAndUnstableSort
 
         //-------------------------------------------------------------------------
         // LanguagePrimitives: ENUMS
