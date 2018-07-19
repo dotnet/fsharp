@@ -6708,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
-        <source>Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.</source>
-        <target state="translated">用於非同步工作流程，以將名稱繫結到非同步計算的結果，或在其他計算運算式中，用於將名稱繫結到屬於計算類型的結果。</target>
+        <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
+        <target state="review-required-translation">用於非同步工作流程，以將名稱繫結到非同步計算的結果，或在其他計算運算式中，用於將名稱繫結到屬於計算類型的結果。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6788,13 +6788,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
-        <source>Used to indicate a value to provide as the result of a computation expression.</source>
-        <target state="translated">用以指出要作為計算運算式結果提供的值。</target>
+        <source>Used to provide a value for the result of the containing computation expression.</source>
+        <target state="review-required-translation">用以指出要作為計算運算式結果提供的值。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
-        <source>Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.</source>
-        <target state="translated">用以指出在評估時提供內含計算運算式結果的計算運算式。</target>
+        <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
+        <target state="review-required-translation">用以指出在評估時提供內含計算運算式結果的計算運算式。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6843,8 +6843,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
-        <source>Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.</source>
-        <target state="translated">用來在非同步工作流程或其他計算運算式中，對需要 Dispose 才能呼叫以釋放資源的值取代 let!。</target>
+        <source>Used instead of let! in computation expressions for values that require Dispose to be called to free resources.</source>
+        <target state="review-required-translation">用來在非同步工作流程或其他計算運算式中，對需要 Dispose 才能呼叫以釋放資源的值取代 let!。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">
