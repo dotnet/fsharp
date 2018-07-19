@@ -17326,7 +17326,6 @@ let TypeCheckOneImplFile
                 try IL.parseILVersion version |> ignore; true
                 with _ -> false
             match attrName with
-            | "System.Reflection.AssemblyInformationalVersionAttribute"
             | "System.Reflection.AssemblyFileVersionAttribute" //TODO compile error like c# compiler?
             | "System.Reflection.AssemblyVersionAttribute" when not (isValid()) ->
                 warning(Error(FSComp.SR.fscBadAssemblyVersion(attrName, version), range))
