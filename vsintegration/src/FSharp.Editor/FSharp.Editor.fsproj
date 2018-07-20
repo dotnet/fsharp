@@ -9,6 +9,7 @@
     <CreateVsixContainer>false</CreateVsixContainer>
     <NoWarn>$(NoWarn);75</NoWarn>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <OtherFlags>$(OtherFlags) --warnon:1182 --subsystemversion:6.00</OtherFlags>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
@@ -103,6 +104,11 @@
     <Compile Include="Build\SetGlobalPropertiesForSdkProjects.fs" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fsi" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fs" />
+    <Compile Include="CodeLens\AbstractCodeLensDisplayService.fs" />
+    <Compile Include="CodeLens\CodeLensGeneralTagger.fs" />
+    <Compile Include="CodeLens\LineLensDisplayService.fs" />
+    <Compile Include="CodeLens\FSharpCodeLensService.fs" />
+    <Compile Include="CodeLens\CodeLensProvider.fs" />
   </ItemGroup>
 
   <ItemGroup>

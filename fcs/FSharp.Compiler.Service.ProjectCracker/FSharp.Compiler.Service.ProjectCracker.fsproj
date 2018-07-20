@@ -6,6 +6,7 @@
   <Import Project="..\netfx.props" />
   <PropertyGroup>
     <TargetFrameworks>net45</TargetFrameworks>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <OutputPath>..\..\$(Configuration.ToLower())\fcs</OutputPath>
   </PropertyGroup>
   <PropertyGroup>

@@ -7012,11 +7012,6 @@
         <target state="translated">Adresa proměnné {0} nebo související výraz nejde v tomto bodě použít. Je tím zajištěno, aby adresa lokální hodnoty neunikla ze svého rozsahu.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="translated">Výraz Span nebo IsByRefLike nejde vrátit z této funkce nebo metody, protože se skládá pomocí elementů, které můžou uniknout ze svého rozsahu.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
         <target state="translated">Tuto hodnotu nejde přiřadit, protože cíl {0} může odkazovat na paměť, která nepoužívá lokální zásobník (non-stack-local), zatímco přiřazovaný výraz je vyhodnocený tak, že může případně odkazovat na paměť s lokálním zásobníkem (stack-local). Díky tomu se zabraňuje, aby ukazatele na paměť svázanou se zásobníkem (stack-bound) unikly ze svého rozsahu.</target>
@@ -7059,7 +7054,7 @@
       </trans-unit>
       <trans-unit id="tastCantTakeAddressOfExpression">
         <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
-        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
+        <target state="translated">Adresa hodnoty vrácená výrazem nejde převzít. Před převzetím adresy přiřaďte vrácenou hodnotu hodnotě s vazbou na klauzuli Let.</target>
         <note />
       </trans-unit>
     </body>
