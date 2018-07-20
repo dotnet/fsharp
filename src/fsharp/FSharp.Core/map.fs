@@ -16,14 +16,6 @@ namespace Microsoft.FSharp.Collections
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module MapTree = 
-
-        let rec sizeAux acc m = 
-            match m with  
-            | MapEmpty -> acc
-            | MapNode(_,_,l,r,_) -> sizeAux (sizeAux (acc+1) l) r 
-
-        let size x = sizeAux 0 x
-
     #if TRACE_SETS_AND_MAPS
         let mutable traceCount = 0
         let mutable numOnes = 0
@@ -59,34 +51,30 @@ namespace Microsoft.FSharp.Collections
 
         let empty = MapEmpty 
 
-        let makeLeafNode k v = MapNode(k,v,MapEmpty,MapEmpty,1)
+        let mkLeaf k v =
+            MapNode (k, v, MapEmpty, MapEmpty, 1)
 
-        let height  = function
-          | MapEmpty -> 0
-          | MapNode(_,_,_,_,h) -> h
+        let size x =
+            match x with
+            | MapEmpty -> 0
+            | MapNode (_,_,_,_,h) -> h
 
         let isEmpty m = 
             match m with 
             | MapEmpty -> true
             | _ -> false
 
-        let mk l k v r = 
-            match l,r with 
-            | MapEmpty,MapEmpty -> makeLeafNode k v
-            | _ -> 
-                let hl = height l 
-                let hr = height r 
-                let m = if hl < hr then hr else hl 
-                MapNode(k,v,l,r,m+1)
+        let mk l k v r =
+            MapNode (k,v,l,r,size l + size r + 1)
 
         let rebalance t1 k v t2 =
-            let t1h = height t1 
-            let t2h = height t2 
-            if  t2h > t1h + 2 then (* right is heavier than left *)
+            let t1h = size t1 
+            let t2h = size t2 
+            if  (t2h >>> 1) > t1h then (* right is heavier than left *)
                 match t2 with 
                 | MapNode(t2k,t2v,t2l,t2r,_) -> 
                    (* one of the nodes must have height > height t1 + 1 *)
-                   if height t2l > t1h + 1 then  (* balance left: combination *)
+                   if size t2l > t1h then  (* balance left: combination *)
                      match t2l with 
                      | MapNode(t2lk,t2lv,t2ll,t2lr,_) ->
                         mk (mk t1 k v t2ll) t2lk t2lv (mk t2lr t2k t2v t2r) 
@@ -95,11 +83,11 @@ namespace Microsoft.FSharp.Collections
                      mk (mk t1 k v t2l) t2k t2v t2r
                 | _ -> failwith "rebalance"
             else
-                if  t1h > t2h + 2 then (* left is heavier than right *)
+                if (t1h >>> 1) > t2h then (* left is heavier than right *)
                   match t1 with 
                   | MapNode(t1k,t1v,t1l,t1r,_) -> 
                     (* one of the nodes must have height > height t2 + 1 *)
-                      if height t1r > t2h + 1 then 
+                      if size t1r > t2h then 
                       (* balance right: combination *)
                         match t1r with 
                         | MapNode(t1rk,t1rv,t1rl,t1rr,_) ->
@@ -112,7 +100,7 @@ namespace Microsoft.FSharp.Collections
 
         let rec add (comparer: IComparer<'Value>) k v m = 
             match m with 
-            | MapEmpty -> makeLeafNode k v
+            | MapEmpty -> mkLeaf k v
             | MapNode(k2,v2,l,r,h) -> 
                 let c = comparer.Compare(k,k2) 
                 if c < 0 then rebalance (add comparer k v l) k2 v2 r
@@ -336,7 +324,7 @@ namespace Microsoft.FSharp.Collections
             | []                           -> []
             | MapEmpty             :: rest -> collapseLHS rest
             | MapNode(_,_,MapEmpty,MapEmpty,_)         :: _ -> stack
-            | (MapNode(k,v,l,r,_)) :: rest -> collapseLHS (l :: (makeLeafNode k v) :: r :: rest)
+            | (MapNode(k,v,l,r,_)) :: rest -> collapseLHS (l :: (mkLeaf k v) :: r :: rest)
           
         let mkIterator s = { stack = collapseLHS [s]; started = false }
 
