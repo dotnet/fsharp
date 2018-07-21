@@ -273,26 +273,110 @@ namespace Microsoft.FSharp.Collections
         let foldSection (comparer: IComparer<'Value>) lo hi f m x =
             foldSectionOpt comparer lo hi (OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)) m x
 
+        // create a mapping function which indexes the array, but with duplicate values removed
+        let private getLatestAccessor (comparer:IComparer<'Key>) (keys:IReadOnlyList<'Key>) (array:IReadOnlyList<'T>) =
+            let rec getFirstDuplicateKey i =
+                if i >= array.Count-1 then None
+                elif comparer.Compare (keys.[i], keys.[i+1]) = 0 then Some i
+                else getFirstDuplicateKey (i+1)
+
+            match getFirstDuplicateKey 0 with
+            | None -> (fun i -> array.[i]), array.Count
+            | Some idx ->
+                let indexes = ResizeArray (array.Count-idx)
+                indexes.Add (idx+1)
+                for i = idx+2 to array.Count-1 do
+                    if comparer.Compare (keys.[i-1], keys.[i]) = 0 then
+                        indexes.[indexes.Count-1] <- i
+                    else
+                        indexes.Add i
+                (fun i -> if i < idx then array.[i] else array.[indexes.[i-idx]]), idx+indexes.Count
+
+        let constructViaArray comparer (data:seq<'Key*'Value>) =
+            let array = data |> Seq.toArray
+            if array.Length = 0 then MapEmpty
+            else
+                let keys = array |> Array.map fst
+
+                Microsoft.FSharp.Primitives.Basics.Array.stableSortWithKeysAndComparer comparer array keys
+
+                let getKV, count =
+                    getLatestAccessor comparer keys array
+
+                let rec loop lower upper =
+                    assert (lower <= upper)
+                    let mid = lower + (upper-lower)/2
+                    let k,v = getKV mid
+                    if mid = upper then
+                        mkLeaf k v
+                    else
+                        let right = loop (mid+1) upper
+                        if mid = lower then
+                            mk MapEmpty k v right
+                        else
+                            let left = loop lower (mid-1)
+                            mk left k v right
+
+                loop 0 (count-1)
+
         let toList m = 
             let rec loop m acc = 
                 match m with 
                 | MapEmpty -> acc
                 | MapNode(k,v,l,r,_) -> loop l ((k,v)::loop r acc)
             loop m []
-        let toArray m = m |> toList |> Array.ofList
-        let ofList comparer l = List.fold (fun acc (k,v) -> add comparer k v acc) empty l
 
-        let rec mkFromEnumerator comparer acc (e : IEnumerator<_>) = 
-            if e.MoveNext() then 
-                let (x,y) = e.Current 
-                mkFromEnumerator comparer (add comparer x y acc) e
-            else acc
+        let toArray m = m |> toList |> Array.ofList
+
+        [<Literal>]
+        let largeObjectHeapBytes = 85000
+
+        let maxInitializationObjectCount<'Key, 'Value> () =
+            largeObjectHeapBytes * 10 / 9 / sizeof<'Key*'Value> / 2
+
+        let ofList comparer (l:list<'Key*'Value>) =
+            if l |> List.isEmpty then empty
+            else
+                let chunk = ResizeArray ()
+                let maxCount = maxInitializationObjectCount<'Key, 'Value> ()
+                let rec populate x =
+                    match x with
+                    | [] -> x
+                    | hd::tl ->
+                        chunk.Add hd
+                        if chunk.Count = maxCount then tl
+                        else populate tl
+                let remainder = populate l
+                let chunkTree = constructViaArray comparer chunk
+                remainder |> List.fold (fun acc (k,v) -> add comparer k v acc) chunkTree
+
+        let ofSeqlImpl comparer (e:IEnumerator<'Key*'Value>) = 
+            if not (e.MoveNext()) then empty
+            else
+                let chunk = ResizeArray ()
+                let maxCount = maxInitializationObjectCount<'Key, 'Value> ()
+                let rec populate () =
+                    chunk.Add e.Current
+                    if chunk.Count = maxCount then true
+                    elif e.MoveNext () then populate ()
+                    else false
+
+                let more = populate ()
+                let chunkTree = constructViaArray comparer chunk
+
+                if not more then
+                    chunkTree
+                else
+                    let rec addRemainder acc =
+                        if e.MoveNext () then
+                            let x, y = e.Current
+                            addRemainder (add comparer x y acc)
+                        else
+                            acc
+                    addRemainder chunkTree
           
         let ofArray comparer (arr : array<_>) =
-            let mutable res = empty
-            for (x,y) in arr do
-                res <- add comparer x y res 
-            res
+            constructViaArray comparer arr
 
         let ofSeq comparer (c : seq<'Key * 'T>) =
             match c with 
@@ -300,7 +384,7 @@ namespace Microsoft.FSharp.Collections
             | :? list<'Key * 'T> as xs -> ofList comparer xs
             | _ -> 
                 use ie = c.GetEnumerator()
-                mkFromEnumerator comparer empty ie 
+                ofSeqlImpl comparer ie 
 
           
         let copyToArray s (arr: _[]) i =

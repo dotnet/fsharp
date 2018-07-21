@@ -101,3 +101,5 @@ module internal Array =
     val stableSortInPlaceWith: comparer:('T -> 'T -> int) -> array:'T[] -> unit
 
     val stableSortInPlace: array:'T[] -> unit when 'T : comparison 
+
+    val stableSortWithKeysAndComparer : System.Collections.Generic.IComparer<'Key> -> array<'T> -> array<'Key> -> unit when 'Key : comparison 
