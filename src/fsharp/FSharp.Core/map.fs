@@ -51,9 +51,6 @@ namespace Microsoft.FSharp.Collections
 
         let empty = MapEmpty 
 
-        let mkLeaf k v =
-            MapNode (k, v, MapEmpty, MapEmpty, 1)
-
         let size x =
             match x with
             | MapEmpty -> 0
@@ -64,8 +61,11 @@ namespace Microsoft.FSharp.Collections
             | MapEmpty -> true
             | _ -> false
 
-        let mk l k v r =
-            MapNode (k,v,l,r,size l + size r + 1)
+        let inline mk l k v r =
+            MapNode (k,v,l,r, size l + size r + 1)
+
+        let inline mkLeaf k v =
+            MapNode (k, v, MapEmpty, MapEmpty, 1)
 
         let rebalance t1 k v t2 =
             let t1h = size t1 
