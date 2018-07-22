@@ -13,21 +13,12 @@ namespace Microsoft.FSharp.Collections
     type MapTree<'Key,'Value when 'Key : comparison > = 
         | MapEmpty 
         | MapOne of 'Key * 'Value
-        | MapNode of 'Key * 'Value * MapTree<'Key,'Value> *  MapTree<'Key,'Value> * int
+        | MapNode of 'Key * 'Value * MapTree<'Key,'Value> *  MapTree<'Key,'Value> * size:int
             // REVIEW: performance rumour has it that the data held in MapNode and MapOne should be
             // exactly one cache line. It is currently ~7 and 4 words respectively. 
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module MapTree = 
-
-        let rec sizeAux acc m = 
-            match m with  
-            | MapEmpty -> acc
-            | MapOne _ -> acc + 1
-            | MapNode(_,_,l,r,_) -> sizeAux (sizeAux (acc+1) l) r 
-
-        let size x = sizeAux 0 x
-
 
     #if TRACE_SETS_AND_MAPS
         let mutable traceCount = 0
@@ -64,10 +55,10 @@ namespace Microsoft.FSharp.Collections
 
         let empty = MapEmpty 
 
-        let height  = function
+        let size  = function
           | MapEmpty -> 0
           | MapOne _ -> 1
-          | MapNode(_,_,_,_,h) -> h
+          | MapNode (size=s) -> s
 
         let isEmpty m = 
             match m with 
@@ -78,37 +69,40 @@ namespace Microsoft.FSharp.Collections
             match l,r with 
             | MapEmpty,MapEmpty -> MapOne(k,v)
             | _ -> 
-                let hl = height l 
-                let hr = height r 
-                let m = if hl < hr then hr else hl 
-                MapNode(k,v,l,r,m+1)
+                let sl = size l 
+                let sr = size r 
+                MapNode(k,v,l,r,sl+sr+1)
 
         let rebalance t1 k v t2 =
-            let t1h = height t1 
-            let t2h = height t2 
-            if  t2h > t1h + 2 then (* right is heavier than left *)
+            let t1s = size t1 
+            let t2s = size t2 
+            if  (t2s >>> 1) > t1s then (* right is over twice as heavy as left *)
                 match t2 with 
                 | MapNode(t2k,t2v,t2l,t2r,_) -> 
-                   (* one of the nodes must have height > height t1 + 1 *)
-                   if height t2l > t1h + 1 then  (* balance left: combination *)
+                   (* one of the nodes must have size > size t1 *)
+                   if size t2l > t1s then  (* balance left: combination *)
                      match t2l with 
                      | MapNode(t2lk,t2lv,t2ll,t2lr,_) ->
                         mk (mk t1 k v t2ll) t2lk t2lv (mk t2lr t2k t2v t2r) 
-                     | _ -> failwith "rebalance"
+                     | MapOne(t2lk,t2lv) ->
+                        mk (mk t1 k v empty) t2lk t2lv (mk empty t2k t2v t2r) 
+                     | MapEmpty -> failwith "rebalance"
                    else (* rotate left *)
                      mk (mk t1 k v t2l) t2k t2v t2r
                 | _ -> failwith "rebalance"
             else
-                if  t1h > t2h + 2 then (* left is heavier than right *)
+                if (t1s >>> 1) > t2s then (* left is over twice as heavy as right *)
                   match t1 with 
                   | MapNode(t1k,t1v,t1l,t1r,_) -> 
-                    (* one of the nodes must have height > height t2 + 1 *)
-                      if height t1r > t2h + 1 then 
+                    (* one of the nodes must have size > size t2 *)
+                      if size t1r > t2s then 
                       (* balance right: combination *)
                         match t1r with 
                         | MapNode(t1rk,t1rv,t1rl,t1rr,_) ->
                             mk (mk t1l t1k t1v t1rl) t1rk t1rv (mk t1rr k v t2)
-                        | _ -> failwith "rebalance"
+                        | MapOne(t1rk,t1rv) ->
+                            mk (mk t1l t1k t1v empty) t1rk t1rv (mk empty k v t2)
+                        | MapEmpty -> failwith "rebalance"
                       else
                         mk t1l t1k t1v (mk t1r k v t2)
                   | _ -> failwith "rebalance"
