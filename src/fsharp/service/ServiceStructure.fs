@@ -2,8 +2,9 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler.Ast
 open System.Collections.Generic
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 
@@ -624,8 +625,8 @@ module Structure =
 
         /// Determine if a line is a single line or xml docummentation comment
         let (|Comment|_|) (line: string) =
-            if line.StartsWith "///" then Some XmlDoc
-            elif line.StartsWith "//" then Some SingleLine
+            if line.StartsWithOrdinal("///") then Some XmlDoc
+            elif line.StartsWithOrdinal("//") then Some SingleLine
             else None
 
         let getCommentRanges (lines: string[]) =

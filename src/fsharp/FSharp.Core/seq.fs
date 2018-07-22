@@ -852,6 +852,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Truncate")>]
         let truncate count (source: seq<'T>) =
             checkNonNull "source" source
+            if count <= 0 then empty else
             seq { let i = ref 0
                   use ie = source.GetEnumerator()
                   while !i < count && ie.MoveNext() do

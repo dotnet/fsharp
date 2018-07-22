@@ -988,7 +988,7 @@ module Pass4_RewriteAssembly =
             // Take off the variables
             let tps,vss,b,rty = stripTopLambda (b,f.Type)
             // Don't take all the variables - only up to length wf
-            let vssTake,vssDrop = List.chop wf vss
+            let vssTake,vssDrop = List.splitAt wf vss
             // put the variables back on
             let b,rty = mkMultiLambdasCore b.Range vssDrop (b,rty)
             // fHat, args 
