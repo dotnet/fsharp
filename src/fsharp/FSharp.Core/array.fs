@@ -405,10 +405,12 @@ namespace Microsoft.FSharp.Collections
             loop 0
 
         let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (array: 'T[]) =
+            let length = array.Length
+            if length = 0 then Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked 0 else
             let dict = Dictionary<_,ResizeArray<_>> comparer
 
             // Build the groupings
-            for i = 0 to (array.Length - 1) do
+            for i = 0 to length - 1 do
                 let v = array.[i]
                 let safeKey = keyf v
                 let mutable prev = Unchecked.defaultof<_>
