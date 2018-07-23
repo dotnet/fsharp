@@ -4731,6 +4731,13 @@ path:
 commaSeparatedPaths:
   | path { [$1] }
   | path COMMA commaSeparatedPaths { $1 :: $3 }
+  | path DOT LPAREN commaSeparatedPaths rparen
+  { let (LongIdentWithDots(lid,dotms)) = $1
+    List.map (fun (p: LongIdentWithDots) -> LongIdentWithDots(lid @ p.Lid, dotms @ [rhs parseState 2])) $4 }
+  | path DOT LPAREN commaSeparatedPaths rparen COMMA commaSeparatedPaths
+  { let (LongIdentWithDots(lid,dotms)) = $1
+    let subpaths = List.map (fun (p: LongIdentWithDots) -> LongIdentWithDots(lid @ p.Lid, dotms @ [rhs parseState 2])) $4
+    List.append subpaths $7 }
 
 multiPath:
   | path DOT LPAREN commaSeparatedPaths rparen
