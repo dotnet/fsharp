@@ -1138,6 +1138,7 @@ namespace Microsoft.FSharp.Collections
 
         let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:seq<'T>) =
             checkNonNull "source" source
+            if isEmpty source then empty else
 
             let dict = Dictionary comparer
 
