@@ -13,13 +13,8 @@
     <Import Project="$(MSBuildThisFileDirectory)..\build\targets\AssemblyVersions.props" />
 
     <PropertyGroup>
-        <!-- This number should only be two parts, e.g., '15.6'. -->
-        <FSharpProductVersion>$(VSAssemblyVersion.Split('.')[0]).$(VSAssemblyVersion.Split('.')[1])</FSharpProductVersion>
-        <!-- BUILD_BUILDNUMBER is passed from Microbuild. Replace by today's date and (0) if it was a local build -->
-        <BUILD_BUILDNUMBER Condition="'$(BUILD_BUILDNUMBER)' == ''">$([System.DateTime]::Now.ToString(yyyyMMdd.0))</BUILD_BUILDNUMBER>
-        <!-- Remove .DRAFT suffix if it exists in the build number -->
-        <FSharpPackageVersion>$(FSharpProductVersion).$(BUILD_BUILDNUMBER.Replace(".DRAFT", ""))</FSharpPackageVersion>
-        <!-- FSharpPackageVersion should be {F# version}.{today's date}.{build number}. Example: 4.1.20160901.3 -->
+        <!-- FSharpPackageVersion should be {VS version}.{today's date}.{build number}. Example: 15.6.20160901.3 -->
+        <FSharpPackageVersion>$(VSMajorVersion).$(VSMinorVersion).$(BUILD_BUILDNUMBER)</FSharpPackageVersion>
     </PropertyGroup>
 
     <PropertyGroup>
