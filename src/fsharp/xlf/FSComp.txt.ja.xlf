@@ -83,18 +83,18 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">リスト コンストラクター式のすべての要素は同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
+        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="needs-review-translation">リスト コンストラクター式のすべての要素は同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">配列コンストラクター式の要素はすべて同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
+        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="needs-review-translation">配列コンストラクター式の要素はすべて同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
-        <source>The 'if' expression is missing an 'else' branch. The 'then' branch has type '{0}'. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type.</source>
-        <target state="translated">'if' 式に 'else' ブランチがありません。'then' ブランチは型 '{0}' です。'if' はステートメントではなく式であるため、同じ型の値を返す 'else' ブランチを追加してください。</target>
+        <source>This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type '{0}'.</source>
+        <target state="needs-review-translation">'if' 式に 'else' ブランチがありません。'then' ブランチは型 '{0}' です。'if' はステートメントではなく式であるため、同じ型の値を返す 'else' ブランチを追加してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="ifExpression">
@@ -103,12 +103,12 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">if' 式のすべてのブランチは同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
+        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="needs-review-translation">if' 式のすべてのブランチは同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
+        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
         <target state="translated">パターン マッチ式のすべてのブランチは、同じ型の値を返す必要があります。最初のブランチが返した値の型は '{0}' ですが、このブランチが返した値の型は '{1}' です。</target>
         <note />
       </trans-unit>
