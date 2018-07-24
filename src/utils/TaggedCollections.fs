@@ -18,10 +18,10 @@ namespace Internal.Utilities.Collections.Tagged
     [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
     [<NoEquality; NoComparison>]
     type SetTree<'T> = 
-        | SetEmpty                                          // height = 0   
-        | SetNode of 'T * SetTree<'T> *  SetTree<'T> * int    // height = int 
+        | SetEmpty                                          // size = 0   
+        | SetNode of 'T * SetTree<'T> *  SetTree<'T> * size:int
 #if ONE
-        | SetOne  of 'T                                     // height = 1   
+        | SetOne  of 'T                                     // size = 1   
 #endif
         // OPTIMIZATION: store SetNode(k,SetEmpty,SetEmpty,1) --->  SetOne(k) 
 
@@ -33,13 +33,13 @@ namespace Internal.Utilities.Collections.Tagged
     module SetTree = 
         let empty = SetEmpty
 
-        let height t = 
+        let inline size t = 
             match t with 
             | SetEmpty -> 0
 #if ONE
             | SetOne _ -> 1
 #endif
-            | SetNode (_,_,_,h) -> h
+            | SetNode (size=s) -> s
 
 #if CHECKED
         let rec checkInvariant t =
@@ -55,54 +55,52 @@ namespace Internal.Utilities.Collections.Tagged
         let inline SetOne(x) = SetNode(x,SetEmpty,SetEmpty,1)
 #endif
 
-        let tolerance = 2
-
-        let mk l hl k r hr = 
+        let mk l k r = 
 #if ONE
-            if hl = 0 && hr = 0 then SetOne (k)
-            else
+            match l,r with 
+            | SetEmpty,SetEmpty -> SetOne (k)
+            | _ -> 
 #endif
-              let m = if hl < hr then hr else hl 
-              SetNode(k,l,r,m+1)
+              SetNode(k,l,r,(size l)+(size r)+1)
 
         let rebalance t1 k t2 =
-            let t1h = height t1 
-            let t2h = height t2
-            if  t2h > t1h + tolerance then // right is heavier than left 
+            let t1s = size t1 
+            let t2s = size t2 
+            if  (t2s >>> 1) > t1s then (* right is over twice as heavy as left *)
                 match t2 with 
                 | SetNode(t2k,t2l,t2r,_) -> 
-                    // one of the nodes must have height > height t1 + 1 
-                    let t2lh = height t2l
-                    if t2lh > t1h + 1 then  // balance left: combination 
-                        match t2l with 
-                        | SetNode(t2lk,t2ll,t2lr,_) ->
-                            let l = mk t1 t1h k t2ll (height t2ll)
-                            let r = mk t2lr (height t2lr) t2k t2r (height t2r)
-                            mk l (height l) t2lk r (height r)
-                        | _ -> failwith "rebalance"
-                    else // rotate left 
-                        let l = mk t1 t1h k t2l t2lh
-                        mk l (height l) t2k t2r (height t2r)
+                   (* one of the nodes must have size > size t1 *)
+                   if size t2l > t1s then  (* balance left: combination *)
+                     match t2l with 
+                     | SetNode(t2lk,t2ll,t2lr,_) ->
+                        mk (mk t1 k t2ll) t2lk (mk t2lr t2k t2r) 
+#if ONE
+                     | SetOne(t2lk) ->
+                        mk (mk t1 k empty) t2lk (mk empty t2k t2r) 
+#endif
+                     | SetEmpty -> failwith "rebalance"
+                   else (* rotate left *)
+                     mk (mk t1 k t2l) t2k t2r
                 | _ -> failwith "rebalance"
             else
-                if  t1h > t2h + tolerance then // left is heavier than right 
-                    match t1 with 
-                    | SetNode(t1k,t1l,t1r,_) -> 
-                        // one of the nodes must have height > height t2 + 1 
-                        let t1rh = height t1r
-                        if t1rh > t2h + 1 then 
-                            // balance right: combination 
-                            match t1r with 
-                            | SetNode(t1rk,t1rl,t1rr,_) ->
-                                let l = mk t1l (height t1l) t1k t1rl (height t1rl)
-                                let r = mk t1rr (height t1rr) k t2 t2h
-                                mk l (height l) t1rk r (height r)
-                            | _ -> failwith "rebalance"
-                        else
-                            let r = mk t1r t1rh k t2 t2h
-                            mk t1l (height t1l) t1k r (height r)
-                    | _ -> failwith "rebalance"
-                else mk t1 t1h k t2 t2h
+                if (t1s >>> 1) > t2s then (* left is over twice as heavy as right *)
+                  match t1 with 
+                  | SetNode(t1k,t1l,t1r,_) -> 
+                    (* one of the nodes must have size > size t2 *)
+                      if size t1r > t2s then 
+                      (* balance right: combination *)
+                        match t1r with 
+                        | SetNode(t1rk,t1rl,t1rr,_) ->
+                            mk (mk t1l t1k t1rl) t1rk (mk t1rr k t2)
+#if ONE
+                        | SetOne(t1rk) ->
+                            mk (mk t1l t1k empty) t1rk (mk empty k t2)
+#endif
+                        | SetEmpty -> failwith "rebalance"
+                      else
+                        mk t1l t1k (mk t1r k t2)
+                  | _ -> failwith "rebalance"
+                else mk t1 k t2
 
         let rec add (comparer: IComparer<'T>) k t = 
             match t with 
@@ -124,7 +122,7 @@ namespace Internal.Utilities.Collections.Tagged
         let rec balance comparer t1 k t2 =
             // Given t1 < k < t2 where t1 and t2 are "balanced",
             // return a balanced tree for <t1,k,t2>.
-            // Recall: balance means subtrees heights differ by at most "tolerance"
+            // Recall: balance means subtrees size of trees differ by a factor of 2
             match t1,t2 with
             | SetEmpty,t2  -> add comparer k t2 // drop t1 = empty 
             | t1,SetEmpty  -> add comparer k t1 // drop t2 = empty 
@@ -132,22 +130,22 @@ namespace Internal.Utilities.Collections.Tagged
             | SetOne k1,t2 -> add comparer k (add comparer k1 t2)
             | t1,SetOne k2 -> add comparer k (add comparer k2 t1)
 #endif
-            | SetNode(k1,t11,t12,t1h),SetNode(k2,t21,t22,t2h) ->
+            | SetNode(k1,t11,t12,s1),SetNode(k2,t21,t22,s2) ->
                 // Have:  (t11 < k1 < t12) < k < (t21 < k2 < t22)
-                // Either (a) h1,h2 differ by at most 2 - no rebalance needed.
-                //        (b) h1 too small, i.e. h1+2 < h2
-                //        (c) h2 too small, i.e. h2+2 < h1 
-                if   t1h+tolerance < t2h then
+                // Either (a) h1,h2 differ by at most a factory of 2 - no rebalance needed.
+                //        (b) h1 too small
+                //        (c) h2 too small
+                if   (s2 >>> 1) > s1 then 
                     // case: b, h1 too small 
                     // push t1 into low side of t2, may increase height by 1 so rebalance 
                     rebalance (balance comparer t1 k t21) k2 t22
-                elif t2h+tolerance < t1h then
+                elif (s1 >>> 1) > s2 then
                     // case: c, h2 too small 
                     // push t2 into high side of t1, may increase height by 1 so rebalance 
                     rebalance t11 k1 (balance comparer t12 k t2)
                 else
                     // case: a, h1 and h2 meet balance requirement 
-                    mk t1 t1h k t2 t2h
+                    mk t1 k t2
 
         let rec split (comparer : IComparer<'T>) pivot t =
             // Given a pivot and a set t
@@ -182,7 +180,7 @@ namespace Internal.Utilities.Collections.Tagged
             | SetNode (k2,l,r,_) ->
                 match l with 
                 | SetEmpty -> k2,r
-                | _ -> let k3,l' = spliceOutSuccessor l in k3,mk l' (height l') k2 r (height r)
+                | _ -> let k3,l' = spliceOutSuccessor l in k3,mk l' k2 r
 
         let rec remove (comparer: IComparer<'T>) k t = 
             match t with 
@@ -202,7 +200,7 @@ namespace Internal.Utilities.Collections.Tagged
                   | _,SetEmpty -> l
                   | _ -> 
                       let sk,r' = spliceOutSuccessor r 
-                      mk l (height l) sk r' (height r')
+                      mk l sk r'
                 else rebalance l k2 (remove comparer k r) 
 
         let rec contains (comparer: IComparer<'T>) k t = 
@@ -287,16 +285,6 @@ namespace Internal.Utilities.Collections.Tagged
             | SetEmpty -> acc           
 
         let diff comparer a b = diffAux comparer b a
-
-        let rec countAux s acc = 
-            match s with 
-            | SetNode(_,l,r,_) -> countAux l (countAux r (acc+1))
-#if ONE
-            | SetOne(k) -> acc+1
-#endif
-            | SetEmpty -> acc           
-
-        let count s = countAux s 0
 
         let rec union comparer t1 t2 =
             // Perf: tried bruteForce for low heights, but nothing significant 
@@ -553,7 +541,7 @@ namespace Internal.Utilities.Collections.Tagged
             iter (fun x -> arr.[!j] <- x; j := !j + 1) s
 
         let toArray s = 
-            let n = (count s) 
+            let n = (size s) 
             let res = Array.zeroCreate n 
             copyToArray s res 0;
             res
@@ -585,7 +573,7 @@ namespace Internal.Utilities.Collections.Tagged
 
         member s.Add(x) : Set<'T,'ComparerTag> = refresh s (SetTree.add comparer x tree)
         member s.Remove(x) : Set<'T,'ComparerTag> = refresh s (SetTree.remove comparer x tree)
-        member s.Count = SetTree.count tree
+        member s.Count = SetTree.size tree
         member s.Contains(x) = SetTree.contains comparer  x tree
         member s.Iterate(x) = SetTree.iter  x tree
         member s.Fold f x  = SetTree.fold f tree x
@@ -686,7 +674,7 @@ namespace Internal.Utilities.Collections.Tagged
             member s.Contains(x) = SetTree.contains comparer x tree
             member s.CopyTo(arr,i) = SetTree.copyToArray tree arr i
             member s.IsReadOnly = true
-            member s.Count = SetTree.count tree  
+            member s.Count = SetTree.size tree  
 
         interface IEnumerable<'T> with
             member s.GetEnumerator() = SetTree.toSeq tree
@@ -708,21 +696,20 @@ namespace Internal.Utilities.Collections.Tagged
 #if ONE 
         | MapOne of 'Key * 'T
 #endif
-        | MapNode of 'Key * 'T * MapTree<'Key,'T> *  MapTree<'Key,'T> * int
-
+        | MapNode of 'Key * 'T * MapTree<'Key,'T> *  MapTree<'Key,'T> * size:int
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module MapTree = 
 
         let empty = MapEmpty 
 
-        let inline height x  = 
+        let inline size x  = 
           match x with 
           | MapEmpty -> 0
 #if ONE 
           | MapOne _ -> 1
 #endif
-          | MapNode(_,_,_,_,h) -> h
+          | MapNode(size=s) -> s
 
         let inline isEmpty m = 
             match m with 
@@ -735,57 +722,52 @@ namespace Internal.Utilities.Collections.Tagged
             | MapEmpty,MapEmpty -> MapOne(k,v)
             | _ -> 
 #endif
-                let hl = height l 
-                let hr = height r 
-                let m = if hl < hr then hr else hl 
-                MapNode(k,v,l,r,m+1)
+                MapNode(k,v,l,r,(size l)+(size r)+1)
 
         let rebalance t1 k v t2 =
-            let t1h = height t1
-            let t2h = height t2
-            if t2h > t1h + 2 then // right is heavier than left 
+            let t1s = size t1 
+            let t2s = size t2 
+            if  (t2s >>> 1) > t1s then (* right is over twice as heavy as left *)
                 match t2 with 
                 | MapNode(t2k,t2v,t2l,t2r,_) -> 
-                   // one of the nodes must have height > height t1 + 1 
-                   if height t2l > t1h + 1 then  // balance left: combination 
+                   (* one of the nodes must have size > size t1 *)
+                   if size t2l > t1s then  (* balance left: combination *)
                      match t2l with 
                      | MapNode(t2lk,t2lv,t2ll,t2lr,_) ->
                         mk (mk t1 k v t2ll) t2lk t2lv (mk t2lr t2k t2v t2r) 
-                     | _ -> failwith "rebalance"
-                   else // rotate left 
+#if ONE
+                     | MapOne(t2lk,t2lv) ->
+                        mk (mk t1 k v empty) t2lk t2lv (mk empty t2k t2v t2r) 
+#endif
+                     | MapEmpty -> failwith "rebalance"
+                   else (* rotate left *)
                      mk (mk t1 k v t2l) t2k t2v t2r
                 | _ -> failwith "rebalance"
             else
-                if t1h > t2h + 2 then // left is heavier than right 
+                if (t1s >>> 1) > t2s then (* left is over twice as heavy as right *)
                   match t1 with 
                   | MapNode(t1k,t1v,t1l,t1r,_) -> 
-                    // one of the nodes must have height > height t2 + 1 
-                      if height t1r > t2h + 1 then 
-                      // balance right: combination 
+                    (* one of the nodes must have size > size t2 *)
+                      if size t1r > t2s then 
+                      (* balance right: combination *)
                         match t1r with 
                         | MapNode(t1rk,t1rv,t1rl,t1rr,_) ->
                             mk (mk t1l t1k t1v t1rl) t1rk t1rv (mk t1rr k v t2)
-                        | _ -> failwith "rebalance"
+#if ONE
+                        | MapOne(t1rk,t1rv) ->
+                            mk (mk t1l t1k t1v empty) t1rk t1rv (mk empty k v t2)
+#endif
+                        | MapEmpty -> failwith "rebalance"
                       else
                         mk t1l t1k t1v (mk t1r k v t2)
                   | _ -> failwith "rebalance"
                 else mk t1 k v t2
-
-        let rec sizeAux acc m = 
-            match m with  
-            | MapEmpty -> acc
-#if ONE 
-            | MapOne _ -> acc + 1
-#endif
-            | MapNode(_,_,l,r,_) -> sizeAux (sizeAux (acc+1) l) r 
 
 #if ONE 
 #else
         let MapOne(k,v) = MapNode(k,v,MapEmpty,MapEmpty,1)
 #endif
         
-        let count x = sizeAux 0 x
-
         let rec add (comparer: IComparer<'T>) k v m = 
             match m with 
             | MapEmpty -> MapOne(k,v)
@@ -1122,7 +1104,7 @@ namespace Internal.Utilities.Collections.Tagged
         member m.Partition(f)  =
             let r1,r2 = MapTree.partition comparer f tree  
             refresh m r1, refresh m r2
-        member m.Count = MapTree.count tree
+        member m.Count = MapTree.size tree
         member m.ContainsKey(k) = MapTree.containsKey comparer k tree
         member m.Remove(k)  = refresh m (MapTree.remove comparer k tree)
         member m.TryFind(k) = MapTree.tryFind comparer k tree
