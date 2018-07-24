@@ -67,45 +67,45 @@ namespace Microsoft.FSharp.Collections
         let inline mkLeaf k v =
             MapNode (k, v, MapEmpty, MapEmpty, 1)
 
-        let rebalance t1 k v t2 =
-            let t1h = size t1 
-            let t2h = size t2 
-            if  (t2h >>> 1) > t1h then (* right is heavier than left *)
-                match t2 with 
-                | MapNode(t2k,t2v,t2l,t2r,_) -> 
-                   (* one of the nodes must have height > height t1 + 1 *)
-                   if size t2l > t1h then  (* balance left: combination *)
-                     match t2l with 
-                     | MapNode(t2lk,t2lv,t2ll,t2lr,_) ->
-                        mk (mk t1 k v t2ll) t2lk t2lv (mk t2lr t2k t2v t2r) 
-                     | _ -> failwith "rebalance"
-                   else (* rotate left *)
-                     mk (mk t1 k v t2l) t2k t2v t2r
-                | _ -> failwith "rebalance"
-            else
-                if (t1h >>> 1) > t2h then (* left is heavier than right *)
-                  match t1 with 
-                  | MapNode(t1k,t1v,t1l,t1r,_) -> 
-                    (* one of the nodes must have height > height t2 + 1 *)
-                      if size t1r > t2h then 
-                      (* balance right: combination *)
-                        match t1r with 
-                        | MapNode(t1rk,t1rv,t1rl,t1rr,_) ->
-                            mk (mk t1l t1k t1v t1rl) t1rk t1rv (mk t1rr k v t2)
-                        | _ -> failwith "rebalance"
-                      else
-                        mk t1l t1k t1v (mk t1r k v t2)
-                  | _ -> failwith "rebalance"
-                else mk t1 k v t2
+        let private rebalanceRight l k v r =
+            match r with 
+            | MapEmpty -> failwith "rebalance"
+            | MapNode(rk,rv,rl,rr,_) -> 
+                (* one of the nodes must have height > height t1 + 1 *)
+                if size rl > size l then  (* balance left: combination *)
+                    match rl with 
+                    | MapEmpty -> failwith "rebalance"
+                    | MapNode(rlk,rlv,rll,rlr,_) -> mk (mk l k v rll) rlk rlv (mk rlr rk rv rr) 
+                else (* rotate left *)
+                    mk (mk l k v rl) rk rv rr
+
+        let private rebalanceLeft l k v r =
+            match l with 
+            | MapEmpty -> failwith "rebalance"
+            | MapNode(lk,lv,ll,lr,_) -> 
+                (* one of the nodes must have height > height t2 + 1 *)
+                if size lr > size r then 
+                    (* balance right: combination *)
+                    match lr with 
+                    | MapEmpty -> failwith "rebalance"
+                    | MapNode(lrk,lrv,lrl,lrr,_) -> mk (mk ll lk lv lrl) lrk lrv (mk lrr k v r)
+                else
+                    mk ll lk lv (mk lr k v r)
+
+        let inline rebalance l k v r =
+            let ls, rs = size l, size r 
+            if   (rs >>> 1) > ls then rebalanceRight l k v r 
+            elif (ls >>> 1) > rs then rebalanceLeft  l k v r
+            else MapNode (k,v,l,r, ls+rs+1)
 
         let rec add (comparer: IComparer<'Value>) k v m = 
             match m with 
             | MapEmpty -> mkLeaf k v
-            | MapNode(k2,v2,l,r,h) -> 
+            | MapNode(k2,v2,l,r,s) -> 
                 let c = comparer.Compare(k,k2) 
-                if c < 0 then rebalance (add comparer k v l) k2 v2 r
-                elif c = 0 then MapNode(k,v,l,r,h)
-                else rebalance l k2 v2 (add comparer k v r) 
+                if   c < 0 then rebalance (add comparer k v l) k2 v2 r
+                elif c > 0 then rebalance l k2 v2 (add comparer k v r) 
+                else MapNode(k,v,l,r,s)
 
         let rec find (comparer: IComparer<'Value>) k m = 
             match m with 
