@@ -8,10 +8,8 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
-    [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
     [<NoEquality; NoComparison>]
     type MapTree<'Key,'Value when 'Key : comparison > = 
-        | MapEmpty 
         | MapNode of 'Key * 'Value * MapTree<'Key,'Value> *  MapTree<'Key,'Value> * int
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -49,48 +47,37 @@ namespace Microsoft.FSharp.Collections
             n
     #endif
 
-        let empty = MapEmpty 
+        [<Sealed; AbstractClass>]
+        type Constants<'Key, 'Value when 'Key : comparison> private () = 
+            static let empty = MapNode(Unchecked.defaultof<'Key>, Unchecked.defaultof<'Value>, Unchecked.defaultof<MapTree<'Key,'Value>>, Unchecked.defaultof<MapTree<'Key,'Value>>, 0)
+            static member Empty = empty
 
-        let size x =
-            match x with
-            | MapEmpty -> 0
-            | MapNode (_,_,_,_,h) -> h
+        let inline size (MapNode(_,_,_,_,s)) = s
 
-        let isEmpty m = 
-            match m with 
-            | MapEmpty -> true
-            | _ -> false
+        let inline isEmpty (MapNode(_,_,_,_,s)) = s = 0
 
         let inline mk l k v r =
             MapNode (k,v,l,r, size l + size r + 1)
 
         let inline mkLeaf k v =
-            MapNode (k, v, MapEmpty, MapEmpty, 1)
+            MapNode (k, v, Constants.Empty, Constants.Empty, 1)
 
-        let private rebalanceRight l k v r =
-            match r with 
-            | MapEmpty -> failwith "rebalance"
-            | MapNode(rk,rv,rl,rr,_) -> 
-                (* one of the nodes must have height > height t1 + 1 *)
-                if size rl > size l then  (* balance left: combination *)
-                    match rl with 
-                    | MapEmpty -> failwith "rebalance"
-                    | MapNode(rlk,rlv,rll,rlr,_) -> mk (mk l k v rll) rlk rlv (mk rlr rk rv rr) 
-                else (* rotate left *)
-                    mk (mk l k v rl) rk rv rr
+        let private rebalanceRight l k v (MapNode(rk,rv,rl,rr,_)) =
+            (* one of the nodes must have height > height t1 + 1 *)
+            if size rl > size l then  (* balance left: combination *)
+                match rl with 
+                | MapNode(rlk,rlv,rll,rlr,_) -> mk (mk l k v rll) rlk rlv (mk rlr rk rv rr) 
+            else (* rotate left *)
+                mk (mk l k v rl) rk rv rr
 
-        let private rebalanceLeft l k v r =
-            match l with 
-            | MapEmpty -> failwith "rebalance"
-            | MapNode(lk,lv,ll,lr,_) -> 
-                (* one of the nodes must have height > height t2 + 1 *)
-                if size lr > size r then 
-                    (* balance right: combination *)
-                    match lr with 
-                    | MapEmpty -> failwith "rebalance"
-                    | MapNode(lrk,lrv,lrl,lrr,_) -> mk (mk ll lk lv lrl) lrk lrv (mk lrr k v r)
-                else
-                    mk ll lk lv (mk lr k v r)
+        let private rebalanceLeft (MapNode(lk,lv,ll,lr,_)) k v r =
+            (* one of the nodes must have height > height t2 + 1 *)
+            if size lr > size r then 
+                (* balance right: combination *)
+                match lr with 
+                | MapNode(lrk,lrv,lrl,lrr,_) -> mk (mk ll lk lv lrl) lrk lrv (mk lrr k v r)
+            else
+                mk ll lk lv (mk lr k v r)
 
         let inline rebalance l k v r =
             let ls, rs = size l, size r 
@@ -98,10 +85,9 @@ namespace Microsoft.FSharp.Collections
             elif (ls >>> 1) > rs then rebalanceLeft  l k v r
             else MapNode (k,v,l,r, ls+rs+1)
 
-        let rec add (comparer: IComparer<'Value>) k v m = 
-            match m with 
-            | MapEmpty -> mkLeaf k v
-            | MapNode(k2,v2,l,r,s) -> 
+        let rec add (comparer: IComparer<'Value>) k v (MapNode(k2,v2,l,r,s)) = 
+            if s = 0 then  mkLeaf k v
+            else
                 let c = comparer.Compare(k,k2) 
                 if   c < 0 then rebalance (add comparer k v l) k2 v2 r
                 elif c > 0 then rebalance l k2 v2 (add comparer k v r) 
@@ -109,7 +95,7 @@ namespace Microsoft.FSharp.Collections
 
         let rec find (comparer: IComparer<'Value>) k m = 
             match m with 
-            | MapEmpty -> raise (KeyNotFoundException())
+            | MapNode(_,_,_,_,0) -> raise (KeyNotFoundException())
             | MapNode(k2,v2,l,r,_) -> 
                 let c = comparer.Compare(k,k2) 
                 if c < 0 then find comparer k l
@@ -118,7 +104,7 @@ namespace Microsoft.FSharp.Collections
 
         let rec tryFind (comparer: IComparer<'Value>) k m = 
             match m with 
-            | MapEmpty -> None
+            | MapNode(_,_,_,_,0) -> None
             | MapNode(k2,v2,l,r,_) -> 
                 let c = comparer.Compare(k,k2) 
                 if c < 0 then tryFind comparer k l
@@ -130,44 +116,44 @@ namespace Microsoft.FSharp.Collections
         
         let rec partitionAux (comparer: IComparer<'Value>) (f:OptimizedClosures.FSharpFunc<_,_,_>) s acc = 
             match s with 
-            | MapEmpty -> acc
+            | MapNode(_,_,_,_,0) -> acc
             | MapNode(k,v,l,r,_) -> 
                 let acc = partitionAux comparer f r acc 
                 let acc = partition1 comparer f k v acc
                 partitionAux comparer f l acc
 
-        let partition (comparer: IComparer<'Value>) f s = partitionAux comparer (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) s (empty,empty)
+        let partition (comparer: IComparer<'Value>) f s = partitionAux comparer (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) s (Constants.Empty,Constants.Empty)
 
         let filter1 (comparer: IComparer<'Value>) (f:OptimizedClosures.FSharpFunc<_,_,_>) k v acc = if f.Invoke(k, v) then add comparer k v acc else acc 
 
         let rec filterAux (comparer: IComparer<'Value>) (f:OptimizedClosures.FSharpFunc<_,_,_>) s acc = 
             match s with 
-            | MapEmpty -> acc
+            | MapNode(_,_,_,_,0) -> acc
             | MapNode(k,v,l,r,_) ->
                 let acc = filterAux comparer f l acc
                 let acc = filter1 comparer f k v acc
                 filterAux comparer f r acc
 
-        let filter (comparer: IComparer<'Value>) f s = filterAux comparer (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) s empty
+        let filter (comparer: IComparer<'Value>) f s = filterAux comparer (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) s Constants.Empty
 
         let rec spliceOutSuccessor m = 
             match m with 
-            | MapEmpty -> failwith "internal error: Map.spliceOutSuccessor"
+            | MapNode(_,_,_,_,0) -> failwith "internal error: Map.spliceOutSuccessor"
             | MapNode(k2,v2,l,r,_) ->
                 match l with 
-                | MapEmpty -> k2,v2,r
+                | MapNode(_,_,_,_,0) -> k2,v2,r
                 | _ -> let k3,v3,l' = spliceOutSuccessor l in k3,v3,mk l' k2 v2 r
 
         let rec remove (comparer: IComparer<'Value>) k m = 
             match m with 
-            | MapEmpty -> empty
+            | MapNode(_,_,_,_,0) -> Constants.Empty
             | MapNode(k2,v2,l,r,_) -> 
                 let c = comparer.Compare(k,k2) 
                 if c < 0 then rebalance (remove comparer k l) k2 v2 r
                 elif c = 0 then 
                   match l,r with 
-                  | MapEmpty,_ -> r
-                  | _,MapEmpty -> l
+                  | MapNode(_,_,_,_,0),_ -> r
+                  | _,MapNode(_,_,_,_,0) -> l
                   | _ -> 
                       let sk,sv,r' = spliceOutSuccessor r 
                       mk l sk sv r'
@@ -175,7 +161,7 @@ namespace Microsoft.FSharp.Collections
 
         let rec mem (comparer: IComparer<'Value>) k m = 
             match m with 
-            | MapEmpty -> false
+            | MapNode(_,_,_,_,0) -> false
             | MapNode(k2,_,l,r,_) -> 
                 let c = comparer.Compare(k,k2) 
                 if c < 0 then mem comparer k l
@@ -183,14 +169,14 @@ namespace Microsoft.FSharp.Collections
 
         let rec iterOpt (f:OptimizedClosures.FSharpFunc<_,_,_>) m =
             match m with 
-            | MapEmpty -> ()
+            | MapNode(_,_,_,_,0) -> ()
             | MapNode(k2,v2,l,r,_) -> iterOpt f l; f.Invoke(k2, v2); iterOpt f r
 
         let iter f m = iterOpt (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) m
 
         let rec tryPickOpt (f:OptimizedClosures.FSharpFunc<_,_,_>) m =
             match m with 
-            | MapEmpty -> None
+            | MapNode(_,_,_,_,0) -> None
             | MapNode(k2,v2,l,r,_) -> 
                 match tryPickOpt f l with 
                 | Some _ as res -> res 
@@ -204,21 +190,21 @@ namespace Microsoft.FSharp.Collections
 
         let rec existsOpt (f:OptimizedClosures.FSharpFunc<_,_,_>) m = 
             match m with 
-            | MapEmpty -> false
+            | MapNode(_,_,_,_,0) -> false
             | MapNode(k2,v2,l,r,_) -> existsOpt f l || f.Invoke(k2, v2) || existsOpt f r
 
         let exists f m = existsOpt (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) m
 
         let rec forallOpt (f:OptimizedClosures.FSharpFunc<_,_,_>) m = 
             match m with 
-            | MapEmpty -> true
+            | MapNode(_,_,_,_,0) -> true
             | MapNode(k2,v2,l,r,_) -> forallOpt f l && f.Invoke(k2, v2) && forallOpt f r
 
         let forall f m = forallOpt (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) m
 
         let rec map f m = 
             match m with 
-            | MapEmpty -> empty
+            | MapNode(_,_,_,_,0) -> Constants.Empty
             | MapNode(k,v,l,r,h) -> 
                 let l2 = map f l 
                 let v2 = f v 
@@ -227,7 +213,7 @@ namespace Microsoft.FSharp.Collections
 
         let rec mapiOpt (f:OptimizedClosures.FSharpFunc<_,_,_>) m = 
             match m with
-            | MapEmpty -> empty
+            | MapNode(_,_,_,_,0) -> Constants.Empty
             | MapNode(k,v,l,r,h) -> 
                 let l2 = mapiOpt f l 
                 let v2 = f.Invoke(k, v) 
@@ -238,7 +224,7 @@ namespace Microsoft.FSharp.Collections
 
         let rec foldBackOpt (f:OptimizedClosures.FSharpFunc<_,_,_,_>) m x = 
             match m with 
-            | MapEmpty -> x
+            | MapNode(_,_,_,_,0) -> x
             | MapNode(k,v,l,r,_) -> 
                 let x = foldBackOpt f r x
                 let x = f.Invoke(k,v,x)
@@ -248,7 +234,7 @@ namespace Microsoft.FSharp.Collections
 
         let rec foldOpt (f:OptimizedClosures.FSharpFunc<_,_,_,_>) x m  = 
             match m with 
-            | MapEmpty -> x
+            | MapNode(_,_,_,_,0) -> x
             | MapNode(k,v,l,r,_) -> 
                 let x = foldOpt f x l
                 let x = f.Invoke(x,k,v)
@@ -259,7 +245,7 @@ namespace Microsoft.FSharp.Collections
         let foldSectionOpt (comparer: IComparer<'Value>) lo hi (f:OptimizedClosures.FSharpFunc<_,_,_,_>) m x =
             let rec foldFromTo (f:OptimizedClosures.FSharpFunc<_,_,_,_>) m x = 
                 match m with 
-                | MapEmpty -> x
+                | MapNode(_,_,_,_,0) -> x
                 | MapNode(k,v,l,r,_) ->
                     let cLoKey = comparer.Compare(lo,k)
                     let cKeyHi = comparer.Compare(k,hi)
@@ -294,7 +280,7 @@ namespace Microsoft.FSharp.Collections
 
         let constructViaArray comparer (data:seq<'Key*'Value>) =
             let array = data |> Seq.toArray
-            if array.Length = 0 then MapEmpty
+            if array.Length = 0 then Constants.Empty
             else
                 let keys = array |> Array.map fst
 
@@ -312,7 +298,7 @@ namespace Microsoft.FSharp.Collections
                     else
                         let right = loop (mid+1) upper
                         if mid = lower then
-                            mk MapEmpty k v right
+                            mk Constants.Empty k v right
                         else
                             let left = loop lower (mid-1)
                             mk left k v right
@@ -322,7 +308,7 @@ namespace Microsoft.FSharp.Collections
         let toList m = 
             let rec loop m acc = 
                 match m with 
-                | MapEmpty -> acc
+                | MapNode(_,_,_,_,0) -> acc
                 | MapNode(k,v,l,r,_) -> loop l ((k,v)::loop r acc)
             loop m []
 
@@ -335,7 +321,7 @@ namespace Microsoft.FSharp.Collections
             largeObjectHeapBytes * 10 / 9 / sizeof<'Key*'Value> / 2
 
         let ofList comparer (l:list<'Key*'Value>) =
-            if l |> List.isEmpty then empty
+            if l |> List.isEmpty then Constants.Empty
             else
                 let chunk = ResizeArray ()
                 let maxCount = maxInitializationObjectCount<'Key, 'Value> ()
@@ -351,7 +337,7 @@ namespace Microsoft.FSharp.Collections
                 remainder |> List.fold (fun acc (k,v) -> add comparer k v acc) chunkTree
 
         let ofSeqlImpl comparer (e:IEnumerator<'Key*'Value>) = 
-            if not (e.MoveNext()) then empty
+            if not (e.MoveNext()) then Constants.Empty
             else
                 let chunk = ResizeArray ()
                 let maxCount = maxInitializationObjectCount<'Key, 'Value> ()
@@ -406,9 +392,9 @@ namespace Microsoft.FSharp.Collections
         let rec collapseLHS stack =
             match stack with
             | []                           -> []
-            | MapEmpty             :: rest -> collapseLHS rest
-            | MapNode(_,_,MapEmpty,MapEmpty,_)         :: _ -> stack
-            | (MapNode(k,v,l,r,_)) :: rest -> collapseLHS (l :: (mkLeaf k v) :: r :: rest)
+            | MapNode(_,_,_,_,0) :: rest -> collapseLHS rest
+            | MapNode(_,_,MapNode(_,_,_,_,0),MapNode(_,_,_,_,0),_) :: _ -> stack
+            | MapNode(k,v,l,r,_) :: rest -> collapseLHS (l :: (mkLeaf k v) :: r :: rest)
           
         let mkIterator s = { stack = collapseLHS [s]; started = false }
 
@@ -418,7 +404,7 @@ namespace Microsoft.FSharp.Collections
         let current i =
             if i.started then
                 match i.stack with
-                  | MapNode(k,v,MapEmpty,MapEmpty,_) :: _ -> new KeyValuePair<_,_>(k,v)
+                  | MapNode(k,v,MapNode(_,_,_,_,0),MapNode(_,_,_,_,0),_) :: _ -> new KeyValuePair<_,_>(k,v)
                   | []            -> alreadyFinished()
                   | _             -> failwith "Please report error: Map iterator, unexpected stack for current"
             else
@@ -427,7 +413,7 @@ namespace Microsoft.FSharp.Collections
         let rec moveNext i =
           if i.started then
             match i.stack with
-              | MapNode(_,_,MapEmpty,MapEmpty,_) :: rest ->
+              | MapNode(_,_,MapNode(_,_,_,_,0),MapNode(_,_,_,_,0),_) :: rest ->
                 i.stack <- collapseLHS rest
                 not i.stack.IsEmpty
               | [] -> false
@@ -476,7 +462,7 @@ namespace Microsoft.FSharp.Collections
         // set (it is just a lookup into a .NET table of type-instantiation-indexed static fields).
         static let empty = 
             let comparer = LanguagePrimitives.FastGenericComparer<'Key> 
-            new Map<'Key,'Value>(comparer,MapTree<_,_>.MapEmpty)
+            new Map<'Key,'Value>(comparer,MapTree.Constants.Empty)
 
 #if !FX_NO_BINARY_SERIALIZATION
         [<System.Runtime.Serialization.OnSerializingAttribute>]
