@@ -89,9 +89,22 @@ namespace Microsoft.FSharp.Collections
             if s = 0 then  mkLeaf k v
             else
                 let c = comparer.Compare(k,k2) 
-                if   c < 0 then rebalance (add comparer k v l) k2 v2 r
-                elif c > 0 then rebalance l k2 v2 (add comparer k v r) 
-                else MapNode(k,v,l,r,s)
+                if c < 0 then
+                    let l' = add comparer k v l
+                    let l's, rs = size l', size r 
+                    if (l's >>> 1) > rs then
+                        rebalanceLeft  l' k2 v2 r
+                    else
+                        MapNode (k2,v2,l',r, l's+rs+1)
+                elif c > 0 then
+                    let r' = add comparer k v r
+                    let ls, r's = size l, size r' 
+                    if (r's >>> 1) > ls then
+                        rebalanceRight l k2 v2 r' 
+                    else
+                        MapNode (k2,v2,l,r', ls+r's+1)
+                else
+                    MapNode(k,v,l,r,s)
 
         let rec find (comparer: IComparer<'Value>) k m = 
             match m with 
