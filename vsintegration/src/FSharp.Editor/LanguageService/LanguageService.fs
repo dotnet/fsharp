@@ -37,6 +37,7 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.ComponentModelHost
 open Microsoft.VisualStudio.Text.Outlining
 open FSharp.NativeInterop
+open FSharp.Editor.SettingsPersistence
 
 #nowarn "9" // NativePtr.toNativeInt
 
@@ -118,7 +119,8 @@ type internal FSharpProjectOptionsManager
     (
         checkerProvider: FSharpCheckerProvider,
         [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspaceImpl,
-        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider
+        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider,
+        [<Import(typeof<ISettings>)>] _settings: ISettings // This is necessary so that the Settings global doesn't explode.
     ) =
 
     // A table of information about projects, excluding single-file projects.
@@ -228,7 +230,7 @@ type internal FSharpProjectOptionsManager
         | _ -> this.TryGetOptionsForProject(projectId) |> Option.map(fun (parsingOptions, _, projectOptions) -> parsingOptions, projectOptions)
 
     /// get a siteprovider
-    member this.ProvideProjectSiteProvider(project:Project) = provideProjectSiteProvider(workspace, project, serviceProvider, Some projectOptionsTable)
+    member this.ProvideProjectSiteProvider(project) = provideProjectSiteProvider(workspace, project, serviceProvider, Some projectOptionsTable)
 
     /// Tell the checker to update the project info for the specified project id
     member this.UpdateProjectInfoWithProjectId(projectId:ProjectId, userOpName, invalidateConfig) =
@@ -236,7 +238,7 @@ type internal FSharpProjectOptionsManager
         match hier with
         | null -> ()
         | h when (h.IsCapabilityMatch("CPS")) ->
-            let project = workspace.CurrentSolution.GetProject(projectId)
+            let project = workspace.ProjectTracker.GetProject(projectId)
             if not (isNull project) then
                 let siteProvider = this.ProvideProjectSiteProvider(project)
                 let projectSite = siteProvider.GetProjectSite()
