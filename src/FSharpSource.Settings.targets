@@ -21,8 +21,10 @@
   <!-- Version number computation -->
   <PropertyGroup>
     <FSCoreVersion>4.5.0.0</FSCoreVersion>
-    <FSProductVersion>10.2.2.0</FSProductVersion>
-    <FSPackageVersion>10.2.2</FSPackageVersion>
+    <FSCoreMajorVersion>4.5</FSCoreMajorVersion>
+    <FSProductVersion>10.2.3.0</FSProductVersion>
+    <FSPackageVersion>10.2.3</FSPackageVersion>
+    <FSPackageMajorVersion>10.2</FSPackageMajorVersion>
     <VSAssemblyVersion>15.7.0.0</VSAssemblyVersion>
   </PropertyGroup>
 
@@ -97,12 +99,6 @@
     <!-- Always qualify the IntermediateOutputPath by the TargetDotnetProfile if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetDotnetProfile)\</IntermediateOutputPath>
     <IntermediateOutputPath Condition="'$(PortableProfileBeingReferenced)' != ''">obj\$(Configuration)\$(TargetDotnetProfile)\$(PortableProfileBeingReferenced)\</IntermediateOutputPath>
-
-    <!-- Frozen FSharp.Core package being built with this build -->
-    <FSharpCore41TargetPackageVersion>4.1.19</FSharpCore41TargetPackageVersion>
-    <FSharpCore41TargetMajorVersion>4.1</FSharpCore41TargetMajorVersion>
-    <FSharpCoreLatestTargetPackageVersion>4.5.1</FSharpCoreLatestTargetPackageVersion>
-    <FSharpCoreLatestTargetMajorVersion>4.5</FSharpCoreLatestTargetMajorVersion>
 
     <!-- Always qualify the IntermediateOutputPath by the TargetDotnetProfile if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetDotnetProfile)\</IntermediateOutputPath>

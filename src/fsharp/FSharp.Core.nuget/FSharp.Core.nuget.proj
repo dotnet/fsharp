@@ -55,11 +55,8 @@
       <PackageVersion Condition="'@(PackageNuspec)' == 'Microsoft.Portable.FSharp.Core.nuspec'">$(FSharpCoreFrozenPortableTargetPackageVersion)</PackageVersion>
       <PackageMajorVersion Condition="'@(PackageNuspec)' == 'Microsoft.Portable.FSharp.Core.nuspec'">$(FSharpCoreFrozenPortableTargetMajorVersion)</PackageMajorVersion>
 
-      <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.1.xxx.nuspec'">$(FSharpCore41TargetPackageVersion)</PackageVersion>
-      <PackageMajorVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.1.xxx.nuspec'">$(FSharpCore41TargetMajorVersion)</PackageMajorVersion>
-
-      <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.LatestNuget.nuspec'">$(FSharpCoreLatestTargetPackageVersion)</PackageVersion>
-      <PackageMajorVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.LatestNuget.nuspec'">$(FSharpCoreLatestTargetMajorVersion)</PackageMajorVersion>
+      <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.LatestNuget.nuspec'">$(FSCorePackageVersion)</PackageVersion>
+      <PackageMajorVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.LatestNuget.nuspec'">$(FSCoreMajorVersion)</PackageMajorVersion>
 
       <!-- can't have &lt; and &gt; which happens when building locally -->
       <NormalizedGitHeadSha>$(GitHeadSha)</NormalizedGitHeadSha>
