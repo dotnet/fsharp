@@ -17,7 +17,6 @@
 
   <ItemGroup>
     <PackageNuspec Include="FSharp.Core.LatestNuget.nuspec" />
-    <PackageNuspec Include="FSharp.Core.4.1.xxx.nuspec" />
     <PackageNuspec Include="Microsoft.Portable.FSharp.Core.nuspec" />
   </ItemGroup>
 
