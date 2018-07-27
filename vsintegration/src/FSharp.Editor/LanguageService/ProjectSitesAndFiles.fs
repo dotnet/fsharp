@@ -132,8 +132,7 @@ type internal FSharpProjectOptionsTable () =
     member __.SetOptionsWithProjectId(projectId:ProjectId, sourcePaths:string[], referencePaths:string[], options:string[]) =
         commandLineOptions.[projectId] <- (sourcePaths, referencePaths, options)
 
-
-let internal provideProjectSiteProvider(workspace:VisualStudioWorkspaceImpl, project:Project, serviceProvider:System.IServiceProvider, projectOptionsTable:FSharpProjectOptionsTable option) =
+let internal provideProjectSiteProvider(workspace:VisualStudioWorkspaceImpl, project:AbstractProject, serviceProvider:System.IServiceProvider, projectOptionsTable:FSharpProjectOptionsTable option) =
     let hier = workspace.GetHierarchy(project.Id)
     let getCommandLineOptionsWithProjectId (projectId) =
         match projectOptionsTable with
@@ -150,14 +149,14 @@ let internal provideProjectSiteProvider(workspace:VisualStudioWorkspaceImpl, pro
 
                 {
                     new IProjectSite with
-                        member __.Description = project.Name
+                        member __.Description = project.DisplayName
                         member __.CompilationSourceFiles = getCommandLineOptionsWithProjectId(project.Id) |> fst
                         member __.CompilationOptions =
                             let _,references,options = getCommandLineOptionsWithProjectId(project.Id)
                             Array.concat [options; references |> Array.map(fun r -> "-r:" + r)]
                         member __.CompilationReferences = getCommandLineOptionsWithProjectId(project.Id) |> snd
                         member site.CompilationBinOutputPath = site.CompilationOptions |> Array.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
-                        member __.ProjectFileName = project.FilePath
+                        member __.ProjectFileName = project.ProjectFilePath
                         member __.AdviseProjectSiteChanges(_,_) = ()
                         member __.AdviseProjectSiteCleaned(_,_) = ()
                         member __.AdviseProjectSiteClosed(_,_) = ()
@@ -230,15 +229,15 @@ type internal ProjectSitesAndFiles() =
                     if not (String.IsNullOrWhiteSpace(path)) then
                         match projectIdOpt with
                         | Some(projectId) ->
-                            let project = workspace.CurrentSolution.GetProject(projectId)
+                            let project = workspace.ProjectTracker.GetProject(projectId)
                             if not (isNull project) then
-                                for reference in project.ProjectReferences do
-                                    let project = workspace.CurrentSolution.GetProject(reference.ProjectId)
+                                for reference in project.GetCurrentProjectReferences() do
+                                    let project = workspace.ProjectTracker.GetProject(reference.ProjectId)
                                     if not (isNull project) && project.Language = FSharpConstants.FSharpLanguageName then
                                         let siteProvider = provideProjectSiteProvider (workspace, project, serviceProvider, projectOptionsTable)
                                         let referenceProject = workspace.ProjectTracker.GetProject(reference.ProjectId)
                                         let outputPath = referenceProject.BinOutputPath
-                                        yield Some project.Id, project.FilePath, outputPath, siteProvider
+                                        yield Some project.Id, project.ProjectFilePath, outputPath, siteProvider
                         | _ -> ()
 
                 | (Some references), _ ->
