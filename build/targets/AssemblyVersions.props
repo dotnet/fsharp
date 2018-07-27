@@ -3,6 +3,8 @@
   <PropertyGroup>
     <!-- Put build number 0 and today's date if this was a local build -->
     <BUILD_BUILDNUMBER Condition="'$(BUILD_BUILDNUMBER)' == ''">$([System.DateTime]::Now.ToString(yyyyMMdd.0))</BUILD_BUILDNUMBER>
+    <!-- Remove '.DRAFT' suffix if it exists -->
+    <BUILD_BUILDNUMBER>$(BUILD_BUILDNUMBER.Replace(".DRAFT", ""))</BUILD_BUILDNUMBER>
 
     <!--
     Given $(BUILD_BUILDNUMBER) = '20161225.1'
@@ -25,7 +27,10 @@
     <FSProductVersion>10.2.3.0</FSProductVersion>
     <FSPackageVersion>10.2.3</FSPackageVersion>
     <FSPackageMajorVersion>10.2</FSPackageMajorVersion>
-    <VSAssemblyVersion>15.8.0.0</VSAssemblyVersion>
+    <VSMajorVersion>16</VSMajorVersion>
+    <VSMinorVersion>0</VSMinorVersion>
+    <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
+    <VSAssemblyVersion>$(VSMajorVersion).$(VSMinorVersion).0.0</VSAssemblyVersion>
 
     <MicroBuildAssemblyVersion Condition="'$(MicroBuildAssemblyVersion)' == ''">$(FSCoreVersion)</MicroBuildAssemblyVersion>
 

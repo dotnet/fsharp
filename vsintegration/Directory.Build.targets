@@ -18,4 +18,12 @@
     <Import Project="DisableVsixManifestTargets.targets" Condition="'$(CreateVsixContainer)' == 'false'" />
   </ImportGroup>
 
+  <ItemGroup Condition="'$(NoMsbuild)' != 'true'">
+    <PackageReference Include="Microsoft.VisualFSharp.Msbuild.15.0" Version="$(MicrosoftVisualFSharpMSBuild150PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildPackageVersion)" PrivateAssets="all" ExcludeAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildFrameworkPackageVersion)" PrivateAssets="all" ExcludeAssets="all" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildTasksCorePackageVersion)" PrivateAssets="all" ExcludeAssets="all" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildUtilitiesCorePackageVersion)" PrivateAssets="all" ExcludeAssets="all" />
+  </ItemGroup>
+
 </Project>

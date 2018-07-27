@@ -1254,8 +1254,8 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
 
           // First look for a solution by a record property
           let recdPropSearch = 
-              let isGetProp = nm.StartsWith "get_" 
-              let isSetProp = nm.StartsWith "set_" 
+              let isGetProp = nm.StartsWithOrdinal("get_") 
+              let isSetProp = nm.StartsWithOrdinal("set_") 
               if argtys.IsEmpty && isGetProp || isSetProp then 
                   let propName = nm.[4..]
                   let props = 
@@ -1913,81 +1913,85 @@ and CanMemberSigsMatchUpToCheck
       (subsumeArg: CalledArg -> CallerArg<_> -> OperationResult<unit>)    // used to compare the arguments for compatibility
       reqdRetTyOpt 
       (calledMeth:CalledMeth<_>): ImperativeOperationResult =
-
-    let g    = csenv.g
-    let amap = csenv.amap
-    let m    = csenv.m
+        trackErrors {
+            let g    = csenv.g
+            let amap = csenv.amap
+            let m    = csenv.m
     
-    let minfo = calledMeth.Method
-    let minst = calledMeth.CalledTyArgs
-    let uminst = calledMeth.CallerTyArgs
-    let callerObjArgTys = calledMeth.CallerObjArgTys
-    let assignedItemSetters = calledMeth.AssignedItemSetters
-    let unnamedCalledOptArgs = calledMeth.UnnamedCalledOptArgs
-    let unnamedCalledOutArgs = calledMeth.UnnamedCalledOutArgs
+            let minfo = calledMeth.Method
+            let minst = calledMeth.CalledTyArgs
+            let uminst = calledMeth.CallerTyArgs
+            let callerObjArgTys = calledMeth.CallerObjArgTys
+            let assignedItemSetters = calledMeth.AssignedItemSetters
+            let unnamedCalledOptArgs = calledMeth.UnnamedCalledOptArgs
+            let unnamedCalledOutArgs = calledMeth.UnnamedCalledOutArgs
 
-    // First equate the method instantiation (if any) with the method type parameters 
-    if minst.Length <> uminst.Length then ErrorD(Error(FSComp.SR.csTypeInstantiationLengthMismatch(), m)) else
-    
-    Iterate2D unifyTypes minst uminst ++ (fun () -> 
-
-    if not (permitOptArgs || isNil unnamedCalledOptArgs) then ErrorD(Error(FSComp.SR.csOptionalArgumentNotPermittedHere(), m)) else
-    
-
-    let calledObjArgTys = calledMeth.CalledObjArgTys(m)
-    
-    // Check all the argument types. 
-
-    if calledObjArgTys.Length <> callerObjArgTys.Length then 
-        if (calledObjArgTys.Length <> 0) then
-            ErrorD(Error (FSComp.SR.csMemberIsNotStatic(minfo.LogicalName), m))
-        else
-            ErrorD(Error (FSComp.SR.csMemberIsNotInstance(minfo.LogicalName), m))
-    else
-        Iterate2D subsumeTypes calledObjArgTys callerObjArgTys ++ (fun () -> 
-        (calledMeth.ArgSets |> IterateD (fun argSet -> 
-            if argSet.UnnamedCalledArgs.Length <> argSet.UnnamedCallerArgs.Length then ErrorD(Error(FSComp.SR.csArgumentLengthMismatch(), m)) else
-            Iterate2D subsumeArg argSet.UnnamedCalledArgs argSet.UnnamedCallerArgs)) ++ (fun () -> 
-        (calledMeth.ParamArrayCalledArgOpt |> OptionD (fun calledArg ->
-            if isArray1DTy g calledArg.CalledArgumentType then 
-                let paramArrayElemTy = destArrayTy g calledArg.CalledArgumentType
-                let reflArgInfo = calledArg.ReflArgInfo // propgate the reflected-arg info to each param array argument
-                calledMeth.ParamArrayCallerArgs |> OptionD (IterateD (fun callerArg -> subsumeArg (CalledArg((0, 0), false, NotOptional, NoCallerInfo, false, false, None, reflArgInfo, paramArrayElemTy)) callerArg))
+            // First equate the method instantiation (if any) with the method type parameters 
+            if minst.Length <> uminst.Length then 
+                return! ErrorD(Error(FSComp.SR.csTypeInstantiationLengthMismatch(), m))
             else
-                CompleteD)
-        
-        ) ++ (fun () -> 
-        (calledMeth.ArgSets |> IterateD (fun argSet -> 
-            argSet.AssignedNamedArgs |> IterateD (fun arg -> subsumeArg arg.CalledArg arg.CallerArg)))  ++ (fun () -> 
-        (assignedItemSetters |> IterateD (fun (AssignedItemSetter(_, item, caller)) -> 
-            let name, calledArgTy = 
-                match item with
-                | AssignedPropSetter(_, pminfo, pminst) -> 
-                    let calledArgTy = List.head (List.head (pminfo.GetParamTypes(amap, m, pminst)))
-                    pminfo.LogicalName, calledArgTy
+                do! Iterate2D unifyTypes minst uminst
+                if not (permitOptArgs || isNil unnamedCalledOptArgs) then 
+                    return! ErrorD(Error(FSComp.SR.csOptionalArgumentNotPermittedHere(), m)) 
+                else
+                    let calledObjArgTys = calledMeth.CalledObjArgTys(m)
+    
+                    // Check all the argument types. 
 
-                | AssignedILFieldSetter(finfo) ->
-                    (* Get or set instance IL field *)
-                    let calledArgTy = finfo.FieldType(amap, m)
-                    finfo.FieldName, calledArgTy
+                    if calledObjArgTys.Length <> callerObjArgTys.Length then 
+                        if (calledObjArgTys.Length <> 0) then
+                           return!  ErrorD(Error (FSComp.SR.csMemberIsNotStatic(minfo.LogicalName), m))
+                        else
+                            return! ErrorD(Error (FSComp.SR.csMemberIsNotInstance(minfo.LogicalName), m))
+                    else
+                        do! Iterate2D subsumeTypes calledObjArgTys callerObjArgTys
+                for argSet in calledMeth.ArgSets do
+                    if argSet.UnnamedCalledArgs.Length <> argSet.UnnamedCallerArgs.Length then 
+                        return! ErrorD(Error(FSComp.SR.csArgumentLengthMismatch(), m))
+                    else
+                        do! Iterate2D subsumeArg argSet.UnnamedCalledArgs argSet.UnnamedCallerArgs
+                match calledMeth.ParamArrayCalledArgOpt with
+                | Some calledArg ->
+                    if isArray1DTy g calledArg.CalledArgumentType then 
+                        let paramArrayElemTy = destArrayTy g calledArg.CalledArgumentType
+                        let reflArgInfo = calledArg.ReflArgInfo // propgate the reflected-arg info to each param array argument
+                        match calledMeth.ParamArrayCallerArgs with
+                        | Some args ->
+                            for callerArg in args do
+                                do! subsumeArg (CalledArg((0, 0), false, NotOptional, NoCallerInfo, false, false, None, reflArgInfo, paramArrayElemTy)) callerArg
+                        | _ -> ()
+                | _ -> ()
+                for argSet in calledMeth.ArgSets do
+                    for arg in argSet.AssignedNamedArgs do
+                        do! subsumeArg arg.CalledArg arg.CallerArg
+                for (AssignedItemSetter(_, item, caller)) in assignedItemSetters do
+                    let name, calledArgTy = 
+                        match item with
+                        | AssignedPropSetter(_, pminfo, pminst) -> 
+                            let calledArgTy = List.head (List.head (pminfo.GetParamTypes(amap, m, pminst)))
+                            pminfo.LogicalName, calledArgTy
+
+                        | AssignedILFieldSetter(finfo) ->
+                            (* Get or set instance IL field *)
+                            let calledArgTy = finfo.FieldType(amap, m)
+                            finfo.FieldName, calledArgTy
                 
-                | AssignedRecdFieldSetter(rfinfo) ->
-                    let calledArgTy = rfinfo.FieldType
-                    rfinfo.Name, calledArgTy
+                        | AssignedRecdFieldSetter(rfinfo) ->
+                            let calledArgTy = rfinfo.FieldType
+                            rfinfo.Name, calledArgTy
             
-            subsumeArg (CalledArg((-1, 0), false, NotOptional, NoCallerInfo, false, false, Some (mkSynId m name), ReflectedArgInfo.None, calledArgTy)) caller) )) ++ (fun () -> 
-        
-        // - Always take the return type into account for
-        //      -- op_Explicit, op_Implicit
-        //      -- methods using tupling of unfilled out args
-        // - Never take into account return type information for constructors 
-        match reqdRetTyOpt with 
-        | None -> CompleteD 
-        | Some _  when minfo.IsConstructor -> CompleteD 
-        | Some _  when not alwaysCheckReturn && isNil unnamedCalledOutArgs -> CompleteD 
-        | Some reqdRetTy -> 
-            let methodRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
-            unifyTypes reqdRetTy methodRetTy )))))
+                    do! subsumeArg (CalledArg((-1, 0), false, NotOptional, NoCallerInfo, false, false, Some (mkSynId m name), ReflectedArgInfo.None, calledArgTy)) caller
+                // - Always take the return type into account for
+                //      -- op_Explicit, op_Implicit
+                //      -- methods using tupling of unfilled out args
+                // - Never take into account return type information for constructors 
+                match reqdRetTyOpt with
+                | Some _  when (minfo.IsConstructor || not alwaysCheckReturn && isNil unnamedCalledOutArgs) -> ()
+                | Some reqdRetTy ->
+                    let methodRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
+                    return! unifyTypes reqdRetTy methodRetTy
+                | _ -> ()
+        }
 
 // Assert a subtype constraint, and wrap an ErrorsFromAddingSubsumptionConstraint error around any failure 
 // to allow us to report the outer types involved in the constraint 
