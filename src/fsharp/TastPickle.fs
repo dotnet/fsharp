@@ -121,6 +121,7 @@ type WriterState =
     onlerefs: Table<int * int[]> 
     osimpletys: Table<int>
     oglobals : TcGlobals
+    mutable isStructThisArgPos : bool
     ofile : string
     /// Indicates if we are using in-memory format, where we store XML docs as well
     oInMem : bool
@@ -709,7 +710,8 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
         osimpletys=Table<_>.Create "osimpletys"  
         oglobals=g
         ofile=file
-        oInMem=inMem }
+        oInMem=inMem
+        isStructThisArgPos = false}
     p x st1
     let sizes = 
       st1.otycons.Size,
@@ -731,7 +733,8 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
        osimpletys=Table<_>.Create "osimpletys (fake)"
        oglobals=g
        ofile=file
-       oInMem=inMem }
+       oInMem=inMem
+       isStructThisArgPos = false }
     p_tup7
       (p_array p_encoded_ccuref) 
       (p_tup3 p_int p_int p_int) 
@@ -1268,6 +1271,13 @@ let p_tys = (p_list p_ty)
 
 let fill_p_attribs,p_attribs = p_hole()
 
+// In F# 4.5, the type of the "this" pointer for structs is considered to be inref for the purposes of checking the implementation
+// of the struct.  However for backwards compat reaons we can't serialize this as the type.
+let checkForInRefStructThisArg st ty = 
+    let g = st.oglobals
+    let _, tauTy = tryDestForallTy g ty
+    isFunTy g tauTy && isFunTy g (rangeOfFunTy g tauTy) && isInByrefTy g (domainOfFunTy g tauTy)
+
 let p_nonlocal_val_ref (nlv:NonLocalValOrMemberRef) st =
     let a = nlv.EnclosingEntity
     let key = nlv.ItemKey
@@ -1277,7 +1287,13 @@ let p_nonlocal_val_ref (nlv:NonLocalValOrMemberRef) st =
     p_bool pkey.MemberIsOverride st 
     p_string pkey.LogicalName st 
     p_int pkey.TotalArgCount st 
+    let isStructThisArgPos = 
+        match key.TypeForLinkage with 
+        | None -> false
+        | Some ty -> checkForInRefStructThisArg st ty
+    st.isStructThisArgPos <- isStructThisArgPos
     p_option p_ty key.TypeForLinkage st
+    st.isStructThisArgPos <- false
 
 let rec p_vref ctxt x st = 
     match x with 
@@ -1539,6 +1555,7 @@ let u_tyar_specs = (u_list u_tyar_spec)
 
 let _ = fill_p_ty (fun ty st ->
     let ty = stripTyparEqns ty
+    let ty = if isInByrefTy st.oglobals ty && st.isStructThisArgPos then destByrefTy st.oglobals ty else ty
     match ty with 
     | TType_tuple (tupInfo,l) -> 
           if evalTupInfoIsStruct tupInfo then 
@@ -1547,7 +1564,11 @@ let _ = fill_p_ty (fun ty st ->
               p_byte 0 st; p_tys l st
     | TType_app(ERefNonLocal nleref,[]) -> p_byte 1 st; p_simpletyp nleref st
     | TType_app (tc,tinst)              -> p_byte 2 st; p_tup2 (p_tcref "typ") p_tys (tc,tinst) st
-    | TType_fun (d,r)                   -> p_byte 3 st; p_tup2 p_ty p_ty (d,r) st
+    | TType_fun (d,r)                   -> 
+        p_byte 3 st
+        p_ty d st
+        st.isStructThisArgPos <- false
+        p_ty r st
     | TType_var r                       -> p_byte 4 st; p_tpref r st
     | TType_forall (tps,r)              -> p_byte 5 st; p_tup2 p_tyar_specs p_ty (tps,r) st
     | TType_measure unt                 -> p_byte 6 st; p_measure_expr unt st
@@ -1815,7 +1836,12 @@ and p_ValData x st =
     p_option p_string x.ValCompiledName st
     // only keep range information on published values, not on optimization data
     p_ranges (x.ValReprInfo |> Option.map (fun _ -> x.val_range, x.DefinitionRange)) st
+    
+    let isStructThisArgPos = x.IsMember && checkForInRefStructThisArg st x.Type
+    st.isStructThisArgPos <- isStructThisArgPos
     p_ty x.val_type st
+    st.isStructThisArgPos <- false
+
     p_int64 x.val_flags.PickledBits st
     p_option p_member_info x.MemberInfo st
     p_attribs x.Attribs st
