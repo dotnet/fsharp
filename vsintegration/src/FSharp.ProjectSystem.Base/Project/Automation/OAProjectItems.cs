@@ -17,7 +17,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Microsoft.VisualStudio.FSharp.ProjectSystem;
 
-
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 {
     /// <summary>

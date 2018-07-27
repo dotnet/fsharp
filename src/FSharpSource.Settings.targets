@@ -34,7 +34,7 @@
     <WarningsAsErrors />
 
     <RoslynVSPackagesVersion>15.0.26201</RoslynVSPackagesVersion>
-    <SystemCollectionsImmutableVersion>1.3.1</SystemCollectionsImmutableVersion>
+    <SystemCollectionsImmutableVersion>1.5.0</SystemCollectionsImmutableVersion>
     <VSSDK_BUILDTOOLS_VERSION>Microsoft.VSSDK.BuildTools.15.1.192</VSSDK_BUILDTOOLS_VERSION>
 
     <MicrosoftVisualStudioThreadingVersion>15.3.23</MicrosoftVisualStudioThreadingVersion>
@@ -45,8 +45,10 @@
     <IntermediateOutputPath Condition="'$(PortableProfileBeingReferenced)' != ''">obj\$(Configuration)\$(TargetDotnetProfile)\$(PortableProfileBeingReferenced)\</IntermediateOutputPath>
 
     <!-- Frozen FSharp.Core package being built with this build -->
-    <FSharpCoreTargetPackageVersion>4.3.5</FSharpCoreTargetPackageVersion>
-    <FSharpCoreTargetMajorVersion>4.3</FSharpCoreTargetMajorVersion>
+    <FSharpCore41TargetPackageVersion>4.1.19</FSharpCore41TargetPackageVersion>
+    <FSharpCore41TargetMajorVersion>4.1</FSharpCore41TargetMajorVersion>
+    <FSharpCoreLatestTargetPackageVersion>4.5.2</FSharpCoreLatestTargetPackageVersion>
+    <FSharpCoreLatestTargetMajorVersion>4.5</FSharpCoreLatestTargetMajorVersion>
 
     <!-- Always qualify the IntermediateOutputPath by the TargetDotnetProfile if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetDotnetProfile)\</IntermediateOutputPath>
@@ -55,7 +57,7 @@
     <!-- Frozen FSharp.Core package -->
     <FSharpCoreFrozenPortablePackageVersion>10.1.0</FSharpCoreFrozenPortablePackageVersion>
     <FSharpCoreFrozenPortableTargetPackageVersion>10.2.0</FSharpCoreFrozenPortableTargetPackageVersion>
-    <FSharpCoreFrozenPortableTargetMajorVersion>10.1</FSharpCoreFrozenPortableTargetMajorVersion>
+    <FSharpCoreFrozenPortableTargetMajorVersion>10.2</FSharpCoreFrozenPortableTargetMajorVersion>
 
     <!-- Nunit -->
     <NUnitVersion>3.5.0</NUnitVersion>

@@ -16,7 +16,7 @@
             <group targetFramework=".NETStandard1.6">
                 <dependency id="Microsoft.NETCore.Platforms" version="1.0.1" />
                 <dependency id="NETStandard.Library" version="1.6.0" />
-                <dependency id="System.Collections.Immutable" version="1.3.1" />
+                <dependency id="System.Collections.Immutable" version="1.5.0" />
                 <dependency id="System.Console" version="4.0.0" />
                 <dependency id="System.Diagnostics.Process" version="4.1.0" />
                 <dependency id="System.Diagnostics.TraceSource" version="4.0.0" />
@@ -24,14 +24,14 @@
                 <dependency id="System.Linq.Queryable" version="4.0.1" />
                 <dependency id="System.Net.Requests" version="4.0.11" />
                 <dependency id="System.Reflection.Emit" version="4.0.1" />
-                <dependency id="System.Reflection.Metadata" version="1.4.2" />
+                <dependency id="System.Reflection.Metadata" version="1.6.0" />
                 <dependency id="System.Runtime.InteropServices" version="4.1.0" />
                 <dependency id="System.Runtime.Loader" version="4.0.0" />
                 <dependency id="System.Security.Cryptography.Algorithms" version="4.2.0" />
                 <dependency id="System.Threading.Tasks.Parallel" version="4.0.1" />
                 <dependency id="System.Threading.Thread" version="4.0.0" />
                 <dependency id="System.Threading.ThreadPool" version="4.0.10" />
-                <dependency id="System.ValueTuple" version="4.4.0" />
+                <dependency id="System.ValueTuple" version="4.3.0" />
             </group>
         </dependencies>
     </metadata>

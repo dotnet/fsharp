@@ -7012,11 +7012,6 @@
         <target state="translated">W tym miejscu nie można użyć adresu zmiennej „{0}” ani powiązanego wyrażenia. Ma to na celu uniemożliwienie adresowi wartości lokalnej wykroczenia poza zakres.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="translated">Z tej funkcji lub metody nie można zwrócić wyrażenia Span ani IsByRefLike, ponieważ jest ona złożona przy użyciu elementów, które mogą wykroczyć poza swój zakres.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
         <target state="translated">Ta wartość nie może zostać przypisana, ponieważ element docelowy „{0}” może odwoływać się do pamięci innej niż pamięć lokalna dla stosu, natomiast przypisywane wyrażenie może potencjalnie odwoływać się do pamięci lokalnej dla stosu. Dzięki temu łatwiej uniemożliwić wskaźnikom do pamięci powiązanej ze stosem wykroczenie poza ich zakres.</target>
@@ -7059,7 +7054,7 @@
       </trans-unit>
       <trans-unit id="tastCantTakeAddressOfExpression">
         <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
-        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
+        <target state="translated">Nie można uzyskać adresu wartości zwróconej przez wyrażenie. Przypisz zwróconą wartość do wartości powiązanej za pomocą instrukcji let przed uzyskaniem adresu.</target>
         <note />
       </trans-unit>
     </body>
