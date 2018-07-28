@@ -744,8 +744,8 @@ if "%BUILD_PROTO%" == "1" (
 
   if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 
-    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:artifacts\protobuild-net40.build.binlog
-         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:artifacts\protobuild-net40.build.binlog
+    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:%~dp0artifacts\protobuild-net40.build.binlog
+         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:%~dp0artifacts\protobuild-net40.build.binlog
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
   )
 
@@ -754,8 +754,8 @@ if "%BUILD_PROTO%" == "1" (
     echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
          %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
 
-    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:artifacts\protobuild-coreclr.build.binlog
-         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:artifacts\protobuild-coreclr.build.binlog
+    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:%~dp0artifacts\protobuild-coreclr.build.binlog
+         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:%~dp0artifacts\protobuild-coreclr.build.binlog
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
   )
 
@@ -778,8 +778,8 @@ if "%BUILD_PHASE%" == "1" (
     echo %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore %BUILD_DIAG%
          %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore %BUILD_DIAG%
 
-    echo %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%  /bl:artifacts\msbuild.build-everything.build.%BUILD_CONFIG%.binlog
-         %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%  /bl:artifacts\msbuild.build-everything.build.%BUILD_CONFIG%.binlog
+    echo %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%  /bl:%~dp0artifacts\msbuild.build-everything.build.%BUILD_CONFIG%.binlog
+         %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%  /bl:%~dp0artifacts\msbuild.build-everything.build.%BUILD_CONFIG%.binlog
 
    @if ERRORLEVEL 1 echo Error build failed && goto :failure
 )
@@ -803,8 +803,8 @@ if not "%SIGN_TYPE%" == "" (
 
 echo ---------------- Done with assembly signing, start package creation ---------------
 
-echo %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%  /bl:artifacts\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
-     %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%  /bl:artifacts\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
+echo %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%  /bl:=~dp0artifacts\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
+     %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%  /bl:%~dp0artifacts\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
 if ERRORLEVEL 1 echo Error building NuGet packages && goto :failure
 
 if not "%SIGN_TYPE%" == "" (
@@ -814,8 +814,8 @@ if not "%SIGN_TYPE%" == "" (
 )
 
 if "%BUILD_SETUP%" == "1" (
-    echo %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%  /bl:artifacts\msbuild.build-insertion.build.%BUILD_CONFIG%.binlog
-         %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%  /bl:artifacts\msbuild.build-insertion.build.%BUILD_CONFIG%.binlog
+    echo %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%  /bl:%~dp0artifacts\msbuild.build-insertion.build.%BUILD_CONFIG%.binlog
+         %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%  /bl:%~dp0artifacts\msbuild.build-insertion.build.%BUILD_CONFIG%.binlog
     if ERRORLEVEL 1 echo Error building insertion packages && goto :failure
 )
 
@@ -828,8 +828,8 @@ if not "%SIGN_TYPE%" == "" (
 echo ---------------- Done with signing, building insertion files ---------------
 
 if "%BUILD_SETUP%" == "1" (
-    echo %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG%  /bl:artifacts\msbuild.setup-swix.build.%BUILD_CONFIG%.binlog
-         %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG%  /bl:artifacts\msbuild.setup-swix.build.%BUILD_CONFIG%.binlog
+    echo %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG%  /bl:%~dp0artifacts\msbuild.setup-swix.build.%BUILD_CONFIG%.binlog
+         %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG%  /bl:%~dp0artifacts\msbuild.setup-swix.build.%BUILD_CONFIG%.binlog
     if ERRORLEVEL 1 echo Error building .vsmanproj && goto :failure
 )
 
