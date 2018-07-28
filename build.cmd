@@ -759,7 +759,7 @@ if "%BUILD_PHASE%" == "1" (
          %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore %BUILD_DIAG%
 
     echo %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
-         %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
+         %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%  /bl:%BUILD_CONFIG%\bin\build-everything.binlog
 
    @if ERRORLEVEL 1 echo Error build failed && goto :failure
 )
