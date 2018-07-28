@@ -106,14 +106,13 @@ namespace Microsoft.FSharp.Collections
                 else
                     MapNode(k,v,l,r,s)
 
-        let rec find (comparer: IComparer<'Value>) k m = 
-            match m with 
-            | MapNode(_,_,_,_,0) -> raise (KeyNotFoundException())
-            | MapNode(k2,v2,l,r,_) -> 
-                let c = comparer.Compare(k,k2) 
-                if c < 0 then find comparer k l
-                elif c = 0 then v2
-                else find comparer k r
+        let rec find (comparer: IComparer<'Value>) k (MapNode(k2,_,_,_,s) as m) =
+            if s = 0 then raise (KeyNotFoundException ())
+            
+            let c = comparer.Compare(k,k2) 
+            if   c < 0 then match m with MapNode(_,_,l,_,_) -> find comparer k l
+            elif c > 0 then match m with MapNode(_,_,_,r,_) -> find comparer k r 
+            else match m with MapNode(_,v2,_,_,_) -> v2
 
         let rec tryFind (comparer: IComparer<'Value>) k m = 
             match m with 
