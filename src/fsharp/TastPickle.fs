@@ -506,8 +506,12 @@ let p_maybe_lazy p (x: MaybeLazy<_>) st =
     p_lazy_impl p x.Value st
 
 let p_hole () = 
-    let h = ref (None : 'T pickler option)
+    let h = ref (None : ('T -> WriterState -> unit) option)
     (fun f -> h := Some f),(fun x st -> match !h with Some f -> f x st | None -> pfailwith st "p_hole: unfilled hole")
+
+let p_hole2 () = 
+    let h = ref (None : ('Arg -> 'T -> WriterState -> unit) option)
+    (fun f -> h := Some f),(fun arg x st -> match !h with Some f -> f arg x st | None -> pfailwith st "p_hole2: unfilled hole")
 
 let u_array_core f n st =
     let res = Array.zeroCreate n
@@ -1266,7 +1270,9 @@ let u_rfref st = let a,b = u_tup2 u_tcref u_string st in RFRef(a,b)
 let u_tpref st = u_local_item_ref st.itypars st
 
 // forward reference
-let fill_p_ty,p_ty = p_hole()
+let fill_p_ty2,p_ty2 = p_hole2()
+
+let p_ty = p_ty2 false
 let p_tys = (p_list p_ty)
 
 let fill_p_attribs,p_attribs = p_hole()
@@ -1291,9 +1297,7 @@ let p_nonlocal_val_ref (nlv:NonLocalValOrMemberRef) st =
         match key.TypeForLinkage with 
         | None -> false
         | Some ty -> checkForInRefStructThisArg st ty
-    st.isStructThisArgPos <- isStructThisArgPos
-    p_option p_ty key.TypeForLinkage st
-    st.isStructThisArgPos <- false
+    p_option (p_ty2 isStructThisArgPos) key.TypeForLinkage st
 
 let rec p_vref ctxt x st = 
     match x with 
@@ -1553,9 +1557,17 @@ let u_tyar_spec st =
 
 let u_tyar_specs = (u_list u_tyar_spec)
 
-let _ = fill_p_ty (fun ty st ->
+let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
     let ty = stripTyparEqns ty
-    let ty = if isInByrefTy st.oglobals ty && st.isStructThisArgPos then destByrefTy st.oglobals ty else ty
+
+    // See comment on 'checkForInRefStructThisArg'
+    let ty = 
+        if isInByrefTy st.oglobals ty && isStructThisArgPos then 
+            // Convert the inref to a byref 
+            mkByrefTy st.oglobals (destByrefTy st.oglobals ty) 
+        else
+            ty
+
     match ty with 
     | TType_tuple (tupInfo,l) -> 
           if evalTupInfoIsStruct tupInfo then 
@@ -1566,11 +1578,15 @@ let _ = fill_p_ty (fun ty st ->
     | TType_app (tc,tinst)              -> p_byte 2 st; p_tup2 (p_tcref "typ") p_tys (tc,tinst) st
     | TType_fun (d,r)                   -> 
         p_byte 3 st
-        p_ty d st
-        st.isStructThisArgPos <- false
+        // Note, the "this" argument may be found in the domain position of a function type, so propagate the isStructThisArgPos value
+        p_ty2 isStructThisArgPos d st
         p_ty r st
     | TType_var r                       -> p_byte 4 st; p_tpref r st
-    | TType_forall (tps,r)              -> p_byte 5 st; p_tup2 p_tyar_specs p_ty (tps,r) st
+    | TType_forall (tps,r)              -> 
+        p_byte 5 st
+        p_tyar_specs tps st
+        // Note, the "this" argument may be found in the body of a generic forall type, so propagate the isStructThisArgPos value
+        p_ty2 isStructThisArgPos r st
     | TType_measure unt                 -> p_byte 6 st; p_measure_expr unt st
     | TType_ucase (uc,tinst)            -> p_byte 7 st; p_tup2 p_ucref p_tys (uc,tinst) st)
 
@@ -1838,9 +1854,7 @@ and p_ValData x st =
     p_ranges (x.ValReprInfo |> Option.map (fun _ -> x.val_range, x.DefinitionRange)) st
     
     let isStructThisArgPos = x.IsMember && checkForInRefStructThisArg st x.Type
-    st.isStructThisArgPos <- isStructThisArgPos
-    p_ty x.val_type st
-    st.isStructThisArgPos <- false
+    p_ty2 isStructThisArgPos x.val_type st
 
     p_int64 x.val_flags.PickledBits st
     p_option p_member_info x.MemberInfo st
