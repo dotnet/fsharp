@@ -60,8 +60,10 @@ namespace Microsoft.FSharp.Collections
 
         let inline isEmpty (MapNode(Size=s)) = s = 0
 
+        let inline (++) l r = Checked.(+) l r
+
         let inline mk l k v r =
-            MapNode (k,v,l,r, size l + size r + 1)
+            MapNode (k,v,l,r, size l ++ size r ++ 1)
 
         let inline mkLeaf k v =
             MapNode (k, v, Constants.Empty, Constants.Empty, 1)
@@ -87,7 +89,7 @@ namespace Microsoft.FSharp.Collections
             let ls, rs = size l, size r 
             if   (rs >>> 1) > ls then rebalanceRight l k v r 
             elif (ls >>> 1) > rs then rebalanceLeft  l k v r
-            else MapNode (k,v,l,r, ls+rs+1)
+            else MapNode (k,v,l,r, ls ++ rs ++ 1)
 
         let rec add (comparer:IComparer<'Key>) k v (MapNode(k2,v2,l,r,s)) = 
             if s = 0 then mkLeaf k v
@@ -99,14 +101,14 @@ namespace Microsoft.FSharp.Collections
                     if (l's >>> 1) > rs then
                         rebalanceLeft  l' k2 v2 r
                     else
-                        MapNode (k2,v2,l',r, l's+rs+1)
+                        MapNode (k2,v2,l',r, l's ++ rs ++ 1)
                 elif c > 0 then
                     let r' = add comparer k v r
                     let ls, r's = size l, size r' 
                     if (r's >>> 1) > ls then
                         rebalanceRight l k2 v2 r' 
                     else
-                        MapNode (k2,v2,l,r', ls+r's+1)
+                        MapNode (k2,v2,l,r', ls ++ r's ++ 1)
                 else
                     MapNode(k,v,l,r,s)
 
