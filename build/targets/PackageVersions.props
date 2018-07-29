@@ -7,6 +7,7 @@
 
     <!-- System.* packages -->
     <SystemCollectionsImmutablePackageVersion>1.5.0</SystemCollectionsImmutablePackageVersion>
+    <SystemValueTuplePackageVersion>4.3.0</SystemValueTuplePackageVersion>
 
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
