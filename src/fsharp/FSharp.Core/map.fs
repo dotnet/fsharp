@@ -113,13 +113,13 @@ namespace Microsoft.FSharp.Collections
                     MapNode(k,v,l,r,s)
 
         let inline private findImpl (comparer:IComparer<'Key>) k m found notfound =
-            let rec loop (MapNode(Key=k2;Size=s) as m) =
-                if s = 0 then notfound ()
+            let rec loop m =
+                if (size m) = 0 then notfound ()
                 else
-                    let c = comparer.Compare(k,k2) 
-                    if   c < 0 then match m with MapNode(Left=l) -> loop l
-                    elif c > 0 then match m with MapNode(Right=r) -> loop r 
-                    else match m with MapNode(Value=v2) -> found v2
+                    let c = comparer.Compare(k, key m) 
+                    if   c < 0 then loop (left m)
+                    elif c > 0 then loop (right m)
+                    else found (value m)
             loop m
 
         let find    comparer k m = findImpl comparer k m id   (fun () -> raise (KeyNotFoundException ()))
