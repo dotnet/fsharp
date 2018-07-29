@@ -52,7 +52,11 @@ namespace Microsoft.FSharp.Collections
             static let empty = MapNode(Unchecked.defaultof<'Key>, Unchecked.defaultof<'Value>, Unchecked.defaultof<MapTree<'Key,'Value>>, Unchecked.defaultof<MapTree<'Key,'Value>>, 0)
             static member Empty = empty
 
-        let inline size (MapNode(Size=s)) = s
+        let inline size  (MapNode(Size=s))  = s
+        let inline key   (MapNode(Key=k))   = k
+        let inline value (MapNode(Value=v)) = v
+        let inline left  (MapNode(Left=l))  = l
+        let inline right (MapNode(Right=r)) = r
 
         let inline isEmpty (MapNode(Size=s)) = s = 0
 
@@ -313,36 +317,11 @@ namespace Microsoft.FSharp.Collections
 
                 loop 0 (count-1)
 
-        let toList m = 
-            let rec loop m acc = 
-                match m with 
-                | MapNode(Size=0) -> acc
-                | MapNode(k,v,l,r,_) -> loop l ((k,v)::loop r acc)
-            loop m []
-
-        let toArray m = m |> toList |> Array.ofList
-
         [<Literal>]
         let largeObjectHeapBytes = 85000
 
         let maxInitializationObjectCount<'Key, 'Value> () =
             largeObjectHeapBytes * 10 / 9 / sizeof<'Key*'Value> / 2
-
-        let ofList comparer (l:list<'Key*'Value>) =
-            if l |> List.isEmpty then Constants.Empty
-            else
-                let chunk = ResizeArray ()
-                let maxCount = maxInitializationObjectCount<'Key, 'Value> ()
-                let rec populate x =
-                    match x with
-                    | [] -> x
-                    | hd::tl ->
-                        chunk.Add hd
-                        if chunk.Count = maxCount then tl
-                        else populate tl
-                let remainder = populate l
-                let chunkTree = constructViaArray comparer chunk
-                remainder |> List.fold (fun acc (k,v) -> add comparer k v acc) chunkTree
 
         let ofSeqlImpl comparer (e:IEnumerator<'Key*'Value>) = 
             if not (e.MoveNext()) then Constants.Empty
@@ -368,6 +347,12 @@ namespace Microsoft.FSharp.Collections
                         else
                             acc
                     addRemainder chunkTree
+
+        let ofList comparer (l:list<'Key*'Value>) =
+            match l with
+            | [] -> Constants.Empty
+            | l when (List.length l) <= (maxInitializationObjectCount<'Key, 'Value> ()) -> constructViaArray comparer l
+            | _ -> ofSeqlImpl comparer ((l:>seq<_>).GetEnumerator ())
           
         let ofArray comparer (arr : array<_>) =
             constructViaArray comparer arr
@@ -376,72 +361,67 @@ namespace Microsoft.FSharp.Collections
             match c with 
             | :? array<'Key * 'T> as xs -> ofArray comparer xs
             | :? list<'Key * 'T> as xs -> ofList comparer xs
-            | _ -> 
-                use ie = c.GetEnumerator()
-                ofSeqlImpl comparer ie 
-
+            | _ -> ofSeqlImpl comparer (c.GetEnumerator())
           
         let copyToArray s (arr: _[]) i =
             let j = ref i 
             s |> iter (fun x y -> arr.[!j] <- KeyValuePair(x,y); j := !j + 1)
-
-
-        /// Imperative left-to-right iterators.
-        [<NoEquality; NoComparison>]
-        type MapIterator<'Key,'Value when 'Key : comparison > = 
-             { /// invariant: always collapseLHS result 
-               mutable stack: MapTree<'Key,'Value> list;  
-               /// true when MoveNext has been called   
-               mutable started : bool }
-
-        // collapseLHS:
-        // a) Always returns either [] or a list starting with MapOne.
-        // b) The "fringe" of the set stack is unchanged. 
-        let rec collapseLHS stack =
-            match stack with
-            | []                           -> []
-            | MapNode(Size=0) :: rest -> collapseLHS rest
-            | MapNode(_,_,MapNode(Size=0),MapNode(Size=0),_) :: _ -> stack
-            | MapNode(k,v,l,r,_) :: rest -> collapseLHS (l :: (mkLeaf k v) :: r :: rest)
           
-        let mkIterator s = { stack = collapseLHS [s]; started = false }
+        [<NoComparison; NoEquality>]
+        type TreeIterator<'Key,'Value when 'Key : comparison>(root) =
+            let items = ResizeArray<MapTree<'Key,'Value>> ()
+            let mutable depth = 0
 
-        let notStarted() = raise (InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
-        let alreadyFinished() = raise (InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
+            let rec tryPush item =
+                if size item > 0 then
+                    if depth = items.Count then
+                        items.Add item
+                    else
+                        items.[depth] <- item
+                    depth <- depth + 1
 
-        let current i =
-            if i.started then
-                match i.stack with
-                  | MapNode(k,v,MapNode(Size=0),MapNode(Size=0),_) :: _ -> new KeyValuePair<_,_>(k,v)
-                  | []            -> alreadyFinished()
-                  | _             -> failwith "Please report error: Map iterator, unexpected stack for current"
-            else
-                notStarted()
+                    tryPush (left item)
 
-        let rec moveNext i =
-          if i.started then
-            match i.stack with
-              | MapNode(_,_,MapNode(Size=0),MapNode(Size=0),_) :: rest ->
-                i.stack <- collapseLHS rest
-                not i.stack.IsEmpty
-              | [] -> false
-              | _ -> failwith "Please report error: Map iterator, unexpected stack for moveNext"
-          else
-              i.started <- true  (* The first call to MoveNext "starts" the enumeration. *)
-              not i.stack.IsEmpty
+            do tryPush root
 
-        let mkIEnumerator s = 
-          let i = ref (mkIterator s) 
-          { new IEnumerator<_> with 
-                member __.Current = current !i
-            interface System.Collections.IEnumerator with
-                member __.Current = box (current !i)
-                member __.MoveNext() = moveNext !i
-                member __.Reset() = i :=  mkIterator s
-            interface System.IDisposable with 
-                member __.Dispose() = ()}
+            member inline __.PopCurrent f =  
+                depth <- depth - 1
+                match items.[depth] with
+                | MapNode(k,v,_,r,_) ->
+                    tryPush r
+                    f k v
 
+            member __.MorePairs = depth > 0
 
+        let inline private getEnumerable f m =
+            seq { let iterator = TreeIterator<_,_> m
+                  while iterator.MorePairs do
+                      yield iterator.PopCurrent f }
+
+        let tryGetSmallEnumerable m =
+            match m with
+            | MapNode(Size=0)                                          -> Seq.empty
+            | MapNode(k,v,_,_,1)                                       -> [                        KeyValuePair (k,v)                        ] :> seq<_>
+            | MapNode(k,v,MapNode(lk,lv,_,_,1),_,2)                    -> [| KeyValuePair (lk,lv); KeyValuePair (k,v)                       |] :> seq<_>
+            | MapNode(k,v,_,MapNode(rk,rv,_,_,1),2)                    -> [|                       KeyValuePair (k,v); KeyValuePair (rk,rv) |] :> seq<_>
+            | MapNode(k,v,MapNode(lk,lv,_,_,1),MapNode(rk,rv,_,_,1),3) -> [| KeyValuePair (lk,lv); KeyValuePair (k,v); KeyValuePair (rk,rv) |] :> seq<_>
+            | _ -> null
+
+        let getKVEnumerable m =
+            match tryGetSmallEnumerable m with
+            | null -> getEnumerable (fun k v -> KeyValuePair (k, v)) m
+            | small -> small
+
+        let toSeq m =
+            getEnumerable (fun k v -> k, v) m
+
+        let toList m = 
+            let iterator = TreeIterator<_,_> m
+            List.init (size m) (fun _ -> iterator.PopCurrent (fun k v -> k, v))
+
+        let toArray m =
+            let iterator = TreeIterator<_,_> m
+            Array.init (size m) (fun _ -> iterator.PopCurrent (fun k v -> k, v))
 
     [<System.Diagnostics.DebuggerTypeProxy(typedefof<MapDebugView<_,_>>)>]
     [<System.Diagnostics.DebuggerDisplay("Count = {Count}")>]
@@ -568,6 +548,8 @@ namespace Microsoft.FSharp.Collections
 #endif
             MapTree.tryFind comparer key tree
 
+        member m.ToSeq() = MapTree.toSeq tree
+
         member m.ToList() = MapTree.toList tree
 
         member m.ToArray() = MapTree.toArray tree
@@ -599,10 +581,10 @@ namespace Microsoft.FSharp.Collections
         override this.GetHashCode() = this.ComputeHashCode()
 
         interface IEnumerable<KeyValuePair<'Key, 'Value>> with
-            member __.GetEnumerator() = MapTree.mkIEnumerator tree
+            member __.GetEnumerator() = (MapTree.getKVEnumerable tree).GetEnumerator()
 
         interface System.Collections.IEnumerable with
-            member __.GetEnumerator() = (MapTree.mkIEnumerator tree :> System.Collections.IEnumerator)
+            member __.GetEnumerator() = (((MapTree.getKVEnumerable tree).GetEnumerator()) :> System.Collections.IEnumerator)
 
         interface IDictionary<'Key, 'Value> with 
             member m.Item 
@@ -739,7 +721,7 @@ namespace Microsoft.FSharp.Collections
         let foldBack<'Key,'T,'State  when 'Key : comparison> folder (table:Map<'Key,'T>) (state:'State) =  MapTree.foldBack  folder table.Tree state
         
         [<CompiledName("ToSeq")>]
-        let toSeq (table:Map<_,_>) = table |> Seq.map (fun kvp -> kvp.Key, kvp.Value)
+        let toSeq (table:Map<_,_>) = table.ToSeq()
 
         [<CompiledName("FindKey")>]
         let findKey predicate (table : Map<_,_>) = table |> toSeq |> Seq.pick (fun (k,v) -> if predicate k v then Some(k) else None)
