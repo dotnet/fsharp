@@ -39,7 +39,6 @@
     <Compile Include="Common\ContentType.fs" />
     <Compile Include="Common\Vs.fs" />
     <Compile Include="Options\SettingsPersistence.fs" />
-    <Compile Include="Options\UIHelpers.fs" />
     <Compile Include="Options\EditorOptions.fs" />
     <Compile Include="LanguageService\ProvideBraceCompletionAttribute.fs" />
     <Compile Include="LanguageService\FSharpEditorFactory.fs" />
@@ -155,6 +154,7 @@
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="$(MicrosoftVSSDKBuildToolsPackageVersion)"  PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutablePackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="System.Design" Version="$(SystemDesignPackageVersion)" />
     <PackageReference Include="VSSDK.VSLangProj" Version="$(VSSDKVSLangProjPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
   </ItemGroup>
 
