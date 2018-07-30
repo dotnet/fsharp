@@ -18,7 +18,6 @@ namespace Microsoft.FSharp.Collections
     type SetTree<'T> when 'T: comparison = 
         | SetEmpty                                          // height = 0   
         | SetNode of 'T * SetTree<'T> *  SetTree<'T> * int    // height = int 
-        | SetOne  of 'T                                     // height = 1   
             // OPTIMIZATION: store SetNode(k,SetEmpty,SetEmpty,1) --->  SetOne(k) 
             // REVIEW: performance rumour has it that the data held in SetNode and SetOne should be
             // exactly one cache line on typical architectures. They are currently 
@@ -30,7 +29,6 @@ namespace Microsoft.FSharp.Collections
         let rec countAux s acc = 
             match s with 
             | SetNode(_,l,r,_) -> countAux l (countAux r (acc+1))
-            | SetOne(_) -> acc+1
             | SetEmpty -> acc           
 
         let count s = countAux s 0
@@ -64,7 +62,6 @@ namespace Microsoft.FSharp.Collections
             totalSizeOnNodeCreation <- totalSizeOnNodeCreation + float (count n); 
             n
     #else
-        let SetOne n = SetTree.SetOne n
         let SetNode (x,l,r,h) = SetTree.SetNode(x,l,r,h)
         
     #endif
@@ -73,7 +70,6 @@ namespace Microsoft.FSharp.Collections
         let height t = 
             match t with 
             | SetEmpty -> 0
-            | SetOne _ -> 1
             | SetNode (_,_,_,h) -> h
 
     #if CHECKED
@@ -88,11 +84,14 @@ namespace Microsoft.FSharp.Collections
                 (-2 <= (h1 - h2) && (h1 - h2) <= 2) && checkInvariant t1 && checkInvariant t2
     #endif
 
+        let inline mkLeaf k =
+            SetNode (k, SetEmpty, SetEmpty, 1)
+
         let tolerance = 2
 
         let mk l k r = 
             match l,r with 
-            | SetEmpty,SetEmpty -> SetOne (k)
+            | SetEmpty,SetEmpty -> mkLeaf k
             | _ -> 
               let hl = height l 
               let hr = height r 
@@ -137,13 +136,7 @@ namespace Microsoft.FSharp.Collections
                 if   c < 0 then rebalance (add comparer k l) k2 r
                 elif c = 0 then t
                 else            rebalance l k2 (add comparer k r)
-            | SetOne(k2) -> 
-                // nb. no check for rebalance needed for small trees, also be sure to reuse node already allocated 
-                let c = comparer.Compare(k,k2) 
-                if c < 0   then SetNode (k,SetEmpty,t,2)
-                elif c = 0 then t
-                else            SetNode (k,t,SetEmpty,2)                  
-            | SetEmpty -> SetOne(k)
+            | SetEmpty -> mkLeaf k
 
         let rec balance comparer t1 k t2 =
             // Given t1 < k < t2 where t1 and t2 are "balanced",
@@ -152,8 +145,6 @@ namespace Microsoft.FSharp.Collections
             match t1,t2 with
             | SetEmpty,t2  -> add comparer k t2 // drop t1 = empty 
             | t1,SetEmpty  -> add comparer k t1 // drop t2 = empty 
-            | SetOne k1,t2 -> add comparer k (add comparer k1 t2)
-            | t1,SetOne k2 -> add comparer k (add comparer k2 t1)
             | SetNode(k1,t11,t12,h1),SetNode(k2,t21,t22,h2) ->
                 // Have:  (t11 < k1 < t12) < k < (t21 < k2 < t22)
                 // Either (a) h1,h2 differ by at most 2 - no rebalance needed.
@@ -185,18 +176,12 @@ namespace Microsoft.FSharp.Collections
                 else            // pivot t2 
                     let t12Lo,havePivot,t12Hi = split comparer pivot t12
                     balance comparer t11 k1 t12Lo,havePivot,t12Hi
-            | SetOne k1 ->
-                let c = comparer.Compare(k1,pivot)
-                if   c < 0 then t       ,false,SetEmpty // singleton under pivot 
-                elif c = 0 then SetEmpty,true ,SetEmpty // singleton is    pivot 
-                else            SetEmpty,false,t        // singleton over  pivot 
             | SetEmpty  -> 
                 SetEmpty,false,SetEmpty
         
         let rec spliceOutSuccessor t = 
             match t with 
             | SetEmpty -> failwith "internal error: Set.spliceOutSuccessor"
-            | SetOne (k2) -> k2,SetEmpty
             | SetNode (k2,l,r,_) ->
                 match l with 
                 | SetEmpty -> k2,r
@@ -205,10 +190,6 @@ namespace Microsoft.FSharp.Collections
         let rec remove (comparer: IComparer<'T>) k t = 
             match t with 
             | SetEmpty -> t
-            | SetOne (k2) -> 
-                let c = comparer.Compare(k,k2) 
-                if   c = 0 then SetEmpty
-                else            t
             | SetNode (k2,l,r,_) -> 
                 let c = comparer.Compare(k,k2) 
                 if   c < 0 then rebalance (remove comparer k l) k2 r
@@ -228,19 +209,16 @@ namespace Microsoft.FSharp.Collections
                 if   c < 0 then mem comparer k l
                 elif c = 0 then true
                 else mem comparer k r
-            | SetOne(k2) -> (comparer.Compare(k,k2) = 0)
             | SetEmpty -> false
 
         let rec iter f t = 
             match t with 
             | SetNode(k2,l,r,_) -> iter f l; f k2; iter f r
-            | SetOne(k2) -> f k2
             | SetEmpty -> ()            
 
         let rec foldBackOpt (f:OptimizedClosures.FSharpFunc<_,_,_>) m x = 
             match m with 
             | SetNode(k,l,r,_) -> foldBackOpt f l (f.Invoke(k, (foldBackOpt f r x)))
-            | SetOne(k) -> f.Invoke(k, x)
             | SetEmpty -> x
 
         let foldBack f m x = foldBackOpt (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) m x
@@ -251,7 +229,6 @@ namespace Microsoft.FSharp.Collections
                 let x = foldOpt f x l in 
                 let x = f.Invoke(x, k)
                 foldOpt f x r
-            | SetOne(k) -> f.Invoke(x, k)
             | SetEmpty -> x
 
         let fold f x m = foldOpt (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) x m
@@ -259,13 +236,11 @@ namespace Microsoft.FSharp.Collections
         let rec forall f m = 
             match m with 
             | SetNode(k2,l,r,_) -> f k2 && forall f l && forall f r
-            | SetOne(k2) -> f k2
             | SetEmpty -> true          
 
         let rec exists f m = 
             match m with 
             | SetNode(k2,l,r,_) -> f k2 || exists f l || exists f r
-            | SetOne(k2) -> f k2
             | SetEmpty -> false         
 
         let isEmpty m = match m with  | SetEmpty -> true | _ -> false
@@ -279,7 +254,6 @@ namespace Microsoft.FSharp.Collections
             | SetNode(k,l,r,_) -> 
                 let acc = if f k then add comparer k acc else acc 
                 filterAux comparer f l (filterAux comparer f r acc)
-            | SetOne(k) -> if f k then add comparer k acc else acc
             | SetEmpty -> acc           
 
         let filter comparer f s = filterAux comparer f s SetEmpty
@@ -290,7 +264,6 @@ namespace Microsoft.FSharp.Collections
             | _ ->
             match m with 
             | SetNode(k,l,r,_) -> diffAux comparer l (diffAux comparer r (remove comparer k acc))
-            | SetOne(k) -> remove comparer k acc
             | SetEmpty -> acc           
 
         let diff comparer a b = diffAux comparer b a
@@ -311,8 +284,6 @@ namespace Microsoft.FSharp.Collections
                   balance comparer (union comparer t21 lo) k2 (union comparer t22 hi)
             | SetEmpty,t -> t
             | t,SetEmpty -> t
-            | SetOne k1,t2 -> add comparer k1 t2
-            | t1,SetOne k2 -> add comparer k2 t1
 
         let rec intersectionAux comparer b m acc = 
             match m with 
@@ -320,8 +291,6 @@ namespace Microsoft.FSharp.Collections
                 let acc = intersectionAux comparer b r acc 
                 let acc = if mem comparer k b then add comparer k acc else acc 
                 intersectionAux comparer b l acc
-            | SetOne(k) -> 
-                if mem comparer k b then add comparer k acc else acc
             | SetEmpty -> acc
 
         let intersection comparer a b = intersectionAux comparer b a SetEmpty
@@ -334,7 +303,6 @@ namespace Microsoft.FSharp.Collections
                 let acc = partitionAux comparer f r acc 
                 let acc = partition1 comparer f k acc
                 partitionAux comparer f l acc
-            | SetOne(k) -> partition1 comparer f k acc
             | SetEmpty -> acc           
 
         let partition comparer f s = partitionAux comparer f s (SetEmpty,SetEmpty)
@@ -343,31 +311,26 @@ namespace Microsoft.FSharp.Collections
         let (|MatchSetNode|MatchSetEmpty|) s = 
             match s with 
             | SetNode(k2,l,r,_) -> MatchSetNode(k2,l,r)
-            | SetOne(k2) -> MatchSetNode(k2,SetEmpty,SetEmpty)
             | SetEmpty -> MatchSetEmpty
         
         let rec minimumElementAux s n = 
             match s with 
             | SetNode(k,l,_,_) -> minimumElementAux l k
-            | SetOne(k) -> k
             | SetEmpty -> n
 
         and minimumElementOpt s = 
             match s with 
             | SetNode(k,l,_,_) -> Some(minimumElementAux l k)
-            | SetOne(k) -> Some k
             | SetEmpty -> None
 
         and maximumElementAux s n = 
             match s with 
             | SetNode(k,_,r,_) -> maximumElementAux r k
-            | SetOne(k) -> k
             | SetEmpty -> n             
 
         and maximumElementOpt s = 
             match s with 
             | SetNode(k,_,r,_) -> Some(maximumElementAux r k)
-            | SetOne(k) -> Some(k)
             | SetEmpty -> None
 
         let minimumElement s = 
@@ -398,8 +361,8 @@ namespace Microsoft.FSharp.Collections
             match stack with
             | []                       -> []
             | SetEmpty         :: rest -> collapseLHS rest
-            | SetOne _         :: _ -> stack
-            | SetNode(k,l,r,_) :: rest -> collapseLHS (l :: SetOne k :: r :: rest)
+            | SetNode(_,_,_,1) :: _ -> stack
+            | SetNode(k,l,r,_) :: rest -> collapseLHS (l :: (mkLeaf k) :: r :: rest)
           
         let mkIterator s = { stack = collapseLHS [s]; started = false }
 
@@ -409,7 +372,7 @@ namespace Microsoft.FSharp.Collections
         let current i =
             if i.started then
                 match i.stack with
-                  | SetOne k :: _ -> k
+                  | SetNode(k,_,_,1) :: _ -> k
                   | []            -> alreadyFinished()
                   | _             -> failwith "Please report error: Set iterator, unexpected stack for current"
             else
@@ -418,7 +381,7 @@ namespace Microsoft.FSharp.Collections
         let rec moveNext i =
             if i.started then
                 match i.stack with
-                  | SetOne _ :: rest -> 
+                  | SetNode(_,_,_,1) :: rest -> 
                       i.stack <- collapseLHS rest;
                       not i.stack.IsEmpty 
                   | [] -> false
@@ -448,24 +411,11 @@ namespace Microsoft.FSharp.Collections
             | [],_  -> -1
             | _ ,[] ->  1
             | (SetEmpty  _ :: t1),(SetEmpty    :: t2) -> compareStacks comparer t1 t2
-            | (SetOne(n1k) :: t1),(SetOne(n2k) :: t2) -> 
-                 let c = comparer.Compare(n1k,n2k) 
-                 if c <> 0 then c else compareStacks comparer t1 t2
-            | (SetOne(n1k) :: t1),(SetNode(n2k,SetEmpty,n2r,_) :: t2) -> 
-                 let c = comparer.Compare(n1k,n2k) 
-                 if c <> 0 then c else compareStacks comparer (SetEmpty :: t1) (n2r :: t2)
-            | (SetNode(n1k,(SetEmpty as emp),n1r,_) :: t1),(SetOne(n2k) :: t2) -> 
-                 let c = comparer.Compare(n1k,n2k) 
-                 if c <> 0 then c else compareStacks comparer (n1r :: t1) (emp :: t2)
             | (SetNode(n1k,SetEmpty,n1r,_) :: t1),(SetNode(n2k,SetEmpty,n2r,_) :: t2) -> 
                  let c = comparer.Compare(n1k,n2k) 
                  if c <> 0 then c else compareStacks comparer (n1r :: t1) (n2r :: t2)
-            | (SetOne(n1k) :: t1),_ -> 
-                compareStacks comparer (SetEmpty :: SetOne(n1k) :: t1) l2
             | (SetNode(n1k,n1l,n1r,_) :: t1),_ -> 
                 compareStacks comparer (n1l :: SetNode(n1k,SetEmpty,n1r,0) :: t1) l2
-            | _,(SetOne(n2k) :: t2) -> 
-                compareStacks comparer l1 (SetEmpty :: SetOne(n2k) :: t2)
             | _,(SetNode(n2k,n2l,n2r,_) :: t2) -> 
                 compareStacks comparer l1 (n2l :: SetNode(n2k,SetEmpty,n2r,0) :: t2)
                 
@@ -482,7 +432,6 @@ namespace Microsoft.FSharp.Collections
             let rec loop m acc = 
                 match m with 
                 | SetNode(k,l,r,_) -> loop l (k :: loop r acc)
-                | SetOne(k) ->  k ::acc
                 | SetEmpty -> acc
             loop s []
 
