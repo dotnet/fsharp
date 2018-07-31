@@ -1,7 +1,7 @@
 queue:
   name: VSEng-MicroBuildVS2017
   timeoutInMinutes: 300
-  demands: 
+  demands:
   - visualstudio
   - DotNetFramework
   - msbuild
