@@ -852,6 +852,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Truncate")>]
         let truncate count (source: seq<'T>) =
             checkNonNull "source" source
+            if count <= 0 then empty else
             seq { let i = ref 0
                   use ie = source.GetEnumerator()
                   while !i < count && ie.MoveNext() do
@@ -1030,6 +1031,8 @@ namespace Microsoft.FSharp.Collections
 
         let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (seq:seq<'T>) =
             checkNonNull "seq" seq
+
+            if isEmpty seq then empty else
 
             let dict = Dictionary<_,ResizeArray<_>> comparer
 

@@ -5,7 +5,6 @@ namespace UnitTests.TestLib.Utils
 open System
 open System.IO
 open NUnit.Framework
-
 open Microsoft.VisualStudio
 
 module Asserts =
@@ -54,6 +53,7 @@ module UIStuff =
     let SetupSynchronizationContext() =
         Microsoft.VisualStudio.FSharp.ProjectSystem.UIThread.InitUnitTestingMode()
         Microsoft.VisualStudio.FSharp.LanguageService.UIThread.InitUnitTestingMode()
+        Microsoft.VisualStudio.FSharp.ProjectSystem.UIThread.InitUnitTestingMode()
 
 module FilesystemHelpers =
     let pid = System.Diagnostics.Process.GetCurrentProcess().Id 

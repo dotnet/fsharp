@@ -11,7 +11,6 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library  
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Layout
@@ -642,7 +641,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                     let glyph = GlyphOfItem(denv, item.Item)
 
                     let name, nameInCode =
-                        if displayName.StartsWith "( " && displayName.EndsWith " )" then
+                        if displayName.StartsWithOrdinal("( ") && displayName.EndsWithOrdinal(" )") then
                             let cleanName = displayName.[2..displayName.Length - 3]
                             cleanName, 
                             if IsOperatorName displayName then cleanName else "``" + cleanName + "``"
@@ -655,7 +654,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                     let isAttributeItem = lazy (SymbolHelpers.IsAttribute infoReader item.Item)
 
                     let cutAttributeSuffix (name: string) =
-                        if isAttributeApplicationContext && name <> "Attribute" && name.EndsWith "Attribute" && isAttributeItem.Value then
+                        if isAttributeApplicationContext && name <> "Attribute" && name.EndsWithOrdinal("Attribute") && isAttributeItem.Value then
                             name.[0..name.Length - "Attribute".Length - 1]
                         else name
 

@@ -6,14 +6,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectFiles Include="src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj" />
     <ProjectFiles Include="src\FSharp.Editor\FSharp.Editor.fsproj" />
+    <ProjectFiles Include="src\FSharp.ProjectSystem.PropertyPages\FSharp.PropertiesPages.vbproj" />
     <ProjectFiles Include="src\FSharp.LanguageService\FSharp.LanguageService.fsproj" />
     <ProjectFiles Include="src\FSharp.UIResources\FSharp.UIResources.csproj" />
-    <ProjectFiles Include="src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj" />
     <ProjectFiles Include="src\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj" />
-    <ProjectFiles Include="src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj" />
-    <ProjectFiles Include="src\FSharp.ProjectSystem.PropertyPages\FSharp.PropertiesPages.vbproj" />
     <ProjectFiles Include="src\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />
+    <ProjectFiles Include="src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj" />
     <ProjectFiles Include="src\FSharp.PatternMatcher\FSharp.PatternMatcher.csproj" />
   </ItemGroup>
 

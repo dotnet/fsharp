@@ -121,6 +121,7 @@ type WriterState =
     onlerefs: Table<int * int[]> 
     osimpletys: Table<int>
     oglobals : TcGlobals
+    mutable isStructThisArgPos : bool
     ofile : string
     /// Indicates if we are using in-memory format, where we store XML docs as well
     oInMem : bool
@@ -713,7 +714,8 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
         osimpletys=Table<_>.Create "osimpletys"  
         oglobals=g
         ofile=file
-        oInMem=inMem }
+        oInMem=inMem
+        isStructThisArgPos = false}
     p x st1
     let sizes = 
       st1.otycons.Size,
@@ -735,7 +737,8 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
        osimpletys=Table<_>.Create "osimpletys (fake)"
        oglobals=g
        ofile=file
-       oInMem=inMem }
+       oInMem=inMem
+       isStructThisArgPos = false }
     p_tup7
       (p_array p_encoded_ccuref) 
       (p_tup3 p_int p_int p_int) 

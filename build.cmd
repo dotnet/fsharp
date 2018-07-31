@@ -79,6 +79,8 @@ set TEST_END_2_END=0
 set INCLUDE_TEST_SPEC_NUNIT=
 set INCLUDE_TEST_TAGS=
 
+set COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=0
+
 set SIGN_TYPE=%PB_SIGNTYPE%
 
 REM ------------------ Parse all arguments -----------------------
@@ -156,6 +158,7 @@ if /i "%ARG%" == "net40" (
     set _autoselect=0
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_NET40=1
+    set COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=1
 )
 
 if /i "%ARG%" == "coreclr" (
@@ -175,6 +178,7 @@ if /i "%ARG%" == "vs" (
     set _autoselect=0
     set BUILD_NET40=1
     set BUILD_VS=1
+    set COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=1
 )
 
 if /i "%ARG%" == "fcs" (
@@ -191,6 +195,7 @@ if /i "%ARG%" == "nobuild" (
 )
 if /i "%ARG%" == "all" (
     set _autoselect=0
+    set COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=1
     set BUILD_PROTO=1
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_NET40=1
@@ -481,9 +486,6 @@ if NOT EXIST Proto\net40\bin\fsc.exe (
   set BUILD_PROTO=1
 )
 
-rem turn off vs ide unit tests until they pass again
-set TEST_VS_IDEUNIT_SUITE= 0
-
 rem
 rem This stops the dotnet cli from hunting around and 
 rem finding the highest possible dotnet sdk version to use.
@@ -512,6 +514,9 @@ echo PB_SKIPTESTS=%PB_SKIPTESTS%
 echo PB_RESTORESOURCE=%PB_RESTORESOURCE%
 echo.
 echo SIGN_TYPE=%SIGN_TYPE%
+echo.
+echo COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=%COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES%
+echo.
 echo TEST_FCS=%TEST_FCS%
 echo TEST_NET40_COMPILERUNIT_SUITE=%TEST_NET40_COMPILERUNIT_SUITE%
 echo TEST_NET40_COREUNIT_SUITE=%TEST_NET40_COREUNIT_SUITE%
@@ -744,8 +749,8 @@ if "%BUILD_PROTO%" == "1" (
 
   if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 
-    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true
-         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true
+    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:artifacts\protobuild-net40.build.binlog
+         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:artifacts\protobuild-net40.build.binlog
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
   )
 
@@ -754,8 +759,8 @@ if "%BUILD_PROTO%" == "1" (
     echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
          %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
 
-    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true
-         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true
+    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:artifacts\protobuild-coreclr.build.binlog
+         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:artifacts\protobuild-coreclr.build.binlog
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
   )
 
@@ -778,8 +783,8 @@ if "%BUILD_PHASE%" == "1" (
     echo %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore %BUILD_DIAG%
          %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore %BUILD_DIAG%
 
-    echo %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
-         %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
+    echo %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%  /bl:artifacts\msbuild.build-everything.build.%BUILD_CONFIG%.binlog
+         %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%  /bl:artifacts\msbuild.build-everything.build.%BUILD_CONFIG%.binlog
 
    @if ERRORLEVEL 1 echo Error build failed && goto :failure
 )
@@ -803,8 +808,8 @@ if not "%SIGN_TYPE%" == "" (
 
 echo ---------------- Done with assembly signing, start package creation ---------------
 
-echo %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%
-     %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%
+echo %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%  /bl:artifacts\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
+     %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%  /bl:artifacts\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
 if ERRORLEVEL 1 echo Error building NuGet packages && goto :failure
 
 if not "%SIGN_TYPE%" == "" (
@@ -814,8 +819,8 @@ if not "%SIGN_TYPE%" == "" (
 )
 
 if "%BUILD_SETUP%" == "1" (
-    echo %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%
-         %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%
+    echo %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%  /bl:artifacts\msbuild.build-insertion.build.%BUILD_CONFIG%.binlog
+         %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%  /bl:artifacts\msbuild.build-insertion.build.%BUILD_CONFIG%.binlog
     if ERRORLEVEL 1 echo Error building insertion packages && goto :failure
 )
 
@@ -828,8 +833,8 @@ if not "%SIGN_TYPE%" == "" (
 echo ---------------- Done with signing, building insertion files ---------------
 
 if "%BUILD_SETUP%" == "1" (
-    echo %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG%
-         %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG%
+    echo %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG%  /bl:artifacts\msbuild.setup-swix.build.%BUILD_CONFIG%.binlog
+         %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG%  /bl:artifacts\msbuild.setup-swix.build.%BUILD_CONFIG%.binlog
     if ERRORLEVEL 1 echo Error building .vsmanproj && goto :failure
 )
 
@@ -838,6 +843,11 @@ echo ---------------- Done building insertion files, starting pack/update/prepar
 if "%BUILD_NET40_FSHARP_CORE%" == "1" (
   echo ----------------  start update.cmd ---------------
   call src\update.cmd %BUILD_CONFIG% -ngen
+)
+
+if "%COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES%" == "1" (
+  echo ----------------  copy fscomp resource for build from sources ---------------
+  copy /y src\fsharp\FSharp.Compiler.Private\obj\%BUILD_CONFIG%\net40\FSComp.* src\buildfromsource\FSharp.Compiler.Private
 )
 
 @echo set NUNITPATH=packages\NUnit.Console.3.0.0\tools\
@@ -1173,6 +1183,16 @@ if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
         set ERRORFILE=!RESULTSDIR!\test-vs-ideunit-errors.log
         set ERRORARG=--err:"!ERRORFILE!" 
         set OUTPUTARG=--output:"!OUTPUTFILE!" 
+    )
+
+    rem Verify that VisualFSharp.UnitTests.dll can be loaded by nunit.  Report load errors.
+    pushd !FSCBINPATH!
+    echo "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\GetTypesVSUnitTests.dll" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\GetTypesVSUnitTests.dll" !WHERE_ARG_NUNIT!
+    popd
+
+    if errorlevel 1 (
+        goto :failure
     )
 
     pushd !FSCBINPATH!

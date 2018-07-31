@@ -289,8 +289,8 @@ module internal InterfaceStubGenerator =
     /// Convert a getter/setter to its canonical form
     let internal normalizePropertyName (v: FSharpMemberOrFunctionOrValue) =
         let displayName = v.DisplayName
-        if (v.IsPropertyGetterMethod && displayName.StartsWith("get_")) || 
-            (v.IsPropertySetterMethod && displayName.StartsWith("set_")) then
+        if (v.IsPropertyGetterMethod && displayName.StartsWithOrdinal("get_")) || 
+            (v.IsPropertySetterMethod && displayName.StartsWithOrdinal("set_")) then
             displayName.[4..]
         else displayName
 
@@ -308,7 +308,7 @@ module internal InterfaceStubGenerator =
                 | _  -> formatArgsUsage ctx verboseMode v argInfos
              
             if String.IsNullOrWhiteSpace(args) then "" 
-            elif args.StartsWith("(") then args
+            elif args.StartsWithOrdinal("(") then args
             elif v.CurriedParameterGroups.Count > 1 && (not verboseMode) then " " + args
             else sprintf "(%s)" args
             , namesWithIndices
@@ -321,7 +321,7 @@ module internal InterfaceStubGenerator =
                 | _, _, ".ctor", _ -> "new" + parArgs
                 // Properties (skipping arguments)
                 | _, true, _, name when v.IsPropertyGetterMethod || v.IsPropertySetterMethod -> 
-                    if name.StartsWith("get_") || name.StartsWith("set_") then name.[4..] else name
+                    if name.StartsWithOrdinal("get_") || name.StartsWithOrdinal("set_") then name.[4..] else name
                 // Ordinary instance members
                 | _, true, _, name -> name + parArgs
                 // Ordinary functions or values
@@ -509,10 +509,10 @@ module internal InterfaceStubGenerator =
     let internal (|MemberNameAndRange|_|) = function
         | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
                     _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = MemberKind.PropertyGet ->
-            if name.StartsWith("get_") then Some(name, range) else Some("get_" + name, range)
+            if name.StartsWithOrdinal("get_") then Some(name, range) else Some("get_" + name, range)
         | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
                     _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = MemberKind.PropertySet ->
-            if name.StartsWith("set_") then Some(name, range) else Some("set_" + name, range)
+            if name.StartsWithOrdinal("set_") then Some(name, range) else Some("set_" + name, range)
         | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, LongIdentPattern(name, range), 
                     _retTy, _expr, _bindingRange, _seqPoint) ->
             Some(name, range)
@@ -535,8 +535,8 @@ module internal InterfaceStubGenerator =
 
     let internal normalizeEventName (m: FSharpMemberOrFunctionOrValue) =
         let name = m.DisplayName
-        if name.StartsWith("add_") then name.[4..]
-        elif name.StartsWith("remove_")  then name.[7..]
+        if name.StartsWithOrdinal("add_") then name.[4..]
+        elif name.StartsWithOrdinal("remove_")  then name.[7..]
         else name
 
     /// Ideally this info should be returned in error symbols from FCS. 
