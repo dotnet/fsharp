@@ -22,8 +22,12 @@
     <Build_FileVersion>$(_Build_Year).$(_Build_Month).$(_Build_Day).$(_Build_Number)</Build_FileVersion>
 
     <FSCoreVersion>4.5.0.0</FSCoreVersion>
-    <FSProductVersion>10.2.1.0</FSProductVersion>
-    <FSPackageVersion>10.2.1</FSPackageVersion>
+    <FSCoreMajorVersion>4.5</FSCoreMajorVersion>
+    <FSCorePackageVersion>4.5.3</FSCorePackageVersion>
+    <FSProductVersion>10.2.3.0</FSProductVersion>
+    <FSPackageVersion>10.2.3</FSPackageVersion>
+    <FSPackageMajorVersion>10.2</FSPackageMajorVersion>
+
     <VSMajorVersion>16</VSMajorVersion>
     <VSMinorVersion>0</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
