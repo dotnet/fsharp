@@ -58,7 +58,6 @@
     <PackageReference Include="Microsoft.VisualStudio.Shell.14.0" Version="$(MicrosoftVisualStudioShell140PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.Shell.15.0" Version="$(MicrosoftVisualStudioShell150PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualFSharp.Microsoft.VisualStudio.Shell.UI.Internal" Version="$(MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="VSSDK.VSHelp" Version="$(VSSDKVSHelpPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="VSSDK.VSLangProj.8" Version="$(VSSDKVSLangProj8PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
   </ItemGroup>

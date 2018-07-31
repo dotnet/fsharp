@@ -208,7 +208,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualFSharp.Type.Providers.Redist" Version="$(MicrosoftVisualFSharpTypeProvidersRedistPackageVersion)" />
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonPackageVersion)" />
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
   </ItemGroup>
 
 </Project>
