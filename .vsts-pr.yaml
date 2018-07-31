@@ -1,0 +1,59 @@
+phases:
+- phase: Linux
+  queue:
+    name: Hosted Linux Preview
+    timeoutInMinutes: 90
+    parallel: 2
+    matrix:
+      release_default:
+        _command: ./mono/cibuild.sh
+        _args: release
+      release_fcs:
+        _command: ./fcs/build.sh
+        _args: Build
+  steps:
+    - script: $(_command) $(_args)
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.SourcesDirectory)/tests/TestResults'
+        ArtifactName: 'Linux $(_command) $(_args)'
+        publishLocation: Container
+      continueOnError: true
+      condition: failed()
+
+- phase: Windows
+  queue:
+    name: Hosted VS2017
+    timeoutInMinutes: 90
+    parallel: 7
+    matrix:
+      ci_part1:
+        _command: build.cmd
+        _args: release ci_part1
+      ci_part2:
+        _command: build.cmd
+        _args: release ci_part2
+      ci_part3:
+        _command: build.cmd
+        _args: release ci_part3
+      ci_part4:
+        _command: build.cmd
+        _args: release ci_part4
+      debug_default:
+        _command: build.cmd
+        _args: debug
+      net40_no_vs:
+        _command: build.cmd
+        _args: release net40
+      release_fcs:
+        _command: fcs\build.cmd
+        _args: TestAndNuget
+  steps:
+    - script: $(_command) $(_args)
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.SourcesDirectory)\tests\TestResults'
+        ArtifactName: 'Windows $(_command) $(_args)'
+        publishLocation: Container
+      continueOnError: true
+      condition: failed()
