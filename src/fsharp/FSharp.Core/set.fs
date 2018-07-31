@@ -13,16 +13,9 @@ namespace Microsoft.FSharp.Collections
 
     (* A classic functional language implementation of binary trees *)
 
-    [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
     [<NoEquality; NoComparison>]
     type SetTree<'T> when 'T: comparison = 
-        | SetEmpty                                          // height = 0   
         | SetNode of 'T * SetTree<'T> *  SetTree<'T> * Size:int
-            // OPTIMIZATION: store SetNode(k,SetEmpty,SetEmpty,1) --->  SetOne(k) 
-            // REVIEW: performance rumour has it that the data held in SetNode and SetOne should be
-            // exactly one cache line on typical architectures. They are currently 
-            // ~6 and 3 words respectively. 
-
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module internal SetTree = 
@@ -54,16 +47,14 @@ namespace Microsoft.FSharp.Collections
             let n = SetTree.SetNode(x,l,r,h)
             totalSizeOnNodeCreation <- totalSizeOnNodeCreation + float (count n); 
             n
-    #else
-        let SetNode (x,l,r,h) = SetTree.SetNode(x,l,r,h)
-        
     #endif
-    
 
-        let size t = 
-            match t with 
-            | SetEmpty -> 0
-            | SetNode (Size=s) -> s
+        [<Sealed; AbstractClass>]
+        type Constants<'Key when 'Key : comparison> private () = 
+            static let empty = SetNode(Unchecked.defaultof<'Key>, Unchecked.defaultof<SetTree<'Key>>, Unchecked.defaultof<SetTree<'Key>>, 0)
+            static member Empty = empty
+    
+        let size (SetNode (Size=s)) = s
 
     #if CHECKED
         let rec checkInvariant t =
@@ -77,15 +68,11 @@ namespace Microsoft.FSharp.Collections
                 (-2 <= (h1 - h2) && (h1 - h2) <= 2) && checkInvariant t1 && checkInvariant t2
     #endif
 
-        let inline mkLeaf k =
-            SetNode (k, SetEmpty, SetEmpty, 1)
-
         let inline (++) l r = Checked.(+) l r
 
-        let mk l k r = 
-            match l,r with 
-            | SetEmpty,SetEmpty -> mkLeaf k
-            | _ -> SetNode(k,l,r,(size l) ++ (size r) + 1)
+        let inline mkLeaf k = SetNode (k, Constants.Empty, Constants.Empty, 1)
+
+        let inline mk l k r = SetNode(k,l,r,(size l) ++ (size r) + 1)
 
         let rebalance t1 k t2 =
             let t1s = size t1 
@@ -98,10 +85,8 @@ namespace Microsoft.FSharp.Collections
                         match t2l with 
                         | SetNode(t2lk,t2ll,t2lr,_) ->
                             mk (mk t1 k t2ll) t2lk (mk t2lr t2k t2r) 
-                        | _ -> failwith "rebalance"
                     else // rotate left 
                         mk (mk t1 k t2l) t2k t2r
-                | _ -> failwith "rebalance"
             else
                 if  (t1s >>> 1) > t2s then // left is heavier than right 
                     match t1 with 
@@ -112,28 +97,26 @@ namespace Microsoft.FSharp.Collections
                             match t1r with 
                             | SetNode(t1rk,t1rl,t1rr,_) ->
                                 mk (mk t1l t1k t1rl) t1rk (mk t1rr k t2)
-                            | _ -> failwith "rebalance"
                         else
                             mk t1l t1k (mk t1r k t2)
-                    | _ -> failwith "rebalance"
                 else mk t1 k t2
 
         let rec add (comparer: IComparer<'T>) k t = 
             match t with 
+            | SetNode (Size=0) -> mkLeaf k
             | SetNode (k2,l,r,_) -> 
                 let c = comparer.Compare(k,k2) 
                 if   c < 0 then rebalance (add comparer k l) k2 r
                 elif c = 0 then t
                 else            rebalance l k2 (add comparer k r)
-            | SetEmpty -> mkLeaf k
 
         let rec balance comparer t1 k t2 =
             // Given t1 < k < t2 where t1 and t2 are "balanced",
             // return a balanced tree for <t1,k,t2>.
             // Recall: balance means subtrees heights differ by at most "tolerance"
             match t1,t2 with
-            | SetEmpty,t2  -> add comparer k t2 // drop t1 = empty 
-            | t1,SetEmpty  -> add comparer k t1 // drop t2 = empty 
+            | SetNode (Size=0),t2  -> add comparer k t2 // drop t1 = empty 
+            | t1,SetNode (Size=0)  -> add comparer k t1 // drop t2 = empty 
             | SetNode(k1,t11,t12,s1),SetNode(k2,t21,t22,s2) ->
                 // Have:  (t11 < k1 < t12) < k < (t21 < k2 < t22)
                 // Either (a) h1,h2 differ by at most 2 - no rebalance needed.
@@ -155,6 +138,8 @@ namespace Microsoft.FSharp.Collections
             // Given a pivot and a set t
             // Return { x in t s.t. x < pivot }, pivot in t? , { x in t s.t. x > pivot } 
             match t with
+            | SetNode(Size=0) -> 
+                Constants.Empty,false,Constants.Empty
             | SetNode(k1,t11,t12,_) ->
                 let c = comparer.Compare(pivot,k1)
                 if   c < 0 then // pivot t1 
@@ -165,27 +150,25 @@ namespace Microsoft.FSharp.Collections
                 else            // pivot t2 
                     let t12Lo,havePivot,t12Hi = split comparer pivot t12
                     balance comparer t11 k1 t12Lo,havePivot,t12Hi
-            | SetEmpty  -> 
-                SetEmpty,false,SetEmpty
         
         let rec spliceOutSuccessor t = 
             match t with 
-            | SetEmpty -> failwith "internal error: Set.spliceOutSuccessor"
+            | SetNode(Size=0) -> failwith "internal error: Set.spliceOutSuccessor"
             | SetNode (k2,l,r,_) ->
                 match l with 
-                | SetEmpty -> k2,r
+                | SetNode(Size=0) -> k2,r
                 | _ -> let k3,l' = spliceOutSuccessor l in k3,mk l' k2 r
 
         let rec remove (comparer: IComparer<'T>) k t = 
             match t with 
-            | SetEmpty -> t
+            | SetNode(Size=0) -> t
             | SetNode (k2,l,r,_) -> 
                 let c = comparer.Compare(k,k2) 
                 if   c < 0 then rebalance (remove comparer k l) k2 r
                 elif c = 0 then 
                   match l,r with 
-                  | SetEmpty,_ -> r
-                  | _,SetEmpty -> l
+                  | SetNode(Size=0),_ -> r
+                  | _,SetNode(Size=0) -> l
                   | _ -> 
                       let sk,r' = spliceOutSuccessor r 
                       mk l sk r'
@@ -193,46 +176,46 @@ namespace Microsoft.FSharp.Collections
 
         let rec mem (comparer: IComparer<'T>) k t = 
             match t with 
+            | SetNode(Size=0) -> false
             | SetNode(k2,l,r,_) -> 
                 let c = comparer.Compare(k,k2) 
                 if   c < 0 then mem comparer k l
                 elif c = 0 then true
                 else mem comparer k r
-            | SetEmpty -> false
 
         let rec iter f t = 
             match t with 
+            | SetNode(Size=0) -> ()            
             | SetNode(k2,l,r,_) -> iter f l; f k2; iter f r
-            | SetEmpty -> ()            
 
         let rec foldBackOpt (f:OptimizedClosures.FSharpFunc<_,_,_>) m x = 
             match m with 
+            | SetNode(Size=0) -> x
             | SetNode(k,l,r,_) -> foldBackOpt f l (f.Invoke(k, (foldBackOpt f r x)))
-            | SetEmpty -> x
 
         let foldBack f m x = foldBackOpt (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) m x
 
         let rec foldOpt (f:OptimizedClosures.FSharpFunc<_,_,_>) x m = 
             match m with 
+            | SetNode(Size=0) -> x
             | SetNode(k,l,r,_) -> 
                 let x = foldOpt f x l in 
                 let x = f.Invoke(x, k)
                 foldOpt f x r
-            | SetEmpty -> x
 
         let fold f x m = foldOpt (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) x m
 
         let rec forall f m = 
             match m with 
+            | SetNode(Size=0) -> true          
             | SetNode(k2,l,r,_) -> f k2 && forall f l && forall f r
-            | SetEmpty -> true          
 
         let rec exists f m = 
             match m with 
+            | SetNode(Size=0) -> false         
             | SetNode(k2,l,r,_) -> f k2 || exists f l || exists f r
-            | SetEmpty -> false         
 
-        let isEmpty m = match m with  | SetEmpty -> true | _ -> false
+        let isEmpty (SetNode(Size=s)) = s = 0
 
         let subset comparer a b  = forall (fun x -> mem comparer x b) a
 
@@ -240,26 +223,28 @@ namespace Microsoft.FSharp.Collections
 
         let rec filterAux comparer f s acc = 
             match s with 
+            | SetNode(Size=0) -> acc           
             | SetNode(k,l,r,_) -> 
                 let acc = if f k then add comparer k acc else acc 
                 filterAux comparer f l (filterAux comparer f r acc)
-            | SetEmpty -> acc           
 
-        let filter comparer f s = filterAux comparer f s SetEmpty
+        let filter comparer f s = filterAux comparer f s Constants.Empty
 
         let rec diffAux comparer m acc = 
             match acc with
-            | SetEmpty -> acc
+            | SetNode(Size=0) -> acc
             | _ ->
             match m with 
+            | SetNode(Size=0) -> acc           
             | SetNode(k,l,r,_) -> diffAux comparer l (diffAux comparer r (remove comparer k acc))
-            | SetEmpty -> acc           
 
         let diff comparer a b = diffAux comparer b a
 
         let rec union comparer t1 t2 =
             // Perf: tried bruteForce for low heights, but nothing significant 
             match t1,t2 with               
+            | SetNode(Size=0),t -> t
+            | t,SetNode(Size=0) -> t
             | SetNode(k1,t11,t12,h1),SetNode(k2,t21,t22,h2) -> // (t11 < k < t12) AND (t21 < k2 < t22) 
                 // Divide and Conquer:
                 //   Suppose t1 is largest.
@@ -271,56 +256,54 @@ namespace Microsoft.FSharp.Collections
                 else
                   let lo,_,hi = split comparer k2 t1 in
                   balance comparer (union comparer t21 lo) k2 (union comparer t22 hi)
-            | SetEmpty,t -> t
-            | t,SetEmpty -> t
 
         let rec intersectionAux comparer b m acc = 
             match m with 
+            | SetNode(Size=0) -> acc
             | SetNode(k,l,r,_) -> 
                 let acc = intersectionAux comparer b r acc 
                 let acc = if mem comparer k b then add comparer k acc else acc 
                 intersectionAux comparer b l acc
-            | SetEmpty -> acc
 
-        let intersection comparer a b = intersectionAux comparer b a SetEmpty
+        let intersection comparer a b = intersectionAux comparer b a Constants.Empty
 
         let partition1 comparer f k (acc1,acc2) = if f k then (add comparer k acc1,acc2) else (acc1,add comparer k acc2) 
         
         let rec partitionAux comparer f s acc = 
             match s with 
+            | SetNode(Size=0) -> acc           
             | SetNode(k,l,r,_) -> 
                 let acc = partitionAux comparer f r acc 
                 let acc = partition1 comparer f k acc
                 partitionAux comparer f l acc
-            | SetEmpty -> acc           
 
-        let partition comparer f s = partitionAux comparer f s (SetEmpty,SetEmpty)
+        let partition comparer f s = partitionAux comparer f s (Constants.Empty,Constants.Empty)
 
-        // It's easier to get many less-important algorithms right using this active pattern
-        let (|MatchSetNode|MatchSetEmpty|) s = 
-            match s with 
-            | SetNode(k2,l,r,_) -> MatchSetNode(k2,l,r)
-            | SetEmpty -> MatchSetEmpty
+        //// It's easier to get many less-important algorithms right using this active pattern
+        //let (|MatchSetNode|MatchSetEmpty|) s = 
+        //    match s with 
+        //    | SetNode(Size=0) -> MatchSetEmpty
+        //    | SetNode(k2,l,r,_) -> MatchSetNode(k2,l,r)
         
         let rec minimumElementAux s n = 
             match s with 
+            | SetNode(Size=0) -> n
             | SetNode(k,l,_,_) -> minimumElementAux l k
-            | SetEmpty -> n
 
         and minimumElementOpt s = 
             match s with 
+            | SetNode(Size=0) -> None
             | SetNode(k,l,_,_) -> Some(minimumElementAux l k)
-            | SetEmpty -> None
 
         and maximumElementAux s n = 
             match s with 
+            | SetNode(Size=0) -> n             
             | SetNode(k,_,r,_) -> maximumElementAux r k
-            | SetEmpty -> n             
 
         and maximumElementOpt s = 
             match s with 
+            | SetNode(Size=0) -> None
             | SetNode(k,_,r,_) -> Some(maximumElementAux r k)
-            | SetEmpty -> None
 
         let minimumElement s = 
             match minimumElementOpt s with 
@@ -349,7 +332,7 @@ namespace Microsoft.FSharp.Collections
         let rec collapseLHS stack =
             match stack with
             | []                       -> []
-            | SetEmpty         :: rest -> collapseLHS rest
+            | SetNode(Size=0)  :: rest -> collapseLHS rest
             | SetNode(_,_,_,1) :: _ -> stack
             | SetNode(k,l,r,_) :: rest -> collapseLHS (l :: (mkLeaf k) :: r :: rest)
           
@@ -394,34 +377,36 @@ namespace Microsoft.FSharp.Collections
         // Set comparison.  This can be expensive.
         //--------------------------------------------------------------------------
 
-        let rec compareStacks (comparer: IComparer<'T>) l1 l2 =
+        let (^^) hd tl =
+            match hd with
+            | SetNode(Size=0) -> tl
+            | _ -> hd::tl
+
+        let rec compareStacks (comparer:IComparer<'T>) l1 l2 =
             match l1,l2 with 
             | [],[] ->  0
             | [],_  -> -1
             | _ ,[] ->  1
-            | (SetEmpty  _ :: t1),(SetEmpty    :: t2) -> compareStacks comparer t1 t2
-            | (SetNode(n1k,SetEmpty,n1r,_) :: t1),(SetNode(n2k,SetEmpty,n2r,_) :: t2) -> 
-                 let c = comparer.Compare(n1k,n2k) 
-                 if c <> 0 then c else compareStacks comparer (n1r :: t1) (n2r :: t2)
-            | (SetNode(n1k,n1l,n1r,_) :: t1),_ -> 
-                compareStacks comparer (n1l :: SetNode(n1k,SetEmpty,n1r,0) :: t1) l2
-            | _,(SetNode(n2k,n2l,n2r,_) :: t2) -> 
-                compareStacks comparer l1 (n2l :: SetNode(n2k,SetEmpty,n2r,0) :: t2)
+            | (SetNode(n1k,SetNode(Size=0),n1r,_)::t1),(SetNode(n2k,SetNode(Size=0),n2r,_)::t2) -> 
+                 match comparer.Compare (n1k,n2k) with
+                 | 0 -> compareStacks comparer (n1r ^^ t1) (n2r ^^ t2)
+                 | c -> c
+            | (SetNode(n1k,(SetNode(Size=n1ls) as n1l),n1r,_)::t1),_ when n1ls > 0 -> 
+                compareStacks comparer (n1l ^^ (mk Constants.Empty n1k n1r) ^^ t1) l2
+            | _,(SetNode(n2k,n2l,n2r,_)::t2) -> 
+                compareStacks comparer l1 (n2l ^^ (mk Constants.Empty n2k n2r) ^^ t2)
                 
-        let compare comparer s1 s2 = 
-            match s1,s2 with 
-            | SetEmpty,SetEmpty -> 0
-            | SetEmpty,_ -> -1
-            | _,SetEmpty -> 1
-            | _ -> compareStacks comparer [s1] [s2]
+        let compare comparer s1 s2 =
+            if obj.ReferenceEquals (s1,s2) then 0
+            else compareStacks comparer (s1 ^^ []) (s2 ^^ [])
 
         let choose s = minimumElement s
 
         let toList s = 
             let rec loop m acc = 
                 match m with 
+                | SetNode(Size=0) -> acc
                 | SetNode(k,l,r,_) -> loop l (k :: loop r acc)
-                | SetEmpty -> acc
             loop s []
 
         let copyToArray s (arr: _[]) i =
@@ -443,9 +428,9 @@ namespace Microsoft.FSharp.Collections
           
         let ofSeq comparer (c: IEnumerable<_>) =
           use ie = c.GetEnumerator()
-          mkFromEnumerator comparer SetEmpty ie 
+          mkFromEnumerator comparer Constants.Empty ie 
 
-        let ofArray comparer l = Array.fold (fun acc k -> add comparer k acc) SetEmpty l    
+        let ofArray comparer l = Array.fold (fun acc k -> add comparer k acc) Constants.Empty l    
 
 
     [<Sealed>]
@@ -476,7 +461,7 @@ namespace Microsoft.FSharp.Collections
 
         static let empty: Set<'T> = 
             let comparer = LanguagePrimitives.FastGenericComparer<'T> 
-            Set<'T>(comparer, SetEmpty)
+            Set<'T>(comparer, SetTree.Constants.Empty)
 
 #if !FX_NO_BINARY_SERIALIZATION
         [<System.Runtime.Serialization.OnSerializingAttribute>]
@@ -541,17 +526,17 @@ namespace Microsoft.FSharp.Collections
 
         member s.Partition f : Set<'T> *  Set<'T> = 
             match s.Tree with 
-            | SetEmpty -> s,s
+            | SetNode(Size=0) -> s,s
             | _ -> let t1,t2 = SetTree.partition s.Comparer f s.Tree in Set(s.Comparer,t1), Set(s.Comparer,t2)
 
         member s.Filter f : Set<'T> = 
             match s.Tree with 
-            | SetEmpty -> s
+            | SetNode(Size=0) -> s
             | _ -> Set(s.Comparer,SetTree.filter s.Comparer f s.Tree)
 
         member s.Map f : Set<'U> = 
             let comparer = LanguagePrimitives.FastGenericComparer<'U>
-            Set(comparer,SetTree.fold (fun acc k -> SetTree.add comparer (f k) acc) (SetTree<_>.SetEmpty) s.Tree)
+            Set(comparer,SetTree.fold (fun acc k -> SetTree.add comparer (f k) acc) SetTree.Constants.Empty s.Tree)
 
         member s.Exists f = SetTree.exists f s.Tree
 
@@ -560,10 +545,10 @@ namespace Microsoft.FSharp.Collections
         [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member (-) (set1: Set<'T>, set2: Set<'T>) = 
             match set1.Tree with 
-            | SetEmpty -> set1 (* 0 - B = 0 *)
+            | SetNode(Size=0) -> set1 (* 0 - B = 0 *)
             | _ -> 
             match set2.Tree with 
-            | SetEmpty -> set1 (* A - 0 = A *)
+            | SetNode(Size=0) -> set1 (* A - 0 = A *)
             | _ -> Set(set1.Comparer,SetTree.diff set1.Comparer  set1.Tree set2.Tree)
 
         [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
@@ -573,18 +558,18 @@ namespace Microsoft.FSharp.Collections
             SetTree.numUnions <- SetTree.numUnions + 1
 #endif
             match set2.Tree with 
-            | SetEmpty -> set1  (* A U 0 = A *)
+            | SetNode(Size=0) -> set1  (* A U 0 = A *)
             | _ -> 
             match set1.Tree with 
-            | SetEmpty -> set2  (* 0 U B = B *)
+            | SetNode(Size=0) -> set2  (* 0 U B = B *)
             | _ -> Set(set1.Comparer,SetTree.union set1.Comparer  set1.Tree set2.Tree)
 
         static member Intersection(a: Set<'T>, b: Set<'T>) : Set<'T>  = 
             match b.Tree with 
-            | SetEmpty -> b  (* A INTER 0 = 0 *)
+            | SetNode(Size=0) -> b  (* A INTER 0 = 0 *)
             | _ -> 
             match a.Tree with 
-            | SetEmpty -> a (* 0 INTER B = 0 *)
+            | SetNode(Size=0) -> a (* 0 INTER B = 0 *)
             | _ -> Set(a.Comparer,SetTree.intersection a.Comparer a.Tree b.Tree)
            
         static member Union(sets:seq<Set<'T>>) : Set<'T>  = 
