@@ -161,7 +161,7 @@ let (|ObjectInitializationCheck|_|) g expr =
            [| TTarget([], Expr.App(Expr.Val(failInitRef, _, _), _, _, _, _), _); _ |], _, resultTy
         ) when 
             IsCompilerGeneratedName name &&
-            name.StartsWith "init" &&
+            name.StartsWithOrdinal("init") &&
             selfRef.BaseOrThisInfo = MemberThisVal &&
             valRefEq g failInitRef (ValRefForIntrinsic g.fail_init_info) &&
             isUnitTy g resultTy -> Some()
@@ -260,8 +260,9 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         // Check to see if there aren't enough arguments or if there is a tuple-arity mismatch
         // If so, adjust and try again
-        if curriedArgs.Length < curriedArgInfos.Length ||
-           ((List.take curriedArgInfos.Length curriedArgs,curriedArgInfos) ||> List.exists2 (fun arg argInfo -> 
+        let nCurriedArgInfos = curriedArgInfos.Length
+        if curriedArgs.Length < nCurriedArgInfos ||
+           ((List.truncate nCurriedArgInfos curriedArgs,curriedArgInfos) ||> List.exists2 (fun arg argInfo -> 
                        (argInfo.Length > (tryDestRefTupleExpr arg).Length)))
         then
             if verboseCReflect then 
@@ -277,7 +278,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             ConvExpr cenv env (MakeApplicationAndBetaReduce cenv.g (expr,exprty,[tyargs],curriedArgs,m)) 
         else
             // Too many arguments? Chop 
-            let (curriedArgs:Expr list ),laterArgs = List.chop curriedArgInfos.Length curriedArgs 
+            let (curriedArgs:Expr list ),laterArgs = List.splitAt nCurriedArgInfos curriedArgs 
 
             let callR = 
                 // We now have the right number of arguments, w.r.t. currying and tupling.
@@ -561,8 +562,8 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
              let methArgTypesR = List.map (ConvILType cenv env m) ilMethRef.ArgTypes
              let methRetTypeR = ConvILType cenv env m ilMethRef.ReturnType
              let methName = ilMethRef.Name
-             let isPropGet = isProp && methName.StartsWith("get_",System.StringComparison.Ordinal)
-             let isPropSet = isProp && methName.StartsWith("set_",System.StringComparison.Ordinal)
+             let isPropGet = isProp && methName.StartsWithOrdinal("get_")
+             let isPropSet = isProp && methName.StartsWithOrdinal("set_")
              let tyargs = (enclTypeArgs@methTypeArgs)
              ConvObjectModelCall cenv env m (isPropGet,isPropSet,isNewObj,parentTyconR,methArgTypesR,methRetTypeR,methName,tyargs,methTypeArgs.Length,callArgs)
 
