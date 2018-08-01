@@ -74,41 +74,49 @@ namespace Microsoft.FSharp.Collections
 
         let inline mk l k r = SetNode(k,l,r,(size l) ++ (size r) + 1)
 
-        let rebalance t1 k t2 =
-            let t1s = size t1 
-            let t2s = size t2 
-            if  (t2s >>> 1) > t1s  then // right is heavier than left 
-                match t2 with 
-                | SetNode(t2k,t2l,t2r,_) -> 
-                    // one of the nodes must have height > height t1 + 1 
-                    if size t2l > t1s then  // balance left: combination 
-                        match t2l with 
-                        | SetNode(t2lk,t2ll,t2lr,_) ->
-                            mk (mk t1 k t2ll) t2lk (mk t2lr t2k t2r) 
-                    else // rotate left 
-                        mk (mk t1 k t2l) t2k t2r
-            else
-                if  (t1s >>> 1) > t2s then // left is heavier than right 
-                    match t1 with 
-                    | SetNode(t1k,t1l,t1r,_) -> 
-                        // one of the nodes must have height > height t2 + 1 
-                        if size t1r > t2s then 
-                            // balance right: combination 
-                            match t1r with 
-                            | SetNode(t1rk,t1rl,t1rr,_) ->
-                                mk (mk t1l t1k t1rl) t1rk (mk t1rr k t2)
-                        else
-                            mk t1l t1k (mk t1r k t2)
-                else mk t1 k t2
+        let private rebalanceRight l k (SetNode(rk,rl,rr,_)) =
+            (* one of the nodes must have height > height t1 + 1 *)
+            if size rl > size l then  (* balance left: combination *)
+                match rl with 
+                | SetNode(rlk,rll,rlr,_) -> mk (mk l k rll) rlk (mk rlr rk rr) 
+            else (* rotate left *)
+                mk (mk l k rl) rk rr
 
-        let rec add (comparer: IComparer<'T>) k t = 
-            match t with 
-            | SetNode (Size=0) -> mkLeaf k
-            | SetNode (k2,l,r,_) -> 
+        let private rebalanceLeft (SetNode(lk,ll,lr,_)) k r =
+            (* one of the nodes must have height > height t2 + 1 *)
+            if size lr > size r then 
+                (* balance right: combination *)
+                match lr with 
+                | SetNode(lrk,lrl,lrr,_) -> mk (mk ll lk lrl) lrk (mk lrr k r)
+            else
+                mk ll lk (mk lr k r)
+
+        let inline rebalance l k r =
+            let ls, rs = size l, size r 
+            if   (rs >>> 1) > ls then rebalanceRight l k r 
+            elif (ls >>> 1) > rs then rebalanceLeft  l k r
+            else SetNode (k,l,r, ls ++ rs ++ 1)
+
+        let rec add (comparer:IComparer<'Key>) k (SetNode(k2,l,r,s)) = 
+            if s = 0 then mkLeaf k
+            else
                 let c = comparer.Compare(k,k2) 
-                if   c < 0 then rebalance (add comparer k l) k2 r
-                elif c = 0 then t
-                else            rebalance l k2 (add comparer k r)
+                if c < 0 then
+                    let l' = add comparer k l
+                    let l's, rs = size l', size r 
+                    if (l's >>> 1) > rs then
+                        rebalanceLeft  l' k2 r
+                    else
+                        SetNode (k2,l',r, l's ++ rs ++ 1)
+                elif c > 0 then
+                    let r' = add comparer k r
+                    let ls, r's = size l, size r' 
+                    if (r's >>> 1) > ls then
+                        rebalanceRight l k2 r' 
+                    else
+                        SetNode (k2,l,r', ls ++ r's ++ 1)
+                else
+                    SetNode(k,l,r,s)
 
         let rec balance comparer t1 k t2 =
             // Given t1 < k < t2 where t1 and t2 are "balanced",
