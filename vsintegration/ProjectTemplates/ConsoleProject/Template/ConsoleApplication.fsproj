@@ -12,11 +12,6 @@
     <TargetFrameworkVersion>v$targetframeworkversion$</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <UseStandardResourceNames>true</UseStandardResourceNames>
-    $if$ ($targetframeworkversion$ >= 4.0)
-    <TargetFSharpCoreVersion>4.4.3.0</TargetFSharpCoreVersion>
-    $else$
-    <TargetFSharpCoreVersion>2.3.0.0</TargetFSharpCoreVersion>
-    $endif$
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -43,22 +38,17 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib"/>
+    <Reference Include="System"/>
+    <Reference Include="System.Core"/>
+    <Reference Include="System.Numerics"/>
     <Reference Include="FSharp.Core">
-      <Name>FSharp.Core</Name>
-      <AssemblyName>FSharp.Core.dll</AssemblyName>
-      <HintPath>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\$(TargetFSharpCoreVersion)\FSharp.Core.dll</HintPath>
+      <HintPath>..\packages\FSharp.Core.4.5.2\lib\net45\FSharp.Core.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System.ValueTuple">
       <HintPath>..\packages\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="System"/>
-    $if$ ($targetframeworkversion$ >= 3.5)
-    <Reference Include="System.Core"/>
-    $endif$
-    $if$ ($targetframeworkversion$ > 3.5)
-    <Reference Include="System.Numerics"/>
-    $endif$
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
