@@ -409,7 +409,7 @@
       </trans-unit>
       <trans-unit id="6001">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# 대화형</target>
         <note />
       </trans-unit>
       <trans-unit id="6002">
@@ -459,7 +459,7 @@
       </trans-unit>
       <trans-unit id="9027">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# 대화형</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductRegistryName">
@@ -509,7 +509,7 @@
       </trans-unit>
       <trans-unit id="6005">
         <source>Change path and command line arguments passed to the F# Interactive</source>
-        <target state="translated">F# Interactive에 전달된 경로 및 명령줄 인수를 변경합니다.</target>
+        <target state="translated">F# 대화형에 전달된 경로 및 명령줄 인수를 변경합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="6006">

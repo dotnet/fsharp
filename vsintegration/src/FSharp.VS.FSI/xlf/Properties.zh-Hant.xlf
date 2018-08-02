@@ -4,22 +4,22 @@
     <body>
       <trans-unit id="FSharpInteractive64Bit">
         <source>64-bit F# Interactive</source>
-        <target state="translated">64 位元 F# Interactive</target>
+        <target state="translated">64 位元 F# 互動</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractive64BitDescr">
         <source>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</source>
-        <target state="translated">如果設為 true，並且目前電腦為 64 位元，則 F# Interactive 會當做 64 位元處理序來執行 (反之，F# Interactive 則為 32 位元處理序)。</target>
+        <target state="translated">如果設為 true，並且目前電腦為 64 位元，則 F# 互動會當做 64 位元處理序來執行 (反之，F# 互動則為 32 位元處理序)。</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
         <source>F# Interactive options</source>
-        <target state="translated">F# Interactive 選項</target>
+        <target state="translated">F# 互動選項</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptionsDescr">
         <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
-        <target state="translated">由 Visual Studio 額外傳遞給 F# Interactive 可執行檔的命令列引數。(若啟用指令碼偵錯，則會忽略最佳化及偵錯旗標)</target>
+        <target state="translated">由 Visual Studio 額外傳遞給 F# 互動可執行檔的命令列引數。(若啟用指令碼偵錯，則會忽略最佳化及偵錯旗標)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">
@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopyDescr">
         <source>Prevents referenced assemblies from being locked by the F# Interactive process.</source>
-        <target state="translated">避免參考的組件遭 F# 互動式處理序封鎖。</target>
+        <target state="translated">避免參考的組件遭 F# 互動處理序封鎖。</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugMode">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugModeDescr">
         <source>Enable debugging of F# scripts (may impact script performance, requires reset of F# Interactive)</source>
-        <target state="translated">啟用 F# 指令碼偵錯 (可能會影響指令碼效能，必須重設 F# Interactive)</target>
+        <target state="translated">啟用 F# 指令碼偵錯 (可能會影響指令碼效能，必須重設 F# 互動)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugging">
