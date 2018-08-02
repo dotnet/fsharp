@@ -604,19 +604,19 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
                     // For F# defined methods.
                     | FSMeth(_, _, vref, _) ->
                         let ty, _ = destFunTy g vref.Type
-                        ValueSome(ty)
+                        Some(ty)
 
                     // For IL methods, defined outside of F#.
                     | ILMeth(_, info, _) ->
                         let paramTypes = info.GetRawArgTypes(amap, m, minfo.FormalMethodInst)
                         match paramTypes with
                         | [] -> failwith "impossible"
-                        | ty :: _ -> ValueSome(ty)
+                        | ty :: _ -> Some(ty)
 
-                    | _ -> ValueNone
+                    | _ -> None
                 
                 match tyOpt with
-                | ValueSome(ty) ->
+                | Some(ty) ->
                     if isByrefTy g ty && not (isInByrefTy g ty) then
                         errorR(Error(FSComp.SR.tcCannotCallExtensionMemberInrefToByref(), m))
                 | _ -> ()
