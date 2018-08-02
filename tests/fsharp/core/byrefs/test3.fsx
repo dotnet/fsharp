@@ -43,27 +43,48 @@ module Negatives =
         let dt = DateTime.Now
         dt.Change() // should fail
 
+    let test3 () =
+        let dt = DateTime.Now
+        let dtr = &dt
+        let _x = &dtr.Test2() // should fail
+        ()
+
+    let test4 () =
+        let dt = DateTime.Now
+        let dtr = &dt
+        dtr.Change() // should fail
+
 #endif
 
 module Positives =
 
     let test1 () =
         let dt = DateTime.Now
-        dt.Test()
+        let _x = dt.Test()
+        let dtr = &dt
+        dtr.Test()
 
     let test2 () =
         let dt = DateTime.Now
         dt.NotChange()
+        let dtr = &dt
+        dtr.NotChange()
 
     let test3 () =
         let mutable dt = DateTime.Now
         let _x = dt.Test2()
         dt.Test()
+        let dtr = &dt
+        let _x = dtr.Test2()
+        dtr.Test()
 
     let test4 () =
         let mutable dt = DateTime.Now
         dt.Change()
         dt.NotChange()
+        let dtr = &dt
+        dtr.Change()
+        dtr.NotChange()
 
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
