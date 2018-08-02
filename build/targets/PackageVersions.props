@@ -9,6 +9,7 @@
     <SystemRuntimeCachingPackageVersion>1.5.0</SystemRuntimeCachingPackageVersion>
     <SystemCollectionsImmutablePackageVersion>1.5.0</SystemCollectionsImmutablePackageVersion>
     <SystemDesignPackageVersion>4.0.0</SystemDesignPackageVersion>
+    <SystemValueTuplePackageVersion>4.3.0</SystemValueTuplePackageVersion>
 
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
