@@ -1185,6 +1185,8 @@ if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
         type "!ERRORFILE!"
         echo -------end vs-ide-unit errors ------------------------
         echo Error: Running tests vs-ideunit failed, see logs above, search for "Errors and Failures"  -- FAILED
+        echo Command Line for running tests
+        echo "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\VisualFSharp.UnitTests.dll" !WHERE_ARG_NUNIT!
         echo ----------------------------------------------------------------------------------------------------
         goto :failure
     )
