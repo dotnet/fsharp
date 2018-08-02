@@ -28,6 +28,17 @@ open Microsoft.FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
+/// Check if the name of an attribute exists in the list of ILAttributes.
+let HasAttributeByName name (customAttrs: ILAttributes) =
+    customAttrs.AsList
+    |> List.exists (fun ilattrib ->
+        ilattrib.Method.DeclaringType.TypeRef.Name = name
+    )
+
+/// Check if the IsReadOnlyAttribute exists in the list of ILAttributes.
+let HasIsReadOnlyAttribute customAttrs =
+    HasAttributeByName "System.Runtime.CompilerServices.IsReadOnlyAttribute" customAttrs
+
 //-------------------------------------------------------------------------
 // From IL types to F# types
 //------------------------------------------------------------------------- 
@@ -284,13 +295,26 @@ let ExistsHeadTypeInEntireHierarchy g amap m typeToSearchFrom tcrefToLookFor =
 let ImportILTypeFromMetadata amap m scoref tinst minst ilty = 
     ImportILType scoref amap m (tinst@minst) ilty
 
-        
-/// Get the return type of an IL method, taking into account instantiations for type and method generic parameters, and
+/// Read an Abstract IL type from metadata, including any attributes that may affect the type itself, and convert to an F# type.
+let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst ilty customAttrs =
+    let ty = ImportILType scoref amap m (tinst@minst) ilty
+    // If the type is a byref and one of attributes from a return or parameter has IsReadOnly, then it's a inref.
+    if isByrefTy amap.g ty && HasIsReadOnlyAttribute customAttrs then
+        mkInByrefTy amap.g (destByrefTy amap.g ty)
+    else
+        ty
+
+/// Get the parameter type of an IL method. 
+let ImportParameterTypeFromMetadata amap m ilty customAttrs scoref tinst mist =
+    ImportILTypeFromMetadataWithAttributes amap m scoref tinst mist ilty customAttrs
+    
+/// Get the return type of an IL method, taking into account instantiations for type, return attributes and method generic parameters, and
 /// translating 'void' to 'None'.
-let ImportReturnTypeFromMetaData amap m ty scoref tinst minst =
-    match ty with 
+let ImportReturnTypeFromMetadata amap m ilty customAttrs scoref tinst minst =
+    match ilty with 
     | ILType.Void -> None
-    | retTy ->  Some (ImportILTypeFromMetadata amap m scoref tinst minst retTy)
+    | retTy -> Some(ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst retTy customAttrs)
+
 
 /// Copy constraints.  If the constraint comes from a type parameter associated
 /// with a type constructor then we are simply renaming type variables.  If it comes
@@ -806,19 +830,19 @@ type ILMethInfo =
     /// Get the argument types of the the IL method. If this is an C#-style extension method 
     /// then drop the object argument.
     member x.GetParamTypes(amap,m,minst) = 
-        x.ParamMetadata |> List.map (fun p -> ImportILTypeFromMetadata amap m x.MetadataScope x.DeclaringTypeInst minst p.Type) 
+        x.ParamMetadata |> List.map (fun p -> ImportParameterTypeFromMetadata amap m p.Type p.CustomAttrs x.MetadataScope x.DeclaringTypeInst minst) 
 
     /// Get all the argument types of the IL method. Include the object argument even if this is 
     /// an C#-style extension method.
     member x.GetRawArgTypes(amap,m,minst) = 
-        x.RawMetadata.Parameters |> List.map (fun p -> ImportILTypeFromMetadata amap m x.MetadataScope x.DeclaringTypeInst minst p.Type) 
+        x.RawMetadata.Parameters |> List.map (fun p -> ImportParameterTypeFromMetadata amap m p.Type p.CustomAttrs x.MetadataScope x.DeclaringTypeInst minst) 
 
     /// Get info about the arguments of the IL method. If this is an C#-style extension method then 
     /// drop the object argument.
     ///
     /// Any type parameters of the enclosing type are instantiated in the type returned.
     member x.GetParamNamesAndTypes(amap,m,minst) = 
-        x.ParamMetadata |> List.map (fun p -> ParamNameAndType(Option.map (mkSynId m) p.Name, ImportILTypeFromMetadata amap m x.MetadataScope x.DeclaringTypeInst minst p.Type) )
+        x.ParamMetadata |> List.map (fun p -> ParamNameAndType(Option.map (mkSynId m) p.Name, ImportParameterTypeFromMetadata amap m p.Type p.CustomAttrs x.MetadataScope x.DeclaringTypeInst minst) )
 
     /// Get a reference to the method (dropping all generic instantiations), as an Abstract IL ILMethodRef.
     member x.ILMethodRef = 
@@ -838,7 +862,8 @@ type ILMethInfo =
         // All C#-style extension methods are instance. We have to re-read the 'obj' type w.r.t. the
         // method instantiation.
         if x.IsILExtensionMethod then
-            [ImportILTypeFromMetadata amap m x.MetadataScope x.DeclaringTypeInst minst x.RawMetadata.Parameters.Head.Type]
+            let p = x.RawMetadata.Parameters.Head
+            [ ImportParameterTypeFromMetadata amap m p.Type p.CustomAttrs x.MetadataScope x.DeclaringTypeInst minst ]
         else if x.IsInstance then 
             [ x.ApparentEnclosingType ]
         else
@@ -846,7 +871,7 @@ type ILMethInfo =
 
     /// Get the compiled return type of the method, where 'void' is None.
     member x.GetCompiledReturnTy (amap, m, minst) =
-        ImportReturnTypeFromMetaData amap m x.RawMetadata.Return.Type x.MetadataScope x.DeclaringTypeInst minst 
+        ImportReturnTypeFromMetadata amap m x.RawMetadata.Return.Type x.RawMetadata.Return.CustomAttrs x.MetadataScope x.DeclaringTypeInst minst 
 
     /// Get the F# view of the return type of the method, where 'void' is 'unit'.
     member x.GetFSharpReturnTy (amap, m, minst) = 
@@ -1503,7 +1528,7 @@ type MethInfo =
                 match x with
                 | ILMeth(_,ilminfo,_) -> 
                     let ftinfo = ILTypeInfo.FromType g (TType_app(tcref,formalEnclosingTyparTys))
-                    let formalRetTy = ImportReturnTypeFromMetaData amap m ilminfo.RawMetadata.Return.Type ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys
+                    let formalRetTy = ImportReturnTypeFromMetadata amap m ilminfo.RawMetadata.Return.Type ilminfo.RawMetadata.Return.CustomAttrs ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys
                     let formalParams = 
                         [ [ for p in ilminfo.RawMetadata.Parameters do 
                                 let paramType = ImportILTypeFromMetadata amap m ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys p.Type

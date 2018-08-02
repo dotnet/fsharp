@@ -7057,6 +7057,11 @@
         <target state="translated">Adresa hodnoty vrácená výrazem nejde převzít. Před převzetím adresy přiřaďte vrácenou hodnotu hodnotě s vazbou na klauzuli Let.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcCannotCallExtensionMemberInrefToByref">
+        <source>Cannot call the extension member as it requires a value to be mutable or a byref due to the extending type being used as a byref.</source>
+        <target state="new">Cannot call the extension member as it requires a value to be mutable or a byref due to the extending type being used as a byref.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

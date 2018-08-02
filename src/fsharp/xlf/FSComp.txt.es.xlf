@@ -7057,6 +7057,11 @@
         <target state="translated">No se puede tomar la dirección del valor devuelto de la expresión. Asigne el valor devuelto a un valor enlazado con let antes de tomar la dirección.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcCannotCallExtensionMemberInrefToByref">
+        <source>Cannot call the extension member as it requires a value to be mutable or a byref due to the extending type being used as a byref.</source>
+        <target state="new">Cannot call the extension member as it requires a value to be mutable or a byref due to the extending type being used as a byref.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
