@@ -159,9 +159,9 @@ module Scripting =
 
             match p.ExitCode with
             | 0 -> Success
-            | err -> 
+            | errCode -> 
                 let msg = sprintf "Error running command '%s' with args '%s' in directory '%s'.\n---- stdout below --- \n%s\n---- stderr below --- \n%s " exePath arguments workDir (out.ToString()) (err.ToString())
-                ErrorLevel (msg, err)
+                ErrorLevel (msg, errCode)
 
     type OutPipe (writer: TextWriter) =
         member x.Post (msg:string) = lock writer (fun () -> writer.WriteLine(msg))
