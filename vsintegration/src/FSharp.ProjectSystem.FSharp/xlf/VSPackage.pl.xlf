@@ -484,7 +484,7 @@
       </trans-unit>
       <trans-unit id="ProjectRenderFolderMultiple">
         <source>The project '{0}' could not be opened because opening it would cause a folder to be rendered multiple times in the solution explorer. One such problematic item is '{1}'. To open this project in Visual Studio, first edit the project file and fix the problem.</source>
-        <target state="translated">Nie można otworzyć projektu „{0}”, ponieważ spowodowałoby to wielokrotne zrenderowanie folderu w eksploratorze rozwiązań. Jednym z elementów powodujących problemy jest „{1}”. Aby otworzyć ten projekt w programie Visual Studio, najpierw edytuj plik projektu i rozwiąż problem.</target>
+        <target state="translated">Nie można otworzyć projektu „{0}”, ponieważ spowodowałoby to wielokrotne renderowanie folderu w eksploratorze rozwiązań. Jednym z elementów powodujących problemy jest „{1}”. Aby otworzyć ten projekt w programie Visual Studio, najpierw edytuj plik projektu i rozwiąż problem.</target>
         <note />
       </trans-unit>
       <trans-unit id="PropertyDefaultNamespace">
@@ -509,7 +509,7 @@
       </trans-unit>
       <trans-unit id="6005">
         <source>Change path and command line arguments passed to the F# Interactive</source>
-        <target state="translated">Zmień ścieżkę i argumenty wiersza polecenia przekazywane do programu F# Interactive</target>
+        <target state="translated">Zmień ścieżkę i argumenty wiersza polecenia przekazywane do narzędzia F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="6006">

@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line2">
         <source>and select "Execute in Interactive".  You can open the F# Interactive Window from the "View" menu.</source>
-        <target state="translated">und wählen Sie "Interaktiv ausführen" aus.  Sie können das F# Interactive-Fenster über das Menü "Ansicht" öffnen.</target>
+        <target state="translated">und wählen Sie "In Interactive ausführen" aus.  Sie können das F# Interactive-Fenster über das Menü "Ansicht" öffnen.</target>
         <note />
       </trans-unit>
       <trans-unit id="MoreAbout">
@@ -1479,7 +1479,7 @@
       </trans-unit>
       <trans-unit id="GenericClasses-Line3">
         <source>To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/generics/</source>
-        <target state="translated">Weitere Informationen finden Sie unter:: https://docs.microsoft.com/de-de/dotnet/articles/fsharp/language-reference/generics/</target>
+        <target state="translated">Weitere Informationen finden Sie unter: https://docs.microsoft.com/de-de/dotnet/articles/fsharp/language-reference/generics/</target>
         <note />
       </trans-unit>
       <trans-unit id="InternalField">
@@ -1529,7 +1529,7 @@
       </trans-unit>
       <trans-unit id="Interfaces-Line3">
         <source>To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/interfaces</source>
-        <target state="translated">Weitere Informationen finden Sie unter:: https://docs.microsoft.com/de-de/dotnet/articles/fsharp/language-reference/interfaces</target>
+        <target state="translated">Weitere Informationen finden Sie unter: https://docs.microsoft.com/de-de/dotnet/articles/fsharp/language-reference/interfaces</target>
         <note />
       </trans-unit>
       <trans-unit id="IDisposable">

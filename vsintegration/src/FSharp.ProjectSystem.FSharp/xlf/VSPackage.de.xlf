@@ -524,7 +524,7 @@
       </trans-unit>
       <trans-unit id="AddReferenceDialogTitle_Dev11">
         <source>Reference Manager - {0}</source>
-        <target state="translated">Verweis-Manager - {0}</target>
+        <target state="translated">Verweis-Manager – {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="Dev11SupportsOnlySilverlight5">
