@@ -79,6 +79,8 @@ set TEST_END_2_END=0
 set INCLUDE_TEST_SPEC_NUNIT=
 set INCLUDE_TEST_TAGS=
 
+set COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=0
+
 set SIGN_TYPE=%PB_SIGNTYPE%
 
 REM ------------------ Parse all arguments -----------------------
@@ -156,6 +158,7 @@ if /i "%ARG%" == "net40" (
     set _autoselect=0
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_NET40=1
+    set COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=1
 )
 
 if /i "%ARG%" == "coreclr" (
@@ -175,6 +178,7 @@ if /i "%ARG%" == "vs" (
     set _autoselect=0
     set BUILD_NET40=1
     set BUILD_VS=1
+    set COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=1
 )
 
 if /i "%ARG%" == "fcs" (
@@ -191,6 +195,7 @@ if /i "%ARG%" == "nobuild" (
 )
 if /i "%ARG%" == "all" (
     set _autoselect=0
+    set COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=1
     set BUILD_PROTO=1
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_NET40=1
@@ -481,9 +486,6 @@ if NOT EXIST Proto\net40\bin\fsc.exe (
   set BUILD_PROTO=1
 )
 
-rem turn off vs ide unit tests until they pass again
-set TEST_VS_IDEUNIT_SUITE= 0
-
 rem
 rem This stops the dotnet cli from hunting around and 
 rem finding the highest possible dotnet sdk version to use.
@@ -512,6 +514,9 @@ echo PB_SKIPTESTS=%PB_SKIPTESTS%
 echo PB_RESTORESOURCE=%PB_RESTORESOURCE%
 echo.
 echo SIGN_TYPE=%SIGN_TYPE%
+echo.
+echo COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=%COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES%
+echo.
 echo TEST_FCS=%TEST_FCS%
 echo TEST_NET40_COMPILERUNIT_SUITE=%TEST_NET40_COMPILERUNIT_SUITE%
 echo TEST_NET40_COREUNIT_SUITE=%TEST_NET40_COREUNIT_SUITE%
@@ -838,6 +843,11 @@ echo ---------------- Done building insertion files, starting pack/update/prepar
 if "%BUILD_NET40_FSHARP_CORE%" == "1" (
   echo ----------------  start update.cmd ---------------
   call src\update.cmd %BUILD_CONFIG% -ngen
+)
+
+if "%COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES%" == "1" (
+  echo ----------------  copy fscomp resource for build from sources ---------------
+  copy /y src\fsharp\FSharp.Compiler.Private\obj\%BUILD_CONFIG%\net40\FSComp.* src\buildfromsource\FSharp.Compiler.Private
 )
 
 @echo set NUNITPATH=packages\NUnit.Console.3.0.0\tools\
@@ -1173,6 +1183,16 @@ if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
         set ERRORFILE=!RESULTSDIR!\test-vs-ideunit-errors.log
         set ERRORARG=--err:"!ERRORFILE!" 
         set OUTPUTARG=--output:"!OUTPUTFILE!" 
+    )
+
+    rem Verify that VisualFSharp.UnitTests.dll can be loaded by nunit.  Report load errors.
+    pushd !FSCBINPATH!
+    echo "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\GetTypesVSUnitTests.dll" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\GetTypesVSUnitTests.dll" !WHERE_ARG_NUNIT!
+    popd
+
+    if errorlevel 1 (
+        goto :failure
     )
 
     pushd !FSCBINPATH!

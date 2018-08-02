@@ -1,5 +1,6 @@
 module internal FSharp.Compiler.Service.Tests.Common
 
+open System
 open System.IO
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler
@@ -36,7 +37,7 @@ let readRefs (folder : string) (projectFile: string) =
     match result with
     | Ok(Dotnet.ProjInfo.Inspect.GetResult.FscArgs x) ->
         x
-        |> List.filter (fun s -> s.StartsWith("-r:"))
+        |> List.filter (fun s -> s.StartsWith("-r:", StringComparison.Ordinal))
         |> List.map (fun s -> s.Replace("-r:", ""))
     | _ -> []
 #endif

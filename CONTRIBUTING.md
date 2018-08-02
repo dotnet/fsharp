@@ -69,8 +69,6 @@ Contributions to this repository will be rigorously policed for quality.
 All code submissions should be submitted with regression test cases, and will be subject to peer review by the community and Microsoft.  The bar for contributions will be high. This will result in a higher-quality, more stable product.
 
 - We expect contributors to be actively involved in quality assurance.
-- We expect contributors to be actively involved in quality assurance.
-- We expect contributors to be actively involved in quality assurance.
 - Partial, incomplete, or poorly-tested contributions will not be accepted.
 - Contributions may be put on hold according to stability, testing, and design-coherence requirements.
 

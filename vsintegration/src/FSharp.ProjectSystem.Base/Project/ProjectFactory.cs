@@ -22,9 +22,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     internal abstract class ProjectFactory : Microsoft.VisualStudio.Shell.Flavor.FlavoredProjectFactoryBase
                     , IVsProjectUpgradeViaFactory, IVsProjectUpgradeViaFactory4
 
-	{
-		private Microsoft.VisualStudio.Shell.Package package;
-		private System.IServiceProvider site;
+    {
+        private Microsoft.VisualStudio.Shell.Package package;
+        private System.IServiceProvider site;
 
         private Microsoft.Build.Evaluation.ProjectCollection buildEngine;
         private Microsoft.Build.Evaluation.Project buildProject;
@@ -112,6 +112,46 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
 
+            // Solution properties
+            IVsSolution solution = this.Site.GetService(typeof(SVsSolution)) as IVsSolution;
+            Debug.Assert(solution != null, "Could not retrieve the solution service from the global service provider");
+
+            // We do not want to throw. If we cannot set the solution related constants we set them to empty string.
+            string solutionDirectory, solutionPath, userOptionsFile;
+            solution.GetSolutionInfo(out solutionDirectory, out solutionPath, out userOptionsFile);
+            if (solutionDirectory == null)
+            {
+                solutionDirectory = String.Empty;
+            }
+            if (solutionPath == null)
+            {
+                solutionPath = String.Empty;
+            }
+            string solutionFileName = (solutionPath.Length == 0) ? String.Empty : Path.GetFileName(solutionPath);
+            string solutionName = (solutionPath.Length == 0) ? String.Empty : Path.GetFileNameWithoutExtension(solutionPath);
+            var solutionExtension = Path.GetExtension(solutionPath);
+
+            // DevEnvDir property
+            IVsShell shell = this.Site.GetService(typeof(SVsShell)) as IVsShell;
+            Debug.Assert(shell != null, "Could not retrieve the IVsShell service from the global service provider");
+            object installDirAsObject;
+
+            // We do not want to throw. If we cannot set the solution related constants we set them to empty string.
+            shell.GetProperty((int)__VSSPROPID.VSSPROPID_InstallDirectory, out installDirAsObject);
+            string installDir = ((string)installDirAsObject);
+            if (String.IsNullOrEmpty(installDir))
+            {
+                installDir = String.Empty;
+            }
+            else 
+            {
+                // Ensure that we have trailing backslash as this is done for the langproj macros too.
+                if (installDir[installDir.Length - 1] != Path.DirectorySeparatorChar)
+                {
+                    installDir += Path.DirectorySeparatorChar;
+                }
+            }
+
             // Get the list of GUIDs from the project/template
             string guidsList = this.ProjectTypeGuids(fileName);
 
@@ -119,7 +159,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             IVsCreateAggregateProject aggregateProjectFactory = (IVsCreateAggregateProject)this.Site.GetService(typeof(SVsCreateAggregateProject));
             int hr = aggregateProjectFactory.CreateAggregateProject(guidsList, fileName, location, name, flags, ref projectGuid, out project);
             if (hr == VSConstants.E_ABORT)
+            {
                 canceled = 1;
+            }
             ErrorHandler.ThrowOnFailure(hr);
 
             this.buildProject = null;
@@ -146,6 +188,67 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return node;
         }
 
+        internal Microsoft.Build.Evaluation.Project ReinitializeMsBuildProject(string filename)
+        {
+            // Solution properties
+            IVsSolution solution = this.Site.GetService(typeof(SVsSolution)) as IVsSolution;
+            Debug.Assert(solution != null, "Could not retrieve the solution service from the global service provider");
+
+            // We do not want to throw.If we cannot set the solution related constants we set them to empty string.
+            string solutionDirectory, solutionPath, userOptionsFile;
+            solution.GetSolutionInfo(out solutionDirectory, out solutionPath, out userOptionsFile);
+            if (solutionDirectory == null)
+            {
+                solutionDirectory = String.Empty;
+            }
+            if (solutionPath == null)
+            {
+                solutionPath = String.Empty;
+            }
+            string solutionFileName = (solutionPath.Length == 0) ? String.Empty : Path.GetFileName(solutionPath);
+            string solutionName = (solutionPath.Length == 0) ? String.Empty : Path.GetFileNameWithoutExtension(solutionPath);
+            string solutionExtension = String.Empty;
+            if (solutionPath.Length > 0 && Path.HasExtension(solutionPath))
+            {
+                solutionExtension = Path.GetExtension(solutionPath);
+            }
+
+            //DevEnvDir property
+            IVsShell shell = this.Site.GetService(typeof(SVsShell)) as IVsShell;
+            Debug.Assert(shell != null, "Could not retrieve the IVsShell service from the global service provider");
+            object installDirAsObject;
+
+            //We do not want to throw.If we cannot set the solution related constants we set them to empty string.
+            shell.GetProperty((int)__VSSPROPID.VSSPROPID_InstallDirectory, out installDirAsObject);
+            string installDir = ((string)installDirAsObject);
+            if (String.IsNullOrEmpty(installDir))
+            {
+                installDir = String.Empty;
+            }
+            else
+            {
+                //Ensure that we have trailing backslash as this is done for the langproj macros too.
+                if (installDir[installDir.Length - 1] != Path.DirectorySeparatorChar)
+                {
+                    installDir += Path.DirectorySeparatorChar;
+                }
+            }
+
+            var projectGlobalPropertiesThatAllProjectSystemsMustSet = new Dictionary<string, string>()
+            {
+                { GlobalProperty.SolutionDir.ToString(), solutionDirectory },
+                { GlobalProperty.SolutionPath.ToString(), solutionPath },
+                { GlobalProperty.SolutionFileName.ToString(), solutionFileName },
+                { GlobalProperty.SolutionName.ToString(), solutionName },
+                { GlobalProperty.SolutionExt.ToString(), solutionExtension },
+                { GlobalProperty.BuildingInsideVisualStudio.ToString(), "true" },
+                { GlobalProperty.Configuration.ToString(), "" },
+                { GlobalProperty.Platform.ToString(), "" },
+                { GlobalProperty.DevEnvDir.ToString(), installDir }
+            };
+            return Utilities.ReinitializeMsBuildProject(this.buildEngine, filename, projectGlobalPropertiesThatAllProjectSystemsMustSet, this.buildProject);
+        }
+
         /// <summary>
         /// Retrives the list of project guids from the project file.
         /// If you don't want your project to be flavorable, override
@@ -158,7 +261,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             // Load the project so we can extract the list of GUIDs
 
-            this.buildProject = Utilities.ReinitializeMsBuildProject(this.buildEngine, file, this.buildProject);
+            this.buildProject = this.ReinitializeMsBuildProject(file);
 
             // Retrieve the list of GUIDs, if it is not specify, make it our GUID
             string guids = buildProject.GetPropertyValue(ProjectFileConstants.ProjectTypeGuids);
@@ -167,7 +270,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return guids;
         }
-
 
         private class ProjectInspector
         {
