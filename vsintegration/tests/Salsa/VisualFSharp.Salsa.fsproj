@@ -7,6 +7,8 @@
     <OutputType>Library</OutputType>
     <NoWarn>$(NoWarn);45;47;52;58;75</NoWarn>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
+    <DefaultValueTuplePackageVersion>$(SystemValueTuplePackageVersion)</DefaultValueTuplePackageVersion>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>

@@ -7012,11 +7012,6 @@
         <target state="translated">L'adresse de la variable '{0}' ou une expression associée ne peut pas être utilisée à ce stade. Cela permet de s'assurer que l'adresse de la valeur locale ne sort pas de sa portée.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="translated">L'expression Span ou IsByRefLike ne peut pas être retournée à partir de cette fonction ou méthode, car elle est composée d'éléments qui peuvent sortir de leur portée.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
         <target state="translated">Impossible d’affecter cette valeur car la cible '{0}' peut faire référence à une mémoire non locale (hors de la pile), tandis que l'expression en cours d’affectation est évaluée comme faisant potentiellement référence à une mémoire locale (dans la pile). Cela permet d'éviter que les pointeurs vers la mémoire liée à la pile ne sortent de leur portée.</target>
@@ -7059,7 +7054,7 @@
       </trans-unit>
       <trans-unit id="tastCantTakeAddressOfExpression">
         <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
-        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
+        <target state="translated">Impossible de prendre l'adresse de la valeur retournée par l'expression. Assignez la valeur retournée à une valeur liée à let avant de prendre l'adresse.</target>
         <note />
       </trans-unit>
     </body>

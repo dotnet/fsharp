@@ -7,7 +7,7 @@ open System.Reflection
 [<assembly:AssemblyTitle("fsi.exe")>]
 [<assembly:AssemblyCopyright("\169 Microsoft Corporation.  All Rights Reserved.")>]
 [<assembly:AssemblyProduct("Microsoft\174 F#")>]
-[<assembly:AssemblyInformationalVersion("10.1.1.0")>]
-[<assembly:AssemblyVersion("10.1.1.0")>]
-[<assembly:AssemblyFileVersion("2017.06.27.0")>]
+[<assembly:AssemblyInformationalVersion("10.2.0.0")>]
+[<assembly:AssemblyVersion("10.2.0.0")>]
+[<assembly:AssemblyFileVersion("2018.05.22.0")>]
 do()
