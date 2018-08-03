@@ -4354,6 +4354,9 @@ type internal SR private() =
     /// Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
     /// (Originally from ..\FSComp.txt:1442)
     static member tastCantTakeAddressOfExpression() = (3238, GetStringFunc("tastCantTakeAddressOfExpression",",,,") )
+    /// This type is not an attribute
+    /// (Originally from ..\FSComp.txt:1442)
+    static member tcTypeDoesNotInheritAttribute() = (3239, GetStringFunc("tcTypeDoesNotInheritAttribute",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5770,4 +5773,5 @@ type internal SR private() =
         ignore(GetString("chkNoSpanLikeVariable"))
         ignore(GetString("chkNoSpanLikeValueFromExpression"))
         ignore(GetString("tastCantTakeAddressOfExpression"))
+        ignore(GetString("tcTypeDoesNotInheritAttribute"))
         ()

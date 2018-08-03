@@ -7062,6 +7062,11 @@
         <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTypeDoesNotInheritAttribute">
+        <source>This type is not an attribute</source>
+        <target state="new">This type is not an attribute</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
