@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="cmdidFsiToolWindow|ButtonText">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# インタラクティブ</target>
         <note />
       </trans-unit>
       <trans-unit id="cmdidAttachDebugger|CommandName">
@@ -84,12 +84,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|ButtonText">
         <source>&amp;Send to F# Interactive</source>
-        <target state="translated">F# Interactive に送信(&amp;S)</target>
+        <target state="translated">F# インタラクティブに送信(&amp;S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|MenuText">
         <source>&amp;Send to F# Interactive</source>
-        <target state="translated">F# Interactive に送信(&amp;S)</target>
+        <target state="translated">F# インタラクティブに送信(&amp;S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|CommandName">
@@ -99,12 +99,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|ButtonText">
         <source>&amp;Send References to F# Interactive</source>
-        <target state="translated">参照を F# Interactive に送信(&amp;S)</target>
+        <target state="translated">参照を F# インタラクティブに送信(&amp;S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|MenuText">
         <source>&amp;Send References to F# Interactive</source>
-        <target state="translated">参照を F# Interactive に送信(&amp;S)</target>
+        <target state="translated">参照を F# インタラクティブに送信(&amp;S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|CommandName">
@@ -114,12 +114,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|ButtonText">
         <source>&amp;Send Project Output to F# Interactive</source>
-        <target state="translated">プロジェクト出力を F# Interactive に送信(&amp;S)</target>
+        <target state="translated">プロジェクト出力を F# インタラクティブに送信(&amp;S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|MenuText">
         <source>&amp;Send Project Output to F# Interactive</source>
-        <target state="translated">プロジェクト出力を F# Interactive に送信(&amp;S)</target>
+        <target state="translated">プロジェクト出力を F# インタラクティブに送信(&amp;S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|CommandName">

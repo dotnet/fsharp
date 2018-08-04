@@ -27,8 +27,6 @@
     "fsiAnyCpu.exe",
     "FSharp.Data.TypeProviders.dll",
     "Microsoft.Build.dll",
-    "Microsoft.Build.Conversion.Core.dll",
-    "Microsoft.Build.Engine.dll",
     "Microsoft.Build.Framework.dll",
     "Microsoft.Build.Tasks.Core.dll",
     "Microsoft.Build.Utilities.Core.dll",

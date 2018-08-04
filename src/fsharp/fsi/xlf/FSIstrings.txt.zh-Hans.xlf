@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">启动 F# 交互进程时发生问题。此情况可能是由一个已知问题导致的，即某些 Windows 系统上的后台进程控制台不支持启用了 Unicode 的应用程序。请尝试选择“工具”-&gt;“选项”-&gt;“F# 交互 for Visual Studio”，然后输入“--fsi-server-no-unicode”。</target>
+        <target state="translated">启动 F# 交互窗口进程时发生问题。此情况可能是由一个已知问题导致的，即某些 Windows 系统上的后台进程控制台不支持启用了 Unicode 的应用程序。请尝试选择“工具”-&gt;“选项”-&gt;“适用于 Visual Studio 的 F# 交互窗口”，然后输入“--fsi-server-no-unicode”。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -139,7 +139,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
         <source>  F# Interactive directives:</source>
-        <target state="translated">  F# 交互指令: </target>
+        <target state="translated">  F# 交互窗口指令: </target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashrInfo">
@@ -174,7 +174,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader2commandLine">
         <source>  F# Interactive command line options:</source>
-        <target state="translated">  F# 交互命令行选项: </target>
+        <target state="translated">  F# 交互窗口命令行选项: </target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader3">
@@ -214,7 +214,7 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; 已引用“{0}”(文件可能由 F# 交互进程锁定)</target>
+        <target state="translated">--&gt; 已引用“{0}”(文件可能由 F# 交互窗口进程锁定)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
@@ -254,7 +254,7 @@
       </trans-unit>
       <trans-unit id="fsiProductName">
         <source>Microsoft (R) F# Interactive version {0}</source>
-        <target state="translated">Microsoft(R) F# 交互版本 {0}</target>
+        <target state="translated">Microsoft(R) F# 交互窗口版本 {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiProductNameCommunity">
@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
         <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">防止引用被 F# 交互式进程锁定</target>
+        <target state="translated">防止引用被 F# 交互窗口进程锁定</target>
         <note />
       </trans-unit>
     </body>
