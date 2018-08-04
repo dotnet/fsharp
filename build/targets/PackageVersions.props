@@ -6,9 +6,11 @@
     <RoslynPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\..\RoslynPackageVersion.txt').Trim())</RoslynPackageVersion>
 
     <!-- System.* packages -->
-    <SystemRuntimeCachingPackageVersion>1.5.0</SystemRuntimeCachingPackageVersion>
     <SystemCollectionsImmutablePackageVersion>1.5.0</SystemCollectionsImmutablePackageVersion>
+    <SystemIoCompressionPackageVersion>4.3.0</SystemIoCompressionPackageVersion>
+    <SystemRuntimeCachingPackageVersion>1.5.0</SystemRuntimeCachingPackageVersion>
     <SystemDesignPackageVersion>4.0.0</SystemDesignPackageVersion>
+    <SystemReflectionMetadataPackageVersion>1.6.0</SystemReflectionMetadataPackageVersion>
     <SystemValueTuplePackageVersion>4.3.0</SystemValueTuplePackageVersion>
 
     <!-- Roslyn packages -->
@@ -29,7 +31,7 @@
     <!-- Visual Studio packages -->
     <EnvDTE80PackageVersion>8.0.1</EnvDTE80PackageVersion>
     <MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalPackageVersion>14.0.25420</MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalPackageVersion>
-    <MicrosoftVisualStudioCoreUtility>15.6.27740</MicrosoftVisualStudioCoreUtility>
+    <MicrosoftVisualStudioCoreUtilityPackageVersion>15.6.27740</MicrosoftVisualStudioCoreUtilityPackageVersion>
     <MicrosoftVisualStudioComponentModelHostPackageVersion>15.0.26201-alpha</MicrosoftVisualStudioComponentModelHostPackageVersion>
     <MicrosoftVisualStudioDesignerInterfacesPackageVersion>1.1.4322</MicrosoftVisualStudioDesignerInterfacesPackageVersion>
     <MicrosoftVisualStudioEditorPackageVersion>15.0.26201</MicrosoftVisualStudioEditorPackageVersion>
@@ -62,10 +64,11 @@
     <MicrosoftVisualStudioTextManagerInterop120PackageVersion>12.0.30112</MicrosoftVisualStudioTextManagerInterop120PackageVersion>
     <MicrosoftVisualStudioTextUIPackageVersion>15.6.27740</MicrosoftVisualStudioTextUIPackageVersion>
     <MicrosoftVisualStudioTextUIWpfPackageVersion>15.6.27740</MicrosoftVisualStudioTextUIWpfPackageVersion>
+    <MicrosoftVisualStudioThreadingPackageVersion>15.3.23</MicrosoftVisualStudioThreadingPackageVersion>
     <MicrosoftVisualStudioUtilitiesPackageVersion>15.0.26201</MicrosoftVisualStudioUtilitiesPackageVersion>
     <MicrosoftVisualStudioValidationPackageVersion>15.3.15</MicrosoftVisualStudioValidationPackageVersion>
     <MicrosoftVisualStudioWCFReferenceInteropPackageVersion>9.0.30729</MicrosoftVisualStudioWCFReferenceInteropPackageVersion>
-    <MicrosoftVSSDKBuildToolsPackageVersion>15.1.192</MicrosoftVSSDKBuildToolsPackageVersion>
+    <MicrosoftVSSDKBuildToolsPackageVersion>15.6.170</MicrosoftVSSDKBuildToolsPackageVersion>
     <VSSDKDebuggerVisualizersPackageVersion>12.0.4</VSSDKDebuggerVisualizersPackageVersion>
     <VSSDKVSLangProjPackageVersion>7.0.4</VSSDKVSLangProjPackageVersion>
     <VSSDKVSLangProj8PackageVersion>8.0.4</VSSDKVSLangProj8PackageVersion>

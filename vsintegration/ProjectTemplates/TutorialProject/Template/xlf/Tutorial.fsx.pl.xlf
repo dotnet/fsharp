@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="Instructions-Line1">
         <source>To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click</source>
-        <target state="translated">Aby wykonać kod w programie F# Interactive, zaznacz sekcję kodu i naciśnij kombinację klawiszy Alt-Enter lub kliknij prawym przyciskiem myszy,</target>
+        <target state="translated">Aby wykonać kod w narzędziu F# Interactive, zaznacz sekcję kodu i naciśnij kombinację klawiszy Alt-Enter lub kliknij prawym przyciskiem myszy,</target>
         <note />
       </trans-unit>
       <trans-unit id="Instructions-Line2">
         <source>and select "Execute in Interactive".  You can open the F# Interactive Window from the "View" menu.</source>
-        <target state="translated">a następnie wybierz opcję „Wykonaj w programie Interactive”. Okno programu F# Interactive można otworzyć z menu „Widok”.</target>
+        <target state="translated">a następnie wybierz opcję „Wykonaj w trybie interaktywnym”. Okno narzędzia F# Interactive można otworzyć z menu „Widok”.</target>
         <note />
       </trans-unit>
       <trans-unit id="MoreAbout">
