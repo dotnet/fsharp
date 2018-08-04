@@ -27,8 +27,6 @@ open Microsoft.FSharp.Core.Printf
 open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
-let codeLabelOrder = ComparisonIdentity.Structural<ILCodeLabel>
-
 // Convert the output of convCustomAttr
 open Microsoft.FSharp.Compiler.AbstractIL.ILAsciiWriter 
 let wrapCustomAttr setCustomAttr (cinfo, bytes) =
@@ -284,6 +282,9 @@ type System.Reflection.Emit.ILGenerator with
 
 let inline flagsIf  b x  = if b then x else enum 0
 
+module Map = 
+    let force x m str = match Map.tryFind x m with Some y -> y | None -> failwithf "Map.force: %s: x = %+A" str x
+
 module Zmap = 
     let force x m str = match Zmap.tryFind x m with Some y -> y | None -> failwithf "Zmap.force: %s: x = %+A" str x
 
@@ -363,30 +364,25 @@ let convTypeRefAux (cenv:cenv) (tref:ILTypeRef) =
 /// and could be placed as hash tables in the global environment.
 [<AutoSerializable(false)>]
 type emEnv =
-    { emTypMap   : Zmap<ILTypeRef, Type * TypeBuilder * ILTypeDef * Type option (*the created type*) > ;
-      emConsMap  : Zmap<ILMethodRef, ConstructorBuilder>;    
-      emMethMap  : Zmap<ILMethodRef, MethodBuilder>;
-      emFieldMap : Zmap<ILFieldRef, FieldBuilder>;
-      emPropMap  : Zmap<ILPropertyRef, PropertyBuilder>;
+    { emTypMap   : Map<ILTypeRef, Type * TypeBuilder * ILTypeDef * Type option (*the created type*) >
+      emConsMap  : Map<ILMethodRef, ConstructorBuilder>;   
+      emMethMap  : Map<ILMethodRef, MethodBuilder>
+      emFieldMap : Map<ILFieldRef, FieldBuilder>
+      emPropMap  : Map<ILPropertyRef, PropertyBuilder>
       emLocals   : LocalBuilder[];
-      emLabels   : Zmap<IL.ILCodeLabel, Label>;
+      emLabels   : Map<IL.ILCodeLabel, Label>
       emTyvars   : Type[] list; // stack
       emEntryPts : (TypeBuilder * string) list
       delayedFieldInits :  (unit -> unit) list}
   
-let orderILTypeRef      = ComparisonIdentity.Structural<ILTypeRef>
-let orderILMethodRef    = ComparisonIdentity.Structural<ILMethodRef>
-let orderILFieldRef     = ComparisonIdentity.Structural<ILFieldRef> 
-let orderILPropertyRef  = ComparisonIdentity.Structural<ILPropertyRef>
-
 let emEnv0 = 
-    { emTypMap   = Zmap.empty orderILTypeRef;
-      emConsMap  = Zmap.empty orderILMethodRef;
-      emMethMap  = Zmap.empty orderILMethodRef;
-      emFieldMap = Zmap.empty orderILFieldRef;
-      emPropMap = Zmap.empty orderILPropertyRef;
+    { emTypMap   = Map.empty
+      emConsMap  = Map.empty
+      emMethMap  = Map.empty
+      emFieldMap = Map.empty
+      emPropMap = Map.empty
       emLocals   = [| |];
-      emLabels   = Zmap.empty codeLabelOrder;
+      emLabels   = Map.empty
       emTyvars   = [];
       emEntryPts = []
       delayedFieldInits = [] }
@@ -394,13 +390,13 @@ let emEnv0 =
 let envBindTypeRef emEnv (tref:ILTypeRef) (typT, typB, typeDef)= 
     match typT with 
     | null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name;
-    | _ -> {emEnv with emTypMap = Zmap.add tref (typT, typB, typeDef, None) emEnv.emTypMap}
+    | _ -> {emEnv with emTypMap = Map.add tref (typT, typB, typeDef, None) emEnv.emTypMap}
 
 let envUpdateCreatedTypeRef emEnv (tref:ILTypeRef) =
     // The tref's TypeBuilder has been created, so we have a Type proper.
     // Update the tables to include this created type (the typT held prior to this is (i think) actually (TypeBuilder :> Type).
     // The (TypeBuilder :> Type) does not implement all the methods that a Type proper does.
-    let typT, typB, typeDef, _createdTypOpt = Zmap.force tref emEnv.emTypMap "envGetTypeDef: failed"
+    let typT, typB, typeDef, _createdTypOpt = Map.force tref emEnv.emTypMap "envGetTypeDef: failed"
     if typB.IsCreated() then
         let ty = typB.CreateTypeAndLog()
 #if ENABLE_MONO_SUPPORT
@@ -415,7 +411,7 @@ let envUpdateCreatedTypeRef emEnv (tref:ILTypeRef) =
               System.Runtime.Serialization.FormatterServices.GetUninitializedObject(ty) |> ignore
             with e -> ()
 #endif
-        {emEnv with emTypMap = Zmap.add tref (typT, typB, typeDef, Some ty) emEnv.emTypMap}
+        {emEnv with emTypMap = Map.add tref (typT, typB, typeDef, Some ty) emEnv.emTypMap}
     else
 #if DEBUG
         printf "envUpdateCreatedTypeRef: expected type to be created\n";
@@ -424,7 +420,7 @@ let envUpdateCreatedTypeRef emEnv (tref:ILTypeRef) =
 
 let convTypeRef cenv emEnv preferCreated (tref:ILTypeRef) = 
     let res = 
-        match Zmap.tryFind tref emEnv.emTypMap with
+        match Map.tryFind tref emEnv.emTypMap with
         | Some (_typT, _typB, _typeDef, Some createdTy) when preferCreated -> createdTy 
         | Some (typT, _typB, _typeDef, _)                                  -> typT       
         | None                                                        -> convTypeRefAux cenv tref 
@@ -433,35 +429,35 @@ let convTypeRef cenv emEnv preferCreated (tref:ILTypeRef) =
     | _ -> res
   
 let envBindConsRef emEnv (mref:ILMethodRef) consB = 
-    {emEnv with emConsMap = Zmap.add mref consB emEnv.emConsMap}
+    {emEnv with emConsMap = Map.add mref consB emEnv.emConsMap}
 
 let envGetConsB emEnv (mref:ILMethodRef) = 
-    Zmap.force mref emEnv.emConsMap "envGetConsB: failed"
+    Map.force mref emEnv.emConsMap "envGetConsB: failed"
 
 let envBindMethodRef emEnv (mref:ILMethodRef) methB = 
-    {emEnv with emMethMap = Zmap.add mref methB emEnv.emMethMap}
+    {emEnv with emMethMap = Map.add mref methB emEnv.emMethMap}
 
 let envGetMethB emEnv (mref:ILMethodRef) = 
-    Zmap.force mref emEnv.emMethMap "envGetMethB: failed"
+    Map.force mref emEnv.emMethMap "envGetMethB: failed"
 
 let envBindFieldRef emEnv fref fieldB = 
-    {emEnv with emFieldMap = Zmap.add fref fieldB emEnv.emFieldMap}
+    {emEnv with emFieldMap = Map.add fref fieldB emEnv.emFieldMap}
 
 let envGetFieldB emEnv fref =
-    Zmap.force fref emEnv.emFieldMap "- envGetMethB: failed"
+    Map.force fref emEnv.emFieldMap "- envGetMethB: failed"
       
 let envBindPropRef emEnv (pref:ILPropertyRef) propB = 
-    {emEnv with emPropMap = Zmap.add pref propB emEnv.emPropMap}
+    {emEnv with emPropMap = Map.add pref propB emEnv.emPropMap}
 
 let envGetPropB emEnv pref =
-    Zmap.force pref emEnv.emPropMap "- envGetPropB: failed"
+    Map.force pref emEnv.emPropMap "- envGetPropB: failed"
       
 let envGetTypB emEnv (tref:ILTypeRef) = 
-    Zmap.force tref emEnv.emTypMap "envGetTypB: failed"
+    Map.force tref emEnv.emTypMap "envGetTypB: failed"
     |> (fun (_typT, typB, _typeDef, _createdTypOpt) -> typB)
                  
 let envGetTypeDef emEnv (tref:ILTypeRef) = 
-    Zmap.force tref emEnv.emTypMap "envGetTypeDef: failed"
+    Map.force tref emEnv.emTypMap "envGetTypeDef: failed"
     |> (fun (_typT, _typB, typeDef, _createdTypOpt) -> typeDef)
                  
 let envSetLocals emEnv locs = assert (emEnv.emLocals.Length = 0); // check "locals" is not yet set (scopes once only)
@@ -469,11 +465,11 @@ let envSetLocals emEnv locs = assert (emEnv.emLocals.Length = 0); // check "loca
 let envGetLocal  emEnv i    = emEnv.emLocals.[i] // implicit bounds checking
 
 let envSetLabel emEnv name lab =
-    assert (not (Zmap.mem name emEnv.emLabels));
-    {emEnv with emLabels = Zmap.add name lab emEnv.emLabels}
+    assert (not (Map.containsKey name emEnv.emLabels));
+    {emEnv with emLabels = Map.add name lab emEnv.emLabels}
     
 let envGetLabel emEnv name = 
-    Zmap.find name emEnv.emLabels
+    Map.find name emEnv.emLabels
 
 let envPushTyvars emEnv tys =  {emEnv with emTyvars = tys :: emEnv.emTyvars}
 let envPopTyvars  emEnv      =  {emEnv with emTyvars = List.tail emEnv.emTyvars}
@@ -487,7 +483,7 @@ let envGetTyvar   emEnv u16  =
         else
             tvs.[i]
 
-let isEmittedTypeRef emEnv tref = Zmap.mem tref emEnv.emTypMap
+let isEmittedTypeRef emEnv tref = Map.containsKey tref emEnv.emTypMap
 
 let envAddEntryPt  emEnv mref = {emEnv with emEntryPts = mref::emEnv.emEntryPts}
 let envPopEntryPts emEnv      = {emEnv with emEntryPts = []}, emEnv.emEntryPts
@@ -2147,6 +2143,6 @@ let LookupTypeRef   cenv emEnv tref = convCreatedTypeRef cenv emEnv tref
 let LookupType      cenv emEnv ty  = convCreatedType cenv emEnv ty
 
 // Lookups of ILFieldRef and MethodRef may require a similar non-Builder-fixup post Type-creation.
-let LookupFieldRef  emEnv fref = Zmap.tryFind fref emEnv.emFieldMap |> Option.map (fun fieldBuilder  -> fieldBuilder  :> FieldInfo)
-let LookupMethodRef emEnv mref = Zmap.tryFind mref emEnv.emMethMap  |> Option.map (fun methodBuilder -> methodBuilder :> MethodInfo)
+let LookupFieldRef  emEnv fref = Map.tryFind fref emEnv.emFieldMap |> Option.map (fun fieldBuilder  -> fieldBuilder  :> FieldInfo)
+let LookupMethodRef emEnv mref = Map.tryFind mref emEnv.emMethMap  |> Option.map (fun methodBuilder -> methodBuilder :> MethodInfo)
 

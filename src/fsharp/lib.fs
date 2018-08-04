@@ -286,6 +286,9 @@ module List =
 // Zmap rebinds
 //------------------------------------------------------------------------- 
 
+module Map = 
+    let force  k   mp           = match Map.tryFind k mp with Some x -> x | None -> failwith "Map.force: lookup failed"
+
 module Zmap = 
     let force  k   mp           = match Zmap.tryFind k mp with Some x -> x | None -> failwith "Zmap.force: lookup failed"
 

@@ -24,6 +24,14 @@ let verboseTLR = false
 
 let internalError str = dprintf "Error: %s\n" str;raise (Failure str)  
 
+module Map = 
+    let force k   mp (str,soK) = 
+        try Map.find k mp 
+        with e -> 
+            dprintf "Map.force: %s %s\n" str (soK k); 
+            PreserveStackTrace(e)
+            raise e
+
 module Zmap = 
     let force k   mp (str,soK) = 
         try Zmap.find k mp 
