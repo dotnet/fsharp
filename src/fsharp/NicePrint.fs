@@ -6,6 +6,7 @@
 
 module internal Microsoft.FSharp.Compiler.NicePrint
 
+open Internal.Utilities.Collections
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
@@ -761,7 +762,7 @@ module private PrintTypes =
         let varL = layoutTyparRef denv typar
         let varL = if denv.showAttributes then layoutTyparAttribs denv typar.Kind typar.Attribs varL else varL
 
-        match Zmap.tryFind typar env.inplaceConstraints with
+        match MapCustom.tryFind typar env.inplaceConstraints with
         | Some (typarConstraintTy) ->
             if Zset.contains typar env.singletons then
                 leftL (tagPunctuation "#") ^^ layoutTypeWithInfo denv env typarConstraintTy

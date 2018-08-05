@@ -117,6 +117,9 @@
     <Compile Include="$(FSharpSourcesRoot)/utils/TaggedCollections.fs">
       <Link>Utilities/TaggedCollections.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/utils/SortKey.fs">
+      <Link>Utilities/SortKey.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/QueueList.fs">
       <Link>Utilities/QueueList.fs</Link>
     </Compile>

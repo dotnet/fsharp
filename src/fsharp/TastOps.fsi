@@ -6,6 +6,7 @@ module internal Microsoft.FSharp.Compiler.Tastops
 open System.Text
 open System.Collections.Generic
 open Internal.Utilities
+open Internal.Utilities.Collections
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
@@ -749,11 +750,15 @@ val trimPathByDisplayEnv : DisplayEnv -> string list -> string
 val prefixOfStaticReq : TyparStaticReq -> string
 val prefixOfRigidTypar : Typar -> string
 
+[<Struct>]
+type TyparByStamp =
+    interface IComparer<Typar>
+
 /// Utilities used in simplifying types for visual presentation
 module SimplifyTypes = 
     type TypeSimplificationInfo =
         { singletons         : Typar Zset;
-          inplaceConstraints :  Zmap<Typar,TType>;
+          inplaceConstraints : Map<SortKey<Typar,TyparByStamp>, TType>
           postfixConstraints : TyparConstraintsWithTypars; }
     val typeSimplificationInfo0 : TypeSimplificationInfo
     val CollectInfo : bool -> TType list -> TyparConstraintsWithTypars -> TypeSimplificationInfo
