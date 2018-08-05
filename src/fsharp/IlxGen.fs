@@ -696,8 +696,7 @@ and IlxGenEnv =
       /// Full list of enclosing bound values.  First non-compiler-generated element is used to help give nice names for closures and other expressions.  
       letBoundVars: ValRef list 
       /// The set of IL local variable indexes currently in use by lexically scoped variables, to allow reuse on different branches. 
-      /// Really an integer set. 
-      liveLocals: IntMap<unit> 
+      liveLocals: Set<int> 
       /// Are we under the scope of a try, catch or finally? If so we can't tailcall. SEH = structured exception handling
       withinSEH: bool }
 
@@ -1588,7 +1587,7 @@ let CodeGenThen cenv mgbuf (entryPointInfo,methodName,eenv,alreadyUsedArgs,alrea
 
     (* Call the given code generator *)
     codeGenFunction cgbuf {eenv with withinSEH=false
-                                     liveLocals=IntMap.empty()  
+                                     liveLocals=Set.empty
                                      innerVals = innerVals}
 
     let locals,maxStack,lab2pc,code,exnSpecs,hasSequencePoints = cgbuf.Close()
@@ -4309,11 +4308,11 @@ and GenMatch cenv cgbuf eenv (spBind,_exprm,tree,targets,m,ty) sequel =
 
 // Accumulate the decision graph as we go
 and GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets repeatSP sequel = 
-    let targetInfos = GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv tree targets repeatSP (IntMap.empty()) sequel
+    let targetInfos = GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv tree targets repeatSP Map.empty sequel
     GenPostponedDecisionTreeTargets cenv cgbuf stackAtTargets targetInfos sequel
     
 and TryFindTargetInfo targetInfos n =  
-    match IntMap.tryFind n targetInfos  with 
+    match Map.tryFind n targetInfos  with 
     | Some (targetInfo,_) -> Some targetInfo
     | None -> None
 
@@ -4389,7 +4388,7 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
                 CG.EmitInstr cgbuf (pop 0) Push0 (I_br targetMarkBeforeBinds.CodeLabel)
                 true 
 
-        let targetInfos = IntMap.add targetIdx (targetInfo,isTargetPostponed) targetInfos
+        let targetInfos = Map.add targetIdx (targetInfo,isTargetPostponed) targetInfos
         targetInfos
 
 and GenPostponedDecisionTreeTargets cenv cgbuf stackAtTargets targetInfos sequel = 
@@ -5582,9 +5581,9 @@ and AllocLocal cenv cgbuf eenv compgen (v,ty,isFixed) (scopeMarks: Mark * Mark) 
      // Get an index for the local
      let j = 
         if cenv.opts.localOptimizationsAreOn 
-        then cgbuf.ReallocLocal((fun i (_,ty',isFixed') -> not isFixed' && not isFixed && not (IntMap.mem i eenv.liveLocals) && (ty = ty')),ranges,ty,isFixed)
+        then cgbuf.ReallocLocal((fun i (_,ty',isFixed') -> not isFixed' && not isFixed && not (Set.contains i eenv.liveLocals) && (ty = ty')),ranges,ty,isFixed)
         else cgbuf.AllocLocal(ranges,ty,isFixed)
-     j, { eenv with liveLocals =  IntMap.add j () eenv.liveLocals  }
+     j, { eenv with liveLocals =  Set.add j eenv.liveLocals  }
 
 and AllocLocalVal cenv cgbuf v eenv repr scopeMarks = 
     let repr,eenv = 
@@ -6918,7 +6917,7 @@ let GetEmptyIlxGenEnv (ilg : ILGlobals) ccu =
       someTypeInThisAssembly=ilg.typ_Object (* dummy value *)
       isFinalFile = false
       letBoundVars=[]
-      liveLocals=IntMap.empty()
+      liveLocals=Set.empty
       innerVals = []
       sigToImplRemapInfo = [] (* "module remap info" *)
       withinSEH = false }

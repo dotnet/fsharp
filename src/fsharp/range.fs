@@ -197,6 +197,9 @@ let mkRange f b e =
 let mkFileIndexRange fi b e = range (fi, b, e)
 
 (* end representation, start derived ops *)
+
+module Int32 = 
+    let order = LanguagePrimitives.FastGenericComparer<int>
                  
 let posOrder   = Order.orderOn (fun (p:pos) -> p.Line, p.Column) (Pair.order (Int32.order, Int32.order))
 (* rangeOrder: not a total order, but enough to sort on ranges *)      

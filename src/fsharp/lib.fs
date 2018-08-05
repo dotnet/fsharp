@@ -74,9 +74,6 @@ module Filename =
 module Bool = 
     let order = LanguagePrimitives.FastGenericComparer<bool>
 
-module Int32 = 
-    let order = LanguagePrimitives.FastGenericComparer<int>
-
 module Int64 = 
     let order = LanguagePrimitives.FastGenericComparer<int64>
 
@@ -132,24 +129,6 @@ module Check =
         ArgumentNotNull s argname
         if s.Length = 0 then
             raise (new System.ArgumentNullException(argname))
-
-//-------------------------------------------------------------------------
-// Library 
-//------------------------------------------------------------------------
-
-type IntMap<'T> = Zmap<int,'T>
-module IntMap = 
-    let empty () = Zmap.empty Int32.order
-
-    let add k v (t:IntMap<'T>) = Zmap.add k v t
-    let find k (t:IntMap<'T>) = Zmap.find k t
-    let tryFind k (t:IntMap<'T>) = Zmap.tryFind k t
-    let remove  k (t:IntMap<'T>) = Zmap.remove k t
-    let mem     k (t:IntMap<'T>)  = Zmap.mem k t
-    let iter    f (t:IntMap<'T>)  = Zmap.iter f t
-    let map     f (t:IntMap<'T>)  = Zmap.map f t 
-    let fold    f (t:IntMap<'T>)  z = Zmap.fold f t z
-
 
 //-------------------------------------------------------------------------
 // Library: generalized association lists
