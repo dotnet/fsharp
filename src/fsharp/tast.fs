@@ -2279,6 +2279,11 @@ and
 
     override x.ToString() = x.Name
 
+and [<Struct>] TyparByStamp =
+    interface IComparer<Typar> with
+        member __.Compare(v1: Typar, v2: Typar): int =
+            compare v1.Stamp v2.Stamp
+
 and
     [<NoEquality; NoComparison; RequireQualifiedAccess (*; StructuredFormatDisplay("{DebugText}") *) >]
     TyparConstraint = 
@@ -2962,7 +2967,11 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     member x.DebugText  =  x.ToString()
 
     override x.ToString() = x.LogicalName
-    
+
+and [<Struct>] ValByStamp =
+    interface IComparer<Val> with
+        member __.Compare(v1, v2) =
+            compare v1.Stamp v2.Stamp
     
 and 
     /// Represents the extra information stored for a member

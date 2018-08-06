@@ -750,10 +750,6 @@ val trimPathByDisplayEnv : DisplayEnv -> string list -> string
 val prefixOfStaticReq : TyparStaticReq -> string
 val prefixOfRigidTypar : Typar -> string
 
-[<Struct>]
-type TyparByStamp =
-    interface IComparer<Typar>
-
 /// Utilities used in simplifying types for visual presentation
 module SimplifyTypes = 
     type TypeSimplificationInfo =

@@ -13,9 +13,18 @@ with
             Unchecked.defaultof<'Comparer>.Compare(lhs.CompareObj, rhs.CompareObj)
 
     static member fail () = failwith "Invalid logic. No method other than IComparable<_>.CompareTo is valid for SortKey"
-    interface IComparable with member __.CompareTo _ = SortKey<'Key,'Comparer>.fail ()
     override __.GetHashCode () = SortKey<'Key,'Comparer>.fail ()
     override __.Equals _ = SortKey<'Key,'Comparer>.fail ()
+
+#if THIS_SHOULD_JUST_THROW_AN_EXCEPTION
+    interface IComparable with member __.CompareTo _ = SortKey<'Key,'Comparer>.fail ()
+#else
+    // tests run with an old version of FSharp.Core that doesn't using the non-boxing IComparable
+    interface IComparable with
+        member lhs.CompareTo rhs =
+            Unchecked.defaultof<'Comparer>.Compare(lhs.CompareObj, (rhs:?>SortKey<'Key,'Comparer>).CompareObj)
+#endif
+
 
 [<Sealed; AbstractClass>]
 type MapCustom<'Key,'Value>() =
@@ -41,3 +50,6 @@ type MapCustom<'Key,'Value>() =
 
     static member inline find<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (k:'Key) (m:Map<SortKey<'Key,'Comparer>,'Value>) =
         Map.find {CompareObj=k} m
+
+    static member inline fold<'Comparer, 'State when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (folder:'Key->'Value->'State->'State) (m:Map<SortKey<'Key,'Comparer>,'Value>) (state:'State) : 'State =
+        Map.foldBack (fun {CompareObj=k} t s -> folder k t s) m state 

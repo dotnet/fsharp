@@ -8,6 +8,7 @@ open System
 open System.Collections.Generic
 
 open Internal.Utilities
+open Internal.Utilities.Collections
 
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
@@ -12419,19 +12420,19 @@ module IncrClassChecking =
           TakenFieldNames:Set<string>
           RepInfoTcGlobals:TcGlobals
           /// vals mapped to representations
-          ValReprs  : Zmap<Val, IncrClassValRepr> 
+          ValReprs  : Map<SortKey<Val, ValByStamp>, IncrClassValRepr> 
           /// vals represented as fields or members from this point on 
           ValsWithRepresentation  : Zset<Val> }
 
         static member Empty(g, names) = 
             { TakenFieldNames=Set.ofList names
               RepInfoTcGlobals=g
-              ValReprs = Zmap.empty valOrder 
+              ValReprs = MapCustom.Empty<ValByStamp> ()
               ValsWithRepresentation = Zset.empty valOrder }
 
         /// Find the representation of a value
         member localRep.LookupRepr (v:Val) = 
-            match Zmap.tryFind v localRep.ValReprs with 
+            match MapCustom.tryFind v localRep.ValReprs with 
             | None -> error(InternalError("LookupRepr: failed to find representation for value", v.Range))
             | Some res -> res
 
@@ -12544,7 +12545,7 @@ module IncrClassChecking =
             // OK, representation chosen, now add it 
             {localRep with 
                 TakenFieldNames=takenFieldNames 
-                ValReprs = Zmap.add v repr localRep.ValReprs}  
+                ValReprs = MapCustom.add v repr localRep.ValReprs}  
 
         member localRep.ValNowWithRepresentation (v:Val) = 
             {localRep with ValsWithRepresentation = Zset.add v localRep.ValsWithRepresentation}
@@ -12629,7 +12630,7 @@ module IncrClassChecking =
         member localRep.PublishIncrClassFields (cenv, denv, cpath, ctorInfo:IncrClassCtorLhs, safeStaticInitInfo) =    
             let tcref = ctorInfo.TyconRef
             let rfspecs   = 
-                [ for KeyValue(v, repr) in localRep.ValReprs do
+                [ for KeyValue({CompareObj=v}, repr) in localRep.ValReprs do
                       match repr with 
                       | InField(isStatic, _, rfref) -> 
                           // Instance fields for structs are published earlier because the full set of fields is determined syntactically from the implicit

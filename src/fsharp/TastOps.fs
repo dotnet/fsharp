@@ -1863,11 +1863,6 @@ let typarOrder =
     { new System.Collections.Generic.IComparer<Typar> with 
         member x.Compare (v1:Typar, v2:Typar) = compare v1.Stamp v2.Stamp } 
 
-[<Struct>]
-type TyparByStamp =
-    interface IComparer<Typar> with
-        member __.Compare(v1: Typar, v2: Typar): int = compare v1.Stamp v2.Stamp
-
 let emptyFreeTypars = Zset.empty typarOrder
 let unionFreeTypars s1 s2 = 
     if s1 === emptyFreeTypars then s2

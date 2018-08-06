@@ -2,6 +2,8 @@
 
 module internal Microsoft.FSharp.Compiler.Detuple 
 
+open Internal.Utilities.Collections
+
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
@@ -181,20 +183,20 @@ module GlobalUsageAnalysis =
     ///   (b) log it's binding site representation.
     type Results =
        { ///  v -> context / APP inst args 
-         Uses     : Zmap<Val, (accessor list * TType list * Expr list) list>
+         Uses     : Map<SortKey<Val, ValByStamp>, (accessor list * TType list * Expr list) list>
          /// v -> binding repr 
-         Defns     : Zmap<Val, Expr>                                        
+         Defns     : Map<SortKey<Val, ValByStamp>, Expr>                                        
          /// bound in a decision tree? 
          DecisionTreeBindings    : Zset<Val>                                    
          ///  v -> v list * recursive? -- the others in the mutual binding 
-         RecursiveBindings  : Zmap<Val, bool * Vals>
+         RecursiveBindings  : Map<SortKey<Val, ValByStamp>, bool * Vals>
          TopLevelBindings : Zset<Val>
          IterationIsAtTopLevel      : bool }
 
     let z0 =
-       { Uses     = Zmap.empty valOrder
-         Defns     = Zmap.empty valOrder
-         RecursiveBindings  = Zmap.empty valOrder
+       { Uses     = MapCustom.Empty<ValByStamp> ()
+         Defns     = MapCustom.Empty<ValByStamp> ()
+         RecursiveBindings  = MapCustom.Empty<ValByStamp> ()
          DecisionTreeBindings    = Zset.empty valOrder
          TopLevelBindings = Zset.empty valOrder
          IterationIsAtTopLevel      = true }
@@ -203,9 +205,9 @@ module GlobalUsageAnalysis =
     /// Note: this routine is called very frequently
     let logUse (f:Val) tup z =
        {z with Uses = 
-                  match Zmap.tryFind f z.Uses with
-                  | Some sites -> Zmap.add f (tup::sites) z.Uses
-                  | None    -> Zmap.add f [tup] z.Uses }
+                  match MapCustom.tryFind f z.Uses with
+                  | Some sites -> MapCustom.add f (tup::sites) z.Uses
+                  | None    -> MapCustom.add f [tup] z.Uses }
 
     /// Log the definition of a binding
     let logBinding z (isInDTree, v) =
@@ -218,14 +220,14 @@ module GlobalUsageAnalysis =
     let logNonRecBinding z (bind:Binding) =
         let v = bind.Var
         let vs = [v]
-        {z with RecursiveBindings = Zmap.add v (false, vs) z.RecursiveBindings
-                Defns = Zmap.add v bind.Expr z.Defns } 
+        {z with RecursiveBindings = MapCustom.add v (false, vs) z.RecursiveBindings
+                Defns = MapCustom.add v bind.Expr z.Defns } 
 
     /// Log the definition of a recursive binding
     let logRecBindings z binds =
         let vs = valsOfBinds binds
-        {z with RecursiveBindings = (z.RecursiveBindings, vs) ||> List.fold (fun mubinds v -> Zmap.add v (true, vs) mubinds)
-                Defns    = (z.Defns, binds) ||> List.fold (fun eqns bind -> Zmap.add bind.Var bind.Expr eqns)  } 
+        {z with RecursiveBindings = (z.RecursiveBindings, vs) ||> List.fold (fun mubinds v -> MapCustom.add v (true, vs) mubinds)
+                Defns    = (z.Defns, binds) ||> List.fold (fun eqns bind -> MapCustom.add bind.Var bind.Expr eqns)  } 
 
     /// Work locally under a lambda of some kind
     let foldUnderLambda f z x =
@@ -535,7 +537,7 @@ let decideFormalSuggestedCP g z tys vss =
             TupleTS tss
 
     let trimTsByVal z ts v =
-        match Zmap.tryFind v z.Uses with
+        match MapCustom.tryFind v z.Uses with
         | None       -> UnknownTS (* formal has no usage info, it is unused *)
         | Some sites -> 
             let trim ts (accessors, _inst, _args) = trimTsByAccess accessors ts
@@ -599,7 +601,7 @@ let determineTransforms g (z : GlobalUsageAnalysis.Results) =
    let selectTransform (f: Val) sites =
      if not (eligibleVal g f.Range f) then None else
      // Consider f, if it has top-level lambda (meaning has term args) 
-     match Zmap.tryFind f z.Defns with
+     match MapCustom.tryFind f z.Defns with
      | None   -> None // no binding site, so no transform 
      | Some e -> 
         let tps, vss, _b, rty = stripTopLambda (e, f.Type)
@@ -610,7 +612,7 @@ let determineTransforms g (z : GlobalUsageAnalysis.Results) =
           let callPatterns = sitesCPs sites                   // callPatterns from sites 
           decideTransform g z f callPatterns (m, tps, vss, rty) // make transform (if required) 
   
-   let vtransforms = Zmap.chooseL selectTransform z.Uses
+   let vtransforms = MapCustom.chooseL selectTransform z.Uses
    let vtransforms = Zmap.ofList valOrder vtransforms
    vtransforms
 

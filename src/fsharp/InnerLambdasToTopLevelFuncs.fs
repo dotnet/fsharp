@@ -2,6 +2,7 @@
 
 module internal Microsoft.FSharp.Compiler.InnerLambdasToTopLevelFuncs 
 
+open Internal.Utilities.Collections
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
@@ -145,7 +146,7 @@ let GetValsBoundUnderMustInline xinfo =
         Zset.union (GetValsBoundInExpr repr) rejectS
       else rejectS
     let rejectS = Zset.empty valOrder
-    let rejectS = Zmap.fold accRejectFrom xinfo.Defns rejectS
+    let rejectS = MapCustom.fold accRejectFrom xinfo.Defns rejectS
     rejectS
 
 //-------------------------------------------------------------------------
@@ -180,7 +181,7 @@ let IsMandatoryNonTopLevel g (f:Val) =
 module Pass1_DetermineTLRAndArities = 
 
     let GetMaxNumArgsAtUses xinfo f =
-       match Zmap.tryFind f xinfo.Uses with
+       match MapCustom.tryFind f xinfo.Uses with
        | None       -> 0 (* no call sites *)
        | Some sites -> 
            sites |> List.map (fun (_accessors,_tinst,args) -> List.length args) |> List.max
@@ -203,8 +204,8 @@ module Pass1_DetermineTLRAndArities =
     /// ValRec considered: recursive && some f in mutual binding is not bound to a lambda
     let IsValueRecursionFree xinfo f =
 
-        let hasDelayedRepr f = isDelayedRepr f (Zmap.force f xinfo.Defns ("IsValueRecursionFree - hasDelayedRepr",nameOfVal))
-        let isRecursive,mudefs = Zmap.force f xinfo.RecursiveBindings ("IsValueRecursionFree",nameOfVal)
+        let hasDelayedRepr f = isDelayedRepr f (Map.force {CompareObj=f} xinfo.Defns ("IsValueRecursionFree - hasDelayedRepr",(fun {CompareObj=v} -> nameOfVal v)))
+        let isRecursive,mudefs = Map.force {CompareObj=f} xinfo.RecursiveBindings ("IsValueRecursionFree",(fun {CompareObj=v} -> nameOfVal v))
         not isRecursive || List.forall hasDelayedRepr mudefs
 
     let DumpArity arityM =
@@ -213,7 +214,7 @@ module Pass1_DetermineTLRAndArities =
 
     let DetermineTLRAndArities g expr  =
        let xinfo = GetUsageInfoOfImplFile g expr
-       let fArities = Zmap.chooseL (SelectTLRVals g xinfo) xinfo.Defns
+       let fArities = MapCustom.chooseL (SelectTLRVals g xinfo) xinfo.Defns
        let fArities = List.filter (fst >> IsValueRecursionFree xinfo) fArities
        // Do not TLR v if it is bound under a mustinline defn 
        // There is simply no point - the original value will be duplicated and TLR'd anyway 

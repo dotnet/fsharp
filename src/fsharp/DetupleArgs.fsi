@@ -2,6 +2,7 @@
 
 module internal Microsoft.FSharp.Compiler.Detuple 
 
+open Internal.Utilities.Collections
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.TcGlobals
@@ -18,13 +19,13 @@ module GlobalUsageAnalysis =
     /// Later could support "safe" change operations, and optimisations could be in terms of those.
     type Results =
        { /// v -> context / APP inst args 
-         Uses   : Zmap<Val,(accessor list * TType list * Expr list) list>; 
+         Uses   : Map<SortKey<Val, ValByStamp>, (accessor list * TType list * Expr list) list>; 
          /// v -> binding repr 
-         Defns   : Zmap<Val,Expr>;                                    
+         Defns   : Map<SortKey<Val, ValByStamp>, Expr>;                                    
          /// bound in a decision tree? 
          DecisionTreeBindings    : Zset<Val>;                                              
          /// v -> recursive? * v list   -- the others in the mutual binding 
-         RecursiveBindings  : Zmap<Val,(bool * Vals)>;                        
+         RecursiveBindings  : Map<SortKey<Val, ValByStamp>, (bool * Vals)>;                        
          /// val not defined under lambdas 
          TopLevelBindings : Zset<Val>;                                            
          /// top of expr toplevel? (true) 
