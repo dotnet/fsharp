@@ -123,6 +123,14 @@ module NegativeTests =
         let mutable x = 1
         let f = Beef(fun () -> &x) // is not allowed
         ()
+
+    type TestNegativeOverloading() =
+
+        static member Beef(dt: byref<int>) = ()
+
+        static member Beef(dt: inref<int>) = ()
+
+        static member Beef(dt: outref<int>) = ()
 #endif
 
 module Tests =
@@ -137,6 +145,14 @@ module Tests =
             let y = &x // is allowed
             ()
         ()
+
+    type TestPositiveOverloading() =
+
+        static member Beef(dt: byref<int>) = ()
+
+        static member Beef(dt: inref<float32>) = ()
+
+        static member Beef(dt: outref<float>) = ()
 
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
