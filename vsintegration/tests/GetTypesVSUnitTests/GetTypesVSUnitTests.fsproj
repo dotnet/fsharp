@@ -15,6 +15,7 @@
   <ItemGroup>
     <Compile Include="GetTypesVSUnitTests.fs" />
     <None Include="App.config" />
+    <None Include="App.config" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

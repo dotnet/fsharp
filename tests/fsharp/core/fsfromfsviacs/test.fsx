@@ -173,6 +173,14 @@ module TestExtensions =
 
     check "dfeweeon5" (x.ExtendCSharpTypeWithInRefExtension()) x.Year
 
+
+let ToFSharpFunc() = 
+    test "vkejhwew901" (FuncConvert.FromFunc(FSharpFuncTests.ApiWrapper.f1)(3)  =  FSharpFuncTests.ApiWrapper.f1.Invoke(3))
+    test "vkejhwew902" (FuncConvert.FromFunc(FSharpFuncTests.ApiWrapper.f2)(3)("a")  =  FSharpFuncTests.ApiWrapper.f2.Invoke(3, "a"))
+    test "vkejhwew903" (FuncConvert.FromFunc(FSharpFuncTests.ApiWrapper.f3)(3)("a")(6uy)  =  FSharpFuncTests.ApiWrapper.f3.Invoke(3, "a", 6uy))
+    test "vkejhwew904" (FuncConvert.FromFunc(FSharpFuncTests.ApiWrapper.f4)(3)("a")(6uy)(7y)  =  FSharpFuncTests.ApiWrapper.f4.Invoke(3, "a", 6uy, 7y))
+    test "vkejhwew905" (FuncConvert.FromFunc(FSharpFuncTests.ApiWrapper.f5)(3)("a")(6uy)(7y)(7s)  =  FSharpFuncTests.ApiWrapper.f5.Invoke(3, "a", 6uy, 7y, 7s))
+
 #endif
 
 #if TESTS_AS_APP

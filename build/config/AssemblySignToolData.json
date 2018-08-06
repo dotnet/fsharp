@@ -57,6 +57,7 @@
     }
   ],
   "exclude": [
+    "FSharp.Core.4.5.2.nupkg",
     "FSharp.Data.TypeProviders.dll",
     "Microsoft.Build.dll",
     "Microsoft.Build.Framework.dll",
