@@ -18,7 +18,8 @@ open Microsoft.VisualStudio.Utilities
 type WpfNavigableTextRunViewElementFactory
     [<ImportingConstructor>]
     (
-        viewElementFactoryService:IViewElementFactoryService
+        viewElementFactoryService:IViewElementFactoryService,
+        settings: EditorOptions
     ) =
     let styles = Microsoft.VisualStudio.FSharp.UIResources.NavStyles()
     interface IViewElementFactory with
@@ -37,8 +38,8 @@ type WpfNavigableTextRunViewElementFactory
             | :? TextBlock as tb ->
                 let underlineStyle =
                     let key =
-                        if Settings.QuickInfo.DisplayLinks then
-                            match Settings.QuickInfo.UnderlineStyle with
+                        if settings.QuickInfo.DisplayLinks then
+                            match settings.QuickInfo.UnderlineStyle with
                             | QuickInfoUnderlineStyle.Solid -> "solid_underline"
                             | QuickInfoUnderlineStyle.Dash -> "dash_underline"
                             | QuickInfoUnderlineStyle.Dot -> "dot_underline"
