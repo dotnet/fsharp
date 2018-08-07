@@ -126,11 +126,11 @@ module NegativeTests =
 
     type TestNegativeOverloading() =
 
-        static member Beef(dt: byref<int>) = ()
+        static member TestMethod(dt: byref<int>) = ()
 
-        static member Beef(dt: inref<int>) = ()
+        static member TestMethod(dt: inref<int>) = ()
 
-        static member Beef(dt: outref<int>) = ()
+        static member TestMethod(dt: outref<int>) = ()
 #endif
 
 module Tests =
@@ -148,11 +148,11 @@ module Tests =
 
     type TestPositiveOverloading() =
 
-        static member Beef(dt: byref<int>) = ()
+        static member TestMethod(dt: byref<int>) = ()
 
-        static member Beef(dt: inref<float32>) = ()
+        static member TestMethod(dt: inref<float32>) = ()
 
-        static member Beef(dt: outref<float>) = ()
+        static member TestMethod(dt: outref<float>) = ()
 
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 

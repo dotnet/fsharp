@@ -29,8 +29,8 @@ test2.fsx(112,53,112,54): typecheck error FS3209: The address of the variable 'x
 
 test2.fsx(124,33,124,34): typecheck error FS3209: The address of the variable 'x' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
-test2.fsx(133,23,133,27): typecheck error FS0438: Duplicate method. The method 'Beef' has the same name and signature as another method in type 'NegativeTests.TestNegativeOverloading'.
+test2.fsx(133,23,133,33): typecheck error FS0438: Duplicate method. The method 'TestMethod' has the same name and signature as another method in type 'NegativeTests.TestNegativeOverloading'.
 
-test2.fsx(131,23,131,27): typecheck error FS0438: Duplicate method. The method 'Beef' has the same name and signature as another method in type 'NegativeTests.TestNegativeOverloading'.
+test2.fsx(131,23,131,33): typecheck error FS0438: Duplicate method. The method 'TestMethod' has the same name and signature as another method in type 'NegativeTests.TestNegativeOverloading'.
 
-test2.fsx(129,23,129,27): typecheck error FS0438: Duplicate method. The method 'Beef' has the same name and signature as another method in type 'NegativeTests.TestNegativeOverloading'.
+test2.fsx(129,23,129,33): typecheck error FS0438: Duplicate method. The method 'TestMethod' has the same name and signature as another method in type 'NegativeTests.TestNegativeOverloading'.
