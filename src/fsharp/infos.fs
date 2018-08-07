@@ -28,17 +28,6 @@ open Microsoft.FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
-/// Check if the name of an attribute exists in the list of ILAttributes.
-let HasAttributeByName name (customAttrs: ILAttributes) =
-    customAttrs.AsList
-    |> List.exists (fun ilattrib ->
-        ilattrib.Method.DeclaringType.TypeRef.Name = name
-    )
-
-/// Check if the IsReadOnlyAttribute exists in the list of ILAttributes.
-let HasIsReadOnlyAttribute customAttrs =
-    HasAttributeByName "System.Runtime.CompilerServices.IsReadOnlyAttribute" customAttrs
-
 //-------------------------------------------------------------------------
 // From IL types to F# types
 //------------------------------------------------------------------------- 
@@ -296,24 +285,24 @@ let ImportILTypeFromMetadata amap m scoref tinst minst ilty =
     ImportILType scoref amap m (tinst@minst) ilty
 
 /// Read an Abstract IL type from metadata, including any attributes that may affect the type itself, and convert to an F# type.
-let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst ilty customAttrs =
+let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst ilty cattrs =
     let ty = ImportILType scoref amap m (tinst@minst) ilty
     // If the type is a byref and one of attributes from a return or parameter has IsReadOnly, then it's a inref.
-    if isByrefTy amap.g ty && HasIsReadOnlyAttribute customAttrs then
+    if isByrefTy amap.g ty && TryFindILAttribute amap.g.attrib_IsReadOnlyAttribute cattrs then
         mkInByrefTy amap.g (destByrefTy amap.g ty)
     else
         ty
 
 /// Get the parameter type of an IL method. 
-let ImportParameterTypeFromMetadata amap m ilty customAttrs scoref tinst mist =
-    ImportILTypeFromMetadataWithAttributes amap m scoref tinst mist ilty customAttrs
+let ImportParameterTypeFromMetadata amap m ilty cattrs scoref tinst mist =
+    ImportILTypeFromMetadataWithAttributes amap m scoref tinst mist ilty cattrs
     
 /// Get the return type of an IL method, taking into account instantiations for type, return attributes and method generic parameters, and
 /// translating 'void' to 'None'.
-let ImportReturnTypeFromMetadata amap m ilty customAttrs scoref tinst minst =
+let ImportReturnTypeFromMetadata amap m ilty cattrs scoref tinst minst =
     match ilty with 
     | ILType.Void -> None
-    | retTy -> Some(ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst retTy customAttrs)
+    | retTy -> Some(ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst retTy cattrs)
 
 
 /// Copy constraints.  If the constraint comes from a type parameter associated
