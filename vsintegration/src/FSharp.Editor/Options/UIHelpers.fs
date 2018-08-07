@@ -16,6 +16,8 @@ module internal OptionsUIHelpers =
         let view = lazy this.CreateView()
         
         let optionService =
+            // lazy, so GetService is called from UI thread
+            lazy
                 let scm = this.Site.GetService(typeof<SComponentModel>) :?> IComponentModel
                 scm.GetService<IPersistSettings>()
 
@@ -24,10 +26,10 @@ module internal OptionsUIHelpers =
         override this.Child = upcast view.Value
 
         override this.SaveSettingsToStorage() = 
-            this.GetResult() |> optionService.Write
+            this.GetResult() |> optionService.Value.Write
 
         override this.LoadSettingsFromStorage() = 
-            optionService.Read() |> this.SetViewModel
+            optionService.Value.Read() |> this.SetViewModel
 
         //Override this method when using immutable settings type
         member __.SetViewModel(settings: 't) =
