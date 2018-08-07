@@ -615,15 +615,23 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                     | None -> item.Item.DisplayName
                 name, items)
 
-        // Filter out operators (and list)
+        // Filter out operators, active patterns (as values) and the empty list
         let items = 
             // Check whether this item looks like an operator.
             let isOperatorItem(name, items: CompletionItem list) = 
                 match items |> List.map (fun x -> x.Item) with
                 | [Item.Value _ | Item.MethodGroup _ | Item.UnionCase _] -> IsOperatorName name
                 | _ -> false              
-            let isFSharpList name = (name = "[]") // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
-            items |> List.filter (fun (displayName, items) -> not (isOperatorItem(displayName, items)) && not (isFSharpList displayName)) 
+            
+            let isActivePatternItem (items: CompletionItem list) =
+                match items |> List.map (fun x -> x.Item) with
+                | [Item.Value vref] -> IsActivePatternName vref.CompiledName
+                | _ -> false
+            
+            items |> List.filter (fun (displayName, items) -> 
+                not (isOperatorItem(displayName, items)) && 
+                not (displayName = "[]") && // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
+                not (isActivePatternItem items))
                     
         let decls = 
             items 
