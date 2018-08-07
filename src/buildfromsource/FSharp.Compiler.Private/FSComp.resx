@@ -4357,4 +4357,7 @@
   <data name="tcCannotCallExtensionMemberInrefToByref" xml:space="preserve">
     <value>Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</value>
   </data>
+  <data name="tcByrefsMayNotHaveTypeExtensions" xml:space="preserve">
+    <value>Byref types are not allowed to have optional type extensions.</value>
+  </data>
 </root>

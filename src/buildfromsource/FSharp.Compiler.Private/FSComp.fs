@@ -4354,6 +4354,9 @@ type internal SR private() =
     /// Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.
     /// (Originally from ..\FSComp.txt:1442)
     static member tcCannotCallExtensionMemberInrefToByref() = (3237, GetStringFunc("tcCannotCallExtensionMemberInrefToByref",",,,") )
+    /// Byref types are not allowed to have optional type extensions.
+    /// (Originally from ..\FSComp.txt:1443)
+    static member tcByrefsMayNotHaveTypeExtensions() = (3238, GetStringFunc("tcByrefsMayNotHaveTypeExtensions",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5770,4 +5773,5 @@ type internal SR private() =
         ignore(GetString("chkNoSpanLikeValueFromExpression"))
         ignore(GetString("tastCantTakeAddressOfExpression"))
         ignore(GetString("tcCannotCallExtensionMemberInrefToByref"))
+        ignore(GetString("tcByrefsMayNotHaveTypeExtensions"))
         ()
