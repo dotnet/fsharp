@@ -85,6 +85,17 @@ module ByrefNegativeTests =
         let v =  C.M(w) // not allowed
         check "cweweoiwe51btw" v w
              
+    type byref<'T> with
+
+        member this.Test() = 1
+
+    type inref<'T> with
+
+        member this.Test() = 1
+
+    type outref<'T> with
+
+        member this.Test() = 1
 #endif
 
 // Test a simple ref  argument
