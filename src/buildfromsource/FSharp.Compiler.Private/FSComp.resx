@@ -4354,4 +4354,7 @@
   <data name="tastCantTakeAddressOfExpression" xml:space="preserve">
     <value>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</value>
   </data>
+  <data name="tcCannotCallExtensionMemberInrefToByref" xml:space="preserve">
+    <value>Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</value>
+  </data>
 </root>

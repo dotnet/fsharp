@@ -4351,6 +4351,9 @@ type internal SR private() =
     /// Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
     /// (Originally from ..\FSComp.txt:1441)
     static member tastCantTakeAddressOfExpression() = (3236, GetStringFunc("tastCantTakeAddressOfExpression",",,,") )
+    /// Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.
+    /// (Originally from ..\FSComp.txt:1442)
+    static member tcCannotCallExtensionMemberInrefToByref() = (3237, GetStringFunc("tcCannotCallExtensionMemberInrefToByref",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5766,4 +5769,5 @@ type internal SR private() =
         ignore(GetString("chkNoSpanLikeVariable"))
         ignore(GetString("chkNoSpanLikeValueFromExpression"))
         ignore(GetString("tastCantTakeAddressOfExpression"))
+        ignore(GetString("tcCannotCallExtensionMemberInrefToByref"))
         ()
