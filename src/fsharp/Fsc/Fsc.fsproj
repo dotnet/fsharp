@@ -6,6 +6,7 @@
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
     <ProjectLanguage>FSharp</ProjectLanguage>
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
@@ -21,6 +22,7 @@
     <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>fsc</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
   </PropertyGroup>
 

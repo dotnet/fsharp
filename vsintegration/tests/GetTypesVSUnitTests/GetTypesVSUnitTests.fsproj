@@ -9,10 +9,12 @@
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
     <NoMsbuild>true</NoMsbuild>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="GetTypesVSUnitTests.fs" />
+    <None Include="App.config" />
     <None Include="App.config" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
@@ -22,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="..\UnitTests\VisualFSharp.UnitTests.fsproj" />
   </ItemGroup>
 
 </Project>

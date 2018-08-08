@@ -14,6 +14,7 @@ open System.Text.RegularExpressions
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.FSharp
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 // Internal unittest namespaces
@@ -26,6 +27,9 @@ open UnitTests.TestLib.ProjectSystem
 [<TestFixture>][<Category "ProjectSystem">]
 type UpToDate() = 
     inherit TheTests()
+
+    [<OneTimeSetUp>]
+    member public __.Init () = AssemblyResolver.addResolver ()
 
     [<Test>]
     member public this.ItemInputs () =
