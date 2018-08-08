@@ -22,4 +22,11 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
   </ItemGroup>
 
+  <Target Name="RemovePackagesFromCache" BeforeTargets="Restore">
+      <ItemGroup>
+          <FoldersToDelete Include="$(NuGetPackageRoot)comboprovider" />
+      </ItemGroup>
+      <RemoveDir Directories="@(FoldersToDelete)" />
+  </Target>
+
 </Project>
