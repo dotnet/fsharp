@@ -53,3 +53,9 @@ test.fsx(85,22,85,23): typecheck error FS0001: This expression was expected to h
     'inref<System.DateTime>'    
 but here has type
     'System.DateTime'    
+
+test.fsx(88,10,88,15): typecheck error FS3238: Byref types are not allowed to have optional type extensions.
+
+test.fsx(92,10,92,15): typecheck error FS3238: Byref types are not allowed to have optional type extensions.
+
+test.fsx(96,10,96,16): typecheck error FS3238: Byref types are not allowed to have optional type extensions.
