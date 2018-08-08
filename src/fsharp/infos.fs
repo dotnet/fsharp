@@ -2470,6 +2470,10 @@ type EventInfo =
 //-------------------------------------------------------------------------
 // Helpers associated with getting and comparing method signatures
 
+/// Strips inref and outref to be a byref.
+let stripByrefTy g ty =
+    if isByrefTy g ty then mkByrefTy g (destByrefTy g ty)
+    else ty
 
 /// Represents the information about the compiled form of a method signature. Used when analyzing implementation
 /// relations between members and abstract slots.
@@ -2493,7 +2497,8 @@ let CompiledSigOfMeth g amap m (minfo:MethInfo) =
             
     CompiledSig(vargtys,vrty,formalMethTypars,fmtpinst)
 
-/// Used to hide/filter members from super classes based on signature 
+/// Used to hide/filter members from super classes based on signature
+/// Inref and outref parameter types will be treated as a byref type for equivalency.
 let MethInfosEquivByNameAndPartialSig erasureFlag ignoreFinal g amap m (minfo:MethInfo) (minfo2:MethInfo) = 
     (minfo.LogicalName = minfo2.LogicalName) &&
     (minfo.GenericArity = minfo2.GenericArity) &&
@@ -2504,7 +2509,8 @@ let MethInfosEquivByNameAndPartialSig erasureFlag ignoreFinal g amap m (minfo:Me
     let fminst2 = generalizeTypars formalMethTypars2
     let argtys = minfo.GetParamTypes(amap, m, fminst)
     let argtys2 = minfo2.GetParamTypes(amap, m, fminst2)
-    (argtys,argtys2) ||> List.lengthsEqAndForall2 (List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g (TypeEquivEnv.FromEquivTypars formalMethTypars formalMethTypars2)))
+    (argtys,argtys2) ||> List.lengthsEqAndForall2 (List.lengthsEqAndForall2 (fun ty1 ty2 ->
+        typeAEquivAux erasureFlag g (TypeEquivEnv.FromEquivTypars formalMethTypars formalMethTypars2) (stripByrefTy g ty1) (stripByrefTy g ty2)))
 
 /// Used to hide/filter members from super classes based on signature 
 let PropInfosEquivByNameAndPartialSig erasureFlag g amap m (pinfo:PropInfo) (pinfo2:PropInfo) = 

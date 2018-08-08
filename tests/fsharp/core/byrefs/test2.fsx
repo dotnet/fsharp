@@ -123,6 +123,14 @@ module NegativeTests =
         let mutable x = 1
         let f = TestDelegate(fun () -> &x) // is not allowed
         ()
+
+    type TestNegativeOverloading() =
+
+        static member TestMethod(dt: byref<int>) = ()
+
+        static member TestMethod(dt: inref<int>) = ()
+
+        static member TestMethod(dt: outref<int>) = ()
 #endif
 
 module Tests =
@@ -137,6 +145,14 @@ module Tests =
             let y = &x // is allowed
             ()
         ()
+
+    type TestPositiveOverloading() =
+
+        static member TestMethod(dt: byref<int>) = ()
+
+        static member TestMethod(dt: inref<float32>) = ()
+
+        static member TestMethod(dt: outref<float>) = ()
 
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
