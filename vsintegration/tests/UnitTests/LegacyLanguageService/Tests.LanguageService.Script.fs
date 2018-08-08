@@ -4,6 +4,7 @@ namespace Tests.LanguageService.Script
 
 open System
 open System.IO
+open System.Reflection
 open NUnit.Framework
 open Salsa.Salsa
 open Salsa.VsOpsUtils
@@ -573,7 +574,7 @@ type UsingMSBuild() as this =
 
     [<Test>]
     [<Category("fsx closure")>]
-    member public this.``Fsx.NoError.HashR.ResolveFromFullyQualifiedPath``() =         
+    member public this.``Fsx.NoError.HashR.ResolveFromFullyQualifiedPath``() =
         let fullyqualifiepathtoddll = System.IO.Path.Combine( System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.configuration.dll" )
         let code = ["#light";"#r @\"" + fullyqualifiepathtoddll + "\""]
         let (project, _) = createSingleFileFsxFromLines code
@@ -581,10 +582,11 @@ type UsingMSBuild() as this =
 
     [<Test>]
     [<Category("fsx closure")>]
-    member public this.``Fsx.NoError.HashR.RelativePath1``() = 
-        use _guard = this.UsingNewVS()  
+    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
+    member public this.``Fsx.NoError.HashR.RelativePath1``() =
+        use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
-        let project = CreateProject(solution,"testproject")    
+        let project = CreateProject(solution,"testproject")
         let file1 = AddFileFromText(project,"lib.fs",
                                     ["module Lib"
                                      "let X = 42"
@@ -608,7 +610,7 @@ type UsingMSBuild() as this =
         let script2 = File.WriteAllLines(script2Path,
                                       ["#r \"../lib.exe\""
                                        ])
-                                       
+
         let script1 = OpenFile(project, script1Path)   
         TakeCoffeeBreak(this.VS)
         
@@ -616,17 +618,17 @@ type UsingMSBuild() as this =
         let ans = GetSquiggleAtCursor(script1)
         AssertNoSquiggle(ans)
 
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Test; Category("fsx closure")>]
+    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
     member public this.``Fsx.NoError.HashR.RelativePath2``() = 
         use _guard = this.UsingNewVS()  
         let solution = this.CreateSolution()
-        let project = CreateProject(solution,"testproject")    
+        let project = CreateProject(solution,"testproject")
         let file1 = AddFileFromText(project,"lib.fs",
                                     ["module Lib"
                                      "let X = 42"
                                      ])
-        
+
         let bld = Build(project)
 
         let script1Dir = Path.Combine(ProjectDirectory(project), "ccc")
@@ -1335,11 +1337,8 @@ type UsingMSBuild() as this =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
-        let fsVersion = "10.1.1.0"
-        let binariesFolder = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with
-                             | Some(x) -> x
-                             | None -> failwith "Location of binaries folder cannot be found"
-
+        let fsVersion = "10.2.3.0"
+        let binariesFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
         PlaceIntoProjectFileBeforeImport
             (project, sprintf @"
                 <ItemGroup>

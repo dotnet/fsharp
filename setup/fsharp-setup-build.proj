@@ -45,7 +45,7 @@
                  Properties="Configuration=$(Configuration);IsLangPack=%(VsixProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);OutputPath=$(VsixBuildLocation);DisableOutputPathCopying=true;$(CustomProps)" />
         <MSBuild Projects="%(SwixSetupProjects.ProjectPath)"
                  Targets="Build"
-                 Properties="LocaleCode=%(SwixSetupProjects.LocaleCode);LocaleId=%(SwixSetupProjects.LocaleId);LocaleParentId=%(SwixSetupProjects.LocaleParentId);LocaleParentCulture=%(SwixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SwixSetupProjects.LocaleSpecificCulture);IsLangPack=%(SwixSetupProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);$(CustomProps)"/>
+                 Properties="LocaleCode=%(SwixSetupProjects.LocaleCode);LocaleId=%(SwixSetupProjects.LocaleId);LocaleParentId=%(SwixSetupProjects.LocaleParentId);LocaleParentCulture=%(SwixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SwixSetupProjects.LocaleSpecificCulture);IsLangPack=%(SwixSetupProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);VSGeneralVersion=$(VSGeneralVersion);$(CustomProps)"/>
     </Target>
 
     <Target Name="CopyLocalizationResources" BeforeTargets="Build">

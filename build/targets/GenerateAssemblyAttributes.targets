@@ -26,8 +26,6 @@
 
     <PropertyGroup>
       <GeneratedFSharpAssemblyVersionFile>$(IntermediateOutputPath)$(MSBuildProjectName).AssemblyVersion$(DefaultLanguageSourceExtension)</GeneratedFSharpAssemblyVersionFile>
-      <!-- AssemblyInformationalVersionAttribute issues a by-design warning if the value passed isn't of the form #.#.#.#, but we specifically want to suppress this to allow the commit hash to be embedded. -->
-      <NoWarn Condition="'$(Language)' == 'F#'">2003;$(NoWarn)</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup>
