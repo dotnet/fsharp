@@ -587,7 +587,7 @@ module Pass2_DetermineReqdItems =
             if verboseTLR then 
                 dprintf "closeStep: fc=%30A nSubs=%d reqdTypars0=%s reqdTypars=%s\n" fc directCallReqdEnvs.Length (showTyparSet reqdTypars0) (showTyparSet reqdTypars)
                 directCallReqdEnvs |> List.iter (fun f    -> dprintf "closeStep: dcall    f=%s\n" f.LogicalName)          
-                directCallReqdEnvs |> List.iter (fun f    -> dprintf "closeStep: dcall   fc=%A\n" (Zmap.find f fclassM))
+                directCallReqdEnvs |> List.iter (fun f    -> dprintf "closeStep: dcall   fc=%A\n" (MapCustom.find f fclassM))
                 directCallReqdTypars |> List.iter (fun _reqdTypars -> dprintf "closeStep: dcall reqdTypars=%s\n" (showTyparSet reqdTypars0)) 
 #else
             ignore fc
