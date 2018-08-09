@@ -5329,10 +5329,15 @@ let CheckSimulateException(tcConfig:TcConfig) =
 // Type-check sets of files
 //--------------------------------------------------------------------------
 
-type RootSigs =  Zmap<QualifiedNameOfFile, ModuleOrNamespaceType>
-type RootImpls = Zset<QualifiedNameOfFile >
-
 let qnameOrder = Order.orderBy (fun (q:QualifiedNameOfFile) -> q.Text)
+
+[<Struct>]
+type QualifiedNameOfFileByText =
+    interface System.Collections.Generic.IComparer<QualifiedNameOfFile> with
+        member __.Compare(v1, v2) = qnameOrder.Compare (v1,v2)
+
+type RootSigs =  Map<SortKey<QualifiedNameOfFile,QualifiedNameOfFileByText>, ModuleOrNamespaceType>
+type RootImpls = Zset<QualifiedNameOfFile >
 
 type TcState = 
     { tcsCcu: CcuThunk
@@ -5403,7 +5408,7 @@ let GetInitialTcState(m, ccuName, tcConfig:TcConfig, tcGlobals, tcImports:TcImpo
       tcsTcSigEnv=tcEnv0
       tcsTcImplEnv=tcEnv0
       tcsCreatesGeneratedProvidedTypes=false
-      tcsRootSigs = Zmap.empty qnameOrder
+      tcsRootSigs = MapCustom.Empty<QualifiedNameOfFileByText> ()
       tcsRootImpls = Zset.empty qnameOrder
       tcsCcuSig = NewEmptyModuleOrNamespaceType Namespace }
 
@@ -5425,7 +5430,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig:TcConfig, tcImports:Tc
           | ParsedInput.SigFile (ParsedSigFileInput(_, qualNameOfFile, _, _, _) as file) ->
                 
               // Check if we've seen this top module signature before. 
-              if Zmap.mem qualNameOfFile tcState.tcsRootSigs then 
+              if MapCustom.mem qualNameOfFile tcState.tcsRootSigs then 
                   errorR(Error(FSComp.SR.buildSignatureAlreadySpecified(qualNameOfFile.Text), m.StartRange))
 
               // Check if the implementation came first in compilation order 
@@ -5436,7 +5441,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig:TcConfig, tcImports:Tc
               let! (tcEnv, sigFileType, createsGeneratedProvidedTypes) = 
                   TypeCheckOneSigFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcState.tcsTcSigEnv file
 
-              let rootSigs = Zmap.add qualNameOfFile  sigFileType tcState.tcsRootSigs
+              let rootSigs = MapCustom.add qualNameOfFile  sigFileType tcState.tcsRootSigs
 
               // Add the  signature to the signature env (unless it had an explicit signature)
               let ccuSigForFile = CombineCcuContentFragments m [sigFileType; tcState.tcsCcuSig]
@@ -5461,7 +5466,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig:TcConfig, tcImports:Tc
           | ParsedInput.ImplFile (ParsedImplFileInput(_, _, qualNameOfFile, _, _, _, _) as file) ->
             
               // Check if we've got an interface for this fragment 
-              let rootSigOpt = tcState.tcsRootSigs.TryFind(qualNameOfFile)
+              let rootSigOpt = tcState.tcsRootSigs.TryFind {CompareObj=qualNameOfFile}
 
               // Check if we've already seen an implementation for this fragment 
               if Zset.contains qualNameOfFile tcState.tcsRootImpls then 
@@ -5550,7 +5555,7 @@ let TypeCheckClosedInputSetFinish (declaredImpls: TypedImplFile list, tcState) =
     tcState.tcsCcu.Deref.Contents <- NewCcuContents ILScopeRef.Local range0 tcState.tcsCcu.AssemblyName tcState.tcsCcuSig
 
     // Check all interfaces have implementations 
-    tcState.tcsRootSigs |> Zmap.iter (fun qualNameOfFile _ ->  
+    tcState.tcsRootSigs |> MapCustom.iter (fun qualNameOfFile _ ->  
       if not (Zset.contains qualNameOfFile tcState.tcsRootImpls) then 
         errorR(Error(FSComp.SR.buildSignatureWithoutImplementation(qualNameOfFile.Text), qualNameOfFile.Range)))
 
