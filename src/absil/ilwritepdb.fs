@@ -449,8 +449,8 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
             let convert (content:IEnumerable<Blob>) = 
                 use sha = System.Security.Cryptography.SHA1.Create()    // IncrementalHash is core only
                 let hash = content 
-                           |> Seq.map ( fun c -> c.GetBytes().Array |> sha.ComputeHash )         
-                           |> Seq.collect id |> Array.ofSeq |> sha.ComputeHash
+                           |> Seq.collect (fun c -> c.GetBytes().Array |> sha.ComputeHash)
+                           |> Array.ofSeq |> sha.ComputeHash
                 BlobContentId.FromHash(hash)
             System.Func<IEnumerable<Blob>, BlobContentId>( convert )
 
