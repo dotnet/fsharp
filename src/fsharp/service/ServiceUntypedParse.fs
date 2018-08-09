@@ -1289,7 +1289,7 @@ module UntypedParseImpl =
                         if rangeContainsPos range pos then Some CompletionContext.Invalid
                         else None
 
-                    member __.VisitLetOrUse(bindings, range) =
+                    member __.VisitLetOrUse(_, _, bindings, range) =
                         match bindings with
                         | [] when range.StartLine = pos.Line -> Some CompletionContext.Invalid
                         | _ -> None
