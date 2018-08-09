@@ -172,6 +172,10 @@ this file.
 
     <PropertyGroup>
         <CoreCompileDependsOn>_ComputeNonExistentFileProperty</CoreCompileDependsOn>
+
+        <!-- Provided for compatability with the initial releases of FSharp for the dotnet sdk -->
+        <!-- New project files should use 'EmbeddedFiles' -->
+        <EmbeddedFiles Condition=" '$(Embed)' != '' ">$(EmbeddedFiles);$(Embed)</EmbeddedFiles>
     </PropertyGroup>
 
     <Target Name="GenerateFSharpTextResources"
@@ -273,7 +277,7 @@ this file.
               DocumentationFile="$(DocumentationFile)"
               DotnetFscCompilerPath="$(DotnetFscCompilerPath)"
               EmbedAllSources="$(EmbedAllSources)"
-              Embed="$(Embed)"
+              Embed="$(EmbeddedFiles)"
               GenerateInterfaceFile="$(GenerateInterfaceFile)"
               HighEntropyVA="$(HighEntropyVA)"
               KeyFile="$(KeyOriginatorFile)"
