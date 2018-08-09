@@ -45,6 +45,9 @@ type MapCustom<'Key,'Value>() =
     static member inline mem<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (k:'Key) (m:Map<SortKey<'Key,'Comparer>,'Value>) =
         Map.containsKey {CompareObj=k} m
 
+    static member inline memberOf<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (m:Map<SortKey<'Key,'Comparer>,'Value>) (k:'Key) =
+        Map.containsKey {CompareObj=k} m
+
     static member inline add<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (k:'Key) (v:'Value) (m:Map<SortKey<'Key,'Comparer>,'Value>) =
         Map.add {CompareObj=k} v m
 
@@ -53,3 +56,17 @@ type MapCustom<'Key,'Value>() =
 
     static member inline fold<'Comparer, 'State when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (folder:'Key->'Value->'State->'State) (m:Map<SortKey<'Key,'Comparer>,'Value>) (state:'State) : 'State =
         Map.foldBack (fun {CompareObj=k} t s -> folder k t s) m state 
+
+    static member inline remove<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (k:'Key) (m:Map<SortKey<'Key,'Comparer>,'Value>) =
+        Map.remove {CompareObj=k} m
+
+
+    static member foldMap<'Comparer, 'State, 'U when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (folder:'State->'Key->'Value->'State*'U) (initialState:'State) (initialMap:Map<SortKey<'Key,'Comparer>,'Value>) : 'State * Map<SortKey<'Key,'Comparer>,'U> =
+        let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt folder
+        let struct (finalState, finalMap) =
+            (initialMap, struct (initialState, MapCustom.Empty<'Comparer> ()))
+            ||> Map.foldBack (fun {CompareObj=k} v struct (acc, m) ->
+                let acc', v' = f.Invoke (acc, k, v)
+                let m' = Map.add {CompareObj=k} v' m
+                struct (acc', m'))
+        finalState, finalMap

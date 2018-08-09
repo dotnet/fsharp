@@ -314,6 +314,11 @@ type BindingGroupSharingSameReqdItems(bindings: Bindings) =
 
 let fclassOrder = Order.orderOn (fun (b: BindingGroupSharingSameReqdItems) -> b.Vals) (List.order valOrder)
 
+[<Struct>]
+type BindingGroupSharingSameReqdItemsByVals =
+    interface System.Collections.Generic.IComparer<BindingGroupSharingSameReqdItems> with
+        member __.Compare(v1, v2) = fclassOrder.Compare (v1,v2)
+    
 /// It is required to make the TLR closed wrt it's freevars (the env reqdVals0).
 /// For gv a generator,
 ///   An arity-met gv occurrence contributes the env required for that gv call.
@@ -424,16 +429,16 @@ module Pass2_DetermineReqdItems =
     /// recShortCalls to f will require a binding for f in terms of fHat within the fHatBody.
     type state =
         { stack         : (BindingGroupSharingSameReqdItems * Generators * ReqdItemsForDefn) list
-          reqdItemsMap  : Zmap<BindingGroupSharingSameReqdItems,ReqdItemsForDefn>
-          fclassM       : Zmap<Val,BindingGroupSharingSameReqdItems>
+          reqdItemsMap  : Map<SortKey<BindingGroupSharingSameReqdItems,BindingGroupSharingSameReqdItemsByVals>,ReqdItemsForDefn>
+          fclassM       : Map<SortKey<Val,ValByStamp>,BindingGroupSharingSameReqdItems>
           revDeclist    : BindingGroupSharingSameReqdItems list
           recShortCallS : Zset<Val>
         }
 
     let state0 =
         { stack         = []
-          reqdItemsMap  = Zmap.empty fclassOrder
-          fclassM       = Zmap.empty valOrder
+          reqdItemsMap  = MapCustom.Empty<BindingGroupSharingSameReqdItemsByVals> ()
+          fclassM       = MapCustom.Empty<ValByStamp> ()
           revDeclist    = []
           recShortCallS = Zset.empty valOrder }
 
@@ -457,8 +462,8 @@ module Pass2_DetermineReqdItems =
             | (fclass,_reqdVals0,env)::stack -> (* ASSERT: same fclass *)
                 {state with
                    stack        = stack
-                   reqdItemsMap = Zmap.add  fclass env   state.reqdItemsMap
-                   fclassM      = List.fold (fun mp (k,v) -> Zmap.add k v mp) state.fclassM fclass.Pairs }
+                   reqdItemsMap = MapCustom.add  fclass env   state.reqdItemsMap
+                   fclassM      = List.fold (fun mp (k,v) -> MapCustom.add k v mp) state.fclassM fclass.Pairs }
 
     /// Log requirements for gv in the relevant stack frames 
     let LogRequiredFrom gv items state =
@@ -570,8 +575,8 @@ module Pass2_DetermineReqdItems =
         let closeStep reqdItemsMap changed fc (env: ReqdItemsForDefn) =
             let directCallReqdEnvs   = env.ReqdSubEnvs
             let directCallReqdTypars = directCallReqdEnvs |> List.map (fun f -> 
-                                            let fc  = Zmap.force f  fclassM ("reqdTyparsFor",nameOfVal)
-                                            let env = Zmap.force fc reqdItemsMap    ("reqdTyparsFor",string)       
+                                            let fc  = Map.force {CompareObj=f}  fclassM ("reqdTyparsFor",(fun x -> nameOfVal x.CompareObj))
+                                            let env = Map.force {CompareObj=fc} reqdItemsMap    ("reqdTyparsFor",(fun x -> string x.CompareObj))       
                                             env.reqdTypars)
 
             let reqdTypars0 = env.reqdTypars
@@ -591,7 +596,7 @@ module Pass2_DetermineReqdItems =
        
         let rec fixpoint reqdItemsMap =
             let changed = false
-            let changed,reqdItemsMap = Zmap.foldMap (closeStep reqdItemsMap) changed reqdItemsMap
+            let changed,reqdItemsMap = MapCustom.foldMap (closeStep reqdItemsMap) changed reqdItemsMap
             if changed then
                 fixpoint reqdItemsMap
             else
@@ -623,9 +628,9 @@ module Pass2_DetermineReqdItems =
         // close the reqdTypars under the subEnv reln 
         let reqdItemsMap    = CloseReqdTypars fclassM reqdItemsMap
         // filter out trivial fclass - with no TLR defns 
-        let reqdItemsMap    = Zmap.remove (BindingGroupSharingSameReqdItems List.empty) reqdItemsMap
+        let reqdItemsMap    = MapCustom.remove (BindingGroupSharingSameReqdItems List.empty) reqdItemsMap
         // restrict declist to those with reqdItemsMap bindings (the non-trivial ones) 
-        let declist = List.filter (Zmap.memberOf reqdItemsMap) declist
+        let declist = List.filter (MapCustom.memberOf reqdItemsMap) declist
 #if DEBUG
         // diagnostic dump 
         if verboseTLR then
@@ -689,11 +694,11 @@ exception AbortTLR of Range.range
 ///         and TBIND(asubEnvi = aenvFor(v)) for each (asubEnvi,v) in cmap(subEnvk) ranging over required subEnvk.
 /// where
 ///   aenvFor(v) = aenvi where (v,aenvi) in cmap.
-let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupSharingSameReqdItems,ReqdItemsForDefn>) =
-   let fclassOf f = Zmap.force f fclassM ("fclassM",nameOfVal)
+let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Map<SortKey<BindingGroupSharingSameReqdItems,BindingGroupSharingSameReqdItemsByVals>,ReqdItemsForDefn>) =
+   let fclassOf f = Map.force {CompareObj=f} fclassM ("fclassM",fun x -> nameOfVal x.CompareObj)
    let packEnv carrierMaps (fc:BindingGroupSharingSameReqdItems) =
        if verboseTLR then dprintf "\ntlr: packEnv fc=%A\n" fc
-       let env = Zmap.force fc reqdItemsMap ("packEnv",string)
+       let env = Map.force {CompareObj=fc} reqdItemsMap ("packEnv",fun x -> string x.CompareObj)
 
        // carrierMaps = (fclass,(v,aenv)map)map 
        let carrierMapFor f = Zmap.force (fclassOf f) carrierMaps ("carrierMapFor",string)
@@ -832,7 +837,7 @@ let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
     if verboseTLR then dprintf "CreateNewValuesForTLR------\n"
     let createFHat (f:Val) =
         let wf     = Zmap.force f arityM ("createFHat - wf",(fun v -> showL (valL v)))
-        let fc     = Zmap.force f fclassM ("createFHat - fc",nameOfVal)
+        let fc     = Map.force {CompareObj=f} fclassM ("createFHat - fc",fun x -> nameOfVal x.CompareObj)
         let envp   = Zmap.force fc envPackM ("CreateNewValuesForTLR - envp",string)
         let name   = f.LogicalName (* + "_TLR_" + string wf *)
         let m      = f.Range
@@ -866,7 +871,7 @@ module Pass4_RewriteAssembly =
          tlrS          : Zset<Val> 
          topValS       : Zset<Val> 
          arityM        : Zmap<Val,int> 
-         fclassM       : Zmap<Val,BindingGroupSharingSameReqdItems> 
+         fclassM       : Map<SortKey<Val,ValByStamp>,BindingGroupSharingSameReqdItems> 
          recShortCallS : Zset<Val> 
          envPackM      : Zmap<BindingGroupSharingSameReqdItems,PackedReqdItems>
          /// The mapping from 'f' values to 'fHat' values
@@ -1060,7 +1065,7 @@ module Pass4_RewriteAssembly =
 
                    let f = fvref.Deref
                    (* replace by direct call to corresponding fHat (and additional closure args) *)
-                   let fc   = Zmap.force f  penv.fclassM ("TransApp - fc",nameOfVal)   
+                   let fc   = Map.force {CompareObj=f}  penv.fclassM ("TransApp - fc",fun x -> nameOfVal x.CompareObj)   
                    let envp = Zmap.force fc penv.envPackM ("TransApp - envp",string)
                    let fHat = Zmap.force f  penv.fHatM ("TransApp - fHat",nameOfVal)
                    let tys  = (List.map mkTyparTy envp.ep_etps) @ tys

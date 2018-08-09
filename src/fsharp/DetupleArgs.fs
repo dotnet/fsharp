@@ -613,7 +613,7 @@ let determineTransforms g (z : GlobalUsageAnalysis.Results) =
           decideTransform g z f callPatterns (m, tps, vss, rty) // make transform (if required) 
   
    let vtransforms = MapCustom.chooseL selectTransform z.Uses
-   let vtransforms = Zmap.ofList valOrder vtransforms
+   let vtransforms = MapCustom.ofList<ValByStamp> vtransforms
    vtransforms
 
 
@@ -624,11 +624,11 @@ let determineTransforms g (z : GlobalUsageAnalysis.Results) =
 
 type penv =
    { // The planned transforms 
-     transforms : Zmap<Val, Transform>
+     transforms : Map<SortKey<Val, ValByStamp>, Transform>
      ccu        : CcuThunk
      g          : TcGlobals }
 
-let hasTransfrom penv f = Zmap.tryFind f penv.transforms
+let hasTransfrom penv f = MapCustom.tryFind f penv.transforms
 
 //-------------------------------------------------------------------------
 // pass - app fixup - collapseArgs
