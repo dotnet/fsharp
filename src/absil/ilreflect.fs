@@ -285,9 +285,6 @@ let inline flagsIf  b x  = if b then x else enum 0
 module Map = 
     let force x m str = match Map.tryFind x m with Some y -> y | None -> failwithf "Map.force: %s: x = %+A" str x
 
-module Zmap = 
-    let force x m str = match Zmap.tryFind x m with Some y -> y | None -> failwithf "Zmap.force: %s: x = %+A" str x
-
 let equalTypes (s:Type) (t:Type) = s.Equals(t)
 let equalTypeLists ss tt = List.lengthsEqAndForall2 equalTypes ss tt
 

@@ -138,12 +138,6 @@
     <Compile Include="$(FSharpSourcesRoot)/utils/filename.fs">
       <Link>Utilities/filename.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/absil/zmap.fsi">
-      <Link>Utilities/zmap.fsi</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/absil/zmap.fs">
-      <Link>Utilities/zmap.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/absil/zset.fsi">
       <Link>Utilities/zset.fsi</Link>
     </Compile>

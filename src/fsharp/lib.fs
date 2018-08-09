@@ -262,19 +262,11 @@ module List =
         Zset.elements s          // get elements... no repeats
 
 //---------------------------------------------------------------------------
-// Zmap rebinds
+// Map rebinds
 //------------------------------------------------------------------------- 
 
 module Map = 
     let force  k   mp           = match Map.tryFind k mp with Some x -> x | None -> failwith "Map.force: lookup failed"
-
-module Zmap = 
-    let force  k   mp           = match Zmap.tryFind k mp with Some x -> x | None -> failwith "Zmap.force: lookup failed"
-
-    let mapKey key f mp =
-      match f (Zmap.tryFind key mp) with
-      | Some fx -> Zmap.add key fx mp       
-      | None    -> Zmap.remove key mp
 
 //---------------------------------------------------------------------------
 // Zset

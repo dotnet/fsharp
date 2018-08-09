@@ -121,12 +121,6 @@
     <Compile Include="..\..\utils\filename.fs">
       <Link>filename.fs</Link>
     </Compile>
-    <Compile Include="..\..\absil\zmap.fsi">
-      <Link>zmap.fsi</Link>
-    </Compile>
-    <Compile Include="..\..\absil\zmap.fs">
-      <Link>zmap.fs</Link>
-    </Compile>
     <Compile Include="..\..\absil\zset.fsi">
       <Link>zset.fsi</Link>
     </Compile>
