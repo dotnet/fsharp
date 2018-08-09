@@ -557,10 +557,10 @@ echo.
 echo ---------------- Done with arguments, starting preparation -----------------
 rem set TargetFrameworkSDKToolsDirectory --- needed for sdk to find al.exe. 
 if not "%TargetFrameworkSDKToolsDirectory%" == "" ( goto have_TargetFrameworkSDKToolsDirectory ) 
-set TargetFrameworkSDKToolsDirectory=%WindowsSDK_ExecutablePath_x64% 
+set TargetFrameworkSDKToolsDirectory=%WindowsSDK_ExecutablePath_x64%
 
 if not "%TargetFrameworkSDKToolsDirectory%" == "" ( goto have_TargetFrameworkSDKToolsDirectory ) 
-set TargetFrameworkSDKToolsDirectory=%WindowsSDK_ExecutablePath_x86% 
+set TargetFrameworkSDKToolsDirectory=%WindowsSDK_ExecutablePath_x86%
 
 :have_TargetFrameworkSDKToolsDirectory 
 
