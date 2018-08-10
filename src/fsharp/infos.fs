@@ -1596,7 +1596,7 @@ type MethInfo =
                 x.DeclaringTyconRef.Typars(m)
 
     /// Tries to get the head of the argument type list if it's a byref type.
-    member x.TryHeadObjArgsAsByrefType(amap, m, minst) =
+    member x.TryHeadObjArgsByrefType(amap, m, minst) =
         x.GetObjArgTypes(amap, m, minst)
         |> List.tryHead
         |> Option.bind (fun ty ->
