@@ -25,9 +25,9 @@ let verboseTLR = false
 
 let internalError str = dprintf "Error: %s\n" str;raise (Failure str)  
 
-module Map = 
-    let force k   mp (str,soK) = 
-        try Map.find k mp 
+module MapCustom = 
+    let force (k:'Key) (mp:Map<SortKey<'Key,'Comparer>,'T>) (str,soK) = 
+        try MapCustom.find k mp 
         with e -> 
             dprintf "Map.force: %s %s\n" str (soK k); 
             PreserveStackTrace(e)
@@ -196,8 +196,8 @@ module Pass1_DetermineTLRAndArities =
     /// ValRec considered: recursive && some f in mutual binding is not bound to a lambda
     let IsValueRecursionFree xinfo f =
 
-        let hasDelayedRepr f = isDelayedRepr f (Map.force {CompareObj=f} xinfo.Defns ("IsValueRecursionFree - hasDelayedRepr",(fun {CompareObj=v} -> nameOfVal v)))
-        let isRecursive,mudefs = Map.force {CompareObj=f} xinfo.RecursiveBindings ("IsValueRecursionFree",(fun {CompareObj=v} -> nameOfVal v))
+        let hasDelayedRepr f = isDelayedRepr f (MapCustom.force f xinfo.Defns ("IsValueRecursionFree - hasDelayedRepr",nameOfVal))
+        let isRecursive,mudefs = MapCustom.force f xinfo.RecursiveBindings ("IsValueRecursionFree",nameOfVal)
         not isRecursive || List.forall hasDelayedRepr mudefs
 
     let DumpArity arityM =
@@ -567,8 +567,8 @@ module Pass2_DetermineReqdItems =
         let closeStep reqdItemsMap changed fc (env: ReqdItemsForDefn) =
             let directCallReqdEnvs   = env.ReqdSubEnvs
             let directCallReqdTypars = directCallReqdEnvs |> List.map (fun f -> 
-                                            let fc  = Map.force {CompareObj=f}  fclassM ("reqdTyparsFor",(fun x -> nameOfVal x.CompareObj))
-                                            let env = Map.force {CompareObj=fc} reqdItemsMap    ("reqdTyparsFor",(fun x -> string x.CompareObj))       
+                                            let fc  = MapCustom.force f fclassM ("reqdTyparsFor",nameOfVal)
+                                            let env = MapCustom.force fc reqdItemsMap    ("reqdTyparsFor",string)       
                                             env.reqdTypars)
 
             let reqdTypars0 = env.reqdTypars
@@ -687,13 +687,13 @@ exception AbortTLR of Range.range
 /// where
 ///   aenvFor(v) = aenvi where (v,aenvi) in cmap.
 let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Map<SortKey<BindingGroupSharingSameReqdItems,BindingGroupSharingSameReqdItemsByVals>,ReqdItemsForDefn>) =
-   let fclassOf f = Map.force {CompareObj=f} fclassM ("fclassM",fun x -> nameOfVal x.CompareObj)
+   let fclassOf f = MapCustom.force f fclassM ("fclassM",nameOfVal)
    let packEnv carrierMaps (fc:BindingGroupSharingSameReqdItems) =
        if verboseTLR then dprintf "\ntlr: packEnv fc=%A\n" fc
-       let env = Map.force {CompareObj=fc} reqdItemsMap ("packEnv",fun x -> string x.CompareObj)
+       let env = MapCustom.force fc reqdItemsMap ("packEnv",string)
 
        // carrierMaps = (fclass,(v,aenv)map)map 
-       let carrierMapFor f = Map.force {CompareObj=fclassOf f} carrierMaps ("carrierMapFor",fun x -> string x.CompareObj)
+       let carrierMapFor f = MapCustom.force (fclassOf f) carrierMaps ("carrierMapFor",string)
        let valsSubEnvFor f = MapCustom.keys (carrierMapFor f)
 
        // determine vals(env) - transclosure 
@@ -745,7 +745,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Map<SortKey<BindingGro
        // build cmap for env 
        let cmapPairs = vals |> List.map (fun v -> (v,(mkCompGenLocal env.m v.LogicalName v.Type |> fst))) 
        let cmap      = MapCustom.ofList<ValByStamp> cmapPairs
-       let aenvFor     v = Map.force {CompareObj=v} cmap ("aenvFor",fun x -> nameOfVal x.CompareObj)
+       let aenvFor     v = MapCustom.force v cmap ("aenvFor",nameOfVal)
        let aenvExprFor v = exprForVal env.m (aenvFor v)
 
        // build PackedReqdItems 
@@ -828,9 +828,9 @@ let MakeSimpleArityInfo tps n = ValReprInfo (ValReprInfo.InferTyparInfo tps,List
 let CreateNewValuesForTLR g tlrS arityM fclassM envPackM = 
     if verboseTLR then dprintf "CreateNewValuesForTLR------\n"
     let createFHat (f:Val) =
-        let wf     = Map.force {CompareObj=f} arityM ("createFHat - wf",(fun v -> showL (valL v.CompareObj)))
-        let fc     = Map.force {CompareObj=f} fclassM ("createFHat - fc",fun x -> nameOfVal x.CompareObj)
-        let envp   = Map.force {CompareObj=fc} envPackM ("CreateNewValuesForTLR - envp",fun x -> string x.CompareObj)
+        let wf     = MapCustom.force f arityM ("createFHat - wf",(fun v -> showL (valL v)))
+        let fc     = MapCustom.force f fclassM ("createFHat - fc",nameOfVal)
+        let envp   = MapCustom.force fc envPackM ("CreateNewValuesForTLR - envp",string)
         let name   = f.LogicalName (* + "_TLR_" + string wf *)
         let m      = f.Range
         let tps,tau    = f.TypeScheme
@@ -969,14 +969,14 @@ module Pass4_RewriteAssembly =
     let TransTLRBindings penv (binds:Bindings) = 
         if isNil binds then List.empty,List.empty else
         let fc   = BindingGroupSharingSameReqdItems binds
-        let envp = Map.force {CompareObj=fc} penv.envPackM ("TransTLRBindings",fun x -> string x.CompareObj)
+        let envp = MapCustom.force fc penv.envPackM ("TransTLRBindings",string)
         
         let fRebinding (TBind(fOrig,b,letSeqPtOpt)) =
             let m = fOrig.Range
             let tps,vss,_b,rty = stripTopLambda (b,fOrig.Type)
             let aenvExprs = envp.ep_aenvs |> List.map (exprForVal m) 
             let vsExprs   = vss |> List.map (mkRefTupledVars penv.g m) 
-            let fHat      = Map.force {CompareObj=fOrig} penv.fHatM ("fRebinding",fun x -> nameOfVal x.CompareObj) 
+            let fHat      = MapCustom.force fOrig penv.fHatM ("fRebinding",nameOfVal) 
             (* REVIEW: is this mutation really, really necessary? *)
             (* Why are we applying TLR if the thing already has an arity? *)
             let fOrig = setValHasNoArity fOrig
@@ -989,8 +989,8 @@ module Pass4_RewriteAssembly =
             fBind                                
 
         let fHatNewBinding (shortRecBinds:Bindings) (TBind(f,b,letSeqPtOpt)) =
-            let wf   = Map.force {CompareObj=f} penv.arityM ("fHatNewBinding - arityM",fun x -> nameOfVal x.CompareObj)
-            let fHat = Map.force {CompareObj=f} penv.fHatM  ("fHatNewBinding - fHatM",fun x -> nameOfVal x.CompareObj)
+            let wf   = MapCustom.force f penv.arityM ("fHatNewBinding - arityM",nameOfVal)
+            let fHat = MapCustom.force f penv.fHatM  ("fHatNewBinding - fHatM",nameOfVal)
             // Take off the variables
             let tps,vss,b,rty = stripTopLambda (b,f.Type)
             // Don't take all the variables - only up to length wf
@@ -1052,14 +1052,14 @@ module Pass4_RewriteAssembly =
         match fx with
         | Expr.Val (fvref:ValRef,_,m) when 
                 (Zset.contains fvref.Deref penv.tlrS) &&
-                (let wf = Map.force {CompareObj=fvref.Deref} penv.arityM ("TransApp - wf",fun x -> nameOfVal x.CompareObj)
+                (let wf = MapCustom.force fvref.Deref penv.arityM ("TransApp - wf",nameOfVal)
                  IsArityMet fvref wf tys args) ->
 
                    let f = fvref.Deref
                    (* replace by direct call to corresponding fHat (and additional closure args) *)
-                   let fc   = Map.force {CompareObj=f}  penv.fclassM ("TransApp - fc",fun x -> nameOfVal x.CompareObj)   
-                   let envp = Map.force {CompareObj=fc} penv.envPackM ("TransApp - envp",fun x -> string x.CompareObj)
-                   let fHat = Map.force {CompareObj=f}  penv.fHatM ("TransApp - fHat",fun x -> nameOfVal x.CompareObj)
+                   let fc   = MapCustom.force f  penv.fclassM ("TransApp - fc",nameOfVal)   
+                   let envp = MapCustom.force fc penv.envPackM ("TransApp - envp",string)
+                   let fHat = MapCustom.force f  penv.fHatM ("TransApp - fHat",nameOfVal)
                    let tys  = (List.map mkTyparTy envp.ep_etps) @ tys
                    let aenvExprs = List.map (exprForVal m) envp.ep_aenvs
                    let args = aenvExprs @ args
