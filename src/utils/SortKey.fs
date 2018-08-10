@@ -27,7 +27,7 @@ with
 
 
 [<Sealed; AbstractClass>]
-type MapCustom<'Key,'Value>() =
+type Zmap<'Key,'Value>() =
     static member Empty<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct>() : Map<SortKey<'Key,'Comparer>,'Value> =
         Map.empty<SortKey<'Key,'Comparer>, 'Value>
 
@@ -75,7 +75,7 @@ type MapCustom<'Key,'Value>() =
     static member foldMap<'Comparer, 'State, 'U when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (folder:'State->'Key->'Value->'State*'U) (initialState:'State) (initialMap:Map<SortKey<'Key,'Comparer>,'Value>) : 'State * Map<SortKey<'Key,'Comparer>,'U> =
         let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt folder
         let struct (finalState, finalMap) =
-            (initialMap, struct (initialState, MapCustom.Empty<'Comparer> ()))
+            (initialMap, struct (initialState, Zmap.Empty<'Comparer> ()))
             ||> Map.foldBack (fun {CompareObj=k} v struct (acc, m) ->
                 let acc', v' = f.Invoke (acc, k, v)
                 let m' = Map.add {CompareObj=k} v' m

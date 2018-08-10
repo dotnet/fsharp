@@ -2527,14 +2527,14 @@ module SimplifyTypes =
         | TType_measure _          -> z
 
     let incM x m =
-        if MapCustom.mem x m then MapCustom.add x (1 + MapCustom.find x m) m
-        else MapCustom.add x 1 m
+        if Zmap.mem x m then Zmap.add x (1 + Zmap.find x m) m
+        else Zmap.add x 1 m
 
     let accTyparCounts z ty =
         // Walk type to determine typars and their counts (for pprinting decisions) 
         foldTypeButNotConstraints (fun z ty -> match ty with | TType_var tp when tp.Rigidity = TyparRigidity.Rigid  -> incM tp z | _ -> z) z ty
 
-    let emptyTyparCounts = MapCustom.Empty<TyparByStamp> ()
+    let emptyTyparCounts = Zmap.Empty<TyparByStamp> ()
 
     // print multiple fragments of the same type using consistent naming and formatting 
     let accTyparCountsMulti acc l = List.fold accTyparCounts acc l
@@ -2546,11 +2546,11 @@ module SimplifyTypes =
           
     let typeSimplificationInfo0 = 
         { singletons         = Zset.empty typarOrder
-          inplaceConstraints = MapCustom.Empty<TyparByStamp> ()
+          inplaceConstraints = Zmap.Empty<TyparByStamp> ()
           postfixConstraints = [] }
 
     let categorizeConstraints simplify m cxs =
-        let singletons = if simplify then MapCustom.chooseL (fun tp n -> if n = 1 then Some tp else None) m else []
+        let singletons = if simplify then Zmap.chooseL (fun tp n -> if n = 1 then Some tp else None) m else []
         let singletons = Zset.addList singletons (Zset.empty typarOrder)
         // Here, singletons are typars that occur once in the type.
         // However, they may also occur in a type constraint.
@@ -2568,7 +2568,7 @@ module SimplifyTypes =
         let inplace = inplace |> List.map (function (tp, TyparConstraint.CoercesTo(ty, _)) -> tp, ty | _ -> failwith "not isTTyparCoercesToType")
         
         { singletons         = singletons
-          inplaceConstraints = MapCustom.ofList inplace
+          inplaceConstraints = Zmap.ofList inplace
           postfixConstraints = postfix }
     let CollectInfo simplify tys cxs = 
         categorizeConstraints simplify (accTyparCountsMulti emptyTyparCounts tys) cxs 
@@ -3248,7 +3248,7 @@ module DebugPrint = begin
                    + typar.DisplayName))
           let varL = tpL |> stampL typar.Stamp 
 
-          match MapCustom.tryFind typar env.inplaceConstraints with
+          match Zmap.tryFind typar env.inplaceConstraints with
           | Some (typarConstraintTy) ->
               if Zset.contains typar env.singletons then
                 leftL (tagText "#") ^^ auxTyparConstraintTypL env typarConstraintTy

@@ -762,7 +762,7 @@ module private PrintTypes =
         let varL = layoutTyparRef denv typar
         let varL = if denv.showAttributes then layoutTyparAttribs denv typar.Kind typar.Attribs varL else varL
 
-        match MapCustom.tryFind typar env.inplaceConstraints with
+        match Zmap.tryFind typar env.inplaceConstraints with
         | Some (typarConstraintTy) ->
             if Zset.contains typar env.singletons then
                 leftL (tagPunctuation "#") ^^ layoutTypeWithInfo denv env typarConstraintTy

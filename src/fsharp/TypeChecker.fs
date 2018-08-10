@@ -12427,12 +12427,12 @@ module IncrClassChecking =
         static member Empty(g, names) = 
             { TakenFieldNames=Set.ofList names
               RepInfoTcGlobals=g
-              ValReprs = MapCustom.Empty<ValByStamp> ()
+              ValReprs = Zmap.Empty<ValByStamp> ()
               ValsWithRepresentation = Zset.empty valOrder }
 
         /// Find the representation of a value
         member localRep.LookupRepr (v:Val) = 
-            match MapCustom.tryFind v localRep.ValReprs with 
+            match Zmap.tryFind v localRep.ValReprs with 
             | None -> error(InternalError("LookupRepr: failed to find representation for value", v.Range))
             | Some res -> res
 
@@ -12545,7 +12545,7 @@ module IncrClassChecking =
             // OK, representation chosen, now add it 
             {localRep with 
                 TakenFieldNames=takenFieldNames 
-                ValReprs = MapCustom.add v repr localRep.ValReprs}  
+                ValReprs = Zmap.add v repr localRep.ValReprs}  
 
         member localRep.ValNowWithRepresentation (v:Val) = 
             {localRep with ValsWithRepresentation = Zset.add v localRep.ValsWithRepresentation}

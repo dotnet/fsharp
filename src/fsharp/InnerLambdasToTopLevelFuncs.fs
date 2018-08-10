@@ -25,9 +25,9 @@ let verboseTLR = false
 
 let internalError str = dprintf "Error: %s\n" str;raise (Failure str)  
 
-module MapCustom = 
+module Zmap = 
     let force (k:'Key) (mp:Map<SortKey<'Key,'Comparer>,'T>) (str,soK) = 
-        try MapCustom.find k mp 
+        try Zmap.find k mp 
         with e -> 
             dprintf "Map.force: %s %s\n" str (soK k); 
             PreserveStackTrace(e)
@@ -138,7 +138,7 @@ let GetValsBoundUnderMustInline xinfo =
         Zset.union (GetValsBoundInExpr repr) rejectS
       else rejectS
     let rejectS = Zset.empty valOrder
-    let rejectS = MapCustom.fold accRejectFrom xinfo.Defns rejectS
+    let rejectS = Zmap.fold accRejectFrom xinfo.Defns rejectS
     rejectS
 
 //-------------------------------------------------------------------------
@@ -173,7 +173,7 @@ let IsMandatoryNonTopLevel g (f:Val) =
 module Pass1_DetermineTLRAndArities = 
 
     let GetMaxNumArgsAtUses xinfo f =
-       match MapCustom.tryFind f xinfo.Uses with
+       match Zmap.tryFind f xinfo.Uses with
        | None       -> 0 (* no call sites *)
        | Some sites -> 
            sites |> List.map (fun (_accessors,_tinst,args) -> List.length args) |> List.max
@@ -196,17 +196,17 @@ module Pass1_DetermineTLRAndArities =
     /// ValRec considered: recursive && some f in mutual binding is not bound to a lambda
     let IsValueRecursionFree xinfo f =
 
-        let hasDelayedRepr f = isDelayedRepr f (MapCustom.force f xinfo.Defns ("IsValueRecursionFree - hasDelayedRepr",nameOfVal))
-        let isRecursive,mudefs = MapCustom.force f xinfo.RecursiveBindings ("IsValueRecursionFree",nameOfVal)
+        let hasDelayedRepr f = isDelayedRepr f (Zmap.force f xinfo.Defns ("IsValueRecursionFree - hasDelayedRepr",nameOfVal))
+        let isRecursive,mudefs = Zmap.force f xinfo.RecursiveBindings ("IsValueRecursionFree",nameOfVal)
         not isRecursive || List.forall hasDelayedRepr mudefs
 
     let DumpArity arityM =
         let dump f n = dprintf "tlr: arity %50s = %d\n" (showL (valL f)) n
-        MapCustom.iter dump arityM
+        Zmap.iter dump arityM
 
     let DetermineTLRAndArities g expr  =
        let xinfo = GetUsageInfoOfImplFile g expr
-       let fArities = MapCustom.chooseL (SelectTLRVals g xinfo) xinfo.Defns
+       let fArities = Zmap.chooseL (SelectTLRVals g xinfo) xinfo.Defns
        let fArities = List.filter (fst >> IsValueRecursionFree xinfo) fArities
        // Do not TLR v if it is bound under a mustinline defn 
        // There is simply no point - the original value will be duplicated and TLR'd anyway 
@@ -223,7 +223,7 @@ module Pass1_DetermineTLRAndArities =
            missed |> Zset.iter (fun v -> dprintf "TopLevel but not TLR = %s\n" v.LogicalName) 
 #endif
        (* REPORT OVER *)   
-       let arityM = MapCustom.ofList<ValByStamp> fArities
+       let arityM = Zmap.ofList<ValByStamp> fArities
 #if DEBUG
        if verboseTLR then DumpArity arityM
 #endif
@@ -429,8 +429,8 @@ module Pass2_DetermineReqdItems =
 
     let state0 =
         { stack         = []
-          reqdItemsMap  = MapCustom.Empty<BindingGroupSharingSameReqdItemsByVals> ()
-          fclassM       = MapCustom.Empty<ValByStamp> ()
+          reqdItemsMap  = Zmap.Empty<BindingGroupSharingSameReqdItemsByVals> ()
+          fclassM       = Zmap.Empty<ValByStamp> ()
           revDeclist    = []
           recShortCallS = Zset.empty valOrder }
 
@@ -454,8 +454,8 @@ module Pass2_DetermineReqdItems =
             | (fclass,_reqdVals0,env)::stack -> (* ASSERT: same fclass *)
                 {state with
                    stack        = stack
-                   reqdItemsMap = MapCustom.add  fclass env   state.reqdItemsMap
-                   fclassM      = List.fold (fun mp (k,v) -> MapCustom.add k v mp) state.fclassM fclass.Pairs }
+                   reqdItemsMap = Zmap.add  fclass env   state.reqdItemsMap
+                   fclassM      = List.fold (fun mp (k,v) -> Zmap.add k v mp) state.fclassM fclass.Pairs }
 
     /// Log requirements for gv in the relevant stack frames 
     let LogRequiredFrom gv items state =
@@ -490,7 +490,7 @@ module Pass2_DetermineReqdItems =
     let ExprEnvIntercept (tlrS,arityM) exprF z expr = 
          let accInstance z (fvref:ValRef,tps,args) (* f known local *) = 
              let f = fvref.Deref
-             match MapCustom.tryFind f arityM with
+             match Zmap.tryFind f arityM with
              
              | Some wf -> 
                  // f is TLR with arity wf 
@@ -567,8 +567,8 @@ module Pass2_DetermineReqdItems =
         let closeStep reqdItemsMap changed fc (env: ReqdItemsForDefn) =
             let directCallReqdEnvs   = env.ReqdSubEnvs
             let directCallReqdTypars = directCallReqdEnvs |> List.map (fun f -> 
-                                            let fc  = MapCustom.force f fclassM ("reqdTyparsFor",nameOfVal)
-                                            let env = MapCustom.force fc reqdItemsMap    ("reqdTyparsFor",string)       
+                                            let fc  = Zmap.force f fclassM ("reqdTyparsFor",nameOfVal)
+                                            let env = Zmap.force fc reqdItemsMap    ("reqdTyparsFor",string)       
                                             env.reqdTypars)
 
             let reqdTypars0 = env.reqdTypars
@@ -579,7 +579,7 @@ module Pass2_DetermineReqdItems =
             if verboseTLR then 
                 dprintf "closeStep: fc=%30A nSubs=%d reqdTypars0=%s reqdTypars=%s\n" fc directCallReqdEnvs.Length (showTyparSet reqdTypars0) (showTyparSet reqdTypars)
                 directCallReqdEnvs |> List.iter (fun f    -> dprintf "closeStep: dcall    f=%s\n" f.LogicalName)          
-                directCallReqdEnvs |> List.iter (fun f    -> dprintf "closeStep: dcall   fc=%A\n" (MapCustom.find f fclassM))
+                directCallReqdEnvs |> List.iter (fun f    -> dprintf "closeStep: dcall   fc=%A\n" (Zmap.find f fclassM))
                 directCallReqdTypars |> List.iter (fun _reqdTypars -> dprintf "closeStep: dcall reqdTypars=%s\n" (showTyparSet reqdTypars0)) 
 #else
             ignore fc
@@ -588,7 +588,7 @@ module Pass2_DetermineReqdItems =
        
         let rec fixpoint reqdItemsMap =
             let changed = false
-            let changed,reqdItemsMap = MapCustom.foldMap (closeStep reqdItemsMap) changed reqdItemsMap
+            let changed,reqdItemsMap = Zmap.foldMap (closeStep reqdItemsMap) changed reqdItemsMap
             if changed then
                 fixpoint reqdItemsMap
             else
@@ -620,9 +620,9 @@ module Pass2_DetermineReqdItems =
         // close the reqdTypars under the subEnv reln 
         let reqdItemsMap    = CloseReqdTypars fclassM reqdItemsMap
         // filter out trivial fclass - with no TLR defns 
-        let reqdItemsMap    = MapCustom.remove (BindingGroupSharingSameReqdItems List.empty) reqdItemsMap
+        let reqdItemsMap    = Zmap.remove (BindingGroupSharingSameReqdItems List.empty) reqdItemsMap
         // restrict declist to those with reqdItemsMap bindings (the non-trivial ones) 
-        let declist = List.filter (MapCustom.memberOf reqdItemsMap) declist
+        let declist = List.filter (Zmap.memberOf reqdItemsMap) declist
 #if DEBUG
         // diagnostic dump 
         if verboseTLR then
@@ -687,14 +687,14 @@ exception AbortTLR of Range.range
 /// where
 ///   aenvFor(v) = aenvi where (v,aenvi) in cmap.
 let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Map<SortKey<BindingGroupSharingSameReqdItems,BindingGroupSharingSameReqdItemsByVals>,ReqdItemsForDefn>) =
-   let fclassOf f = MapCustom.force f fclassM ("fclassM",nameOfVal)
+   let fclassOf f = Zmap.force f fclassM ("fclassM",nameOfVal)
    let packEnv carrierMaps (fc:BindingGroupSharingSameReqdItems) =
        if verboseTLR then dprintf "\ntlr: packEnv fc=%A\n" fc
-       let env = MapCustom.force fc reqdItemsMap ("packEnv",string)
+       let env = Zmap.force fc reqdItemsMap ("packEnv",string)
 
        // carrierMaps = (fclass,(v,aenv)map)map 
-       let carrierMapFor f = MapCustom.force (fclassOf f) carrierMaps ("carrierMapFor",string)
-       let valsSubEnvFor f = MapCustom.keys (carrierMapFor f)
+       let carrierMapFor f = Zmap.force (fclassOf f) carrierMaps ("carrierMapFor",string)
+       let valsSubEnvFor f = Zmap.keys (carrierMapFor f)
 
        // determine vals(env) - transclosure 
        let vals = env.ReqdVals @ List.collect valsSubEnvFor env.ReqdSubEnvs  // list, with repeats 
@@ -744,25 +744,25 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Map<SortKey<BindingGro
 
        // build cmap for env 
        let cmapPairs = vals |> List.map (fun v -> (v,(mkCompGenLocal env.m v.LogicalName v.Type |> fst))) 
-       let cmap      = MapCustom.ofList<ValByStamp> cmapPairs
-       let aenvFor     v = MapCustom.force v cmap ("aenvFor",nameOfVal)
+       let cmap      = Zmap.ofList<ValByStamp> cmapPairs
+       let aenvFor     v = Zmap.force v cmap ("aenvFor",nameOfVal)
        let aenvExprFor v = exprForVal env.m (aenvFor v)
 
        // build PackedReqdItems 
        let reqdTypars   = env.reqdTypars
-       let aenvs  = MapCustom.values cmap
+       let aenvs  = Zmap.values cmap
        let pack   = cmapPairs |> List.map (fun (v,aenv) -> mkInvisibleBind aenv (exprForVal env.m v))
        let unpack = 
            let unpackCarrier (v,aenv) = mkInvisibleBind (setValHasNoArity v) (exprForVal env.m aenv)
            let unpackSubenv f = 
                let subCMap  = carrierMapFor f    
-               let vaenvs   = MapCustom.toList subCMap
+               let vaenvs   = Zmap.toList subCMap
                vaenvs |> List.map (fun (subv,subaenv) -> mkBind NoSequencePointAtInvisibleBinding subaenv (aenvExprFor subv))
-           List.map unpackCarrier (MapCustom.toList cmap) @
+           List.map unpackCarrier (Zmap.toList cmap) @
            List.collect unpackSubenv env.ReqdSubEnvs
       
        // extend carrierMaps 
-       let carrierMaps = MapCustom.add fc cmap carrierMaps
+       let carrierMaps = Zmap.add fc cmap carrierMaps
 
        // dump 
        if verboseTLR then
@@ -779,9 +779,9 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Map<SortKey<BindingGro
               ep_pack   = pack
               ep_unpack = unpack}),carrierMaps
   
-   let carriedMaps = MapCustom.Empty<BindingGroupSharingSameReqdItemsByVals> ()
+   let carriedMaps = Zmap.Empty<BindingGroupSharingSameReqdItemsByVals> ()
    let envPacks,_carriedMaps = List.mapFold packEnv carriedMaps declist   (* List.mapFold in dec order *)
-   let envPacks = MapCustom.ofList<BindingGroupSharingSameReqdItemsByVals> envPacks
+   let envPacks = Zmap.ofList<BindingGroupSharingSameReqdItemsByVals> envPacks
    envPacks
 
 
@@ -828,9 +828,9 @@ let MakeSimpleArityInfo tps n = ValReprInfo (ValReprInfo.InferTyparInfo tps,List
 let CreateNewValuesForTLR g tlrS arityM fclassM envPackM = 
     if verboseTLR then dprintf "CreateNewValuesForTLR------\n"
     let createFHat (f:Val) =
-        let wf     = MapCustom.force f arityM ("createFHat - wf",(fun v -> showL (valL v)))
-        let fc     = MapCustom.force f fclassM ("createFHat - fc",nameOfVal)
-        let envp   = MapCustom.force fc envPackM ("CreateNewValuesForTLR - envp",string)
+        let wf     = Zmap.force f arityM ("createFHat - wf",(fun v -> showL (valL v)))
+        let fc     = Zmap.force f fclassM ("createFHat - fc",nameOfVal)
+        let envp   = Zmap.force fc envPackM ("CreateNewValuesForTLR - envp",string)
         let name   = f.LogicalName (* + "_TLR_" + string wf *)
         let m      = f.Range
         let tps,tau    = f.TypeScheme
@@ -847,7 +847,7 @@ let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
    
     let fs     = Zset.elements tlrS
     let ffHats = List.map (fun f -> f,createFHat f) fs
-    let fHatM  = MapCustom.ofList<ValByStamp> ffHats
+    let fHatM  = Zmap.ofList<ValByStamp> ffHats
     fHatM
 
 
@@ -969,14 +969,14 @@ module Pass4_RewriteAssembly =
     let TransTLRBindings penv (binds:Bindings) = 
         if isNil binds then List.empty,List.empty else
         let fc   = BindingGroupSharingSameReqdItems binds
-        let envp = MapCustom.force fc penv.envPackM ("TransTLRBindings",string)
+        let envp = Zmap.force fc penv.envPackM ("TransTLRBindings",string)
         
         let fRebinding (TBind(fOrig,b,letSeqPtOpt)) =
             let m = fOrig.Range
             let tps,vss,_b,rty = stripTopLambda (b,fOrig.Type)
             let aenvExprs = envp.ep_aenvs |> List.map (exprForVal m) 
             let vsExprs   = vss |> List.map (mkRefTupledVars penv.g m) 
-            let fHat      = MapCustom.force fOrig penv.fHatM ("fRebinding",nameOfVal) 
+            let fHat      = Zmap.force fOrig penv.fHatM ("fRebinding",nameOfVal) 
             (* REVIEW: is this mutation really, really necessary? *)
             (* Why are we applying TLR if the thing already has an arity? *)
             let fOrig = setValHasNoArity fOrig
@@ -989,8 +989,8 @@ module Pass4_RewriteAssembly =
             fBind                                
 
         let fHatNewBinding (shortRecBinds:Bindings) (TBind(f,b,letSeqPtOpt)) =
-            let wf   = MapCustom.force f penv.arityM ("fHatNewBinding - arityM",nameOfVal)
-            let fHat = MapCustom.force f penv.fHatM  ("fHatNewBinding - fHatM",nameOfVal)
+            let wf   = Zmap.force f penv.arityM ("fHatNewBinding - arityM",nameOfVal)
+            let fHat = Zmap.force f penv.fHatM  ("fHatNewBinding - fHatM",nameOfVal)
             // Take off the variables
             let tps,vss,b,rty = stripTopLambda (b,f.Type)
             // Don't take all the variables - only up to length wf
@@ -1014,7 +1014,7 @@ module Pass4_RewriteAssembly =
         newBinds,rebinds
 
     let GetAEnvBindings penv fc =
-        match MapCustom.tryFind fc penv.envPackM with
+        match Zmap.tryFind fc penv.envPackM with
         | None      -> List.empty           // no env for this mutual binding 
         | Some envp -> envp.ep_pack // environment pack bindings 
 
@@ -1052,14 +1052,14 @@ module Pass4_RewriteAssembly =
         match fx with
         | Expr.Val (fvref:ValRef,_,m) when 
                 (Zset.contains fvref.Deref penv.tlrS) &&
-                (let wf = MapCustom.force fvref.Deref penv.arityM ("TransApp - wf",nameOfVal)
+                (let wf = Zmap.force fvref.Deref penv.arityM ("TransApp - wf",nameOfVal)
                  IsArityMet fvref wf tys args) ->
 
                    let f = fvref.Deref
                    (* replace by direct call to corresponding fHat (and additional closure args) *)
-                   let fc   = MapCustom.force f  penv.fclassM ("TransApp - fc",nameOfVal)   
-                   let envp = MapCustom.force fc penv.envPackM ("TransApp - envp",string)
-                   let fHat = MapCustom.force f  penv.fHatM ("TransApp - fHat",nameOfVal)
+                   let fc   = Zmap.force f  penv.fclassM ("TransApp - fc",nameOfVal)   
+                   let envp = Zmap.force fc penv.envPackM ("TransApp - envp",string)
+                   let fHat = Zmap.force f  penv.fHatM ("TransApp - fHat",nameOfVal)
                    let tys  = (List.map mkTyparTy envp.ep_etps) @ tys
                    let aenvExprs = List.map (exprForVal m) envp.ep_aenvs
                    let args = aenvExprs @ args
