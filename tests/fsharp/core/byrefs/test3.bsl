@@ -16,3 +16,7 @@ test3.fsx(55,9,55,21): typecheck error FS3237: Cannot call the byref extension m
 test3.fsx(59,17,59,29): typecheck error FS3239: Cannot partially apply the extension method 'NotChange' because the first parameter is a byref type.
 
 test3.fsx(60,17,60,24): typecheck error FS3239: Cannot partially apply the extension method 'Test' because the first parameter is a byref type.
+
+test3.fsx(61,17,61,26): typecheck error FS3239: Cannot partially apply the extension method 'Change' because the first parameter is a byref type.
+
+test3.fsx(62,17,62,25): typecheck error FS3239: Cannot partially apply the extension method 'Test2' because the first parameter is a byref type.

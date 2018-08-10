@@ -58,6 +58,8 @@ module Negatives =
         let dt = DateTime.Now
         let x = dt.NotChange // should fail
         let y = dt.Test // should fail
+        let z = dt.Change // should fail
+        let w = dt.Test2 // should fail
         ()
 
 #endif
