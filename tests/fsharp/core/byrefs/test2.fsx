@@ -100,7 +100,7 @@ module NegativeTests =
 
     type Test() =
 
-        member __.Beef() =
+        member __.TestMethod() =
             let mutable a = Unchecked.defaultof<ByRefInterface>
             let obj = { new ByRefInterface with
 
@@ -118,11 +118,19 @@ module NegativeTests =
             obj.Test(&x, &y) |> ignore
             a
             
-    type Beef = delegate of unit-> byref<int>
-    let testBeef () =
+    type TestDelegate = delegate of unit-> byref<int>
+    let testFunction () =
         let mutable x = 1
-        let f = Beef(fun () -> &x) // is not allowed
+        let f = TestDelegate(fun () -> &x) // is not allowed
         ()
+
+    type TestNegativeOverloading() =
+
+        static member TestMethod(dt: byref<int>) = ()
+
+        static member TestMethod(dt: inref<int>) = ()
+
+        static member TestMethod(dt: outref<int>) = ()
 #endif
 
 module Tests =
@@ -137,6 +145,14 @@ module Tests =
             let y = &x // is allowed
             ()
         ()
+
+    type TestPositiveOverloading() =
+
+        static member TestMethod(dt: byref<int>) = ()
+
+        static member TestMethod(dt: inref<float32>) = ()
+
+        static member TestMethod(dt: outref<float>) = ()
 
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 

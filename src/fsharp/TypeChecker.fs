@@ -16304,9 +16304,14 @@ module TcDeclarations =
                 let tyDeclRange = synTyconInfo.Range
                 let (ComponentInfo(_, typars, cs, longPath, _, _, _, _)) = synTyconInfo
                 let declKind, tcref, declaredTyconTypars = ComputeTyconDeclKind tyconOpt isAtOriginalTyconDefn cenv envForDecls false tyDeclRange typars cs longPath
-                let newslotsOK = (if isAtOriginalTyconDefn && tcref.IsFSharpObjectModelTycon then NewSlotsOK else NoNewSlots) 
+                let newslotsOK = (if isAtOriginalTyconDefn && tcref.IsFSharpObjectModelTycon then NewSlotsOK else NoNewSlots)
+
+                if (declKind = ExtrinsicExtensionBinding) && isByrefTyconRef cenv.g tcref then 
+                    error(Error(FSComp.SR.tcByrefsMayNotHaveTypeExtensions(), tyDeclRange))
+
                 if not (isNil members) && tcref.IsTypeAbbrev then 
                     errorR(Error(FSComp.SR.tcTypeAbbreviationsCannotHaveAugmentations(), tyDeclRange))
+
                 MutRecDefnsPhase2DataForTycon(tyconOpt, innerParent, declKind, tcref, baseValOpt, safeInitInfo, declaredTyconTypars, members, tyDeclRange, newslotsOK, fixupFinalAttrs))
 
         // By now we've established the full contents of type definitions apart from their
