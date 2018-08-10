@@ -4351,7 +4351,7 @@ type internal SR private() =
     /// Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
     /// (Originally from ..\FSComp.txt:1441)
     static member tastCantTakeAddressOfExpression() = (3236, GetStringFunc("tastCantTakeAddressOfExpression",",,,") )
-    /// Cannot call the byref extension method '%s' as the first parameter requires the value to be mutable or a non-readonly byref type.
+    /// Cannot call the byref extension method '%s. The first parameter requires the value to be mutable or a non-readonly byref type.
     /// (Originally from ..\FSComp.txt:1442)
     static member tcCannotCallExtensionMethodInrefToByref(a0 : System.String) = (3237, GetStringFunc("tcCannotCallExtensionMethodInrefToByref",",,,%s,,,") a0)
     /// Byref types are not allowed to have optional type extensions.

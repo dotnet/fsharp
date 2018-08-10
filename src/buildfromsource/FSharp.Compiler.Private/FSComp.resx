@@ -4355,7 +4355,7 @@
     <value>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</value>
   </data>
   <data name="tcCannotCallExtensionMethodInrefToByref" xml:space="preserve">
-    <value>Cannot call the byref extension method '{0}' as the first parameter requires the value to be mutable or a non-readonly byref type.</value>
+    <value>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</value>
   </data>
   <data name="tcByrefsMayNotHaveTypeExtensions" xml:space="preserve">
     <value>Byref types are not allowed to have optional type extensions.</value>
