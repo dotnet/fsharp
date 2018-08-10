@@ -569,7 +569,6 @@ val isEmptyFreeTyvars : FreeTyvars -> bool
 val unionFreeTyvars : FreeTyvars -> FreeTyvars -> FreeTyvars
 
 val emptyFreeLocals : FreeLocals
-val unionFreeLocals : FreeLocals -> FreeLocals -> FreeLocals
 
 type FreeVarOptions 
 

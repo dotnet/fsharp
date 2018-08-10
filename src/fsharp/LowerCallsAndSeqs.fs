@@ -17,6 +17,7 @@ open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.MethodCalls
+open Internal.Utilities.Collections
 
 //----------------------------------------------------------------------------
 // Eta-expansion of calls to top-level-methods
@@ -92,7 +93,7 @@ type LoweredSeqFirstPhaseResult =
      /// The state variables allocated for one portion of the sequence expression (i.e. the local let-bound variables which become state variables)
      stateVars: ValRef list }
 
-let isVarFreeInExpr v e = Zset.contains v (freeInExpr CollectTyparsAndLocals e).FreeLocals
+let isVarFreeInExpr v e = SetCustom.contains v (freeInExpr CollectTyparsAndLocals e).FreeLocals
 
 /// Analyze a TAST expression to detect the elaborated form of a sequence expression.
 /// Then compile it to a state machine represented as a TAST containing goto, return and label nodes. 

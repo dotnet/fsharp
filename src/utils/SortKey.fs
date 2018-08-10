@@ -83,3 +83,37 @@ type Zmap<'Key,'Value>() =
                 struct (acc', m'))
         finalState, finalMap
 
+type zset<'Key,'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> = Set<SortKey<'Key,'Comparer>>
+
+[<Sealed; AbstractClass>]
+type SetCustom<'Key>() =
+    static member empty<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct>() : zset<'Key,'Comparer> =
+        Set.empty<SortKey<'Key,'Comparer>>
+
+    static member inline contains<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (k:'Key) (s:zset<'Key,'Comparer>) =
+        Set.contains {CompareObj=k} s
+
+    static member inline exists<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (f:'Key->bool) (s:zset<'Key,'Comparer>) =
+        Set.exists (fun {CompareObj=k} -> f k) s
+
+    static member inline add<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (k:'Key) (s:zset<'Key,'Comparer>) =
+        Set.add {CompareObj=k} s
+
+    static member inline remove<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (k:'Key) (s:zset<'Key,'Comparer>) =
+        Set.remove {CompareObj=k} s
+
+    static member inline forall<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (f:'Key->bool) (s:zset<'Key,'Comparer>) =
+        Set.forall (fun {CompareObj=k} -> f k) s
+
+    static member inline memberOf<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (s:zset<'Key,'Comparer>) (k:'Key) =
+        Set.contains {CompareObj=k} s
+
+    static member inline elements<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (s:zset<'Key,'Comparer>) =
+        Set.foldBack (fun e l -> e.CompareObj::l) s []
+
+    static member inline filter<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (f:'Key->bool) (s:zset<'Key,'Comparer>) =
+        Set.filter (fun {CompareObj=k} -> f k) s
+
+    static member inline union<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (set1:zset<'Key,'Comparer>) (set2:zset<'Key,'Comparer>) =
+        Set.union set1 set2
+

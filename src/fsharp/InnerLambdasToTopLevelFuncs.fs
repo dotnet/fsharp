@@ -516,7 +516,7 @@ module Pass2_DetermineReqdItems =
              let frees        = FreeInBindings tlrBs
              let reqdTypars0  = frees.FreeTyvars.FreeTypars   |> Zset.elements      (* put in env *)
              // occurrences contribute to env 
-             let reqdVals0 = frees.FreeLocals |> Zset.elements
+             let reqdVals0 = frees.FreeLocals |> SetCustom.elements
              // tlrBs are not reqdVals0 for themselves 
              let reqdVals0 = reqdVals0 |> List.filter (fun gv -> not (fclass.Contains gv)) 
              let reqdVals0 = reqdVals0 |> Zset.ofList valOrder 

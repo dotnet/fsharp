@@ -3903,7 +3903,7 @@ and GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr =
     // pointer which gives the current closure itself. This is in the case e.g. let rec f = ... f ... 
     let cloFreeVars = 
         cloFreeVarResults.FreeLocals
-        |> Zset.elements 
+        |> SetCustom.elements 
         |> List.filter (fun fv -> 
             match StorageForVal m fv eenvouter with 
             | (StaticField _ | StaticProperty _ | Method _ | Null) -> false

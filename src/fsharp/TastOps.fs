@@ -1835,11 +1835,7 @@ let ValRefIsExplicitImpl g (vref:ValRef) = ValIsExplicitImpl g vref.Deref
 // an equation assigned by type inference.
 //---------------------------------------------------------------------------
 
-let emptyFreeLocals = Zset.empty valOrder
-let unionFreeLocals s1 s2 = 
-    if s1 === emptyFreeLocals then s2
-    elif s2 === emptyFreeLocals then s1
-    else Zset.union s1 s2
+let emptyFreeLocals = SetCustom.empty<ValByStamp> ()
 
 let emptyFreeRecdFields = Zset.empty recdFieldRefOrder
 let unionFreeRecdFields s1 s2 = 
@@ -1883,7 +1879,7 @@ let unionFreeTyvars fvs1 fvs2 =
     if fvs1 === emptyFreeTyvars then fvs2 else 
     if fvs2 === emptyFreeTyvars then fvs1 else
     { FreeTycons           = unionFreeTycons fvs1.FreeTycons fvs2.FreeTycons
-      FreeTraitSolutions   = unionFreeLocals fvs1.FreeTraitSolutions fvs2.FreeTraitSolutions
+      FreeTraitSolutions   = Set.union fvs1.FreeTraitSolutions fvs2.FreeTraitSolutions
       FreeTypars           = unionFreeTypars fvs1.FreeTypars fvs2.FreeTypars }
 
 type FreeVarOptions = 
@@ -2018,8 +2014,8 @@ and accFreeInTraitSln opts sln acc =
     | ClosedExprSln _ -> acc // nothing to accumulate because it's a closed expression referring only to erasure of provided method calls
 
 and accFreeLocalValInTraitSln _opts v fvs =
-    if Zset.contains v fvs.FreeTraitSolutions then fvs 
-    else { fvs with FreeTraitSolutions = Zset.add v fvs.FreeTraitSolutions}
+    if SetCustom.contains v fvs.FreeTraitSolutions then fvs 
+    else { fvs with FreeTraitSolutions = SetCustom.add v fvs.FreeTraitSolutions}
 
 and accFreeValRefInTraitSln opts (vref:ValRef) fvs = 
     if vref.IsLocalRef then
@@ -4123,7 +4119,7 @@ let freeVarsAllPublic fvs =
     //
     // CODEREVIEW:
     // What about non-local vals. This fix assumes non-local vals must be public. OK?
-    Zset.forall isPublicVal fvs.FreeLocals  &&
+    SetCustom.forall isPublicVal fvs.FreeLocals  &&
     Zset.forall isPublicUnionCase fvs.FreeUnionCases &&
     Zset.forall isPublicRecdField fvs.FreeRecdFields  &&
     Zset.forall isPublicTycon fvs.FreeTyvars.FreeTycons
@@ -4161,7 +4157,7 @@ let emptyFreeVars =
 let unionFreeVars fvs1 fvs2 = 
   if fvs1 === emptyFreeVars then fvs2 else 
   if fvs2 === emptyFreeVars then fvs1 else
-  { FreeLocals                    = unionFreeLocals fvs1.FreeLocals fvs2.FreeLocals;
+  { FreeLocals                    = Set.union fvs1.FreeLocals fvs2.FreeLocals;
     FreeTyvars                    = unionFreeTyvars fvs1.FreeTyvars fvs2.FreeTyvars;    
     UsesMethodLocalConstructs     = fvs1.UsesMethodLocalConstructs || fvs2.UsesMethodLocalConstructs;
     UsesUnboundRethrow            = fvs1.UsesUnboundRethrow || fvs2.UsesUnboundRethrow;
@@ -4186,8 +4182,8 @@ let accFreeVarsInTraitSln opts tys acc = accFreeTyvars opts accFreeInTraitSln ty
 let boundLocalVal opts v fvs =
     if not opts.includeLocals then fvs else
     let fvs = accFreevarsInVal opts v fvs
-    if not (Zset.contains v fvs.FreeLocals) then fvs
-    else {fvs with FreeLocals= Zset.remove v fvs.FreeLocals} 
+    if not (SetCustom.contains v fvs.FreeLocals) then fvs
+    else {fvs with FreeLocals= SetCustom.remove v fvs.FreeLocals} 
 
 let boundProtect fvs =
     if fvs.UsesMethodLocalConstructs then {fvs with UsesMethodLocalConstructs = false} else fvs
@@ -4250,10 +4246,10 @@ and accFreeInValFlags opts flag acc =
 
 and accFreeLocalVal opts v fvs =
     if not opts.includeLocals then fvs else
-    if Zset.contains v fvs.FreeLocals then fvs 
+    if SetCustom.contains v fvs.FreeLocals then fvs 
     else 
         let fvs = accFreevarsInVal opts v fvs
-        {fvs with FreeLocals=Zset.add v fvs.FreeLocals}
+        {fvs with FreeLocals=SetCustom.add v fvs.FreeLocals}
   
 and accLocalTyconRepr opts b fvs = 
     if not opts.includeLocalTyconReprs then fvs else
@@ -8349,8 +8345,8 @@ let (|CompiledForEachExpr|_|) g expr =
                       enumerableVar.IsCompilerGenerated &&
                       enumeratorVar.IsCompilerGenerated &&
                       (let fvs = (freeInExpr CollectLocals bodyExpr)
-                       not (Zset.contains enumerableVar fvs.FreeLocals) && 
-                       not (Zset.contains enumeratorVar fvs.FreeLocals)) ->
+                       not (SetCustom.contains enumerableVar fvs.FreeLocals) && 
+                       not (SetCustom.contains enumeratorVar fvs.FreeLocals)) ->
 
         // Extract useful ranges
         let mEnumExpr = enumerableExpr.Range

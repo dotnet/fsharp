@@ -24,6 +24,7 @@ open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.TypeRelations
+open Internal.Utilities.Collections
 
 //--------------------------------------------------------------------------
 // TestHooks - for dumping range to support source transforms
@@ -407,8 +408,8 @@ let CheckEscapes cenv allowProtected m syntacticArgs body = (* m is a range suit
 
         if not allowProtected && frees.UsesMethodLocalConstructs  then
             errorR(Error(FSComp.SR.chkProtectedOrBaseCalled(), m))
-        elif Zset.exists cantBeFree fvs then 
-            let v =  List.find cantBeFree (Zset.elements fvs) 
+        elif SetCustom.exists cantBeFree fvs then 
+            let v =  List.find cantBeFree (SetCustom.elements fvs) 
 
             // byref error before mutable error (byrefs are mutable...). 
             if (isByrefLikeTy cenv.g m v.Type) then

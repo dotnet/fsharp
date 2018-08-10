@@ -2082,7 +2082,7 @@ module GeneralizationHelpers =
                 if item.WillNeverHaveFreeTypars then item.CachedFreeTraitSolutions else 
                 let ftyvs = item.GetFreeTyvars()
                 ftyvs.FreeTraitSolutions
-            if ftycs.IsEmpty then acc else unionFreeLocals ftycs acc
+            if ftycs.IsEmpty then acc else Set.union ftycs acc
 
         List.fold acc_in_free_item emptyFreeLocals env.eUngeneralizableItems 
 
@@ -12491,7 +12491,7 @@ module IncrClassChecking =
                     // All struct variables are forced into fields. Structs may not contain "let" bindings, so no new variables can be 
                     // introduced.
                     
-                    if v.IsMutable || relevantForcedFieldVars.Contains v || tcref.IsStructOrEnumTycon then 
+                    if v.IsMutable || (relevantForcedFieldVars |> SetCustom.contains v) || tcref.IsStructOrEnumTycon then 
                         //dprintfn "Representing %s as a field %s" v.LogicalName name
                         let rfref = RFRef(tcref, name)
                         reportIfUnused()
@@ -16697,7 +16697,7 @@ let TcMutRecDefnsEscapeCheck (binds: MutRecShapes<_, _, _, _, _>) env =
     let freeInEnv = GeneralizationHelpers.ComputeUnabstractableTraitSolutions env
     let checkBinds (binds: Binding list) = 
         for bind in binds do 
-            if Zset.contains bind.Var freeInEnv then 
+            if SetCustom.contains bind.Var freeInEnv then 
                 let nm = bind.Var.DisplayName 
                 errorR(Error(FSComp.SR.tcMemberUsedInInvalidWay(nm, nm, nm), bind.Var.Range))
 

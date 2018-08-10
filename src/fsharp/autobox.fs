@@ -10,6 +10,7 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.TypeRelations
+open Internal.Utilities.Collections
 
 //----------------------------------------------------------------------------
 // Decide the set of mutable locals to promote to heap-allocated reference cells
@@ -25,7 +26,7 @@ let DecideEscapes syntacticArgs body =
         not passedIn && (v.IsMutable && v.ValReprInfo.IsNone) 
 
     let frees = freeInExpr CollectLocals body
-    frees.FreeLocals |> Zset.filter cantBeFree 
+    frees.FreeLocals |> SetCustom.filter cantBeFree 
 
 /// Find all the mutable locals that escape a lambda expression, ignoring the arguments to the lambda
 let DecideLambda exprF cenv topValInfo expr ety z   = 
@@ -38,7 +39,7 @@ let DecideLambda exprF cenv topValInfo expr ety z   =
         let args = Option.fold snoc args baseValOpt
         let syntacticArgs = Option.fold snoc args  ctorThisValOpt
         
-        let z = Zset.union z (DecideEscapes syntacticArgs body)
+        let z = SetCustom.union z (DecideEscapes syntacticArgs body)
         let z = match exprF with Some f -> f z body | None -> z
         z
     | _ -> z
@@ -84,7 +85,7 @@ let DecideExpr cenv exprF z expr  =
         let CheckMethod z (TObjExprMethod(_, _attribs, _tps, vs, body, _m)) = 
             let vs = List.concat vs
             let syntacticArgs = (match baseValOpt with Some x -> x:: vs | None -> vs)
-            let z = Zset.union z (DecideEscapes syntacticArgs body)
+            let z = Set.union z (DecideEscapes syntacticArgs body)
             exprF z body
 
         let CheckMethods z l = (z, l) ||> List.fold CheckMethod 
@@ -167,14 +168,16 @@ let TransformBinding g (nvs: ValMap<_>) exprF (TBind(v, expr, m)) =
 /// Rewrite mutable locals to reference cells across an entire implementation file
 let TransformImplFile g amap implFile = 
     let fvs = DecideImplFile g amap implFile
-    if Zset.isEmpty fvs then 
+    if Set.isEmpty fvs then 
         implFile
     else
         for fv in fvs do
+            let fv = fv.CompareObj
             warning (Error(FSComp.SR.abImplicitHeapAllocation(fv.DisplayName), fv.Range))
 
         let nvs = 
             [ for fv in fvs do
+                let fv = fv.CompareObj
                 let nty = mkRefCellTy g fv.Type
                 let nv, nve = 
                     if fv.IsCompilerGenerated then mkCompGenLocal fv.Range fv.LogicalName nty

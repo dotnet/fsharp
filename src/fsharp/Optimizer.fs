@@ -32,6 +32,7 @@ open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
 open Microsoft.FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic
+open Internal.Utilities.Collections
 
 #if DEBUG
 let verboseOptimizationInfo = 
@@ -996,7 +997,7 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
         | CurriedLambdaValue (_, _, _, expr, _) | ConstExprValue(_, expr) when            
             (let fvs = freeInExpr CollectAll expr
              (isAssemblyBoundary && not (freeVarsAllPublic fvs)) || 
-             Zset.exists hiddenVal       fvs.FreeLocals            ||
+             SetCustom.exists hiddenVal       fvs.FreeLocals            ||
              Zset.exists hiddenTycon     fvs.FreeTyvars.FreeTycons ||
              Zset.exists hiddenTyconRepr fvs.FreeLocalTyconReprs   ||
              Zset.exists hiddenRecdField fvs.FreeRecdFields        ||
@@ -1082,7 +1083,7 @@ let AbstractExprInfoByVars (boundVars:Val list, boundTyVars) ivalue =
           // Check for escape in lambda 
           | CurriedLambdaValue (_, _, _, expr, _) | ConstExprValue(_, expr)  when 
             (let fvs = freeInExpr (if isNil boundTyVars then CollectLocals else CollectTyparsAndLocals) expr
-             (not (isNil boundVars) && List.exists (Zset.memberOf fvs.FreeLocals) boundVars) ||
+             (not (isNil boundVars) && List.exists (SetCustom.memberOf fvs.FreeLocals) boundVars) ||
              (not (isNil boundTyVars) && List.exists (Zset.memberOf fvs.FreeTyvars.FreeTypars) boundTyVars) ||
              (fvs.UsesMethodLocalConstructs )) ->
               
@@ -1208,7 +1209,7 @@ let ValueIsUsedOrHasEffect cenv fvs (b:Binding, binfo) =
     Option.isSome v.MemberInfo ||
     binfo.HasEffect || 
     v.IsFixed ||
-    Zset.contains v (fvs())
+    SetCustom.contains v (fvs())
 
 let rec SplitValuesByIsUsedOrHasEffect cenv fvs x = 
     x |> List.filter (ValueIsUsedOrHasEffect cenv fvs) |> List.unzip
@@ -1310,7 +1311,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m  =
            && (not (vspec2.LogicalName.Contains(suffixForVariablesThatMayNotBeEliminated)))
            // REVIEW: this looks slow. Look only for one variable instead 
            && (let fvs = accFreeInExprs CollectLocals args emptyFreeVars
-               not (Zset.contains vspec1 fvs.FreeLocals))
+               not (SetCustom.contains vspec1 fvs.FreeLocals))
 
         // Immediate consumption of value as 2nd or subsequent argument to a construction or projection operation 
         let rec GetImmediateUseContext rargsl argsr = 
@@ -1331,7 +1332,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m  =
          | Expr.Match(spMatch, _exprm, TDSwitch(Expr.Val(VRefLocal vspec2, _, _), cases, dflt, _), targets, m, ty2)
              when (valEq vspec1 vspec2 && 
                    let fvs = accFreeInTargets CollectLocals targets (accFreeInSwitchCases CollectLocals cases dflt emptyFreeVars)
-                   not (Zset.contains vspec1 fvs.FreeLocals)) -> 
+                   not (SetCustom.contains vspec1 fvs.FreeLocals)) -> 
 
               let spMatch = spBind.Combine(spMatch)
               Some (Expr.Match(spMatch, e1.Range, TDSwitch(e1, cases, dflt, m), targets, m, ty2))
@@ -2728,7 +2729,7 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
           | None -> CurriedLambdaValue (lambdaId, arities, bsize, expr', ety) 
           | Some baseVal -> 
               let fvs = freeInExpr CollectLocals body'
-              if fvs.UsesMethodLocalConstructs || fvs.FreeLocals.Contains baseVal then 
+              if fvs.UsesMethodLocalConstructs || (fvs.FreeLocals |> SetCustom.contains baseVal) then 
                   UnknownValue
               else 
                   let expr2 = mkMemberLambdas m tps ctorThisValOpt None vsl (body', bodyty)
@@ -2804,7 +2805,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e:Expr, einfo) =
     (let fvs = freeInExpr CollectLocals e
      not fvs.UsesUnboundRethrow  &&
      not fvs.UsesMethodLocalConstructs &&
-     fvs.FreeLocals |> Zset.forall (fun v -> 
+     fvs.FreeLocals |> SetCustom.forall (fun v -> 
           // no direct-self-recursive references
           not (env.dontSplitVars.ContainsVal v) &&
           (v.ValReprInfo.IsSome ||

@@ -4970,7 +4970,7 @@ and
 //---------------------------------------------------------------------------
 
 /// Represents a set of free local values.
-and FreeLocals = Zset<Val>
+and FreeLocals = Internal.Utilities.Collections.zset<Val,ValByStamp>
 
 /// Represents a set of free type parameters
 and FreeTypars = Zset<Typar>
