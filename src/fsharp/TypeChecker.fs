@@ -12420,14 +12420,14 @@ module IncrClassChecking =
           TakenFieldNames:Set<string>
           RepInfoTcGlobals:TcGlobals
           /// vals mapped to representations
-          ValReprs  : Map<SortKey<Val, ValByStamp>, IncrClassValRepr> 
+          ValReprs  : zmap<Val, ValByStamp, IncrClassValRepr> 
           /// vals represented as fields or members from this point on 
           ValsWithRepresentation  : Zset<Val> }
 
         static member Empty(g, names) = 
             { TakenFieldNames=Set.ofList names
               RepInfoTcGlobals=g
-              ValReprs = Zmap.Empty<ValByStamp> ()
+              ValReprs = Zmap.empty<ValByStamp> ()
               ValsWithRepresentation = Zset.empty valOrder }
 
         /// Find the representation of a value

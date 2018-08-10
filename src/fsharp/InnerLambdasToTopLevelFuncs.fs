@@ -26,7 +26,7 @@ let verboseTLR = false
 let internalError str = dprintf "Error: %s\n" str;raise (Failure str)  
 
 module Zmap = 
-    let force (k:'Key) (mp:Map<SortKey<'Key,'Comparer>,'T>) (str,soK) = 
+    let force (k:'Key) (mp:zmap<'Key,'Comparer,'T>) (str,soK) = 
         try Zmap.find k mp 
         with e -> 
             dprintf "Map.force: %s %s\n" str (soK k); 
@@ -421,16 +421,16 @@ module Pass2_DetermineReqdItems =
     /// recShortCalls to f will require a binding for f in terms of fHat within the fHatBody.
     type state =
         { stack         : (BindingGroupSharingSameReqdItems * Generators * ReqdItemsForDefn) list
-          reqdItemsMap  : Map<SortKey<BindingGroupSharingSameReqdItems,BindingGroupSharingSameReqdItemsByVals>,ReqdItemsForDefn>
-          fclassM       : Map<SortKey<Val,ValByStamp>,BindingGroupSharingSameReqdItems>
+          reqdItemsMap  : zmap<BindingGroupSharingSameReqdItems,BindingGroupSharingSameReqdItemsByVals,ReqdItemsForDefn>
+          fclassM       : zmap<Val,ValByStamp,BindingGroupSharingSameReqdItems>
           revDeclist    : BindingGroupSharingSameReqdItems list
           recShortCallS : Zset<Val>
         }
 
     let state0 =
         { stack         = []
-          reqdItemsMap  = Zmap.Empty<BindingGroupSharingSameReqdItemsByVals> ()
-          fclassM       = Zmap.Empty<ValByStamp> ()
+          reqdItemsMap  = Zmap.empty<BindingGroupSharingSameReqdItemsByVals> ()
+          fclassM       = Zmap.empty<ValByStamp> ()
           revDeclist    = []
           recShortCallS = Zset.empty valOrder }
 
@@ -686,7 +686,7 @@ exception AbortTLR of Range.range
 ///         and TBIND(asubEnvi = aenvFor(v)) for each (asubEnvi,v) in cmap(subEnvk) ranging over required subEnvk.
 /// where
 ///   aenvFor(v) = aenvi where (v,aenvi) in cmap.
-let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Map<SortKey<BindingGroupSharingSameReqdItems,BindingGroupSharingSameReqdItemsByVals>,ReqdItemsForDefn>) =
+let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: zmap<BindingGroupSharingSameReqdItems,BindingGroupSharingSameReqdItemsByVals,ReqdItemsForDefn>) =
    let fclassOf f = Zmap.force f fclassM ("fclassM",nameOfVal)
    let packEnv carrierMaps (fc:BindingGroupSharingSameReqdItems) =
        if verboseTLR then dprintf "\ntlr: packEnv fc=%A\n" fc
@@ -779,7 +779,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Map<SortKey<BindingGro
               ep_pack   = pack
               ep_unpack = unpack}),carrierMaps
   
-   let carriedMaps = Zmap.Empty<BindingGroupSharingSameReqdItemsByVals> ()
+   let carriedMaps = Zmap.empty<BindingGroupSharingSameReqdItemsByVals> ()
    let envPacks,_carriedMaps = List.mapFold packEnv carriedMaps declist   (* List.mapFold in dec order *)
    let envPacks = Zmap.ofList<BindingGroupSharingSameReqdItemsByVals> envPacks
    envPacks
@@ -862,12 +862,12 @@ module Pass4_RewriteAssembly =
          g             : TcGlobals
          tlrS          : Zset<Val> 
          topValS       : Zset<Val> 
-         arityM        : Map<SortKey<Val,ValByStamp>,int> 
-         fclassM       : Map<SortKey<Val,ValByStamp>,BindingGroupSharingSameReqdItems> 
+         arityM        : zmap<Val,ValByStamp,int> 
+         fclassM       : zmap<Val,ValByStamp,BindingGroupSharingSameReqdItems> 
          recShortCallS : Zset<Val> 
-         envPackM      : Map<SortKey<BindingGroupSharingSameReqdItems,BindingGroupSharingSameReqdItemsByVals>,PackedReqdItems>
+         envPackM      : zmap<BindingGroupSharingSameReqdItems,BindingGroupSharingSameReqdItemsByVals,PackedReqdItems>
          /// The mapping from 'f' values to 'fHat' values
-         fHatM         : Map<SortKey<Val,ValByStamp>,Val> 
+         fHatM         : zmap<Val,ValByStamp,Val> 
        }
 
 

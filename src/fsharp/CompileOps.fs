@@ -5336,7 +5336,7 @@ type QualifiedNameOfFileByText =
     interface System.Collections.Generic.IComparer<QualifiedNameOfFile> with
         member __.Compare(v1, v2) = qnameOrder.Compare (v1,v2)
 
-type RootSigs =  Map<SortKey<QualifiedNameOfFile,QualifiedNameOfFileByText>, ModuleOrNamespaceType>
+type RootSigs =  zmap<QualifiedNameOfFile,QualifiedNameOfFileByText, ModuleOrNamespaceType>
 type RootImpls = Zset<QualifiedNameOfFile >
 
 type TcState = 
@@ -5408,7 +5408,7 @@ let GetInitialTcState(m, ccuName, tcConfig:TcConfig, tcGlobals, tcImports:TcImpo
       tcsTcSigEnv=tcEnv0
       tcsTcImplEnv=tcEnv0
       tcsCreatesGeneratedProvidedTypes=false
-      tcsRootSigs = Zmap.Empty<QualifiedNameOfFileByText> ()
+      tcsRootSigs = Zmap.empty<QualifiedNameOfFileByText> ()
       tcsRootImpls = Zset.empty qnameOrder
       tcsCcuSig = NewEmptyModuleOrNamespaceType Namespace }
 

@@ -2534,19 +2534,19 @@ module SimplifyTypes =
         // Walk type to determine typars and their counts (for pprinting decisions) 
         foldTypeButNotConstraints (fun z ty -> match ty with | TType_var tp when tp.Rigidity = TyparRigidity.Rigid  -> incM tp z | _ -> z) z ty
 
-    let emptyTyparCounts = Zmap.Empty<TyparByStamp> ()
+    let emptyTyparCounts = Zmap.empty<TyparByStamp> ()
 
     // print multiple fragments of the same type using consistent naming and formatting 
     let accTyparCountsMulti acc l = List.fold accTyparCounts acc l
 
     type TypeSimplificationInfo =
         { singletons         : Typar Zset
-          inplaceConstraints : Map<SortKey<Typar,TyparByStamp>, TType>
+          inplaceConstraints : zmap<Typar,TyparByStamp, TType>
           postfixConstraints : (Typar * TyparConstraint) list }
           
     let typeSimplificationInfo0 = 
         { singletons         = Zset.empty typarOrder
-          inplaceConstraints = Zmap.Empty<TyparByStamp> ()
+          inplaceConstraints = Zmap.empty<TyparByStamp> ()
           postfixConstraints = [] }
 
     let categorizeConstraints simplify m cxs =

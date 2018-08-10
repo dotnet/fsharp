@@ -183,20 +183,20 @@ module GlobalUsageAnalysis =
     ///   (b) log it's binding site representation.
     type Results =
        { ///  v -> context / APP inst args 
-         Uses     : Map<SortKey<Val, ValByStamp>, (accessor list * TType list * Expr list) list>
+         Uses     : zmap<Val, ValByStamp, (accessor list * TType list * Expr list) list>
          /// v -> binding repr 
-         Defns     : Map<SortKey<Val, ValByStamp>, Expr>                                        
+         Defns     : zmap<Val, ValByStamp, Expr>                                        
          /// bound in a decision tree? 
          DecisionTreeBindings    : Zset<Val>                                    
          ///  v -> v list * recursive? -- the others in the mutual binding 
-         RecursiveBindings  : Map<SortKey<Val, ValByStamp>, bool * Vals>
+         RecursiveBindings  : zmap<Val, ValByStamp, bool * Vals>
          TopLevelBindings : Zset<Val>
          IterationIsAtTopLevel      : bool }
 
     let z0 =
-       { Uses     = Zmap.Empty<ValByStamp> ()
-         Defns     = Zmap.Empty<ValByStamp> ()
-         RecursiveBindings  = Zmap.Empty<ValByStamp> ()
+       { Uses     = Zmap.empty<ValByStamp> ()
+         Defns     = Zmap.empty<ValByStamp> ()
+         RecursiveBindings  = Zmap.empty<ValByStamp> ()
          DecisionTreeBindings    = Zset.empty valOrder
          TopLevelBindings = Zset.empty valOrder
          IterationIsAtTopLevel      = true }
@@ -624,7 +624,7 @@ let determineTransforms g (z : GlobalUsageAnalysis.Results) =
 
 type penv =
    { // The planned transforms 
-     transforms : Map<SortKey<Val, ValByStamp>, Transform>
+     transforms : zmap<Val, ValByStamp, Transform>
      ccu        : CcuThunk
      g          : TcGlobals }
 
