@@ -1595,6 +1595,14 @@ type MethInfo =
             | _ -> 
                 x.DeclaringTyconRef.Typars(m)
 
+    /// Tries to get the head of the argument type list if it's a byref type.
+    member x.TryHeadObjArgsAsByrefType(amap, m, minst) =
+        x.GetObjArgTypes(amap, m, minst)
+        |> List.tryHead
+        |> Option.bind (fun ty ->
+            if isByrefTy x.TcGlobals ty then Some(ty)
+            else None)
+
 //-------------------------------------------------------------------------
 // ILFieldInfo
 
