@@ -331,7 +331,7 @@ type IncrementalOptimizationEnv =
     { // An identifier to help with name generation
       latestBoundId: Ident option
       // The set of lambda IDs we've inlined to reach this point. Helps to prevent recursive inlining 
-      dontInline: Zset<Unique>  
+      dontInline: Set<Unique>  
       // Recursively bound vars. If an sub-expression that is a candidate for method splitting
       // contains any of these variables then don't split it, for fear of mucking up tailcalls.
       // See FSharp 1.0 bug 2892
@@ -346,7 +346,7 @@ type IncrementalOptimizationEnv =
 
     static member Empty = 
         { latestBoundId = None 
-          dontInline = Zset.empty Int64.order
+          dontInline = Set.empty
           typarInfos = []
           functionVal = None 
           dontSplitVars = ValMap.Empty
@@ -2529,7 +2529,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         cenv.settings.InlineLambdas () &&
         not finfo.HasEffect &&
         // Don't inline recursively! 
-        not (Zset.contains lambdaId env.dontInline) &&
+        not (Set.contains lambdaId env.dontInline) &&
         (// Check the number of argument groups is enough to saturate the lambdas of the target. 
          (if tyargs |> List.exists (fun t -> match t with TType_measure _ -> false | _ -> true) then 1 else 0) + args.Length = arities &&
           (// Enough args
@@ -2591,7 +2591,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         // Inlining:  beta reducing 
         let expr' = MakeApplicationAndBetaReduce cenv.g (f2', f2ty, [tyargs], args', m)
         // Inlining: reoptimizing
-        Some (OptimizeExpr cenv {env with dontInline= Zset.add lambdaId env.dontInline} expr')
+        Some (OptimizeExpr cenv {env with dontInline= Set.add lambdaId env.dontInline} expr')
           
     | _ -> None
 
