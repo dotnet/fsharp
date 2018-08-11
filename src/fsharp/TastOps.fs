@@ -3815,14 +3815,14 @@ type SignatureRepackageInfo =
 type SignatureHidingInfo = 
     { mhiTycons     : Zset<Tycon>; 
       mhiTyconReprs : Zset<Tycon>;  
-      mhiVals       : Zset<Val>; 
+      mhiVals       : zset<Val,ValByStamp>
       mhiRecdFields : Zset<RecdFieldRef>; 
       mhiUnionCases : Zset<UnionCaseRef> }
 
     static member Empty = 
         { mhiTycons      = Zset.empty tyconOrder; 
           mhiTyconReprs  = Zset.empty tyconOrder;  
-          mhiVals        = Zset.empty valOrder; 
+          mhiVals        = SetCustom.empty<ValByStamp> ()
           mhiRecdFields  = Zset.empty recdFieldRefOrder; 
           mhiUnionCases  = Zset.empty unionCaseRefOrder }
 
@@ -3911,7 +3911,7 @@ let accValRemap g aenv (msigty:ModuleOrNamespaceType) (implVal:Val) (mrpi, mhi) 
     match sigValOpt with 
     | None -> 
         if verbose then dprintf "accValRemap, hide = %s#%d\n" implVal.LogicalName implVal.Stamp
-        let mhi = { mhi with mhiVals = Zset.add implVal mhi.mhiVals }
+        let mhi = { mhi with mhiVals = SetCustom.add implVal mhi.mhiVals }
         (mrpi, mhi) 
     | Some (sigVal:Val)  -> 
         // The value is in the signature. Add the repackage entry. 
@@ -4042,7 +4042,7 @@ let accValHidingInfoAtAssemblyBoundary (vspec:Val) mhi =
        // anything that's not a module or member binding gets assembly visibility
        not vspec.IsMemberOrModuleBinding then 
         // The value is not public, hence hidden at the assembly boundary. 
-        { mhi with mhiVals = Zset.add vspec mhi.mhiVals } 
+        { mhi with mhiVals = SetCustom.add vspec mhi.mhiVals } 
     else 
         mhi
 
@@ -4077,9 +4077,26 @@ let IsHidden setF accessF remapF debugF =
         if verbose then dprintf "IsHidden, #mrmi = %d, %s = %b\n" mrmi.Length (showL (debugF x)) res;
         res
         
+let IsHidden' setF accessF remapF debugF = 
+    let rec check mrmi x = 
+        if verbose then dprintf "IsHidden %s ??\n" (showL (debugF x));
+            // Internal/private? 
+        not (canAccessFromEverywhere (accessF x)) || 
+        (match mrmi with 
+         | [] -> false // Ah! we escaped to freedom! 
+         | (rpi, mhi) :: rest -> 
+            // Explicitly hidden? 
+            SetCustom.contains x (setF mhi) || 
+            // Recurse... 
+            check rest (remapF rpi x))
+    fun mrmi x -> 
+        let res = check mrmi x
+        if verbose then dprintf "IsHidden, #mrmi = %d, %s = %b\n" mrmi.Length (showL (debugF x)) res;
+        res
+        
 let IsHiddenTycon     mrmi x = IsHidden (fun mhi -> mhi.mhiTycons)     (fun tc -> tc.Accessibility)        (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
 let IsHiddenTyconRepr mrmi x = IsHidden (fun mhi -> mhi.mhiTyconReprs) (fun v -> v.TypeReprAccessibility)  (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
-let IsHiddenVal       mrmi x = IsHidden (fun mhi -> mhi.mhiVals)       (fun v -> v.Accessibility)          (fun rpi x ->  (remapValRef rpi (mkLocalValRef x)).Deref) DebugPrint.valL mrmi x 
+let IsHiddenVal       mrmi x = IsHidden' (fun mhi -> mhi.mhiVals)       (fun v -> v.Accessibility)          (fun rpi x ->  (remapValRef rpi (mkLocalValRef x)).Deref) DebugPrint.valL mrmi x 
 let IsHiddenRecdField mrmi x = IsHidden (fun mhi -> mhi.mhiRecdFields) (fun rfref -> rfref.RecdField.Accessibility) (fun rpi x ->  remapRecdFieldRef rpi.tyconRefRemap x) DebugPrint.recdFieldRefL mrmi x 
 
 

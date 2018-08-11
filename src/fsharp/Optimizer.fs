@@ -976,7 +976,7 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
     let hiddenTycon, hiddenTyconRepr, hiddenVal, hiddenRecdField, hiddenUnionCase = 
         Zset.memberOf mhi.mhiTycons, 
         Zset.memberOf mhi.mhiTyconReprs, 
-        Zset.memberOf mhi.mhiVals, 
+        SetCustom.memberOf mhi.mhiVals, 
         Zset.memberOf mhi.mhiRecdFields, 
         Zset.memberOf mhi.mhiUnionCases
 
@@ -3076,7 +3076,7 @@ and OptimizeModuleExpr cenv env x =
                     not (ValueIsUsedOrHasEffect cenv (fun () -> fvs.FreeLocals) (bind, binfo)) &&
 
                     // Check the thing is hidden by the signature (if any)
-                    hidden.mhiVals.Contains bind.Var && 
+                    (hidden.mhiVals |> SetCustom.contains bind.Var) && 
 
                     // Check the thing is not compiled as a static field or property, since reflected definitions and other reflective stuff might need it
                     not (IsCompiledAsStaticProperty cenv.g bind.Var))

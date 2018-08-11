@@ -859,7 +859,7 @@ type SignatureRepackageInfo =
 type SignatureHidingInfo = 
     { mhiTycons  : Zset<Tycon>; 
       mhiTyconReprs : Zset<Tycon>;  
-      mhiVals       : Zset<Val>; 
+      mhiVals       : zset<Val,ValByStamp>
       mhiRecdFields : Zset<RecdFieldRef>;
       mhiUnionCases : Zset<UnionCaseRef> }
     static member Empty : SignatureHidingInfo
