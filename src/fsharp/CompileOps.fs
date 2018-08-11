@@ -5332,12 +5332,12 @@ let CheckSimulateException(tcConfig:TcConfig) =
 let qnameOrder = Order.orderBy (fun (q:QualifiedNameOfFile) -> q.Text)
 
 [<Struct;NoComparison;NoEquality>]
-type QualifiedNameOfFileByText =
+type QNameOrder =
     interface System.Collections.Generic.IComparer<QualifiedNameOfFile> with
         member __.Compare(v1, v2) = qnameOrder.Compare (v1,v2)
 
-type RootSigs =  zmap<QualifiedNameOfFile,QualifiedNameOfFileByText, ModuleOrNamespaceType>
-type RootImpls = zset<QualifiedNameOfFile,QualifiedNameOfFileByText>
+type RootSigs =  zmap<QualifiedNameOfFile,QNameOrder, ModuleOrNamespaceType>
+type RootImpls = zset<QualifiedNameOfFile,QNameOrder>
 
 type TcState = 
     { tcsCcu: CcuThunk
@@ -5408,8 +5408,8 @@ let GetInitialTcState(m, ccuName, tcConfig:TcConfig, tcGlobals, tcImports:TcImpo
       tcsTcSigEnv=tcEnv0
       tcsTcImplEnv=tcEnv0
       tcsCreatesGeneratedProvidedTypes=false
-      tcsRootSigs = Zmap.empty<QualifiedNameOfFileByText> ()
-      tcsRootImpls = SetCustom.empty<QualifiedNameOfFileByText> ()
+      tcsRootSigs = Zmap.empty<QNameOrder> ()
+      tcsRootImpls = SetCustom.empty<QNameOrder> ()
       tcsCcuSig = NewEmptyModuleOrNamespaceType Namespace }
 
 

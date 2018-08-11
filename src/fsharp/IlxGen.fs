@@ -3663,7 +3663,7 @@ and GenObjectExpr cenv cgbuf eenvouter expr (baseType,baseValOpt,basecall,overri
 
 and GenSequenceExpr cenv (cgbuf:CodeGenBuffer) eenvouter (nextEnumeratorValRef:ValRef,pcvref:ValRef,currvref:ValRef,stateVars,generateNextExpr,closeExpr,checkCloseExpr:Expr,seqElemTy, m)  sequel =
     let stateVars = [ pcvref; currvref ] @ stateVars
-    let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> SetCustom.ofList<ValByStamp>
+    let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> SetCustom.ofList<ValOrder>
 
     // pretend that the state variables are bound
     let eenvouter = 
@@ -4651,7 +4651,7 @@ and GenLetRecBindings cenv cgbuf eenv (allBinds: Bindings,m) =
 
 
     let fixups = ref []
-    let recursiveVars = SetCustom.ofList<ValByStamp> (bindsPossiblyRequiringFixup |> List.map (fun v -> v.Var))
+    let recursiveVars = SetCustom.ofList<ValOrder> (bindsPossiblyRequiringFixup |> List.map (fun v -> v.Var))
     let _ = 
         (recursiveVars, bindsPossiblyRequiringFixup) ||> List.fold (fun forwardReferenceSet (bind:Binding) ->
             // Compute fixups 

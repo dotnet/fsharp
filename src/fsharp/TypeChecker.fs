@@ -11588,14 +11588,14 @@ and TcIncrementalLetRecGeneralization cenv scopem
 
                     //printfn "(failed generalization test 1 for binding for %s)" pgrbind.RecBindingInfo.Val.DisplayName
                     // Any declared type parameters in an type are always generalizable
-                    let freeInBinding = Set.diff  freeInBinding (SetCustom.ofList<TyparByStamp> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.ExtraGeneralizableTypars))
+                    let freeInBinding = Set.diff  freeInBinding (SetCustom.ofList<TyparOrder> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.ExtraGeneralizableTypars))
 
                     if freeInBinding.IsEmpty then true else
 
                     //printfn "(failed generalization test 2 for binding for %s)" pgrbind.RecBindingInfo.Val.DisplayName
 
                     // Any declared method parameters can always be generalized
-                    let freeInBinding = Set.diff  freeInBinding (SetCustom.ofList<TyparByStamp> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.RecBindingInfo.DeclaredTypars))
+                    let freeInBinding = Set.diff  freeInBinding (SetCustom.ofList<TyparOrder> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.RecBindingInfo.DeclaredTypars))
 
                     if freeInBinding.IsEmpty then true else
 
@@ -11651,8 +11651,8 @@ and TcIncrementalLetRecGeneralization cenv scopem
                     freeInEnv 
                 else 
                     let freeInBinding = (freeInType CollectAllNoCaching pgrbind.RecBindingInfo.Val.TauType).FreeTypars
-                    let freeInBinding = Set.diff  freeInBinding (SetCustom.ofList<TyparByStamp> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.ExtraGeneralizableTypars))
-                    let freeInBinding = Set.diff  freeInBinding (SetCustom.ofList<TyparByStamp> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.RecBindingInfo.DeclaredTypars))
+                    let freeInBinding = Set.diff  freeInBinding (SetCustom.ofList<TyparOrder> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.ExtraGeneralizableTypars))
+                    let freeInBinding = Set.diff  freeInBinding (SetCustom.ofList<TyparOrder> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.RecBindingInfo.DeclaredTypars))
                     Set.union freeInBinding freeInEnv)
 
         // Process the bindings marked for transition from PreGeneralization --> PostGeneralization
@@ -11686,7 +11686,7 @@ and TcIncrementalLetRecGeneralization cenv scopem
 /// Compute the type variables which may be generalized and perform the generalization 
 and TcLetrecComputeAndGeneralizeGenericTyparsForBinding cenv denv freeInEnv (pgrbind : PreGeneralizationRecursiveBinding)  =
 
-    let freeInEnv = Set.diff freeInEnv (SetCustom.ofList<TyparByStamp> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.ExtraGeneralizableTypars))
+    let freeInEnv = Set.diff freeInEnv (SetCustom.ofList<TyparOrder> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.ExtraGeneralizableTypars))
 
     let rbinfo = pgrbind.RecBindingInfo
     let vspec = rbinfo.Val
@@ -12420,15 +12420,15 @@ module IncrClassChecking =
           TakenFieldNames:Set<string>
           RepInfoTcGlobals:TcGlobals
           /// vals mapped to representations
-          ValReprs  : zmap<Val, ValByStamp, IncrClassValRepr> 
+          ValReprs  : zmap<Val, ValOrder, IncrClassValRepr> 
           /// vals represented as fields or members from this point on 
-          ValsWithRepresentation  : zset<Val,ValByStamp> }
+          ValsWithRepresentation  : zset<Val,ValOrder> }
 
         static member Empty(g, names) = 
             { TakenFieldNames=Set.ofList names
               RepInfoTcGlobals=g
-              ValReprs = Zmap.empty<ValByStamp> ()
-              ValsWithRepresentation = SetCustom.empty<ValByStamp> () }
+              ValReprs = Zmap.empty<ValOrder> ()
+              ValsWithRepresentation = SetCustom.empty<ValOrder> () }
 
         /// Find the representation of a value
         member localRep.LookupRepr (v:Val) = 
@@ -15979,7 +15979,7 @@ module TcDeclarations =
           else
             let isInSameModuleOrNamespace = 
                  match envForDecls.eModuleOrNamespaceTypeAccumulator.Value.TypesByMangledName.TryFind(tcref.LogicalName) with 
-                  | Some tycon -> (TyconByStamp.Compare tcref.Deref tycon) = 0
+                  | Some tycon -> (TyconOrder.Compare tcref.Deref tycon) = 0
                   | None -> 
                         //false
                         // There is a special case we allow when compiling FSharp.Core.dll which permits interface implementations across namespace fragments

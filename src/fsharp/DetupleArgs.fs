@@ -165,7 +165,7 @@ module GlobalUsageAnalysis =
 
     let GetValsBoundInExpr expr =
        let folder = {ExprFolder0 with valBindingSiteIntercept = bindAccBounds}
-       let z0 = SetCustom.empty<ValByStamp> ()
+       let z0 = SetCustom.empty<ValOrder> ()
        let z  = FoldExpr folder z0 expr
        z
 
@@ -183,22 +183,22 @@ module GlobalUsageAnalysis =
     ///   (b) log it's binding site representation.
     type Results =
        { ///  v -> context / APP inst args 
-         Uses     : zmap<Val, ValByStamp, (accessor list * TType list * Expr list) list>
+         Uses     : zmap<Val, ValOrder, (accessor list * TType list * Expr list) list>
          /// v -> binding repr 
-         Defns     : zmap<Val, ValByStamp, Expr>                                        
+         Defns     : zmap<Val, ValOrder, Expr>                                        
          /// bound in a decision tree? 
-         DecisionTreeBindings    : zset<Val, ValByStamp>
+         DecisionTreeBindings    : zset<Val, ValOrder>
          ///  v -> v list * recursive? -- the others in the mutual binding 
-         RecursiveBindings  : zmap<Val, ValByStamp, bool * Vals>
-         TopLevelBindings : zset<Val, ValByStamp>
+         RecursiveBindings  : zmap<Val, ValOrder, bool * Vals>
+         TopLevelBindings : zset<Val, ValOrder>
          IterationIsAtTopLevel      : bool }
 
     let z0 =
-       { Uses     = Zmap.empty<ValByStamp> ()
-         Defns     = Zmap.empty<ValByStamp> ()
-         RecursiveBindings  = Zmap.empty<ValByStamp> ()
-         DecisionTreeBindings    = SetCustom.empty<ValByStamp> ()
-         TopLevelBindings = SetCustom.empty<ValByStamp> ()
+       { Uses     = Zmap.empty<ValOrder> ()
+         Defns     = Zmap.empty<ValOrder> ()
+         RecursiveBindings  = Zmap.empty<ValOrder> ()
+         DecisionTreeBindings    = SetCustom.empty<ValOrder> ()
+         TopLevelBindings = SetCustom.empty<ValOrder> ()
          IterationIsAtTopLevel      = true }
 
     /// Log the use of a value with a particular tuple chape at a callsite
@@ -613,7 +613,7 @@ let determineTransforms g (z : GlobalUsageAnalysis.Results) =
           decideTransform g z f callPatterns (m, tps, vss, rty) // make transform (if required) 
   
    let vtransforms = Zmap.chooseL selectTransform z.Uses
-   let vtransforms = Zmap.ofList<ValByStamp> vtransforms
+   let vtransforms = Zmap.ofList<ValOrder> vtransforms
    vtransforms
 
 
@@ -624,7 +624,7 @@ let determineTransforms g (z : GlobalUsageAnalysis.Results) =
 
 type penv =
    { // The planned transforms 
-     transforms : zmap<Val, ValByStamp, Transform>
+     transforms : zmap<Val, ValOrder, Transform>
      ccu        : CcuThunk
      g          : TcGlobals }
 

@@ -137,7 +137,7 @@ let GetValsBoundUnderMustInline xinfo =
       if v.InlineInfo = ValInline.PseudoVal then
         Set.union (GetValsBoundInExpr repr) rejectS
       else rejectS
-    let rejectS = SetCustom.empty<ValByStamp> ()
+    let rejectS = SetCustom.empty<ValOrder> ()
     let rejectS = Zmap.fold accRejectFrom xinfo.Defns rejectS
     rejectS
 
@@ -213,7 +213,7 @@ module Pass1_DetermineTLRAndArities =
        let rejectS = GetValsBoundUnderMustInline xinfo
        let fArities = List.filter (fun (v,_) -> not (SetCustom.contains v rejectS)) fArities
        (*-*)
-       let tlrS   = SetCustom.ofList<ValByStamp> (List.map fst fArities)
+       let tlrS   = SetCustom.ofList<ValOrder> (List.map fst fArities)
        let topValS   = xinfo.TopLevelBindings                     (* genuinely top level *)
        let topValS   = SetCustom.filter (IsMandatoryNonTopLevel g >> not) topValS     (* restrict *)
        (* REPORT MISSED CASES *)
@@ -223,7 +223,7 @@ module Pass1_DetermineTLRAndArities =
            missed |> SetCustom.iter (fun v -> dprintf "TopLevel but not TLR = %s\n" v.LogicalName) 
 #endif
        (* REPORT OVER *)   
-       let arityM = Zmap.ofList<ValByStamp> fArities
+       let arityM = Zmap.ofList<ValOrder> fArities
 #if DEBUG
        if verboseTLR then DumpArity arityM
 #endif
@@ -292,7 +292,7 @@ module Pass1_DetermineTLRAndArities =
 /// [Each fclass has an env, the fclass are the handles to envs.]
 type BindingGroupSharingSameReqdItems(bindings: Bindings) =
     let vals = valsOfBinds bindings
-    let vset = SetCustom.ofList<ValByStamp> vals
+    let vset = SetCustom.ofList<ValOrder> vals
 
     member fclass.Vals = vals
 
@@ -304,10 +304,10 @@ type BindingGroupSharingSameReqdItems(bindings: Bindings) =
 
     override fclass.ToString() = "+" + String.concat "+" (List.map nameOfVal vals)
 
-let fclassOrder = Order.orderOn (fun (b: BindingGroupSharingSameReqdItems) -> b.Vals) (List.order (ValByStamp ()))
+let fclassOrder = Order.orderOn (fun (b: BindingGroupSharingSameReqdItems) -> b.Vals) (List.order (ValOrder ()))
 
 [<Struct;NoComparison;NoEquality>]
-type BindingGroupSharingSameReqdItemsByVals =
+type FclassOrder =
     interface System.Collections.Generic.IComparer<BindingGroupSharingSameReqdItems> with
         member __.Compare(v1, v2) = fclassOrder.Compare (v1,v2)
     
@@ -329,7 +329,7 @@ let reqdItemOrder =
       | ReqdSubEnv v -> true ,v
       | ReqdVal    v -> false,v
    
-    Order.orderOn rep (Pair.order (Bool.order, (ValByStamp ())))
+    Order.orderOn rep (Pair.order (Bool.order, (ValOrder ())))
 
 [<Struct;NoComparison;NoEquality>]
 type ReqdItemOrder =
@@ -340,7 +340,7 @@ type ReqdItemOrder =
 /// The reqdTypars   are the free reqdTypars of the defns, and those required by any direct TLR arity-met calls.
 /// The reqdItems are the ids/subEnvs required from calls to freeVars.
 type ReqdItemsForDefn =
-    { reqdTypars   : zset<Typar,TyparByStamp>
+    { reqdTypars   : zset<Typar,TyparOrder>
       reqdItems : zset<ReqdItem,ReqdItemOrder>
       m      : Range.range }
     member env.ReqdSubEnvs = [ for x in env.reqdItems do match x.CompareObj with | ReqdSubEnv f -> yield f | ReqdVal _ -> () ]
@@ -352,7 +352,7 @@ type ReqdItemsForDefn =
                reqdItems = SetCustom.addList items  env.reqdItems}
 
     static member Initial typars m = 
-        {reqdTypars   = SetCustom.ofList<TyparByStamp> typars
+        {reqdTypars   = SetCustom.ofList<TyparOrder> typars
          reqdItems = SetCustom.empty<ReqdItemOrder> ()
          m      = m }
 
@@ -367,7 +367,7 @@ type ReqdItemsForDefn =
 // pass2: collector - state
 //-------------------------------------------------------------------------
 
-type Generators = zset<Val,ValByStamp>
+type Generators = zset<Val,ValOrder>
 
 /// check a named function value applied to sufficient arguments 
 let IsArityMet (vref:ValRef)  wf (tys: TypeInst) args = 
@@ -426,18 +426,18 @@ module Pass2_DetermineReqdItems =
     /// recShortCalls to f will require a binding for f in terms of fHat within the fHatBody.
     type state =
         { stack         : (BindingGroupSharingSameReqdItems * Generators * ReqdItemsForDefn) list
-          reqdItemsMap  : zmap<BindingGroupSharingSameReqdItems,BindingGroupSharingSameReqdItemsByVals,ReqdItemsForDefn>
-          fclassM       : zmap<Val,ValByStamp,BindingGroupSharingSameReqdItems>
+          reqdItemsMap  : zmap<BindingGroupSharingSameReqdItems,FclassOrder,ReqdItemsForDefn>
+          fclassM       : zmap<Val,ValOrder,BindingGroupSharingSameReqdItems>
           revDeclist    : BindingGroupSharingSameReqdItems list
-          recShortCallS : zset<Val,ValByStamp>
+          recShortCallS : zset<Val,ValOrder>
         }
 
     let state0 =
         { stack         = []
-          reqdItemsMap  = Zmap.empty<BindingGroupSharingSameReqdItemsByVals> ()
-          fclassM       = Zmap.empty<ValByStamp> ()
+          reqdItemsMap  = Zmap.empty<FclassOrder> ()
+          fclassM       = Zmap.empty<ValOrder> ()
           revDeclist    = []
-          recShortCallS = SetCustom.empty<ValByStamp> () }
+          recShortCallS = SetCustom.empty<ValOrder> () }
 
     /// PUSH = start collecting for fclass 
     let PushFrame (fclass: BindingGroupSharingSameReqdItems) (reqdTypars0,reqdVals0,m) state =
@@ -464,7 +464,7 @@ module Pass2_DetermineReqdItems =
 
     /// Log requirements for gv in the relevant stack frames 
     let LogRequiredFrom gv items state =
-        let logIntoFrame (fclass, reqdVals0:zset<Val,ValByStamp>, env: ReqdItemsForDefn) =
+        let logIntoFrame (fclass, reqdVals0:zset<Val,ValOrder>, env: ReqdItemsForDefn) =
            let env = 
                if reqdVals0 |> SetCustom.contains gv then
                    env.Extend ([],items) 
@@ -524,7 +524,7 @@ module Pass2_DetermineReqdItems =
              let reqdVals0 = frees.FreeLocals |> SetCustom.elements
              // tlrBs are not reqdVals0 for themselves 
              let reqdVals0 = reqdVals0 |> List.filter (fun gv -> not (fclass.Contains gv)) 
-             let reqdVals0 = reqdVals0 |> SetCustom.ofList<ValByStamp>
+             let reqdVals0 = reqdVals0 |> SetCustom.ofList<ValOrder>
              // collect into env over bodies 
              let z          = PushFrame fclass (reqdTypars0,reqdVals0,m) z
              let z          = (z,tlrBs) ||> List.fold (foldOn (fun b -> b.Expr) exprF) 
@@ -691,7 +691,7 @@ exception AbortTLR of Range.range
 ///         and TBIND(asubEnvi = aenvFor(v)) for each (asubEnvi,v) in cmap(subEnvk) ranging over required subEnvk.
 /// where
 ///   aenvFor(v) = aenvi where (v,aenvi) in cmap.
-let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: zmap<BindingGroupSharingSameReqdItems,BindingGroupSharingSameReqdItemsByVals,ReqdItemsForDefn>) =
+let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: zmap<BindingGroupSharingSameReqdItems,FclassOrder,ReqdItemsForDefn>) =
    let fclassOf f = Zmap.force f fclassM ("fclassM",nameOfVal)
    let packEnv carrierMaps (fc:BindingGroupSharingSameReqdItems) =
        if verboseTLR then dprintf "\ntlr: packEnv fc=%A\n" fc
@@ -703,7 +703,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: zmap<BindingGroupShari
 
        // determine vals(env) - transclosure 
        let vals = env.ReqdVals @ List.collect valsSubEnvFor env.ReqdSubEnvs  // list, with repeats 
-       let vals = vals |> SetCustom.ofList<ValByStamp> |> SetCustom.elements // noRepeats
+       let vals = vals |> SetCustom.ofList<ValOrder> |> SetCustom.elements // noRepeats
 
        // Remove genuinely toplevel, no need to close over these
        let vals = vals |> List.filter (IsMandatoryTopLevel >> not) 
@@ -749,7 +749,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: zmap<BindingGroupShari
 
        // build cmap for env 
        let cmapPairs = vals |> List.map (fun v -> (v,(mkCompGenLocal env.m v.LogicalName v.Type |> fst))) 
-       let cmap      = Zmap.ofList<ValByStamp> cmapPairs
+       let cmap      = Zmap.ofList<ValOrder> cmapPairs
        let aenvFor     v = Zmap.force v cmap ("aenvFor",nameOfVal)
        let aenvExprFor v = exprForVal env.m (aenvFor v)
 
@@ -784,9 +784,9 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: zmap<BindingGroupShari
               ep_pack   = pack
               ep_unpack = unpack}),carrierMaps
   
-   let carriedMaps = Zmap.empty<BindingGroupSharingSameReqdItemsByVals> ()
+   let carriedMaps = Zmap.empty<FclassOrder> ()
    let envPacks,_carriedMaps = List.mapFold packEnv carriedMaps declist   (* List.mapFold in dec order *)
-   let envPacks = Zmap.ofList<BindingGroupSharingSameReqdItemsByVals> envPacks
+   let envPacks = Zmap.ofList<FclassOrder> envPacks
    envPacks
 
 
@@ -852,7 +852,7 @@ let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
    
     let fs     = SetCustom.elements tlrS
     let ffHats = List.map (fun f -> f,createFHat f) fs
-    let fHatM  = Zmap.ofList<ValByStamp> ffHats
+    let fHatM  = Zmap.ofList<ValOrder> ffHats
     fHatM
 
 
@@ -865,14 +865,14 @@ module Pass4_RewriteAssembly =
     type RewriteContext =
        { ccu           : CcuThunk
          g             : TcGlobals
-         tlrS          : zset<Val,ValByStamp>
-         topValS       : zset<Val,ValByStamp>
-         arityM        : zmap<Val,ValByStamp,int> 
-         fclassM       : zmap<Val,ValByStamp,BindingGroupSharingSameReqdItems> 
-         recShortCallS : zset<Val,ValByStamp>
-         envPackM      : zmap<BindingGroupSharingSameReqdItems,BindingGroupSharingSameReqdItemsByVals,PackedReqdItems>
+         tlrS          : zset<Val,ValOrder>
+         topValS       : zset<Val,ValOrder>
+         arityM        : zmap<Val,ValOrder,int> 
+         fclassM       : zmap<Val,ValOrder,BindingGroupSharingSameReqdItems> 
+         recShortCallS : zset<Val,ValOrder>
+         envPackM      : zmap<BindingGroupSharingSameReqdItems,FclassOrder,PackedReqdItems>
          /// The mapping from 'f' values to 'fHat' values
-         fHatM         : zmap<Val,ValByStamp,Val> 
+         fHatM         : zmap<Val,ValOrder,Val> 
        }
 
 

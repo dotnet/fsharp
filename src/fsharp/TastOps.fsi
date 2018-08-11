@@ -741,8 +741,8 @@ val prefixOfRigidTypar : Typar -> string
 /// Utilities used in simplifying types for visual presentation
 module SimplifyTypes = 
     type TypeSimplificationInfo =
-        { singletons         : zset<Typar,TyparByStamp>
-          inplaceConstraints : zmap<Typar,TyparByStamp,TType>
+        { singletons         : zset<Typar,TyparOrder>
+          inplaceConstraints : zmap<Typar,TyparOrder,TType>
           postfixConstraints : TyparConstraintsWithTypars; }
     val typeSimplificationInfo0 : TypeSimplificationInfo
     val CollectInfo : bool -> TType list -> TyparConstraintsWithTypars -> TypeSimplificationInfo
@@ -846,9 +846,9 @@ type SignatureRepackageInfo =
     static member Empty : SignatureRepackageInfo
       
 type SignatureHidingInfo = 
-    { mhiTycons     : zset<Tycon,TyconByStamp>
-      mhiTyconReprs : zset<Tycon,TyconByStamp>
-      mhiVals       : zset<Val,ValByStamp>
+    { mhiTycons     : zset<Tycon,TyconOrder>
+      mhiTyconReprs : zset<Tycon,TyconOrder>
+      mhiVals       : zset<Val,ValOrder>
       mhiRecdFields : zset<RecdFieldRef,RecdFieldRefOrder>
       mhiUnionCases : zset<UnionCaseRef,UnionCaseRefOrder> }
     static member Empty : SignatureHidingInfo

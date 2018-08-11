@@ -1934,17 +1934,17 @@ and [<Sealed; StructuredFormatDisplay("{DebugText}")>]
 and ModuleOrNamespace = Entity 
 and Tycon = Entity 
 
-and [<Struct;NoComparison;NoEquality>] TyconByStamp =
+and [<Struct;NoComparison;NoEquality>] TyconOrder =
     static member inline Compare (v1:Tycon) (v2:Tycon) =
         v1.Stamp.CompareTo v2.Stamp
 
     interface IComparer<Tycon> with
         member __.Compare(v1, v2) =
-            TyconByStamp.Compare v1 v2
+            TyconOrder.Compare v1 v2
 
 and [<Struct;NoComparison;NoEquality>] RecdFieldRefOrder =
     static member Compare (RFRef(tcref1, nm1)) (RFRef(tcref2, nm2)) = 
-        let c = TyconByStamp.Compare tcref1.Deref tcref2.Deref
+        let c = TyconOrder.Compare tcref1.Deref tcref2.Deref
         if c <> 0 then c else 
         compare nm1 nm2
 
@@ -1954,7 +1954,7 @@ and [<Struct;NoComparison;NoEquality>] RecdFieldRefOrder =
 and [<Struct;NoComparison;NoEquality>] UnionCaseRefOrder =
     interface IComparer<UnionCaseRef> with
         member __.Compare(UCRef(tcref1, nm1), UCRef(tcref2, nm2)) = 
-            let c = TyconByStamp.Compare tcref1.Deref tcref2.Deref
+            let c = TyconOrder.Compare tcref1.Deref tcref2.Deref
             if c <> 0 then c else 
             compare nm1 nm2
 
@@ -2304,7 +2304,7 @@ and
 
     override x.ToString() = x.Name
 
-and [<Struct;NoComparison;NoEquality>] TyparByStamp =
+and [<Struct;NoComparison;NoEquality>] TyparOrder =
     interface IComparer<Typar> with
         member __.Compare(v1: Typar, v2: Typar): int =
             v1.Stamp.CompareTo v2.Stamp
@@ -2993,13 +2993,13 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 
     override x.ToString() = x.LogicalName
 
-and [<Struct;NoComparison;NoEquality>] ValByStamp =
+and [<Struct;NoComparison;NoEquality>] ValOrder =
     static member inline Compare (v1:Val) (v2:Val) =
         v1.Stamp.CompareTo v2.Stamp
 
     interface IComparer<Val> with
         member __.Compare(v1, v2) =
-            ValByStamp.Compare v1 v2
+            ValOrder.Compare v1 v2
     
 and 
     /// Represents the extra information stored for a member
@@ -4998,14 +4998,14 @@ and
 //---------------------------------------------------------------------------
 
 /// Represents a set of free local values.
-and FreeLocals = Internal.Utilities.Collections.zset<Val,ValByStamp>
+and FreeLocals = Internal.Utilities.Collections.zset<Val,ValOrder>
 
 /// Represents a set of free type parameters
-and FreeTypars = Internal.Utilities.Collections.zset<Typar,TyparByStamp>
+and FreeTypars = Internal.Utilities.Collections.zset<Typar,TyparOrder>
 
 /// Represents a set of 'free' named type definitions. Used to collect the named type definitions referred to 
 /// from a type or expression.
-and FreeTycons = Internal.Utilities.Collections.zset<Tycon,TyconByStamp>
+and FreeTycons = Internal.Utilities.Collections.zset<Tycon,TyconOrder>
 
 /// Represents a set of 'free' record field definitions. Used to collect the record field definitions referred to 
 /// from an expression.

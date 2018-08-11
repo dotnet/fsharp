@@ -10,7 +10,7 @@ open Microsoft.FSharp.Compiler.TcGlobals
 val DetupleImplFile : CcuThunk -> TcGlobals -> TypedImplFile -> TypedImplFile
 
 module GlobalUsageAnalysis = 
-    val GetValsBoundInExpr : Expr -> zset<Val,ValByStamp>
+    val GetValsBoundInExpr : Expr -> zset<Val,ValOrder>
 
     type accessor 
 
@@ -19,15 +19,15 @@ module GlobalUsageAnalysis =
     /// Later could support "safe" change operations, and optimisations could be in terms of those.
     type Results =
        { /// v -> context / APP inst args 
-         Uses   : zmap<Val, ValByStamp, (accessor list * TType list * Expr list) list>
+         Uses   : zmap<Val, ValOrder, (accessor list * TType list * Expr list) list>
          /// v -> binding repr 
-         Defns   : zmap<Val, ValByStamp, Expr>
+         Defns   : zmap<Val, ValOrder, Expr>
          /// bound in a decision tree? 
-         DecisionTreeBindings    : zset<Val, ValByStamp>
+         DecisionTreeBindings    : zset<Val, ValOrder>
          /// v -> recursive? * v list   -- the others in the mutual binding 
-         RecursiveBindings  : zmap<Val, ValByStamp, (bool * Vals)>
+         RecursiveBindings  : zmap<Val, ValOrder, (bool * Vals)>
          /// val not defined under lambdas 
-         TopLevelBindings : zset<Val, ValByStamp>
+         TopLevelBindings : zset<Val, ValOrder>
          /// top of expr toplevel? (true) 
          IterationIsAtTopLevel      : bool;                                                         
        }

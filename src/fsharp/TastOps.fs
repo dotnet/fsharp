@@ -1814,11 +1814,11 @@ let ValRefIsExplicitImpl g (vref:ValRef) = ValIsExplicitImpl g vref.Deref
 // an equation assigned by type inference.
 //---------------------------------------------------------------------------
 
-let emptyFreeLocals = SetCustom.empty<ValByStamp> ()
+let emptyFreeLocals = SetCustom.empty<ValOrder> ()
 let emptyFreeRecdFields = SetCustom.empty<RecdFieldRefOrder> ()
 let emptyFreeUnionCases = SetCustom.empty<UnionCaseRefOrder> ()
-let emptyFreeTycons = SetCustom.empty<TyconByStamp> ()
-let emptyFreeTypars = SetCustom.empty<TyparByStamp> ()
+let emptyFreeTycons = SetCustom.empty<TyconOrder> ()
+let emptyFreeTypars = SetCustom.empty<TyparOrder> ()
 
 let emptyFreeTyvars =  
     { FreeTycons = emptyFreeTycons
@@ -2485,24 +2485,24 @@ module SimplifyTypes =
         // Walk type to determine typars and their counts (for pprinting decisions) 
         foldTypeButNotConstraints (fun z ty -> match ty with | TType_var tp when tp.Rigidity = TyparRigidity.Rigid  -> incM tp z | _ -> z) z ty
 
-    let emptyTyparCounts = Zmap.empty<TyparByStamp> ()
+    let emptyTyparCounts = Zmap.empty<TyparOrder> ()
 
     // print multiple fragments of the same type using consistent naming and formatting 
     let accTyparCountsMulti acc l = List.fold accTyparCounts acc l
 
     type TypeSimplificationInfo =
-        { singletons         : zset<Typar,TyparByStamp>
-          inplaceConstraints : zmap<Typar,TyparByStamp, TType>
+        { singletons         : zset<Typar,TyparOrder>
+          inplaceConstraints : zmap<Typar,TyparOrder, TType>
           postfixConstraints : (Typar * TyparConstraint) list }
           
     let typeSimplificationInfo0 = 
-        { singletons         = SetCustom.empty<TyparByStamp> ()
-          inplaceConstraints = Zmap.empty<TyparByStamp> ()
+        { singletons         = SetCustom.empty<TyparOrder> ()
+          inplaceConstraints = Zmap.empty<TyparOrder> ()
           postfixConstraints = [] }
 
     let categorizeConstraints simplify m cxs =
         let singletons = if simplify then Zmap.chooseL (fun tp n -> if n = 1 then Some tp else None) m else []
-        let singletons = SetCustom.ofList<TyparByStamp> singletons
+        let singletons = SetCustom.ofList<TyparOrder> singletons
         // Here, singletons are typars that occur once in the type.
         // However, they may also occur in a type constraint.
         // If they do, they are really multiple occurrence - so we should remove them.
@@ -3768,16 +3768,16 @@ type SignatureRepackageInfo =
     static member Empty = { mrpiVals = []; mrpiEntities= [] } 
 
 type SignatureHidingInfo = 
-    { mhiTycons     : zset<Tycon,TyconByStamp>; 
-      mhiTyconReprs : zset<Tycon,TyconByStamp>;  
-      mhiVals       : zset<Val,ValByStamp>
+    { mhiTycons     : zset<Tycon,TyconOrder>; 
+      mhiTyconReprs : zset<Tycon,TyconOrder>;  
+      mhiVals       : zset<Val,ValOrder>
       mhiRecdFields : zset<RecdFieldRef,RecdFieldRefOrder>; 
       mhiUnionCases : zset<UnionCaseRef,UnionCaseRefOrder> }
 
     static member Empty = 
-        { mhiTycons      = SetCustom.empty<TyconByStamp> ()
-          mhiTyconReprs  = SetCustom.empty<TyconByStamp> ()
-          mhiVals        = SetCustom.empty<ValByStamp> ()
+        { mhiTycons      = SetCustom.empty<TyconOrder> ()
+          mhiTyconReprs  = SetCustom.empty<TyconOrder> ()
+          mhiVals        = SetCustom.empty<ValOrder> ()
           mhiRecdFields  = SetCustom.empty<RecdFieldRefOrder> ()
           mhiUnionCases  = SetCustom.empty<UnionCaseRefOrder> () }
 
@@ -7683,7 +7683,7 @@ type PrettyNaming.ActivePatternInfo with
 // not by their argument types.
 let doesActivePatternHaveFreeTypars g (v:ValRef) =
     let vty  = v.TauType
-    let vtps = v.Typars |> SetCustom.ofList<TyparByStamp>
+    let vtps = v.Typars |> SetCustom.ofList<TyparOrder>
     if not (isFunTy g v.TauType) then
         errorR(Error(FSComp.SR.activePatternIdentIsNotFunctionTyped(v.LogicalName), v.Range))
     let argtys, resty  = stripFunTy g vty
