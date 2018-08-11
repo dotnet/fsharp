@@ -44,13 +44,6 @@ steps:
     msbuildArguments: '/t:Build /p:ExpectedFeedUrl=$(PB_PublishBlobFeedUrl) /p:AccountKey=$(PB_PublishBlobFeedKey) /p:ManifestBranch=$(SourceBranch) /p:ManifestCommit=$(SourceVersion) /p:ManifestBuildId=$(OfficialBuildId)'
   condition: and(succeeded(), contains(variables['PB_PublishType'], 'blob'))
 
-# Run BinSkim
-- task: securedevelopmentteam.vss-secure-development-tools.build-task-binskim.BinSkim@3
-  displayName: Run BinSkim
-  inputs:
-    arguments: 'analyze "$(MSBuildConfiguration)\*.dll" "$(MSBuildConfiguration)\*.exe" --recurse --output "$(MSBuildConfiguration)\artifacts"'
-  continueOnError: true
-
 # Create static drop
 - task: PublishBuildArtifacts@1
   displayName: Create static drop
