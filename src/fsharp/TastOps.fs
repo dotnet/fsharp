@@ -1849,11 +1849,7 @@ let unionFreeUnionCases s1 s2 =
     elif s2 === emptyFreeUnionCases then s1
     else Zset.union s1 s2
 
-let emptyFreeTycons = Zset.empty tyconOrder
-let unionFreeTycons s1 s2 = 
-    if s1 === emptyFreeTycons then s2
-    elif s2 === emptyFreeTycons then s1
-    else Zset.union s1 s2
+let emptyFreeTycons = SetCustom.empty<TyconByStamp> ()
 
 let emptyFreeTypars = SetCustom.empty<TyparByStamp> ()
 
@@ -1865,12 +1861,12 @@ let emptyFreeTyvars =
 
 let isEmptyFreeTyvars ftyvs = 
     SetCustom.isEmpty ftyvs.FreeTypars &&
-    Zset.isEmpty ftyvs.FreeTycons 
+    SetCustom.isEmpty ftyvs.FreeTycons 
 
 let unionFreeTyvars fvs1 fvs2 = 
     if fvs1 === emptyFreeTyvars then fvs2 else 
     if fvs2 === emptyFreeTyvars then fvs1 else
-    { FreeTycons           = unionFreeTycons fvs1.FreeTycons fvs2.FreeTycons
+    { FreeTycons           = Set.union fvs1.FreeTycons fvs2.FreeTycons
       FreeTraitSolutions   = Set.union fvs1.FreeTraitSolutions fvs2.FreeTraitSolutions
       FreeTypars           = Set.union fvs1.FreeTypars fvs2.FreeTypars }
 
@@ -1952,8 +1948,8 @@ let CollectLocals = CollectTyparsAndLocals
 
 let accFreeLocalTycon opts x acc = 
     if not opts.includeLocalTycons then acc else
-    if Zset.contains x acc.FreeTycons then acc else 
-    { acc with FreeTycons = Zset.add x acc.FreeTycons } 
+    if SetCustom.contains x acc.FreeTycons then acc else 
+    { acc with FreeTycons = SetCustom.add x acc.FreeTycons } 
 
 let accFreeTycon opts (tcr:TyconRef) acc = 
     if not opts.includeLocalTycons then acc
@@ -3805,15 +3801,15 @@ type SignatureRepackageInfo =
     static member Empty = { mrpiVals = []; mrpiEntities= [] } 
 
 type SignatureHidingInfo = 
-    { mhiTycons     : Zset<Tycon>; 
-      mhiTyconReprs : Zset<Tycon>;  
+    { mhiTycons     : zset<Tycon,TyconByStamp>; 
+      mhiTyconReprs : zset<Tycon,TyconByStamp>;  
       mhiVals       : zset<Val,ValByStamp>
       mhiRecdFields : Zset<RecdFieldRef>; 
       mhiUnionCases : Zset<UnionCaseRef> }
 
     static member Empty = 
-        { mhiTycons      = Zset.empty tyconOrder; 
-          mhiTyconReprs  = Zset.empty tyconOrder;  
+        { mhiTycons      = SetCustom.empty<TyconByStamp> ()
+          mhiTyconReprs  = SetCustom.empty<TyconByStamp> ()
           mhiVals        = SetCustom.empty<ValByStamp> ()
           mhiRecdFields  = Zset.empty recdFieldRefOrder; 
           mhiUnionCases  = Zset.empty unionCaseRefOrder }
@@ -3836,7 +3832,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi) =
     match sigtyconOpt with 
     | None -> 
         // The type constructor is not present in the signature. Hence it is hidden. 
-        let mhi = { mhi with mhiTycons = Zset.add entity mhi.mhiTycons }
+        let mhi = { mhi with mhiTycons = SetCustom.add entity mhi.mhiTycons }
         (mrpi, mhi) 
     | Some sigtycon  -> 
         // The type constructor is in the signature. Hence record the repackage entry 
@@ -3847,7 +3843,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi) =
         let mhi = 
             if (match entity.TypeReprInfo with TNoRepr -> false | _ -> true) && (match sigtycon.TypeReprInfo with TNoRepr -> true | _ -> false) then 
                 // The type representation is absent in the signature, hence it is hidden 
-                { mhi with mhiTyconReprs = Zset.add entity mhi.mhiTyconReprs } 
+                { mhi with mhiTyconReprs = SetCustom.add entity mhi.mhiTyconReprs } 
             else 
                 // The type representation is present in the signature. 
                 // Find the fields that have been hidden or which were non-public anyway. 
@@ -3879,7 +3875,7 @@ let accSubEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi)
     match sigtyconOpt with 
     | None -> 
         // The type constructor is not present in the signature. Hence it is hidden. 
-        let mhi = { mhi with mhiTycons = Zset.add entity mhi.mhiTycons }
+        let mhi = { mhi with mhiTycons = SetCustom.add entity mhi.mhiTycons }
         (mrpi, mhi) 
     | Some sigtycon  -> 
         // The type constructor is in the signature. Hence record the repackage entry 
@@ -4001,9 +3997,9 @@ let ComputeRemappingFromImplementationToSignature g mdef msigty =
 let accTyconHidingInfoAtAssemblyBoundary (tycon:Tycon) mhi =
     if not (canAccessFromEverywhere tycon.Accessibility) then 
         // The type constructor is not public, hence hidden at the assembly boundary. 
-        { mhi with mhiTycons = Zset.add tycon mhi.mhiTycons } 
+        { mhi with mhiTycons = SetCustom.add tycon mhi.mhiTycons } 
     elif not (canAccessFromEverywhere tycon.TypeReprAccessibility) then 
-        { mhi with mhiTyconReprs = Zset.add tycon mhi.mhiTyconReprs } 
+        { mhi with mhiTyconReprs = SetCustom.add tycon mhi.mhiTyconReprs } 
     else 
         mhi 
         |> Array.foldBack  
@@ -4086,8 +4082,8 @@ let IsHidden' setF accessF remapF debugF =
         if verbose then dprintf "IsHidden, #mrmi = %d, %s = %b\n" mrmi.Length (showL (debugF x)) res;
         res
         
-let IsHiddenTycon     mrmi x = IsHidden (fun mhi -> mhi.mhiTycons)     (fun tc -> tc.Accessibility)        (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
-let IsHiddenTyconRepr mrmi x = IsHidden (fun mhi -> mhi.mhiTyconReprs) (fun v -> v.TypeReprAccessibility)  (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
+let IsHiddenTycon     mrmi x = IsHidden' (fun mhi -> mhi.mhiTycons)     (fun tc -> tc.Accessibility)        (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
+let IsHiddenTyconRepr mrmi x = IsHidden' (fun mhi -> mhi.mhiTyconReprs) (fun v -> v.TypeReprAccessibility)  (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
 let IsHiddenVal       mrmi x = IsHidden' (fun mhi -> mhi.mhiVals)       (fun v -> v.Accessibility)          (fun rpi x ->  (remapValRef rpi (mkLocalValRef x)).Deref) DebugPrint.valL mrmi x 
 let IsHiddenRecdField mrmi x = IsHidden (fun mhi -> mhi.mhiRecdFields) (fun rfref -> rfref.RecdField.Accessibility) (fun rpi x ->  remapRecdFieldRef rpi.tyconRefRemap x) DebugPrint.recdFieldRefL mrmi x 
 
@@ -4131,10 +4127,10 @@ let freeVarsAllPublic fvs =
     SetCustom.forall isPublicVal fvs.FreeLocals  &&
     Zset.forall isPublicUnionCase fvs.FreeUnionCases &&
     Zset.forall isPublicRecdField fvs.FreeRecdFields  &&
-    Zset.forall isPublicTycon fvs.FreeTyvars.FreeTycons
+    SetCustom.forall isPublicTycon fvs.FreeTyvars.FreeTycons
 
 let freeTyvarsAllPublic tyvars = 
-    Zset.forall isPublicTycon tyvars.FreeTycons
+    SetCustom.forall isPublicTycon tyvars.FreeTycons
 
 
 // Detect the subset of match expressions we treat in a linear way
@@ -4170,7 +4166,7 @@ let unionFreeVars fvs1 fvs2 =
     FreeTyvars                    = unionFreeTyvars fvs1.FreeTyvars fvs2.FreeTyvars;    
     UsesMethodLocalConstructs     = fvs1.UsesMethodLocalConstructs || fvs2.UsesMethodLocalConstructs;
     UsesUnboundRethrow            = fvs1.UsesUnboundRethrow || fvs2.UsesUnboundRethrow;
-    FreeLocalTyconReprs           = unionFreeTycons fvs1.FreeLocalTyconReprs fvs2.FreeLocalTyconReprs; 
+    FreeLocalTyconReprs           = Set.union fvs1.FreeLocalTyconReprs fvs2.FreeLocalTyconReprs; 
     FreeRecdFields                = unionFreeRecdFields fvs1.FreeRecdFields fvs2.FreeRecdFields; 
     FreeUnionCases                = unionFreeUnionCases fvs1.FreeUnionCases fvs2.FreeUnionCases; }
 
@@ -4262,8 +4258,8 @@ and accFreeLocalVal opts v fvs =
   
 and accLocalTyconRepr opts b fvs = 
     if not opts.includeLocalTyconReprs then fvs else
-    if Zset.contains b fvs.FreeLocalTyconReprs  then fvs
-    else { fvs with FreeLocalTyconReprs = Zset.add b fvs.FreeLocalTyconReprs } 
+    if SetCustom.contains b fvs.FreeLocalTyconReprs  then fvs
+    else { fvs with FreeLocalTyconReprs = SetCustom.add b fvs.FreeLocalTyconReprs } 
 
 and accUsedRecdOrUnionTyconRepr opts (tc:Tycon) fvs = 
     if match tc.TypeReprInfo with  TFSharpObjectRepr _ | TRecdRepr _ | TUnionRepr _ -> true | _ -> false

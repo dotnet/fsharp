@@ -974,8 +974,8 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
     // Under those checks, the further hidden* checks may be subsumed (meaning, not required anymore).
 
     let hiddenTycon, hiddenTyconRepr, hiddenVal, hiddenRecdField, hiddenUnionCase = 
-        Zset.memberOf mhi.mhiTycons, 
-        Zset.memberOf mhi.mhiTyconReprs, 
+        SetCustom.memberOf mhi.mhiTycons, 
+        SetCustom.memberOf mhi.mhiTyconReprs, 
         SetCustom.memberOf mhi.mhiVals, 
         Zset.memberOf mhi.mhiRecdFields, 
         Zset.memberOf mhi.mhiUnionCases
@@ -989,7 +989,7 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
             let tyvars = freeInVal CollectAll v2 
             if  
                 (isAssemblyBoundary && not (freeTyvarsAllPublic tyvars)) || 
-                Zset.exists hiddenTycon tyvars.FreeTycons || 
+                SetCustom.exists hiddenTycon tyvars.FreeTycons || 
                 hiddenVal v2
             then detail'
             else ValValue (vref2, detail')
@@ -998,8 +998,8 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
             (let fvs = freeInExpr CollectAll expr
              (isAssemblyBoundary && not (freeVarsAllPublic fvs)) || 
              SetCustom.exists hiddenVal       fvs.FreeLocals            ||
-             Zset.exists hiddenTycon     fvs.FreeTyvars.FreeTycons ||
-             Zset.exists hiddenTyconRepr fvs.FreeLocalTyconReprs   ||
+             SetCustom.exists hiddenTycon     fvs.FreeTyvars.FreeTycons ||
+             SetCustom.exists hiddenTyconRepr fvs.FreeLocalTyconReprs   ||
              Zset.exists hiddenRecdField fvs.FreeRecdFields        ||
              Zset.exists hiddenUnionCase fvs.FreeUnionCases ) ->
                 UnknownValue
@@ -1007,7 +1007,7 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
         | ConstValue(_, ty) when 
             (let ftyvs = freeInType CollectAll ty
              (isAssemblyBoundary && not (freeTyvarsAllPublic ftyvs)) || 
-             Zset.exists hiddenTycon ftyvs.FreeTycons) ->
+             SetCustom.exists hiddenTycon ftyvs.FreeTycons) ->
                 UnknownValue
         | TupleValue vinfos         -> 
             TupleValue (Array.map abstractExprInfo vinfos)

@@ -2072,7 +2072,7 @@ module GeneralizationHelpers =
                 if item.WillNeverHaveFreeTypars then item.CachedFreeLocalTycons else 
                 let ftyvs = item.GetFreeTyvars()
                 ftyvs.FreeTycons
-            if ftycs.IsEmpty then acc else unionFreeTycons ftycs acc
+            if ftycs.IsEmpty then acc else Set.union ftycs acc
 
         List.fold acc_in_free_item emptyFreeTycons env.eUngeneralizableItems 
 
@@ -16688,7 +16688,7 @@ let ElimModuleDoBinding bind =
 let TcMutRecDefnsEscapeCheck (binds: MutRecShapes<_, _, _, _, _>) env = 
     let freeInEnv = GeneralizationHelpers.ComputeUnabstractableTycons env
     let checkTycon (tycon: Tycon) = 
-        if not tycon.IsTypeAbbrev && Zset.contains tycon freeInEnv then 
+        if not tycon.IsTypeAbbrev && SetCustom.contains tycon freeInEnv then 
             let nm = tycon.DisplayName
             errorR(Error(FSComp.SR.tcTypeUsedInInvalidWay(nm, nm, nm), tycon.Range))
 

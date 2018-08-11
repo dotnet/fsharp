@@ -560,7 +560,6 @@ val applyTys : TcGlobals -> TType -> TType list * 'T list -> TType
 val emptyFreeTypars : FreeTypars
 
 val emptyFreeTycons : FreeTycons
-val unionFreeTycons : FreeTycons -> FreeTycons -> FreeTycons
 
 val emptyFreeTyvars : FreeTyvars
 val isEmptyFreeTyvars : FreeTyvars -> bool
@@ -855,8 +854,8 @@ type SignatureRepackageInfo =
     static member Empty : SignatureRepackageInfo
       
 type SignatureHidingInfo = 
-    { mhiTycons  : Zset<Tycon>; 
-      mhiTyconReprs : Zset<Tycon>;  
+    { mhiTycons     : zset<Tycon,TyconByStamp>
+      mhiTyconReprs : zset<Tycon,TyconByStamp>
       mhiVals       : zset<Val,ValByStamp>
       mhiRecdFields : Zset<RecdFieldRef>;
       mhiUnionCases : Zset<UnionCaseRef> }

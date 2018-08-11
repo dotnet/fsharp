@@ -1933,6 +1933,10 @@ and [<Sealed; StructuredFormatDisplay("{DebugText}")>]
 
 and ModuleOrNamespace = Entity 
 and Tycon = Entity 
+and [<Struct>] TyconByStamp =
+    interface IComparer<Tycon> with
+        member __.Compare(v1, v2) =
+            compare v1.Stamp v2.Stamp
 
 /// A set of static methods for constructing types.
 and Construct = 
@@ -4977,7 +4981,7 @@ and FreeTypars = Internal.Utilities.Collections.zset<Typar,TyparByStamp>
 
 /// Represents a set of 'free' named type definitions. Used to collect the named type definitions referred to 
 /// from a type or expression.
-and FreeTycons = Zset<Tycon>
+and FreeTycons = Internal.Utilities.Collections.zset<Tycon,TyconByStamp>
 
 /// Represents a set of 'free' record field definitions. Used to collect the record field definitions referred to 
 /// from an expression.
