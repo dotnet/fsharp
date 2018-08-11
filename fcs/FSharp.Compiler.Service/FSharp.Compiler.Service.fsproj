@@ -111,12 +111,6 @@
     <Compile Include="$(FSharpSourcesRoot)/utils/EditDistance.fs">
       <Link>Utilities/EditDistance.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/utils/TaggedCollections.fsi">
-      <Link>Utilities/TaggedCollections.fsi</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/utils/TaggedCollections.fs">
-      <Link>Utilities/TaggedCollections.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/utils/SortKey.fs">
       <Link>Utilities/SortKey.fs</Link>
     </Compile>
@@ -137,12 +131,6 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/utils/filename.fs">
       <Link>Utilities/filename.fs</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/absil/zset.fsi">
-      <Link>Utilities/zset.fsi</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/absil/zset.fs">
-      <Link>Utilities/zset.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/absil/bytes.fsi">
       <Link>Utilities/bytes.fsi</Link>

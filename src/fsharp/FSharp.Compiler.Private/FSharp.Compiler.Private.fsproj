@@ -54,8 +54,6 @@
     <InternalsVisibleTo Include="HostedCompilerServer" />
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedText Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
     </EmbeddedText>
@@ -113,12 +111,6 @@
     <Compile Include="..\..\utils\EditDistance.fs">
       <Link>Utilities\EditDistance.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\TaggedCollections.fsi">
-      <Link>Utilities\TaggedCollections.fsi</Link>
-    </Compile>
-    <Compile Include="..\..\utils\TaggedCollections.fs">
-      <Link>Utilities\TaggedCollections.fs</Link>
-    </Compile>
     <Compile Include="..\..\utils\SortKey.fs">
       <Link>Utilities\SortKey.fs</Link>
     </Compile>
@@ -136,12 +128,6 @@
     </Compile>
     <Compile Include="..\..\utils\filename.fs">
       <Link>Utilities\filename.fs</Link>
-    </Compile>
-    <Compile Include="..\..\absil\zset.fsi">
-      <Link>Utilities\zset.fsi</Link>
-    </Compile>
-    <Compile Include="..\..\absil\zset.fs">
-      <Link>Utilities\zset.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\bytes.fsi">
       <Link>Utilities\bytes.fsi</Link>
@@ -455,8 +441,6 @@
     <Compile Include="..\TypeChecker.fs">
       <Link>Logic\TypeChecker.fs</Link>
     </Compile>
-
-    <!-- includes the optimizer and code generator -->
     <Compile Include="..\Optimizer.fsi">
       <Link>Optimize\Optimizer.fsi</Link>
     </Compile>
@@ -487,8 +471,6 @@
     <Compile Include="..\IlxGen.fs">
       <Link>CodeGen\IlxGen.fs</Link>
     </Compile>
-
-    <!-- includes the core of the F# Compiler fsc.exe implementation -->
     <Compile Include="..\CompileOps.fsi">
       <Link>Driver\CompileOps.fsi</Link>
     </Compile>
@@ -507,8 +489,6 @@
     <Compile Include="..\fsc.fs">
       <Link>Driver\fsc.fs</Link>
     </Compile>
-
-    <!-- the symbol API. -->
     <Compile Include="..\symbols\SymbolHelpers.fsi">
       <Link>Symbols/SymbolHelpers.fsi</Link>
     </Compile>
@@ -533,8 +513,6 @@
     <Compile Include="..\symbols\SymbolPatterns.fs">
       <Link>Symbols/SymbolPatterns.fs</Link>
     </Compile>
-
-    <!-- the incremental builder and service . -->
     <Compile Include="..\service\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
     </Compile>
@@ -637,8 +615,6 @@
     <Compile Include="..\service\ServiceAnalysis.fs">
       <Link>Service/ServiceAnalysis.fs</Link>
     </Compile>
-    
-    <!-- the core of the F# Interactive fsi.exe implementation -->
     <EmbeddedText Include="..\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
     </EmbeddedText>
@@ -648,22 +624,16 @@
     <Compile Include="..\fsi\fsi.fs">
       <Link>InteractiveSession/fsi.fs</Link>
     </Compile>
-
-    <Compile Include="..\MSBuildReferenceResolver.fs"  Condition="'$(MonoPackaging)' != 'true'">
+    <Compile Include="..\MSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' != 'true'">
       <Link>Misc/MSBuildReferenceResolver.fs</Link>
     </Compile>
-    <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
     <Compile Include="..\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'">
       <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
-  </ItemGroup>
-  <ItemGroup>
     <PackageNuspec Include="FSharp.Compiler.Private.netcore.nuspec" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
     <None Include="project.json" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetDotnetProfile)' != 'coreclr'">
+  <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -679,8 +649,6 @@
       <HintPath>..\..\..\packages\System.ValueTuple.$(SystemValueTuplePackageVersion)\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
       <Private>true</Private>
     </Reference>
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
     <Reference Include="Microsoft.Build.Framework">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Framework.$(MicrosoftBuildFrameworkPackageVersion)\lib\net46\Microsoft.Build.Framework.dll</HintPath>
     </Reference>
@@ -701,6 +669,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="FSharp.Data.TypeProviders">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Type.Providers.Redist.$(MicrosoftVisualFSharpTypeProvidersRedistPackageVersion)\content\4.3.0.0\FSharp.Data.TypeProviders.dll</HintPath>
+    </Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
