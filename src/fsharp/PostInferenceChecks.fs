@@ -1776,6 +1776,21 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
                            MethInfosEquivByNameAndSig EraseAll true g cenv.amap v.Range minfo1 minfo2 then 
                             errorR(Duplicate(kind,v.DisplayName,v.Range)))
 
+            if v.IsExtensionMethod then
+                let minfo = FSMeth(g, generalizedTyconRef tcref, mkLocalValRef v, Some 0UL)
+                minfo.TryHeadObjArgsByrefType(cenv.amap, v.Range, minfo.FormalMethodInst)
+                |> Option.iter (fun ty ->
+                    let hasStructOrStructConstraint =
+                        match destByrefTy g ty with
+                        | TType_var(tp) ->
+                            tp.Constraints
+                            |> List.exists (function | TyparConstraint.IsNonNullableStruct _ -> true | _ -> false)
+                        | destTy -> isStructTy g destTy 
+
+                    if not hasStructOrStructConstraint then
+                        errorR(Error(FSComp.SR.chkByrefExtensionMethodMustBeAStruct(v.DisplayName), v.Range))
+                )
+
             // Properties get 'get_X', only if there are no args
             // Properties get 'get_X'
             match v.ValReprInfo with 

@@ -7072,6 +7072,11 @@
         <target state="new">Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkByrefExtensionMethodMustBeAStruct">
+        <source>The first parameter of the byref extension method '{0}' must be a value type or a generic type constrained to struct.</source>
+        <target state="new">The first parameter of the byref extension method '{0}' must be a value type or a generic type constrained to struct.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
