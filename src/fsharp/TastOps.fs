@@ -1855,15 +1855,7 @@ let unionFreeTycons s1 s2 =
     elif s2 === emptyFreeTycons then s1
     else Zset.union s1 s2
 
-let typarOrder = 
-    { new System.Collections.Generic.IComparer<Typar> with 
-        member x.Compare (v1:Typar, v2:Typar) = compare v1.Stamp v2.Stamp } 
-
-let emptyFreeTypars = Zset.empty typarOrder
-let unionFreeTypars s1 s2 = 
-    if s1 === emptyFreeTypars then s2
-    elif s2 === emptyFreeTypars then s1
-    else Zset.union s1 s2
+let emptyFreeTypars = SetCustom.empty<TyparByStamp> ()
 
 let emptyFreeTyvars =  
     { FreeTycons = emptyFreeTycons
@@ -1872,7 +1864,7 @@ let emptyFreeTyvars =
       FreeTypars = emptyFreeTypars}
 
 let isEmptyFreeTyvars ftyvs = 
-    Zset.isEmpty ftyvs.FreeTypars &&
+    SetCustom.isEmpty ftyvs.FreeTypars &&
     Zset.isEmpty ftyvs.FreeTycons 
 
 let unionFreeTyvars fvs1 fvs2 = 
@@ -1880,7 +1872,7 @@ let unionFreeTyvars fvs1 fvs2 =
     if fvs2 === emptyFreeTyvars then fvs1 else
     { FreeTycons           = unionFreeTycons fvs1.FreeTycons fvs2.FreeTycons
       FreeTraitSolutions   = Set.union fvs1.FreeTraitSolutions fvs2.FreeTraitSolutions
-      FreeTypars           = unionFreeTypars fvs1.FreeTypars fvs2.FreeTypars }
+      FreeTypars           = Set.union fvs1.FreeTypars fvs2.FreeTypars }
 
 type FreeVarOptions = 
     { canCache: bool
@@ -1972,7 +1964,7 @@ let rec boundTypars opts tps acc =
     // Bound type vars form a recursively-referential set due to constraints, e.g.  A : I<B>, B : I<A> 
     // So collect up free vars in all constraints first, then bind all variables 
     let acc = List.foldBack (fun (tp:Typar) acc -> accFreeInTyparConstraints opts tp.Constraints acc) tps acc
-    List.foldBack (fun tp acc -> { acc with FreeTypars = Zset.remove tp acc.FreeTypars}) tps acc
+    List.foldBack (fun tp acc -> { acc with FreeTypars = SetCustom.remove tp acc.FreeTypars}) tps acc
 
 and accFreeInTyparConstraints opts cxs acc =
     List.foldBack (accFreeInTyparConstraint opts) cxs acc
@@ -2026,10 +2018,10 @@ and accFreeValRefInTraitSln opts (vref:ValRef) fvs =
 
 and accFreeTyparRef opts (tp:Typar) acc = 
     if not opts.includeTypars then acc else
-    if Zset.contains tp acc.FreeTypars then acc 
+    if SetCustom.contains tp acc.FreeTypars then acc 
     else 
         accFreeInTyparConstraints opts tp.Constraints
-          { acc with FreeTypars = Zset.add tp acc.FreeTypars}
+          { acc with FreeTypars = SetCustom.add tp acc.FreeTypars}
 
 and accFreeInType opts ty acc  = 
     match stripTyparEqns ty with 
@@ -2536,30 +2528,30 @@ module SimplifyTypes =
     let accTyparCountsMulti acc l = List.fold accTyparCounts acc l
 
     type TypeSimplificationInfo =
-        { singletons         : Typar Zset
+        { singletons         : zset<Typar,TyparByStamp>
           inplaceConstraints : zmap<Typar,TyparByStamp, TType>
           postfixConstraints : (Typar * TyparConstraint) list }
           
     let typeSimplificationInfo0 = 
-        { singletons         = Zset.empty typarOrder
+        { singletons         = SetCustom.empty<TyparByStamp> ()
           inplaceConstraints = Zmap.empty<TyparByStamp> ()
           postfixConstraints = [] }
 
     let categorizeConstraints simplify m cxs =
         let singletons = if simplify then Zmap.chooseL (fun tp n -> if n = 1 then Some tp else None) m else []
-        let singletons = Zset.addList singletons (Zset.empty typarOrder)
+        let singletons = SetCustom.ofList<TyparByStamp> singletons
         // Here, singletons are typars that occur once in the type.
         // However, they may also occur in a type constraint.
         // If they do, they are really multiple occurrence - so we should remove them.
         let constraintTypars = (freeInTyparConstraints CollectTyparsNoCaching (List.map snd cxs)).FreeTypars
-        let usedInTypeConstraint typar = Zset.contains typar constraintTypars
-        let singletons = singletons |> Zset.filter (usedInTypeConstraint >> not) 
+        let usedInTypeConstraint typar = SetCustom.contains typar constraintTypars
+        let singletons = singletons |> SetCustom.filter (usedInTypeConstraint >> not) 
         // Here, singletons should really be used once 
         let inplace, postfix =
           cxs |> List.partition (fun (tp, tpc) -> 
             simplify &&
             isTTyparCoercesToType tpc && 
-            Zset.contains tp singletons && 
+            SetCustom.contains tp singletons && 
             tp.Constraints.Length = 1)
         let inplace = inplace |> List.map (function (tp, TyparConstraint.CoercesTo(ty, _)) -> tp, ty | _ -> failwith "not isTTyparCoercesToType")
         
@@ -3246,7 +3238,7 @@ module DebugPrint = begin
 
           match Zmap.tryFind typar env.inplaceConstraints with
           | Some (typarConstraintTy) ->
-              if Zset.contains typar env.singletons then
+              if SetCustom.contains typar env.singletons then
                 leftL (tagText "#") ^^ auxTyparConstraintTypL env typarConstraintTy
               else
                 (varL ^^ sepL (tagText ":>") ^^ auxTyparConstraintTypL env typarConstraintTy) |> wrap
@@ -7745,14 +7737,14 @@ type PrettyNaming.ActivePatternInfo with
 // not by their argument types.
 let doesActivePatternHaveFreeTypars g (v:ValRef) =
     let vty  = v.TauType
-    let vtps = v.Typars |> Zset.ofList typarOrder
+    let vtps = v.Typars |> SetCustom.ofList<TyparByStamp>
     if not (isFunTy g v.TauType) then
         errorR(Error(FSComp.SR.activePatternIdentIsNotFunctionTyped(v.LogicalName), v.Range))
     let argtys, resty  = stripFunTy g vty
     let argtps, restps= (freeInTypes CollectTypars argtys).FreeTypars, (freeInType CollectTypars resty).FreeTypars        
     // Error if an active pattern is generic in type variables that only occur in the result Choice<_, ...>.
     // Note: The test restricts to v.Typars since typars from the closure are considered fixed.
-    not (Zset.isEmpty (Zset.inter (Zset.diff restps argtps) vtps)) 
+    not (SetCustom.isEmpty (SetCustom.inter (SetCustom.diff restps argtps) vtps)) 
 
 //---------------------------------------------------------------------------
 // RewriteExpr: rewrite bottom up with interceptors 

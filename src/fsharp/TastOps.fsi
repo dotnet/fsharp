@@ -382,7 +382,6 @@ type TyconRefMultiMap<'T> =
 val valOrder          : IComparer<Val>
 val tyconOrder        : IComparer<Tycon>
 val recdFieldRefOrder : IComparer<RecdFieldRef>
-val typarOrder        : IComparer<Typar>
 
 //-------------------------------------------------------------------------
 // Equality on Tycon and Val
@@ -559,7 +558,6 @@ val applyTys : TcGlobals -> TType -> TType list * 'T list -> TType
 //------------------------------------------------------------------------- 
  
 val emptyFreeTypars : FreeTypars
-val unionFreeTypars : FreeTypars -> FreeTypars -> FreeTypars
 
 val emptyFreeTycons : FreeTycons
 val unionFreeTycons : FreeTycons -> FreeTycons -> FreeTycons
@@ -752,8 +750,8 @@ val prefixOfRigidTypar : Typar -> string
 /// Utilities used in simplifying types for visual presentation
 module SimplifyTypes = 
     type TypeSimplificationInfo =
-        { singletons         : Typar Zset;
-          inplaceConstraints : Map<SortKey<Typar,TyparByStamp>, TType>
+        { singletons         : zset<Typar,TyparByStamp>
+          inplaceConstraints : zmap<Typar,TyparByStamp,TType>
           postfixConstraints : TyparConstraintsWithTypars; }
     val typeSimplificationInfo0 : TypeSimplificationInfo
     val CollectInfo : bool -> TType list -> TyparConstraintsWithTypars -> TypeSimplificationInfo

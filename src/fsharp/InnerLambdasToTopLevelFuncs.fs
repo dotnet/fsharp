@@ -69,7 +69,7 @@ let destApp (f,fty,tys,args,m) =
     | f                                  -> (f,fty,tys,args,m)
 
 #if DEBUG
-let showTyparSet tps = showL (commaListL (List.map typarL (Zset.elements tps)))    
+let showTyparSet tps = showL (commaListL (List.map typarL (SetCustom.elements tps)))    
 #endif
 
 // CLEANUP NOTE: don't like the look of this function - this distinction 
@@ -335,7 +335,7 @@ let reqdItemOrder =
 /// The reqdTypars   are the free reqdTypars of the defns, and those required by any direct TLR arity-met calls.
 /// The reqdItems are the ids/subEnvs required from calls to freeVars.
 type ReqdItemsForDefn =
-    { reqdTypars   : Zset<Typar>
+    { reqdTypars   : zset<Typar,TyparByStamp>
       reqdItems : Zset<ReqdItem>
       m      : Range.range }
     member env.ReqdSubEnvs = [ for x in env.reqdItems do match x with | ReqdSubEnv f -> yield f | ReqdVal _ -> () ]
@@ -343,16 +343,16 @@ type ReqdItemsForDefn =
 
     member env.Extend (typars,items) =
         {env with
-               reqdTypars   = Zset.addList typars env.reqdTypars
+               reqdTypars   = SetCustom.addList typars env.reqdTypars
                reqdItems = Zset.addList items  env.reqdItems}
 
     static member Initial typars m = 
-        {reqdTypars   = Zset.addList typars  (Zset.empty typarOrder)
+        {reqdTypars   = SetCustom.ofList<TyparByStamp> typars
          reqdItems = Zset.empty reqdItemOrder
          m      = m }
 
     override env.ToString() = 
-        (showL (commaListL (List.map typarL (Zset.elements env.reqdTypars)))) + "--" +
+        (showL (commaListL (List.map typarL (SetCustom.elements env.reqdTypars)))) + "--" +
         (String.concat "," (List.map string (Zset.elements env.reqdItems)))
 
 (*--debug-stuff--*)
@@ -514,7 +514,7 @@ module Pass2_DetermineReqdItems =
              let fclass = BindingGroupSharingSameReqdItems tlrBs
              // what determines env? 
              let frees        = FreeInBindings tlrBs
-             let reqdTypars0  = frees.FreeTyvars.FreeTypars   |> Zset.elements      (* put in env *)
+             let reqdTypars0  = frees.FreeTyvars.FreeTypars   |> SetCustom.elements      (* put in env *)
              // occurrences contribute to env 
              let reqdVals0 = frees.FreeLocals |> SetCustom.elements
              // tlrBs are not reqdVals0 for themselves 
@@ -572,8 +572,8 @@ module Pass2_DetermineReqdItems =
                                             env.reqdTypars)
 
             let reqdTypars0 = env.reqdTypars
-            let reqdTypars  = List.fold Zset.union reqdTypars0 directCallReqdTypars
-            let changed = changed || (not (Zset.equal reqdTypars0 reqdTypars))
+            let reqdTypars  = List.fold Set.union reqdTypars0 directCallReqdTypars
+            let changed = changed || (not (SetCustom.equal reqdTypars0 reqdTypars))
             let env   = {env with reqdTypars = reqdTypars}
 #if DEBUG
             if verboseTLR then 
@@ -774,7 +774,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: zmap<BindingGroupShari
            dprintf "tlr: packEnv unpack  =%s\n" (showL (listL bindingL unpack))
 
        // result 
-       (fc, { ep_etps   = Zset.elements reqdTypars
+       (fc, { ep_etps   = SetCustom.elements reqdTypars
               ep_aenvs  = aenvs
               ep_pack   = pack
               ep_unpack = unpack}),carrierMaps

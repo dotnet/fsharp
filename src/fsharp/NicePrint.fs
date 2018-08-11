@@ -764,7 +764,7 @@ module private PrintTypes =
 
         match Zmap.tryFind typar env.inplaceConstraints with
         | Some (typarConstraintTy) ->
-            if Zset.contains typar env.singletons then
+            if SetCustom.contains typar env.singletons then
                 leftL (tagPunctuation "#") ^^ layoutTypeWithInfo denv env typarConstraintTy
             else
                 (varL ^^ sepL (tagPunctuation ":>") ^^ layoutTypeWithInfo denv env typarConstraintTy) |> bracketL
@@ -1193,7 +1193,7 @@ module private PrintTastMemberOrVals =
             else 
                 nameL
 
-        let isOverGeneric = List.length (Zset.elements (freeInType CollectTyparsNoCaching tau).FreeTypars) < List.length tps // Bug: 1143 
+        let isOverGeneric = List.length (SetCustom.elements (freeInType CollectTyparsNoCaching tau).FreeTypars) < List.length tps // Bug: 1143 
         let isTyFunction  = v.IsTypeFunction     // Bug: 1143, and innerpoly tests 
         let typarBindingsL = 
             if isTyFunction || isOverGeneric || denv.showTyparBinding then 

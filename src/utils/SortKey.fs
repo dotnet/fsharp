@@ -90,10 +90,18 @@ type SetCustom<'Key>() =
     static member empty<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct>() : zset<'Key,'Comparer> =
         Set.empty<SortKey<'Key,'Comparer>>
 
+    static member inline isEmpty<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (s:zset<'Key,'Comparer>) =
+        Set.isEmpty s
+
     static member ofList<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> lst : zset<'Key,'Comparer> =
         lst
         |> List.map (fun k -> {CompareObj=k})
         |> Set.ofList
+
+    static member ofSeq<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> lst : zset<'Key,'Comparer> =
+        lst
+        |> Seq.map (fun k -> {CompareObj=k})
+        |> Set.ofSeq
 
     static member inline contains<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (k:'Key) (s:zset<'Key,'Comparer>) =
         Set.contains {CompareObj=k} s
@@ -129,7 +137,23 @@ type SetCustom<'Key>() =
         List.fold (fun acc x -> Set.add {CompareObj=x} acc) s xs
     
     static member inline diff<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (a:zset<'Key,'Comparer>) (b:zset<'Key,'Comparer>) =
-        Set.fold (fun a k -> Set.remove k a) a b
+        if Set.isEmpty a || Set.isEmpty b then a
+        else Set.fold (fun a k -> Set.remove k a) a b
+
+    static member inline inter<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (a:zset<'Key,'Comparer>) (b:zset<'Key,'Comparer>) =
+        Set.intersect a b
+
+    static member inline equal<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (a:zset<'Key,'Comparer>) (b:zset<'Key,'Comparer>) =
+        if obj.ReferenceEquals (a,b) then true
+        else
+            let lhs = (a:>seq<_>).GetEnumerator ()
+            let rhs = (b:>seq<_>).GetEnumerator ()
+            let rec loop () =
+                match lhs.MoveNext (), rhs.MoveNext () with
+                | true, true when Unchecked.defaultof<'Comparer>.Compare (lhs.Current.CompareObj, rhs.Current.CompareObj) = 0 -> loop ()  
+                | false, false -> true
+                | _ -> false
+            loop ()
 
     static member inline iter<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (f:'Key->unit) (m:zset<'Key,'Comparer>) =
         Set.iter (fun {CompareObj=k} -> f k) m

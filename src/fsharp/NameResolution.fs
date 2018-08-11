@@ -27,6 +27,8 @@ open System.Collections.Generic
 
 #if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
+open Internal.Utilities.Collections
+
 #endif
 
 /// An object that captures the logical context for name resolution.
@@ -1663,7 +1665,7 @@ let CheckAllTyparsInferrable amap m item =
             let freeInArgsAndRetType = 
                 accFreeInTypes CollectTyparsNoCaching (pinfo.GetParamTypes(amap,m)) 
                        (freeInType CollectTyparsNoCaching (pinfo.GetPropertyType(amap,m)))
-            let free = Zset.diff freeInDeclaringType.FreeTypars  freeInArgsAndRetType.FreeTypars
+            let free = Internal.Utilities.Collections.SetCustom.diff freeInDeclaringType.FreeTypars  freeInArgsAndRetType.FreeTypars
             free.IsEmpty)
 
     | Item.MethodGroup(_,minfos,_) -> 
@@ -1675,7 +1677,7 @@ let CheckAllTyparsInferrable amap m item =
                 List.foldBack (accFreeInTypes CollectTyparsNoCaching) (minfo.GetParamTypes(amap, m, fminst)) 
                    (accFreeInTypes CollectTyparsNoCaching (minfo.GetObjArgTypes(amap, m, fminst)) 
                        (freeInType CollectTyparsNoCaching (minfo.GetFSharpReturnTy(amap, m, fminst))))
-            let free = Zset.diff freeInDeclaringType.FreeTypars  freeInArgsAndRetType.FreeTypars
+            let free = Internal.Utilities.Collections.SetCustom.diff freeInDeclaringType.FreeTypars  freeInArgsAndRetType.FreeTypars
             free.IsEmpty)
 
     | Item.CtorGroup _ 

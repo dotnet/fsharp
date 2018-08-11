@@ -1071,7 +1071,7 @@ let AbstractExprInfoByVars (boundVars:Val list, boundTyVars) ivalue =
             (not (isNil boundVars) && List.exists (valEq v2) boundVars) || 
             (not (isNil boundTyVars) &&
              let ftyvs = freeInVal CollectTypars v2
-             List.exists (Zset.memberOf ftyvs.FreeTypars) boundTyVars) -> 
+             List.exists (SetCustom.memberOf ftyvs.FreeTypars) boundTyVars) -> 
 
              // hiding value when used in expression 
               abstractExprInfo detail
@@ -1084,7 +1084,7 @@ let AbstractExprInfoByVars (boundVars:Val list, boundTyVars) ivalue =
           | CurriedLambdaValue (_, _, _, expr, _) | ConstExprValue(_, expr)  when 
             (let fvs = freeInExpr (if isNil boundTyVars then CollectLocals else CollectTyparsAndLocals) expr
              (not (isNil boundVars) && List.exists (SetCustom.memberOf fvs.FreeLocals) boundVars) ||
-             (not (isNil boundTyVars) && List.exists (Zset.memberOf fvs.FreeTyvars.FreeTypars) boundTyVars) ||
+             (not (isNil boundTyVars) && List.exists (SetCustom.memberOf fvs.FreeTyvars.FreeTypars) boundTyVars) ||
              (fvs.UsesMethodLocalConstructs )) ->
               
               // Trimming lambda
@@ -1094,7 +1094,7 @@ let AbstractExprInfoByVars (boundVars:Val list, boundTyVars) ivalue =
           | ConstValue(_, ty) when 
             (not (isNil boundTyVars) && 
              (let ftyvs = freeInType CollectTypars ty
-              List.exists (Zset.memberOf ftyvs.FreeTypars) boundTyVars)) ->
+              List.exists (SetCustom.memberOf ftyvs.FreeTypars) boundTyVars)) ->
               UnknownValue
 
           // Otherwise check all sub-values 

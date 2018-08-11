@@ -3924,8 +3924,8 @@ and GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr =
     //  -- "internal" ones, which get used internally in the implementation
     let cloContractFreeTyvarSet = (freeInType CollectTypars (tyOfExpr cenv.g expr)).FreeTypars 
     
-    let cloInternalFreeTyvars = Zset.diff  cloFreeVarResults.FreeTyvars.FreeTypars cloContractFreeTyvarSet |> Zset.elements
-    let cloContractFreeTyvars = cloContractFreeTyvarSet |> Zset.elements
+    let cloInternalFreeTyvars = SetCustom.diff  cloFreeVarResults.FreeTyvars.FreeTypars cloContractFreeTyvarSet |> SetCustom.elements
+    let cloContractFreeTyvars = cloContractFreeTyvarSet |> SetCustom.elements
     
     let cloFreeTyvars = cloContractFreeTyvars @ cloInternalFreeTyvars
     

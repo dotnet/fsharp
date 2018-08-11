@@ -4973,7 +4973,7 @@ and
 and FreeLocals = Internal.Utilities.Collections.zset<Val,ValByStamp>
 
 /// Represents a set of free type parameters
-and FreeTypars = Zset<Typar>
+and FreeTypars = Internal.Utilities.Collections.zset<Typar,TyparByStamp>
 
 /// Represents a set of 'free' named type definitions. Used to collect the named type definitions referred to 
 /// from a type or expression.
