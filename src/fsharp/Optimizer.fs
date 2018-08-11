@@ -974,11 +974,11 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
     // Under those checks, the further hidden* checks may be subsumed (meaning, not required anymore).
 
     let hiddenTycon, hiddenTyconRepr, hiddenVal, hiddenRecdField, hiddenUnionCase = 
-        SetCustom.memberOf mhi.mhiTycons, 
-        SetCustom.memberOf mhi.mhiTyconReprs, 
-        SetCustom.memberOf mhi.mhiVals, 
-        SetCustom.memberOf mhi.mhiRecdFields, 
-        SetCustom.memberOf mhi.mhiUnionCases
+        Zset.memberOf mhi.mhiTycons, 
+        Zset.memberOf mhi.mhiTyconReprs, 
+        Zset.memberOf mhi.mhiVals, 
+        Zset.memberOf mhi.mhiRecdFields, 
+        Zset.memberOf mhi.mhiUnionCases
 
     let rec abstractExprInfo ivalue = 
         match ivalue with 
@@ -989,7 +989,7 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
             let tyvars = freeInVal CollectAll v2 
             if  
                 (isAssemblyBoundary && not (freeTyvarsAllPublic tyvars)) || 
-                SetCustom.exists hiddenTycon tyvars.FreeTycons || 
+                Zset.exists hiddenTycon tyvars.FreeTycons || 
                 hiddenVal v2
             then detail'
             else ValValue (vref2, detail')
@@ -997,17 +997,17 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
         | CurriedLambdaValue (_, _, _, expr, _) | ConstExprValue(_, expr) when            
             (let fvs = freeInExpr CollectAll expr
              (isAssemblyBoundary && not (freeVarsAllPublic fvs)) || 
-             SetCustom.exists hiddenVal       fvs.FreeLocals            ||
-             SetCustom.exists hiddenTycon     fvs.FreeTyvars.FreeTycons ||
-             SetCustom.exists hiddenTyconRepr fvs.FreeLocalTyconReprs   ||
-             SetCustom.exists hiddenRecdField fvs.FreeRecdFields        ||
-             SetCustom.exists hiddenUnionCase fvs.FreeUnionCases ) ->
+             Zset.exists hiddenVal       fvs.FreeLocals            ||
+             Zset.exists hiddenTycon     fvs.FreeTyvars.FreeTycons ||
+             Zset.exists hiddenTyconRepr fvs.FreeLocalTyconReprs   ||
+             Zset.exists hiddenRecdField fvs.FreeRecdFields        ||
+             Zset.exists hiddenUnionCase fvs.FreeUnionCases ) ->
                 UnknownValue
         // Check for escape in constant 
         | ConstValue(_, ty) when 
             (let ftyvs = freeInType CollectAll ty
              (isAssemblyBoundary && not (freeTyvarsAllPublic ftyvs)) || 
-             SetCustom.exists hiddenTycon ftyvs.FreeTycons) ->
+             Zset.exists hiddenTycon ftyvs.FreeTycons) ->
                 UnknownValue
         | TupleValue vinfos         -> 
             TupleValue (Array.map abstractExprInfo vinfos)
@@ -1071,7 +1071,7 @@ let AbstractExprInfoByVars (boundVars:Val list, boundTyVars) ivalue =
             (not (isNil boundVars) && List.exists (valEq v2) boundVars) || 
             (not (isNil boundTyVars) &&
              let ftyvs = freeInVal CollectTypars v2
-             List.exists (SetCustom.memberOf ftyvs.FreeTypars) boundTyVars) -> 
+             List.exists (Zset.memberOf ftyvs.FreeTypars) boundTyVars) -> 
 
              // hiding value when used in expression 
               abstractExprInfo detail
@@ -1083,8 +1083,8 @@ let AbstractExprInfoByVars (boundVars:Val list, boundTyVars) ivalue =
           // Check for escape in lambda 
           | CurriedLambdaValue (_, _, _, expr, _) | ConstExprValue(_, expr)  when 
             (let fvs = freeInExpr (if isNil boundTyVars then CollectLocals else CollectTyparsAndLocals) expr
-             (not (isNil boundVars) && List.exists (SetCustom.memberOf fvs.FreeLocals) boundVars) ||
-             (not (isNil boundTyVars) && List.exists (SetCustom.memberOf fvs.FreeTyvars.FreeTypars) boundTyVars) ||
+             (not (isNil boundVars) && List.exists (Zset.memberOf fvs.FreeLocals) boundVars) ||
+             (not (isNil boundTyVars) && List.exists (Zset.memberOf fvs.FreeTyvars.FreeTypars) boundTyVars) ||
              (fvs.UsesMethodLocalConstructs )) ->
               
               // Trimming lambda
@@ -1094,7 +1094,7 @@ let AbstractExprInfoByVars (boundVars:Val list, boundTyVars) ivalue =
           | ConstValue(_, ty) when 
             (not (isNil boundTyVars) && 
              (let ftyvs = freeInType CollectTypars ty
-              List.exists (SetCustom.memberOf ftyvs.FreeTypars) boundTyVars)) ->
+              List.exists (Zset.memberOf ftyvs.FreeTypars) boundTyVars)) ->
               UnknownValue
 
           // Otherwise check all sub-values 
@@ -1209,7 +1209,7 @@ let ValueIsUsedOrHasEffect cenv fvs (b:Binding, binfo) =
     Option.isSome v.MemberInfo ||
     binfo.HasEffect || 
     v.IsFixed ||
-    SetCustom.contains v (fvs())
+    Zset.contains v (fvs())
 
 let rec SplitValuesByIsUsedOrHasEffect cenv fvs x = 
     x |> List.filter (ValueIsUsedOrHasEffect cenv fvs) |> List.unzip
@@ -1311,7 +1311,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m  =
            && (not (vspec2.LogicalName.Contains(suffixForVariablesThatMayNotBeEliminated)))
            // REVIEW: this looks slow. Look only for one variable instead 
            && (let fvs = accFreeInExprs CollectLocals args emptyFreeVars
-               not (SetCustom.contains vspec1 fvs.FreeLocals))
+               not (Zset.contains vspec1 fvs.FreeLocals))
 
         // Immediate consumption of value as 2nd or subsequent argument to a construction or projection operation 
         let rec GetImmediateUseContext rargsl argsr = 
@@ -1332,7 +1332,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m  =
          | Expr.Match(spMatch, _exprm, TDSwitch(Expr.Val(VRefLocal vspec2, _, _), cases, dflt, _), targets, m, ty2)
              when (valEq vspec1 vspec2 && 
                    let fvs = accFreeInTargets CollectLocals targets (accFreeInSwitchCases CollectLocals cases dflt emptyFreeVars)
-                   not (SetCustom.contains vspec1 fvs.FreeLocals)) -> 
+                   not (Zset.contains vspec1 fvs.FreeLocals)) -> 
 
               let spMatch = spBind.Combine(spMatch)
               Some (Expr.Match(spMatch, e1.Range, TDSwitch(e1, cases, dflt, m), targets, m, ty2))
@@ -2729,7 +2729,7 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
           | None -> CurriedLambdaValue (lambdaId, arities, bsize, expr', ety) 
           | Some baseVal -> 
               let fvs = freeInExpr CollectLocals body'
-              if fvs.UsesMethodLocalConstructs || (fvs.FreeLocals |> SetCustom.contains baseVal) then 
+              if fvs.UsesMethodLocalConstructs || (fvs.FreeLocals |> Zset.contains baseVal) then 
                   UnknownValue
               else 
                   let expr2 = mkMemberLambdas m tps ctorThisValOpt None vsl (body', bodyty)
@@ -2805,7 +2805,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e:Expr, einfo) =
     (let fvs = freeInExpr CollectLocals e
      not fvs.UsesUnboundRethrow  &&
      not fvs.UsesMethodLocalConstructs &&
-     fvs.FreeLocals |> SetCustom.forall (fun v -> 
+     fvs.FreeLocals |> Zset.forall (fun v -> 
           // no direct-self-recursive references
           not (env.dontSplitVars.ContainsVal v) &&
           (v.ValReprInfo.IsSome ||
@@ -3076,12 +3076,12 @@ and OptimizeModuleExpr cenv env x =
                     not (ValueIsUsedOrHasEffect cenv (fun () -> fvs.FreeLocals) (bind, binfo)) &&
 
                     // Check the thing is hidden by the signature (if any)
-                    (hidden.mhiVals |> SetCustom.contains bind.Var) && 
+                    (hidden.mhiVals |> Zset.contains bind.Var) && 
 
                     // Check the thing is not compiled as a static field or property, since reflected definitions and other reflective stuff might need it
                     not (IsCompiledAsStaticProperty cenv.g bind.Var))
 
-            let deadSet = SetCustom.ofList<ValOrder> (dead |> List.map (fun (bind, _) -> bind.Var))
+            let deadSet = Zset.ofList<ValOrder> (dead |> List.map (fun (bind, _) -> bind.Var))
 
             // Eliminate dead private bindings from a module type by mutation. Note that the optimizer doesn't
             // actually copy the entire term - it copies the expression portions of the term and leaves the 
@@ -3095,7 +3095,7 @@ and OptimizeModuleExpr cenv env x =
             let rec elimModTy (mtyp:ModuleOrNamespaceType) =                  
                 let mty = 
                     new ModuleOrNamespaceType(kind=mtyp.ModuleOrNamespaceKind, 
-                                              vals= (mtyp.AllValsAndMembers |> QueueList.filter (SetCustom.memberOf deadSet >> not)), 
+                                              vals= (mtyp.AllValsAndMembers |> QueueList.filter (Zset.memberOf deadSet >> not)), 
                                               entities= mtyp.AllEntities)
                 mtyp.ModuleAndNamespaceDefinitions |> List.iter elimModSpec
                 mty
@@ -3109,14 +3109,14 @@ and OptimizeModuleExpr cenv env x =
                     let mbinds = mbinds |> List.choose elimModuleBinding
                     TMDefRec(isRec, tycons, mbinds, m)
                 | TMDefLet(bind, m)  -> 
-                    if SetCustom.contains bind.Var deadSet then TMDefRec(false, [], [], m) else x
+                    if Zset.contains bind.Var deadSet then TMDefRec(false, [], [], m) else x
                 | TMDefDo _  -> x
                 | TMDefs(defs) -> TMDefs(List.map elimModDef defs) 
                 | TMAbstract _ ->  x 
             and elimModuleBinding x = 
                 match x with 
                 | ModuleOrNamespaceBinding.Binding bind -> 
-                     if bind.Var |> SetCustom.memberOf deadSet then None
+                     if bind.Var |> Zset.memberOf deadSet then None
                      else Some x
                 | ModuleOrNamespaceBinding.Module(mspec, d) ->
                     // Clean up the ModuleOrNamespaceType by mutation

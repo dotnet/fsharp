@@ -3663,7 +3663,7 @@ and GenObjectExpr cenv cgbuf eenvouter expr (baseType,baseValOpt,basecall,overri
 
 and GenSequenceExpr cenv (cgbuf:CodeGenBuffer) eenvouter (nextEnumeratorValRef:ValRef,pcvref:ValRef,currvref:ValRef,stateVars,generateNextExpr,closeExpr,checkCloseExpr:Expr,seqElemTy, m)  sequel =
     let stateVars = [ pcvref; currvref ] @ stateVars
-    let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> SetCustom.ofList<ValOrder>
+    let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList<ValOrder>
 
     // pretend that the state variables are bound
     let eenvouter = 
@@ -3701,7 +3701,7 @@ and GenSequenceExpr cenv (cgbuf:CodeGenBuffer) eenvouter (nextEnumeratorValRef:V
                                                             ...
 *)
                                                    /// State variables always get zero-initialized
-                                                   if stateVarsSet |> SetCustom.contains fv then 
+                                                   if stateVarsSet |> Zset.contains fv then 
                                                        GenDefaultValue cenv cgbuf eenv (fv.Type,m) 
                                                    else
                                                        GenGetLocalVal cenv cgbuf eenv m fv None
@@ -3743,7 +3743,7 @@ and GenSequenceExpr cenv (cgbuf:CodeGenBuffer) eenvouter (nextEnumeratorValRef:V
 
     for fv in cloFreeVars do 
        /// State variables always get zero-initialized
-       if stateVarsSet |> SetCustom.contains fv then 
+       if stateVarsSet |> Zset.contains fv then 
            GenDefaultValue cenv cgbuf eenvouter (fv.Type,m) 
        else
            GenGetLocalVal cenv cgbuf eenvouter m fv None
@@ -3903,7 +3903,7 @@ and GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr =
     // pointer which gives the current closure itself. This is in the case e.g. let rec f = ... f ... 
     let cloFreeVars = 
         cloFreeVarResults.FreeLocals
-        |> SetCustom.elements 
+        |> Zset.elements 
         |> List.filter (fun fv -> 
             match StorageForVal m fv eenvouter with 
             | (StaticField _ | StaticProperty _ | Method _ | Null) -> false
@@ -3924,8 +3924,8 @@ and GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr =
     //  -- "internal" ones, which get used internally in the implementation
     let cloContractFreeTyvarSet = (freeInType CollectTypars (tyOfExpr cenv.g expr)).FreeTypars 
     
-    let cloInternalFreeTyvars = Set.diff  cloFreeVarResults.FreeTyvars.FreeTypars cloContractFreeTyvarSet |> SetCustom.elements
-    let cloContractFreeTyvars = cloContractFreeTyvarSet |> SetCustom.elements
+    let cloInternalFreeTyvars = Set.diff  cloFreeVarResults.FreeTyvars.FreeTypars cloContractFreeTyvarSet |> Zset.elements
+    let cloContractFreeTyvars = cloContractFreeTyvarSet |> Zset.elements
     
     let cloFreeTyvars = cloContractFreeTyvars @ cloInternalFreeTyvars
     
@@ -4638,20 +4638,20 @@ and GenLetRecBindings cenv cgbuf eenv (allBinds: Bindings,m) =
             let selfv = (match e with Expr.Obj _ -> None | _ when isLocalTypeFunc -> None | _ -> Option.map mkLocalValRef selfv)
             let clo,_,eenvclo =  GetIlxClosureInfo cenv m isLocalTypeFunc selfv {eenv with  letBoundVars=(mkLocalValRef boundv)::eenv.letBoundVars}  e 
             clo.cloFreeVars |> List.iter (fun fv -> 
-                if SetCustom.contains fv forwardReferenceSet then 
+                if Zset.contains fv forwardReferenceSet then 
                     match StorageForVal m fv eenvclo with
                     | Env (_,_,ilField,_) -> fixups := (boundv, fv, (fun () -> GenLetRecFixup cenv cgbuf eenv (clo.cloSpec,access,ilField,exprForVal m fv,m))) :: !fixups
                     | _ -> error (InternalError("GenLetRec: " + fv.LogicalName + " was not in the environment",m)) )
               
         | Expr.Val  (vref,_,_) -> 
             let fv = vref.Deref
-            let needsFixup = SetCustom.contains fv forwardReferenceSet
+            let needsFixup = Zset.contains fv forwardReferenceSet
             if needsFixup then fixups := (boundv, fv,(fun () -> GenExpr cenv cgbuf eenv SPSuppress  (set e) discard)) :: !fixups
         | _ -> failwith "compute real fixup vars"
 
 
     let fixups = ref []
-    let recursiveVars = SetCustom.ofList<ValOrder> (bindsPossiblyRequiringFixup |> List.map (fun v -> v.Var))
+    let recursiveVars = Zset.ofList<ValOrder> (bindsPossiblyRequiringFixup |> List.map (fun v -> v.Var))
     let _ = 
         (recursiveVars, bindsPossiblyRequiringFixup) ||> List.fold (fun forwardReferenceSet (bind:Binding) ->
             // Compute fixups 
@@ -4660,7 +4660,7 @@ and GenLetRecBindings cenv cgbuf eenv (allBinds: Bindings,m) =
                                (exprForVal m bind.Var, 
                                   (fun _ -> failwith ("internal error: should never need to set non-delayed recursive val: " + bind.Var.LogicalName)))
             // Record the variable as defined
-            let forwardReferenceSet = SetCustom.remove bind.Var forwardReferenceSet
+            let forwardReferenceSet = Zset.remove bind.Var forwardReferenceSet
             forwardReferenceSet)
 
     // Generate the actual bindings
@@ -4668,9 +4668,9 @@ and GenLetRecBindings cenv cgbuf eenv (allBinds: Bindings,m) =
         (recursiveVars, allBinds) ||> List.fold (fun forwardReferenceSet (bind:Binding) ->
             GenBinding cenv cgbuf eenv bind
             // Record the variable as defined
-            let forwardReferenceSet = SetCustom.remove bind.Var forwardReferenceSet
+            let forwardReferenceSet = Zset.remove bind.Var forwardReferenceSet
             // Execute and discard any fixups that can now be committed 
-            fixups := !fixups |> List.filter (fun (boundv, fv, action) -> if (SetCustom.contains boundv forwardReferenceSet || SetCustom.contains fv forwardReferenceSet) then  true else (action(); false))
+            fixups := !fixups |> List.filter (fun (boundv, fv, action) -> if (Zset.contains boundv forwardReferenceSet || Zset.contains fv forwardReferenceSet) then  true else (action(); false))
             forwardReferenceSet)
     ()
 

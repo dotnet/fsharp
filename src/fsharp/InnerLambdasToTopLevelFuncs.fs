@@ -69,7 +69,7 @@ let destApp (f,fty,tys,args,m) =
     | f                                  -> (f,fty,tys,args,m)
 
 #if DEBUG
-let showTyparSet tps = showL (commaListL (List.map typarL (SetCustom.elements tps)))    
+let showTyparSet tps = showL (commaListL (List.map typarL (Zset.elements tps)))    
 #endif
 
 // CLEANUP NOTE: don't like the look of this function - this distinction 
@@ -137,7 +137,7 @@ let GetValsBoundUnderMustInline xinfo =
       if v.InlineInfo = ValInline.PseudoVal then
         Set.union (GetValsBoundInExpr repr) rejectS
       else rejectS
-    let rejectS = SetCustom.empty<ValOrder> ()
+    let rejectS = Zset.empty<ValOrder> ()
     let rejectS = Zmap.fold accRejectFrom xinfo.Defns rejectS
     rejectS
 
@@ -181,10 +181,10 @@ module Pass1_DetermineTLRAndArities =
     let SelectTLRVals g xinfo f e =
         if IsRefusedTLR g f then None 
         // Exclude values bound in a decision tree
-        else if SetCustom.contains f xinfo.DecisionTreeBindings then None
+        else if Zset.contains f xinfo.DecisionTreeBindings then None
         else
             // Could the binding be TLR? with what arity? 
-            let atTopLevel = SetCustom.contains f xinfo.TopLevelBindings
+            let atTopLevel = Zset.contains f xinfo.TopLevelBindings
             let tps,vss,_b,_rty = stripTopLambda (e,f.Type)
             let nFormals    = vss.Length
             let nMaxApplied = GetMaxNumArgsAtUses xinfo f  
@@ -211,16 +211,16 @@ module Pass1_DetermineTLRAndArities =
        // Do not TLR v if it is bound under a mustinline defn 
        // There is simply no point - the original value will be duplicated and TLR'd anyway 
        let rejectS = GetValsBoundUnderMustInline xinfo
-       let fArities = List.filter (fun (v,_) -> not (SetCustom.contains v rejectS)) fArities
+       let fArities = List.filter (fun (v,_) -> not (Zset.contains v rejectS)) fArities
        (*-*)
-       let tlrS   = SetCustom.ofList<ValOrder> (List.map fst fArities)
+       let tlrS   = Zset.ofList<ValOrder> (List.map fst fArities)
        let topValS   = xinfo.TopLevelBindings                     (* genuinely top level *)
-       let topValS   = SetCustom.filter (IsMandatoryNonTopLevel g >> not) topValS     (* restrict *)
+       let topValS   = Zset.filter (IsMandatoryNonTopLevel g >> not) topValS     (* restrict *)
        (* REPORT MISSED CASES *)
 #if DEBUG
        if verboseTLR then 
            let missed = Set.diff  xinfo.TopLevelBindings tlrS
-           missed |> SetCustom.iter (fun v -> dprintf "TopLevel but not TLR = %s\n" v.LogicalName) 
+           missed |> Zset.iter (fun v -> dprintf "TopLevel but not TLR = %s\n" v.LogicalName) 
 #endif
        (* REPORT OVER *)   
        let arityM = Zmap.ofList<ValOrder> fArities
@@ -292,11 +292,11 @@ module Pass1_DetermineTLRAndArities =
 /// [Each fclass has an env, the fclass are the handles to envs.]
 type BindingGroupSharingSameReqdItems(bindings: Bindings) =
     let vals = valsOfBinds bindings
-    let vset = SetCustom.ofList<ValOrder> vals
+    let vset = Zset.ofList<ValOrder> vals
 
     member fclass.Vals = vals
 
-    member fclass.Contains (v: Val) = vset |> SetCustom.contains v
+    member fclass.Contains (v: Val) = vset |> Zset.contains v
 
     member fclass.IsEmpty = isNil vals
 
@@ -348,17 +348,17 @@ type ReqdItemsForDefn =
 
     member env.Extend (typars,items) =
         {env with
-               reqdTypars   = SetCustom.addList typars env.reqdTypars
-               reqdItems = SetCustom.addList items  env.reqdItems}
+               reqdTypars   = Zset.addList typars env.reqdTypars
+               reqdItems = Zset.addList items  env.reqdItems}
 
     static member Initial typars m = 
-        {reqdTypars   = SetCustom.ofList<TyparOrder> typars
-         reqdItems = SetCustom.empty<ReqdItemOrder> ()
+        {reqdTypars   = Zset.ofList<TyparOrder> typars
+         reqdItems = Zset.empty<ReqdItemOrder> ()
          m      = m }
 
     override env.ToString() = 
-        (showL (commaListL (List.map typarL (SetCustom.elements env.reqdTypars)))) + "--" +
-        (String.concat "," (List.map string (SetCustom.elements env.reqdItems)))
+        (showL (commaListL (List.map typarL (Zset.elements env.reqdTypars)))) + "--" +
+        (String.concat "," (List.map string (Zset.elements env.reqdItems)))
 
 (*--debug-stuff--*)
 
@@ -437,7 +437,7 @@ module Pass2_DetermineReqdItems =
           reqdItemsMap  = Zmap.empty<FclassOrder> ()
           fclassM       = Zmap.empty<ValOrder> ()
           revDeclist    = []
-          recShortCallS = SetCustom.empty<ValOrder> () }
+          recShortCallS = Zset.empty<ValOrder> () }
 
     /// PUSH = start collecting for fclass 
     let PushFrame (fclass: BindingGroupSharingSameReqdItems) (reqdTypars0,reqdVals0,m) state =
@@ -466,7 +466,7 @@ module Pass2_DetermineReqdItems =
     let LogRequiredFrom gv items state =
         let logIntoFrame (fclass, reqdVals0:zset<Val,ValOrder>, env: ReqdItemsForDefn) =
            let env = 
-               if reqdVals0 |> SetCustom.contains gv then
+               if reqdVals0 |> Zset.contains gv then
                    env.Extend ([],items) 
                else env
          
@@ -479,7 +479,7 @@ module Pass2_DetermineReqdItems =
            if verboseTLR then dprintf "shortCall:     rec: %s\n" gv.LogicalName
            // Have short call to gv within it's (mutual) definition(s) 
            {state with
-               recShortCallS = SetCustom.add gv state.recShortCallS}
+               recShortCallS = Zset.add gv state.recShortCallS}
         else
           if verboseTLR then dprintf "shortCall: not-rec: %s\n" gv.LogicalName
           state
@@ -514,17 +514,17 @@ module Pass2_DetermineReqdItems =
                  LogRequiredFrom f [ReqdVal f] z                    
         
          let accBinds m z (binds: Bindings) =
-             let tlrBs,nonTlrBs = binds |> List.partition (fun b -> SetCustom.contains b.Var tlrS) 
+             let tlrBs,nonTlrBs = binds |> List.partition (fun b -> Zset.contains b.Var tlrS) 
              // For bindings marked TLR, collect implied env 
              let fclass = BindingGroupSharingSameReqdItems tlrBs
              // what determines env? 
              let frees        = FreeInBindings tlrBs
-             let reqdTypars0  = frees.FreeTyvars.FreeTypars   |> SetCustom.elements      (* put in env *)
+             let reqdTypars0  = frees.FreeTyvars.FreeTypars   |> Zset.elements      (* put in env *)
              // occurrences contribute to env 
-             let reqdVals0 = frees.FreeLocals |> SetCustom.elements
+             let reqdVals0 = frees.FreeLocals |> Zset.elements
              // tlrBs are not reqdVals0 for themselves 
              let reqdVals0 = reqdVals0 |> List.filter (fun gv -> not (fclass.Contains gv)) 
-             let reqdVals0 = reqdVals0 |> SetCustom.ofList<ValOrder>
+             let reqdVals0 = reqdVals0 |> Zset.ofList<ValOrder>
              // collect into env over bodies 
              let z          = PushFrame fclass (reqdTypars0,reqdVals0,m) z
              let z          = (z,tlrBs) ||> List.fold (foldOn (fun b -> b.Expr) exprF) 
@@ -578,7 +578,7 @@ module Pass2_DetermineReqdItems =
 
             let reqdTypars0 = env.reqdTypars
             let reqdTypars  = List.fold Set.union reqdTypars0 directCallReqdTypars
-            let changed = changed || (not (SetCustom.equal reqdTypars0 reqdTypars))
+            let changed = changed || (not (Zset.equal reqdTypars0 reqdTypars))
             let env   = {env with reqdTypars = reqdTypars}
 #if DEBUG
             if verboseTLR then 
@@ -633,7 +633,7 @@ module Pass2_DetermineReqdItems =
         if verboseTLR then
              DumpReqdValMap reqdItemsMap
              declist |> List.iter (fun fc -> dprintf "Declist: %A\n" fc) 
-             recShortCallS |> SetCustom.iter (fun f -> dprintf "RecShortCall: %s\n" f.LogicalName) 
+             recShortCallS |> Zset.iter (fun f -> dprintf "RecShortCall: %s\n" f.LogicalName) 
 #endif
 
         reqdItemsMap,fclassM,declist,recShortCallS 
@@ -703,7 +703,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: zmap<BindingGroupShari
 
        // determine vals(env) - transclosure 
        let vals = env.ReqdVals @ List.collect valsSubEnvFor env.ReqdSubEnvs  // list, with repeats 
-       let vals = vals |> SetCustom.ofList<ValOrder> |> SetCustom.elements // noRepeats
+       let vals = vals |> Zset.ofList<ValOrder> |> Zset.elements // noRepeats
 
        // Remove genuinely toplevel, no need to close over these
        let vals = vals |> List.filter (IsMandatoryTopLevel >> not) 
@@ -739,7 +739,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: zmap<BindingGroupShari
 
        let vals = vals |> List.filter (fun v -> not (isByrefLikeTy g v.Range v.Type))
        // Remove values which have been labelled TLR, no need to close over these
-       let vals = vals |> List.filter (SetCustom.memberOf topValS >> not) 
+       let vals = vals |> List.filter (Zset.memberOf topValS >> not) 
        
        // Carrier sets cannot include constrained polymorphic values. We can't just take such a value out, so for the moment 
        // we'll just abandon TLR altogether and give a warning about this condition. 
@@ -779,7 +779,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: zmap<BindingGroupShari
            dprintf "tlr: packEnv unpack  =%s\n" (showL (listL bindingL unpack))
 
        // result 
-       (fc, { ep_etps   = SetCustom.elements reqdTypars
+       (fc, { ep_etps   = Zset.elements reqdTypars
               ep_aenvs  = aenvs
               ep_pack   = pack
               ep_unpack = unpack}),carrierMaps
@@ -850,7 +850,7 @@ let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
         let fHat = mkLocalNameTypeArity f.IsCompilerGenerated m fHatName fHatTy (Some fHatArity)
         fHat
    
-    let fs     = SetCustom.elements tlrS
+    let fs     = Zset.elements tlrS
     let ffHats = List.map (fun f -> f,createFHat f) fs
     let fHatM  = Zmap.ofList<ValOrder> ffHats
     fHatM
@@ -1014,7 +1014,7 @@ module Pass4_RewriteAssembly =
             let fHatBind   = mkMultiLambdaBind fHat letSeqPtOpt m fHat_tps fHat_args (fHat_body,rty)
             fHatBind
         let rebinds = binds |> List.map fRebinding 
-        let shortRecBinds = rebinds |> List.filter (fun b -> penv.recShortCallS |> SetCustom.contains b.Var)
+        let shortRecBinds = rebinds |> List.filter (fun b -> penv.recShortCallS |> Zset.contains b.Var)
         let newBinds      = binds |> List.map (fHatNewBinding shortRecBinds) 
         newBinds,rebinds
 
@@ -1024,7 +1024,7 @@ module Pass4_RewriteAssembly =
         | Some envp -> envp.ep_pack // environment pack bindings 
 
     let TransBindings xisRec penv (binds:Bindings) =
-        let tlrBs,nonTlrBs = binds |> List.partition (fun b -> SetCustom.contains b.Var penv.tlrS) 
+        let tlrBs,nonTlrBs = binds |> List.partition (fun b -> Zset.contains b.Var penv.tlrS) 
         let fclass = BindingGroupSharingSameReqdItems tlrBs
         // Trans each TLR f binding into fHat and f rebind 
         let newTlrBinds,tlrRebinds = TransTLRBindings penv tlrBs
@@ -1034,7 +1034,7 @@ module Pass4_RewriteAssembly =
         // QUERY: yes and no - if we don't, we have an unrealizable term, and many decisions must 
         // QUERY: correlate with LowerCallsAndSeqs.  
         let forceTopBindToHaveArity (bind:Binding) = 
-            if penv.topValS |> SetCustom.contains bind.Var then ConvertBind penv.g bind 
+            if penv.topValS |> Zset.contains bind.Var then ConvertBind penv.g bind 
             else bind
 
         let nonTlrBs = nonTlrBs |> List.map forceTopBindToHaveArity 
@@ -1056,7 +1056,7 @@ module Pass4_RewriteAssembly =
         // CLEANUP NOTE: should be using a mkApps to make all applications 
         match fx with
         | Expr.Val (fvref:ValRef,_,m) when 
-                (SetCustom.contains fvref.Deref penv.tlrS) &&
+                (Zset.contains fvref.Deref penv.tlrS) &&
                 (let wf = Zmap.force fvref.Deref penv.arityM ("TransApp - wf",nameOfVal)
                  IsArityMet fvref wf tys args) ->
 

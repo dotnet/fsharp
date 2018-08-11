@@ -408,8 +408,8 @@ let CheckEscapes cenv allowProtected m syntacticArgs body = (* m is a range suit
 
         if not allowProtected && frees.UsesMethodLocalConstructs  then
             errorR(Error(FSComp.SR.chkProtectedOrBaseCalled(), m))
-        elif SetCustom.exists cantBeFree fvs then 
-            let v =  List.find cantBeFree (SetCustom.elements fvs) 
+        elif Zset.exists cantBeFree fvs then 
+            let v =  List.find cantBeFree (Zset.elements fvs) 
 
             // byref error before mutable error (byrefs are mutable...). 
             if (isByrefLikeTy cenv.g m v.Type) then

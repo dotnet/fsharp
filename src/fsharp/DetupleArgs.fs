@@ -161,11 +161,11 @@ let (|TyappAndApp|_|) e =
 //-------------------------------------------------------------------------
 
 module GlobalUsageAnalysis = 
-    let bindAccBounds vals (_isInDTree, v) =  SetCustom.add v vals
+    let bindAccBounds vals (_isInDTree, v) =  Zset.add v vals
 
     let GetValsBoundInExpr expr =
        let folder = {ExprFolder0 with valBindingSiteIntercept = bindAccBounds}
-       let z0 = SetCustom.empty<ValOrder> ()
+       let z0 = Zset.empty<ValOrder> ()
        let z  = FoldExpr folder z0 expr
        z
 
@@ -197,8 +197,8 @@ module GlobalUsageAnalysis =
        { Uses     = Zmap.empty<ValOrder> ()
          Defns     = Zmap.empty<ValOrder> ()
          RecursiveBindings  = Zmap.empty<ValOrder> ()
-         DecisionTreeBindings    = SetCustom.empty<ValOrder> ()
-         TopLevelBindings = SetCustom.empty<ValOrder> ()
+         DecisionTreeBindings    = Zset.empty<ValOrder> ()
+         TopLevelBindings = Zset.empty<ValOrder> ()
          IterationIsAtTopLevel      = true }
 
     /// Log the use of a value with a particular tuple chape at a callsite
@@ -211,8 +211,8 @@ module GlobalUsageAnalysis =
 
     /// Log the definition of a binding
     let logBinding z (isInDTree, v) =
-        let z = if isInDTree then {z with DecisionTreeBindings = SetCustom.add v z.DecisionTreeBindings} else z
-        let z = if z.IterationIsAtTopLevel then {z with TopLevelBindings = SetCustom.add v z.TopLevelBindings} else z
+        let z = if isInDTree then {z with DecisionTreeBindings = Zset.add v z.DecisionTreeBindings} else z
+        let z = if z.IterationIsAtTopLevel then {z with TopLevelBindings = Zset.add v z.TopLevelBindings} else z
         z
         
 

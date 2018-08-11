@@ -24,7 +24,7 @@ type cenv =
       mutable unsolved: Typars }
 
 let accTy cenv _env ty =
-    (freeInType CollectTyparsNoCaching (tryNormalizeMeasureInType cenv.g ty)).FreeTypars |> SetCustom.iter (fun tp -> 
+    (freeInType CollectTyparsNoCaching (tryNormalizeMeasureInType cenv.g ty)).FreeTypars |> Zset.iter (fun tp -> 
             if (tp.Rigidity <> TyparRigidity.Rigid) then 
                 cenv.unsolved <- tp :: cenv.unsolved) 
 

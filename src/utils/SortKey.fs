@@ -91,7 +91,7 @@ module Set =
 type zset<'Key,'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> = Set<SortKey<'Key,'Comparer>>
 
 [<Sealed; AbstractClass>]
-type SetCustom<'Key>() =
+type Zset<'Key>() =
     static member empty<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct>() : zset<'Key,'Comparer> =
         Set.empty<SortKey<'Key,'Comparer>>
 

@@ -26,7 +26,7 @@ let DecideEscapes syntacticArgs body =
         not passedIn && (v.IsMutable && v.ValReprInfo.IsNone) 
 
     let frees = freeInExpr CollectLocals body
-    frees.FreeLocals |> SetCustom.filter cantBeFree 
+    frees.FreeLocals |> Zset.filter cantBeFree 
 
 /// Find all the mutable locals that escape a lambda expression, ignoring the arguments to the lambda
 let DecideLambda exprF cenv topValInfo expr ety z   = 
@@ -39,7 +39,7 @@ let DecideLambda exprF cenv topValInfo expr ety z   =
         let args = Option.fold snoc args baseValOpt
         let syntacticArgs = Option.fold snoc args  ctorThisValOpt
         
-        let z = SetCustom.union z (DecideEscapes syntacticArgs body)
+        let z = Zset.union z (DecideEscapes syntacticArgs body)
         let z = match exprF with Some f -> f z body | None -> z
         z
     | _ -> z

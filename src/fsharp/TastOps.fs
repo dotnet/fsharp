@@ -1814,11 +1814,11 @@ let ValRefIsExplicitImpl g (vref:ValRef) = ValIsExplicitImpl g vref.Deref
 // an equation assigned by type inference.
 //---------------------------------------------------------------------------
 
-let emptyFreeLocals = SetCustom.empty<ValOrder> ()
-let emptyFreeRecdFields = SetCustom.empty<RecdFieldRefOrder> ()
-let emptyFreeUnionCases = SetCustom.empty<UnionCaseRefOrder> ()
-let emptyFreeTycons = SetCustom.empty<TyconOrder> ()
-let emptyFreeTypars = SetCustom.empty<TyparOrder> ()
+let emptyFreeLocals = Zset.empty<ValOrder> ()
+let emptyFreeRecdFields = Zset.empty<RecdFieldRefOrder> ()
+let emptyFreeUnionCases = Zset.empty<UnionCaseRefOrder> ()
+let emptyFreeTycons = Zset.empty<TyconOrder> ()
+let emptyFreeTypars = Zset.empty<TyparOrder> ()
 
 let emptyFreeTyvars =  
     { FreeTycons = emptyFreeTycons
@@ -1827,8 +1827,8 @@ let emptyFreeTyvars =
       FreeTypars = emptyFreeTypars}
 
 let isEmptyFreeTyvars ftyvs = 
-    SetCustom.isEmpty ftyvs.FreeTypars &&
-    SetCustom.isEmpty ftyvs.FreeTycons 
+    Zset.isEmpty ftyvs.FreeTypars &&
+    Zset.isEmpty ftyvs.FreeTycons 
 
 let unionFreeTyvars fvs1 fvs2 = 
     if fvs1 === emptyFreeTyvars then fvs2 else 
@@ -1915,8 +1915,8 @@ let CollectLocals = CollectTyparsAndLocals
 
 let accFreeLocalTycon opts x acc = 
     if not opts.includeLocalTycons then acc else
-    if SetCustom.contains x acc.FreeTycons then acc else 
-    { acc with FreeTycons = SetCustom.add x acc.FreeTycons } 
+    if Zset.contains x acc.FreeTycons then acc else 
+    { acc with FreeTycons = Zset.add x acc.FreeTycons } 
 
 let accFreeTycon opts (tcr:TyconRef) acc = 
     if not opts.includeLocalTycons then acc
@@ -1927,7 +1927,7 @@ let rec boundTypars opts tps acc =
     // Bound type vars form a recursively-referential set due to constraints, e.g.  A : I<B>, B : I<A> 
     // So collect up free vars in all constraints first, then bind all variables 
     let acc = List.foldBack (fun (tp:Typar) acc -> accFreeInTyparConstraints opts tp.Constraints acc) tps acc
-    List.foldBack (fun tp acc -> { acc with FreeTypars = SetCustom.remove tp acc.FreeTypars}) tps acc
+    List.foldBack (fun tp acc -> { acc with FreeTypars = Zset.remove tp acc.FreeTypars}) tps acc
 
 and accFreeInTyparConstraints opts cxs acc =
     List.foldBack (accFreeInTyparConstraint opts) cxs acc
@@ -1969,8 +1969,8 @@ and accFreeInTraitSln opts sln acc =
     | ClosedExprSln _ -> acc // nothing to accumulate because it's a closed expression referring only to erasure of provided method calls
 
 and accFreeLocalValInTraitSln _opts v fvs =
-    if SetCustom.contains v fvs.FreeTraitSolutions then fvs 
-    else { fvs with FreeTraitSolutions = SetCustom.add v fvs.FreeTraitSolutions}
+    if Zset.contains v fvs.FreeTraitSolutions then fvs 
+    else { fvs with FreeTraitSolutions = Zset.add v fvs.FreeTraitSolutions}
 
 and accFreeValRefInTraitSln opts (vref:ValRef) fvs = 
     if vref.IsLocalRef then
@@ -1981,10 +1981,10 @@ and accFreeValRefInTraitSln opts (vref:ValRef) fvs =
 
 and accFreeTyparRef opts (tp:Typar) acc = 
     if not opts.includeTypars then acc else
-    if SetCustom.contains tp acc.FreeTypars then acc 
+    if Zset.contains tp acc.FreeTypars then acc 
     else 
         accFreeInTyparConstraints opts tp.Constraints
-          { acc with FreeTypars = SetCustom.add tp acc.FreeTypars}
+          { acc with FreeTypars = Zset.add tp acc.FreeTypars}
 
 and accFreeInType opts ty acc  = 
     match stripTyparEqns ty with 
@@ -2496,25 +2496,25 @@ module SimplifyTypes =
           postfixConstraints : (Typar * TyparConstraint) list }
           
     let typeSimplificationInfo0 = 
-        { singletons         = SetCustom.empty<TyparOrder> ()
+        { singletons         = Zset.empty<TyparOrder> ()
           inplaceConstraints = Zmap.empty<TyparOrder> ()
           postfixConstraints = [] }
 
     let categorizeConstraints simplify m cxs =
         let singletons = if simplify then Zmap.chooseL (fun tp n -> if n = 1 then Some tp else None) m else []
-        let singletons = SetCustom.ofList<TyparOrder> singletons
+        let singletons = Zset.ofList<TyparOrder> singletons
         // Here, singletons are typars that occur once in the type.
         // However, they may also occur in a type constraint.
         // If they do, they are really multiple occurrence - so we should remove them.
         let constraintTypars = (freeInTyparConstraints CollectTyparsNoCaching (List.map snd cxs)).FreeTypars
-        let usedInTypeConstraint typar = SetCustom.contains typar constraintTypars
-        let singletons = singletons |> SetCustom.filter (usedInTypeConstraint >> not) 
+        let usedInTypeConstraint typar = Zset.contains typar constraintTypars
+        let singletons = singletons |> Zset.filter (usedInTypeConstraint >> not) 
         // Here, singletons should really be used once 
         let inplace, postfix =
           cxs |> List.partition (fun (tp, tpc) -> 
             simplify &&
             isTTyparCoercesToType tpc && 
-            SetCustom.contains tp singletons && 
+            Zset.contains tp singletons && 
             tp.Constraints.Length = 1)
         let inplace = inplace |> List.map (function (tp, TyparConstraint.CoercesTo(ty, _)) -> tp, ty | _ -> failwith "not isTTyparCoercesToType")
         
@@ -3201,7 +3201,7 @@ module DebugPrint = begin
 
           match Zmap.tryFind typar env.inplaceConstraints with
           | Some (typarConstraintTy) ->
-              if SetCustom.contains typar env.singletons then
+              if Zset.contains typar env.singletons then
                 leftL (tagText "#") ^^ auxTyparConstraintTypL env typarConstraintTy
               else
                 (varL ^^ sepL (tagText ":>") ^^ auxTyparConstraintTypL env typarConstraintTy) |> wrap
@@ -3775,11 +3775,11 @@ type SignatureHidingInfo =
       mhiUnionCases : zset<UnionCaseRef,UnionCaseRefOrder> }
 
     static member Empty = 
-        { mhiTycons      = SetCustom.empty<TyconOrder> ()
-          mhiTyconReprs  = SetCustom.empty<TyconOrder> ()
-          mhiVals        = SetCustom.empty<ValOrder> ()
-          mhiRecdFields  = SetCustom.empty<RecdFieldRefOrder> ()
-          mhiUnionCases  = SetCustom.empty<UnionCaseRefOrder> () }
+        { mhiTycons      = Zset.empty<TyconOrder> ()
+          mhiTyconReprs  = Zset.empty<TyconOrder> ()
+          mhiVals        = Zset.empty<ValOrder> ()
+          mhiRecdFields  = Zset.empty<RecdFieldRefOrder> ()
+          mhiUnionCases  = Zset.empty<UnionCaseRefOrder> () }
 
 let addValRemap v v' tmenv = 
     { tmenv with valRemap= tmenv.valRemap.Add v (mkLocalValRef v')  }
@@ -3799,7 +3799,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi) =
     match sigtyconOpt with 
     | None -> 
         // The type constructor is not present in the signature. Hence it is hidden. 
-        let mhi = { mhi with mhiTycons = SetCustom.add entity mhi.mhiTycons }
+        let mhi = { mhi with mhiTycons = Zset.add entity mhi.mhiTycons }
         (mrpi, mhi) 
     | Some sigtycon  -> 
         // The type constructor is in the signature. Hence record the repackage entry 
@@ -3810,7 +3810,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi) =
         let mhi = 
             if (match entity.TypeReprInfo with TNoRepr -> false | _ -> true) && (match sigtycon.TypeReprInfo with TNoRepr -> true | _ -> false) then 
                 // The type representation is absent in the signature, hence it is hidden 
-                { mhi with mhiTyconReprs = SetCustom.add entity mhi.mhiTyconReprs } 
+                { mhi with mhiTyconReprs = Zset.add entity mhi.mhiTyconReprs } 
             else 
                 // The type representation is present in the signature. 
                 // Find the fields that have been hidden or which were non-public anyway. 
@@ -3823,7 +3823,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi) =
                             | _ -> 
                                 // The field is not in the signature. Hence it is regarded as hidden. 
                                 let rfref = tcref.MakeNestedRecdFieldRef rfield
-                                { mhi with mhiRecdFields =  SetCustom.add rfref mhi.mhiRecdFields })
+                                { mhi with mhiRecdFields =  Zset.add rfref mhi.mhiRecdFields })
                         entity.AllFieldsArray
                 |> List.foldBack  (fun (ucase:UnionCase) mhi ->
                             match sigtycon.GetUnionCaseByName ucase.DisplayName with 
@@ -3833,7 +3833,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi) =
                             | _ -> 
                                 // The constructor is not in the signature. Hence it is regarded as hidden. 
                                 let ucref = tcref.MakeNestedUnionCaseRef ucase
-                                { mhi with mhiUnionCases =  SetCustom.add ucref mhi.mhiUnionCases })
+                                { mhi with mhiUnionCases =  Zset.add ucref mhi.mhiUnionCases })
                         (entity.UnionCasesAsList)  
         (mrpi, mhi) 
 
@@ -3842,7 +3842,7 @@ let accSubEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi)
     match sigtyconOpt with 
     | None -> 
         // The type constructor is not present in the signature. Hence it is hidden. 
-        let mhi = { mhi with mhiTycons = SetCustom.add entity mhi.mhiTycons }
+        let mhi = { mhi with mhiTycons = Zset.add entity mhi.mhiTycons }
         (mrpi, mhi) 
     | Some sigtycon  -> 
         // The type constructor is in the signature. Hence record the repackage entry 
@@ -3866,7 +3866,7 @@ let accValRemap g aenv (msigty:ModuleOrNamespaceType) (implVal:Val) (mrpi, mhi) 
     match sigValOpt with 
     | None -> 
         if verbose then dprintf "accValRemap, hide = %s#%d\n" implVal.LogicalName implVal.Stamp
-        let mhi = { mhi with mhiVals = SetCustom.add implVal mhi.mhiVals }
+        let mhi = { mhi with mhiVals = Zset.add implVal mhi.mhiVals }
         (mrpi, mhi) 
     | Some (sigVal:Val)  -> 
         // The value is in the signature. Add the repackage entry. 
@@ -3964,9 +3964,9 @@ let ComputeRemappingFromImplementationToSignature g mdef msigty =
 let accTyconHidingInfoAtAssemblyBoundary (tycon:Tycon) mhi =
     if not (canAccessFromEverywhere tycon.Accessibility) then 
         // The type constructor is not public, hence hidden at the assembly boundary. 
-        { mhi with mhiTycons = SetCustom.add tycon mhi.mhiTycons } 
+        { mhi with mhiTycons = Zset.add tycon mhi.mhiTycons } 
     elif not (canAccessFromEverywhere tycon.TypeReprAccessibility) then 
-        { mhi with mhiTyconReprs = SetCustom.add tycon mhi.mhiTyconReprs } 
+        { mhi with mhiTyconReprs = Zset.add tycon mhi.mhiTyconReprs } 
     else 
         mhi 
         |> Array.foldBack  
@@ -3974,7 +3974,7 @@ let accTyconHidingInfoAtAssemblyBoundary (tycon:Tycon) mhi =
                    if not (canAccessFromEverywhere rfield.Accessibility) then 
                        let tcref = mkLocalTyconRef tycon
                        let rfref = tcref.MakeNestedRecdFieldRef rfield
-                       { mhi with mhiRecdFields = SetCustom.add rfref mhi.mhiRecdFields } 
+                       { mhi with mhiRecdFields = Zset.add rfref mhi.mhiRecdFields } 
                    else mhi)
                tycon.AllFieldsArray  
         |> List.foldBack  
@@ -3982,7 +3982,7 @@ let accTyconHidingInfoAtAssemblyBoundary (tycon:Tycon) mhi =
                    if not (canAccessFromEverywhere ucase.Accessibility) then 
                        let tcref = mkLocalTyconRef tycon
                        let ucref = tcref.MakeNestedUnionCaseRef ucase
-                       { mhi with mhiUnionCases = SetCustom.add ucref mhi.mhiUnionCases } 
+                       { mhi with mhiUnionCases = Zset.add ucref mhi.mhiUnionCases } 
                    else mhi)
                (tycon.UnionCasesAsList)   
 
@@ -3997,7 +3997,7 @@ let accValHidingInfoAtAssemblyBoundary (vspec:Val) mhi =
        // anything that's not a module or member binding gets assembly visibility
        not vspec.IsMemberOrModuleBinding then 
         // The value is not public, hence hidden at the assembly boundary. 
-        { mhi with mhiVals = SetCustom.add vspec mhi.mhiVals } 
+        { mhi with mhiVals = Zset.add vspec mhi.mhiVals } 
     else 
         mhi
 
@@ -4024,7 +4024,7 @@ let IsHidden setF accessF remapF debugF =
          | [] -> false // Ah! we escaped to freedom! 
          | (rpi, mhi) :: rest -> 
             // Explicitly hidden? 
-            SetCustom.contains x (setF mhi) || 
+            Zset.contains x (setF mhi) || 
             // Recurse... 
             check rest (remapF rpi x))
     fun mrmi x -> 
@@ -4074,13 +4074,13 @@ let freeVarsAllPublic fvs =
     //
     // CODEREVIEW:
     // What about non-local vals. This fix assumes non-local vals must be public. OK?
-    SetCustom.forall isPublicVal fvs.FreeLocals  &&
-    SetCustom.forall isPublicUnionCase fvs.FreeUnionCases &&
-    SetCustom.forall isPublicRecdField fvs.FreeRecdFields  &&
-    SetCustom.forall isPublicTycon fvs.FreeTyvars.FreeTycons
+    Zset.forall isPublicVal fvs.FreeLocals  &&
+    Zset.forall isPublicUnionCase fvs.FreeUnionCases &&
+    Zset.forall isPublicRecdField fvs.FreeRecdFields  &&
+    Zset.forall isPublicTycon fvs.FreeTyvars.FreeTycons
 
 let freeTyvarsAllPublic tyvars = 
-    SetCustom.forall isPublicTycon tyvars.FreeTycons
+    Zset.forall isPublicTycon tyvars.FreeTycons
 
 
 // Detect the subset of match expressions we treat in a linear way
@@ -4137,8 +4137,8 @@ let accFreeVarsInTraitSln opts tys acc = accFreeTyvars opts accFreeInTraitSln ty
 let boundLocalVal opts v fvs =
     if not opts.includeLocals then fvs else
     let fvs = accFreevarsInVal opts v fvs
-    if not (SetCustom.contains v fvs.FreeLocals) then fvs
-    else {fvs with FreeLocals= SetCustom.remove v fvs.FreeLocals} 
+    if not (Zset.contains v fvs.FreeLocals) then fvs
+    else {fvs with FreeLocals= Zset.remove v fvs.FreeLocals} 
 
 let boundProtect fvs =
     if fvs.UsesMethodLocalConstructs then {fvs with UsesMethodLocalConstructs = false} else fvs
@@ -4201,15 +4201,15 @@ and accFreeInValFlags opts flag acc =
 
 and accFreeLocalVal opts v fvs =
     if not opts.includeLocals then fvs else
-    if SetCustom.contains v fvs.FreeLocals then fvs 
+    if Zset.contains v fvs.FreeLocals then fvs 
     else 
         let fvs = accFreevarsInVal opts v fvs
-        {fvs with FreeLocals=SetCustom.add v fvs.FreeLocals}
+        {fvs with FreeLocals=Zset.add v fvs.FreeLocals}
   
 and accLocalTyconRepr opts b fvs = 
     if not opts.includeLocalTyconReprs then fvs else
-    if SetCustom.contains b fvs.FreeLocalTyconReprs  then fvs
-    else { fvs with FreeLocalTyconReprs = SetCustom.add b fvs.FreeLocalTyconReprs } 
+    if Zset.contains b fvs.FreeLocalTyconReprs  then fvs
+    else { fvs with FreeLocalTyconReprs = Zset.add b fvs.FreeLocalTyconReprs } 
 
 and accUsedRecdOrUnionTyconRepr opts (tc:Tycon) fvs = 
     if match tc.TypeReprInfo with  TFSharpObjectRepr _ | TRecdRepr _ | TUnionRepr _ -> true | _ -> false
@@ -4218,19 +4218,19 @@ and accUsedRecdOrUnionTyconRepr opts (tc:Tycon) fvs =
 
 and accFreeUnionCaseRef opts cr fvs =   
     if not opts.includeUnionCases then fvs else
-    if SetCustom.contains cr fvs.FreeUnionCases then fvs 
+    if Zset.contains cr fvs.FreeUnionCases then fvs 
     else
         let fvs = fvs |> accUsedRecdOrUnionTyconRepr opts cr.Tycon
         let fvs = fvs |> accFreevarsInTycon opts cr.TyconRef
-        { fvs with FreeUnionCases = SetCustom.add cr fvs.FreeUnionCases } 
+        { fvs with FreeUnionCases = Zset.add cr fvs.FreeUnionCases } 
 
 and accFreeRecdFieldRef opts rfref fvs = 
     if not opts.includeRecdFields then fvs else
-    if SetCustom.contains rfref fvs.FreeRecdFields then fvs 
+    if Zset.contains rfref fvs.FreeRecdFields then fvs 
     else 
         let fvs = fvs |> accUsedRecdOrUnionTyconRepr opts rfref.Tycon
         let fvs = fvs |> accFreevarsInTycon opts rfref.TyconRef 
-        { fvs with FreeRecdFields = SetCustom.add rfref fvs.FreeRecdFields } 
+        { fvs with FreeRecdFields = Zset.add rfref fvs.FreeRecdFields } 
   
 and accFreeExnRef _exnc fvs = fvs // Note: this exnc (TyconRef) should be collected the surround types, e.g. tinst of Expr.Op 
 and accFreeValRef opts (vref:ValRef) fvs = 
@@ -7683,14 +7683,14 @@ type PrettyNaming.ActivePatternInfo with
 // not by their argument types.
 let doesActivePatternHaveFreeTypars g (v:ValRef) =
     let vty  = v.TauType
-    let vtps = v.Typars |> SetCustom.ofList<TyparOrder>
+    let vtps = v.Typars |> Zset.ofList<TyparOrder>
     if not (isFunTy g v.TauType) then
         errorR(Error(FSComp.SR.activePatternIdentIsNotFunctionTyped(v.LogicalName), v.Range))
     let argtys, resty  = stripFunTy g vty
     let argtps, restps= (freeInTypes CollectTypars argtys).FreeTypars, (freeInType CollectTypars resty).FreeTypars        
     // Error if an active pattern is generic in type variables that only occur in the result Choice<_, ...>.
     // Note: The test restricts to v.Typars since typars from the closure are considered fixed.
-    not (SetCustom.isEmpty (SetCustom.inter (Set.diff restps argtps) vtps)) 
+    not (Zset.isEmpty (Zset.inter (Set.diff restps argtps) vtps)) 
 
 //---------------------------------------------------------------------------
 // RewriteExpr: rewrite bottom up with interceptors 
@@ -8300,8 +8300,8 @@ let (|CompiledForEachExpr|_|) g expr =
                       enumerableVar.IsCompilerGenerated &&
                       enumeratorVar.IsCompilerGenerated &&
                       (let fvs = (freeInExpr CollectLocals bodyExpr)
-                       not (SetCustom.contains enumerableVar fvs.FreeLocals) && 
-                       not (SetCustom.contains enumeratorVar fvs.FreeLocals)) ->
+                       not (Zset.contains enumerableVar fvs.FreeLocals) && 
+                       not (Zset.contains enumeratorVar fvs.FreeLocals)) ->
 
         // Extract useful ranges
         let mEnumExpr = enumerableExpr.Range
