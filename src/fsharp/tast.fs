@@ -1933,10 +1933,31 @@ and [<Sealed; StructuredFormatDisplay("{DebugText}")>]
 
 and ModuleOrNamespace = Entity 
 and Tycon = Entity 
-and [<Struct>] TyconByStamp =
+
+and [<Struct;NoComparison;NoEquality>] TyconByStamp =
+    static member inline Compare (v1:Tycon) (v2:Tycon) =
+        v1.Stamp.CompareTo v2.Stamp
+
     interface IComparer<Tycon> with
         member __.Compare(v1, v2) =
-            compare v1.Stamp v2.Stamp
+            TyconByStamp.Compare v1 v2
+
+and [<Struct;NoComparison;NoEquality>] RecdFieldRefOrder =
+    static member Compare (RFRef(tcref1, nm1)) (RFRef(tcref2, nm2)) = 
+        let c = TyconByStamp.Compare tcref1.Deref tcref2.Deref
+        if c <> 0 then c else 
+        compare nm1 nm2
+
+    interface IComparer<RecdFieldRef> with
+        member __.Compare (lhs, rhs) = RecdFieldRefOrder.Compare lhs rhs
+
+and [<Struct;NoComparison;NoEquality>] UnionCaseRefOrder =
+    interface IComparer<UnionCaseRef> with
+        member __.Compare(UCRef(tcref1, nm1), UCRef(tcref2, nm2)) = 
+            let c = TyconByStamp.Compare tcref1.Deref tcref2.Deref
+            if c <> 0 then c else 
+            compare nm1 nm2
+
 
 /// A set of static methods for constructing types.
 and Construct = 
@@ -2283,10 +2304,10 @@ and
 
     override x.ToString() = x.Name
 
-and [<Struct>] TyparByStamp =
+and [<Struct;NoComparison;NoEquality>] TyparByStamp =
     interface IComparer<Typar> with
         member __.Compare(v1: Typar, v2: Typar): int =
-            compare v1.Stamp v2.Stamp
+            v1.Stamp.CompareTo v2.Stamp
 
 and
     [<NoEquality; NoComparison; RequireQualifiedAccess (*; StructuredFormatDisplay("{DebugText}") *) >]
@@ -2972,10 +2993,13 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 
     override x.ToString() = x.LogicalName
 
-and [<Struct>] ValByStamp =
+and [<Struct;NoComparison;NoEquality>] ValByStamp =
+    static member inline Compare (v1:Val) (v2:Val) =
+        v1.Stamp.CompareTo v2.Stamp
+
     interface IComparer<Val> with
         member __.Compare(v1, v2) =
-            compare v1.Stamp v2.Stamp
+            ValByStamp.Compare v1 v2
     
 and 
     /// Represents the extra information stored for a member
@@ -4985,10 +5009,10 @@ and FreeTycons = Internal.Utilities.Collections.zset<Tycon,TyconByStamp>
 
 /// Represents a set of 'free' record field definitions. Used to collect the record field definitions referred to 
 /// from an expression.
-and FreeRecdFields = Zset<RecdFieldRef>
+and FreeRecdFields = Internal.Utilities.Collections.zset<RecdFieldRef,RecdFieldRefOrder>
 
 /// Represents a set of 'free' union cases. Used to collect the union cases referred to from an expression.
-and FreeUnionCases = Zset<UnionCaseRef>
+and FreeUnionCases = Internal.Utilities.Collections.zset<UnionCaseRef,UnionCaseRefOrder>
 
 /// Represents a set of 'free' type-related elements, including named types, trait solutions, union cases and
 /// record fields.

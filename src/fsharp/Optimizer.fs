@@ -977,8 +977,8 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
         SetCustom.memberOf mhi.mhiTycons, 
         SetCustom.memberOf mhi.mhiTyconReprs, 
         SetCustom.memberOf mhi.mhiVals, 
-        Zset.memberOf mhi.mhiRecdFields, 
-        Zset.memberOf mhi.mhiUnionCases
+        SetCustom.memberOf mhi.mhiRecdFields, 
+        SetCustom.memberOf mhi.mhiUnionCases
 
     let rec abstractExprInfo ivalue = 
         match ivalue with 
@@ -1000,8 +1000,8 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
              SetCustom.exists hiddenVal       fvs.FreeLocals            ||
              SetCustom.exists hiddenTycon     fvs.FreeTyvars.FreeTycons ||
              SetCustom.exists hiddenTyconRepr fvs.FreeLocalTyconReprs   ||
-             Zset.exists hiddenRecdField fvs.FreeRecdFields        ||
-             Zset.exists hiddenUnionCase fvs.FreeUnionCases ) ->
+             SetCustom.exists hiddenRecdField fvs.FreeRecdFields        ||
+             SetCustom.exists hiddenUnionCase fvs.FreeUnionCases ) ->
                 UnknownValue
         // Check for escape in constant 
         | ConstValue(_, ty) when 

@@ -376,14 +376,6 @@ type TyconRefMultiMap<'T> =
     static member OfList : (TyconRef * 'T) list -> TyconRefMultiMap<'T>
 
 //-------------------------------------------------------------------------
-// Orderings on Tycon, Val, RecdFieldRef, Typar
-//------------------------------------------------------------------------- 
-
-val valOrder          : IComparer<Val>
-val tyconOrder        : IComparer<Tycon>
-val recdFieldRefOrder : IComparer<RecdFieldRef>
-
-//-------------------------------------------------------------------------
 // Equality on Tycon and Val
 //------------------------------------------------------------------------- 
 
@@ -857,8 +849,8 @@ type SignatureHidingInfo =
     { mhiTycons     : zset<Tycon,TyconByStamp>
       mhiTyconReprs : zset<Tycon,TyconByStamp>
       mhiVals       : zset<Val,ValByStamp>
-      mhiRecdFields : Zset<RecdFieldRef>;
-      mhiUnionCases : Zset<UnionCaseRef> }
+      mhiRecdFields : zset<RecdFieldRef,RecdFieldRefOrder>
+      mhiUnionCases : zset<UnionCaseRef,UnionCaseRefOrder> }
     static member Empty : SignatureHidingInfo
 
 val ComputeRemappingFromInferredSignatureToExplicitSignature : TcGlobals -> ModuleOrNamespaceType -> ModuleOrNamespaceType -> SignatureRepackageInfo * SignatureHidingInfo

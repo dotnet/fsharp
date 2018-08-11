@@ -1019,27 +1019,6 @@ let rec getErasedTypes g ty =
     | TType_measure _ -> 
         [ty]
 
-
-//---------------------------------------------------------------------------
-// Standard orderings, e.g. for order set/map keys
-//---------------------------------------------------------------------------
-
-let valOrder = { new IComparer<Val> with member __.Compare(v1, v2) = compare v1.Stamp v2.Stamp }
-let tyconOrder = { new IComparer<Tycon> with member __.Compare(tc1, tc2) = compare tc1.Stamp tc2.Stamp }
-let recdFieldRefOrder  = 
-    { new IComparer<RecdFieldRef> with 
-         member __.Compare(RFRef(tcref1, nm1), RFRef(tcref2, nm2)) = 
-            let c = tyconOrder.Compare (tcref1.Deref, tcref2.Deref) 
-            if c <> 0 then c else 
-            compare nm1 nm2 }
-
-let unionCaseRefOrder = 
-    { new IComparer<UnionCaseRef> with 
-         member __.Compare(UCRef(tcref1, nm1), UCRef(tcref2, nm2)) = 
-            let c = tyconOrder.Compare (tcref1.Deref, tcref2.Deref) 
-            if c <> 0 then c else 
-            compare nm1 nm2 }
-
 //---------------------------------------------------------------------------
 // Make some common types
 //---------------------------------------------------------------------------
@@ -1836,21 +1815,9 @@ let ValRefIsExplicitImpl g (vref:ValRef) = ValIsExplicitImpl g vref.Deref
 //---------------------------------------------------------------------------
 
 let emptyFreeLocals = SetCustom.empty<ValByStamp> ()
-
-let emptyFreeRecdFields = Zset.empty recdFieldRefOrder
-let unionFreeRecdFields s1 s2 = 
-    if s1 === emptyFreeRecdFields then s2
-    elif s2 === emptyFreeRecdFields then s1
-    else Zset.union s1 s2
-
-let emptyFreeUnionCases = Zset.empty unionCaseRefOrder
-let unionFreeUnionCases s1 s2 = 
-    if s1 === emptyFreeUnionCases then s2
-    elif s2 === emptyFreeUnionCases then s1
-    else Zset.union s1 s2
-
+let emptyFreeRecdFields = SetCustom.empty<RecdFieldRefOrder> ()
+let emptyFreeUnionCases = SetCustom.empty<UnionCaseRefOrder> ()
 let emptyFreeTycons = SetCustom.empty<TyconByStamp> ()
-
 let emptyFreeTypars = SetCustom.empty<TyparByStamp> ()
 
 let emptyFreeTyvars =  
@@ -3804,15 +3771,15 @@ type SignatureHidingInfo =
     { mhiTycons     : zset<Tycon,TyconByStamp>; 
       mhiTyconReprs : zset<Tycon,TyconByStamp>;  
       mhiVals       : zset<Val,ValByStamp>
-      mhiRecdFields : Zset<RecdFieldRef>; 
-      mhiUnionCases : Zset<UnionCaseRef> }
+      mhiRecdFields : zset<RecdFieldRef,RecdFieldRefOrder>; 
+      mhiUnionCases : zset<UnionCaseRef,UnionCaseRefOrder> }
 
     static member Empty = 
         { mhiTycons      = SetCustom.empty<TyconByStamp> ()
           mhiTyconReprs  = SetCustom.empty<TyconByStamp> ()
           mhiVals        = SetCustom.empty<ValByStamp> ()
-          mhiRecdFields  = Zset.empty recdFieldRefOrder; 
-          mhiUnionCases  = Zset.empty unionCaseRefOrder }
+          mhiRecdFields  = SetCustom.empty<RecdFieldRefOrder> ()
+          mhiUnionCases  = SetCustom.empty<UnionCaseRefOrder> () }
 
 let addValRemap v v' tmenv = 
     { tmenv with valRemap= tmenv.valRemap.Add v (mkLocalValRef v')  }
@@ -3856,7 +3823,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi) =
                             | _ -> 
                                 // The field is not in the signature. Hence it is regarded as hidden. 
                                 let rfref = tcref.MakeNestedRecdFieldRef rfield
-                                { mhi with mhiRecdFields =  Zset.add rfref mhi.mhiRecdFields })
+                                { mhi with mhiRecdFields =  SetCustom.add rfref mhi.mhiRecdFields })
                         entity.AllFieldsArray
                 |> List.foldBack  (fun (ucase:UnionCase) mhi ->
                             match sigtycon.GetUnionCaseByName ucase.DisplayName with 
@@ -3866,7 +3833,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi) =
                             | _ -> 
                                 // The constructor is not in the signature. Hence it is regarded as hidden. 
                                 let ucref = tcref.MakeNestedUnionCaseRef ucase
-                                { mhi with mhiUnionCases =  Zset.add ucref mhi.mhiUnionCases })
+                                { mhi with mhiUnionCases =  SetCustom.add ucref mhi.mhiUnionCases })
                         (entity.UnionCasesAsList)  
         (mrpi, mhi) 
 
@@ -4007,7 +3974,7 @@ let accTyconHidingInfoAtAssemblyBoundary (tycon:Tycon) mhi =
                    if not (canAccessFromEverywhere rfield.Accessibility) then 
                        let tcref = mkLocalTyconRef tycon
                        let rfref = tcref.MakeNestedRecdFieldRef rfield
-                       { mhi with mhiRecdFields = Zset.add rfref mhi.mhiRecdFields } 
+                       { mhi with mhiRecdFields = SetCustom.add rfref mhi.mhiRecdFields } 
                    else mhi)
                tycon.AllFieldsArray  
         |> List.foldBack  
@@ -4015,7 +3982,7 @@ let accTyconHidingInfoAtAssemblyBoundary (tycon:Tycon) mhi =
                    if not (canAccessFromEverywhere ucase.Accessibility) then 
                        let tcref = mkLocalTyconRef tycon
                        let ucref = tcref.MakeNestedUnionCaseRef ucase
-                       { mhi with mhiUnionCases = Zset.add ucref mhi.mhiUnionCases } 
+                       { mhi with mhiUnionCases = SetCustom.add ucref mhi.mhiUnionCases } 
                    else mhi)
                (tycon.UnionCasesAsList)   
 
@@ -4047,25 +4014,8 @@ let ComputeHidingInfoAtAssemblyBoundary mty acc =
 //--------------------------------------------------------------------------
 // Compute instances of the above for mexpr -> mty
 //--------------------------------------------------------------------------
-
-let IsHidden setF accessF remapF debugF = 
-    let rec check mrmi x = 
-        if verbose then dprintf "IsHidden %s ??\n" (showL (debugF x));
-            // Internal/private? 
-        not (canAccessFromEverywhere (accessF x)) || 
-        (match mrmi with 
-         | [] -> false // Ah! we escaped to freedom! 
-         | (rpi, mhi) :: rest -> 
-            // Explicitly hidden? 
-            Zset.contains x (setF mhi) || 
-            // Recurse... 
-            check rest (remapF rpi x))
-    fun mrmi x -> 
-        let res = check mrmi x
-        if verbose then dprintf "IsHidden, #mrmi = %d, %s = %b\n" mrmi.Length (showL (debugF x)) res;
-        res
         
-let IsHidden' setF accessF remapF debugF = 
+let IsHidden setF accessF remapF debugF = 
     let rec check mrmi x = 
         if verbose then dprintf "IsHidden %s ??\n" (showL (debugF x));
             // Internal/private? 
@@ -4082,9 +4032,9 @@ let IsHidden' setF accessF remapF debugF =
         if verbose then dprintf "IsHidden, #mrmi = %d, %s = %b\n" mrmi.Length (showL (debugF x)) res;
         res
         
-let IsHiddenTycon     mrmi x = IsHidden' (fun mhi -> mhi.mhiTycons)     (fun tc -> tc.Accessibility)        (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
-let IsHiddenTyconRepr mrmi x = IsHidden' (fun mhi -> mhi.mhiTyconReprs) (fun v -> v.TypeReprAccessibility)  (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
-let IsHiddenVal       mrmi x = IsHidden' (fun mhi -> mhi.mhiVals)       (fun v -> v.Accessibility)          (fun rpi x ->  (remapValRef rpi (mkLocalValRef x)).Deref) DebugPrint.valL mrmi x 
+let IsHiddenTycon     mrmi x = IsHidden (fun mhi -> mhi.mhiTycons)     (fun tc -> tc.Accessibility)        (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
+let IsHiddenTyconRepr mrmi x = IsHidden (fun mhi -> mhi.mhiTyconReprs) (fun v -> v.TypeReprAccessibility)  (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
+let IsHiddenVal       mrmi x = IsHidden (fun mhi -> mhi.mhiVals)       (fun v -> v.Accessibility)          (fun rpi x ->  (remapValRef rpi (mkLocalValRef x)).Deref) DebugPrint.valL mrmi x 
 let IsHiddenRecdField mrmi x = IsHidden (fun mhi -> mhi.mhiRecdFields) (fun rfref -> rfref.RecdField.Accessibility) (fun rpi x ->  remapRecdFieldRef rpi.tyconRefRemap x) DebugPrint.recdFieldRefL mrmi x 
 
 
@@ -4125,8 +4075,8 @@ let freeVarsAllPublic fvs =
     // CODEREVIEW:
     // What about non-local vals. This fix assumes non-local vals must be public. OK?
     SetCustom.forall isPublicVal fvs.FreeLocals  &&
-    Zset.forall isPublicUnionCase fvs.FreeUnionCases &&
-    Zset.forall isPublicRecdField fvs.FreeRecdFields  &&
+    SetCustom.forall isPublicUnionCase fvs.FreeUnionCases &&
+    SetCustom.forall isPublicRecdField fvs.FreeRecdFields  &&
     SetCustom.forall isPublicTycon fvs.FreeTyvars.FreeTycons
 
 let freeTyvarsAllPublic tyvars = 
@@ -4167,8 +4117,8 @@ let unionFreeVars fvs1 fvs2 =
     UsesMethodLocalConstructs     = fvs1.UsesMethodLocalConstructs || fvs2.UsesMethodLocalConstructs;
     UsesUnboundRethrow            = fvs1.UsesUnboundRethrow || fvs2.UsesUnboundRethrow;
     FreeLocalTyconReprs           = Set.union fvs1.FreeLocalTyconReprs fvs2.FreeLocalTyconReprs; 
-    FreeRecdFields                = unionFreeRecdFields fvs1.FreeRecdFields fvs2.FreeRecdFields; 
-    FreeUnionCases                = unionFreeUnionCases fvs1.FreeUnionCases fvs2.FreeUnionCases; }
+    FreeRecdFields                = Set.union fvs1.FreeRecdFields fvs2.FreeRecdFields; 
+    FreeUnionCases                = Set.union fvs1.FreeUnionCases fvs2.FreeUnionCases; }
 
 let inline accFreeTyvars (opts:FreeVarOptions) f v acc =
     if not opts.collectInTypes then acc else
@@ -4268,19 +4218,19 @@ and accUsedRecdOrUnionTyconRepr opts (tc:Tycon) fvs =
 
 and accFreeUnionCaseRef opts cr fvs =   
     if not opts.includeUnionCases then fvs else
-    if Zset.contains cr fvs.FreeUnionCases then fvs 
+    if SetCustom.contains cr fvs.FreeUnionCases then fvs 
     else
         let fvs = fvs |> accUsedRecdOrUnionTyconRepr opts cr.Tycon
         let fvs = fvs |> accFreevarsInTycon opts cr.TyconRef
-        { fvs with FreeUnionCases = Zset.add cr fvs.FreeUnionCases } 
+        { fvs with FreeUnionCases = SetCustom.add cr fvs.FreeUnionCases } 
 
 and accFreeRecdFieldRef opts rfref fvs = 
     if not opts.includeRecdFields then fvs else
-    if Zset.contains rfref fvs.FreeRecdFields then fvs 
+    if SetCustom.contains rfref fvs.FreeRecdFields then fvs 
     else 
         let fvs = fvs |> accUsedRecdOrUnionTyconRepr opts rfref.Tycon
         let fvs = fvs |> accFreevarsInTycon opts rfref.TyconRef 
-        { fvs with FreeRecdFields = Zset.add rfref fvs.FreeRecdFields } 
+        { fvs with FreeRecdFields = SetCustom.add rfref fvs.FreeRecdFields } 
   
 and accFreeExnRef _exnc fvs = fvs // Note: this exnc (TyconRef) should be collected the surround types, e.g. tinst of Expr.Op 
 and accFreeValRef opts (vref:ValRef) fvs = 

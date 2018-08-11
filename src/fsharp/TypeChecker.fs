@@ -15979,7 +15979,7 @@ module TcDeclarations =
           else
             let isInSameModuleOrNamespace = 
                  match envForDecls.eModuleOrNamespaceTypeAccumulator.Value.TypesByMangledName.TryFind(tcref.LogicalName) with 
-                  | Some tycon -> (tyconOrder.Compare(tcref.Deref, tycon) = 0)
+                  | Some tycon -> (TyconByStamp.Compare tcref.Deref tycon) = 0
                   | None -> 
                         //false
                         // There is a special case we allow when compiling FSharp.Core.dll which permits interface implementations across namespace fragments

@@ -304,7 +304,7 @@ type BindingGroupSharingSameReqdItems(bindings: Bindings) =
 
     override fclass.ToString() = "+" + String.concat "+" (List.map nameOfVal vals)
 
-let fclassOrder = Order.orderOn (fun (b: BindingGroupSharingSameReqdItems) -> b.Vals) (List.order valOrder)
+let fclassOrder = Order.orderOn (fun (b: BindingGroupSharingSameReqdItems) -> b.Vals) (List.order (ValByStamp ()))
 
 [<Struct>]
 type BindingGroupSharingSameReqdItemsByVals =
@@ -329,7 +329,7 @@ let reqdItemOrder =
       | ReqdSubEnv v -> true ,v
       | ReqdVal    v -> false,v
    
-    Order.orderOn rep (Pair.order (Bool.order,valOrder))
+    Order.orderOn rep (Pair.order (Bool.order, (ValByStamp ())))
 
 /// An env says what is needed to close the corresponding defn(s).
 /// The reqdTypars   are the free reqdTypars of the defns, and those required by any direct TLR arity-met calls.
@@ -698,7 +698,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: zmap<BindingGroupShari
 
        // determine vals(env) - transclosure 
        let vals = env.ReqdVals @ List.collect valsSubEnvFor env.ReqdSubEnvs  // list, with repeats 
-       let vals = List.noRepeats valOrder vals                        // noRepeats
+       let vals = List.noRepeats (ValByStamp ()) vals                        // noRepeats
 
        // Remove genuinely toplevel, no need to close over these
        let vals = vals |> List.filter (IsMandatoryTopLevel >> not) 

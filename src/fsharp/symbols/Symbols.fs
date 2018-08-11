@@ -999,7 +999,7 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
         match other with
         |   :? FSharpField as uc -> 
             match d, uc.V with 
-            | RecdOrClass r1, RecdOrClass r2 -> recdFieldRefOrder.Compare(r1, r2) = 0
+            | RecdOrClass r1, RecdOrClass r2 -> (RecdFieldRefOrder.Compare r1 r2) = 0
             | Union (u1, n1), Union (u2, n2) -> cenv.g.unionCaseRefEq u1 u2 && n1 = n2
             | _ -> false
         |   _ -> false
