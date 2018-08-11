@@ -90,6 +90,11 @@ type SetCustom<'Key>() =
     static member empty<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct>() : zset<'Key,'Comparer> =
         Set.empty<SortKey<'Key,'Comparer>>
 
+    static member ofList<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> lst : zset<'Key,'Comparer> =
+        lst
+        |> List.map (fun k -> {CompareObj=k})
+        |> Set.ofList
+
     static member inline contains<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (k:'Key) (s:zset<'Key,'Comparer>) =
         Set.contains {CompareObj=k} s
 
@@ -116,4 +121,16 @@ type SetCustom<'Key>() =
 
     static member inline union<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (set1:zset<'Key,'Comparer>) (set2:zset<'Key,'Comparer>) =
         Set.union set1 set2
+
+    static member inline fold<'Comparer, 'State when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (folder:'Key->'State->'State) (s:zset<'Key,'Comparer>) (state:'State) : 'State =
+        Set.fold (fun acc {CompareObj=k} -> folder k acc) state s
+
+    static member inline addList<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (xs:list<'Key>) (s:zset<'Key,'Comparer>) =
+        List.fold (fun acc x -> Set.add {CompareObj=x} acc) s xs
+    
+    static member inline diff<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (a:zset<'Key,'Comparer>) (b:zset<'Key,'Comparer>) =
+        Set.fold (fun a k -> Set.remove k a) a b
+
+    static member inline iter<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (f:'Key->unit) (m:zset<'Key,'Comparer>) =
+        Set.iter (fun {CompareObj=k} -> f k) m
 

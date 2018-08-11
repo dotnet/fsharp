@@ -12422,13 +12422,13 @@ module IncrClassChecking =
           /// vals mapped to representations
           ValReprs  : zmap<Val, ValByStamp, IncrClassValRepr> 
           /// vals represented as fields or members from this point on 
-          ValsWithRepresentation  : Zset<Val> }
+          ValsWithRepresentation  : zset<Val,ValByStamp> }
 
         static member Empty(g, names) = 
             { TakenFieldNames=Set.ofList names
               RepInfoTcGlobals=g
               ValReprs = Zmap.empty<ValByStamp> ()
-              ValsWithRepresentation = Zset.empty valOrder }
+              ValsWithRepresentation = SetCustom.empty<ValByStamp> () }
 
         /// Find the representation of a value
         member localRep.LookupRepr (v:Val) = 
@@ -12548,10 +12548,10 @@ module IncrClassChecking =
                 ValReprs = Zmap.add v repr localRep.ValReprs}  
 
         member localRep.ValNowWithRepresentation (v:Val) = 
-            {localRep with ValsWithRepresentation = Zset.add v localRep.ValsWithRepresentation}
+            {localRep with ValsWithRepresentation = SetCustom.add v localRep.ValsWithRepresentation}
 
         member localRep.IsValWithRepresentation (v:Val) = 
-                localRep.ValsWithRepresentation.Contains(v) 
+                localRep.ValsWithRepresentation |> SetCustom.contains v
 
         member localRep.IsValRepresentedAsLocalVar  (v:Val) =
             match localRep.LookupRepr v with 

@@ -3081,7 +3081,7 @@ and OptimizeModuleExpr cenv env x =
                     // Check the thing is not compiled as a static field or property, since reflected definitions and other reflective stuff might need it
                     not (IsCompiledAsStaticProperty cenv.g bind.Var))
 
-            let deadSet = Zset.addList (dead |> List.map (fun (bind, _) -> bind.Var)) (Zset.empty valOrder)
+            let deadSet = SetCustom.ofList<ValByStamp> (dead |> List.map (fun (bind, _) -> bind.Var))
 
             // Eliminate dead private bindings from a module type by mutation. Note that the optimizer doesn't
             // actually copy the entire term - it copies the expression portions of the term and leaves the 
@@ -3095,7 +3095,7 @@ and OptimizeModuleExpr cenv env x =
             let rec elimModTy (mtyp:ModuleOrNamespaceType) =                  
                 let mty = 
                     new ModuleOrNamespaceType(kind=mtyp.ModuleOrNamespaceKind, 
-                                              vals= (mtyp.AllValsAndMembers |> QueueList.filter (Zset.memberOf deadSet >> not)), 
+                                              vals= (mtyp.AllValsAndMembers |> QueueList.filter (SetCustom.memberOf deadSet >> not)), 
                                               entities= mtyp.AllEntities)
                 mtyp.ModuleAndNamespaceDefinitions |> List.iter elimModSpec
                 mty
@@ -3109,14 +3109,14 @@ and OptimizeModuleExpr cenv env x =
                     let mbinds = mbinds |> List.choose elimModuleBinding
                     TMDefRec(isRec, tycons, mbinds, m)
                 | TMDefLet(bind, m)  -> 
-                    if Zset.contains bind.Var deadSet then TMDefRec(false, [], [], m) else x
+                    if SetCustom.contains bind.Var deadSet then TMDefRec(false, [], [], m) else x
                 | TMDefDo _  -> x
                 | TMDefs(defs) -> TMDefs(List.map elimModDef defs) 
                 | TMAbstract _ ->  x 
             and elimModuleBinding x = 
                 match x with 
                 | ModuleOrNamespaceBinding.Binding bind -> 
-                     if bind.Var |> Zset.memberOf deadSet then None
+                     if bind.Var |> SetCustom.memberOf deadSet then None
                      else Some x
                 | ModuleOrNamespaceBinding.Module(mspec, d) ->
                     // Clean up the ModuleOrNamespaceType by mutation

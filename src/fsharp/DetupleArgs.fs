@@ -161,11 +161,11 @@ let (|TyappAndApp|_|) e =
 //-------------------------------------------------------------------------
 
 module GlobalUsageAnalysis = 
-    let bindAccBounds vals (_isInDTree, v) =  Zset.add v vals
+    let bindAccBounds vals (_isInDTree, v) =  SetCustom.add v vals
 
     let GetValsBoundInExpr expr =
        let folder = {ExprFolder0 with valBindingSiteIntercept = bindAccBounds}
-       let z0 = Zset.empty valOrder
+       let z0 = SetCustom.empty<ValByStamp> ()
        let z  = FoldExpr folder z0 expr
        z
 
@@ -187,18 +187,18 @@ module GlobalUsageAnalysis =
          /// v -> binding repr 
          Defns     : zmap<Val, ValByStamp, Expr>                                        
          /// bound in a decision tree? 
-         DecisionTreeBindings    : Zset<Val>                                    
+         DecisionTreeBindings    : zset<Val, ValByStamp>
          ///  v -> v list * recursive? -- the others in the mutual binding 
          RecursiveBindings  : zmap<Val, ValByStamp, bool * Vals>
-         TopLevelBindings : Zset<Val>
+         TopLevelBindings : zset<Val, ValByStamp>
          IterationIsAtTopLevel      : bool }
 
     let z0 =
        { Uses     = Zmap.empty<ValByStamp> ()
          Defns     = Zmap.empty<ValByStamp> ()
          RecursiveBindings  = Zmap.empty<ValByStamp> ()
-         DecisionTreeBindings    = Zset.empty valOrder
-         TopLevelBindings = Zset.empty valOrder
+         DecisionTreeBindings    = SetCustom.empty<ValByStamp> ()
+         TopLevelBindings = SetCustom.empty<ValByStamp> ()
          IterationIsAtTopLevel      = true }
 
     /// Log the use of a value with a particular tuple chape at a callsite
@@ -211,8 +211,8 @@ module GlobalUsageAnalysis =
 
     /// Log the definition of a binding
     let logBinding z (isInDTree, v) =
-        let z = if isInDTree then {z with DecisionTreeBindings = Zset.add v z.DecisionTreeBindings} else z
-        let z = if z.IterationIsAtTopLevel then {z with TopLevelBindings = Zset.add v z.TopLevelBindings} else z
+        let z = if isInDTree then {z with DecisionTreeBindings = SetCustom.add v z.DecisionTreeBindings} else z
+        let z = if z.IterationIsAtTopLevel then {z with TopLevelBindings = SetCustom.add v z.TopLevelBindings} else z
         z
         
 
