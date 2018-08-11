@@ -16,6 +16,7 @@ open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
+open Internal.Utilities.Collections
 
 #if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
@@ -435,11 +436,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
 
         and checkTypeRepr m aenv (implTycon:Tycon) sigTypeRepr =
             let reportNiceError k s1 s2 = 
-              let aset = NameSet.ofList s1
-              let fset = NameSet.ofList s2
-              match Zset.elements (Zset.diff aset fset) with 
+              let aset = Set.ofList s1
+              let fset = Set.ofList s2
+              match Set.toList (Set.diff aset fset) with 
               | [] -> 
-                  match Zset.elements (Zset.diff fset aset) with             
+                  match Set.toList (Set.diff fset aset) with             
                   | [] -> (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNumbersDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, k),m)); false)
                   | l -> (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureDefinesButImplDoesNot(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, k, String.concat ";" l),m)); false)
               | l -> (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplDefinesButSignatureDoesNot(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, k, String.concat ";" l),m)); false)

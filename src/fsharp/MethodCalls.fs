@@ -353,7 +353,7 @@ type CalledMeth<'T>
 
             let names = namedCallerArgs |> List.map (fun (CallerNamedArg(nm, _)) -> nm.idText) 
 
-            if (List.noRepeats String.order names).Length <> namedCallerArgs.Length then
+            if (names |> Set.ofList |> Set.count) <> namedCallerArgs.Length then
                 errorR(Error(FSComp.SR.typrelNamedArgumentHasBeenAssignedMoreThenOnce(), m))
                 
             let argSet = { UnnamedCalledArgs=unnamedCalledArgs; UnnamedCallerArgs=unnamedCallerArgs; ParamArrayCalledArgOpt=paramArrayCalledArgOpt; ParamArrayCallerArgs=paramArrayCallerArgs; AssignedNamedArgs=assignedNamedArgs }

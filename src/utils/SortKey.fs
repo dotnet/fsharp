@@ -83,6 +83,11 @@ type Zmap<'Key,'Value>() =
                 struct (acc', m'))
         finalState, finalMap
 
+module Set =
+    let diff a b =
+        if Set.isEmpty a || Set.isEmpty b then a
+        else Set.fold (fun a k -> Set.remove k a) a b
+
 type zset<'Key,'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> = Set<SortKey<'Key,'Comparer>>
 
 [<Sealed; AbstractClass>]
@@ -136,10 +141,6 @@ type SetCustom<'Key>() =
     static member inline addList<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (xs:list<'Key>) (s:zset<'Key,'Comparer>) =
         List.fold (fun acc x -> Set.add {CompareObj=x} acc) s xs
     
-    static member inline diff<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (a:zset<'Key,'Comparer>) (b:zset<'Key,'Comparer>) =
-        if Set.isEmpty a || Set.isEmpty b then a
-        else Set.fold (fun a k -> Set.remove k a) a b
-
     static member inline inter<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (a:zset<'Key,'Comparer>) (b:zset<'Key,'Comparer>) =
         Set.intersect a b
 

@@ -5,6 +5,7 @@
 module internal Microsoft.FSharp.Compiler.NameResolution
 
 open Internal.Utilities
+open Internal.Utilities.Collections
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
@@ -1665,7 +1666,7 @@ let CheckAllTyparsInferrable amap m item =
             let freeInArgsAndRetType = 
                 accFreeInTypes CollectTyparsNoCaching (pinfo.GetParamTypes(amap,m)) 
                        (freeInType CollectTyparsNoCaching (pinfo.GetPropertyType(amap,m)))
-            let free = Internal.Utilities.Collections.SetCustom.diff freeInDeclaringType.FreeTypars  freeInArgsAndRetType.FreeTypars
+            let free = Set.diff freeInDeclaringType.FreeTypars  freeInArgsAndRetType.FreeTypars
             free.IsEmpty)
 
     | Item.MethodGroup(_,minfos,_) -> 
@@ -1677,7 +1678,7 @@ let CheckAllTyparsInferrable amap m item =
                 List.foldBack (accFreeInTypes CollectTyparsNoCaching) (minfo.GetParamTypes(amap, m, fminst)) 
                    (accFreeInTypes CollectTyparsNoCaching (minfo.GetObjArgTypes(amap, m, fminst)) 
                        (freeInType CollectTyparsNoCaching (minfo.GetFSharpReturnTy(amap, m, fminst))))
-            let free = Internal.Utilities.Collections.SetCustom.diff freeInDeclaringType.FreeTypars  freeInArgsAndRetType.FreeTypars
+            let free = Set.diff freeInDeclaringType.FreeTypars  freeInArgsAndRetType.FreeTypars
             free.IsEmpty)
 
     | Item.CtorGroup _ 
@@ -3511,7 +3512,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                   yield einfo.RemoveMethod.DisplayName ]
         else []
 
-    let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
+    let suppressedMethNames = Set.ofList (pinfoMethNames @ einfoMethNames)
 
     let pinfos = 
         pinfosIncludingUnseen
@@ -4150,7 +4151,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                       yield einfo.AddMethod.DisplayName
                       yield einfo.RemoveMethod.DisplayName ]
         
-            let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
+            let suppressedMethNames = Set.ofList (pinfoMethNames @ einfoMethNames)
         
             let pinfos = 
                 pinfosIncludingUnseen

@@ -6366,13 +6366,13 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
         error(Error(FSComp.SR.tcFieldRequiresAssignment(fspec.rfield_id.idText, fullDisplayTextOfTyconRef tcref), m)))
 
     // Other checks (overlap with above check now clear)
-    let ns1 = NameSet.ofList (List.map fst fldsList)
-    let ns2 = NameSet.ofList (List.map (fun x -> x.rfield_id.idText) fspecs)
+    let ns1 = Set.ofList (List.map fst fldsList)
+    let ns2 = Set.ofList (List.map (fun x -> x.rfield_id.idText) fspecs)
     
-    if Option.isNone optOrigExpr && not (Zset.subset ns2 ns1) then
-        error (MissingFields(Zset.elements (Zset.diff ns2 ns1), m))
+    if Option.isNone optOrigExpr && not (Set.isSubset ns2 ns1) then
+        error (MissingFields(Set.toList (Set.diff ns2 ns1), m))
     
-    if  not (Zset.subset ns1 ns2) then 
+    if  not (Set.isSubset ns1 ns2) then 
         error (Error(FSComp.SR.tcExtraneousFieldsGivenValues(), m))
     
     // Build record 
@@ -11588,14 +11588,14 @@ and TcIncrementalLetRecGeneralization cenv scopem
 
                     //printfn "(failed generalization test 1 for binding for %s)" pgrbind.RecBindingInfo.Val.DisplayName
                     // Any declared type parameters in an type are always generalizable
-                    let freeInBinding = SetCustom.diff  freeInBinding (SetCustom.ofList<TyparByStamp> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.ExtraGeneralizableTypars))
+                    let freeInBinding = Set.diff  freeInBinding (SetCustom.ofList<TyparByStamp> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.ExtraGeneralizableTypars))
 
                     if freeInBinding.IsEmpty then true else
 
                     //printfn "(failed generalization test 2 for binding for %s)" pgrbind.RecBindingInfo.Val.DisplayName
 
                     // Any declared method parameters can always be generalized
-                    let freeInBinding = SetCustom.diff  freeInBinding (SetCustom.ofList<TyparByStamp> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.RecBindingInfo.DeclaredTypars))
+                    let freeInBinding = Set.diff  freeInBinding (SetCustom.ofList<TyparByStamp> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.RecBindingInfo.DeclaredTypars))
 
                     if freeInBinding.IsEmpty then true else
 
@@ -11603,7 +11603,7 @@ and TcIncrementalLetRecGeneralization cenv scopem
 
                     // Type variables free in the non-recursive environment do not stop us generalizing the binding, 
                     // since they can't be generalized anyway
-                    let freeInBinding = SetCustom.diff  freeInBinding freeInEnv
+                    let freeInBinding = Set.diff  freeInBinding freeInEnv
 
                     if freeInBinding.IsEmpty then true else
 
@@ -11651,8 +11651,8 @@ and TcIncrementalLetRecGeneralization cenv scopem
                     freeInEnv 
                 else 
                     let freeInBinding = (freeInType CollectAllNoCaching pgrbind.RecBindingInfo.Val.TauType).FreeTypars
-                    let freeInBinding = SetCustom.diff  freeInBinding (SetCustom.ofList<TyparByStamp> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.ExtraGeneralizableTypars))
-                    let freeInBinding = SetCustom.diff  freeInBinding (SetCustom.ofList<TyparByStamp> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.RecBindingInfo.DeclaredTypars))
+                    let freeInBinding = Set.diff  freeInBinding (SetCustom.ofList<TyparByStamp> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.ExtraGeneralizableTypars))
+                    let freeInBinding = Set.diff  freeInBinding (SetCustom.ofList<TyparByStamp> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.RecBindingInfo.DeclaredTypars))
                     Set.union freeInBinding freeInEnv)
 
         // Process the bindings marked for transition from PreGeneralization --> PostGeneralization
@@ -11686,7 +11686,7 @@ and TcIncrementalLetRecGeneralization cenv scopem
 /// Compute the type variables which may be generalized and perform the generalization 
 and TcLetrecComputeAndGeneralizeGenericTyparsForBinding cenv denv freeInEnv (pgrbind : PreGeneralizationRecursiveBinding)  =
 
-    let freeInEnv = SetCustom.diff freeInEnv (SetCustom.ofList<TyparByStamp> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.ExtraGeneralizableTypars))
+    let freeInEnv = Set.diff freeInEnv (SetCustom.ofList<TyparByStamp> (NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g pgrbind.ExtraGeneralizableTypars))
 
     let rbinfo = pgrbind.RecBindingInfo
     let vspec = rbinfo.Val

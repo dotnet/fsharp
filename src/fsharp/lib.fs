@@ -85,11 +85,6 @@ module Pair =
                   if res1 <> 0 then res1 else compare2.Compare (a2, aa2) }
 
 
-type NameSet =  Zset<string>
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module NameSet =
-    let ofList l : NameSet = List.foldBack Zset.add l (Zset.empty String.order)
-
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameMap = 
     let domain m = Map.foldBack (fun x _ acc -> Zset.add x acc) m (Zset.empty String.order)

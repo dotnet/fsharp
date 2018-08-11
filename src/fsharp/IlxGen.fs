@@ -86,13 +86,13 @@ let ChooseFreeVarNames takenNames ts =
     let tns = List.map (fun t -> (t,None)) ts
     let rec chooseName names (t,nOpt) = 
         let tn = match nOpt with None -> t | Some n -> t + string n
-        if Zset.contains tn names then
+        if Set.contains tn names then
           chooseName names (t,Some(match nOpt with None ->  0 | Some n -> (n+1)))
         else
-          let names = Zset.add tn names
+          let names = Set.add tn names
           tn,names
 
-    let names    = Zset.empty String.order |> Zset.addList takenNames
+    let names    = Set.ofList takenNames
     let ts,_names = List.mapFold chooseName names tns
     ts
 
@@ -3924,7 +3924,7 @@ and GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr =
     //  -- "internal" ones, which get used internally in the implementation
     let cloContractFreeTyvarSet = (freeInType CollectTypars (tyOfExpr cenv.g expr)).FreeTypars 
     
-    let cloInternalFreeTyvars = SetCustom.diff  cloFreeVarResults.FreeTyvars.FreeTypars cloContractFreeTyvarSet |> SetCustom.elements
+    let cloInternalFreeTyvars = Set.diff  cloFreeVarResults.FreeTyvars.FreeTypars cloContractFreeTyvarSet |> SetCustom.elements
     let cloContractFreeTyvars = cloContractFreeTyvarSet |> SetCustom.elements
     
     let cloFreeTyvars = cloContractFreeTyvars @ cloInternalFreeTyvars

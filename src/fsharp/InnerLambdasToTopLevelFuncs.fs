@@ -219,7 +219,7 @@ module Pass1_DetermineTLRAndArities =
        (* REPORT MISSED CASES *)
 #if DEBUG
        if verboseTLR then 
-           let missed = SetCustom.diff  xinfo.TopLevelBindings tlrS
+           let missed = Set.diff  xinfo.TopLevelBindings tlrS
            missed |> SetCustom.iter (fun v -> dprintf "TopLevel but not TLR = %s\n" v.LogicalName) 
 #endif
        (* REPORT OVER *)   

@@ -7690,7 +7690,7 @@ let doesActivePatternHaveFreeTypars g (v:ValRef) =
     let argtps, restps= (freeInTypes CollectTypars argtys).FreeTypars, (freeInType CollectTypars resty).FreeTypars        
     // Error if an active pattern is generic in type variables that only occur in the result Choice<_, ...>.
     // Note: The test restricts to v.Typars since typars from the closure are considered fixed.
-    not (SetCustom.isEmpty (SetCustom.inter (SetCustom.diff restps argtps) vtps)) 
+    not (SetCustom.isEmpty (SetCustom.inter (Set.diff restps argtps) vtps)) 
 
 //---------------------------------------------------------------------------
 // RewriteExpr: rewrite bottom up with interceptors 
