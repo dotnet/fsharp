@@ -306,7 +306,7 @@ type BindingGroupSharingSameReqdItems(bindings: Bindings) =
 
 let fclassOrder = Order.orderOn (fun (b: BindingGroupSharingSameReqdItems) -> b.Vals) (List.order (ValByStamp ()))
 
-[<Struct>]
+[<Struct;NoComparison;NoEquality>]
 type BindingGroupSharingSameReqdItemsByVals =
     interface System.Collections.Generic.IComparer<BindingGroupSharingSameReqdItems> with
         member __.Compare(v1, v2) = fclassOrder.Compare (v1,v2)
@@ -330,6 +330,7 @@ let reqdItemOrder =
       | ReqdVal    v -> false,v
    
     Order.orderOn rep (Pair.order (Bool.order, (ValByStamp ())))
+
 
 /// An env says what is needed to close the corresponding defn(s).
 /// The reqdTypars   are the free reqdTypars of the defns, and those required by any direct TLR arity-met calls.

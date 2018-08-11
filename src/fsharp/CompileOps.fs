@@ -5331,7 +5331,7 @@ let CheckSimulateException(tcConfig:TcConfig) =
 
 let qnameOrder = Order.orderBy (fun (q:QualifiedNameOfFile) -> q.Text)
 
-[<Struct>]
+[<Struct;NoComparison;NoEquality>]
 type QualifiedNameOfFileByText =
     interface System.Collections.Generic.IComparer<QualifiedNameOfFile> with
         member __.Compare(v1, v2) = qnameOrder.Compare (v1,v2)
