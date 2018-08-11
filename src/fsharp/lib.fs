@@ -87,10 +87,7 @@ module Pair =
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameMap = 
-    let domain m = Map.foldBack (fun x _ acc -> Zset.add x acc) m (Zset.empty String.order)
-    let domainL m = Zset.elements (domain m)
-
-
+    let domainL (m:Map<_,_>) = (m, []) ||> Map.foldBack (fun k _ acc -> k :: acc)
 
 //---------------------------------------------------------------------------
 // Library: Pre\Post checks
@@ -251,23 +248,23 @@ let mapTriple (f1,f2,f3) (a1,a2,a3)  = (f1 a1, f2 a2, f3 a3)
 let mapQuadruple (f1,f2,f3,f4) (a1,a2,a3,a4)  = (f1 a1, f2 a2, f3 a3, f4 a4)
 let fmap2Of2 f z (a1,a2)       = let z,a2 = f z a2 in z,(a1,a2)
 
-module List = 
-    let noRepeats xOrder xs =
-        let s = Zset.addList   xs (Zset.empty xOrder) // build set 
-        Zset.elements s          // get elements... no repeats
+//module List = 
+//    let noRepeats xOrder xs =
+//        let s = Zset.addList   xs (Zset.empty xOrder) // build set 
+//        Zset.elements s          // get elements... no repeats
 
 //---------------------------------------------------------------------------
 // Zset
 //------------------------------------------------------------------------- 
 
-module Zset =
-    let ofList order xs = Zset.addList   xs (Zset.empty order)
+//module Zset =
+//    //let ofList order xs = Zset.addList   xs (Zset.empty order)
 
-    // CLEANUP NOTE: move to Zset?
-    let rec fixpoint f (s as s0) =
-        let s = f s
-        if Zset.equal s s0 then s0           (* fixed *)
-                           else fixpoint f s (* iterate *)
+//    // CLEANUP NOTE: move to Zset?
+//    let rec fixpoint f (s as s0) =
+//        let s = f s
+//        if Zset.equal s s0 then s0           (* fixed *)
+//                           else fixpoint f s (* iterate *)
 
 //---------------------------------------------------------------------------
 // Misc

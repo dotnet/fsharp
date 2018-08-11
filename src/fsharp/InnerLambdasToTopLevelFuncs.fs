@@ -331,30 +331,34 @@ let reqdItemOrder =
    
     Order.orderOn rep (Pair.order (Bool.order, (ValByStamp ())))
 
+[<Struct;NoComparison;NoEquality>]
+type ReqdItemOrder =
+    interface System.Collections.Generic.IComparer<ReqdItem> with
+        member __.Compare(v1, v2) = reqdItemOrder.Compare (v1,v2)
 
 /// An env says what is needed to close the corresponding defn(s).
 /// The reqdTypars   are the free reqdTypars of the defns, and those required by any direct TLR arity-met calls.
 /// The reqdItems are the ids/subEnvs required from calls to freeVars.
 type ReqdItemsForDefn =
     { reqdTypars   : zset<Typar,TyparByStamp>
-      reqdItems : Zset<ReqdItem>
+      reqdItems : zset<ReqdItem,ReqdItemOrder>
       m      : Range.range }
-    member env.ReqdSubEnvs = [ for x in env.reqdItems do match x with | ReqdSubEnv f -> yield f | ReqdVal _ -> () ]
-    member env.ReqdVals = [ for x in env.reqdItems do match x with | ReqdSubEnv _ -> () | ReqdVal v -> yield v ]
+    member env.ReqdSubEnvs = [ for x in env.reqdItems do match x.CompareObj with | ReqdSubEnv f -> yield f | ReqdVal _ -> () ]
+    member env.ReqdVals = [ for x in env.reqdItems do match x.CompareObj with | ReqdSubEnv _ -> () | ReqdVal v -> yield v ]
 
     member env.Extend (typars,items) =
         {env with
                reqdTypars   = SetCustom.addList typars env.reqdTypars
-               reqdItems = Zset.addList items  env.reqdItems}
+               reqdItems = SetCustom.addList items  env.reqdItems}
 
     static member Initial typars m = 
         {reqdTypars   = SetCustom.ofList<TyparByStamp> typars
-         reqdItems = Zset.empty reqdItemOrder
+         reqdItems = SetCustom.empty<ReqdItemOrder> ()
          m      = m }
 
     override env.ToString() = 
         (showL (commaListL (List.map typarL (SetCustom.elements env.reqdTypars)))) + "--" +
-        (String.concat "," (List.map string (Zset.elements env.reqdItems)))
+        (String.concat "," (List.map string (SetCustom.elements env.reqdItems)))
 
 (*--debug-stuff--*)
 
@@ -699,7 +703,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: zmap<BindingGroupShari
 
        // determine vals(env) - transclosure 
        let vals = env.ReqdVals @ List.collect valsSubEnvFor env.ReqdSubEnvs  // list, with repeats 
-       let vals = List.noRepeats (ValByStamp ()) vals                        // noRepeats
+       let vals = vals |> SetCustom.ofList<ValByStamp> |> SetCustom.elements // noRepeats
 
        // Remove genuinely toplevel, no need to close over these
        let vals = vals |> List.filter (IsMandatoryTopLevel >> not) 
