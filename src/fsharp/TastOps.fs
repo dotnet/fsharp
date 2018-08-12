@@ -2478,7 +2478,7 @@ module SimplifyTypes =
         | TType_measure _          -> z
 
     let incM x m =
-        if Zmap.mem x m then Zmap.add x (1 + Zmap.find x m) m
+        if Zmap.containsKey x m then Zmap.add x (1 + Zmap.find x m) m
         else Zmap.add x 1 m
 
     let accTyparCounts z ty =

@@ -43,7 +43,7 @@ type Zmap<'Key,'Value>() =
     static member inline tryFind<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (k:'Key) (m:zmap<'Key,'Comparer,'Value>) =
         Map.tryFind {CompareObj=k} m
 
-    static member inline mem<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (k:'Key) (m:zmap<'Key,'Comparer,'Value>) =
+    static member inline containsKey<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (k:'Key) (m:zmap<'Key,'Comparer,'Value>) =
         Map.containsKey {CompareObj=k} m
 
     static member inline memberOf<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (m:zmap<'Key,'Comparer,'Value>) (k:'Key) =
@@ -55,7 +55,7 @@ type Zmap<'Key,'Value>() =
     static member inline find<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (k:'Key) (m:zmap<'Key,'Comparer,'Value>) =
         Map.find {CompareObj=k} m
 
-    static member inline fold<'Comparer, 'State when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (folder:'Key->'Value->'State->'State) (m:zmap<'Key,'Comparer,'Value>) (state:'State) : 'State =
+    static member inline foldBack<'Comparer, 'State when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (folder:'Key->'Value->'State->'State) (m:zmap<'Key,'Comparer,'Value>) (state:'State) : 'State =
         Map.foldBack (fun {CompareObj=k} t s -> folder k t s) m state 
 
     static member inline remove<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (k:'Key) (m:zmap<'Key,'Comparer,'Value>) =
@@ -73,7 +73,7 @@ type Zmap<'Key,'Value>() =
     static member inline iter<'Comparer when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (f:'Key->'Value->unit) (m:zmap<'Key,'Comparer,'Value>) =
         Map.iter (fun {CompareObj=k} v -> f k v) m
 
-    static member foldMap<'Comparer, 'State, 'U when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (folder:'State->'Key->'Value->'State*'U) (initialState:'State) (initialMap:zmap<'Key,'Comparer,'Value>) : 'State * zmap<'Key,'Comparer,'U> =
+    static member foldBackMap<'Comparer, 'State, 'U when 'Comparer :> IComparer<'Key> and 'Comparer : struct> (folder:'State->'Key->'Value->'State*'U) (initialState:'State) (initialMap:zmap<'Key,'Comparer,'Value>) : 'State * zmap<'Key,'Comparer,'U> =
         let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt folder
         let struct (finalState, finalMap) =
             (initialMap, struct (initialState, Zmap.empty<'Comparer> ()))

@@ -5430,7 +5430,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig:TcConfig, tcImports:Tc
           | ParsedInput.SigFile (ParsedSigFileInput(_, qualNameOfFile, _, _, _) as file) ->
                 
               // Check if we've seen this top module signature before. 
-              if Zmap.mem qualNameOfFile tcState.tcsRootSigs then 
+              if Zmap.containsKey qualNameOfFile tcState.tcsRootSigs then 
                   errorR(Error(FSComp.SR.buildSignatureAlreadySpecified(qualNameOfFile.Text), m.StartRange))
 
               // Check if the implementation came first in compilation order 

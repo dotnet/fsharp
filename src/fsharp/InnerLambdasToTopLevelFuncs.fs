@@ -138,7 +138,7 @@ let GetValsBoundUnderMustInline xinfo =
         Set.union (GetValsBoundInExpr repr) rejectS
       else rejectS
     let rejectS = Zset.empty<ValOrder> ()
-    let rejectS = Zmap.fold accRejectFrom xinfo.Defns rejectS
+    let rejectS = Zmap.foldBack accRejectFrom xinfo.Defns rejectS
     rejectS
 
 //-------------------------------------------------------------------------
@@ -593,7 +593,7 @@ module Pass2_DetermineReqdItems =
        
         let rec fixpoint reqdItemsMap =
             let changed = false
-            let changed,reqdItemsMap = Zmap.foldMap (closeStep reqdItemsMap) changed reqdItemsMap
+            let changed,reqdItemsMap = Zmap.foldBackMap (closeStep reqdItemsMap) changed reqdItemsMap
             if changed then
                 fixpoint reqdItemsMap
             else
