@@ -737,6 +737,8 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 )
 
 echo ---------------- Done with package restore, starting proto ------------------------
+set logdir=%~dp0%BUILD_CONFIG%\net40\
+if not exist "!logdir!" mkdir "!logdir!"
 
 rem Build Proto
 if "%BUILD_PROTO%" == "1" (
