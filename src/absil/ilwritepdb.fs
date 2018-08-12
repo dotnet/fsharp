@@ -416,10 +416,16 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
 
             let collectScopes scope =
                 let list = new List<PdbMethodScope>()
-                let rec toList scope =
-                    list.Add scope
-                    scope.Children |> Seq.iter(fun s -> toList s)
-                toList scope
+                let rec toList scope parent =
+                    let nested =
+                        match parent with
+                        | Some p -> scope.StartOffset <> p.StartOffset || scope.EndOffset <> p.EndOffset
+                        | None -> true
+
+                    if nested then list.Add scope
+                    scope.Children |> Seq.iter(fun s -> toList s (if nested then Some scope else parent))
+
+                toList scope None
                 list.ToArray() |> Array.sortWith<PdbMethodScope> scopeSorter
 
             collectScopes scope |> Seq.iter(fun s ->
