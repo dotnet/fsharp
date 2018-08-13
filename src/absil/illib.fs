@@ -279,29 +279,10 @@ module List =
         | [] -> None
         | h::t -> if f h then Some (h,n) else findi (n+1) f t
 
-    let chop n l = 
-        if n = List.length l then (l,[]) else // avoids allocation unless necessary 
-        let rec loop n l acc = 
-            if n <= 0 then (List.rev acc,l) else 
-            match l with 
-            | [] -> failwith "List.chop: overchop"
-            | (h::t) -> loop (n-1) t (h::acc) 
-        loop n l [] 
-
-    let take n l = 
-        if n = List.length l then l else 
-        let rec loop acc n l = 
-            match l with
-            | []    -> List.rev acc
-            | x::xs -> if n<=0 then List.rev acc else loop (x::acc) (n-1) xs
-
-        loop [] n l
-
     let rec drop n l = 
         match l with 
         | []    -> []
         | _::xs -> if n=0 then l else drop (n-1) xs
-
 
     let splitChoose select l =
         let rec ch acc1 acc2 l = 
@@ -464,6 +445,13 @@ module ValueOption =
     let inline ofOption x = match x with Some x -> ValueSome x | None -> ValueNone
     let inline bind f x = match x with ValueSome x -> f x | ValueNone -> ValueNone
 
+type String with
+    member inline x.StartsWithOrdinal(value) =
+        x.StartsWith(value, StringComparison.Ordinal)
+
+    member inline x.EndsWithOrdinal(value) =
+        x.EndsWith(value, StringComparison.Ordinal)
+
 module String = 
     let indexNotFound() = raise (new KeyNotFoundException("An index for the character was not found in the string"))
 
@@ -543,7 +531,7 @@ module String =
     let (|StartsWith|_|) pattern value =
         if String.IsNullOrWhiteSpace value then
             None
-        elif value.StartsWith pattern then
+        elif value.StartsWithOrdinal(pattern) then
             Some()
         else None
 
@@ -561,7 +549,7 @@ module String =
         while not (isNull !line) do
             yield !line
             line := reader.ReadLine()
-        if str.EndsWith("\n") then
+        if str.EndsWithOrdinal("\n") then
             // last trailing space not returned
             // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
             yield String.Empty

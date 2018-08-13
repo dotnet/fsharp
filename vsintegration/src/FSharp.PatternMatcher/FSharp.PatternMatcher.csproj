@@ -3,7 +3,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
     <OutputType>Library</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -16,10 +15,6 @@
     <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutablePackageVersion)" />
   </ItemGroup>
 
 </Project>

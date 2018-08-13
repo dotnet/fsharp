@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">Se produjo un problema al iniciar el proceso de F# interactivo. Esto puede deberse a un problema conocido de compatibilidad de la consola de procesos en segundo plano con aplicaciones habilitadas para Unicode en algunos sistemas Windows. Pruebe lo siguiente: seleccione Herramientas-&gt;Opciones-&gt;F# interactivo para Visual Studio y escriba '--fsi-server-no-unicode'.</target>
+        <target state="translated">Se produjo un problema al iniciar el proceso de F# interactivo. Esto puede deberse a un problema conocido de compatibilidad de la consola de procesos en segundo plano con aplicaciones habilitadas para Unicode en algunos sistemas Windows. Pruebe lo siguiente: seleccione Herramientas-&gt;Opciones-&gt;F# interactivo para Visual Studio y escriba “--fsi-server-no-unicode”.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -139,7 +139,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
         <source>  F# Interactive directives:</source>
-        <target state="translated">  Directivas de F#:</target>
+        <target state="translated">  Directivas de F# interactivo:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashrInfo">
@@ -214,7 +214,7 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; '{0}' al que se hace referencia (el archivo puede estar bloqueado por un proceso de F# interactivo)</target>
+        <target state="translated">--&gt; “{0}” al que se hace referencia (el archivo puede estar bloqueado por un proceso de F# interactivo)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
@@ -259,7 +259,7 @@
       </trans-unit>
       <trans-unit id="fsiProductNameCommunity">
         <source>F# Interactive for F# {0}</source>
-        <target state="translated">F# Interactive para F# {0}</target>
+        <target state="translated">F# interactivo para F# {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="shadowCopyReferences">

@@ -29,12 +29,12 @@
       </trans-unit>
       <trans-unit id="fsharpInteractive">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# インタラクティブ</target>
         <note />
       </trans-unit>
       <trans-unit id="couldNotFindFsiExe">
         <source>Could not find fsi.exe, the F# Interactive executable.\nThis file does not exist:\n\n{0}\n</source>
-        <target state="translated">F# Interactive 実行可能ファイルである fsi.exe が見つかりませんでした。\nこのファイルは存在しません:\n\n{0}\n</target>
+        <target state="translated">F# インタラクティブ実行可能ファイルである fsi.exe が見つかりませんでした。\nこのファイルは存在しません:\n\n{0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="killingProcessRaisedException">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="sessionIsNotDebugFriendly">
         <source>The current F# Interactive session is not configured for debugging. For the best experience, enable debugging in F# Interactive settings, then reset the session.\n\nAttempt debugging with current settings?</source>
-        <target state="translated">現在の F# Interactive セッションは、デバッグのために構成されていません。最適にご利用いただくには、F# Interactive 設定でデバッグを有効にし、セッションをリセットしてください。\n\n現在の設定でデバッグを試みますか?</target>
+        <target state="translated">現在の F# インタラクティブ セッションは、デバッグのために構成されていません。最適にご利用いただくには、F# インタラクティブ設定でデバッグを有効にし、セッションをリセットしてください。\n\n現在の設定でデバッグを試みますか?</target>
         <note />
       </trans-unit>
       <trans-unit id="doNotShowWarningInFuture">
