@@ -201,6 +201,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 
 %token <string> KEYWORD_STRING // Like __SOURCE_DIRECTORY__
 %token <string> IDENT 
+%token <string> HASH_IDENT 
 %token <string> INFIX_STAR_STAR_OP 
 %token <string> INFIX_COMPARE_OP 
 %token <string> INFIX_AT_HAT_OP 
