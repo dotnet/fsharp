@@ -577,6 +577,7 @@ type TypeCheckInfo
             | Item.Event _ -> CompletionItemKind.Event
             | Item.ILField _ 
             | Item.Value _ -> CompletionItemKind.Field
+            | Item.CustomOperation _ -> CompletionItemKind.CustomOperation
             | _ -> CompletionItemKind.Other
 
         { ItemWithInst = item

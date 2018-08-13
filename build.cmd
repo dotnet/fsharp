@@ -555,6 +555,14 @@ echo.
 echo.
 
 echo ---------------- Done with arguments, starting preparation -----------------
+rem set TargetFrameworkSDKToolsDirectory --- needed for sdk to find al.exe. 
+if not "%TargetFrameworkSDKToolsDirectory%" == "" ( goto have_TargetFrameworkSDKToolsDirectory ) 
+set TargetFrameworkSDKToolsDirectory=%WindowsSDK_ExecutablePath_x64%
+
+if not "%TargetFrameworkSDKToolsDirectory%" == "" ( goto have_TargetFrameworkSDKToolsDirectory ) 
+set TargetFrameworkSDKToolsDirectory=%WindowsSDK_ExecutablePath_x86%
+
+:have_TargetFrameworkSDKToolsDirectory 
 
 set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.6.170
 if "%VSSDKInstall%"=="" (
@@ -574,6 +582,7 @@ if "%RestorePackages%"=="" (
 @echo VSSDKInstall:   %VSSDKInstall%
 @echo VSSDKToolsPath: %VSSDKToolsPath%
 @echo VSSDKIncludes:  %VSSDKIncludes%
+@echo TargetFrameworkSDKToolsDirectory:  %TargetFrameworkSDKToolsDirectory%
 
 @call src\update.cmd signonly
 

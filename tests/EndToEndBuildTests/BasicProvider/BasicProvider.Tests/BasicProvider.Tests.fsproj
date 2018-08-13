@@ -1,4 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework Condition=" '$(TestTargetFramework)' == '' ">netcoreapp2.0</TargetFramework>
@@ -19,6 +20,13 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0-preview-20170517-02" />
     <PackageReference Include="xunit" Version="2.2.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
-
   </ItemGroup>
+
+  <Target Name="RemovePackagesFromCache" BeforeTargets="Restore">
+      <ItemGroup>
+          <FoldersToDelete Include="$(NuGetPackageRoot)basicprovider" />
+      </ItemGroup>
+      <RemoveDir Directories="@(FoldersToDelete)" />
+  </Target>
+
 </Project>
