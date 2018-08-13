@@ -416,10 +416,16 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
 
             let collectScopes scope =
                 let list = new List<PdbMethodScope>()
-                let rec toList scope =
-                    list.Add scope
-                    scope.Children |> Seq.iter(fun s -> toList s)
-                toList scope
+                let rec toList scope parent =
+                    let nested =
+                        match parent with
+                        | Some p -> scope.StartOffset <> p.StartOffset || scope.EndOffset <> p.EndOffset
+                        | None -> true
+
+                    if nested then list.Add scope
+                    scope.Children |> Seq.iter(fun s -> toList s (if nested then Some scope else parent))
+
+                toList scope None
                 list.ToArray() |> Array.sortWith<PdbMethodScope> scopeSorter
 
             collectScopes scope |> Seq.iter(fun s ->
@@ -449,8 +455,8 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
             let convert (content:IEnumerable<Blob>) = 
                 use sha = System.Security.Cryptography.SHA1.Create()    // IncrementalHash is core only
                 let hash = content 
-                           |> Seq.map ( fun c -> c.GetBytes().Array |> sha.ComputeHash )         
-                           |> Seq.collect id |> Array.ofSeq |> sha.ComputeHash
+                           |> Seq.collect (fun c -> c.GetBytes().Array |> sha.ComputeHash)
+                           |> Array.ofSeq |> sha.ComputeHash
                 BlobContentId.FromHash(hash)
             System.Func<IEnumerable<Blob>, BlobContentId>( convert )
 

@@ -61,7 +61,7 @@ type internal FSharpCodeLensService
 
             override __.VisitTypeAbbrev( _, range) = Some range
 
-            override __.VisitLetOrUse(binding, range) = Some range
+            override __.VisitLetOrUse(_, _, _, range) = Some range
 
             override __.VisitBinding (fn, binding) =
                 Some binding.RangeOfBindingAndRhs
