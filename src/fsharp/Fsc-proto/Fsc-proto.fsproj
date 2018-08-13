@@ -97,12 +97,6 @@
     <Compile Include="..\..\utils\EditDistance.fs">
       <Link>Utilities\EditDistance.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\TaggedCollections.fsi">
-      <Link>TaggedCollections.fsi</Link>
-    </Compile>
-    <Compile Include="..\..\utils\TaggedCollections.fs">
-      <Link>TaggedCollections.fs</Link>
-    </Compile>
     <Compile Include="..\..\utils\SortKey.fs">
       <Link>SortKey.fs</Link>
     </Compile>
@@ -120,12 +114,6 @@
     </Compile>
     <Compile Include="..\..\utils\filename.fs">
       <Link>filename.fs</Link>
-    </Compile>
-    <Compile Include="..\..\absil\zset.fsi">
-      <Link>zset.fsi</Link>
-    </Compile>
-    <Compile Include="..\..\absil\zset.fs">
-      <Link>zset.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\bytes.fsi">
       <Link>bytes.fsi</Link>
