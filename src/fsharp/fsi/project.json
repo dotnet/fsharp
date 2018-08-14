@@ -8,7 +8,7 @@
     "System.Reflection.TypeExtensions": "4.3.0",
     "System.Runtime.Loader": "4.3.0",
     "System.Threading.Thread": "4.3.0",
-    "System.Reflection.Metadata": "1.4.2"
+    "System.Reflection.Metadata": "1.6.0"
   },
   "runtimes": {
     "win7-x86": { },

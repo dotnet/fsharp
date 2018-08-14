@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="translated">패턴 일치 식의 모든 분기는 동일한 형식의 값을 반환해야 합니다. 첫 번째 분기는 '{0}' 형식의 값을 반환했지만 이 분기는 '{1}' 형식의 값을 반환했습니다.</target>
+        <target state="needs-review-translation">패턴 일치 식의 모든 분기는 동일한 형식의 값을 반환해야 합니다. 첫 번째 분기는 '{0}' 형식의 값을 반환했지만 이 분기는 '{1}' 형식의 값을 반환했습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -7012,11 +7012,6 @@
         <target state="translated">지금은 '{0}' 변수의 주소 또는 관련 식을 사용할 수 없습니다. 로컬 값의 주소가 범위를 벗어나지 않도록 하기 위한 것입니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="translated">범위를 벗어날 수 있는 요소를 사용하여 구성되므로 이 함수 또는 메서드에서 Span 또는 IsByRefLike 식을 반환할 수 없습니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
         <target state="translated">'{0}' 대상이 비스택 로컬 메모리를 참조할 수 있는데, 할당되는 식은 잠재적으로 스택 로컬 메모리를 참조하도록 평가되므로 이 값을 할당할 수 없습니다. 스택에 바인딩된 메모리에 대한 포인터가 범위를 벗어나지 않도록 하기 위한 것입니다.</target>
@@ -7059,7 +7054,12 @@
       </trans-unit>
       <trans-unit id="tastCantTakeAddressOfExpression">
         <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
-        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
+        <target state="translated">식에서 반환된 값의 주소를 가져올 수 없습니다. 주소를 가져오기 전에 반환된 값을 let 바인딩 값에 할당하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoReturnOfLimitedSpan">
+        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
+        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
         <note />
       </trans-unit>
     </body>

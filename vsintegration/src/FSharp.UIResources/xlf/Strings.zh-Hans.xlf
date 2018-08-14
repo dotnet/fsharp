@@ -7,6 +7,31 @@
         <target state="translated">始终在顶层放置 open 语句</target>
         <note />
       </trans-unit>
+      <trans-unit id="CodeLens">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Replace_LineLens">
+        <source>Show annotations to the right instead of above the line</source>
+        <target state="translated">在行右侧而非上方显示批注</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Switch">
+        <source>Enable CodeLens (Experimental)</source>
+        <target state="translated">启用 CodeLens (试验)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Prefix">
+        <source>Annotation prefix</source>
+        <target state="translated">批注前缀</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_UseColors">
+        <source>Use colors in annotations</source>
+        <target state="translated">在批注中使用颜色</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Code_Fixes">
         <source>Code Fixes</source>
         <target state="translated">代码修补程序</target>
@@ -104,7 +129,7 @@
       </trans-unit>
       <trans-unit id="Show_Outlining">
         <source>Show outlining and collapsible nodes for F# code</source>
-        <target state="translated">显示 F# 代码的大纲和可折叠节点</target>
+        <target state="translated">显示 F# 代码的大纲显示节点和可折叠节点</target>
         <note />
       </trans-unit>
       <trans-unit id="Time_until_stale_completion">
