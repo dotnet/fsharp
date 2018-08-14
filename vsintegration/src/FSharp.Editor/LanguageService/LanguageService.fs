@@ -675,9 +675,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                     // This is the path for .fs/.fsi files in legacy projects
 
                     this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
-
                 | h when not (isNull h) && not (IsScript(filename)) ->
-                    
                     let docId = this.Workspace.CurrentSolution.GetDocumentIdsWithFilePath(filename).FirstOrDefault()
                     match docId with
                     | null ->
