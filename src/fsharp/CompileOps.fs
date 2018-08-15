@@ -2112,12 +2112,13 @@ type TimeStampCache(defaultTimeStamp: DateTime) =
     let projects = Dictionary<IProjectReference, DateTime>(HashIdentity.Reference)
     member cache.GetFileTimeStamp fileName = 
         let ok, v = files.TryGetValue(fileName)
-        if ok then v else 
+        if ok then v else
         let v = 
-            if FileSystem.SafeExists(fileName) then
+            try 
                 FileSystem.GetLastWriteTimeShim(fileName)
-            else
-                defaultTimeStamp            
+            with 
+            | :? FileNotFoundException ->
+                defaultTimeStamp   
         files.[fileName] <- v
         v
 
