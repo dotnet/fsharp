@@ -1120,7 +1120,6 @@ module private PrintTastMemberOrVals =
                 for _,info in argInfo do
                     info.Attribs <- []
                     info.Name <- None
-            
 
         let mkNameL niceMethodTypars tagFunction name =
             let nameL =
