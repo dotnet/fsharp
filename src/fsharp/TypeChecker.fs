@@ -8448,7 +8448,7 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicF
     match delayed with 
     | []  
     | DelayedDot :: _ -> 
-        UnifyTypesAndRecover cenv env mExpr overallTy exprty
+        UnifyTypes cenv env mExpr overallTy exprty
         expr.Expr, tpenv
     // expr.M(args) where x.M is a .NET method or index property 
     // expr.M<tyargs>(args) where x.M is a .NET method or index property 
