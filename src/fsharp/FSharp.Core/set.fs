@@ -16,9 +16,9 @@ namespace Microsoft.FSharp.Collections
     [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
     [<NoEquality; NoComparison>]
     type SetTree<'T> when 'T: comparison = 
-        | SetEmpty                                          // height = 0   
-        | SetNode of 'T * SetTree<'T> *  SetTree<'T> * int    // height = int 
-        | SetOne  of 'T                                     // height = 1   
+        | SetEmpty                                          // size = 0   
+        | SetNode of 'T * SetTree<'T> *  SetTree<'T> * size:int
+        | SetOne  of 'T                                     // size = 1   
             // OPTIMIZATION: store SetNode(k,SetEmpty,SetEmpty,1) --->  SetOne(k) 
             // REVIEW: performance rumour has it that the data held in SetNode and SetOne should be
             // exactly one cache line on typical architectures. They are currently 
@@ -27,14 +27,6 @@ namespace Microsoft.FSharp.Collections
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module internal SetTree = 
-        let rec countAux s acc = 
-            match s with 
-            | SetNode(_,l,r,_) -> countAux l (countAux r (acc+1))
-            | SetOne(_) -> acc+1
-            | SetEmpty -> acc           
-
-        let count s = countAux s 0
-
     #if TRACE_SETS_AND_MAPS
         let mutable traceCount = 0
         let mutable numOnes = 0
@@ -65,16 +57,17 @@ namespace Microsoft.FSharp.Collections
             n
     #else
         let SetOne n = SetTree.SetOne n
-        let SetNode (x,l,r,h) = SetTree.SetNode(x,l,r,h)
+        let SetNode (x,l,r,s) = SetTree.SetNode(x,l,r,s)
         
     #endif
-    
 
-        let height t = 
+        let empty = SetEmpty 
+
+        let size t = 
             match t with 
             | SetEmpty -> 0
             | SetOne _ -> 1
-            | SetNode (_,_,_,h) -> h
+            | SetNode (size=s) -> s
 
     #if CHECKED
         let rec checkInvariant t =
@@ -88,46 +81,47 @@ namespace Microsoft.FSharp.Collections
                 (-2 <= (h1 - h2) && (h1 - h2) <= 2) && checkInvariant t1 && checkInvariant t2
     #endif
 
-        let tolerance = 2
-
         let mk l k r = 
             match l,r with 
             | SetEmpty,SetEmpty -> SetOne (k)
             | _ -> 
-              let hl = height l 
-              let hr = height r 
-              let m = if hl < hr then hr else hl 
-              SetNode(k,l,r,m+1)
+              let sl = size l 
+              let sr = size r 
+              SetNode(k,l,r,sl+sr+1)
 
         let rebalance t1 k t2 =
-            let t1h = height t1 
-            let t2h = height t2 
-            if  t2h > t1h + tolerance then // right is heavier than left 
+            let t1s = size t1 
+            let t2s = size t2 
+            if  (t2s >>> 1) > t1s then (* right is over twice as heavy as left *)
                 match t2 with 
                 | SetNode(t2k,t2l,t2r,_) -> 
-                    // one of the nodes must have height > height t1 + 1 
-                    if height t2l > t1h + 1 then  // balance left: combination 
-                        match t2l with 
-                        | SetNode(t2lk,t2ll,t2lr,_) ->
-                            mk (mk t1 k t2ll) t2lk (mk t2lr t2k t2r) 
-                        | _ -> failwith "rebalance"
-                    else // rotate left 
-                        mk (mk t1 k t2l) t2k t2r
+                   (* one of the nodes must have size > size t1 *)
+                   if size t2l > t1s then  (* balance left: combination *)
+                     match t2l with 
+                     | SetNode(t2lk,t2ll,t2lr,_) ->
+                        mk (mk t1 k t2ll) t2lk (mk t2lr t2k t2r) 
+                     | SetOne(t2lk) ->
+                        mk (mk t1 k empty) t2lk (mk empty t2k t2r) 
+                     | SetEmpty -> failwith "rebalance"
+                   else (* rotate left *)
+                     mk (mk t1 k t2l) t2k t2r
                 | _ -> failwith "rebalance"
             else
-                if  t1h > t2h + tolerance then // left is heavier than right 
-                    match t1 with 
-                    | SetNode(t1k,t1l,t1r,_) -> 
-                        // one of the nodes must have height > height t2 + 1 
-                        if height t1r > t2h + 1 then 
-                            // balance right: combination 
-                            match t1r with 
-                            | SetNode(t1rk,t1rl,t1rr,_) ->
-                                mk (mk t1l t1k t1rl) t1rk (mk t1rr k t2)
-                            | _ -> failwith "rebalance"
-                        else
-                            mk t1l t1k (mk t1r k t2)
-                    | _ -> failwith "rebalance"
+                if (t1s >>> 1) > t2s then (* left is over twice as heavy as right *)
+                  match t1 with 
+                  | SetNode(t1k,t1l,t1r,_) -> 
+                    (* one of the nodes must have size > size t2 *)
+                      if size t1r > t2s then 
+                      (* balance right: combination *)
+                        match t1r with 
+                        | SetNode(t1rk,t1rl,t1rr,_) ->
+                            mk (mk t1l t1k t1rl) t1rk (mk t1rr k t2)
+                        | SetOne(t1rk) ->
+                            mk (mk t1l t1k empty) t1rk (mk empty k t2)
+                        | SetEmpty -> failwith "rebalance"
+                      else
+                        mk t1l t1k (mk t1r k t2)
+                  | _ -> failwith "rebalance"
                 else mk t1 k t2
 
         let rec add (comparer: IComparer<'T>) k t = 
@@ -148,22 +142,22 @@ namespace Microsoft.FSharp.Collections
         let rec balance comparer t1 k t2 =
             // Given t1 < k < t2 where t1 and t2 are "balanced",
             // return a balanced tree for <t1,k,t2>.
-            // Recall: balance means subtrees heights differ by at most "tolerance"
+            // Recall: balance means subtrees size of trees differ by a factor of 2
             match t1,t2 with
             | SetEmpty,t2  -> add comparer k t2 // drop t1 = empty 
             | t1,SetEmpty  -> add comparer k t1 // drop t2 = empty 
             | SetOne k1,t2 -> add comparer k (add comparer k1 t2)
             | t1,SetOne k2 -> add comparer k (add comparer k2 t1)
-            | SetNode(k1,t11,t12,h1),SetNode(k2,t21,t22,h2) ->
+            | SetNode(k1,t11,t12,s1),SetNode(k2,t21,t22,s2) ->
                 // Have:  (t11 < k1 < t12) < k < (t21 < k2 < t22)
-                // Either (a) h1,h2 differ by at most 2 - no rebalance needed.
-                //        (b) h1 too small, i.e. h1+2 < h2
-                //        (c) h2 too small, i.e. h2+2 < h1 
-                if   h1+tolerance < h2 then
+                // Either (a) h1,h2 differ by at most a factory of 2 - no rebalance needed.
+                //        (b) h1 too small
+                //        (c) h2 too small
+                if   (s2 >>> 1) > s1 then 
                     // case: b, h1 too small 
                     // push t1 into low side of t2, may increase height by 1 so rebalance 
                     rebalance (balance comparer t1 k t21) k2 t22
-                elif h2+tolerance < h1 then
+                elif (s1 >>> 1) > s2 then
                     // case: c, h2 too small 
                     // push t2 into high side of t1, may increase height by 1 so rebalance 
                     rebalance t11 k1 (balance comparer t12 k t2)
@@ -491,12 +485,10 @@ namespace Microsoft.FSharp.Collections
             iter (fun x -> arr.[!j] <- x; j := !j + 1) s
 
         let toArray s = 
-            let n = (count s) 
+            let n = size s
             let res = Array.zeroCreate n 
             copyToArray s res 0;
             res
-
-
 
         let rec mkFromEnumerator comparer acc (e: IEnumerator<_>) = 
           if e.MoveNext() then 
@@ -582,7 +574,7 @@ namespace Microsoft.FSharp.Collections
 #endif
             Set<'T>(s.Comparer,SetTree.remove s.Comparer value s.Tree)
 
-        member s.Count = SetTree.count s.Tree
+        member s.Count = SetTree.size s.Tree
 
         member s.Contains(value) = 
 #if TRACE_SETS_AND_MAPS
