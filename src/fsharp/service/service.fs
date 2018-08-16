@@ -903,6 +903,9 @@ type TypeCheckInfo
         match item with
         | Item.Types _ | Item.ModuleOrNamespaces _ -> true
         | _ -> false
+    
+    /// Find the most precise display context for the given line and column.
+    member __.GetBestDisplayEnvForPos cursorPos  = GetBestEnvForPos cursorPos
 
     member __.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
         let (nenv, ad), m = GetBestEnvForPos cursorPos
@@ -2016,6 +2019,7 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
         | _ -> 
             async.Return dflt
 
+    
     member info.GetToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag, userOpName) = 
         info.GetStructuredToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag, ?userOpName=userOpName)
         |> Tooltips.Map Tooltips.ToFSharpToolTipText
@@ -2128,6 +2132,13 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
             RequireCompilationThread ctok
             scope.IsRelativeNameResolvableFromSymbol(pos, plid, symbol))
     
+    member info.GetDisplayEnvForPos(pos: pos) : Async<DisplayEnv option> =
+        let userOpName = "CodeLens"
+        reactorOp userOpName "GetDisplayContextAtPos" None (fun ctok scope -> 
+            DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent ctok
+            let (nenv, _), _ = scope.GetBestDisplayEnvForPos pos
+            Some nenv.DisplayEnv)
+            
     member info.ImplementationFile =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
         scopeOptX 

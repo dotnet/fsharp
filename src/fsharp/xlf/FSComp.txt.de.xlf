@@ -7012,11 +7012,6 @@
         <target state="translated">Die Adresse der Variablen "{0}" oder ein entsprechender Ausdruck kann zu diesem Zeitpunkt nicht verwendet werden. Hierdurch wird sichergestellt, dass die Adresse des lokalen Werts den zugehörigen Bereich nicht verlässt.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="translated">Der Ausdruck "Span" oder "IsByRefLike" kann von dieser Funktion oder Methode nicht zurückgegeben werden, weil er anhand von Elementen zusammengestellt wurde, die möglicherweise ihren Bereich verlassen.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
         <target state="translated">Dieser Wert kann nicht zugewiesen werden, weil das Ziel "{0}" möglicherweise auf einen lokalen Nicht-Stapel-Arbeitsspeicher verweist, während der zugewiesene Ausdruck laut Auswertung möglicherweise auf einen lokalen Stapelarbeitsspeicher verweist. So wird verhindert, dass Zeiger auf stapelgebundenen Arbeitsspeicher ihren Bereich verlassen.</target>
@@ -7059,7 +7054,17 @@
       </trans-unit>
       <trans-unit id="tastCantTakeAddressOfExpression">
         <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
-        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
+        <target state="translated">Die Adresse des über den Ausdruck zurückgegebenen Werts kann nicht abgerufen werden. Weisen Sie den zurückgegebenen Wert einem let-bound-Wert zu, bevor Sie die Adresse abrufen.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotCallExtensionMemberInrefToByref">
+        <source>Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</source>
+        <target state="new">Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
+        <source>Byref types are not allowed to have optional type extensions.</source>
+        <target state="new">Byref types are not allowed to have optional type extensions.</target>
         <note />
       </trans-unit>
     </body>

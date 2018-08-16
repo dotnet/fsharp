@@ -57,11 +57,10 @@ type internal FSharpCheckerProvider
             let mmd = amd.GetModules().[0]
             let mmr = mmd.GetMetadataReader()
 
-            // "lifetime is timed to Metadata you got from the GetMetadata(...). As long as you hold it strongly, raw 
+            // "lifetime is timed to Metadata you got from the GetMetadata(…). As long as you hold it strongly, raw 
             // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
             // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
-            // You shouldn't dispose it directly."
-
+            // You shouldn’t dispose it directly."
             let objToHold = box md
 
             // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
@@ -78,7 +77,7 @@ type internal FSharpCheckerProvider
         lazy
             let checker = 
                 FSharpChecker.Create(
-                    projectCacheSize = Settings.LanguageServicePerformance.ProjectCheckCacheSize, 
+                    projectCacheSize = Settings.LanguageServicePerformance.ProjectCheckCacheSize,
                     keepAllBackgroundResolutions = false,
                     // Enabling this would mean that if devenv.exe goes above 2.3GB we do a one-off downsize of the F# Compiler Service caches
                     (* , MaxMemory = 2300 *) 
@@ -150,7 +149,6 @@ type internal FSharpProjectOptionsManager
     member this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, fileContents) =
         async {
             let extraProjectInfo = Some(box workspace)
-            let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject |> Option.map(fun (_, _, projectOptions) -> projectOptions)
             if SourceFile.MustBeSingleFileProject(fileName) then 
                 // NOTE: we don't use a unique stamp for single files, instead comparing options structurally.
                 // This is because we repeatedly recompute the options.
@@ -160,12 +158,12 @@ type internal FSharpProjectOptionsManager
                 // compiled and #r will refer to files on disk
                 let referencedProjectFileNames = [| |] 
                 let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, options)
-                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, options.ExtraProjectInfo, Some projectOptionsTable)
+                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, options.ExtraProjectInfo, Some projectOptionsTable)
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
                 return (deps, parsingOptions, projectOptions)
             else
                 let site = ProjectSitesAndFiles.ProjectSiteOfSingleFile(fileName)
-                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, extraProjectInfo, Some projectOptionsTable)
+                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, extraProjectInfo, Some projectOptionsTable)
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
                 return (deps, parsingOptions, projectOptions)
         }
@@ -175,8 +173,7 @@ type internal FSharpProjectOptionsManager
         Logger.Log LogEditorFunctionId.LanguageService_UpdateProjectInfo
         projectOptionsTable.AddOrUpdateProject(projectId, (fun isRefresh ->
             let extraProjectInfo = Some(box workspace)
-            let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject |> Option.map(fun (_, _, projectOptions) -> projectOptions)
-            let referencedProjects, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, Some(projectId), site.ProjectFileName, extraProjectInfo,  Some projectOptionsTable)
+            let referencedProjects, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, Some(projectId), site.ProjectFileName, extraProjectInfo,  Some projectOptionsTable)
             if invalidateConfig then checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = not isRefresh, userOpName = userOpName + ".UpdateProjectInfo")
             let referencedProjectIds = referencedProjects |> Array.choose tryGetOrCreateProjectId
             let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
@@ -329,6 +326,7 @@ type internal FSharpCheckerWorkspaceServiceFactory
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010")>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.LanguageServicePerformanceOptionPage>, "F#", null, "Performance", "6011")>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.AdvancedSettingsOptionPage>, "F#", null, "Advanced", "6012")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeLensOptionPage>, "F#", null, "CodeLens", "6013")>]
 [<ProvideFSharpVersionRegistration(FSharpConstants.projectPackageGuidString, "Microsoft Visual F#")>]
 // 64 represents a hex number. It needs to be greater than 37 so the TextMate editor will not be chosen as higher priority.
 [<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fs", 64)>]
@@ -374,18 +372,33 @@ type internal FSharpPackage() as this =
     // FSI-LINKAGE-POINT: unsited init
     do Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
-    override this.Initialize() =
-        base.Initialize()
+    override this.InitializeAsync(cancellationToken: CancellationToken, progress: IProgress<ServiceProgressData>) : Tasks.Task =
+        // `base.` methods can't be called in the `async` builder, so we have to cache it
+        let baseInitializeAsync = base.InitializeAsync(cancellationToken, progress)
+        let task =
+            async {
+                do! baseInitializeAsync |> Async.AwaitTask
 
-        this.ComponentModel.GetService<SettingsPersistence.ISettings>() |> ignore
+                let! commandService = this.GetServiceAsync(typeof<IMenuCommandService>) |> Async.AwaitTask // FSI-LINKAGE-POINT
+                let commandService = commandService :?> OleMenuCommandService
+                let packageInit () =
+                    // ensure settings are registered
+                    let settingsStore = this.ComponentModel.GetService<SettingsPersistence.SettingsStore>()
+                    Settings.Initialize(settingsStore)
 
-        // FSI-LINKAGE-POINT: sited init
-        let commandService = this.GetService(typeof<IMenuCommandService>) :?> OleMenuCommandService // FSI-LINKAGE-POINT
-        Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
-        // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
-        let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
+                    // FSI-LINKAGE-POINT: sited init
+                    Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
 
-        ()
+                    // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
+                    let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
+                    ()
+                let awaiter = this.JoinableTaskFactory.SwitchToMainThreadAsync().GetAwaiter()
+                if awaiter.IsCompleted then
+                    packageInit() // already on the UI thread
+                else
+                    awaiter.OnCompleted(fun () -> packageInit())
+            } |> Async.StartAsTask
+        upcast task // convert Task<unit> to Task
 
     override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
@@ -610,7 +623,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                                                 optionsAssociation.Remove(projectContext) |> ignore
                                                 project.Disconnect()))
 
-                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites(site, this.SystemServiceProvider, Some (this.Workspace :>obj), Some projectInfoManager.FSharpOptions ) do
+                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites(Some projectId, site, this.SystemServiceProvider, Some (this.Workspace :>obj), Some projectInfoManager.FSharpOptions ) do
                     setup referencedSite
 
         setup (siteProvider.GetProjectSite()) 

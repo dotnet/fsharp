@@ -7012,11 +7012,6 @@
         <target state="translated">O endereço da variável '{0}' ou de uma expressão relacionada não pode ser utilizado neste ponto. Isso tem como objetivo garantir que o endereço do valor local não escape de seu escopo.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="translated">A expressão Span ou IsByRefLike não pode ser retornada desta função ou deste método porque ela é composta utilizando elementos que podem escapar de seu escopo.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
         <target state="translated">Este valor não pode ser atribuído porque o destino '{0}' pode se referir a uma memória local não empilhada, enquanto a expressão que está sendo atribuída é avaliada para possivelmente se referir à memória local empilhada. Isso tem como objetivo ajudar a evitar que os ponteiros da memória vinculada à pilha escapem de seu escopo.</target>
@@ -7059,7 +7054,17 @@
       </trans-unit>
       <trans-unit id="tastCantTakeAddressOfExpression">
         <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
-        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
+        <target state="translated">Não é possível obter o endereço do valor retornado da expressão. Atribua o valor retornado a um valor associado a let antes de obter o endereço.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotCallExtensionMemberInrefToByref">
+        <source>Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</source>
+        <target state="new">Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
+        <source>Byref types are not allowed to have optional type extensions.</source>
+        <target state="new">Byref types are not allowed to have optional type extensions.</target>
         <note />
       </trans-unit>
     </body>

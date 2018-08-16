@@ -7012,11 +7012,6 @@
         <target state="translated">Bu noktada '{0}' değişkeninin veya ilgili bir değişkenin adresi kullanılamaz. Bunun amacı, yerel değerin adresinin kapsamı dışına kaçmasını engellemektir.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="translated">Span veya IsByRefLike ifadesi kapsamından kaçabilecek öğeler kullanılarak oluşturulduğundan, bu işlev veya metottan döndürülemez.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
         <target state="translated">'{0}' hedefi yığında yerel olmayan belleğe başvurabileceğinden ve atanmakta olan ifadenin yığında yerel belleğe başvurma olasılığının olduğu tespit edildiğinden bu değer atanamaz. Bunun amacı, yığınla sınırlı belleğe yönelik işaretçilerin kapsamlarından kaçmasının önlenmesine yardımcı olmaktır.</target>
@@ -7059,7 +7054,17 @@
       </trans-unit>
       <trans-unit id="tastCantTakeAddressOfExpression">
         <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
-        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
+        <target state="translated">İfadeden döndürülen değerin adresi alınamaz. Adresi almadan önce, döndürülen değeri let ile bağlanmış bir değere atayın.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotCallExtensionMemberInrefToByref">
+        <source>Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</source>
+        <target state="new">Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
+        <source>Byref types are not allowed to have optional type extensions.</source>
+        <target state="new">Byref types are not allowed to have optional type extensions.</target>
         <note />
       </trans-unit>
     </body>

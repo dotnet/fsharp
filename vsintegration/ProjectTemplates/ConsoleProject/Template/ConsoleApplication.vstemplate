@@ -25,8 +25,9 @@
     <FullClassName>NuGet.VisualStudio.TemplateWizard</FullClassName>
   </WizardExtension>
   <WizardData>
-    <packages repository="extension" repositoryId="VisualFSharp">
+    <packages repository="extension" repositoryId="VisualFSharpTemplates">
       <package id="System.ValueTuple" version="4.4.0" targetFramework="net40" />
+      <package id="FSharp.Core" version="4.5.2" targetFramework="net40" />
      </packages>
   </WizardData>
 </VSTemplate>

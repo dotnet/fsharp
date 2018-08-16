@@ -4330,9 +4330,6 @@
   <data name="chkNoByrefAddressOfValueFromExpression" xml:space="preserve">
     <value>The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</value>
   </data>
-  <data name="chkNoReturnOfLimitedSpan" xml:space="preserve">
-    <value>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</value>
-  </data>
   <data name="chkNoWriteToLimitedSpan" xml:space="preserve">
     <value>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</value>
   </data>
@@ -4356,5 +4353,11 @@
   </data>
   <data name="tastCantTakeAddressOfExpression" xml:space="preserve">
     <value>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</value>
+  </data>
+  <data name="tcCannotCallExtensionMemberInrefToByref" xml:space="preserve">
+    <value>Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</value>
+  </data>
+  <data name="tcByrefsMayNotHaveTypeExtensions" xml:space="preserve">
+    <value>Byref types are not allowed to have optional type extensions.</value>
   </data>
 </root>
