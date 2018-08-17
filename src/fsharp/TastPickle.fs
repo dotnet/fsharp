@@ -980,6 +980,7 @@ let p_ILBasicType x st =
 let p_ILVolatility x st = p_int (match x with Volatile -> 0 | Nonvolatile -> 1) st
 let p_ILReadonly   x st = p_int (match x with ReadonlyAddress -> 0 | NormalAddress -> 1) st
 
+let p_ILAlignment x st = p_int ( match x with | Aligned -> 0 | Unaligned1 -> 1 | Unaligned2 -> 2 | Unaligned4 -> 3 ) st
 let u_ILMethodRef st = 
     let x1,x2,x3,x4,x5,x6 = u_tup6 u_ILTypeRef u_ILCallConv u_int u_string u_ILTypes u_ILType st
     ILMethodRef.Create(x1,x2,x4,x3,x5,x6)
@@ -1016,7 +1017,7 @@ let u_ILBasicType st =
     
 let u_ILVolatility st = (match u_int st with  0 -> Volatile | 1 -> Nonvolatile | _ -> ufailwith st "u_ILVolatility" )
 let u_ILReadonly   st = (match u_int st with  0 -> ReadonlyAddress | 1 -> NormalAddress | _ -> ufailwith st "u_ILReadonly" )
-  
+let u_ILAlignment st = (match u_int st with  0 -> Aligned | 1 -> Unaligned1 | 2 -> Unaligned2 | 3 -> Unaligned4 | _ -> ufailwith st "u_ILAlignment" )
 let [<Literal>] itag_nop           = 0 
 let [<Literal>] itag_ldarg         = 1
 let [<Literal>] itag_ldnull        = 2 
@@ -1084,6 +1085,9 @@ let [<Literal>] itag_initobj       = 63   // currently unused, added for forward
 let [<Literal>] itag_initblk       = 64   // currently unused, added for forward compat   
 let [<Literal>] itag_cpobj         = 65   // currently unused, added for forward compat   
 let [<Literal>] itag_cpblk         = 66   // currently unused, added for forward compat  
+let [<Literal>] itag_ldind         = 67
+
+let [<Literal>] itag_stind         = 68
 
 let simple_instrs = 
     [ itag_add,        AI_add
@@ -1162,6 +1166,8 @@ let decoders =
      itag_ilzero,      u_ILType                            >> EI_ilzero   
      itag_initobj,     u_ILType                            >> I_initobj   
      itag_cpobj,       u_ILType                            >> I_cpobj 
+     itag_ldind,       u_tup3 u_ILAlignment u_ILVolatility u_ILBasicType >> (fun (a,b,c) -> I_ldind (a,b,c))
+     itag_stind,       u_tup3 u_ILAlignment u_ILVolatility u_ILBasicType >> (fun (a,b,c) -> I_stind (a,b,c))
    ]   
 
 let decode_tab = 
