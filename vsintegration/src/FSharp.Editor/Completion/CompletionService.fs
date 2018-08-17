@@ -30,15 +30,19 @@ type internal FSharpCompletionService
                   Completion.Create("""\s*#r\s+(@?"*(?<literal>"[^"]*"?))""", [".dll"; ".exe"], useIncludeDirectives = true)
                   Completion.Create("""\s*#I\s+(@?"*(?<literal>"[^"]*"?))""", ["\x00"], useIncludeDirectives = false) ]))
 
-    let completionRules = 
+    override this.Language = FSharpConstants.FSharpLanguageName
+    override this.GetBuiltInProviders() = builtInProviders
+    override this.GetRules() =
+        let enterKeyRule =
+            match Settings.IntelliSense.EnterKeySetting with
+            | NeverNewline -> EnterKeyRule.Never
+            | NewlineOnCompleteWord -> EnterKeyRule.AfterFullyTypedWord
+            | AlwaysNewline -> EnterKeyRule.Always
+
         CompletionRules.Default
             .WithDismissIfEmpty(true)
             .WithDismissIfLastCharacterDeleted(true)
-            .WithDefaultEnterKeyRule(EnterKeyRule.Never)
-
-    override this.Language = FSharpConstants.FSharpLanguageName
-    override this.GetBuiltInProviders() = builtInProviders
-    override this.GetRules() = completionRules
+            .WithDefaultEnterKeyRule(enterKeyRule)
 
 [<Shared>]
 [<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpConstants.FSharpLanguageName)>]
