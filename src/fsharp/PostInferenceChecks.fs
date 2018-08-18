@@ -477,6 +477,8 @@ type PermitByRefType =
     /// Don't permit any byref or byref-like types
     | None 
 
+    | InnerNone
+
     /// Permit only a Span or IsByRefLike type
     | SpanLike
 
@@ -561,12 +563,14 @@ let CheckType permitByRefLike (cenv:cenv) env m ty =
              else
                errorR (Error(FSComp.SR.checkNotSufficientlyGenericBecauseOfScope(tp.DisplayName),m))
 
-        let visitTyconRef _isInner tcref = 
+        let visitTyconRef isInner tcref = 
 
             match permitByRefLike with
             | PermitByRefType.None when isByrefLikeTyconRef cenv.g m tcref ->
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
             | PermitByRefType.SpanLike when isByrefTyconRef cenv.g tcref ->
+                errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
+            | PermitByRefType.InnerNone when isInner && isByrefLikeTyconRef cenv.g m tcref ->
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
             | _ -> ()
 
@@ -1323,7 +1327,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprsNoByRefLike cenv env args 
 
-and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValInfo alwaysCheckNoReraise e m ety context =
+and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValInfo alwaysCheckNoReraise e mOrig ety context =
     let g = cenv.g
     // The topValInfo here says we are _guaranteeing_ to compile a function value 
     // as a .NET method with precisely the corresponding argument counts. 
@@ -1353,8 +1357,9 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
             // any byRef arguments are considered used, as they may be 'out's
             restArgs |> List.iter (fun arg -> if isByrefTy g arg.Type then arg.SetHasBeenReferenced())
 
-        syntacticArgs |> List.iter (CheckValSpec cenv env)
+        syntacticArgs |> List.iter (CheckValSpec PermitByRefType.InnerNone cenv env)
         syntacticArgs |> List.iter (BindVal cenv env)
+        CheckType PermitByRefType.InnerNone cenv env mOrig bodyty
 
         // Trigger a test hook
         match memInfo with 
@@ -1393,6 +1398,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
                 
     // This path is for expression bindings that are not actually lambdas
     | _ -> 
+        let m = mOrig
         // Permit byrefs for let x = ...
         CheckTypePermitAllByrefs cenv env m ety
         let limit = 
@@ -1441,7 +1447,7 @@ and CheckDecisionTreeTargets cenv env targets context =
 
 and CheckDecisionTreeTarget cenv env context (TTarget(vs,e,_)) = 
     BindVals cenv env vs 
-    vs |> List.iter (CheckValSpec cenv env)
+    vs |> List.iter (CheckValSpec PermitByRefType.All cenv env)
     CheckExpr cenv env e context 
 
 and CheckDecisionTree cenv env x =
@@ -1549,10 +1555,10 @@ and CheckValInfo cenv env (ValReprInfo(_,args,ret)) =
 and CheckArgInfo cenv env (argInfo : ArgReprInfo)  = 
     CheckAttribs cenv env argInfo.Attribs
 
-and CheckValSpec cenv env (v:Val) =
+and CheckValSpec permitByRefLike cenv env (v:Val) =
     v.Attribs |> CheckAttribs cenv env
     v.ValReprInfo |> Option.iter (CheckValInfo cenv env)
-    v.Type |> CheckTypePermitAllByrefs cenv env v.Range
+    v.Type |> CheckType permitByRefLike cenv env v.Range
 
 and AdjustAccess isHidden (cpath: unit -> CompilationPath) access =
     if isHidden then 
