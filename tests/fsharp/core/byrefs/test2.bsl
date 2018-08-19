@@ -19,6 +19,8 @@ test2.fsx(79,14,79,29): typecheck error FS3228: The address of a value returned 
 
 test2.fsx(87,14,87,29): typecheck error FS3228: The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
+test2.fsx(93,13,93,14): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
 test2.fsx(93,28,93,29): typecheck error FS0421: The address of the variable 'x' cannot be used at this point
 
 test2.fsx(93,17,93,29): typecheck error FS0425: The type of a first-class function cannot contain byrefs
@@ -34,3 +36,25 @@ test2.fsx(133,23,133,33): typecheck error FS0438: Duplicate method. The method '
 test2.fsx(131,23,131,33): typecheck error FS0438: Duplicate method. The method 'TestMethod' has the same name and signature as another method in type 'NegativeTests.TestNegativeOverloading'.
 
 test2.fsx(129,23,129,33): typecheck error FS0438: Duplicate method. The method 'TestMethod' has the same name and signature as another method in type 'NegativeTests.TestNegativeOverloading'.
+
+test2.fsx(137,18,137,22): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+test2.fsx(137,18,137,22): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+test2.fsx(139,18,139,23): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+test2.fsx(141,9,141,14): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+test2.fsx(141,34,141,39): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+test2.fsx(141,35,141,36): typecheck error FS0418: The byref typed value 'x' cannot be used at this point
+
+test2.fsx(143,9,143,14): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+test2.fsx(147,17,147,18): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+test2.fsx(149,17,149,18): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+test2.fsx(149,41,149,42): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+test2.fsx(155,36,155,39): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
