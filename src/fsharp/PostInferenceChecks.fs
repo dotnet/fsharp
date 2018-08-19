@@ -477,6 +477,7 @@ type PermitByRefType =
     /// Don't permit any byref or byref-like types
     | None 
 
+    /// Don't permit any byref or byref-like type on function or tuple types.
     | InnerNone
 
     /// Permit only a Span or IsByRefLike type
@@ -2061,8 +2062,8 @@ let CheckEntityDefn cenv env (tycon:Entity) =
             let env = BindTypars g env tps
             for argtys in argtysl do 
                 for (argty, _) in argtys do 
-                     CheckTypePermitAllByrefs cenv env m argty
-            CheckTypePermitAllByrefs cenv env m rty
+                     CheckType PermitByRefType.InnerNone cenv env vref.Range argty
+            CheckType PermitByRefType.InnerNone cenv env vref.Range rty
                 
         | None -> ()
 
