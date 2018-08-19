@@ -477,7 +477,7 @@ type PermitByRefType =
     /// Don't permit any byref or byref-like types
     | None 
 
-    /// Don't permit any byref or byref-like type on function or tuple types.
+    /// Don't permit any byref or byref-like type on inner function, tuple, or generic types
     | InnerNone
 
     /// Permit only a Span or IsByRefLike type

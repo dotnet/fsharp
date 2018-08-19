@@ -154,6 +154,12 @@ module NegativeTests =
 
         static member NegativeTest(tup) =
             StaticTest.Test(tup)
+
+        static member NegativeTest2(x: byref<int> -> unit) = ()
+
+        static member NegativeTest3(x: byref<int> option) = ()
+
+    let test12 (x: byref<int> option) = ()
 #endif
 
 module Tests =
