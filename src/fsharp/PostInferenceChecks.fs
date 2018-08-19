@@ -477,8 +477,8 @@ type PermitByRefType =
     /// Don't permit any byref or byref-like types
     | None 
 
-    /// Don't permit any byref or byref-like type on inner function, tuple, or generic types
-    | InnerNone
+    /// Don't permit any byref types on inner function, tuple, or generic types
+    | NoInnerByRef
 
     /// Permit only a Span or IsByRefLike type
     | SpanLike
@@ -571,7 +571,7 @@ let CheckType permitByRefLike (cenv:cenv) env m ty =
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
             | PermitByRefType.SpanLike when isByrefTyconRef cenv.g tcref ->
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
-            | PermitByRefType.InnerNone when isInner && isByrefLikeTyconRef cenv.g m tcref ->
+            | PermitByRefType.NoInnerByRef when isInner && isByrefTyconRef cenv.g tcref ->
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
             | _ -> ()
 
@@ -1358,9 +1358,9 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
             // any byRef arguments are considered used, as they may be 'out's
             restArgs |> List.iter (fun arg -> if isByrefTy g arg.Type then arg.SetHasBeenReferenced())
 
-        syntacticArgs |> List.iter (CheckValSpec PermitByRefType.InnerNone cenv env)
+        syntacticArgs |> List.iter (CheckValSpec PermitByRefType.NoInnerByRef cenv env)
         syntacticArgs |> List.iter (BindVal cenv env)
-        CheckType PermitByRefType.InnerNone cenv env mOrig bodyty
+        CheckType PermitByRefType.NoInnerByRef cenv env mOrig bodyty
 
         // Trigger a test hook
         match memInfo with 
@@ -1401,7 +1401,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
     | _ -> 
         let m = mOrig
         // Permit byrefs for let x = ...
-        CheckTypePermitAllByrefs cenv env m ety
+        CheckType PermitByRefType.NoInnerByRef cenv env m ety
         let limit = 
             if not inlined && (isByrefLikeTy g m ety || isNativePtrTy g ety) then
                 // allow byref to occur as RHS of byref binding. 
@@ -2062,8 +2062,8 @@ let CheckEntityDefn cenv env (tycon:Entity) =
             let env = BindTypars g env tps
             for argtys in argtysl do 
                 for (argty, _) in argtys do 
-                     CheckType PermitByRefType.InnerNone cenv env vref.Range argty
-            CheckType PermitByRefType.InnerNone cenv env vref.Range rty
+                     CheckType PermitByRefType.NoInnerByRef cenv env vref.Range argty
+            CheckType PermitByRefType.NoInnerByRef cenv env vref.Range rty
                 
         | None -> ()
 
