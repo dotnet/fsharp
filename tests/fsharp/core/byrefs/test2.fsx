@@ -160,6 +160,60 @@ module NegativeTests =
         static member NegativeTest3(x: byref<int> option) = ()
 
     let test12 (x: byref<int> option) = ()
+
+    let testHelper1 (x: int) (y: byref<int>) = ()
+
+    let test13 () =
+        let x = testHelper1 1
+        ()
+
+    let test14 () =
+        testHelper1 1
+
+    let test15 () =
+        let x =
+            printfn "test"
+            testHelper1 1
+        ()
+
+    let test16 () =
+        let x = 1
+        testHelper1 1
+        ()
+
+    let test17 () =
+        let x = testHelper1
+        ()
+
+    let test18 () =
+        testHelper1
+
+    let test19 () =
+        let x =
+            printfn "test"
+            testHelper1
+        ()
+
+    let test20 () =
+        let x = 1
+        testHelper1
+        ()
+
+    let test21 () =
+        let x = StaticTest.Test
+        ()
+
+    let test22 () =
+        let x =
+            printfn "test"
+            StaticTest.Test
+        ()
+
+    let test23 () =
+        let x = 1
+        StaticTest.Test
+        ()
+    
 #endif
 
 module Tests =
@@ -196,10 +250,15 @@ module Tests =
 
         static member Test (x: byref<int>, y: int) = ()
 
+        static member Test2 (x: inref<int>, y: int) = ()
+
         // This passes because tup becomes 'int ref * int', which is valid and produces valid code.
         // We include this to test current behavior with inference and byrefs.
         static member PositiveTest(tup) =
             StaticTest.Test(tup)
+
+    let test3 () =
+        StaticTest.Test2 // is passing, but probably shouldn't be
 
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
