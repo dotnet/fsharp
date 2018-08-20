@@ -43,11 +43,11 @@ test.fsx(66,34,66,47): typecheck error FS1204: This construct is for use in the 
 
 test.fsx(66,34,66,47): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
 
-test.fsx(71,21,71,23): typecheck error FS3236: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
+test.fsx(71,21,71,23): typecheck error FS3238: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
 
-test.fsx(72,21,72,23): typecheck error FS3236: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
+test.fsx(72,21,72,23): typecheck error FS3238: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
 
-test.fsx(78,21,78,37): typecheck error FS3236: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
+test.fsx(78,21,78,37): typecheck error FS3238: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
 
 test.fsx(85,22,85,23): typecheck error FS0001: This expression was expected to have type
     'inref<System.DateTime>'    

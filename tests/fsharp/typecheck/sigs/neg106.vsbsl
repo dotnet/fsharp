@@ -1,5 +1,5 @@
 
-neg106.fs(8,59,8,61): typecheck error FS3230: A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'
+neg106.fs(8,59,8,61): typecheck error FS3231: A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'
 
 neg106.fs(13,18,13,72): typecheck error FS0041: No overloads match for method 'CompareExchange'. The available overloads are shown below.
 neg106.fs(13,18,13,72): typecheck error FS0041: Possible overload: 'System.Threading.Interlocked.CompareExchange(location1: byref<int>, value: int, comparand: int) : int'. Type constraint mismatch. The type 
@@ -38,7 +38,7 @@ is not compatible with type
     'byref<'a>'    
 .
 
-neg106.fs(17,59,17,61): typecheck error FS3236: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
+neg106.fs(17,59,17,61): typecheck error FS3238: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
 
 neg106.fs(17,14,17,68): typecheck error FS0041: No overloads match for method 'CompareExchange'. The available overloads are shown below.
 neg106.fs(17,14,17,68): typecheck error FS0041: Possible overload: 'System.Threading.Interlocked.CompareExchange(location1: byref<int>, value: int, comparand: int) : int'. Type constraint mismatch. The type 

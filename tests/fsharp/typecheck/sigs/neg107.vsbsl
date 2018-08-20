@@ -55,15 +55,15 @@ neg107.fsx(37,33,37,34): typecheck error FS0425: The type of a first-class funct
 
 neg107.fsx(37,33,37,34): typecheck error FS0425: The type of a first-class function cannot contain byrefs
 
-neg107.fsx(45,34,45,40): typecheck error FS3232: Struct members cannot return the address of fields of the struct by reference
+neg107.fsx(45,34,45,40): typecheck error FS3234: Struct members cannot return the address of fields of the struct by reference
 
-neg107.fsx(45,34,45,38): typecheck error FS3232: Struct members cannot return the address of fields of the struct by reference
+neg107.fsx(45,34,45,38): typecheck error FS3234: Struct members cannot return the address of fields of the struct by reference
 
-neg107.fsx(53,34,53,38): typecheck error FS3232: Struct members cannot return the address of fields of the struct by reference
+neg107.fsx(53,34,53,38): typecheck error FS3234: Struct members cannot return the address of fields of the struct by reference
 
-neg107.fsx(67,34,67,40): typecheck error FS3232: Struct members cannot return the address of fields of the struct by reference
+neg107.fsx(67,34,67,40): typecheck error FS3234: Struct members cannot return the address of fields of the struct by reference
 
-neg107.fsx(67,34,67,38): typecheck error FS3232: Struct members cannot return the address of fields of the struct by reference
+neg107.fsx(67,34,67,38): typecheck error FS3234: Struct members cannot return the address of fields of the struct by reference
 
 neg107.fsx(71,19,71,20): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 

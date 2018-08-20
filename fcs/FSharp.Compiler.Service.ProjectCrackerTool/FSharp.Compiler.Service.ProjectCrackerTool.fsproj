@@ -28,7 +28,7 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Portable.FSharp.Core.$(FSharpCoreFrozenPortablePackageVersion)\lib\profiles\net40\FSharp.Core.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <PackageReference Update="FSharp.Core" Version="4.1.*" />
+    <PackageReference Include="FSharp.Core" Version="4.1.18" />
     <Reference Include="Microsoft.Build.Framework, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\fcs\dependencies\MSBuild.v12.0\Microsoft.Build.Framework.dll</HintPath>
       <Private>false</Private>
