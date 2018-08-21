@@ -109,11 +109,10 @@ module ByrefNegativeTests =
 
             for kvp in aggregator do
             for kvpInner in kvp.Value do
-                if Array.TrueForAll(kvpInner.Value,(fun v -> v = 0.0) ) then
-                    kvp.Value.TryRemove(
-                        kvpInner.Key,
-                        &kvpInner.Value)
-                    |> ignore
+                kvp.Value.TryRemove(
+                    kvpInner.Key,
+                    &kvpInner.Value)
+                |> ignore
 
         let test2 () =
             let x = KeyValuePair(1, [||])
