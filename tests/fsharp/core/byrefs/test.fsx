@@ -96,6 +96,29 @@ module ByrefNegativeTests =
     type outref<'T> with
 
         member this.Test() = 1
+
+    module CantTakeAddressOfExpressionReturningReferenceType =
+        open System.Collections.Concurrent
+        open System.Collections.Generic
+
+        let test1 () =
+            let aggregator = 
+                new ConcurrentDictionary<
+                        string, ConcurrentDictionary<string,array<float>>
+                        >()
+
+            for kvp in aggregator do
+            for kvpInner in kvp.Value do
+                if Array.TrueForAll(kvpInner.Value,(fun v -> v = 0.0) ) then
+                    kvp.Value.TryRemove(
+                        kvpInner.Key,
+                        &kvpInner.Value)
+                    |> ignore
+
+        let test2 () =
+            let x = KeyValuePair(1, [||])
+            let y = &x.Value
+            ()
 #endif
 
 // Test a simple ref  argument

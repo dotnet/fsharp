@@ -59,3 +59,11 @@ test.fsx(88,10,88,15): typecheck error FS3238: Byref types are not allowed to ha
 test.fsx(92,10,92,15): typecheck error FS3238: Byref types are not allowed to have optional type extensions.
 
 test.fsx(96,10,96,16): typecheck error FS3238: Byref types are not allowed to have optional type extensions.
+
+test.fsx(112,26,112,36): typecheck error FS0039: The value, constructor, namespace or type 'TrueForAll' is not defined.
+
+test.fsx(115,25,115,40): typecheck error FS3236: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
+
+test.fsx(115,25,115,40): typecheck error FS0001: The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
+
+test.fsx(120,21,120,29): typecheck error FS3236: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
