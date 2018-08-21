@@ -176,10 +176,10 @@ module NegativeTests =
             testHelper1 1
         ()
 
-    // let test16 () =
-    //     let x = 1
-    //     testHelper1 1
-    //     ()
+    let test16 () =
+        let x = 1
+        testHelper1 1
+        ()
 
     let test17 () =
         let x = testHelper1
@@ -194,10 +194,10 @@ module NegativeTests =
             testHelper1
         ()
 
-    // let test20 () =
-    //     let x = 1
-    //     testHelper1
-    //     ()
+    let test20 () =
+        let x = 1
+        testHelper1
+        ()
 
     let test21 () =
         let x = StaticTest.Test
@@ -209,10 +209,22 @@ module NegativeTests =
             StaticTest.Test
         ()
 
-    // let test23 () =
-    //     let x = 1
-    //     StaticTest.Test
-    //     ()
+    let test23 () =
+        let x = 1
+        StaticTest.Test
+        ()
+
+    let test24 () : byref<int> * int =
+        let mutable x = 1
+        (&x, 1)
+
+    let test25 () =
+        test24 ()
+        ()
+
+    let test26 () =
+        let x = test24 ()
+        ()
     
 #endif
 

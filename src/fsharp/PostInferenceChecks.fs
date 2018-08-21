@@ -106,7 +106,10 @@ type env =
       external : bool 
     
       /// Current return scope of the expr.
-      returnScope : int } 
+      returnScope : int 
+      
+      /// Are we in a fully applied app expression?
+      isInFullyAppliedApp: bool } 
 
 let BindTypar env (tp:Typar) = 
     { env with 
@@ -485,10 +488,7 @@ let WarnOnWrongTypeForAccess (cenv:cenv) env objName valAcc m ty =
 [<RequireQualifiedAccess>]
 type PermitByRefType = 
     /// Don't permit any byref or byref-like types
-    | None 
-
-    /// Don't permit any byref or byref-like types on inner function, tuple, or generic types
-    | NoInnerByRefLike
+    | None
 
     /// Permit only a Span or IsByRefLike type
     | SpanLike
@@ -574,16 +574,18 @@ let CheckType permitByRefLike (cenv:cenv) env m ty =
              else
                errorR (Error(FSComp.SR.checkNotSufficientlyGenericBecauseOfScope(tp.DisplayName),m))
 
-        let visitTyconRef isInner tcref = 
+        let visitTyconRef isInner tcref =
+        
+            let isInnerByRefLike = isInner && isByrefLikeTyconRef cenv.g m tcref
 
             match permitByRefLike with
             | PermitByRefType.None when isByrefLikeTyconRef cenv.g m tcref ->
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
-            | PermitByRefType.SpanLike when isByrefTyconRef cenv.g tcref ->
+            | PermitByRefType.SpanLike when isByrefTyconRef cenv.g tcref || isInnerByRefLike ->
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
-            | PermitByRefType.NoInnerByRefLike when isInner && isByrefLikeTyconRef cenv.g m tcref ->
-                errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
-            | _ -> ()
+            | _ ->
+                if isInnerByRefLike then
+                    errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
 
             if tyconRefEq cenv.g cenv.g.system_Void_tcref tcref then 
                 errorR(Error(FSComp.SR.chkSystemVoidOnlyInTypeof(), m))
@@ -678,7 +680,15 @@ and CheckValRef (cenv:cenv) (env:env) v m (context: PermitByRefExpr) =
         if context.Disallow && isByrefLikeTy cenv.g m v.Type then 
             errorR(Error(FSComp.SR.chkNoByrefAtThisPoint(v.DisplayName), m))
 
-    CheckTypePermitAllByrefs cenv env m v.Type // the byref checks are done at the actual binding of the value 
+    let isFunVal =
+        let _, ty = tryDestForallTy cenv.g v.Type
+        isFunTy cenv.g ty
+
+    // We can skip a check type for functions that are fully applied.
+    if not isFunVal then
+        CheckTypePermitAllByrefs cenv env m v.Type
+    elif not env.isInFullyAppliedApp then
+        CheckTypeNoByrefs cenv env m v.Type
 
 /// Check a use of a value
 and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: PermitByRefExpr) = 
@@ -772,6 +782,8 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv:cenv) expr =
         | _ -> ()
 
 and CheckCallLimitArgs cenv env m returnTy limitArgs (context: PermitByRefExpr) =
+    CheckTypePermitAllByrefs cenv env m returnTy
+
     let isReturnByref = isByrefTy cenv.g returnTy
     let isReturnSpanLike = isSpanLikeTy cenv.g m returnTy
 
@@ -858,12 +870,14 @@ and CheckCallWithReceiver cenv env m returnTy args contexts context =
                 limitArgs
         CheckCallLimitArgs cenv env m returnTy limitArgs context
 
-/// Check if the expression is a function value and then disallow any byref or byref-likes types on the function type.
-and CheckExprNoByrefsIfExprFunVal cenv env m expr =
+and CheckExprIsFullyAppliedVal _cenv env (argsl: Exprs) expr =
     match expr with
-    | Expr.Val(vref, _, _) when not vref.IsMember && isFunTy cenv.g vref.Type ->
-        CheckTypeNoByrefs cenv env m vref.Type
-    | _ -> ()
+    | Expr.Val(vref, _, _) ->
+        match vref.ValReprInfo with
+        | Some(info) ->
+            { env with isInFullyAppliedApp = argsl.Length = info.NumCurriedArgs}
+        | _ -> env
+    | _ -> env
 
 /// Check an expression, given information about the position of the expression
 and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =    
@@ -880,10 +894,6 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
     | Expr.Sequential (e1,e2,dir,_,_) -> 
         CheckExprNoByrefs cenv env e1
 
-        // Special check a function not being applied. This is for let-bound function values.
-        CheckExprNoByrefsIfExprFunVal cenv env e1.Range e1
-        CheckExprNoByrefsIfExprFunVal cenv env e2.Range e2
-
         match dir with
         | NormalSeq -> 
             CheckExpr cenv env e2 context       // carry context into _;RHS (normal sequencing only)      
@@ -892,9 +902,6 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
             NoLimit
 
     | Expr.Let ((TBind(v,_bindRhs,_) as bind),body,_,_) ->
-        // Special check a function not being applied. This is for let-bound function values.
-        CheckExprNoByrefsIfExprFunVal cenv env body.Range body
-
         let isByRef = isByrefTy cenv.g v.Type
 
         let bindingContext =
@@ -951,9 +958,11 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
         NoLimit
 
     // Allow base calls to F# methods
-    | Expr.App((InnerExprPat(ExprValWithPossibleTypeInst(v,vFlags,_,_)  as f)),_fty,tyargs,(Expr.Val(baseVal,_,_) :: rest),m) 
+    | Expr.App((InnerExprPat(ExprValWithPossibleTypeInst(v,vFlags,_,_)  as f)),_fty,tyargs,((Expr.Val(baseVal,_,_) :: rest) as argsl),m) 
           when ((match vFlags with VSlotDirectCall -> true | _ -> false) && 
                 baseVal.BaseOrThisInfo = BaseVal) ->
+
+        let env = CheckExprIsFullyAppliedVal cenv env argsl f
 
         let memberInfo = Option.get v.MemberInfo
         if memberInfo.MemberFlags.IsDispatchSlot then
@@ -1009,6 +1018,17 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
 
     // Check an application
     | Expr.App(f,_fty,tyargs,argsl,m) ->
+        let f =
+            // This is to handle recursive apps. We don't want to check the dummy expression.
+            match f with
+            | Expr.Link(eref) -> 
+                match !eref with
+                | Expr.App(f, _, _, _, _) -> f
+                | e -> e
+            | _ -> f
+
+        let env = CheckExprIsFullyAppliedVal cenv env argsl f
+
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprNoByrefs cenv env f
 
@@ -1016,18 +1036,6 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
             match f with
             | Expr.Val(vref, _, _) when vref.IsInstanceMember && not argsl.IsEmpty -> true
             | _ -> false
-
-        // If we have a partially applied let-bound function value,
-        //     then disallow any byref or byref-like types.
-        match f with
-        | Expr.Val(vref, _, _) ->
-            match vref.ValReprInfo with
-            | Some(info) ->
-                // args can be 0 if it's trying to recurse
-                if argsl.Length <> 0 && argsl.Length < info.NumCurriedArgs then
-                    CheckExprNoByrefsIfExprFunVal cenv env m f
-            | _ -> ()
-        | _ -> ()
 
         let returnTy = tyOfExpr g expr
         let contexts = mkArgsForAppliedExpr false argsl f
@@ -1397,16 +1405,13 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
 
         let permitByRefType =
             if isTop then
-                PermitByRefType.NoInnerByRefLike
+                PermitByRefType.All
             else
                 PermitByRefType.None
 
         syntacticArgs |> List.iter (CheckValSpec permitByRefType cenv env)
         syntacticArgs |> List.iter (BindVal cenv env)
         CheckType permitByRefType cenv env mOrig bodyty
-
-        // Special check a function not being applied. This is for let-bound function values.
-        CheckExprNoByrefsIfExprFunVal cenv env body.Range body
 
         // Trigger a test hook
         match memInfo with 
@@ -1447,10 +1452,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
     | _ -> 
         let m = mOrig
         // Permit byrefs for let x = ...
-        CheckType PermitByRefType.NoInnerByRefLike cenv env m ety
-
-        // Special check a function not being applied. This is for let-bound function values.
-        CheckExprNoByrefsIfExprFunVal cenv env e.Range e
+        CheckTypePermitAllByrefs cenv env m ety
 
         let limit = 
             if not inlined && (isByrefLikeTy g m ety || isNativePtrTy g ety) then
@@ -1640,8 +1642,6 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v,bindRhs,_) as bi
          let nm = v.DisplayName
          errorR(Error(FSComp.SR.chkMemberUsedInInvalidWay(nm, nm, stringOfRange m), v.Range))
 
-    // Byrefs allowed for x in 'let x = ...'
-    v.Type |> CheckTypePermitAllByrefs cenv env v.Range
     v.Attribs |> CheckAttribs cenv env
     v.ValReprInfo |> Option.iter (CheckValInfo cenv env)
 
@@ -2112,8 +2112,8 @@ let CheckEntityDefn cenv env (tycon:Entity) =
             let env = BindTypars g env tps
             for argtys in argtysl do 
                 for (argty, _) in argtys do 
-                     CheckType PermitByRefType.NoInnerByRefLike cenv env vref.Range argty
-            CheckType PermitByRefType.NoInnerByRefLike cenv env vref.Range rty
+                     CheckTypePermitAllByrefs cenv env vref.Range argty
+            CheckTypePermitAllByrefs cenv env vref.Range rty
                 
         | None -> ()
 
@@ -2272,7 +2272,8 @@ let CheckTopImpl (g,amap,reportErrors,infoReader,internalsVisibleToPaths,viewCcu
           boundTypars= TyparMap.Empty
           reflect=false
           external=false 
-          returnScope = 0 }
+          returnScope = 0
+          isInFullyAppliedApp = false }
 
     CheckModuleExpr cenv env mexpr
     CheckAttribs cenv env extraAttribs
