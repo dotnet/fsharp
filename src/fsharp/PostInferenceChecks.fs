@@ -490,6 +490,9 @@ type PermitByRefType =
     /// Don't permit any byref or byref-like types
     | None
 
+    /// Don't permit any byref or byref-like types on inner types.
+    | NoInnerByRefLike
+
     /// Permit only a Span or IsByRefLike type
     | SpanLike
 
@@ -581,11 +584,11 @@ let CheckType permitByRefLike (cenv:cenv) env m ty =
             match permitByRefLike with
             | PermitByRefType.None when isByrefLikeTyconRef cenv.g m tcref ->
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
+            | PermitByRefType.NoInnerByRefLike when isInnerByRefLike ->
+                errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
             | PermitByRefType.SpanLike when isByrefTyconRef cenv.g tcref || isInnerByRefLike ->
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
-            | _ ->
-                if isInnerByRefLike then
-                    errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
+            | _ -> ()
 
             if tyconRefEq cenv.g cenv.g.system_Void_tcref tcref then 
                 errorR(Error(FSComp.SR.chkSystemVoidOnlyInTypeof(), m))
@@ -623,11 +626,17 @@ let CheckTypePermitSpanLike (cenv:cenv) env m ty = CheckType PermitByRefType.Spa
 /// Check types occurring in TAST but allow all byrefs.  Only used on internally-generated types
 let CheckTypePermitAllByrefs (cenv:cenv) env m ty = CheckType PermitByRefType.All cenv env m ty
 
+/// Check types ocurring in TAST but disallow inner types to be byref or byref-like types.
+let CheckTypeNoInnerByrefs cenv env m ty = CheckType PermitByRefType.NoInnerByRefLike cenv env m ty
+
 let CheckTypeInstNoByrefs cenv env m tyargs =
     tyargs |> List.iter (CheckTypeNoByrefs cenv env m)
 
 let CheckTypeInstPermitAllByrefs cenv env m tyargs =
     tyargs |> List.iter (CheckTypePermitAllByrefs cenv env m)
+
+let CheckTypeInstNoInnerByrefs cenv env m tyargs =
+    tyargs |> List.iter (CheckTypeNoInnerByrefs cenv env m)
 
 /// Applied functions get wrapped in coerce nodes for subsumption coercions
 let (|OptionalCoerce|) = function 
@@ -684,11 +693,13 @@ and CheckValRef (cenv:cenv) (env:env) v m (context: PermitByRefExpr) =
         let _, ty = tryDestForallTy cenv.g v.Type
         isFunTy cenv.g ty
 
-    // We can skip a check type for functions that are fully applied.
+    // This is to handle values that are functions who are not applied. We check to see if it's a valid type.
     if not isFunVal then
-        CheckTypePermitAllByrefs cenv env m v.Type
+        CheckTypeNoInnerByrefs cenv env m v.Type
     elif not env.isInFullyAppliedApp then
         CheckTypeNoByrefs cenv env m v.Type
+    else
+        CheckTypePermitAllByrefs cenv env m v.Type
 
 /// Check a use of a value
 and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: PermitByRefExpr) = 
@@ -782,7 +793,7 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv:cenv) expr =
         | _ -> ()
 
 and CheckCallLimitArgs cenv env m returnTy limitArgs (context: PermitByRefExpr) =
-    CheckTypePermitAllByrefs cenv env m returnTy
+    CheckTypeNoInnerByrefs cenv env m returnTy
 
     let isReturnByref = isByrefTy cenv.g returnTy
     let isReturnSpanLike = isSpanLikeTy cenv.g m returnTy
@@ -916,7 +927,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
         CheckExpr cenv env body context
 
     | Expr.Const (_,m,ty) -> 
-        CheckTypePermitAllByrefs cenv env m ty 
+        CheckTypeNoInnerByrefs cenv env m ty 
         NoLimit
             
     | Expr.Val (vref,vFlags,m) -> 
@@ -1012,14 +1023,14 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
 
     // Allow '%expr' in quotations
     | Expr.App(Expr.Val(vref,_,_),_,tinst,[arg],m) when isSpliceOperator g vref && env.quote ->
-          CheckTypeInstPermitAllByrefs cenv env m tinst // it's the splice operator, a byref instantiation is allowed
+          CheckTypeInstNoInnerByrefs cenv env m tinst // it's the splice operator, a byref instantiation is allowed
           CheckExprNoByrefs cenv env arg
           NoLimit
 
     // Check an application
     | Expr.App(f,_fty,tyargs,argsl,m) ->
         let f =
-            // This is to handle recursive apps. We don't want to check the dummy expression.
+            // This is to handle recursive apps.
             match f with
             | Expr.Link(eref) -> 
                 match !eref with
@@ -1060,7 +1071,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
         NoLimit
 
     | Expr.Match(_,_,dtree,targets,m,ty) -> 
-        CheckTypePermitAllByrefs cenv env m ty // computed byrefs allowed at each branch
+        CheckTypeNoInnerByrefs cenv env m ty // computed byrefs allowed at each branch
         CheckDecisionTree cenv env dtree
         CheckDecisionTreeTargets cenv env targets context
 
@@ -1115,7 +1126,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         CheckExprsNoByRefLike cenv env [e1;e2]
 
     | TOp.TryFinally _,[_],[Expr.Lambda(_,_,_,[_],e1,_,_); Expr.Lambda(_,_,_,[_],e2,_,_)] ->
-        CheckTypeInstPermitAllByrefs cenv env m tyargs  // result of a try/finally can be a byref 
+        CheckTypeInstNoInnerByrefs cenv env m tyargs  // result of a try/finally can be a byref 
         ctorLimitedZoneCheck()
         let limit = CheckExpr cenv env e1 context   // result of a try/finally can be a byref if in a position where the overall expression is can be a byref
         CheckExprNoByrefs cenv env e2
@@ -1126,7 +1137,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         CheckExprsNoByRefLike cenv env [e1;e2;e3]
 
     | TOp.TryCatch _,[_],[Expr.Lambda(_,_,_,[_],e1,_,_); Expr.Lambda(_,_,_,[_],_e2,_,_); Expr.Lambda(_,_,_,[_],e3,_,_)] ->
-        CheckTypeInstPermitAllByrefs cenv env m tyargs  // result of a try/catch can be a byref 
+        CheckTypeInstNoInnerByrefs cenv env m tyargs  // result of a try/catch can be a byref 
         ctorLimitedZoneCheck()
         let limit1 = CheckExpr cenv env e1 context // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
         // [(* e2; -- don't check filter body - duplicates logic in 'catch' body *) e3]
@@ -1137,7 +1148,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckTypeInstNoByrefs cenv env m enclTypeArgs
         CheckTypeInstNoByrefs cenv env m methTypeArgs
-        CheckTypeInstPermitAllByrefs cenv env m tys // permit byref returns
+        CheckTypeInstNoInnerByrefs cenv env m tys // permit byref returns
 
         let hasReceiver = 
             (methRef.CallingConv.IsInstance || methRef.CallingConv.IsInstanceExplicit) &&
@@ -1313,7 +1324,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         CheckExpr cenv env obj context
 
     | TOp.ILAsm (instrs,tys),_,_  ->
-        CheckTypeInstPermitAllByrefs cenv env m tys
+        CheckTypeInstNoInnerByrefs cenv env m tys
         CheckTypeInstNoByrefs cenv env m tyargs
         match instrs,args with
         // Write a .NET instance field
@@ -1452,7 +1463,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
     | _ -> 
         let m = mOrig
         // Permit byrefs for let x = ...
-        CheckTypePermitAllByrefs cenv env m ety
+        CheckTypeNoInnerByrefs cenv env m ety
 
         let limit = 
             if not inlined && (isByrefLikeTy g m ety || isNativePtrTy g ety) then
@@ -1520,11 +1531,11 @@ and CheckDecisionTreeSwitch cenv env (e,cases,dflt,m) =
 
 and CheckDecisionTreeTest cenv env m discrim =
     match discrim with
-    | DecisionTreeTest.UnionCase (_,tinst) -> CheckTypeInstPermitAllByrefs cenv env m tinst
-    | DecisionTreeTest.ArrayLength (_,ty) -> CheckTypePermitAllByrefs cenv env m ty
+    | DecisionTreeTest.UnionCase (_,tinst) -> CheckTypeInstNoInnerByrefs cenv env m tinst
+    | DecisionTreeTest.ArrayLength (_,ty) -> CheckTypeNoInnerByrefs cenv env m ty
     | DecisionTreeTest.Const _ -> ()
     | DecisionTreeTest.IsNull -> ()
-    | DecisionTreeTest.IsInst (srcTy,tgtTy)    -> CheckTypePermitAllByrefs cenv env m srcTy; CheckTypePermitAllByrefs cenv env m tgtTy
+    | DecisionTreeTest.IsInst (srcTy,tgtTy)    -> CheckTypeNoInnerByrefs cenv env m srcTy; CheckTypeNoInnerByrefs cenv env m tgtTy
     | DecisionTreeTest.ActivePatternCase (exp,_,_,_,_)     -> CheckExprNoByrefs cenv env exp
 
 and CheckAttrib cenv env (Attrib(_,_,args,props,_,_,_)) = 
@@ -2113,8 +2124,8 @@ let CheckEntityDefn cenv env (tycon:Entity) =
             let env = BindTypars g env tps
             for argtys in argtysl do 
                 for (argty, _) in argtys do 
-                     CheckTypePermitAllByrefs cenv env vref.Range argty
-            CheckTypePermitAllByrefs cenv env vref.Range rty
+                     CheckTypeNoInnerByrefs cenv env vref.Range argty
+            CheckTypeNoInnerByrefs cenv env vref.Range rty
                 
         | None -> ()
 
