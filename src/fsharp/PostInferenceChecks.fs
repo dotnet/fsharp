@@ -1642,6 +1642,7 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v,bindRhs,_) as bi
          let nm = v.DisplayName
          errorR(Error(FSComp.SR.chkMemberUsedInInvalidWay(nm, nm, stringOfRange m), v.Range))
 
+    v.Type |> CheckTypePermitAllByrefs cenv env v.Range
     v.Attribs |> CheckAttribs cenv env
     v.ValReprInfo |> Option.iter (CheckValInfo cenv env)
 
