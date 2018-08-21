@@ -52,3 +52,27 @@ test2.fsx(191,43,191,44): typecheck error FS3209: The address of the variable 'x
 test2.fsx(195,14,195,15): typecheck error FS3209: The address of the variable 'y' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
 test2.fsx(199,13,199,19): typecheck error FS3230: This value can't be assigned because the target 'x' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.
+
+test2.fsx(204,26,204,27): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+test2.fsx(204,26,204,27): typecheck error FS0406: The byref-typed variable 'inputSequence' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
+
+test2.fsx(204,26,204,27): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+test2.fsx(204,26,204,27): typecheck error FS0425: The type of a first-class function cannot contain byrefs
+
+test2.fsx(204,26,204,27): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+test2.fsx(204,26,204,27): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+test2.fsx(209,13,209,18): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+test2.fsx(208,14,208,18): typecheck error FS0437: A type would store a byref typed value. This is not permitted by Common IL.
+
+test2.fsx(214,13,214,18): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+test2.fsx(213,14,213,19): typecheck error FS0437: A type would store a byref typed value. This is not permitted by Common IL.
+
+test2.fsx(222,18,222,23): typecheck error FS3228: The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
+
+test2.fsx(231,17,231,18): typecheck error FS3236: The Span or IsByRefLike variable 's' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.

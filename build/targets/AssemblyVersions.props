@@ -21,12 +21,16 @@
     <_Build_Number>$(BUILD_BUILDNUMBER.Substring(9))</_Build_Number>
     <Build_FileVersion>$(_Build_Year).$(_Build_Month).$(_Build_Day).$(_Build_Number)</Build_FileVersion>
 
-    <FSCoreVersion>4.4.3.0</FSCoreVersion>
-    <FSProductVersion>10.1.1.0</FSProductVersion>
-    <FSPackageVersion>10.1.4</FSPackageVersion>
+    <FSCoreMajorVersion>4.5</FSCoreMajorVersion>
+    <FSCorePackageVersion>$(FSCoreMajorVersion).3</FSCorePackageVersion>
+    <FSCoreVersion>$(FSCoreMajorVersion).0.0</FSCoreVersion>
+
+    <FSPackageMajorVersion>10.2</FSPackageMajorVersion>
+    <FSPackageVersion>$(FSPackageMajorVersion).3</FSPackageVersion>
+    <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
 
     <VSMajorVersion>15</VSMajorVersion>
-    <VSMinorVersion>7</VSMinorVersion>
+    <VSMinorVersion>8</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersion>$(VSMajorVersion).$(VSMinorVersion).0.0</VSAssemblyVersion>
 

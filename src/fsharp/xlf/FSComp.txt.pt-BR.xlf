@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="translated">Todos os branches de uma expressão correspondente ao padrão precisam retornar valores do mesmo tipo. O primeiro branch retornou um valor do tipo '{0}', mas este branch retornou um valor do tipo '{1}'.</target>
+        <target state="needs-review-translation">Todos os branches de uma expressão correspondente ao padrão precisam retornar valores do mesmo tipo. O primeiro branch retornou um valor do tipo '{0}', mas este branch retornou um valor do tipo '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -7012,11 +7012,6 @@
         <target state="translated">O endereço da variável '{0}' ou de uma expressão relacionada não pode ser utilizado neste ponto. Isso tem como objetivo garantir que o endereço do valor local não escape de seu escopo.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="translated">A expressão Span ou IsByRefLike não pode ser retornada desta função ou deste método porque ela é composta utilizando elementos que podem escapar de seu escopo.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
         <target state="translated">Este valor não pode ser atribuído porque o destino '{0}' pode se referir a uma memória local não empilhada, enquanto a expressão que está sendo atribuída é avaliada para possivelmente se referir à memória local empilhada. Isso tem como objetivo ajudar a evitar que os ponteiros da memória vinculada à pilha escapem de seu escopo.</target>
@@ -7059,7 +7054,12 @@
       </trans-unit>
       <trans-unit id="tastCantTakeAddressOfExpression">
         <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
-        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
+        <target state="translated">Não é possível obter o endereço do valor retornado da expressão. Atribua o valor retornado a um valor associado a let antes de obter o endereço.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoReturnOfLimitedSpan">
+        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
+        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
         <note />
       </trans-unit>
     </body>
