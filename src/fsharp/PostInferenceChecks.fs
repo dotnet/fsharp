@@ -872,15 +872,6 @@ and CheckCallWithReceiver cenv env m returnTy args contexts context =
                 limitArgs
         CheckCallLimitArgs cenv env m returnTy limitArgs context
 
-and CheckExprIsFullyAppliedVal _cenv env (argsl: Exprs) expr =
-    match expr with
-    | Expr.Val(vref, _, _) ->
-        match vref.ValReprInfo with
-        | Some(info) ->
-            { env with isInApp = argsl.Length = info.NumCurriedArgs}
-        | _ -> env
-    | _ -> env
-
 /// Check an expression, given information about the position of the expression
 and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =    
     let g = cenv.g
@@ -964,16 +955,18 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
           when ((match vFlags with VSlotDirectCall -> true | _ -> false) && 
                 baseVal.BaseOrThisInfo = BaseVal) ->
 
-        let env = CheckExprIsFullyAppliedVal cenv env argsl f
-
         let memberInfo = Option.get v.MemberInfo
         if memberInfo.MemberFlags.IsDispatchSlot then
             errorR(Error(FSComp.SR.tcCannotCallAbstractBaseMember(v.DisplayName),m))
             NoLimit
         else         
+            let env = { env with isInApp = true }
+            let returnTy = tyOfExpr g expr
+
             CheckValRef cenv env v m PermitByRefExpr.No
             CheckValRef cenv env baseVal m PermitByRefExpr.No
             CheckTypeInstNoByrefs cenv env m tyargs
+            CheckTypeNoInnerByrefs cenv env m returnTy
             CheckExprs cenv env rest (mkArgsForAppliedExpr true rest f)
 
     // Allow base calls to IL methods
@@ -1020,6 +1013,9 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
 
     // Check an application
     | Expr.App(f,_fty,tyargs,argsl,m) ->
+        let env = { env with isInApp = true }
+        let returnTy = tyOfExpr g expr
+
         let f =
             // This is to handle recursive apps.
             match f with
@@ -1029,21 +1025,16 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
                 | e -> e
             | _ -> f
 
-        let env = { env with isInApp = true }
-
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprNoByrefs cenv env f
+        CheckTypeNoInnerByrefs cenv env m returnTy
 
         let hasReceiver =
             match f with
             | Expr.Val(vref, _, _) when vref.IsInstanceMember && not argsl.IsEmpty -> true
             | _ -> false
 
-        let returnTy = tyOfExpr g expr
         let contexts = mkArgsForAppliedExpr false argsl f
-
-        CheckTypeNoInnerByrefs cenv env m returnTy
-
         if hasReceiver then
             CheckCallWithReceiver cenv env m returnTy argsl contexts context
         else
