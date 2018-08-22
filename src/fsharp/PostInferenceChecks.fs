@@ -951,7 +951,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
         NoLimit
 
     // Allow base calls to F# methods
-    | Expr.App((InnerExprPat(ExprValWithPossibleTypeInst(v,vFlags,_,_)  as f)),_fty,tyargs,((Expr.Val(baseVal,_,_) :: rest) as argsl),m) 
+    | Expr.App((InnerExprPat(ExprValWithPossibleTypeInst(v,vFlags,_,_)  as f)),_fty,tyargs,(Expr.Val(baseVal,_,_) :: rest),m) 
           when ((match vFlags with VSlotDirectCall -> true | _ -> false) && 
                 baseVal.BaseOrThisInfo = BaseVal) ->
 
@@ -1018,11 +1018,8 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
 
         let f =
             // This is to handle recursive apps.
-            match f with
-            | Expr.Link(eref) -> 
-                match !eref with
-                | Expr.App(f, _, _, _, _) -> f
-                | e -> e
+            match stripExpr f with
+            | Expr.App(f, _, _, _, _) -> f
             | _ -> f
 
         CheckTypeInstNoByrefs cenv env m tyargs
