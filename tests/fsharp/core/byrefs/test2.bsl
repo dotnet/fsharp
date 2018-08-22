@@ -71,8 +71,6 @@ test2.fsx(155,36,155,39): typecheck error FS0412: A type instantiation involves 
 
 test2.fsx(156,13,156,33): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
-test2.fsx(156,29,156,32): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
-
 test2.fsx(158,37,158,38): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
 test2.fsx(160,37,160,38): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
@@ -81,23 +79,15 @@ test2.fsx(162,17,162,18): typecheck error FS0412: A type instantiation involves 
 
 test2.fsx(167,13,167,14): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
-test2.fsx(167,17,167,28): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
-
 test2.fsx(167,17,167,30): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
 test2.fsx(170,9,170,15): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
-
-test2.fsx(171,9,171,20): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
 test2.fsx(171,9,171,22): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
 test2.fsx(174,13,174,14): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
-test2.fsx(176,13,176,24): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
-
 test2.fsx(176,13,176,26): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
-
-test2.fsx(181,9,181,20): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
 test2.fsx(181,9,181,22): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 

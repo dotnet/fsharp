@@ -109,7 +109,7 @@ type env =
       returnScope : int 
       
       /// Are we in a fully applied app expression?
-      isInFullyAppliedApp: bool } 
+      isInApp: bool } 
 
 let BindTypar env (tp:Typar) = 
     { env with 
@@ -689,17 +689,10 @@ and CheckValRef (cenv:cenv) (env:env) v m (context: PermitByRefExpr) =
         if context.Disallow && isByrefLikeTy cenv.g m v.Type then 
             errorR(Error(FSComp.SR.chkNoByrefAtThisPoint(v.DisplayName), m))
 
-    let isFunVal =
-        let _, ty = tryDestForallTy cenv.g v.Type
-        isFunTy cenv.g ty
-
-    // This is to handle values that are functions who are not applied. We check to see if it's a valid type.
-    if not isFunVal then
-        CheckTypeNoInnerByrefs cenv env m v.Type
-    elif not env.isInFullyAppliedApp then
-        CheckTypeNoByrefs cenv env m v.Type
+    if env.isInApp then
+        CheckTypePermitAllByrefs cenv env m v.Type // we do checks for byrefs elsewhere
     else
-        CheckTypePermitAllByrefs cenv env m v.Type
+        CheckTypeNoInnerByrefs cenv env m v.Type
 
 /// Check a use of a value
 and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: PermitByRefExpr) = 
@@ -793,8 +786,6 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv:cenv) expr =
         | _ -> ()
 
 and CheckCallLimitArgs cenv env m returnTy limitArgs (context: PermitByRefExpr) =
-    CheckTypeNoInnerByrefs cenv env m returnTy
-
     let isReturnByref = isByrefTy cenv.g returnTy
     let isReturnSpanLike = isSpanLikeTy cenv.g m returnTy
 
@@ -886,7 +877,7 @@ and CheckExprIsFullyAppliedVal _cenv env (argsl: Exprs) expr =
     | Expr.Val(vref, _, _) ->
         match vref.ValReprInfo with
         | Some(info) ->
-            { env with isInFullyAppliedApp = argsl.Length = info.NumCurriedArgs}
+            { env with isInApp = argsl.Length = info.NumCurriedArgs}
         | _ -> env
     | _ -> env
 
@@ -1038,7 +1029,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
                 | e -> e
             | _ -> f
 
-        let env = CheckExprIsFullyAppliedVal cenv env argsl f
+        let env = { env with isInApp = true }
 
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprNoByrefs cenv env f
@@ -1050,6 +1041,9 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
 
         let returnTy = tyOfExpr g expr
         let contexts = mkArgsForAppliedExpr false argsl f
+
+        CheckTypeNoInnerByrefs cenv env m returnTy
+
         if hasReceiver then
             CheckCallWithReceiver cenv env m returnTy argsl contexts context
         else
@@ -1416,7 +1410,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
 
         let permitByRefType =
             if isTop then
-                PermitByRefType.All
+                PermitByRefType.NoInnerByRefLike
             else
                 PermitByRefType.None
 
@@ -2285,7 +2279,7 @@ let CheckTopImpl (g,amap,reportErrors,infoReader,internalsVisibleToPaths,viewCcu
           reflect=false
           external=false 
           returnScope = 0
-          isInFullyAppliedApp = false }
+          isInApp = false }
 
     CheckModuleExpr cenv env mexpr
     CheckAttribs cenv env extraAttribs
