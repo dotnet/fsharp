@@ -108,8 +108,8 @@ type env =
       /// Current return scope of the expr.
       returnScope : int 
       
-      /// Are we in a fully applied app expression?
-      isInApp: bool } 
+      /// Are we in an app expression (Expr.App)?
+      isInAppExpr: bool } 
 
 let BindTypar env (tp:Typar) = 
     { env with 
@@ -689,7 +689,7 @@ and CheckValRef (cenv:cenv) (env:env) v m (context: PermitByRefExpr) =
         if context.Disallow && isByrefLikeTy cenv.g m v.Type then 
             errorR(Error(FSComp.SR.chkNoByrefAtThisPoint(v.DisplayName), m))
 
-    if env.isInApp then
+    if env.isInAppExpr then
         CheckTypePermitAllByrefs cenv env m v.Type // we do checks for byrefs elsewhere
     else
         CheckTypeNoInnerByrefs cenv env m v.Type
@@ -960,7 +960,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
             errorR(Error(FSComp.SR.tcCannotCallAbstractBaseMember(v.DisplayName),m))
             NoLimit
         else         
-            let env = { env with isInApp = true }
+            let env = { env with isInAppExpr = true }
             let returnTy = tyOfExpr g expr
 
             CheckValRef cenv env v m PermitByRefExpr.No
@@ -1013,7 +1013,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
 
     // Check an application
     | Expr.App(f,_fty,tyargs,argsl,m) ->
-        let env = { env with isInApp = true }
+        let env = { env with isInAppExpr = true }
         let returnTy = tyOfExpr g expr
 
         let f =
@@ -2267,7 +2267,7 @@ let CheckTopImpl (g,amap,reportErrors,infoReader,internalsVisibleToPaths,viewCcu
           reflect=false
           external=false 
           returnScope = 0
-          isInApp = false }
+          isInAppExpr = false }
 
     CheckModuleExpr cenv env mexpr
     CheckAttribs cenv env extraAttribs
