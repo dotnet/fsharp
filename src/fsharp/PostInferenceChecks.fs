@@ -1013,18 +1013,16 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
 
     // Check an application
     | Expr.App(f,_fty,tyargs,argsl,m) ->
-        let env = { env with isInAppExpr = true }
         let returnTy = tyOfExpr g expr
 
-        let f =
-            // This is to handle recursive apps.
-            match stripExpr f with
-            | Expr.App(f, _, _, _, _) -> f
-            | _ -> f
+        // This is to handle recursive cases. Don't check 'returnTy' again if we are still inside a app expression.
+        if not env.isInAppExpr then
+            CheckTypeNoInnerByrefs cenv env m returnTy
+
+        let env = { env with isInAppExpr = true }
 
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprNoByrefs cenv env f
-        CheckTypeNoInnerByrefs cenv env m returnTy
 
         let hasReceiver =
             match f with
