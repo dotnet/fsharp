@@ -4360,4 +4360,10 @@
   <data name="tcByrefsMayNotHaveTypeExtensions" xml:space="preserve">
     <value>Byref types are not allowed to have optional type extensions.</value>
   </data>
+  <data name="chkInvalidFunctionParameterType" xml:space="preserve">
+    <value>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</value>
+  </data>
+  <data name="chkInvalidFunctionReturnType" xml:space="preserve">
+    <value>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</value>
+  </data>
 </root>
