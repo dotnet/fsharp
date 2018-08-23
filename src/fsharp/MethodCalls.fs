@@ -599,7 +599,7 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
             //     If so, make sure we don't allow readonly/immutable values to be passed byref from an extension member. 
             //     An inref will work though.
             if isReadOnly && mustTakeAddress && minfo.IsExtensionMember then
-                minfo.TryHeadObjArgsByrefType(amap, m, minfo.FormalMethodInst)
+                minfo.TryObjArgByrefType(amap, m, minfo.FormalMethodInst)
                 |> Option.iter (fun ty ->
                     if not (isInByrefTy g ty) then
                         errorR(Error(FSComp.SR.tcCannotCallExtensionMethodInrefToByref(minfo.DisplayName), m)))
