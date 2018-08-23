@@ -1441,3 +1441,5 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3236,tastCantTakeAddressOfExpression,"Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address."
 3237,tcCannotCallExtensionMemberInrefToByref,"Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref."
 3238,tcByrefsMayNotHaveTypeExtensions,"Byref types are not allowed to have optional type extensions."
+3300,chkInvalidFunctionParameterType,"The parameter '%s' has an invalid type '%s'. This is not permitted by the rules of Common IL."
+3301,chkInvalidFunctionReturnType,"The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL."

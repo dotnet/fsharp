@@ -568,7 +568,7 @@ let rec mkArgsForAppliedExpr isBaseCall argsl x =
     | _  -> []
 
 /// Check types occurring in the TAST.
-let CheckType permitByRefLike (cenv:cenv) env m ty =
+let CheckTypeAux permitByRefLike (cenv:cenv) env m ty onInnerByrefError =
     if cenv.reportErrors then 
         let visitTyar (env,tp) = 
           if not (env.boundTypars.ContainsKey tp) then 
@@ -585,9 +585,9 @@ let CheckType permitByRefLike (cenv:cenv) env m ty =
             | PermitByRefType.None when isByrefLikeTyconRef cenv.g m tcref ->
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
             | PermitByRefType.NoInnerByRefLike when isInnerByRefLike ->
-                errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
+                onInnerByrefError ()
             | PermitByRefType.SpanLike when isByrefTyconRef cenv.g tcref || isInnerByRefLike ->
-                errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
+                onInnerByrefError ()
             | _ -> ()
 
             if tyconRefEq cenv.g cenv.g.system_Void_tcref tcref then 
@@ -615,6 +615,8 @@ let CheckType permitByRefLike (cenv:cenv) env m ty =
 
         CheckTypeDeep (ignore, Some visitTyconRef, Some visitAppTy, Some visitTraitSolution, Some visitTyar) cenv.g env false ty
 
+let CheckType permitByRefLike cenv env m ty =
+    CheckTypeAux permitByRefLike cenv env m ty (fun () -> errorR(Error(FSComp.SR.chkErrorUseOfByref(), m)))
 
 /// Check types occurring in TAST (like CheckType) and additionally reject any byrefs.
 /// The additional byref checks are to catch "byref instantiations" - one place were byref are not permitted.  
@@ -1400,9 +1402,23 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
             else
                 PermitByRefType.None
 
-        syntacticArgs |> List.iter (CheckValSpec permitByRefType cenv env)
+        // Check argument types
+        syntacticArgs 
+        |> List.iter (fun arg ->
+            CheckValSpecAux permitByRefType cenv env arg (fun () -> 
+                if arg.IsCompilerGenerated then
+                    errorR(Error(FSComp.SR.chkErrorUseOfByref(), arg.Range))
+                else
+                    errorR(Error(FSComp.SR.chkInvalidFunctionParameterType(arg.DisplayName, NicePrint.minimalStringOfType cenv.denv arg.Type), arg.Range))
+            )
+        )
+
+        // Check return type
+        CheckTypeAux permitByRefType cenv env mOrig bodyty (fun () ->
+            errorR(Error(FSComp.SR.chkInvalidFunctionReturnType(NicePrint.minimalStringOfType cenv.denv bodyty), mOrig))
+        )
+
         syntacticArgs |> List.iter (BindVal cenv env)
-        CheckType permitByRefType cenv env mOrig bodyty
 
         // Trigger a test hook
         match memInfo with 
@@ -1599,10 +1615,13 @@ and CheckValInfo cenv env (ValReprInfo(_,args,ret)) =
 and CheckArgInfo cenv env (argInfo : ArgReprInfo)  = 
     CheckAttribs cenv env argInfo.Attribs
 
-and CheckValSpec permitByRefLike cenv env (v:Val) =
+and CheckValSpecAux permitByRefLike cenv env (v:Val) onInnerByrefError =
     v.Attribs |> CheckAttribs cenv env
     v.ValReprInfo |> Option.iter (CheckValInfo cenv env)
-    v.Type |> CheckType permitByRefLike cenv env v.Range
+    CheckTypeAux permitByRefLike cenv env v.Range v.Type onInnerByrefError
+
+and CheckValSpec permitByRefLike cenv env v =
+    CheckValSpecAux permitByRefLike cenv env v (fun () -> errorR(Error(FSComp.SR.chkErrorUseOfByref(), v.Range)))
 
 and AdjustAccess isHidden (cpath: unit -> CompilationPath) access =
     if isHidden then 

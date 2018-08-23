@@ -7067,6 +7067,16 @@
         <target state="new">Byref types are not allowed to have optional type extensions.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkInvalidFunctionParameterType">
+        <source>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</source>
+        <target state="new">The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInvalidFunctionReturnType">
+        <source>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</source>
+        <target state="new">The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

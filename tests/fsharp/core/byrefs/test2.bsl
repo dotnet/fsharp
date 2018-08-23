@@ -51,37 +51,37 @@ test2.fsx(137,18,137,22): typecheck error FS0412: A type instantiation involves 
 
 test2.fsx(139,18,139,23): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
-test2.fsx(141,9,141,14): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+test2.fsx(141,9,141,14): typecheck error FS3301: The function or method has an invalid return type '(byref<int> * int)'. This is not permitted by the rules of Common IL.
 
 test2.fsx(141,34,141,39): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
 test2.fsx(141,35,141,36): typecheck error FS0418: The byref typed value 'x' cannot be used at this point
 
-test2.fsx(143,9,143,14): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+test2.fsx(143,9,143,14): typecheck error FS3301: The function or method has an invalid return type '(byref<int> -> unit)'. This is not permitted by the rules of Common IL.
 
 test2.fsx(145,14,145,15): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
-test2.fsx(147,17,147,18): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+test2.fsx(147,17,147,18): typecheck error FS3300: The parameter 'x' has an invalid type '((byref<int> -> unit) * int)'. This is not permitted by the rules of Common IL.
 
-test2.fsx(149,17,149,18): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+test2.fsx(149,17,149,18): typecheck error FS3300: The parameter 'x' has an invalid type '(byref<int> -> unit)'. This is not permitted by the rules of Common IL.
 
-test2.fsx(149,41,149,42): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+test2.fsx(149,41,149,42): typecheck error FS3300: The parameter 'y' has an invalid type '(byref<int> * int)'. This is not permitted by the rules of Common IL.
 
-test2.fsx(155,36,155,39): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+test2.fsx(155,36,155,39): typecheck error FS3300: The parameter 'tup' has an invalid type '(inref<int> * int)'. This is not permitted by the rules of Common IL.
 
 test2.fsx(156,13,156,33): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
-test2.fsx(158,37,158,38): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+test2.fsx(158,37,158,38): typecheck error FS3300: The parameter 'x' has an invalid type '(byref<int> -> unit)'. This is not permitted by the rules of Common IL.
 
-test2.fsx(160,37,160,38): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+test2.fsx(160,37,160,38): typecheck error FS3300: The parameter 'x' has an invalid type 'byref<int> option'. This is not permitted by the rules of Common IL.
 
-test2.fsx(162,17,162,18): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+test2.fsx(162,17,162,18): typecheck error FS3300: The parameter 'x' has an invalid type 'byref<int> option'. This is not permitted by the rules of Common IL.
 
 test2.fsx(167,13,167,14): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
 test2.fsx(167,17,167,30): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
-test2.fsx(170,9,170,15): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+test2.fsx(170,9,170,15): typecheck error FS3301: The function or method has an invalid return type '(byref<int> -> unit)'. This is not permitted by the rules of Common IL.
 
 test2.fsx(171,9,171,22): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
@@ -95,7 +95,7 @@ test2.fsx(185,13,185,14): typecheck error FS0412: A type instantiation involves 
 
 test2.fsx(185,17,185,28): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
-test2.fsx(188,9,188,15): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+test2.fsx(188,9,188,15): typecheck error FS3301: The function or method has an invalid return type '(int -> byref<int> -> unit)'. This is not permitted by the rules of Common IL.
 
 test2.fsx(189,9,189,20): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
@@ -117,7 +117,7 @@ test2.fsx(209,13,209,28): typecheck error FS0412: A type instantiation involves 
 
 test2.fsx(214,9,214,24): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
-test2.fsx(217,9,217,15): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+test2.fsx(217,9,217,15): typecheck error FS3301: The function or method has an invalid return type '(byref<int> * int)'. This is not permitted by the rules of Common IL.
 
 test2.fsx(219,10,219,15): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
