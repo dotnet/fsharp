@@ -633,12 +633,22 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) 
     let ucrefs = if isIL then [] else tcref.UnionCasesAsList |> List.map tcref.MakeNestedUnionCaseRef 
     let flds =  if isIL then [| |] else tcref.AllFieldsArray
 
+    let markIsExtensionMethod (extMemInfo: ExtensionMember) =
+        match extMemInfo with
+        | ILExtMem(_, FSMeth(_, _, vref, _), _) ->
+            vref.Deref.SetIsExtensionMethod()
+        | _ -> ()
+
     let eIndexedExtensionMembers, eUnindexedExtensionMembers = 
         let ilStyleExtensionMeths = GetCSharpStyleIndexedExtensionMembersForTyconRef amap m  tcref 
         ((nenv.eIndexedExtensionMembers,nenv.eUnindexedExtensionMembers),ilStyleExtensionMeths) ||> List.fold (fun (tab1,tab2) extMemInfo -> 
             match extMemInfo with 
-            | Choice1Of2 (tcref,extMemInfo) -> tab1.Add (tcref, extMemInfo), tab2
-            | Choice2Of2 extMemInfo -> tab1, extMemInfo :: tab2)  
+            | Choice1Of2 (tcref,extMemInfo) -> 
+                markIsExtensionMethod extMemInfo
+                tab1.Add (tcref, extMemInfo), tab2
+            | Choice2Of2 extMemInfo -> 
+                markIsExtensionMethod extMemInfo
+                tab1, extMemInfo :: tab2)  
 
     let isILOrRequiredQualifiedAccess = isIL || (not ownDefinition && HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs)
     let eFieldLabels = 
