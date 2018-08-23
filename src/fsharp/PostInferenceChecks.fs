@@ -1778,7 +1778,7 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
 
             if v.IsExtensionMethod then
                 let minfo = FSMeth(g, generalizedTyconRef tcref, mkLocalValRef v, Some 0UL)
-                minfo.TryHeadObjArgsByrefType(cenv.amap, v.Range, minfo.FormalMethodInst)
+                minfo.TryObjArgByrefType(cenv.amap, v.Range, minfo.FormalMethodInst)
                 |> Option.iter (fun ty ->
                     let hasStructOrStructConstraint =
                         match destByrefTy g ty with
