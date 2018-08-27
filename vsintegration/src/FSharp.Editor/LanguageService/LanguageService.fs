@@ -57,10 +57,11 @@ type internal FSharpCheckerProvider
             let mmd = amd.GetModules().[0]
             let mmr = mmd.GetMetadataReader()
 
-            // "lifetime is timed to Metadata you got from the GetMetadata(…). As long as you hold it strongly, raw 
+            // "lifetime is timed to Metadata you got from the GetMetadata(...). As long as you hold it strongly, raw 
             // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
             // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
-            // You shouldn’t dispose it directly."
+            // You shouldn't dispose it directly."
+
             let objToHold = box md
 
             // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
