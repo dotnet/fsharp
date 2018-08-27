@@ -4341,19 +4341,19 @@ type internal SR private() =
     static member tcIsReadOnlyNotStruct() = (3232, GetStringFunc("tcIsReadOnlyNotStruct",",,,") )
     /// Struct members cannot return the address of fields of the struct by reference
     /// (Originally from ..\FSComp.txt:1438)
-    static member chkStructsMayNotReturnAddressesOfContents() = (3234, GetStringFunc("chkStructsMayNotReturnAddressesOfContents",",,,") )
+    static member chkStructsMayNotReturnAddressesOfContents() = (3233, GetStringFunc("chkStructsMayNotReturnAddressesOfContents",",,,") )
     /// The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.
     /// (Originally from ..\FSComp.txt:1439)
-    static member chkNoByrefLikeFunctionCall() = (3235, GetStringFunc("chkNoByrefLikeFunctionCall",",,,") )
+    static member chkNoByrefLikeFunctionCall() = (3234, GetStringFunc("chkNoByrefLikeFunctionCall",",,,") )
     /// The Span or IsByRefLike variable '%s' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
     /// (Originally from ..\FSComp.txt:1440)
-    static member chkNoSpanLikeVariable(a0 : System.String) = (3236, GetStringFunc("chkNoSpanLikeVariable",",,,%s,,,") a0)
+    static member chkNoSpanLikeVariable(a0 : System.String) = (3235, GetStringFunc("chkNoSpanLikeVariable",",,,%s,,,") a0)
     /// A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.
     /// (Originally from ..\FSComp.txt:1441)
-    static member chkNoSpanLikeValueFromExpression() = (3237, GetStringFunc("chkNoSpanLikeValueFromExpression",",,,") )
+    static member chkNoSpanLikeValueFromExpression() = (3236, GetStringFunc("chkNoSpanLikeValueFromExpression",",,,") )
     /// Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
     /// (Originally from ..\FSComp.txt:1442)
-    static member tastCantTakeAddressOfExpression() = (3238, GetStringFunc("tastCantTakeAddressOfExpression",",,,") )
+    static member tastCantTakeAddressOfExpression() = (3237, GetStringFunc("tastCantTakeAddressOfExpression",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
