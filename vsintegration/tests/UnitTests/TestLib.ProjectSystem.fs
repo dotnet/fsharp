@@ -387,7 +387,6 @@ type TheTests() =
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Name>Blah</Name>
-    <EnableFrameworkPathOverride>false</EnableFrameworkPathOverride>
   </PropertyGroup>
   <PropertyGroup Condition="" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' "">
     <DebugSymbols>true</DebugSymbols>
@@ -412,7 +411,6 @@ type TheTests() =
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Name>Blah</Name>
-    <EnableFrameworkPathOverride>false</EnableFrameworkPathOverride>
   </PropertyGroup>
   <PropertyGroup Condition="" '$(Configuration)|$(Platform)' == 'Debug|x86' "">
     <PlatformTarget>x86</PlatformTarget>
@@ -447,7 +445,6 @@ type TheTests() =
                 <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
                 <FileAlignment>512</FileAlignment>
                 <Name>Blah</Name>
-                <EnableFrameworkPathOverride>false</EnableFrameworkPathOverride>
               </PropertyGroup>"
         let sb = new StringBuilder(template)     
         for (configName,customStr) in configs do
@@ -477,7 +474,6 @@ type TheTests() =
                 <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
                 <FileAlignment>512</FileAlignment>
                 <Name>Blah</Name>
-                <EnableFrameworkPathOverride>false</EnableFrameworkPathOverride>
               </PropertyGroup>"
         let sb = new StringBuilder(String.Format(template,platform))     
         for (platformName,customStr) in platforms do

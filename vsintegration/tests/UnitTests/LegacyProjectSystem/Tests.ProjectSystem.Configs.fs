@@ -13,7 +13,6 @@ open NUnit.Framework
 // VS namespaces 
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.FSharp
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 // Internal unittest namespaces
@@ -22,12 +21,6 @@ open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
-
-[<SetUpFixture>]
-type public AssemblyResolverTestFixture () =
-
-    [<OneTimeSetUp>]
-    member public __.Init () = AssemblyResolver.addResolver ()
 
 [<TestFixture>][<Category "ProjectSystem">]
 type Config() = 
