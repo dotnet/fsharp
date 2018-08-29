@@ -1844,8 +1844,6 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
                            MethInfosEquivByNameAndSig EraseAll true g cenv.amap v.Range minfo1 minfo2 then 
                             errorR(Duplicate(kind,v.DisplayName,v.Range)))
 
-
-
             // Properties get 'get_X', only if there are no args
             // Properties get 'get_X'
             match v.ValReprInfo with 

@@ -9808,10 +9808,11 @@ and TcMethodApplication
     let objArgPreBinder, objArgs = 
         match objArgs, lambdaVars with 
         | [objArg], Some _   -> 
+            if  finalCalledMethInfo.IsExtensionMember && finalCalledMethInfo.ObjArgNeedsAddress(cenv.amap, mMethExpr) then
+                error(Error(FSComp.SR.tcCannotPartiallyApplyExtensionMethodForByref(finalCalledMethInfo.DisplayName), mMethExpr))
             let objArgTy = tyOfExpr cenv.g objArg
             let v, ve = mkCompGenLocal mMethExpr "objectArg" objArgTy
             (fun body -> mkCompGenLet mMethExpr v objArg body), [ve]
-
         | _ -> 
             emptyPreBinder, objArgs
 

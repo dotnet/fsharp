@@ -598,28 +598,12 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
             // Check to see if the extension member uses the extending type as a byref.
             //     If so, make sure we don't allow readonly/immutable values to be passed byref from an extension member. 
             //     An inref will work though.
-            if mustTakeAddress && isReadOnly && minfo.IsExtensionMember then
-                let tyOpt =
-                    match minfo with
-                    // For F# defined methods.
-                    | FSMeth(_, _, vref, _) ->
-                        let ty, _ = destFunTy g vref.Type
-                        Some(ty)
-
-                    // For IL methods, defined outside of F#.
-                    | ILMeth(_, info, _) ->
-                        let paramTypes = info.GetRawArgTypes(amap, m, minfo.FormalMethodInst)
-                        match paramTypes with
-                        | [] -> failwith "impossible"
-                        | ty :: _ -> Some(ty)
-
-                    | _ -> None
-                
-                match tyOpt with
-                | Some(ty) ->
-                    if isByrefTy g ty && not (isInByrefTy g ty) then
-                        errorR(Error(FSComp.SR.tcCannotCallExtensionMemberInrefToByref(), m))
-                | _ -> ()
+            if isReadOnly && mustTakeAddress && minfo.IsExtensionMember then
+                minfo.TryObjArgByrefType(amap, m, minfo.FormalMethodInst)
+                |> Option.iter (fun ty ->
+                    if not (isInByrefTy g ty) then
+                        errorR(Error(FSComp.SR.tcCannotCallExtensionMethodInrefToByref(minfo.DisplayName), m)))
+                        
 
             wrap, [objArgExpr'] 
 
