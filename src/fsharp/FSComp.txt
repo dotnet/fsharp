@@ -1439,5 +1439,6 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3234,chkNoSpanLikeVariable,"The Span or IsByRefLike variable '%s' cannot be used at this point. This is to ensure the address of the local value does not escape its scope."
 3235,chkNoSpanLikeValueFromExpression,"A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope."
 3236,tastCantTakeAddressOfExpression,"Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address."
-3237,tcCannotCallExtensionMemberInrefToByref,"Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref."
+3237,tcCannotCallExtensionMethodInrefToByref,"Cannot call the byref extension method '%s. The first parameter requires the value to be mutable or a non-readonly byref type."
 3238,tcByrefsMayNotHaveTypeExtensions,"Byref types are not allowed to have optional type extensions."
+3239,tcCannotPartiallyApplyExtensionMethodForByref,"Cannot partially apply the extension method '%s' because the first parameter is a byref type."
