@@ -4351,12 +4351,15 @@ type internal SR private() =
     /// Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
     /// (Originally from ..\FSComp.txt:1441)
     static member tastCantTakeAddressOfExpression() = (3236, GetStringFunc("tastCantTakeAddressOfExpression",",,,") )
-    /// Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.
+    /// Cannot call the byref extension method '%s. The first parameter requires the value to be mutable or a non-readonly byref type.
     /// (Originally from ..\FSComp.txt:1442)
-    static member tcCannotCallExtensionMemberInrefToByref() = (3237, GetStringFunc("tcCannotCallExtensionMemberInrefToByref",",,,") )
+    static member tcCannotCallExtensionMethodInrefToByref(a0 : System.String) = (3237, GetStringFunc("tcCannotCallExtensionMethodInrefToByref",",,,%s,,,") a0)
     /// Byref types are not allowed to have optional type extensions.
     /// (Originally from ..\FSComp.txt:1443)
     static member tcByrefsMayNotHaveTypeExtensions() = (3238, GetStringFunc("tcByrefsMayNotHaveTypeExtensions",",,,") )
+    /// Cannot partially apply the extension method '%s' because the first parameter is a byref type.
+    /// (Originally from ..\FSComp.txt:1444)
+    static member tcCannotPartiallyApplyExtensionMethodForByref(a0 : System.String) = (3239, GetStringFunc("tcCannotPartiallyApplyExtensionMethodForByref",",,,%s,,,") a0)
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5772,6 +5775,7 @@ type internal SR private() =
         ignore(GetString("chkNoSpanLikeVariable"))
         ignore(GetString("chkNoSpanLikeValueFromExpression"))
         ignore(GetString("tastCantTakeAddressOfExpression"))
-        ignore(GetString("tcCannotCallExtensionMemberInrefToByref"))
+        ignore(GetString("tcCannotCallExtensionMethodInrefToByref"))
         ignore(GetString("tcByrefsMayNotHaveTypeExtensions"))
+        ignore(GetString("tcCannotPartiallyApplyExtensionMethodForByref"))
         ()
