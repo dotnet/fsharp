@@ -194,7 +194,7 @@ module CoreTests =
 
             fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
 
-            singleNegTest cfg "test2"
+            singleNegTest { cfg with fsc_flags = sprintf "%s --warnaserror-" cfg.fsc_flags } "test2"
 
             exec cfg ("." ++ "test2.exe") ""
 

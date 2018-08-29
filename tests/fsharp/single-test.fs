@@ -212,11 +212,15 @@ let singleNegTest (cfg: TestConfig) testname =
 
     log "Negative typechecker testing: %s" testname
 
-    fscAppendErrExpectFail cfg  (sprintf "%s.err" testname) """%s --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%s.dll""" cfg.fsc_flags testname sources
+    let warnaserror =
+        if cfg.fsc_flags.Contains("--warnaserror-") then String.Empty
+        else "--warnaserror"
+
+    fscAppendErrExpectFail cfg  (sprintf "%s.err" testname) """%s --vserrors %s --nologo --maxerrors:10000 -a -o:%s.dll""" cfg.fsc_flags warnaserror testname sources
 
     let diff = fsdiff cfg (sprintf "%s.err" testname) (sprintf "%s.bsl" testname)
 
-    fscAppendErrExpectFail cfg (sprintf "%s.vserr" testname) "%s --test:ContinueAfterParseFailure --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%s.dll" cfg.fsc_flags testname sources
+    fscAppendErrExpectFail cfg (sprintf "%s.vserr" testname) "%s --test:ContinueAfterParseFailure --vserrors %s --nologo --maxerrors:10000 -a -o:%s.dll" cfg.fsc_flags warnaserror testname sources
 
     let vbslDiff = fsdiff cfg (sprintf "%s.vserr" testname) VSBSLFILE
 
