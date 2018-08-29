@@ -602,6 +602,34 @@ module M2 =
 """
     VerifyCompletionList(fileContents, "    Ext", ["Extensions"; "ExtraTopLevelOperators"], [])
 
+[<Test>]
+let ``Byref Extension Methods`` () =
+    let fileContents = """
+module Extensions =
+    open System
+    open System.Runtime.CompilerServices
+
+    [<Struct>]
+    type Message = Message of String
+
+    [<Sealed; AbstractClass; Extension>]
+    type MessageExtensions private () =
+        let (|Message|) (Message message) = message
+
+        [<Extension>]
+        static member Print (Message message : Message) =
+            printfn "%s" message
+
+        [<Extension>]
+        static member PrintRef (Message message : inref<Message>) =
+            printfn "%s" message
+
+    let wrappedMessage = Message "Hello World"
+
+    wrappedMessage.
+"""
+    VerifyCompletionList(fileContents, "wrappedMessage.", ["PrintRef"], [])
+
 #if EXE
 ShouldDisplaySystemNamespace()
 #endif
