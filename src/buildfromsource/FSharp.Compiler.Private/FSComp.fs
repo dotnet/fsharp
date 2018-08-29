@@ -4357,18 +4357,15 @@ type internal SR private() =
     /// Byref types are not allowed to have optional type extensions.
     /// (Originally from ..\FSComp.txt:1443)
     static member tcByrefsMayNotHaveTypeExtensions() = (3238, GetStringFunc("tcByrefsMayNotHaveTypeExtensions",",,,") )
-<<<<<<< HEAD
+    /// Cannot partially apply the extension method '%s' because the first parameter is a byref type.
+    /// (Originally from ..\FSComp.txt:1444)
+    static member tcCannotPartiallyApplyExtensionMethodForByref(a0 : System.String) = (3239, GetStringFunc("tcCannotPartiallyApplyExtensionMethodForByref",",,,%s,,,") a0)
     /// The parameter '%s' has an invalid type '%s'. This is not permitted by the rules of Common IL.
     /// (Originally from ..\FSComp.txt:1444)
     static member chkInvalidFunctionParameterType(a0 : System.String, a1 : System.String) = (3300, GetStringFunc("chkInvalidFunctionParameterType",",,,%s,,,%s,,,") a0 a1)
     /// The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL.
     /// (Originally from ..\FSComp.txt:1445)
     static member chkInvalidFunctionReturnType(a0 : System.String) = (3301, GetStringFunc("chkInvalidFunctionReturnType",",,,%s,,,") a0)
-=======
-    /// Cannot partially apply the extension method '%s' because the first parameter is a byref type.
-    /// (Originally from ..\FSComp.txt:1444)
-    static member tcCannotPartiallyApplyExtensionMethodForByref(a0 : System.String) = (3239, GetStringFunc("tcCannotPartiallyApplyExtensionMethodForByref",",,,%s,,,") a0)
->>>>>>> dev15.9
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
