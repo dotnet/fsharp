@@ -1442,3 +1442,5 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3237,tcCannotCallExtensionMethodInrefToByref,"Cannot call the byref extension method '%s. The first parameter requires the value to be mutable or a non-readonly byref type."
 3238,tcByrefsMayNotHaveTypeExtensions,"Byref types are not allowed to have optional type extensions."
 3239,tcCannotPartiallyApplyExtensionMethodForByref,"Cannot partially apply the extension method '%s' because the first parameter is a byref type."
+3300,chkInvalidFunctionParameterType,"The parameter '%s' has an invalid type '%s'. This is not permitted by the rules of Common IL."
+3301,chkInvalidFunctionReturnType,"The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL."
