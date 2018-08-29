@@ -4368,4 +4368,5 @@
   </data>
   <data name="chkInvalidFunctionReturnType" xml:space="preserve">
     <value>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</value>
+  </data>
 </root>
