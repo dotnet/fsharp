@@ -7,6 +7,31 @@
         <target state="translated">Sempre coloque as instruções abertas no nível superior</target>
         <note />
       </trans-unit>
+      <trans-unit id="CodeLens">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Replace_LineLens">
+        <source>Show annotations to the right instead of above the line</source>
+        <target state="translated">Mostrar anotações à direita da linha, em vez de acima dela</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Switch">
+        <source>Enable CodeLens (Experimental)</source>
+        <target state="translated">Habilitar CodeLens (Experimental)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Prefix">
+        <source>Annotation prefix</source>
+        <target state="translated">Prefixo da anotação</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_UseColors">
+        <source>Use colors in annotations</source>
+        <target state="translated">Usar cores em anotações</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Code_Fixes">
         <source>Code Fixes</source>
         <target state="translated">Correções de Código</target>
@@ -135,31 +160,6 @@
       <trans-unit id="Tooltip_project_check_cache_size">
         <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
         <target state="translated">Os dados do projeto são colocados em cache para os recursos do IDE. Os valores mais altos utilizam mais memória porque mais projetos são colocados em cache. O ajuste desses valores não deve afetar as soluções de pequeno ou médio porte.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens">
-        <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_Replace_LineLens">
-        <source>Show annotations to the right instead of above the line</source>
-        <target state="translated">Mostrar anotações à direita da linha, em vez de acima dela</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_Switch">
-        <source>Enable CodeLens (Experimental)</source>
-        <target state="translated">Habilitar CodeLens (Experimental)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_Prefix">
-        <source>Annotation prefix</source>
-        <target state="translated">Prefixo da anotação</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_UseColors">
-        <source>Use colors in annotations</source>
-        <target state="translated">Usar cores em anotações</target>
         <note />
       </trans-unit>
     </body>

@@ -38,7 +38,7 @@ type public Fsc () as this =
     let mutable documentationFile : string = null
     let mutable dotnetFscCompilerPath : string = null
     let mutable embedAllSources = false
-    let mutable embed : string = null
+    let mutable embeddedFiles : ITaskItem[] = [||]
     let mutable generateInterfaceFile : string = null
     let mutable highEntropyVA : bool = false
     let mutable keyFile : string = null
@@ -106,7 +106,9 @@ type public Fsc () as this =
                 | _          -> null)
         if embedAllSources then
             builder.AppendSwitch("--embed+")
-        builder.AppendSwitchIfNotNull("--embed:", embed)
+        if embeddedFiles <> null then 
+            for item in embeddedFiles do
+                builder.AppendSwitchIfNotNull("--embed:", item.ItemSpec)
         builder.AppendSwitchIfNotNull("--sourcelink:", sourceLink)
         // NoFramework
         if noFramework then 
@@ -290,9 +292,9 @@ type public Fsc () as this =
         with get() = embedAllSources
         and  set(s) = embedAllSources <- s
 
-    member fsc.Embed
-        with get() = embed
-        and set(e) = embed <- e
+    member fsc.EmbeddedFiles
+        with get() = embeddedFiles
+        and set(e) = embeddedFiles <- e
 
     // --generate-interface-file <string>: 
     //     Print the inferred interface of the

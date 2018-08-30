@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="translated">Tutti i rami di un'espressione di criteri di ricerca devono restituire valori dello stesso tipo. Il primo ramo ha restituito un valore di tipo '{0}', ma questo ramo ha restituito un valore di tipo '{1}'.</target>
+        <target state="needs-review-translation">Tutti i rami di un'espressione di criteri di ricerca devono restituire valori dello stesso tipo. Il primo ramo ha restituito un valore di tipo '{0}', ma questo ramo ha restituito un valore di tipo '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -7065,6 +7065,11 @@
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
         <source>Byref types are not allowed to have optional type extensions.</source>
         <target state="new">Byref types are not allowed to have optional type extensions.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoReturnOfLimitedSpan">
+        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
+        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
         <note />
       </trans-unit>
     </body>

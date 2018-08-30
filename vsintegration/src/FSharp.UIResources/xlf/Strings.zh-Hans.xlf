@@ -7,6 +7,31 @@
         <target state="translated">始终在顶层放置 open 语句</target>
         <note />
       </trans-unit>
+      <trans-unit id="CodeLens">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Replace_LineLens">
+        <source>Show annotations to the right instead of above the line</source>
+        <target state="translated">在行右侧而非上方显示批注</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Switch">
+        <source>Enable CodeLens (Experimental)</source>
+        <target state="translated">启用 CodeLens (试验)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Prefix">
+        <source>Annotation prefix</source>
+        <target state="translated">批注前缀</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_UseColors">
+        <source>Use colors in annotations</source>
+        <target state="translated">在批注中使用颜色</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Code_Fixes">
         <source>Code Fixes</source>
         <target state="translated">代码修补程序</target>
@@ -135,31 +160,6 @@
       <trans-unit id="Tooltip_project_check_cache_size">
         <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
         <target state="translated">针对 IDE 功能缓存项目数据。值越大，缓存的项目越多，因此使用的内存越多。调整此值不应影响小型或中型解决方案。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens">
-        <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_Replace_LineLens">
-        <source>Show annotations to the right instead of above the line</source>
-        <target state="translated">在行右侧而非上方显示批注</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_Switch">
-        <source>Enable CodeLens (Experimental)</source>
-        <target state="translated">启用 CodeLens (试验)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_Prefix">
-        <source>Annotation prefix</source>
-        <target state="translated">批注前缀</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_UseColors">
-        <source>Use colors in annotations</source>
-        <target state="translated">在批注中使用颜色</target>
         <note />
       </trans-unit>
     </body>

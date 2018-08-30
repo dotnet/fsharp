@@ -7067,6 +7067,11 @@
         <target state="new">Byref types are not allowed to have optional type extensions.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkNoReturnOfLimitedSpan">
+        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
+        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
