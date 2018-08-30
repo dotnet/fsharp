@@ -182,7 +182,7 @@ module private Utils =
 
     type PerDocumentSavedData = { Hash: int; Items: Index.IIndexedNavigableItems }
 
-[<ExportLanguageService(typeof<INavigateToSearchService>, FSharpConstants.FSharpLanguageName); Shared>]
+[<ExportLanguageService(typeof<INavigateToSearchService_RemoveInterfaceAboveAndRenameThisAfterInternalsVisibleToUsersUpdate>, FSharpConstants.FSharpLanguageName); Shared>]
 type internal FSharpNavigateToSearchService 
     [<ImportingConstructor>] 
     (
@@ -237,8 +237,8 @@ type internal FSharpNavigateToSearchService
         | PatternMatchKind.Fuzzy -> NavigateToMatchKind.Regular
         | _ -> NavigateToMatchKind.Regular
 
-    interface INavigateToSearchService with
-        member __.SearchProjectAsync(project, searchPattern, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
+    interface INavigateToSearchService_RemoveInterfaceAboveAndRenameThisAfterInternalsVisibleToUsersUpdate with
+        member __.SearchProjectAsync(project, searchPattern, _, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
             asyncMaybe {
                 let! parsingOptions, _site, _options = projectInfoManager.TryGetOptionsForProject(project.Id)
                 let! items =
@@ -270,7 +270,7 @@ type internal FSharpNavigateToSearchService
             |> Async.map Seq.toImmutableArray
             |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
 
-        member __.SearchDocumentAsync(document, searchPattern, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
+        member __.SearchDocumentAsync(document, searchPattern, _, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
             asyncMaybe {
                 let! parsingOptions, _, _ = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
                 let! items = getCachedIndexedNavigableItems(document, parsingOptions) |> liftAsync
