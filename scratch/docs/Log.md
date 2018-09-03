@@ -15,7 +15,14 @@ Got set up with Toby's help. I put together his key points below. There are a fe
     * Debug your version of the compiler or whatever to see what's going on (in my case, I have a small computation expression builder which includes various custom operators, etc)
 
 ### Interesting Jumping Off Points
-* The `MatchBang` implementation pull request
+* Docs (in no particular order)
+    * Toby's thesis
+    * https://github.com/Microsoft/visualfsharp/blob/master/DEVGUIDE.md
+    * https://github.com/fsharp/fslang-suggestions/issues/579
+    * https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions
+    * https://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html
+    * https://fsharp.github.io/2016/09/26/fsharp-rfc-process.html
+* The `MatchBang` implementation pull request - https://github.com/Microsoft/visualfsharp/pull/4427
 * `TcComputationExpression` in `TypeChecker.fs`
 * `LetOrUseBang` usages
 * `fsharpqafiles` - how does this all get picked up for running the tests?
