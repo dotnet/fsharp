@@ -13,3 +13,9 @@ Got set up with Toby's help. I put together his key points below. There are a fe
     * Set `Fsc` as the start-up project, with your `.fsx`'s path as its only argument
     * Run `Fsc` from inside VS, with will build only the dependencies you require, then will kick off compilation of your script.
     * Debug your version of the compiler or whatever to see what's going on (in my case, I have a small computation expression builder which includes various custom operators, etc)
+
+### Interesting Jumping Off Points
+* The `MatchBang` implementation pull request
+* `TcComputationExpression` in `TypeChecker.fs`
+* `LetOrUseBang` usages
+* `fsharpqafiles` - how does this all get picked up for running the tests?
