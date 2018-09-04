@@ -37,5 +37,6 @@ Explored the compiler, documentation and surrounding literature.
 So now we have prior art for some of both the theory (papers from Petricek and McBride & Patterson on applicatives) and the practice (`match!` pull request, Petricek's - rejected! - earlier work on joinads).
 
 Questions:
-* Why does Petricek prefer the monoidal (semigroupal?) definition of applicatives? What different does it make which we pick? What is the signature of `merge` and how can I implement `apply` using that definition? The monoidal aspect is relevant because with the Option applicative, we need to define how we collapse `Some (Some x)`, the question, I suppose, is whether to make that aspect the explicit one (in my experience, it is the clearer way to do things).
+* Why does Petricek prefer the monoidal (semigroupal?) definition of applicatives? What different does it make which we pick?
+    * What is the signature of `merge` (maybe `(a -> b -> c) -> f a -> f b -> f c`? Although that wouldn't require `map` since `let map f x = merge (<|) (pure f) x` by that definition) and how can I implement `apply` using that definition? The monoidal aspect is relevant because with the Option applicative, we need to define how we collapse `Some (Some x)`, the question, I suppose, is whether to make that aspect the explicit one (in my experience, it is the clearer way to do things).
 * Why was Petricek's work on joinads rejected by Don Syme? Am I at risk of falling into the same trap?
