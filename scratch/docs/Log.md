@@ -38,5 +38,5 @@ So now we have prior art for some of both the theory (papers from Petricek and M
 
 Questions:
 * Why does Petricek prefer the monoidal (semigroupal?) definition of applicatives? What different does it make which we pick?
-    * `merge : f a * f b -> f (a*b)` (previously I was wondering about `liftA2 : (a -> b -> c) -> f a -> f b -> f c`, although that wouldn't require `map` since `let map f x = merge (<|) (pure f) x` by that definition, so the `map` would just be optional as an optimisation, just as adding both `merge` and `map` could be an optimisation for when we already have `bind`)
+    * `merge : f a * f b -> f (a*b)` which is a bit odd because it involves creating a tuple, which doesn't seem very elegant (previously I was wondering about `liftA2 : (a -> b -> c) -> f a -> f b -> f c`, although that wouldn't require `map` since `let map f x = merge (<|) (pure f) x` by that definition, so the `map` would just be optional as an optimisation, just as adding both `merge` and `map` could be an optimisation for when we already have `bind`)
 * Why was Petricek's work on joinads rejected by Don Syme? Am I at risk of falling into the same trap?
