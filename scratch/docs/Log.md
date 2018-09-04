@@ -43,3 +43,5 @@ Questions:
     * `merge : f a * f b -> f (a*b)` which is a bit odd because it involves creating a tuple, which doesn't seem very elegant (does it imply allocating a tuple for each application of a value?!). Previously I was wondering about `liftA2 : (a -> b -> c) -> f a -> f b -> f c`, although that wouldn't require `map` since `let map f x = merge (<|) (pure f) x` by that definition, so the `map` would just be optional as an optimisation, just as adding both `merge` and `map` could be an optimisation for when we already have `bind`. I guess we don't have curried functions when defining builders? I'll have to check.
 * Why was Petricek's work on joinads rejected by Don Syme? Am I at risk of falling into the same trap?
 * Should we allow mixing applicatives and monads, as long as the rules that no RHS of an apply is the LHS of a `let!`?
+* What should we do if someone tries to use `let! ... and! ...` if the builder only defines `Bind`?
+* Is using `map` and `merge` perferable because we get `map` which gives an optimisation for some usages of existing monadic CEs?
