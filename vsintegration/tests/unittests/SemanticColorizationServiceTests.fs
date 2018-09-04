@@ -77,3 +77,40 @@ type SemanticClassificationServiceTests() =
                 let s: (*7*)string<Ms> = Uom.tag "foo" """,
             marker, 
             classificationType)
+
+    [<TestCase("(*1*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*2*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*3*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*4*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*5*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*6*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*7*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*8*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*9*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*10*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*11*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*12*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*13*)", FSharpClassificationTypes.MutableVar)>]
+    member __.MutableRecordField(marker: string, classificationType: string) =
+        let sourceText ="""
+type R1 = { mutable (*1*)Doop: int}
+let r1 = { (*2*)Doop = 12 }
+r1.Doop
+
+let mutable (*3*)first = 12
+
+printfn "%d" (*4*)first
+
+let g ((*5*)x: outref<int>) = (*6*)x <- 12
+
+let f() =
+    let (*7*)second = &first
+    let (*8*)third: outref<int> = &first
+    printfn "%d%d" (*9*)second (*10*)third
+
+type R = { (*12*)MutableField: int ref }
+let r = { (*13*)MutableField = ref 12 }
+r.MutableField
+r.MutableField := 3
+"""
+        verifyColorizerAtEndOfMarker(sourceText, marker, classificationType)
