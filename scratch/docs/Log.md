@@ -15,10 +15,12 @@ Got set up with Toby's help. I put together his key points below. There are a fe
     * Debug your version of the compiler or whatever to see what's going on (in my case, I have a small computation expression builder which includes various custom operators, etc)
 
 ### Interesting Jumping Off Points
-* Docs (in no particular order)
+* Docs (in no particular order):
     * Toby's thesis
     * https://github.com/Microsoft/visualfsharp/blob/master/DEVGUIDE.md
     * https://github.com/fsharp/fslang-suggestions/issues/579
+    * https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/computation-zoo.pdf
+    * http://www.staff.city.ac.uk/~ross/papers/Applicative.pdf
     * https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions
     * https://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html
     * https://fsharp.github.io/2016/09/26/fsharp-rfc-process.html
@@ -26,3 +28,14 @@ Got set up with Toby's help. I put together his key points below. There are a fe
 * `TcComputationExpression` in `TypeChecker.fs`
 * `LetOrUseBang` usages
 * `fsharpqafiles` - how does this all get picked up for running the tests?
+
+## 2018-09-04
+Explored the compiler, documentation and surrounding literature.
+
+[Tomas Petricek's "The F# Computation Expression Zoo"](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/computation-zoo.pdf), linked by Don Syme in the `let! ... and! ...` fslang suggestion is very helpful because it defines much of the core of the change very clearly (see part 3, "Semantics of computation expressions", and part 4.4). Interestingly, Petricek seems to prefer the less common "Monoidal" definition of applicatives (see Part 4 of McBride & Patersons's ["Applicative programming with effects"](http://www.staff.city.ac.uk/~ross/papers/Applicative.pdf) and subsequent [explanations by people on the internet](https://argumatronic.com/posts/2017-03-08-applicative-instances.html)) that defines `map` and `merge` rather than `pure` and `apply`. I am starting to wonder now... should we allow `let! ... and! ...` when the user has only defined bind? I suppose it'd allow for future implementations of `pure` & `apply` / `map` & `merge` to make it more efficient (providing the relvant laws relating monads and applicatives hold).
+
+So now we have prior art for some of both the theory (papers from Petricek and McBride & Patterson on applicatives) and the practice (`match!` pull request, Petricek's - rejected! - earlier work on joinads).
+
+Questions:
+* Why does Petricek prefer the monoidal (semigroupal?) definition of applicatives? What different does it make which we pick?
+* Why was Petricek's work on joinads rejected by Don Syme? Am I at risk of falling into the same trap?
