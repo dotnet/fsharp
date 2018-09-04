@@ -45,3 +45,7 @@ Questions:
 * Should we allow mixing applicatives and monads, as long as the rules that no RHS of an apply is the LHS of a `let!`?
 * What should we do if someone tries to use `let! ... and! ...` if the builder only defines `Bind`?
 * Is using `map` and `merge` perferable because we get `map` which gives an optimisation for some usages of existing monadic CEs?
+* `map` & `merge` / `apply` vs. zip?
+
+Standard place for tests (see `match!` PR) seems to be: https://github.com/Microsoft/visualfsharp/tree/master/tests/fsharp/core
+`match!` commit: https://github.com/Microsoft/visualfsharp/commit/e33831a596bc2858c9311280212b559318272ee4
