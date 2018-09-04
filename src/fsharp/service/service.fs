@@ -1324,13 +1324,25 @@ type TypeCheckInfo
             let underlyingTy = stripTyEqnsAndMeasureEqns g ty
             isStructTy g underlyingTy
 
+        let isValMutable (vref: ValRef) =
+            // Mutable values, ref cells, byrefs, and outrefs are mutable.
+            // Note that it is not possible for a caller to mutate an inref, so it is not colored, despite being a pointer type.
+            vref.IsMutable
+            || Tastops.isRefCellTy g vref.Type
+            || Tastops.isByrefTy g vref.Type
+            || Tastops.isOutByrefTy g vref.Type
+
+        let isRecdFieldMutable (rfinfo: RecdFieldInfo) =
+            (rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone)
+            || Tastops.isRefCellTy g rfinfo.RecdField.FormalType
+
         resolutions
         |> Seq.choose (fun cnr ->
             match cnr with
             // 'seq' in 'seq { ... }' gets colored as keywords
             | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref ->
                 Some (m, SemanticClassificationType.ComputationExpression)
-            | CNR(_, (Item.Value vref), _, _, _, _, m) when vref.IsMutable || Tastops.isRefCellTy g vref.Type ->
+            | CNR(_, (Item.Value vref), _, _, _, _, m) when isValMutable vref ->
                 Some (m, SemanticClassificationType.MutableVar)
             | CNR(_, Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m) ->
                 Some (m, SemanticClassificationType.IntrinsicFunction)
@@ -1343,7 +1355,7 @@ type TypeCheckInfo
                     Some (m, SemanticClassificationType.Operator)
                 else
                     Some (m, SemanticClassificationType.Function)
-            | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone -> 
+            | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when isRecdFieldMutable rfinfo ->
                 Some (m, SemanticClassificationType.MutableVar)
             | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when isFunction g rfinfo.FieldType ->
                Some (m, SemanticClassificationType.Function)
