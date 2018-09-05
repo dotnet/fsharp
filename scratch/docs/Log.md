@@ -96,3 +96,11 @@ let foo : string option =
 ```
 
 The semantics are iff `y` is `None` then bomb out of the CE with `None` else continue down the CE, printing the "y was set..." stuff to `stdout`.
+
+### Have a go at adding a shonky `let! ... and! ...`
+
+Arbitrary list of things to do / remember:
+* Update AST (not sure how the AST/TAST handle custom operators and built-in CE  methods yet)
+* Update TAST
+* Add `and!` to the frontend
+* Add logic for grabbing `.Apply` off the given builder and validating its signature etc (won't both with `.Map` or `.Merge` at this point because that's yet more functions to have to wire up, validate, etc)
