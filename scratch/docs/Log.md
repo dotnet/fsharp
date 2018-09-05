@@ -105,3 +105,29 @@ Arbitrary list of things to do / remember:
 * Add `and!` to the frontend
 * Add logic for grabbing `.Apply` off the given builder and validating its signature etc (won't both with `.Map` or `.Merge` at this point because that's yet more functions to have to wire up, validate, etc)
 * Should there be an `andUse!` or something? What usecases could there be? What would that look like?
+
+What I've done so far makes `and!` only valid within a `let!`:
+```F#
+    [<NoEquality; NoComparison;RequireQualifiedAccess>]
+    SynAndBangExpr = 
+    /// AndBang(isUse, bindings, body, wholeRange)
+    ///
+    /// F# syntax: and! pat = expr in expr (Must follow on directly from a let! / and!)
+    | AndBang of bindSeqPoint:SequencePointInfoForBinding * isUse:bool * isFromSource:bool * SynPat * SynExpr * SynAndBangExpr * range:range
+    | NotAndBang of SynExpr
+and
+    [<NoEquality; NoComparison;RequireQualifiedAccess>]
+    SynExpr =
+
+(* ... *)
+
+    /// SynExpr.LetOrUseBang(spBind, isUse, isFromSource, pat, rhsExpr, bodyExpr, mWholeExpr).
+    ///
+    /// F# syntax: let! pat = expr in expr'
+    /// F# syntax: use! pat = expr in expr'
+    /// where expr' admits an immediate and!
+    /// Computation expressions only
+    | LetOrUseBang    of bindSeqPoint:SequencePointInfoForBinding * isUse:bool * isFromSource:bool * SynPat * SynExpr * SynAndBangExpr * range:range
+```
+
+This is kind of what we want, but its type safety is actually a bit annoying - now `and!`s are a different expression type, and the normal functions, e.g. to test whether something is a control-flow expression, doesn't directly apply to it. I feel like this will need revisiting.
