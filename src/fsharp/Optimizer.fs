@@ -1663,7 +1663,15 @@ let TryDetectQueryQuoteAndRun cenv (expr:Expr) =
         //printfn "Not eliminating because no Run found"
         None
                 
+let IsSystemStringConcatOverload (methRef: ILMethodRef) =
+    methRef.Name = "Concat" && methRef.DeclaringTypeRef.FullName = "System.String" && 
+    methRef.ArgTypes |> List.forall(fun ilty -> ilty.BasicQualifiedName = "System.String") &&
+    methRef.ReturnType.BasicQualifiedName = "System.String"
 
+let IsSystemStringConcatArray (methRef: ILMethodRef) =
+    methRef.Name = "Concat" && methRef.DeclaringTypeRef.FullName = "System.String" && 
+    methRef.ArgTypes.Head.BasicQualifiedName = "System.String[]" && methRef.ArgTypes.Length = 1 &&
+    methRef.ReturnType.BasicQualifiedName = "System.String"
     
 //-------------------------------------------------------------------------
 // The traversal
@@ -1723,7 +1731,6 @@ let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
         assert ("unexpected reclink" = "")
         failwith "Unexpected reclink"
 
-
 //-------------------------------------------------------------------------
 // Optimize/analyze an object expression
 //------------------------------------------------------------------------- 
@@ -1773,8 +1780,53 @@ and OptimizeInterfaceImpl cenv env baseValOpt (ty, overrides) =
       Info=UnknownValue}
 
 //-------------------------------------------------------------------------
-// Optimize/analyze an application of an intrinsic operator to arguments
+// Make and optimize String.Concat calls
 //------------------------------------------------------------------------- 
+
+and MakeOptimizedSystemStringConcatCall cenv env m args =
+    let rec flattenArgs e accArgs =
+        match e, accArgs with
+        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ], _), _ when IsSystemStringConcatArray methRef ->
+            fold args accArgs
+
+        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, args, _), _ when IsSystemStringConcatOverload methRef ->
+            fold args accArgs
+
+        // Optimize string constants, e.g. "1" + "2" will turn into "12"
+        | Expr.Const(Const.String str1, _, _), Expr.Const(Const.String str2, _, _) :: accArgs ->
+            mkString cenv.g m (str1 + str2) :: accArgs
+
+        | arg, _ -> arg :: accArgs
+
+    and fold args accArgs =
+        (args, accArgs)
+        ||> List.foldBack (fun arg accArgs -> flattenArgs arg accArgs)
+
+    let args = fold args []
+
+    let expr' =
+        match args with
+        | [ arg ] ->
+            arg
+        | [ arg1; arg2 ] -> 
+            mkStaticCall_String_Concat2 cenv.g m arg1 arg2
+        | [ arg1; arg2; arg3 ] ->
+            mkStaticCall_String_Concat3 cenv.g m arg1 arg2 arg3
+        | [ arg1; arg2; arg3; arg4 ] ->
+            mkStaticCall_String_Concat4 cenv.g m arg1 arg2 arg3 arg4
+        | args ->
+            let arg = mkArray (cenv.g.string_ty, args, m)
+            mkStaticCall_String_Concat_Array cenv.g m arg
+
+    match expr' with
+    | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _) as op, tyargs, args, m) when IsSystemStringConcatOverload methRef || IsSystemStringConcatArray methRef ->
+        OptimizeExprOpReductions cenv env (op, tyargs, args, m)
+    | _ ->
+        OptimizeExpr cenv env expr'
+
+//-------------------------------------------------------------------------
+// Optimize/analyze an application of an intrinsic operator to arguments
+//-------------------------------------------------------------------------
 
 and OptimizeExprOp cenv env (op, tyargs, args, m) =
 
@@ -1827,8 +1879,17 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
     // if the types match up. 
     | TOp.ILAsm([], [ty]), _, [a] when typeEquiv cenv.g (tyOfExpr cenv.g a) ty -> OptimizeExpr cenv env a
 
+    // Optimize calls when concatenating strings, e.g. "1" + "2" + "3" + "4" .. etc.
+    | TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ] when IsSystemStringConcatArray methRef ->
+        MakeOptimizedSystemStringConcatCall cenv env m args
+    | TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, args when IsSystemStringConcatOverload methRef ->
+        MakeOptimizedSystemStringConcatCall cenv env m args
+
     | _ -> 
-    (* Reductions *)
+        (* Reductions *)
+        OptimizeExprOpReductions cenv env (op, tyargs, args, m)
+
+and OptimizeExprOpReductions cenv env (op, tyargs, args, m) =
     let args', arginfos = OptimizeExprsThenConsiderSplits cenv env args
     let knownValue = 
         match op, arginfos with 
@@ -1842,7 +1903,6 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
         | Some res -> OptimizeExpr cenv env res  (* discard e1 since guard ensures it has no effects *)
         | None -> OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos valu
     | None -> OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos UnknownValue
-
 
 and OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos valu =
     // The generic case - we may collect information, but the construction/projection doesn't disappear 
@@ -2559,7 +2619,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         // Inlining:  beta reducing 
         let expr' = MakeApplicationAndBetaReduce cenv.g (f2', f2ty, [tyargs], args', m)
         // Inlining: reoptimizing
-        Some (OptimizeExpr cenv {env with dontInline= Zset.add lambdaId env.dontInline} expr')
+        Some(OptimizeExpr cenv {env with dontInline= Zset.add lambdaId env.dontInline} expr')
           
     | _ -> None
 
