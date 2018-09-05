@@ -58,6 +58,8 @@ Standard place for tests (see `match!` PR) seems to be: https://github.com/Micro
 ## 2018-09-04
 Still waiting on a response on #langdesign.
 
+Good news! The [RFC process](https://fsharp.github.io/2016/09/26/fsharp-rfc-process.html) isn't very heavyweight.
+
 After reading the [Extend ComputationExpression builders with Map](https://github.com/fsharp/fslang-design/issues/258) discussion, I am wondering how `pure` will work.
 
 Parts of compiler to explore following on from the `match!` PR:
@@ -70,4 +72,27 @@ Parts of compiler to explore following on from the `match!` PR:
 * src/fsharp/service/ServiceParseTreeWalk.fs
 * src/fsharp/service/ServiceUntypedParse.fs
 
-Good news! The [RFC process](https://fsharp.github.io/2016/09/26/fsharp-rfc-process.html) isn't very heavyweight.
+### Messing with the `match!` syntax
+
+Interesting existing annoyance, no idea if it's easily fixable: I tried to use a `match!` to do some `printf`-ing, but got the "You haven't defined `Zero`" error. Okay, so I implement that, then I get the same for `Combine`. I'd have liked to have had all of the errors at once to avoid multiple build & run iterations.
+
+...Now I need a `Delay` too! 😄
+
+Managed to mangle the new `match!` syntax to use `letmatch!` on a branch.
+
+```F#
+let x = Some 1
+let y = opt { return "A" }
+let z = Some 3.5
+
+let foo : string option =
+    opt {
+        let! x' = x
+        letmatch! y with
+        | yValue -> printfn "y was set to %s!" yValue
+        let! z' = z
+        return sprintf "x = %d, z = %f" x' z'
+    }
+```
+
+The semantics are iff `y` is `None` then bomb out of the CE with `None` else continue down the CE, printing the "y was set..." stuff to `stdout`.
