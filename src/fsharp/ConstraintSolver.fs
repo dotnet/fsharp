@@ -1345,7 +1345,10 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                   // If there's nothing left to learn then raise the errors 
                   (if (permitWeakResolution && List.isEmpty support) || List.isEmpty frees then errors  
                   // Otherwise re-record the trait waiting for canonicalization 
-                   else AddMemberConstraint csenv ndeep m2 trace traitInfo support frees) ++ (fun () -> ResultD TTraitUnsolved)
+                   else AddMemberConstraint csenv ndeep m2 trace traitInfo support frees) ++ (fun () -> 
+                        match errors with
+                        | ErrorResult(_, (UnresolvedOverloading _ as err)) -> ErrorD err
+                        | _ -> ResultD TTraitUnsolved)
     ) 
     ++ 
     (fun res -> RecordMemberConstraintSolution csenv.SolverState m trace traitInfo res))
