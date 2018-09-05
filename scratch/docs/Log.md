@@ -104,3 +104,4 @@ Arbitrary list of things to do / remember:
 * Update TAST
 * Add `and!` to the frontend
 * Add logic for grabbing `.Apply` off the given builder and validating its signature etc (won't both with `.Map` or `.Merge` at this point because that's yet more functions to have to wire up, validate, etc)
+* Should there be an `andUse!` or something? What usecases could there be? What would that look like?
