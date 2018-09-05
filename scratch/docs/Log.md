@@ -54,3 +54,6 @@ Standard place for tests (see `match!` PR) seems to be: https://github.com/Micro
 * Answer questions from today (I've already made a post to #langdesign)
 * Try to understand the `match!` commit by reading/debugging
 * Trying to change the `let!` syntax, e.g. to `foo!` and see it work
+
+## 2018-09-04
+Still waiting on a response on #langdesign.
