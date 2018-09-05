@@ -59,3 +59,15 @@ Standard place for tests (see `match!` PR) seems to be: https://github.com/Micro
 Still waiting on a response on #langdesign.
 
 After reading the [Extend ComputationExpression builders with Map](https://github.com/fsharp/fslang-design/issues/258) discussion, I am wondering how `pure` will work.
+
+Parts of compiler to explore following on from the `match!` PR:
+* src/fsharp/LexFilter.fs
+* src/fsharp/TypeChecker.fs
+* src/fsharp/ast.fs
+* src/fsharp/lex.fsl
+* src/fsharp/pars.fsy
+* src/fsharp/service/ServiceLexing.fs
+* src/fsharp/service/ServiceParseTreeWalk.fs
+* src/fsharp/service/ServiceUntypedParse.fs
+
+Good news! The [RFC process](https://fsharp.github.io/2016/09/26/fsharp-rfc-process.html) isn't very heavyweight.
