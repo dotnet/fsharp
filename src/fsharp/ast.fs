@@ -482,6 +482,14 @@ and
 
 and
     [<NoEquality; NoComparison;RequireQualifiedAccess>]
+    SynAndBangExpr = 
+    /// AndBang(isUse, bindings, body, wholeRange)
+    ///
+    /// F# syntax: and! pat = expr in expr (Must follow on directly from a let! / and!)
+    | AndBang of isUse:bool * bindings:SynBinding list * body:SynAndBangExpr * range:range
+    | EndOfAndBangChain of SynExpr
+and
+    [<NoEquality; NoComparison;RequireQualifiedAccess>]
     SynExpr =
 
     /// F# syntax: (expr)
@@ -690,10 +698,11 @@ and
 
     /// SynExpr.LetOrUseBang(spBind, isUse, isFromSource, pat, rhsExpr, bodyExpr, mWholeExpr).
     ///
-    /// F# syntax: let! pat = expr in expr
-    /// F# syntax: use! pat = expr in expr
+    /// F# syntax: let! pat = expr in expr'
+    /// F# syntax: use! pat = expr in expr'
+    /// where expr' admits an immediate and!
     /// Computation expressions only
-    | LetOrUseBang    of bindSeqPoint:SequencePointInfoForBinding * isUse:bool * isFromSource:bool * SynPat * SynExpr * SynExpr * range:range
+    | LetOrUseBang    of bindSeqPoint:SequencePointInfoForBinding * isUse:bool * isFromSource:bool * SynPat * SynExpr * SynAndBangExpr * range:range
 
     /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
     | MatchBang of  matchSeqPoint:SequencePointInfoForBinding * expr:SynExpr * clauses:SynMatchClause list * isExnMatch:bool * range:range (* bool indicates if this is an exception match in a computation expression which throws unmatched exceptions *)
