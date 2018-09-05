@@ -57,3 +57,5 @@ Standard place for tests (see `match!` PR) seems to be: https://github.com/Micro
 
 ## 2018-09-04
 Still waiting on a response on #langdesign.
+
+After reading the [Extend ComputationExpression builders with Map](https://github.com/fsharp/fslang-design/issues/258) discussion, I am wondering how `pure` will work.
