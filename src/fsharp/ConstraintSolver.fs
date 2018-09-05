@@ -783,13 +783,14 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
     let ndeep = ndeep + 1
     let aenv = csenv.EquivEnv
     let g = csenv.g
-    if ty1 === ty2 then CompleteD else
 
     match cxsln with
     | Some (traitInfo, traitSln) when traitInfo.Solution.IsNone -> 
         // If this is an overload resolution at this point it's safe to assume the candidate member being evaluated solves this member constraint.
         TransactMemberConstraintSolution traitInfo trace traitSln
     | _ -> ()
+
+    if ty1 === ty2 then CompleteD else
 
     let canShortcut = not trace.HasTrace
     let sty1 = stripTyEqnsA csenv.g canShortcut ty1
@@ -1347,7 +1348,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                   // Otherwise re-record the trait waiting for canonicalization 
                    else AddMemberConstraint csenv ndeep m2 trace traitInfo support frees) ++ (fun () -> 
                         match errors with
-                        | ErrorResult(_, (UnresolvedOverloading _ as err)) -> ErrorD err
+                        | ErrorResult(_, (UnresolvedOverloading _ as err)) when (not (nm = "op_Explicit" || nm = "op_Implicit")) -> ErrorD err
                         | _ -> ResultD TTraitUnsolved)
     ) 
     ++ 
