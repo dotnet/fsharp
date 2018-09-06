@@ -7,6 +7,31 @@
         <target state="translated">Всегда располагайте открытые операторы на верхнем уровне</target>
         <note />
       </trans-unit>
+      <trans-unit id="CodeLens">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Replace_LineLens">
+        <source>Show annotations to the right instead of above the line</source>
+        <target state="translated">Показать примечания справа от строки, а не над ней</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Switch">
+        <source>Enable CodeLens (Experimental)</source>
+        <target state="translated">Включить CodeLens (экспериментальная функция)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Prefix">
+        <source>Annotation prefix</source>
+        <target state="translated">Префикс примечания</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_UseColors">
+        <source>Use colors in annotations</source>
+        <target state="translated">Использовать цветные примечания</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Code_Fixes">
         <source>Code Fixes</source>
         <target state="translated">Исправления кода</target>
@@ -135,31 +160,6 @@
       <trans-unit id="Tooltip_project_check_cache_size">
         <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
         <target state="translated">Для функций и компонентов IDE используются кэшированные данные проекта. Более высокие значения потребляют больший объем памяти, так как кэшируется больше проектов. Настройка этого значения не должна влиять на решения небольших или средних размеров.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens">
-        <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_Replace_LineLens">
-        <source>Show annotations to the right instead of above the line</source>
-        <target state="translated">Показать примечания справа от строки, а не над ней</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_Switch">
-        <source>Enable CodeLens (Experimental)</source>
-        <target state="translated">Включить CodeLens (экспериментальная функция)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_Prefix">
-        <source>Annotation prefix</source>
-        <target state="translated">Префикс примечания</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_UseColors">
-        <source>Use colors in annotations</source>
-        <target state="translated">Использовать цветные примечания</target>
         <note />
       </trans-unit>
     </body>

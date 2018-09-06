@@ -21,7 +21,7 @@
     <MicrosoftVisualStudioLanguageServicesPackageVersion>$(RoslynPackageVersion)</MicrosoftVisualStudioLanguageServicesPackageVersion>
 
     <!-- Microsoft Build packages -->
-    <MicrosoftBuildOverallPackagesVersion>15.6.85</MicrosoftBuildOverallPackagesVersion>
+    <MicrosoftBuildOverallPackagesVersion>15.8.166</MicrosoftBuildOverallPackagesVersion>
     <MicrosoftBuildPackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildPackageVersion>
     <MicrosoftBuildFrameworkPackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkPackageVersion>
     <MicrosoftBuildTasksCorePackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCorePackageVersion>

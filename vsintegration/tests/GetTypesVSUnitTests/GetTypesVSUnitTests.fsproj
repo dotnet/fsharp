@@ -19,7 +19,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="EnvDTE80" Version="$(EnvDTE80PackageVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;build;analyzers;native" />
     <PackageReference Include="NUnit" Version="$(NUnitPackageVersion)" />
+    <PackageReference Include="VSSDK.VSLangProj.8" Version="$(VSSDKVSLangProj8PackageVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;build;analyzers;native" />
   </ItemGroup>
 
   <ItemGroup>
