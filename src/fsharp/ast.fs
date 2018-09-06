@@ -695,6 +695,14 @@ and
     /// Computation expressions only
     | LetOrUseBang    of bindSeqPoint:SequencePointInfoForBinding * isUse:bool * isFromSource:bool * SynPat * SynExpr * SynExpr * range:range
 
+    /// SynExpr.AndBangChain(spBind, [(spBind, isUse, isFromSource, pat, rhsExpr, mWholeAndBangExpr)], bodyExpr, mWholeChainExpr).
+    ///
+    /// F# syntax: let! pat = expr and! ... and! ... and! pat = expr in expr
+    /// F# syntax: use! pat = expr and! ... and! ... and! pat = expr in expr
+    /// F# syntax: use! pat = expr and! ... anduse! ... and! pat = expr in expr
+    /// Computation expressions only
+    | AndBangChain of bindSeqPoint:SequencePointInfoForBinding * (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list * SynExpr * range:range
+
     /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
     | MatchBang of  matchSeqPoint:SequencePointInfoForBinding * expr:SynExpr * clauses:SynMatchClause list * isExnMatch:bool * range:range (* bool indicates if this is an exception match in a computation expression which throws unmatched exceptions *)
 
