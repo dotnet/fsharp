@@ -585,7 +585,7 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
             let hasCallInfo = ccallInfo.IsSome
             let mustTakeAddress = hasCallInfo || minfo.ObjArgNeedsAddress(amap, m)
             let objArgTy = tyOfExpr g objArgExpr
-            let wrap, objArgExpr', _readonly, _writeonly = mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m
+            let wrap, objArgExpr', isReadOnly, _isWriteOnly = mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m
             
             // Extension members and calls to class constraints may need a coercion for their object argument
             let objArgExpr' = 
@@ -594,6 +594,32 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
                   mkCoerceExpr(objArgExpr', minfo.ApparentEnclosingType, m, objArgTy)
               else
                   objArgExpr'
+
+            // Check to see if the extension member uses the extending type as a byref.
+            //     If so, make sure we don't allow readonly/immutable values to be passed byref from an extension member. 
+            //     An inref will work though.
+            if mustTakeAddress && isReadOnly && minfo.IsExtensionMember then
+                let tyOpt =
+                    match minfo with
+                    // For F# defined methods.
+                    | FSMeth(_, _, vref, _) ->
+                        let ty, _ = destFunTy g vref.Type
+                        Some(ty)
+
+                    // For IL methods, defined outside of F#.
+                    | ILMeth(_, info, _) ->
+                        let paramTypes = info.GetRawArgTypes(amap, m, minfo.FormalMethodInst)
+                        match paramTypes with
+                        | [] -> failwith "impossible"
+                        | ty :: _ -> Some(ty)
+
+                    | _ -> None
+                
+                match tyOpt with
+                | Some(ty) ->
+                    if isByrefTy g ty && not (isInByrefTy g ty) then
+                        errorR(Error(FSComp.SR.tcCannotCallExtensionMemberInrefToByref(), m))
+                | _ -> ()
 
             wrap, [objArgExpr'] 
 

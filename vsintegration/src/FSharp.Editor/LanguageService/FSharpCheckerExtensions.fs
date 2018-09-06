@@ -69,6 +69,7 @@ type FSharpChecker with
                 return bindParsedInput results
         }
 
+
     member checker.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, allowStaleResults: bool, userOpName: string, ?sourceText: SourceText) =
         async {
             let! cancellationToken = Async.CancellationToken

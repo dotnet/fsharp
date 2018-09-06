@@ -5,8 +5,8 @@ open System.ComponentModel.Composition
 open System.Runtime.InteropServices
 
 open Microsoft.VisualStudio.FSharp.UIResources
+open Microsoft.VisualStudio.Shell
 open SettingsPersistence
-open OptionsUIHelpers
 
 module DefaultTuning = 
     let UnusedDeclarationsAnalyzerInitialDelay = 0 (* 1000 *) (* milliseconds *)
@@ -59,10 +59,10 @@ type AdvancedOptions =
     { IsBlockStructureEnabled: bool 
       IsOutliningEnabled: bool }
 
-[<Export(typeof<ISettings>)>]
-type internal Settings [<ImportingConstructor>](store: SettingsStore) =
-    do  // Initialize default settings
-        
+type internal Settings() =
+
+    static member Initialize(store: SettingsStore) =
+        // Initialize default settings
         store.RegisterDefault
             { ShowAfterCharIsTyped = true
               ShowAfterCharIsDeleted = true
@@ -75,9 +75,9 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
         store.RegisterDefault
             { // We have this off by default, disable until we work out how to make this low priority 
               // See https://github.com/Microsoft/visualfsharp/pull/3238#issue-237699595
-              SimplifyName = false 
+              SimplifyName = false
               AlwaysPlaceOpensAtTopLevel = false
-              UnusedOpens = true 
+              UnusedOpens = true
               UnusedDeclarations = true }
 
         store.RegisterDefault
@@ -87,7 +87,7 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
               ProjectCheckCacheSize = 200 }
 
         store.RegisterDefault
-            { IsBlockStructureEnabled = true 
+            { IsBlockStructureEnabled = true
               IsOutliningEnabled = true }
 
         store.RegisterDefault
@@ -96,8 +96,6 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
               ReplaceWithLineLens = true
               Prefix = "// " }
 
-    interface ISettings
-
     static member IntelliSense : IntelliSenseOptions = getSettings()
     static member QuickInfo : QuickInfoOptions = getSettings()
     static member CodeFixes : CodeFixesOptions = getSettings()
@@ -105,7 +103,103 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
     static member CodeLens : CodeLensOptions = getSettings()
     static member Advanced: AdvancedOptions = getSettings()
 
+module internal OptionsUIHelpers =
+
+    open System.Windows
+    open System.Windows.Controls
+    open System.Windows.Data
+    open System.Windows.Markup
+
+    open Microsoft.VisualStudio.ComponentModelHost
+
+    [<AbstractClass>]
+    type AbstractOptionPage<'t>() as this =
+        inherit UIElementDialogPage()
+
+        let view = lazy this.CreateView()
+        
+        let store =
+            lazy
+                let scm = this.Site.GetService(typeof<SComponentModel>) :?> IComponentModel
+                // make sure settings are initialized to default values
+                let settingsStore = scm.GetService<SettingsStore>()
+                Settings.Initialize(settingsStore)
+                settingsStore
+
+        abstract CreateView : unit -> FrameworkElement
+
+        member this.View = view.Value
+
+        member this.Store = store.Value  
+
+        override this.Child = upcast this.View
+
+        override this.SaveSettingsToStorage() = 
+            this.GetResult() |> this.Store.SaveSettings |> Async.StartImmediate
+
+        override this.LoadSettingsFromStorage() = 
+            this.Store.LoadSettings() |> this.SetViewModel
+
+        //Override this method when using immutable settings type
+        member this.SetViewModel(settings: 't) =
+            // this is needed in case when settings are a CLIMutable record
+            this.View.DataContext <- null
+            this.View.DataContext <- settings
+
+        //Override this method when using immutable settings type
+        member this.GetResult() : 't =
+            downcast this.View.DataContext
+
+    //data binding helpers
+    let radioButtonCoverter =
+      { new IValueConverter with
+            member this.Convert(value, _, parameter, _) =
+                upcast value.Equals(parameter)
+            member this.ConvertBack(value, _, parameter, _) =
+                if value.Equals(true) then parameter else Binding.DoNothing }
+                
+    let bindRadioButton (radioButton: RadioButton) path value =
+        let binding = Binding (path, Converter = radioButtonCoverter, ConverterParameter = value)
+        radioButton.SetBinding(RadioButton.IsCheckedProperty, binding) |> ignore
+
+    let bindCheckBox (checkBox: CheckBox) (path: string) =
+        checkBox.SetBinding(CheckBox.IsCheckedProperty, path) |> ignore
+
+    // some helpers to create option views in code instead of XAML
+    let ( *** ) (control : #IAddChild) (children: UIElement list) =
+        children |> List.iter control.AddChild
+        control
+
+    let ( +++ ) (control : #IAddChild) content = 
+        control.AddChild content
+        control
+
+    let withDefaultStyles (element: FrameworkElement) =
+        let groupBoxStyle = System.Windows.Style(typeof<GroupBox>)
+        groupBoxStyle.Setters.Add(Setter(GroupBox.PaddingProperty, Thickness(Left = 7.0, Right = 7.0, Top = 7.0 )))
+        groupBoxStyle.Setters.Add(Setter(GroupBox.MarginProperty, Thickness(Bottom = 3.0)))
+        groupBoxStyle.Setters.Add(Setter(GroupBox.ForegroundProperty, DynamicResourceExtension(SystemColors.WindowTextBrushKey)))
+        element.Resources.Add(typeof<GroupBox>, groupBoxStyle)
+ 
+        let checkBoxStyle = new System.Windows.Style(typeof<CheckBox>)
+        checkBoxStyle.Setters.Add(new Setter(CheckBox.MarginProperty, new Thickness(Bottom = 7.0 )))
+        checkBoxStyle.Setters.Add(new Setter(CheckBox.ForegroundProperty, new DynamicResourceExtension(SystemColors.WindowTextBrushKey)))
+        element.Resources.Add(typeof<CheckBox>, checkBoxStyle)
+ 
+        let textBoxStyle = new System.Windows.Style(typeof<TextBox>)
+        textBoxStyle.Setters.Add(new Setter(TextBox.MarginProperty, new Thickness(Left = 7.0, Right = 7.0 )))
+        textBoxStyle.Setters.Add(new Setter(TextBox.ForegroundProperty, new DynamicResourceExtension(SystemColors.WindowTextBrushKey)))
+        element.Resources.Add(typeof<TextBox>, textBoxStyle);
+ 
+        let radioButtonStyle = new System.Windows.Style(typeof<RadioButton>)
+        radioButtonStyle.Setters.Add(new Setter(RadioButton.MarginProperty, new Thickness(Bottom = 7.0 )))
+        radioButtonStyle.Setters.Add(new Setter(RadioButton.ForegroundProperty, new DynamicResourceExtension(SystemColors.WindowTextBrushKey)))
+        element.Resources.Add(typeof<RadioButton>, radioButtonStyle)
+        element
+
 module internal OptionsUI =
+
+    open OptionsUIHelpers
 
     [<Guid(Guids.intelliSenseOptionPageIdString)>]
     type internal IntelliSenseOptionPage() =

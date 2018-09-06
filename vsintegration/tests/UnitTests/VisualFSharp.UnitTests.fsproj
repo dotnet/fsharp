@@ -122,7 +122,6 @@
     </Compile>
 -->
     <Compile Include="EditorFormattingServiceTests.fs">
-      <Link>Roslyn\EditorFormattingServiceTests.fs</Link>
     </Compile>
     <Compile Include="IndentationServiceTests.fs">
       <Link>Roslyn\IndentationServiceTests.fs</Link>
@@ -157,6 +156,7 @@
       <Link>Roslyn\DocumentHighlightsServiceTests.fs</Link>
     </Compile>
     <None Include="App.config" />
+    <None Include="App.config" CopyToOutputDirectory="PreserveNewest" />
     <None Include="app.runsettings" />
   </ItemGroup>
   <ItemGroup>

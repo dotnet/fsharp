@@ -29,9 +29,6 @@ module internal SettingsPersistence =
     [<Guid(Guids.svsSettingsPersistenceManagerIdString)>]
     type SVsSettingsPersistenceManager = class end
 
-    // marker interface for default settings export
-    type ISettings = interface end
-
     [<Export>]
     type SettingsStore
         [<ImportingConstructor>]

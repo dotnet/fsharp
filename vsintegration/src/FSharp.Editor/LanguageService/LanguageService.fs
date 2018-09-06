@@ -57,11 +57,10 @@ type internal FSharpCheckerProvider
             let mmd = amd.GetModules().[0]
             let mmr = mmd.GetMetadataReader()
 
-            // "lifetime is timed to Metadata you got from the GetMetadata(...). As long as you hold it strongly, raw 
+            // "lifetime is timed to Metadata you got from the GetMetadata(…). As long as you hold it strongly, raw 
             // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
             // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
-            // You shouldn't dispose it directly."
-
+            // You shouldn’t dispose it directly."
             let objToHold = box md
 
             // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
@@ -78,7 +77,7 @@ type internal FSharpCheckerProvider
         lazy
             let checker = 
                 FSharpChecker.Create(
-                    projectCacheSize = Settings.LanguageServicePerformance.ProjectCheckCacheSize, 
+                    projectCacheSize = Settings.LanguageServicePerformance.ProjectCheckCacheSize,
                     keepAllBackgroundResolutions = false,
                     // Enabling this would mean that if devenv.exe goes above 2.3GB we do a one-off downsize of the F# Compiler Service caches
                     (* , MaxMemory = 2300 *) 
@@ -373,18 +372,33 @@ type internal FSharpPackage() as this =
     // FSI-LINKAGE-POINT: unsited init
     do Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
-    override this.Initialize() =
-        base.Initialize()
+    override this.InitializeAsync(cancellationToken: CancellationToken, progress: IProgress<ServiceProgressData>) : Tasks.Task =
+        // `base.` methods can't be called in the `async` builder, so we have to cache it
+        let baseInitializeAsync = base.InitializeAsync(cancellationToken, progress)
+        let task =
+            async {
+                do! baseInitializeAsync |> Async.AwaitTask
 
-        this.ComponentModel.GetService<SettingsPersistence.ISettings>() |> ignore
+                let! commandService = this.GetServiceAsync(typeof<IMenuCommandService>) |> Async.AwaitTask // FSI-LINKAGE-POINT
+                let commandService = commandService :?> OleMenuCommandService
+                let packageInit () =
+                    // ensure settings are registered
+                    let settingsStore = this.ComponentModel.GetService<SettingsPersistence.SettingsStore>()
+                    Settings.Initialize(settingsStore)
 
-        // FSI-LINKAGE-POINT: sited init
-        let commandService = this.GetService(typeof<IMenuCommandService>) :?> OleMenuCommandService // FSI-LINKAGE-POINT
-        Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
-        // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
-        let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
+                    // FSI-LINKAGE-POINT: sited init
+                    Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
 
-        ()
+                    // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
+                    let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
+                    ()
+                let awaiter = this.JoinableTaskFactory.SwitchToMainThreadAsync().GetAwaiter()
+                if awaiter.IsCompleted then
+                    packageInit() // already on the UI thread
+                else
+                    awaiter.OnCompleted(fun () -> packageInit())
+            } |> Async.StartAsTask
+        upcast task // convert Task<unit> to Task
 
     override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
