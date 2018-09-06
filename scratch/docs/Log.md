@@ -135,3 +135,5 @@ This is kind of what we want, but its type safety is actually a bit annoying - n
 ## 2018-09-05
 
 I am trying to work off `type ... and ...` and `let ... and ...` to work out how to make this fit `let!`. Looks like there some logic in `lexfilter.fs` for mapping from light to verbose syntax that I'll want to understand well.
+
+Why, CE section of the parser, do we have a rule for `BINDER` when `BINDER`s should have been mapped to `OBINDER`s by `lexfilter.fs`
