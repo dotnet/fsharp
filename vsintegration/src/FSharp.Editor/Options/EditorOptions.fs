@@ -77,7 +77,7 @@ type LanguageServicePerformanceOptions =
 [<CLIMutable>]
 type CodeLensOptions =
   { Enabled : bool
-    ReplaceWithLineLens: bool 
+    ReplaceWithLineLens: bool
     UseColors: bool
     Prefix : string }
     static member Default =
@@ -88,10 +88,10 @@ type CodeLensOptions =
 
 [<CLIMutable>]
 type AdvancedOptions =
-    { IsBlockStructureEnabled: bool 
+    { IsBlockStructureEnabled: bool
       IsOutliningEnabled: bool }
     static member Default =
-      { IsBlockStructureEnabled = true 
+      { IsBlockStructureEnabled = true
         IsOutliningEnabled = true }
 
 [<Export>]
@@ -110,6 +110,7 @@ type EditorOptions
         store.Register LanguageServicePerformanceOptions.Default
         store.Register AdvancedOptions.Default
         store.Register IntelliSenseOptions.Default
+        store.Register CodeLensOptions.Default
 
     member __.IntelliSense : IntelliSenseOptions = store.Read()
     member __.QuickInfo : QuickInfoOptions = store.Read()
