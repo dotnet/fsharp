@@ -3297,26 +3297,20 @@ declExpr:
   | BINDER headBindingPattern EQUALS typedSeqExprBlock IN opt_OBLOCKSEP typedSeqExprBlock %prec expr_let 
      { let spBind = SequencePointAtBinding(rhs2 parseState 1 5)
        let m = unionRanges (rhs parseState 1) $7.Range
-       match $1 with
-       | "and" -> SynAndBangExpr.AndBang (spBind,false,true,$2,$4,$7,m)
-       | _ -> SynAndBangExpr.NotAndBang (SynExpr.LetOrUseBang(spBind,($1 = "use"),true,$2,$4,$7,m)) }
+       SynExpr.LetOrUseBang(spBind,($1 = "use"),true,$2,$4,$7,m) }
 
   | OBINDER headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP typedSeqExprBlock %prec expr_let 
-     { $5 (match $1 with | "use" -> "use!" | "let" -> "let!" | "and" -> "and!") (rhs parseState 1)  // report unterminated error 
+     { $5 (if $1 = "use" then "use!" else "let!") (rhs parseState 1)  // report unterminated error 
        let spBind = SequencePointAtBinding(unionRanges (rhs parseState 1) $4.Range)
        let m = unionRanges (rhs parseState 1) $7.Range
-       match $1 with
-       | "and" -> SynAndBangExpr.AndBang (spBind,false,true,$2,$4,$7,m)
-       | _ -> SynAndBangExpr.NotAndBang (SynExpr.LetOrUseBang(spBind,($1 = "use"),true,$2,$4,$7,m)) }
+       SynExpr.LetOrUseBang(spBind,($1 = "use"),true,$2,$4,$7,m) }
 
   | OBINDER headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let 
      { // error recovery that allows intellisense when writing incomplete computation expressions 
        let spBind = SequencePointAtBinding(unionRanges (rhs parseState 1) $4.Range) 
        let mAll = unionRanges (rhs parseState 1) (rhs parseState 7)
        let m = $4.Range.EndRange // zero-width range
-       match $1 with
-       | "and" -> SynAndBangExpr.AndBang (spBind,false,true,$2,$4, SynExpr.ImplicitZero m, mAll)
-       | _ -> SynAndBangExpr.NotAndBang (SynExpr.LetOrUseBang(spBind,($1 = "use"),true,$2,$4, SynExpr.ImplicitZero m, mAll)) }
+       SynExpr.LetOrUseBang(spBind,($1 = "use"),true,$2,$4, SynExpr.ImplicitZero m, mAll) }
 
   | DO_BANG typedSeqExpr IN opt_OBLOCKSEP typedSeqExprBlock %prec expr_let 
      { let spBind = NoSequencePointAtDoBinding

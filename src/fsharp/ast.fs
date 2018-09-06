@@ -486,8 +486,8 @@ and
     /// AndBang(isUse, bindings, body, wholeRange)
     ///
     /// F# syntax: and! pat = expr in expr (Must follow on directly from a let! / and!)
-    | AndBang of bindSeqPoint:SequencePointInfoForBinding * isUse:bool * isFromSource:bool * SynPat * SynExpr * SynAndBangExpr * range:range
-    | NotAndBang of SynExpr
+    | AndBang of isUse:bool * bindings:SynBinding list * body:SynAndBangExpr * range:range
+    | EndOfAndBangChain of SynExpr
 and
     [<NoEquality; NoComparison;RequireQualifiedAccess>]
     SynExpr =
