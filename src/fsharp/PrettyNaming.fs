@@ -552,13 +552,13 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
         let mutable start = 0
         for i = 0 to length - 1 do
             match text.[i], insideQuotation with
-            | _, _ when i = length - 1 ->
-                result.Add(text.Substring(start, i - start + 1))
             // split when seeing a separator
             | c, false when c = separator -> 
                 result.Add(text.Substring(start, i - start))
                 insideQuotation <- false
                 start <- i + 1
+            | _, _ when i = length - 1 ->
+                result.Add(text.Substring(start, i - start + 1))
             // keep reading if a separator is inside quotation
             | c, true when c = separator ->
                 insideQuotation <- true
