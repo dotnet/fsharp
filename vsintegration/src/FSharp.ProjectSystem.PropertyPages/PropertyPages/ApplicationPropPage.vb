@@ -49,8 +49,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         Protected Const INDEX_WINDOWSCLASSLIB As Integer = 2
         Protected Const INDEX_LAST As Integer = INDEX_WINDOWSCLASSLIB
         Public Const Const_TargetFrameworkMoniker As String = "TargetFrameworkMoniker"
-        Private m_v20FSharpRedistInstalled As Boolean = False
-        Private m_v40FSharpRedistInstalled As Boolean = False
 
         Friend WithEvents TargetFramework As System.Windows.Forms.ComboBox
         Friend WithEvents TargetFrameworkLabel As System.Windows.Forms.Label
@@ -74,12 +72,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             m_OutputTypeStringKeys(INDEX_WINDOWSAPP) = SR.GetString(SR.PPG_WindowsApp)
             m_OutputTypeStringKeys(INDEX_COMMANDLINEAPP) = SR.GetString(SR.PPG_CommandLineApp)
             m_OutputTypeStringKeys(INDEX_WINDOWSCLASSLIB) = SR.GetString(SR.PPG_WindowsClassLib)
-
-            Dim v20FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\10.1\Runtime\v2.0"
-            Dim v40FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\10.1\Runtime\v4.0"
-
-            m_v20FSharpRedistInstalled = Not (IsNothing(Microsoft.Win32.Registry.GetValue(v20FSharpRedistKey, Nothing, Nothing)))
-            m_v40FSharpRedistInstalled = Not (IsNothing(Microsoft.Win32.Registry.GetValue(v40FSharpRedistKey, Nothing, Nothing)))
 
             'Add any initialization after the InitializeComponent() call
             AddChangeHandlers()
@@ -587,18 +579,9 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             If moniker.StartsWith(".NETCoreApp") OrElse moniker.StartsWith(".NETStandard") Then
                 Return True
             End If
-            If moniker.Contains("v2") Then
-                Return Me.m_v20FSharpRedistInstalled
-            End If
-            If moniker.Contains("v3.0") Then
-                Return Me.m_v20FSharpRedistInstalled
-            End If
-            If moniker.Contains("v3.5") Then
-                Return Me.m_v20FSharpRedistInstalled
-            End If
-            '' Is this cheating?
-            If moniker.Contains("v4") Then
-                Return Me.m_v40FSharpRedistInstalled
+            ' With the latest tooling, if we have editors the redist is installed by definition
+            If moniker.Contains("v2") Or moniker.Contains("v3.0") Or moniker.Contains("v3.5") Or moniker.Contains("v4") Then
+                Return True
             End If
             Return False
         End Function

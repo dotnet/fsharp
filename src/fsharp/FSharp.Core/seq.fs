@@ -1087,6 +1087,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Distinct")>]
         let distinct source =
             checkNonNull "source" source
+            if isEmpty source then empty else
             seq { let hashSet = HashSet<'T>(HashIdentity.Structural<'T>)
                   for v in source do
                       if hashSet.Add(v) then
@@ -1095,6 +1096,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("DistinctBy")>]
         let distinctBy projection source =
             checkNonNull "source" source
+            if isEmpty source then empty else
             seq { let hashSet = HashSet<_>(HashIdentity.Structural<_>)
                   for v in source do
                     if hashSet.Add(projection v) then
@@ -1138,6 +1140,7 @@ namespace Microsoft.FSharp.Collections
 
         let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:seq<'T>) =
             checkNonNull "source" source
+            if isEmpty source then empty else
 
             let dict = Dictionary comparer
 

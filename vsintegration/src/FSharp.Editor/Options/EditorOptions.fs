@@ -67,6 +67,13 @@ type LanguageServicePerformanceOptions =
         ProjectCheckCacheSize = 200 }
 
 [<CLIMutable>]
+type CodeLensOptions =
+  { Enabled : bool
+    ReplaceWithLineLens: bool 
+    UseColors: bool
+    Prefix : string }
+
+[<CLIMutable>]
 type AdvancedOptions =
     { IsBlockStructureEnabled: bool 
       IsOutliningEnabled: bool }
@@ -103,6 +110,13 @@ type EditorOptions
         member __.Read() = store.Read()
         member __.Write(settings) = store.Write(settings)
 
+        store.RegisterDefault
+            { Enabled = false
+              UseColors = false
+              ReplaceWithLineLens = true
+              Prefix = "// " }
+
+    interface ISettings
 
 [<AutoOpen>]
 module internal WorkspaceSettingFromDocumentExtension =
@@ -143,6 +157,12 @@ module internal OptionsUI =
         inherit AbstractOptionPage<LanguageServicePerformanceOptions>()
         override this.CreateView() =
             upcast LanguageServicePerformanceOptionControl()
+    
+    [<Guid(Guids.codeLensOptionPageIdString)>]
+    type internal CodeLensOptionPage() =
+        inherit AbstractOptionPage<CodeLensOptions>()
+        override this.CreateView() =
+            upcast CodeLensOptionControl()
 
     [<Guid(Guids.advancedSettingsPageIdSring)>]
     type internal AdvancedSettingsOptionPage() =

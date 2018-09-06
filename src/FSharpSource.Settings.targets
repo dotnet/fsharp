@@ -38,10 +38,6 @@
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetDotnetProfile)\</IntermediateOutputPath>
     <IntermediateOutputPath Condition="'$(PortableProfileBeingReferenced)' != ''">obj\$(Configuration)\$(TargetDotnetProfile)\$(PortableProfileBeingReferenced)\</IntermediateOutputPath>
 
-    <!-- Frozen FSharp.Core package being built with this build -->
-    <FSharpCoreTargetPackageVersion>4.3.5</FSharpCoreTargetPackageVersion>
-    <FSharpCoreTargetMajorVersion>4.3</FSharpCoreTargetMajorVersion>
-
     <!-- Always qualify the IntermediateOutputPath by the TargetDotnetProfile if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetDotnetProfile)\</IntermediateOutputPath>
     <IntermediateOutputPath Condition="'$(PortableProfileBeingReferenced)' != ''">obj\$(Configuration)\$(TargetDotnetProfile)\$(PortableProfileBeingReferenced)\</IntermediateOutputPath>
@@ -49,7 +45,7 @@
     <!-- Frozen FSharp.Core package -->
     <FSharpCoreFrozenPortablePackageVersion>10.1.0</FSharpCoreFrozenPortablePackageVersion>
     <FSharpCoreFrozenPortableTargetPackageVersion>10.2.0</FSharpCoreFrozenPortableTargetPackageVersion>
-    <FSharpCoreFrozenPortableTargetMajorVersion>10.1</FSharpCoreFrozenPortableTargetMajorVersion>
+    <FSharpCoreFrozenPortableTargetMajorVersion>10.2</FSharpCoreFrozenPortableTargetMajorVersion>
 
     <!-- Nunit -->
     <NUnitVersion>3.5.0</NUnitVersion>

@@ -250,6 +250,19 @@ module CoreTests =
             //testOkFile.CheckExists()
         end
 
+        begin
+            use testOkFile = fileguard cfg "test3.ok"
+
+            fsc cfg "%s -o:test3.exe -g" cfg.fsc_flags ["test3.fsx"]
+
+            singleNegTest cfg "test3"
+
+            // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
+            //exec cfg ("." ++ "test.exe") ""
+
+            //testOkFile.CheckExists()
+        end
+
     [<Test>]
     let asyncStackTraces () = 
         let cfg = testConfig "core/asyncStackTraces"
@@ -1645,10 +1658,16 @@ module RegressionTests =
     let ``literal-value-bug-2-FSI_BASIC`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI_BASIC
 
     [<Test>]
+    let ``OverloadResolution-bug-FSC_BASIC`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSC_BASIC
+
+    [<Test>]
+    let ``OverloadResolution-bug-FSI_BASIC`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSI_BASIC
+
+    [<Test>]
     let ``struct-tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_BASIC
 
     [<Test >]
-    let ``tuple-bug-1`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
+    let ``tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
 
     [<Test>]
     let ``26`` () = singleTestBuildAndRun "regression/26" FSC_BASIC
@@ -1908,6 +1927,12 @@ module TypecheckTests =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos24.exe" cfg.fsc_flags ["pos24.fs"]
         peverify cfg "pos24.exe"
+
+    [<Test>]
+    let ``sigs pos31`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos31.exe --warnaserror" cfg.fsc_flags ["pos31.fsi"; "pos31.fs"]
+        peverify cfg "pos31.exe"
 
     [<Test>]
     let ``sigs pos23`` () = 

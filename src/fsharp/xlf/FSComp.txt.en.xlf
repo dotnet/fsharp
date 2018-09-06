@@ -7012,11 +7012,6 @@
         <target state="new">The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
         <target state="new">This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</target>
@@ -7060,6 +7055,11 @@
       <trans-unit id="tastCantTakeAddressOfExpression">
         <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
         <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoReturnOfLimitedSpan">
+        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
+        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
         <note />
       </trans-unit>
     </body>

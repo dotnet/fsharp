@@ -1,5 +1,5 @@
 rem Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-@if "%_echo%"=="" echo off 
+@if "%_echo%"=="" echo off
 
 setlocal enableDelayedExpansion
 
@@ -557,10 +557,10 @@ echo.
 echo ---------------- Done with arguments, starting preparation -----------------
 rem set TargetFrameworkSDKToolsDirectory --- needed for sdk to find al.exe. 
 if not "%TargetFrameworkSDKToolsDirectory%" == "" ( goto have_TargetFrameworkSDKToolsDirectory ) 
-set TargetFrameworkSDKToolsDirectory=%WindowsSDK_ExecutablePath_x64% 
+set TargetFrameworkSDKToolsDirectory=%WindowsSDK_ExecutablePath_x64%
 
 if not "%TargetFrameworkSDKToolsDirectory%" == "" ( goto have_TargetFrameworkSDKToolsDirectory ) 
-set TargetFrameworkSDKToolsDirectory=%WindowsSDK_ExecutablePath_x86% 
+set TargetFrameworkSDKToolsDirectory=%WindowsSDK_ExecutablePath_x86%
 
 :have_TargetFrameworkSDKToolsDirectory 
 
@@ -588,6 +588,10 @@ if "%RestorePackages%"=="" (
 
 :: Check prerequisites
 if not "%VisualStudioVersion%" == "" goto vsversionset
+if exist "%VS160COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=16.0
+if not "%VisualStudioVersion%" == "" goto vsversionset
+
+if not "%VisualStudioVersion%" == "" goto vsversionset
 if exist "%VS150COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=15.0
 if not "%VisualStudioVersion%" == "" goto vsversionset
 
@@ -607,6 +611,10 @@ if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" se
 :vsversionset
 if "%VisualStudioVersion%" == "" echo Error: Could not find an installation of Visual Studio && goto :failure
 
+if exist "%VS160COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
+    set _msbuildexe="%VS160COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe"
+    goto :havemsbuild
+)
 if exist "%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
     set _msbuildexe="%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe"
     goto :havemsbuild
@@ -680,7 +688,6 @@ if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
     :: Restore the Tools directory
     call "%~dp0init-tools.cmd"
 )
-
 set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
 set _dotnet20exe=%~dp0Tools\dotnet20\dotnet.exe
 set NUGET_PACKAGES=%~dp0packages
@@ -709,6 +716,32 @@ if not "%PB_PackageVersionPropsUrl%" == "" (
     :: set DotNetPackageVersionPropsPath
     set DotNetPackageVersionPropsPath=!dependencyUptakeDir!\PackageVersions.props
 )
+
+echo ----------- Done with package restore, starting dependency uptake check -------------
+
+if not "%PB_PackageVersionPropsUrl%" == "" (
+    set dependencyUptakeDir=%~dp0Tools\dependencyUptake
+    if not exist "!dependencyUptakeDir!" mkdir "!dependencyUptakeDir!"
+
+    :: download package version overrides
+    echo powershell -noprofile -executionPolicy RemoteSigned -command "Invoke-WebRequest -Uri '%PB_PackageVersionPropsUrl%' -OutFile '!dependencyUptakeDir!\PackageVersions.props'"
+         powershell -noprofile -executionPolicy RemoteSigned -command "Invoke-WebRequest -Uri '%PB_PackageVersionPropsUrl%' -OutFile '!dependencyUptakeDir!\PackageVersions.props'"
+    if ERRORLEVEL 1 echo Error downloading package version properties && goto :failure
+
+    :: prepare dependency uptake files
+    echo %_msbuildexe% %msbuildflags% %~dp0build\projects\PrepareDependencyUptake.proj /t:Build
+         %_msbuildexe% %msbuildflags% %~dp0build\projects\PrepareDependencyUptake.proj /t:Build
+    if ERRORLEVEL 1 echo Error building dependency uptake files && goto :failure
+
+    :: restore dependencies
+    %_nugetexe% restore !dependencyUptakeDir!\packages.config -PackagesDirectory packages -ConfigFile !dependencyUptakeDir!\NuGet.config
+    if ERRORLEVEL 1 echo Error restoring dependency uptake packages && goto :failure
+)
+
+set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
+set _dotnet20exe=%~dp0Tools\dotnet20\dotnet.exe
+set NUGET_PACKAGES=%~dp0Packages
+set path=%~dp0Tools\dotnet20\;%path%
 
 set _fsiexe="packages\FSharp.Compiler.Tools.4.1.27\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
@@ -766,8 +799,8 @@ echo ---------------- Done with SDK restore, starting build --------------------
 
 if "%BUILD_PHASE%" == "1" (
 
-    echo %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore %BUILD_DIAG%
-         %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore %BUILD_DIAG%
+    echo %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore %BUILD_DIAG%  /bl:%~dp0%BUILD_CONFIG%\net40\binmsbuild.build-everything.restore.%BUILD_CONFIG%.binlog
+         %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore %BUILD_DIAG%  /bl:%~dp0%BUILD_CONFIG%\net40\binmsbuild.build-everything.restore.%BUILD_CONFIG%.binlog
 
     echo %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%  /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-everything.build.%BUILD_CONFIG%.binlog
          %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%  /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-everything.build.%BUILD_CONFIG%.binlog

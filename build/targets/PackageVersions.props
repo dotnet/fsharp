@@ -6,10 +6,10 @@
     <RoslynPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\..\RoslynPackageVersion.txt').Trim())</RoslynPackageVersion>
 
     <!-- System.* packages -->
-    <SystemCollectionsImmutablePackageVersion>1.4.0</SystemCollectionsImmutablePackageVersion>
+    <SystemCollectionsImmutablePackageVersion>1.5.0</SystemCollectionsImmutablePackageVersion>
     <SystemIoCompressionPackageVersion>4.3.0</SystemIoCompressionPackageVersion>
     <SystemRuntimeCachingPackageVersion>1.5.0</SystemRuntimeCachingPackageVersion>
-    <SystemReflectionMetadataPackageVersion>1.5.0</SystemReflectionMetadataPackageVersion>
+    <SystemReflectionMetadataPackageVersion>1.6.0</SystemReflectionMetadataPackageVersion>
     <SystemValueTuplePackageVersion>4.3.0</SystemValueTuplePackageVersion>
 
     <!-- Roslyn packages -->
@@ -20,7 +20,7 @@
     <MicrosoftVisualStudioLanguageServicesPackageVersion>$(RoslynPackageVersion)</MicrosoftVisualStudioLanguageServicesPackageVersion>
 
     <!-- Microsoft Build packages -->
-    <MicrosoftBuildOverallPackagesVersion>15.6.85</MicrosoftBuildOverallPackagesVersion>
+    <MicrosoftBuildOverallPackagesVersion>15.8.166</MicrosoftBuildOverallPackagesVersion>
     <MicrosoftBuildPackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildPackageVersion>
     <MicrosoftBuildFrameworkPackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkPackageVersion>
     <MicrosoftBuildTasksCorePackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCorePackageVersion>

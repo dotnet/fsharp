@@ -676,11 +676,13 @@
       <HintPath>..\..\..\packages\System.Reflection.Metadata.$(SystemReflectionMetadataPackageVersion)\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
     </Reference>
     <Reference Include="System.Collections.Immutable">
-      <HintPath>..\..\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutablePackageVersion)\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+      <HintPath>..\..\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutablePackageVersion)\lib\netstandard1.0\System.Collections.Immutable.dll</HintPath>
     </Reference>
     <Reference Include="System.ValueTuple">
       <HintPath>..\..\..\packages\System.ValueTuple.$(SystemValueTuplePackageVersion)\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-      <Private>true</Private>
+    </Reference>
+    <Reference Include="System.IO.Compression">
+      <HintPath>..\..\..\packages\System.IO.Compression.$(SystemIoCompressionPackageVersion)\lib\net46\System.IO.Compression.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
@@ -695,15 +697,6 @@
     </Reference>
     <Reference Include="Microsoft.Build.Tasks.Core">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.$(MicrosoftBuildTasksCorePackageVersion)\lib\net46\Microsoft.Build.Tasks.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Build.Tasks.Core">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.$(MicrosoftBuildTasksCorePackageVersion)\lib\net46\Microsoft.Build.Tasks.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="System.IO.Compression">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.IO.Compression.$(SystemIoCompressionPackageVersion)\lib\net46\System.IO.Compression.dll</HintPath>
-    </Reference>
-    <Reference Include="FSharp.Data.TypeProviders">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Type.Providers.Redist.$(MicrosoftVisualFSharpTypeProvidersRedistPackageVersion)\content\4.3.0.0\FSharp.Data.TypeProviders.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

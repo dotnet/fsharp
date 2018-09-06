@@ -7,6 +7,31 @@
         <target state="translated">Inserisci sempre le istruzioni OPEN al primo livello</target>
         <note />
       </trans-unit>
+      <trans-unit id="CodeLens">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Replace_LineLens">
+        <source>Show annotations to the right instead of above the line</source>
+        <target state="translated">Mostra le annotazioni a destra anziché sopra la riga</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Switch">
+        <source>Enable CodeLens (Experimental)</source>
+        <target state="translated">Abilita CodeLens (sperimentale)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Prefix">
+        <source>Annotation prefix</source>
+        <target state="translated">Prefisso annotazione</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_UseColors">
+        <source>Use colors in annotations</source>
+        <target state="translated">Usa colori nelle annotazioni</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Code_Fixes">
         <source>Code Fixes</source>
         <target state="translated">Correzioni del codice</target>

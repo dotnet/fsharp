@@ -163,6 +163,9 @@ namespace Microsoft.FSharp.Collections
                 Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 count array
 
         let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (projection:'T->'SafeKey) (getKey:'SafeKey->'Key) (array:'T[]) =
+            let length = array.Length
+            if length = 0 then Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked 0 else
+
             let dict = Dictionary comparer
 
             // Build the groupings
@@ -279,6 +282,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("DistinctBy")>]
         let distinctBy projection (array:'T[]) =
             checkNonNull "array" array
+            let length = array.Length
+            if length = 0 then Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked 0 else
+
             let temp = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
             let mutable i = 0 
             let hashSet = HashSet<_>(HashIdentity.Structural<_>)
