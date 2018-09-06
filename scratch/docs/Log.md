@@ -157,7 +157,36 @@ Okay, so in `lexfilter.fs` why do we map some `BINDER`s to `OBINDER`s? Is the li
 > dsyme [2:16 PM]  
 Yes, the syntaxes are effectively separate.  e.g. we could split pars.fsy into two parsers - one for `#light on` (the default, containing `OBINDER`) and one for #light off (containing `BINDER`)
 
-### Interesting High-Level Questions
+### High-Level Questions
 
 * Should `anduse!` be a thing? If so, what should its final name be?
 * How should the ranges work for `let! ... and! ...` groups? For each binding range over the full chain of bindings and the final body? I'd kind of like just the current binding and the body, but ranges have to be continuous - it's baked in pretty deeply. I think I'll just do what let does and accept that it looks like earlier `and!`'s bindings are in scope of later ones.
+
+### Low-Level Questions
+
+#### Parsing complexity vs. AST complexity
+
+The `binders` non-terminal awkwardly contains the final body with a `let!` rather than waiting until after the zero-or-more `and!`s. This makes creating the range more awkward. On the other hand, that keeps the structure of the AST largely as it is, whilst still preventing more `let!`s half way through. I think keeping the AST as it is so we don't get a new `and!` expression type wins here.
+
+> Toby Shaw [6:57 PM]
+I had naively only thought about the other way, but I like your idea more
+catches the error in parsing, which is way nicer
+
+> tomd [6:57 PM]  
+Yep!
+
+> Toby Shaw [6:58 PM]  
+the only problem is that you might find it harder to give a descriptive error message
+
+> tomd [6:58 PM]  
+Shoe horning the latter way into parsing is hard too
+Yeah, I am no where near thinking about that too hard though
+Why do you say that?
+
+> Toby Shaw [7:04 PM]  
+the parser has auto-generated error messages, I think
+Whereas if you throw the error in type checking, then you can choose the error message
+
+#### What is allowed to follow a `let! ... and! ...`?
+
+It's probably worth giving some thought to what should be allowed to come after a `let! ... and! ...` chain. Only allowing `return` might be one simple way to get started?
