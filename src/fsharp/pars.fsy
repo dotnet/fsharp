@@ -3331,6 +3331,7 @@ declExpr:
      { SynExpr.YieldOrReturnFrom(($1,not $1), $2, unionRanges (rhs parseState 1) $2.Range) } 
 
   | binders
+     { }
 
   | DO_BANG typedSeqExpr IN opt_OBLOCKSEP typedSeqExprBlock %prec expr_let 
      { let spBind = NoSequencePointAtDoBinding
