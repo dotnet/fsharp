@@ -1846,7 +1846,84 @@ module OptimizationTests =
             |> Seq.filter (fun line -> line.Contains(".locals init"))
             |> Seq.length
 
-        log "Ran ok - optimizations removed %d textual occurrences of optimizable identifiers from target IL" numElim 
+        log "Ran ok - optimizations removed %d textual occurrences of optimizable identifiers from target IL" numElim
+        
+    [<Test>]
+    let ``stringconcat`` () = 
+        let cfg = testConfig "optimize/stringconcat"
+
+        fsc cfg "%s -g --optimize+" cfg.fsc_flags ["test.fs"]
+
+        ildasm cfg "/out=test.il" "test.exe"
+
+        let lines = File.ReadAllText(getfullpath cfg "test.il")
+        lines.Contains("""
+    IL_0000:  ldc.i4.s   13
+    IL_0002:  newarr     [mscorlib]System.String
+    IL_0007:  dup
+    IL_0008:  ldc.i4.0
+    IL_0009:  ldc.i4.5
+    IL_000a:  call       string Test.Test::ss(int32)
+    IL_000f:  stelem     [mscorlib]System.String
+    IL_0014:  dup
+    IL_0015:  ldc.i4.1
+    IL_0016:  ldc.i4.6
+    IL_0017:  call       string Test.Test::ss(int32)
+    IL_001c:  stelem     [mscorlib]System.String
+    IL_0021:  dup
+    IL_0022:  ldc.i4.2
+    IL_0023:  ldc.i4.7
+    IL_0024:  call       string Test.Test::ss(int32)
+    IL_0029:  stelem     [mscorlib]System.String
+    IL_002e:  dup
+    IL_002f:  ldc.i4.3
+    IL_0030:  ldc.i4.8
+    IL_0031:  call       string Test.Test::ss(int32)
+    IL_0036:  stelem     [mscorlib]System.String
+    IL_003b:  dup
+    IL_003c:  ldc.i4.4
+    IL_003d:  ldc.i4.s   9
+    IL_003f:  call       string Test.Test::ss(int32)
+    IL_0044:  stelem     [mscorlib]System.String
+    IL_0049:  dup
+    IL_004a:  ldc.i4.5
+    IL_004b:  ldc.i4.s   10
+    IL_004d:  call       string Test.Test::ss(int32)
+    IL_0052:  stelem     [mscorlib]System.String
+    IL_0057:  dup
+    IL_0058:  ldc.i4.6
+    IL_0059:  ldstr      "_50__60_"
+    IL_005e:  stelem     [mscorlib]System.String
+    IL_0063:  dup
+    IL_0064:  ldc.i4.7
+    IL_0065:  ldc.i4.s   100
+    IL_0067:  call       string Test.Test::ss(int32)
+    IL_006c:  stelem     [mscorlib]System.String
+    IL_0071:  dup
+    IL_0072:  ldc.i4.8
+    IL_0073:  ldc.i4.s   101
+    IL_0075:  call       string Test.Test::ss(int32)
+    IL_007a:  stelem     [mscorlib]System.String
+    IL_007f:  dup
+    IL_0080:  ldc.i4.s   9
+    IL_0082:  ldc.i4.s   102
+    IL_0084:  call       string Test.Test::ss(int32)
+    IL_0089:  stelem     [mscorlib]System.String
+    IL_008e:  dup
+    IL_008f:  ldc.i4.s   10
+    IL_0091:  ldc.i4.s   103
+    IL_0093:  call       string Test.Test::ss(int32)
+    IL_0098:  stelem     [mscorlib]System.String
+    IL_009d:  dup
+    IL_009e:  ldc.i4.s   11
+    IL_00a0:  ldstr      "_104__105_"
+    IL_00a5:  stelem     [mscorlib]System.String
+    IL_00aa:  dup
+    IL_00ab:  ldc.i4.s   12
+    IL_00ad:  ldc.i4.s   106
+    IL_00af:  call       string Test.Test::ss(int32)
+    IL_00b4:  stelem     [mscorlib]System.String
+    IL_00b9:  call       string [mscorlib]System.String::Concat(string[])""") |> Assert.True
 
     [<Test>]
     let stats () = 
