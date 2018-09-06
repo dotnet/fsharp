@@ -140,6 +140,10 @@ I am trying to work off `type ... and ...` and `let ... and ...` to work out how
 
 Why, CE section of the parser, do we have a rule for `BINDER` when `BINDER`s should have been mapped to `OBINDER`s by `lexfilter.fs`
 
+I should probably get to grips with fslex and fsyacc in a more principled way:
+http://courses.softlab.ntua.gr/compilers/2015a/ocamllex-tutorial.pdf
+http://courses.softlab.ntua.gr/compilers/2015a/ocamlyacc-tutorial.pdf
+
 > tomd [2:12 PM]  
 Question about parsing `let!`:
 Is `lexfilter.fs` mean to transform all instaces of `BINDER` to `OBINDER`? I would have naively assumed light syntax works by mapping first to verbose syntax. Yet, `pars.fsy` still seems to have rules for `BINDER` - why is this?
@@ -148,7 +152,7 @@ Is `lexfilter.fs` mean to transform all instaces of `BINDER` to `OBINDER`? I wou
 @tomd use of light syntax is optional, so BINDER is used for `#light "off"`
 
 > tomd [2:15 PM]  
-Okay, so in `lexfilter.fs` why do we map some `BINDERs` to `OBINDER`s? Is the light syntax the canonical one, in some sense?
+Okay, so in `lexfilter.fs` why do we map some `BINDER`s to `OBINDER`s? Is the light syntax the canonical one, in some sense?
 
 > dsyme [2:16 PM]  
-Yes, the syntaxes are effectively separate.  e.g. we could split pars.fsy into two parsers - one for #light on (the default, containing OBINDER) and one for #light off (containing BINDER)
+Yes, the syntaxes are effectively separate.  e.g. we could split pars.fsy into two parsers - one for `#light on` (the default, containing `OBINDER`) and one for #light off (containing `BINDER`)
