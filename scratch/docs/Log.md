@@ -136,4 +136,19 @@ This is kind of what we want, but its type safety is actually a bit annoying - n
 
 I am trying to work off `type ... and ...` and `let ... and ...` to work out how to make this fit `let!`. Looks like there some logic in `lexfilter.fs` for mapping from light to verbose syntax that I'll want to understand well.
 
+### Light And Verbose Syntax
+
 Why, CE section of the parser, do we have a rule for `BINDER` when `BINDER`s should have been mapped to `OBINDER`s by `lexfilter.fs`
+
+> tomd [2:12 PM]  
+Question about parsing `let!`:
+Is `lexfilter.fs` mean to transform all instaces of `BINDER` to `OBINDER`? I would have naively assumed light syntax works by mapping first to verbose syntax. Yet, `pars.fsy` still seems to have rules for `BINDER` - why is this?
+
+> dsyme [2:13 PM]  
+@tomd use of light syntax is optional, so BINDER is used for `#light "off"`
+
+> tomd [2:15 PM]  
+Okay, so in `lexfilter.fs` why do we map some `BINDERs` to `OBINDER`s? Is the light syntax the canonical one, in some sense?
+
+> dsyme [2:16 PM]  
+Yes, the syntaxes are effectively separate.  e.g. we could split pars.fsy into two parsers - one for #light on (the default, containing OBINDER) and one for #light off (containing BINDER)
