@@ -72,6 +72,11 @@ type CodeLensOptions =
     ReplaceWithLineLens: bool 
     UseColors: bool
     Prefix : string }
+    static member Default =
+      { Enabled = false
+        UseColors = false
+        ReplaceWithLineLens = true
+        Prefix = "// " }
 
 [<CLIMutable>]
 type AdvancedOptions =
@@ -103,6 +108,7 @@ type EditorOptions
     member __.CodeFixes : CodeFixesOptions = store.Read()
     member __.LanguageServicePerformance : LanguageServicePerformanceOptions = store.Read()
     member __.Advanced: AdvancedOptions = store.Read()
+    member __.CodeLens: CodeLensOptions = store.Read()
 
     interface Microsoft.CodeAnalysis.Host.IWorkspaceService
 
@@ -110,13 +116,6 @@ type EditorOptions
         member __.Read() = store.Read()
         member __.Write(settings) = store.Write(settings)
 
-        store.RegisterDefault
-            { Enabled = false
-              UseColors = false
-              ReplaceWithLineLens = true
-              Prefix = "// " }
-
-    interface ISettings
 
 [<AutoOpen>]
 module internal WorkspaceSettingFromDocumentExtension =
