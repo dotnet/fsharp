@@ -157,7 +157,7 @@ Okay, so in `lexfilter.fs` why do we map some `BINDER`s to `OBINDER`s? Is the li
 > dsyme [2:16 PM]  
 Yes, the syntaxes are effectively separate.  e.g. we could split pars.fsy into two parsers - one for `#light on` (the default, containing `OBINDER`) and one for #light off (containing `BINDER`)
 
-### Interesting Questions
+### Interesting High-Level Questions
 
 * Should `anduse!` be a thing? If so, what should its final name be?
-* How should the ranges work for `let! ... and! ...` groups? For each binding range over the full chain of bindings and the final body? I'd kind of like just the current binding and the body, but ranges have to be continuous - it's baked in pretty deeply.
+* How should the ranges work for `let! ... and! ...` groups? For each binding range over the full chain of bindings and the final body? I'd kind of like just the current binding and the body, but ranges have to be continuous - it's baked in pretty deeply. I think I'll just do what let does and accept that it looks like earlier `and!`'s bindings are in scope of later ones.
