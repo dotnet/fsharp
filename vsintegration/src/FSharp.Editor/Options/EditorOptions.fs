@@ -18,16 +18,24 @@ module DefaultTuning =
     /// Re-tokenizing is fast so we don't need to save this data long.
     let PerDocumentSavedDataSlidingWindow = TimeSpan(0,0,10)(* seconds *)
 
+type EnterKeySetting =
+    | NeverNewline
+    | NewlineOnCompleteWord
+    | AlwaysNewline
+
 // CLIMutable to make the record work also as a view model
 [<CLIMutable>]
 type IntelliSenseOptions =
   { ShowAfterCharIsTyped: bool
     ShowAfterCharIsDeleted: bool
-    ShowAllSymbols : bool }
+    ShowAllSymbols : bool
+    EnterKeySetting : EnterKeySetting }
     static member Default =
       { ShowAfterCharIsTyped = true
         ShowAfterCharIsDeleted = true
-        ShowAllSymbols = true }
+        ShowAllSymbols = true
+        EnterKeySetting = EnterKeySetting.NeverNewline}
+
 
 [<RequireQualifiedAccess>]
 type QuickInfoUnderlineStyle = Dot | Dash | Solid
