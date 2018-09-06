@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// LexFilter - process the token stream prior to parsing.
-/// Implements the offside rule and a copule of other lexical transformations.
+/// Implements the offside rule and a couple of other lexical transformations.
 module internal Microsoft.FSharp.Compiler.LexFilter
 
 open Internal.Utilities.Text.Lexing
