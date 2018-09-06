@@ -688,7 +688,7 @@ and
     /// Computation expressions only
     | YieldOrReturnFrom  of (bool * bool) * expr:SynExpr * range:range
 
-    /// SynExpr.LetOrUseAndBang(spBind, [(spBind, isUse, isFromSource, pat, rhsExpr, mWholeAndBangExpr)], bodyExpr, mWholeChainExpr).
+    /// SynExpr.LetOrUseAndBang(spBind, isUse, isFromSource, pat, rhsExpr, [(andBangSpBind, andBangIsUse, andBangIsFromSource, andBangPat, andBangRhsExpr, mAndBangExpr)], bodyExpr, mLetBangExpr).
     ///
     /// F# syntax: let! pat = expr in expr
     /// F# syntax: use! pat = expr in expr
@@ -697,7 +697,7 @@ and
     /// F# syntax: let! pat = expr anduse! ... and! ... and! pat = expr in expr
     /// F# syntax: use! pat = expr and! ... anduse! ... and! pat = expr in expr
     /// Computation expressions only
-    | LetOrUseAndBang of bindSeqPoint:SequencePointInfoForBinding * (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list * SynExpr * range:range
+    | LetOrUseAndBang of bindSeqPoint:SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range:range * (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list * SynExpr
 
     /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
     | MatchBang of  matchSeqPoint:SequencePointInfoForBinding * expr:SynExpr * clauses:SynMatchClause list * isExnMatch:bool * range:range (* bool indicates if this is an exception match in a computation expression which throws unmatched exceptions *)
@@ -789,7 +789,7 @@ and
         | SynExpr.ImplicitZero (range=m)
         | SynExpr.YieldOrReturn (range=m)
         | SynExpr.YieldOrReturnFrom (range=m)
-        | SynExpr.LetOrUseBang (range=m)
+        | SynExpr.LetOrUseAndBang (range=m)
         | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m)
         | SynExpr.Fixed (range=m) -> m
@@ -851,7 +851,7 @@ and
         | SynExpr.ImplicitZero (range=m)
         | SynExpr.YieldOrReturn (range=m)
         | SynExpr.YieldOrReturnFrom (range=m)
-        | SynExpr.LetOrUseBang (range=m)
+        | SynExpr.LetOrUseAndBang (range=m)
         | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m) -> m
         | SynExpr.DotGet (expr,_,lidwd,m) -> if lidwd.ThereIsAnExtraDotAtTheEnd then unionRanges expr.Range lidwd.RangeSansAnyExtraDot else m
@@ -915,7 +915,7 @@ and
         | SynExpr.ImplicitZero (range=m)
         | SynExpr.YieldOrReturn (range=m)
         | SynExpr.YieldOrReturnFrom (range=m)
-        | SynExpr.LetOrUseBang (range=m)
+        | SynExpr.LetOrUseAndBang (range=m)
         | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m)  -> m
         // these are better than just .Range, and also commonly applicable inside queries
@@ -1622,7 +1622,7 @@ let rec IsControlFlowExpression e =
     // Treat "ident { ... }" as a control flow expression
     | SynExpr.App (_, _, SynExpr.Ident _, SynExpr.CompExpr _,_)
     | SynExpr.IfThenElse _
-    | SynExpr.LetOrUseBang _
+    | SynExpr.LetOrUseAndBang _
     | SynExpr.Match _
     | SynExpr.TryWith _
     | SynExpr.TryFinally _
