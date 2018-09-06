@@ -131,3 +131,7 @@ and
 ```
 
 This is kind of what we want, but its type safety is actually a bit annoying - now `and!`s are a different expression type, and the normal functions, e.g. to test whether something is a control-flow expression, doesn't directly apply to it. I feel like this will need revisiting - will we want a `let!` followed by a list of `and!`s (, i.e. the string "and!" could be like an expression list separator - see `listPatternElements` in `pars.fsy`, started with a "let!" and terminated with a "return". If the list is non-empty => its an applicative expression)?
+
+## 2018-09-05
+
+I am trying to work off `type ... and ...` and `let ... and ...` to work out how to make this fit `let!`. Looks like there some logic in `lexfilter.fs` for mapping from light to verbose syntax that I'll want to understand well.
