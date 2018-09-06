@@ -90,8 +90,7 @@ type SemanticClassificationServiceTests() =
     [<TestCase("(*10*)", FSharpClassificationTypes.MutableVar)>]
     [<TestCase("(*11*)", FSharpClassificationTypes.MutableVar)>]
     [<TestCase("(*12*)", FSharpClassificationTypes.MutableVar)>]
-    [<TestCase("(*13*)", FSharpClassificationTypes.MutableVar)>]
-    member __.MutableRecordField(marker: string, classificationType: string) =
+    member __.MutableValues(marker: string, classificationType: string) =
         let sourceText ="""
 type R1 = { mutable (*1*)Doop: int}
 let r1 = { (*2*)Doop = 12 }
@@ -108,8 +107,8 @@ let f() =
     let (*8*)third: outref<int> = &first
     printfn "%d%d" (*9*)second (*10*)third
 
-type R = { (*12*)MutableField: int ref }
-let r = { (*13*)MutableField = ref 12 }
+type R = { (*11*)MutableField: int ref }
+let r = { (*12*)MutableField = ref 12 }
 r.MutableField
 r.MutableField := 3
 """
