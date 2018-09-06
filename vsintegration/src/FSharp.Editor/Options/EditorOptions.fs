@@ -18,12 +18,18 @@ module DefaultTuning =
     /// Re-tokenizing is fast so we don't need to save this data long.
     let PerDocumentSavedDataSlidingWindow = TimeSpan(0,0,10)(* seconds *)
 
+type EnterKeySetting =
+    | NeverNewline
+    | NewlineOnCompleteWord
+    | AlwaysNewline
+
 // CLIMutable to make the record work also as a view model
 [<CLIMutable>]
 type IntelliSenseOptions =
   { ShowAfterCharIsTyped: bool
     ShowAfterCharIsDeleted: bool
-    ShowAllSymbols : bool }
+    ShowAllSymbols : bool
+    EnterKeySetting : EnterKeySetting }
 
 [<RequireQualifiedAccess>]
 type QuickInfoUnderlineStyle = Dot | Dash | Solid
@@ -66,7 +72,8 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
         store.RegisterDefault
             { ShowAfterCharIsTyped = true
               ShowAfterCharIsDeleted = true
-              ShowAllSymbols = true }
+              ShowAllSymbols = true
+              EnterKeySetting = EnterKeySetting.NeverNewline }
 
         store.RegisterDefault
             { DisplayLinks = true
@@ -113,6 +120,12 @@ module internal OptionsUI =
         override this.CreateView() =
             let view = IntelliSenseOptionControl()
             view.charTyped.Unchecked.Add <| fun _ -> view.charDeleted.IsChecked <- System.Nullable false
+
+            let path = "EnterKeySetting"
+            bindRadioButton view.nevernewline path EnterKeySetting.NeverNewline
+            bindRadioButton view.newlinecompleteline path EnterKeySetting.NewlineOnCompleteWord
+            bindRadioButton view.alwaysnewline path EnterKeySetting.AlwaysNewline
+
             upcast view              
             
     [<Guid(Guids.quickInfoOptionPageIdString)>]

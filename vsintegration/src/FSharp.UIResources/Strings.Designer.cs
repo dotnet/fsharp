@@ -178,6 +178,42 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Always add new line on enter.
+        /// </summary>
+        public static string Enter_key_always {
+            get {
+                return ResourceManager.GetString("Enter_key_always", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Never add new line on enter.
+        /// </summary>
+        public static string Enter_key_never {
+            get {
+                return ResourceManager.GetString("Enter_key_never", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Only add new line on enter after end of fully typed word.
+        /// </summary>
+        public static string Enter_key_only {
+            get {
+                return ResourceManager.GetString("Enter_key_only", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter key behavior.
+        /// </summary>
+        public static string Enter_Key_Rule {
+            get {
+                return ResourceManager.GetString("Enter_Key_Rule", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to IntelliSense Performance Options.
         /// </summary>
         public static string IntelliSense_Performance {
@@ -277,7 +313,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Show outlining and collapsable nodes for F# code.
+        ///   Looks up a localized string similar to Show outlining and collapsible nodes for F# code.
         /// </summary>
         public static string Show_Outlining {
             get {
