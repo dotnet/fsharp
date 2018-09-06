@@ -139,6 +139,12 @@ module internal OptionsUI =
         override this.CreateView() =
             let view = IntelliSenseOptionControl()
             view.charTyped.Unchecked.Add <| fun _ -> view.charDeleted.IsChecked <- System.Nullable false
+           
+            let path = "EnterKeySetting" 
+            bindRadioButton view.nevernewline path EnterKeySetting.NeverNewline 
+            bindRadioButton view.newlinecompleteline path EnterKeySetting.NewlineOnCompleteWord 
+            bindRadioButton view.alwaysnewline path EnterKeySetting.AlwaysNewline
+
             upcast view              
             
     [<Guid(Guids.quickInfoOptionPageIdString)>]
