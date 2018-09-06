@@ -1784,13 +1784,13 @@ and OptimizeInterfaceImpl cenv env baseValOpt (ty, overrides) =
 //------------------------------------------------------------------------- 
 
 and MakeOptimizedSystemStringConcatCall cenv env m args =
-    let rec flattenArgs e accArgs =
+    let rec optimizeArg e accArgs =
         match e, accArgs with
         | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ], _), _ when IsSystemStringConcatArray methRef ->
-            fold args accArgs
+            optimizeArgs args accArgs
 
         | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, args, _), _ when IsSystemStringConcatOverload methRef ->
-            fold args accArgs
+            optimizeArgs args accArgs
 
         // Optimize string constants, e.g. "1" + "2" will turn into "12"
         | Expr.Const(Const.String str1, _, _), Expr.Const(Const.String str2, _, _) :: accArgs ->
@@ -1798,11 +1798,11 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
 
         | arg, _ -> arg :: accArgs
 
-    and fold args accArgs =
+    and optimizeArgs args accArgs =
         (args, accArgs)
-        ||> List.foldBack (fun arg accArgs -> flattenArgs arg accArgs)
+        ||> List.foldBack (fun arg accArgs -> optimizeArg arg accArgs)
 
-    let args = fold args []
+    let args = optimizeArgs args []
 
     let expr' =
         match args with
