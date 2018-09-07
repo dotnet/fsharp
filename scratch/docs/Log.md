@@ -199,9 +199,11 @@ The first thing I want to have work it the `option` applicative, which I think i
 
 Questions to #general:
 > tomd [2:43 PM]  
-When writing a computation expression builder, is the choice in which of `Yield` and `Return` to implement purely down to whether you want the CE to make the `yield` or `return` keyword available. I can't really imagine a world where they're have different implementations (since they'd imply different monad instances, right?)  
+When writing a computation expression builder, is the choice in which of `Yield` and `Return` to implement purely down to whether you want the CE to make the `yield` or `return` keyword available? I can't really imagine a world where they're have different implementations (since they'd imply different monad instances, right?)  
 >  
 > The context of this question is working out how `pure` would work for `let! ... and! ...` computation expressions (I think `apply` is entirely new, so no prior art to decipher in that case).
+
+Assuming the difference is in keyword, as person writing a CE, I guess I'd use `return` for plain old applicatives and `yield` for [alternative applicatives](https://hackage.haskell.org/package/base-4.6.0.1/docs/Control-Applicative.html#t:Alternative), and so on that basis, I think my change should use, say, support `return` initially and `yield` later (when the CE builder writer has defined `Combine`, which is really the alternation operator).
 
 Proposal for desugaring, a la [the existing CE docs](https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions):
 
