@@ -179,14 +179,32 @@ Yep!
 the only problem is that you might find it harder to give a descriptive error message
 
 > tomd [6:58 PM]  
-Shoe horning the latter way into parsing is hard too
-Yeah, I am no where near thinking about that too hard though
+Shoe horning the latter way into parsing is hard too  
+Yeah, I am no where near thinking about that too hard though  
 Why do you say that?
 
 > Toby Shaw [7:04 PM]  
-the parser has auto-generated error messages, I think
+the parser has auto-generated error messages, I think  
 Whereas if you throw the error in type checking, then you can choose the error message
 
 #### What is allowed to follow a `let! ... and! ...`?
 
 It's probably worth giving some thought to what should be allowed to come after a `let! ... and! ...` chain. Only allowing `return` might be one simple way to get started?
+
+## 2018-09-06
+
+[Useful description](https://fsprojects.github.io/FSharpPlus/computation-expressions.html) of the various kinds of `monad`, as F# sees things.
+
+The first thing I want to have work it the `option` applicative, which I think is a strict (no delaying required), monad-plus (plus in this case means take the first `Some` value) CE.
+
+Questions to #general:
+> tomd [2:43 PM]  
+When writing a computation expression builder, is the choice in which of `Yield` and `Return` to implement purely down to whether you want the CE to make the `yield` or `return` keyword available. I can't really imagine a world where they're have different implementations (since they'd imply different monad instances, right?)  
+>  
+> The context of this question is working out how `pure` would work for `let! ... and! ...` computation expressions (I think `apply` is entirely new, so no prior art to decipher in that case).
+
+Proposal for desugaring, a la [the existing CE docs](https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions):
+
+| Expression                    | Translation                            |
+|-------------------------------|----------------------------------------|
+| `let! pattern1 = expr1 in and! pattern2 = expr2 in cexpr` | `builder.apply()`
