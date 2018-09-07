@@ -1857,7 +1857,7 @@ module OptimizationTests =
         let outFile = getfullpath cfg "test.main.il"
         let expectedFile = getfullpath cfg "test.main.il.bsl"
 
-        ildasm_out_no_comments cfg "/item=Test.Test::main" outFile "test.exe"
+        ildasm_out_no_comments cfg "/item=Test.Test::main /noca" outFile "test.exe"
 
         let diff = fsdiff cfg outFile expectedFile
 
@@ -1874,7 +1874,7 @@ module OptimizationTests =
         let outFile = getfullpath cfg "test.test.il"
         let expectedFile = getfullpath cfg "test.test.il.bsl"
 
-        ildasm_out_no_comments cfg "/item=Test.Test::test" outFile "test.exe"
+        ildasm_out_no_comments cfg "/item=Test.Test::test /noca" outFile "test.exe"
 
         let diff = fsdiff cfg outFile expectedFile
 

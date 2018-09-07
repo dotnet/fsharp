@@ -9,11 +9,9 @@
 .class public abstract auto ansi sealed Test.Test
        extends [mscorlib]System.Object
 {
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .method public static int32  main(string[] argv) cil managed
   {
     .entrypoint
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.EntryPointAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  6
     .locals init (string V_0)
