@@ -214,6 +214,6 @@ Proposal for desugaring, a la [the existing CE docs](https://docs.microsoft.com/
 |---------|-----------------------------|-------------|
 | `Apply` | M<'T -> 'U> * M<T> -> M<'U> | Called for `let! ... and! ...` and computation expressions. Allows certain operations that do not require the full power of bind to be performed potentially more efficiently, or where they do not even have a sensible bind operation (but to have an apply) to be performed at all.
 
-| Expression                    | Translation                            |
-|-------------------------------|----------------------------------------|
-| `let! pattern1 = expr1 in and! pattern2 = expr2 in and! ... in cexpr` | `builder.apply(builder.apply(builder.apply(cexpr, expr1), expr2), ...)`
+| Expression                    | Translation | And using operators... |
+|-------------------------------|-------------|------------------------|
+| `let! pattern1 = expr1 in and! pattern2 = expr2 in and! ... in cexpr` | `builder.apply(builder.apply(builder.apply(cexpr, expr1), expr2), ...)` | `cexpr <*> expr1 <*> expr2 <*> ... <*> exprN`
