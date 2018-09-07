@@ -430,6 +430,26 @@ let fscBothToOut cfg out arg = Printf.ksprintf (Commands.fsc cfg.Directory (exec
 let fscAppendErrExpectFail cfg errPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppendErrExpectFail cfg errPath) cfg.DotNetExe  cfg.FSC) arg
 let csc cfg arg = Printf.ksprintf (Commands.csc (exec cfg) cfg.CSC) arg
 let ildasm cfg arg = Printf.ksprintf (Commands.ildasm (exec cfg) cfg.ILDASM) arg
+let ildasm_out_no_comments cfg arg outFile inputFile =
+    let arg = (arg + " /out=" + outFile)
+    ildasm cfg "%s" arg inputFile
+    let text = File.ReadAllText(outFile)
+    let blockComments = @"/\*(.*?)\*/"
+    let lineComments = @"//(.*?)\r?\n"
+    let strings = @"""((\\[^\n]|[^""\n])*)"""
+    let verbatimStrings = @"@(""[^""]*"")+"
+    let textNoComments =
+        System.Text.RegularExpressions.Regex.Replace(text, 
+            blockComments + "|" + lineComments + "|" + strings + "|" + verbatimStrings, 
+            (fun me -> 
+                if (me.Value.StartsWith("/*") || me.Value.StartsWith("//")) then
+                    if me.Value.StartsWith("//") then Environment.NewLine else String.Empty
+                else
+                    me.Value), System.Text.RegularExpressions.RegexOptions.Singleline)
+
+    let writer = File.CreateText(outFile)
+    writer.Write(textNoComments)
+    writer.Close()
 let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
 let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
