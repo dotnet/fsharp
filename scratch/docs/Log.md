@@ -216,4 +216,4 @@ Proposal for desugaring, a la [the existing CE docs](https://docs.microsoft.com/
 
 | Expression                    | Translation                            |
 |-------------------------------|----------------------------------------|
-| `let! pattern1 = expr1 in and! pattern2 = expr2 in cexpr` | `builder.apply(builder.return(expr)`
+| `let! pattern1 = expr1 in and! pattern2 = expr2 in and! ... in cexpr` | `builder.apply(builder.apply(builder.apply(cexpr, expr1), expr2), ...)`
