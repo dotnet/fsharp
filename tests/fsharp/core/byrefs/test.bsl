@@ -59,3 +59,13 @@ test.fsx(88,10,88,15): typecheck error FS3239: Byref types are not allowed to ha
 test.fsx(92,10,92,15): typecheck error FS3239: Byref types are not allowed to have optional type extensions.
 
 test.fsx(96,10,96,16): typecheck error FS3239: Byref types are not allowed to have optional type extensions.
+
+test.fsx(114,21,114,36): typecheck error FS3237: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
+
+test.fsx(114,21,114,36): typecheck error FS0001: Type mismatch. Expecting a
+    'byref<float array>'    
+but given a
+    'inref<float array>'    
+The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
+
+test.fsx(119,21,119,29): typecheck error FS3237: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
