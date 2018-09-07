@@ -206,6 +206,8 @@ When writing a computation expression builder, is the choice in which of `Yield`
 Assuming the difference is in keyword, as person writing a CE, I guess I'd use `return` for plain old applicatives and `yield` for [alternative applicatives](https://hackage.haskell.org/package/base-4.6.0.1/docs/Control-Applicative.html#t:Alternative), and so on that basis, I think my change should use, say, support `return` initially and `yield` later (when the CE builder writer has defined `Combine`, which is really the alternation operator).
 Alternative applicative support via `let! ... and! ...` and `yield` keywords would make writing things with alternatives, e.g. an argument parser, both efficient (no rebuilding the compuation on every application) and convenient (syntax is lightweight and readable).
 
+Note from @Nick: `Delay` is useful even in non-side-effectful CE builders as a way to "hide" evaluating a CE behind a thunk.
+
 Proposal for desugaring, a la [the existing CE docs](https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions):
 
 | Method  | Typical Signature(s)        | Description |
