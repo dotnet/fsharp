@@ -194,7 +194,7 @@ module CoreTests =
 
             fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
 
-            singleNegTest cfg "test2"
+            singleNegTest { cfg with fsc_flags = sprintf "%s --warnaserror-" cfg.fsc_flags } "test2"
 
             exec cfg ("." ++ "test2.exe") ""
 
@@ -2392,6 +2392,9 @@ module TypecheckTests =
 
     [<Test>]
     let ``type check neg107`` () = singleNegTest (testConfig "typecheck/sigs") "neg107"
+
+    [<Test>]
+    let ``type check neg108`` () = singleNegTest (testConfig "typecheck/sigs") "neg108"
 
     [<Test>]
     let ``type check neg103`` () = singleNegTest (testConfig "typecheck/sigs") "neg103"
