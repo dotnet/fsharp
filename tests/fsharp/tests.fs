@@ -1847,7 +1847,9 @@ module OptimizationTests =
             |> Seq.length
 
         log "Ran ok - optimizations removed %d textual occurrences of optimizable identifiers from target IL" numElim
-        
+     
+// These tests need FSharp.Core to be optimized (in release)
+#if !DEBUG
     [<Test>]
     let ``stringconcat main`` () = 
         let cfg = testConfig "optimize/stringconcat"
@@ -1881,6 +1883,7 @@ module OptimizationTests =
         match diff with
         | "" -> ()
         | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff)
+#endif
 
     [<Test>]
     let stats () = 
