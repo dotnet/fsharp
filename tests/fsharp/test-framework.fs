@@ -447,9 +447,8 @@ let ildasm_out_no_comments cfg arg outFile inputFile =
                 else
                     me.Value), System.Text.RegularExpressions.RegexOptions.Singleline)
 
-    let writer = File.CreateText(outFile)
+    use writer = File.CreateText(outFile)
     writer.Write(textNoComments)
-    writer.Close()
 let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
 let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
