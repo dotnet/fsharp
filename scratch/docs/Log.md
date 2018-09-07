@@ -217,3 +217,7 @@ Proposal for desugaring, a la [the existing CE docs](https://docs.microsoft.com/
 | Expression                    | Translation | And using operators... |
 |-------------------------------|-------------|------------------------|
 | `let! pattern1 = expr1 in and! pattern2 = expr2 in and! ... in cexpr` | `builder.apply(builder.apply(builder.apply(cexpr, expr1), expr2), ...)` | `cexpr <*> expr1 <*> expr2 <*> ... <*> exprN`
+
+Given the above, I think it would _not_ require extra work to allow all of the other usual CE keywords to work alongside `let! ... and! ...`, since the desugaring only requires the context of what `and!`s correspond to what `let!`s and otherwise doesn't interact, which (right now) is easily done in the parser/AST.
+
+This also means we can add optimisations to reduce current desugarings which use `Bind` to use the least powerful that applies of `Map`, `Apply` and `Bind`. Even in a world where these magic optimisations exist (where `let! ... and! ...` syntax wouldn't strictly be necessary for `Apply` to be called, the syntax would be handy because it would be a means for the CE user to assert "I expect this to be possible with only `apply`, I do _not_ want to be using `Bind` here", e.g. because of the runtime cost or because I don't want to care about whether or not `Bind` even exists on this builder).
