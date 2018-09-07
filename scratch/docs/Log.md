@@ -204,9 +204,14 @@ When writing a computation expression builder, is the choice in which of `Yield`
 > The context of this question is working out how `pure` would work for `let! ... and! ...` computation expressions (I think `apply` is entirely new, so no prior art to decipher in that case).
 
 Assuming the difference is in keyword, as person writing a CE, I guess I'd use `return` for plain old applicatives and `yield` for [alternative applicatives](https://hackage.haskell.org/package/base-4.6.0.1/docs/Control-Applicative.html#t:Alternative), and so on that basis, I think my change should use, say, support `return` initially and `yield` later (when the CE builder writer has defined `Combine`, which is really the alternation operator).
+Alternative applicative support via `let! ... and! ...` and `yield` keywords would make writing things with alternatives, e.g. an argument parser, both efficient (no rebuilding the compuation on every application) and convenient (syntax is lightweight and readable).
 
 Proposal for desugaring, a la [the existing CE docs](https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions):
 
+| Method  | Typical Signature(s)        | Description |
+|---------|-----------------------------|-------------|
+| `Apply` | M<'T -> 'U> * M<T> -> M<'U> | Called for `let! ... and! ...` and computation expressions. Allows certain operations that do not require the full power of bind to be performed potentially more efficiently, or where they do not even have a sensible bind operation (but to have an apply) to be performed at all.
+
 | Expression                    | Translation                            |
 |-------------------------------|----------------------------------------|
-| `let! pattern1 = expr1 in and! pattern2 = expr2 in cexpr` | `builder.apply()`
+| `let! pattern1 = expr1 in and! pattern2 = expr2 in cexpr` | `builder.apply(builder.return(expr)`
