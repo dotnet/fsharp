@@ -1665,13 +1665,13 @@ let TryDetectQueryQuoteAndRun cenv (expr:Expr) =
                 
 let IsSystemStringConcatOverload (methRef: ILMethodRef) =
     methRef.Name = "Concat" && methRef.DeclaringTypeRef.FullName = "System.String" && 
-    methRef.ArgTypes |> List.forall(fun ilty -> ilty.BasicQualifiedName = "System.String") &&
-    methRef.ReturnType.BasicQualifiedName = "System.String"
+    methRef.ReturnType.BasicQualifiedName = "System.String" &&
+    methRef.ArgTypes |> List.forall(fun ilty -> ilty.BasicQualifiedName = "System.String")
 
 let IsSystemStringConcatArray (methRef: ILMethodRef) =
     methRef.Name = "Concat" && methRef.DeclaringTypeRef.FullName = "System.String" && 
-    methRef.ArgTypes.Head.BasicQualifiedName = "System.String[]" && methRef.ArgTypes.Length = 1 &&
-    methRef.ReturnType.BasicQualifiedName = "System.String"
+    methRef.ReturnType.BasicQualifiedName = "System.String" &&
+    methRef.ArgTypes.Head.BasicQualifiedName = "System.String[]" && methRef.ArgTypes.Length = 1
     
 //-------------------------------------------------------------------------
 // The traversal
@@ -1804,7 +1804,7 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
 
     let args = optimizeArgs args []
 
-    let expr' =
+    let expr2 =
         match args with
         | [ arg ] ->
             arg
@@ -1818,11 +1818,11 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
             let arg = mkArray (cenv.g.string_ty, args, m)
             mkStaticCall_String_Concat_Array cenv.g m arg
 
-    match expr' with
+    match expr2 with
     | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _) as op, tyargs, args, m) when IsSystemStringConcatOverload methRef || IsSystemStringConcatArray methRef ->
         OptimizeExprOpReductions cenv env (op, tyargs, args, m)
     | _ ->
-        OptimizeExpr cenv env expr'
+        OptimizeExpr cenv env expr2
 
 //-------------------------------------------------------------------------
 // Optimize/analyze an application of an intrinsic operator to arguments
