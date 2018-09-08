@@ -1671,7 +1671,7 @@ let IsSystemStringConcatOverload (methRef: ILMethodRef) =
 let IsSystemStringConcatArray (methRef: ILMethodRef) =
     methRef.Name = "Concat" && methRef.DeclaringTypeRef.FullName = "System.String" && 
     methRef.ReturnType.BasicQualifiedName = "System.String" &&
-    methRef.ArgTypes.Head.BasicQualifiedName = "System.String[]" && methRef.ArgTypes.Length = 1
+    methRef.ArgTypes.Length = 1 && methRef.ArgTypes.Head.BasicQualifiedName = "System.String[]"
     
 //-------------------------------------------------------------------------
 // The traversal
