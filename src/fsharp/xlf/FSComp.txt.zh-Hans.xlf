@@ -6708,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
-        <source>Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.</source>
-        <target state="translated">在异步工作流中用于将名称绑定到异步计算的结果，或在其他计算表达式中，用于将名称绑定到属于计算类型的结果。</target>
+        <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
+        <target state="review-required-translation">在异步工作流中用于将名称绑定到异步计算的结果，或在其他计算表达式中，用于将名称绑定到属于计算类型的结果。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6788,13 +6788,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
-        <source>Used to indicate a value to provide as the result of a computation expression.</source>
-        <target state="translated">用于表示一个可作为计算表达式的结果提供的值。</target>
+        <source>Used to provide a value for the result of the containing computation expression.</source>
+        <target state="review-required-translation">用于表示一个可作为计算表达式的结果提供的值。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
-        <source>Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.</source>
-        <target state="translated">用于表示一种计算表达式，该表达式在计算时，提供包含计算表达式的结果。</target>
+        <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
+        <target state="review-required-translation">用于表示一种计算表达式，该表达式在计算时，提供包含计算表达式的结果。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6838,13 +6838,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that require Dispose to be called to free resources.</source>
-        <target state="translated">用于替代 let，以便要求 Dispose 的值可调用到免费资源。</target>
+        <source>Used instead of let for values that implement IDisposable"</source>
+        <target state="needs-review-translation">用于替代 let，以便要求 Dispose 的值可调用到免费资源。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
-        <source>Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.</source>
-        <target state="translated">用于替代异步工作流和其他计算表达式中的 let!，以便要求 Dispose 的值可调用到免费资源。</target>
+        <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
+        <target state="review-required-translation">用于替代异步工作流和其他计算表达式中的 let!，以便要求 Dispose 的值可调用到免费资源。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">

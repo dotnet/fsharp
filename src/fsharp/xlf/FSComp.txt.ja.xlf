@@ -6708,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
-        <source>Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.</source>
-        <target state="translated">非同期コンピュテーションの結果に名前をバインドする非同期ワークフローで使用します。また別のコンピュテーション式では、そのコンピュテーション型を示す名前を結果にバインドします。</target>
+        <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
+        <target state="review-required-translation">非同期コンピュテーションの結果に名前をバインドする非同期ワークフローで使用します。また別のコンピュテーション式では、そのコンピュテーション型を示す名前を結果にバインドします。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6788,13 +6788,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
-        <source>Used to indicate a value to provide as the result of a computation expression.</source>
-        <target state="translated">コンピュテーション式の結果として提供される値を示すために使用します。</target>
+        <source>Used to provide a value for the result of the containing computation expression.</source>
+        <target state="review-required-translation">コンピュテーション式の結果として提供される値を示すために使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
-        <source>Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.</source>
-        <target state="translated">コンピュテーション式を示し、評価されたときはそのコンピュテーション式の結果を示すために使用します。</target>
+        <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
+        <target state="review-required-translation">コンピュテーション式を示し、評価されたときはそのコンピュテーション式の結果を示すために使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6838,13 +6838,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Dispose を呼び出してリソースを解放する必要のある値に対して、let の代わりに使用します。</target>
+        <source>Used instead of let for values that implement IDisposable"</source>
+        <target state="needs-review-translation">Dispose を呼び出してリソースを解放する必要のある値に対して、let の代わりに使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
-        <source>Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.</source>
-        <target state="translated">非同期ワークフロー、および Dispose を呼び出してリソースを解放する必要のある値のその他のコンピュテーション式で let! の代わりに使用します。</target>
+        <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
+        <target state="review-required-translation">非同期ワークフロー、および Dispose を呼び出してリソースを解放する必要のある値のその他のコンピュテーション式で let! の代わりに使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">
