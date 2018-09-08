@@ -6708,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
-        <source>Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.</source>
-        <target state="translated">Используется в асинхронных рабочих процессах для привязки к результату асинхронного вычисления или (в других вычислительных выражениях) для привязки имени к результату, который имеет тип вычисления.</target>
+        <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
+        <target state="review-required-translation">Используется в асинхронных рабочих процессах для привязки к результату асинхронного вычисления или (в других вычислительных выражениях) для привязки имени к результату, который имеет тип вычисления.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6788,13 +6788,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
-        <source>Used to indicate a value to provide as the result of a computation expression.</source>
-        <target state="translated">Используется для указания значения, предоставляемого как результат вычислительного выражения.</target>
+        <source>Used to provide a value for the result of the containing computation expression.</source>
+        <target state="review-required-translation">Используется для указания значения, предоставляемого как результат вычислительного выражения.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
-        <source>Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.</source>
-        <target state="translated">Используется для обозначения вычислительного выражения, при вычислении которого выдается результат содержащего его вычислительного выражения.</target>
+        <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
+        <target state="review-required-translation">Используется для обозначения вычислительного выражения, при вычислении которого выдается результат содержащего его вычислительного выражения.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6843,8 +6843,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
-        <source>Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Используется вместо let! в асинхронных рабочих процессах и других вычислительных выражениях для значений, требующих вызова Dispose для освобождения ресурсов.</target>
+        <source>Used instead of let! in computation expressions for values that require Dispose to be called to free resources.</source>
+        <target state="review-required-translation">Используется вместо let! в асинхронных рабочих процессах и других вычислительных выражениях для значений, требующих вызова Dispose для освобождения ресурсов.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">
