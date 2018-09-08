@@ -6838,12 +6838,12 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Používá se místo výrazu let u hodnot, které k uvolnění prostředků vyžadují volání funkce Dispose.</target>
+        <source>Used instead of let for values that implement IDisposable"</source>
+        <target state="needs-review-translation">Používá se místo výrazu let u hodnot, které k uvolnění prostředků vyžadují volání funkce Dispose.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
-        <source>Used instead of let! in computation expressions for values that require Dispose to be called to free resources.</source>
+        <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
         <target state="review-required-translation">Používá se místo výrazu let! v asynchronních pracovních postupech a jiných výrazech výpočtu pro hodnoty, které k uvolnění prostředků vyžadují volání funkce Dispose.</target>
         <note />
       </trans-unit>

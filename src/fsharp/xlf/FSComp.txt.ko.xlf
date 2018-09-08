@@ -6838,12 +6838,12 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that require Dispose to be called to free resources.</source>
-        <target state="translated">무료 리소스로 호출하기 위해 Dispose가 필요한 값에 대해 let 대신 사용됩니다.</target>
+        <source>Used instead of let for values that implement IDisposable"</source>
+        <target state="needs-review-translation">무료 리소스로 호출하기 위해 Dispose가 필요한 값에 대해 let 대신 사용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
-        <source>Used instead of let! in computation expressions for values that require Dispose to be called to free resources.</source>
+        <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
         <target state="review-required-translation">무료 리소스로 호출하기 위해 Dispose가 필요한 값에 대해 기타 계산 식 및 비동기 워크플로에서 let! 대신 사용됩니다.</target>
         <note />
       </trans-unit>

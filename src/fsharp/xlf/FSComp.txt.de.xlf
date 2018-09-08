@@ -6838,12 +6838,12 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Wird anstelle von "let" für Werte verwendet, bei denen die "Dispose" zum Freigeben von Ressourcen erforderlich ist.</target>
+        <source>Used instead of let for values that implement IDisposable"</source>
+        <target state="needs-review-translation">Wird anstelle von "let" für Werte verwendet, bei denen die "Dispose" zum Freigeben von Ressourcen erforderlich ist.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
-        <source>Used instead of let! in computation expressions for values that require Dispose to be called to free resources.</source>
+        <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
         <target state="review-required-translation">Wird anstelle von "let!" in asynchronen Workflows und anderen Berechnungsausdrücken für Werte verwendet, bei denen die "Dispose" zum Freigeben von Ressourcen erforderlich ist.</target>
         <note />
       </trans-unit>
