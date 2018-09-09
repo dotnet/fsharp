@@ -127,8 +127,7 @@ namespace Internal.Utilities.Text.Lexing
         member lexbuf.BufferScanStart     with get() : int = bufferScanStart     and set v = bufferScanStart <- v
         member lexbuf.BufferAcceptAction  with get() = bufferAcceptAction  and set v = bufferAcceptAction <- v
         member lexbuf.RefillBuffer () = filler lexbuf
-        static member LexemeString(lexbuf:LexBuffer<char>) = 
-            new System.String(lexbuf.Buffer,lexbuf.BufferScanStart,lexbuf.LexemeLength)
+        static member LexemeString (lexbuf: LexBuffer<uint16>) = System.String(lexbuf.Lexeme |> Array.map char)
 
         member lexbuf.IsPastEndOfStream 
            with get() = eof
@@ -167,17 +166,17 @@ namespace Internal.Utilities.Text.Lexing
             LexBuffer<'Char>.FromArrayNoCopy buffer
 
         // Important: This method takes ownership of the array
-        static member FromChars (arr:char[]) = LexBuffer.FromArrayNoCopy arr 
+        static member FromChars (arr:char[]) = LexBuffer.FromArrayNoCopy (arr |> Array.map uint16)
 
-    module GenericImplFragments = 
-        let startInterpret(lexBuffer:LexBuffer<char>)= 
+    module internal GenericImplFragments = 
+        let startInterpret(lexBuffer:LexBuffer<uint16>)= 
             lexBuffer.BufferScanStart <- lexBuffer.BufferScanStart + lexBuffer.LexemeLength;
             lexBuffer.BufferMaxScanLength <- lexBuffer.BufferMaxScanLength - lexBuffer.LexemeLength;
             lexBuffer.BufferScanLength <- 0;
             lexBuffer.LexemeLength <- 0;
             lexBuffer.BufferAcceptAction <- -1;
 
-        let afterRefill (trans: uint16[][],sentinel,lexBuffer:LexBuffer<char>,scanUntilSentinel,endOfScan,state,eofPos) = 
+        let afterRefill (trans: uint16[][],sentinel,lexBuffer:LexBuffer<uint16>,scanUntilSentinel,endOfScan,state,eofPos) = 
             // end of file occurs if we couldn't extend the buffer 
             if lexBuffer.BufferScanLength = lexBuffer.BufferMaxScanLength then  
                 let snew = int trans.[state].[eofPos] // == EOF 
@@ -191,9 +190,9 @@ namespace Internal.Utilities.Text.Lexing
             else 
                 scanUntilSentinel lexBuffer state
 
-        let onAccept (lexBuffer:LexBuffer<char>,a) = 
-            lexBuffer.LexemeLength <- lexBuffer.BufferScanLength;
-            lexBuffer.BufferAcceptAction <- a;
+        let onAccept (lexBuffer:LexBuffer<uint16>, a) = 
+            lexBuffer.LexemeLength <- lexBuffer.BufferScanLength
+            lexBuffer.BufferAcceptAction <- a
 
     open GenericImplFragments
 
@@ -220,15 +219,15 @@ namespace Internal.Utilities.Text.Lexing
                         let baseForUnicodeCategories = numLowUnicodeChars+numSpecificUnicodeChars*2
                         let unicodeCategory = 
 #if FX_RESHAPED_GLOBALIZATION
-                            System.Globalization.CharUnicodeInfo.GetUnicodeCategory(inp)
+                            System.Globalization.CharUnicodeInfo.GetUnicodeCategory(char inp)
 #else
-                            System.Char.GetUnicodeCategory(inp)
+                            System.Char.GetUnicodeCategory(char inp)
 #endif
                         //System.Console.WriteLine("inp = {0}, unicodeCategory = {1}", [| box inp; box unicodeCategory |]);
                         int trans.[state].[baseForUnicodeCategories + int32 unicodeCategory]
                     else 
                         // This is the specific unicode character
-                        let c = char (int trans.[state].[baseForSpecificUnicodeChars+i*2])
+                        let c = trans.[state].[baseForSpecificUnicodeChars+i*2]
                         //System.Console.WriteLine("c = {0}, inp = {1}, i = {2}", [| box c; box inp; box i |]);
                         // OK, have we found the entry for a specific unicode character?
                         if c = inp
@@ -269,7 +268,7 @@ namespace Internal.Utilities.Text.Lexing
         //      30 entries, one for each UnicodeCategory
         //      1 entry for EOF
 
-        member tables.Interpret(initialState,lexBuffer : LexBuffer<char>) = 
+        member tables.Interpret(initialState, lexBuffer: LexBuffer<uint16>) = 
             startInterpret(lexBuffer)
             scanUntilSentinel lexBuffer initialState
 

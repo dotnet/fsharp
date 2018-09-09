@@ -227,7 +227,7 @@ type FSharpLineTokenizer =
 type FSharpSourceTokenizer =
     new : conditionalDefines:string list * fileName:string option -> FSharpSourceTokenizer
     member CreateLineTokenizer : lineText:string -> FSharpLineTokenizer
-    member CreateBufferTokenizer : bufferFiller:(char[] * int * int -> int) -> FSharpLineTokenizer
+    member CreateBufferTokenizer : bufferFiller:(uint16[] * int * int -> int) -> FSharpLineTokenizer
     
 
 module internal TestExpose =     
