@@ -7063,8 +7063,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotInheritAttribute">
-        <source>This type is not an attribute</source>
-        <target state="new">This type is not an attribute</target>
+        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
+        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
         <note />
       </trans-unit>
     </body>

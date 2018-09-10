@@ -4144,7 +4144,7 @@ type internal SR private() =
     /// Used to associate, or bind, a name to a value or function.
     /// (Originally from ..\FSComp.txt:1372)
     static member keywordDescriptionLet() = (GetStringFunc("keywordDescriptionLet",",,,") )
-    /// Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.
+    /// Used in computation expressions to bind a name to the result of another computation expression.
     /// (Originally from ..\FSComp.txt:1373)
     static member keywordDescriptionLetBang() = (GetStringFunc("keywordDescriptionLetBang",",,,") )
     /// Used to branch by comparing a value to a pattern.
@@ -4195,10 +4195,10 @@ type internal SR private() =
     /// Used to indicate that a function is recursive.
     /// (Originally from ..\FSComp.txt:1389)
     static member keywordDescriptionRec() = (GetStringFunc("keywordDescriptionRec",",,,") )
-    /// Used to indicate a value to provide as the result of a computation expression.
+    /// Used to provide a value for the result of the containing computation expression.
     /// (Originally from ..\FSComp.txt:1390)
     static member keywordDescriptionReturn() = (GetStringFunc("keywordDescriptionReturn",",,,") )
-    /// Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.
+    /// Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.
     /// (Originally from ..\FSComp.txt:1391)
     static member keywordDescriptionReturnBang() = (GetStringFunc("keywordDescriptionReturnBang",",,,") )
     /// Used in query expressions to specify what fields or columns to extract. Note that this is a contextual keyword, which means that it is not actually a reserved word and it only acts like a keyword in appropriate context.
@@ -4225,10 +4225,10 @@ type internal SR private() =
     /// Used to convert to a type that is higher in the inheritance chain.
     /// (Originally from ..\FSComp.txt:1399)
     static member keywordDescriptionUpcast() = (GetStringFunc("keywordDescriptionUpcast",",,,") )
-    /// Used instead of let for values that require Dispose to be called to free resources.
+    /// Used instead of let for values that implement IDisposable"
     /// (Originally from ..\FSComp.txt:1400)
     static member keywordDescriptionUse() = (GetStringFunc("keywordDescriptionUse",",,,") )
-    /// Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.
+    /// Used instead of let! in computation expressions for computation expression results that implement IDisposable.
     /// (Originally from ..\FSComp.txt:1401)
     static member keywordDescriptionUseBang() = (GetStringFunc("keywordDescriptionUseBang",",,,") )
     /// Used in a signature to indicate a value, or in a type to declare a member, in limited situations.
@@ -4353,10 +4353,10 @@ type internal SR private() =
     static member chkNoSpanLikeValueFromExpression() = (3236, GetStringFunc("chkNoSpanLikeValueFromExpression",",,,") )
     /// Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
     /// (Originally from ..\FSComp.txt:1442)
-    static member tastCantTakeAddressOfExpression() = (3238, GetStringFunc("tastCantTakeAddressOfExpression",",,,") )
-    /// This type is not an attribute
-    /// (Originally from ..\FSComp.txt:1442)
-    static member tcTypeDoesNotInheritAttribute() = (3238, GetStringFunc("tcTypeDoesNotInheritAttribute",",,,") )
+    static member tastCantTakeAddressOfExpression() = (3237, GetStringFunc("tastCantTakeAddressOfExpression",",,,") )
+    /// This type does not inherit Attribute, it will not work correctly with other .NET languages.
+    /// (Originally from ..\FSComp.txt:1443)
+    static member tcTypeDoesNotInheritAttribute() = (3242, GetStringFunc("tcTypeDoesNotInheritAttribute",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5769,4 +5769,9 @@ type internal SR private() =
         ignore(GetString("tastValueMustBeLocal"))
         ignore(GetString("tcIsReadOnlyNotStruct"))
         ignore(GetString("chkStructsMayNotReturnAddressesOfContents"))
+        ignore(GetString("chkNoByrefLikeFunctionCall"))
+        ignore(GetString("chkNoSpanLikeVariable"))
+        ignore(GetString("chkNoSpanLikeValueFromExpression"))
+        ignore(GetString("tastCantTakeAddressOfExpression"))
+        ignore(GetString("tcTypeDoesNotInheritAttribute"))
         ()
