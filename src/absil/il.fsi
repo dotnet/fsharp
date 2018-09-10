@@ -265,6 +265,8 @@ and
 
     member QualifiedName: string
 
+    member IsByrefTy: bool
+
 and [<StructuralEquality; StructuralComparison>]
     ILCallingSignature =  
     { CallingConv: ILCallingConv

@@ -5587,7 +5587,7 @@ and AllocLocal cenv cgbuf eenv compgen (v,ty,isFixed) (scopeMarks: Mark * Mark) 
      // Get an index for the local
      let j = 
         if cenv.opts.localOptimizationsAreOn 
-        then cgbuf.ReallocLocal((fun i (_,ty',isFixed') -> not isFixed' && not isFixed && not (IntMap.mem i eenv.liveLocals) && (ty = ty')),ranges,ty,isFixed)
+        then cgbuf.ReallocLocal((fun i (_,ty',isFixed') -> ty.IsByrefTy && ty'.IsByrefTy && not isFixed' && not isFixed && not (IntMap.mem i eenv.liveLocals) && (ty = ty')),ranges,ty,isFixed)
         else cgbuf.AllocLocal(ranges,ty,isFixed)
      j, { eenv with liveLocals =  IntMap.add j () eenv.liveLocals  }
 
