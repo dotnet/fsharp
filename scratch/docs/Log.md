@@ -332,6 +332,30 @@ builder.Apply(
     cExpr)
 ```
 
+And with some extra body in the middle:
+```F#
+option {
+    let! a = aExpr
+    and! b = bExpr
+    and! c = cExpr
+    let d = 3 + 4
+    return (a + b + c) * d
+}
+```
+I presume it would desugar (have yet to confirm this is how `let`s work yet) as so:
+```F#
+builder.Apply(
+    builder.Apply(
+        builder.Apply(
+            builder.Return(
+                fun a b c ->
+                    let d = 3 + 4
+                    (a + b + c) * d),
+            aExpr), 
+        bExpr), 
+    cExpr)
+```
+
 I assert `Apply` is the best way because the desugaring is most natural. The only unintuitive thing, perhaps, is that the first binding goes into the inner most `Apply` and we work outwards from there, which is the reverse of how you read the top-to-bottom CE.
 
 ### Answers from @dsyme
