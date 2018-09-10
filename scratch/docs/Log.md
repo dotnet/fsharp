@@ -240,10 +240,14 @@ m.Map(m.Merge(x, y), fun (a, b) -> a + b)
 
 ### Choosing `return` vs. `yield`
 
-Assuming the difference is in keyword, as person writing a CE, I guess I'd use `return` for plain old applicatives and `yield` for [alternative applicatives](https://hackage.haskell.org/package/base-4.6.0.1/docs/Control-Applicative.html#t:Alternative), and so on that basis, I think my change should use, say, support `return` initially and `yield` later (when the CE builder writer has defined `Combine`, which is really the alternation operator).
+Assuming the difference is in which keyword becomes available inside te CE, as person writing a CE, I supppose I'd use `return` for plain old applicatives and `yield` for [alternative applicatives](https://hackage.haskell.org/package/base-4.6.0.1/docs/Control-Applicative.html#t:Alternative), and so on that basis, I think my change should use, say, support `return` initially and `yield` later (when the CE builder writer has defined `Combine`, which is really the alternation operator).
 Alternative applicative support via `let! ... and! ...` and `yield` keywords would make writing things with alternatives, e.g. an argument parser, both efficient (no rebuilding the compuation on every application) and convenient (syntax is lightweight and readable).
 
-Note from @Nick: `Delay` is useful even in non-side-effectful CE builders as a way to "hide" evaluating a CE behind a thunk.
+### A Note on Alternation
+`Combine`, the alternation method, is called when sequencing CE expressions. e.g. for options, we can pick the first in the `Some` case by just listing them inside the CE and providing a left-biased `Combine` method on the builder.
+
+### Further uses of `Delay`
+Note from @Nick: `Delay` is useful even in non-side-effectful CE builders as a way to "hide" evaluating a CE behind a thunk - useful when building the CE itself is expensive.
 
 ### Desugaring
 
@@ -255,8 +259,35 @@ Proposal for desugaring, a la [the existing CE docs](https://docs.microsoft.com/
 
 | Expression                    | Translation | And using operators... |
 |-------------------------------|-------------|------------------------|
-| `let! pattern1 = expr1 and! pattern2 = expr2 and! ... in cexpr` | `builder.apply(builder.apply(builder.apply(cexpr, expr1), expr2), ...)` | `cexpr <*> expr1 <*> expr2 <*> ... <*> exprN`
+| `let! pattern1 = expr1 and! pattern2 = expr2 and! ... in cexpr` | `builder.apply(builder.apply(builder.apply(fun expr1 expr2 ... -> cexpr, expr1), expr2), ...)` | `cexpr <*> expr1 <*> expr2 <*> ... <*> exprN`
 
 Given the above, I think it would _not_ require extra work to allow all of the other usual CE keywords to work alongside `let! ... and! ...`, since the desugaring only requires the context of what `and!`s correspond to what `let!`s and otherwise doesn't interact, which (right now) is easily done in the parser/AST.
 
 This also means we can add optimisations to reduce current desugarings which use `Bind` to use the least powerful that applies of `Map`, `Apply` and `Bind`. Even in a world where these magic optimisations exist (where `let! ... and! ...` syntax wouldn't strictly be necessary for `Apply` to be called, the syntax would be handy because it would be a means for the CE user to assert "I expect this to be possible with only `apply`, I do _not_ want to be using `Bind` here", e.g. because of the runtime cost or because I don't want to care about whether or not `Bind` even exists on this builder).
+
+## 2018-09-10
+
+I don't think we need `in` between `let!`s and `and!`s in the same chain, because any later `and!` in unambiguously part of the chain (a new chain would need to be started with a fresh `let!`).
+
+### Should we desugar to `Bind`, `Apply` or `Map`?
+
+Right now, we can only ever desugar `let!` to a `Bind`. This isn't ideal because `Bind` can be expensive and can make statically examining the structure of the full computation impossible (the can't know what will happen "behind a bind" until a value is present for us to use to generate the subsequent computation).
+
+If `Apply` is available on the builder, we can use it as a (potentially) more efficient alternative for `Bind` where the RHS of a `let!` does not make reference to the LHS of a previous `let!`. In a sense, it allows us to bind multiple names which are not interdependent simultaneously. It also allows us to apply functions on the LHS of a `let!` to values on the LHS of a `let!` without `Bind`. This is useful because implementing `Bind` isn't possible for as many interesting structures as for `Apply`.
+
+Similarly, if `Map` is available, we can use is as an alternative to `Apply` and `Bind` if we take the value on the LHS of a `let!` and transform it with reference to the LHS of any other `let!` at any point. Again, `Map` is possible to implement for more structures than both `Bind` and `Apply`, and it is potentially more efficient to use too.
+
+`Bind`, `Apply` and `Map` are related via various laws that govern how they "should" behave - i.e. we expect any "sensible" CE builder writer will produce methods for which these hold. For example, `builder.Bind(fun x -> builder.Return(f x))` and `builder.Apply(builder.Return(f), x)` should both produce the same result as `builder.Map(f, x)`.
+
+The most minimal change we could make is to just make `let! ... and! ...` desugar to `Apply` as defined earlier. This makes CE builders useful for strutures for which we can't or haven't defined `Bind`. It also allows the more efficient `Apply` to be used even where `Bind` is defined, and potentially allows more static examination of the resulting value.
+
+Beyond that, we could start more aggressively using the most constrained (and hence generally most efficient) desugaring we can. e.g. even if the CE writer does not explicitly use `let! ... and! ...`, we may notice that no LHS of a `let!` is used on the RHS of another, so we can desugar to `Apply` instead. If the laws hold, this would probably create a more efficient program which behaves identically, however, _it will do something different to the `Bind` desugaring if the laws don't hold_! e.g. If `Apply` calls `System.Environment.Exit()` but `Bind` does not, the program will do something drastically different. As such, the more aggressive, optimising desugarings are potentially dangerous so we probably want to consider these separately to the `let! ... and! ...` proposal. Interestingly, however, if a CE writer was using a builder which defined `Bind` but not `Apply` or `Map`, and later the builder was updated to implement `Apply` and `Map` in a way that held with respect to the laws, then without a change of their source code, they could get some new optimisations after recompiling.
+
+Even in a world with these auto-magical, optimising desugarings, having the `let! ... and! ...` syntax is still useful, since it offers a way for the CE writer to declare "I expect this should be possible with `Apply` and therefore do not require `Bind`, so please verify that is true and use only `Apply`". This makes it possible to be confident that the desugaring will avoid using `Bind` e.g. because it is expensive.
+
+Assuming we used the full suite of optimising desugarings (i.e. using `Map` in preference to `Apply`, in preference to `Bind` when possible), we would get this:
+
+| Expression                    | Translation | Optimisation |
+|-------------------------------|-------------|--------------|
+|`let! pat1 = exp1 and! pat2 = exp2 in let! pat3 = exp1 in return pat1 + pat2 + pat3`| `builder.Apply(builder.Apply(builder.Apply(fun pat1 pat2 pat3 -> pat1 + pat2 + pat3), exp1), exp2), exp3)` | Use `Apply` rather than `Bind` despite final binding not being part of preceding `and!` chain.
+| `let! x = y in return x + 1` | `builder.Map((fun x -> x + 1), y)` | Use `Map` rather than `Bind` or `Apply` despite `let!`
