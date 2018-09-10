@@ -289,7 +289,7 @@ Assuming we used the full suite of optimising desugarings (i.e. using `Map` in p
 
 | Expression                    | Translation | Optimisation |
 |-------------------------------|-------------|--------------|
-|`let! pat1 = exp1 and! pat2 = exp2 in let! pat3 = exp1 in return pat1 + pat2 + pat3`| `builder.Apply(builder.Apply(builder.Apply(fun pat1 pat2 pat3 -> pat1 + pat2 + pat3), exp1), exp2), exp3)` | Use `Apply` rather than `Bind` despite final binding not being part of preceding `and!` chain.
+|`let! pat1 = exp1 and! pat2 = exp2 in let! pat3 = exp1 in return pat1 + pat2 + pat3`| `builder.Apply(builder.Apply(builder.Apply(builder.Return(fun pat1 pat2 pat3 -> pat1 + pat2 + pat3), exp1), exp2), exp3)` | Use `Apply` rather than `Bind` despite final binding not being part of preceding `and!` chain.
 | `let! x = y in return x + 1` | `builder.Map((fun x -> x + 1), y)` | Use `Map` rather than `Bind` or `Apply` despite `let!`
 
 ### `liftA2` vs. `apply` vs. `merge`
@@ -303,6 +303,37 @@ There's already been plenty of chat about the `apply` vs. `merge` way of doing t
 >  
 > Some functors support an implementation of `liftA2` that is more efficient than the default one. In particular, if fmap is an expensive operation, it is likely better to use `liftA2` than to fmap over the structure and then use `apply`. We can also look at `liftA2` are a generalised `Merge` that avoids arbitrarily creating a tuple. With `liftA2` we can nicely introduce it along the lines of "it's like `map`, but where we can have 2 parameters". Or maybe that obscures the essence of the contribution an applicative provides over a functor?
 
+Comparing `liftA2` and `apply` because `merge` introduces a tuple, which I find arbitrary and inelegant.
+
+```F#
+val liftA2 : ('a -> 'b -> 'c) -> f 'a -> f 'b -> f 'c
+```
+```F#
+val apply : f ('a -> 'b) -> f 'a -> f 'b
+```
+
+Imagine a simple but presumably represenative example CE:
+```F#
+option {
+    let! a = aExpr
+    and! b = bExpr
+    and! c = cExpr
+    return a + b + c // We're explicitly returning here (i.e. calling `pure`, so this neatly maps into the `apply` desugaring - liftA2 presumes the function is unwrapped, so we'd be passing in (<|) to apply the lambda doing the summation anyway)
+}
+```
+
+```F#
+builder.Apply(
+    builder.Apply(
+        builder.Apply(
+            builder.Return(fun a b c -> a + b + c),
+            aExpr), 
+        bExpr), 
+    cExpr)
+```
+
+I assert `Apply` is the best way because the desugaring is most natural. The only unintuitive thing, perhaps, is that the first binding goes into the inner most `Apply` and we work outwards from there, which is the reverse of how you read the top-to-bottom CE.
+
 ### Answers from @dsyme
 
 Why was joinads rejected? It made various things significantly more complicated, e.g. pattern matching.
@@ -312,3 +343,11 @@ Why was joinads rejected? It made various things significantly more complicated,
 Smart CE builder optimisations, such as swapping out simple `Apply` usages for `Map` where possible, etc, won't be accepted because it'll make the "simple" desugaring not so simple.
 
 `Map` & `Merge` vs. `Pure` & `Apply` vs. `Pure` & `LiftA2`: The choice is largely arbitrary, pick whichever.
+
+### Decision Record
+
+* Nothing to worry about from the rejection of the joinads proposal - this change does not introduce the level of complexity that caused the issues in that case.
+
+* I will use `apply` because I am most familiar with this encoding and I think it desugars very clearly.
+
+* I will avoid `map` altogether - there is a separate suggestion and RFC for that and given @dsyme's points about not wanting more magic in the desugaring (e.g. using `apply` to implement `map` if `map` is not given explicitly, etc), these two changes should be orthogonal (although my work here is related in the sense that the skills needed to do one are very much like the skills needed to do the other).
