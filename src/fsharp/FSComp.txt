@@ -1440,3 +1440,4 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3235,chkNoSpanLikeVariable,"The Span or IsByRefLike variable '%s' cannot be used at this point. This is to ensure the address of the local value does not escape its scope."
 3236,chkNoSpanLikeValueFromExpression,"A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope."
 3237,tastCantTakeAddressOfExpression,"Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address."
+3242,tcTypeDoesNotInheritAttribute,"This type does not inherit Attribute, it will not work correctly with other .NET languages."

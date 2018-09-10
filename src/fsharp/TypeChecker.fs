@@ -10747,6 +10747,7 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
         | Exception _ when canFail -> [ ], true
         | res -> 
         let item = ForceRaise res
+        if not (ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap mAttr ty cenv.g.tcref_System_Attribute) then warning(Error(FSComp.SR.tcTypeDoesNotInheritAttribute(), mAttr))
         let attrib = 
             match item with 
             | Item.CtorGroup(methodName, minfos) ->
