@@ -3004,10 +3004,10 @@ recover:
 /* EXPERIMENT */
 
 binders:
-  | BINDER headBindingPattern EQUALS typedSeqExprBlock IN morebinders opt_OBLOCKSEP typedSeqExprBlock %prec expr_let /* TODO the 'IN' in this position sort of implies that the variable is in scope in any subsequence AND! RHSs - which is not true! */
+  | BINDER headBindingPattern EQUALS typedSeqExprBlock morebinders opt_OBLOCKSEP typedSeqExprBlock %prec expr_let /* TODO the 'IN' in this position sort of implies that the variable is in scope in any subsequence AND! RHSs - which is not true! */
      { let spBind = SequencePointAtBinding(rhs2 parseState 1 5)
-       let m = unionRanges (rhs parseState 1) $8.Range
-       SynExpr.LetOrUseAndBang(spBind,$6,$8,m) }
+       let m = unionRanges (rhs parseState 1) $7.Range
+       SynExpr.LetOrUseAndBang(spBind,$5,$7,m) }
 
   | OBINDER headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator morebinders opt_OBLOCKSEP typedSeqExprBlock %prec expr_let
      { $5 (if $1 = "use" then "use!" else "let!") (rhs parseState 1)  // report unterminated error
@@ -3024,7 +3024,6 @@ binders:
 
 
 morebinders:
-  /* TODO Handle verbose and! */
 
   | AND_BANG headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator morebinders %prec expr_let /* TODO Check precedence */
      { $5 (if $1 then "anduse!" else "and!") (rhs parseState 1)  // report unterminated error
