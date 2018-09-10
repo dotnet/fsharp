@@ -291,3 +291,7 @@ Assuming we used the full suite of optimising desugarings (i.e. using `Map` in p
 |-------------------------------|-------------|--------------|
 |`let! pat1 = exp1 and! pat2 = exp2 in let! pat3 = exp1 in return pat1 + pat2 + pat3`| `builder.Apply(builder.Apply(builder.Apply(fun pat1 pat2 pat3 -> pat1 + pat2 + pat3), exp1), exp2), exp3)` | Use `Apply` rather than `Bind` despite final binding not being part of preceding `and!` chain.
 | `let! x = y in return x + 1` | `builder.Map((fun x -> x + 1), y)` | Use `Map` rather than `Bind` or `Apply` despite `let!`
+
+### `liftA2` vs. `apply` vs. merge`
+
+There's already been plenty of chat about the `apply` vs. `merge` way of doing things, but some people also claim `liftA2` is easier to write - maybe we should consider that (although probably under a different name).
