@@ -292,9 +292,16 @@ Assuming we used the full suite of optimising desugarings (i.e. using `Map` in p
 |`let! pat1 = exp1 and! pat2 = exp2 in let! pat3 = exp1 in return pat1 + pat2 + pat3`| `builder.Apply(builder.Apply(builder.Apply(fun pat1 pat2 pat3 -> pat1 + pat2 + pat3), exp1), exp2), exp3)` | Use `Apply` rather than `Bind` despite final binding not being part of preceding `and!` chain.
 | `let! x = y in return x + 1` | `builder.Map((fun x -> x + 1), y)` | Use `Map` rather than `Bind` or `Apply` despite `let!`
 
-### `liftA2` vs. `apply` vs. merge`
+### `liftA2` vs. `apply` vs. `merge`
 
-There's already been plenty of chat about the `apply` vs. `merge` way of doing things, but some people also claim `liftA2` is easier to write - maybe we should consider that (although probably under a different name).
+There's already been plenty of chat about the `apply` vs. `merge` way of doing things, but some people also claim `liftA2` is easier to write (`apply` often prompts the question "why would I end up with a function in my functor" and then people get hung up on that).
+
+> From Hackage:  
+> `liftA2 :: (a -> b -> c) -> f a -> f b -> f c`  
+>  
+> Lift a binary function to actions.  
+>  
+> Some functors support an implementation of `liftA2` that is more efficient than the default one. In particular, if fmap is an expensive operation, it is likely better to use `liftA2` than to fmap over the structure and then use `apply`. We can also look at `liftA2` are a generalised `Merge` that avoids arbitrarily creating a tuple. With `liftA2` we can nicely introduce it along the lines of "it's like `map`, but where we can have 2 parameters". Or maybe that obscures the essence of the contribution an applicative provides over a functor?
 
 ### Answers from @dsyme
 
@@ -304,4 +311,4 @@ Why was joinads rejected? It made various things significantly more complicated,
 
 Smart CE builder optimisations, such as swapping out simple `Apply` usages for `Map` where possible, etc, won't be accepted because it'll make the "simple" desugaring not so simple.
 
-`Map` & `Merge` vs. `Pure` and `Apply` vs. `Pure` & `LiftA2`: The choice is largely arbitrary, pick whichever.
+`Map` & `Merge` vs. `Pure` & `Apply` vs. `Pure` & `LiftA2`: The choice is largely arbitrary, pick whichever.
