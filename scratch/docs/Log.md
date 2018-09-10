@@ -55,7 +55,7 @@ Standard place for tests (see `match!` PR) seems to be: https://github.com/Micro
 * Try to understand the `match!` commit by reading/debugging
 * Trying to change the `let!` syntax, e.g. to `foo!` and see it work
 
-## 2018-09-04
+## 2018-09-05
 Still waiting on a response on #langdesign.
 
 Good news! The [RFC process](https://fsharp.github.io/2016/09/26/fsharp-rfc-process.html) isn't very heavyweight.
@@ -132,7 +132,7 @@ and
 
 This is kind of what we want, but its type safety is actually a bit annoying - now `and!`s are a different expression type, and the normal functions, e.g. to test whether something is a control-flow expression, doesn't directly apply to it. I feel like this will need revisiting - will we want a `let!` followed by a list of `and!`s (, i.e. the string "and!" could be like an expression list separator - see `listPatternElements` in `pars.fsy`, started with a "let!" and terminated with a "return". If the list is non-empty => its an applicative expression)?
 
-## 2018-09-05
+## 2018-09-06
 
 I am trying to work off `type ... and ...` and `let ... and ...` to work out how to make this fit `let!`. Looks like there some logic in `lexfilter.fs` for mapping from light to verbose syntax that I'll want to understand well.
 
@@ -191,32 +191,71 @@ Whereas if you throw the error in type checking, then you can choose the error m
 
 It's probably worth giving some thought to what should be allowed to come after a `let! ... and! ...` chain. Only allowing `return` might be one simple way to get started?
 
-## 2018-09-06
+## 2018-09-07
 
 [Useful description](https://fsprojects.github.io/FSharpPlus/computation-expressions.html) of the various kinds of `monad`, as F# sees things.
 
 The first thing I want to have work it the `option` applicative, which I think is a strict (no delaying required), monad-plus (plus in this case means take the first `Some` value) CE.
 
-Questions to #general:
+### Question to #general:
+
 > tomd [2:43 PM]  
 When writing a computation expression builder, is the choice in which of `Yield` and `Return` to implement purely down to whether you want the CE to make the `yield` or `return` keyword available? I can't really imagine a world where they're have different implementations (since they'd imply different monad instances, right?)  
 >  
 > The context of this question is working out how `pure` would work for `let! ... and! ...` computation expressions (I think `apply` is entirely new, so no prior art to decipher in that case).
+>
+> tomasp [11:10 PM]  
+@tomd I think one reason was that `let! a = x and b = y` maps pretty directly to `Merge`, so the translation is simpler
+and it also works nicely if you have something that is also a monad, because then you can translate this:  
+
+```F#
+m {
+  let! a = x
+  and b = y
+  let! c = z
+  return a + b + c }
+```
+
+> into this:  
+
+```F#
+m.Bind(m.Merge(x, y), fun (a, b) -> 
+  m.Bind(z, fun c -> 
+    m.Return(a + b + c) ) )
+```
+> For reference, if you do not have `Bind` and have just an applicative, you will not be able to do the second `let! c = z`. You can only write, say:
+
+```F#
+m {
+  let! a = x
+  and b = y
+  return a + b }
+```
+
+> which can be translated using just `Map`:
+
+```F#
+m.Map(m.Merge(x, y), fun (a, b) -> a + b)
+```
+
+### Choosing `return` vs. `yield`
 
 Assuming the difference is in keyword, as person writing a CE, I guess I'd use `return` for plain old applicatives and `yield` for [alternative applicatives](https://hackage.haskell.org/package/base-4.6.0.1/docs/Control-Applicative.html#t:Alternative), and so on that basis, I think my change should use, say, support `return` initially and `yield` later (when the CE builder writer has defined `Combine`, which is really the alternation operator).
 Alternative applicative support via `let! ... and! ...` and `yield` keywords would make writing things with alternatives, e.g. an argument parser, both efficient (no rebuilding the compuation on every application) and convenient (syntax is lightweight and readable).
 
 Note from @Nick: `Delay` is useful even in non-side-effectful CE builders as a way to "hide" evaluating a CE behind a thunk.
 
+### Desugaring
+
 Proposal for desugaring, a la [the existing CE docs](https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions):
 
 | Method  | Typical Signature(s)        | Description |
 |---------|-----------------------------|-------------|
-| `Apply` | M<'T -> 'U> * M<T> -> M<'U> | Called for `let! ... and! ...` and computation expressions. Allows certain operations that do not require the full power of bind to be performed potentially more efficiently, or where they do not even have a sensible bind operation (but to have an apply) to be performed at all.
+| `Apply` | `M<'T -> 'U> * M<'T> -> M<'U>` | Called for `let! ... and! ...` and computation expressions. Allows certain operations that do not require the full power of bind to be performed potentially more efficiently, or where they do not even have a sensible bind operation (but to have an apply) to be performed at all.
 
 | Expression                    | Translation | And using operators... |
 |-------------------------------|-------------|------------------------|
-| `let! pattern1 = expr1 in and! pattern2 = expr2 in and! ... in cexpr` | `builder.apply(builder.apply(builder.apply(cexpr, expr1), expr2), ...)` | `cexpr <*> expr1 <*> expr2 <*> ... <*> exprN`
+| `let! pattern1 = expr1 and! pattern2 = expr2 and! ... in cexpr` | `builder.apply(builder.apply(builder.apply(cexpr, expr1), expr2), ...)` | `cexpr <*> expr1 <*> expr2 <*> ... <*> exprN`
 
 Given the above, I think it would _not_ require extra work to allow all of the other usual CE keywords to work alongside `let! ... and! ...`, since the desugaring only requires the context of what `and!`s correspond to what `let!`s and otherwise doesn't interact, which (right now) is easily done in the parser/AST.
 
