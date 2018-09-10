@@ -295,3 +295,13 @@ Assuming we used the full suite of optimising desugarings (i.e. using `Map` in p
 ### `liftA2` vs. `apply` vs. merge`
 
 There's already been plenty of chat about the `apply` vs. `merge` way of doing things, but some people also claim `liftA2` is easier to write - maybe we should consider that (although probably under a different name).
+
+### Answers from @dsyme
+
+Why was joinads rejected? It made various things significantly more complicated, e.g. pattern matching.
+
+`Map` can be added as an efficient desugaring of `let! x = y in return x + 1`, but `Map` will need an attribute on it to indicate the backwards incompatible optimisation is allowed by this builder.
+
+Smart CE builder optimisations, such as swapping out simple `Apply` usages for `Map` where possible, etc, won't be accepted because it'll make the "simple" desugaring not so simple.
+
+`Map` & `Merge` vs. `Pure` and `Apply` vs. `Pure` & `LiftA2`: The choice is largely arbitrary, pick whichever.
