@@ -8,9 +8,10 @@ phases:
       release_default:
         _command: ./mono/cibuild.sh
         _args: release
-      release_fcs:
-        _command: ./fcs/build.sh
-        _args: Build
+      # disabled until it can be properly fixed
+      #release_fcs:
+      #  _command: ./fcs/build.sh
+      #  _args: Build
   steps:
     - script: $(_command) $(_args)
     - task: PublishBuildArtifacts@1

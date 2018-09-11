@@ -4369,6 +4369,9 @@
   <data name="tcCannotPartiallyApplyExtensionMethodForByref" xml:space="preserve">
     <value>Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</value>
   </data>
+  <data name="tcTypeDoesNotInheritAttribute" xml:space="preserve">
+    <value>This type does not inherit Attribute, it will not work correctly with other .NET languages.</value>
+  </data>
   <data name="chkInvalidFunctionParameterType" xml:space="preserve">
     <value>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</value>
   </data>
