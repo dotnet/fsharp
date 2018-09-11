@@ -3011,14 +3011,14 @@ binders:
        let m = unionRanges (rhs parseState 1) $8.Range
        SynExpr.LetOrUseAndBang(spBind,($1 = "use"),true,$2,$4,m,$6,$8) }
 
-  | OBINDER headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator morebinders opt_OBLOCKSEP typedSeqExprBlock %prec expr_let
+  | OBINDER headBindingPattern EQUALS typedSeqExprBlock morebinders hardwhiteDefnBindingsTerminator opt_OBLOCKSEP typedSeqExprBlock %prec expr_let
      { $5 (if $1 = "use" then "use!" else "let!") (rhs parseState 1)  // report unterminated error
        printfn "In OBINDER case" // TODO Remove
        let spBind = SequencePointAtBinding(unionRanges (rhs parseState 1) $4.Range)
        let m = unionRanges (rhs parseState 1) $8.Range
-       SynExpr.LetOrUseAndBang(spBind,($1 = "use"),true,$2,$4,m,$6,$8) }
+       SynExpr.LetOrUseAndBang(spBind,($1 = "use"),true,$2,$4,m,$5,$8) }
 
-  | OBINDER headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator morebinders opt_OBLOCKSEP error %prec expr_let
+  | OBINDER headBindingPattern EQUALS typedSeqExprBlock morebinders hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let
      { // error recovery that allows intellisense when writing incomplete computation expressions
        printfn "In OBINDER error case" // TODO Remove
        let spBind = SequencePointAtBinding(unionRanges (rhs parseState 1) $4.Range)
