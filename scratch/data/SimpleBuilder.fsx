@@ -9,15 +9,15 @@ type OptionalBuilder =
         | None -> None
     
     // TODO Make this actually get called when `let! ... and! ...` syntax is used (and automagically if RHSs allow it?)
-    member __.Apply(f : ('a -> 'b) option, x : 'a option) : 'b option =
-        match f, x with
-        | Some f, Some x -> f x
+    member __.Apply(fOpt : ('a -> 'b) option, xOpt : 'a option) : 'b option =
+        match fOpt, xOpt with
+        | Some f, Some x -> Some <| f x
         | _ -> None
 
     // TODO Not needed, but for maximum efficiency, we want to use this if it is defined
-    member __.Map(f : 'a -> 'b, x : 'a option) : 'b option =
-        match x with
-        | Some x -> f x
+    member __.Map(f : 'a -> 'b, xOpt : 'a option) : 'b option =
+        match xOpt with
+        | Some x -> Some <| f x
         | None -> None
 
     member __.Return(x) =
