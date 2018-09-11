@@ -375,3 +375,12 @@ Smart CE builder optimisations, such as swapping out simple `Apply` usages for `
 * I will use `apply` because I am most familiar with this encoding and I think it desugars very clearly.
 
 * I will avoid `map` altogether - there is a separate suggestion and RFC for that and given @dsyme's points about not wanting more magic in the desugaring (e.g. using `apply` to implement `map` if `map` is not given explicitly, etc), these two changes should be orthogonal (although my work here is related in the sense that the skills needed to do one are very much like the skills needed to do the other).
+
+## 2018-09-11
+
+Beyond making `let! ... and! ...` appear to work, I'll need to:
+* Come up with a comprehensive set of tests
+* Preempt some common errors and make sure the messages are and least somewhat helpful
+* Think about how to update the CE docs on MSDN and whatever hover-over tips VS gives, etc
+* Explore the debugging, step-through experience
+* Explore the "find definition" experience
