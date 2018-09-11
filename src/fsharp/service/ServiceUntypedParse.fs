@@ -874,13 +874,12 @@ module UntypedParseImpl =
             | (SynExpr.Match(_, e, synMatchClauseList, _, _) | SynExpr.MatchBang(_, e, synMatchClauseList, _, _)) -> 
                 walkExprWithKind parentKind e |> Option.orElse (List.tryPick walkClause synMatchClauseList)
             | SynExpr.LetOrUseAndBang(_, _, _, _, e1, _, es, e2) ->
-                seq {
+                [
                     yield e1
                     for (_,_,_,_,eAndBang,_) in es do
                         yield eAndBang
                     yield e2
-                }
-                |> List.ofSeq
+                ]
                 |> List.tryPick (walkExprWithKind parentKind) 
             | SynExpr.DoBang(e, _) -> walkExprWithKind parentKind e
             | SynExpr.TraitCall (ts, sign, e, _) ->
