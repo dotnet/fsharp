@@ -386,3 +386,5 @@ Beyond making `let! ... and! ...` appear to work, I'll need to:
 * Explore the "find definition" experience
 * Chase down "The result of this equality expression is discarded..."
 * Make sure both light and verbose syntax look sensible
+
+Still trying to make the syntax parse properly. I suspect this is to do with the different syntaxes: https://fsharpforfunandprofit.com/posts/fsharp-syntax/
