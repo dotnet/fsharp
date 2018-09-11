@@ -763,7 +763,9 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref:ILMethodRef) =
             res
        
         match List.tryFind select methInfos with
-        | None          -> failwith "convMethodRef: could not bind to method"
+        | None          -> 
+            let methNames = methInfos |> List.map (fun m -> m.Name) |> List.distinct
+            failwithf "convMethodRef: could not bind to method '%A' of type '%s'" (System.String.Join(", ", methNames)) parentT.AssemblyQualifiedName
         | Some methInfo -> methInfo (* return MethodInfo for (generic) type's (generic) method *)
           
 let queryableTypeGetMethod cenv emEnv parentT (mref:ILMethodRef) =

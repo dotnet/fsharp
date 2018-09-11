@@ -3,8 +3,6 @@
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
 open Microsoft.FSharp.Compiler.Ast
-open System.Collections.Generic
-open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 
 module public Structure =
@@ -42,6 +40,7 @@ module public Structure =
         | For
         | While
         | Match
+        | MatchBang
         | MatchLambda
         | MatchClause
         | Lambda

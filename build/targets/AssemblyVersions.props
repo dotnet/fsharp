@@ -65,4 +65,7 @@
   <Target Name="GetVsixPackageVersion" Outputs="$(VsixPackageVersion)">
   </Target>
 
+  <Target Name="GetVSGeneralVersion" Outputs="$(VSGeneralVersion)">
+  </Target>
+
 </Project>

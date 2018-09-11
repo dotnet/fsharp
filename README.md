@@ -18,9 +18,9 @@ For historical reasons this repository is called "visualfsharp" and currently al
 
 | Branch | Status |
 |:------:|:------:|
-|master|[![Build Status](https://dotnet.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=master)](https://dotnet.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
-|dev15.9|[![Build Status](https://dotnet.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=dev15.9)](https://dotnet.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
-|dev16.0|[![Build Status](https://dotnet.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=dev16.0)](https://dotnet.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
+|master|[![Build Status](https://dnceng.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=master)](https://dnceng.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
+|dev15.9|[![Build Status](https://dnceng.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=dev15.9)](https://dnceng.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
+|dev16.0|[![Build Status](https://dnceng.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=dev16.0)](https://dnceng.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
 
 ## Help improve the Quality of the Tools by Using the Nightly Releases of Visual F# Tools
 To setup Visual Studio to use the latest nightly releases of the Visual F# Tools:

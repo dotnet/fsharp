@@ -869,7 +869,8 @@ module UntypedParseImpl =
             | SynExpr.JoinIn(e1, _, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.YieldOrReturn(_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.YieldOrReturnFrom(_, e, _) -> walkExprWithKind parentKind e
-            | (SynExpr.Match(_, e, synMatchClauseList, _, _) | SynExpr.MatchBang(_, e, synMatchClauseList, _, _)) -> 
+            | SynExpr.Match(_, e, synMatchClauseList, _, _)
+            | SynExpr.MatchBang(_, e, synMatchClauseList, _, _) -> 
                 walkExprWithKind parentKind e |> Option.orElse (List.tryPick walkClause synMatchClauseList)
             | SynExpr.LetOrUseBang(_, _, _, _, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.DoBang(e, _) -> walkExprWithKind parentKind e
