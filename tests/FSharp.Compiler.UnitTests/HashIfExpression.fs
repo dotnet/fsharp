@@ -68,7 +68,7 @@ type HashIfExpression()     =
         CompileThreadStatic.ErrorLogger <- errorLogger
 
         let parser (s : string) =
-            let lexbuf          = LexBuffer<char>.FromChars (s.ToCharArray ())
+            let lexbuf          = LexBuffer<uint16>.FromChars (s)
             lexbuf.StartPos     <- startPos
             lexbuf.EndPos       <- startPos
             let tokenStream     = PPLexer.tokenstream args

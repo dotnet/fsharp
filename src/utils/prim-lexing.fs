@@ -118,6 +118,7 @@ namespace Internal.Utilities.Text.Lexing
            and  set b =  endPos <- b
 
         member lexbuf.Lexeme         = Array.sub buffer bufferScanStart lexemeLength
+        member lexbuf.LexemeChar(n)  = buffer.[n+bufferScanStart]
         
         member lexbuf.BufferLocalStore = (context :> IDictionary<_,_>)
         member lexbuf.LexemeLength        with get() : int = lexemeLength    and set v = lexemeLength <- v
@@ -127,7 +128,9 @@ namespace Internal.Utilities.Text.Lexing
         member lexbuf.BufferScanStart     with get() : int = bufferScanStart     and set v = bufferScanStart <- v
         member lexbuf.BufferAcceptAction  with get() = bufferAcceptAction  and set v = bufferAcceptAction <- v
         member lexbuf.RefillBuffer () = filler lexbuf
-        static member LexemeString (lexbuf: LexBuffer<uint16>) = System.String(lexbuf.Lexeme |> Array.map char)
+        static member LexemeString (lexbuf: LexBuffer<uint16>) =
+            let chars = Array.init lexbuf.LexemeLength (lexbuf.LexemeChar >> char)
+            System.String(chars)
 
         member lexbuf.IsPastEndOfStream 
            with get() = eof
@@ -166,9 +169,11 @@ namespace Internal.Utilities.Text.Lexing
             LexBuffer<'Char>.FromArrayNoCopy buffer
 
         // Important: This method takes ownership of the array
-        static member FromChars (arr:char[]) = LexBuffer.FromArrayNoCopy (arr |> Array.map uint16)
+        static member FromChars (s: string) =
+            let arr = Array.init s.Length (fun i -> uint16 s.[i])
+            LexBuffer.FromArrayNoCopy arr
 
-    module internal GenericImplFragments = 
+    module GenericImplFragments = 
         let startInterpret(lexBuffer:LexBuffer<uint16>)= 
             lexBuffer.BufferScanStart <- lexBuffer.BufferScanStart + lexBuffer.LexemeLength;
             lexBuffer.BufferMaxScanLength <- lexBuffer.BufferMaxScanLength - lexBuffer.LexemeLength;

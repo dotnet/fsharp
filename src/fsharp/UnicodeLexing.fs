@@ -15,7 +15,7 @@ open Internal.Utilities.Text.Lexing
 type Lexbuf =  LexBuffer<uint16>
 
 let StringAsLexbuf (s:string) : Lexbuf =
-    LexBuffer<_>.FromChars (s.ToCharArray())
+    LexBuffer<_>.FromChars (s)
   
 let FunctionAsLexbuf (bufferFiller: uint16[] * int * int -> int) : Lexbuf =
     LexBuffer<_>.FromFunction bufferFiller 
@@ -65,5 +65,5 @@ let UnicodeFileAsLexbuf (filename,codePage : int option, retryLocked:bool) :  Le
                else 
                    reraise()
     let source = getSource 0
-    let lexbuf = LexBuffer<_>.FromChars(source.ToCharArray())  
+    let lexbuf = LexBuffer<_>.FromChars (source)
     lexbuf

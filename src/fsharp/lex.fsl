@@ -152,7 +152,7 @@ let shouldStartFile args lexbuf (m:range) err tok =
     else tok
     
 let evalIfDefExpression startPos args (lookup:string->bool) (lexed:string) =
-    let lexbuf          = LexBuffer<uint16>.FromChars (lexed.ToCharArray())
+    let lexbuf          = LexBuffer<uint16>.FromChars (lexed)
     lexbuf.StartPos     <- startPos
     lexbuf.EndPos       <- startPos
     let tokenStream     = Microsoft.FSharp.Compiler.PPLexer.tokenstream args
