@@ -385,3 +385,4 @@ Beyond making `let! ... and! ...` appear to work, I'll need to:
 * Explore the debugging, step-through experience
 * Explore the "find definition" experience
 * Chase down "The result of this equality expression is discarded..."
+* Make sure both light and verbose syntax look sensible
