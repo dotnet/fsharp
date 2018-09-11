@@ -414,3 +414,65 @@ Editor index lines and columns from 1. Compiler debug output indexs from 0. Cons
 
 For posterity, I am currently invoking the compiler as so:
 `fsc.exe --parseonly --debug+ --debug-parse SimpleBuilder.fsx`
+
+Once theory I have about what I was doing wrong was having `and!` mess with the offisde rule. Maybe it should work just like `and` does? That seems sensible intutively modulo that `and!`s exist "inside" the `let!` that precedes it. EDIT: Either way, my logic fails, so I guess the error is somewhere else in the lexer or the subsequent filtering. Is there a way to just print the tokens post-filtering?
+
+`--tokenize` seems to be working okay. From what I can see, an `OBLOCKEND` is inserted before the `and!`. Is that correct?
+
+```
+offside token at column 8 indicates end of CtxtSeqBlock started at (34:12)!
+<-- popping Context(seqblock(subsequent,(34:12))), stack = [let(true,(33:8)); seqblock(subsequent,(33:8)); paren; vanilla((32:4));
+ seqblock(subsequent,(32:4)); let(true,(31:0)); seqblock(subsequent,(2:0))]
+end of CtxtSeqBlock, insert OBLOCKEND
+inserting OBLOCKEND
+```
+
+Looks like we get as far as reading the identifier after the `and!` too:
+```
+AND!: entering CtxtLetDecl(blockLet=true), awaiting EQUALS to go to CtxtSeqBlock ((35:8))
+--> pushing, stack = [let(true,(35:8)); seqblock(subsequent,(33:8)); paren; vanilla((32:4));
+ seqblock(subsequent,(32:4)); let(true,(31:0)); seqblock(subsequent,(2:0))]
+tokenize - got OAND_BANG @ C:\Users\Tom\Documents\FSharpContribs\visualfsharp\scratch\data\SimpleBuilder.fsx(36,8)-(36,12)
+tokenize - getting one token from scratch\data\SimpleBuilder.fsx
+popNextTokenTup: no delayed tokens, running lexer...
+popNextTokenTup: no delayed tokens, running lexer...
+popNextTokenTup: delayed token, tokenStartPos = (35:15)
+tokenize - got IDENT @ C:\Users\Tom\Documents\FSharpContribs\visualfsharp\scratch\data\SimpleBuilder.fsx(36,13)-(36,14)
+tokenize - getting one token from scratch\data\SimpleBuilder.fsx
+popNextTokenTup: delayed token, tokenStartPos = (35:15)
+CtxtLetDecl: EQUALS, pushing CtxtSeqBlock
+popNextTokenTup: no delayed tokens, running lexer...
+--> insert OBLOCKBEGIN
+--> pushing, stack = [seqblock(first,(36:12)); let(true,(35:8)); seqblock(subsequent,(33:8)); paren;
+ vanilla((32:4)); seqblock(subsequent,(32:4)); let(true,(31:0));
+ seqblock(subsequent,(2:0))]
+ ```
+
+ Then the rest, which seems to agree with what I see:
+ ```
+ pushing CtxtVanilla at tokenStartPos = (37:8)
+tokenize - got YIELD @ C:\Users\Tom\Documents\FSharpContribs\visualfsharp\scratch\data\SimpleBuilder.fsx(38,8)-(38,14)
+tokenize - getting one token from scratch\data\SimpleBuilder.fsx
+popNextTokenTup: no delayed tokens, running lexer...
+popNextTokenTup: no delayed tokens, running lexer...
+popNextTokenTup: delayed token, tokenStartPos = (37:23)
+tokenize - got IDENT @ C:\Users\Tom\Documents\FSharpContribs\visualfsharp\scratch\data\SimpleBuilder.fsx(38,15)-(38,22)
+tokenize - getting one token from scratch\data\SimpleBuilder.fsx
+popNextTokenTup: delayed token, tokenStartPos = (37:23)
+tokenize - got STRING @ C:\Users\Tom\Documents\FSharpContribs\visualfsharp\scratch\data\SimpleBuilder.fsx(38,23)-(38,39)
+tokenize - getting one token from scratch\data\SimpleBuilder.fsx
+popNextTokenTup: no delayed tokens, running lexer...
+popNextTokenTup: no delayed tokens, running lexer...
+popNextTokenTup: delayed token, tokenStartPos = (37:42)
+tokenize - got IDENT @ C:\Users\Tom\Documents\FSharpContribs\visualfsharp\scratch\data\SimpleBuilder.fsx(38,40)-(38,41)
+tokenize - getting one token from scratch\data\SimpleBuilder.fsx
+popNextTokenTup: delayed token, tokenStartPos = (37:42)
+popNextTokenTup: no delayed tokens, running lexer...
+popNextTokenTup: delayed token, tokenStartPos = (38:4)
+tokenize - got IDENT @ C:\Users\Tom\Documents\FSharpContribs\visualfsharp\scratch\data\SimpleBuilder.fsx(38,42)-(38,43)
+tokenize - getting one token from scratch\data\SimpleBuilder.fsx
+popNextTokenTup: delayed token, tokenStartPos = (38:4)
+IN/ELSE/ELIF/DONE/RPAREN/RBRACE/END at (38:4) terminates context at position (37:8)
+```
+
+So is the offside stuff adding/missing something weird that I've not noticed, or is the parsing logic not doing what I expect?
