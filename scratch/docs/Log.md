@@ -403,3 +403,5 @@ Okay, I think this:
 is about runs of let bindings preserving the light syntax. `SeqBlock` is the name for a series of let-bindings in a row?
 
 By the looks of it, the corollery is that I probably do want to support light and verbose syntax, and then I can largely copy the above lex filter stuff for `and!`.
+
+[The spec](https://fsharp.org/specs/language-spec/4.0/FSharpSpec-4.0-latest.pdf) covers offside contexts (section 15.1.6, page 282).
