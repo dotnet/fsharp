@@ -996,6 +996,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
               | Parser.TOKEN_OLET(_)  -> getErrorString("Parser.TOKEN.OLET")
               | Parser.TOKEN_OBINDER 
               | Parser.TOKEN_BINDER -> getErrorString("Parser.TOKEN.BINDER")
+              | Parser.TOKEN_AND_BANG -> getErrorString("Parser.TOKEN.AND.BANG")
               | Parser.TOKEN_ODO -> getErrorString("Parser.TOKEN.ODO")
               | Parser.TOKEN_OWITH -> getErrorString("Parser.TOKEN.OWITH")
               | Parser.TOKEN_OFUNCTION -> getErrorString("Parser.TOKEN.OFUNCTION")
