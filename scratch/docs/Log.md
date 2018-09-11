@@ -388,3 +388,18 @@ Beyond making `let! ... and! ...` appear to work, I'll need to:
 * Make sure both light and verbose syntax look sensible
 
 Still trying to make the syntax parse properly. I suspect this is to do with the different syntaxes: https://fsharpforfunandprofit.com/posts/fsharp-syntax/
+
+From the debugging: `LET: entering CtxtLetDecl(blockLet=%b), awaiting EQUALS to go to CtxtSeqBlock (%a)\n` when filtering `BINDER`. How does thhis need to change to accomodate `and!`? Need to explore `CtxtLetDecl` to get started.
+
+Okay, I think this:
+```F#
+    //  let!  ... ~~~> CtxtLetDecl 
+    | BINDER b, (ctxt :: _) -> 
+        let blockLet = match ctxt with CtxtSeqBlock _ -> true | _ -> false
+        if debug then dprintf "LET: entering CtxtLetDecl(blockLet=%b), awaiting EQUALS to go to CtxtSeqBlock (%a)\n" blockLet outputPos tokenStartPos
+        pushCtxt tokenTup (CtxtLetDecl(blockLet,tokenStartPos))
+        returnToken tokenLexbufState (if blockLet then OBINDER b else token)
+```
+is about runs of let bindings preserving the light syntax. `SeqBlock` is the name for a series of let-bindings in a row?
+
+By the looks of it, the corollery is that I probably do want to support light and verbose syntax, and then I can largely copy the above lex filter stuff for `and!`.
