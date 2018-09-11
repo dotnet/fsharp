@@ -4366,11 +4366,14 @@ type internal SR private() =
     /// Cannot partially apply the extension method '%s' because the first parameter is a byref type.
     /// (Originally from ..\FSComp.txt:1446)
     static member tcCannotPartiallyApplyExtensionMethodForByref(a0 : System.String) = (3241, GetStringFunc("tcCannotPartiallyApplyExtensionMethodForByref",",,,%s,,,") a0)
-    /// The parameter '%s' has an invalid type '%s'. This is not permitted by the rules of Common IL.
+    /// This type does not inherit Attribute, it will not work correctly with other .NET languages.
     /// (Originally from ..\FSComp.txt:1447)
+    static member tcTypeDoesNotInheritAttribute() = (3242, GetStringFunc("tcTypeDoesNotInheritAttribute",",,,") )
+    /// The parameter '%s' has an invalid type '%s'. This is not permitted by the rules of Common IL.
+    /// (Originally from ..\FSComp.txt:1448)
     static member chkInvalidFunctionParameterType(a0 : System.String, a1 : System.String) = (3300, GetStringFunc("chkInvalidFunctionParameterType",",,,%s,,,%s,,,") a0 a1)
     /// The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL.
-    /// (Originally from ..\FSComp.txt:1448)
+    /// (Originally from ..\FSComp.txt:1449)
     static member chkInvalidFunctionReturnType(a0 : System.String) = (3301, GetStringFunc("chkInvalidFunctionReturnType",",,,%s,,,") a0)
 
     /// Call this method once to validate that all known resources are valid; throws if not
@@ -5792,6 +5795,7 @@ type internal SR private() =
         ignore(GetString("tcByrefsMayNotHaveTypeExtensions"))
         ignore(GetString("tcCannotCallExtensionMethodInrefToByref"))
         ignore(GetString("tcCannotPartiallyApplyExtensionMethodForByref"))
+        ignore(GetString("tcTypeDoesNotInheritAttribute"))
         ignore(GetString("chkInvalidFunctionParameterType"))
         ignore(GetString("chkInvalidFunctionReturnType"))
         ()

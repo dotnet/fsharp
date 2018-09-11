@@ -7092,6 +7092,11 @@
         <target state="new">Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTypeDoesNotInheritAttribute">
+        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
+        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
