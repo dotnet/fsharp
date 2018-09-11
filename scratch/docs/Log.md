@@ -384,3 +384,4 @@ Beyond making `let! ... and! ...` appear to work, I'll need to:
 * Think about how to update the CE docs on MSDN and whatever hover-over tips VS gives, etc
 * Explore the debugging, step-through experience
 * Explore the "find definition" experience
+* Chase down "The result of this equality expression is discarded..."

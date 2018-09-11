@@ -9,13 +9,13 @@ type OptionalBuilder =
         | None -> None
     
     // TODO Make this actually get called when `let! ... and! ...` syntax is used (and automagically if RHSs allow it?)
-    member __.Apply(x : 'a option, f : ('a -> 'b) option) : 'b option =
+    member __.Apply(f : ('a -> 'b) option, x : 'a option) : 'b option =
         match f, x with
         | Some f, Some x -> f x
         | _ -> None
 
     // TODO Not needed, but for maximum efficiency, we want to use this if it is defined
-    member __.Map(x : 'a option, f : 'a -> 'b) : 'b option =
+    member __.Map(f : 'a -> 'b, x : 'a option) : 'b option =
         match x with
         | Some x -> f x
         | None -> None
@@ -25,15 +25,15 @@ type OptionalBuilder =
     
 let opt = OptionalBuilder()
 
-let x = Some 1
-let y = Some "A"
-let z : float option = None
+let xOpt = Some 1
+let yOpt = Some "A"
+let zOpt = None
 
 let foo =
     opt {
-        let! x' = x
-        let! y' = y
-        let! z' = z
+        let! x = xOpt
+        and! y = yOpt
+        and! z = zOpt
         return sprintf "x = %d, y = %s, z = %f" x y z
     }
 
