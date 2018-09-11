@@ -1719,6 +1719,9 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
             pushCtxt tokenTup (CtxtLetDecl(blockLet,tokenStartPos))
             returnToken tokenLexbufState (if blockLet then OBINDER b else token)
 
+        | AND_BANG isUse, (ctxt :: _) -> 
+            failwithf "TODO - Don't know how to handle 'and!' in lextfilter yet. isUse = %b, ctxt = %A+" isUse ctxt
+
         |  (VAL | STATIC | ABSTRACT | MEMBER | OVERRIDE | DEFAULT), ctxtStack when thereIsACtxtMemberBodyOnTheStackAndWeShouldPopStackForUpcomingMember ctxtStack -> 
             if debug then dprintf "STATIC/MEMBER/OVERRIDE/DEFAULT: already inside CtxtMemberBody, popping all that context before starting next member...\n"
             // save this token, we'll consume it again later...
