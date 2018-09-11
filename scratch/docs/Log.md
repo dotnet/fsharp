@@ -405,3 +405,12 @@ is about runs of let bindings preserving the light syntax. `SeqBlock` is the nam
 By the looks of it, the corollery is that I probably do want to support light and verbose syntax, and then I can largely copy the above lex filter stuff for `and!`.
 
 [The spec](https://fsharp.org/specs/language-spec/4.0/FSharpSpec-4.0-latest.pdf) covers offside contexts (section 15.1.6, page 282).
+
+> The `SeqBlock` context is the primary context of the analysis. It indicates a sequence of items that must be column-aligned. Where necessary for parsing, the compiler automatically inserts a delimiter that replaces the regular `in` and `;` tokens between the syntax elements.
+
+Does `isLetContinuator` need `AND_BANG` and `OAND_BANG` adding to it? I think no, else we keep the offside position from the first `let!`?
+
+Editor index lines and columns from 1. Compiler debug output indexs from 0. Consider putting in an issue for this bjorn and chethusk seem to be in favour.
+
+For posterity, I am currently invoking the compiler as so:
+`fsc.exe --parseonly --debug+ --debug-parse SimpleBuilder.fsx`
