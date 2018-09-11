@@ -16,7 +16,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiConstants 
 
 
-let lexeme (lexbuf : LexBuffer<char>) = new System.String(lexbuf.Lexeme)
+let lexeme (lexbuf : LexBuffer<uint16>) = LexBuffer<uint16>.LexemeString lexbuf
 
 let unexpectedChar _lexbuf =
   raise Parsing.RecoverableParseError ;;
