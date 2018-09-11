@@ -697,7 +697,7 @@ and
     /// F# syntax: let! pat = expr anduse! ... and! ... and! pat = expr in expr
     /// F# syntax: use! pat = expr and! ... anduse! ... and! pat = expr in expr
     /// Computation expressions only
-    | LetOrUseAndBang of bindSeqPoint:SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range:range * (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list * SynExpr // TODO Why is the range not the last arg anymore? Consider swapping that back?
+    | LetOrUseAndBang of bindSeqPoint:SequencePointInfoForBinding * bool * bool * SynPat * rhs:SynExpr * range:range * andBangs:(SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list * body:SynExpr // TODO Why is the range not the last arg anymore? Consider swapping that back?
 
     /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
     | MatchBang of  matchSeqPoint:SequencePointInfoForBinding * expr:SynExpr * clauses:SynMatchClause list * isExnMatch:bool * range:range (* bool indicates if this is an exception match in a computation expression which throws unmatched exceptions *)
@@ -2429,6 +2429,6 @@ let rec synExprContainsError inpExpr =
 
           | SynExpr.MatchBang (_,e,cl,_,_) ->
               walkExpr e || walkMatchClauses cl
-          | SynExpr.LetOrUseBang  (_,_,_,_,e1,e2,_) ->
-              walkExpr e1 || walkExpr e2
+          | SynExpr.LetOrUseAndBang  (rhs=e1;body=e2;andBangs=es) ->
+              walkExpr e1 || walkExprs [ for (_,_,_,_,e,_) in es do yield e ] || walkExpr e2
     walkExpr inpExpr
