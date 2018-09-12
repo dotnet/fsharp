@@ -30,7 +30,7 @@ module BraceCompletionSessionProviderHelpers =
     let tryGetCaretPosition session =
         session |> tryGetCaretPoint session.SubjectBuffer
 
-    let tryInsertAdditionalBracePair (session: IBraceCompletionSession) openingChar closingChar =
+    let isBetweenChars (session: IBraceCompletionSession) openingChar closingChar =
         let sourceCode = session.TextView.TextSnapshot
         let position = session.TextView.Caret.Position.BufferPosition.Position
         let start = position - 2
@@ -416,8 +416,8 @@ type VerticalBarCompletionSession() =
         (* This is for [| |] and {| |} , since the implementation deals with chars only. 
            We have to test if there is a { or [ before the cursor position and insert the closing '|'. *)
         member __.CheckOpeningPoint(session, _cancellationToken) = 
-            tryInsertAdditionalBracePair session CurlyBrackets.OpenCharacter CurlyBrackets.CloseCharacter ||
-            tryInsertAdditionalBracePair session SquareBrackets.OpenCharacter SquareBrackets.CloseCharacter
+            isBetweenChars session CurlyBrackets.OpenCharacter CurlyBrackets.CloseCharacter ||
+            isBetweenChars session SquareBrackets.OpenCharacter SquareBrackets.CloseCharacter
 
 type AngleBracketCompletionSession() =
     
@@ -435,7 +435,7 @@ type AngleBracketCompletionSession() =
         (* This is for attributes [< >] , since the implementation deals with chars only. 
            We have to test if there is a [ before the cursor position and insert the closing '>'. *)
         member __.CheckOpeningPoint(session, _cancellationToken) = 
-            tryInsertAdditionalBracePair session SquareBrackets.OpenCharacter SquareBrackets.CloseCharacter          
+            isBetweenChars session SquareBrackets.OpenCharacter SquareBrackets.CloseCharacter          
 
 (* For multi-line comments, test if it is between "()" *)
 type AsteriskCompletionSession() =
@@ -454,35 +454,44 @@ type AsteriskCompletionSession() =
         (* This is for attributes [< >] , since the implementation deals with chars only. 
            We have to test if there is a [ before the cursor position and insert the closing '>'. *)
         member __.CheckOpeningPoint(session, _cancellationToken) = 
-            tryInsertAdditionalBracePair session Parenthesis.OpenCharacter Parenthesis.CloseCharacter          
+            isBetweenChars session Parenthesis.OpenCharacter Parenthesis.CloseCharacter          
 
 [<ExportLanguageService(typeof<IEditorBraceCompletionSessionFactory>, FSharpConstants.FSharpLanguageName)>]
 type EditorBraceCompletionSessionFactory() =
 
+    let isInUserDefinedCode (document: Document) (text: SourceText) (position: int) (cancellationToken: CancellationToken) =
+        let colorizationData = Tokenizer.getClassifiedSpans(document.Id, text, TextSpan(position - 1, 1), Some (document.FilePath), [ ], cancellationToken)
+        colorizationData.Count = 0 
+        || colorizationData.Exists(fun classifiedSpan -> 
+            classifiedSpan.TextSpan.IntersectsWith position &&
+            (
+                match classifiedSpan.ClassificationType with
+                | ClassificationTypeNames.Comment
+                | ClassificationTypeNames.StringLiteral
+                | ClassificationTypeNames.ExcludedCode
+                | ClassificationTypeNames.PreprocessorKeyword
+                | ClassificationTypeNames.PreprocessorText -> false
+                | _ -> true
+            ))    
+
     member __.IsSupportedOpeningBrace openingBrace =
         match openingBrace with
-        | Parenthesis.OpenCharacter | CurlyBrackets.OpenCharacter | SquareBrackets.OpenCharacter
-        | DoubleQuote.OpenCharacter | VerticalBar.OpenCharacter | AngleBrackets.OpenCharacter 
+        | Parenthesis.OpenCharacter
+        | CurlyBrackets.OpenCharacter
+        | SquareBrackets.OpenCharacter
+        | DoubleQuote.OpenCharacter
+        | VerticalBar.OpenCharacter
+        | AngleBrackets.OpenCharacter 
         | Asterisk.OpenCharacter -> true
         | _ -> false
 
     member __.CheckCodeContext(document: Document, position: int, _openingBrace, cancellationToken) =
-        // We need to know if we are inside a F# comment. If we are, then don't do automatic completion.
         let sourceCodeTask = document.GetTextAsync(cancellationToken)
         sourceCodeTask.Wait(cancellationToken)
-        let sourceCode = sourceCodeTask.Result
+        let text = sourceCodeTask.Result
         
         position = 0 
-        || let colorizationData = Tokenizer.getClassifiedSpans(document.Id, sourceCode, TextSpan(position - 1, 1), Some (document.FilePath), [ ], cancellationToken)
-           in colorizationData.Count = 0 
-              || colorizationData.Exists(fun classifiedSpan -> 
-                    classifiedSpan.TextSpan.IntersectsWith position &&
-                    (
-                        match classifiedSpan.ClassificationType with
-                        | ClassificationTypeNames.Comment
-                        | ClassificationTypeNames.StringLiteral -> false
-                        | _ -> true // anything else is a valid classification type
-                    ))                
+        || isInUserDefinedCode document text position cancellationToken             
 
     member __.CreateEditorSession(_document, _openingPosition, openingBrace, _cancellationToken) =
         match openingBrace with
@@ -524,9 +533,9 @@ type BraceCompletionSessionProvider
         member __.TryCreateSession(textView, openingPoint, openingBrace, closingBrace, session) =
             session <-
                 maybe {
-                    let! document =       openingPoint.Snapshot.GetOpenDocumentInCurrentContextWithChanges() |> Option.ofObj
+                    let! document = openingPoint.Snapshot.GetOpenDocumentInCurrentContextWithChanges() |> Option.ofObj
                     let! sessionFactory = document.TryGetLanguageService<IEditorBraceCompletionSessionFactory>()
-                    let! session =        sessionFactory.TryCreateSession(document, openingPoint.Position, openingBrace, CancellationToken.None) |> Option.ofObj
+                    let! session = sessionFactory.TryCreateSession(document, openingPoint.Position, openingBrace, CancellationToken.None) |> Option.ofObj
 
                     let undoHistory = undoManager.GetTextBufferUndoManager(textView.TextBuffer).TextBufferUndoHistory
                     return BraceCompletionSession(
