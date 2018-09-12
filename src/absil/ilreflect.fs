@@ -763,7 +763,9 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref:ILMethodRef) =
             res
        
         match List.tryFind select methInfos with
-        | None          -> failwith "convMethodRef: could not bind to method"
+        | None          -> 
+            let methNames = methInfos |> List.map (fun m -> m.Name) |> List.distinct
+            failwithf "convMethodRef: could not bind to method '%A' of type '%s'" (System.String.Join(", ", methNames)) parentT.AssemblyQualifiedName
         | Some methInfo -> methInfo (* return MethodInfo for (generic) type's (generic) method *)
           
 let queryableTypeGetMethod cenv emEnv parentT (mref:ILMethodRef) =
@@ -1296,7 +1298,7 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
         ignore src
         ()
 #else
-        if cenv.generatePdb && not (src.Document.File.EndsWith("stdin", StringComparison.Ordinal)) then
+        if cenv.generatePdb && not (src.Document.File.EndsWithOrdinal("stdin")) then
             let guid x = match x with None -> Guid.Empty | Some g -> Guid(g:byte[]) in
             let symDoc = modB.DefineDocumentAndLog(src.Document.File, guid src.Document.Language, guid src.Document.Vendor, guid src.Document.DocumentType)
             ilG.MarkSequencePointAndLog(symDoc, src.Line, src.Column, src.EndLine, src.EndColumn)

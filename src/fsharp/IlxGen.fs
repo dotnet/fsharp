@@ -797,7 +797,7 @@ let GetMethodSpecForMemberVal amap g (memberInfo:ValMemberInfo) (vref:ValRef) =
     let parentTypars = parentTcref.TyparsNoRange
     let numParentTypars = parentTypars.Length
     if tps.Length < numParentTypars then error(InternalError("CodeGen check: type checking did not ensure that this method is sufficiently generic", m))
-    let ctps,mtps = List.chop numParentTypars tps
+    let ctps,mtps = List.splitAt numParentTypars tps
     let isCompiledAsInstance = ValRefIsCompiledAsInstanceMember g vref
 
     let ilActualRetTy = 
@@ -817,8 +817,8 @@ let GetMethodSpecForMemberVal amap g (memberInfo:ValMemberInfo) (vref:ValRef) =
 
         let thisTy = if isByrefTy g thisTy then destByrefTy g thisTy else thisTy
         let thisArgTys = argsOfAppTy g thisTy
-        if ctps.Length <> thisArgTys.Length then
-           warning(InternalError(sprintf "CodeGen check: type checking did not quantify the correct number of type variables for this method, #parentTypars = %d, #ctps = %d, #mtps = %d, #thisArgTys = %d" numParentTypars ctps.Length mtps.Length thisArgTys.Length,m))
+        if numParentTypars <> thisArgTys.Length then
+           warning(InternalError(sprintf "CodeGen check: type checking did not quantify the correct number of type variables for this method, #parentTypars = %d, #mtps = %d, #thisArgTys = %d" numParentTypars mtps.Length thisArgTys.Length,m))
         else 
            List.iter2
               (fun gtp ty2 -> 
@@ -2615,7 +2615,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
       | Method (topValInfo,vref,mspec,_,_,_,_) ->
           let nowArgs,laterArgs = 
               let _,curriedArgInfos,_,_ = GetTopValTypeInFSharpForm cenv.g topValInfo vref.Type m
-              List.chop curriedArgInfos.Length args
+              List.splitAt curriedArgInfos.Length args
 
           let actualRetTy = applyTys cenv.g vref.Type (tyargs,nowArgs)
           let _,curriedArgInfos,returnTy,_ = GetTopValTypeInCompiledForm cenv.g topValInfo vref.Type m
@@ -2637,7 +2637,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
 
           let (ilEnclArgTys,ilMethArgTys) = 
               if ilTyArgs.Length  < numEnclILTypeArgs then error(InternalError("length mismatch",m))
-              List.chop numEnclILTypeArgs ilTyArgs
+              List.splitAt numEnclILTypeArgs ilTyArgs
 
           let boxity = mspec.DeclaringType.Boxity
           let mspec = mkILMethSpec (mspec.MethodRef, boxity,ilEnclArgTys,ilMethArgTys)
@@ -5286,9 +5286,9 @@ and GenMethodForBinding
 
         let mdef = 
             if // operator names
-               mdef.Name.StartsWith("op_",System.StringComparison.Ordinal) || 
+               mdef.Name.StartsWithOrdinal("op_") || 
                // active pattern names
-               mdef.Name.StartsWith("|",System.StringComparison.Ordinal) ||
+               mdef.Name.StartsWithOrdinal("|") ||
                // event add/remove method
                v.val_flags.IsGeneratedEventVal then
                 mdef.WithSpecialName

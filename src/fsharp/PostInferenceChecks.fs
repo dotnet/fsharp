@@ -286,7 +286,7 @@ let BindVal cenv env (v:Val) =
        cenv.reportErrors && 
        not v.HasBeenReferenced && 
        not v.IsCompiledAsTopLevel && 
-       not (v.DisplayName.StartsWith("_", System.StringComparison.Ordinal)) && 
+       not (v.DisplayName.StartsWithOrdinal("_")) && 
        not v.IsCompilerGenerated then 
 
         match v.BaseOrThisInfo with 
@@ -496,19 +496,32 @@ type PermitByRefExpr =
     /// Context allows for byref typed expr, but the byref must be returnable
     | YesReturnable
 
+    /// Context allows for byref typed expr, but the byref must be returnable and a non-local
+    | YesReturnableNonLocal
+
     /// General (address-of expr and byref values not allowed) 
     | No            
 
     member context.Disallow = 
         match context with 
         | PermitByRefExpr.Yes 
-        | PermitByRefExpr.YesReturnable -> false 
+        | PermitByRefExpr.YesReturnable 
+        | PermitByRefExpr.YesReturnableNonLocal -> false 
         | _ -> true
 
     member context.PermitOnlyReturnable = 
         match context with 
-        | PermitByRefExpr.YesReturnable -> true
+        | PermitByRefExpr.YesReturnable 
+        | PermitByRefExpr.YesReturnableNonLocal -> true
         | _ -> false
+
+    member context.PermitOnlyReturnableNonLocal =
+        match context with
+        | PermitByRefExpr.YesReturnableNonLocal -> true
+        | _ -> false
+
+let inline IsLimitEscapingScope env (context: PermitByRefExpr) limit =
+    (limit.scope >= env.returnScope || (limit.IsLocal && context.PermitOnlyReturnableNonLocal))
 
 let mkArgsPermit n = 
     if n=1 then PermitByRefExpr.Yes
@@ -678,7 +691,7 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: Perm
         //     &y
         let isReturnExprBuiltUsingStackReferringByRefLike = 
             context.PermitOnlyReturnable &&
-            ((HasLimitFlag LimitFlags.ByRef limit && limit.scope >= env.returnScope) ||
+            ((HasLimitFlag LimitFlags.ByRef limit && IsLimitEscapingScope env context limit) ||
              HasLimitFlag LimitFlags.StackReferringSpanLike limit)
 
         if isReturnExprBuiltUsingStackReferringByRefLike then
@@ -760,7 +773,7 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (context: PermitByRefExpr) 
          HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limitArgs)
 
     if cenv.reportErrors then
-        if context.PermitOnlyReturnable && ((isReturnLimitedByRef && limitArgs.scope >= env.returnScope) || isReturnLimitedSpanLike) then
+        if context.PermitOnlyReturnable && ((isReturnLimitedByRef && IsLimitEscapingScope env context limitArgs) || isReturnLimitedSpanLike) then
             if isReturnLimitedSpanLike then
                 errorR(Error(FSComp.SR.chkNoSpanLikeValueFromExpression(), m))
             else
@@ -829,24 +842,6 @@ and CheckCallWithReceiver cenv env m returnTy args contexts context =
             else
                 limitArgs
         CheckCallLimitArgs cenv env m returnTy limitArgs context
-
-/// Check call arguments, including the return argument. Permits returnable byref.
-and CheckCallPermitReturnableByRef cenv env m returnTy args =
-    let limitArgs = CheckExprsPermitByRefLike cenv env args
-    CheckCallLimitArgs cenv env m returnTy limitArgs PermitByRefExpr.YesReturnable
-
-/// Check call arguments, including the return argument. The receiver argument is handled differently. Permits returnable byref.
-and CheckCallWithReceiverPermitReturnableByRef cenv env m returnTy args =
-    CheckCallWithReceiver cenv env m returnTy args (List.init args.Length (fun _ -> PermitByRefExpr.Yes)) PermitByRefExpr.YesReturnable
-
-/// Check call arguments, including the return argument. Permits byref.
-and CheckCallPermitByRefLike cenv env m returnTy args =
-    let limitArgs = CheckExprsPermitByRefLike cenv env args
-    CheckCallLimitArgs cenv env m returnTy limitArgs PermitByRefExpr.Yes
-
-/// Check call arguments, including the return argument. The receiver argument is handled differently. Permits byref.
-and CheckCallWithReceiverPermitByRefLike cenv env m returnTy args =
-    CheckCallWithReceiver cenv env m returnTy args (List.init args.Length (fun _ -> PermitByRefExpr.Yes)) PermitByRefExpr.Yes
 
 /// Check an expression, given information about the position of the expression
 and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =    
@@ -1049,9 +1044,7 @@ and CheckMethod cenv env baseValOpt (TObjExprMethod(_,attribs,tps,vs,body,m)) =
     CheckAttribs cenv env attribs
     CheckNoReraise cenv None body
     CheckEscapes cenv true m (match baseValOpt with Some x -> x:: vs | None -> vs) body |> ignore
-    let limit = CheckExprPermitReturnableByRef cenv env body
-    if HasLimitFlag LimitFlags.StackReferringSpanLike limit then
-        errorR(Error(FSComp.SR.chkNoReturnOfLimitedSpan(), body.Range))
+    CheckExpr cenv { env with returnScope = env.returnScope + 1 } body PermitByRefExpr.YesReturnableNonLocal |> ignore
 
 and CheckInterfaceImpls cenv env baseValOpt l = 
     l |> List.iter (CheckInterfaceImpl cenv env baseValOpt)
@@ -1101,17 +1094,20 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
             not args.IsEmpty
 
         let returnTy = tyOfExpr g expr
+
+        let argContexts = List.init args.Length (fun _ -> PermitByRefExpr.Yes)
+
         match tys with
         | [ty] when context.PermitOnlyReturnable && isByrefLikeTy g m ty -> 
             if hasReceiver then
-                CheckCallWithReceiverPermitReturnableByRef cenv env m returnTy args
+                CheckCallWithReceiver cenv env m returnTy args argContexts context
             else
-                CheckCallPermitReturnableByRef cenv env m returnTy args
+                CheckCall cenv env m returnTy args argContexts context
         | _ -> 
             if hasReceiver then
-                CheckCallWithReceiverPermitByRefLike cenv env m returnTy args
+                CheckCallWithReceiver cenv env m returnTy args argContexts PermitByRefExpr.Yes
             else
-                CheckCallPermitByRefLike cenv env m returnTy args
+                CheckCall cenv env m returnTy args argContexts PermitByRefExpr.Yes
 
     | TOp.Tuple tupInfo,_,_ when not (evalTupInfoIsStruct tupInfo) ->           
         match context with 
@@ -1139,7 +1135,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
             let returningAddrOfLocal = 
                 context.PermitOnlyReturnable && 
                 HasLimitFlag LimitFlags.ByRef limit &&
-                limit.scope >= env.returnScope
+                IsLimitEscapingScope env context limit
             
             if returningAddrOfLocal then 
                 if vref.IsCompilerGenerated then
@@ -1750,14 +1746,14 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
 
                 // Default augmentation contains the nasty 'Case<UnionCase>' etc.
                 let prefix = "New"
-                if nm.StartsWith prefix then
+                if nm.StartsWithOrdinal(prefix) then
                     match tcref.GetUnionCaseByName(nm.[prefix.Length ..]) with 
                     | Some(uc) -> error(NameClash(nm,kind,v.DisplayName,v.Range, FSComp.SR.chkUnionCaseCompiledForm(),uc.DisplayName,uc.Range))
                     | None -> ()
 
                 // Default augmentation contains the nasty 'Is<UnionCase>' etc.
                 let prefix = "Is"
-                if nm.StartsWith prefix && hasDefaultAugmentation then
+                if nm.StartsWithOrdinal(prefix) && hasDefaultAugmentation then
                     match tcref.GetUnionCaseByName(nm.[prefix.Length ..]) with 
                     | Some(uc) -> error(NameClash(nm,kind,v.DisplayName,v.Range, FSComp.SR.chkUnionCaseDefaultAugmentation(),uc.DisplayName,uc.Range))
                     | None -> ()

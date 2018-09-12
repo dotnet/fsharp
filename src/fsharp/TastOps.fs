@@ -2244,7 +2244,7 @@ let PartitionValTyparsForApparentEnclosingType g (v:Val)  =
         let parentTypars = parent.TyparsNoRange
         let nparentTypars = parentTypars.Length
         if nparentTypars <= fullTypars.Length then 
-            let memberParentTypars, memberMethodTypars = List.chop nparentTypars fullTypars
+            let memberParentTypars, memberMethodTypars = List.splitAt nparentTypars fullTypars
             let memberToParentInst, tinst = mkTyparToTyparRenaming memberParentTypars parentTypars
             Some(parentTypars, memberParentTypars, memberMethodTypars, memberToParentInst, tinst)
         else None
@@ -6956,15 +6956,17 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                              | Some id -> id.idText))
                 | _ -> 
                     []
-
-            assert (curriedActualArgTys.Length >= curriedNiceNames.Length)
+             
+            let nCurriedNiceNames = curriedNiceNames.Length 
+            assert (curriedActualArgTys.Length >= nCurriedNiceNames)
 
             let argTysWithNiceNames, argTysWithoutNiceNames =
-                List.chop curriedNiceNames.Length argTys
+                List.splitAt nCurriedNiceNames argTys
 
             /// Only consume 'suppliedArgs' up to at most the number of nice arguments
-            let suppliedArgs, droppedSuppliedArgs = 
-                List.chop (min suppliedArgs.Length curriedNiceNames.Length) suppliedArgs
+            let nSuppliedArgs = min suppliedArgs.Length nCurriedNiceNames
+            let suppliedArgs, droppedSuppliedArgs =
+                List.splitAt nSuppliedArgs suppliedArgs
 
             /// The relevant range for any expressions and applications includes the arguments 
             let appm = (m, suppliedArgs) ||> List.fold (fun m e -> unionRanges m (e.Range)) 
@@ -6975,7 +6977,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
             // is a classic case. Here we generate
             //   let tmp = (effect;4) in 
             //   (fun v -> Seq.take tmp (v :> seq<_>))
-            let buildingLambdas = suppliedArgs.Length <> curriedNiceNames.Length
+            let buildingLambdas = nSuppliedArgs <> nCurriedNiceNames
 
             /// Given a tuple of argument variables that has a tuple type that satisfies the input argument types, 
             /// coerce it to a tuple that satisfies the matching coerced argument type(s).
@@ -7101,17 +7103,15 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                     argTysWithoutNiceNames
                     (resVar, resVarAsExpr, retTy)
 
-            
-            // Mark the up as Some/None
-            let suppliedArgs = List.map Some suppliedArgs @ List.ofArray (Array.create (curriedNiceNames.Length - suppliedArgs.Length) None)
-
-            assert (suppliedArgs.Length = curriedNiceNames.Length)
-
-            let exprForAllArgs = 
-
+            let exprForAllArgs =
                 if isNil argTysWithNiceNames then 
                     mkCompGenLet appm cloVar exprWithActualTy exprForOtherArgs
                 else
+                    // Mark the up as Some/None
+                    let suppliedArgs = List.map Some suppliedArgs @ List.replicate (nCurriedNiceNames - nSuppliedArgs) None
+
+                    assert (suppliedArgs.Length = nCurriedNiceNames)
+
                     let lambdaBuilders, binderBuilders, inpsAsArgs = 
                     
                         (argTysWithNiceNames, curriedNiceNames, suppliedArgs) |||> List.map3 (fun (_, inpArgTy, actualArgTys) niceNames suppliedArg -> 

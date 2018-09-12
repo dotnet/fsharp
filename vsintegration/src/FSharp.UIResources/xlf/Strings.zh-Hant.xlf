@@ -7,6 +7,31 @@
         <target state="translated">一律將 open 陳述式放在最上層</target>
         <note />
       </trans-unit>
+      <trans-unit id="CodeLens">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Replace_LineLens">
+        <source>Show annotations to the right instead of above the line</source>
+        <target state="translated">在行的右方而非上方顯示註釋</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Switch">
+        <source>Enable CodeLens (Experimental)</source>
+        <target state="translated">啟用 CodeLens (實驗性)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Prefix">
+        <source>Annotation prefix</source>
+        <target state="translated">註釋前置詞</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_UseColors">
+        <source>Use colors in annotations</source>
+        <target state="translated">在註釋中使用色彩</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Code_Fixes">
         <source>Code Fixes</source>
         <target state="translated">程式碼修正</target>
@@ -59,7 +84,7 @@
       </trans-unit>
       <trans-unit id="Project_check_cache_size">
         <source>Number of projects whose data is cached in memory</source>
-        <target state="needs-review-translation">專案檢查快取大小</target>
+        <target state="translated">資料會快取到記憶體的專案數</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -109,57 +134,52 @@
       </trans-unit>
       <trans-unit id="Time_until_stale_completion">
         <source>Time until stale results are used (in milliseconds)</source>
-        <target state="new">Time until stale results are used (in milliseconds)</target>
+        <target state="translated">使用過時結果前等待的時間 (毫秒)</target>
         <note />
       </trans-unit>
       <trans-unit id="IntelliSense_Performance">
         <source>IntelliSense Performance Options</source>
-        <target state="new">IntelliSense Performance Options</target>
+        <target state="translated">IntelliSense 效能選項</target>
         <note />
       </trans-unit>
       <trans-unit id="Project_Performance">
         <source>F# Project and Caching Performance Options</source>
-        <target state="new">F# Project and Caching Performance Options</target>
+        <target state="translated">F# 專案與快取效能選項</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Stale_IntelliSense_Results">
         <source>Enable stale data for IntelliSense features</source>
-        <target state="new">Enable stale data for IntelliSense features</target>
+        <target state="translated">為 IntelliSense 功能啟用過時資料</target>
         <note />
       </trans-unit>
       <trans-unit id="Tooltip_in_memory_cross_project_references">
         <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
-        <target state="new">In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</target>
+        <target state="translated">記憶體內跨專案參考，會在記憶體中儲存專案等級的資料，以允許 IDE 功能在各專案中皆可運作。</target>
         <note />
       </trans-unit>
       <trans-unit id="Tooltip_project_check_cache_size">
         <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="new">Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</target>
+        <target state="translated">專案資料會進行快取，供 IDE 功能使用。值較高時會使用較多的記憶體，這是因為會快取較多的專案數。調整此值應該不會影響中小型的解決方案。</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens">
-        <source>CodeLens</source>
-        <target state="new">CodeLens</target>
+      <trans-unit id="Enter_key_always">
+        <source>Always add new line on enter</source>
+        <target state="new">Always add new line on enter</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Replace_LineLens">
-        <source>Show annotations to the right instead of above the line</source>
-        <target state="new">Show annotations to the right instead of above the line</target>
+      <trans-unit id="Enter_key_never">
+        <source>Never add new line on enter</source>
+        <target state="new">Never add new line on enter</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Switch">
-        <source>Enable CodeLens (Experimental)</source>
-        <target state="new">Enable CodeLens (Experimental)</target>
+      <trans-unit id="Enter_key_only">
+        <source>Only add new line on enter after end of fully typed word</source>
+        <target state="new">Only add new line on enter after end of fully typed word</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Prefix">
-        <source>Annotation prefix</source>
-        <target state="new">Annotation prefix</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_UseColors">
-        <source>Use colors in annotations</source>
-        <target state="new">Use colors in annotations</target>
+      <trans-unit id="Enter_Key_Rule">
+        <source>Enter key behavior</source>
+        <target state="new">Enter key behavior</target>
         <note />
       </trans-unit>
     </body>

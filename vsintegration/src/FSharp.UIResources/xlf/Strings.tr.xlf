@@ -7,6 +7,31 @@
         <target state="translated">Açık deyimleri her zaman en üst düzeye yerleştir</target>
         <note />
       </trans-unit>
+      <trans-unit id="CodeLens">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Replace_LineLens">
+        <source>Show annotations to the right instead of above the line</source>
+        <target state="translated">Ek açıklamaları satırın üstü yerine sağ tarafta göster</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Switch">
+        <source>Enable CodeLens (Experimental)</source>
+        <target state="translated">CodeLens’i Etkinleştir (Deneysel)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Prefix">
+        <source>Annotation prefix</source>
+        <target state="translated">Ek açıklama ön eki</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_UseColors">
+        <source>Use colors in annotations</source>
+        <target state="translated">Ek açıklamalarda renk kullan</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Code_Fixes">
         <source>Code Fixes</source>
         <target state="translated">Kod Düzeltmeleri</target>
@@ -59,7 +84,7 @@
       </trans-unit>
       <trans-unit id="Project_check_cache_size">
         <source>Number of projects whose data is cached in memory</source>
-        <target state="needs-review-translation">Proje denetimi önbelleği boyutu</target>
+        <target state="translated">Verileri bellekte önbelleğe alınan proje sayısı</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -109,57 +134,52 @@
       </trans-unit>
       <trans-unit id="Time_until_stale_completion">
         <source>Time until stale results are used (in milliseconds)</source>
-        <target state="new">Time until stale results are used (in milliseconds)</target>
+        <target state="translated">Eski sonuçların kullanılması için geçecek süre (milisaniye cinsinden)</target>
         <note />
       </trans-unit>
       <trans-unit id="IntelliSense_Performance">
         <source>IntelliSense Performance Options</source>
-        <target state="new">IntelliSense Performance Options</target>
+        <target state="translated">IntelliSense Performans Seçenekleri</target>
         <note />
       </trans-unit>
       <trans-unit id="Project_Performance">
         <source>F# Project and Caching Performance Options</source>
-        <target state="new">F# Project and Caching Performance Options</target>
+        <target state="translated">F# Proje ve Önbelleğe Alma Performansı Seçenekleri</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Stale_IntelliSense_Results">
         <source>Enable stale data for IntelliSense features</source>
-        <target state="new">Enable stale data for IntelliSense features</target>
+        <target state="translated">IntelliSense özellikleri için eski verileri etkinleştir</target>
         <note />
       </trans-unit>
       <trans-unit id="Tooltip_in_memory_cross_project_references">
         <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
-        <target state="new">In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</target>
+        <target state="translated">Bellek içi projeler arası başvurular, IDE özelliklerinin farklı projelerde çalışmasına imkan tanımak için bellekte proje düzeyi veriler depolar.</target>
         <note />
       </trans-unit>
       <trans-unit id="Tooltip_project_check_cache_size">
         <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="new">Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</target>
+        <target state="translated">IDE özellikleri için proje verileri önbelleğe alınır. Değer yüksek olduğunda daha fazla proje önbelleğe alındığından daha fazla bellek kullanılır. Bu değerin ayarlanması küçük veya orta ölçekli çözümleri etkilememelidir.</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens">
-        <source>CodeLens</source>
-        <target state="new">CodeLens</target>
+      <trans-unit id="Enter_key_always">
+        <source>Always add new line on enter</source>
+        <target state="new">Always add new line on enter</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Replace_LineLens">
-        <source>Show annotations to the right instead of above the line</source>
-        <target state="new">Show annotations to the right instead of above the line</target>
+      <trans-unit id="Enter_key_never">
+        <source>Never add new line on enter</source>
+        <target state="new">Never add new line on enter</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Switch">
-        <source>Enable CodeLens (Experimental)</source>
-        <target state="new">Enable CodeLens (Experimental)</target>
+      <trans-unit id="Enter_key_only">
+        <source>Only add new line on enter after end of fully typed word</source>
+        <target state="new">Only add new line on enter after end of fully typed word</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Prefix">
-        <source>Annotation prefix</source>
-        <target state="new">Annotation prefix</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_UseColors">
-        <source>Use colors in annotations</source>
-        <target state="new">Use colors in annotations</target>
+      <trans-unit id="Enter_Key_Rule">
+        <source>Enter key behavior</source>
+        <target state="new">Enter key behavior</target>
         <note />
       </trans-unit>
     </body>

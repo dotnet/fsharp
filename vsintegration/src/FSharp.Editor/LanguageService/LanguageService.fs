@@ -46,7 +46,8 @@ type internal FSharpCheckerProvider
     [<ImportingConstructor>]
     (
         analyzerService: IDiagnosticAnalyzerService,
-        [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspaceImpl
+        [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspaceImpl,
+        settings: EditorOptions
     ) =
 
     let tryGetMetadataSnapshot (path, timeStamp) = 
@@ -57,10 +58,11 @@ type internal FSharpCheckerProvider
             let mmd = amd.GetModules().[0]
             let mmr = mmd.GetMetadataReader()
 
-            // "lifetime is timed to Metadata you got from the GetMetadata(…). As long as you hold it strongly, raw 
+            // "lifetime is timed to Metadata you got from the GetMetadata(...). As long as you hold it strongly, raw 
             // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
             // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
-            // You shouldn’t dispose it directly."
+            // You shouldn't dispose it directly."
+
             let objToHold = box md
 
             // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
@@ -77,7 +79,7 @@ type internal FSharpCheckerProvider
         lazy
             let checker = 
                 FSharpChecker.Create(
-                    projectCacheSize = Settings.LanguageServicePerformance.ProjectCheckCacheSize, 
+                    projectCacheSize = settings.LanguageServicePerformance.ProjectCheckCacheSize, 
                     keepAllBackgroundResolutions = false,
                     // Enabling this would mean that if devenv.exe goes above 2.3GB we do a one-off downsize of the F# Compiler Service caches
                     (* , MaxMemory = 2300 *) 
@@ -118,7 +120,8 @@ type internal FSharpProjectOptionsManager
     (
         checkerProvider: FSharpCheckerProvider,
         [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspaceImpl,
-        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider
+        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider,
+        settings: EditorOptions
     ) =
 
     // A table of information about projects, excluding single-file projects.
@@ -158,12 +161,12 @@ type internal FSharpProjectOptionsManager
                 // compiled and #r will refer to files on disk
                 let referencedProjectFileNames = [| |] 
                 let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, options)
-                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, options.ExtraProjectInfo, Some projectOptionsTable)
+                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, options.ExtraProjectInfo, Some projectOptionsTable)
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
                 return (deps, parsingOptions, projectOptions)
             else
                 let site = ProjectSitesAndFiles.ProjectSiteOfSingleFile(fileName)
-                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, extraProjectInfo, Some projectOptionsTable)
+                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, extraProjectInfo, Some projectOptionsTable)
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
                 return (deps, parsingOptions, projectOptions)
         }
@@ -173,7 +176,7 @@ type internal FSharpProjectOptionsManager
         Logger.Log LogEditorFunctionId.LanguageService_UpdateProjectInfo
         projectOptionsTable.AddOrUpdateProject(projectId, (fun isRefresh ->
             let extraProjectInfo = Some(box workspace)
-            let referencedProjects, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, Some(projectId), site.ProjectFileName, extraProjectInfo,  Some projectOptionsTable)
+            let referencedProjects, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, Some(projectId), site.ProjectFileName, extraProjectInfo,  Some projectOptionsTable)
             if invalidateConfig then checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = not isRefresh, userOpName = userOpName + ".UpdateProjectInfo")
             let referencedProjectIds = referencedProjects |> Array.choose tryGetOrCreateProjectId
             let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
@@ -306,6 +309,12 @@ type internal FSharpCheckerWorkspaceServiceFactory
                 member this.Checker = checkerProvider.Checker
                 member this.FSharpProjectOptionsManager = projectInfoManager }
 
+[<Microsoft.CodeAnalysis.Host.Mef.ExportWorkspaceServiceFactory(typeof<EditorOptions>, Microsoft.CodeAnalysis.Host.Mef.ServiceLayer.Default)>]
+type internal FSharpSettingsFactory
+    [<Composition.ImportingConstructor>] (settings: EditorOptions) =
+    interface Microsoft.CodeAnalysis.Host.Mef.IWorkspaceServiceFactory with
+        member this.CreateService(_) = upcast settings
+
 [<Guid(FSharpConstants.packageGuidString)>]
 [<ProvideOptionPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>,
                     "F# Tools", "F# Interactive",   // category/sub-category on Tools>Options...
@@ -375,8 +384,6 @@ type internal FSharpPackage() as this =
     override this.Initialize() =
         base.Initialize()
 
-        this.ComponentModel.GetService<SettingsPersistence.ISettings>() |> ignore
-
         // FSI-LINKAGE-POINT: sited init
         let commandService = this.GetService(typeof<IMenuCommandService>) :?> OleMenuCommandService // FSI-LINKAGE-POINT
         Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
@@ -407,13 +414,13 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
         else Path.GetFileNameWithoutExtension projectFileName
 
-    let singleFileProjects = ConcurrentDictionary<_, AbstractProject>()
+    let singleFileProjects = ConcurrentDictionary<_, IWorkspaceProjectContext>()
 
     let tryRemoveSingleFileProject projectId =
         match singleFileProjects.TryRemove(projectId) with
         | true, project ->
             projectInfoManager.ClearInfoForSingleFileProject(projectId)
-            project.Disconnect()
+            project.Dispose()
         | _ -> ()
 
     let invalidPathChars = set (Path.GetInvalidPathChars())
@@ -500,16 +507,18 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         
     /// Sync the Roslyn information for the project held in 'projectContext' to match the information given by 'site'.
     /// Also sync the info in ProjectInfoManager if necessary.
-    member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace, forceUpdate, userOpName) =
+    member this.SyncProject(projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace: VisualStudioWorkspaceImpl, forceUpdate, userOpName) =
         let wellFormedFilePathSetIgnoreCase (paths: seq<string>) =
             HashSet(paths |> Seq.filter isPathWellFormed |> Seq.map (fun s -> try Path.GetFullPath(s) with _ -> s), StringComparer.OrdinalIgnoreCase)
 
         let mutable updated = forceUpdate
 
+        let project = workspace.CurrentSolution.Projects |> Seq.filter (fun p -> p.Name = projectContext.DisplayName) |> Seq.exactlyOne
+
         // Sync the source files in projectContext.  Note that these source files are __not__ maintained in order in projectContext
         // as edits are made. It seems this is ok because the source file list is only used to drive roslyn per-file checking.
         let updatedFiles = site.CompilationSourceFiles |> wellFormedFilePathSetIgnoreCase
-        let originalFiles = project.GetCurrentDocuments() |> Seq.map (fun file -> file.FilePath) |> wellFormedFilePathSetIgnoreCase
+        let originalFiles = project.Documents |> Seq.map (fun file -> file.FilePath) |> wellFormedFilePathSetIgnoreCase
         
         for file in updatedFiles do
             if not(originalFiles.Contains(file)) then
@@ -522,7 +531,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                 updated <- true
 
         let updatedRefs = site.CompilationReferences |> wellFormedFilePathSetIgnoreCase
-        let originalRefs = project.GetCurrentMetadataReferences() |> Seq.map (fun ref -> ref.FilePath) |> wellFormedFilePathSetIgnoreCase
+        let originalRefs = project.MetadataReferences |> Enumerable.OfType<PortableExecutableReference> |> Seq.map (fun ref -> ref.FilePath) |> wellFormedFilePathSetIgnoreCase
 
         for ref in updatedRefs do
             if not(originalRefs.Contains(ref)) then
@@ -565,11 +574,14 @@ type internal FSharpLanguageService(package : FSharpPackage) =
             let projectFileName = site.ProjectFileName
             let projectDisplayName = projectDisplayNameOf projectFileName
 
-            let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
+            // This projectId is not guaranteed to be the same ProjectId that will actually be created once we call CreateProjectContext
+            // in Roslyn versions once https://github.com/dotnet/roslyn/pull/26931 is merged. Roslyn will still guarantee that once
+            // there is a project in the workspace with the same path, it'll return the ID of that. So this is sufficient to use
+            // in that case as long as we only use it to call GetProject.
+            let fakeProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
-            if isNull (workspace.ProjectTracker.GetProject projectId) then
+            if isNull (workspace.ProjectTracker.GetProject fakeProjectId) then
                 let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
-                let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
 
                 let hierarchy =
                     site.ProjectProvider
@@ -588,27 +600,27 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                         projectFileName,
                         projectGuid,
                         hierarchy,
-                        Option.toObj site.CompilationBinOutputPath,
-                        errorReporter)
-
-                let project = projectContext :?> AbstractProject
+                        Option.toObj site.CompilationBinOutputPath)
+                
+                // The real project ID that was actually added. See comments for fakeProjectId why this one is actually good.
+                let realProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
                 // Sync IProjectSite --> projectContext, and IProjectSite --> ProjectInfoManage
-                this.SyncProject(project, projectContext, site, workspace, forceUpdate=true, userOpName=userOpName)
+                this.SyncProject(projectContext, site, workspace, forceUpdate=true, userOpName=userOpName)
 
-                site.BuildErrorReporter <- Some (errorReporter :> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
+                site.BuildErrorReporter <- Some (projectContext :?> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
 
                 // TODO: consider forceUpdate = false here.  forceUpdate=true may be causing repeated computation?
                 site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                              AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, workspace, forceUpdate=true, userOpName="AdviseProjectSiteChanges."+userOpName)))
+                                              AdviseProjectSiteChanges(fun () -> this.SyncProject(projectContext, site, workspace, forceUpdate=true, userOpName="AdviseProjectSiteChanges."+userOpName)))
 
                 site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                              AdviseProjectSiteChanges(fun () -> 
-                                                projectInfoManager.ClearInfoForProject(project.Id)
+                                                projectInfoManager.ClearInfoForProject(realProjectId)
                                                 optionsAssociation.Remove(projectContext) |> ignore
-                                                project.Disconnect()))
+                                                projectContext.Dispose()))
 
-                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites(Some projectId, site, this.SystemServiceProvider, Some (this.Workspace :>obj), Some projectInfoManager.FSharpOptions ) do
+                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites(Some realProjectId, site, this.SystemServiceProvider, Some (this.Workspace :>obj), Some projectInfoManager.FSharpOptions ) do
                     setup referencedSite
 
         setup (siteProvider.GetProjectSite()) 
@@ -618,19 +630,21 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         let projectFileName = fileName
         let projectDisplayName = projectDisplayNameOf projectFileName
 
-        let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
-        let _referencedProjectFileNames, parsingOptions, projectOptions = projectInfoManager.ComputeSingleFileOptions (tryGetOrCreateProjectId workspace, fileName, loadTime, fileContents) |> Async.RunSynchronously
-        projectInfoManager.AddOrUpdateSingleFileProject(projectId, (loadTime, parsingOptions, projectOptions))
+        let mutable projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
         if isNull (workspace.ProjectTracker.GetProject projectId) then
             let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
-            let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
 
-            let projectContext = projectContextFactory.CreateProjectContext(FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectId.Id, hier, null, errorReporter)
+            let projectContext = projectContextFactory.CreateProjectContext(FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectId.Id, hier, null)
+            
+            projectId <- workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
+
             projectContext.AddSourceFile(fileName)
             
-            let project = projectContext :?> AbstractProject
-            singleFileProjects.[projectId] <- project
+            singleFileProjects.[projectId] <- projectContext
+
+        let _referencedProjectFileNames, parsingOptions, projectOptions = projectInfoManager.ComputeSingleFileOptions (tryGetOrCreateProjectId workspace, fileName, loadTime, fileContents) |> Async.RunSynchronously
+        projectInfoManager.AddOrUpdateSingleFileProject(projectId, (loadTime, parsingOptions, projectOptions))
 
     override this.ContentTypeName = FSharpConstants.FSharpContentTypeName
     override this.LanguageName = FSharpConstants.FSharpLanguageName
@@ -651,7 +665,8 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         let wpfTextView = this.EditorAdaptersFactoryService.GetWpfTextView(textView)
         let outliningManager = outliningManagerService.GetOutliningManager(wpfTextView)
         if not (isNull outliningManager) then
-            outliningManager.Enabled <- Settings.Advanced.IsOutliningEnabled
+            let settings = this.Workspace.Services.GetService<EditorOptions>()
+            outliningManager.Enabled <- settings.Advanced.IsOutliningEnabled
 
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->

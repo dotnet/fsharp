@@ -356,8 +356,7 @@ type AssemblyRefData =
 let AssemblyRefUniqueStampGenerator = new UniqueStampGenerator<AssemblyRefData>()
 
 let isMscorlib data =
-    if System.String.Compare(data.assemRefName, "mscorlib") = 0 then true 
-    else false
+    data.assemRefName = "mscorlib"
 
 [<Sealed>]
 type ILAssemblyRef(data)  =

@@ -3,10 +3,173 @@
 
     See License.txt in the project root for license information.
 
-Visual F<span>#</span>
-======================
+## F# 4.5
 
-All notable changes to this project will be documented in this file.
+We introduced the F# language version 4.5 with this release. This also corresponds with the new 4.5.x family of FSharp.Core (the F# core library). You can read the specs for each of these changes in the [F# RFC repository](https://github.com/fsharp/fslang-design). There are also many improvements to F# tools for Visual Studio with this release.
+
+### Releases
+
+* Visual Studio 2017 update 15.8
+* .NET Core SDK version 2.1.400 or higher
+
+### Language features
+
+* Support for `voidptr`
+* `NativePtr.ofVoidPtr` and `NativePtr.toVoidPtr` support
+* New types: `inref<'T>`, `outref<'T>` to represent read-only and write-only `byref`s
+* Support for `IsByRefLike` structs
+* Support for `IsReadOnly` structs
+* Full support for production and consumption of `byref` returns
+* Support for extension methods for `byref`/`inref`/`outref`
+* Support for `match!` in computation expressions
+* Relaxed upcast requirements for `yield` in sequence, list, and array expressions
+* Relaxed indentation requirements for list and array expressions
+* Enumeration cases emitted as public
+* Various bug fixes with `byref` programming
+
+### FSharp.Core features
+
+* Version aligned to 4.5.x for the NuGet package and 4.5.0.0 for the binary
+* Improved strack traces for `async { }` so that user code can now be seen
+* Support for `ValueOption<'T>`
+* Support for `TryGetValue` on Map
+
+### Compiler improvements
+
+Improvements to the F# compiler in addition to the previously-mentioned language features are in F# 4.5. These include:
+
+* Restored ability to inherit from `FSharpFunc`
+* Removed ~2.2% of all allocations in the F# compiler
+* F# reference normalization support for user control of transitive assembly references written to an output file
+* Respecting `WarningsNotAsErrors`
+* Error message improvement when branches of a pattern match do not return the same type
+* Respecting `#nowarn "2003"`
+* Other smaller performance improvements and many bug fixes
+
+### Tooling improvements
+
+Significant improvements in the F# tools, such as performance enhancements and some new editor features are included this release. As always, with a large number of contributions from the F# open source community. Here are the highlights:
+
+* We improved IntelliSense performance for .NET SDK-style projects of all forms, including those that use multi-targeting.
+* A community-driven effort to analyze and improve IntelliSense performance for very large files was contributed by [Vasily Kirichenko](https://github.com/vasily-kirichenko),[ Steffen Forkmann](https://github.com/forki), and [Gauthier Segay](https://github.com/smoothdeveloper). IntelliSense in very large files (10k+ lines of code) is roughly twice as fast now.
+* The warning for an outdated FSharp.Core (despite the package being installed) is no longer present in .NET SDK-style projects.
+* The description tooltip that displays XML documentation for a member after . in IntelliSense no longer times out after 10 seconds.
+* A bug where you could not set breakpoints in object constructor arguments has been fixed.
+* A bug where a renamed symbol would be duplicated when it is a generic parameter has been fixed.
+* Templates for .NET Framework (classic F# templates) now consume FSharp.Core from a NuGet package, to align with .NET SDK F# templates.
+* Automatic, transactional brace completion is now available for `()`, `[]`, `{}`, `[||]`, and `[<>]` brace pairs. We did this work in collaboration with [Gibran Rosa](https://github.com/gibranrosa).
+* You can now go to definition with **Ctrl + Click** on an F# symbol. The settings for this gesture are also respected in the **Tools > Options** window.
+* The IntelliSense performance UI has been modified to allow configuration of stale typecheck information for various IDE features. Explanations for each option are now present in tooltips for the settings.
+* Brace match highlighting now correctly highlights braces, completed in collaboration with [Vasily Kirichenko](https://github.com/vasily-kirichenko).
+* Go to definition now navigates correctly when a type is defined recursively, contributed by [Vasily Kirichenko](https://github.com/vasily-kirichenko).
+* A bug where an auto-imported namespace wasn't opened when the top of a file was empty has been fixed by [Vasily Kirichenko](https://github.com/vasily-kirichenko).
+* A bug where `printf` specifiers that contained dots were miscolored has been fixed by [Vasily Kirichenko](https://github.com/vasily-kirichenko).
+* A bug where all opens were considered unused inside of a recursive module has been fixed by [Vasily Kirichenko](https://github.com/vasily-kirichenko).
+* Autocompletion for attributes now only suggests options that are actually attributes, contributed by [Vasily Kirichenko](https://github.com/vasily-kirichenko).
+* Signature Help tooltips are now generated for Type Provider static parameters at the constructor call site, contributed by[Vasily Kirichenko](https://github.com/vasily-kirichenko).
+* A bug where value types used as units of measure were colored as reference types has been fixed by [Vasily Kirichenko](https://github.com/vasily-kirichenko).
+* A bug where semantic colorization could disappear for some files while scrolling has been fixed by  [Vasily Kirichenko](https://github.com/vasily-kirichenko).
+There is now an experimental CodeLens implementation, contributed by [Victor Peter Rouven Müller](https://github.com/realvictorprm). You can turn it on in **Options > Text Editor > F# > Code Lens**.
+* A bug where the F# compiler service would incorrectly elide the module names in XML documentation has been fixed by [Sebastian Urban](https://github.com/surban).
+* Code that uses `Dictionary` with `ContainsKey` and subsequent `Item` calls has been changed to use `TryGetValue`, by [Eugene Auduchinok](https://github.com/auduchinok).
+* [Jakob Majoka](https://github.com/majocha) also contributed in the process of consuming a different API for Tooltips.
+
+### Infrastructure, Packaging, and Open Source Improvements
+
+We made the following enhancements to infrastructure, packaging, and our open source contribution experience:
+
+* The F# compiler distributed with Visual Studio no longer installs as a singleton in the F# Compiler SDK location. It is now fully side-by-side with Visual Studio, meaning that side-by-side installations of Visual Studio wil finally have truly side-by-side F# tooling and language experiences.
+* The FSharp.Core NuGet package is now signed.
+* ETW logging has been added to the F# tools and compiler.
+* The very large `control.fs`/`control.fsi` files in FSharp.Core have been split into `async.fs`/`async.fsi`, `event.fs`/`event.fsi`, `eventmodule.fs`/`eventmodule.fsi`, `mailbox.fs`/`mailbox.fsi`, and `observable.fs`/`observable.fsi`.
+* We added .NET SDK-style versions of our project performance stress test artifacts.
+* We removed Newtonsoft.json from our codebase, and you now have one less package downloaded for OSS contributors.
+* We now use the latest versions of System.Collections.Immutable and System.Reflection.Metadata.
+
+## F# 4.1
+
+### Releases
+
+* Visual Studio 2017 updates 15.0 to 15.8 (exclusive)
+* .NET Core SDK versions 1.0 to 2.1.400 (exclusive)
+
+### Language and Core Library features
+
+* Struct tuples
+* Initial support for consuming C#-style `ref` returns
+* Struct record support with the `[<Struct>]` attribute
+* Struct Discriminated Union support with the `[<Struct>]` attribute
+* `Result<'TSuccess, 'TFailure>` type, with supporting functions in FSharp.Core
+* Support for the `fixed` keyword to pin a pointer-tyle local to the stack
+* Underscores in numeric literals
+* Caller Info Attribute Argument support
+* `namespace rec` and `module rec` to support mutually referential types and functions within the same file
+* Implicit "Module" suffix added to modules that share the same name as a type
+* Tuple equality for F# tuples and `System.Tuple`
+
+### Compiler improvements
+
+* Support for generating Portable PDBs
+* Significant improvements to error messages, particularly to aid with suggestions
+* Performance improvements
+* Interoperability improvements
+* Support for geenerating F# AssymblyInfo from properties for .NET SDK projects
+* `--debug:full` support for F# on .NET Core on Windows
+* `MakeTuple` support for struct tuples
+* Warnings are forwarded when searching for method overloads
+* Support for emitting an enum-specific warning when pattern matching over one
+* Many smaller bug fixes
+
+### FSharp.Core features
+
+* Support for `NativePtr.ByRef`
+* Support for `Async.StartImmediateAsTask`
+* Support for `Seq.transpose`/`Array.transpose`/`List.transpose`
+* `IsSerializable` support for `Option` and `Async<'T>`
+* Many smaller bug fixes
+
+### IDE features for F# tools in Visual Studio
+
+Most items here contributed by community members.
+
+* Default installation of F# wherever .NET Core is installed
+* Significant memory reductions in F# tooling
+* IntelliSense Filters and Glyphs
+* Support for Go to All
+* Find all Reference support
+* In-memory cross-project references support
+* QuickInfo supports type colorization
+* QuickInfo supports navigable links that will invoke Go to Definition
+* Inline Rename support
+* Go to Definition from F# to C# support
+* Semantic document highlighting for selected symbols
+* Support for Structured Guidelines and code outlining, which is toggleable
+* Support for `EditorBrowsable(EditorBrowsableState.Never)`
+* Code fix for making Record and Discriminated Union case lables upper-case
+* Code fix to make suggestions for an unkown identifier
+* Code fix for prefixing or replacing an unused value with an underscore
+* Code fix to add the `new` keyword to a disposable type
+* Code fix to add an `open` statement at the top for a symbol coming from an unopened namespace or module
+* Code fix to simplify a name by removing unnecessary namespace qualifiers
+* Graying out unused values in the editor
+* Colorized `fsi.exe` when ran as a standalone console application
+* Autocompletion support, including symbols from unopened namespaces
+* Colorization for mutable values to distinguish them from immutable values
+* Support for move up/down on solution folder nodes
+* Support for Blue (High Contrast) theming
+* Full support for .NET Core and .NET Standard projects, with the ability to create new ASP.NET Core projects in F#
+* Full support for ASP.NET Web SDK tooling, such as Azure publish UI, for F# projects
+* Property page auto-sizing support for different monitors
+* Smart indentation support which auto-indents based on scope and auto-deindents for bracket-like characters
+* XML documentation comment width scaling to prevent it running horizontally off the screen
+* Multiple settings pages to modify tooling settings
+* Support for Drag and Drop across folders
+* Support for nightly builds of the tools
+* Expanded debugger view for lists from 50 items to 5000 items
+* Support for Optimization APIs in the compiler service
+* Support for `IsNameGenerated` in the F# symbols API
+
+## Older F# releases
 
 ### [4.0.0] - Visual Studio 2015 Update 1 - 30 November 2015
 

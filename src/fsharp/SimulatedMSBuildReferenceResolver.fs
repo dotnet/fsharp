@@ -109,7 +109,7 @@ let internal SimulatedMSBuildResolver =
 #if !FX_RESHAPED_MSBUILD
                 // For this one we need to get the version search exactly right, without doing a load
                 try 
-                    if not found && r.StartsWith("FSharp.Core, Version=")  && Environment.OSVersion.Platform = PlatformID.Win32NT then 
+                    if not found && r.StartsWithOrdinal("FSharp.Core, Version=") && Environment.OSVersion.Platform = PlatformID.Win32NT then 
                         let n = AssemblyName(r)
                         let fscoreDir0 = 
                             let PF = 

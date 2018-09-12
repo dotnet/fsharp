@@ -13,7 +13,7 @@
     <PackageAuthors    Condition="'$(PackageAuthors)' == ''"   >Microsoft and F# Software Foundation</PackageAuthors> 
     <PackageTags       Condition="'$(PackageTags)' == ''"      >Visual F# Compiler FSharp functional programming</PackageTags> 
     <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\coreclr\bin</OutputPath>
-    <PreReleaseSuffix  Condition="'$(PreRelease)' != 'false'">-rtm-$(BuildRevision.Trim())-0</PreReleaseSuffix>
+    <PreReleaseSuffix  Condition="'$(PreRelease)' != 'false'">-rtm-$(NuGetPackageVersionSuffix)</PreReleaseSuffix>
     <PackageVersion>$(FSPackageVersion)$(PreReleaseSuffix)</PackageVersion>
   </PropertyGroup>
 

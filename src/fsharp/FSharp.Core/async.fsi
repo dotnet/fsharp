@@ -427,7 +427,6 @@ namespace Microsoft.FSharp.Control
         /// The default is used if this parameter is not provided.</param>
         /// <returns>A <c>System.Threading.Tasks.Task</c> that will be completed
         /// in the corresponding state once the computation terminates (produces the result, throws exception or gets canceled)</returns>
-        /// </returns> 
         static member StartImmediateAsTask: 
             computation:Async<'T> * ?cancellationToken:CancellationToken-> Task<'T>
 

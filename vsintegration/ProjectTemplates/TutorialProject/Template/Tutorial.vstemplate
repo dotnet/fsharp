@@ -6,7 +6,7 @@
     <Icon Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="4004" />
     <TemplateID>Microsoft.FSharp.Tutorial</TemplateID>
     <ProjectType>FSharp</ProjectType>
-    <RequiredFrameworkVersion>4.0</RequiredFrameworkVersion>
+    <RequiredFrameworkVersion>4.5</RequiredFrameworkVersion>
     <NumberOfParentCategoriesToRollUp>1</NumberOfParentCategoriesToRollUp>
     <CreateNewFolder>true</CreateNewFolder>
     <DefaultName>Tutorial</DefaultName>
@@ -23,9 +23,9 @@
     <FullClassName>NuGet.VisualStudio.TemplateWizard</FullClassName>
   </WizardExtension>
   <WizardData>
-    <packages repository="extension" repositoryId="VisualFSharp">
+    <packages repository="extension" repositoryId="VisualFSharpTemplates">
       <package id="System.ValueTuple" version="4.4.0" targetFramework="net40" />
-      <package id="FSharp.Core" version="4.5.0" targetFramework="net40" />
+      <package id="FSharp.Core" version="4.5.2" targetFramework="net40" />
      </packages>
   </WizardData>
 </VSTemplate>

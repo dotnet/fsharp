@@ -47,7 +47,8 @@ type internal FSharpCodeLensService
         projectInfoManager: FSharpProjectOptionsManager,
         classificationFormatMapService: IClassificationFormatMapService,
         typeMap: Lazy<ClassificationTypeMap>,
-        codeLens : CodeLensDisplayService
+        codeLens : CodeLensDisplayService,
+        settings: EditorOptions
     ) as self =
 
     let lineLens = codeLens
@@ -98,7 +99,7 @@ type internal FSharpCodeLensService
                 let textBlock = new TextBlock(Background = Brushes.AliceBlue, Opacity = 0.0, TextTrimming = TextTrimming.None)
                 DependencyObjectExtensions.SetDefaultTextProperties(textBlock, formatMap.Value)
 
-                let prefix = Documents.Run Settings.CodeLens.Prefix
+                let prefix = Documents.Run settings.CodeLens.Prefix
                 prefix.Foreground <- SolidColorBrush(Color.FromRgb(153uy, 153uy, 153uy))
                 textBlock.Inlines.Add prefix
 
@@ -106,7 +107,7 @@ type internal FSharpCodeLensService
 
                     let coloredProperties = layoutTagToFormatting text.Tag
                     let actualProperties =
-                        if Settings.CodeLens.UseColors
+                        if settings.CodeLens.UseColors
                         then
                             // If color is gray (R=G=B), change to correct gray color.
                             // Otherwise, use the provided color.
@@ -148,7 +149,7 @@ type internal FSharpCodeLensService
             do! Async.Sleep 800 |> liftAsync
             let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
             let! _, options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
-            let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(document, options, true, "LineLens")
+            let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(document, options, "LineLens", allowStaleResults=true)
             let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
             let textSnapshot = buffer.CurrentSnapshot
             

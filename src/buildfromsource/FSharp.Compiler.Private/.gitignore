@@ -7,3 +7,5 @@ pars.fsi
 pplex.fs
 pppars.fs
 pppars.fsi
+FSComp.resources
+FSComp.*.resources

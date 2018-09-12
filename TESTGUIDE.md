@@ -12,10 +12,7 @@ To run tests, use variations such as the following, depending on which test suit
 
 ## Prerequisites
 
-In order to run the FSharpQA suite, you will need to install [Perl](http://www.perl.org/get.html) (ActiveState Perl 5.16.3 is known to work fine).
-Perl must be included in the `%PATH%` for the below steps to work. It is also recommended that you run tests from an elevated command prompt, as there are a couple of test cases which require administrative privileges.
-
-The Perl requirement is gradually being removed.
+It is recommended that you run tests from an elevated command prompt, as there are a couple of test cases which require administrative privileges.
 
 ## Test Suites
 
@@ -47,11 +44,17 @@ See note about baseline under "Other Tips" bellow for tests checking expectation
 
 ### FSharpQA Suite
 
+The FSharpQA suite relies on [Perl](http://www.perl.org/get.html), StrawberryPerl64 package from nuget is used automatically by the test suite.
+
 These tests use the `RunAll.pl` framework to execute, however the easiest way to run them is via the `build.cmd` script, see [usage examples](https://github.com/Microsoft/visualfsharp/blob/master/build.cmd#L31).
 
 Tests are grouped in folders per area. Each folder contains a number of source code files and a single `env.lst` file. The `env.lst` file defines a series of test cases, one per line.
-Each test case runs an optional "pre command," compiles a given set of source files using given flags, optionally runs the resulting binary, then optionally runs a final "post command." 
+
+Each test case runs an optional "pre command," compiles a given set of source files using given flags, optionally runs the resulting binary, then optionally runs a final "post command".
+
 If all of these steps complete without issue, the test is considered to have passed.
+
+Read more at [tests/fsharpqa/readme.md](tests/fsharpqa/readme.md).
 
 #### Test lists
 

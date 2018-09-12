@@ -30,8 +30,8 @@
   <ItemGroup Condition="'$(BUILD_VS)'=='1'">
     <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-src-build.proj" />
     <ProjectsWithNet40 Include="vsintegration/Utils/LanguageServiceProfiling/LanguageServiceProfiling.fsproj" />
-    <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-project-templates-build.proj" />
     <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-item-templates-build.proj" />
+    <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-project-templates-build.proj" />
     <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-vsix-build.proj" />
   </ItemGroup>
 
