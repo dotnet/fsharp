@@ -482,7 +482,7 @@ namespace Microsoft.FSharp.Collections
             mkSeq (fun () -> IEnumerator.upto (Some (count-1)) initializer)
 
         [<CompiledName("Iterate")>]
-        let iter action (source : seq<'T>) =
+        let inline iter action (source : seq<'T>) =
             checkNonNull "source" source
             use e = source.GetEnumerator()
             while e.MoveNext() do
