@@ -27,13 +27,14 @@ let opt = OptionalBuilder()
 
 let xOpt = Some 1
 let yOpt = Some "A"
-let zOpt = None
+let zOpt = Some 3.0
 
 let foo =
     opt {
         let! x = xOpt
         and! y = yOpt
-        return sprintf "x = %d, y = %s" x y
+        and! z = zOpt
+        return sprintf "x = %d, y = %s, z = %f" x y z
     }
 
 (*
