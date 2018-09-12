@@ -782,11 +782,7 @@ module LeafExpressionConverter =
                     typedefof<Action<_>>, tyargs
                 else
                     let tyargs = [| vP.Type; bodyP.Type |]
-#if FX_NO_CONVERTER             
                     typedefof<Func<_, _>>, tyargs
-#else
-                    typedefof<System.Converter<_, _>>, tyargs
-#endif            
             let convType = lambdaTy.MakeGenericType tyargs
             let convDelegate = Expression.Lambda(convType, bodyP, [| vP |]) |> asExpr
             Expression.Call(typeof<FuncConvert>,"ToFSharpFunc", tyargs,[| convDelegate |]) |> asExpr

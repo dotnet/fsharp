@@ -51,6 +51,7 @@ module Asserts =
 
 module UIStuff =
     let SetupSynchronizationContext() =
+        Microsoft.VisualStudio.FSharp.ProjectSystem.UIThread.InitUnitTestingMode()
         Microsoft.VisualStudio.FSharp.LanguageService.UIThread.InitUnitTestingMode()
         Microsoft.VisualStudio.FSharp.ProjectSystem.UIThread.InitUnitTestingMode()
 

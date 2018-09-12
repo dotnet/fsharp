@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="Instructions-Line1">
         <source>To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click</source>
-        <target state="translated">F# Interactive でコードを実行するには、コードの一部を強調表示して、Alt キーを押しながら Enter キーを押すか、右マウス ボタンをクリックし</target>
+        <target state="translated">F# インタラクティブでコードを実行するには、コードの一部を強調表示して、Alt キーを押しながら Enter キーを押すか、右マウス ボタンをクリックし</target>
         <note />
       </trans-unit>
       <trans-unit id="Instructions-Line2">
         <source>and select "Execute in Interactive".  You can open the F# Interactive Window from the "View" menu.</source>
-        <target state="translated">[対話形式で実行]5D; を選択します。[表示]5D; メニューから F# Interactive ウィンドウを開くことができます。</target>
+        <target state="translated">[対話形式で実行]5D; を選択します。[表示]5D; メニューから F# インタラクティブ ウィンドウを開くことができます。</target>
         <note />
       </trans-unit>
       <trans-unit id="MoreAbout">
@@ -489,7 +489,7 @@
       </trans-unit>
       <trans-unit id="FilterShorter-Line1">
         <source>A shorter way to write 'squareOddValuesAndAddOne' is to nest each</source>
-        <target state="translated">'squareOddValuesAndAddOne' を記述するためのより簡単な方法は、</target>
+        <target state="translated">'squareOddValuesAndAddOne' を書き込むためのより簡単な方法は、</target>
         <note />
       </trans-unit>
       <trans-unit id="FilterShorter-Line2">
@@ -509,7 +509,7 @@
       </trans-unit>
       <trans-unit id="FilterWithPipes-Line1">
         <source>A preferred way to write 'squareOddValuesAndAddOne' is to use F# pipe operators.</source>
-        <target state="translated">'squareOddValuesAndAddOne' を記述するための推奨される方法は、F# パイプ演算子を使用する方法です。</target>
+        <target state="translated">'squareOddValuesAndAddOne' を書き込むための推奨される方法は、F# パイプ演算子を使用する方法です。</target>
         <note />
       </trans-unit>
       <trans-unit id="FilterWithPipes-Line2">
@@ -949,7 +949,7 @@
       </trans-unit>
       <trans-unit id="ProcessRecord-Line1">
         <source>This example shows how to write a function that processes a record value.</source>
-        <target state="translated">この例では、レコード値を処理する関数を記述する方法を示します。</target>
+        <target state="translated">この例では、レコード値を処理する関数を書き込む方法を示します。</target>
         <note />
       </trans-unit>
       <trans-unit id="ProcessRecord-Line2">
@@ -994,7 +994,7 @@
       </trans-unit>
       <trans-unit id="DiscriminatedUnions-Line2">
         <source>Data stored in DUs can be one of several distinct values.</source>
-        <target state="translated">DU に格納されるデータは、複数の個別の値のいずれかになります。</target>
+        <target state="translated">DU の格納データは、複数の個別の値のいずれかになります。</target>
         <note />
       </trans-unit>
       <trans-unit id="DiscriminatedUnions-Line3">
@@ -1099,7 +1099,7 @@
       </trans-unit>
       <trans-unit id="DuRecursiveDef-Line3">
         <source>and the other being a Node with a value and two subtrees.</source>
-        <target state="translated">もう片方は値と 2 つのサブツリーを含むノードです。</target>
+        <target state="translated">もう片方は値と 2 つのサブツリーを含む Node です。</target>
         <note />
       </trans-unit>
       <trans-unit id="SearchBinaryTree-Line1">
@@ -1259,7 +1259,7 @@
       </trans-unit>
       <trans-unit id="MatchShorthand-Line2">
         <source>which is useful when you're writing functions which make use of Partial Application.</source>
-        <target state="translated">これは、部分適用を利用する関数を記述している場合に役立ちます。</target>
+        <target state="translated">これは、部分適用を利用する関数を書き込む場合に役立ちます。</target>
         <note />
       </trans-unit>
       <trans-unit id="ParseHelpers">

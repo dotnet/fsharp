@@ -29,8 +29,8 @@
 
     <Message Text="Copying build artifacts to $(FinalOutputPath)" />
     <MakeDir Directories="$(FinalOutputPath);$(FinalIntermediateOutputPath)" />
-    <Copy SourceFiles="@(OutputFilesToCopy)" DestinationFolder="$(FinalOutputPath)" />
-    <Copy SourceFiles="@(IntermediateFilesToCopy)" DestinationFolder="$(FinalIntermediateOutputPath)" />
+    <Copy SourceFiles="@(OutputFilesToCopy)" DestinationFolder="$(FinalOutputPath)\%(RecursiveDir)" />
+    <Copy SourceFiles="@(IntermediateFilesToCopy)" DestinationFolder="$(FinalIntermediateOutputPath)\%(RecursiveDir)" />
   </Target>
 
   <Import Project="build\targets\AssemblyVersions.props" />

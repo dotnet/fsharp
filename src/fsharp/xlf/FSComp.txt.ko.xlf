@@ -83,18 +83,18 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">목록 생성자의 모든 요소는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
+        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="needs-review-translation">목록 생성자의 모든 요소는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">배열 생성자의 모든 요소는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
+        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="needs-review-translation">배열 생성자의 모든 요소는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
-        <source>The 'if' expression is missing an 'else' branch. The 'then' branch has type '{0}'. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type.</source>
-        <target state="translated">'if' 식에 'else' 분기가 누락되었습니다. 'then' 분기의 형식은 '{0}'입니다. 'if'는 문이 아니라 식이므로 동일한 형식의 값을 반환하는 'else' 분기를 추가하세요.</target>
+        <source>This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type '{0}'.</source>
+        <target state="needs-review-translation">'if' 식에 'else' 분기가 누락되었습니다. 'then' 분기의 형식은 '{0}'입니다. 'if'는 문이 아니라 식이므로 동일한 형식의 값을 반환하는 'else' 분기를 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ifExpression">
@@ -103,13 +103,13 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">if' 식의 모든 분기는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
+        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="needs-review-translation">if' 식의 모든 분기는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
-        <target state="translated">패턴 일치 식의 모든 분기는 동일한 형식의 값을 반환해야 합니다. 첫 번째 분기는 '{0}' 형식의 값을 반환했지만 이 분기는 '{1}' 형식의 값을 반환했습니다.</target>
+        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="needs-review-translation">패턴 일치 식의 모든 분기는 동일한 형식의 값을 반환해야 합니다. 첫 번째 분기는 '{0}' 형식의 값을 반환했지만 이 분기는 '{1}' 형식의 값을 반환했습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -6708,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
-        <source>Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.</source>
-        <target state="translated">비동기 워크플로에 사용되어 비동기 계산 결과에 이름을 바인딩하거나, 기타 계산 식에서 계산 형식인 결과에 이름을 바인딩하는 데 사용됩니다.</target>
+        <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
+        <target state="review-required-translation">비동기 워크플로에 사용되어 비동기 계산 결과에 이름을 바인딩하거나, 기타 계산 식에서 계산 형식인 결과에 이름을 바인딩하는 데 사용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6788,13 +6788,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
-        <source>Used to indicate a value to provide as the result of a computation expression.</source>
-        <target state="translated">계산 식의 결과로 제공하는 값을 나타내는 데 사용됩니다.</target>
+        <source>Used to provide a value for the result of the containing computation expression.</source>
+        <target state="review-required-translation">계산 식의 결과로 제공하는 값을 나타내는 데 사용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
-        <source>Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.</source>
-        <target state="translated">계산할 때, 포함하는 계산 식의 결과를 제공하는 계산 식을 나타내는 데 사용됩니다.</target>
+        <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
+        <target state="review-required-translation">계산할 때, 포함하는 계산 식의 결과를 제공하는 계산 식을 나타내는 데 사용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6838,13 +6838,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that require Dispose to be called to free resources.</source>
-        <target state="translated">무료 리소스로 호출하기 위해 Dispose가 필요한 값에 대해 let 대신 사용됩니다.</target>
+        <source>Used instead of let for values that implement IDisposable"</source>
+        <target state="needs-review-translation">무료 리소스로 호출하기 위해 Dispose가 필요한 값에 대해 let 대신 사용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
-        <source>Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.</source>
-        <target state="translated">무료 리소스로 호출하기 위해 Dispose가 필요한 값에 대해 기타 계산 식 및 비동기 워크플로에서 let! 대신 사용됩니다.</target>
+        <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
+        <target state="review-required-translation">무료 리소스로 호출하기 위해 Dispose가 필요한 값에 대해 기타 계산 식 및 비동기 워크플로에서 let! 대신 사용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">
@@ -7012,11 +7012,6 @@
         <target state="translated">지금은 '{0}' 변수의 주소 또는 관련 식을 사용할 수 없습니다. 로컬 값의 주소가 범위를 벗어나지 않도록 하기 위한 것입니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="translated">범위를 벗어날 수 있는 요소를 사용하여 구성되므로 이 함수 또는 메서드에서 Span 또는 IsByRefLike 식을 반환할 수 없습니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
         <target state="translated">'{0}' 대상이 비스택 로컬 메모리를 참조할 수 있는데, 할당되는 식은 잠재적으로 스택 로컬 메모리를 참조하도록 평가되므로 이 값을 할당할 수 없습니다. 스택에 바인딩된 메모리에 대한 포인터가 범위를 벗어나지 않도록 하기 위한 것입니다.</target>
@@ -7059,7 +7054,17 @@
       </trans-unit>
       <trans-unit id="tastCantTakeAddressOfExpression">
         <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
-        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
+        <target state="translated">식에서 반환된 값의 주소를 가져올 수 없습니다. 주소를 가져오기 전에 반환된 값을 let 바인딩 값에 할당하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoReturnOfLimitedSpan">
+        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
+        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDoesNotInheritAttribute">
+        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
+        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
         <note />
       </trans-unit>
     </body>

@@ -2909,7 +2909,8 @@ let rec ResolveTypeLongIdentPrim sink (ncenv:NameResolver) occurence first fully
                 | OpenQualified -> 
                     match LookupTypeNameInEnvHaveArity fullyQualified id.idText staticResInfo.NumStaticArgs nenv with
                     | Some tcref when IsEntityAccessible ncenv.amap m2 ad tcref -> 
-                        OneResult (ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad ResolutionInfo.Empty genOk 1 m2 tcref id2 rest2)
+                        let resInfo = ResolutionInfo.Empty.AddEntity(id.idRange, tcref)
+                        OneResult (ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad resInfo genOk 1 m2 tcref id2 rest2)
                     | _ -> 
                         NoResultsOrUsefulErrors
 

@@ -7,6 +7,31 @@
         <target state="translated">Zawsze umieszczaj otwarte instrukcje na najwyższym poziomie</target>
         <note />
       </trans-unit>
+      <trans-unit id="CodeLens">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Replace_LineLens">
+        <source>Show annotations to the right instead of above the line</source>
+        <target state="translated">Pokaż adnotacje po prawej, a nie ponad wierszem</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Switch">
+        <source>Enable CodeLens (Experimental)</source>
+        <target state="translated">Włącz funkcję CodeLens (eksperymentalna)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Prefix">
+        <source>Annotation prefix</source>
+        <target state="translated">Prefiks adnotacji</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_UseColors">
+        <source>Use colors in annotations</source>
+        <target state="translated">Stosuj kolory w adnotacjach</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Code_Fixes">
         <source>Code Fixes</source>
         <target state="translated">Poprawki kodu</target>
@@ -135,6 +160,26 @@
       <trans-unit id="Tooltip_project_check_cache_size">
         <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
         <target state="translated">Dane projektów są buforowane na potrzeby funkcji środowiska IDE. Wyższe wartości powodują używanie większej ilości pamięci, ponieważ buforowanych jest więcej projektów. Dostrajanie tej wartości nie powinno mieć wpływu na małe ani średnie rozwiązania.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_always">
+        <source>Always add new line on enter</source>
+        <target state="new">Always add new line on enter</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_never">
+        <source>Never add new line on enter</source>
+        <target state="new">Never add new line on enter</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_only">
+        <source>Only add new line on enter after end of fully typed word</source>
+        <target state="new">Only add new line on enter after end of fully typed word</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_Key_Rule">
+        <source>Enter key behavior</source>
+        <target state="new">Enter key behavior</target>
         <note />
       </trans-unit>
     </body>

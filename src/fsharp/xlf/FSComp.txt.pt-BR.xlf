@@ -83,18 +83,18 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Todos os elementos de uma expressão do construtor de lista devem ter o mesmo tipo. Essa expressão deveria ter o tipo '{0}', mas aqui tem o tipo '{1}'.</target>
+        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="needs-review-translation">Todos os elementos de uma expressão do construtor de lista devem ter o mesmo tipo. Essa expressão deveria ter o tipo '{0}', mas aqui tem o tipo '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Todos os elementos de uma expressão do construtor de matriz devem ter o mesmo tipo. Essa expressão deveria ter o tipo '{0}', mas aqui tem o tipo '{1}'.</target>
+        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="needs-review-translation">Todos os elementos de uma expressão do construtor de matriz devem ter o mesmo tipo. Essa expressão deveria ter o tipo '{0}', mas aqui tem o tipo '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
-        <source>The 'if' expression is missing an 'else' branch. The 'then' branch has type '{0}'. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type.</source>
-        <target state="translated">A expressão 'if' está sem uma ramificação 'else'. A ramificação 'then' tem tipo '{0}'. Como 'if' é uma expressão e não uma instrução, adicione uma ramificação 'else' que retorna um valor do mesmo tipo.</target>
+        <source>This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type '{0}'.</source>
+        <target state="needs-review-translation">A expressão 'if' está sem uma ramificação 'else'. A ramificação 'then' tem tipo '{0}'. Como 'if' é uma expressão e não uma instrução, adicione uma ramificação 'else' que retorna um valor do mesmo tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="ifExpression">
@@ -103,13 +103,13 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Todas as ramificações de uma expressão 'if' devem ter o mesmo tipo. Essa expressão deveria ter o tipo '{0}', mas aqui tem o tipo '{1}'.</target>
+        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="needs-review-translation">Todas as ramificações de uma expressão 'if' devem ter o mesmo tipo. Essa expressão deveria ter o tipo '{0}', mas aqui tem o tipo '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
-        <target state="translated">Todos os branches de uma expressão correspondente ao padrão precisam retornar valores do mesmo tipo. O primeiro branch retornou um valor do tipo '{0}', mas este branch retornou um valor do tipo '{1}'.</target>
+        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="needs-review-translation">Todos os branches de uma expressão correspondente ao padrão precisam retornar valores do mesmo tipo. O primeiro branch retornou um valor do tipo '{0}', mas este branch retornou um valor do tipo '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -6708,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
-        <source>Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.</source>
-        <target state="translated">Usado em fluxos de trabalho assíncronos para associar um nome ao resultado de uma computação assíncrona ou, em outras expressões de cálculo, usado para associar um nome a um resultado, que é do tipo de computação.</target>
+        <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
+        <target state="review-required-translation">Usado em fluxos de trabalho assíncronos para associar um nome ao resultado de uma computação assíncrona ou, em outras expressões de cálculo, usado para associar um nome a um resultado, que é do tipo de computação.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6788,13 +6788,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
-        <source>Used to indicate a value to provide as the result of a computation expression.</source>
-        <target state="translated">Usado para indicar o valor a ser fornecido como o resultado de uma expressão de computação.</target>
+        <source>Used to provide a value for the result of the containing computation expression.</source>
+        <target state="review-required-translation">Usado para indicar o valor a ser fornecido como o resultado de uma expressão de computação.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
-        <source>Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.</source>
-        <target state="translated">Usado para indicar uma expressão de computação que, quando avaliada, fornece o resultado da expressão de computação que a contém.</target>
+        <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
+        <target state="review-required-translation">Usado para indicar uma expressão de computação que, quando avaliada, fornece o resultado da expressão de computação que a contém.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6838,13 +6838,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Usado ao invés de let para valores que necessitam que Dispose seja chamado para liberar recursos.</target>
+        <source>Used instead of let for values that implement IDisposable"</source>
+        <target state="needs-review-translation">Usado ao invés de let para valores que necessitam que Dispose seja chamado para liberar recursos.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
-        <source>Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Usado ao invés de let! em fluxos de trabalho assíncronos e outras expressões de computação para valores que necessitam que Dispose seja chamado para liberar recursos.</target>
+        <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
+        <target state="review-required-translation">Usado ao invés de let! em fluxos de trabalho assíncronos e outras expressões de computação para valores que necessitam que Dispose seja chamado para liberar recursos.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">
@@ -7012,11 +7012,6 @@
         <target state="translated">O endereço da variável '{0}' ou de uma expressão relacionada não pode ser utilizado neste ponto. Isso tem como objetivo garantir que o endereço do valor local não escape de seu escopo.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="translated">A expressão Span ou IsByRefLike não pode ser retornada desta função ou deste método porque ela é composta utilizando elementos que podem escapar de seu escopo.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
         <target state="translated">Este valor não pode ser atribuído porque o destino '{0}' pode se referir a uma memória local não empilhada, enquanto a expressão que está sendo atribuída é avaliada para possivelmente se referir à memória local empilhada. Isso tem como objetivo ajudar a evitar que os ponteiros da memória vinculada à pilha escapem de seu escopo.</target>
@@ -7059,7 +7054,17 @@
       </trans-unit>
       <trans-unit id="tastCantTakeAddressOfExpression">
         <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
-        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
+        <target state="translated">Não é possível obter o endereço do valor retornado da expressão. Atribua o valor retornado a um valor associado a let antes de obter o endereço.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoReturnOfLimitedSpan">
+        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
+        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDoesNotInheritAttribute">
+        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
+        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
         <note />
       </trans-unit>
     </body>

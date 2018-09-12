@@ -12,6 +12,10 @@ To run tests, use variations such as the following, depending on which test suit
 
 You can also submit pull requests to http://github.com/Microsoft/visualfsharp and run the tests via continuoous integration. Most people do wholesale testing that way.
 
+## Prerequisites
+
+It is recommended that you run tests from an elevated command prompt, as there are a couple of test cases which require administrative privileges.
+
 ## Test Suites
 
 The F# tests are split as follows:
@@ -42,13 +46,19 @@ There are also negative tests checking code expected to fail compilation. See no
 
 ### FSharpQA Suite
 
-These tests are Windows-only and use the `RunAll.pl` framework to execute, however the easiest way to run them is via the `build.cmd` script, see [usage examples](https://github.com/Microsoft/visualfsharp/blob/master/build.cmd#L31).
+The FSharpQA suite relies on [Perl](http://www.perl.org/get.html), StrawberryPerl64 package from nuget is used automatically by the test suite.
 
-    .\build.cmd net40 test-net40-fsharpqa
+These tests use the `RunAll.pl` framework to execute, however the easiest way to run them is via the `build.cmd` script, see [usage examples](https://github.com/Microsoft/visualfsharp/blob/master/build.cmd#L31).
 
 Tests are grouped in folders per area. Each folder contains a number of source code files and a single `env.lst` file. The `env.lst` file defines a series of test cases, one per line.
-Each test case runs an optional "pre command," compiles a given set of source files using given flags, optionally runs the resulting binary, then optionally runs a final "post command." 
+
+Each test case runs an optional "pre command," compiles a given set of source files using given flags, optionally runs the resulting binary, then optionally runs a final "post command".
+
 If all of these steps complete without issue, the test is considered to have passed.
+
+Read more at [tests/fsharpqa/readme.md](tests/fsharpqa/readme.md).
+
+#### Test lists
 
 For the FSharpQA suite, the list of test areas and their associated "tags" is stored at
 

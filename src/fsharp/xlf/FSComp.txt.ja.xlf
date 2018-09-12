@@ -83,18 +83,18 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">リスト コンストラクター式のすべての要素は同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
+        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="needs-review-translation">リスト コンストラクター式のすべての要素は同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">配列コンストラクター式の要素はすべて同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
+        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="needs-review-translation">配列コンストラクター式の要素はすべて同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
-        <source>The 'if' expression is missing an 'else' branch. The 'then' branch has type '{0}'. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type.</source>
-        <target state="translated">'if' 式に 'else' ブランチがありません。'then' ブランチは型 '{0}' です。'if' はステートメントではなく式であるため、同じ型の値を返す 'else' ブランチを追加してください。</target>
+        <source>This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type '{0}'.</source>
+        <target state="needs-review-translation">'if' 式に 'else' ブランチがありません。'then' ブランチは型 '{0}' です。'if' はステートメントではなく式であるため、同じ型の値を返す 'else' ブランチを追加してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="ifExpression">
@@ -103,13 +103,13 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">if' 式のすべてのブランチは同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
+        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="needs-review-translation">if' 式のすべてのブランチは同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
-        <target state="translated">パターン マッチ式のすべてのブランチは、同じ型の値を返す必要があります。最初のブランチが返した値の型は '{0}' ですが、このブランチが返した値の型は '{1}' です。</target>
+        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="needs-review-translation">パターン マッチ式のすべてのブランチは、同じ型の値を返す必要があります。最初のブランチが返した値の型は '{0}' ですが、このブランチが返した値の型は '{1}' です。</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -6708,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
-        <source>Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.</source>
-        <target state="translated">非同期コンピュテーションの結果に名前をバインドする非同期ワークフローで使用します。また別のコンピュテーション式では、そのコンピュテーション型を示す名前を結果にバインドします。</target>
+        <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
+        <target state="review-required-translation">非同期コンピュテーションの結果に名前をバインドする非同期ワークフローで使用します。また別のコンピュテーション式では、そのコンピュテーション型を示す名前を結果にバインドします。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6788,13 +6788,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
-        <source>Used to indicate a value to provide as the result of a computation expression.</source>
-        <target state="translated">コンピュテーション式の結果として提供される値を示すために使用します。</target>
+        <source>Used to provide a value for the result of the containing computation expression.</source>
+        <target state="review-required-translation">コンピュテーション式の結果として提供される値を示すために使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
-        <source>Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.</source>
-        <target state="translated">コンピュテーション式を示し、評価されたときはそのコンピュテーション式の結果を示すために使用します。</target>
+        <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
+        <target state="review-required-translation">コンピュテーション式を示し、評価されたときはそのコンピュテーション式の結果を示すために使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6838,13 +6838,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Dispose を呼び出してリソースを解放する必要のある値に対して、let の代わりに使用します。</target>
+        <source>Used instead of let for values that implement IDisposable"</source>
+        <target state="needs-review-translation">Dispose を呼び出してリソースを解放する必要のある値に対して、let の代わりに使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
-        <source>Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.</source>
-        <target state="translated">非同期ワークフロー、および Dispose を呼び出してリソースを解放する必要のある値のその他のコンピュテーション式で let! の代わりに使用します。</target>
+        <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
+        <target state="review-required-translation">非同期ワークフロー、および Dispose を呼び出してリソースを解放する必要のある値のその他のコンピュテーション式で let! の代わりに使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">
@@ -7012,11 +7012,6 @@
         <target state="translated">現時点で、変数 '{0}' または関連する式のアドレスは使用できません。これは、ローカル値のアドレスがスコープを回避しないようにするためです。</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="translated">この関数またはメソッドから Span または IsByRefLike 式を返すことはできません。スコープを回避できる要素を使用してその式が作成されているためです。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
         <target state="translated">この値をターゲット '{0}' に割り当てることはできません。このターゲットは非スタック ローカルのメモリを参照できるのに対して、割り当てられる式はスタック ローカルのメモリに評価される可能性があるためです。これは、スタックにバインドされたメモリへのポインターが自身のスコープを回避することを防止するために役立ちます。</target>
@@ -7059,7 +7054,17 @@
       </trans-unit>
       <trans-unit id="tastCantTakeAddressOfExpression">
         <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
-        <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
+        <target state="translated">式から返された値のアドレスを取得できません。アドレスを取得する前に、let でバインドされた値に戻り値を割り当ててください。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoReturnOfLimitedSpan">
+        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
+        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDoesNotInheritAttribute">
+        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
+        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
         <note />
       </trans-unit>
     </body>
