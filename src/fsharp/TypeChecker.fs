@@ -8056,10 +8056,16 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             // TODO Add all lambdas then add apply calls (in reverse order), as per comments on this case above
 
             // TODO Lift out to top level?
-            let rec constructApplies (accComp : SynExpr) (varSpace) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
-                match bindings with
-                | [] -> accComp
-                | (spBind, _, isFromSource, pat, rhs, _) :: outerBindings ->
+            // TODO How do we manage the varSpace such that the orthogonality of the and!s is preserved?
+            // Reads in bindings [ andBangExprN ; ... ; andBangExpr2 ; andBangExpr1 ; letExpr ]
+            // creating a lambda for each one, and stacking up the calls to apply to hook up once
+            // all of the lambdas have been created.
+            // Note how we work from the inner expression outward, meaning be create the lambda for the last
+            // 'and!' _first_, and then create the calls to 'Apply' in the opposite order so that the calls to
+            // 'Apply' correspond to their lambda.
+            let rec constructApplies (accComp : SynExpr) (varSpace) (pendingApplyCalls : (SynExpr -> SynExpr) list) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
+                match bindings, pendingApplyCalls with // TODO Nest pattern matches to avoid allocation here?
+                | (spBind, _, isFromSource, pat, rhs, _) :: remainingBindings, _ ->
 
                     let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhs.Range
                     if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), bindRange))
@@ -8067,8 +8073,9 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                     if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env bindRange ad "Apply" builderTy)
                     then error(Error(FSComp.SR.tcRequireBuilderMethod("Apply"), bindRange))
 
-                    // TODO Assert no RHS refers to and outer LHS, else insert a helpful and!-related error for that
+                    // TODO Assert no RHS refers to and outer LHS, else insert a helpful and!-related error for that instead of just "not defined" or using a value the user might have expected to have been shadowed
                         
+                    // TODO: Intentionally only include the current binding - the whole point of applicatives is to avoid bringing the LHS of an earlier binding in the RHS of another?
                     // Add the variables to the query variable space, on demand
                     let varSpace =
                         addVarsToVarSpace varSpace (fun _mCustomOp env -> 
@@ -8078,19 +8085,24 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
                     let rhsExpr = if isFromSource then mkSourceExpr rhs else rhs
 
-                    let newAccComp = 
+                    let newAccComp = // TODO NEXT: Split lambda and apply, stacking up applies for later
                         trans true q varSpace accComp (fun holeFill -> 
                             let consumeExpr = SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, holeFill, innerRange, SequencePointAtTarget)], spBind, innerRange)
                             translatedCtxt (mkSynCall "Apply" bindRange [consumeExpr; rhsExpr])) // TODO The lambda (i.e. "consumeExpr") comes first here, but it comes second in Bind - is that okay or needless break with the precent?
 
-                    constructApplies newAccComp varSpace outerBindings
+                    constructApplies newAccComp varSpace [] remainingBindings
+                
+                | [], apply :: remainingApplies ->
+                    failwithf "Need to hook up Applies: apply = %+A, remaining = %+A" apply remainingApplies
 
-            let allBindings = 
+                | [], [] -> accComp
+
+            let bindingsBottomToTop = 
                 let letBinding =
                     (letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm)
-                List.rev (letBinding :: andBangBindings)
+                List.rev (letBinding :: andBangBindings) // [ andBangExprN ; ... ; andBangExpr2 ; andBangExpr1 ; letExpr ]
 
-            Some (constructApplies innerComp varSpace allBindings)
+            Some (constructApplies innerComp varSpace [] bindingsBottomToTop)
 
         // 'use! pat = e1 and! pat = e2 in e3' --> TODO
         //| SynExpr.LetOrUseAndBang(spBind, true, isFromSource, (SynPat.Named (SynPat.Wild _, id, false, _, _) as pat) , rhsExpr, _, andBangs, innerComp)
