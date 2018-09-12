@@ -62,8 +62,8 @@ type internal FSharpCodeLensService
 
             override __.VisitTypeAbbrev( _, range) = Some range
 
-            override __.VisitLetOrUse(binding, range) = 
-                match binding |> Seq.tryFind (fun b -> b.RangeOfHeadPat.StartLine = pos.Line) with
+            override __.VisitLetOrUse(_, _, bindings, range) = 
+                match bindings |> Seq.tryFind (fun b -> b.RangeOfHeadPat.StartLine = pos.Line) with
                 | Some entry ->
                     Some entry.RangeOfBindingAndRhs
                 | None ->
