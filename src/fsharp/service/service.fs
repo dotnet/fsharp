@@ -1328,7 +1328,8 @@ type TypeCheckInfo
             // Mutable values, ref cells, and non-inref byrefs are mutable.
             vref.IsMutable
             || Tastops.isRefCellTy g vref.Type
-            || Tastops.isByrefTy g vref.Type && not (Tastops.isInByrefTy g vref.Type)
+            || (Tastops.isByrefTy g vref.Type && not (Tastops.isInByrefTy g vref.Type))
+            || Tastops.isOutByrefTy g vref.Type
 
         let isRecdFieldMutable (rfinfo: RecdFieldInfo) =
             (rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone)
