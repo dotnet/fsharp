@@ -210,6 +210,7 @@ this file.
                 @(CompileBefore);
                 @(Compile);
                 @(CompileAfter);
+                @(CompilerToolsFscCompilerTools);
                 @(_CoreCompileResourceInputs);
                 @(ManifestNonResxWithNoCultureOnDisk);
                 $(ApplicationIcon);
@@ -278,6 +279,7 @@ this file.
               BaseAddress="$(BaseAddress)"
               ChecksumAlgorithm="$(PdbChecksumAlgorithm)"
               CodePage="$(CodePage)"
+              CompilerTools="$(FscCompilerTools)"
               DebugSymbols="$(DebugSymbols)"
               DebugType="$(DebugType)"
               DefineConstants="$(DefineConstants)"

@@ -40,8 +40,9 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 
 
 		- INPUT FILES -
---reference:<file>                       Reference an assembly (Short form:
-                                         -r)
+--reference:<file>                       Reference an assembly (Short form: -r)
+--compilertool:<file>                    Reference an assembly or diretory containing a
+                                         design time tool (Short form: -t)
 
 
 		- RESOURCES -

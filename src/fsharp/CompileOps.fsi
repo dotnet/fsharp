@@ -272,7 +272,7 @@ type TcConfigBuilder =
       mutable conditionalCompilationDefines: string list
       /// Sources added into the build with #load
       mutable loadedSources: (range * string) list
-      
+      mutable compilerToolPaths: string  list
       mutable referencedDLLs: AssemblyReference  list
       mutable projectReferences: IProjectReference list
       mutable knownUnresolvedReferences: UnresolvedAssemblyReference list
@@ -408,6 +408,7 @@ type TcConfigBuilder =
     member TurnWarningOff: range * string -> unit
     member TurnWarningOn: range * string -> unit
     member AddIncludePath: range * string * string -> unit
+    member AddCompilerToolsByPath: range * string -> unit
     member AddReferencedAssemblyByPath: range * string -> unit
     member RemoveReferencedAssemblyByPath: range * string -> unit
     member AddEmbeddedSourceFile: string -> unit
@@ -441,6 +442,7 @@ type TcConfig =
     member conditionalCompilationDefines: string list
     member subsystemVersion: int * int
     member useHighEntropyVA: bool
+    member compilerToolPaths: string list
     member referencedDLLs: AssemblyReference list
     member reduceMemoryUsage: ReduceMemoryFlag
     member inputCodePage: int option

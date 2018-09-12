@@ -62,7 +62,7 @@ module internal ExtensionTyping =
 
     /// Load a the design-time part of a type-provider into the host process, and look for types
     /// marked with the TypeProviderAttribute attribute.
-    let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m: range) =
+    let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m:range, compilerToolPaths:string list) =
 
         // Report an error, blaming the particular type provider component
         let raiseError (e: exn) =
@@ -102,6 +102,17 @@ module internal ExtensionTyping =
 
         let designTimeAssemblyOpt = 
 
+            // If we've found a design-time assembly, look for the public types with TypeProviderAttribute
+
+            // ===========================================================================================
+            // CompilerTools can also TypeProvider design time tools
+            // TODO:  Search xompilerToolPaths for designtime type provider
+            // ===========================================================================================
+
+            ignore (compilerToolPaths)
+
+            // ===========================================================================================
+
             if designTimeAssemblyNameString.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
                 loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyNameString
             else
@@ -123,7 +134,6 @@ module internal ExtensionTyping =
                     with e ->
                         raiseError e
 
-        // If we've find a design-time assembly, look for the public types with TypeProviderAttribute
         match designTimeAssemblyOpt with
         | Some loadedDesignTimeAssembly ->
             try
@@ -194,7 +204,8 @@ module internal ExtensionTyping =
              isInteractive: bool, 
              systemRuntimeContainsType : string -> bool, 
              systemRuntimeAssemblyVersion : System.Version, 
-             m: range) =         
+             compilerToolPaths: string list,
+             m:range) =
 
         let providerSpecs = 
                 try
@@ -214,7 +225,7 @@ module internal ExtensionTyping =
                       | Some designTimeAssemblyName, Some path when String.Compare(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) = 0 ->
                           ()
                       | Some _, _ ->
-                          for t in GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m) do
+                          for t in GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m, compilerToolPaths) do
                             let resolver = CreateTypeProvider (t, runTimeAssemblyFileName, resolutionEnvironment, isInvalidationSupported, isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
                             match box resolver with 
                             | null -> ()
@@ -223,7 +234,7 @@ module internal ExtensionTyping =
                           () ]
 
                 with :? TypeProviderError as tpe ->
-                    tpe.Iter(fun e -> errorR(NumberedError((e.Number, e.ContextualErrorMessage), m)) )                        
+                    tpe.Iter(fun e -> errorR(NumberedError((e.Number, e.ContextualErrorMessage), m)) )
                     []
 
         let providers = Tainted<_>.CreateAll providerSpecs

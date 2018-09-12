@@ -2029,6 +2029,7 @@ type TcConfigBuilder =
       mutable light: bool option
       mutable conditionalCompilationDefines: string list
       mutable loadedSources: (range * string) list
+      mutable compilerToolPaths: string list
       mutable referencedDLLs: AssemblyReference list
       mutable projectReferences: IProjectReference list
       mutable knownUnresolvedReferences: UnresolvedAssemblyReference list
@@ -2193,6 +2194,7 @@ type TcConfigBuilder =
           resolutionEnvironment = ResolutionEnvironment.EditingOrCompilation false
           framework = true
           implicitlyResolveAssemblies = true
+          compilerToolPaths = []
           referencedDLLs = []
           projectReferences = []
           knownUnresolvedReferences = []
@@ -2423,6 +2425,13 @@ type TcConfigBuilder =
 
     member tcConfigB.AddEmbeddedResource filename =
         tcConfigB.embedResources <- tcConfigB.embedResources ++ filename
+
+    member tcConfigB.AddCompilerToolsByPath (m:range, path) = 
+        if FileSystem.IsInvalidPathShim(path) then
+            warning(Error(FSComp.SR.buildInvalidAssemblyName(path), m))
+        elif not (tcConfigB.compilerToolPaths  |> List.exists (fun text -> path = text)) then // NOTE: We keep same paths if range is different.
+            let compilerToolPath = tcConfigB.compilerToolPaths |> List.tryPick (fun text -> if text = path then Some text else None)
+            tcConfigB.compilerToolPaths <- tcConfigB.compilerToolPaths ++ (Option.defaultValue "" compilerToolPath)   //AssemblyReference(m, path, projectReference)             
 
     member tcConfigB.AddReferencedAssemblyByPath (m, path) = 
         if FileSystem.IsInvalidPathShim path then
@@ -2682,6 +2691,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.light = data.light
     member x.conditionalCompilationDefines = data.conditionalCompilationDefines
     member x.loadedSources = data.loadedSources
+    member x.compilerToolPaths = data.compilerToolPaths
     member x.referencedDLLs = data.referencedDLLs
     member x.knownUnresolvedReferences = data.knownUnresolvedReferences
     member x.clrRoot = clrRootValue
@@ -4261,7 +4271,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             let providers = 
                 [ for designTimeAssemblyName in designTimeAssemblyNames do
                       yield! ExtensionTyping.GetTypeProvidersOfAssembly(fileNameOfRuntimeAssembly, ilScopeRefOfRuntimeAssembly, designTimeAssemblyName, typeProviderEnvironment, 
-                                                                        tcConfig.isInvalidationSupported, tcConfig.isInteractive, systemRuntimeContainsType, primaryAssemblyVersion, m) ]
+                                                                        tcConfig.isInvalidationSupported, tcConfig.isInteractive, systemRuntimeContainsType, primaryAssemblyVersion, tcConfig.compilerToolPaths, m) ]
 
             // Note, type providers are disposable objects. The TcImports owns the provider objects - when/if it is disposed, the providers are disposed.
             // We ignore all exceptions from provider disposal.
@@ -4545,7 +4555,6 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     member tcImports.RegisterAndImportReferencedAssemblies (ctok, nms: AssemblyResolution list) =
       cancellable {
         CheckDisposed()
-
         let! results = 
            nms |> Cancellable.each (fun nm -> 
                cancellable {

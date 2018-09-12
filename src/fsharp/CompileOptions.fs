@@ -559,11 +559,18 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
 // OptionBlock: Input files
 //-------------------------
 
-let inputFileFlagsBoth (tcConfigB: TcConfigBuilder) =
+let inputFileFlagsBoth (tcConfigB : TcConfigBuilder) = [
     [ CompilerOption("reference", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None, Some (FSComp.SR.optsReference()))
-    ]
+      CompilerOption("compilertool", tagFile, OptionString (fun s -> tcConfigB.AddCompilerToolsByPath (rangeStartup, s)), None, Some (FSComp.SR.optsCompilerTool()))
 
-let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB 
+let referenceFlagAbbrev (tcConfigB : TcConfigBuilder) =
+    CompilerOption("r", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None, Some(FSComp.SR.optsShortFormOf("--reference")))
+
+let compilerToolFlagAbbrev (tcConfigB : TcConfigBuilder) =
+    CompilerOption("t", tagFile, OptionString (fun s -> tcConfigB.AddCompilerToolsByPath (rangeStartup, s)), None, Some(FSComp.SR.optsShortFormOf("--compilertool")))
+
+let inputFileFlagsFsi tcConfigB = inputFileFlagsBoth tcConfigB
+let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
 
 let inputFileFlagsFsiBase (_tcConfigB: TcConfigBuilder) =
 #if NETSTANDARD

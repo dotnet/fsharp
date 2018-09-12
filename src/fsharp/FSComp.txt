@@ -846,6 +846,7 @@ optsNoOpt,"Only include optimization information essential for implementing inli
 optsNoInterface,"Don't add a resource to the generated assembly containing F#-specific metadata"
 optsSig,"Print the inferred interface of the assembly to a file"
 optsReference,"Reference an assembly (Short form: -r)"
+optsCompilerTool,"Reference an assembly or diretory containing a design time tool (Short form: -t)"
 optsWin32res,"Specify a Win32 resource file (.res)"
 optsWin32manifest,"Specify a Win32 manifest file"
 optsNowin32manifest,"Do not include the default Win32 manifest"
