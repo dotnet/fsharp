@@ -428,7 +428,7 @@ module internal ExtensionTyping =
         member __.GetGenericArguments() = x.GetGenericArguments() |> ProvidedType.CreateArray ctxt
         member __.ApplyStaticArguments(provider: ITypeProvider, fullTypePathAfterArguments, staticArgs: obj[]) = 
             provider.ApplyStaticArguments(x, fullTypePathAfterArguments,  staticArgs) |> ProvidedType.Create ctxt
-        member __.IsVoid = (typeof<System.Void>.Equals(x))
+        member __.IsVoid = (typeof<System.Void>.Equals(x) || (x.Namespace = "System" && x.Name = "Void"))
         member __.IsGenericParameter = x.IsGenericParameter
         member __.IsValueType = x.IsValueType
         member __.IsByRef = x.IsByRef
