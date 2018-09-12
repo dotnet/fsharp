@@ -1324,13 +1324,11 @@ type TypeCheckInfo
             let underlyingTy = stripTyEqnsAndMeasureEqns g ty
             isStructTy g underlyingTy
 
-        let isValMutable (vref: ValRef) =
-            // Mutable values, ref cells, byrefs, and outrefs are mutable.
-            // Note that it is not possible for a caller to mutate an inref, so it is not colored, despite being a pointer type.
+        let IsValRefMutable (vref: ValRef) =
+            // Mutable values, ref cells, and non-inref byrefs are mutable.
             vref.IsMutable
             || Tastops.isRefCellTy g vref.Type
-            || Tastops.isByrefTy g vref.Type
-            || Tastops.isOutByrefTy g vref.Type
+            || Tastops.isByrefTy g vref.Type && not (Tastops.isInByrefTy g vref.Type)
 
         let isRecdFieldMutable (rfinfo: RecdFieldInfo) =
             (rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone)
@@ -1342,7 +1340,7 @@ type TypeCheckInfo
             // 'seq' in 'seq { ... }' gets colored as keywords
             | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref ->
                 Some (m, SemanticClassificationType.ComputationExpression)
-            | CNR(_, (Item.Value vref), _, _, _, _, m) when isValMutable vref ->
+            | CNR(_, (Item.Value vref), _, _, _, _, m) when IsValRefMutable vref ->
                 Some (m, SemanticClassificationType.MutableVar)
             | CNR(_, Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m) ->
                 Some (m, SemanticClassificationType.IntrinsicFunction)
