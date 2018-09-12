@@ -1767,7 +1767,8 @@ let rec isUnmanagedTy g ty =
                     isEq g.float32_tcr ||
                     isEq g.float_tcr ||
                     isEq g.decimal_tcr ||
-                    isEq g.bool_tcr then
+                    isEq g.bool_tcr ||
+                    isEq g.unit_tcr_canon then
             true
         else
             let tycon = tcref.Deref
