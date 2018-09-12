@@ -190,6 +190,8 @@ type internal FSharpNavigateToSearchService
         projectInfoManager: FSharpProjectOptionsManager
     ) =
 
+    let kindsProvided = ImmutableHashSet.Create(NavigateToItemKind.Module, NavigateToItemKind.Class, NavigateToItemKind.Field, NavigateToItemKind.Property, NavigateToItemKind.Method, NavigateToItemKind.Enum, NavigateToItemKind.EnumItem) :> IImmutableSet<string>
+
     // Save the backing navigation data in a memory cache held in a sliding window
     let itemsByDocumentId = new MemoryCache("FSharp.Editor.FSharpNavigateToSearchService")
 
@@ -285,6 +287,6 @@ type internal FSharpNavigateToSearchService
             |> Async.map Seq.toImmutableArray
             |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
 
-        member __.KindsProvided = ImmutableHashSet.Create(NavigateToItemKind.Module, NavigateToItemKind.Class, NavigateToItemKind.Field, NavigateToItemKind.Property, NavigateToItemKind.Method, NavigateToItemKind.Enum, NavigateToItemKind.EnumItem) :> IImmutableSet<string>
+        member __.KindsProvided = kindsProvided
 
         member __.CanFilter = true
