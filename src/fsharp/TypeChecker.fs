@@ -8045,7 +8045,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         //| SynExpr.LetOrUseAndBang(spBind, false, isFromSource, pat, rhsExpr, _, andBangs, innerComp) -> 
         | SynExpr.LetOrUseAndBang(_, false, _, _, _, _, _, _) -> 
 
-            failwith "TODO"
+            failwith "TODO - Type check and!"
 
         // 'use! pat = e1 and! pat = e2 in e3' --> TODO
         //| SynExpr.LetOrUseAndBang(spBind, true, isFromSource, (SynPat.Named (SynPat.Wild _, id, false, _, _) as pat) , rhsExpr, _, andBangs, innerComp)
@@ -8053,12 +8053,12 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         | SynExpr.LetOrUseAndBang(_, true, _, (SynPat.Named (SynPat.Wild _, _, false, _, _)) , _, _, _, _)
         | SynExpr.LetOrUseAndBang(_, true, _, (SynPat.LongIdent (LongIdentWithDots([_], _), _, _, _, _, _)), _, _, _, _) ->
 
-            failwith "TODO"
+            failwith "TODO - Type check and!"
 
         // 'use! pat = e1 and(Use)! pat = e2 in e3' where any 'pat' is not a simple name --> error
         //| SynExpr.LetOrUseAndBang(_spBind, true, _isFromSource, pat, _rhsExpr, _, andBangs, _innerComp) -> 
         | SynExpr.LetOrUseAndBang(_, true, _, _, _, _, _, _) -> 
-            failwith "TODO"
+            failwith "TODO - Type check and!"
 
         | SynExpr.Match (spMatch, expr, clauses, false, m) ->
             let mMatch = match spMatch with SequencePointAtBinding mMatch -> mMatch | _ -> m

@@ -33,8 +33,7 @@ let foo =
     opt {
         let! x = xOpt
         and! y = yOpt
-        and! z = zOpt
-        return sprintf "x = %d, y = %s, z = %f" x y z
+        return sprintf "x = %d, y = %s" x y
     }
 
 (*
