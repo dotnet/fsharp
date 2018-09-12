@@ -8041,11 +8041,30 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         | SynExpr.LetOrUseAndBang(_spBind, true, _isFromSource, pat, _rhsExpr, _, [], _innerComp) -> 
             error(Error(FSComp.SR.tcInvalidUseBangBinding(), pat.Range))
 
-        // 'let! pat = expr and! pat = expr in expr' --> TODO
-        //| SynExpr.LetOrUseAndBang(spBind, false, isFromSource, pat, rhsExpr, _, andBangs, innerComp) -> 
-        | SynExpr.LetOrUseAndBang(_, false, _, _, _, _, _, _) -> 
+        // 'let! pat1 = expr1 and! pat2 = expr2 in exprBody' --> 
+        //     build.Apply((function _arg -> match _arg with pat2 -> 
+        //         build.Apply((function _arg -> match _arg with pat1 ->
+        //             build.Return(exprBody)
+        //         ), expr1)
+        //     ), expr2)
+        | SynExpr.LetOrUseAndBang(spBind, false, isFromSource, pat, rhsExpr, _, andBangs, innerComp) -> 
 
-            failwith "TODO - Type check and!"
+            let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhsExpr.Range
+            if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), bindRange))
+            let innerRange = innerComp.Range
+            if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env bindRange ad "Bind" builderTy) then error(Error(FSComp.SR.tcRequireBuilderMethod("Bind"), bindRange))
+                
+            // Add the variables to the query variable space, on demand
+            let varSpace = 
+                addVarsToVarSpace varSpace (fun _mCustomOp env -> 
+                        use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
+                        let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (pat, None) 
+                        vspecs, envinner)
+
+            let rhsExpr = if isFromSource then mkSourceExpr rhsExpr else rhsExpr
+            Some (trans true q varSpace innerComp (fun holeFill -> 
+                        let consumeExpr = SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, holeFill, innerRange, SequencePointAtTarget)], spBind, innerRange)
+                        translatedCtxt (mkSynCall "Bind"  bindRange [rhsExpr; consumeExpr])))
 
         // 'use! pat = e1 and! pat = e2 in e3' --> TODO
         //| SynExpr.LetOrUseAndBang(spBind, true, isFromSource, (SynPat.Named (SynPat.Wild _, id, false, _, _) as pat) , rhsExpr, _, andBangs, innerComp)
