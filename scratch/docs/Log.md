@@ -476,3 +476,7 @@ IN/ELSE/ELIF/DONE/RPAREN/RBRACE/END at (38:4) terminates context at position (37
 ```
 
 So is the offside stuff adding/missing something weird that I've not noticed, or is the parsing logic not doing what I expect?
+
+One conflict: `isLetContinuator` currently lets the `and!` be "inside" the `let!`, but the parser expects `hardwhiteDefnBindingsTerminator`, i.e. `ODECLEND`!
+
+How much of a problem is it that `let! ... and! ...` is using right-recursion?
