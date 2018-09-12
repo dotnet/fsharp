@@ -8044,27 +8044,47 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         // 'let! pat1 = expr1 and! pat2 = expr2 in exprBody' --> 
         //     build.Apply((function _arg -> match _arg with pat2 -> 
         //         build.Apply((function _arg -> match _arg with pat1 ->
-        //             build.Return(exprBody)
+        //             exprBody
         //         ), expr1)
         //     ), expr2)
-        | SynExpr.LetOrUseAndBang(spBind, false, isFromSource, pat, rhsExpr, _, andBangs, innerComp) -> 
+        | SynExpr.LetOrUseAndBang(letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, innerComp) ->  // TODO Handle use! / anduse!
 
-            let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhsExpr.Range
-            if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), bindRange))
-            let innerRange = innerComp.Range
-            if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env bindRange ad "Bind" builderTy) then error(Error(FSComp.SR.tcRequireBuilderMethod("Bind"), bindRange))
-                
-            // Add the variables to the query variable space, on demand
-            let varSpace = 
-                addVarsToVarSpace varSpace (fun _mCustomOp env -> 
-                        use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                        let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (pat, None) 
-                        vspecs, envinner)
+            printfn "type checking a let! ... and! ..." // TODO Remove
 
-            let rhsExpr = if isFromSource then mkSourceExpr rhsExpr else rhsExpr
-            Some (trans true q varSpace innerComp (fun holeFill -> 
-                        let consumeExpr = SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, holeFill, innerRange, SequencePointAtTarget)], spBind, innerRange)
-                        translatedCtxt (mkSynCall "Bind"  bindRange [rhsExpr; consumeExpr])))
+            // TODO Lift out to top level?
+            let rec constructApplies (accComp : SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
+                match bindings with
+                | [] -> accComp
+                | (spBind, _, isFromSource, pat, rhs, _) :: outerBindings ->
+
+                    let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhs.Range
+                    if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), bindRange))
+                    let innerRange = accComp.Range
+                    if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env bindRange ad "Apply" builderTy)
+                    then error(Error(FSComp.SR.tcRequireBuilderMethod("Apply"), bindRange))
+                        
+                    // Add the variables to the query variable space, on demand // TODO Think hard about how this should work - shouldn't this happen only once inside all and!s?
+                    let varSpace = 
+                        addVarsToVarSpace varSpace (fun _mCustomOp env -> 
+                                use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
+                                let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (pat, None) 
+                                vspecs, envinner)
+
+                    let rhsExpr = if isFromSource then mkSourceExpr rhs else rhs
+
+                    let newAccComp = 
+                        trans true q varSpace accComp (fun holeFill -> 
+                            let consumeExpr = SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, holeFill, innerRange, SequencePointAtTarget)], spBind, innerRange)
+                            translatedCtxt (mkSynCall "Apply"  bindRange [consumeExpr; rhsExpr])) // TODO The lambda (i.e. "consumeExpr") comes first here, but it comes second in Bind - is that okay or needless break with the precent?
+
+                    constructApplies newAccComp outerBindings
+
+            let allBindings = 
+                let letBinding =
+                    (letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm)
+                List.rev (letBinding :: andBangBindings)
+
+            Some (constructApplies innerComp allBindings)
 
         // 'use! pat = e1 and! pat = e2 in e3' --> TODO
         //| SynExpr.LetOrUseAndBang(spBind, true, isFromSource, (SynPat.Named (SynPat.Wild _, id, false, _, _) as pat) , rhsExpr, _, andBangs, innerComp)
