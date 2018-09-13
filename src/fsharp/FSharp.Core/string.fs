@@ -95,5 +95,6 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Length")>]
         let length (str:string) =
-            let str = emptyIfNull str
-            str.Length
+            match str with
+            | null -> 0
+            | _ -> str.Length
