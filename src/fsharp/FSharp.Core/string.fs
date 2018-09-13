@@ -24,31 +24,35 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Iterate")>]
         let iter (action : (char -> unit)) (str:string) =
-            let str = emptyIfNull str
-            for i = 0 to str.Length - 1 do
-                action str.[i] 
+            if not (String.IsNullOrEmpty str) then
+                for i = 0 to str.Length - 1 do
+                    action str.[i] 
 
         [<CompiledName("IterateIndexed")>]
         let iteri action (str:string) =
-            let str = emptyIfNull str
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(action)
-            for i = 0 to str.Length - 1 do
-                f.Invoke(i, str.[i]) 
+            if not (String.IsNullOrEmpty str) then
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(action)
+                for i = 0 to str.Length - 1 do
+                    f.Invoke(i, str.[i]) 
 
         [<CompiledName("Map")>]
         let map (mapping: char -> char) (str:string) =
-            let str = emptyIfNull str
-            let res = StringBuilder str.Length
-            str |> iter (fun c -> res.Append(mapping c) |> ignore)
-            res.ToString()
+            if String.IsNullOrEmpty str then
+                String.Empty
+            else
+                let res = StringBuilder str.Length
+                str |> iter (fun c -> res.Append(mapping c) |> ignore)
+                res.ToString()
 
         [<CompiledName("MapIndexed")>]
         let mapi (mapping: int -> char -> char) (str:string) =
-            let str = emptyIfNull str
-            let res = StringBuilder str.Length
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(mapping)
-            str |> iteri (fun i c -> res.Append(f.Invoke(i, c)) |> ignore)
-            res.ToString()
+            if String.IsNullOrEmpty str then
+                String.Empty
+            else
+                let res = StringBuilder str.Length
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(mapping)
+                str |> iteri (fun i c -> res.Append(f.Invoke(i, c)) |> ignore)
+                res.ToString()
 
         [<CompiledName("Filter")>]
         let filter (predicate: char -> bool) (str:string) =
