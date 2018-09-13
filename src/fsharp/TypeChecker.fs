@@ -8044,9 +8044,12 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         // 'let! pat1 = expr1 and! pat2 = expr2 in exprBody' --> 
         //     build.Apply(
         //         build.Apply(
-        //             (function _arg1 -> match _arg1 with pat1 ->
-        //                 (function _arg2 -> match _arg2 with pat2 -> 
-        //                     exprBody
+        //             build.Return(
+        //                 (function _arg1 -> match _arg1 with pat1 ->
+        //                     (function _arg2 -> match _arg2 with pat2 -> 
+        //                         exprBody
+        //                     )
+        //                 )
         //         ), expr1)
         //     ), expr2)
         | SynExpr.LetOrUseAndBang(letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, bodyComp) ->  // TODO Handle use! / anduse!
@@ -8059,7 +8062,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             // Note how we work from the inner expression outward, meaning be create the lambda for the last
             // 'and!' _first_, and then create the calls to 'Apply' in the opposite order so that the calls to
             // 'Apply' correspond to their lambda.
-            let rec constructApplies (innerComp : SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) (pendingApplies : (SynExpr -> SynExpr) list) =
+            let rec desugar (innerComp : SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) (pendingApplies : (SynExpr -> SynExpr) list) =
 
                 match bindings with
                 | (spBind, _, isFromSource, pat, rhsExpr, _) :: remainingBindings ->
@@ -8075,14 +8078,23 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                         (fun consumeExpr -> mkSynCall "Apply"  bindRange [consumeExpr; rhsExpr]) :: pendingApplies
 
                     let newInnerComp =
-                        SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, innerComp, innerRange, SequencePointAtTarget)], spBind, innerRange)
+                        let matchLambda = 
+                            SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, innerComp, innerRange, SequencePointAtTarget)], spBind, innerRange)
 
-                    constructApplies newInnerComp remainingBindings newPendingApplies
-                
+                        // If this is the last matchLambda, we need to insert a return so that Apply takes an
+                        // F<'a -> 'b> as opposed to just an 'a -> 'b
+                        match remainingBindings with
+                        | _::_ ->
+                            matchLambda
+                        | [] ->
+                            mkSynCall "Return" bindRange [matchLambda] // TODO Fallback to 'Yield' if 'Return' isn't defined?
+                        
+                    desugar newInnerComp remainingBindings newPendingApplies
+
                 | [] ->
                     match pendingApplies with
                     | ap :: remainingApplies ->
-                        constructApplies (ap innerComp) [] remainingApplies
+                        desugar (ap innerComp) [] remainingApplies
                     | [] ->
                         innerComp
 
@@ -8103,7 +8115,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                 ) varSpace
 
             // TODO Collect up varSpace and use it here? Does this mean and! bindings cannot shadow each other?
-            Some (trans true q varSpace bodyComp (fun holeFill -> translatedCtxt (constructApplies holeFill bindingsBottomToTop [])))
+            Some (trans true q varSpace bodyComp (fun holeFill -> translatedCtxt (desugar holeFill bindingsBottomToTop [])))
 
         // 'use! pat = e1 and! pat = e2 in e3' --> TODO
         //| SynExpr.LetOrUseAndBang(spBind, true, isFromSource, (SynPat.Named (SynPat.Wild _, id, false, _, _) as pat) , rhsExpr, _, andBangs, innerComp)

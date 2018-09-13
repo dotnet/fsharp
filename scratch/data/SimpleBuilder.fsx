@@ -22,6 +22,9 @@ type OptionalBuilder =
 
     member __.Return(x) =
         Some x
+
+    //member __.Zero () = // TODO: Remove - just here to explore current compiler limitations
+    //    None
     
 let opt = OptionalBuilder()
 
@@ -36,6 +39,8 @@ let foo =
         and! z = zOpt
         return sprintf "x = %d, y = %s, z = %f" x y z
     }
+
+printfn "foo = %+A" foo 
 
 (*
 let foo' =
