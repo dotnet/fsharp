@@ -489,8 +489,12 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
         let m = n.LastIndexOf mangledGenericTypeNameSym
         if m = -1 then false else
         let mutable res = m < n.Length - 1
-        for i = m + 1 to n.Length - 1 do
-            res <- res && n.[i] >= '0' && n.[i] <= '9'
+        let mutable i = m + 1
+        while res && i < n.Length do
+            let char = n.[i]
+            if not (char >= '0' && char <= '9') then
+                res <- false
+            i <- i + 1
         res
 
     type NameArityPair = NameArityPair of string * int
