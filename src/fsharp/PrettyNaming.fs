@@ -515,19 +515,14 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
 
     type NameArityPair = NameArityPair of string * int
 
-    let DecodeGenericTypeName n =
-        match IsMangledGenericNameAndPos n with
-        | Some pos ->
-            let res = n.Substring(0,pos)
-            let num = n.Substring(pos+1,n.Length - pos - 1)
-            NameArityPair(res, int32 num)
-        | _ -> NameArityPair(n,0)
+    let DecodeGenericTypeName pos (mangledName:string) =
+        let res = mangledName.Substring(0,pos)
+        let num = mangledName.Substring(pos+1,mangledName.Length - pos - 1)
+        NameArityPair(res, int32 num)
 
     let DemangleGenericTypeName n =
         match IsMangledGenericNameAndPos n with
-        | Some pos ->
-            let pos = n.LastIndexOf mangledGenericTypeNameSym
-            n.Substring(0,pos)
+        | Some pos -> n.Substring(0,pos)
         | _ -> n
 
     let private chopStringTo (s:string) (c:char) =
