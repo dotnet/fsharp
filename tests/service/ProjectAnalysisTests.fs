@@ -3811,6 +3811,10 @@ let ``Test Project26 parameter symbols`` () =
     let objSymbol = wholeProjectResults.GetAllUsesOfAllSymbols() |> Async.RunSynchronously |> Array.find (fun su -> su.Symbol.DisplayName = "Class")
     let objEntity = objSymbol.Symbol :?> FSharpEntity
     
+    let rec isByRef (ty: FSharpType) = 
+        if ty.IsAbbreviation then isByRef ty.AbbreviatedType 
+        else ty.IsNamedType && ty.NamedEntity.IsByRef
+
     // check we can get the CurriedParameterGroups
     let objMethodsCurriedParameterGroups = 
         [ for x in objEntity.MembersFunctionsAndValues do 
@@ -3823,14 +3827,14 @@ let ``Test Project26 parameter symbols`` () =
                             if p.IsOptionalArg then yield "optional"
                         }
                         |> String.concat ","
-                     yield x.CompiledName, p.Name,  p.Type.ToString(), attributeNames ]
+                     yield x.CompiledName, p.Name,  p.Type.ToString(), isByRef p.Type, attributeNames ]
 
     objMethodsCurriedParameterGroups |> shouldEqual 
-          [("M1", Some "arg1", "type 'c", "");
-           ("M1", Some "arg2", "type 'd Microsoft.FSharp.Core.option", "optional");
-           ("M2", Some "arg1", "type 'a", "params");
-           ("M2", Some "arg2", "type 'b", "optional");
-           ("M3", Some "arg", "type Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int>", "out")]
+          [("M1", Some "arg1", "type 'c", false, "");
+           ("M1", Some "arg2", "type 'd Microsoft.FSharp.Core.option", false, "optional");
+           ("M2", Some "arg1", "type 'a", false, "params");
+           ("M2", Some "arg2", "type 'b", false, "optional");
+           ("M3", Some "arg", "type Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int>", true, "out")]
 
     // check we can get the ReturnParameter
     let objMethodsReturnParameter = 
