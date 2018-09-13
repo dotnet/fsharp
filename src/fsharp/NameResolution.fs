@@ -3706,8 +3706,8 @@ let InfosForTyconConstructors (ncenv:NameResolver) m ad (tcref:TyconRef) =
 
 /// import.fs creates somewhat fake modules for nested members of types (so that 
 /// types never contain other types) 
-let notFakeContainerModule tyconNames nm = 
-    not (Set.contains nm tyconNames)
+let private notFakeContainerModule (tyconNames:HashSet<_>) nm = 
+    not (tyconNames.Contains nm)
 
 /// Check is a namespace or module contains something accessible 
 let rec private EntityRefContainsSomethingAccessible (ncenv: NameResolver) m ad (modref:ModuleOrNamespaceRef) = 
@@ -3758,7 +3758,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
          let ilTyconNames = 
              mty.TypesByAccessNames.Values
              |> List.choose (fun (tycon:Tycon) -> if tycon.IsILTycon then Some tycon.DisplayName else None)
-             |> Set.ofList
+             |> HashSet
 
          // Collect up the accessible values in the module, excluding the members
          (mty.AllValsAndMembers
@@ -3867,7 +3867,7 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
        let ilTyconNames =
           nenv.TyconsByAccessNames(fullyQualified).Values
           |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
-          |> Set.ofList
+          |> HashSet
        
        /// Include all the entries in the eUnqualifiedItems table. 
        let unqualifiedItems = 
@@ -3968,7 +3968,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
        let ilTyconNames = 
            mty.TypesByAccessNames.Values
            |> List.choose (fun (tycon:Tycon) -> if tycon.IsILTycon then Some tycon.DisplayName else None)
-           |> Set.ofList
+           |> HashSet
     
         // Collect up the accessible sub-modules 
        (mty.ModulesAndNamespacesByDemangledName 
@@ -4029,17 +4029,17 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
     |  [] ->     
         
         // empty plid - return namespaces\modules\record types\accessible fields
-       let iltyconNames =
+       let ilTyconNames =
           nenv.TyconsByAccessNames(fullyQualified).Values
           |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
-          |> Set.ofList
+          |> HashSet
 
        let mods = 
            nenv.ModulesAndNamespaces(fullyQualified)
            |> NameMultiMap.range 
            |> List.filter (fun x -> 
                 let demangledName = x.DemangledModuleOrNamespaceName
-                IsInterestingModuleName demangledName && notFakeContainerModule iltyconNames demangledName)
+                IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName)
            |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
            |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
            |> List.map ItemForModuleOrNamespaceRef
@@ -4345,7 +4345,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                  let ilTyconNames = 
                      mty.TypesByAccessNames.Values
                      |> List.choose (fun (tycon:Tycon) -> if tycon.IsILTycon then Some tycon.DisplayName else None)
-                     |> Set.ofList
+                     |> HashSet
 
                  // Collect up the accessible sub-modules. We must yield them even though `item` is not a module or namespace, 
                  // otherwise we would not resolve long idents which have modules and namespaces in the middle (i.e. all long idents)
@@ -4428,7 +4428,7 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
                let ilTyconNames =
                   nenv.TyconsByAccessNames(OpenQualified).Values
                   |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
-                  |> Set.ofList
+                  |> HashSet
                
                for ns in NameMultiMap.range (nenv.ModulesAndNamespaces(OpenQualified)) do
                    let demangledName = ns.DemangledModuleOrNamespaceName
@@ -4493,7 +4493,7 @@ let GetVisibleNamespacesAndModulesAtPoint (ncenv: NameResolver) (nenv: NameResol
     let ilTyconNames =
         nenv.TyconsByAccessNames(FullyQualifiedFlag.OpenQualified).Values
         |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
-        |> Set.ofList
+        |> HashSet
 
     nenv.ModulesAndNamespaces(FullyQualifiedFlag.OpenQualified)
     |> NameMultiMap.range 
