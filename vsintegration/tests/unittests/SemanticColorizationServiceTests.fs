@@ -131,15 +131,13 @@ r.MutableField := 3
     [<TestCase("(*6*)", FSharpClassificationTypes.MutableVar)>]
     member __.NoInrefsExpected(marker: string, classificationType: string) =
         let sourceText = """
-let f (item: (*1)inref<int>) = printfn "%d" (*2*)item
-
-let x = 1
-let y = 2
-
-let (*3*)xRef = &x
-let (*4*)yRef: inref<int> = &y
-
-f (*5*)xRef
-f (*6*)yRef
+let f (item: (*1*)inref<int>) = printfn "%d" (*2*)item
+let g() =
+    let x = 1
+    let y = 2
+    let (*3*)xRef = &x
+    let (*4*)yRef: inref<int> = &y
+    f (*5*)&xRef
+    f (*6*)&yRef
 """
         verifyNoClassificationDataAtEndOfMarker(sourceText, marker, classificationType)
