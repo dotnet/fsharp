@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 4:5:0:0
 }
 .assembly GenIter03
 {
@@ -36,21 +36,13 @@
   // Offset: 0x00000208 Length: 0x0000007B
 }
 .module GenIter03.exe
-<<<<<<< HEAD
-// MVID: {5B16FAD7-F77C-DC98-A745-0383D7FA165B}
-=======
-// MVID: {5B17FC4F-F77C-DC98-A745-03834FFC175B}
->>>>>>> 7dbfae8e8b72211c5dc0016cf7c7a2addcf33e58
+// MVID: {5B9A68C0-F77C-DC98-A745-0383C0689A5B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-<<<<<<< HEAD
-// Image base: 0x02F70000
-=======
-// Image base: 0x026C0000
->>>>>>> 7dbfae8e8b72211c5dc0016cf7c7a2addcf33e58
+// Image base: 0x00770000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

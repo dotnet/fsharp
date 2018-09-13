@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 4:5:0:0
 }
 .assembly SeqExpressionSteppingTest6
 {
@@ -36,21 +36,13 @@
   // Offset: 0x000002A8 Length: 0x000000BA
 }
 .module SeqExpressionSteppingTest6.exe
-<<<<<<< HEAD
-// MVID: {5B16FAD8-2432-94A2-A745-0383D8FA165B}
-=======
-// MVID: {5B17FC50-2432-94A2-A745-038350FC175B}
->>>>>>> 7dbfae8e8b72211c5dc0016cf7c7a2addcf33e58
+// MVID: {5B9A68C1-2432-94A2-A745-0383C1689A5B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-<<<<<<< HEAD
-// Image base: 0x02A60000
-=======
-// Image base: 0x023E0000
->>>>>>> 7dbfae8e8b72211c5dc0016cf7c7a2addcf33e58
+// Image base: 0x00F20000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

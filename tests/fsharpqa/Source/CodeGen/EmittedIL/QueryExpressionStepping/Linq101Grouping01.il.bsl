@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 4:5:0:0
 }
 .assembly extern System.Core
 {
@@ -45,13 +45,13 @@
   // Offset: 0x00000418 Length: 0x00000129
 }
 .module Linq101Grouping01.exe
-// MVID: {5B16FAD8-FB79-E5BF-A745-0383D8FA165B}
+// MVID: {5B9A68C1-FB79-E5BF-A745-0383C1689A5B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x03240000
+// Image base: 0x025F0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
