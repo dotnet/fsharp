@@ -8053,10 +8053,10 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
             printfn "type checking a let! ... and! ..." // TODO Remove
 
+            // TODO Compute varSpace first and check for RHS references to LHS names, upfront?
             // TODO Lift out to top level?
-            // TODO How do we manage the varSpace such that the orthogonality of the and!s is preserved?
-            // TODO Add all lambdas then add apply calls (in reverse order), as per comments on this case above
             // TODO Assert no RHS refers to and outer LHS, else insert a helpful and!-related error for that instead of just "not defined" or using a value the user might have expected to have been shadowed
+            // TODO Assert bindings in an and! chain don't clash - they're logically orthogonal, so shadowing doesn't really make sense
 
             // Reads in bindings [ andBangExprN ; ... ; andBangExpr2 ; andBangExpr1 ; letExpr ]
             // creating a lambda for each one, and stacking up the calls to apply to hook up once
@@ -8064,7 +8064,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             // Note how we work from the inner expression outward, meaning be create the lambda for the last
             // 'and!' _first_, and then create the calls to 'Apply' in the opposite order so that the calls to
             // 'Apply' correspond to their lambda.
-            let rec constructApplies (innerComp : SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) (pendingApplies : (SynExpr -> SynExpr) list) =
+            let rec constructApplies (innerComp : SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) varSpace (pendingApplies : (SynExpr -> SynExpr) list) =
 
                 match bindings with
                 | (spBind, _, isFromSource, pat, rhsExpr, _) :: remainingBindings ->
@@ -8075,7 +8075,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                     then error(Error(FSComp.SR.tcRequireBuilderMethod("Apply"), bindRange))
                         
                     // Add the variables to the query variable space, on demand
-                    let andBangVarSpace = 
+                    let varSpace = 
                         addVarsToVarSpace varSpace (fun _mCustomOp env -> 
                             use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
                             let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (pat, None) 
@@ -8087,15 +8087,14 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                         (fun consumeExpr -> mkSynCall "Apply"  bindRange [consumeExpr; rhsExpr]) :: pendingApplies
 
                     let newInnerComp =
-                        trans true q andBangVarSpace innerComp (fun holeFill -> 
-                            translatedCtxt (SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, holeFill, innerRange, SequencePointAtTarget)], spBind, innerRange)))
+                        SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, innerComp, innerRange, SequencePointAtTarget)], spBind, innerRange)
 
-                    constructApplies newInnerComp remainingBindings newPendingApplies
+                    constructApplies newInnerComp remainingBindings varSpace newPendingApplies
                 
                 | [] ->
                     match pendingApplies with
                     | ap :: remainingApplies ->
-                        constructApplies (ap innerComp) [] remainingApplies
+                        constructApplies (ap innerComp) [] varSpace remainingApplies
                     | [] ->
                         innerComp
 
@@ -8104,7 +8103,8 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                     (letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm)
                 List.rev (letBinding :: andBangBindings) // [ andBangExprN ; ... ; andBangExpr2 ; andBangExpr1 ; letExpr ]
 
-            Some (constructApplies bodyComp bindingsBottomToTop [])
+            // TODO Collect up varSpace and use it here? Does this mean and! bindings cannot shadow each other?
+            Some (trans true q varSpace bodyComp (fun holeFill -> translatedCtxt (constructApplies holeFill bindingsBottomToTop varSpace [])))
 
         // 'use! pat = e1 and! pat = e2 in e3' --> TODO
         //| SynExpr.LetOrUseAndBang(spBind, true, isFromSource, (SynPat.Named (SynPat.Wild _, id, false, _, _) as pat) , rhsExpr, _, andBangs, innerComp)
