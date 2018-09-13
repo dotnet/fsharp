@@ -2976,7 +2976,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     match cenv.g.system_MarshalByRefObject_tcref with
                     | None -> false
                     | Some mbrTyconRef ->
-                    // Check we can deref system_MarshalByRefObject_tcref
+                    // Check we can deref system_MarshalByRefObject_tcref. When compiling against the Silverlight mscorlib we can't
                     if mbrTyconRef.TryDeref.IsSome then
                         // Check if this is a subtype of MarshalByRefObject
                         assert (cenv.g.system_MarshalByRefObject_typ.IsSome)

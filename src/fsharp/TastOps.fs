@@ -5214,8 +5214,7 @@ let isRecdOrStructFieldAllocObservable (f:RecdField) = not f.IsStatic && f.IsMut
 let isUnionCaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldAllocObservable
 let isUnionCaseRefAllocObservable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseAllocObservable
   
-let isRecdOrUnionOrStructTyconRefAllocObservable (_g: TcGlobals) (tcref : TyconRef) = 
-    let tycon = tcref.Deref
+let isRecdOrUnionOrStructTyconAllocObservable (_g:TcGlobals) (tycon:Tycon) =
     if tycon.IsUnionTycon then 
         tycon.UnionCasesArray |> Array.exists isUnionCaseAllocObservable
     elif tycon.IsRecordTycon || tycon.IsFSharpStructOrEnumTycon then 
@@ -5223,6 +5222,7 @@ let isRecdOrUnionOrStructTyconRefAllocObservable (_g: TcGlobals) (tcref : TyconR
     else
         false
 
+let isRecdOrUnionOrStructTyconRefAllocObservable g (tcr : TyconRef) = isRecdOrUnionOrStructTyconAllocObservable g tcr.Deref
   
 // Although from the pure F# perspective exception values cannot be changed, the .NET 
 // implementation of exception objects attaches a whole bunch of stack information to 
@@ -5582,7 +5582,7 @@ let isPossibleMutationDefinitelyImmutable g ty =
 //
 // We only do this for true local or closure fields because we can't take addresses of immutable static 
 // fields across assemblies.
-let CanTakeAddressOfImmutableVal g (v:ValRef) mut m =
+let CanTakeAddressOfImmutableVal (g: TcGlobals) m (v:ValRef) mut =
     // We can take the address of values of struct type if the operation doesn't mutate 
     // and the value is a true local or closure field. 
     not v.IsMutable &&
@@ -5632,7 +5632,7 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
         None, exprForValRef m v
     // LVALUE: "x" where "x" is mutable local, mutable intra-assembly module/static binding, or operation doesn't mutate 
     // Note: we can always take the address of mutable values
-    | Expr.Val(v, _, m) when MustTakeAddressOfVal g v || CanTakeAddressOfImmutableVal g v mut m ->
+    | Expr.Val(v, _, m) when MustTakeAddressOfVal g v || CanTakeAddressOfImmutableVal g m v mut ->
         None, mkValAddr m v
     // LVALUE: "x" where "e.x" is record field. 
     | Expr.Op (TOp.ValFieldGet rfref, tinst, [e], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g rfref mut tinst ->

@@ -4300,18 +4300,13 @@
   <data name="pickleUnexpectedNonZero" xml:space="preserve">
     <value>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</value>
   </data>
+  <data name="tcTupleMemberNotNormallyUsed" xml:space="preserve">
+    <value>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</value>
+  </data>
   <data name="implicitlyDiscardedInSequenceExpression" xml:space="preserve">
     <value>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</value>
   </data>
   <data name="implicitlyDiscardedSequenceInSequenceExpression" xml:space="preserve">
     <value>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</value>
-  </data>
-  <data name="tcStructTypeAssumedImmutable" xml:space="preserve">
-    <value>The struct type '{0}' has been assumed to be immutable.</value>
-  </data>
-  <data name="tastLikelyMutationOfConstant" xml:space="preserve">
-    <value>Likely mutation of a constant expression. Consider using a mutable local, e.g. 'let mutable x = ...'.</value>
-  <data name="tcTupleMemberNotNormallyUsed" xml:space="preserve">
-    <value>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</value>
   </data>
 </root>
