@@ -3754,11 +3754,27 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
              mty.TypeDefinitions
              |> List.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
              |> List.filter (fun tycon -> not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tycon)))
+         
+         let accessibleSubModules =
+             let moduleOrNamespaces =
+                 mty.ModulesAndNamespacesByDemangledName
+                 |> NameMap.range
 
-         let ilTyconNames = 
-             mty.TypesByAccessNames.Values
-             |> List.choose (fun (tycon:Tycon) -> if tycon.IsILTycon then Some tycon.DisplayName else None)
-             |> HashSet
+             if isNil moduleOrNamespaces then [] else
+
+             let ilTyconNames = 
+                 mty.TypesByAccessNames.Values
+                 |> List.choose (fun (tycon:Tycon) -> if tycon.IsILTycon then Some tycon.DisplayName else None)
+                 |> HashSet
+
+             moduleOrNamespaces
+             |> List.filter (fun x -> 
+                 let demangledName = x.DemangledModuleOrNamespaceName
+                 notFakeContainerModule ilTyconNames demangledName && IsInterestingModuleName demangledName)
+             |> List.map modref.NestedTyconRef
+             |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
+             |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
+             |> List.map ItemForModuleOrNamespaceRef
 
          // Collect up the accessible values in the module, excluding the members
          (mty.AllValsAndMembers
@@ -3787,16 +3803,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
           |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
           |> List.map Item.ExnCase)
 
-         // Collect up the accessible sub-modules 
-       @ (mty.ModulesAndNamespacesByDemangledName 
-          |> NameMap.range 
-          |> List.filter (fun x -> 
-                let demangledName = x.DemangledModuleOrNamespaceName
-                notFakeContainerModule ilTyconNames demangledName && IsInterestingModuleName demangledName)
-          |> List.map modref.NestedTyconRef
-          |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
-          |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
-          |> List.map ItemForModuleOrNamespaceRef)
+       @ accessibleSubModules
 
     // Get all the types and .NET constructor groups accessible from here 
        @ (tycons 
@@ -3864,10 +3871,6 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
 
     |  [] -> 
     
-       let ilTyconNames =
-          nenv.TyconsByAccessNames(fullyQualified).Values
-          |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
-          |> HashSet
        
        /// Include all the entries in the eUnqualifiedItems table. 
        let unqualifiedItems = 
@@ -3889,9 +3892,18 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
                |> NameMap.range
                |> List.filter (function Item.ActivePatternCase _v -> true | _ -> false)
 
-       let moduleAndNamespaceItems = 
-           nenv.ModulesAndNamespaces(fullyQualified)
-           |> NameMultiMap.range 
+       let moduleAndNamespaceItems =
+           let moduleOrNamespaceRefs = 
+               nenv.ModulesAndNamespaces fullyQualified
+               |> NameMultiMap.range
+           
+           if isNil moduleOrNamespaceRefs then [] else
+           let ilTyconNames =
+              nenv.TyconsByAccessNames(fullyQualified).Values
+              |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
+              |> HashSet
+
+           moduleOrNamespaceRefs
            |> List.filter (fun x -> 
                 let demangledName = x.DemangledModuleOrNamespaceName
                 IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName)
@@ -4485,20 +4497,23 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
     }
 
 let IsItemResolvable (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad plid (item: Item) : bool = 
-  protectAssemblyExploration false <| fun () -> 
-    GetCompletionForItem ncenv nenv m ad plid item |> Seq.exists (ItemsAreEffectivelyEqual ncenv.g item)
+    protectAssemblyExploration false (fun () -> 
+        GetCompletionForItem ncenv nenv m ad plid item 
+        |> Seq.exists (ItemsAreEffectivelyEqual ncenv.g item)
+    )
 
 let GetVisibleNamespacesAndModulesAtPoint (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad =
-  protectAssemblyExploration [] <| fun () -> 
-    let ilTyconNames =
-        nenv.TyconsByAccessNames(FullyQualifiedFlag.OpenQualified).Values
-        |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
-        |> HashSet
+    protectAssemblyExploration [] (fun () -> 
+        let ilTyconNames =
+            nenv.TyconsByAccessNames(FullyQualifiedFlag.OpenQualified).Values
+            |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
+            |> HashSet
 
-    nenv.ModulesAndNamespaces(FullyQualifiedFlag.OpenQualified)
-    |> NameMultiMap.range 
-    |> List.filter (fun x -> 
-         let demangledName = x.DemangledModuleOrNamespaceName
-         IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName
-         && EntityRefContainsSomethingAccessible ncenv m ad  x
-         && not (IsTyconUnseen ad ncenv.g ncenv.amap m x))
+        nenv.ModulesAndNamespaces(FullyQualifiedFlag.OpenQualified)
+        |> NameMultiMap.range 
+        |> List.filter (fun x -> 
+             let demangledName = x.DemangledModuleOrNamespaceName
+             IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName
+             && EntityRefContainsSomethingAccessible ncenv m ad  x
+             && not (IsTyconUnseen ad ncenv.g ncenv.amap m x))
+    )
