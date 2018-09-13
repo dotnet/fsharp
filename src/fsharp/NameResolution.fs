@@ -3657,7 +3657,8 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
       let FullTypeOfPinfo(pinfo:PropInfo) = 
         let rty = pinfo.GetPropertyType(amap,m) 
         let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else  rty 
-        rty      
+        rty
+
       (ty
          |> AllPropInfosOfTypeInScope ncenv.InfoReader nenv (Some id,ad) IgnoreOverrides m
          |> List.filter (fun x -> x.IsStatic = statics)
@@ -3705,8 +3706,8 @@ let InfosForTyconConstructors (ncenv:NameResolver) m ad (tcref:TyconRef) =
         | Exception _ -> []
 
 /// import.fs creates somewhat fake modules for nested members of types (so that 
-/// types never contain other types) 
-let private notFakeContainerModule (tyconNames:HashSet<_>) nm = 
+/// types never contain other types)
+let inline notFakeContainerModule (tyconNames:HashSet<_>) nm = 
     not (tyconNames.Contains nm)
 
 /// Check is a namespace or module contains something accessible 
