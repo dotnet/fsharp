@@ -11,6 +11,11 @@
     <PackageTargetFallback>net462</PackageTargetFallback>
   </PropertyGroup>
 
+
+  <PropertyGroup>
+    <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
+  </PropertyGroup>
+
   <ImportGroup Condition="'$(ImportVsSDK)' == 'true' AND Exists('$(NuGetPackageRoot)Microsoft.VSSDK.BuildTools\$(MicrosoftVSSDKBuildToolsPackageVersion)')">
     <Import Project="$(NuGetPackageRoot)Microsoft.VSSDK.BuildTools\$(MicrosoftVSSDKBuildToolsPackageVersion)\build\Microsoft.VsSDK.BuildTools.props" />
     <Import Project="$(NugetPackageRoot)Microsoft.VSSDK.BuildTools\$(MicrosoftVSSDKBuildToolsPackageVersion)\build\Microsoft.VsSDK.BuildTools.targets" />
@@ -18,4 +23,18 @@
     <Import Project="DisableVsixManifestTargets.targets" Condition="'$(CreateVsixContainer)' == 'false'" />
   </ImportGroup>
 
+  <ItemGroup Condition="'$(NoMsbuild)' != 'true'">
+    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildPackageVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildFrameworkPackageVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildTasksCorePackageVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildUtilitiesCorePackageVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Include="System.IO.Compression" Version="$(SystemIoCompressionPackageVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutablePackageVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Include="System.ValueTuple" Version="$(SystemValueTuplePackageVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+  </ItemGroup>
+ 
 </Project>

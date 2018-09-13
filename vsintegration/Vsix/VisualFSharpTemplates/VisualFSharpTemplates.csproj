@@ -4,13 +4,22 @@
 
   <PropertyGroup>
     <AssemblyName>VisualFSharpTemplate</AssemblyName>
-    <TargetFramework>net46</TargetFramework>
     <OutputType>Library</OutputType>
     <ExtensionInstallationFolder>Microsoft\FSharpTemplates</ExtensionInstallationFolder>
     <DeployExtension>false</DeployExtension>
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="$(FSharpSourcesRoot)\..\packages\FSharp.Core.4.5.2\FSharp.Core.4.5.2.nupkg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>packages\FSharp.Core.4.5.2.nupkg</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.4.0\System.ValueTuple.4.4.0.nupkg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>packages\System.ValueTuple.4.4.0.nupkg</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <None Include="Source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>

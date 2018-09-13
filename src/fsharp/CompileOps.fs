@@ -2347,6 +2347,7 @@ type TcConfigBuilder =
      /// and from which we can read the metadata. Only used when metadataOnly=true.
       mutable tryGetMetadataSnapshot : ILReaderTryGetMetadataSnapshot
 
+      mutable internalTestSpanStackReferring : bool
       }
 
     static member Initial =
@@ -2483,6 +2484,7 @@ type TcConfigBuilder =
           copyFSharpCore = CopyFSharpCoreFlag.No
           shadowCopyReferences = false
           tryGetMetadataSnapshot = (fun _ -> None)
+          internalTestSpanStackReferring = false
         }
 
     static member CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
@@ -2943,6 +2945,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     member x.copyFSharpCore = data.copyFSharpCore
     member x.shadowCopyReferences = data.shadowCopyReferences
     member x.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot
+    member x.internalTestSpanStackReferring = data.internalTestSpanStackReferring
     static member Create(builder, validate) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         TcConfig(builder, validate)
@@ -5431,7 +5434,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig:TcConfig, tcImports:Tc
 
               // Typecheck the signature file 
               let! (tcEnv, sigFileType, createsGeneratedProvidedTypes) = 
-                  TypeCheckOneSigFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink) tcState.tcsTcSigEnv file
+                  TypeCheckOneSigFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcState.tcsTcSigEnv file
 
               let rootSigs = Zmap.add qualNameOfFile  sigFileType tcState.tcsRootSigs
 
@@ -5468,7 +5471,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig:TcConfig, tcImports:Tc
 
               // Typecheck the implementation file 
               let! topAttrs, implFile, _implFileHiddenType, tcEnvAtEnd, createsGeneratedProvidedTypes = 
-                  TypeCheckOneImplFile  (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink) tcImplEnv rootSigOpt file
+                  TypeCheckOneImplFile  (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcImplEnv rootSigOpt file
 
               let hadSig = rootSigOpt.IsSome
               let implFileSigType = SigTypeOfImplFile implFile

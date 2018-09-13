@@ -90,6 +90,7 @@ Conformance01			Conformance\DeclarationElements\AccessibilityAnnotations\OnOverr
 Conformance01			Conformance\DeclarationElements\AccessibilityAnnotations\OnTypeMembers
 Conformance01			Conformance\DeclarationElements\AccessibilityAnnotations\PermittedLocations
 Conformance01			Conformance\DeclarationElements\CustomAttributes\ArgumentsOfAllTypes
+Conformance01			Conformance\DeclarationElements\CustomAttributes\AttributeInheritance
 
 Conformance02			Conformance\DeclarationElements\CustomAttributes\AttributeUsage
 Conformance02			Conformance\DeclarationElements\CustomAttributes\Basic

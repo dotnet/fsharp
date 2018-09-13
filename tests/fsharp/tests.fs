@@ -182,6 +182,8 @@ module CoreTests =
 
             fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
+            singleNegTest cfg "test"
+
             exec cfg ("." ++ "test.exe") ""
 
             testOkFile.CheckExists()
@@ -203,15 +205,31 @@ module CoreTests =
             testOkFile.CheckExists()
         end
 
+        begin
+            use testOkFile = fileguard cfg "test2.ok"
+
+            fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
+
+            singleNegTest cfg "test2"
+
+            exec cfg ("." ++ "test2.exe") ""
+
+            testOkFile.CheckExists()
+        end
+
     [<Test>]
     let span () = 
 
         let cfg = testConfig "core/span"
 
+        let cfg = { cfg with fsc_flags = sprintf "%s --test:StackSpan" cfg.fsc_flags}
+
         begin
             use testOkFile = fileguard cfg "test.ok"
 
             fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+
+            singleNegTest cfg "test"
 
             // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
             //exec cfg ("." ++ "test.exe") ""
@@ -219,19 +237,31 @@ module CoreTests =
             //testOkFile.CheckExists()
         end
 
-        // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
-        //begin
-        //    use testOkFile = fileguard cfg "test.ok"
-        //    fsi cfg "" ["test.fsx"]
-        //    testOkFile.CheckExists()
-        //end
+        begin
+            use testOkFile = fileguard cfg "test2.ok"
 
-        // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
-        //begin
-        //    use testOkFile = fileguard cfg "test.ok"
-        //    fsiAnyCpu cfg "" ["test.fsx"]
-        //    testOkFile.CheckExists()
-        //end
+            fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
+
+            singleNegTest cfg "test2"
+
+            // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
+            //exec cfg ("." ++ "test.exe") ""
+
+            //testOkFile.CheckExists()
+        end
+
+        begin
+            use testOkFile = fileguard cfg "test3.ok"
+
+            fsc cfg "%s -o:test3.exe -g" cfg.fsc_flags ["test3.fsx"]
+
+            singleNegTest cfg "test3"
+
+            // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
+            //exec cfg ("." ++ "test.exe") ""
+
+            //testOkFile.CheckExists()
+        end
 
     [<Test>]
     let asyncStackTraces () = 
@@ -1628,10 +1658,16 @@ module RegressionTests =
     let ``literal-value-bug-2-FSI_BASIC`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI_BASIC
 
     [<Test>]
+    let ``OverloadResolution-bug-FSC_BASIC`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSC_BASIC
+
+    [<Test>]
+    let ``OverloadResolution-bug-FSI_BASIC`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSI_BASIC
+
+    [<Test>]
     let ``struct-tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_BASIC
 
     [<Test >]
-    let ``tuple-bug-1`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
+    let ``tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
 
     [<Test>]
     let ``26`` () = singleTestBuildAndRun "regression/26" FSC_BASIC
@@ -1891,6 +1927,12 @@ module TypecheckTests =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos24.exe" cfg.fsc_flags ["pos24.fs"]
         peverify cfg "pos24.exe"
+
+    [<Test>]
+    let ``sigs pos31`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos31.exe --warnaserror" cfg.fsc_flags ["pos31.fsi"; "pos31.fs"]
+        peverify cfg "pos31.exe"
 
     [<Test>]
     let ``sigs pos23`` () = 
@@ -2352,6 +2394,12 @@ module TypecheckTests =
 
     [<Test>]
     let ``type check neg107`` () = singleNegTest (testConfig "typecheck/sigs") "neg107"
+
+    [<Test>]
+    let ``type check neg108`` () = singleNegTest (testConfig "typecheck/sigs") "neg108"
+
+    [<Test>]
+    let ``type check neg109`` () = singleNegTest (testConfig "typecheck/sigs") "neg109"
 
     [<Test>]
     let ``type check neg103`` () = singleNegTest (testConfig "typecheck/sigs") "neg103"

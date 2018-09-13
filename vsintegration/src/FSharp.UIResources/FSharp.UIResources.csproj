@@ -3,7 +3,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
     <OutputType>Library</OutputType>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -36,8 +35,16 @@
     <Compile Update="$(IntermediateOutputPath)**\*.g.cs" Visible="false" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Update="Strings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Strings.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Update="Strings.resx">
-      <Generator></Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
 
@@ -45,7 +52,7 @@
     <VSMSBuildBinDir>$(VS150COMNTOOLS)\..\..\MSBuild\$(VisualStudioVersion)\Bin</VSMSBuildBinDir>
     <LanguageTargets Condition="Exists('$(VSMSBuildBinDir)')">$(VSMSBuildBinDir)\Microsoft.CSharp.targets</LanguageTargets>
   </PropertyGroup>
-
+  <Target Name="CoreCompile"/>
   <Target Name="WorkaroundForXAMLIntellisenseBuildIssue" AfterTargets="_CheckCompileDesignTimePrerequisite">
     <PropertyGroup>
       <BuildingProject>false</BuildingProject>

@@ -28,17 +28,19 @@ type SemanticClassificationServiceTests() =
     }
 
     let checker = FSharpChecker.Create()
+    let perfOptions = { LanguageServicePerformanceOptions.Default with AllowStaleCompletionResults = false }
 
     let getRanges (sourceText: string) : (Range.range * SemanticClassificationType) list =
         asyncMaybe {
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, 0, sourceText, projectOptions, false, "")
+
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, 0, sourceText, projectOptions, perfOptions, "")
             return checkFileResults.GetSemanticClassification(None)
         } 
         |> Async.RunSynchronously
         |> Option.toList
         |> List.collect Array.toList
 
-    let verifyColorizerAtEndOfMarker(fileContents: string, marker: string, classificationType: string) =
+    let verifyClassificationAtEndOfMarker(fileContents: string, marker: string, classificationType: string) =
         let text = SourceText.From fileContents
         let ranges = getRanges fileContents
         let line = text.Lines.GetLinePosition (fileContents.IndexOf(marker) + marker.Length - 1)
@@ -46,6 +48,14 @@ type SemanticClassificationServiceTests() =
         match ranges |> List.tryFind (fun (range, _) -> Range.rangeContainsPos range markerPos) with
         | None -> Assert.Fail("Cannot find colorization data for end of marker")
         | Some(_, ty) -> Assert.AreEqual(classificationType, FSharpClassificationTypes.getClassificationTypeName ty, "Classification data doesn't match for end of marker")
+
+    let verifyNoClassificationDataAtEndOfMarker(fileContents: string, marker: string, classificationType: string) =
+        let text = SourceText.From fileContents
+        let ranges = getRanges fileContents
+        let line = text.Lines.GetLinePosition (fileContents.IndexOf(marker) + marker.Length - 1)
+        let markerPos = Range.mkPos (Range.Line.fromZ line.Line) (line.Character + marker.Length - 1)
+        let anyData = ranges |> List.exists (fun (range, sct) -> Range.rangeContainsPos range markerPos && ((FSharpClassificationTypes.getClassificationTypeName sct) = classificationType))
+        Assert.False(anyData, "Classification data was found when it wasn't expected.")
 
     [<TestCase("(*1*)", FSharpClassificationTypes.ValueType)>]
     [<TestCase("(*2*)", FSharpClassificationTypes.ReferenceType)>]
@@ -55,7 +65,7 @@ type SemanticClassificationServiceTests() =
     [<TestCase("(*6*)", FSharpClassificationTypes.ValueType)>]
     [<TestCase("(*7*)", FSharpClassificationTypes.ReferenceType)>]
     member __.Measured_Types(marker: string, classificationType: string) =
-        verifyColorizerAtEndOfMarker(
+        verifyClassificationAtEndOfMarker(
                 """#light (*Light*)
                 open System
                 
@@ -75,3 +85,59 @@ type SemanticClassificationServiceTests() =
                 let s: (*7*)string<Ms> = Uom.tag "foo" """,
             marker, 
             classificationType)
+
+    [<TestCase("(*1*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*2*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*3*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*4*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*5*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*6*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*7*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*8*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*9*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*10*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*11*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*12*)", FSharpClassificationTypes.MutableVar)>]
+    member __.MutableValues(marker: string, classificationType: string) =
+        let sourceText ="""
+type R1 = { mutable (*1*)Doop: int}
+let r1 = { (*2*)Doop = 12 }
+r1.Doop
+
+let mutable (*3*)first = 12
+
+printfn "%d" (*4*)first
+
+let g ((*5*)xRef: outref<int>) = (*6*)xRef <- 12
+
+let f() =
+    let (*7*)second = &first
+    let (*8*)third: outref<int> = &first
+    printfn "%d%d" (*9*)second (*10*)third
+
+type R = { (*11*)MutableField: int ref }
+let r = { (*12*)MutableField = ref 12 }
+r.MutableField
+r.MutableField := 3
+"""
+        verifyClassificationAtEndOfMarker(sourceText, marker, classificationType)
+
+
+    [<TestCase("(*1*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*2*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*3*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*4*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*5*)", FSharpClassificationTypes.MutableVar)>]
+    [<TestCase("(*6*)", FSharpClassificationTypes.MutableVar)>]
+    member __.NoInrefsExpected(marker: string, classificationType: string) =
+        let sourceText = """
+let f (item: (*1*)inref<int>) = printfn "%d" (*2*)item
+let g() =
+    let x = 1
+    let y = 2
+    let (*3*)xRef = &x
+    let (*4*)yRef: inref<int> = &y
+    f (*5*)&xRef
+    f (*6*)&yRef
+"""
+        verifyNoClassificationDataAtEndOfMarker(sourceText, marker, classificationType)
