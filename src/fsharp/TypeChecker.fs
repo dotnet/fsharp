@@ -2928,7 +2928,7 @@ let TcRuntimeTypeTest isCast isOperator cenv denv m tgtTy srcTy =
       warning(TypeTestUnnecessary(m))
 
     if isTyparTy cenv.g srcTy && not (destTyparTy cenv.g srcTy).IsCompatFlex then 
-        error(IndeterminateRuntimeCoercion(denv, srcTy, tgty, m))
+        error(IndeterminateRuntimeCoercion(denv, srcTy, tgtTy, m))
 
     if isSealedTy cenv.g srcTy then 
         error(RuntimeCoercionSourceSealed(denv, srcTy, m))
@@ -2951,14 +2951,14 @@ let TcRuntimeTypeTest isCast isOperator cenv denv m tgtTy srcTy =
                               else warning(Error(FSComp.SR.tcTypeTestLossy(NicePrint.minimalStringOfType denv ety, NicePrint.minimalStringOfType denv (stripTyEqnsWrtErasure EraseAll cenv.g ety)), m)))
 
 ///  Checks, warnings and constraint assertions for upcasts 
-let TcStaticUpcast cenv denv m tgty srcTy =
-    if isTyparTy cenv.g tgty then 
-        if not (destTyparTy cenv.g tgty).IsCompatFlex then 
-            error(IndeterminateStaticCoercion(denv, srcTy, tgty, m)) 
+let TcStaticUpcast cenv denv m tgtTy srcTy =
+    if isTyparTy cenv.g tgtTy then 
+        if not (destTyparTy cenv.g tgtTy).IsCompatFlex then 
+            error(IndeterminateStaticCoercion(denv, srcTy, tgtTy, m)) 
             //else warning(UpcastUnnecessary(m))
 
-    if isSealedTy cenv.g tgty && not (isTyparTy cenv.g tgty) then 
-        warning(CoercionTargetSealed(denv, tgty, m))
+    if isSealedTy cenv.g tgtTy && not (isTyparTy cenv.g tgtTy) then 
+        warning(CoercionTargetSealed(denv, tgtTy, m))
 
     if typeEquiv cenv.g srcTy tgtTy then 
         warning(UpcastUnnecessary(m)) 
@@ -8285,58 +8285,6 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
             let inputExpr, tpenv = TcExpr cenv inputExprTy env tpenv rhsExpr
             let innerExpr, tpenv = tcSequenceExprBody envinner genOuterTy tpenv innerComp
             let inputExprMark = inputExpr.Range
-            let matchv, matchExpr = compileSeqExprMatchClauses cenv env inputExprMark (pat', vspecs) innerExpr bindPatTy genOuterTy 
-            let consumeExpr = mkLambda wholeExprMark matchv (matchExpr, genOuterTy)
-            //SEQPOINT NEEDED - we must consume spBind on this path
-            Some(mkSeqUsing cenv env wholeExprMark bindPatTy genOuterTy inputExpr consumeExpr, tpenv)
-
-        | SynExpr.LetOrUseBang(_, _, _, _, _, _, m) -> 
-            error(Error(FSComp.SR.tcUseForInSequenceExpression(), m))
-
-        | SynExpr.Match (spMatch, expr, clauses, false, _) ->
-            let inputExpr, matchty, tpenv = TcExprOfUnknownType cenv env tpenv expr
-            let tclauses, tpenv = 
-                List.mapFold 
-                    (fun tpenv (Clause(pat, cond, innerComp, _, sp)) ->
-                          let pat', cond', vspecs, envinner, tpenv = TcMatchPattern cenv matchty env tpenv (pat, cond)
-                          let innerExpr, tpenv = tcSequenceExprBody envinner genOuterTy tpenv innerComp
-                          TClause(pat', cond', TTarget(vspecs, innerExpr, sp), pat'.Range), tpenv)
-                    tpenv
-                    clauses
-            let inputExprTy = tyOfExpr cenv.g inputExpr
-            let inputExprMark = inputExpr.Range
-            let matchv, matchExpr = CompilePatternForMatchClauses cenv env inputExprMark inputExprMark true ThrowIncompleteMatchException inputExprTy genOuterTy tclauses 
-            Some(mkLet spMatch inputExprMark matchv inputExpr matchExpr, tpenv)
-
-        | SynExpr.TryWith (_, mTryToWith, _, _, _, _, _) ->
-            error(Error(FSComp.SR.tcTryIllegalInSequenceExpression(), mTryToWith))
-
-        | SynExpr.YieldOrReturnFrom((isYield, _), yieldExpr, m) -> 
-            let resultExpr, genExprTy, tpenv = TcExprOfUnknownType cenv env tpenv yieldExpr
-
-            if not isYield then errorR(Error(FSComp.SR.tcUseYieldBangForMultipleResults(), m)) 
-
-            AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m  NoTrace genOuterTy genExprTy
-            Some(mkCoerceExpr(resultExpr, genOuterTy, m, genExprTy), tpenv)
-
-        | SynExpr.YieldOrReturn((isYield, _), yieldExpr, m) -> 
-            let genResultTy = NewInferenceType ()
-            if not isYield then errorR(Error(FSComp.SR.tcSeqResultsUseYield(), m)) 
-            UnifyTypes cenv env m genOuterTy (mkSeqTy cenv.g genResultTy)
-
-            let resultExpr, tpenv = TcExprFlex cenv flex true genResultTy env tpenv yieldExpr
-            Some(mkCallSeqSingleton cenv.g m genResultTy resultExpr, tpenv )
-
-        // 'use x = expr in expr'
-        | SynExpr.LetOrUse (_isRec, true, [Binding (_vis, NormalBinding, _, _, _, _, _, pat, _, rhsExpr, _, _spBind)], innerComp, wholeExprMark) ->
-
-            let bindPatTy = NewInferenceType ()
-            let inputExprTy = NewInferenceType ()
-            let pat', _, vspecs, envinner, tpenv = TcMatchPattern cenv bindPatTy env tpenv (pat, None)
-            UnifyTypes cenv env m inputExprTy bindPatTy
-            let inputExpr, tpenv = TcExpr cenv inputExprTy env tpenv rhsExpr
-            let innerExpr, tpenv = tcSequenceExprBody envinner genOuterTy tpenv innerComp
-            let inputExprMark = inputExpr.Range
             let matchv, matchExpr = compileSeqExprMatchClauses cenv env inputExprMark (pat', vspecs) innerExpr (Some inputExpr) bindPatTy genOuterTy 
             let consumeExpr = mkLambda wholeExprMark matchv (matchExpr, genOuterTy)
             //SEQPOINT NEEDED - we must consume spBind on this path
@@ -8348,11 +8296,13 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
         | SynExpr.Match (spMatch, expr, clauses, _) ->
             let inputExpr, matchty, tpenv = TcExprOfUnknownType cenv env tpenv expr
             let tclauses, tpenv = 
-                (tpenv, clauses) ||> List.mapFold (fun tpenv clause ->
-                    let (Clause(pat, cond, innerComp, _, sp)) = clause
-                    let pat', cond', vspecs, envinner, tpenv = TcMatchPattern cenv matchty env tpenv (pat, cond)
-                    let innerExpr, tpenv = tcSequenceExprBody envinner genOuterTy tpenv innerComp
-                    TClause(pat', cond', TTarget(vspecs, innerExpr, sp), pat'.Range), tpenv)
+                List.mapFold 
+                    (fun tpenv (Clause(pat, cond, innerComp, _, sp)) ->
+                          let pat', cond', vspecs, envinner, tpenv = TcMatchPattern cenv matchty env tpenv (pat, cond)
+                          let innerExpr, tpenv = tcSequenceExprBody envinner genOuterTy tpenv innerComp
+                          TClause(pat', cond', TTarget(vspecs, innerExpr, sp), pat'.Range), tpenv)
+                    tpenv
+                    clauses
             let inputExprTy = tyOfExpr cenv.g inputExpr
             let inputExprMark = inputExpr.Range
             let matchv, matchExpr = CompilePatternForMatchClauses cenv env inputExprMark inputExprMark true ThrowIncompleteMatchException (Some inputExpr) inputExprTy genOuterTy tclauses 
@@ -8374,7 +8324,7 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
             if not isYield then errorR(Error(FSComp.SR.tcSeqResultsUseYield(), m)) 
             UnifyTypes cenv env m genOuterTy (mkSeqTy cenv.g genResultTy)
 
-            let resultExpr, tpenv = TcExpr cenv genResultTy env tpenv yieldExpr
+            let resultExpr, tpenv = TcExprFlex cenv flex true genResultTy env tpenv yieldExpr
             Some(mkCallSeqSingleton cenv.g m genResultTy resultExpr, tpenv )
 
         | _ -> None
