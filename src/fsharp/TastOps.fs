@@ -5212,7 +5212,7 @@ and remarkBind m (TBind(v, repr, _)) =
 
 let isRecdOrStructFieldMutable (f:RecdField) = not f.IsStatic && f.IsMutable
 let isUnionCaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldMutable
-let isUnionCaseRefMutable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseAllocObservable
+let isUnionCaseRefAllocObservable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseAllocObservable
   
 let isRecdOrUnionOrStructTyconRefAllocObservable (_g: TcGlobals) (tcref : TyconRef) = 
     let tycon = tcref.Deref

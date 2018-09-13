@@ -2169,7 +2169,7 @@ module GeneralizationHelpers =
         | Expr.Op(op, _, args, _) ->
             match op with 
             | TOp.Tuple _ -> true
-            | TOp.UnionCase uc -> not (isUnionCaseRefMutable uc)
+            | TOp.UnionCase uc -> not (isUnionCaseRefAllocObservable uc)
             | TOp.Recd(ctorInfo, tcref) -> 
                 match ctorInfo with 
                 | RecdExpr -> not (isRecdOrUnionOrStructTyconRefAllocObservable g tcref)
