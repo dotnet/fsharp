@@ -484,10 +484,10 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
      
     let [<Literal>] private mangledGenericTypeNameSym = '`'
 
-    let IsMangledGenericName (n:string) = 
-        n.IndexOf mangledGenericTypeNameSym <> -1 &&
+    let IsMangledGenericName (n:string) =
         (* check what comes after the symbol is a number *)
         let m = n.LastIndexOf mangledGenericTypeNameSym
+        if m = -1 then false else
         let mutable res = m < n.Length - 1
         for i = m + 1 to n.Length - 1 do
             res <- res && n.[i] >= '0' && n.[i] <= '9'
@@ -504,7 +504,7 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
         else NameArityPair(n,0)
 
     let DemangleGenericTypeName n = 
-        if  IsMangledGenericName n then 
+        if IsMangledGenericName n then 
             let pos = n.LastIndexOf mangledGenericTypeNameSym
             n.Substring(0,pos)
         else n
