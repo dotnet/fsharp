@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 4:5:0:0
 }
 .assembly extern Utils
 {
@@ -40,13 +40,13 @@
   // Offset: 0x000003C0 Length: 0x00000134
 }
 .module Linq101Ordering01.exe
-// MVID: {5B17FC50-649A-6956-A745-038350FC175B}
+// MVID: {5B9A632A-649A-6956-A745-03832A639A5B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x04AC0000
+// Image base: 0x00AD0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

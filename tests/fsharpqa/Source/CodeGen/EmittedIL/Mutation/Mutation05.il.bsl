@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 4:5:0:0
 }
 .assembly Mutation05
 {
@@ -36,21 +36,13 @@
   // Offset: 0x000004D8 Length: 0x00000127
 }
 .module Mutation05.exe
-<<<<<<< HEAD
-// MVID: {5B1872AD-8C6A-2E22-A745-0383AD72185B}
-=======
-// MVID: {5B17FC4F-8C6A-2E22-A745-03834FFC175B}
->>>>>>> 7dbfae8e8b72211c5dc0016cf7c7a2addcf33e58
+// MVID: {5B9A632A-8C6A-2E22-A745-03832A639A5B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-<<<<<<< HEAD
-// Image base: 0x01040000
-=======
-// Image base: 0x00FA0000
->>>>>>> 7dbfae8e8b72211c5dc0016cf7c7a2addcf33e58
+// Image base: 0x008E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
