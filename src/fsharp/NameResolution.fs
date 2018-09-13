@@ -4380,26 +4380,24 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
     }
 
 let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f plid (modref: ModuleOrNamespaceRef) =
-    let mty = modref.ModuleOrNamespaceType
     match plid with 
     | [] -> f modref
     | id :: rest -> 
-        match mty.ModulesAndNamespacesByDemangledName.TryFind id with
+        match modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryFind id with
         | Some mty -> 
-            PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest (modref.NestedTyconRef mty) 
+            modref.NestedTyconRef mty
+            |> PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest
         | None -> Seq.empty
 
 let PartialResolveLongIndentAsModuleOrNamespaceThenLazy (nenv:NameResolutionEnv) plid f =
-    seq {
-        match plid with 
-        | id :: rest -> 
-            match Map.tryFind id nenv.eModulesAndNamespaces with
-            | Some modrefs -> 
-                for modref in modrefs do
-                    yield! PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest modref
-            | None -> ()
-        | [] -> ()
-    }
+    match plid with 
+    | id :: rest -> 
+        match Map.tryFind id nenv.eModulesAndNamespaces with
+        | Some modrefs -> 
+            modrefs
+            |> Seq.collect (PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest)
+        | None -> Seq.empty
+    | [] -> Seq.empty
 
 let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad plid (item: Item) : seq<Item> =
     seq {
