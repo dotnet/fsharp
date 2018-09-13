@@ -479,4 +479,14 @@ So is the offside stuff adding/missing something weird that I've not noticed, or
 
 One conflict: `isLetContinuator` currently lets the `and!` be "inside" the `let!`, but the parser expects `hardwhiteDefnBindingsTerminator`, i.e. `ODECLEND`!
 
-How much of a problem is it that `let! ... and! ...` is using right-recursion?
+How much of a problem is it that `let! ... and! ...` is using right-recursion? (We seem to use it for `and`...)
+
+Okay, I think it is time to take a step back. The easiest thing to make `and!` is presumably to emulate an existing construct. Up to and excluding parsing, `and!` works like `and` (after that there's a difference because, semantically, the `and!` is very much a part of the larger `let!` construct).
+
+NFO `OAND_BANG` - there's no `OAND`!
+
+One day lost to `build.cmd` not actually building everything. From what I can tell, you *must* use VS or msbuild to rebuild some artefacts.
+
+## 2018-09-13
+
+Parsing seem to at least accept my examples. Working on type checking now. One of the core issue right now if when to call `trans` and `translatedCtxt` on desugared CEs.
