@@ -484,6 +484,22 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
      
     let [<Literal>] private mangledGenericTypeNameSym = '`'
 
+    let IsMangledGenericNameAndPos (n:string) =
+        (* check what comes after the symbol is a number *)
+        let m = n.LastIndexOf mangledGenericTypeNameSym
+        if m = -1 then None else
+        let mutable res = m < n.Length - 1
+        let mutable i = m + 1
+        while res && i < n.Length do
+            let char = n.[i]
+            if not (char >= '0' && char <= '9') then
+                res <- false
+            i <- i + 1
+        if res then
+            Some m
+        else
+            None
+
     let IsMangledGenericName (n:string) =
         (* check what comes after the symbol is a number *)
         let m = n.LastIndexOf mangledGenericTypeNameSym
@@ -499,19 +515,20 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
 
     type NameArityPair = NameArityPair of string * int
 
-    let DecodeGenericTypeName n = 
-        if IsMangledGenericName n then 
-            let pos = n.LastIndexOf mangledGenericTypeNameSym
+    let DecodeGenericTypeName n =
+        match IsMangledGenericNameAndPos n with
+        | Some pos ->
             let res = n.Substring(0,pos)
             let num = n.Substring(pos+1,n.Length - pos - 1)
             NameArityPair(res, int32 num)
-        else NameArityPair(n,0)
+        | _ -> NameArityPair(n,0)
 
-    let DemangleGenericTypeName n = 
-        if IsMangledGenericName n then 
+    let DemangleGenericTypeName n =
+        match IsMangledGenericNameAndPos n with
+        | Some pos ->
             let pos = n.LastIndexOf mangledGenericTypeNameSym
             n.Substring(0,pos)
-        else n
+        | _ -> n
 
     let private chopStringTo (s:string) (c:char) =
         match s.IndexOf c with
