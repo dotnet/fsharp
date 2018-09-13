@@ -1444,7 +1444,7 @@ and TransactMemberConstraintSolution traitInfo (trace:OptionalTrace) sln  =
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads 
 and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution nm (TTrait(tys, _, memFlags, argtys, rty, soln) as traitInfo): MethInfo list =
     let results = 
-        if MemberConstraintSupportIsReadyForDeterminingOverloads permitWeakResolution csenv traitInfo then
+        if permitWeakResolution || MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then
             let m = csenv.m
             let minfos = 
                 match memFlags.MemberKind with
@@ -1456,10 +1456,7 @@ and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution 
             // Merge the sets so we don't get the same minfo from each side 
             // We merge based on whether minfos use identical metadata or not. 
             let minfos = List.reduce (ListSet.unionFavourLeft MethInfo.MethInfosUseIdenticalDefinitions) minfos
-            if minfos.Length <= 1 || MemberConstraintSignatureIsReadyForResolution csenv traitInfo then 
-                minfos
-            else 
-                [] // nothing available yet, there are overloads and the signature has not been fully determined
+            minfos
         else 
             []
     // The trait name "op_Explicit" also covers "op_Implicit", so look for that one too.
@@ -1485,24 +1482,14 @@ and SupportOfMemberConstraintIsPartiallySolved (csenv:ConstraintSolverEnv) (TTra
 and GetFreeTyparsOfMemberConstraint (csenv:ConstraintSolverEnv) (TTrait(tys, _, _, argtys, rty, _)) =
     freeInTypesLeftToRightSkippingConstraints csenv.g (tys@argtys@ Option.toList rty)
 
-/// Check there are no unsolved statically-resolved type parameters in the argument types of the trait method signature.
-/// This is necessary to prevent overload resolution being applied to statically resolved members
-// constraints before all argument types are known.  The return type is not taken into account.
-and MemberConstraintSignatureIsReadyForResolution csenv (TTrait(tys, _, _, argtys, _, _)) =
-    let typarsRelevantToOverloadResultion = freeInTypesLeftToRightSkippingConstraints csenv.g (tys@argtys)
-    typarsRelevantToOverloadResultion |> List.forall (fun tp -> match tp.StaticReq with HeadTypeStaticReq -> false | _ -> true)
-
 and MemberConstraintIsReadyForWeakResolution csenv traitInfo =
-   SupportOfMemberConstraintIsPartiallySolved csenv traitInfo && 
-   MemberConstraintSignatureIsReadyForResolution csenv traitInfo
+   SupportOfMemberConstraintIsFullySolved csenv traitInfo
 
 and MemberConstraintIsReadyForStrongResolution csenv traitInfo =
-   SupportOfMemberConstraintIsFullySolved csenv traitInfo && 
-   MemberConstraintSignatureIsReadyForResolution csenv traitInfo
+   SupportOfMemberConstraintIsFullySolved csenv traitInfo
 
-and MemberConstraintSupportIsReadyForDeterminingOverloads permitWeakResolution csenv traitInfo =
-   (permitWeakResolution && SupportOfMemberConstraintIsPartiallySolved csenv traitInfo) 
-   || SupportOfMemberConstraintIsFullySolved csenv traitInfo
+and MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo =
+   SupportOfMemberConstraintIsFullySolved csenv traitInfo
 
 /// Re-solve the global constraints involving any of the given type variables. 
 /// Trait constraints can't always be solved using the pessimistic rules. We only canonicalize 
