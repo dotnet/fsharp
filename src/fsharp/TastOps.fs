@@ -5210,8 +5210,8 @@ and remarkBind m (TBind(v, repr, _)) =
 // Reference semantics?
 //--------------------------------------------------------------------------
 
-let isRecdOrStructFieldMutable (f:RecdField) = not f.IsStatic && f.IsMutable
-let isUnionCaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldMutable
+let isRecdOrStructFieldAllocObservable (f:RecdField) = not f.IsStatic && f.IsMutable
+let isUnionCaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldAllocObservable
 let isUnionCaseRefAllocObservable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseAllocObservable
   
 let isRecdOrUnionOrStructTyconRefAllocObservable (_g: TcGlobals) (tcref : TyconRef) = 
@@ -5219,7 +5219,7 @@ let isRecdOrUnionOrStructTyconRefAllocObservable (_g: TcGlobals) (tcref : TyconR
     if tycon.IsUnionTycon then 
         tycon.UnionCasesArray |> Array.exists isUnionCaseAllocObservable
     elif tycon.IsRecordTycon || tycon.IsFSharpStructOrEnumTycon then 
-        tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldMutable
+        tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldAllocObservable
     else
         false
 
@@ -5690,7 +5690,7 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
        -> 
         if isByrefTy g v.Type then error(Error(FSComp.SR.tastUnexpectedByRef(), m));
         if v.IsMutable then 
-            error(Error(FSComp.SR.tastInvalidAddressOfMutableAcrossAssemblyBoundary(), m))
+            error(Error(FSComp.SR.tastInvalidAddressOfMutableAcrossAssemblyBoundary(), m));
         else 
             error(Error(FSComp.SR.tastValueMustBeLocalAndMutable(), m));
          

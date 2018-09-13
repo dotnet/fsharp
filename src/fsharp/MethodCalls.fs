@@ -1120,7 +1120,7 @@ module ProvidedMethodCalls =
             let targetMethInfo = ProvidedMeth(amap,ctor.PApply((fun ne -> upcast ne),m),None,m)
             let objArgs = [] 
             let arguments = [ for ea in args.PApplyArray(id, "GetInvokerExpresson", m) -> exprToExpr ea ]
-            let callExpr = BuildMethodCall tcVal g amap PossiblyMutates m false targetMethInfo isSuperInit [] objArgs arguments
+            let callExpr = BuildMethodCall tcVal g amap Mutates.PossiblyMutates m false targetMethInfo isSuperInit [] objArgs arguments
             callExpr
 
         and addVar (v:Tainted<ProvidedVar>) =    
