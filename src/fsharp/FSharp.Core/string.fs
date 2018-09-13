@@ -12,12 +12,6 @@ namespace Microsoft.FSharp.Core
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
     module String =
-
-        let inline emptyIfNull str = 
-            match str with
-            | null -> String.Empty
-            | _ -> str
-
         [<CompiledName("Concat")>]
         let concat sep (strings : seq<string>) =  
             String.Join(sep, strings)
@@ -56,17 +50,21 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Filter")>]
         let filter (predicate: char -> bool) (str:string) =
-            let str = emptyIfNull str
-            let res = StringBuilder str.Length
-            str |> iter (fun c -> if predicate c then res.Append c |> ignore)
-            res.ToString()
+            if String.IsNullOrEmpty str then
+                String.Empty
+            else
+                let res = StringBuilder str.Length
+                str |> iter (fun c -> if predicate c then res.Append c |> ignore)
+                res.ToString()
 
         [<CompiledName("Collect")>]
         let collect (mapping: char -> string) (str:string) =
-            let str = emptyIfNull str
-            let res = StringBuilder str.Length
-            str |> iter (fun c -> res.Append(mapping c) |> ignore)
-            res.ToString()
+            if String.IsNullOrEmpty str then
+                String.Empty
+            else
+                let res = StringBuilder str.Length
+                str |> iter (fun c -> res.Append(mapping c) |> ignore)
+                res.ToString()
 
         [<CompiledName("Initialize")>]
         let init (count:int) (initializer: int-> string) =
@@ -79,30 +77,34 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Replicate")>]
         let replicate (count:int) (str:string) =
             if count < 0 then invalidArgInputMustBeNonNegative "count" count
-            let str = emptyIfNull str
-            let res = StringBuilder str.Length
-            for i = 0 to count - 1 do 
-               res.Append str |> ignore
-            res.ToString()
+
+            if String.IsNullOrEmpty str then
+                String.Empty
+            else
+                let res = StringBuilder str.Length
+                for i = 0 to count - 1 do 
+                   res.Append str |> ignore
+                res.ToString()
 
         [<CompiledName("ForAll")>]
         let forall predicate (str:string) =
-            match str with
-            | null -> true
-            | _ ->
+            if String.IsNullOrEmpty str then
+                true
+            else
                 let rec check i = (i >= str.Length) || (predicate str.[i] && check (i+1)) 
                 check 0
 
         [<CompiledName("Exists")>]
         let exists predicate (str:string) =
-            match str with
-            | null -> false
-            | _ ->
+            if String.IsNullOrEmpty str then
+                false
+            else
                 let rec check i = (i < str.Length) && (predicate str.[i] || check (i+1)) 
                 check 0  
 
         [<CompiledName("Length")>]
         let length (str:string) =
-            match str with
-            | null -> 0
-            | _ -> str.Length
+            if String.IsNullOrEmpty str then
+                0
+            else
+                str.Length
