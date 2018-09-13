@@ -59,7 +59,7 @@ module EnvMisc =
     let maxTypeCheckErrorsOutOfProjectContext = GetEnvInteger "FCS_MaxErrorsOutOfProjectContext" 3
     let braceMatchCacheSize = GetEnvInteger "FCS_BraceMatchCacheSize" 5
     let parseFileCacheSize = GetEnvInteger "FCS_ParseFileCacheSize" 2
-    let checkFileInProjectCacheSize = GetEnvInteger "FCS_CheckFileInProjectCacheSize" 5
+    let checkFileInProjectCacheSize = GetEnvInteger "FCS_CheckFileInProjectCacheSize" 10
 
     let projectCacheSizeDefault   = GetEnvInteger "FCS_ProjectCacheSizeDefault" 3
     let frameworkTcImportsCacheStrongSize = GetEnvInteger "FCS_frameworkTcImportsCacheStrongSizeDefault" 8
@@ -568,7 +568,7 @@ type TypeCheckInfo
             p <- p - 1
         if p >= 0 then Some p else None
     
-    let CompletionItem (ty: TyconRef option) (unresolvedEntity: AssemblySymbol option) (item: ItemWithInst) =
+    let CompletionItem (ty: TyconRef option) (assemblySymbol: AssemblySymbol option) (item: ItemWithInst) =
         let kind = 
             match item.Item with
             | Item.MethodGroup (_, minfo :: _, _) -> CompletionItemKind.Method minfo.IsExtensionMember
@@ -577,31 +577,15 @@ type TypeCheckInfo
             | Item.Event _ -> CompletionItemKind.Event
             | Item.ILField _ 
             | Item.Value _ -> CompletionItemKind.Field
+            | Item.CustomOperation _ -> CompletionItemKind.CustomOperation
             | _ -> CompletionItemKind.Other
-
-        let getNamespace (idents: Idents) = 
-            if idents.Length > 1 then Some idents.[..idents.Length - 2] else None
-
-        let unresolved =
-            unresolvedEntity
-            |> Option.map (fun x ->
-                let ns = 
-                    x.TopRequireQualifiedAccessParent 
-                    |> Option.bind getNamespace 
-                    |> Option.orElseWith (fun () -> getNamespace x.CleanedIdents)
-                    |> Option.defaultValue [||]
-
-                let displayName = x.CleanedIdents |> Array.skip ns.Length |> String.concat "."
-                
-                { DisplayName = displayName
-                  Namespace = ns })
 
         { ItemWithInst = item
           MinorPriority = 0
           Kind = kind
           IsOwnMember = false
           Type = ty 
-          Unresolved = unresolved }
+          Unresolved = assemblySymbol |> Option.map (fun x -> x.UnresolvedSymbol) }
 
     let DefaultCompletionItem item = CompletionItem None None item
     
@@ -919,6 +903,9 @@ type TypeCheckInfo
         match item with
         | Item.Types _ | Item.ModuleOrNamespaces _ -> true
         | _ -> false
+    
+    /// Find the most precise display context for the given line and column.
+    member __.GetBestDisplayEnvForPos cursorPos  = GetBestEnvForPos cursorPos
 
     member __.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
         let (nenv, ad), m = GetBestEnvForPos cursorPos
@@ -1225,7 +1212,9 @@ type TypeCheckInfo
                       //Item.Value(vref)
                       None
 
-                  | Item.Types (_, [AppTy g (tr, _)]) when not tr.IsLocalRef ->
+                  | Item.Types (_, TType_app (tr, _) :: _) when tr.IsLocalRef && tr.IsTypeAbbrev -> None
+
+                  | Item.Types (_, [ AppTy g (tr, _) ]) when not tr.IsLocalRef ->
                       match tr.TypeReprInfo, tr.PublicPath with
                       | TILObjectRepr(TILObjectReprData (ILScopeRef.Assembly assref, _, _)), Some (PubPath parts) ->
                           let fullName = parts |> String.concat "."
@@ -1335,13 +1324,23 @@ type TypeCheckInfo
             let underlyingTy = stripTyEqnsAndMeasureEqns g ty
             isStructTy g underlyingTy
 
+        let IsValRefMutable (vref: ValRef) =
+            // Mutable values, ref cells, and non-inref byrefs are mutable.
+            vref.IsMutable
+            || Tastops.isRefCellTy g vref.Type
+            || (Tastops.isByrefTy g vref.Type && not (Tastops.isInByrefTy g vref.Type))
+
+        let isRecdFieldMutable (rfinfo: RecdFieldInfo) =
+            (rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone)
+            || Tastops.isRefCellTy g rfinfo.RecdField.FormalType
+
         resolutions
         |> Seq.choose (fun cnr ->
             match cnr with
             // 'seq' in 'seq { ... }' gets colored as keywords
             | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref ->
                 Some (m, SemanticClassificationType.ComputationExpression)
-            | CNR(_, (Item.Value vref), _, _, _, _, m) when vref.IsMutable || Tastops.isRefCellTy g vref.Type ->
+            | CNR(_, (Item.Value vref), _, _, _, _, m) when IsValRefMutable vref ->
                 Some (m, SemanticClassificationType.MutableVar)
             | CNR(_, Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m) ->
                 Some (m, SemanticClassificationType.IntrinsicFunction)
@@ -1354,7 +1353,7 @@ type TypeCheckInfo
                     Some (m, SemanticClassificationType.Operator)
                 else
                     Some (m, SemanticClassificationType.Function)
-            | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone -> 
+            | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when isRecdFieldMutable rfinfo ->
                 Some (m, SemanticClassificationType.MutableVar)
             | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when isFunction g rfinfo.FieldType ->
                Some (m, SemanticClassificationType.Function)
@@ -2030,6 +2029,7 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
         | _ -> 
             async.Return dflt
 
+    
     member info.GetToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag, userOpName) = 
         info.GetStructuredToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag, ?userOpName=userOpName)
         |> Tooltips.Map Tooltips.ToFSharpToolTipText
@@ -2142,6 +2142,13 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
             RequireCompilationThread ctok
             scope.IsRelativeNameResolvableFromSymbol(pos, plid, symbol))
     
+    member info.GetDisplayEnvForPos(pos: pos) : Async<DisplayEnv option> =
+        let userOpName = "CodeLens"
+        reactorOp userOpName "GetDisplayContextAtPos" None (fun ctok scope -> 
+            DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent ctok
+            let (nenv, _), _ = scope.GetBestDisplayEnvForPos pos
+            Some nenv.DisplayEnv)
+            
     member info.ImplementationFile =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
         scopeOptX 
@@ -2779,7 +2786,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             parseCacheLock.AcquireLock (fun ltok -> 
                 match checkFileInProjectCache.TryGet(ltok,(filename,sourceText,options)) with
                 | Some (a,b,c,_) -> Some (a,b,c)
-                | None -> None)
+                | None -> parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCachePossiblyStale.TryGet(ltok,(filename,options))))
         | None -> parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCachePossiblyStale.TryGet(ltok,(filename,options)))
 
     /// Parse and typecheck the whole project (the implementation, called recursively as project graph is evaluated)

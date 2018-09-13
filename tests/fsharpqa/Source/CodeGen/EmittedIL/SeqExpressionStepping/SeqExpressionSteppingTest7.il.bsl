@@ -36,13 +36,13 @@
   // Offset: 0x00000278 Length: 0x00000098
 }
 .module SeqExpressionSteppingTest7.exe
-// MVID: {5B16FAD8-2432-93C3-A745-0383D8FA165B}
+// MVID: {5B17FC50-2432-93C3-A745-038350FC175B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00EB0000
+// Image base: 0x02D10000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -240,16 +240,16 @@
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       16 (0x10)
-      .maxstack  6
+      // Code size       9 (0x9)
+      .maxstack  7
       .locals init (!a V_0)
-      IL_0000:  ldc.i4.0
-      IL_0001:  ldloca.s   V_0
-      IL_0003:  initobj    !a
-      IL_0009:  ldloc.0
-      IL_000a:  newobj     instance void class SeqExpressionSteppingTest7/f@5<!a>::.ctor(int32,
+      IL_0000:  ldnull
+      IL_0001:  ldc.i4.0
+      IL_0002:  ldloc.0
+      IL_0003:  newobj     instance void class SeqExpressionSteppingTest7/f@5<!a>::.ctor(string,
+                                                                                         int32,
                                                                                          !0)
-      IL_000f:  ret
+      IL_0008:  ret
     } // end of method f@5::GetFreshEnumerator
 
   } // end of class f@5
@@ -266,19 +266,19 @@
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a> 
           f<a>() cil managed
   {
-    // Code size       23 (0x17)
-    .maxstack  4
+    // Code size       16 (0x10)
+    .maxstack  5
     .locals init ([0] !!a V_0)
     .line 5,5 : 12,57 ''
-    IL_0000:  ldc.i4.0
-    IL_0001:  ldloca.s   V_0
-    IL_0003:  initobj    !!a
-    IL_0009:  ldloc.0
-    IL_000a:  newobj     instance void class SeqExpressionSteppingTest7/f@5<!!a>::.ctor(int32,
+    IL_0000:  ldnull
+    IL_0001:  ldc.i4.0
+    IL_0002:  ldloc.0
+    IL_0003:  newobj     instance void class SeqExpressionSteppingTest7/f@5<!!a>::.ctor(string,
+                                                                                        int32,
                                                                                         !0)
-    IL_000f:  tail.
-    IL_0011:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<!!0>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0016:  ret
+    IL_0008:  tail.
+    IL_000a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<!!0>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_000f:  ret
   } // end of method SeqExpressionSteppingTest7::f
 
   .property class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>

@@ -38,6 +38,8 @@ is not compatible with type
     'byref<'a>'    
 .
 
+neg106.fs(17,59,17,61): typecheck error FS3237: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
+
 neg106.fs(17,14,17,68): typecheck error FS0041: No overloads match for method 'CompareExchange'. The available overloads are shown below.
 neg106.fs(17,14,17,68): typecheck error FS0041: Possible overload: 'System.Threading.Interlocked.CompareExchange(location1: byref<int>, value: int, comparand: int) : int'. Type constraint mismatch. The type 
     'inref<int>'    

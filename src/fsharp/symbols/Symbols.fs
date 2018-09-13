@@ -123,6 +123,7 @@ module Impl =
     /// Convert an IL member accessibility into an F# accessibility
     let getApproxFSharpAccessibilityOfMember (declaringEntity: EntityRef) (ilAccess: ILMemberAccess) = 
         match ilAccess with 
+        | ILMemberAccess.CompilerControlled
         | ILMemberAccess.FamilyAndAssembly 
         | ILMemberAccess.Assembly -> 
             taccessPrivate  (CompPath(declaringEntity.CompilationPath.ILScopeRef, []))
@@ -1550,7 +1551,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member __.IsEventAddMethod = 
         if isUnresolved() then false else 
         match d with 
-        | M m when m.LogicalName.StartsWith("add_") -> 
+        | M m when m.LogicalName.StartsWithOrdinal("add_") -> 
             let eventName = m.LogicalName.[4..]
             let entityTy = generalizedTyconRef m.DeclaringTyconRef
             not (isNil (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
@@ -1564,7 +1565,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member __.IsEventRemoveMethod = 
         if isUnresolved() then false else 
         match d with 
-        | M m when m.LogicalName.StartsWith("remove_") -> 
+        | M m when m.LogicalName.StartsWithOrdinal("remove_") -> 
             let eventName = m.LogicalName.[7..]
             let entityTy = generalizedTyconRef m.DeclaringTyconRef
             not (isNil (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
@@ -1591,7 +1592,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member __.IsPropertyGetterMethod = 
         if isUnresolved() then false else 
         match d with 
-        | M m when m.LogicalName.StartsWith("get_") -> 
+        | M m when m.LogicalName.StartsWithOrdinal("get_") -> 
             let propName = PrettyNaming.ChopPropertyName(m.LogicalName) 
             let declaringTy = generalizedTyconRef m.DeclaringTyconRef
             not (isNil (GetImmediateIntrinsicPropInfosOfType (Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy))
@@ -1602,7 +1603,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         if isUnresolved() then false else 
         match d with 
         // Look for a matching property with the right name. 
-        | M m when m.LogicalName.StartsWith("set_") -> 
+        | M m when m.LogicalName.StartsWithOrdinal("set_") -> 
             let propName = PrettyNaming.ChopPropertyName(m.LogicalName) 
             let declaringTy = generalizedTyconRef m.DeclaringTyconRef
             not (isNil (GetImmediateIntrinsicPropInfosOfType (Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy))
@@ -1958,6 +1959,23 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             prefix + x.LogicalName 
         with _  -> "??"
 
+    member x.FormatLayout (denv:FSharpDisplayContext) =
+        match x.IsMember, d with
+        | true, V v ->
+            NicePrint.prettyLayoutOfValOrMemberNoInst { (denv.Contents cenv.g) with showMemberContainers=true } v.Deref
+        | _,_ ->
+            checkIsResolved()
+            let ty = 
+                match d with 
+                | E e -> e.GetDelegateType(cenv.amap, range0)
+                | P p -> p.GetPropertyType(cenv.amap, range0)
+                | M m | C m -> 
+                    let rty = m.GetFSharpReturnTy(cenv.amap, range0, m.FormalMethodInst)
+                    let argtysl = m.GetParamTypes(cenv.amap, range0, m.FormalMethodInst) 
+                    mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtysl) rty
+                | V v -> v.TauType
+            NicePrint.prettyLayoutOfTypeNoCx (denv.Contents cenv.g) ty
+
 
 and FSharpType(cenv, ty:TType) =
 
@@ -2104,6 +2122,10 @@ and FSharpType(cenv, ty:TType) =
     member x.Format(denv: FSharpDisplayContext) = 
        protect <| fun () -> 
         NicePrint.prettyStringOfTyNoCx (denv.Contents cenv.g) ty 
+
+    member x.FormatLayout(denv: FSharpDisplayContext) =
+       protect <| fun () -> 
+        NicePrint.prettyLayoutOfTypeNoCx (denv.Contents cenv.g) ty
 
     override x.ToString() = 
        protect <| fun () -> 

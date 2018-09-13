@@ -181,7 +181,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()  
             
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument (originDocument, projectOptions, allowStaleResults=true,sourceText=sourceText, userOpName=userOpName)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument (originDocument, projectOptions, sourceText=sourceText, userOpName=userOpName)
             let idRange = lexerSymbol.Ident.idRange
             let! fsSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
             let symbol = fsSymbolUse.Symbol
@@ -194,7 +194,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                 let! implDoc = originDocument.Project.Solution.TryGetDocumentFromPath fsfilePath
                 let! implSourceText = implDoc.GetTextAsync ()
                 let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject implDoc
-                let! _, _, checkFileResults = checker.ParseAndCheckDocument (implDoc, projectOptions, allowStaleResults=true, sourceText=implSourceText, userOpName=userOpName)
+                let! _, _, checkFileResults = checker.ParseAndCheckDocument (implDoc, projectOptions, sourceText=implSourceText, userOpName=userOpName)
                 let! symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol |> liftAsync
                 let! implSymbol  = symbolUses |> Array.tryHead 
                 let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, implSymbol.RangeAlternate)
@@ -204,16 +204,21 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                 return! rangeToNavigableItem (fsSymbolUse.RangeAlternate, targetDocument)
         }
 
-    /// Use the targetSymbol to find the first instance of its presence in the provided source file.
-    member private __.FindSymbolDeclarationInFile(targetSymbolUse: FSharpSymbolUse, filePath: string, source: string, options: FSharpProjectOptions, fileVersion:int) = 
+    /// if the symbol is defined in the given file, return its declaration location, otherwise use the targetSymbol to find the first 
+    /// instance of its presence in the provided source file. The first case is needed to return proper declaration location for
+    /// recursive type definitions, where the first its usage may not be the declaration.
+    member __.FindSymbolDeclarationInFile(targetSymbolUse: FSharpSymbolUse, filePath: string, source: string, options: FSharpProjectOptions, fileVersion:int) = 
         asyncMaybe {
-            let! _, checkFileAnswer = checker.ParseAndCheckFileInProject (filePath, fileVersion, source, options, userOpName=userOpName) |> liftAsync
-            match checkFileAnswer with 
-            | FSharpCheckFileAnswer.Aborted -> return! None
-            | FSharpCheckFileAnswer.Succeeded checkFileResults ->
-                let! symbolUses = checkFileResults.GetUsesOfSymbolInFile targetSymbolUse.Symbol |> liftAsync
-                let! implSymbol  = symbolUses |> Array.tryHead 
-                return implSymbol.RangeAlternate
+            match targetSymbolUse.Symbol.DeclarationLocation with
+            | Some decl when decl.FileName = filePath -> return decl
+            | _ ->
+                let! _, checkFileAnswer = checker.ParseAndCheckFileInProject (filePath, fileVersion, source, options, userOpName = userOpName) |> liftAsync
+                match checkFileAnswer with 
+                | FSharpCheckFileAnswer.Aborted -> return! None
+                | FSharpCheckFileAnswer.Succeeded checkFileResults ->
+                    let! symbolUses = checkFileResults.GetUsesOfSymbolInFile targetSymbolUse.Symbol |> liftAsync
+                    let! implSymbol  = symbolUses |> Array.tryHead 
+                    return implSymbol.RangeAlternate
         }
 
     member private this.FindDefinitionAtPosition(originDocument: Document, position: int) =
@@ -228,7 +233,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
             
             let preferSignature = isSignatureFile originDocument.FilePath
 
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument (originDocument, projectOptions, allowStaleResults=true, sourceText=sourceText, userOpName=userOpName)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument (originDocument, projectOptions, sourceText=sourceText, userOpName=userOpName)
                 
             let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position,originDocument.FilePath, defines, SymbolLookupKind.Greedy, false)
             let idRange = lexerSymbol.Ident.idRange

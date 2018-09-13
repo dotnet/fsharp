@@ -11,7 +11,6 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library  
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Layout
@@ -548,6 +547,8 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
 /// A table of declarations for Intellisense completion 
 [<Sealed>]
 type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForType: bool, isError: bool) = 
+    static let fsharpNamespace = [|"Microsoft"; "FSharp"|]
+
     member __.Items = declarations
     member __.IsForType = isForType
     member __.IsError = isError
@@ -614,15 +615,23 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                     | None -> item.Item.DisplayName
                 name, items)
 
-        // Filter out operators (and list)
+        // Filter out operators, active patterns (as values) and the empty list
         let items = 
             // Check whether this item looks like an operator.
             let isOperatorItem(name, items: CompletionItem list) = 
                 match items |> List.map (fun x -> x.Item) with
                 | [Item.Value _ | Item.MethodGroup _ | Item.UnionCase _] -> IsOperatorName name
                 | _ -> false              
-            let isFSharpList name = (name = "[]") // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
-            items |> List.filter (fun (displayName, items) -> not (isOperatorItem(displayName, items)) && not (isFSharpList displayName)) 
+            
+            let isActivePatternItem (items: CompletionItem list) =
+                match items |> List.map (fun x -> x.Item) with
+                | [Item.Value vref] -> IsActivePatternName vref.CompiledName
+                | _ -> false
+            
+            items |> List.filter (fun (displayName, items) -> 
+                not (isOperatorItem(displayName, items)) && 
+                not (displayName = "[]") && // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
+                not (isActivePatternItem items))
                     
         let decls = 
             items 
@@ -640,7 +649,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                     let glyph = GlyphOfItem(denv, item.Item)
 
                     let name, nameInCode =
-                        if displayName.StartsWith "( " && displayName.EndsWith " )" then
+                        if displayName.StartsWithOrdinal("( ") && displayName.EndsWithOrdinal(" )") then
                             let cleanName = displayName.[2..displayName.Length - 3]
                             cleanName, 
                             if IsOperatorName displayName then cleanName else "``" + cleanName + "``"
@@ -650,22 +659,26 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                             | Some _ -> displayName
                             | None -> Lexhelp.Keywords.QuoteIdentifierIfNeeded displayName
 
-                    let isAttribute = SymbolHelpers.IsAttribute infoReader item.Item
-                    
+                    let isAttributeItem = lazy (SymbolHelpers.IsAttribute infoReader item.Item)
+
                     let cutAttributeSuffix (name: string) =
-                        if isAttributeApplicationContext && isAttribute && name <> "Attribute" && name.EndsWith "Attribute" then
+                        if isAttributeApplicationContext && name <> "Attribute" && name.EndsWithOrdinal("Attribute") && isAttributeItem.Value then
                             name.[0..name.Length - "Attribute".Length - 1]
                         else name
 
                     let name = cutAttributeSuffix name
                     let nameInCode = cutAttributeSuffix nameInCode
-                    let fullName = SymbolHelpers.FullNameOfItem g item.Item
+                    
+                    let fullName = 
+                        match item.Unresolved with
+                        | Some x -> x.FullName
+                        | None -> SymbolHelpers.FullNameOfItem g item.Item
                     
                     let namespaceToOpen = 
                         item.Unresolved 
                         |> Option.map (fun x -> x.Namespace)
                         |> Option.bind (fun ns ->
-                            if ns |> Array.startsWith [|"Microsoft"; "FSharp"|] then None
+                            if ns |> Array.startsWith fsharpNamespace then None
                             else Some ns)
                         |> Option.map (fun ns ->
                             match currentNamespaceOrModule with
@@ -676,7 +689,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                             | None -> ns)
                         |> Option.bind (function
                             | [||] -> None
-                            | ns -> Some (ns |> String.concat "."))
+                            | ns -> Some (System.String.Join(".", ns)))
 
                     FSharpDeclarationListItem(
                         name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), getAccessibility item.Item, 

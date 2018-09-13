@@ -83,18 +83,18 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Bir list constructor ifadesinin tüm öğeleri aynı türe sahip olmalıdır. Bu ifadenin '{0}' türünde olması bekleniyordu ancak burada '{1}' türünde.</target>
+        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="needs-review-translation">Bir list constructor ifadesinin tüm öğeleri aynı türe sahip olmalıdır. Bu ifadenin '{0}' türünde olması bekleniyordu ancak burada '{1}' türünde.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Bir array constructor ifadesinin tüm öğeleri aynı türe sahip olmalıdır. Bu ifadenin '{0}' türünde olması bekleniyordu ancak burada '{1}' türünde.</target>
+        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="needs-review-translation">Bir array constructor ifadesinin tüm öğeleri aynı türe sahip olmalıdır. Bu ifadenin '{0}' türünde olması bekleniyordu ancak burada '{1}' türünde.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
-        <source>The 'if' expression is missing an 'else' branch. The 'then' branch has type '{0}'. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type.</source>
-        <target state="translated">'if' ifadesinde bir 'else' dalı eksik. 'then' dalı '{0}' türünde. 'if' bir ifade değil deyim olduğundan, aynı türde değer döndüren bir 'else' dalı eklemeniz gerekir.</target>
+        <source>This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type '{0}'.</source>
+        <target state="needs-review-translation">'if' ifadesinde bir 'else' dalı eksik. 'then' dalı '{0}' türünde. 'if' bir ifade değil deyim olduğundan, aynı türde değer döndüren bir 'else' dalı eklemeniz gerekir.</target>
         <note />
       </trans-unit>
       <trans-unit id="ifExpression">
@@ -103,13 +103,13 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Bir 'if' ifadesinin tüm dalları aynı türe sahip olmalıdır. Bu ifadenin '{0}' türünde olması bekleniyordu ancak burada '{1}' türünde.</target>
+        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="needs-review-translation">Bir 'if' ifadesinin tüm dalları aynı türe sahip olmalıdır. Bu ifadenin '{0}' türünde olması bekleniyordu ancak burada '{1}' türünde.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
-        <target state="needs-review-translation">Bir pattern match ifadesinin tüm dalları aynı türe sahip olmalıdır. Bu ifadenin '{0}' türünde olması bekleniyordu ancak burada '{1}' türünde.</target>
+        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="needs-review-translation">Bir desen eşleştirme ifadesinin tüm dalları aynı türdeki değerleri döndürmelidir. Birinci dal '{0}' türünde bir değer döndürdü ancak bu dal '{1}' türünde bir değer döndürdü.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -5434,7 +5434,7 @@
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
         <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="translated">{0} ile sürüm '{1}' belirtildi, ancak bu değer geçersiz ve yok sayıldı</target>
+        <target state="translated">{0} özniteliğinde '{1}' sürümü belirtildi, ancak bu değer geçersiz olduğundan yoksayıldı</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">
@@ -6517,11 +6517,6 @@
         <target state="translated">'fixed' ifadesi derlenirken başvurularda System.Runtime.CompilerServices.OffsetToStringData metodu bulunamadı.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoByrefReturnOfLocal">
-        <source>The address of the variable '{0}' or a related expression cannot be used at this point. The address may not be passed to a call that returns an address. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="needs-review-translation">'{0}' değişkeninin adresi bu noktada kullanılamaz. Bir metot veya işlev, bu yerel değerin adresini döndüremez.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcNamedActivePattern">
         <source>{0} is an active pattern and cannot be treated as a discriminated union case with named fields.</source>
         <target state="translated">{0} etkin bir desen ve adlandırılmış alanlar içeren bir ayırt edici birleşim durumu olarak değerlendirilemez.</target>
@@ -6713,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
-        <source>Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.</source>
-        <target state="translated">Zaman uyumsuz iş akışlarında adı zaman uyumsuz hesaplamanın sonucuna bağlamak için veya diğer hesaplama ifadelerinde adı hesaplama türünden bir sonuca bağlamak için kullanılır.</target>
+        <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
+        <target state="review-required-translation">Zaman uyumsuz iş akışlarında adı zaman uyumsuz hesaplamanın sonucuna bağlamak için veya diğer hesaplama ifadelerinde adı hesaplama türünden bir sonuca bağlamak için kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6793,13 +6788,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
-        <source>Used to indicate a value to provide as the result of a computation expression.</source>
-        <target state="translated">Bir hesaplama ifadesinin sonucu olarak sağlanacak değeri belirtmek için kullanılır.</target>
+        <source>Used to provide a value for the result of the containing computation expression.</source>
+        <target state="review-required-translation">Bir hesaplama ifadesinin sonucu olarak sağlanacak değeri belirtmek için kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
-        <source>Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.</source>
-        <target state="translated">Değerlendirildiğinde, içerdiği hesaplama ifadesinin sonucu veren bir hesaplama ifadesini belirtmek için kullanılır.</target>
+        <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
+        <target state="review-required-translation">Değerlendirildiğinde, içerdiği hesaplama ifadesinin sonucu veren bir hesaplama ifadesini belirtmek için kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6843,13 +6838,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Dispose'un boş kaynaklara çağrılmasını gerektiren değerler için let yerine kullanılır.</target>
+        <source>Used instead of let for values that implement IDisposable"</source>
+        <target state="needs-review-translation">Dispose'un boş kaynaklara çağrılmasını gerektiren değerler için let yerine kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
-        <source>Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Zaman uyumsuz iş akışlarında ve diğer hesaplama ifadelerinde Dispose'un boş kaynaklara çağrılmasını gerektiren değerler için let! yerine kullanılır.</target>
+        <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
+        <target state="review-required-translation">Zaman uyumsuz iş akışlarında ve diğer hesaplama ifadelerinde Dispose'un boş kaynaklara çağrılmasını gerektiren değerler için let! yerine kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">
@@ -6979,7 +6974,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionMatchBang">
         <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
-        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <target state="translated">Başka bir hesaplama ifadesinin sonucu üzerinde doğrudan desen eşleştirmesi için hesaplama ifadelerinde kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">
@@ -6989,57 +6984,87 @@
       </trans-unit>
       <trans-unit id="writeToReadOnlyByref">
         <source>The byref pointer is readonly, so this write is not permitted.</source>
-        <target state="new">The byref pointer is readonly, so this write is not permitted.</target>
+        <target state="translated">Byref işaretçisi salt okunur olduğundan bu yazma işlemine izin verilmiyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastValueMustBeMutable">
         <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
-        <target state="new">A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</target>
+        <target state="translated">İçeriği değiştirmek veya değer türünün adresini almak için bir değerin değiştirilebilir olması gerekir, örn. 'let mutable x = ...'</target>
         <note />
       </trans-unit>
       <trans-unit id="readOnlyAttributeOnStructWithMutableField">
         <source>A ReadOnly attribute has been applied to a struct type with a mutable field.</source>
-        <target state="new">A ReadOnly attribute has been applied to a struct type with a mutable field.</target>
+        <target state="translated">Değiştirilebilir bir alana sahip bir yapı türüne ReadOnly özniteliği uygulandı.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefReturnImplicitlyDereferenced">
         <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
-        <target state="new">A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</target>
+        <target state="translated">Bir işlev veya metot tarafından döndürülen bir byref işaretçisinin başvurusu F# 4.5 itibarıyla örtük olarak kaldırıldı. Dönüş değerini bir işaretçi olarak edinmek için address-of işlecini kullanın. Örn. '&amp;f(x)' veya '&amp;obj.Method(arg1, arg2)'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByRefLikeNotStruct">
         <source>A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
-        <target state="new">A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</target>
+        <target state="translated">IsByRefLike ek açıklaması eklenmiş bir tür aynı zamanda bir yapı olmalıdır. Türe [&lt;Struct&gt;] özniteliğini eklemeyi göz önünde bulundurun.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefAddressOfLocal">
         <source>The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="new">The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="new">The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <target state="translated">Bu noktada '{0}' değişkeninin veya ilgili bir değişkenin adresi kullanılamaz. Bunun amacı, yerel değerin adresinin kapsamı dışına kaçmasını engellemektir.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoWriteToLimitedSpan">
         <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
-        <target state="new">This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</target>
+        <target state="translated">'{0}' hedefi yığında yerel olmayan belleğe başvurabileceğinden ve atanmakta olan ifadenin yığında yerel belleğe başvurma olasılığının olduğu tespit edildiğinden bu değer atanamaz. Bunun amacı, yığınla sınırlı belleğe yönelik işaretçilerin kapsamlarından kaçmasının önlenmesine yardımcı olmaktır.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastValueMustBeLocal">
         <source>A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</source>
-        <target state="new">A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</target>
+        <target state="translated">Bir modülde tanımlanan bir değerin adresini alabilmesi için değiştirilebilir olması gerekir. Örn. 'let mutable x = ...'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIsReadOnlyNotStruct">
         <source>A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
-        <target state="new">A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</target>
+        <target state="translated">IsReadOnly ek açıklaması eklenmiş bir tür aynı zamanda bir yapı olmalıdır. Türe [&lt;Struct&gt;] özniteliğini eklemeyi göz önünde bulundurun.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkStructsMayNotReturnAddressesOfContents">
         <source>Struct members cannot return the address of fields of the struct by reference</source>
-        <target state="new">Struct members cannot return the address of fields of the struct by reference</target>
+        <target state="translated">Yapı üyeleri, başvuruya göre yapı alanlarının adreslerini döndüremez</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefLikeFunctionCall">
+        <source>The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">Yığında yerel olmayan bir Span veya IsByRefLike türünün byref’i olan bir bağımsız değişken yığında yerel olan başka bir Span veya IsByRefLike türüyle birlikte kullanıldığından işlev veya metot çağrısı bu noktada kullanılamaz. Bunun amacı, yerel değerin adresinin kapsamından kaçmasının önlenmesine yardımcı olmaktır.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefAddressOfValueFromExpression">
+        <source>The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">Bu noktada ifadeden döndürülen bir değerin adresi kullanılamaz. Bunun amacı, yerel değerin adresinin kapsamı dışına kaçmasını engellemektir.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoSpanLikeVariable">
+        <source>The Span or IsByRefLike variable '{0}' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">Bu noktada Span veya IsByRefLike değişkeni '{0}' kullanılamaz. Bunun amacı, yerel değerin adresinin kapsamı dışına kaçmasını engellemektir.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoSpanLikeValueFromExpression">
+        <source>A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">Bu noktada ifadeden döndürülen bir Span veya IsByRefLike değeri kullanılamaz. Bunun amacı, yerel değerin adresinin kapsamı dışına kaçmasını engellemektir.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastCantTakeAddressOfExpression">
+        <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
+        <target state="translated">İfadeden döndürülen değerin adresi alınamaz. Adresi almadan önce, döndürülen değeri let ile bağlanmış bir değere atayın.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoReturnOfLimitedSpan">
+        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
+        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDoesNotInheritAttribute">
+        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
+        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
         <note />
       </trans-unit>
     </body>

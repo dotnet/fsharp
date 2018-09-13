@@ -356,8 +356,7 @@ type AssemblyRefData =
 let AssemblyRefUniqueStampGenerator = new UniqueStampGenerator<AssemblyRefData>()
 
 let isMscorlib data =
-    if System.String.Compare(data.assemRefName, "mscorlib") = 0 then true 
-    else false
+    data.assemRefName = "mscorlib"
 
 [<Sealed>]
 type ILAssemblyRef(data)  =
@@ -1229,6 +1228,7 @@ type ILMethodBody =
 [<RequireQualifiedAccess>]
 type ILMemberAccess = 
     | Assembly
+    | CompilerControlled
     | FamilyAndAssembly
     | FamilyOrAssembly
     | Family
@@ -1547,7 +1547,7 @@ let memberAccessOfFlags flags =
     elif f = 0x00000002 then  ILMemberAccess.FamilyAndAssembly 
     elif f = 0x00000005 then  ILMemberAccess.FamilyOrAssembly 
     elif f = 0x00000003 then  ILMemberAccess.Assembly 
-    else failwith "impossible: the flags parameter value is come from enums MethodAttributes and FieldAttributes must have access flag"
+    else ILMemberAccess.CompilerControlled
 
 let convertMemberAccess (ilMemberAccess:ILMemberAccess) =
     match ilMemberAccess with
@@ -1555,6 +1555,7 @@ let convertMemberAccess (ilMemberAccess:ILMemberAccess) =
     | ILMemberAccess.Private             -> MethodAttributes.Private
     | ILMemberAccess.Assembly            -> MethodAttributes.Assembly
     | ILMemberAccess.FamilyAndAssembly   -> MethodAttributes.FamANDAssem
+    | ILMemberAccess.CompilerControlled   -> MethodAttributes.PrivateScope
     | ILMemberAccess.FamilyOrAssembly    -> MethodAttributes.FamORAssem
     | ILMemberAccess.Family              -> MethodAttributes.Family
 
@@ -1806,6 +1807,7 @@ type ILPropertyDefs =
 let convertFieldAccess (ilMemberAccess:ILMemberAccess) =
     match ilMemberAccess with
     | ILMemberAccess.Assembly            -> FieldAttributes.Assembly
+    | ILMemberAccess.CompilerControlled   -> enum<FieldAttributes>(0)
     | ILMemberAccess.FamilyAndAssembly   -> FieldAttributes.FamANDAssem
     | ILMemberAccess.FamilyOrAssembly    -> FieldAttributes.FamORAssem
     | ILMemberAccess.Family              -> FieldAttributes.Family
@@ -1947,6 +1949,7 @@ let convertTypeAccessFlags access =
     | ILTypeDefAccess.Nested ILMemberAccess.Public -> TypeAttributes.NestedPublic
     | ILTypeDefAccess.Nested ILMemberAccess.Private  -> TypeAttributes.NestedPrivate
     | ILTypeDefAccess.Nested ILMemberAccess.Family  -> TypeAttributes.NestedFamily
+    | ILTypeDefAccess.Nested ILMemberAccess.CompilerControlled -> TypeAttributes.NestedPrivate
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyAndAssembly -> TypeAttributes.NestedFamANDAssem
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly -> TypeAttributes.NestedFamORAssem
     | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> TypeAttributes.NestedAssembly
@@ -1974,6 +1977,7 @@ let convertEncoding encoding =
 let convertToNestedTypeAccess (ilMemberAccess:ILMemberAccess) =
     match ilMemberAccess with
     | ILMemberAccess.Assembly            -> TypeAttributes.NestedAssembly
+    | ILMemberAccess.CompilerControlled   -> failwith "Method access compiler controlled."
     | ILMemberAccess.FamilyAndAssembly   -> TypeAttributes.NestedFamANDAssem
     | ILMemberAccess.FamilyOrAssembly    -> TypeAttributes.NestedFamORAssem
     | ILMemberAccess.Family              -> TypeAttributes.NestedFamily
@@ -1989,6 +1993,8 @@ let convertInitSemantics (init:ILTypeInit) =
 type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout, implements: ILTypes, genericParams: ILGenericParameterDefs,
                extends: ILType option, methods: ILMethodDefs, nestedTypes: ILTypeDefs, fields: ILFieldDefs, methodImpls: ILMethodImplDefs,
                events: ILEventDefs, properties: ILPropertyDefs, securityDeclsStored: ILSecurityDeclsStored, customAttrsStored: ILAttributesStored, metadataIndex: int32) =  
+
+    let mutable customAttrsStored = customAttrsStored
 
     new (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, securityDecls, customAttrs) =  
        ILTypeDef (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, storeILSecurityDecls securityDecls, storeILCustomAttrs customAttrs, NoMetadataIdx)
@@ -2025,7 +2031,15 @@ type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout
                   properties = defaultArg properties x.Properties,
                   customAttrs = defaultArg customAttrs x.CustomAttrs)
 
-    member x.CustomAttrs = customAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = 
+        match customAttrsStored with 
+        | ILAttributesStored.Reader f ->
+            let res = ILAttributes(f x.MetadataIndex)
+            customAttrsStored <- ILAttributesStored.Given res
+            res 
+        | ILAttributesStored.Given res -> 
+            res
+
     member x.SecurityDecls = x.SecurityDeclsStored.GetSecurityDecls x.MetadataIndex
 
     member x.IsClass =     (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Class
