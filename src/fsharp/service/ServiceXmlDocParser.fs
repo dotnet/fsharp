@@ -165,7 +165,7 @@ module XmlDocComment =
         Some (res, pos + (s.Length - res.Length))
 
     let private str (prefix: string) (s: string, pos) =
-        match s.StartsWith prefix with
+        match s.StartsWithOrdinal(prefix) with
         | true -> 
             let res = s.Substring prefix.Length
             Some (res, pos + (s.Length - res.Length))

@@ -71,7 +71,7 @@ module internal PrintUtilities =
                     tcref.DisplayName // has no static params
                 else
                     tcref.DisplayName+"<...>" // shorten
-            if isAttribute && name.EndsWith "Attribute" then
+            if isAttribute && name.EndsWithOrdinal("Attribute") then
                 String.dropSuffix name "Attribute"
             else 
                 name
@@ -170,7 +170,7 @@ module private PrintIL =
             match System.Int32.TryParse(rightMost, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture) with 
             | true, n -> n
             | false, _ -> 0 // looks like it's non-generic
-        ilTyparSubst |> List.rev |> List.take numParms |> List.rev
+        ilTyparSubst |> List.rev |> List.truncate numParms |> List.rev
                              
     let rec layoutILType (denv: DisplayEnv) (ilTyparSubst: layout list) (ty: ILType) : layout =
         match ty with
@@ -655,7 +655,7 @@ module private PrintTypes =
         | ILAttrib ilMethRef -> 
             let trimmedName = 
                 let name = ilMethRef.DeclaringTypeRef.Name
-                if name.EndsWith "Attribute" then
+                if name.EndsWithOrdinal("Attribute") then
                     String.dropSuffix name "Attribute"
                 else
                     name
@@ -1988,6 +1988,7 @@ let isGeneratedExceptionField pos f     = TastDefinitionPrinting.isGeneratedExce
 let stringOfTyparConstraint denv tpc  = stringOfTyparConstraints denv [tpc]
 let stringOfTy              denv x    = x |> PrintTypes.layoutType denv |> showL
 let prettyLayoutOfType   denv x    = x |> PrintTypes.prettyLayoutOfType denv
+let prettyLayoutOfTypeNoCx  denv x    = x |> PrintTypes.prettyLayoutOfTypeNoConstraints denv
 let prettyStringOfTy        denv x    = x |> PrintTypes.prettyLayoutOfType denv |> showL
 let prettyStringOfTyNoCx    denv x    = x |> PrintTypes.prettyLayoutOfTypeNoConstraints denv |> showL
 let stringOfRecdField       denv x    = x |> TastDefinitionPrinting.layoutRecdField false denv |> showL

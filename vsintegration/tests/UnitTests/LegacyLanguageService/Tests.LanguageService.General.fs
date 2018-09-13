@@ -115,7 +115,7 @@ type UsingMSBuild() =
         let lsbase = publicTypesInAsm @"FSharp.LanguageService.Base.dll"
         Assert.AreEqual(0, lsbase)
         let psbase = publicTypesInAsm @"FSharp.ProjectSystem.Base.dll"
-        Assert.AreEqual(19, psbase)
+        Assert.AreEqual(17, psbase)
         let fsi = publicTypesInAsm @"FSharp.VS.FSI.dll"
         Assert.AreEqual(1, fsi)
 

@@ -1074,6 +1074,7 @@ let GetMemberAccessFlags access =
     | ILMemberAccess.Public -> 0x00000006
     | ILMemberAccess.Private  -> 0x00000001
     | ILMemberAccess.Family  -> 0x00000004
+    | ILMemberAccess.CompilerControlled -> 0x00000000
     | ILMemberAccess.FamilyAndAssembly -> 0x00000002
     | ILMemberAccess.FamilyOrAssembly -> 0x00000005
     | ILMemberAccess.Assembly -> 0x00000003
@@ -1085,6 +1086,7 @@ let GetTypeAccessFlags  access =
     | ILTypeDefAccess.Nested ILMemberAccess.Public -> 0x00000002
     | ILTypeDefAccess.Nested ILMemberAccess.Private  -> 0x00000003
     | ILTypeDefAccess.Nested ILMemberAccess.Family  -> 0x00000004
+    | ILTypeDefAccess.Nested ILMemberAccess.CompilerControlled -> failwith "bad type acccess"
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyAndAssembly -> 0x00000006
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly -> 0x00000007
     | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> 0x00000005
@@ -2524,7 +2526,8 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
                 SequencePoints=seqpoints }
           cenv.AddCode code
           addr
-      | MethodBody.Abstract ->
+      | MethodBody.Abstract
+      | MethodBody.PInvoke _ ->
           // Now record the PDB record for this method - we write this out later. 
           if cenv.generatePdb then 
             cenv.pdbinfo.Add  

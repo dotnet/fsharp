@@ -134,10 +134,14 @@ let AdjustCalledArgType (infoReader:InfoReader) isConstraint (calledArg: CalledA
 
         // If the called method argument is an inref type, then the caller may provide a byref or value
         if isInByrefTy g calledArgTy then
+#if IMPLICIT_ADDRESS_OF
             if isByrefTy g callerArgTy then 
                 calledArgTy
             else 
                 destByrefTy g calledArgTy
+#else
+            calledArgTy
+#endif
 
         // If the called method argument is a (non inref) byref type, then the caller may provide a byref or ref.
         elif isByrefTy g calledArgTy then
@@ -254,25 +258,25 @@ type CalledMeth<'T>
                     | None -> true)
 
             // See if any of them are 'out' arguments being returned as part of a return tuple 
-            let unnamedCalledArgs, unnamedCalledOptArgs, unnamedCalledOutArgs = 
+            let minArgs, unnamedCalledArgs, unnamedCalledOptArgs, unnamedCalledOutArgs = 
                 let nUnnamedCallerArgs = unnamedCallerArgs.Length
-                if allowOutAndOptArgs && nUnnamedCallerArgs < unnamedCalledArgs.Length then
-                    let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs = List.chop nUnnamedCallerArgs unnamedCalledArgs
+                let nUnnamedCalledArgs = unnamedCalledArgs.Length
+                if allowOutAndOptArgs && nUnnamedCallerArgs < nUnnamedCalledArgs then
+                    let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs = List.splitAt nUnnamedCallerArgs unnamedCalledArgs
                     
                     // Check if all optional/out arguments are byref-out args
                     if unnamedCalledOptOrOutArgs |> List.forall (fun x -> x.IsOutArg && isByrefTy g x.CalledArgumentType) then 
-                        unnamedCalledArgsTrimmed, [], unnamedCalledOptOrOutArgs 
+                        nUnnamedCallerArgs - 1, unnamedCalledArgsTrimmed, [], unnamedCalledOptOrOutArgs 
                     // Check if all optional/out arguments are optional args
                     elif unnamedCalledOptOrOutArgs |> List.forall (fun x -> x.OptArgInfo.IsOptional) then 
-                        unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs, []
+                        nUnnamedCallerArgs - 1, unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs, []
                     // Otherwise drop them on the floor
                     else
-                        unnamedCalledArgs, [], []
+                        nUnnamedCalledArgs - 1, unnamedCalledArgs, [], []
                 else 
-                    unnamedCalledArgs, [], []
+                    nUnnamedCalledArgs - 1, unnamedCalledArgs, [], []
 
             let (unnamedCallerArgs, paramArrayCallerArgs), unnamedCalledArgs, paramArrayCalledArgOpt = 
-                let minArgs = unnamedCalledArgs.Length - 1
                 let supportsParamArgs = 
                     allowParamArgs && 
                     minArgs >= 0 && 
@@ -280,7 +284,7 @@ type CalledMeth<'T>
 
                 if supportsParamArgs  && unnamedCallerArgs.Length >= minArgs then
                     let a, b = List.frontAndBack unnamedCalledArgs
-                    List.chop minArgs unnamedCallerArgs, a, Some(b)
+                    List.splitAt minArgs unnamedCallerArgs, a, Some(b)
                 else
                     (unnamedCallerArgs, []), unnamedCalledArgs, None
 
@@ -651,7 +655,7 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
             | 1, [] -> error(InternalError("expected additional arguments here", m))
             | _ -> 
                 if args.Length < arity then error(InternalError("internal error in getting arguments, n = "+string arity+", #args = "+string args.Length, m));
-                let tupargs, argst = List.chop arity args
+                let tupargs, argst = List.splitAt arity args
                 let tuptys = tupargs |> List.map (tyOfExpr g) 
                 (mkRefTupled g m tupargs tuptys),
                 (argst, rangeOfFunTy g fty) )
@@ -1300,7 +1304,8 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo:MethInfo)  =
     if not (IsTypeAndMethInfoAccessible amap m adOriginal ad minfo) then 
       error (Error (FSComp.SR.tcMethodNotAccessible(minfo.LogicalName), m))
 
-    if isAnyTupleTy g minfo.ApparentEnclosingType && not minfo.IsExtensionMember && (minfo.LogicalName.StartsWith "get_Item" || minfo.LogicalName.StartsWith "get_Rest") then
+    if isAnyTupleTy g minfo.ApparentEnclosingType && not minfo.IsExtensionMember &&
+        (minfo.LogicalName.StartsWithOrdinal("get_Item") || minfo.LogicalName.StartsWithOrdinal("get_Rest")) then
       warning (Error (FSComp.SR.tcTupleMemberNotNormallyUsed(), m))
 
     CheckMethInfoAttributes g m tyargsOpt minfo |> CommitOperationResult

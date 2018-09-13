@@ -232,14 +232,15 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             | Some (ValReprInfo (implTyparNames,implArgInfos,implRetInfo) as implValInfo), Some (ValReprInfo (sigTyparNames,sigArgInfos,sigRetInfo) as sigValInfo) ->
                 let ntps = implTyparNames.Length
                 let mtps = sigTyparNames.Length
+                let nSigArgInfos = sigArgInfos.Length
                 if ntps <> mtps then
                   err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityGenericParametersDiffer(x, y, z, string mtps, string ntps))
                 elif implValInfo.KindsOfTypars <> sigValInfo.KindsOfTypars then
                   err(FSComp.SR.ValueNotContainedMutabilityGenericParametersAreDifferentKinds)
-                elif not (sigArgInfos.Length <= implArgInfos.Length && List.forall2 (fun x y -> List.length x <= List.length y) sigArgInfos (fst (List.chop sigArgInfos.Length implArgInfos))) then 
-                  err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityAritiesDiffer(x, y, z, id.idText, string sigArgInfos.Length, id.idText, id.idText))
+                elif not (nSigArgInfos <= implArgInfos.Length && List.forall2 (fun x y -> List.length x <= List.length y) sigArgInfos (fst (List.splitAt nSigArgInfos implArgInfos))) then 
+                  err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityAritiesDiffer(x, y, z, id.idText, string nSigArgInfos, id.idText, id.idText))
                 else 
-                  let implArgInfos = implArgInfos |> List.take sigArgInfos.Length  
+                  let implArgInfos = implArgInfos |> List.truncate nSigArgInfos
                   let implArgInfos = (implArgInfos, sigArgInfos) ||> List.map2 (fun l1 l2 -> l1 |> List.take l2.Length)
                   // Propagate some information signature to implementation. 
 
