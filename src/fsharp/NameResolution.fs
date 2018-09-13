@@ -3977,21 +3977,29 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
            |> List.filter (fun tycon -> tycon.IsRecordTycon)
            |> List.filter (fun tycon -> not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tycon)))
 
-       let ilTyconNames = 
-           mty.TypesByAccessNames.Values
-           |> List.choose (fun (tycon:Tycon) -> if tycon.IsILTycon then Some tycon.DisplayName else None)
-           |> HashSet
+
+       let accessibleSubModules =
+           let moduleOrNamespaces =
+               mty.ModulesAndNamespacesByDemangledName 
+               |> NameMap.range
+
+           if isNil moduleOrNamespaces then [] else
+
+           let ilTyconNames = 
+               mty.TypesByAccessNames.Values
+               |> List.choose (fun (tycon:Tycon) -> if tycon.IsILTycon then Some tycon.DisplayName else None)
+               |> HashSet
     
-        // Collect up the accessible sub-modules 
-       (mty.ModulesAndNamespacesByDemangledName 
-          |> NameMap.range 
-          |> List.filter (fun x -> 
-                let demangledName = x.DemangledModuleOrNamespaceName
-                notFakeContainerModule ilTyconNames demangledName && IsInterestingModuleName demangledName)
-          |> List.map modref.NestedTyconRef
-          |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
-          |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
-          |> List.map ItemForModuleOrNamespaceRef)
+           moduleOrNamespaces
+           |> List.filter (fun x -> 
+                 let demangledName = x.DemangledModuleOrNamespaceName
+                 notFakeContainerModule ilTyconNames demangledName && IsInterestingModuleName demangledName)
+           |> List.map modref.NestedTyconRef
+           |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
+           |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
+           |> List.map ItemForModuleOrNamespaceRef
+       
+       accessibleSubModules
 
        // Collect all accessible record types
        @ (tycons |> List.map (modref.NestedTyconRef >> ItemOfTyconRef ncenv m) )
@@ -4041,14 +4049,21 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
     |  [] ->     
         
         // empty plid - return namespaces\modules\record types\accessible fields
-       let ilTyconNames =
-          nenv.TyconsByAccessNames(fullyQualified).Values
-          |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
-          |> HashSet
+
 
        let mods = 
-           nenv.ModulesAndNamespaces(fullyQualified)
-           |> NameMultiMap.range 
+           let moduleOrNamespaceRefs =
+               nenv.ModulesAndNamespaces fullyQualified
+               |> NameMultiMap.range 
+
+           if isNil moduleOrNamespaceRefs then [] else
+
+           let ilTyconNames =
+               nenv.TyconsByAccessNames(fullyQualified).Values
+               |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
+               |> HashSet
+
+           moduleOrNamespaceRefs
            |> List.filter (fun x -> 
                 let demangledName = x.DemangledModuleOrNamespaceName
                 IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName)
@@ -4354,23 +4369,29 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                      |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
                      |> List.map Item.ExnCase
              | _ ->
-                 let ilTyconNames = 
-                     mty.TypesByAccessNames.Values
-                     |> List.choose (fun (tycon:Tycon) -> if tycon.IsILTycon then Some tycon.DisplayName else None)
-                     |> HashSet
-
                  // Collect up the accessible sub-modules. We must yield them even though `item` is not a module or namespace, 
                  // otherwise we would not resolve long idents which have modules and namespaces in the middle (i.e. all long idents)
-                 yield! 
+                 
+                 let moduleOrNamespaces = 
                      mty.ModulesAndNamespacesByDemangledName 
-                     |> NameMap.range 
-                     |> List.filter (fun x -> 
-                           let demangledName = x.DemangledModuleOrNamespaceName
-                           notFakeContainerModule ilTyconNames demangledName && IsInterestingModuleName demangledName)
-                     |> List.map modref.NestedTyconRef
-                     |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
-                     |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
-                     |> List.map ItemForModuleOrNamespaceRef
+                     |> NameMap.range
+
+                 if not (isNil moduleOrNamespaces) then
+                     let ilTyconNames = 
+                         mty.TypesByAccessNames.Values
+                         |> List.choose (fun (tycon:Tycon) -> if tycon.IsILTycon then Some tycon.DisplayName else None)
+                         |> HashSet
+                     
+                     yield!
+                         moduleOrNamespaces
+                         |> List.filter (fun x -> 
+                               let demangledName = x.DemangledModuleOrNamespaceName
+                               notFakeContainerModule ilTyconNames demangledName && IsInterestingModuleName demangledName)
+                         |> List.map modref.NestedTyconRef
+                         |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
+                         |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
+                         |> List.map ItemForModuleOrNamespaceRef
+
                  let tycons = 
                      mty.TypeDefinitions
                      |> List.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
@@ -4437,17 +4458,22 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
 
            match item with
            | Item.ModuleOrNamespaces _ ->
-               let ilTyconNames =
-                  nenv.TyconsByAccessNames(OpenQualified).Values
-                  |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
-                  |> HashSet
+               let moduleOrNamespaceRefs =
+                   nenv.ModulesAndNamespaces OpenQualified
+                   |> NameMultiMap.range
                
-               for ns in NameMultiMap.range (nenv.ModulesAndNamespaces(OpenQualified)) do
-                   let demangledName = ns.DemangledModuleOrNamespaceName
-                   if IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName
-                      && EntityRefContainsSomethingAccessible ncenv m ad ns
-                      && not (IsTyconUnseen ad g ncenv.amap m ns)
-                   then yield ItemForModuleOrNamespaceRef ns
+               if not (isNil moduleOrNamespaceRefs) then
+                   let ilTyconNames =
+                       nenv.TyconsByAccessNames(OpenQualified).Values
+                       |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
+                       |> HashSet
+               
+                   for ns in moduleOrNamespaceRefs do
+                       let demangledName = ns.DemangledModuleOrNamespaceName
+                       if IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName
+                          && EntityRefContainsSomethingAccessible ncenv m ad ns
+                          && not (IsTyconUnseen ad g ncenv.amap m ns)
+                       then yield ItemForModuleOrNamespaceRef ns
            
            | Item.Types _ ->
                for tcref in nenv.TyconsByDemangledNameAndArity(OpenQualified).Values do
@@ -4503,14 +4529,19 @@ let IsItemResolvable (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad plid (
     )
 
 let GetVisibleNamespacesAndModulesAtPoint (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad =
-    protectAssemblyExploration [] (fun () -> 
+    protectAssemblyExploration [] (fun () ->
+        let items =
+            nenv.ModulesAndNamespaces FullyQualifiedFlag.OpenQualified
+            |> NameMultiMap.range
+        
+        if isNil items then [] else
+
         let ilTyconNames =
             nenv.TyconsByAccessNames(FullyQualifiedFlag.OpenQualified).Values
             |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
             |> HashSet
 
-        nenv.ModulesAndNamespaces(FullyQualifiedFlag.OpenQualified)
-        |> NameMultiMap.range 
+        items
         |> List.filter (fun x -> 
              let demangledName = x.DemangledModuleOrNamespaceName
              IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName
