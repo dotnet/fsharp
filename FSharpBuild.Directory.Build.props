@@ -11,6 +11,7 @@
     <ToolsRoot>$(RepoRoot)Tools</ToolsRoot>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <ProtoOutputPath>$(RepoRoot)Proto\net40\bin</ProtoOutputPath>
+    <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
   </PropertyGroup>
 
   <!-- nuget -->
@@ -53,8 +54,9 @@
 
   <!-- SDK targets override -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-    <ProtoFSharpTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.targets</ProtoFSharpTargetsShim>
-    <FSharpTargetsShim Condition="Exists('$(ProtoFSharpTargetsShim)')">$(ProtoFSharpTargetsShim)</FSharpTargetsShim>
+    <FSharpPropsShim Condition="Exists('$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.props')">$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
+    <FSharpTargetsShim Condition="Exists('$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.targets')">$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
+    <FSharpOverridesTargetsShim Condition="Exists('$(ProtoOutputPath)\Microsoft.FSharp.Overrides.NetSdk.targets')">$(ProtoOutputPath)\Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
   </PropertyGroup>
 
 </Project>

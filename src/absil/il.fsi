@@ -720,6 +720,7 @@ type ILMethodBody =
 [<RequireQualifiedAccess>]
 type ILMemberAccess = 
     | Assembly
+    | CompilerControlled
     | FamilyAndAssembly
     | FamilyOrAssembly
     | Family
@@ -795,6 +796,8 @@ type ILReturn =
       MetadataIndex: int32  }
 
     member CustomAttrs: ILAttributes
+
+    member WithCustomAttrs: customAttrs: ILAttributes -> ILReturn
 
 [<RequireQualifiedAccess>]
 type ILSecurityAction = 

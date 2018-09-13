@@ -5,14 +5,12 @@ module public Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 
 open System
-open System.Collections
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System.Reflection
-open System.Text
 open System.Threading
-open Internal.Utilities
+open System.Runtime.CompilerServices
 
 #if FX_RESHAPED_REFLECTION
 open Microsoft.FSharp.Core.ReflectionAdapters
@@ -137,6 +135,9 @@ module Array =
           
         loop p l 0
 
+    let existsTrue (arr: bool[]) = 
+        let rec loop n =  (n < arr.Length) &&  (arr.[n] || loop (n+1))
+        loop 0
     
     let findFirstIndexWhereTrue (arr: _[]) p = 
         let rec look lo hi = 
@@ -265,6 +266,10 @@ module List =
        let rec loop i xs = match xs with [] -> false | h::t -> f i h || loop (i+1) t
        loop 0 xs
     
+    let existsTrue (xs: bool list) = 
+       let rec loop i xs = match xs with [] -> false | h::t -> h || loop (i+1) t
+       loop 0 xs
+
     let lengthsEqAndForall2 p l1 l2 = 
         List.length l1 = List.length l2 &&
         List.forall2 p l1 l2
@@ -274,29 +279,10 @@ module List =
         | [] -> None
         | h::t -> if f h then Some (h,n) else findi (n+1) f t
 
-    let chop n l = 
-        if n = List.length l then (l,[]) else // avoids allocation unless necessary 
-        let rec loop n l acc = 
-            if n <= 0 then (List.rev acc,l) else 
-            match l with 
-            | [] -> failwith "List.chop: overchop"
-            | (h::t) -> loop (n-1) t (h::acc) 
-        loop n l [] 
-
-    let take n l = 
-        if n = List.length l then l else 
-        let rec loop acc n l = 
-            match l with
-            | []    -> List.rev acc
-            | x::xs -> if n<=0 then List.rev acc else loop (x::acc) (n-1) xs
-
-        loop [] n l
-
     let rec drop n l = 
         match l with 
         | []    -> []
         | _::xs -> if n=0 then l else drop (n-1) xs
-
 
     let splitChoose select l =
         let rec ch acc1 acc2 l = 
@@ -448,16 +434,23 @@ module List =
 
 [<Struct>]
 type ValueOption<'T> =
-    | VSome of 'T
-    | VNone
-    member x.IsSome = match x with VSome _ -> true | VNone -> false
-    member x.IsNone = match x with VSome _ -> false | VNone -> true
-    member x.Value = match x with VSome r -> r | VNone -> failwith "ValueOption.Value: value is None"
+    | ValueSome of 'T
+    | ValueNone
+    member x.IsSome = match x with ValueSome _ -> true | ValueNone -> false
+    member x.IsNone = match x with ValueSome _ -> false | ValueNone -> true
+    member x.Value = match x with ValueSome r -> r | ValueNone -> failwith "ValueOption.Value: value is None"
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ValueOption =
-    let inline ofOption x = match x with Some x -> VSome x | None -> VNone
-    let inline bind f x = match x with VSome x -> f x | VNone -> VNone
+    let inline ofOption x = match x with Some x -> ValueSome x | None -> ValueNone
+    let inline bind f x = match x with ValueSome x -> f x | ValueNone -> ValueNone
+
+type String with
+    member inline x.StartsWithOrdinal(value) =
+        x.StartsWith(value, StringComparison.Ordinal)
+
+    member inline x.EndsWithOrdinal(value) =
+        x.EndsWith(value, StringComparison.Ordinal)
 
 module String = 
     let indexNotFound() = raise (new KeyNotFoundException("An index for the character was not found in the string"))
@@ -538,7 +531,7 @@ module String =
     let (|StartsWith|_|) pattern value =
         if String.IsNullOrWhiteSpace value then
             None
-        elif value.StartsWith pattern then
+        elif value.StartsWithOrdinal(pattern) then
             Some()
         else None
 
@@ -556,15 +549,28 @@ module String =
         while not (isNull !line) do
             yield !line
             line := reader.ReadLine()
-        if str.EndsWith("\n") then
+        if str.EndsWithOrdinal("\n") then
             // last trailing space not returned
             // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
             yield String.Empty
         |]
-module Dictionary = 
 
+module Dictionary = 
     let inline newWithSize (size: int) = Dictionary<_,_>(size, HashIdentity.Structural)
-        
+
+[<Extension>]
+type DictionaryExtensions() =
+    [<Extension>]
+    static member inline BagAdd(dic: Dictionary<'key, 'value list>, key: 'key, value: 'value) =
+        match dic.TryGetValue key with
+        | true, values -> dic.[key] <- value :: values
+        | _ -> dic.[key] <- [value]
+
+    [<Extension>]
+    static member inline BagExistsValueForKey(dic: Dictionary<'key, 'value list>, key: 'key, f: 'value -> bool) =
+        match dic.TryGetValue key with
+        | true, values -> values |> List.exists f
+        | _ -> false
 
 module Lazy = 
     let force (x: Lazy<'T>) = x.Force()
@@ -1235,7 +1241,7 @@ module Shim =
         interface IFileSystem with
 
             member __.AssemblyLoadFrom(fileName: string) = 
-                Assembly.LoadFrom fileName
+                Assembly.UnsafeLoadFrom fileName
 
             member __.AssemblyLoad(assemblyName: AssemblyName) = 
                 Assembly.Load assemblyName

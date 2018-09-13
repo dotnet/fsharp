@@ -113,10 +113,12 @@ type public CompletionItemKind =
     | Method of isExtension : bool
     | Event
     | Argument
+    | CustomOperation
     | Other
 
-type internal UnresolvedSymbol =
-    { DisplayName: string
+type UnresolvedSymbol =
+    { FullName: string
+      DisplayName: string
       Namespace: string[] }
 
 type internal CompletionItem =

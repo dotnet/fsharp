@@ -14,7 +14,7 @@ let checkPathForIllegalChars  =
             if chars.Contains c then raise(IllegalFileNameChar(path, c)))
 
 // Case sensitive (original behaviour preserved).
-let checkSuffix (x:string) (y:string) = x.EndsWith(y,System.StringComparison.Ordinal) 
+let checkSuffix (x:string) (y:string) = x.EndsWithOrdinal(y) 
 
 let hasExtensionWithValidate (validate:bool) (s:string) = 
     if validate then (checkPathForIllegalChars s) |> ignore

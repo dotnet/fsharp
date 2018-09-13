@@ -22,10 +22,5 @@ type internal SetGlobalPropertiesForSdkProjects
     inherit StaticGlobalPropertiesProviderBase(projectService.Services)
 
     override __.GetGlobalPropertiesAsync(_cancellationToken: CancellationToken): Task<IImmutableDictionary<string, string>> =
-        let editorDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-        [ "FSharpPropsShim", "Microsoft.FSharp.NetSdk.props"
-          "FSharpTargetsShim", "Microsoft.FSharp.NetSdk.targets"
-          "FSharpOverridesTargetsShim", "Microsoft.FSharp.Overrides.NetSdk.targets" ]
-        |> List.map (fun (key, value) -> (key, Path.Combine(editorDirectory, value)))
-        |> List.fold (fun (map:ImmutableDictionary<string, string>) (key, value) -> map.Add(key, value)) (Empty.PropertiesMap)
-        |> Task.FromResult<IImmutableDictionary<string, string>>
+        let properties = Empty.PropertiesMap.Add("FSharpCompilerPath", Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
+        Task.FromResult<IImmutableDictionary<string, string>>(properties)

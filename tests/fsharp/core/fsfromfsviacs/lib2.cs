@@ -50,8 +50,23 @@ namespace CustomExtensions
     {
 
         /// Extend an F# type
+        static public ref readonly DateTime ExtendCSharpTypeWithInRefReturnExtension(in this DateTime inp) { return ref inp; }
+        static public ref DateTime ExtendCSharpTypeWithRefReturnExtension(ref this DateTime inp) { return ref inp; }
+        static public void ExtendCSharpTypeWithOutRefExtension(ref this DateTime inp) { inp = inp.Date; }
+        static public int ExtendCSharpTypeWithInRefExtension(ref this DateTime inp) { return inp.Year;  }
         static public int ExtendFSharpType(this Lib.recd1 recd) { return 5; }
         static public int ExtendCSharpType(this Lib2 recd) { return 4; }
+    }
+}
+
+namespace Fields
+{
+    public class Fields
+    {
+
+        /// Extend an F# type
+        static public int StaticIntField => 3;
+        static public System.DateTime StaticDateTimeField => System.DateTime.Now.Date;
     }
 }
 
@@ -96,5 +111,17 @@ namespace FSharpOptionalTests
             FSharpOption<int> opt = x;
             return opt.Value;
         }
+    }
+}
+
+namespace FSharpFuncTests
+{
+    public class ApiWrapper
+    {
+        public static Func<int, int> f1 = new Func<int, int>((int arg) => arg + 1);
+        public static Func<int, string, int> f2 = new Func<int, string, int>((int arg1, string arg2) => arg1 + arg2.Length + 1);
+        public static Func<int, string, byte, int> f3 = new Func<int, string, byte, int>((int arg1, string arg2, byte arg3) => arg1 + arg2.Length + 1 + arg3);
+        public static Func<int, string, byte, sbyte, int> f4 = new Func<int, string, byte, sbyte, int>((int arg1, string arg2, byte arg3, sbyte arg4) => arg1 + arg2.Length + 1 + arg3 + arg4);
+        public static Func<int, string, byte, sbyte, Int16, int> f5 = new Func<int, string, byte, sbyte, Int16, int>((int arg1, string arg2, byte arg3, sbyte arg4, Int16 arg5) => arg1 + arg2.Length + 1 + arg3 + arg4 + arg5);
     }
 }

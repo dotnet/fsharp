@@ -149,7 +149,7 @@ let IsRefusedTLR g (f:Val) =
     // things marked ValInline.Never are special 
     let dllImportStubOrOtherNeverInline = (f.InlineInfo = ValInline.Never)
     // Cannot have static fields of byref type 
-    let byrefVal = isByrefLikeTy g f.Type
+    let byrefVal = isByrefLikeTy g f.Range f.Type
     // Special values are instance methods etc. on .NET types.  For now leave these alone 
     let specialVal = f.MemberInfo.IsSome
     let alreadyChosen = f.ValReprInfo.IsSome
@@ -162,9 +162,8 @@ let IsMandatoryTopLevel (f:Val) =
     specialVal || isModulBinding
 
 let IsMandatoryNonTopLevel g (f:Val) =
-    let byrefVal = isByrefLikeTy g f.Type
+    let byrefVal = isByrefLikeTy g f.Range f.Type
     byrefVal
-
 
 //-------------------------------------------------------------------------
 // pass1: decide which f are to be TLR? and if so, arity(f)
@@ -727,7 +726,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
        //        temp
 
 
-       let vals = vals |> List.filter (fun v -> not (isByrefLikeTy g v.Type))
+       let vals = vals |> List.filter (fun v -> not (isByrefLikeTy g v.Range v.Type))
        // Remove values which have been labelled TLR, no need to close over these
        let vals = vals |> List.filter (Zset.memberOf topValS >> not) 
        
@@ -989,7 +988,7 @@ module Pass4_RewriteAssembly =
             // Take off the variables
             let tps,vss,b,rty = stripTopLambda (b,f.Type)
             // Don't take all the variables - only up to length wf
-            let vssTake,vssDrop = List.chop wf vss
+            let vssTake,vssDrop = List.splitAt wf vss
             // put the variables back on
             let b,rty = mkMultiLambdasCore b.Range vssDrop (b,rty)
             // fHat, args 

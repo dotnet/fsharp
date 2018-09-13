@@ -9,10 +9,6 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-type CheckResults =
-    | Ready of (FSharpParseFileResults * FSharpCheckFileResults) option
-    | StillRunning of Async<(FSharpParseFileResults * FSharpCheckFileResults) option>
-    
 type FSharpChecker with
     member checker.ParseDocument(document: Document, parsingOptions: FSharpParsingOptions, sourceText: string, userOpName: string) =
         asyncMaybe {
@@ -23,57 +19,58 @@ type FSharpChecker with
     member checker.ParseDocument(document: Document, parsingOptions: FSharpParsingOptions, sourceText: SourceText, userOpName: string) =
         checker.ParseDocument(document, parsingOptions, sourceText=sourceText.ToString(), userOpName=userOpName)
 
-    member checker.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, allowStaleResults: bool, userOpName: string) =
-        let parseAndCheckFile =
-            async {
-                let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options, userOpName=userOpName)
-                return
-                    match checkFileAnswer with
-                    | FSharpCheckFileAnswer.Aborted -> 
-                        None
-                    | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
-                        Some (parseResults, checkFileResults)
-            }
+    member checker.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, languageServicePerformanceOptions: LanguageServicePerformanceOptions, userOpName: string) =
+        async {
+            let parseAndCheckFile =
+                async {
+                    let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options, userOpName=userOpName)
+                    return
+                        match checkFileAnswer with
+                        | FSharpCheckFileAnswer.Aborted -> 
+                            None
+                        | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
+                            Some (parseResults, checkFileResults)
+                }
 
-        let tryGetFreshResultsWithTimeout() : Async<CheckResults> =
-            async {
-                try
-                    let! worker = Async.StartChild(parseAndCheckFile, 2000)
-                    let! result = worker 
-                    return Ready result
-                with :? TimeoutException ->
-                    return StillRunning parseAndCheckFile
-            }
+            let tryGetFreshResultsWithTimeout() =
+                async {
+                    let! worker = Async.StartChild(parseAndCheckFile, millisecondsTimeout=languageServicePerformanceOptions.TimeUntilStaleCompletion)
+                    try
+                        return! worker
+                    with :? TimeoutException ->
+                        return None // worker is cancelled at this point, we cannot return it and wait its completion anymore
+                }
 
-        let bindParsedInput(results: (FSharpParseFileResults * FSharpCheckFileResults) option) =
-            match results with
-            | Some(parseResults, checkResults) ->
-                match parseResults.ParseTree with
-                | Some parsedInput -> Some (parseResults, parsedInput, checkResults)
+            let bindParsedInput(results: (FSharpParseFileResults * FSharpCheckFileResults) option) =
+                match results with
+                | Some(parseResults, checkResults) ->
+                    match parseResults.ParseTree with
+                    | Some parsedInput -> Some (parseResults, parsedInput, checkResults)
+                    | None -> None
                 | None -> None
-            | None -> None
 
-        if allowStaleResults then
-            async {
+            if languageServicePerformanceOptions.AllowStaleCompletionResults then
                 let! freshResults = tryGetFreshResultsWithTimeout()
                     
                 let! results =
                     match freshResults with
-                    | Ready x -> async.Return x
-                    | StillRunning worker ->
+                    | Some x -> async.Return (Some x)
+                    | None ->
                         async {
-                            match allowStaleResults, checker.TryGetRecentCheckResultsForFile(filePath, options) with
-                            | true, Some (parseResults, checkFileResults, _) ->
+                            match checker.TryGetRecentCheckResultsForFile(filePath, options) with
+                            | Some (parseResults, checkFileResults, _) ->
                                 return Some (parseResults, checkFileResults)
-                            | _ ->
-                                return! worker
+                            | None ->
+                                return! parseAndCheckFile
                         }
                 return bindParsedInput results
-            }
-        else parseAndCheckFile |> Async.map bindParsedInput
+            else 
+                let! results = parseAndCheckFile
+                return bindParsedInput results
+        }
 
 
-    member checker.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, allowStaleResults: bool, userOpName: string, ?sourceText: SourceText) =
+    member checker.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, userOpName: string, ?allowStaleResults: bool, ?sourceText: SourceText) =
         async {
             let! cancellationToken = Async.CancellationToken
             let! sourceText =
@@ -81,7 +78,11 @@ type FSharpChecker with
                 | Some x -> async.Return x
                 | None -> document.GetTextAsync(cancellationToken)  |> Async.AwaitTask
             let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-            return! checker.ParseAndCheckDocument(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options, allowStaleResults, userOpName=userOpName)
+            let perfOpts =
+                match allowStaleResults with 
+                | Some b -> { document.FSharpOptions.LanguageServicePerformance with AllowStaleCompletionResults = b } 
+                | _ ->  document.FSharpOptions.LanguageServicePerformance
+            return! checker.ParseAndCheckDocument(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options, perfOpts, userOpName=userOpName)
         }
 
 

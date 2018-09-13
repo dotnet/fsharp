@@ -11,7 +11,6 @@ using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using Microsoft.VisualStudio.FSharp.LanguageService;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {

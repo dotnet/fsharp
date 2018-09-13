@@ -48,6 +48,10 @@ namespace Microsoft.FSharp.Collections
         let concat lists = Microsoft.FSharp.Primitives.Basics.List.concat lists
 
         let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (projection:'T->'SafeKey) (getKey:'SafeKey->'Key) (list:'T list) =
+            match list with
+            | [] -> []
+            | _ ->
+
             let dict = Dictionary comparer
             let rec loop srcList  =
                 match srcList with

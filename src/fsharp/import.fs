@@ -153,8 +153,8 @@ let ImportTyconRefApp (env:ImportMap) tcref tyargs =
     env.g.improveType tcref tyargs 
 
 /// Import an IL type as an F# type.
-let rec ImportILType (env:ImportMap) m tinst typ =  
-    match typ with
+let rec ImportILType (env:ImportMap) m tinst ty =  
+    match ty with
     | ILType.Void -> 
         env.g.unit_ty
 
@@ -168,7 +168,9 @@ let rec ImportILType (env:ImportMap) m tinst typ =
         let inst = tspec.GenericArgs |> List.map (ImportILType env m tinst) 
         ImportTyconRefApp env tcref inst
 
+    | ILType.Modified(_,tref,ILType.Byref ty) when tref.Name = "System.Runtime.InteropServices.InAttribute" -> mkInByrefTy env.g (ImportILType env m tinst ty)
     | ILType.Byref ty -> mkByrefTy env.g (ImportILType env m tinst ty)
+    | ILType.Ptr ILType.Void  when env.g.voidptr_tcr.CanDeref -> mkVoidPtrTy env.g
     | ILType.Ptr ty  -> mkNativePtrTy env.g (ImportILType env m tinst ty)
     | ILType.FunctionPointer _ -> env.g.nativeint_ty (* failwith "cannot import this kind of type (ptr, fptr)" *)
     | ILType.Modified(_,_,ty) -> 
@@ -179,17 +181,17 @@ let rec ImportILType (env:ImportMap) m tinst typ =
          with _ -> 
               error(Error(FSComp.SR.impNotEnoughTypeParamsInScopeWhileImporting(),m))
 
-let rec CanImportILType (env:ImportMap) m typ =  
-    match typ with
+let rec CanImportILType (env:ImportMap) m ty =  
+    match ty with
     | ILType.Void -> true
-    | ILType.Array(_bounds,ty) -> CanImportILType env m ty
+    | ILType.Array(_bounds, ety) -> CanImportILType env m ety
     | ILType.Boxed  tspec | ILType.Value tspec ->
         CanImportILTypeRef env m tspec.TypeRef 
         && tspec.GenericArgs |> List.forall (CanImportILType env m) 
-    | ILType.Byref ty -> CanImportILType env m ty
-    | ILType.Ptr ty  -> CanImportILType env m ty
+    | ILType.Byref ety -> CanImportILType env m ety
+    | ILType.Ptr ety  -> CanImportILType env m ety
     | ILType.FunctionPointer _ -> true
-    | ILType.Modified(_,_,ty) -> CanImportILType env m ty
+    | ILType.Modified(_,_,ety) -> CanImportILType env m ety
     | ILType.TypeVar _u16 -> true
 
 #if !NO_EXTENSIONTYPING
@@ -260,7 +262,10 @@ let rec ImportProvidedType (env:ImportMap) (m:range) (* (tinst:TypeInst) *) (st:
         mkByrefTy g elemTy
     elif st.PUntaint((fun st -> st.IsPointer),m) then 
         let elemTy = (ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()),m)))
-        mkNativePtrTy g elemTy
+        if isUnitTy g elemTy || isVoidTy g elemTy && g.voidptr_tcr.CanDeref then 
+            mkVoidPtrTy g 
+        else
+            mkNativePtrTy g elemTy
     else
 
         // REVIEW: Extension type could try to be its own generic arg (or there could be a type loop)

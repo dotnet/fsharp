@@ -147,7 +147,7 @@ module internal Salsa =
             printfn "build succeeded? %A" buildResult
             let mainassembly = 
                 try
-                    (projectInstance.GetItems("MainAssembly") |> Seq.head).EvaluatedInclude
+                    (projectInstance.GetItems("TargetFileName") |> Seq.head).EvaluatedInclude
                 with e ->
                     ""  // TODO it seems like Dev10 "Clean" target does not produce this output, but this result is not consumed by those tests in an interesting way anyway
             printfn "mainAssembly: %A" mainassembly 

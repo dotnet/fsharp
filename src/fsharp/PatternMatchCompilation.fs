@@ -4,6 +4,7 @@ module internal Microsoft.FSharp.Compiler.PatternMatchCompilation
 
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler 
+open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.Range
@@ -169,6 +170,25 @@ type RefutedSet =
 let notNullText = "some-non-null-value"
 let otherSubtypeText = "some-other-subtype"
 
+/// Create a TAST const value from an IL-initialized field read from .NET metadata
+// (Originally moved from TcFieldInit in TypeChecker.fs -- feel free to move this somewhere more appropriate)
+let ilFieldToTastConst lit =
+    match lit with 
+    | ILFieldInit.String s -> Const.String s
+    | ILFieldInit.Null -> Const.Zero
+    | ILFieldInit.Bool b -> Const.Bool b
+    | ILFieldInit.Char c -> Const.Char (char (int c))
+    | ILFieldInit.Int8 x -> Const.SByte x
+    | ILFieldInit.Int16 x -> Const.Int16 x
+    | ILFieldInit.Int32 x -> Const.Int32 x
+    | ILFieldInit.Int64 x -> Const.Int64 x
+    | ILFieldInit.UInt8 x -> Const.Byte x
+    | ILFieldInit.UInt16 x -> Const.UInt16 x
+    | ILFieldInit.UInt32 x -> Const.UInt32 x
+    | ILFieldInit.UInt64 x -> Const.UInt64 x
+    | ILFieldInit.Single f -> Const.Single f
+    | ILFieldInit.Double f -> Const.Double f 
+
 exception CannotRefute
 let RefuteDiscrimSet g m path discrims = 
     let mkUnknown ty = snd(mkCompGenLocal m "_" ty)
@@ -238,16 +258,28 @@ let RefuteDiscrimSet g m path discrims =
             | Some c ->
                 match tryDestAppTy g ty with
                 | Some tcref when tcref.IsEnumTycon ->
-                    // search for an enum value that pattern match (consts) does not contain
-                    let nonCoveredEnumValues =
-                        tcref.AllFieldsArray |> Array.tryFind (fun f ->
-                            match f.rfield_const with
-                            | None -> false
-                            | Some fieldValue -> (not (consts.Contains fieldValue)) && f.rfield_static)
+                    // We must distinguish between F#-defined enums and other .NET enums, as they are represented differently in the TAST
+                    let enumValues =
+                        if tcref.IsILEnumTycon then
+                            let (TILObjectReprData(_, _, tdef)) = tcref.ILTyconInfo
+                            tdef.Fields.AsList
+                            |> Seq.choose (fun ilField ->
+                                if ilField.IsStatic then
+                                    ilField.LiteralValue |> Option.map (fun ilValue ->
+                                        ilField.Name, ilFieldToTastConst ilValue)
+                                else None)
+                        else
+                            tcref.AllFieldsArray |> Seq.choose (fun fsField ->
+                                match fsField.rfield_const, fsField.rfield_static with
+                                | Some fsFieldValue, true -> Some (fsField.rfield_id.idText, fsFieldValue)
+                                | _ -> None)
+
+                    let nonCoveredEnumValues = Seq.tryFind (fun (_, fldValue) -> not (consts.Contains fldValue)) enumValues
+                          
                     match nonCoveredEnumValues with
                     | None -> Expr.Const(c,m,ty), true
-                    | Some f ->
-                        let v = RecdFieldRef.RFRef(tcref, f.rfield_id.idText)
+                    | Some (fldName, _) ->
+                        let v = RecdFieldRef.RFRef(tcref, fldName)
                         Expr.Op(TOp.ValFieldGet v, [ty], [], m), false
                 | _ -> Expr.Const(c,m,ty), false
             
@@ -904,7 +936,7 @@ let CompilePatternBasic
                  when isNil topgtvs && ucref.Tycon.IsStructRecordOrUnionTycon ->
 
              let argexp = GetSubExprOfInput subexpr
-             let vOpt,addrexp = mkExprAddrOfExprAux g true false NeverMutates argexp None matchm
+             let vOpt, addrexp, _readonly, _writeonly = mkExprAddrOfExprAux g true false NeverMutates argexp None matchm
              match vOpt with 
              | None -> Some addrexp, None
              | Some (v,e) -> 

@@ -54,7 +54,7 @@ let internal projectOptions = {
 
 let private getSpans (sourceText: SourceText) (caretPosition: int) =
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-    FSharpDocumentHighlightsService.GetDocumentHighlights(checker, documentId, sourceText, filePath, caretPosition, [], projectOptions, 0)
+    FSharpDocumentHighlightsService.GetDocumentHighlights(checker, documentId, sourceText, filePath, caretPosition, [], projectOptions, 0, LanguageServicePerformanceOptions.Default)
     |> Async.RunSynchronously
     |> Option.defaultValue [||]
 

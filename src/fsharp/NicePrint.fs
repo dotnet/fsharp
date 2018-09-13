@@ -71,7 +71,7 @@ module internal PrintUtilities =
                     tcref.DisplayName // has no static params
                 else
                     tcref.DisplayName+"<...>" // shorten
-            if isAttribute && name.EndsWith "Attribute" then
+            if isAttribute && name.EndsWithOrdinal("Attribute") then
                 String.dropSuffix name "Attribute"
             else 
                 name
@@ -170,10 +170,10 @@ module private PrintIL =
             match System.Int32.TryParse(rightMost, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture) with 
             | true, n -> n
             | false, _ -> 0 // looks like it's non-generic
-        ilTyparSubst |> List.rev |> List.take numParms |> List.rev
+        ilTyparSubst |> List.rev |> List.truncate numParms |> List.rev
                              
-    let rec layoutILType (denv: DisplayEnv) (ilTyparSubst: layout list) (typ : ILType) : layout =
-        match typ with
+    let rec layoutILType (denv: DisplayEnv) (ilTyparSubst: layout list) (ty: ILType) : layout =
+        match ty with
         | ILType.Void               -> WordL.structUnit // These are type-theoretically totally different type-theoretically `void` is Fin 0 and `unit` is Fin (S 0) ... but, this looks like as close as we can get.
         | ILType.Array (sh, t)      -> layoutILType denv ilTyparSubst t ^^ layoutILArrayShape sh
         | ILType.Value t
@@ -655,7 +655,7 @@ module private PrintTypes =
         | ILAttrib ilMethRef -> 
             let trimmedName = 
                 let name = ilMethRef.DeclaringTypeRef.Name
-                if name.EndsWith "Attribute" then
+                if name.EndsWithOrdinal("Attribute") then
                     String.dropSuffix name "Attribute"
                 else
                     name
@@ -762,11 +762,11 @@ module private PrintTypes =
         let varL = if denv.showAttributes then layoutTyparAttribs denv typar.Kind typar.Attribs varL else varL
 
         match Zmap.tryFind typar env.inplaceConstraints with
-        | Some (typarConstrTyp) ->
+        | Some (typarConstraintTy) ->
             if Zset.contains typar env.singletons then
-                leftL (tagPunctuation "#") ^^ layoutTypeWithInfo denv env typarConstrTyp
+                leftL (tagPunctuation "#") ^^ layoutTypeWithInfo denv env typarConstraintTy
             else
-                (varL ^^ sepL (tagPunctuation ":>") ^^ layoutTypeWithInfo denv env typarConstrTyp) |> bracketL
+                (varL ^^ sepL (tagPunctuation ":>") ^^ layoutTypeWithInfo denv env typarConstraintTy) |> bracketL
 
         | _ -> varL
 
@@ -906,15 +906,28 @@ module private PrintTypes =
             | [arg] ->  layoutTypeWithInfoAndPrec denv env 2 arg ^^ tcL
             | args  -> bracketIfL (prec <= 1) (bracketL (layoutTypesWithInfoAndPrec denv env 2 (sepL (tagPunctuation ",")) args) --- tcL)
 
-    /// Layout a type, taking precedence into account to insert brackets where needed *)
-    and layoutTypeWithInfoAndPrec denv env prec typ =
+    /// Layout a type, taking precedence into account to insert brackets where needed
+    and layoutTypeWithInfoAndPrec denv env prec ty =
 
-        match stripTyparEqns typ with 
+        match stripTyparEqns ty with 
 
-        // Layout a type application 
+        // Always prefer to format 'byref<ty,ByRefKind.In>' as 'inref<ty>'
+        | ty when isInByrefTy denv.g ty && (match ty with TType_app (tc, _) when denv.g.inref_tcr.CanDeref  && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
+            layoutTypeWithInfoAndPrec denv env prec (mkInByrefTy denv.g (destByrefTy denv.g ty))
+
+        // Always prefer to format 'byref<ty,ByRefKind.Out>' as 'outref<ty>'
+        | ty when isOutByrefTy denv.g ty && (match ty with TType_app (tc, _) when denv.g.outref_tcr.CanDeref  && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
+            layoutTypeWithInfoAndPrec denv env prec (mkOutByrefTy denv.g (destByrefTy denv.g ty))
+
+        // Always prefer to format 'byref<ty,ByRefKind.InOut>' as 'byref<ty>'
+        | ty when isByrefTy denv.g ty && (match ty with TType_app (tc, _) when denv.g.byref_tcr.CanDeref  && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
+            layoutTypeWithInfoAndPrec denv env prec (mkByrefTy denv.g (destByrefTy denv.g ty))
+
+        // Always prefer 'float' to 'float<1>'
         | TType_app (tc,args) when tc.IsMeasureableReprTycon && List.forall (isDimensionless denv.g) args ->
           layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided denv.g tc args)
 
+        // Layout a type application 
         | TType_app (tc,args) -> 
           layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec tc.IsPrefixDisplay args 
 
@@ -942,7 +955,7 @@ module private PrintTypes =
               match stripTyparEqns ty with 
               | TType_fun (dty,rty) -> loop (soFarL --- (layoutTypeWithInfoAndPrec denv env 4 dty ^^ wordL (tagPunctuation "->"))) rty
               | rty -> soFarL --- layoutTypeWithInfoAndPrec denv env 5 rty
-            bracketIfL (prec <= 4) (loop emptyL typ)
+            bracketIfL (prec <= 4) (loop emptyL ty)
 
         // Layout a type variable . 
         | TType_var r ->
@@ -955,11 +968,11 @@ module private PrintTypes =
         sepListL sep (List.map (layoutTypeWithInfoAndPrec denv env prec) typl)
 
     /// Layout a single type, taking TypeSimplificationInfo into account 
-    and private layoutTypeWithInfo denv env typ = 
-        layoutTypeWithInfoAndPrec denv env 5 typ
+    and private layoutTypeWithInfo denv env ty = 
+        layoutTypeWithInfoAndPrec denv env 5 ty
 
-    and layoutType denv typ  = 
-        layoutTypeWithInfo denv SimplifyTypes.typeSimplificationInfo0 typ
+    and layoutType denv ty  = 
+        layoutTypeWithInfo denv SimplifyTypes.typeSimplificationInfo0 ty
 
     /// Layout a single type used as the type of a member or value 
     let layoutTopType denv env argInfos rty cxs =
@@ -1080,18 +1093,18 @@ module private PrintTypes =
             nameL
         nameL ^^ wordL (tagPunctuation ":") ^^ tauL
 
-    let prettyLayoutOfType denv typ = 
-        let typ,cxs = PrettyTypes.PrettifyType denv.g typ
-        let env = SimplifyTypes.CollectInfo true [typ] cxs
+    let prettyLayoutOfType denv ty = 
+        let ty,cxs = PrettyTypes.PrettifyType denv.g ty
+        let env = SimplifyTypes.CollectInfo true [ty] cxs
         let cxsL = layoutConstraintsWithInfo denv env env.postfixConstraints
-        layoutTypeWithInfoAndPrec denv env 2 typ  --- cxsL
+        layoutTypeWithInfoAndPrec denv env 2 ty  --- cxsL
 
-    let prettyLayoutOfTypeNoConstraints denv typ = 
-        let typ,_cxs = PrettyTypes.PrettifyType denv.g typ
-        layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 5 typ  
+    let prettyLayoutOfTypeNoConstraints denv ty = 
+        let ty,_cxs = PrettyTypes.PrettifyType denv.g ty
+        layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 5 ty  
 
-    let layoutAssemblyName _denv (typ: TType) =
-        typ.GetAssemblyName()
+    let layoutAssemblyName _denv (ty: TType) =
+        ty.GetAssemblyName()
 
 /// Printing TAST objects
 module private PrintTastMemberOrVals = 
@@ -1228,7 +1241,7 @@ module InfoMemberPrinting =
     /// Format the arguments of a method to a buffer. 
     ///
     /// This uses somewhat "old fashioned" printf-style buffer printing.
-    let layoutParamData denv (ParamData(isParamArray, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty)) =
+    let layoutParamData denv (ParamData(isParamArray, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) =
         let isOptArg = optArgInfo.IsOptional
         match isParamArray, nmOpt, isOptArg, tryDestOptionTy denv.g pty with 
         // Layout an optional argument 
@@ -1975,6 +1988,7 @@ let isGeneratedExceptionField pos f     = TastDefinitionPrinting.isGeneratedExce
 let stringOfTyparConstraint denv tpc  = stringOfTyparConstraints denv [tpc]
 let stringOfTy              denv x    = x |> PrintTypes.layoutType denv |> showL
 let prettyLayoutOfType   denv x    = x |> PrintTypes.prettyLayoutOfType denv
+let prettyLayoutOfTypeNoCx  denv x    = x |> PrintTypes.prettyLayoutOfTypeNoConstraints denv
 let prettyStringOfTy        denv x    = x |> PrintTypes.prettyLayoutOfType denv |> showL
 let prettyStringOfTyNoCx    denv x    = x |> PrintTypes.prettyLayoutOfTypeNoConstraints denv |> showL
 let stringOfRecdField       denv x    = x |> TastDefinitionPrinting.layoutRecdField false denv |> showL

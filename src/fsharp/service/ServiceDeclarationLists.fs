@@ -11,7 +11,6 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library  
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Layout
@@ -56,8 +55,8 @@ type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: s
 [<AutoOpen>]
 module internal DescriptionListsImpl = 
 
-    let isFunction g typ =
-        let _,tau = tryDestForallTy g typ
+    let isFunction g ty =
+        let _,tau = tryDestForallTy g ty
         isFunTy g tau 
    
     let printCanonicalizedTypeName g (denv:DisplayEnv) tau =
@@ -85,14 +84,14 @@ module internal DescriptionListsImpl =
             else 
                 // TODO: in this case ucinst is ignored - it gives the instantiation of the type parameters of
                 // the union type containing this case.
-                NicePrint.layoutOfParamData denv (ParamData(false, false, NotOptional, NoCallerInfo, Some f.Id, ReflectedArgInfo.None, f.FormalType)) 
+                NicePrint.layoutOfParamData denv (ParamData(false, false, false, NotOptional, NoCallerInfo, Some f.Id, ReflectedArgInfo.None, f.FormalType)) 
         FSharpMethodGroupItemParameter(
           name=initial.ParameterName, 
           canonicalTypeTextForSorting=initial.CanonicalTypeTextForSorting, 
           display=display,
           isOptional=false)
 
-    let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty) as paramData) =
+    let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) as paramData) =
         FSharpMethodGroupItemParameter(
           name = (match nmOpt with None -> "" | Some pn -> pn.idText),
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv pty,
@@ -103,7 +102,7 @@ module internal DescriptionListsImpl =
     let PrettyParamsOfParamDatas g denv typarInst (paramDatas:ParamData list) rty = 
         let paramInfo,paramTypes = 
             paramDatas 
-            |> List.map (fun (ParamData(isParamArrayArg, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty)) -> 
+            |> List.map (fun (ParamData(isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) -> 
                 let isOptArg = optArgInfo.IsOptional
                 match nmOpt, isOptArg, tryDestOptionTy denv.g pty with 
                 // Layout an optional argument 
@@ -179,8 +178,8 @@ module internal DescriptionListsImpl =
         | SymbolHelpers.ItemIsWithStaticArguments m g staticParameters ->
             staticParameters 
                 |> Array.map (fun sp -> 
-                    let typ = Import.ImportProvidedType amap m (sp.PApply((fun x -> x.ParameterType),m))
-                    let spKind = NicePrint.prettyLayoutOfType denv typ
+                    let ty = Import.ImportProvidedType amap m (sp.PApply((fun x -> x.ParameterType),m))
+                    let spKind = NicePrint.prettyLayoutOfType denv ty
                     let spName = sp.PUntaint((fun sp -> sp.Name), m)
                     let spOpt = sp.PUntaint((fun sp -> sp.IsOptional), m)
                     FSharpMethodGroupItemParameter(
@@ -237,7 +236,7 @@ module internal DescriptionListsImpl =
                     let firstCurriedParamDatas = 
                         firstCurriedArgInfo
                         |> List.map ParamNameAndType.FromArgInfo
-                        |> List.map (fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
+                        |> List.map (fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
 
                     // Adjust the return type so it only strips the first argument
                     let curriedRetTy = 
@@ -321,7 +320,7 @@ module internal DescriptionListsImpl =
             | None -> 
                 let argNamesAndTys = SymbolHelpers.ParamNameAndTypesOfUnaryCustomOperation g minfo 
                 let argTys, _ = PrettyTypes.PrettifyTypes g (argNamesAndTys |> List.map (fun (ParamNameAndType(_,ty)) -> ty))
-                let paramDatas = (argNamesAndTys, argTys) ||> List.map2 (fun (ParamNameAndType(nmOpt, _)) argTy -> ParamData(false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None,argTy))
+                let paramDatas = (argNamesAndTys, argTys) ||> List.map2 (fun (ParamNameAndType(nmOpt, _)) argTy -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None,argTy))
                 let rty = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
                 let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst paramDatas rty
 
@@ -334,15 +333,15 @@ module internal DescriptionListsImpl =
                 let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] rty
                 [], prettyRetTyL  // no parameter data available for binary operators like 'zip', 'join' and 'groupJoin' since they use bespoke syntax 
 
-        | Item.FakeInterfaceCtor typ -> 
-            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] typ
+        | Item.FakeInterfaceCtor ty -> 
+            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] ty
             [], prettyRetTyL
 
         | Item.DelegateCtor delty -> 
             let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
 
             // No need to pass more generic type information in here since the instanitations have already been applied
-            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst [ParamData(false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, fty)] delty
+            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst [ParamData(false, false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, fty)] delty
 
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
             // for display as part of the method group
@@ -381,14 +380,14 @@ module internal DescriptionListsImpl =
             | TNoRepr -> FSharpGlyph.Class  
          
          /// Find the glyph for the given type representation.
-         let typeToGlyph typ = 
-            if isAppTy denv.g typ then 
-                let tcref = tcrefOfAppTy denv.g typ
+         let typeToGlyph ty = 
+            if isAppTy denv.g ty then 
+                let tcref = tcrefOfAppTy denv.g ty
                 tcref.TypeReprInfo |> reprToGlyph 
-            elif isStructTupleTy denv.g typ then FSharpGlyph.Struct
-            elif isRefTupleTy denv.g typ then FSharpGlyph.Class
-            elif isFunction denv.g typ then FSharpGlyph.Delegate
-            elif isTyparTy denv.g typ then FSharpGlyph.Struct
+            elif isStructTupleTy denv.g ty then FSharpGlyph.Struct
+            elif isRefTupleTy denv.g ty then FSharpGlyph.Class
+            elif isFunction denv.g ty then FSharpGlyph.Delegate
+            elif isTyparTy denv.g ty then FSharpGlyph.Struct
             else FSharpGlyph.Typedef
             
          // This may explore assemblies that are not in the reference set,
@@ -400,7 +399,7 @@ module internal DescriptionListsImpl =
                   if isFunction denv.g vref.Type then FSharpGlyph.Method
                   elif vref.LiteralValue.IsSome then FSharpGlyph.Constant
                   else FSharpGlyph.Variable
-            | Item.Types(_,typ::_) -> typeToGlyph (stripTyEqns denv.g typ)    
+            | Item.Types(_,ty::_) -> typeToGlyph (stripTyEqns denv.g ty)    
             | Item.UnionCase _
             | Item.ActivePatternCase _ -> FSharpGlyph.EnumMember   
             | Item.ExnCase _ -> FSharpGlyph.Exception   
@@ -548,6 +547,8 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
 /// A table of declarations for Intellisense completion 
 [<Sealed>]
 type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForType: bool, isError: bool) = 
+    static let fsharpNamespace = [|"Microsoft"; "FSharp"|]
+
     member __.Items = declarations
     member __.IsForType = isForType
     member __.IsError = isError
@@ -614,15 +615,23 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                     | None -> item.Item.DisplayName
                 name, items)
 
-        // Filter out operators (and list)
+        // Filter out operators, active patterns (as values) and the empty list
         let items = 
             // Check whether this item looks like an operator.
             let isOperatorItem(name, items: CompletionItem list) = 
                 match items |> List.map (fun x -> x.Item) with
                 | [Item.Value _ | Item.MethodGroup _ | Item.UnionCase _] -> IsOperatorName name
                 | _ -> false              
-            let isFSharpList name = (name = "[]") // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
-            items |> List.filter (fun (displayName, items) -> not (isOperatorItem(displayName, items)) && not (isFSharpList displayName)) 
+            
+            let isActivePatternItem (items: CompletionItem list) =
+                match items |> List.map (fun x -> x.Item) with
+                | [Item.Value vref] -> IsActivePatternName vref.CompiledName
+                | _ -> false
+            
+            items |> List.filter (fun (displayName, items) -> 
+                not (isOperatorItem(displayName, items)) && 
+                not (displayName = "[]") && // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
+                not (isActivePatternItem items))
                     
         let decls = 
             items 
@@ -640,7 +649,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                     let glyph = GlyphOfItem(denv, item.Item)
 
                     let name, nameInCode =
-                        if displayName.StartsWith "( " && displayName.EndsWith " )" then
+                        if displayName.StartsWithOrdinal("( ") && displayName.EndsWithOrdinal(" )") then
                             let cleanName = displayName.[2..displayName.Length - 3]
                             cleanName, 
                             if IsOperatorName displayName then cleanName else "``" + cleanName + "``"
@@ -650,22 +659,26 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                             | Some _ -> displayName
                             | None -> Lexhelp.Keywords.QuoteIdentifierIfNeeded displayName
 
-                    let isAttribute = SymbolHelpers.IsAttribute infoReader item.Item
-                    
+                    let isAttributeItem = lazy (SymbolHelpers.IsAttribute infoReader item.Item)
+
                     let cutAttributeSuffix (name: string) =
-                        if isAttributeApplicationContext && isAttribute && name <> "Attribute" && name.EndsWith "Attribute" then
+                        if isAttributeApplicationContext && name <> "Attribute" && name.EndsWithOrdinal("Attribute") && isAttributeItem.Value then
                             name.[0..name.Length - "Attribute".Length - 1]
                         else name
 
                     let name = cutAttributeSuffix name
                     let nameInCode = cutAttributeSuffix nameInCode
-                    let fullName = SymbolHelpers.FullNameOfItem g item.Item
+                    
+                    let fullName = 
+                        match item.Unresolved with
+                        | Some x -> x.FullName
+                        | None -> SymbolHelpers.FullNameOfItem g item.Item
                     
                     let namespaceToOpen = 
                         item.Unresolved 
                         |> Option.map (fun x -> x.Namespace)
                         |> Option.bind (fun ns ->
-                            if ns |> Array.startsWith [|"Microsoft"; "FSharp"|] then None
+                            if ns |> Array.startsWith fsharpNamespace then None
                             else Some ns)
                         |> Option.map (fun ns ->
                             match currentNamespaceOrModule with
@@ -676,7 +689,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                             | None -> ns)
                         |> Option.bind (function
                             | [||] -> None
-                            | ns -> Some (ns |> String.concat "."))
+                            | ns -> Some (System.String.Join(".", ns)))
 
                     FSharpDeclarationListItem(
                         name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), getAccessibility item.Item, 

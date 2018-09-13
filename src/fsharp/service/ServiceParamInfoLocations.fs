@@ -144,17 +144,27 @@ module internal NoteworthyParamInfoLocationsImpl =
                     NotFound, Some inner
             | _ -> NotFound, Some inner
 
-
+    let (|StaticParameters|_|) pos synType =
+        match synType with
+        | SynType.App(SynType.LongIdent(LongIdentWithDots(lid, _) as lidwd), Some(openm), args, commas, closemOpt, _pf, wholem) ->
+            let lidm = lidwd.Range
+            let betweenTheBrackets = mkRange wholem.FileName openm.Start wholem.End
+            if AstTraversal.rangeContainsPosEdgesExclusive betweenTheBrackets pos && args |> List.forall isStaticArg then
+                let commasAndCloseParen = [ for c in commas -> c.End ] @ [ wholem.End ]
+                Some (FSharpNoteworthyParamInfoLocations(pathOfLid lid, lidm, openm.Start, commasAndCloseParen, closemOpt.IsSome, args |> List.map digOutIdentFromStaticArg))
+            else
+                None
+        | _ ->
+            None
 
     let traverseInput(pos, parseTree) =
-
         AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
         member this.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
             let expr = expr // fix debug locals
             match expr with
 
             // new LID<tyarg1, ...., tyargN>(...)  and error recovery of these
-            | SynExpr.New(_, synType, synExpr, _range) -> 
+            | SynExpr.New(_, synType, synExpr, _) -> 
                 let constrArgsResult, cacheOpt = searchSynArgExpr traverseSynExpr pos synExpr
                 match constrArgsResult, cacheOpt with
                 | Found(parenLoc, args, isThereACloseParen), _ ->
@@ -163,7 +173,9 @@ module internal NoteworthyParamInfoLocationsImpl =
                 | NotFound, Some cache ->
                     cache
                 | _ ->
-                    traverseSynExpr synExpr
+                    match synType with
+                    | StaticParameters pos loc -> Some loc
+                    | _ -> traverseSynExpr synExpr
 
             // EXPR<  = error recovery of a form of half-written TypeApp
             | SynExpr.App(_, _, SynExpr.App(_, true, SynExpr.Ident op, synExpr, openm), SynExpr.ArbitraryAfterError _, wholem) when op.idText = "op_LessThan" ->
@@ -221,18 +233,10 @@ module internal NoteworthyParamInfoLocationsImpl =
 
             | _ -> defaultTraverse expr
 
-        member this.VisitTypeAbbrev(tyAbbrevRhs, _m) =
+        member this.VisitTypeAbbrev(tyAbbrevRhs, _m) = 
             match tyAbbrevRhs with
-            | SynType.App(SynType.LongIdent(LongIdentWithDots(lid, _) as lidwd), Some(openm), args, commas, closemOpt, _pf, wholem) ->
-                let lidm = lidwd.Range
-                let betweenTheBrackets = mkRange wholem.FileName openm.Start wholem.End
-                if AstTraversal.rangeContainsPosEdgesExclusive betweenTheBrackets pos && args |> List.forall isStaticArg then
-                    let commasAndCloseParen = [ for c in commas -> c.End ] @ [ wholem.End ]
-                    Some (FSharpNoteworthyParamInfoLocations(pathOfLid lid, lidm, openm.Start, commasAndCloseParen, closemOpt.IsSome, args |> List.map digOutIdentFromStaticArg))
-                else
-                    None
-            | _ ->
-                None
+            | StaticParameters pos loc -> Some loc
+            | _ -> None
 
         member this.VisitImplicitInherit(defaultTraverse, ty, expr, m) =
             match defaultTraverse expr with
