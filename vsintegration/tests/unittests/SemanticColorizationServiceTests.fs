@@ -54,7 +54,7 @@ type SemanticClassificationServiceTests() =
         let ranges = getRanges fileContents
         let line = text.Lines.GetLinePosition (fileContents.IndexOf(marker) + marker.Length - 1)
         let markerPos = Range.mkPos (Range.Line.fromZ line.Line) (line.Character + marker.Length - 1)
-        let anyData = ranges |> List.exists (fun (range, _) -> Range.rangeContainsPos range markerPos)
+        let anyData = ranges |> List.exists (fun (range, sct) -> Range.rangeContainsPos range markerPos && ((FSharpClassificationTypes.getClassificationTypeName sct) = classificationType))
         Assert.False(anyData, "Classification data was found when it wasn't expected.")
 
     [<TestCase("(*1*)", FSharpClassificationTypes.ValueType)>]
