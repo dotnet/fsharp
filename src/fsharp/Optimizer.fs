@@ -1261,9 +1261,9 @@ and OpHasEffect g op =
     | TOp.Recd (ctor, tcref) -> 
         match ctor with 
         | RecdExprIsObjInit -> true
-        | RecdExpr -> isRecdOrUnionOrFSharpStructTyconRefMutable g tcref
-    | TOp.UnionCase ucref -> isRecdOrUnionOrFSharpStructTyconRefMutable g ucref.TyconRef
-    | TOp.ExnConstr ecref -> isExnMutable ecref
+        | RecdExpr -> isRecdOrUnionOrStructTyconRefAllocObservable g tcref
+    | TOp.UnionCase ucref -> isRecdOrUnionOrStructTyconRefAllocObservable g ucref.TyconRef
+    | TOp.ExnConstr ecref -> isExnAllocObservable ecref
     | TOp.Bytes _ | TOp.UInt16s _ | TOp.Array -> true (* alloc observable *)
     | TOp.UnionCaseTagGet _ -> false
     | TOp.UnionCaseProof _ -> false

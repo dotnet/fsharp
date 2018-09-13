@@ -2172,10 +2172,10 @@ module GeneralizationHelpers =
             | TOp.UnionCase uc -> not (isUnionCaseRefMutable uc)
             | TOp.Recd(ctorInfo, tcref) -> 
                 match ctorInfo with 
-                | RecdExpr -> not (isRecdOrUnionOrFSharpStructTyconRefMutable g tcref)
+                | RecdExpr -> not (isRecdOrUnionOrStructTyconRefAllocObservable g tcref)
                 | RecdExprIsObjInit -> false
             | TOp.Array -> isNil args
-            | TOp.ExnConstr ec -> not (isExnMutable ec)
+            | TOp.ExnConstr ec -> not (isExnAllocObservable ec)
 
             | TOp.ILAsm([], _) -> true
 

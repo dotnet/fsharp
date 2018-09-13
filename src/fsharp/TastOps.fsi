@@ -1091,8 +1091,8 @@ val TypeHasDefaultValue : TcGlobals -> range -> TType -> bool
 val isAbstractTycon : Tycon -> bool
 
 val isUnionCaseRefMutable : UnionCaseRef -> bool
-val isRecdOrUnionOrFSharpStructTyconRefMutable : TcGlobals -> TyconRef -> bool
-val isExnMutable : TyconRef -> bool 
+val isRecdOrUnionOrStructTyconRefAllocObservable : TcGlobals -> TyconRef -> bool
+val isExnAllocObservable : TyconRef -> bool 
 val isUnionCaseFieldMutable : TcGlobals -> UnionCaseRef -> int -> bool
 val isExnFieldMutable : TyconRef -> int -> bool
 
