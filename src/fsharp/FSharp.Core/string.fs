@@ -76,7 +76,7 @@ namespace Microsoft.FSharp.Core
         let replicate (count:int) (str:string) =
             if count < 0 then invalidArgInputMustBeNonNegative "count" count
             let str = emptyIfNull str
-            let res = StringBuilder str.Length
+            let res = StringBuilder(count * str.Length)
             for i = 0 to count - 1 do 
                res.Append str |> ignore
             res.ToString()
