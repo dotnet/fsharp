@@ -81,7 +81,7 @@ namespace Microsoft.FSharp.Core
             if String.IsNullOrEmpty str then
                 String.Empty
             else
-                let res = StringBuilder str.Length
+                let res = StringBuilder(count * str.Length)
                 for i = 0 to count - 1 do 
                    res.Append str |> ignore
                 res.ToString()
