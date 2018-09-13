@@ -8049,64 +8049,62 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         //                     exprBody
         //         ), expr1)
         //     ), expr2)
-        | SynExpr.LetOrUseAndBang(letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, innerComp) ->  // TODO Handle use! / anduse!
+        | SynExpr.LetOrUseAndBang(letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, bodyComp) ->  // TODO Handle use! / anduse!
 
             printfn "type checking a let! ... and! ..." // TODO Remove
 
-            // TODO Add all lambdas then add apply calls (in reverse order), as per comments on this case above
-
             // TODO Lift out to top level?
             // TODO How do we manage the varSpace such that the orthogonality of the and!s is preserved?
+            // TODO Add all lambdas then add apply calls (in reverse order), as per comments on this case above
+            // TODO Assert no RHS refers to and outer LHS, else insert a helpful and!-related error for that instead of just "not defined" or using a value the user might have expected to have been shadowed
+
             // Reads in bindings [ andBangExprN ; ... ; andBangExpr2 ; andBangExpr1 ; letExpr ]
             // creating a lambda for each one, and stacking up the calls to apply to hook up once
             // all of the lambdas have been created.
             // Note how we work from the inner expression outward, meaning be create the lambda for the last
             // 'and!' _first_, and then create the calls to 'Apply' in the opposite order so that the calls to
             // 'Apply' correspond to their lambda.
-            let rec constructApplies (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
-                match bindings with // TODO Nest pattern matches to avoid allocation here?
-                | (spBind, _, isFromSource, pat, rhs, _) :: remainingBindings ->
+            let rec constructApplies (innerComp : SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) (pendingApplies : (SynExpr -> SynExpr) list) =
 
-                    let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhs.Range
+                match bindings with
+                | (spBind, _, isFromSource, pat, rhsExpr, _) :: remainingBindings ->
+                    let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhsExpr.Range
                     if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), bindRange))
-                    let innerRange = accComp.Range
+                    let innerRange = innerComp.Range
                     if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env bindRange ad "Apply" builderTy)
                     then error(Error(FSComp.SR.tcRequireBuilderMethod("Apply"), bindRange))
-
-                    // TODO Assert no RHS refers to and outer LHS, else insert a helpful and!-related error for that instead of just "not defined" or using a value the user might have expected to have been shadowed
                         
-                    // TODO: Intentionally only include the current binding - the whole point of applicatives is to avoid bringing the LHS of an earlier binding in the RHS of another?
                     // Add the variables to the query variable space, on demand
-                    let newVarSpace =
+                    let andBangVarSpace = 
                         addVarsToVarSpace varSpace (fun _mCustomOp env -> 
                             use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
                             let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (pat, None) 
                             vspecs, envinner)
 
-                    let rhsExpr = if isFromSource then mkSourceExpr rhs else rhs
+                    let rhsExpr = if isFromSource then mkSourceExpr rhsExpr else rhsExpr
 
+                    let newPendingApplies =
+                        (fun consumeExpr -> mkSynCall "Apply"  bindRange [consumeExpr; rhsExpr]) :: pendingApplies
 
-                    // TODO NEXT: Rewrite to use stack frame - more terse and readable solution?
-                    //            Go down bindings, preparing applies and stacking up lambdas and varspace, then empty stack of lambdas too
-
-                    let newAccComp =
-                        trans true q newVarSpace accComp (fun holeFill -> 
+                    let newInnerComp =
+                        trans true q andBangVarSpace innerComp (fun holeFill -> 
                             translatedCtxt (SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, holeFill, innerRange, SequencePointAtTarget)], spBind, innerRange)))
 
-                    let newPendingApplyCall = 
-                        trans true q varSpace accComp (fun holeFill -> 
-                            translatedCtxt (mkSynCall "Apply" bindRange [holeFill; rhsExpr]))
-
-                    constructApplies newAccComp varSpace (newPendingApplyCall :: pendingApplyCalls) remainingBindings
+                    constructApplies newInnerComp remainingBindings newPendingApplies
                 
-                | [] -> innerComp
+                | [] ->
+                    match pendingApplies with
+                    | ap :: remainingApplies ->
+                        constructApplies (ap innerComp) [] remainingApplies
+                    | [] ->
+                        innerComp
 
             let bindingsBottomToTop = 
                 let letBinding =
                     (letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm)
                 List.rev (letBinding :: andBangBindings) // [ andBangExprN ; ... ; andBangExpr2 ; andBangExpr1 ; letExpr ]
 
-            Some (constructApplies bindingsBottomToTop)
+            Some (constructApplies bodyComp bindingsBottomToTop [])
 
         // 'use! pat = e1 and! pat = e2 in e3' --> TODO
         //| SynExpr.LetOrUseAndBang(spBind, true, isFromSource, (SynPat.Named (SynPat.Wild _, id, false, _, _) as pat) , rhsExpr, _, andBangs, innerComp)

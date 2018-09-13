@@ -3022,6 +3022,7 @@ binders:
        let spBind = SequencePointAtBinding(unionRanges (rhs parseState 1) $4.Range)
        let mAll = unionRanges (rhs parseState 1) (rhs parseState 7) // TODO Check this range
        let m = $4.Range.EndRange // zero-width range
+       failwith "Inserting implicit zero from OBINDER!" // TODO Remove
        SynExpr.LetOrUseAndBang(spBind,($1 = "use"),true,$2,$4, mAll, [], SynExpr.ImplicitZero m) }
 
 
