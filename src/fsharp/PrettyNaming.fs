@@ -486,32 +486,19 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
 
     let IsMangledGenericNameAndPos (n:string) =
         (* check what comes after the symbol is a number *)
-        let m = n.LastIndexOf mangledGenericTypeNameSym
-        if m = -1 then None else
-        let mutable res = m < n.Length - 1
-        let mutable i = m + 1
+        let pos = n.LastIndexOf mangledGenericTypeNameSym
+        if pos = -1 then None else
+        let mutable res = pos < n.Length - 1
+        let mutable i = pos + 1
         while res && i < n.Length do
             let char = n.[i]
             if not (char >= '0' && char <= '9') then
                 res <- false
             i <- i + 1
         if res then
-            Some m
+            Some pos
         else
             None
-
-    let IsMangledGenericName (n:string) =
-        (* check what comes after the symbol is a number *)
-        let m = n.LastIndexOf mangledGenericTypeNameSym
-        if m = -1 then false else
-        let mutable res = m < n.Length - 1
-        let mutable i = m + 1
-        while res && i < n.Length do
-            let char = n.[i]
-            if not (char >= '0' && char <= '9') then
-                res <- false
-            i <- i + 1
-        res
 
     type NameArityPair = NameArityPair of string * int
 
@@ -520,10 +507,13 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
         let num = mangledName.Substring(pos+1,mangledName.Length - pos - 1)
         NameArityPair(res, int32 num)
 
-    let DemangleGenericTypeName n =
-        match IsMangledGenericNameAndPos n with
-        | Some pos -> n.Substring(0,pos)
-        | _ -> n
+    let inline DemangleGenericTypeNameWithPos pos (mangledName:string) =
+        mangledName.Substring(0,pos)
+
+    let DemangleGenericTypeName (mangledName:string) =
+        match IsMangledGenericNameAndPos mangledName with
+        | Some pos -> DemangleGenericTypeNameWithPos pos mangledName
+        | _ -> mangledName
 
     let private chopStringTo (s:string) (c:char) =
         match s.IndexOf c with

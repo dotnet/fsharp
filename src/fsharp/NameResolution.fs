@@ -985,8 +985,8 @@ type TypeNameResolutionStaticArgsInfo =
 
     // Get the first possible mangled name of the type, assuming the args are generic args
     member x.MangledNameForType nm = 
-        if IsMangledGenericName nm || x.NumStaticArgs = 0 then nm
-        else nm+"`"+string x.NumStaticArgs
+        if x.NumStaticArgs = 0 || IsMangledGenericNameAndPos nm <> None then nm
+        else nm + "`" + string x.NumStaticArgs
 
 
 
