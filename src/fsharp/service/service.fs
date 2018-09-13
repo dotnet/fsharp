@@ -1324,13 +1324,23 @@ type TypeCheckInfo
             let underlyingTy = stripTyEqnsAndMeasureEqns g ty
             isStructTy g underlyingTy
 
+        let IsValRefMutable (vref: ValRef) =
+            // Mutable values, ref cells, and non-inref byrefs are mutable.
+            vref.IsMutable
+            || Tastops.isRefCellTy g vref.Type
+            || (Tastops.isByrefTy g vref.Type && not (Tastops.isInByrefTy g vref.Type))
+
+        let isRecdFieldMutable (rfinfo: RecdFieldInfo) =
+            (rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone)
+            || Tastops.isRefCellTy g rfinfo.RecdField.FormalType
+
         resolutions
         |> Seq.choose (fun cnr ->
             match cnr with
             // 'seq' in 'seq { ... }' gets colored as keywords
             | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref ->
                 Some (m, SemanticClassificationType.ComputationExpression)
-            | CNR(_, (Item.Value vref), _, _, _, _, m) when vref.IsMutable || Tastops.isRefCellTy g vref.Type ->
+            | CNR(_, (Item.Value vref), _, _, _, _, m) when IsValRefMutable vref ->
                 Some (m, SemanticClassificationType.MutableVar)
             | CNR(_, Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m) ->
                 Some (m, SemanticClassificationType.IntrinsicFunction)
@@ -1343,7 +1353,7 @@ type TypeCheckInfo
                     Some (m, SemanticClassificationType.Operator)
                 else
                     Some (m, SemanticClassificationType.Function)
-            | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone -> 
+            | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when isRecdFieldMutable rfinfo ->
                 Some (m, SemanticClassificationType.MutableVar)
             | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when isFunction g rfinfo.FieldType ->
                Some (m, SemanticClassificationType.Function)

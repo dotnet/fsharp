@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:4:3:0
 }
 .assembly SeqExpressionSteppingTest7
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000278 Length: 0x00000098
 }
 .module SeqExpressionSteppingTest7.exe
-// MVID: {59B19240-2432-93C3-A745-03834092B159}
+// MVID: {5B17FC50-2432-93C3-A745-038350FC175B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x027D0000
+// Image base: 0x02D10000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -91,7 +91,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<!a>& next) cil managed
     {
-      // Code size       138 (0x8a)
+      // Code size       130 (0x82)
       .maxstack  7
       .locals init ([0] !a V_0)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
@@ -173,12 +173,10 @@
       IL_0073:  ldc.i4.2
       IL_0074:  stfld      int32 class SeqExpressionSteppingTest7/f@5<!a>::pc
       IL_0079:  ldarg.0
-      IL_007a:  ldloca.s   V_0
-      IL_007c:  initobj    !a
-      IL_0082:  ldloc.0
-      IL_0083:  stfld      !0 class SeqExpressionSteppingTest7/f@5<!a>::current
-      IL_0088:  ldc.i4.0
-      IL_0089:  ret
+      IL_007a:  ldloc.0
+      IL_007b:  stfld      !0 class SeqExpressionSteppingTest7/f@5<!a>::current
+      IL_0080:  ldc.i4.0
+      IL_0081:  ret
     } // end of method f@5::GenerateNext
 
     .method public strict virtual instance void 
@@ -252,18 +250,16 @@
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       17 (0x11)
+      // Code size       9 (0x9)
       .maxstack  7
       .locals init (!a V_0)
       IL_0000:  ldnull
       IL_0001:  ldc.i4.0
-      IL_0002:  ldloca.s   V_0
-      IL_0004:  initobj    !a
-      IL_000a:  ldloc.0
-      IL_000b:  newobj     instance void class SeqExpressionSteppingTest7/f@5<!a>::.ctor(string,
+      IL_0002:  ldloc.0
+      IL_0003:  newobj     instance void class SeqExpressionSteppingTest7/f@5<!a>::.ctor(string,
                                                                                          int32,
                                                                                          !0)
-      IL_0010:  ret
+      IL_0008:  ret
     } // end of method f@5::GetFreshEnumerator
 
   } // end of class f@5
@@ -280,21 +276,19 @@
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a> 
           f<a>() cil managed
   {
-    // Code size       24 (0x18)
+    // Code size       16 (0x10)
     .maxstack  5
     .locals init ([0] !!a V_0)
     .line 5,5 : 12,57 ''
     IL_0000:  ldnull
     IL_0001:  ldc.i4.0
-    IL_0002:  ldloca.s   V_0
-    IL_0004:  initobj    !!a
-    IL_000a:  ldloc.0
-    IL_000b:  newobj     instance void class SeqExpressionSteppingTest7/f@5<!!a>::.ctor(string,
+    IL_0002:  ldloc.0
+    IL_0003:  newobj     instance void class SeqExpressionSteppingTest7/f@5<!!a>::.ctor(string,
                                                                                         int32,
                                                                                         !0)
-    IL_0010:  tail.
-    IL_0012:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<!!0>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0017:  ret
+    IL_0008:  tail.
+    IL_000a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<!!0>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_000f:  ret
   } // end of method SeqExpressionSteppingTest7::f
 
   .property class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>
