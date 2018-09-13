@@ -1,6 +1,6 @@
 #light
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 #r @"System.Core.dll"
 #r @"System.Data.Linq.dll"
 #endif

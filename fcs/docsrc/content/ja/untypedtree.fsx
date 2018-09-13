@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../bin/v4.5/"
+#I "../../../../debug/bin/net45/"
 (**
 コンパイラサービス：型無し構文木の処理
 ======================================
@@ -88,7 +88,7 @@ let getUntypedTree (file, input) =
 `FSharpChecker` の詳細については
 [ APIドキュメント](../reference/microsoft-fsharp-compiler-sourcecodeservices-FSharpChecker.html)
 の他に、F# ソースコードのインラインコメントも参考になるでしょう
-( [`service.fsi` のソースコードを参照](https://github.com/fsharp/fsharp/blob/fsharp_31/src/fsharp/vs/service.fsi) )。
+( [`service.fsi` のソースコードを参照](https://github.com/fsharp/fsharp/blob/fsharp_31/src/fsharp/service/service.fsi) )。
 
 ASTの走査
 ---------

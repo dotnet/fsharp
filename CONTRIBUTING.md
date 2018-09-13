@@ -2,7 +2,7 @@
 
 The Visual F# team is proud to be a contributor to F#, and urge you to join in too. F# users and the F# community are grateful for all contributions to F#.
 
-Besides this overview, we recommend ["Becoming a contributor"](http://mrange.wordpress.com/2014/12/11/becoming-an-fsharp-contributor/), a community blog post by Mårten Rånge. 
+Besides this overview, we recommend ["A journey into the F~ compiler"](https://skillsmatter.com/skillscasts/11629-a-journey-into-the-f-sharp-compiler/), a talk by Steffen Forkmann. 
 For those contributing to the core of the F# compiler, we recommend ["The F# Compiler Technical Overview"](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html)
 
 ### Getting Started
@@ -69,8 +69,6 @@ Contributions to this repository will be rigorously policed for quality.
 All code submissions should be submitted with regression test cases, and will be subject to peer review by the community and Microsoft.  The bar for contributions will be high. This will result in a higher-quality, more stable product.
 
 - We expect contributors to be actively involved in quality assurance.
-- We expect contributors to be actively involved in quality assurance.
-- We expect contributors to be actively involved in quality assurance.
 - Partial, incomplete, or poorly-tested contributions will not be accepted.
 - Contributions may be put on hold according to stability, testing, and design-coherence requirements.
 
@@ -113,7 +111,7 @@ Feature PRs have the following minimum requirements:
 
 - For Visual F# Tools features, include a link to the [Visual F# Tools](https://github.com/microsoft/visualfsharp) issue for the feature.
 
-- For F# Library features, if you have made additions to the FSharp.Core library public surface area, update [the SurfaceArea tests](https://github.com/Microsoft/visualfsharp/tree/fsharp4/src/fsharp/FSharp.Core.Unittests).
+- For F# Library features, if you have made additions to the FSharp.Core library public surface area, update [the SurfaceArea tests](https://github.com/Microsoft/visualfsharp/tree/fsharp4/tests/FSharp.Core.UnitTests).
 
 - For F# Language and Library features, you will be asked to submit a speclet for the feature to the [F# Language Design](https://github.com/fsharp/fslang-design) GitHub repository of speclets.  In some cases you will only need to do this after your feature is accepted, but for more complex features you may be asked to do this during the review of the feature.  
 

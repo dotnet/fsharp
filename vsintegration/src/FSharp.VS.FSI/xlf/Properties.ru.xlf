@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="ru" original="../Properties.resx">
+    <body>
+      <trans-unit id="FSharpInteractive64Bit">
+        <source>64-bit F# Interactive</source>
+        <target state="translated">F# Interactive, 64-разрядная версия</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractive64BitDescr">
+        <source>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</source>
+        <target state="translated">Если задано значение true и текущий компьютер является 64-разрядным, F# Interactive запускается как 64-разрядный процесс.  (В остальных случая F# Interactive является 32-разрядным процессом.)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveOptions">
+        <source>F# Interactive options</source>
+        <target state="translated">Параметры F# Interactive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveOptionsDescr">
+        <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
+        <target state="translated">Дополнительные аргументы командной строки, передаваемые исполняемому файлу F# Interactive из Visual Studio. Оптимизация и флаги отладки игнорируются, если включена отладка скриптов.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveMisc">
+        <source>Misc</source>
+        <target state="translated">Прочее</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveShadowCopy">
+        <source>Shadow copy assemblies</source>
+        <target state="translated">Теневое копирование сборок</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveShadowCopyDescr">
+        <source>Prevents referenced assemblies from being locked by the F# Interactive process.</source>
+        <target state="translated">Предотвращает блокировку сборок, на которые указаны ссылки, процессом F# Interactive.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveDebugMode">
+        <source>Enable script debugging</source>
+        <target state="translated">Включить отладку скриптов</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveDebugModeDescr">
+        <source>Enable debugging of F# scripts (may impact script performance, requires reset of F# Interactive)</source>
+        <target state="translated">Включение отладки скриптов F# (может повлиять на их производительность, необходим сброс F# Interactive).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveDebugging">
+        <source>Debugging</source>
+        <target state="translated">Отладка</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

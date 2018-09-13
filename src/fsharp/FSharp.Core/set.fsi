@@ -93,8 +93,8 @@ namespace Microsoft.FSharp.Collections
         interface ICollection<'T> 
         interface IEnumerable<'T> 
         interface System.Collections.IEnumerable 
-
         interface System.IComparable
+        interface IReadOnlyCollection<'T>
         override Equals : obj -> bool
 
 

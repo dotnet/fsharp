@@ -6,6 +6,3 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.TcGlobals
 
 val MakeTLRDecisions : Tast.CcuThunk -> TcGlobals -> Tast.TypedImplFile -> Tast.TypedImplFile
-#if TLR_LIFT
-val liftTLR : bool ref
-#endif

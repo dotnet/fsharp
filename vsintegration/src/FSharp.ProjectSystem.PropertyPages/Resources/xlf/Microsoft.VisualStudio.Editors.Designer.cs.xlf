@@ -1,0 +1,2948 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="cs" original="../Microsoft.VisualStudio.Editors.Designer.resx">
+    <body>
+      <trans-unit id="CMN_AllFilesFilter">
+        <source>All Files</source>
+        <target state="translated">Všechny soubory</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_PropertyPageControlName">
+        <source>Property Page</source>
+        <target state="translated">Stránka vlastností</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ReferencesTitle">
+        <source>References</source>
+        <target state="translated">Odkazy</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_VersionTitle">
+        <source>Version</source>
+        <target state="translated">Verze</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SigningTitle">
+        <source>Signing</source>
+        <target state="translated">Podepsání</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ApplicationTitle">
+        <source>Application</source>
+        <target state="translated">Aplikace</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_CompileTitle">
+        <source>Compile</source>
+        <target state="translated">Kompilovat</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_DebugTitle">
+        <source>Debug</source>
+        <target state="translated">Ladit</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_DeployTitle">
+        <source>Deploy</source>
+        <target state="translated">Nasadit</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_VdtGeneralTitle">
+        <source>Database</source>
+        <target state="translated">Databáze</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Security">
+        <source>Security</source>
+        <target state="translated">Zabezpečení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_BuildTitle">
+        <source>Build</source>
+        <target state="translated">Sestavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_BuildEventsTitle">
+        <source>Build Events</source>
+        <target state="translated">Události sestavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ReferencePathsTitle">
+        <source>Reference Paths</source>
+        <target state="translated">Cesty odkazů</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_PreBuildCommandLineTitle">
+        <source>Pre-build Event Command Line</source>
+        <target state="translated">Příkazový řádek události před sestavením</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_PostBuildCommandLineTitle">
+        <source>Post-build Event Command Line</source>
+        <target state="translated">Příkazový řádek události po sestavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_OutputPathNotSecure">
+        <source>The output path is not trusted.
+The application may throw security exceptions when it attempts to perform actions which require full trust.
+Click OK to ignore and continue. Click CANCEL to choose a different output path.</source>
+        <target state="translated">Cesta výstupu není důvěryhodná.
+Při pokusech o provedení akcí vyžadujících úplný vztah důvěryhodnosti může v aplikaci docházet k bezpečnostním výjimkám.
+Pokud chcete tento stav ignorovat a pokračovat v operaci , klikněte na OK. Pokud chcete vybrat jinou cestu výstupu, klikněte na Zrušit.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_BrowseText">
+        <source>&lt;Browse...&gt;</source>
+        <target state="translated">&lt;procházet...&gt;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_StartupObjectNone">
+        <source>(None)</source>
+        <target state="translated">(žádné)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_KeyFileNewText">
+        <source>&lt;New...&gt;</source>
+        <target state="translated">&lt;nové...&gt;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_KeyFileBrowseText">
+        <source>&lt;Browse...&gt;</source>
+        <target state="translated">&lt;procházet...&gt;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ComboBoxSelect_None">
+        <source>(None)</source>
+        <target state="translated">(žádné)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ActiveConfigOrPlatformFormatString_1Arg">
+        <source>Active ({0})</source>
+        <target state="translated">Aktivní ({0})</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AllConfigurations">
+        <source>All Configurations</source>
+        <target state="translated">Všechny konfigurace</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AllPlatforms">
+        <source>All Platforms</source>
+        <target state="translated">Všechny platformy</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_NotApplicable">
+        <source>N/A</source>
+        <target state="translated">Není k dispozici</target>
+        <note>This is used in the platform and configuration comboboxes when showing pages that don't care about the current platform/configuration</note>
+      </trans-unit>
+      <trans-unit id="PPG_ConfigNotFound_2Args">
+        <source>Could not find the configuration '{0}' for platform '{1}'.</source>
+        <target state="translated">Konfigurace {0} pro platformu {1} se nenašla.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_NeutralLanguage_None">
+        <source>(None)</source>
+        <target state="translated">(žádné)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SelectFileTitle">
+        <source>Select File</source>
+        <target state="translated">Vybrat soubor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AddExistingFilesTitle">
+        <source>Add existing file to project</source>
+        <target state="translated">Přidat existující soubor do projektu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AddIconFilesFilter">
+        <source>Icon Files</source>
+        <target state="translated">Soubory ikon</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ExeFilesFilter">
+        <source>Executable Files</source>
+        <target state="translated">Spustitelné soubory</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SelectWorkingDirectoryTitle">
+        <source>Select Working Directory</source>
+        <target state="translated">Vybrat pracovní adresář</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SelectOutputPathTitle">
+        <source>Select Output Path</source>
+        <target state="translated">Vybrat cestu výstupu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SelectReferencePath">
+        <source>Select Reference Path</source>
+        <target state="translated">Vybrat cestu k odkazu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AddWin32ResourceFilter">
+        <source>Win32 Resource Files</source>
+        <target state="translated">Soubory prostředků Win32</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AddWin32ResourceTitle">
+        <source>Add Win32 resource file to project</source>
+        <target state="translated">Přidat soubor prostředků Win32 do projektu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_InvalidFolderPath">
+        <source>Folder path does not exist.
+Please select a valid folder path.</source>
+        <target state="translated">Cesta ke složce neexistuje.
+Vyberte prosím platnou cestu ke složce.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AdvancedCompilerSettings_Title">
+        <source>Advanced Compiler Settings</source>
+        <target state="translated">Pokročilé nastavení kompilátoru</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AdvancedBuildSettings_Title">
+        <source>Advanced Build Settings</source>
+        <target state="translated">Pokročilé nastavení sestavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_CompilerWarnings_Title">
+        <source>Compiler Warnings</source>
+        <target state="translated">Upozornění kompilátoru</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ReferencePaths_Title">
+        <source>Reference Paths</source>
+        <target state="translated">Cesty odkazů</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_CompatibleSettings_Title">
+        <source>Compatible Settings</source>
+        <target state="translated">Kompatibilní nastavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AssemblyInfo_Title">
+        <source>Assembly Information</source>
+        <target state="translated">Informace o sestavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AssemblyInfo_InvalidVersion">
+        <source>Invalid version format, expected "[Major]", "[Major].[Minor]", "[Major].[Minor].[Build]" or "[Major].[Minor].[Build].[Revision]"</source>
+        <target state="translated">Neplatný formát verze, očekává se [Major], [Major].[Minor], [Major].[Minor].[Build] nebo [Major].[Minor].[Build].[Revision].</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AssemblyInfo_BadWildcard">
+        <source>A wildcard ("*") is not allowed in this field.</source>
+        <target state="translated">Zástupný znak (*) není v tomto poli povolený.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AssemblyInfo_VersionOutOfRange_2Args">
+        <source>Each part of the version number for '{0}' must be an integer between 0 and {1}.</source>
+        <target state="translated">Každá část čísla verze {0} musí být celočíselná hodnota z intervalu 0 až {1}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_DefaultIconText">
+        <source>(Default Icon)</source>
+        <target state="translated">(Výchozí ikona)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_InvalidSubMainStartup">
+        <source>Startup object must be a form when 'Enable application framework' is checked.</source>
+        <target state="translated">Pokud jste zaškrtli Povolit rozhraní Framework aplikace, spouštěcí objekt musí být formulář.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_StartupObjectNotSet">
+        <source>(Not set)</source>
+        <target state="translated">(nenastaveno)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_CantAddIcon">
+        <source>Icon could not be added to the project.</source>
+        <target state="translated">Ikona se do projektu nedá přidat.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_BadIcon">
+        <source>Invalid icon file.</source>
+        <target state="translated">Neplatný soubor ikony.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_BadIcon_1Arg">
+        <source>{0} is not a valid icon file.</source>
+        <target state="translated">{0} není platným souborem ikony.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_BadGuid">
+        <source>The GUID should match the format dddddddd-dddd-dddd-dddd-dddddddddddd.</source>
+        <target state="translated">Identifikátor GUID by měl odpovídat formátu dddddddd-dddd-dddd-dddd-dddddddddddd.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_MyAppCommentLine1">
+        <source>NOTE: This file is auto-generated; do not modify it directly.  To make changes,</source>
+        <target state="translated">POZNÁMKA: Neměňte přímo tento soubor, protože se generuje automaticky.  Pokud chcete provést změny,</target>
+        <note>These comments are placed in the ApplicationEvents.vb file if it is generated by the project designer.  The same comments appear in the templates, under vsproject\Templates\Windows\VisualBasic\ProjectTemplates\WindowsApplication\MyEvents.vb (MyEvents.vb is renamed to ApplicationEvents.vb after project creation), and these comments should be kept in sync</note>
+      </trans-unit>
+      <trans-unit id="PPG_Application_MyAppCommentLine2">
+        <source> or if you encounter build errors in this file, go to the Project Designer</source>
+        <target state="translated"> nebo pokud dojde v tomto souboru k chybám sestavení, jděte do návrháře projektu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_MyAppCommentLine3">
+        <source> (go to Project Properties or double-click the My Project node in</source>
+        <target state="translated"> (přejděte na vlastnosti projektu, nebo dvakrát klikněte na uzel Můj projekt v</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_MyAppCommentLine4">
+        <source> Solution Explorer), and make changes on the Application tab.</source>
+        <target state="translated"> průzkumníku řešení), a proveďte změny v kartě Aplikace.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_InvalidIdentifierStartupForm_1Arg">
+        <source>'{0}' is not a valid identifier. Please select a different Startup form.</source>
+        <target state="translated">{0} není platný identifikátor. Vyberte prosím jiný úvodní formulář.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_InvalidIdentifierSplashScreenForm_1Arg">
+        <source>'{0}' is not a valid identifier. Please select a different Splash screen form.</source>
+        <target state="translated">{0} není platný identifikátor. Vyberte prosím jiný formulář úvodní obrazovky.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_SplashSameAsStart">
+        <source>The splash screen form cannot be the start-up form.</source>
+        <target state="translated">Z úvodní obrazovky neleze vytvořit úvodní formulář.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_StartupFormLabelText">
+        <source>Startup f&amp;orm:</source>
+        <target state="translated">Úv&amp;odní formulář:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_AppEventsCommentLine1">
+        <source>The following events are available for MyApplication:</source>
+        <target state="translated">Pro MyApplication jsou dostupné následující události:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_AppEventsCommentLine3">
+        <source>Startup: Raised when the application starts, before the startup form is created.</source>
+        <target state="translated">Úvodní: Volá se při spouštění aplikace, před vytvořením úvodního formuláře.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_AppEventsCommentLine4">
+        <source>Shutdown: Raised after all application forms are closed.  This event is not raised if the application terminates abnormally.</source>
+        <target state="translated">Závěrečný: Volá se po zavření všech formulářů aplikací.  V případě nestandardního ukončení aplikace se tato událost nevolá.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_AppEventsCommentLine5">
+        <source>UnhandledException: Raised if the application encounters an unhandled exception.</source>
+        <target state="translated">UnhandledException: Volá se, když v aplikaci dojde k neošetřené výjimce.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_AppEventsCommentLine6">
+        <source>StartupNextInstance: Raised when launching a single-instance application and the application is already active. </source>
+        <target state="translated">StartupNextInstance: Volá se při spuštění aplikace s jednou instancí, pokud už je aplikace aktivní. </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_AppEventsCommentLine7">
+        <source>NetworkAvailabilityChanged: Raised when the network connection is connected or disconnected.</source>
+        <target state="translated">NetworkAvailabilityChanged: Volá se při připojení k síti nebo odpojení od sítě.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AdvancedBuildSettings_InvalidBaseAddress">
+        <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, 0x11000000.</source>
+        <target state="translated">Základní adresa musí být šestnáctkové číslo maximálně s osmi číslicemi, např. 0x11000000.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_Notification_None">
+        <source>None</source>
+        <target state="translated">Žádné</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_Notification_Warning">
+        <source>Warning</source>
+        <target state="translated">Upozornění</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_Notification_Error">
+        <source>Error</source>
+        <target state="translated">Chyba</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_OptionStrict_Custom">
+        <source>(custom)</source>
+        <target state="translated">(vlastní)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_42016">
+        <source>Implicit conversion</source>
+        <target state="translated">Implicitní převod</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_42017_42018_42019">
+        <source>Late binding; call could fail at run time</source>
+        <target state="translated">Pozdní vazba. Volání může při běhu selhat.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_42020">
+        <source>Implicit type; object assumed</source>
+        <target state="translated">Implicitní typ; předpokládaný objekt</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_42104">
+        <source>Use of variable prior to assignment</source>
+        <target state="translated">Použití proměnné před přiřazením</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_420XX">
+        <source>Function/Operator without return value</source>
+        <target state="translated">Funkce nebo operátor bez návratové hodnoty</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_42024">
+        <source>Unused local variable</source>
+        <target state="translated">Nepoužitá lokální proměnná</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_42025">
+        <source>Instance variable accesses shared member</source>
+        <target state="translated">Proměnná instance přistupuje ke sdílenému členu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_42004">
+        <source>Recursive operator or property access</source>
+        <target state="translated">Rekurzivní operátor nebo přístup k vlastnosti</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_42029">
+        <source>Duplicate or overlapping catch blocks</source>
+        <target state="translated">Duplicitní nebo překrývající se bloky catch</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_ResetIndeterminateWarningLevels">
+        <source>The warning settings for one or more configurations conflict.
+Changing this setting will reset the settings in all configurations.</source>
+        <target state="translated">Nastavení upozornění pro jednu nebo více konfigurací koliduje.
+Změnou tohoto nastavení dojde k resetování nastavení ve všech konfiguracích.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MyApplication_StartupMode_FormCloses">
+        <source>When startup form closes</source>
+        <target state="translated">Když se zavře úvodní formulář</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MyApplication_StartupMode_AppExits">
+        <source>When last form closes</source>
+        <target state="translated">Když se zavře poslední formulář</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MyApplication_AuthenMode_Windows">
+        <source>Windows</source>
+        <target state="translated">Windows</target>
+        <note>Authentication modes</note>
+      </trans-unit>
+      <trans-unit id="PPG_MyApplication_AuthenMode_ApplicationDefined">
+        <source>Application-defined</source>
+        <target state="translated">Definované aplikací</target>
+        <note>Authentication modes</note>
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_Cancel">
+        <source>Cancel</source>
+        <target state="translated">Zrušit</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_Calculate">
+        <source>&amp;Calculate Permissions</source>
+        <target state="translated">&amp;Vypočítat oprávnění</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_Stopped">
+        <source>Stopped...</source>
+        <target state="translated">Zastaveno...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_Starting">
+        <source>Starting...</source>
+        <target state="translated">Spouštění...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_Building">
+        <source>Building...</source>
+        <target state="translated">Sestavování...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_Analyzing">
+        <source>Analyzing...</source>
+        <target state="translated">Analyzování...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_AnalyzeFailed">
+        <source>Analyze Failed</source>
+        <target state="translated">Analýza nebyla úspěšná</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_Aborting">
+        <source>Aborting...</source>
+        <target state="translated">Přerušování...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_Cancelling">
+        <source>Canceling...</source>
+        <target state="translated">Zrušení...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_InternetZone">
+        <source>Internet</source>
+        <target state="translated">Internet</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_LocalIntranetZone">
+        <source>Local Intranet</source>
+        <target state="translated">Místní intranet</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_CustomZone">
+        <source>(Custom)</source>
+        <target state="translated">(vlastní)</target>
+        <note>Don't use</note>
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_ZoneDefault">
+        <source>(Zone Default)</source>
+        <target state="translated">(výchozí zóna)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_Included">
+        <source>Include</source>
+        <target state="translated">Zahrnout</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_Excluded">
+        <source>Exclude</source>
+        <target state="translated">Vyloučit</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_FullTrustToolTip">
+        <source>The application will require elevated permissions to run in the selected zone. Click the help link above for more info.</source>
+        <target state="translated">Ke spuštění aplikace ve vybrané zóně je potřeba vyšší oprávnění. Další informace získáte, když kliknete na odkaz na nápovědu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_BadPermissionToolTip">
+        <source>This permission could not be loaded. Press the delete key to remove it from your project.</source>
+        <target state="translated">Oprávnění se nepodařilo načíst. Stisknutím klávesy Odstranit ho odeberete z projektu.</target>
+        <note>Don't use</note>
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_HeaderIncluded">
+        <source>Included</source>
+        <target state="translated">Zahrnuto</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_HeaderPermission">
+        <source>Permission</source>
+        <target state="translated">Oprávnění</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_HeaderSetting">
+        <source>Setting</source>
+        <target state="translated">Nastavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_HelpLabelText">
+        <source>Specify the code access security permissions that your ClickOnce application requires in order to run. Learn more about code access security...</source>
+        <target state="translated">Zadejte oprávnění zabezpečující přístup ke kódu, které aplikace ClickOnce vyžaduje ke spuštění. Další informace o zabezpečení přístupu ke kódu...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_HelpLabelLink">
+        <source>Learn more about code access security...</source>
+        <target state="translated">Další informace o zabezpečení přístupu ke kódu...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_BadDropDownValue">
+        <source>Invalid value</source>
+        <target state="translated">Neplatná hodnota</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_SecurityPermissionCannotBeExcluded">
+        <source>The SecurityPermission must be included in your application with the Execute flag set or your application will not run. Mark this permission as "Zone Default" or "Include."</source>
+        <target state="translated">Aplikace musí zahrnovat oprávnění SecurityPermission s nastaveným příznakem Execute, jinak nepoběží. Označte toto oprávnění jako „Výchozí zóna“ nebo „Zahrnout“.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_ExecuteCannotBeExcluded">
+        <source>The SecurityPermission must be included in your application with the Execute flag set or your application will not run. The Execute flag has been added to the SecurityPermission in your manifest.</source>
+        <target state="translated">Aplikace musí zahrnovat oprávnění SecurityPermission s nastaveným příznakem Execute, jinak nepoběží. K oprávnění SecurityPermission byl v manifestu přidán příznak Execute.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_SwitchToFullTrustDialog">
+        <source>This application requires full trust to run correctly. Would you like to set this as a full trust application?</source>
+        <target state="translated">Aplikace vyžaduje pro správný běh plnou důvěru. Chcete ji nastavit jako důvěryhodnou aplikaci?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_SwitchToFullTrustDialogTitle">
+        <source>Full Trust Required</source>
+        <target state="translated">Vyžaduje plnou důvěru</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_CouldNotSaveManifest">
+        <source>An error occurred and the app.manifest file could not be saved.
+Error:</source>
+        <target state="translated">Došlo k chybě a soubor app.manifest se nepodařilo uložit.
+Chyba:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_CouldNotLoadManifest">
+        <source>An error occurred and the app.manifest file could not be loaded. Please remove any changes you have made to the file and reload the Security property page again.</source>
+        <target state="translated">Došlo k chybě a soubor app.manifest se nepodařilo načíst. Odeberte prosím změny, které jste provedli v souboru, a znovu načtěte stránku s vlastnostmi zabezpečení.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_CheckAccessibilityName">
+        <source>Included</source>
+        <target state="translated">Zahrnuto</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_BlankAccessibilityName">
+        <source>Not Included</source>
+        <target state="translated">Nezahrnuto</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_BangAccessibilityName">
+        <source>Included with warning</source>
+        <target state="translated">Zahrnuto s upozorněním</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_PermCalcFailed">
+        <source>Calculating permissions failed.</source>
+        <target state="translated">Výpočet oprávnění se nezdařil.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_PermCalcFailedCaption">
+        <source>Error</source>
+        <target state="translated">Chyba</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityAdvancedPage_Title">
+        <source>Advanced Security Settings</source>
+        <target state="translated">Upřesnit nastavení zabezpečení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_BuildFailed">
+        <source>Build Failed.  Click CANCEL and correct the build failure before analyzing again.</source>
+        <target state="translated">Sestavení se nezdařilo.  Klikněte na ZRUŠIT a před další analýzou opravte chybu sestavení.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_BuildComplete">
+        <source>Build completed...</source>
+        <target state="translated">Sestavení je hotové...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_BuildUnableToStart">
+        <source>Unable to start the build.</source>
+        <target state="translated">Sestavení nelze spustit.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_BuildFailedToStart">
+        <source>Serious error.  The build must begin in order to analyze permissions.  It has not started.</source>
+        <target state="translated">Závažná chyba.  Před analýzou oprávnění se musí provést sestavení,  které ještě nezačalo.</target>
+        <note>Don't use</note>
+      </trans-unit>
+      <trans-unit id="PPG_CustomPermissionSet">
+        <source>(Custom)</source>
+        <target state="translated">(vlastní)</target>
+        <note>Don't use</note>
+      </trans-unit>
+      <trans-unit id="PPG_NonePermissionSet">
+        <source>(None)</source>
+        <target state="translated">(žádné)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_KeyFileBrowse_Title">
+        <source>Selecting existing key file</source>
+        <target state="translated">Výběr stávajícího souboru klíče</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_KeyFileBrowse_Filter">
+        <source>Key Files</source>
+        <target state="translated">Soubory klíčů</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_KeyFileNew_Title">
+        <source>Create key file</source>
+        <target state="translated">Vytvořit soubor klíče</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_OldPassWrong">
+        <source>The old password is invalid.</source>
+        <target state="translated">Původní heslo je neplatné.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_OldPassEmpty">
+        <source>Enter the old password.</source>
+        <target state="translated">Zadejte staré heslo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_NewPassEmpty">
+        <source>Enter a new password.</source>
+        <target state="translated">Zadejte nové heslo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_NewPassMismatch">
+        <source>The new passwords do not match. Enter the password again.</source>
+        <target state="translated">Nová hesla se neshodují. Zadejte heslo znovu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_NewPassTooShort">
+        <source>The new password must be at least 6 characters in length. Enter the password again.</source>
+        <target state="translated">Nové heslo musí mít aspoň 6 znaků. Zadejte heslo znovu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_BrowseCertTitle">
+        <source>Select a Certificate</source>
+        <target state="translated">Vyberte certifikát</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_BrowseCertStorePrompt">
+        <source>Select a certificate to sign your ClickOnce manifests</source>
+        <target state="translated">Vyberte prosím certifikát, kterým budou podepsány manifesty ClickOnce</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_BrowseCertFileFilter">
+        <source>Certificate Files</source>
+        <target state="translated">Soubory certifikátů</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_IssuedTo">
+        <source>Issued To</source>
+        <target state="translated">Vystaven pro</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_IssuedBy">
+        <source>Issued By</source>
+        <target state="translated">Vydal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_Purpose">
+        <source>Intended Purpose</source>
+        <target state="translated">Účel použití</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_ExpirationDate">
+        <source>Expiration Date</source>
+        <target state="translated">Datum platnosti</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_InvalidPassword">
+        <source>The password is invalid.</source>
+        <target state="translated">Heslo je neplatné.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_InvalidPasswordTitle">
+        <source>Invalid password</source>
+        <target state="translated">Neplatné heslo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_NoPrivateKey">
+        <source>The selected file does not contain a private key. You must choose a certificate that contains a private key.</source>
+        <target state="translated">Vybraný soubor neobsahuje privátní klíč. Musíte vybrat certifikát, který obsahuje privátní klíč.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_NoPrivateKeyTitle">
+        <source>Invalid key</source>
+        <target state="translated">Neplatný klíč</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_CertCreationError">
+        <source>Certificate Creation Error</source>
+        <target state="translated">Chyba při vytvoření certifikátu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_AllPurposes">
+        <source>&lt;All&gt;</source>
+        <target state="translated">&lt;Vše&gt;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_PasswordMismatch">
+        <source>The passwords do not match.</source>
+        <target state="translated">Hesla se neshodují.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_NoPassword">
+        <source>Enter a password.</source>
+        <target state="translated">Zadejte heslo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_NoConfirm">
+        <source>Confirm the password.</source>
+        <target state="translated">Potvrďte heslo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_NoData">
+        <source>(none)</source>
+        <target state="translated">(žádné)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_OpenExistingKeyPasswordTitle">
+        <source>Enter password to open file</source>
+        <target state="translated">Zadat heslo pro otevření souboru</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_OpenExistingKeyPasswordPrompt">
+        <source>Enter &amp;password to open file {0}</source>
+        <target state="translated">Zadejte heslo &amp;pro otevření souboru {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_CreateNewKeyPasswordPrompt">
+        <source>Enter &amp;password for new file {0}</source>
+        <target state="translated">Zadejte heslo &amp;pro nový soubor {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_ProjectAlreadyContainsFile">
+        <source>The project already contains a file with that name. Choose another certificate file or rename the file in your project.</source>
+        <target state="translated">Soubor s tímto názvem už projekt obsahuje. Vyberte jiný soubor certifikátu nebo soubor v projektu přejmenujte.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_CouldNotImportFile">
+        <source>The file '{0}' could not be imported: {1}</source>
+        <target state="translated">Soubor {0} nejde naimportovat: {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_KeyFileNameSuffix">
+        <source>_TemporaryKey.pfx</source>
+        <target state="translated">_TemporaryKey.pfx</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_CertificateNotCodeSigning">
+        <source>The selected certificate is not valid for code signing. Choose another certificate file.</source>
+        <target state="translated">Vybraný certifikát nejde použít k podepisování kódu, protože je neplatný. Vyberte jiný soubor certifikátu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_UndoTransaction">
+        <source>Change property: {0}</source>
+        <target state="translated">Změnit vlastnost: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WindowsApp">
+        <source>Windows Application</source>
+        <target state="translated">Aplikace pro systém Windows</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WindowsService">
+        <source>Windows Service</source>
+        <target state="translated">Služba Windows</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WindowsClassLib">
+        <source>Class Library</source>
+        <target state="translated">Knihovna tříd</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_CommandLineApp">
+        <source>Console Application</source>
+        <target state="translated">Konzolová aplikace</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WebControlLib">
+        <source>Web Control Library</source>
+        <target state="translated">Knihovna webových prvků</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Reference_CanNotRemoveReference">
+        <source>Cannot remove '{0}'. {1}
+</source>
+        <target state="translated">{0} nejde odebrat. {1}
+</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Reference_RemoveImportsFailUnexpected">
+        <source>Adding or removing '{0}' as a project import failed because of an unexpected error from the project system.  The error returned was:  '{1}'.</source>
+        <target state="translated">Přidání nebo odebrání {0} při importu projektu selhalo kvůli nečekané chybě systému projektu.  Vrácená chyba: {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Reference_AddWebReference">
+        <source>Adding web reference failed. {0}
+</source>
+        <target state="translated">Webový odkaz se nepodařilo přidat. {0}
+</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Reference_FailedToUpdateWebReference">
+        <source>Updating web reference '{0}' failed.
+{1}</source>
+        <target state="translated">Webový odkaz {0} nejde aktualizovat.
+{1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WebReferenceTypeName">
+        <source>Web Reference Properties</source>
+        <target state="translated">Vlastnosti webového odkazu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_UrlBehavior_Static">
+        <source>Static</source>
+        <target state="translated">Statický</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_UrlBehavior_Dynamic">
+        <source>Dynamic</source>
+        <target state="translated">Dynamický</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WebReferenceNameDescription">
+        <source>Name of the web reference</source>
+        <target state="translated">Název webového odkazu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_UrlBehaviorName">
+        <source>URL Behavior</source>
+        <target state="translated">Chování URL</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_UrlBehaviorDescription">
+        <source>Web reference URL behavior</source>
+        <target state="translated">Chování URL webového odkazu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WebReferenceUrlName">
+        <source>Web Reference URL</source>
+        <target state="translated">URL webového odkazu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WebReferenceUrlDescription">
+        <source>Web Reference URL</source>
+        <target state="translated">URL webového odkazu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ReferenceDetail_Title">
+        <source>Reference Properties</source>
+        <target state="translated">Vlastnosti odkazu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_RemoteMachineBlankError">
+        <source>The remote machine name cannot be blank.  Please specify the name of the machine to debug remotely.</source>
+        <target state="translated">Název vzdáleného počítače nesmí být prázdný.  Zadejte prosím název vzdáleně laděného počítače.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_ProgramNotExist">
+        <source>The external program cannot be found. Please enter a valid executable file.</source>
+        <target state="translated">Externí program se nedá najít. Zadejte prosím platný spustitelný soubor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_NeedExternalProgram">
+        <source>The external program property cannot be empty. Please enter a valid executable file.</source>
+        <target state="translated">Vlastnost s externím programem nesmí být prázdná. Zadejte prosím platný spustitelný soubor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_NotAnExeError">
+        <source>We can only debug an EXE file. Please enter a valid executable file.</source>
+        <target state="translated">Ladit jde jenom soubor EXE. Zadejte prosím platný spustitelný soubor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_NeedURL">
+        <source>The URL property cannot be empty. Please enter a valid URL.</source>
+        <target state="translated">Vlastnost URL nesmí být prázdná. Zadejte platnou adresu URL.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_InvalidURL">
+        <source>The URL is invalid. Please enter a valid URL like "http://www.microsoft.com/"</source>
+        <target state="translated">Adresa URL není platná. Zadejte prosím platnou adresu URL, třeba http://www.microsoft.com/.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_WorkingDirError">
+        <source>The working directory you entered does not exist. Please enter a valid working directory.</source>
+        <target state="translated">Zadaný pracovní adresář neexistuje. Zadejte prosím platný pracovní adresář.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_ReferenceNotFound">
+        <source>&lt;The system cannot find the reference specified&gt;</source>
+        <target state="translated">&lt;Systému se nepovedlo najít zadané odkazy.&gt;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_UnusedReferenceTitle">
+        <source>Unused References</source>
+        <target state="translated">Nepoužité odkazy</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_UnusedReferenceRemoveButton">
+        <source>&amp;Remove</source>
+        <target state="translated">Odeb&amp;rat</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_UnusedReferenceNoUnusedReferences">
+        <source>No unused references</source>
+        <target state="translated">Žádné nepoužité odkazy</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_UnusedReferenceCompileFail">
+        <source>Project compilation failed. Cannot determine unused references.</source>
+        <target state="translated">Kompilace projektu se nezdařila. Nepoužité odkazy se nedají určit.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_UnusedReferenceCompileWaiting">
+        <source>Gathering list of unused references...</source>
+        <target state="translated">Shromažďuje se seznam nepoužitých odkazů...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_UnusedReferenceError">
+        <source>Error getting unused references.</source>
+        <target state="translated">Při zjišťování nepoužitých odkazů došlo k chybě.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_InvalidHexString">
+        <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, &amp;H11000000.</source>
+        <target state="translated">Základní adresa musí být hexadecimální číslo s osmi nebo méně číslicemi, např. &amp;H11000000.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_NeedResFile">
+        <source>"Resource files must have a .res file extension. Please enter a valid resource file name."</source>
+        <target state="translated">„Soubory prostředků musí mít příponu .res. Zadejte prosím platný název souboru prostředků.“</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_ResourceFileNotExist">
+        <source>"The resource file entered does not exist."</source>
+        <target state="translated">"Zadaný soubor prostředků neexistuje."</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_Title">
+        <source>Project Designer</source>
+        <target state="translated">Návrhář projektu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_SettingsTabTitle">
+        <source>Settings</source>
+        <target state="translated">Nastavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_ResourceTabTitle">
+        <source>Resources</source>
+        <target state="translated">Prostředky</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_ErrorLoading_Msg">
+        <source>An error occurred trying to load the project properties window.  Close the window and try again.
+{0}</source>
+        <target state="translated">Při pokusu o načtení okna vlastností projektu došlo k chybě.  Zavřete okno a zkuste to znovu.
+{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_ErrorLoadingPropPage">
+        <source>An error occurred trying to load the page.</source>
+        <target state="translated">Při pokusu o načtení stránky došlo k chybě.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_DesignerLoader_NotDeferred">
+        <source>The designer cannot be shown because the document for it was never loaded.</source>
+        <target state="translated">Návrhář se nedá zobrazit, protože se pro něj ještě nenačetl dokument.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_ClickHereCreateResx">
+        <source>This project does not contain a default resources file.  Click here to create one.</source>
+        <target state="translated">Projekt neobsahuje soubor výchozích prostředků.  Kliknutím ho vytvořte.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_ClickHereCreateSettings">
+        <source>This project does not contain a default settings file.  Click here to create one.</source>
+        <target state="translated">Projekt neobsahuje soubor výchozího nastavení.  Kliknutím ho vytvořte.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_FileNotFound_1Arg">
+        <source>Could not find the file '{0}'.</source>
+        <target state="translated">Soubor {0} se nepovedlo najít.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_EditorAlreadyOpen_1Arg">
+        <source>The file '{0}' is already open in an editor.  Please close the file and try again.</source>
+        <target state="translated">Soubor {0} už je v editoru otevřený.  Zavřete ho prosím a zkuste to znovu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_OverflowButton_AccessibilityName">
+        <source>All Project Designer Pages</source>
+        <target state="translated">Všechny stránky návrháře projektu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_OverflowButton_Tooltip">
+        <source>More Settings</source>
+        <target state="translated">Další nastavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_SpecialFileNotSupported">
+        <source>The requested file type is not supported in projects of this type.</source>
+        <target state="translated">Požadovaný typ souboru se v projektech tohoto typu nepodporuje.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_AssemblyName">
+        <source>Assembly Name</source>
+        <target state="translated">Název sestavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_RootNamespace">
+        <source>Root Namespace</source>
+        <target state="translated">Kořenový obor názvů</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_StartupObject">
+        <source>Startup Object</source>
+        <target state="translated">Spouštěcí objekt</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_ApplicationIcon">
+        <source>Application Icon</source>
+        <target state="translated">Ikona aplikace</target>
+        <note>Property Friendly Names (for transaction names) - NOTE: All of these are optional</note>
+      </trans-unit>
+      <trans-unit id="PPG_Property_AssemblyVersion">
+        <source>Assembly Version</source>
+        <target state="translated">Verze sestavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_AssemblyFileVersion">
+        <source>Assembly File Version</source>
+        <target state="translated">Verze souboru sestavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_AssemblyGuid">
+        <source>Assembly GUID</source>
+        <target state="translated">GUID sestavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_CustomSubMain">
+        <source>Enable application framework</source>
+        <target state="translated">Povolit aplikační framework</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_StartProgram">
+        <source>External Program Path</source>
+        <target state="translated">Cesta k externímu programu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_StartURL">
+        <source>Start Browser With URL</source>
+        <target state="translated">Spustit prohlížeč s URL</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_StartWorkingDirectory">
+        <source>Working Directory</source>
+        <target state="translated">Pracovní adresář</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_RemoteDebugMachine">
+        <source>Remote Machine Name</source>
+        <target state="translated">Název vzdáleného počítače</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_HostingPanelName">
+        <source>Project Designer Page Container</source>
+        <target state="translated">Kontejner stránky návrháře projektu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_TabButtonDefaultAction">
+        <source>Switch Project Designer Page</source>
+        <target state="translated">Přepnout stránku návrháře projektu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_TabListDescription">
+        <source>Allow switching between active pages of the project designer (use Ctrl+PageUp and Ctrl+PageDown)</source>
+        <target state="translated">Umožňuje přepínání mezi aktivními stránkami návrháře projektu (pomocí Ctrl+PageUp a Ctrl+PageDown).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_PageName">
+        <source>{0} page:</source>
+        <target state="translated">Strana {0}:</target>
+        <note>{0} = sub page name</note>
+      </trans-unit>
+      <trans-unit id="DFX_DesignerReadOnlyCaption">
+        <source>{0} [Read Only]</source>
+        <target state="translated">{0} [jen pro čtení]</target>
+        <note>Attach a readonly to the designer caption {0}=Designer caption</note>
+      </trans-unit>
+      <trans-unit id="DFX_DesignerLoaderIVsTextStreamNotFound">
+        <source>The editor could not get the IVsTextStream for file {0}.</source>
+        <target state="translated">Editoru se nepodařilo pro soubor {0} získat IVsTextStream.</target>
+        <note>#exception {0}=filename</note>
+      </trans-unit>
+      <trans-unit id="DFX_DesignerLoaderIVsTextStreamNotFoundNoFile">
+        <source>The editor could not get the IVsTextStream.</source>
+        <target state="translated">Editoru se nepovedlo získat IVsTextStream.</target>
+        <note>#exception (no file name)</note>
+      </trans-unit>
+      <trans-unit id="DFX_EditorNoDesignerService">
+        <source>No DesignerService for file '{0}'.</source>
+        <target state="translated">Pro soubor {0} není dostupná žádná služba DesignerService.</target>
+        <note>#{0}=file name</note>
+      </trans-unit>
+      <trans-unit id="DFX_InvalidPhysicalViewName">
+        <source>Invalid physical view name.</source>
+        <target state="translated">Neplatný název fyzického zobrazení.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DFX_UnableCreateTextBuffer">
+        <source>Unable to create text buffer.</source>
+        <target state="translated">Nelze vytvořit textový zásobník.</target>
+        <note># com exception</note>
+      </trans-unit>
+      <trans-unit id="DFX_NoLocalRegistry">
+        <source>No LocalRegistry service.</source>
+        <target state="translated">Není dostupná žádná služba LocalRegistry.</target>
+        <note>#exception</note>
+      </trans-unit>
+      <trans-unit id="DFX_ReplaceTextStreamFailed">
+        <source>Replacing text stream failed:{0}</source>
+        <target state="translated">Nahrazení textového streamu nebylo úspěšné: {0}</target>
+        <note>#exception {0}=err msg</note>
+      </trans-unit>
+      <trans-unit id="DFX_BufferReadOnly">
+        <source>Buffer is read only.</source>
+        <target state="translated">Vyrovnávací paměť je jen pro čtení.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DFX_IncompatibleBuffer">
+        <source>File is already opened in an incompatible editor.</source>
+        <target state="translated">Soubor je už otevřený v nekompatibilním editoru.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DFX_NotSupported">
+        <source>Unsupported format.</source>
+        <target state="translated">Formát není podporovaný.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DFX_WindowPane_UnknownError">
+        <source>Unknown Error.</source>
+        <target state="translated">Neznámá chyba.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DFX_CreateEditorInstanceFailed_Ex">
+        <source>Unable to create the designer.  {0}</source>
+        <target state="translated">Nelze vytvořit návrháře.  {0}</target>
+        <note># {0}=inner exception</note>
+      </trans-unit>
+      <trans-unit id="DFX_UnableToCheckout">
+        <source>Unable to check out the current file.  The file may be read-only or locked, or you may need to check the file out manually.</source>
+        <target state="translated">Aktuální soubor nejde zarezervovat.  Soubor může být zamčený, určený jen pro čtení nebo ho budete muset zarezervovat ručně.</target>
+        <note># General checkout exception message</note>
+      </trans-unit>
+      <trans-unit id="DFX_Error_Default_Caption">
+        <source>Microsoft Visual Studio</source>
+        <target state="translated">Microsoft Visual Studio</target>
+        <note>Error reporting</note>
+      </trans-unit>
+      <trans-unit id="OptionPage_Editor_InvalidTabSize">
+        <source>Please enter an integer between 1 and 60.</source>
+        <target state="translated">Zadejte prosím celočíselnou hodnotu mezi 1 a 60.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OptionPage_Editor_InvalidIndentSize">
+        <source>Please enter an integer between 1 and 60.</source>
+        <target state="translated">Zadejte prosím celočíselnou hodnotu mezi 1 a 60.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OptionPage_Environment_StartUpShowEmptyEnvironment">
+        <source>Show empty environment</source>
+        <target state="translated">Zobrazit prázdné prostředí</target>
+        <note>These are items in a combobox (and so they don't need periods)</note>
+      </trans-unit>
+      <trans-unit id="OptionPage_Environment_StartUpLoadLastLoadedSolution">
+        <source>Load last loaded solution</source>
+        <target state="translated">Načíst poslední načtené řešení</target>
+        <note>These are items in a combobox (and so they don't need periods)</note>
+      </trans-unit>
+      <trans-unit id="OptionPage_Environment_StartUpShowNewProjectDialogBox">
+        <source>Show New Project dialog box</source>
+        <target state="translated">Zobrazit dialogové okno Nový projekt</target>
+        <note>These are items in a combobox (and so they don't need periods)</note>
+      </trans-unit>
+      <trans-unit id="OptionPage_Environment_StartUpShowOpenProjectDialogBox">
+        <source>Show Open Project dialog box</source>
+        <target state="translated">Zobrazit dialogové okno Otevřít projekt</target>
+        <note>These are items in a combobox (and so they don't need periods)</note>
+      </trans-unit>
+      <trans-unit id="OptionPage_Environment_ShowHelpOptionRequiresRestartOfIde">
+        <source>Changes in Help Options will not take effect until the environment is restarted.</source>
+        <target state="translated">Změny v možnostech nápovědy se projeví až po restartování prostředí.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OptionPage_Project_IllegalDefaultProjectDirectory">
+        <source>The location specified is on an invalid or read-only disk, or contains a device name reserved for the system.</source>
+        <target state="translated">Zadané umístění je buď neplatné, nachází se na disku určeném jen pro čtení, nebo obsahuje název zařízení rezervovaný systémem.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CategoryCOM">
+        <source>COM</source>
+        <target state="translated">Model COM</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CategoryComponentModel">
+        <source>Component Design</source>
+        <target state="translated">Návrh komponent</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CategorySerialization">
+        <source>Serialization</source>
+        <target state="translated">Serializace</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CategoryWeb">
+        <source>Web</source>
+        <target state="translated">Web</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_COMClassAttrName">
+        <source>COMClass</source>
+        <target state="translated">COMClass</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_COMClassAttrDescription">
+        <source>Expose {0} to COM.</source>
+        <target state="translated">Vystavit {0} modelu COM</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_COMClassAttrDisplayName">
+        <source>COM Class</source>
+        <target state="translated">Třída COM</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_COMVisibleAttrName">
+        <source>COMVisible</source>
+        <target state="translated">COMVisible</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_COMVisibleAttrDescription">
+        <source>Make {0} visible through COM.</source>
+        <target state="translated">Zviditelnit {0} prostřednictvím modelu COM</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_COMVisibleAttrDisplayName">
+        <source>COM Visible</source>
+        <target state="translated">Viditelný pro model COM</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DispIdAttrName">
+        <source>DispId</source>
+        <target state="translated">DispId</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DispIdAttrDescription">
+        <source>Set explicit DispId to this {0}.</source>
+        <target state="translated">Nastavit pro {0} explicitní hodnotu DispId</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DispIdAttrDisplayName">
+        <source>DispId</source>
+        <target state="translated">DispId</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DispIdPropName">
+        <source>Value</source>
+        <target state="translated">Hodnota</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DispIdPropDescription">
+        <source>Explicit DispId value for this {0}.</source>
+        <target state="translated">Explicitní hodnota DispId pro {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DispIdPropDisplayName">
+        <source>Value</source>
+        <target state="translated">Hodnota</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DispIdInvalidValue">
+        <source>DispId value should be an integer greater than or equal to 1.</source>
+        <target state="translated">Hodnota DispId by měla být celé číslo větší než nebo rovno jedné.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CategoryAttrName">
+        <source>Category</source>
+        <target state="translated">Kategorie</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CategoryAttrDescription">
+        <source>Category group for the property.</source>
+        <target state="translated">Skupina kategorií pro vlastnost</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CategoryAttrDisplayName">
+        <source>Category</source>
+        <target state="translated">Kategorie</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DefaultEventAttrName">
+        <source>Default Event</source>
+        <target state="translated">Výchozí událost</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DefaultEventAttrDescription">
+        <source>Default event for the class.</source>
+        <target state="translated">Výchozí událost třídy</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DefaultEventAttrDisplayName">
+        <source>Default Event</source>
+        <target state="translated">Výchozí událost</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DefaultValueAttrName">
+        <source>Default Value</source>
+        <target state="translated">Výchozí hodnota</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DefaultValueAttrDescription">
+        <source>Default value for the property.</source>
+        <target state="translated">Výchozí událost vlastnosti</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DefaultValueAttrDisplayName">
+        <source>Default Value</source>
+        <target state="translated">Výchozí hodnota</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_NonSerializedAttrName">
+        <source>NonSerialized</source>
+        <target state="translated">NonSerialized</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_NonSerializedAttrDescription">
+        <source>Field should not be serialized.</source>
+        <target state="translated">Pole by nemělo být serializované.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_NonSerializedAttrDisplayName">
+        <source>Non Serialized</source>
+        <target state="translated">Neserializované</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_SerializableAttrName">
+        <source>Serializable</source>
+        <target state="translated">Serializovatelné</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_SerializableAttrDescription">
+        <source>Enable serialization for this {0} and its members.</source>
+        <target state="translated">Povolit serializaci pro {0} včetně členů</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_SerializableAttrDisplayName">
+        <source>Serializable</source>
+        <target state="translated">Serializovatelné</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodAttrName">
+        <source>WebMethod</source>
+        <target state="translated">WebMethod</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodAttrDescription">
+        <source>Expose method via web services.</source>
+        <target state="translated">Vystavit metodu prostřednictvím webových služeb</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodAttrDisplayName">
+        <source>Web Method</source>
+        <target state="translated">Metoda webové služby</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodDescName">
+        <source>Description</source>
+        <target state="translated">Popis</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodDescDescription">
+        <source>Description for the Web Method.</source>
+        <target state="translated">Popis metody webové služby</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodDescDisplayName">
+        <source>Description</source>
+        <target state="translated">Popis</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodEnableSessionName">
+        <source>EnableSession</source>
+        <target state="translated">EnableSession</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodEnableSessionDescription">
+        <source>Maintain session state.</source>
+        <target state="translated">Zachovat stav relace</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodEnableSessionDisplayName">
+        <source>Enable Session</source>
+        <target state="translated">Povolit relaci</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodTransactionName">
+        <source>TransactionOptions</source>
+        <target state="translated">TransactionOptions</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodTransactionDescription">
+        <source>Set transaction options.</source>
+        <target state="translated">Nastavit možnosti transakce</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodTransactionDisplayName">
+        <source>Transaction Options</source>
+        <target state="translated">Možnosti transakce</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceAttrName">
+        <source>WebService</source>
+        <target state="translated">WebService</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceAttrDescription">
+        <source>Configure the Web Service settings.</source>
+        <target state="translated">Konfigurovat nastavení webové služby</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceAttrDisplayName">
+        <source>Web Service</source>
+        <target state="translated">Webová služba</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceNameName">
+        <source>Name</source>
+        <target state="translated">Název</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceNameDescription">
+        <source>Name for the web service.</source>
+        <target state="translated">Název webové služby</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceNameDisplayName">
+        <source>Name</source>
+        <target state="translated">Název</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceDescName">
+        <source>Description</source>
+        <target state="translated">Popis</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceDescDescription">
+        <source>Description for the web service.</source>
+        <target state="translated">Popis webové služby</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceDescDisplayName">
+        <source>Description</source>
+        <target state="translated">Popis</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceNSName">
+        <source>Namespace</source>
+        <target state="translated">Obor názvů</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceNSDescription">
+        <source>Namespace for the web service.</source>
+        <target state="translated">Obor názvů webové služby</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceNSDisplayName">
+        <source>Namespace</source>
+        <target state="translated">Obor názvů</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Default">
+        <source>Default</source>
+        <target state="translated">Výchozí</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Action">
+        <source>Action</source>
+        <target state="translated">Akce</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Appearance">
+        <source>Appearance</source>
+        <target state="translated">Vzhled</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Behavior">
+        <source>Behavior</source>
+        <target state="translated">Chování</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Data">
+        <source>Data</source>
+        <target state="translated">Data</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_DragDrop">
+        <source>DragDrop</source>
+        <target state="translated">DragDrop</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Focus">
+        <source>Focus</source>
+        <target state="translated">Fokus</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Format">
+        <source>Format</source>
+        <target state="translated">Formát</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Key">
+        <source>Key</source>
+        <target state="translated">Klíč</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Layout">
+        <source>Layout</source>
+        <target state="translated">Rozložení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Mouse">
+        <source>Mouse</source>
+        <target state="translated">Myš</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_WindowStyle">
+        <source>WindowStyle</source>
+        <target state="translated">WindowStyle</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DE_None">
+        <source>(None)</source>
+        <target state="translated">(Žádný)</target>
+        <note>Default Event</note>
+      </trans-unit>
+      <trans-unit id="PermissionSet_Requires">
+        <source>Requires:</source>
+        <target state="translated">Vyžaduje:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_ResourceNameColumn">
+        <source>Name</source>
+        <target state="translated">Název</target>
+        <note>Column names for the string table</note>
+      </trans-unit>
+      <trans-unit id="RSE_TypeColumn">
+        <source>Type</source>
+        <target state="translated">Typ</target>
+        <note>Column names for the string table</note>
+      </trans-unit>
+      <trans-unit id="RSE_ResourceColumn">
+        <source>Value</source>
+        <target state="translated">Hodnota</target>
+        <note>Column names for the string table</note>
+      </trans-unit>
+      <trans-unit id="RSE_CommentColumn">
+        <source>Comment</source>
+        <target state="translated">Komentář</target>
+        <note>Column names for the string table</note>
+      </trans-unit>
+      <trans-unit id="SingleFileGenerator_FailedToGenerateFile_1Arg">
+        <source>Failed to generate file: {0}</source>
+        <target state="translated">Generování souboru selhalo: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantEditEmbeddedResource">
+        <source>Editing embedded resources directly is not supported. Do you wish to convert this item to a linked resource in order to edit it?</source>
+        <target state="translated">Přímá úprava vložených prostředků není podporovaná. Chcete tuto položku převést na propojený prostředek, abyste ho mohli upravit?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_RenameNotSupported">
+        <source>The current object is auto-generated and only supports renaming through the Managed Resources Editor.</source>
+        <target state="translated">Aktuální objekt se vygeneroval automaticky a podporuje přejmenovávání jenom pomocí editoru spravovaných prostředků.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantFindResourceFile_1Arg">
+        <source>Cannot find the file '{0}'.  It may have been moved or deleted.</source>
+        <target state="translated">Soubor {0} se nedá najít.  Možná byl přesunut nebo odstraněn.</target>
+        <note>{0} = file name and path</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_LoadingResource_1Arg">
+        <source>Unable to load resource from file '{0}'.</source>
+        <target state="translated">Ze souboru '{0}' se nepodařilo načíst prostředek.</target>
+        <note>{0} = file name and path</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_NameBlank">
+        <source>The resource name cannot be empty.</source>
+        <target state="translated">Název prostředku nemůže být prázdný.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_DuplicateName_1Arg">
+        <source>There is already another resource with the name '{0}'.</source>
+        <target state="translated">Už existuje jiný prostředek s názvem {0}.</target>
+        <note>{0} = Resource name</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_UnexpectedResourceType">
+        <source>The resource was not of the expected type.</source>
+        <target state="translated">Prostředek není očekávaného typu.</target>
+        <note>This error can happen if, for example, you try to add foo.bmp to the resource editor, but foo.bmp is really a metafile.</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantCreateNewResource_2Args">
+        <source>Unable to create new resource file '{0}'.  {1}</source>
+        <target state="translated">Nepodařilo se vytvořit nový soubor prostředku {0}. {1}</target>
+        <note>{0} = file name and path, {1} = additional error information</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantPlay_1Arg">
+        <source>Unable to play the audio resource.  {0}</source>
+        <target state="translated">Nelze přehrát zdroj zvuku.  {0}</target>
+        <note>{0} = Additional error information.</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantSaveResource_1Arg">
+        <source>Resource '{0}' cannot be saved to a file.</source>
+        <target state="translated">Prostředek {0} se do souboru nedá uložit.</target>
+        <note>{0} = Resource name</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_UserCancel">
+        <source>The operation has been canceled by the user.</source>
+        <target state="translated">Operace se přerušila na žádost uživatele.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_BadData">
+        <source>The resource value contains invalid data or has an incorrect format.</source>
+        <target state="translated">Hodnota prostředku obsahuje neplatná data, nebo má chybný formát.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_BadIdentifier_2Arg">
+        <source>The name of the resource '{0}' cannot be used as a valid identifier, because it contains one or more invalid characters: '{1}'.  Please remove or replace those characters and try again.</source>
+        <target state="translated">Název prostředku {0} nejde použít jako platný identifikátor, protože obsahuje jeden nebo více neplatných znaků: {1}.  Odeberte prosím tyto znaky nebo je nahraďte a zkuste to znovu.</target>
+        <note>{0} = Resource name</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_MaxFilesLimitation">
+        <source>Too many files specified.  Please select fewer files and try again.</source>
+        <target state="translated">Vybrali jste příliš mnoho souborů.  Vyberte prosím méně souborů a zkuste to znovu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_InternalException">
+        <source>Unexpected error.</source>
+        <target state="translated">Nečekaná chyba.</target>
+        <note>Theoretically possible but we really don't expect to happen.  Unexpected, internal error.</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_Unexpected_NoResource_1Arg">
+        <source>Unable to load internal localized resource '{0}'.</source>
+        <target state="translated">Nepodařilo se načíst vnitřně umístěný prostředek '{0}'.</target>
+        <note>Theoretically possible but we really don't expect to happen.  Unexpected, internal error.</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantConvertFromString_2Args">
+        <source>The value could not be converted into a resource of type {0}.
+
+{1}</source>
+        <target state="translated">Hodnota nebyla převedena na prostředek typu {0}.
+
+{1}</target>
+        <note>{0} = the type that was expected by the resource editor (e.g. System.Drawing.Point)
+{1} = more specific additional error message from the system</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantUseEmptyValue">
+        <source>The value cannot be empty in a resource of type {0}.</source>
+        <target state="translated">Hodnota v prostředku typu {0} nemůže být prázdná.</target>
+        <note>{0} = the type that was expected by the resource editor (e.g. System.Drawing.Point)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantBeEmpty">
+        <source>One or more of the selected resource values could not be cleared.</source>
+        <target state="translated">Jednu nebo více hodnot prostředků nelze smazat.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantEditInDebugMode">
+        <source>The resource file cannot be modified at this time.</source>
+        <target state="translated">Soubor prostředků se momentálně nedá změnit.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_UpdateADependentFile">
+        <source>You are trying to edit a resource file that is a part of another project item (such as a form or a control).  Editing this item could corrupt the project item, and you will have to recover it by hand.  In addition, changes made to this resource file may be lost if further changes are made to the project item.
+
+Do you really want to edit this file?</source>
+        <target state="translated">Pokoušíte se upravovat soubor prostředku, který patří k jiné položce projektu (třeba k formuláři nebo ovládacímu prvku).  Úprava této položky může vést k poškození položky projektu, kterou pak budete muset obnovit ručně.  Pokud budete tuto položku projektu dál měnit, můžete přijít i o změny tohoto zdrojového souboru.
+
+Opravdu chcete tento soubor upravit?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantAddUnsupportedResource_1Arg">
+        <source>The resource '{0}' cannot be added.</source>
+        <target state="translated">Prostředek {0} se nedá přidat.</target>
+        <note>{0} - name of the resource</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantAddFileToDeviceProject_1Arg">
+        <source>The device does not support '{0}' files.</source>
+        <target state="translated">Zařízení nepodporuje soubory {0}.</target>
+        <note>{0} - the extension of the file name like 'tiff'</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_TypeIsNotSupported_1Arg">
+        <source>The resource item uses the type '{0}', which is not supported in this project.</source>
+        <target state="translated">Položka prostředku používá typ {0}, který se v tomto projektu nepodporuje.</target>
+        <note>{0} - name of the type</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantSaveResouce_1Arg">
+        <source>The resource item(s) {0} cannot be saved correctly.  The item(s) will be discarded.</source>
+        <target state="translated">Jedna nebo více položek prostředků {0} nejdou správně uložit.  Tyto položky budou zahozeny.</target>
+        <note>{0} - name list of the resource</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_Name">
+        <source>'{0}'</source>
+        <target state="translated">{0}</target>
+        <note>{0} - name</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_NameList">
+        <source>{0}, '{1}'</source>
+        <target state="translated">{0}, {1}</target>
+        <note># {0} - name list
+# {1} - another name</note>
+      </trans-unit>
+      <trans-unit id="RSE_NothingValue">
+        <source>(Nothing/null)</source>
+        <target state="translated">(nic/null)</target>
+        <note>Displayed in a string table for values of Nothing/null
+CONSIDER: get this from CodeDom</note>
+      </trans-unit>
+      <trans-unit id="RSE_UnknownType">
+        <source>(Unknown type)</source>
+        <target state="translated">(neznámý typ)</target>
+        <note>This actually shouldn't be needed, but if we get an exception trying to get the type name of an entry in the resx file (not supposed to happen), then we'll display this as its type.</note>
+      </trans-unit>
+      <trans-unit id="RSE_NonEditableValue">
+        <source>(Value cannot be displayed)</source>
+        <target state="translated">(hodnota se nedá zobrazit)</target>
+        <note>Displayed in a string table for values which cannot be edited by the user</note>
+      </trans-unit>
+      <trans-unit id="RSE_DetailsCol_Name">
+        <source>Name</source>
+        <target state="translated">Název</target>
+        <note>Columns for the "Details" view of the resource editor</note>
+      </trans-unit>
+      <trans-unit id="RSE_DetailsCol_Filename">
+        <source>Filename</source>
+        <target state="translated">Název souboru</target>
+        <note>Columns for the "Details" view of the resource editor</note>
+      </trans-unit>
+      <trans-unit id="RSE_DetailsCol_ImageType">
+        <source>Type</source>
+        <target state="translated">Typ</target>
+        <note>Columns for the "Details" view of the resource editor</note>
+      </trans-unit>
+      <trans-unit id="RSE_DetailsCol_Size">
+        <source>Size</source>
+        <target state="translated">Velikost</target>
+        <note>Columns for the "Details" view of the resource editor</note>
+      </trans-unit>
+      <trans-unit id="RSE_DetailsCol_Comment">
+        <source>Comment</source>
+        <target state="translated">Komentář</target>
+        <note>Columns for the "Details" view of the resource editor</note>
+      </trans-unit>
+      <trans-unit id="RSE_DetailsCol_Encoding">
+        <source>Text Encoding</source>
+        <target state="translated">Kódování textu</target>
+        <note>Columns for the "Details" view of the resource editor</note>
+      </trans-unit>
+      <trans-unit id="RSE_GraphicSizeFormat">
+        <source>{0} x {1}</source>
+        <target state="translated">{0} x {1}</target>
+        <note>Format string for showing a graphic's size
+
+#  {0} = width (as an integer)
+#  {1} = height (as an integer)
+#Example, for a bitmap of width=123, height = 456, the English version of this string would be "123x456"</note>
+      </trans-unit>
+      <trans-unit id="RSE_FileSizeFormatKB">
+        <source>{0} KB</source>
+        <target state="translated">{0} kB</target>
+        <note>#Format string for showing a file's size
+# {0} = length in kilobytes</note>
+      </trans-unit>
+      <trans-unit id="RSE_FileSizeFormatBytes_1Arg">
+        <source>{0} byte(s)</source>
+        <target state="translated">{0} bajtů</target>
+        <note>Format string for showing a file's size.
+{0} = length in bytes</note>
+      </trans-unit>
+      <trans-unit id="RSE_Cat_Strings">
+        <source>Strings</source>
+        <target state="translated">Řetězce</target>
+        <note>Resource category names (these show up in the category buttons in the ToolStrip at the top of the resource editor)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Cat_Images">
+        <source>Images</source>
+        <target state="translated">Obrázky</target>
+        <note>Resource category names (these show up in the category buttons in the ToolStrip at the top of the resource editor)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Cat_Icons">
+        <source>Icons</source>
+        <target state="translated">Ikony</target>
+        <note>Resource category names (these show up in the category buttons in the ToolStrip at the top of the resource editor)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Cat_Audio">
+        <source>Audio</source>
+        <target state="translated">Zvuk</target>
+        <note>Resource category names (these show up in the category buttons in the ToolStrip at the top of the resource editor)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Cat_Files">
+        <source>Files</source>
+        <target state="translated">Soubory</target>
+        <note>Resource category names (these show up in the category buttons in the ToolStrip at the top of the resource editor)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Cat_Other">
+        <source>Other</source>
+        <target state="translated">Jiné</target>
+        <note>Resource category names (these show up in the category buttons in the ToolStrip at the top of the resource editor)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add">
+        <source>&amp;Add</source>
+        <target state="translated">Přid&amp;at</target>
+        <note>Add, Delete and Views button text in the main ToolStrip</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Remove">
+        <source>&amp;Remove</source>
+        <target state="translated">Odeb&amp;rat</target>
+        <note>Add, Delete and Views button text in the main ToolStrip</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Views">
+        <source>&amp;Views</source>
+        <target state="translated">&amp;Zobrazení</target>
+        <note>Add, Delete and Views button text in the main ToolStrip</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_ExistingFile">
+        <source>&amp;Existing File...</source>
+        <target state="translated">Stávají&amp;cí soubor...</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_String">
+        <source>New &amp;String</source>
+        <target state="translated">Nový ře&amp;tězec</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_Image">
+        <source>New &amp;Image</source>
+        <target state="translated">Nový obráze&amp;k</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_Image_PNG">
+        <source>&amp;PNG Image...</source>
+        <target state="translated">Obrázek &amp;PNG...</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_Image_BMP">
+        <source>&amp;BMP Image...</source>
+        <target state="translated">Obrázek &amp;BMP...</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_Image_GIF">
+        <source>&amp;GIF Image...</source>
+        <target state="translated">Obrázek &amp;GIF...</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_Image_JPEG">
+        <source>&amp;JPEG Image...</source>
+        <target state="translated">Obrázek &amp;JPEG...</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_Image_TIFF">
+        <source>&amp;TIFF Image...</source>
+        <target state="translated">Obrázek &amp;TIFF...</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_Icon">
+        <source>New I&amp;con...</source>
+        <target state="translated">Nová i&amp;kona...</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_TextFile">
+        <source>New &amp;Text File...</source>
+        <target state="translated">Nový &amp;textový soubor...</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_BMP">
+        <source>Windows Bitmap</source>
+        <target state="translated">Bitová mapa Windows</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_EXIF">
+        <source>EXIF Image</source>
+        <target state="translated">Obrázek EXIF</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_GIF">
+        <source>Graphics Interchange Format</source>
+        <target state="translated">Formát GIF</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_JPEG">
+        <source>JPEG File Interchange Format</source>
+        <target state="translated">Formát JPEG</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_MEMBMP">
+        <source>Windows Bitmap</source>
+        <target state="translated">Bitová mapa Windows</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_PNG">
+        <source>Portable Network Graphics</source>
+        <target state="translated">Formát PNG</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_TIFF">
+        <source>Tag Image File Format</source>
+        <target state="translated">Formát TIFF</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_Icon">
+        <source>Icon</source>
+        <target state="translated">Ikona</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_TextFile">
+        <source>Text File</source>
+        <target state="translated">Textový soubor</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_BinaryFile">
+        <source>Binary File</source>
+        <target state="translated">Binární soubor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Type_Wave">
+        <source>Wave Sound</source>
+        <target state="translated">Zvuk ve formátu Wave</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RES_PersistenceMode_Linked">
+        <source>Linked at compile time</source>
+        <target state="translated">Spojený až při kompilaci</target>
+        <note>File Persistence Mode</note>
+      </trans-unit>
+      <trans-unit id="RES_PersistenceMode_Embeded">
+        <source>Embedded in .resx</source>
+        <target state="translated">Vložený do souboru .resx</target>
+        <note>File Persistence Mode</note>
+      </trans-unit>
+      <trans-unit id="RSE_Filter_Bitmap">
+        <source>Bitmaps</source>
+        <target state="translated">Bitové mapy</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_Filter_Icon">
+        <source>Icons</source>
+        <target state="translated">Ikony</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_Filter_Audio">
+        <source>Audio</source>
+        <target state="translated">Zvuk</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_Filter_Text">
+        <source>Text Files</source>
+        <target state="translated">Textové soubory</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_Filter_All">
+        <source>All Files</source>
+        <target state="translated">Všechny soubory</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_FilterSave_BMP">
+        <source>Windows Bitmap</source>
+        <target state="translated">Bitová mapa Windows</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_FilterSave_PNG">
+        <source>Portable Network Graphics</source>
+        <target state="translated">Formát PNG</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_FilterSave_GIF">
+        <source>Graphics Interchange Format</source>
+        <target state="translated">Formát GIF</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_FilterSave_JPEG">
+        <source>JPEG File Interchange Format</source>
+        <target state="translated">Formát JPEG</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_FilterSave_TIFF">
+        <source>Tag Image File Format</source>
+        <target state="translated">Formát TIFF</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_FilterSave_Icon">
+        <source>Icon</source>
+        <target state="translated">Ikona</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Views_List">
+        <source>&amp;List</source>
+        <target state="translated">Sezna&amp;m</target>
+        <note>Resource editor listview view styles (like changing the view style of a folder in Windows XP)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Views_Details">
+        <source>&amp;Details</source>
+        <target state="translated">Po&amp;drobnosti</target>
+        <note>Resource editor listview view styles (like changing the view style of a folder in Windows XP)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Views_Thumbnail">
+        <source>&amp;Thumbnail</source>
+        <target state="translated">Minia&amp;tura</target>
+        <note>Resource editor listview view styles (like changing the view style of a folder in Windows XP)</note>
+      </trans-unit>
+      <trans-unit id="RSE_ResourceEditor">
+        <source>Managed Resources Editor</source>
+        <target state="translated">Editor spravovaných prostředků</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_DlgTitle_AddExisting">
+        <source>Add existing file to resources</source>
+        <target state="translated">Přidat existující soubor k prostředkům</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_DlgTitle_Import_1Arg">
+        <source>Import file into resource '{0}'</source>
+        <target state="translated">Importovat soubor do prostředku {0}</target>
+        <note>{0} = Name of resource being imported into</note>
+      </trans-unit>
+      <trans-unit id="RSE_DlgTitle_Export_1Arg">
+        <source>Export resource '{0}' to file</source>
+        <target state="translated">Exportovat prostředek {0} do souboru</target>
+        <note>{0} = Name of resource being exported from</note>
+      </trans-unit>
+      <trans-unit id="RSE_DlgTitle_AddNew">
+        <source>Please specify where to save the new file</source>
+        <target state="translated">Zadejte prosím, kde má být nový soubor uložen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Dlg_ReplaceExistingFile">
+        <source>The file '{0}' already exists.  Do you want to replace it?</source>
+        <target state="translated">Soubor {0} už existuje.  Chcete ho nahradit?</target>
+        <note>{0} = full file path and name</note>
+      </trans-unit>
+      <trans-unit id="RSE_Dlg_ReplaceExistingFiles">
+        <source>The following files already exist.  Do you want to replace them?</source>
+        <target state="translated">Následující soubory už existují.  Chcete je nahradit?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Dlg_ExportMultiple">
+        <source>Select a folder in which to export the resources.</source>
+        <target state="translated">Vyberte složku, do které budou exportovány prostředky.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Dlg_ContinueAnyway">
+        <source>Do you want to continue anyway?</source>
+        <target state="translated">Chcete i přesto pokračovat?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Dlg_SetCustomTool">
+        <source>Do you want to enable strongly-typed resource generation for this file?</source>
+        <target state="translated">Chcete pro tento soubor povolit generování prostředků se silnými typy?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Task_BadLink_2Args">
+        <source>Resource '{0}' could not be loaded because the file to which it is linked could not be found: {1}.</source>
+        <target state="translated">Prostředek {0} se nedá načíst, protože se nenašel soubor, se kterým je svázaný: {1}.</target>
+        <note>{0} = resource name that had the error, {1} = file path/name that could not be found</note>
+      </trans-unit>
+      <trans-unit id="RSE_Task_CantInstantiate_2Args">
+        <source>Resource '{0}' could not be instantiated.  {1}</source>
+        <target state="translated">Nelze vytvořit instanci prostředku {0}. {1}</target>
+        <note>{0} = resource name that had the error, {1} = extended error information</note>
+      </trans-unit>
+      <trans-unit id="RSE_Task_NonrecommendedName_1Arg">
+        <source>Resource '{0}' has a name that is not recommended and that may cause compilation errors in your code.  Please choose another name.</source>
+        <target state="translated">Prostředek {0} má název, který se nedoporučuje, protože může v kódu způsobit chyby při kompilaci.  Vyberte prosím jiný název.</target>
+        <note>{0} = resource name that had the error</note>
+      </trans-unit>
+      <trans-unit id="RSE_Task_CantChangeCustomToolOrNamespace">
+        <source>Unable to set the Custom Tool or Custom Tool Namespace properties of this file in order to change strongly-typed resource generation options.  If the project file is checked in, try checking it out.</source>
+        <target state="translated">U tohoto souboru se nepodařilo nastavit vlastnosti Vlastní nástroje a Obor názvů vlastního nástroje, aby bylo možné změnit tučně napsané možnosti generování prostředků.  Pokud je soubor projektu zaškrtnutý, zkuste ho odškrtnout.</target>
+        <note>One possible source for this error is that source code control checkout failed or was canceled.</note>
+      </trans-unit>
+      <trans-unit id="RSE_Task_WarningCustomToolNotSet">
+        <source>Double-click here to enable strongly-typed resources for this file.</source>
+        <target state="translated">Pokud chcete pro tento soubor povolit prostředky se silnými typy, poklikejte sem.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Task_InvalidName_1Arg">
+        <source>The resource name '{0}' is not a valid identifier.</source>
+        <target state="translated">Název prostředku {0} není platný identifikátor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_EncodingDisplayName">
+        <source>{0} - Codepage {1}</source>
+        <target state="translated">{0} – znaková sada {1}</target>
+        <note>{0} = encoding name (e.g., "Western European (Windows)"), {1} = code page # (e.g., 85001)</note>
+      </trans-unit>
+      <trans-unit id="RSE_DefaultEncoding">
+        <source>(Default)</source>
+        <target state="translated">(výchozí)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Undo_ChangeName">
+        <source>Change resource name</source>
+        <target state="translated">Změnit název prostředku</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Undo_AddResources_1Arg">
+        <source>Add {0} new resource(s)</source>
+        <target state="translated">Přidat nové prostředky {0}</target>
+        <note>{0} = number of resources added</note>
+      </trans-unit>
+      <trans-unit id="RSE_Undo_RemoveResources_1Arg">
+        <source>Remove {0} resource(s)</source>
+        <target state="translated">Odebrat prostředky {0}</target>
+        <note>{0} = number of resources removed</note>
+      </trans-unit>
+      <trans-unit id="RSE_Undo_DeleteResourceCell">
+        <source>Delete values in {0} cell(s)</source>
+        <target state="translated">Odstranit hodnoty buněk {0}</target>
+        <note>{0} = number of cells cleared</note>
+      </trans-unit>
+      <trans-unit id="RSE_CategiesLabel">
+        <source>&amp;Categories:</source>
+        <target state="translated">&amp;Kategorie:</target>
+        <note>The label in the menu strip for the combobox that holds the categories of resources to display</note>
+      </trans-unit>
+      <trans-unit id="RSE_PropDesc_Name">
+        <source>Name used to identify the resource in code.</source>
+        <target state="translated">Název používaný k identifikaci prostředku v kódu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_PropDesc_Comment">
+        <source>Additional information about the resource.  This property is only meaningful at design time.</source>
+        <target state="translated">Další informace o prostředku.  Tato vlastnost je užitečná jen v okamžiku návrhu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_PropDesc_Encoding">
+        <source>Character encoding of the file.</source>
+        <target state="translated">Kódování znaků souboru</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_PropDesc_Filename">
+        <source>The path to the linked resource.</source>
+        <target state="translated">Cesta k propojenému prostředku</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_PropDesc_FileType">
+        <source>Specifies whether the file resource is text or binary.</source>
+        <target state="translated">Určuje, jestli je soubor prostředku textový nebo binární.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_PropDesc_Persistence">
+        <source>Specifies whether the resource is embedded or linked.  Embedded resources are saved in the resource file.  Linked resources reside in an external location on disk.</source>
+        <target state="translated">Určuje, jestli je prostředek vložený nebo připojený.  Vložené prostředky se ukládají do souboru prostředků.  Propojené prostředky jsou externě umístěné na disku.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_PropDesc_Type">
+        <source>The resource will be generated as this type in the strongly-typed resource class.  For example, the resource might be generated as a String or Bitmap object.</source>
+        <target state="translated">Prostředek se vygeneruje do tučně napsané třídy prostředků jako tento typ.  Prostředek může být vygenerovaný třeba jako objekt řetězce nebo bitové mapy.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_PropDesc_Value">
+        <source>The value of the resource.</source>
+        <target state="translated">Hodnota prostředku</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RFS_CantCreateResourcesFolder_Folder_ExMsg">
+        <source>Unable to add a '{0}' folder to this project.
+
+{1}</source>
+        <target state="translated">Do projektu se nepodařilo přidat složku {0}.
+
+{1}</target>
+        <note>{0} = name of folder trying to add (by default, this will be "Resources"), {1} = additional error information</note>
+      </trans-unit>
+      <trans-unit id="RFS_CantAddFileToProject_File_ExMsg">
+        <source>Unable to add '{0}' to the project.
+
+{1}</source>
+        <target state="translated">Do projektu se nepodařilo přidat '{0}'.
+
+{1}</target>
+        <note>{0} = file name and path, {1} = additional error information.</note>
+      </trans-unit>
+      <trans-unit id="RFS_CantAddFileToProject_File">
+        <source>Unable to add '{0}' to the project.</source>
+        <target state="translated">Do projektu se nepodařilo přidat '{0}'.</target>
+        <note>{0} = file name and path</note>
+      </trans-unit>
+      <trans-unit id="RFS_QueryReplaceFile_File">
+        <source>A file with the name '{0}' already exists.  Do you want to replace it?</source>
+        <target state="translated">Soubor s názvem {0} už existuje.  Chcete ho nahradit?</target>
+        <note>{0} = file name and path</note>
+      </trans-unit>
+      <trans-unit id="RFS_QueryReplaceFileTitle_Editor">
+        <source>{0} - Destination File Exists</source>
+        <target state="translated">{0} – cílový soubor existuje</target>
+        <note>{0} = Name of the editor, e.g. "Managed Resources Editor" or "Resource Picker"</note>
+      </trans-unit>
+      <trans-unit id="RFS_QueryRemoveLink_Folder_Link">
+        <source>There is already a linked file with the name "{0}" in the project folder "{1}".  Do you want to remove it?</source>
+        <target state="translated">Složka projektu {1} už propojený soubor s názvem {0} obsahuje.  Chcete ho odebrat?</target>
+        <note>{0} = file name (no path), {1} = Path of resource folder</note>
+      </trans-unit>
+      <trans-unit id="RFS_QueryRemoveLinkTitle_Editor">
+        <source>{0} - Destination File Exists</source>
+        <target state="translated">{0} – cílový soubor existuje</target>
+        <note>{0} = Name of the editor, e.g. "Managed Resources Editor" or "Resource Picker"</note>
+      </trans-unit>
+      <trans-unit id="RFS_FindNotFound_File">
+        <source>Cannot find the file '{0}'.  It may have been moved or deleted.</source>
+        <target state="translated">Soubor {0} se nedá najít.  Možná byl přesunut nebo odstraněn.</target>
+        <note>{0} = file name and path</note>
+      </trans-unit>
+      <trans-unit id="SD_ComboBoxItem_ConnectionStringType">
+        <source>Connection string</source>
+        <target state="translated">Připojovací řetězec</target>
+        <note>Added as the last item in the list of available types to let the user browse for a new type</note>
+      </trans-unit>
+      <trans-unit id="SD_ComboBoxItem_WebReferenceType">
+        <source>Web Service URL</source>
+        <target state="translated">URL webové služby</target>
+        <note>Added as the last item in the list of available types to let the user browse for a new type</note>
+      </trans-unit>
+      <trans-unit id="SD_ComboBoxItem_BrowseType">
+        <source>Browse...</source>
+        <target state="translated">Procházet...</target>
+        <note>Added as the last item in the list of available types to let the user browse for a new type</note>
+      </trans-unit>
+      <trans-unit id="SD_ComboBoxItem_ApplicationScope">
+        <source>Application</source>
+        <target state="translated">Aplikace</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ComboBoxItem_WebApplicationScope">
+        <source>Application (Web)</source>
+        <target state="translated">Aplikace (web)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ComboBoxItem_UserScope">
+        <source>User</source>
+        <target state="translated">Uživatel</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ComboBoxItem_WebUserScope">
+        <source>User (Web)</source>
+        <target state="translated">Uživatel (web)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_GridViewNameColumnHeaderText">
+        <source>Name</source>
+        <target state="translated">Název</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_GridViewTypeColumnHeaderText">
+        <source>Type</source>
+        <target state="translated">Typ</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_GridViewScopeColumnHeaderText">
+        <source>Scope</source>
+        <target state="translated">Rozsah</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_GridViewValueColumnHeaderText">
+        <source>Value</source>
+        <target state="translated">Hodnota</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UnknownType">
+        <source>Type '{0}' is not defined.</source>
+        <target state="translated">Typ {0} není definovaný.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_NameChanged">
+        <source>Name changed</source>
+        <target state="translated">Název se změnil.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_TypeChanged">
+        <source>Type changed</source>
+        <target state="translated">Typ se změnil.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_ScopeChanged">
+        <source>Scope changed</source>
+        <target state="translated">Rozsah se změnil.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_RoamingChanged">
+        <source>Roaming changed</source>
+        <target state="translated">Roaming se změnil.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_DescriptionChanged">
+        <source>Description changed</source>
+        <target state="translated">Popis se změnil.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_ProviderChanged">
+        <source>Provider changed</source>
+        <target state="translated">Poskytovatel se změnil.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_SerializedValueChanged">
+        <source>Value changed</source>
+        <target state="translated">Hodnota se změnila.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_GenerateDefaultValueInCode">
+        <source>Generate default value in code changed</source>
+        <target state="translated">Generovat výchozí hodnotu ve změněném kódu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_RemoveMultipleSettings_1Arg">
+        <source>Remove {0} setting(s)</source>
+        <target state="translated">Odebrat nastavení {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_Err_CantLoadSettingsFile">
+        <source>Unable to load settings file.  It might be corrupted or contain invalid XML or contain duplicate identifiers.</source>
+        <target state="translated">Soubor nastavení se nepodařilo načíst.  Může být poškozený nebo může obsahovat neplatný kód XML nebo duplicitní identifikátory.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_NewValuesAdded">
+        <source>New values from the app.config file were automatically added</source>
+        <target state="translated">Automaticky se přidaly nové hodnoty ze souboru app.config.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ReplaceValueWithAppConfigValueTitle">
+        <source>Value of setting '{0}' was changed in the app.config file.</source>
+        <target state="translated">Hodnota nastavení '{0}' byla v souboru app.config změněna.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ReplaceValueWithAppConfigValue">
+        <source>The current value in the .settings file is '{0}'
+The new value in the app.config file is '{1}'
+
+Do you want to update the value in the .settings file?</source>
+        <target state="translated">Aktuální hodnota v souboru .settings je {0}.
+Nová hodnota v souboru app.config je {1}.
+
+Chcete aktualizovat hodnotu v souboru .settings?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_FailedToLoadAppConfigValues">
+        <source>An error occurred while reading the app.config file. The file might be corrupted or contain invalid XML.</source>
+        <target state="translated">Při čtení souboru app.config došlo k chybě. Soubor může být poškozený nebo může obsahovat neplatný kód XML.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_FailedToSaveAppConfigValues">
+        <source>An error occurred while saving values to the app.config file. The file might be corrupted or contain invalid XML.</source>
+        <target state="translated">Při ukládání hodnot do souboru app.config došlo k chybě. Soubor může být poškozený nebo může obsahovat neplatný kód XML.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_DuplicateName_1Arg">
+        <source>There is already another setting with the name '{0}'.</source>
+        <target state="translated">Nastavení s názvem {0} už existuje.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_InvalidIdentifier_1Arg">
+        <source>'{0}' is not a valid identifier.</source>
+        <target state="translated">{0} není platný identifikátor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_InvalidTypeName_1Arg">
+        <source>'{0}' is not a valid type name.</source>
+        <target state="translated">{0} není platný název typu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_NameEmpty">
+        <source>The setting name cannot be empty.</source>
+        <target state="translated">Název nastavení nemůže být prázdný.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_InvalidValue_2Arg">
+        <source>'{0}' cannot be converted to an instance of type '{1}'.</source>
+        <target state="translated">{0} se nedá převést na instanci typu {1}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_GenericTypesNotSupported_1Arg">
+        <source>Generic types are not supported.</source>
+        <target state="translated">Obecné typy se nepodporují.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_AbstractTypesNotSupported_1Arg">
+        <source>Abstract types are not supported.</source>
+        <target state="translated">Abstraktní typy nejsou podporované.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_RenameNotSupported">
+        <source>The current object is auto-generated and only supports renaming through the Settings Designer.</source>
+        <target state="translated">Aktuální objekt se vygeneroval automaticky a dá se přejmenovat jenom pomocí návrháře nastavení.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_ModifyParamsNotSupported">
+        <source>The current object is auto-generated and does not support modifying parameters.</source>
+        <target state="translated">Stávající objekt se vytváří automaticky a nepodporuje změnu parametrů.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_CantEditInDebugMode">
+        <source>The settings file cannot be modified at this time.</source>
+        <target state="translated">Soubor nastavení se teď nedá změnit.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_MNU_AddSettingText">
+        <source>&amp;Add Setting</source>
+        <target state="translated">Přid&amp;at nastavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_MNU_RemoveSettingText">
+        <source>R&amp;emove Setting</source>
+        <target state="translated">Od&amp;ebrat nastavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_FullDescriptionText">
+        <source>Application settings allow you to store and retrieve property settings and other information for your application dynamically. For example, the application can save a user's color preferences, then retrieve them the next time it runs.</source>
+        <target state="translated">Nastavení aplikace umožňují dynamicky uchovávat a načítat nastavení vlastností a jiné informace o aplikaci. Aplikace může třeba uložit předvolby barev uživatele a načíst je při dalším spuštění.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_LinkPartOfDescriptionText">
+        <source>Learn more about application settings...</source>
+        <target state="translated">Další informace o nastavení aplikace...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_IncludeSensitiveInfoInConnectionStringWarning">
+        <source>This connection string appears to contain sensitive data (for example, a password), which is required to connect to the database. However, storing sensitive data in the connection string can be a security risk. Do you want to include sensitive data in the connection string?</source>
+        <target state="translated">Připojovací řetězec pravděpodobně obsahuje citlivá data (například heslo), která jsou potřeba pro připojení k databázi. Uchovávání citlivých dat v připojovacím řetězci ale může představovat bezpečnostní riziko. Chcete do připojovacího řetězce zahrnout citlivá data?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_SelectATypeTreeView_AccessibleName">
+        <source>Select a Type</source>
+        <target state="translated">Vyberte typ</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_CODEGENCMT_COMMON1">
+        <source>This class allows you to handle specific events on the settings class:</source>
+        <target state="translated">Tato třída umožňuje zpracovávat specifické události v třídě nastavení:</target>
+        <note>Comments for user part of extending generated settings class</note>
+      </trans-unit>
+      <trans-unit id="SD_CODEGENCMT_COMMON2">
+        <source> The SettingChanging event is raised before a setting's value is changed.</source>
+        <target state="translated"> Událost SettingChanging se vyvolá před změnou hodnoty nastavení.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_CODEGENCMT_COMMON3">
+        <source> The PropertyChanged event is raised after a setting's value is changed.</source>
+        <target state="translated"> Událost PropertyChanged se vyvolá po změně hodnoty nastavení.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_CODEGENCMT_COMMON4">
+        <source> The SettingsLoaded event is raised after the setting values are loaded.</source>
+        <target state="translated"> Událost SettingsLoaded se vyvolá po načtení hodnot nastavení.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_CODEGENCMT_COMMON5">
+        <source> The SettingsSaving event is raised before the setting values are saved.</source>
+        <target state="translated"> Událost SettingsSaving se vyvolá před uložením hodnot nastavení.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_CODEGENCMT_HOWTO_ATTACHEVTS">
+        <source>To add event handlers for saving and changing settings, uncomment the lines below:</source>
+        <target state="translated">Pro přidávání obslužných rutin událostí určených pro ukládání a změnu nastavení odkomentujte prosím níže uvedené řádky:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_CODEGENCMT_HANDLE_CHANGING">
+        <source>Add code to handle the SettingChangingEvent event here.</source>
+        <target state="translated">Kód pro zpracování události SettingChangingEvent přidejte sem.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_CODEGENCMT_HANDLE_SAVING">
+        <source>Add code to handle the SettingsSaving event here.</source>
+        <target state="translated">Kód pro zpracování události SettingsSaving přidejte sem.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_CODEGEN_FAILEDOPENCREATEEXTENDINGFILE">
+        <source>Failed to create or open file.</source>
+        <target state="translated">Otevření nebo vytvoření souboru selhalo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_Description">
+        <source>Description of the setting.</source>
+        <target state="translated">Popis nastavení.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_GenerateDefaultValueInCode">
+        <source>Specifies whether or not the default setting value should be generated in the strongly-typed settings class.</source>
+        <target state="translated">Určuje, jestli se má výchozí hodnota nastavení generovat ve třídě nastavení se silnými typy.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_Group">
+        <source>Specifies the group to which this Settings file belongs.</source>
+        <target state="translated">Určuje skupinu, do které tento soubor nastavení patří.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_GroupDescription">
+        <source>Description of the group to which this Settings file belongs.</source>
+        <target state="translated">Popis skupiny, do které soubor nastavení patří</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_Roaming">
+        <source>Indicates whether the setting should roam when Windows roaming profiles are enabled.</source>
+        <target state="translated">Určuje, jestli může nastavení používat roaming, pokud jsou povolené cestovní profily systému Windows.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_Name">
+        <source>Name used to identify the setting.</source>
+        <target state="translated">Název používaný k identifikaci nastavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_Provider">
+        <source>The provider (System.Configuration.Provider.ProviderBase) used to manage the setting.</source>
+        <target state="translated">Poskytovatel (System.Configuration.Provider.ProviderBase) používaný pro správu nastavení.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_Scope">
+        <source>Specifies whether the setting is per-application (read-only) or per-user (read-write).</source>
+        <target state="translated">Určuje, jestli je nastavení vázané na aplikaci (jen pro čtení) nebo na uživatele (čtení i zápis).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_SerializedSettingType">
+        <source>The setting will be generated as this type in the strongly-typed settings class. For example, the setting might be generated as a String or Integer object.</source>
+        <target state="translated">Nastavení se vygeneruje do tučně napsané třídy nastavení jako tento typ. Nastavení může být vygenerované třeba jako objekt řetězce nebo celočíselné hodnoty.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_Value">
+        <source>The current value for the setting.</source>
+        <target state="translated">Aktuální hodnota pro nastavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_SyncFiles_1Arg">
+        <source>The following files will be deleted:
+
+{0}</source>
+        <target state="translated">Následující soubory budou odstraněny:
+
+{0}</target>
+        <note>Synchronize with user.config file</note>
+      </trans-unit>
+      <trans-unit id="SD_SyncFilesNoFilesFound_1Arg">
+        <source>No user.config files were found in any of the following locations:
+
+{0}</source>
+        <target state="translated">Soubory user.config se nenašly v žádném z následujících umístění:
+
+{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_SyncFilesOneOrMoreFailed">
+        <source>One or more user.config files was not removed.</source>
+        <target state="translated">Jeden nebo víc souborů user.config se neodstranil.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_SFG_AutoSaveRegionText">
+        <source>My.Settings Auto-Save Functionality</source>
+        <target state="translated">Funkce automatického ukládání objektu My.Settings</target>
+        <note>in-code comment used to generate a region that hides My.Settings AutoSave functionality</note>
+      </trans-unit>
+      <trans-unit id="General_MissingService">
+        <source>Unable to find service '{0}'.  Ensure that the application is installed correctly.</source>
+        <target state="translated">Službu {0} se nepodařilo najít.  Ověřte, jestli je aplikace správně nainstalovaná.</target>
+        <note>Settings Global-Object-Provider Strings</note>
+      </trans-unit>
+      <trans-unit id="PPG_Application_RootNamespaceJSharp">
+        <source>Default pac&amp;kage:</source>
+        <target state="translated">Výchozí balíče&amp;k:</target>
+        <note>J# Specific String for Root Namespace</note>
+      </trans-unit>
+      <trans-unit id="RSE_AccessModifier_Custom">
+        <source>(Custom)</source>
+        <target state="translated">(vlastní)</target>
+        <note>Entry in the "Accessibility dropdown"</note>
+      </trans-unit>
+      <trans-unit id="RSE_NoCodeGeneration">
+        <source>No code generation</source>
+        <target state="translated">Bez generování kódu</target>
+        <note>Entry in the "Accessibility dropdown"</note>
+      </trans-unit>
+      <trans-unit id="PPG_WindowsApp_WPF">
+        <source>WPF Application</source>
+        <target state="translated">Aplikace WPF</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_InvalidShutdownMode">
+        <source>(Invalid value: "{0}")</source>
+        <target state="translated">(neplatná hodnota: {0})</target>
+        <note>Goes into the ShutdownMode combobox</note>
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_ShutdownMode_OnExplicitShutdown">
+        <source>On explicit shutdown</source>
+        <target state="translated">Při jednoznačném vypnutí</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_ShutdownMode_OnLastWindowClose">
+        <source>On last window close</source>
+        <target state="translated">Při zavření posledního okna</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_ShutdownMode_OnMainWindowClose">
+        <source>On main window close</source>
+        <target state="translated">Při zavření hlavního okna</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_Xaml_CouldntFindRootElement">
+        <source>Could not find the expected root element "{0}" in the application definition file.</source>
+        <target state="translated">V souboru definice aplikace se nepovedlo nají očekávaný kořenový element {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_Xaml_UnexpectedFormat_2Args">
+        <source>The .xaml file was in an unexpected format, near line {0} column {1}.</source>
+        <target state="translated">Soubor .xaml má blízko řádku {0} a sloupce {1} nečekaný formát.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_StartupObjectLabelText">
+        <source>Startup &amp;object:</source>
+        <target state="translated">Spouštěcí &amp;objekt:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_StartupUriLabelText">
+        <source>Startup &amp;URI:</source>
+        <target state="translated">Spouštěcí identifikátor &amp;URI:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_AppXamlOpenInUnsupportedEditor">
+        <source>The application definition file is already opened in an incompatible editor.  Please close the other editor and reload the project properties page.</source>
+        <target state="translated">Definiční soubor aplikace už je otevřený v nekompatibilním editoru.  Zavřete prosím druhý editor a znovu načtěte stránku vlastností projektu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_CantOpenOrCreateAppXaml_1Arg">
+        <source>There was an error trying to open or create the application definition file for this project.  {0}</source>
+        <target state="translated">Při pokusu o otevření nebo vytvoření souboru definice aplikace tohoto projektu došlo k chybě. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_ErrorControlMessage_1Arg">
+        <source>An error occurred trying to load the application definition file for this project.  The file '{0}' could not be parsed.  Please edit the file in the XAML editor to fix the error.</source>
+        <target state="translated">Při pokusu o načtení definičního souboru aplikace pro tento projekt došlo k chybě.  Soubor {0} se nedá parsovat.  Opravte prosím chybu úpravou souboru v editoru XAML.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_CantReadPropertyValue">
+        <source>(Error)</source>
+        <target state="translated">(chyba)</target>
+        <note>Used inside UI elements when there is an error (e.g. combobox text)</note>
+      </trans-unit>
+      <trans-unit id="PPG_Unexpected">
+        <source>An unspecified error has occurred.</source>
+        <target state="translated">Došlo k nespecifikované chybě.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_CantFindAppXaml">
+        <source>This project does not contain an application definition file.</source>
+        <target state="translated">Tento projekt neobsahuje soubor definice aplikace.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_CouldntCreateApplicationEventsFile_1Arg">
+        <source>An error occurred trying to create the application events file.  {0}</source>
+        <target state="translated">Při pokusu o vytvoření souboru událostí aplikace došlo k chybě. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="General_InvalidArgument_1Arg">
+        <source>Invalid argument '{0}'</source>
+        <target state="translated">Neplatný argument {0}</target>
+        <note>{0} = name of invalid argument</note>
+      </trans-unit>
+      <trans-unit id="PPG_CommandLineApp_WPF">
+        <source>WPF Console Application</source>
+        <target state="translated">Konzolová aplikace WPF</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WindowsClassLib_WPF">
+        <source>WPF Class Library</source>
+        <target state="translated">Knihovna tříd WPF</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_DefaultManifestText">
+        <source>Embed manifest with default settings</source>
+        <target state="translated">Vložit manifest s výchozím nastavením</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_NoManifestText">
+        <source>Create application without a manifest</source>
+        <target state="translated">Vytvořit aplikaci bez manifestu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_BadManifest">
+        <source>Invalid manifest file.</source>
+        <target state="translated">Soubor manifestu není platný.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services">
+        <source>Services</source>
+        <target state="translated">Služby</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_HelpLabelText">
+        <source>Client application services enable your Windows-based applications to use the ASP.NET login (authentication), roles, and profile (settings) services.  </source>
+        <target state="translated">Klientské aplikační služby umožňují vašim aplikacím pro Windows použít služby technologie ASP.NET pro přihlášení (ověřování), role a nastavení profilu.  </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_HelpLabelLink">
+        <source>Learn more about client application services...</source>
+        <target state="translated">Další informace o klientských aplikačních službách...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ServicesAdvancedPage_Title">
+        <source>Advanced Settings for Services</source>
+        <target state="translated">Upřesnit nastavení služeb</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_ConfirmRemoveServices">
+        <source>Disabling application services will clear the default services for Authentication, Roles, and Settings.  Click OK to disable application services.</source>
+        <target state="translated">Zakázáním služeb aplikace se vymažou výchozí služby ověřování, rolí a nastavení.  Pokud chcete služby aplikace zakázat, klikněte na OK.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_ConfirmRemoveServices_Caption">
+        <source>Disable Application Services</source>
+        <target state="translated">Zakázat služby aplikace</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_Seconds">
+        <source>seconds</source>
+        <target state="translated">sekundy</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_Minutes">
+        <source>minutes</source>
+        <target state="translated">minuty</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_Hours">
+        <source>hours</source>
+        <target state="translated">hodiny</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_Days">
+        <source>days</source>
+        <target state="translated">dny</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_VersionWarning">
+        <source>To enable client application services, you must set the Target Framework for your application to .NET Framework 3.5 or later. In C#, you can do this on the Application property page. In Visual Basic, you can do this one the Compile property page by clicking Advanced Compile Options.</source>
+        <target state="translated">Abyste mohli povolit klientské aplikační služby, musíte pro cílové rozhraní .NET Framework vaší aplikace vybrat .NET Framework 3.5 nebo novější. V jazyce C# to můžete udělat na stránce Vlastnosti aplikace. Ve Visual Basicu zase kliknutím na Další možnosti kompilace na stránce Vlastnosti kompilace.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_InvalidAppConfigXml">
+        <source>An error occurred while reading the Application configuration file.  The file might be corrupted or contain invalid XML.</source>
+        <target state="translated">Při čtení konfiguračního souboru aplikace došlo k chybě. Soubor může být poškozený, nebo obsahuje neplatný kód XML.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_InvalidUrl">
+        <source>The URL is invalid. Please enter a valid URL like http://microsoft.com/services</source>
+        <target state="translated">Adresa URL není platná. Zadejte prosím platnou adresu URL, třeba http://microsoft.com/services.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_InvalidUrls">
+        <source>A service URL in the application configuration file is not in the expected format.</source>
+        <target state="translated">Adresa URL služby v konfiguračním souboru aplikace není v očekávaném formátu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_ConnectionStringsDontMatch">
+        <source>Authentication, Roles and Web Settings providers have been configured via the Application configuration file such that they do not share a common connection string.</source>
+        <target state="translated">Konfigurace poskytovatelů služeb pro ověřování, role a nastavení webu se provedla prostřednictvím konfiguračního souboru aplikace, který jim neumožňuje sdílet obecný připojovací řetězec.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_connectionStringValueDefaultDisplayValue">
+        <source>Specify a connection string to a SQL Server database, or use the special connection string "Data Source = |SQL/CE|", which causes SQL Server Compact to generate local database files for offline storage.</source>
+        <target state="translated">Zadejte prosím připojovací řetězec pro databázi serveru SQL Server nebo zadejte speciální připojovací řetězec "Data Source = |SQL/CE|", který způsobí, že SQL Server Compact vygeneruje místní soubory databáze pro úložiště offline.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_UnreferencedTypeNameList_1Arg">
+        <source>The following type names were not understood: '{0}'.  Make sure you have references to these types.</source>
+        <target state="translated">Následující názvy typů nejsou srozumitelné: {0}.  Ověřte, že máte odkazy na tyto typy.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_DuplicateNameList_1Arg">
+        <source>There are already settings with the following names: {0}.</source>
+        <target state="translated">Nastavení s následujícími názvy už existují: {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_CantAuthenticate">
+        <source>The username/password combination cannot be authenticated.</source>
+        <target state="translated">Kombinace uživatelské jméno/heslo se nedá ověřit.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WindowsFormsApp">
+        <source>Windows Forms Application</source>
+        <target state="translated">Formulářová aplikace Windows</target>
+        <note>The "Windows Forms" distinguishes it from a WPF application</note>
+      </trans-unit>
+      <trans-unit id="PPG_ServiceReferenceNamespaceDescription">
+        <source>Namespace of the service reference.</source>
+        <target state="translated">Obor názvů odkazu na službu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ServiceReferenceTypeName">
+        <source>Service Reference Properties</source>
+        <target state="translated">Vlastnosti odkazu na službu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ServiceReferenceUrlDescription">
+        <source>Metadata Location Url</source>
+        <target state="translated">URL umístění metadat</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ServiceReferenceUrlName">
+        <source>Metadata Location</source>
+        <target state="translated">Umístění metadat</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ServiceReferenceProperty_MultipleUrlNotSupported">
+        <source>A service reference with multiple source urls is not supported.</source>
+        <target state="translated">Odkaz na službu s více zdrojovými adresami není podporován.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ServiceReferenceProperty_SetReferenceUrlEmpty">
+        <source>Cannot change reference Url to empty. The reference url must be a valid URL.</source>
+        <target state="translated">Adresa URL odkazu se nedá změnit na prázdnou. Adresa URL odkazu musí být platnou adresou URL.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DFX_OneOrMoreFilesReloaded">
+        <source>One or more files were reloaded during the checkout. Please retry your operation.</source>
+        <target state="translated">Při rezervaci se znovu načetl jeden nebo více souborů. Zopakujte prosím operaci.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ProjectReloadedSomePropertiesMayNotHaveBeenSet">
+        <source>The project was reloaded, and some changes on this page may have been lost.</source>
+        <target state="translated">Projekt se znovu načetl a některé změny na této stránce se mohly ztratit.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_XBAPOutOfTrustZoneToolTip">
+        <source>The application will fail to run in the selected zone because of this requested elevated permission. Click the help link above for more info.</source>
+        <target state="translated">Aplikace kvůli vyžadovaným oprávněním vyšší úrovně ve vybrané zóně selže. Další informace se dozvíte kliknutím na odkaz nápovědy nahoře.</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

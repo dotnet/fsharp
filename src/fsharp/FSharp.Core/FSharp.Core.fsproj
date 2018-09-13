@@ -6,6 +6,7 @@
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
     <ProjectLanguage>FSharp</ProjectLanguage>
     <BuildWith Condition=" '$(Configuration)' == 'Proto' ">LKG</BuildWith>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
 
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
@@ -16,11 +17,11 @@
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Core</AssemblyName>
     <DefineConstants>FSHARP_CORE;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(Configuration)' == 'Proto'">BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <BaseAddress>0x05000000</BaseAddress>
     <CompilingFsLib>true</CompilingFsLib>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <FX_NO_LOADER>true</FX_NO_LOADER>
     <OtherFlags>$(OtherFlags) --warnon:1182 --compiling-fslib --extraoptimizationloops:1</OtherFlags>
     <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
     <OtherFlags>$(OtherFlags) --maxerrors:20</OtherFlags>
@@ -34,17 +35,8 @@
     <None Include="FSharp.Core.runtimeconfig.json"      Condition="'$(TargetDotnetProfile)' == 'coreclr'" ><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
   </ItemGroup>
 
-  <ItemGroup>
-    <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
-      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
-      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
-      <HasLceComments>false</HasLceComments>
-      <InProject>false</InProject>
-    </FilesToLocalize>
-  </ItemGroup>
-
-  <ItemGroup>
-    <CustomAdditionalCompileInputs Include="$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin\fsc-proto.exe">
+  <ItemGroup Condition="'$(Configuration)' != 'Proto'">
+    <CustomAdditionalCompileInputs Include="$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin\fsc.exe">
       <Visible>false</Visible>
     </CustomAdditionalCompileInputs>
   </ItemGroup>
@@ -159,12 +151,6 @@
     <Compile Include="reflect.fs">
       <Link>Reflection/reflect.fs</Link>
     </Compile>
-    <Compile Include="event.fsi">
-      <Link>Event/event.fsi</Link>
-    </Compile>
-    <Compile Include="event.fs">
-      <Link>Event/event.fs</Link>
-    </Compile>
     <Compile Include="math\n.fsi">
       <Link>Numerics/n.fsi</Link>
     </Compile>
@@ -201,11 +187,35 @@
     <Compile Include="nativeptr.fs">
       <Link>NativeInterop/nativeptr.fs</Link>
     </Compile>
-    <Compile Include="control.fsi">
-      <Link>Async/control.fsi</Link>
+    <Compile Include="event.fsi">
+      <Link>Control/event.fsi</Link>
     </Compile>
-    <Compile Include="control.fs">
-      <Link>Async/control.fs</Link>
+    <Compile Include="event.fs">
+      <Link>Control/event.fs</Link>
+    </Compile>
+    <Compile Include="async.fsi">
+      <Link>Control/async.fsi</Link>
+    </Compile>
+    <Compile Include="async.fs">
+      <Link>Control/async.fs</Link>
+    </Compile>
+    <Compile Include="eventmodule.fsi">
+      <Link>Control/eventmodule.fsi</Link>
+    </Compile>
+    <Compile Include="eventmodule.fs">
+      <Link>Control/eventmodule.fs</Link>
+    </Compile>
+    <Compile Include="observable.fsi">
+      <Link>Control/observable.fsi</Link>
+    </Compile>
+    <Compile Include="observable.fs">
+      <Link>Control/observable.fs</Link>
+    </Compile>
+    <Compile Include="mailbox.fsi">
+      <Link>MailboxProcessor/mailbox.fsi</Link>
+    </Compile>
+    <Compile Include="mailbox.fs">
+      <Link>MailboxProcessor/mailbox.fs</Link>
     </Compile>
     <Compile Include="Linq.fsi">
       <Link>Queries/Linq.fsi</Link>
@@ -233,9 +243,6 @@
     </Compile>
     <Compile Include="fslib-extra-pervasives.fs">
       <Link>Extras/fslib-extra-pervasives.fs</Link>
-    </Compile>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Core.dll.fs">
-      <Link>assemblyinfo.FSharp.Core.dll.fs</Link>
     </Compile>
   </ItemGroup>
 
@@ -268,17 +275,6 @@
     <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.optdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
   </Target>
 
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
-      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-         <Authenticode>Microsoft</Authenticode>
-         <StrongName>StrongName</StrongName>
-      </FilesToSign>
-    </ItemGroup>
-  </Target>
-
   <Target Name="nugetpack"
           DependsOnTargets="CreateOrUpdateBuildVersionFile"
           AfterTargets="Build"
@@ -287,7 +283,7 @@
           Outputs='$(FSharpSourcesRoot)\..\$(Configuration)\artifacts\"%(PackageNuspec.Filename)).nupkg'>
 
     <PropertyGroup>
-      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(FSharpCore42TargetVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
+      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(FSharpCoreFrozenPortablePackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
     </PropertyGroup>
 
     <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts" />

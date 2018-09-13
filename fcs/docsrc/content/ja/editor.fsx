@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../bin/v4.5/"
+#I "../../../../debug/bin/net45/"
 (**
 コンパイラサービス: エディタサービス
 ====================================
@@ -14,7 +14,7 @@
 今回も `FSharpChecker` オブジェクトを作成するところから始めます。
 
 > **注意:** 以下で使用しているAPIは試験的なもので、最新バージョンのnugetパッケージの
-  公開に伴って変更されることがあります。
+公開に伴って変更されることがあります。
 
 サンプルソースコードの型チェック
 --------------------------------
@@ -44,14 +44,14 @@ let checker = FSharpChecker.Create()
 *)
 // サンプルの入力となる複数行文字列
 let input = 
-  """
-  open System
+"""
+open System
 
-  let foo() = 
-    let msg = String.Concat("Hello"," ","world")
-    if true then 
-      printfn "%s" msg.
-  """
+let foo() = 
+let msg = String.Concat("Hello"," ","world")
+if true then 
+printfn "%s" msg.
+"""
 // 入力値の分割とファイル名の定義
 let inputLines = input.Split('\n')
 let file = "/home/user/Test.fsx"
@@ -73,8 +73,8 @@ let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(projOp
 *)
 // パースを実行
 let parseFileResults =
-    checker.ParseFile(file, input, parsingOptions)
-    |> Async.RunSynchronously
+checker.ParseFile(file, input, parsingOptions)
+|> Async.RunSynchronously
 (**
 `TypeCheckResults` に備えられた興味深い機能の紹介に入る前に、
 サンプル入力に対して型チェッカーを実行する必要があります。
@@ -84,25 +84,25 @@ F#コードにエラーがあった場合も何らかの型チェックの結果
 
 // 型チェックを実行
 let checkFileAnswer = 
-    checker.CheckFileInProject(parseFileResults, file, 0, input, projOptions) 
-    |> Async.RunSynchronously
+checker.CheckFileInProject(parseFileResults, file, 0, input, projOptions) 
+|> Async.RunSynchronously
 
 (**
 あるいは `ParseAndCheckFileInProject` を使用すれば1つの操作で両方のチェックを行うことができます：
 *)
 
 let parseResults2, checkFileAnswer2 =
-    checker.ParseAndCheckFileInProject(file, 0, input, projOptions)
-    |> Async.RunSynchronously
+checker.ParseAndCheckFileInProject(file, 0, input, projOptions)
+|> Async.RunSynchronously
 
 (**
 この返り値は `CheckFileAnswer` 型で、この型に機能的に興味深いものが揃えられています...
 *)
 
 let checkFileResults = 
-    match checkFileAnswer with
-    | FSharpCheckFileAnswer.Succeeded(res) -> res
-    | res -> failwithf "パースが完了していません... (%A)" res
+match checkFileAnswer with
+| FSharpCheckFileAnswer.Succeeded(res) -> res
+| res -> failwithf "パースが完了していません... (%A)" res
 
 (**
 
@@ -147,7 +147,7 @@ printfn "%A" tip
 (**
 
 > **注意：** `GetToolTipTextAlternate` は古い関数 `GetToolTipText` に代わるものです。
-  `GetToolTipText` は0から始まる行番号を受け取るようになっていたため、非推奨になりました。
+`GetToolTipText` は0から始まる行番号を受け取るようになっていたため、非推奨になりました。
 
 この関数には位置とトークンの種類の他にも、
 (ソースコードの変更時に役立つように)特定行の現在の内容と、
@@ -178,19 +178,19 @@ printfn "%A" tip
 *)
 // 特定の位置における宣言(自動補完)を取得する
 let decls = 
-    checkFileResults.GetDeclarationListInfo
-      (Some parseFileResults, 7, 23, inputLines.[6], [], "msg", fun _ -> false)
-    |> Async.RunSynchronously
+checkFileResults.GetDeclarationListInfo
+(Some parseFileResults, 7, 23, inputLines.[6], [], "msg", fun _ -> false)
+|> Async.RunSynchronously
 
 // 利用可能な項目を表示
 for item in decls.Items do
-    printfn " - %s" item.Name
+printfn " - %s" item.Name
 (**
 
 > **注意：** `GetDeclarationListInfo` は古い関数 `GetDeclarations` に代わるものです。
-  `GetDeclarations` は0から始まる行番号を受け取るようになっていたため、非推奨になりました。
-  また、将来的には現在の `GetDeclarations` が削除され、 `GetDeclarationListInfo` が
-  `GetDeclarations` になる予定です。
+`GetDeclarations` は0から始まる行番号を受け取るようになっていたため、非推奨になりました。
+また、将来的には現在の `GetDeclarations` が削除され、 `GetDeclarationListInfo` が
+`GetDeclarations` になる予定です。
 
 コードを実行してみると、 `Substring` や `ToUpper` 、 `ToLower` といった
 文字列に対するいつものメソッドのリストが取得できていることでしょう。
@@ -214,13 +214,13 @@ for item in decls.Items do
 *)
 //String.Concatメソッドのオーバーロードを取得する
 let methods = 
-    checkFileResults.GetMethodsAlternate(5, 27, inputLines.[4], Some ["String"; "Concat"]) |> Async.RunSynchronously
+checkFileResults.GetMethodsAlternate(5, 27, inputLines.[4], Some ["String"; "Concat"]) |> Async.RunSynchronously
 
 // 連結された引数リストを表示
 for mi in methods.Methods do
-    [ for p in mi.Parameters -> p.Display ]
-    |> String.concat ", " 
-    |> printfn "%s(%s)" methods.MethodName
+[ for p in mi.Parameters -> p.Display ]
+|> String.concat ", " 
+|> printfn "%s(%s)" methods.MethodName
 (**
 ここでは `Display` プロパティを使用することで各引数に対する
 アノテーションを取得しています。
@@ -247,9 +247,9 @@ F#コンパイラは型チェックを(自動的に)バックグラウンドで�
 ファイルに対する型チェックを諦めるか、どちらか選択することになります。
 
 > [fsharpbinding](https://github.com/fsharp/fsharpbinding) プロジェクトには
-  1つのF#エージェント経由ですべてのリクエストをバックグラウンドワークとして
-  処理するような、より複雑な具体例も含まれています。
-  エディタの機能を実装する方法としてはこちらのほうが適切です。
+1つのF#エージェント経由ですべてのリクエストをバックグラウンドワークとして
+処理するような、より複雑な具体例も含まれています。
+エディタの機能を実装する方法としてはこちらのほうが適切です。
 
 *)
 

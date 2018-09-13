@@ -1,0 +1,820 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="pt-BR" original="../Microsoft.VisualStudio.Package.Project.resx">
+    <body>
+      <trans-unit id="AddToNullProjectError">
+        <source>Failed to add file '{0}' to project as project is null.</source>
+        <target state="translated">Falha ao adicionar o arquivo '{0}' ao projeto porque o projeto é nulo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Advanced">
+        <source>Advanced</source>
+        <target state="translated">Avançado</target>
+        <note>Project Property Page Caption</note>
+      </trans-unit>
+      <trans-unit id="ReferenceCouldNotBeAdded">
+        <source>A reference to '{0}' could not be added.</source>
+        <target state="translated">Não foi possível adicionar uma referência para'{0}'.</target>
+        <note>ReferenceCouldNotBeAdded error message</note>
+      </trans-unit>
+      <trans-unit id="ReferenceAlreadyExists">
+        <source>A reference to '{0}' could not be added. A reference to the component '{1}' already exists in the project.</source>
+        <target state="translated">A referência para '{0}' não foi adicionada. A referência para o componente '{1}' já existe no projeto.</target>
+        <note>ReferenceAlreadyExists error message</note>
+      </trans-unit>
+      <trans-unit id="ReferenceWithAssemblyNameAlreadyExists">
+        <source>A reference to '{0}' (with assembly name '{1}') could not be added. A reference to the component '{2}' with the same assembly name already exists in the project.</source>
+        <target state="translated">Uma referência para '{0}' (com nome de assembly '{1}') não pôde ser adicionado. Uma referência para o componente '{2}' com o mesmo nome assembly já existe no projeto.</target>
+        <note>ReferenceAlreadyExists error message</note>
+      </trans-unit>
+      <trans-unit id="AttributeLoad">
+        <source>Could not load attribute '{0}' from project file '{1}'.</source>
+        <target state="translated">Não foi possível carregar o atributo '{0}' do arquivo de projeto '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BuildAction">
+        <source>Build Action</source>
+        <target state="translated">Ação de Compilação</target>
+        <note>Project Build Property Name</note>
+      </trans-unit>
+      <trans-unit id="BuildActionDescription">
+        <source>How the file relates to the build and deployment process</source>
+        <target state="translated">Como o arquivo se relaciona à compilação e ao processo de implantação</target>
+        <note>Project Build Property Description</note>
+      </trans-unit>
+      <trans-unit id="BuildVerbosity">
+        <source>Verbosity</source>
+        <target state="translated">Detalhamento</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BuildVerbosityDescription">
+        <source>Specify how much information is included in the build output</source>
+        <target state="translated">Especificar quantas informações são incluídas na saída da compilação</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cli1">
+        <source>ECMA-335 CLI compatible framework (location must be provided)</source>
+        <target state="translated">Estrutura compatível com a CLI da ECMA-335 (a localização deve ser fornecida)</target>
+        <note>Target platform drop down option</note>
+      </trans-unit>
+      <trans-unit id="Compile">
+        <source>Compile</source>
+        <target state="translated">Compilar</target>
+        <note>Build Action - drop down option</note>
+      </trans-unit>
+      <trans-unit id="ConfirmExtensionChange">
+        <source>If you change a file name extension, the file may become unusable. Are you sure you want to change it?</source>
+        <target state="translated">Se você alterar a extensão de nome de um arquivo, ele poderá se tornar inutilizável. Tem certeza de que deseja alterá-la?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotAddFileThatIsOpenInEditor">
+        <source>A file with name '{0}' already exists and is open in an editor. Please give a unique name to the item you are adding, or delete the existing item first.</source>
+        <target state="translated">Um arquivo com o nome '{0}' já existe e está aberto em um editor. Dê um nome exclusivo ao item que você está adicionando ou exclua o item existente primeiro.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CanNotSaveFileNotOpeneInEditor">
+        <source>Cannot save '{0}' as it is not open in the editor.</source>
+        <target state="translated">Não é possível salvar '{0}' porque não está aberto no editor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Content">
+        <source>Content</source>
+        <target state="translated">Conteúdo</target>
+        <note>Build Action - drop down option</note>
+      </trans-unit>
+      <trans-unit id="CopyToLocal">
+        <source>Copy Local</source>
+        <target state="translated">Copiar Local</target>
+        <note>File property</note>
+      </trans-unit>
+      <trans-unit id="CopyToLocalDescription">
+        <source>Indicates whether the reference will be copied to the output directory.</source>
+        <target state="translated">Indica se a referência será copiada no diretório de saída.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Detailed">
+        <source>Detailed</source>
+        <target state="translated">Detalhado</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Diagnostic">
+        <source>Diagnostic</source>
+        <target state="translated">Diagnóstico</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DirectoryExistError">
+        <source>Directory already exists</source>
+        <target state="translated">O diretório já existe</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EditorViewError">
+        <source>Error opening specified view '{0}' using editor '{1}'</source>
+        <target state="translated">Erro ao abrir a exibição especificada '{0}' usando o editor '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EmbeddedResource">
+        <source>Embedded Resource</source>
+        <target state="translated">Recurso Inserido</target>
+        <note>Build Action - drop down option</note>
+      </trans-unit>
+      <trans-unit id="Error">
+        <source>error</source>
+        <target state="translated">erro</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorInvalidFileName">
+        <source>Files and folders cannot be:
+- Empty strings 
+- System reserved names, including 'CON', 'AUX', PRN', 'COM1' or 'LPT2' 
+- contain only '.'
+- have any of the following characters: / ? : &amp;  \ * " &lt; &gt; | # %</source>
+        <target state="translated">Os arquivos e as pastas não podem ser:
+– Cadeias de caracteres vazias
+– Nomes reservados do sistema, incluindo 'CON', 'AUX', PRN', 'COM1' ou 'LPT2'
+– conter somente '.'
+– ter um destes caracteres: / ? : &amp; \ * " &lt; &gt; | # %</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorInvalidProjectName">
+        <source>The name you provided is not a valid project name.</source>
+        <target state="translated">O nome fornecido não é um nome de projeto válido.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorMsBuildRegistration">
+        <source>MSBuild path not found in registry. Please reinstall to fix the problem.</source>
+        <target state="translated">O caminho MSBuild não foi encontrado no registro. Reinstale para resolver o problema.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorSaving">
+        <source>Error Saving File</source>
+        <target state="translated">Erro ao Salvar Arquivo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Exe">
+        <source>Console Application</source>
+        <target state="translated">Aplicativo do Console</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExpectedObjectOfType">
+        <source>Expecting object of type {0}.</source>
+        <target state="translated">Esperando objeto do tipo {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FailedToRetrieveProperties">
+        <source>Failed to retrieve msbuild property {0} from the project file.</source>
+        <target state="translated">Falha ao recuperar a propriedade {0} de msbuild do arquivo do projeto.</target>
+        <note>The exception message thrown when getting a property from msbuild fails.</note>
+      </trans-unit>
+      <trans-unit id="FileAlreadyExists">
+        <source>A file with the same name '{0}' already exists. Do you want to overwrite it?</source>
+        <target state="translated">Já existe um arquivo com o nome '{0}'. Deseja substituí-lo?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileAlreadyExistsAndCannotBeRenamed">
+        <source>A file with the same name '{0}' already exists.</source>
+        <target state="translated">Já existe um arquivo com o nome '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileAlreadyExistsCaption">
+        <source>Destination File Exists</source>
+        <target state="translated">Arquivo de Destino Existente</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileAlreadyInProject">
+        <source>A file of this name is already part of the project. Do you want to overwrite it?</source>
+        <target state="translated">Um arquivo com este nome já faz parte do projeto. Deseja substituí-lo?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileAlreadyInProjectCaption">
+        <source>Destination File Exists</source>
+        <target state="translated">Arquivo de Destino Existente</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBeRenamedToAnExistingFile">
+        <source>A file or folder with the name '{0}' already exists on disk at this location. Please choose another name.</source>
+        <target state="translated">Já existe um arquivo ou uma pasta com o nome '{0}' no disco neste local. Escolha outro nome.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCopyError">
+        <source>Error Copying File</source>
+        <target state="translated">Erro ao Copiar Arquivo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileName">
+        <source>File Name</source>
+        <target state="translated">Nome do Arquivo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileNameCannotContainALeadingPeriod">
+        <source>File and folder names cannot contain a leading period.</source>
+        <target state="translated">Os nomes de arquivo e pasta não podem conter um ponto à esquerda.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileNameDescription">
+        <source>The name of the file or folder</source>
+        <target state="translated">O nome do arquivo ou da pasta</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderName">
+        <source>Folder Name</source>
+        <target state="translated">Nome da Pasta</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderNameDescription">
+        <source>Name of this folder</source>
+        <target state="translated">Nome desta pasta</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FullPath">
+        <source>Full Path</source>
+        <target state="translated">Caminho Completo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FullPathDescription">
+        <source>Location of the file</source>
+        <target state="translated">Local do arquivo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ItemDoesNotExistInProjectDirectory">
+        <source>The item '{0}' does not exist in the project directory. It may have been moved, renamed or deleted.</source>
+        <target state="translated">O item '{0}' não existe no diretório do projeto. Ele pode ter sido movido, renomeado ou excluído.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LinkedItemsAreNotSupported">
+        <source>Cannot save '{0}' outside the project directory. Linked items are not supported.</source>
+        <target state="translated">Não é possível salvar '{0}' fora do diretório do projeto. Os itens vinculados não são compatíveis.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Library">
+        <source>Class Library</source>
+        <target state="translated">Biblioteca de Classes</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Minimal">
+        <source>Minimal</source>
+        <target state="translated">Mínimo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Misc">
+        <source>Misc</source>
+        <target state="translated">Diversos</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="None">
+        <source>None</source>
+        <target state="translated">Nenhum</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Normal">
+        <source>Normal</source>
+        <target state="translated">Normal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PasteFailed">
+        <source>Item is not available or corrupted and thus cannot be pasted.</source>
+        <target state="translated">O item não está disponível ou está corrompido e, portanto, não pode ser colado.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Program">
+        <source>Program</source>
+        <target state="translated">Programa</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project">
+        <source>Project</source>
+        <target state="translated">Projeto</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectContainsCircularReferences">
+        <source>A reference to library '{0}' cannot be added. Adding this project as a reference would cause a circular dependency. </source>
+        <target state="translated">Não é possível adicionar uma referência à biblioteca '{0}'. A adição deste projeto como uma referência causaria uma dependência circular. </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFile">
+        <source>Project File</source>
+        <target state="translated">Arquivo de Projeto</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFileDescription">
+        <source>The name of the file containing build, configuration, and other information about the project.</source>
+        <target state="translated">O nome do arquivo que contém a compilação, a configuração e outras informações sobre o projeto.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFolder">
+        <source>Project Folder</source>
+        <target state="translated">Pasta do Projeto</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFolderDescription">
+        <source>The absolute location of the project.</source>
+        <target state="translated">Localização absoluta do projeto.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Quiet">
+        <source>Quiet</source>
+        <target state="translated">Silencioso</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RefName">
+        <source>(Name)</source>
+        <target state="translated">(Nome)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferencesNodeName">
+        <source>References</source>
+        <target state="translated">Referências</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RefNameDescription">
+        <source>Display name of the reference</source>
+        <target state="translated">Nome de exibição da referência</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RenameFolder">
+        <source>Rename directory failed. {0}</source>
+        <target state="translated">Falha ao renomear o diretório. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RTL">
+        <source>RTL_False</source>
+        <target state="translated">RTL_False</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SaveCaption">
+        <source>Save?</source>
+        <target state="translated">Salvar?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SaveModifiedDocuments">
+        <source>Do you want to save modified documents?</source>
+        <target state="translated">Deseja salvar os documentos modificados?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SaveOfProjectFileOutsideCurrentDirectory">
+        <source>The project file can only be saved into the project location '{0}'.</source>
+        <target state="translated">O arquivo de projeto só pode ser salvo no local do projeto '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StandardEditorViewError">
+        <source>Error opening specified view '{0}' using standard editor.</source>
+        <target state="translated">Erro ao abrir a exibição especificada '{0}' usando o editor padrão.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="URL">
+        <source>URL</source>
+        <target state="translated">URL</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseOfDeletedItemError">
+        <source>You are trying to use an item that has already been deleted or that does not exist.</source>
+        <target state="translated">Você está tentando usar um item que já foi excluído ou que não existe.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="v1">
+        <source>Microsoft .Net Framework v1.0</source>
+        <target state="translated">Microsoft .Net Framework v1.0</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="v11">
+        <source>Microsoft .Net Framework v1.1</source>
+        <target state="translated">Microsoft .Net Framework v1.1</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="v2">
+        <source>Microsoft .Net Framework v2.0</source>
+        <target state="translated">Microsoft .Net Framework v2.0</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Warning">
+        <source>warning</source>
+        <target state="translated">aviso</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WinExe">
+        <source>Windows Application</source>
+        <target state="translated">Aplicativo do Windows</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidAutomationObject">
+        <source>Automation object invalid.</source>
+        <target state="translated">Objeto de automação inválido.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CancelQueryEdit">
+        <source>The command you are attempting cannot be completed because the file '{0}' that must be modified cannot be changed. If the file is under source control, you may want to check it out; if the file is read-only on disk, you may want to change its attributes.</source>
+        <target state="translated">O comando que você está tentando não pode ser concluído porque o arquivo '{0}' que deve ser modificado não pode ser alterado. Se o arquivo está sob controle do código-fonte você pode desejar verificá-lo; se o arquivo é somente leitura no disco você pode desejar alterar seus atributos.</target>
+        <note>MsgBox</note>
+      </trans-unit>
+      <trans-unit id="ParameterMustBeAValidGuid">
+        <source>Parameter must be a valid guid.</source>
+        <target state="translated">O parâmetro deve ser um GUID válido.</target>
+        <note>Error message in the ArgumentException for a  parameter that is not a valid guid.</note>
+      </trans-unit>
+      <trans-unit id="InvalidLoggerType">
+        <source>Invalid logger type\nExpected: {0}\nReceived: {1}</source>
+        <target state="translated">Tipo de agente inválido\nEsperado: {0}\nRecebido: {1}</target>
+        <note>Error message thrown for when an  invalid logger type is set.</note>
+      </trans-unit>
+      <trans-unit id="InvalidParameter">
+        <source>InvalidParameter</source>
+        <target state="translated">InvalidParameter</target>
+        <note>Generic error message for invalid parameters.</note>
+      </trans-unit>
+      <trans-unit id="ParameterCannotBeNullOrEmpty">
+        <source>ParameterCannotBeNullOEmpty</source>
+        <target state="translated">ParameterCannotBeNullOEmpty</target>
+        <note>Error message for string parameters that cannot be null or empty.</note>
+      </trans-unit>
+      <trans-unit id="ParameterMustBeAValidItemId">
+        <source>Parameter must be a valid item identifier.</source>
+        <target state="translated">O parâmetro deve ser um identificador de item válido.</target>
+        <note>Error message thrown when an invalid item id is retrieved.</note>
+      </trans-unit>
+      <trans-unit id="FileProperties">
+        <source>File Properties</source>
+        <target state="translated">Propriedades do Arquivo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderProperties">
+        <source>Folder Properties</source>
+        <target state="translated">Propriedades da Pasta</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectProperties">
+        <source>Project Properties</source>
+        <target state="translated">Propriedades do Projeto</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceProperties">
+        <source>Reference Properties</source>
+        <target state="translated">Propriedades de Referência</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileOrFolderAlreadyExists">
+        <source>A file or folder with the name '{0}' already exists on disk at this location. Please choose another name.</source>
+        <target state="translated">Já existe um arquivo ou uma pasta com o nome '{0}' no disco neste local. Escolha outro nome.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderCannotBeRenamed">
+        <source>This folder cannot be renamed to '{0}' as it already exists on disk.\n\nOnly empty folders can be renamed to existing folders. This folder contains files within it on disk.</source>
+        <target state="translated">Esta pasta não pode ser renomeada para '{0}', pois já existe no disco.\n\nSomente pastas vazias podem ser renomeadas para pastas existentes. Esta pasta tem arquivos dentro dela no disco.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BuildCaption">
+        <source>Build</source>
+        <target state="translated">Compilar</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputPath">
+        <source>Output Path</source>
+        <target state="translated">Caminho de Saída</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputPathDescription">
+        <source>The path to the primary output</source>
+        <target state="translated">O caminho para a saída principal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PathTooLong">
+        <source>The complete path to '{0}' exceeds the maximum number of characters permitted by the file system.</source>
+        <target state="translated">O caminho completo para '{0}' excede o número máximo de caracteres permitido pelo sistema de arquivos.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CustomTool">
+        <source>Custom Tool</source>
+        <target state="translated">Ferramenta Personalizada</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CustomToolDescription">
+        <source>Specifies the tool that transforms a file at design time and places the output of that transformation into another file. For example, a dataset (.xsd) file comes with a default custom tool.</source>
+        <target state="translated">Especifica a ferramenta que transforma um arquivo em tempo de design e coloca o resultado dessa transformação em outro arquivo. Por exemplo, um arquivo de conjunto de dados (.xsd) vem com uma ferramenta personalizada padrão.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CustomToolNamespace">
+        <source>Custom Tool Namespace</source>
+        <target state="translated">Namespace da Ferramenta Personalizada</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CustomToolNamespaceDescription">
+        <source>The namespace into which the output of the custom tool is placed.</source>
+        <target state="translated">O namespace em que o resultado da ferramenta personalizada é colocado.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputBuilt">
+        <source>Primary Output</source>
+        <target state="translated">Saída Primária</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputContentFiles">
+        <source>Content Files</source>
+        <target state="translated">Arquivos de Conteúdo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputDocumentation">
+        <source>Documentation Files</source>
+        <target state="translated">Arquivos de Documentação</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputLocalizedResourceDlls">
+        <source>Localized Resources</source>
+        <target state="translated">Recursos Localizados</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputSourceFiles">
+        <source>Source Files</source>
+        <target state="translated">Arquivos de Origem</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputSymbols">
+        <source>Debug Symbols</source>
+        <target state="translated">Símbolos de Depuração</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputXmlSerializer">
+        <source>XML Serialization Assemblies</source>
+        <target state="translated">Assemblies de Serialização XML</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputBuiltDescription">
+        <source>Contains the DLL or EXE built by the project.</source>
+        <target state="translated">Contém a DLL ou o EXE compilado pelo projeto.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputContentFilesDescription">
+        <source>Contains all content files in the project.</source>
+        <target state="translated">Contém todos arquivos de conteúdo no projeto.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputDocumentationDescription">
+        <source>Contains the XML Documentation files for the project.</source>
+        <target state="translated">Contém os arquivos de Documentação XML do projeto.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputLocalizedResourceDllsDescription">
+        <source>Contains the satellite assemblies for each culture's resources.</source>
+        <target state="translated">Contém os assemblies satélite para cada recurso de cultura.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputSourceFilesDescription">
+        <source>Contains all source files in the project.</source>
+        <target state="translated">Contém todos os arquivos de origem no projeto.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputSymbolsDescription">
+        <source>Contains the debugging files for the project.</source>
+        <target state="translated">Contém os arquivos de depuração para o projeto.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputXmlSerializerDescription">
+        <source>Contains the XML serialization assemblies for the project.</source>
+        <target state="translated">Contém os assemblies de serialização XML para o projeto.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QueryReloadNestedProject">
+        <source>The project file '{0}' has been modified outside of Visual Studio.  Do you want to reload the project?</source>
+        <target state="translated">O arquivo do projeto '{0}' foi modificado fora do Visual Studio. Deseja recarregar o projeto?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NestedProjectFailedToReload">
+        <source>The nested project has failed to reload.</source>
+        <target state="translated">Falha ao recarregar o projeto aninhado.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileOrFolderCannotBeFound">
+        <source>The item '{0}' cannot be found on disk, either because it has been renamed, deleted, or moved to a new location.</source>
+        <target state="translated">O item '{0}' não foi encontrado no disco, ele foi renomeado, excluído ou movido para um novo local.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorReferenceCouldNotBeAdded">
+        <source>A reference to {0} could not be added. Please make sure that the file is accessible, and that it is a valid assembly or COM component.</source>
+        <target state="translated">Não foi possível adicionar uma referência ao {0}. Certifique-se de que o arquivo está acessível e se ele é um assembly ou um componente COM válido.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsImport">
+        <source>An 'Import' of the file '{1}' was found in the project file '{0}'. This file is not registered as a safe file to import, and could contain targets and tasks that are harmful.  If this imported file is indeed considered safe, then it can be registered by writing to the registry key {2}.</source>
+        <target state="translated">Uma 'Importação' do arquivo '{1}' foi encontrada no arquivo do projeto '{0}'. Esse arquivo não está registrado como um arquivo seguro para importação e pode conter destinos e tarefas prejudiciais. Se este arquivo de importação for realmente considerado seguro, então ele poderá ser registrado escrevendo o mesmo na chave de registro {2}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsUserImport">
+        <source>An 'Import' of the file '{1}' was found in the user project file '{0}'.  All imports in user project files are considered unsafe.</source>
+        <target state="translated">Uma 'Importação' do arquivo '{1}' foi encontrada no arquivo do projeto do usuário '{0}'. Todas as importações em arquivos do projeto são consideradas inseguras.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsItem">
+        <source>One or more items named '{1}' were found in the project file '{0}'. These items normally should not be specified in the project file. They can change the way targets and tasks are executed during project load, and this could have harmful effects.</source>
+        <target state="translated">Um ou mais itens chamados '{1}' foram encontrados no arquivo do projeto '{0}'. Esses itens normalmente não devem ser especificados no arquivo do projeto. Eles podem alterar a forma com que os destinos e as tarefas são executados ao carregar o projeto e isso pode ser prejudicial.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsProperty">
+        <source>A property named '{1}' was found in the project file '{0}'.  This property normally should not be specified in the project file.  Its value can change the way targets and tasks are executed during project load, and this could have harmful effects.</source>
+        <target state="translated">Uma propriedade chamada '{1}' foi encontrada no arquivo do projeto '{0}'. Essa propriedade normalmente não deve ser especificada no arquivo do projeto. O seu valor pode alterar a forma com que os destinos e as tarefas são executados ao carregar o projeto e isso pode ser prejudicial.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsUsingTask">
+        <source>A 'UsingTask' tag which registers the '{1}' task was found in the project file '{0}'.  'UsingTask' tags in the project file take precedence over those in the imported .TARGETS files, and therefore could be used to execute arbitrary code during an otherwise unmodified build process.</source>
+        <target state="translated">Uma marca 'UsingTask' que registra a tarefa '{1}' foi encontrada no arquivo do projeto '{0}'. As marcas 'UsingTask' do arquivo do projeto têm prioridade sobre os arquivos .DIRETORIO importados. Portanto, elas poderiam ser usadas para executar o código arbitrário durante um processo de compilação que, de outra forma, não seria modificado.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsTarget">
+        <source>A 'Target' named '{1}' was found in the project file '{0}'.  The tasks within this target could contain arbitrary code and may get executed as soon as the project is loaded in the IDE.</source>
+        <target state="translated">Um 'Destino' chamado '{1}' foi encontrado no arquivo do projeto '{0}'. As tarefas desse destino podem conter um código arbitrário e podem ser executadas no momento em que o projeto é carregado no IDE.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsItemLocation">
+        <source>An item referring to the file '{1}' was found in the project file '{0}'.  Since this file is located within a system directory, root directory, or network share, it could be harmful to write to this file.</source>
+        <target state="translated">Um item referente ao arquivo '{1}' foi encontrado no arquivo do projeto '{0}'. Como esse arquivo está localizado em um diretório do sistema, diretório raiz ou compartilhamento de rede, talvez seja prejudicial gravar nele.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectLocationNotTrusted">
+        <source>The project location is not trusted:{0}{0}{1}{0}{0}Running the application may result in security exceptions when it attempts to perform actions which require full trust.{0}{0}Click OK to ignore and continue.</source>
+        <target state="translated">A localização do projeto não é confiável:{0}{0}{1}{0}{0}A execução da aplicação pode resultar em exceções de segurança durante a tentativa de executar ações que exigem confiança total.{0}{0}Clique em OK para ignorar e continuar.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BuildEventError">
+        <source>Exception was thrown during BuildBegin event\n{0}</source>
+        <target state="translated">Uma exceção foi lançada durante o evento BuildBegin\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CopyAlways">
+        <source>Copy always</source>
+        <target state="translated">Copiar sempre</target>
+        <note>CopyToOutputDirectory - drop down option</note>
+      </trans-unit>
+      <trans-unit id="CopyToOutputDirectory">
+        <source>Copy to Output Directory</source>
+        <target state="translated">Copiar para Diretório de Saída</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CopyToOutputDirectoryDescription">
+        <source>Specifies the source file will be copied to the output directory</source>
+        <target state="translated">Especifica o arquivo de origem que será copiado para o diretório de saída</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CopyIfNewer">
+        <source>Copy if newer</source>
+        <target state="translated">Copiar se for mais novo</target>
+        <note>CopyToOutputDirectory - drop down option</note>
+      </trans-unit>
+      <trans-unit id="DoNotCopy">
+        <source>Do not copy</source>
+        <target state="translated">Não copiar</target>
+        <note>CopyToOutputDirectory - drop down option</note>
+      </trans-unit>
+      <trans-unit id="SpecificVersion">
+        <source>Specific Version</source>
+        <target state="translated">Versão Específica</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SpecificVersionDescription">
+        <source>Indicates whether this reference is to a specific version of an assembly.</source>
+        <target state="translated">Indica se esta referência é a uma versão específica de um assembly.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NoZeroImpactProjects">
+        <source>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</source>
+        <target state="translated">Microsoft Visual F# não dá suporte a projetos de impacto zero. Para criar um projeto F# a partir deste modelo de projeto, vá até o menu 'Ferramentas, Opções..., Projetos e Soluções, Geral' do Visual Studio e marque a caixa 'Salvar novo projeto quando criado', ou especifique &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; na seção &lt;TemplateData&gt; deste modelo de projeto de arquivo .vstemplate e repita esta operação.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NoWildcardsInProject">
+        <source>"Cannot open F# project '{0}'. \nThis project uses wildcards in item specification: \n'{2}' for item type '{1}'\n\nWildcards in F# projects are not currently supported.</source>
+        <target state="translated">"Não é possível abrir o projeto F# '{0}'. \nEste projeto usa curingas na especificação do item: \n'{2}', para o tipo de item '{1}'\n\nOs curingas nos projetos F# não recebem suporte.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotAddItemToProjectWithWildcards">
+        <source>"Cannot add file {3} to F# project '{0}'. \nThis project uses wildcards in item specification: \n'{2}' for item type '{1}'\n\nWildcards in F# projects are not currently supported.</source>
+        <target state="translated">"Não é possível adicionar o arquivo {3} ao projeto F# '{0}'. \nEste projeto usa curingas na especificação do item: \n'{2}', para o tipo de item '{1}'\n\nOs curingas nos projetos F# não recebem suporte.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpgradeCannotOpenProjectFileForEdit">
+        <source>Cannot open project file for edit.</source>
+        <target state="translated">Não é possível abrir o arquivo do projeto para editar.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpgradeNoNeedToUpgradeAfterCheckout">
+        <source>Project file was checked out and is already upgraded.</source>
+        <target state="translated">Arquivo do projeto foi verificado e já está atualizado.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotStartLibraries">
+        <source>A project with an Output Type of Class Library cannot be started directly.\n\nIn order to debug this project, add an executable project to this solution which references the library project. Set the executable project as the startup project.</source>
+        <target state="translated">Um projeto com um Tipo de Saída de Biblioteca de Classe não pode ser iniciado diretamente.\n\nPara depurar este projeto adicione um projeto executável a esta solução que referencia o projeto de biblioteca. Defina o projeto executável como o projeto de inicialização.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidOutputPath">
+        <source>The entered path is not a valid output path</source>
+        <target state="translated">O caminho introduzido não é um caminho de saída válido</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectRefOnlyExeOrDll">
+        <source>The project {0} cannot be referenced. An assembly must have a 'dll' or 'exe' extension in order to be referenced.</source>
+        <target state="translated">O projeto {0} não pode ser referenciado. Um assembly precisa ter uma extensão 'dll' ou 'exe' para ser referenciado.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotBuildWhenBuildInProgress">
+        <source>Cannot start a build, because another build is already in progress.</source>
+        <target state="translated">Não é possível iniciar uma compilação porque outra já está em andamento.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WorkingDirectoryNotExists">
+        <source>The working directory does not exist:\n'{0}'.</source>
+        <target state="translated">O diretório de trabalho não existe\n'{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectReferencesDifferentFramework">
+        <source>A reference to library '{0}' cannot be added. This project targets a different framework ({2}) from the current project ({1}).</source>
+        <target state="translated">Não é possível adicionar uma referência à biblioteca '{0}'. Este projeto define como destino um framework diferente {2} do projeto atual ({1}).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotLoadUnknownTargetFrameworkProject">
+        <source>The project '{0}' is targeting '{1}'; however, the target framework is not installed on the machine.</source>
+        <target state="translated">O projeto '{0}' está direcionando para '{1}'; no entanto, o framework de destino não está instalado no computador.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductName">
+        <source>F#</source>
+        <target state="translated">F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectReferencesHigherVersionWarning">
+        <source>The referenced project '{0}' is targeting a higher framework version ({1}) than this project’s current target framework version ({2}). This may lead to build failures if types from assemblies outside this project’s target framework are used by any project in the dependency chain.</source>
+        <target state="translated">O projeto referenciado '{0}' está definindo como destino um framework de versão mais recente ({1}) do que a do framework atual ({2}). Isso pode levar a falhas na compilação caso os assemblies de projetos externos sejam usados por alguma cadeia de dependência.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectConversionNotRequired">
+        <source>The project file does not require conversion.</source>
+        <target state="translated">O arquivo de projeto não requer conversão.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConversionNotRequired">
+        <source>No Conversion Required</source>
+        <target state="translated">Nenhuma Conversão Necessária</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorMakingProjectBackup">
+        <source>Error creating backup of project file: {0}</source>
+        <target state="translated">Erro ao criar backup do arquivo de projeto: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectBackupSuccessful">
+        <source>Project file successfully backed up as {0}</source>
+        <target state="translated">O backup do arquivo de projeto foi concluído com êxito como {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BackupNameConflict">
+        <source>Backup file name conflict. Renaming file to: {0}</source>
+        <target state="translated">Conflito de nome de arquivo de backup. Renomeando arquivo para: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectContainsLinkedFile">
+        <source>Backed up project may not build. Project contains linked file: {0}</source>
+        <target state="translated">O projeto em backup não pode compilar. O projeto contém um arquivo vinculado: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorMakingBackup">
+        <source>Failed to backup file as {0}</source>
+        <target state="translated">Falha ao fazer backup do arquivo como {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BackupSuccessful">
+        <source>File successfully backed up as {0}</source>
+        <target state="translated">O backup do arquivo foi concluído com êxito como {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Identity">
+        <source>Identity</source>
+        <target state="translated">Identidade</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IdentityDescription">
+        <source>Security identity of the referenced assembly.</source>
+        <target state="translated">Identidade de segurança do assembly referenciado.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Path">
+        <source>Path</source>
+        <target state="translated">Caminho</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PathDescription">
+        <source>Location of file being referenced.</source>
+        <target state="translated">Local do arquivo que está sendo referenciado.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Version">
+        <source>Version</source>
+        <target state="translated">Versão</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CopyOf">
+        <source>Copy of {0}</source>
+        <target state="translated">Cópia de {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CopyOf2">
+        <source>Copy ({0}) of {1}</source>
+        <target state="translated">Copiar ({0}) de {1}</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

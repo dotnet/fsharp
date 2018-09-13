@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="ru" original="../MyExtensibilityRes.resx">
+    <body>
+      <trans-unit id="AssemblyOptionDialog_Add_Question">
+        <source>The following My Namespace extensions are associated with assembly '{0}'. Do you want to add them to your project?</source>
+        <target state="translated">Следующие расширения пространства имен My связаны со сборкой "{0}". Добавить их в проект?</target>
+        <note>Label of the add My extensions dialog.</note>
+      </trans-unit>
+      <trans-unit id="AssemblyOptionDialog_Add_Text">
+        <source>Add My Namespace Extensions</source>
+        <target state="translated">Добавить расширения пространства имен My</target>
+        <note>Text (caption) of the add My extensions dialog.</note>
+      </trans-unit>
+      <trans-unit id="AssemblyOptionDialog_Option">
+        <source>&amp;Remember my decision for '{0}'.</source>
+        <target state="translated">&amp;Запомнить мое решение для "{0}".</target>
+        <note>Text for the option on add / remove My extensions dialog.</note>
+      </trans-unit>
+      <trans-unit id="AssemblyOptionDialog_Remove_Question">
+        <source>Removing the reference to '{0}' will make the following My Namespace extensions stop functioning. Do you want to remove them as well?</source>
+        <target state="translated">Удаление ссылки на "{0}" приведет к тому, что следующие расширения пространства имен My прекратят функционировать. Удалить их тоже?</target>
+        <note>Label of the remove My extensions dialog.</note>
+      </trans-unit>
+      <trans-unit id="AssemblyOptionDialog_Remove_Text">
+        <source>Remove My Namespace Extensions</source>
+        <target state="translated">Удалить расширения пространства имен My</target>
+        <note>Text (caption) of the remove My extensions dialog.</note>
+      </trans-unit>
+      <trans-unit id="CouldNotAddProjectItemTemplate_Message">
+        <source>No project items were added to the current project from My Namespace extension '{0}'. The extension will not be added to the project.</source>
+        <target state="translated">Из расширения пространства имен My "{0}" в текущий проект не было добавлено ни одного элемента. Расширение не будет добавлено в проект.</target>
+        <note>Error message when there is no project items being added to the project from the My Namespace extension template.</note>
+      </trans-unit>
+      <trans-unit id="CouldNotAddProjectItemTemplate_Title">
+        <source>Failed to Add Project Item</source>
+        <target state="translated">Произошла ошибка при добавлении элемента проекта</target>
+        <note>Text (caption)for the error message when there is no project items being added to the project from the My Namespace extension template.</note>
+      </trans-unit>
+      <trans-unit id="CouldNotSetExtensionAttributes_AllItems">
+        <source>No project items could be associated with My Namespace extension '{0}'. The extension will not be added to the project.</source>
+        <target state="translated">Нет элементов проекта, которые можно связать с расширением пространства имен My "{0}". Расширение не будет добавлено в проект.</target>
+        <note>Error message when we could not set build attributes on any of the project items in My Namespace extension template.</note>
+      </trans-unit>
+      <trans-unit id="CouldNotSetExtensionAttributes_Message">
+        <source>Project item '{0}' was added to the current project but could not be associated with My Namespace extension '{1}'. It will not be removed with the extension.</source>
+        <target state="translated">Элемент проекта "{0}" был добавлен в текущий проект. Однако он не может быть связан с расширением пространства имен My "{1}". Он не будет удален вместе с расширением.</target>
+        <note>Error message when we could not set build attributes on one of the project items in My Namespace extension template.</note>
+      </trans-unit>
+      <trans-unit id="CouldNotSetExtensionAttributes_Title">
+        <source>Failed to Set Extension Attributes</source>
+        <target state="translated">Произошла ошибка при установке атрибутов расширения</target>
+        <note>Text (caption) of the error message when we could not set build attributes on one of or any of the project items in My Namespace extension template.</note>
+      </trans-unit>
+      <trans-unit id="ExtensionExists_Message">
+        <source>Version '{0}' of My Namespace extension '{1}' already exists in the current project. Do you want to overwrite it with version '{2}'?</source>
+        <target state="translated">Версия "{0}" расширения пространства имен My "{1}" уже существует в текущем проекте. Перезаписать ее версией "{2}"?</target>
+        <note>Question to replace an existing My extension in the project.</note>
+      </trans-unit>
+      <trans-unit id="ExtensionExists_Title">
+        <source>Extension File Already Exists</source>
+        <target state="translated">Файл расширения уже существует</target>
+        <note>Title (caption) for the question to replace an existing My extension in the project.</note>
+      </trans-unit>
+      <trans-unit id="PropertyPageTab">
+        <source>My Extensions</source>
+        <target state="translated">Расширения My</target>
+        <note>Caption for "My Extensions" property page.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Add_Finish">
+        <source>My Namespace extensions added: '{0}'.</source>
+        <target state="translated">Добавлены расширения пространства имен My: "{0}".</target>
+        <note>Status bar text listing all My extension templates added.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Add_Progress">
+        <source>My Namespace extension added: '{0}'.</source>
+        <target state="translated">Добавлено расширение пространства имен My: "{0}".</target>
+        <note>Status bar text for each My extension template added.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Add_Remove_Finish">
+        <source>My Namespace extensions added: '{0}'. My Namespace extensions removed: '{1}'.</source>
+        <target state="translated">Добавлены расширения пространства имен My: "{0}". Удалены расширения пространства имен My: "{1}".</target>
+        <note>Status bar text listing all My extensions added and removed to a project. This is a rare case but may happen if user adds / removes assemblies real fast.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Add_Start">
+        <source>Adding My Namespace extensions...</source>
+        <target state="translated">Добавление расширений пространства имен My...</target>
+        <note>Status bar text when starting to add My extension templates.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Remove_Finish">
+        <source>My Namespace extensions removed: '{0}'.</source>
+        <target state="translated">Удалены расширения пространства имен My: "{0}".</target>
+        <note>Status bar text listing all My extension code files removed.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Remove_Progress">
+        <source>My Namespace extension removed: '{0}'.</source>
+        <target state="translated">Удалено расширение пространства имен My: "{0}".</target>
+        <note>Status bar text for each My extension code file removed.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Remove_Start">
+        <source>Removing My Namespace extensions...</source>
+        <target state="translated">Удаление расширений пространства имен My...</target>
+        <note>Status bar text when starting to remove My extensions.</note>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

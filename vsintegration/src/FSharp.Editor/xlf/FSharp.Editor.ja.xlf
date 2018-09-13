@@ -1,0 +1,162 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="ja" original="../FSharp.Editor.resx">
+    <body>
+      <trans-unit id="AddNewKeyword">
+        <source>Add 'new' keyword</source>
+        <target state="translated">'new' キーワードを追加する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ImplementInterface">
+        <source>Implement interface</source>
+        <target state="translated">インターフェイスを実装する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ImplementInterfaceWithoutTypeAnnotation">
+        <source>Implement interface without type annotation</source>
+        <target state="translated">型の注釈を指定しないでインターフェイスを実装する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PrefixValueNameWithUnderscore">
+        <source>Prefix '{0}' with underscore</source>
+        <target state="translated">アンダースコアが含まれているプレフィックス '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RenameValueToUnderscore">
+        <source>Rename '{0}' to '_'</source>
+        <target state="translated">'{0}' から '_' に名前を変更する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SimplifyName">
+        <source>Simplify name</source>
+        <target state="translated">名前を単純化する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NameCanBeSimplified">
+        <source>Name can be simplified.</source>
+        <target state="translated">名前を単純化できます。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpFunctionsOrMethodsClassificationType">
+        <source>F# Functions / Methods</source>
+        <target state="translated">F# 関数 / メソッド</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpMutableVarsClassificationType">
+        <source>F# Mutable Variables / Reference Cells</source>
+        <target state="translated">F# 変更可能な変数 / 参照セル</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpPrintfFormatClassificationType">
+        <source>F# Printf Format</source>
+        <target state="translated">F# Printf 形式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpPropertiesClassificationType">
+        <source>F# Properties</source>
+        <target state="translated">F# プロパティ</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpDisposablesClassificationType">
+        <source>F# Disposable Types</source>
+        <target state="translated">F# 破棄可能な型</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnusedOpens">
+        <source>Remove unused open declarations</source>
+        <target state="translated">未使用の Open 宣言を削除する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnusedOpens">
+        <source>Open declaration can be removed.</source>
+        <target state="translated">Open 宣言は削除できます。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6008">
+        <source>IntelliSense</source>
+        <target state="translated">IntelliSense</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6009">
+        <source>QuickInfo</source>
+        <target state="translated">QuickInfo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddAssemblyReference">
+        <source>Add an assembly reference to '{0}'</source>
+        <target state="translated">アセンブリ参照を '{0}' に追加する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddProjectReference">
+        <source>Add a project reference to '{0}'</source>
+        <target state="translated">プロジェクト参照を '{0}' に追加する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6010">
+        <source>Code Fixes</source>
+        <target state="translated">コード修正</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6011">
+        <source>Performance</source>
+        <target state="translated">パフォーマンス</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TheValueIsUnused">
+        <source>The value is unused</source>
+        <target state="translated">値は使用されていません</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotDetermineSymbol">
+        <source>Cannot determine the symbol under the caret</source>
+        <target state="translated">キャレットの下のシンボルを特定できません</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotNavigateUnknown">
+        <source>Cannot navigate to the requested location</source>
+        <target state="translated">要求された場所に移動できません</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LocatingSymbol">
+        <source>Locating the symbol under the caret...</source>
+        <target state="translated">キャレットの下のシンボルを検索しています...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NavigatingTo">
+        <source>Navigating to symbol...</source>
+        <target state="translated">シンボルに移動しています...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NavigateToFailed">
+        <source>Navigate to symbol failed: {0}</source>
+        <target state="translated">シンボルへの移動に失敗しました: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExceptionsHeader">
+        <source>Exceptions:</source>
+        <target state="translated">例外:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GenericParametersHeader">
+        <source>Generic parameters:</source>
+        <target state="translated">ジェネリック パラメーター</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RenameValueToDoubleUnderscore">
+        <source>Rename '{0}' to '__'</source>
+        <target state="translated">'{0}' から '__' に名前を変更する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6012">
+        <source>Advanced</source>
+        <target state="translated">詳細</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6013">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

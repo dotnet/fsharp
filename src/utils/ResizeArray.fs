@@ -10,9 +10,13 @@ open Microsoft.FSharp.Core.OptimizedClosures
 module internal ResizeArray =
 
     let length (arr: ResizeArray<'T>) =  arr.Count
+
     let get (arr: ResizeArray<'T>) (n: int) =  arr.[n]
+
     let set (arr: ResizeArray<'T>) (n: int) (x:'T) =  arr.[n] <- x
+
     let create  (n: int) x = new ResizeArray<_> (seq { for _ in 1 .. n -> x })
+
     let init (n: int) (f: int -> 'T) =  new ResizeArray<_> (seq { for i in 0 .. n-1 -> f i })
 
     let blit (arr1: ResizeArray<'T>) start1 (arr2: ResizeArray<'T>) start2 len =
@@ -25,6 +29,7 @@ module internal ResizeArray =
             arr2.[start2+i] <- arr1.[start1 + i]
 
     let concat (arrs: ResizeArray<'T> list) = new ResizeArray<_> (seq { for arr in arrs do for x in arr do yield x })
+
     let append (arr1: ResizeArray<'T>) (arr2: ResizeArray<'T>) = concat [arr1; arr2]
 
     let sub (arr: ResizeArray<'T>) start len =
@@ -176,10 +181,13 @@ module internal ResizeArray =
         res
 
     let toArray (arr: ResizeArray<'T>) = arr.ToArray()
+
     let ofArray (arr: 'T[]) = new ResizeArray<_>(arr)
+
     let toSeq (arr: ResizeArray<'T>) = Seq.readonly arr
 
     let sort f (arr: ResizeArray<'T>) = arr.Sort (System.Comparison(f))
+
     let sortBy f (arr: ResizeArray<'T>) = arr.Sort (System.Comparison(fun x y -> compare (f x) (f y)))
 
 

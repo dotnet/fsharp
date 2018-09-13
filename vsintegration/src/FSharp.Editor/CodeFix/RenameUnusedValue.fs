@@ -47,6 +47,9 @@ type internal FSharpRenameUnusedValueCodeFixProvider
 
     override __.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
+            // Don't show code fixes for unused values, even if they are compiler-generated.
+            do! Option.guard context.Document.FSharpOptions.CodeFixes.UnusedDeclarations
+
             let document = context.Document
             let! sourceText = document.GetTextAsync()
             let ident = sourceText.ToString(context.Span)
@@ -55,9 +58,9 @@ type internal FSharpRenameUnusedValueCodeFixProvider
             // where backtickes are replaced with parens.
             if not (PrettyNaming.IsOperatorOrBacktickedName ident) && not (ident.StartsWith "``") then
                 let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
-                let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = true, sourceText = sourceText, userOpName=userOpName)
+                let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName=userOpName)
                 let m = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
-                let defines = CompilerEnvironment.GetCompilationDefinesForEditing (document.FilePath, parsingOptions)
+                let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
                 let! lexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, context.Span.Start, document.FilePath, defines, SymbolLookupKind.Greedy, false)
                 let lineText = (sourceText.Lines.GetLineFromPosition context.Span.Start).ToString()  
                 let! symbolUse = checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
@@ -69,7 +72,7 @@ type internal FSharpRenameUnusedValueCodeFixProvider
 
                     if func.IsMemberThisValue then
                         createCodeFix(context, symbolName, SR.RenameValueToDoubleUnderscore(), TextChange(context.Span, "__"))
-                    elif not func.IsMember then
+                    elif func.IsValue then
                         createCodeFix(context, symbolName, SR.RenameValueToUnderscore(), TextChange(context.Span, "_"))
                 | _ -> ()
         } 

@@ -23,3 +23,5 @@ module Test2 =
         let p1 = &&point.x
         NativePtr.read<int> p1
 
+
+    

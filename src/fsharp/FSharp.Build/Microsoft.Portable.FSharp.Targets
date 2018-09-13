@@ -15,8 +15,8 @@
 
   <!-- Cope with both .targets and .Targets on case-sensitive file-systems -->
   <!-- .targets is used by F# .NET Core SDKs, .Targets is used by F# .NET Framework SDKs -->
-  <Import Project="$(MSBuildThisFileDirectory)Microsoft.FSharp{BuildSuffix}.Targets" Condition="Exists('$(MSBuildThisFileDirectory)Microsoft.FSharp{BuildSuffix}.Targets') AND !Exists('$(MSBuildThisFileDirectory)Microsoft.FSharp{BuildSuffix}.targets')"/>
-  <Import Project="$(MSBuildThisFileDirectory)Microsoft.FSharp{BuildSuffix}.targets" Condition="Exists('$(MSBuildThisFileDirectory)Microsoft.FSharp{BuildSuffix}.targets')"/>
+  <Import Project="$(MSBuildThisFileDirectory)Microsoft.FSharp.Targets" Condition="Exists('$(MSBuildThisFileDirectory)Microsoft.FSharp.Targets') AND !Exists('$(MSBuildThisFileDirectory)Microsoft.FSharp.targets')"/>
+  <Import Project="$(MSBuildThisFileDirectory)Microsoft.FSharp.targets" Condition="Exists('$(MSBuildThisFileDirectory)Microsoft.FSharp.targets')"/>
 
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\Microsoft.Portable.Core.targets" Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\Portable\Microsoft.Portable.Core.props')"/>
   

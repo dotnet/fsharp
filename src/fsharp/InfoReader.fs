@@ -4,8 +4,9 @@
 /// Select members from a type by name, searching the type hierarchy if needed
 module internal Microsoft.FSharp.Compiler.InfoReader
 
+open System.Collections.Generic
+
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 open Microsoft.FSharp.Compiler 
@@ -41,18 +42,16 @@ let private SelectImmediateMemberVals g optFilter f (tcref:TyconRef) =
 let private checkFilter optFilter (nm:string) = match optFilter with None -> true | Some n2 -> nm = n2
 
 /// Try to select an F# value when querying members, and if so return a MethInfo that wraps the F# value.
-let TrySelectMemberVal g optFilter typ pri _membInfo (vref:ValRef) =
+let TrySelectMemberVal g optFilter ty pri _membInfo (vref:ValRef) =
     if checkFilter optFilter vref.LogicalName then 
-        Some(FSMeth(g,typ,vref,pri))
+        Some(FSMeth(g,ty,vref,pri))
     else 
         None
 
-/// Query the immediate methods of an F# type, not taking into account inherited methods. The optFilter
-/// parameter is an optional name to restrict the set of properties returned.
-let GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ =
-    let minfos =
+let rec GetImmediateIntrinsicMethInfosOfTypeAux (optFilter,ad) g amap m origTy metadataTy =
 
-        match metadataOfTy g typ with 
+    let minfos =
+        match metadataOfTy g metadataTy with 
 #if !NO_EXTENSIONTYPING
         | ProvidedTypeMetadata info -> 
             let st = info.ProvidedType
@@ -60,55 +59,75 @@ let GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ =
                 match optFilter with
                 | Some name ->  st.PApplyArray ((fun st -> st.GetMethods() |> Array.filter (fun mi -> mi.Name = name) ), "GetMethods", m)
                 | None -> st.PApplyArray ((fun st -> st.GetMethods()), "GetMethods", m)
-            [   for mi in meths -> ProvidedMeth(amap,mi.Coerce(m),None,m) ]
+            [   for mi in meths -> ProvidedMeth(amap, mi.Coerce(m), None, m) ]
 #endif
-        | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
-            let mdefs = tdef.Methods
-            let mdefs = (match optFilter with None -> mdefs.AsList | Some nm -> mdefs.FindByName nm)
-            mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, typ, mdef)) 
+        | ILTypeMetadata _ -> 
+            let tinfo = ILTypeInfo.FromType g origTy
+            let mdefs = tinfo.RawMetadata.Methods
+            let mdefs = match optFilter with None -> mdefs.AsList | Some nm -> mdefs.FindByName nm
+            mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, origTy, mdef)) 
+
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-            match tryDestAppTy g typ with
-            | None -> []
-            | Some tcref ->
-                SelectImmediateMemberVals g optFilter (TrySelectMemberVal g optFilter typ None) tcref
+            // Tuple types also support the methods get_Item1-8, get_Rest from the compiled tuple type.
+            // In this case convert to the .NET Tuple type that carries metadata and try again
+            if isAnyTupleTy g metadataTy then 
+                let betterMetadataTy = convertToTypeWithMetadataIfPossible g metadataTy
+                GetImmediateIntrinsicMethInfosOfTypeAux (optFilter,ad) g amap m origTy betterMetadataTy
+            // Function types support methods FSharpFunc<_,_>.FromConverter and friends from .NET metadata, 
+            // but not instance methods (you can't write "f.Invoke(x)", you have to write "f x")
+            elif isFunTy g metadataTy then 
+                let betterMetadataTy = convertToTypeWithMetadataIfPossible g metadataTy
+                GetImmediateIntrinsicMethInfosOfTypeAux (optFilter,ad) g amap m origTy betterMetadataTy
+                  |> List.filter (fun minfo -> not minfo.IsInstance)
+            else
+                match tryDestAppTy g metadataTy with
+                | None -> []
+                | Some tcref ->
+                    SelectImmediateMemberVals g optFilter (TrySelectMemberVal g optFilter origTy None) tcref
     let minfos = minfos |> List.filter (IsMethInfoAccessible amap m ad)
     minfos
+
+/// Query the immediate methods of an F# type, not taking into account inherited methods. The optFilter
+/// parameter is an optional name to restrict the set of properties returned.
+let GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m ty = 
+    GetImmediateIntrinsicMethInfosOfTypeAux (optFilter,ad) g amap m ty ty
 
 /// A helper type to help collect properties.
 ///
 /// Join up getters and setters which are not associated in the F# data structure 
-type PropertyCollector(g,amap,m,typ,optFilter,ad) = 
+type PropertyCollector(g, amap, m, ty, optFilter, ad) = 
 
     let hashIdentity = 
-        Microsoft.FSharp.Collections.HashIdentity.FromFunctions 
+        HashIdentity.FromFunctions 
             (fun (pinfo:PropInfo) -> hash pinfo.PropertyName) 
             (fun pinfo1 pinfo2 -> 
                 pinfo1.IsStatic = pinfo2.IsStatic &&
                 PropInfosEquivByNameAndPartialSig EraseNone g amap m pinfo1 pinfo2 &&
                 pinfo1.IsDefiniteFSharpOverride = pinfo2.IsDefiniteFSharpOverride )
-    let props = new System.Collections.Generic.Dictionary<PropInfo,PropInfo>(hashIdentity)
+
+    let props = new Dictionary<PropInfo,PropInfo>(hashIdentity)
+
     let add pinfo =
-        if props.ContainsKey(pinfo) then 
-            match props.[pinfo], pinfo with 
-            | FSProp (_,typ,Some vref1,_), FSProp (_,_,_,Some vref2)
-            | FSProp (_,typ,_,Some vref2), FSProp (_,_,Some vref1,_)  -> 
-                let pinfo = FSProp (g,typ,Some vref1,Some vref2)
-                props.[pinfo] <- pinfo 
-            | _ -> 
-                // This assert fires while editing bad code. We will give a warning later in check.fs
-                //assert ("unexpected case"= "")
-                ()
-        else
+        match props.TryGetValue(pinfo), pinfo with
+        | (true, FSProp (_, ty, Some vref1 ,_)), FSProp (_, _, _, Some vref2)
+        | (true, FSProp (_, ty, _, Some vref2)), FSProp (_, _, Some vref1, _) ->
+            let pinfo = FSProp (g,ty,Some vref1,Some vref2)
+            props.[pinfo] <- pinfo 
+        | (true, _), _ -> 
+            // This assert fires while editing bad code. We will give a warning later in check.fs
+            //assert ("unexpected case"= "")
+            ()
+        | _ ->
             props.[pinfo] <- pinfo
 
     member x.Collect(membInfo:ValMemberInfo,vref:ValRef) = 
         match membInfo.MemberFlags.MemberKind with 
         | MemberKind.PropertyGet ->
-            let pinfo = FSProp(g,typ,Some vref,None) 
+            let pinfo = FSProp(g,ty,Some vref,None) 
             if checkFilter optFilter vref.PropertyName && IsPropInfoAccessible g amap m ad pinfo then
                 add pinfo
         | MemberKind.PropertySet ->
-            let pinfo = FSProp(g,typ,None,Some vref)
+            let pinfo = FSProp(g,ty,None,Some vref)
             if checkFilter optFilter vref.PropertyName  && IsPropInfoAccessible g amap m ad pinfo then 
                 add pinfo
         | _ -> 
@@ -116,12 +135,10 @@ type PropertyCollector(g,amap,m,typ,optFilter,ad) =
 
     member x.Close() = [ for KeyValue(_,pinfo) in props -> pinfo ]
 
-/// Query the immediate properties of an F# type, not taking into account inherited properties. The optFilter
-/// parameter is an optional name to restrict the set of properties returned.
-let GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ =
-    let pinfos =
+let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter,ad) g amap m origTy metadataTy =
 
-        match metadataOfTy g typ with 
+    let pinfos =
+        match metadataOfTy g metadataTy with 
 #if !NO_EXTENSIONTYPING
         | ProvidedTypeMetadata info -> 
             let st = info.ProvidedType
@@ -134,37 +151,48 @@ let GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ =
                 |   None ->
                         st.PApplyArray((fun st -> st.GetProperties()), "GetProperties", m)
             matchingProps
-            |> Seq.map(fun pi -> ProvidedProp(amap,pi,m)) 
+            |> Seq.map(fun pi -> ProvidedProp(amap, pi, m)) 
             |> List.ofSeq
 #endif
-        | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
-            let tinfo = ILTypeInfo.FromType g typ
-            let pdefs = tdef.Properties
+
+        | ILTypeMetadata _ -> 
+            let tinfo = ILTypeInfo.FromType g origTy
+            let pdefs = tinfo.RawMetadata.Properties
             let pdefs = match optFilter with None -> pdefs.AsList | Some nm -> pdefs.LookupByName nm
-            pdefs |> List.map (fun pd -> ILProp(g,ILPropInfo(tinfo,pd))) 
+            pdefs |> List.map (fun pdef -> ILProp(ILPropInfo(tinfo, pdef))) 
+
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-            match tryDestAppTy g typ with
-            | None -> []
-            | Some tcref ->
-                let propCollector = new PropertyCollector(g,amap,m,typ,optFilter,ad)
-                SelectImmediateMemberVals g None
-                           (fun membInfo vref -> propCollector.Collect(membInfo,vref); None)
-                           tcref |> ignore
-                propCollector.Close()
+            // Tuple types also support the properties Item1-8, Rest from the compiled tuple type
+            // In this case convert to the .NET Tuple type that carries metadata and try again
+            if isAnyTupleTy g metadataTy || isFunTy g metadataTy then 
+                let betterMetadataTy = convertToTypeWithMetadataIfPossible g metadataTy
+                GetImmediateIntrinsicPropInfosOfTypeAux (optFilter,ad) g amap m origTy betterMetadataTy
+            else
+                match tryDestAppTy g metadataTy with
+                | None -> []
+                | Some tcref ->
+                    let propCollector = new PropertyCollector(g, amap, m, origTy, optFilter, ad)
+                    SelectImmediateMemberVals g None (fun membInfo vref -> propCollector.Collect(membInfo, vref); None) tcref |> ignore
+                    propCollector.Close()
 
     let pinfos = pinfos |> List.filter (IsPropInfoAccessible g amap m ad)
     pinfos
 
+/// Query the immediate properties of an F# type, not taking into account inherited properties. The optFilter
+/// parameter is an optional name to restrict the set of properties returned.
+let rec GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m ty =
+    GetImmediateIntrinsicPropInfosOfTypeAux (optFilter,ad) g amap m ty ty
+
 // Checks whether the given type has an indexer property.
-let IsIndexerType g amap typ = 
-    isArray1DTy g typ ||
-    isListTy g typ ||
-    match tryDestAppTy g typ with
+let IsIndexerType g amap ty = 
+    isArray1DTy g ty ||
+    isListTy g ty ||
+    match tryDestAppTy g ty with
     | Some tcref ->
         let _, entityTy = generalizeTyconRef tcref
-        let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g amap range0 entityTy 
+        let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g amap range0 entityTy
         props |> List.exists (fun x -> x.PropertyName = "Item")
-    | _ -> false
+    | None -> false
 
 
 /// Sets of methods up the hierarchy, ignoring duplicates by name and sig.
@@ -179,12 +207,12 @@ type HierarchyItem =
 
 /// An InfoReader is an object to help us read and cache infos. 
 /// We create one of these for each file we typecheck. 
-type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
+type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
 
     /// Get the declared IL fields of a type, not including inherited fields
-    let GetImmediateIntrinsicILFieldsOfType (optFilter,ad) m typ =
+    let GetImmediateIntrinsicILFieldsOfType (optFilter, ad) m ty =
         let infos =
-            match metadataOfTy g typ with 
+            match metadataOfTy g ty with 
 #if !NO_EXTENSIONTYPING
             | ProvidedTypeMetadata info -> 
                 let st = info.ProvidedType
@@ -196,9 +224,9 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
                         |   Tainted.Null -> []
                         |   fi -> [  ProvidedField(amap,fi,m) ]
 #endif
-            | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
-                let tinfo = ILTypeInfo.FromType g typ
-                let fdefs = tdef.Fields
+            | ILTypeMetadata _ -> 
+                let tinfo = ILTypeInfo.FromType g ty
+                let fdefs = tinfo.RawMetadata.Fields
                 let fdefs = match optFilter with None -> fdefs.AsList | Some nm -> fdefs.LookupByName nm
                 fdefs |> List.map (fun pd -> ILFieldInfo(tinfo,pd)) 
             | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
@@ -206,10 +234,10 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
         let infos = infos |> List.filter (IsILFieldInfoAccessible g amap m  ad)
         infos           
 
-    /// Get the declared events of a type, not including inherited events 
-    let ComputeImmediateIntrinsicEventsOfType (optFilter,ad) m typ =
+    /// Get the declared events of a type, not including inherited events, and not including F#-declared CLIEvents
+    let ComputeImmediateIntrinsicEventsOfType (optFilter, ad) m ty =
         let infos =
-            match metadataOfTy g typ with 
+            match metadataOfTy g ty with 
 #if !NO_EXTENSIONTYPING
             | ProvidedTypeMetadata info -> 
                 let st = info.ProvidedType
@@ -221,25 +249,25 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
                         |   Tainted.Null -> []
                         |   ei -> [  ProvidedEvent(amap,ei,m) ]
 #endif
-            | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
-                let tinfo = ILTypeInfo.FromType g typ
-                let edefs = tdef.Events
+            | ILTypeMetadata _ -> 
+                let tinfo = ILTypeInfo.FromType g ty
+                let edefs = tinfo.RawMetadata.Events
                 let edefs = match optFilter with None -> edefs.AsList | Some nm -> edefs.LookupByName nm
                 [ for edef in edefs   do
-                    let einfo = ILEventInfo(tinfo,edef)
-                    if IsILEventInfoAccessible g amap m ad einfo then 
-                        yield ILEvent(g,einfo) ]
+                    let ileinfo = ILEventInfo(tinfo,edef)
+                    if IsILEventInfoAccessible g amap m ad ileinfo then 
+                        yield ILEvent ileinfo ]
             | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
                 []
         infos 
 
     /// Make a reference to a record or class field
-    let MakeRecdFieldInfo g typ (tcref:TyconRef) fspec = 
-        RecdFieldInfo(argsOfAppTy g typ,tcref.MakeNestedRecdFieldRef fspec)
+    let MakeRecdFieldInfo g ty (tcref:TyconRef) fspec = 
+        RecdFieldInfo(argsOfAppTy g ty,tcref.MakeNestedRecdFieldRef fspec)
 
     /// Get the F#-declared record fields or class 'val' fields of a type
-    let GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,_ad) _m typ =
-        match tryDestAppTy g typ with 
+    let GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter, _ad) _m ty =
+        match tryDestAppTy g ty with 
         | None -> []
         | Some tcref -> 
             // Note;secret fields are not allowed in lookups here, as we're only looking
@@ -247,47 +275,47 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
             match optFilter with
             | Some nm ->
                match tcref.GetFieldByName nm with
-               | Some rfield when not rfield.IsCompilerGenerated -> [MakeRecdFieldInfo g typ tcref rfield]
+               | Some rfield when not rfield.IsCompilerGenerated -> [MakeRecdFieldInfo g ty tcref rfield]
                | _ -> []
             | None -> 
                 [ for fdef in tcref.AllFieldsArray do
                     if not fdef.IsCompilerGenerated then
-                        yield MakeRecdFieldInfo g typ tcref fdef ]
+                        yield MakeRecdFieldInfo g ty tcref fdef ]
 
 
     /// The primitive reader for the method info sets up a hierarchy
-    let GetIntrinsicMethodSetsUncached ((optFilter,ad,allowMultiIntfInst),m,typ) =
-        FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ :: acc) g amap m allowMultiIntfInst typ []
+    let GetIntrinsicMethodSetsUncached ((optFilter,ad,allowMultiIntfInst),m,ty) =
+        FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m ty :: acc) g amap m allowMultiIntfInst ty []
 
     /// The primitive reader for the property info sets up a hierarchy
-    let GetIntrinsicPropertySetsUncached ((optFilter,ad,allowMultiIntfInst),m,typ) =
-        FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ :: acc) g amap m allowMultiIntfInst typ []
+    let GetIntrinsicPropertySetsUncached ((optFilter,ad,allowMultiIntfInst),m,ty) =
+        FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m ty :: acc) g amap m allowMultiIntfInst ty []
 
-    let GetIntrinsicILFieldInfosUncached ((optFilter,ad),m,typ) =
-        FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicILFieldsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.Yes typ []
+    let GetIntrinsicILFieldInfosUncached ((optFilter,ad),m,ty) =
+        FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicILFieldsOfType (optFilter,ad) m ty @ acc) g amap m AllowMultiIntfInstantiations.Yes ty []
 
-    let GetIntrinsicEventInfosUncached ((optFilter,ad),m,typ) =
-        FoldPrimaryHierarchyOfType (fun typ acc -> ComputeImmediateIntrinsicEventsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.Yes typ []
+    let GetIntrinsicEventInfosUncached ((optFilter,ad),m,ty) =
+        FoldPrimaryHierarchyOfType (fun ty acc -> ComputeImmediateIntrinsicEventsOfType (optFilter,ad) m ty @ acc) g amap m AllowMultiIntfInstantiations.Yes ty []
 
-    let GetIntrinsicRecdOrClassFieldInfosUncached ((optFilter,ad),m,typ) =
-        FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.Yes typ []
+    let GetIntrinsicRecdOrClassFieldInfosUncached ((optFilter,ad),m,ty) =
+        FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,ad) m ty @ acc) g amap m AllowMultiIntfInstantiations.Yes ty []
     
-    let GetEntireTypeHierachyUncached (allowMultiIntfInst,m,typ) =
-        FoldEntireHierarchyOfType (fun typ acc -> typ :: acc) g amap m allowMultiIntfInst typ  [] 
+    let GetEntireTypeHierachyUncached (allowMultiIntfInst,m,ty) =
+        FoldEntireHierarchyOfType (fun ty acc -> ty :: acc) g amap m allowMultiIntfInst ty  [] 
 
-    let GetPrimaryTypeHierachyUncached (allowMultiIntfInst,m,typ) =
-        FoldPrimaryHierarchyOfType (fun typ acc -> typ :: acc) g amap m allowMultiIntfInst typ [] 
+    let GetPrimaryTypeHierachyUncached (allowMultiIntfInst,m,ty) =
+        FoldPrimaryHierarchyOfType (fun ty acc -> ty :: acc) g amap m allowMultiIntfInst ty [] 
 
     /// The primitive reader for the named items up a hierarchy
-    let GetIntrinsicNamedItemsUncached ((nm,ad),m,typ) =
+    let GetIntrinsicNamedItemsUncached ((nm,ad),m,ty) =
         if nm = ".ctor" then None else // '.ctor' lookups only ever happen via constructor syntax
         let optFilter = Some nm
-        FoldPrimaryHierarchyOfType (fun typ acc -> 
-             let minfos = GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ
-             let pinfos = GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ 
-             let finfos = GetImmediateIntrinsicILFieldsOfType (optFilter,ad) m typ 
-             let einfos = ComputeImmediateIntrinsicEventsOfType (optFilter,ad) m typ 
-             let rfinfos = GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,ad) m typ 
+        FoldPrimaryHierarchyOfType (fun ty acc -> 
+             let minfos = GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m ty
+             let pinfos = GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m ty
+             let finfos = GetImmediateIntrinsicILFieldsOfType (optFilter,ad) m ty 
+             let einfos = ComputeImmediateIntrinsicEventsOfType (optFilter,ad) m ty 
+             let rfinfos = GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,ad) m ty 
              match acc with 
              | Some(MethodItem(inheritedMethSets)) when not (isNil minfos) -> Some(MethodItem (minfos::inheritedMethSets))
              | _ when not (isNil minfos) -> Some(MethodItem ([minfos]))
@@ -302,7 +330,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
              | _ -> acc)
           g amap m 
           AllowMultiIntfInstantiations.Yes
-          typ
+          ty
           None
 
     /// Make a cache for function 'f' keyed by type (plus some additional 'flags') that only 
@@ -314,8 +342,8 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
               // Only cache closed, monomorphic types (closed = all members for the type
               // have been processed). Generic type instantiations could be processed if we had 
               // a decent hash function for these.
-              canMemoize=(fun (_flags,(_:range),typ) -> 
-                                    match stripTyEqns g typ with 
+              canMemoize=(fun (_flags,(_:range),ty) -> 
+                                    match stripTyEqns g ty with 
                                     | TType_app(tcref,[]) -> tcref.TypeContents.tcaug_closed 
                                     | _ -> false),
               
@@ -327,10 +355,10 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
                                     match stripTyEqns g typ1, stripTyEqns g typ2 with 
                                     | TType_app(tcref1,[]),TType_app(tcref2,[]) -> tyconRefEq g tcref1 tcref2
                                     | _ -> false
-                       member x.GetHashCode((flags,_,typ)) =
+                       member x.GetHashCode((flags,_,ty)) =
                                     // Ignoring the ranges - that's OK.
                                     flagsEq.GetHashCode flags + 
-                                    (match stripTyEqns g typ with 
+                                    (match stripTyEqns g ty with 
                                      | TType_app(tcref,[]) -> hash tcref.LogicalName
                                      | _ -> 0) })
 
@@ -365,36 +393,36 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
     member x.amap = amap
     
     /// Read the raw method sets of a type, including inherited ones. Cache the result for monomorphic types
-    member x.GetRawIntrinsicMethodSetsOfType (optFilter,ad,allowMultiIntfInst,m,typ) =
-        methodInfoCache.Apply(((optFilter,ad,allowMultiIntfInst),m,typ))
+    member x.GetRawIntrinsicMethodSetsOfType (optFilter,ad,allowMultiIntfInst,m,ty) =
+        methodInfoCache.Apply(((optFilter,ad,allowMultiIntfInst),m,ty))
 
     /// Read the raw property sets of a type, including inherited ones. Cache the result for monomorphic types
-    member x.GetRawIntrinsicPropertySetsOfType (optFilter,ad,allowMultiIntfInst,m,typ) =
-        propertyInfoCache.Apply(((optFilter,ad,allowMultiIntfInst),m,typ))
+    member x.GetRawIntrinsicPropertySetsOfType (optFilter,ad,allowMultiIntfInst,m,ty) =
+        propertyInfoCache.Apply(((optFilter,ad,allowMultiIntfInst),m,ty))
 
     /// Read the record or class fields of a type, including inherited ones. Cache the result for monomorphic types.
-    member x.GetRecordOrClassFieldsOfType (optFilter,ad,m,typ) =
-        recdOrClassFieldInfoCache.Apply(((optFilter,ad),m,typ))
+    member x.GetRecordOrClassFieldsOfType (optFilter,ad,m,ty) =
+        recdOrClassFieldInfoCache.Apply(((optFilter,ad),m,ty))
 
     /// Read the IL fields of a type, including inherited ones. Cache the result for monomorphic types.
-    member x.GetILFieldInfosOfType (optFilter,ad,m,typ) =
-        ilFieldInfoCache.Apply(((optFilter,ad),m,typ))
+    member x.GetILFieldInfosOfType (optFilter,ad,m,ty) =
+        ilFieldInfoCache.Apply(((optFilter,ad),m,ty))
 
-    member x.GetImmediateIntrinsicEventsOfType (optFilter,ad,m,typ) = ComputeImmediateIntrinsicEventsOfType (optFilter,ad) m typ
+    member x.GetImmediateIntrinsicEventsOfType (optFilter,ad,m,ty) = ComputeImmediateIntrinsicEventsOfType (optFilter,ad) m ty
 
     /// Read the events of a type, including inherited ones. Cache the result for monomorphic types.
-    member x.GetEventInfosOfType (optFilter,ad,m,typ) =
-        eventInfoCache.Apply(((optFilter,ad),m,typ))
+    member x.GetEventInfosOfType (optFilter,ad,m,ty) =
+        eventInfoCache.Apply(((optFilter,ad),m,ty))
 
     /// Try and find a record or class field for a type.
-    member x.TryFindRecdOrClassFieldInfoOfType (nm,m,typ) =
-        match recdOrClassFieldInfoCache.Apply((Some nm,AccessibleFromSomewhere),m,typ) with
+    member x.TryFindRecdOrClassFieldInfoOfType (nm,m,ty) =
+        match recdOrClassFieldInfoCache.Apply((Some nm,AccessibleFromSomewhere),m,ty) with
         | [] -> None
         | [single] -> Some single
         | flds ->
             // multiple fields with the same name can come from different classes,
             // so filter them by the given type name
-            match tryDestAppTy g typ with 
+            match tryDestAppTy g ty with 
             | None -> None
             | Some tcref ->
                 match flds |> List.filter (fun rfinfo -> tyconRefEq g tcref rfinfo.TyconRef) with
@@ -403,52 +431,59 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
                 | _ -> failwith "unexpected multiple fields with same name" // Because it should have been already reported as duplicate fields
 
     /// Try and find an item with the given name in a type.
-    member x.TryFindNamedItemOfType (nm,ad,m,typ) =
-        namedItemsCache.Apply(((nm,ad),m,typ))
+    member x.TryFindNamedItemOfType (nm,ad,m,ty) =
+        namedItemsCache.Apply(((nm,ad),m,ty))
 
     /// Get the super-types of a type, including interface types.
-    member x.GetEntireTypeHierachy (allowMultiIntfInst,m,typ) =
-        entireTypeHierarchyCache.Apply((allowMultiIntfInst,m,typ))
+    member x.GetEntireTypeHierachy (allowMultiIntfInst,m,ty) =
+        entireTypeHierarchyCache.Apply((allowMultiIntfInst,m,ty))
 
     /// Get the super-types of a type, excluding interface types.
-    member x.GetPrimaryTypeHierachy (allowMultiIntfInst,m,typ) =
-        primaryTypeHierarchyCache.Apply((allowMultiIntfInst,m,typ))
+    member x.GetPrimaryTypeHierachy (allowMultiIntfInst,m,ty) =
+        primaryTypeHierarchyCache.Apply((allowMultiIntfInst,m,ty))
 
 
-//-------------------------------------------------------------------------
-// Constructor infos
-
-    
 /// Get the declared constructors of any F# type
-let GetIntrinsicConstructorInfosOfType (infoReader:InfoReader) m ty = 
+let rec GetIntrinsicConstructorInfosOfTypeAux (infoReader:InfoReader) m origTy metadataTy = 
   protectAssemblyExploration [] (fun () -> 
     let g = infoReader.g
     let amap = infoReader.amap 
-    if isAppTy g ty then
-        match metadataOfTy g ty with 
+    match metadataOfTy g metadataTy with 
 #if !NO_EXTENSIONTYPING
-        | ProvidedTypeMetadata info -> 
-            let st = info.ProvidedType
-            [ for ci in st.PApplyArray((fun st -> st.GetConstructors()), "GetConstructors", m) do
-                 yield ProvidedMeth(amap,ci.Coerce(m),None,m) ]
+    | ProvidedTypeMetadata info -> 
+        let st = info.ProvidedType
+        [ for ci in st.PApplyArray((fun st -> st.GetConstructors()), "GetConstructors", m) do
+                yield ProvidedMeth(amap,ci.Coerce(m),None,m) ]
 #endif
-        | ILTypeMetadata _ -> 
-            let tinfo = ILTypeInfo.FromType g ty
-            tinfo.RawMetadata.Methods.FindByName ".ctor" 
-            |> List.filter (fun md -> match md.mdKind with MethodKind.Ctor -> true | _ -> false) 
-            |> List.map (fun mdef -> MethInfo.CreateILMeth (amap, m, ty, mdef)) 
+    | ILTypeMetadata _ -> 
+        let tinfo = ILTypeInfo.FromType g origTy
+        tinfo.RawMetadata.Methods.FindByName ".ctor" 
+        |> List.filter (fun md -> md.IsConstructor) 
+        |> List.map (fun mdef -> MethInfo.CreateILMeth (amap, m, origTy, mdef)) 
 
-        | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-            let tcref = tcrefOfAppTy g ty
-            tcref.MembersOfFSharpTyconByName 
-            |> NameMultiMap.find ".ctor"
-            |> List.choose(fun vref -> 
-                match vref.MemberInfo with 
-                | Some membInfo when (membInfo.MemberFlags.MemberKind = MemberKind.Constructor) -> Some vref 
-                | _ -> None) 
-            |> List.map (fun x -> FSMeth(g,ty,x,None)) 
-    else []
+    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
+        // Tuple types also support constructors. In this case convert to the .NET Tuple type that carries metadata and try again
+        // Function types also support constructors. In this case convert to the FSharpFunc type that carries metadata and try again
+        if isAnyTupleTy g metadataTy || isFunTy g metadataTy then 
+            let betterMetadataTy = convertToTypeWithMetadataIfPossible g metadataTy
+            GetIntrinsicConstructorInfosOfTypeAux infoReader m origTy betterMetadataTy
+        else
+            match tryDestAppTy g metadataTy with
+            | None -> []
+            | Some tcref -> 
+                tcref.MembersOfFSharpTyconByName 
+                |> NameMultiMap.find ".ctor"
+                |> List.choose(fun vref -> 
+                    match vref.MemberInfo with 
+                    | Some membInfo when (membInfo.MemberFlags.MemberKind = MemberKind.Constructor) -> Some vref 
+                    | _ -> None) 
+                |> List.map (fun x -> FSMeth(g, origTy, x, None)) 
   )    
+
+let GetIntrinsicConstructorInfosOfType infoReader m ty = 
+    GetIntrinsicConstructorInfosOfTypeAux infoReader m ty ty
+
+
 
 //-------------------------------------------------------------------------
 // Collecting methods and properties taking into account hiding rules in the hierarchy
@@ -602,7 +637,7 @@ let ExcludeHiddenOfMethInfos g amap m (minfos:MethInfo list list) =
         (fun minfo -> minfo.LogicalName)
         (fun m1 m2 -> 
              // only hide those truly from super classes 
-             not (tyconRefEq g (tcrefOfAppTy g m1.EnclosingType) (tcrefOfAppTy g m2.EnclosingType)) &&
+             not (tyconRefEq g m1.DeclaringTyconRef m2.DeclaringTyconRef) &&
              MethInfosEquivByNameAndPartialSig EraseNone true g amap m m1 m2)
         
     |> List.concat
@@ -614,26 +649,26 @@ let ExcludeHiddenOfPropInfos g amap m pinfos =
     |> List.concat
 
 /// Get the sets of intrinsic methods in the hierarchy (not including extension methods)
-let GetIntrinsicMethInfoSetsOfType (infoReader:InfoReader) (optFilter,ad,allowMultiIntfInst) findFlag m typ = 
-    infoReader.GetRawIntrinsicMethodSetsOfType(optFilter,ad,allowMultiIntfInst,m,typ)
+let GetIntrinsicMethInfoSetsOfType (infoReader:InfoReader) (optFilter,ad,allowMultiIntfInst) findFlag m ty = 
+    infoReader.GetRawIntrinsicMethodSetsOfType(optFilter,ad,allowMultiIntfInst,m,ty)
     |> FilterOverridesOfMethInfos findFlag infoReader.g infoReader.amap m
   
 /// Get the sets intrinsic properties in the hierarchy (not including extension properties)
-let GetIntrinsicPropInfoSetsOfType (infoReader:InfoReader) (optFilter,ad,allowMultiIntfInst) findFlag m typ = 
-    infoReader.GetRawIntrinsicPropertySetsOfType(optFilter,ad,allowMultiIntfInst,m,typ) 
+let GetIntrinsicPropInfoSetsOfType (infoReader:InfoReader) (optFilter,ad,allowMultiIntfInst) findFlag m ty = 
+    infoReader.GetRawIntrinsicPropertySetsOfType(optFilter,ad,allowMultiIntfInst,m,ty) 
     |> FilterOverridesOfPropInfos findFlag infoReader.g infoReader.amap m
 
 /// Get the flattened list of intrinsic methods in the hierarchy
-let GetIntrinsicMethInfosOfType infoReader (optFilter,ad,allowMultiIntfInst)  findFlag m typ = 
-    GetIntrinsicMethInfoSetsOfType infoReader (optFilter,ad,allowMultiIntfInst)  findFlag m typ |> List.concat
+let GetIntrinsicMethInfosOfType infoReader (optFilter,ad,allowMultiIntfInst)  findFlag m ty = 
+    GetIntrinsicMethInfoSetsOfType infoReader (optFilter,ad,allowMultiIntfInst)  findFlag m ty |> List.concat
   
 /// Get the flattened list of intrinsic properties in the hierarchy
-let GetIntrinsicPropInfosOfType infoReader (optFilter,ad,allowMultiIntfInst)  findFlag m typ = 
-    GetIntrinsicPropInfoSetsOfType infoReader (optFilter,ad,allowMultiIntfInst)  findFlag m typ  |> List.concat
+let GetIntrinsicPropInfosOfType infoReader (optFilter,ad,allowMultiIntfInst)  findFlag m ty = 
+    GetIntrinsicPropInfoSetsOfType infoReader (optFilter,ad,allowMultiIntfInst)  findFlag m ty  |> List.concat
 
 /// Perform type-directed name resolution of a particular named member in an F# type
-let TryFindIntrinsicNamedItemOfType (infoReader:InfoReader) (nm,ad) findFlag m typ = 
-    match infoReader.TryFindNamedItemOfType(nm, ad, m, typ) with
+let TryFindIntrinsicNamedItemOfType (infoReader:InfoReader) (nm,ad) findFlag m ty = 
+    match infoReader.TryFindNamedItemOfType(nm, ad, m, ty) with
     | Some item -> 
         match item with 
         | PropertyItem psets -> Some(PropertyItem (psets |> FilterOverridesOfPropInfos findFlag infoReader.g infoReader.amap m))
@@ -689,7 +724,7 @@ let GetSigOfFunctionForDelegate (infoReader:InfoReader) delty m ad =
     SigOfFunctionForDelegate(invokeMethInfo,compiledViewOfDelArgTys,delRetTy,fty)
 
 /// Try and interpret a delegate type as a "standard" .NET delegate type associated with an event, with a "sender" parameter.
-let TryDestStandardDelegateTyp (infoReader:InfoReader) m ad delTy =
+let TryDestStandardDelegateType (infoReader:InfoReader) m ad delTy =
     let g = infoReader.g
     let (SigOfFunctionForDelegate(_,compiledViewOfDelArgTys,delRetTy,_)) = GetSigOfFunctionForDelegate infoReader delTy m ad
     match compiledViewOfDelArgTys with 
@@ -714,7 +749,7 @@ let TryDestStandardDelegateTyp (infoReader:InfoReader) m ad delTy =
 /// (from http://msdn.microsoft.com/library/default.asp?url=/library/en-us/csref/html/vcwlkEventsTutorial.asp) 
 let IsStandardEventInfo (infoReader:InfoReader) m ad (einfo:EventInfo) =
     let dty = einfo.GetDelegateType(infoReader.amap,m)
-    match TryDestStandardDelegateTyp infoReader m ad dty with
+    match TryDestStandardDelegateType infoReader m ad dty with
     | Some _ -> true
     | None -> false
 
@@ -722,7 +757,7 @@ let IsStandardEventInfo (infoReader:InfoReader) m ad (einfo:EventInfo) =
 let ArgsTypOfEventInfo (infoReader:InfoReader) m ad (einfo:EventInfo)  =
     let amap = infoReader.amap
     let dty = einfo.GetDelegateType(amap,m)
-    match TryDestStandardDelegateTyp infoReader m ad dty with
+    match TryDestStandardDelegateType infoReader m ad dty with
     | Some(argtys,_) -> argtys
     | None -> error(nonStandardEventError einfo.EventName m)
 

@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:4:3:0
 }
 .assembly AsyncExpressionSteppingTest1
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.AsyncExpressionSteppingTest1
 {
-  // Offset: 0x00000000 Length: 0x00000264
+  // Offset: 0x00000000 Length: 0x0000026C
 }
 .mresource public FSharpOptimizationData.AsyncExpressionSteppingTest1
 {
-  // Offset: 0x00000268 Length: 0x000000B1
+  // Offset: 0x00000270 Length: 0x000000B1
 }
 .module AsyncExpressionSteppingTest1.dll
-// MVID: {59B19208-6394-B5D4-A745-03830892B159}
+// MVID: {5AF5DDAE-6394-B5D4-A745-0383AEDDF55A}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01980000
+// Image base: 0x02880000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -59,6 +59,9 @@
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .method assembly specialname rtspecialname 
               instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@) cil managed
       {
@@ -109,7 +112,7 @@
     {
       // Code size       21 (0x15)
       .maxstack  4
-      .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@)
+      .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder V_0)
       .line 6,6 : 9,14 ''
       IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_DefaultAsyncBuilder()
       IL_0005:  stloc.0

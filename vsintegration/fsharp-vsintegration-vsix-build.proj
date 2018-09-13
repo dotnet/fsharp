@@ -5,12 +5,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <VsixProjects Include="Vsix\VisualFSharpFull\VisualFSharpFull.csproj" />
-    <VsixProjects Include="Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj" />
-    <VsixProjects Include="Vsix\VisualFSharpOpenSource\VisualFSharpOpenSource.csproj" />
+    <ProjectFiles Include="Vsix\VisualFSharpFull\VisualFSharpFull.csproj" />
+    <ProjectFiles Include="Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj" />
   </ItemGroup>
 
-  <Target Name="Build">
-    <MSBuild Projects="@(VsixProjects)" Targets="Build" Properties="Configuration=$(Configuration)" />
+  <Import Project="..\src\root.traversal.targets"/>
+
+  <Target Name="Restore">
+    <MSBuild Projects="@(ProjectFiles)" Targets="Restore" />
   </Target>
+
 </Project>

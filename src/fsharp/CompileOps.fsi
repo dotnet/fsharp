@@ -6,10 +6,9 @@ module internal Microsoft.FSharp.Compiler.CompileOps
 open System
 open System.Text
 open System.Collections.Generic
-open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
+open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
+open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.TypeChecker
@@ -17,10 +16,6 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.ReferenceResolver
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Core.CompilerServices
 #if !NO_EXTENSIONTYPING
@@ -65,10 +60,10 @@ val ComputeQualifiedNameOfFileFromUniquePath: range * string list -> Ast.Qualifi
 val PrependPathToInput: Ast.Ident list -> Ast.ParsedInput -> Ast.ParsedInput
 
 /// Checks if a module name is already given and deduplicates the name if needed.
-val DeduplicateModuleName: Dictionary<string,Set<string>> -> Set<string> -> string -> Ast.QualifiedNameOfFile -> Ast.QualifiedNameOfFile
+val DeduplicateModuleName: IDictionary<string,Set<string>> -> Set<string> -> string -> Ast.QualifiedNameOfFile -> Ast.QualifiedNameOfFile
 
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
-val DeduplicateParsedInputModuleName: Dictionary<string,Set<string>> -> Ast.ParsedInput -> Ast.ParsedInput
+val DeduplicateParsedInputModuleName: IDictionary<string,Set<string>> -> Ast.ParsedInput -> Ast.ParsedInput
 
 val ParseInput: (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLexing.Lexbuf * string option * string * isLastCompiland:(bool * bool) -> Ast.ParsedInput
 
@@ -150,11 +145,11 @@ type IRawFSharpAssemblyData =
     abstract GetInternalsVisibleToAttributes: ILGlobals  -> string list
     ///  The raw IL module definition in the assembly, if any. This is not present for cross-project references
     /// in the language service
-    abstract TryGetRawILModule: unit -> ILModuleDef option
+    abstract TryGetILModuleDef: unit -> ILModuleDef option
     abstract HasAnyFSharpSignatureDataAttribute: bool
     abstract HasMatchingFSharpSignatureDataAttribute: ILGlobals -> bool
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * byte[]) list
+    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> byte[])) list
     ///  The raw F# optimization data in the assembly, if any
     abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> byte[])) list
     ///  The table of type forwarders in the assembly
@@ -211,6 +206,7 @@ type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * Assem
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
+[<RequireQualifiedAccess>]
 type CompilerTarget = 
     | WinExe 
     | ConsoleExe 
@@ -218,9 +214,13 @@ type CompilerTarget =
     | Module
     member IsExe: bool
     
+[<RequireQualifiedAccess>]
 type ResolveAssemblyReferenceMode = 
     | Speculative 
     | ReportErrors
+
+[<RequireQualifiedAccess>]
+type CopyFSharpCoreFlag = Yes | No
 
 //----------------------------------------------------------------------------
 // TcConfig
@@ -234,13 +234,13 @@ type VersionFlag =
     member GetVersionInfo: implicitIncludeDir:string -> ILVersionInfo
     member GetVersionString: implicitIncludeDir:string -> string
 
+[<NoEquality; NoComparison>]
 type TcConfigBuilder =
     { mutable primaryAssembly: PrimaryAssembly
       mutable autoResolveOpenDirectivesToDlls: bool
       mutable noFeedback: bool
       mutable stackReserveSize: int32 option
       mutable implicitIncludeDir: string
-      mutable openBinariesInMemory: bool
       mutable openDebugInformationForLaterStaticLinking: bool
       defaultFSharpBinariesDir: string
       mutable compilingFslib: bool
@@ -263,7 +263,7 @@ type TcConfigBuilder =
       mutable referencedDLLs: AssemblyReference  list
       mutable projectReferences: IProjectReference list
       mutable knownUnresolvedReferences: UnresolvedAssemblyReference list
-      optimizeForMemory: bool
+      reduceMemoryUsage: ReduceMemoryFlag
       mutable subsystemVersion: int * int
       mutable useHighEntropyVA: bool
       mutable inputCodePage: int option
@@ -338,9 +338,7 @@ type TcConfigBuilder =
       mutable optSettings  : Optimizer.OptimizationSettings 
       mutable emitTailcalls: bool
       mutable deterministic: bool
-#if PREFERRED_UI_LANG
       mutable preferredUiLang: string option
-#endif
       mutable lcid        : int option
       mutable productNameForBannerText: string
       mutable showBanner : bool
@@ -357,13 +355,17 @@ type TcConfigBuilder =
       /// If true, indicates all type checking and code generation is in the context of fsi.exe
       isInteractive: bool 
       isInvalidationSupported: bool 
-      mutable sqmSessionGuid: System.Guid option
-      mutable sqmNumOfSourceFiles: int
-      sqmSessionStartedTime: int64
       mutable emitDebugInfoInQuotations: bool
       mutable exename: string option 
-      mutable copyFSharpCore: bool
+      mutable copyFSharpCore: CopyFSharpCoreFlag
       mutable shadowCopyReferences: bool
+
+      /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
+      /// and from which we can read the metadata. Only used when metadataOnly=true.
+      mutable tryGetMetadataSnapshot : ILReaderTryGetMetadataSnapshot
+
+      /// if true - 'let mutable x = Span.Empty', the value 'x' is a stack referring span. Used for internal testing purposes only until we get true stack spans.
+      mutable internalTestSpanStackReferring : bool
     }
 
     static member Initial: TcConfigBuilder
@@ -371,11 +373,13 @@ type TcConfigBuilder =
     static member CreateNew: 
         legacyReferenceResolver: ReferenceResolver.Resolver *
         defaultFSharpBinariesDir: string * 
-        optimizeForMemory: bool * 
+        reduceMemoryUsage: ReduceMemoryFlag * 
         implicitIncludeDir: string * 
         isInteractive: bool * 
         isInvalidationSupported: bool *
-        defaultCopyFSharpCore: bool -> TcConfigBuilder
+        defaultCopyFSharpCore: CopyFSharpCoreFlag *
+        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot 
+          -> TcConfigBuilder
 
     member DecideNames: string list -> outfile: string * pdbfile: string option * assemblyName: string 
     member TurnWarningOff: range * string -> unit
@@ -398,7 +402,6 @@ type TcConfig =
     member noFeedback: bool
     member stackReserveSize: int32 option
     member implicitIncludeDir: string
-    member openBinariesInMemory: bool
     member openDebugInformationForLaterStaticLinking: bool
     member fsharpBinariesDir: string
     member compilingFslib: bool
@@ -417,7 +420,7 @@ type TcConfig =
     member subsystemVersion: int * int
     member useHighEntropyVA: bool
     member referencedDLLs: AssemblyReference list
-    member optimizeForMemory: bool
+    member reduceMemoryUsage: ReduceMemoryFlag
     member inputCodePage: int option
     member embedResources: string list
     member errorSeverityOptions: FSharpErrorSeverityOptions
@@ -488,11 +491,7 @@ type TcConfig =
     member optSettings  : Optimizer.OptimizationSettings 
     member emitTailcalls: bool
     member deterministic: bool
-#if PREFERRED_UI_LANG
     member preferredUiLang: string option
-#else
-    member lcid        : int option
-#endif
     member optsOn       : bool 
     member productNameForBannerText: string
     member showBanner : bool
@@ -525,10 +524,7 @@ type TcConfig =
     /// File system query based on TcConfig settings
     member MakePathAbsolute: string -> string
 
-    member sqmSessionGuid: System.Guid option
-    member sqmNumOfSourceFiles: int
-    member sqmSessionStartedTime: int64
-    member copyFSharpCore: bool
+    member copyFSharpCore: CopyFSharpCoreFlag
     member shadowCopyReferences: bool
     static member Create: TcConfigBuilder * validate: bool -> TcConfig
 
@@ -580,11 +576,8 @@ type ImportedAssembly =
 [<Sealed>] 
 type TcAssemblyResolutions = 
     member GetAssemblyResolutions: unit -> AssemblyResolution list
-
     static member SplitNonFoundationalResolutions : CompilationThreadToken * TcConfig -> AssemblyResolution list * AssemblyResolution list * UnresolvedAssemblyReference list
     static member BuildFromPriorResolutions    : CompilationThreadToken * TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions 
-    
-
 
 /// Represents a table of imported assemblies with their resolutions.
 [<Sealed>] 
@@ -649,6 +642,9 @@ val WriteSignatureData: TcConfig * TcGlobals * Tastops.Remap * CcuThunk * filena
 /// Write F# optimization data as an IL resource
 val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk * Optimizer.LazyModuleInfo -> ILResource
 
+//----------------------------------------------------------------------------
+// #r and other directives
+//--------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
 // #r and other directives
@@ -711,8 +707,10 @@ type TcState =
 
     /// Get the typing environment implied by the set of implementation files checked so far
     member TcEnvFromImpls: TcEnv
-    /// The inferred contents of the assembly, containing the signatures of all implemented files.
-    member PartialAssemblySignature: ModuleOrNamespaceType
+
+    /// The inferred contents of the assembly, containing the signatures of all files.
+    // a.fsi + b.fsi + c.fsi (after checking implementation file for c.fs)
+    member CcuSig: ModuleOrNamespaceType
 
     member NextStateAfterIncrementalFragment: TcEnv -> TcState
 
@@ -725,10 +723,10 @@ val GetInitialTcState:
 /// Check one input, returned as an Eventually computation
 val TypeCheckOneInputEventually :
     checkForErrors:(unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput  
-           -> Eventually<(TcEnv * TopAttribs * TypedImplFile list) * TcState>
+           -> Eventually<(TcEnv * TopAttribs * TypedImplFile option * ModuleOrNamespaceType) * TcState>
 
 /// Finish the checking of multiple inputs 
-val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T list) list * TcState -> (TcEnv * TopAttribs * 'T list) * TcState
+val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T option * 'U) list * TcState -> (TcEnv * TopAttribs * 'T list * 'U list) * TcState
     
 /// Finish the checking of a closed set of inputs 
 val TypeCheckClosedInputSetFinish: TypedImplFile list * TcState -> TcState * TypedImplFile list
@@ -739,7 +737,7 @@ val TypeCheckClosedInputSet: CompilationThreadToken * checkForErrors: (unit -> b
 /// Check a single input and finish the checking
 val TypeCheckOneInputAndFinishEventually :
     checkForErrors: (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput 
-        -> Eventually<(TcEnv * TopAttribs * TypedImplFile list) * TcState>
+        -> Eventually<(TcEnv * TopAttribs * TypedImplFile list * ModuleOrNamespaceType list) * TcState>
 
 /// Indicates if we should report a warning
 val ReportWarning: FSharpErrorSeverityOptions -> PhasedDiagnostic -> bool
@@ -763,7 +761,6 @@ type LoadClosureInput =
       SyntaxTree: ParsedInput option
       ParseDiagnostics: (PhasedDiagnostic * bool) list 
       MetaCommandDiagnostics: (PhasedDiagnostic * bool) list  }
-
 
 [<RequireQualifiedAccess>]
 type LoadClosure = 
@@ -794,8 +791,13 @@ type LoadClosure =
       /// Diagnostics seen while processing the compiler options implied root of closure
       LoadClosureRootFileDiagnostics: (PhasedDiagnostic * bool) list }   
 
-    // Used from service.fs, when editing a script file
-    static member ComputeClosureOfSourceText: CompilationThreadToken * legacyReferenceResolver: ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework: bool -> LoadClosure
+    /// Analyze a script text and find the closure of its references. 
+    /// Used from FCS, when editing a script file.  
+    //
+    /// A temporary TcConfig is created along the way, is why this routine takes so many arguments. We want to be sure to use exactly the
+    /// same arguments as the rest of the application.
+    static member ComputeClosureOfScriptText: CompilationThreadToken * legacyReferenceResolver: ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework: bool * tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot * reduceMemoryUsage: ReduceMemoryFlag -> LoadClosure
 
-    /// Used from fsi.fs and fsc.fs, for #load and command line. The resulting references are then added to a TcConfig.
-    static member ComputeClosureOfSourceFiles: CompilationThreadToken * tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * lexResourceManager: Lexhelp.LexResourceManager -> LoadClosure
+    /// Analyze a set of script files and find the closure of their references. The resulting references are then added to the given TcConfig.
+    /// Used from fsi.fs and fsc.fs, for #load and command line. 
+    static member ComputeClosureOfScriptFiles: CompilationThreadToken * tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * lexResourceManager: Lexhelp.LexResourceManager -> LoadClosure

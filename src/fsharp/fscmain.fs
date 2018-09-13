@@ -9,7 +9,9 @@ open System.Reflection
 open System.Runtime.CompilerServices
 
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AbstractIL.IL // runningOnMono 
+open Microsoft.FSharp.Compiler.AbstractIL
+open Microsoft.FSharp.Compiler.AbstractIL.IL 
+open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader 
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Driver
 open Microsoft.FSharp.Compiler.Lib
@@ -34,9 +36,17 @@ module Driver =
         let ctok = AssumeCompilationThreadWithoutEvidence ()
 
         // Check for --pause as the very first step so that a compiler can be attached here.
-        if argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause") then 
+        let pauseFlag = argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause")
+        if pauseFlag then 
             System.Console.WriteLine("Press return to continue...")
             System.Console.ReadLine() |> ignore
+
+#if !FX_NO_APP_DOMAINS
+        let timesFlag = argv |> Array.exists  (fun x -> x = "/times" || x = "--times")
+        if timesFlag then 
+            let stats = ILBinaryReader.GetStatistics()
+            AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> printfn "STATS: #ByteArrayFile = %d, #MemoryMappedFileOpen = %d, #MemoryMappedFileClosed = %d, #RawMemoryFile = %d, #WeakByteArrayFile = %d" stats.byteFileCount stats.memoryMapFileOpenedCount stats.memoryMapFileClosedCount stats.rawMemoryFileCount stats.weakByteFileCount)
+#endif
 
         let quitProcessExiter = 
             { new Exiter with 
@@ -48,7 +58,18 @@ module Driver =
                     failwithf "%s" <| FSComp.SR.elSysEnvExitDidntExit() 
             }
 
-        mainCompile (ctok, argv, MSBuildReferenceResolver.Resolver, (*bannerAlreadyPrinted*)false, (*openBinariesInMemory*)false, (*defaultCopyFSharpCore*)true, quitProcessExiter, ConsoleLoggerProvider(), None, None)
+        let legacyReferenceResolver = 
+#if CROSS_PLATFORM_COMPILER
+            SimulatedMSBuildReferenceResolver.SimulatedMSBuildResolver
+#else
+            MSBuildReferenceResolver.Resolver
+#endif
+
+        // This is the only place where ReduceMemoryFlag.No is set. This is because fsc.exe is not a long-running process and
+        // thus we can use file-locking memory mapped files.
+        //
+        // This is also one of only two places where CopyFSharpCoreFlag.Yes is set.  The other is in LegacyHostedCompilerForTesting.
+        mainCompile (ctok, argv, legacyReferenceResolver, (*bannerAlreadyPrinted*)false, ReduceMemoryFlag.No, CopyFSharpCoreFlag.Yes, quitProcessExiter, ConsoleLoggerProvider(), None, None)
         0 
 
 [<EntryPoint>]

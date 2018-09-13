@@ -76,7 +76,7 @@ val internal p_ucref : pickler<UnionCaseRef>
 val internal p_expr : pickler<Expr>
 
 /// Serialize a TAST type
-val internal p_typ : pickler<TType>
+val internal p_ty : pickler<TType>
 
 /// Serialize a TAST description of a compilation unit
 val internal pickleCcuInfo : pickler<PickledCcuInfo>
@@ -136,7 +136,7 @@ val internal u_ucref : unpickler<UnionCaseRef>
 val internal u_expr : unpickler<Expr>
 
 /// Deserialize a TAST type
-val internal u_typ : unpickler<TType>
+val internal u_ty : unpickler<TType>
 
 /// Deserialize a TAST description of a compilation unit
 val internal unpickleCcuInfo : ReaderState -> PickledCcuInfo

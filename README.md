@@ -16,12 +16,11 @@ For historical reasons this repository is called "visualfsharp" and currently al
 
 ## Build Status
 
-|            | Ubuntu (Build) | Windows (Debug Build) | Windows (Release Tests 1) | Windows (Release Tests 2) | Windows  (Release Tests 3) |
-|:----------:|:----------------:|:----------------:|:------------------:|:-----------------------:|:---------------------:|
-|**master**  |[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ubuntu14.04)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ubuntu14.04/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/debug_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/debug_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part1_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part1_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part2_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part2_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part3_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part3_windows_nt/)|
-|**dev15.5**  |[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.5/release_ubuntu14.04)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.5/job/release_ubuntu14.04/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.5/debug_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.5/job/debug_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.5/release_ci_part1_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.5/job/release_ci_part1_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.5/release_ci_part2_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.5/job/release_ci_part2_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.5/release_ci_part3_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.5/job/release_ci_part3_windows_nt/)|
-|**dev15.6**  |[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.6/release_ubuntu14.04)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.6/job/release_ubuntu14.04/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.6/debug_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.6/job/debug_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.6/release_ci_part1_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.6/job/release_ci_part1_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.6/release_ci_part2_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.6/job/release_ci_part2_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.6/release_ci_part3_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.6/job/release_ci_part3_windows_nt/)|
-
+| Branch | Status |
+|:------:|:------:|
+|master|[![Build Status](https://dnceng.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=master)](https://dnceng.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
+|dev15.9|[![Build Status](https://dnceng.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=dev15.9)](https://dnceng.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
+|dev16.0|[![Build Status](https://dnceng.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=dev16.0)](https://dnceng.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
 
 ## Help improve the Quality of the Tools by Using the Nightly Releases of Visual F# Tools
 To setup Visual Studio to use the latest nightly releases of the Visual F# Tools:
@@ -35,6 +34,25 @@ See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) for details on b
 See [CONTRIBUTING.md](CONTRIBUTING.md) for general guidelines on the contribution process, also [how we label issues and PRs](https://github.com/dotnet/roslyn/wiki/Labels-used-for-issues)
 
 To contribute to the F# ecosystem more generally see the F# Software Foundation's [Community Projects](http://fsharp.org/community/projects/) pages.
+
+## Branches
+
+These are the branches in use:
+
+* `master` = Latest branch for OSS developers and nightly users.  
+  - Most contributions go here.
+  - Able to be built, installed and used in the latest public Visual Studio release.
+  - May contain updated F# features and logic.
+  - Used to build nightly VSIX (see above).
+  - Gets integrated into https://github.com/fsharp/fsharp to form the basis of Mono releases
+  - Gets integrated into https://github.com/fsharp/FSharp.Compiler.Service to form the basis of FSharp.Compiler.Service releases
+
+* `dev15.x`
+  - Latest release branch for the particular point release of Visual Studio.
+  - Incorporates features and fixes from master up to a particular branch point, then selective cherry-picks.
+  - May contain new features that depend on new things or fixes in the corresponding Visual Studio release.
+  - Gets integrated back into master once the corresponding Visual Studio release is made.
+  - Used to build Visual F# Tool updates
 
 
 ### Technical Documentation
@@ -61,6 +79,8 @@ For typical installs of  F#, see http://fsharp.org.
 To setup Visual Studio to use the latest nightly releases of the Visual F# Tools:
 
 https://blogs.msdn.microsoft.com/dotnet/2017/03/14/announcing-nightly-releases-for-the-visual-f-tools/
+
+If you wish to set up a *Preview* nightly atop Visual Studio preview builds, you can either [download a VSIX Manually from here](https://dotnet.myget.org/feed/fsharp-preview/package/vsix/VisualFSharp) or set up a VSIX feed in visual studio from [here](https://dotnet.myget.org/F/fsharp-preview/vsix).
 
 ### Using CI Builds
 

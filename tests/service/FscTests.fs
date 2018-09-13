@@ -1,6 +1,6 @@
 
 #if INTERACTIVE
-#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
@@ -41,38 +41,18 @@ type PEVerifier () =
     static let runsOnMono = try System.Type.GetType("Mono.Runtime") <> null with _ -> false
 
     let verifierInfo =
-#if FX_ATLEAST_PORTABLE
+#if NETCOREAPP2_0
         None
 #else           
         if runsOnMono then
             Some ("pedump", "--verify all")
         else
-            let rec tryFindFile (fileName : string) (dir : DirectoryInfo) =
-                let file = Path.Combine(dir.FullName, fileName)
-                if File.Exists file then Some file
-                else
-                    dir.GetDirectories() 
-                    |> Array.sortBy(fun d -> d.Name)
-                    |> Array.filter(fun d -> 
-                        match d.Name with 
-                        // skip old SDK directories
-                        | "v6.0" | "v6.0A" | "v7.0" | "v7.0A" | "v7.1" | "v7.1A" -> false
-                        | _ -> true)
-                    |> Array.rev // order by descending -- get latest version
-                    |> Array.tryPick (tryFindFile fileName)
-
-            let tryGetSdkDir (progFiles : Environment.SpecialFolder) =
-                let progFilesFolder = Environment.GetFolderPath(progFiles)
-                let dI = DirectoryInfo(Path.Combine(progFilesFolder, "Microsoft SDKs", "Windows"))
-                if dI.Exists then Some dI
-                else None
-
-            match Array.tryPick tryGetSdkDir [| Environment.SpecialFolder.ProgramFilesX86; Environment.SpecialFolder.ProgramFiles  |] with
-            | None -> None
-            | Some sdkDir ->
-                match tryFindFile "peverify.exe" sdkDir with
-                | None -> None
-                | Some pe -> Some (pe, "/UNIQUE /IL /NOLOGO")
+            let peverifyPath configuration =
+                Path.Combine(__SOURCE_DIRECTORY__, "..", "fsharpqa", "testenv", "src", "PEVerify", "bin", configuration, "net46", "PEVerify.exe")
+            let peverify =
+                if File.Exists(peverifyPath "Debug") then peverifyPath "Debug"
+                else peverifyPath "Release"
+            Some (peverify, "/UNIQUE /IL /NOLOGO")
 #endif
 
     static let execute (fileName : string, arguments : string) =
@@ -116,7 +96,7 @@ let checker = FSharpChecker.Create()
 /// Ensures the default FSharp.Core referenced by the F# compiler service (if none is 
 /// provided explicitly) is available in the output directory.
 let ensureDefaultFSharpCoreAvailable tmpDir  =
-#if FX_ATLEAST_PORTABLE
+#if NETCOREAPP2_0
     ignore tmpDir
 #else
     // FSharp.Compiler.Service references FSharp.Core 4.3.0.0 by default.  That's wrong? But the output won't verify

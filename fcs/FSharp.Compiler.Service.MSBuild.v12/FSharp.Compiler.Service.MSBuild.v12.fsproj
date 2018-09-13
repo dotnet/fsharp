@@ -1,47 +1,25 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<!--
-# Copyright (c) 2002-2011 Microsoft Corporation.  You must not remove this notice, or any other, from this software.
--->
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
   </PropertyGroup>
   <Import Project="..\fcs.props" />
+  <Import Project="..\netfx.props" />
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">$(MSBuildProjectDirectory)\..\..\..\</SolutionDir>
-    <OutputType>Library</OutputType>
-    <AssemblyName>FSharp.Compiler.Service.MSBuild.v12</AssemblyName>
-    <NoWarn>$(NoWarn);44;62;9</NoWarn>
-    <ProjectGuid>{8157b50e-397d-4232-a4e0-1977afc7076d}</ProjectGuid>
-    <AllowCrossTargeting>true</AllowCrossTargeting>
-    <BaseAddress>0x06800000</BaseAddress>
-    <Tailcalls>true</Tailcalls>
-    <FsLexUnicode>true</FsLexUnicode>
-    <OtherFlags>$(OtherFlags) --times</OtherFlags>
-    <NoWarn>$(NoWarn);69;65;54;61;75</NoWarn>
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\..\$(Configuration)\fcs\net45\</OutputPath>
-    <TargetFrameworkProfile />
-    <ResolveNuGetPackages>false</ResolveNuGetPackages>
-    <Prefer32Bit>true</Prefer32Bit>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <TargetFrameworks>net45</TargetFrameworks>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <OutputPath>..\..\$(Configuration.ToLower())\fcs</OutputPath>
     <DefineConstants>$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
-    <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
-    <OtherFlags>$(OtherFlags) --version:$(VersionPrefix).0</OtherFlags>
-    <!-- We target .NET 4.5 for FSharp.Compiler.Service.dll to allow broader use of this DLL -->
-    <TargetFrameworkVersion Condition=" '$(TargetFrameworkVersion)' == '' ">v4.5</TargetFrameworkVersion>
   </PropertyGroup>
-  <!-- MonoDevelop likes these here to recognise the configurations -->
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DefineConstants>DEBUG; $(DefineConstants)</DefineConstants>
-    <Optimize>false</Optimize>
-    <OtherFlags>$(OtherFlags) --no-jit-optimize --jit-tracking</OtherFlags>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <Optimize>true</Optimize>
+  <PropertyGroup>
+    <Description>Additional DLL for legacy compat for the F# compiler service.</Description>
+    <Summary>Additional DLL for legacy compat for the F# compiler service.</Summary>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Authors>Microsoft Corporation; F# community contributors</Authors>
+    <PackageLicenseUrl>https://github.com/fsharp/FSharp.Compiler.Service/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/fsharp/FSharp.Compiler.Service</PackageProjectUrl>
+    <PackageIconUrl>https://raw.github.com/fsharp/FSharp.Compiler.Service/master/misc/logo.png</PackageIconUrl>
+    <PackageTags>F#, compiler, msbuild</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\src\fsharp\MSBuildReferenceResolver.fs">
@@ -49,35 +27,33 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Xml" />
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.IO" />
+    <PackageReference Include="FSharp.Core" Version="4.1.18" />
+    <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
     <Reference Include="Microsoft.Build.Framework, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v12.0/Microsoft.Build.Framework.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\fcs\dependencies\MSBuild.v12.0\Microsoft.Build.Framework.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Microsoft.Build.Engine, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v12.0/Microsoft.Build.Engine.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\fcs\dependencies\MSBuild.v12.0\Microsoft.Build.Engine.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Microsoft.Build, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v12.0/Microsoft.Build.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\fcs\dependencies\MSBuild.v12.0\Microsoft.Build.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Microsoft.Build.Utilities.v12.0">
-      <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v12.0/Microsoft.Build.Utilities.v12.0.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\fcs\dependencies\MSBuild.v12.0\Microsoft.Build.Utilities.v12.0.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Microsoft.Build.Tasks.v12.0">
-      <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v12.0/Microsoft.Build.Tasks.v12.0.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\fcs\dependencies\MSBuild.v12.0\Microsoft.Build.Tasks.v12.0.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <!-- we build the nuget against FSHarp.Core 4.4.0.0 instead of our latest to allow use in wider range of F# tools -->
     <Reference Include="FSharp.Core">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Portable.FSharp.Core.4.1.20\lib\profiles\net40\FSharp.Core.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Portable.FSharp.Core.$(FSharpCoreFrozenPortablePackageVersion)\lib\profiles\net40\FSharp.Core.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
@@ -87,6 +63,6 @@
       <Project>{2e4d67b4-522d-4cf7-97e4-ba940f0b18f3}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets" />
 </Project>

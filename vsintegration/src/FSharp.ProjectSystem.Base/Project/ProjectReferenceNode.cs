@@ -244,7 +244,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         public void CleanProjectReferenceErrorState()
         {
-            Microsoft.VisualStudio.FSharp.LanguageService.UIThread.DoOnUIThread(() =>
+            UIThread.DoOnUIThread(() =>
                 {
                     if (projectRefError != null)
                     {
@@ -262,7 +262,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="text"></param>
         private void SetError(string text)
         {
-            Microsoft.VisualStudio.FSharp.LanguageService.UIThread.DoOnUIThread(() =>
+            UIThread.DoOnUIThread(() =>
                 {
                     // delete existing error if exists
                     CleanProjectReferenceErrorState();
@@ -295,7 +295,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         public void RefreshProjectReferenceErrorState()
         {
-            Microsoft.VisualStudio.FSharp.LanguageService.UIThread.DoOnUIThread(() =>
+            UIThread.DoOnUIThread(() =>
                 {
                     CleanProjectReferenceErrorState();
 
@@ -802,6 +802,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             if (String.Compare(otherFrameworkName.Identifier, ".NETPortable", StringComparison.OrdinalIgnoreCase) == 0)
             {
                  // we always allow references to projects that are targeted to the Portable/".NETPortable" fx family
+                return FrameworkCompatibility.Ok;
+            }
+
+            if (String.Compare(otherFrameworkName.Identifier, ".NETStandard", StringComparison.OrdinalIgnoreCase) == 0)
+            {
+                // we always allow references to projects that are targeted to the ".NETStandard" family
                 return FrameworkCompatibility.Ok;
             }
 

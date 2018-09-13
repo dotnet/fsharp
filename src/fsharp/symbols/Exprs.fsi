@@ -2,7 +2,6 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
-open System.Collections.Generic
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Tast
@@ -11,24 +10,16 @@ open Microsoft.FSharp.Compiler.CompileOps
 
 
 /// Represents the definitional contents of an assembly, as seen by the F# language
-#if COMPILER_PUBLIC_API
 type public FSharpAssemblyContents = 
-#else
-type internal FSharpAssemblyContents = 
-#endif
 
-    internal new : tcGlobals: TcGlobals * thisCcu: CcuThunk * tcImports: TcImports * mimpls: TypedImplFile list -> FSharpAssemblyContents
+    internal new : tcGlobals: TcGlobals * thisCcu: CcuThunk * thisCcuType: ModuleOrNamespaceType option * tcImports: TcImports * mimpls: TypedImplFile list -> FSharpAssemblyContents
 
     /// The contents of the implementation files in the assembly
     member ImplementationFiles:  FSharpImplementationFileContents list
 
 /// Represents the definitional contents of a single file or fragment in an assembly, as seen by the F# language
-#if COMPILER_PUBLIC_API
-and [<Class>] FSharpImplementationFileContents = 
-#else
-and [<Class>] internal FSharpImplementationFileContents = 
-#endif
-    internal new : cenv: Impl.cenv * mimpl: TypedImplFile -> FSharpImplementationFileContents
+and [<Class>] public FSharpImplementationFileContents = 
+    internal new : cenv: SymbolEnv * mimpl: TypedImplFile -> FSharpImplementationFileContents
 
     /// The qualified name acts to fully-qualify module specifications and implementations
     member QualifiedName: string
@@ -46,16 +37,15 @@ and [<Class>] internal FSharpImplementationFileContents =
     member HasExplicitEntryPoint:  bool
 
 /// Represents a declaration in an implementation file, as seen by the F# language
-#if COMPILER_PUBLIC_API
-and FSharpImplementationFileDeclaration = 
-#else
-and internal FSharpImplementationFileDeclaration = 
-#endif
-/// Represents the declaration of a type
+and public FSharpImplementationFileDeclaration = 
+
+    /// Represents the declaration of a type
     | Entity of FSharpEntity * FSharpImplementationFileDeclaration list
+
     /// Represents the declaration of a member, function or value, including the parameters and body of the member
     | MemberOrFunctionOrValue  of FSharpMemberOrFunctionOrValue * FSharpMemberOrFunctionOrValue list list * FSharpExpr
     /// Represents the declaration of a static initialization action
+
     | InitAction of FSharpExpr
 
 /// Represents a checked and reduced expression, as seen by the F# language.  The active patterns 
@@ -63,11 +53,7 @@ and internal FSharpImplementationFileDeclaration =
 ///
 /// Pattern matching is reduced to decision trees and conditional tests. Some other
 /// constructs may be represented in reduced form.
-#if COMPILER_PUBLIC_API
-and [<Sealed>]  FSharpExpr =
-#else
-and [<Sealed>]  internal FSharpExpr =
-#endif
+and [<Sealed>] public FSharpExpr =
     /// The range of the expression
     member Range : range
 
@@ -78,11 +64,7 @@ and [<Sealed>]  internal FSharpExpr =
     member ImmediateSubExpressions : FSharpExpr list
 
 /// Represents a checked method in an object expression, as seen by the F# language.  
-#if COMPILER_PUBLIC_API
-and [<Sealed>]  FSharpObjectExprOverride = 
-#else
-and [<Sealed>]  internal FSharpObjectExprOverride = 
-#endif
+and [<Sealed>] public FSharpObjectExprOverride = 
     /// The signature of the implemented abstract slot
     member Signature : FSharpAbstractSignature
 
@@ -96,11 +78,7 @@ and [<Sealed>]  internal FSharpObjectExprOverride =
     member Body : FSharpExpr
 
 /// A collection of active patterns to analyze expressions
-#if COMPILER_PUBLIC_API
-module BasicPatterns =
-#else
-module internal BasicPatterns =
-#endif
+module public BasicPatterns =
 
     /// Matches expressions which are uses of values 
     val (|Value|_|) : FSharpExpr -> FSharpMemberOrFunctionOrValue option 

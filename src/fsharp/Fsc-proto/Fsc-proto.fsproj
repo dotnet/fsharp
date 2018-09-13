@@ -10,10 +10,8 @@
     <PlatformTarget>x86</PlatformTarget>
     <OutputType>Exe</OutputType>
     <NoWarn>$(NoWarn);62</NoWarn>
-    <AssemblyName>fsc-proto</AssemblyName>
+    <AssemblyName>fsc</AssemblyName>
     <DefineConstants>NO_EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
-    <DefineConstants>BUILDING_PROTO;$(DefineConstants)</DefineConstants>
-    <DefineConstants>BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);35;44;62;9;60;86;47;1203</NoWarn>
     <BuildWith>LKG</BuildWith>
@@ -51,6 +49,12 @@
       <OtherFlags>--module Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser --open Microsoft.FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ilpars.fsy</Link>
     </FsYacc>
+    <Compile Include="..\Logger.fsi">
+      <Link>Logger.fsi</Link>
+    </Compile>
+    <Compile Include="..\Logger.fs">
+      <Link>Logger.fs</Link>
+    </Compile>
     <Compile Include="..\..\utils\reshapedreflection.fs">
       <Link>Reflection\reshapedreflection.fs</Link>
     </Compile>
@@ -438,7 +442,10 @@
     <Compile Include="..\fsc.fs">
       <Link>fsc.fs</Link>
     </Compile>
-    <Compile Include="..\MSBuildReferenceResolver.fs">
+    <Compile Include="..\SimulatedMSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' == 'true'">
+      <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
+    </Compile>
+    <Compile Include="..\MSBuildReferenceResolver.fs"  Condition="'$(MonoPackaging)' != 'true'">
       <Link>MSBuildReferenceResolver.fs</Link>
     </Compile>
     <Compile Include="..\fscmain.fs">
@@ -453,55 +460,38 @@
     <Reference Include="System.Numerics" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.DiaSymReader.PortablePdb">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.DiaSymReader.PortablePdb.1.2.0\lib\portable-net45+win8\Microsoft.DiaSymReader.PortablePdb.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.DiaSymReader">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.DiaSymReader.1.1.0\lib\portable-net45+win8\Microsoft.DiaSymReader.dll</HintPath>
-    </Reference>
     <Reference Include="System.Reflection.Metadata">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Reflection.Metadata.1.4.2\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Reflection.Metadata.$(SystemReflectionMetadataPackageVersion)\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
     </Reference>
     <Reference Include="System.Collections.Immutable">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutableVersion)\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutablePackageVersion)\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
     <Reference Include="System.ValueTuple">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.$(SystemValueTuplePackageVersion)\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
-    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' != 'true' AND '$(OS)' != 'Unix' ">
+    <Reference Include="Microsoft.Build.Framework">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Framework.$(MicrosoftBuildFrameworkPackageVersion)\lib\net46\Microsoft.Build.Framework.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.dll</HintPath>
+    <Reference Include="Microsoft.Build">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.$(MicrosoftBuildPackageVersion)\lib\net46\Microsoft.Build.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Build.Utilities.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath>
+    <Reference Include="Microsoft.Build.Utilities.Core">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Utilities.Core.$(MicrosoftBuildUtilitiesCorePackageVersion)\lib\net46\Microsoft.Build.Utilities.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
+    <Reference Include="Microsoft.Build.Tasks.Core">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.$(MicrosoftBuildTasksCorePackageVersion)\lib\net46\Microsoft.Build.Tasks.Core.dll</HintPath>
     </Reference>
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' ">
-    <Reference Include="Microsoft.Build.Framework, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
+    <Reference Include="Microsoft.Build.Tasks.Core">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.$(MicrosoftBuildTasksCorePackageVersion)\lib\net46\Microsoft.Build.Tasks.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Build.Engine, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Build, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Build.Utilities.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Build.Tasks.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
+    <Reference Include="System.IO.Compression">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.IO.Compression.$(SystemIoCompressionPackageVersion)\lib\net46\System.IO.Compression.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />

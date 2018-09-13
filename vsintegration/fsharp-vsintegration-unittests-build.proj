@@ -5,24 +5,36 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectFiles Include="tests\Salsa\VisualFSharp.Salsa.fsproj"/>
-    <ProjectFiles Include="tests\unittests\VisualFSharp.Unittests.fsproj"/>
+    <ProjectFiles Include="tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj" />
+    <ProjectFiles Include="tests\Salsa\VisualFSharp.Salsa.fsproj" />
+    <ProjectFiles Include="tests\UnitTests\VisualFSharp.UnitTests.fsproj" />
     <ProjectFiles Include="..\tests\service\data\TestTP\TestTP.fsproj" />
     <ProjectFiles Include="..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
-    <ProjectFiles Include="tests\unittests\MockTypeProviders\DefinitionLocationAttribute\DefinitionLocationAttribute.csproj" />
-    <ProjectFiles Include="tests\unittests\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist\DefinitionLocationAttributeFileDoesnotExist.csproj" />
-    <ProjectFiles Include="tests\unittests\MockTypeProviders\DefinitionLocationAttributeLineDoesnotExist\DefinitionLocationAttributeLineDoesnotExist.csproj" />
-    <ProjectFiles Include="tests\unittests\MockTypeProviders\DefinitionLocationAttributeWithSpaceInTheType\DefinitionLocationAttributeWithSpaceInTheType.csproj" />
-    <ProjectFiles Include="tests\unittests\MockTypeProviders\DummyProviderForLanguageServiceTesting\DummyProviderForLanguageServiceTesting.fsproj" />
-    <ProjectFiles Include="tests\unittests\MockTypeProviders\EditorHideMethodsAttribute\EditorHideMethodsAttribute.csproj" />
-    <ProjectFiles Include="tests\unittests\MockTypeProviders\EmptyAssembly\EmptyAssembly.fsproj" />
-    <ProjectFiles Include="tests\unittests\MockTypeProviders\XmlDocAttributeWithAdequateComment\XmlDocAttributeWithAdequateComment.csproj" />
-    <ProjectFiles Include="tests\unittests\MockTypeProviders\XmlDocAttributeWithEmptyComment\XmlDocAttributeWithEmptyComment.csproj" />
-    <ProjectFiles Include="tests\unittests\MockTypeProviders\XmlDocAttributeWithLocalizedComment\XmlDocAttributeWithLocalizedComment.csproj" />
-    <ProjectFiles Include="tests\unittests\MockTypeProviders\XmlDocAttributeWithLongComment\XmlDocAttributeWithLongComment.csproj" />
-    <ProjectFiles Include="tests\unittests\MockTypeProviders\XmlDocAttributeWithNullComment\XmlDocAttributeWithNullComment.csproj" />
+    <ProjectFiles Include="tests\MockTypeProviders\DefinitionLocationAttribute\DefinitionLocationAttribute.csproj" />
+    <ProjectFiles Include="tests\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist\DefinitionLocationAttributeFileDoesnotExist.csproj" />
+    <ProjectFiles Include="tests\MockTypeProviders\DefinitionLocationAttributeLineDoesnotExist\DefinitionLocationAttributeLineDoesnotExist.csproj" />
+    <ProjectFiles Include="tests\MockTypeProviders\DefinitionLocationAttributeWithSpaceInTheType\DefinitionLocationAttributeWithSpaceInTheType.csproj" />
+    <ProjectFiles Include="tests\MockTypeProviders\DummyProviderForLanguageServiceTesting\DummyProviderForLanguageServiceTesting.fsproj" />
+    <ProjectFiles Include="tests\MockTypeProviders\EditorHideMethodsAttribute\EditorHideMethodsAttribute.csproj" />
+    <ProjectFiles Include="tests\MockTypeProviders\EmptyAssembly\EmptyAssembly.fsproj" />
+    <ProjectFiles Include="tests\MockTypeProviders\XmlDocAttributeWithAdequateComment\XmlDocAttributeWithAdequateComment.csproj" />
+    <ProjectFiles Include="tests\MockTypeProviders\XmlDocAttributeWithEmptyComment\XmlDocAttributeWithEmptyComment.csproj" />
+    <ProjectFiles Include="tests\MockTypeProviders\XmlDocAttributeWithLocalizedComment\XmlDocAttributeWithLocalizedComment.csproj" />
+    <ProjectFiles Include="tests\MockTypeProviders\XmlDocAttributeWithLongComment\XmlDocAttributeWithLongComment.csproj" />
+    <ProjectFiles Include="tests\MockTypeProviders\XmlDocAttributeWithNullComment\XmlDocAttributeWithNullComment.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <SdkProjects Include="tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj" />
+    <SdkProjects Include="tests\Salsa\VisualFSharp.Salsa.fsproj" />
+    <SdkProjects Include="tests\UnitTests\VisualFSharp.UnitTests.fsproj" />
   </ItemGroup>
 
   <Import Project="..\src\root.traversal.targets"/>
+
+  <Target Name="Restore">
+    <MSBuild Projects="@(SdkProjects)" Targets="Restore" />
+  </Target>
+
 </Project>
 

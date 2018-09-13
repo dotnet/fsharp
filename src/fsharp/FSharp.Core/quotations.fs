@@ -990,7 +990,7 @@ module Patterns =
           let resT  = instFormal tyargTs rty 
           let methInfo = 
               try 
-#if FX_PORTABLE_OR_NETSTANDARD
+#if FX_RESHAPED_REFLECTION
                  match parentT.GetMethod(nm,argTs) with 
 #else              
                  match parentT.GetMethod(nm,staticOrInstanceBindingFlags,null,argTs,null) with 
@@ -1022,7 +1022,7 @@ module Patterns =
         let tyArgs = List.toArray tyArgs
         let methInfo = 
             try 
-#if FX_PORTABLE_OR_NETSTANDARD
+#if FX_RESHAPED_REFLECTION
                 match ty.GetMethod(nm, argTypes) with 
 #else             
                 match ty.GetMethod(nm,staticOrInstanceBindingFlags,null, argTypes,null) with 
@@ -1145,7 +1145,7 @@ module Patterns =
         let typ = mkNamedType(tc,tyargs)
         let argtyps : Type list = argTypes |> inst tyargs
         let retType : Type = retType |> inst tyargs |> removeVoid
-#if FX_PORTABLE_OR_NETSTANDARD
+#if FX_RESHAPED_REFLECTION
         try 
             typ.GetProperty(propName, staticOrInstanceBindingFlags) 
         with :? AmbiguousMatchException -> null // more than one property found with the specified name and matching binding constraints - return null to initiate manual search
@@ -1164,7 +1164,7 @@ module Patterns =
 
     let bindGenericCtor (tc:Type,argTypes:Instantiable<Type list>) =
         let argtyps =  instFormal (getGenericArguments tc) argTypes
-#if FX_PORTABLE_OR_NETSTANDARD
+#if FX_RESHAPED_REFLECTION
         let argTypes = Array.ofList argtyps
         tc.GetConstructor(argTypes) 
         |> bindCtorBySearchIfCandidateIsNull tc argTypes
@@ -1176,7 +1176,7 @@ module Patterns =
     let bindCtor (tc,argTypes:Instantiable<Type list>,tyargs) =
         let typ = mkNamedType(tc,tyargs)
         let argtyps = argTypes |> inst tyargs
-#if FX_PORTABLE_OR_NETSTANDARD
+#if FX_RESHAPED_REFLECTION
         let argTypes = Array.ofList argtyps
         typ.GetConstructor(argTypes) 
         |> bindCtorBySearchIfCandidateIsNull typ argTypes

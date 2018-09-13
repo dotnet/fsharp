@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:4:3:0
 }
 .assembly AsyncExpressionSteppingTest2
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.AsyncExpressionSteppingTest2
 {
-  // Offset: 0x00000000 Length: 0x00000264
+  // Offset: 0x00000000 Length: 0x0000026C
 }
 .mresource public FSharpOptimizationData.AsyncExpressionSteppingTest2
 {
-  // Offset: 0x00000268 Length: 0x000000B1
+  // Offset: 0x00000270 Length: 0x000000B1
 }
 .module AsyncExpressionSteppingTest2.dll
-// MVID: {59B19208-6394-D499-A745-03830892B159}
+// MVID: {5AF5DDAE-6394-D499-A745-0383AEDDF55A}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x03260000
+// Image base: 0x04520000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -96,6 +96,9 @@
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .method assembly specialname rtspecialname 
               instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x,
                                    class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@) cil managed
@@ -144,6 +147,9 @@
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .method assembly specialname rtspecialname 
               instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x,
                                    class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@) cil managed
@@ -197,7 +203,7 @@
       // Code size       29 (0x1d)
       .maxstack  5
       .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x,
-               [1] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@)
+               [1] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder V_1)
       .line 5,5 : 9,22 ''
       IL_0000:  ldc.i4.0
       IL_0001:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)

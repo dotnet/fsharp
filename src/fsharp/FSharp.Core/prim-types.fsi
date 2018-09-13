@@ -2,110 +2,108 @@
 
 #nowarn "35" // This construct is deprecated: the treatment of this operator is now handled directly by the F# compiler and its meaning may not be redefined.
 #nowarn "61" // The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.
-#nowarn "62" // The syntax 'module ... : sig .. end' is for ML compatibility. Consider using 'module ... = begin .. end'.
 
 /// <summary>Basic F# type definitions, functions and operators </summary>
 namespace Microsoft.FSharp.Core
 
     open System
 
-
     /// <summary>The type 'unit', which has only one value "()". This value is special and
     /// always uses the representation 'null'.</summary>
     type Unit =
-       interface System.IComparable
+       interface IComparable
         
     /// <summary>The type 'unit', which has only one value "()". This value is special and
     /// always uses the representation 'null'.</summary>
     and unit = Unit
 
-
-namespace Microsoft.FSharp.Core
-
-    open System
-    open System.Collections
-
     /// <summary>Indicates the relationship between a compiled entity in a CLI binary and an element in F# source code.</summary>
     type SourceConstructFlags = 
        /// <summary>Indicates that the compiled entity has no relationship to an element in F# source code.</summary>
        | None = 0
+
        /// <summary>Indicates that the compiled entity is part of the representation of an F# union type declaration.</summary>
        | SumType = 1
+
        /// <summary>Indicates that the compiled entity is part of the representation of an F# record type declaration.</summary>
        | RecordType = 2
+
        /// <summary>Indicates that the compiled entity is part of the representation of an F# class or other object type declaration.</summary>
        | ObjectType = 3
+
        /// <summary>Indicates that the compiled entity is part of the representation of an F# record or union case field declaration.</summary>
        | Field = 4
+
        /// <summary>Indicates that the compiled entity is part of the representation of an F# exception declaration.</summary>
        | Exception = 5
+
        /// <summary>Indicates that the compiled entity is part of the representation of an F# closure.</summary>
        | Closure = 6
+
        /// <summary>Indicates that the compiled entity is part of the representation of an F# module declaration.</summary>
        | Module = 7
+
        /// <summary>Indicates that the compiled entity is part of the representation of an F# union case declaration.</summary>
        | UnionCase = 8
+
        /// <summary>Indicates that the compiled entity is part of the representation of an F# value declaration.</summary>
        | Value = 9
+
        /// <summary>The mask of values related to the kind of the compiled entity.</summary>
        | KindMask = 31
+
        /// <summary>Indicates that the compiled entity had private or internal representation in F# source code.</summary>
        | NonPublicRepresentation = 32
 
     [<Flags>]
-        /// <summary>Indicates one or more adjustments to the compiled representation of an F# type or member.</summary>
+    /// <summary>Indicates one or more adjustments to the compiled representation of an F# type or member.</summary>
     type CompilationRepresentationFlags = 
+
        /// <summary>No special compilation representation.</summary>
        | None = 0
+
        /// <summary>Compile an instance member as 'static' .</summary>
        | Static = 1
+
        /// <summary>Compile a member as 'instance' even if <c>null</c> is used as a representation for this type.</summary>
        | Instance = 2
+
        /// <summary>append 'Module' to the end of a module whose name clashes with a type name in the same namespace.</summary>
        | ModuleSuffix = 4  
+
        /// <summary>Permit the use of <c>null</c> as a representation for nullary discriminators in a discriminated union.</summary>
        | UseNullAsTrueValue = 8
+
        /// <summary>Compile a property as a CLI event.</summary>
        | Event = 16
-
-#if FX_NO_ICLONEABLE
-    module ICloneableExtensions =
-        type System.Array with
-            member Clone : unit -> System.Array            
-#else
-#endif    
-       
-       
-    //-------------------------------------------------------------------------
-    // F#-specific Attributes
-
 
     /// <summary>Adding this attribute to class definition makes it sealed, which means it may not
     /// be extended or implemented.</summary>
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     type SealedAttribute =
-        inherit System.Attribute
+        inherit Attribute
         /// <summary>Creates an instance of the attribute.</summary>
         /// <returns>The created attribute.</returns>
         new : unit -> SealedAttribute
-        
-        /// <summary>The value of the attribute, indicating whether the type is sealed or not.</summary>
-        member Value: bool
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <param name="value">Indicates whether the class is sealed.</param>
         /// <returns>SealedAttribute</returns>
         new : value:bool -> SealedAttribute
+        
+        /// <summary>The value of the attribute, indicating whether the type is sealed or not.</summary>
+        member Value: bool
 
     /// <summary>Adding this attribute to class definition makes it abstract, which means it need not
     /// implement all its methods. Instances of abstract classes may not be constructed directly.</summary>
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type AbstractClassAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>AbstractClassAttribute</returns>
         new : unit -> AbstractClassAttribute
-
 
     /// <summary>Adding this attribute to the let-binding for the definition of a top-level 
     /// value makes the quotation expression that implements the value available
@@ -113,7 +111,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Parameter ||| AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.Constructor,AllowMultiple=false)>]  
     [<Sealed>]
     type ReflectedDefinitionAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>ReflectedDefinitionAttribute</returns>
         new : unit -> ReflectedDefinitionAttribute
@@ -138,7 +137,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.GenericParameter,AllowMultiple=false)>]  
     [<Sealed>]
     type EqualityConditionalOnAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>EqualityConditionalOnAttribute</returns>
         new : unit -> EqualityConditionalOnAttribute
@@ -155,7 +155,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.GenericParameter,AllowMultiple=false)>]  
     [<Sealed>]
     type ComparisonConditionalOnAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>ComparisonConditionalOnAttribute</returns>
         new : unit -> ComparisonConditionalOnAttribute
@@ -164,7 +165,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Struct,AllowMultiple=false)>]  
     [<Sealed>]
     type StructAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>StructAttribute</returns>
         new : unit -> StructAttribute
@@ -174,7 +176,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.GenericParameter ||| AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type MeasureAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>MeasureAttribute</returns>
         new : unit -> MeasureAttribute
@@ -184,7 +187,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type MeasureAnnotatedAbbreviationAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>MeasureAnnotatedAbbreviationAttribute</returns>
         new : unit -> MeasureAnnotatedAbbreviationAttribute
@@ -193,7 +197,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Interface,AllowMultiple=false)>]  
     [<Sealed>]
     type InterfaceAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>InterfaceAttribute</returns>
         new : unit -> InterfaceAttribute
@@ -202,7 +207,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type ClassAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>ClassAttribute</returns>
         new : unit -> ClassAttribute
@@ -213,7 +219,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type AllowNullLiteralAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>AllowNullLiteralAttribute</returns>
         new : unit -> AllowNullLiteralAttribute
@@ -229,7 +236,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Field,AllowMultiple=false)>]  
     [<Sealed>]
     type LiteralAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>LiteralAttribute</returns>
         new : unit -> LiteralAttribute
@@ -240,7 +248,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Property,AllowMultiple=false)>]  
     [<Sealed>]
     type CLIEventAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>CLIEventAttribute</returns>
         new : unit -> CLIEventAttribute
@@ -250,7 +259,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type CLIMutableAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>CLIMutableAttribute</returns>
         new : unit -> CLIMutableAttribute
@@ -261,9 +271,11 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultAugmentationAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>The value of the attribute, indicating whether the type has a default augmentation or not</summary>
         member Value: bool
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <param name="value">Indicates whether to generate helper members on the CLI class representing a discriminated
         /// union.</param>
@@ -275,7 +287,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Field,AllowMultiple=false)>]  
     [<Sealed>]
     type VolatileFieldAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>VolatileFieldAttribute</returns>
         new : unit -> VolatileFieldAttribute
@@ -286,7 +299,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Method,AllowMultiple=false)>]  
     [<Sealed>]
     type EntryPointAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>EntryPointAttribute</returns>
         new : unit -> EntryPointAttribute
@@ -297,7 +311,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type ReferenceEqualityAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>ReferenceEqualityAttribute</returns>
         new : unit -> ReferenceEqualityAttribute
@@ -308,7 +323,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type StructuralEqualityAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>StructuralEqualityAttribute</returns>
         new : unit -> StructuralEqualityAttribute
@@ -318,47 +334,57 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type StructuralComparisonAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>StructuralComparisonAttribute</returns>
         new : unit -> StructuralComparisonAttribute
-
 
     [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
     [<Sealed>]
     /// Indicates that a member on a computation builder type is a custom query operator,
     /// and indicates the name of that operator.
     type CustomOperationAttribute = 
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>CustomOperationAttribute</returns>
         new : name:string -> CustomOperationAttribute
+
         /// <summary>Get the name of the custom operation when used in a query or other computation expression</summary>
         member Name : string
+
         /// <summary>Indicates if the custom operation supports the use of 'into' immediately after the use of the operation in a query or other computation expression to consume the results of the operation</summary>
         member AllowIntoPattern : bool with get,set
+
         /// <summary>Indicates if the custom operation is an operation similar to a zip in a sequence computation, supporting two inputs</summary>
         member IsLikeZip : bool with get,set
+
         /// <summary>Indicates if the custom operation is an operation similar to a join in a sequence computation, supporting two inputs and a correlation constraint</summary>
         member IsLikeJoin : bool with get,set
+
         /// <summary>Indicates if the custom operation is an operation similar to a group join in a sequence computation, supporting two inputs and a correlation constraint, and generating a group</summary>
         member IsLikeGroupJoin : bool with get,set
+
         /// <summary>Indicates the name used for the 'on' part of the custom query operator for join-like operators</summary>
         member JoinConditionWord : string with get,set
+
         /// <summary>Indicates if the custom operation maintains the variable space of the query of computation expression</summary>
         member MaintainsVariableSpace : bool with get,set
+
         /// <summary>Indicates if the custom operation maintains the variable space of the query of computation expression through the use of a bind operation</summary>
         member MaintainsVariableSpaceUsingBind : bool with get,set
-        inherit System.Attribute
 
     [<AttributeUsage(AttributeTargets.Parameter,AllowMultiple=false)>]
     [<Sealed>]
     /// <summary>Indicates that, when a custom operator is used in a computation expression,
     /// a parameter is automatically parameterized by the variable space of the computation expression</summary>
     type ProjectionParameterAttribute = 
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>ProjectionParameterAttribute</returns>
         new : unit -> ProjectionParameterAttribute
-        inherit System.Attribute
+        inherit Attribute
 
     /// <summary>Adding this attribute to a type indicates it is a type where equality is an abnormal operation.
     /// This means that the type does not satisfy the F# 'equality' constraint. Within the bounds of the 
@@ -368,17 +394,18 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum,AllowMultiple=false)>]  
     [<Sealed>]
     type NoEqualityAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>NoEqualityAttribute</returns>
         new : unit -> NoEqualityAttribute
-
 
     /// <summary>Adding this attribute to a type indicates it is a type with a user-defined implementation of equality.</summary>
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct,AllowMultiple=false)>]  
     [<Sealed>]
     type CustomEqualityAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>CustomEqualityAttribute</returns>
         new : unit -> CustomEqualityAttribute
@@ -387,11 +414,11 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct,AllowMultiple=false)>]  
     [<Sealed>]
     type CustomComparisonAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>CustomComparisonAttribute</returns>
         new : unit -> CustomComparisonAttribute
-
 
     /// <summary>Adding this attribute to a type indicates it is a type where comparison is an abnormal operation.
     /// This means that the type does not satisfy the F# 'comparison' constraint. Within the bounds of the 
@@ -401,11 +428,11 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum,AllowMultiple=false)>]  
     [<Sealed>]
     type NoComparisonAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>NoComparisonAttribute</returns>
         new : unit -> NoComparisonAttribute
-
 
     /// <summary>Adding this attribute to a field declaration means that the field is 
     /// not initialized. During type checking a constraint is asserted that the field type supports 'null'. 
@@ -413,12 +440,15 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Field,AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultValueAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Indicates if a constraint is asserted that the field type supports 'null'</summary>
         member Check: bool
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>DefaultValueAttribute</returns>
         new : unit -> DefaultValueAttribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <param name="check">Indicates whether to assert that the field type supports <c>null</c>.</param>
         /// <returns>DefaultValueAttribute</returns>
@@ -428,7 +458,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Parameter,AllowMultiple=false)>]  
     [<Sealed>]
     type OptionalArgumentAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>OptionalArgumentAttribute</returns>
         new : unit -> OptionalArgumentAttribute
@@ -438,7 +469,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Method,AllowMultiple=false)>]  
     [<Sealed>]
     type RequiresExplicitTypeArgumentsAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>RequiresExplicitTypeArgumentsAttribute</returns>
         new : unit -> RequiresExplicitTypeArgumentsAttribute
@@ -448,7 +480,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Method,AllowMultiple=false)>]  
     [<Sealed>]
     type GeneralizableValueAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>GeneralizableValueAttribute</returns>
         new : unit -> GeneralizableValueAttribute
@@ -458,26 +491,30 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Class ||| AttributeTargets.Field ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum ||| AttributeTargets.Property,AllowMultiple=false)>]  
     [<Sealed>]
     type CompiledNameAttribute =
-        inherit System.Attribute
-        /// <summary>The name of the value as it appears in compiled code</summary>
-        member CompiledName: string
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <param name="compiledName">The name to use in compiled code.</param>
         /// <returns>CompiledNameAttribute</returns>
         new : compiledName:string -> CompiledNameAttribute
+
+        /// <summary>The name of the value as it appears in compiled code</summary>
+        member CompiledName: string
 
     /// <summary>Adding this attribute to a type with value 'false' disables the behaviour where F# makes the
     /// type Serializable by default.</summary>
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type AutoSerializableAttribute =
-        inherit System.Attribute
-        /// <summary>The value of the attribute, indicating whether the type is automatically marked serializable or not</summary>
-        member Value: bool
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <param name="value">Indicates whether the type should be serializable by default.</param>
         /// <returns>AutoSerializableAttribute</returns>
         new : value:bool -> AutoSerializableAttribute
+
+        /// <summary>The value of the attribute, indicating whether the type is automatically marked serializable or not</summary>
+        member Value: bool
 
     /// <summary>This attribute is added to generated assemblies to indicate the 
     /// version of the data schema used to encode additional F#
@@ -485,19 +522,23 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Assembly,AllowMultiple=false)>]  
     [<Sealed>]
     type FSharpInterfaceDataVersionAttribute =
-        inherit System.Attribute
-        /// <summary>The major version number of the F# version associated with the attribute</summary>
-        member Major: int
-        /// <summary>The minor version number of the F# version associated with the attribute</summary>
-        member Minor: int
-        /// <summary>The release number of the F# version associated with the attribute</summary>
-        member Release: int
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <param name="major">The major version number.</param>
         /// <param name="minor">The minor version number.</param>
         /// <param name="release">The release number.</param>
         /// <returns>FSharpInterfaceDataVersionAttribute</returns>
         new : major:int * minor:int * release:int -> FSharpInterfaceDataVersionAttribute
+
+        /// <summary>The major version number of the F# version associated with the attribute</summary>
+        member Major: int
+
+        /// <summary>The minor version number of the F# version associated with the attribute</summary>
+        member Minor: int
+
+        /// <summary>The release number of the F# version associated with the attribute</summary>
+        member Release: int
 
     /// <summary>This attribute is inserted automatically by the F# compiler to tag types 
     /// and methods in the generated CLI code with flags indicating the correspondence 
@@ -507,21 +548,18 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]  
     [<Sealed>]
     type CompilationMappingAttribute =
-        inherit System.Attribute
-        /// <summary>Indicates the relationship between the compiled entity and F# source code</summary>
-        member SourceConstructFlags : SourceConstructFlags
-        /// <summary>Indicates the sequence number of the entity, if any, in a linear sequence of elements with F# source code</summary>
-        member SequenceNumber : int
-        /// <summary>Indicates the variant number of the entity, if any, in a linear sequence of elements with F# source code</summary>
-        member VariantNumber : int
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <param name="sourceConstructFlags">Indicates the type of source construct.</param>
         /// <returns>CompilationMappingAttribute</returns>
         new : sourceConstructFlags:SourceConstructFlags -> CompilationMappingAttribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <param name="sourceConstructFlags">Indicates the type of source construct.</param>
         /// <returns>CompilationMappingAttribute</returns>
         new : sourceConstructFlags:SourceConstructFlags * sequenceNumber: int -> CompilationMappingAttribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <param name="sourceConstructFlags">Indicates the type of source construct.</param>
         /// <returns>CompilationMappingAttribute</returns>
@@ -531,8 +569,18 @@ namespace Microsoft.FSharp.Core
         /// <param name="typeDefinitions">Indicates the type definitions needed to resolve the source construct.</param>
         /// <returns>CompilationMappingAttribute</returns>
         new : resourceName:string * typeDefinitions:System.Type[] -> CompilationMappingAttribute
+
+        /// <summary>Indicates the relationship between the compiled entity and F# source code</summary>
+        member SourceConstructFlags : SourceConstructFlags
+
+        /// <summary>Indicates the sequence number of the entity, if any, in a linear sequence of elements with F# source code</summary>
+        member SequenceNumber : int
+
+        /// <summary>Indicates the variant number of the entity, if any, in a linear sequence of elements with F# source code</summary>
+        member VariantNumber : int
         /// <summary>Indicates the resource the source construct relates to</summary>
         member ResourceName : string
+
         /// <summary>Indicates the type definitions needed to resolve the source construct</summary>
         member TypeDefinitions : System.Type[]
 
@@ -542,13 +590,15 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]  
     [<Sealed>]
     type CompilationSourceNameAttribute =
-        inherit System.Attribute
-        /// <summary>Indicates the name of the entity in F# source code</summary>
-        member SourceName : string
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <param name="sourceName">The name of the method in source.</param>
         /// <returns>CompilationSourceNameAttribute</returns>
         new : sourceName:string -> CompilationSourceNameAttribute
+
+        /// <summary>Indicates the name of the entity in F# source code</summary>
+        member SourceName : string
 
     /// <summary>This attribute is used to adjust the runtime representation for a type. 
     /// For example, it may be used to note that the <c>null</c> representation
@@ -556,39 +606,45 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]  
     [<Sealed>]
     type CompilationRepresentationAttribute =
-        inherit System.Attribute
-        /// <summary>Indicates one or more adjustments to the compiled representation of an F# type or member</summary>
-        member Flags : CompilationRepresentationFlags
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <param name="flags">Indicates adjustments to the compiled representation of the type or member.</param>
         /// <returns>CompilationRepresentationAttribute</returns>
         new : flags:CompilationRepresentationFlags -> CompilationRepresentationAttribute
+
+        /// <summary>Indicates one or more adjustments to the compiled representation of an F# type or member</summary>
+        member Flags : CompilationRepresentationFlags
 
     /// <summary>This attribute is used to tag values that are part of an experimental library
     /// feature.</summary>
     [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]  
     [<Sealed>]
     type ExperimentalAttribute =
-        inherit System.Attribute
-        /// <summary>Indicates the warning message to be emitted when F# source code uses this construct</summary>
-        member Message: string
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <param name="message">The warning message to be emitted when code uses this construct.</param>
         /// <returns>ExperimentalAttribute</returns>
         new : message:string-> ExperimentalAttribute
+
+        /// <summary>Indicates the warning message to be emitted when F# source code uses this construct</summary>
+        member Message: string
 
     /// <summary>This attribute is generated automatically by the F# compiler to tag functions and members 
     /// that accept a partial application of some of their arguments and return a residual function</summary>
     [<AttributeUsage (AttributeTargets.Method,AllowMultiple=false)>]  
     [<Sealed>]
     type CompilationArgumentCountsAttribute =
-        inherit System.Attribute
-        /// <summary>Indicates the number of arguments in each argument group </summary>
-        member Counts: System.Collections.Generic.IEnumerable<int>
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <param name="counts">Indicates the number of arguments in each argument group.</param>
         /// <returns>CompilationArgumentCountsAttribute</returns>
         new : counts:int[] -> CompilationArgumentCountsAttribute
+
+        /// <summary>Indicates the number of arguments in each argument group </summary>
+        member Counts: System.Collections.Generic.IEnumerable<int>
 
     /// <summary>This attribute is used to mark how a type is displayed by default when using 
     /// '%A' printf formatting patterns and other two-dimensional text-based display layouts. 
@@ -597,32 +653,39 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum,AllowMultiple=false)>]  
     [<Sealed>]
     type StructuredFormatDisplayAttribute =
-        inherit System.Attribute
-        /// <summary>Indicates the text to display by default when objects of this type are displayed 
-        /// using '%A' printf formatting patterns and other two-dimensional text-based display 
-        /// layouts. </summary>
-        member Value: string
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <param name="value">Indicates the text to display when using the '%A' printf formatting.</param>
         /// <returns>StructuredFormatDisplayAttribute</returns>
         new : value:string-> StructuredFormatDisplayAttribute
 
+        /// <summary>Indicates the text to display by default when objects of this type are displayed 
+        /// using '%A' printf formatting patterns and other two-dimensional text-based display 
+        /// layouts. </summary>
+        member Value: string
+
     /// <summary>Indicates that a message should be emitted when F# source code uses this construct.</summary>
     [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]  
     [<Sealed>]
     type CompilerMessageAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
+        /// <summary>Creates an instance of the attribute.</summary>
+        new : message:string * messageNumber: int -> CompilerMessageAttribute
+
         /// <summary>Indicates the warning message to be emitted when F# source code uses this construct</summary>
         member Message: string
+
         /// <summary>Indicates the number associated with the message.</summary>
         member MessageNumber: int
+
         /// <summary>Indicates if the message should indicate a compiler error. Error numbers less than
         /// 10000 are considered reserved for use by the F# compiler and libraries.</summary>
         member IsError: bool with get,set
+
         /// <summary>Indicates if the construct should always be hidden in an editing environment.</summary>
         member IsHidden: bool with get,set
-        /// <summary>Creates an instance of the attribute.</summary>
-        new : message:string * messageNumber: int -> CompilerMessageAttribute
 
     /// <summary>This attribute is used to tag values whose use will result in the generation
     /// of unverifiable code. These values are inevitably marked 'inline' to ensure that
@@ -631,7 +694,8 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Property,AllowMultiple=false)>]  
     [<Sealed>]
     type UnverifiableAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>UnverifiableAttribute</returns>
         new : unit -> UnverifiableAttribute
@@ -644,18 +708,19 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Property,AllowMultiple=false)>]  
     [<Sealed>]
     type NoDynamicInvocationAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>NoDynamicInvocationAttribute</returns>
         new : unit -> NoDynamicInvocationAttribute
-
 
     /// <summary>This attribute is used to indicate that references to the elements of a module, record or union 
     /// type require explicit qualified access.</summary>
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type RequireQualifiedAccessAttribute =
-        inherit System.Attribute
+        inherit Attribute
+
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>RequireQualifiedAccessAttribute</returns>
         new : unit -> RequireQualifiedAccessAttribute
@@ -670,21 +735,21 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly ,AllowMultiple=true)>]  
     [<Sealed>]
     type AutoOpenAttribute =
-        inherit System.Attribute
-        /// <summary>Indicates the namespace or module to be automatically opened when an assembly is referenced
-        /// or an enclosing module opened.</summary>
-        member Path: string
+        inherit Attribute
+
         /// <summary>Creates an attribute used to mark a module as 'automatically opened' when the enclosing namespace is opened</summary>
         /// <returns>AutoOpenAttribute</returns>
         new : unit -> AutoOpenAttribute
+
         /// <summary>Creates an attribute used to mark a namespace or module path to be 'automatically opened' when an assembly is referenced</summary>
         /// <param name="path">The namespace or module to be automatically opened when an assembly is referenced
         /// or an enclosing module opened.</param>
         /// <returns>AutoOpenAttribute</returns>
         new : path:string-> AutoOpenAttribute
 
-    //-------------------------------------------------------------------------
-    // Units of measure
+        /// <summary>Indicates the namespace or module to be automatically opened when an assembly is referenced
+        /// or an enclosing module opened.</summary>
+        member Path: string
 
     [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of floating point numbers, annotated with a unit of measure. The unit
@@ -734,6 +799,55 @@ namespace Microsoft.FSharp.Core
     /// are analyzed using reflection. The type is representationally equivalent to 
     /// <c>System.Int64</c>.</summary>
     type int64<[<Measure>] 'Measure> = int64
+
+    /// <summary>Represents a managed pointer in F# code.</summary>
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
+#else
+    [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
+#endif
+    type byref<'T, 'Kind> = (# "!0&" #)
+
+    /// <summary>Represents a managed pointer in F# code. For F# 4.5+ this is considered equivalent to <c>byref&lt;'T, ByRefKinds.InOut&gt;</c></summary>
+    type byref<'T> = (# "!0&" #)
+
+    /// Represents the types of byrefs in F# 4.5+
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
+#else
+    [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
+#endif
+    module ByRefKinds = 
+
+        /// Represents a byref that can be written
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
+#else
+        [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
+#endif
+        type Out
+
+        /// Represents a byref that can be read
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
+#else
+        [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
+#endif
+        type In
+
+        /// Represents a byref that can be both read and written
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
+#else
+        [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
+#endif
+        type InOut
+
+    /// <summary>Represents a in-argument or readonly managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type inref<'T> = byref<'T, ByRefKinds.In>
+
+    /// <summary>Represents a out-argument managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type outref<'T> = byref<'T, ByRefKinds.Out>
 
     /// <summary>Language primitives associated with the F# language</summary>
     module LanguagePrimitives =
@@ -806,7 +920,6 @@ namespace Microsoft.FSharp.Core
         /// <param name="e2">The second value.</param>
         /// <returns>The maximum value.</returns>
         val inline GenericMaximum : e1:'T -> e2:'T -> 'T when 'T : comparison 
-
 
         /// <summary>Reference/physical equality. 
         /// True if the inputs are reference-equal, false otherwise.</summary>
@@ -1033,7 +1146,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="obj">The input object.</param>
             /// <returns>The managed pointer.</returns>
             [<NoDynamicInvocation>]
-            val inline ( ~& ) : obj:'T -> 'T byref
+            val inline ( ~& ) : obj:'T -> byref<'T>
 
             /// <summary>Address-of. Uses of this value may result in the generation of unverifiable code.</summary>
             /// <param name="obj">The input object.</param>
@@ -1229,11 +1342,6 @@ namespace Microsoft.FSharp.Core
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
             val inline FastCompareTuple5 : comparer:System.Collections.IComparer -> tuple1:('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> tuple2:('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> int
 
-
-namespace Microsoft.FSharp.Core
-    open System
-    open Microsoft.FSharp.Core
-
 #if FX_RESHAPED_REFLECTION
     module internal PrimReflectionAdapters =
 
@@ -1257,8 +1365,10 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`2")>]
     type Choice<'T1,'T2> = 
+
       /// <summary>Choice 1 of 2 choices</summary>
       | Choice1Of2 of 'T1 
+
       /// <summary>Choice 2 of 2 choices</summary>
       | Choice2Of2 of 'T2
     
@@ -1266,10 +1376,13 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`3")>]
     type Choice<'T1,'T2,'T3> = 
+
       /// <summary>Choice 1 of 3 choices</summary>
       | Choice1Of3 of 'T1 
+
       /// <summary>Choice 2 of 3 choices</summary>
       | Choice2Of3 of 'T2
+
       /// <summary>Choice 3 of 3 choices</summary>
       | Choice3Of3 of 'T3
     
@@ -1277,12 +1390,16 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`4")>]
     type Choice<'T1,'T2,'T3,'T4> = 
+
       /// <summary>Choice 1 of 4 choices</summary>
       | Choice1Of4 of 'T1 
+
       /// <summary>Choice 2 of 4 choices</summary>
       | Choice2Of4 of 'T2
+
       /// <summary>Choice 3 of 4 choices</summary>
       | Choice3Of4 of 'T3
+
       /// <summary>Choice 4 of 4 choices</summary>
       | Choice4Of4 of 'T4
     
@@ -1290,14 +1407,19 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`5")>]
     type Choice<'T1,'T2,'T3,'T4,'T5> = 
+
       /// <summary>Choice 1 of 5 choices</summary>
       | Choice1Of5 of 'T1 
+
       /// <summary>Choice 2 of 5 choices</summary>
       | Choice2Of5 of 'T2
+
       /// <summary>Choice 3 of 5 choices</summary>
       | Choice3Of5 of 'T3
+
       /// <summary>Choice 4 of 5 choices</summary>
       | Choice4Of5 of 'T4
+
       /// <summary>Choice 5 of 5 choices</summary>
       | Choice5Of5 of 'T5
     
@@ -1305,16 +1427,22 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`6")>]
     type Choice<'T1,'T2,'T3,'T4,'T5,'T6> = 
+
       /// <summary>Choice 1 of 6 choices</summary>
       | Choice1Of6 of 'T1 
+
       /// <summary>Choice 2 of 6 choices</summary>
       | Choice2Of6 of 'T2
+
       /// <summary>Choice 3 of 6 choices</summary>
       | Choice3Of6 of 'T3
+
       /// <summary>Choice 4 of 6 choices</summary>
       | Choice4Of6 of 'T4
+
       /// <summary>Choice 5 of 6 choices</summary>
       | Choice5Of6 of 'T5
+
       /// <summary>Choice 6 of 6 choices</summary>
       | Choice6Of6 of 'T6
     
@@ -1322,40 +1450,41 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`7")>]
     type Choice<'T1,'T2,'T3,'T4,'T5,'T6,'T7> = 
+
       /// <summary>Choice 1 of 7 choices</summary>
       | Choice1Of7 of 'T1 
+
       /// <summary>Choice 2 of 7 choices</summary>
       | Choice2Of7 of 'T2
+
       /// <summary>Choice 3 of 7 choices</summary>
       | Choice3Of7 of 'T3
+
       /// <summary>Choice 4 of 7 choices</summary>
       | Choice4Of7 of 'T4
+
       /// <summary>Choice 5 of 7 choices</summary>
       | Choice5Of7 of 'T5
+
       /// <summary>Choice 6 of 7 choices</summary>
       | Choice6Of7 of 'T6
+
       /// <summary>Choice 7 of 7 choices</summary>
       | Choice7Of7 of 'T7
-    
-    //-------------------------------------------------------------------------
-    // F# Exception Types
-
     
     /// <summary>Non-exhaustive match failures will raise the MatchFailureException exception</summary>
     [<StructuralEquality; NoComparison>]
     exception MatchFailureException of string * int * int
 
-    //-------------------------------------------------------------------------
-    // F# Function Types
-
-
     /// <summary>The CLI type used to represent F# first-class type function values. This type is for use
     /// by compiled F# code.</summary>
     [<AbstractClass>]
     type FSharpTypeFunc =
+
         /// <summary>Specialize the type function at a given type</summary>
         /// <returns>The specialized type.</returns>
         abstract Specialize<'T> : unit -> obj
+
         /// <summary>Construct an instance of an F# first class type function value </summary>
         /// <returns>FSharpTypeFunc</returns>
         new : unit -> FSharpTypeFunc
@@ -1364,15 +1493,23 @@ namespace Microsoft.FSharp.Core
     /// typically used directly, though may be used from other CLI languages.</summary>
     [<AbstractClass>]
     type FSharpFunc<'T,'U> = 
+
+        /// <summary>Construct an instance of an F# first class function value </summary> 
+        /// <returns>The created F# function.</returns> 
+        new : unit ->  FSharpFunc<'T,'U>
+ 
         /// <summary>Invoke an F# first class function value with one argument</summary>
         /// <param name="func"></param>
         /// <returns>'U</returns>
         abstract member Invoke : func:'T -> 'U
+
 #if !FX_NO_CONVERTER
+
         /// <summary>Convert an F# first class function value to a value of type <c>System.Converter</c></summary>
         /// <param name="func">The input function.</param>
         /// <returns>A System.Converter of the function type.</returns>
         static member op_Implicit : func:('T -> 'U) -> System.Converter<'T,'U>
+
         /// <summary>Convert an value of type <c>System.Converter</c> to a F# first class function value </summary>
         /// <param name="converter">The input System.Converter.</param>
         /// <returns>An F# function of the same type.</returns>
@@ -1382,11 +1519,13 @@ namespace Microsoft.FSharp.Core
         /// <param name="func">The input function.</param>
         /// <returns>System.Converter&lt;'T,'U&gt;</returns>
         static member ToConverter : func:('T -> 'U) -> System.Converter<'T,'U>
+
         /// <summary>Convert an value of type <c>System.Converter</c> to a F# first class function value </summary>
         /// <param name="converter">The input System.Converter.</param>
         /// <returns>An F# function of the same type.</returns>
         static member FromConverter : converter:System.Converter<'T,'U> -> ('T -> 'U)
 #endif
+
         /// <summary>Invoke an F# first class function value with five curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
         /// <param name="func">The input function.</param>
@@ -1397,6 +1536,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg5">The fifth arg.</param>
         /// <returns>The function result.</returns>
         static member InvokeFast : func: FSharpFunc<'T,('U -> 'V -> 'W -> 'X -> 'Y)> * arg1:'T * arg2:'U * arg3:'V * arg4:'W * arg5:'X -> 'Y
+
         /// <summary>Invoke an F# first class function value with four curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
         /// <param name="func">The input function.</param>
@@ -1406,6 +1546,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg4">The fourth arg.</param>
         /// <returns>The function result.</returns>
         static member InvokeFast : func: FSharpFunc<'T,('U -> 'V -> 'W -> 'X)> * arg1:'T * arg2:'U * arg3:'V * arg4:'W -> 'X
+
         /// <summary>Invoke an F# first class function value with three curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
         /// <param name="func">The input function.</param>
@@ -1414,6 +1555,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg3">The third arg.</param>
         /// <returns>The function result.</returns>
         static member InvokeFast : func: FSharpFunc<'T,('U -> 'V -> 'W)> * arg1:'T * arg2:'U * arg3:'V -> 'W
+
         /// <summary>Invoke an F# first class function value with two curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
         /// <param name="func">The input function.</param>
@@ -1422,44 +1564,103 @@ namespace Microsoft.FSharp.Core
         /// <returns>The function result.</returns>
         static member InvokeFast : func: FSharpFunc<'T,('U -> 'V)> * arg1:'T * arg2:'U -> 'V
 
-        /// <summary>Construct an instance of an F# first class function value </summary>
-        /// <returns>The created F# function.</returns>
-        new : unit ->  FSharpFunc<'T,'U>
-
     [<AbstractClass>]
     [<Sealed>]
     /// <summary>Helper functions for converting F# first class function values to and from CLI representations
     /// of functions using delegates.</summary>
     type FuncConvert = 
+
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
-        /// <param name="action">The input action.</param>
+        /// <param name="action">The input Action delegate.</param>
         /// <returns>The F# function.</returns>
-        static member  ToFSharpFunc       : action:Action<'T>            -> ('T -> unit)
+        static member  inline ToFSharpFunc       : action:Action<'T>            -> ('T -> unit)
+
 #if !FX_NO_CONVERTER
         /// <summary>Convert the given Converter delegate object to an F# function value</summary>
-        /// <param name="converter">The input Converter.</param>
+        /// <param name="converter">The input Converter delegate.</param>
         /// <returns>The F# function.</returns>
-        static member  ToFSharpFunc       : converter:Converter<'T,'U>          -> ('T -> 'U)
+        static member  inline ToFSharpFunc       : converter:Converter<'T,'U>          -> ('T -> 'U)
 #endif
+
+        /// <summary>Convert the given Action delegate object to an F# function value</summary>
+        /// <param name="func">The input Action delegate.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline FromAction       : action:Action          -> (unit -> unit)
+
+        /// <summary>Convert the given Action delegate object to an F# function value</summary>
+        /// <param name="func">The input Action delegate.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline FromAction       : action:Action<'T>          -> ('T -> unit)
+
+        /// <summary>Convert the given Action delegate object to an F# function value</summary>
+        /// <param name="func">The input Action delegate.</param>
+        /// <returns>The F#funcfunction.</returns>
+        static member  inline FromAction       : action:Action<'T1,'T2>          -> ('T1 -> 'T2 -> unit)
+
+        /// <summary>Convert the given Action delegate object to an F# function value</summary>
+        /// <param name="func">The input Action delegate.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline FromAction       : action:Action<'T1,'T2,'T3>          -> ('T1 -> 'T2 -> 'T3 -> unit)
+
+        /// <summary>Convert the given Action delegate object to an F# function value</summary>
+        /// <param name="func">The input Action delegate.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline FromAction       : action:Action<'T1,'T2,'T3,'T4>          -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> unit)
+
+        /// <summary>Convert the given Action delegate object to an F# function value</summary>
+        /// <param name="func">The input Action delegate.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline FromAction       : action:Action<'T1,'T2,'T3,'T4,'T5>          -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'T5 -> unit)
+
+        /// <summary>Convert the given Func delegate object to an F# function value</summary>
+        /// <param name="func">The input Func delegate.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline FromFunc       : func:Func<'T>          -> (unit -> 'T)
+
+        /// <summary>Convert the given Func delegate object to an F# function value</summary>
+        /// <param name="func">The input Func delegate.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline FromFunc       : func:Func<'T,'U>          -> ('T -> 'U)
+
+        /// <summary>Convert the given Func delegate object to an F# function value</summary>
+        /// <param name="func">The input Func delegate.</param>
+        /// <returns>The F#funcfunction.</returns>
+        static member  inline FromFunc       : func:Func<'T1,'T2,'U>          -> ('T1 -> 'T2 -> 'U)
+
+        /// <summary>Convert the given Func delegate object to an F# function value</summary>
+        /// <param name="func">The input Func delegate.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline FromFunc       : func:Func<'T1,'T2,'T3,'U>          -> ('T1 -> 'T2 -> 'T3 -> 'U)
+
+        /// <summary>Convert the given Func delegate object to an F# function value</summary>
+        /// <param name="func">The input Func delegate.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline FromFunc       : func:Func<'T1,'T2,'T3,'T4,'U>          -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'U)
+
+        /// <summary>Convert the given Func delegate object to an F# function value</summary>
+        /// <param name="func">The input Func delegate.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline FromFunc       : func:Func<'T1,'T2,'T3,'T4,'T5,'U>          -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'T5 -> 'U)
+
         /// <summary>A utility function to convert function values from tupled to curried form</summary>
         /// <param name="func">The input tupled function.</param>
         /// <returns>The output curried function.</returns>
-        static member FuncFromTupled : func:('T1 * 'T2 -> 'U) -> ('T1 -> 'T2 -> 'U)
+        static member inline FuncFromTupled : func:('T1 * 'T2 -> 'U) -> ('T1 -> 'T2 -> 'U)
         
         /// <summary>A utility function to convert function values from tupled to curried form</summary>
         /// <param name="func">The input tupled function.</param>
         /// <returns>The output curried function.</returns>
-        static member FuncFromTupled : func:('T1 * 'T2 * 'T3 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'U)
+        static member inline FuncFromTupled : func:('T1 * 'T2 * 'T3 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'U)
         
         /// <summary>A utility function to convert function values from tupled to curried form</summary>
         /// <param name="func">The input tupled function.</param>
         /// <returns>The output curried function.</returns>
-        static member FuncFromTupled : func:('T1 * 'T2 * 'T3 * 'T4 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'U)
+        static member inline FuncFromTupled : func:('T1 * 'T2 * 'T3 * 'T4 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'U)
         
         /// <summary>A utility function to convert function values from tupled to curried form</summary>
         /// <param name="func">The input tupled function.</param>
         /// <returns>The output curried function.</returns>
-        static member FuncFromTupled : func:('T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'T5 -> 'U)
+        static member inline FuncFromTupled : func:('T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'T5 -> 'U)
 
     /// <summary>An implementation module used to hold some private implementations of function
     /// value invocation.</summary>
@@ -1471,16 +1672,19 @@ namespace Microsoft.FSharp.Core
         [<AbstractClass>]
         type FSharpFunc<'T1,'T2,'U> = 
             inherit  FSharpFunc<'T1,('T2 -> 'U)>
+
             /// <summary>Invoke the optimized function value with two curried arguments </summary>
             /// <param name="arg1">The first arg.</param>
             /// <param name="arg2">The second arg.</param>
             /// <returns>The function result.</returns>
             abstract member Invoke : arg1:'T1 * arg2:'T2 -> 'U
+
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept two curried arguments without intervening execution. </summary>
             /// <param name="func">The input function.</param>
             /// <returns>The adapted function.</returns>
             static member Adapt : func:('T1 -> 'T2 -> 'U) -> FSharpFunc<'T1,'T2,'U>
+
             /// <summary>Construct an optimized function value that can accept two curried 
             /// arguments without intervening execution.</summary>
             /// <returns>The optimized function.</returns>
@@ -1491,7 +1695,9 @@ namespace Microsoft.FSharp.Core
         /// typically used directly from either F# code or from other CLI languages.</summary>
         [<AbstractClass>]
         type FSharpFunc<'T1,'T2,'T3,'U> = 
+
             inherit  FSharpFunc<'T1,('T2 -> 'T3 -> 'U)>
+
             /// <summary>Invoke an F# first class function value that accepts three curried arguments 
             /// without intervening execution</summary>
             /// <param name="arg1">The first arg.</param>
@@ -1499,11 +1705,13 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg3">The third arg.</param>
             /// <returns>The function result.</returns>
             abstract member Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 -> 'U
+
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept three curried arguments without intervening execution. </summary>
             /// <param name="func">The input function.</param>
             /// <returns>The adapted function.</returns>
             static member Adapt : func:('T1 -> 'T2 -> 'T3 -> 'U) -> FSharpFunc<'T1,'T2,'T3,'U>
+
             /// <summary>Construct an optimized function value that can accept three curried 
             /// arguments without intervening execution.</summary>
             /// <returns>The optimized function.</returns>
@@ -1515,6 +1723,7 @@ namespace Microsoft.FSharp.Core
         [<AbstractClass>]
         type FSharpFunc<'T1,'T2,'T3,'T4,'U> = 
             inherit  FSharpFunc<'T1,('T2 -> 'T3 -> 'T4 -> 'U)>
+
             /// <summary>Invoke an F# first class function value that accepts four curried arguments 
             /// without intervening execution</summary>
             /// <param name="arg1">The first arg.</param>
@@ -1523,11 +1732,13 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg4">The fourth arg.</param>
             /// <returns>The function result.</returns>
             abstract member Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 * arg4:'T4 -> 'U
+
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept four curried arguments without intervening execution. </summary>
             /// <param name="func">The input function.</param>
             /// <returns>The optimized function.</returns>
             static member Adapt : func:('T1 -> 'T2 -> 'T3 -> 'T4 -> 'U) -> FSharpFunc<'T1,'T2,'T3,'T4,'U>
+
             /// <summary>Construct an optimized function value that can accept four curried 
             /// arguments without intervening execution.</summary>
             /// <returns>The optimized function.</returns>
@@ -1539,6 +1750,7 @@ namespace Microsoft.FSharp.Core
         [<AbstractClass>]
         type FSharpFunc<'T1,'T2,'T3,'T4,'T5,'U> = 
             inherit  FSharpFunc<'T1,('T2 -> 'T3 -> 'T4 -> 'T5 -> 'U)>
+
             /// <summary>Invoke an F# first class function value that accepts five curried arguments 
             /// without intervening execution</summary>
             /// <param name="arg1">The first arg.</param>
@@ -1548,20 +1760,17 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg5">The fifth arg.</param>
             /// <returns>The function result.</returns>
             abstract member Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 * arg4:'T4 * arg5:'T5 -> 'U
+
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept five curried arguments without intervening execution. </summary>
             /// <param name="func">The input function.</param>
             /// <returns>The optimized function.</returns>
             static member Adapt : func:('T1 -> 'T2 -> 'T3 -> 'T4 -> 'T5 -> 'U) -> FSharpFunc<'T1,'T2,'T3,'T4,'T5,'U>
+
             /// <summary>Construct an optimized function value that can accept five curried 
             /// arguments without intervening execution.</summary>
             /// <returns>The optimized function.</returns>
             new : unit ->  FSharpFunc<'T1,'T2,'T3,'T4,'T5,'U>
-
-
-    //-------------------------------------------------------------------------
-    // F# Mutable Reference Cells
-
 
     /// <summary>The type of mutable references. Use the functions [!] and [:=] to get and
     /// set values of this type.</summary>
@@ -1569,17 +1778,14 @@ namespace Microsoft.FSharp.Core
     [<CompiledName("FSharpRef`1")>]
     type Ref<'T> = 
         {  /// The current value of the reference cell
-           mutable contents: 'T;}
+           mutable contents: 'T }
+
         /// <summary>The current value of the reference cell</summary>
         member Value : 'T with get,set
             
     /// <summary>The type of mutable references. Use the functions [!] and [:=] to get and
     /// set values of this type.</summary>
     and 'T ref = Ref<'T>
-
-    //-------------------------------------------------------------------------
-    // F# Option Types
-
 
     /// <summary>The type of optional values. When used from other CLI languages the
     /// empty option is the <c>null</c> value. </summary>
@@ -1596,6 +1802,7 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpOption`1")>]
     type Option<'T> =
+
         /// <summary>The representation of "No value"</summary>
         | None :       'T option
 
@@ -1639,20 +1846,49 @@ namespace Microsoft.FSharp.Core
     /// due to the use of <c>null</c> as a value representation.</remarks>
     and 'T option = Option<'T>
 
+    /// <summary>The type of optional values, represented as structs.</summary>
+    ///
+    /// <remarks>Use the constructors <c>ValueSome</c> and <c>ValueNone</c> to create values of this type.
+    /// Use the values in the <c>ValueOption</c> module to manipulate values of this type,
+    /// or pattern match against the values directly.</remarks>
+    [<StructuralEquality; StructuralComparison>]
+    [<CompiledName("FSharpValueOption`1")>]
+    [<Struct>]
+    type ValueOption<'T> =
+        /// <summary>The representation of "No value"</summary>
+        | ValueNone: 'T voption
+
+        /// <summary>The representation of "Value of type 'T"</summary>
+        /// <param name="Value">The input value.</param>
+        /// <returns>An option representing the value.</returns>
+        | ValueSome: 'T -> 'T voption
+
+        /// <summary>Get the value of a 'ValueSome' option. An InvalidOperationException is raised if the option is 'ValueNone'.</summary>
+        member Value : 'T
+
+    /// <summary>The type of optional values, represented as structs.</summary>
+    ///
+    /// <remarks>Use the constructors <c>ValueSome</c> and <c>ValueNone</c> to create values of this type.
+    /// Use the values in the <c>ValueOption</c> module to manipulate values of this type,
+    /// or pattern match against the values directly.</remarks>
+    and 'T voption = ValueOption<'T>
 
     /// <summary>Helper type for error handling without exceptions.</summary>
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpResult`2")>]
     [<Struct>]
     type Result<'T,'TError> = 
+
       /// Represents an OK or a Successful result. The code succeeded with a value of 'T.
       | Ok of ResultValue:'T 
+
       /// Represents an Error or a Failure. The code failed with a value of 'TError representing what went wrong.
       | Error of ErrorValue:'TError
 
 namespace Microsoft.FSharp.Collections
 
     open System
+    open System.Collections
     open System.Collections.Generic
     open Microsoft.FSharp.Core
 
@@ -1667,6 +1903,7 @@ namespace Microsoft.FSharp.Collections
     type List<'T> =
         | ([])  : 'T list
         | (::)  : Head: 'T * Tail: 'T list -> 'T list
+
         /// <summary>Returns an empty list of a particular type</summary>
         static member Empty : 'T list
         
@@ -1700,13 +1937,11 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The list with head appended to the front of tail.</returns>
         static member Cons : head:'T * tail:'T list -> 'T list
         
-        interface System.Collections.Generic.IEnumerable<'T>
-        interface System.Collections.IEnumerable
+        interface IEnumerable<'T>
+        interface IEnumerable
+        interface IReadOnlyCollection<'T>
+        interface IReadOnlyList<'T>
 
-#if !FSCORE_PORTABLE_OLD
-        interface System.Collections.Generic.IReadOnlyCollection<'T>
-#endif
-        
     /// <summary>An abbreviation for the type of immutable singly-linked lists. </summary>
     ///
     /// <remarks>Use the constructors <c>[]</c> and <c>::</c> (infix) to create values of this type, or
@@ -1720,8 +1955,6 @@ namespace Microsoft.FSharp.Collections
     /// <summary>An abbreviation for the CLI type <c>System.Collections.Generic.IEnumerable&lt;_&gt;</c></summary>
     type seq<'T> = IEnumerable<'T>
 
-
-
 namespace Microsoft.FSharp.Core
 
     open System
@@ -1729,38 +1962,10 @@ namespace Microsoft.FSharp.Core
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
 
-
     /// <summary>Basic F# Operators. This module is automatically opened in all F# code.</summary>
     [<AutoOpen>]
     module Operators = 
 
-        // Arithmetic operators. These operators are overloaded and can be used
-        // on any pair of types that satisfies the constraint, e.g. the
-        // '+' function can be used on any type that supports the "op_Addition" 
-        // constraint. This includes all CLI types that support the op_Addition 
-        // operator. The standard integral and floating point types support 
-        // constraints as follows:
-        //   - The built-in integral types are:
-        //          sbyte, byte, int16, uint16, int32, unit32, 
-        //          int64, uint64, nativeint, unativeint
-        //
-        //   - The built-in floating point types are:
-        //          float, float32
-        //
-        //   - The built-in numeric types are these combined
-        //
-        //    All built-in numeric types support:
-        //        'ty.(+)   : (ty,ty) -> ty
-        //        'ty.(-)   : (ty,ty) -> ty
-        //        'ty.( * ) : (ty,ty) -> ty
-        //        'ty.(/)   : (ty,ty) -> ty
-        //        'ty.(%)   : (ty,ty) -> ty
-        //        'ty.(~+)  : (ty)    -> ty
-        //
-        //    All signed numeric types support:
-        //        'ty.(~-)  : (ty)    -> ty
-        
-        
         /// <summary>Overloaded unary negation.</summary>
         /// <param name="n">The value to negate.</param>
         /// <returns>The result of the operation.</returns>
@@ -1889,12 +2094,14 @@ namespace Microsoft.FSharp.Core
         /// <param name="func">The function.</param>
         /// <returns>The function result.</returns>
         val inline (|>): arg:'T1 -> func:('T1 -> 'U) -> 'U
+
         /// <summary>Apply a function to two values, the values being a pair on the left, the function on the right</summary>
         /// <param name="arg1">The first argument.</param>
         /// <param name="arg2">The second argument.</param>
         /// <param name="func">The function.</param>
         /// <returns>The function result.</returns>
         val inline (||>): arg1:'T1 * arg2:'T2 -> func:('T1 -> 'T2 -> 'U) -> 'U
+
         /// <summary>Apply a function to three values, the values being a triple on the left, the function on the right</summary>
         /// <param name="arg1">The first argument.</param>
         /// <param name="arg2">The second argument.</param>
@@ -1930,6 +2137,13 @@ namespace Microsoft.FSharp.Core
         /// <returns>The argument value. If it is None, the defaultValue is returned.</returns>
         [<CompiledName("DefaultArg")>]
         val defaultArg : arg:'T option -> defaultValue:'T -> 'T 
+
+        /// <summary>Used to specify a default value for an optional argument in the implementation of a function</summary>
+        /// <param name="arg">A value option representing the argument.</param>
+        /// <param name="defaultValue">The default value of the argument.</param>
+        /// <returns>The argument value. If it is None, the defaultValue is returned.</returns>
+        [<CompiledName("DefaultValueArg")>]
+        val defaultValueArg : arg:'T voption -> defaultValue:'T -> 'T 
 
         /// <summary>Concatenate two strings. The operator '+' may also be used.</summary>
         [<CompilerMessage("This construct is for ML compatibility. Consider using the '+' operator instead. This may require a type annotation to indicate it acts on strings. This message can be disabled using '--nowarn:62' or '#nowarn \"62\"'.", 62, IsHidden=true)>]
@@ -2131,6 +2345,7 @@ namespace Microsoft.FSharp.Core
         /// <summary>Equivalent to <c>System.Single.NaN</c></summary>
         [<CompiledName("NaNSingle")>]
         val nanf: float32
+
 #if !FX_NO_SYSTEM_CONSOLE
         /// <summary>Reads the value of the property <c>System.Console.In</c>. </summary>
         [<CompiledName("ConsoleIn")>]
@@ -2523,68 +2738,6 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("KeyValuePattern")>]
         val ( |KeyValue| ): keyValuePair:KeyValuePair<'Key,'Value> -> 'Key * 'Value
 
-#if MULTI_DIMENSIONAL_EXTENSION_PROPERTIES
-        type ``[,]``<'T> with 
-            [<CompiledName("Length1")>]
-            /// <summary>Get the length of an array in the first dimension  </summary>
-            member Length1 : int
-            [<CompiledName("Length2")>]
-            /// <summary>Get the length of the array in the second dimension  </summary>
-            member Length2 : int
-            [<CompiledName("Base1")>]
-            /// <summary>Get the lower bound of the array in the first dimension  </summary>
-            member Base1 : int
-            [<CompiledName("Base2")>]
-            /// <summary>Get the lower bound of the array in the second dimension  </summary>
-            member Base2 : int
-
-        type ``[,,]``<'T> with 
-            [<CompiledName("Length1")>]
-            /// <summary>Get the length of an array in the first dimension  </summary>
-            member Length1 : int
-            [<CompiledName("Length2")>]
-            /// <summary>Get the length of an array in the second dimension  </summary>
-            member Length2 : int
-            [<CompiledName("Length3")>]
-            /// <summary>Get the length of an array in the third dimension  </summary>
-            member Length3 : int
-            [<CompiledName("Base1")>]
-            /// <summary>Get the lower bound of the array in the first dimension  </summary>
-            member Base1 : int
-            [<CompiledName("Base2")>]
-            /// <summary>Get the lower bound of the array in the second dimension  </summary>
-            member Base2 : int
-            [<CompiledName("Base3")>]
-            /// <summary>Get the lower bound of the array in the third dimension  </summary>
-            member Base3 : int
-
-        type ``[,,,]``<'T> with 
-            [<CompiledName("Length1")>]
-            /// <summary>Get the length of an array in the first dimension  </summary>
-            member Length1 : int
-            [<CompiledName("Length2")>]
-            /// <summary>Get the length of an array in the second dimension  </summary>
-            member Length2 : int
-            [<CompiledName("Length3")>]
-            /// <summary>Get the length of an array in the third dimension  </summary>
-            member Length3 : int
-            [<CompiledName("Length4")>]
-            /// <summary>Get the length of an array in the fourth dimension  </summary>
-            member Length4 : int
-            [<CompiledName("Base1")>]
-            /// <summary>Get the lower bound of the array in the first dimension  </summary>
-            member Base1 : int
-            [<CompiledName("Base2")>]
-            /// <summary>Get the lower bound of the array in the second dimension  </summary>
-            member Base2 : int
-            [<CompiledName("Base3")>]
-            /// <summary>Get the lower bound of the array in the third dimension  </summary>
-            member Base3 : int
-            [<CompiledName("Base4")>]
-            /// <summary>Get the lower bound of the array in the fourth dimension  </summary>
-            member Base4 : int
-#endif
-
         /// <summary>A module of compiler intrinsic functions for efficient implementations of F# integer ranges
         /// and dynamic invocations of other F# operators</summary>
         module OperatorIntrinsics =
@@ -2908,7 +3061,6 @@ namespace Microsoft.FSharp.Core
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
             val PowGeneric : one:'T * mul: ('T -> 'T -> 'T) * value:'T * exponent:int -> 'T
 
-
         /// <summary>This module contains basic operations which do not apply runtime and/or static checks</summary>
         module Unchecked =
 
@@ -3157,34 +3309,16 @@ namespace Microsoft.FSharp.Core
             val inline char        : value:^T -> char      when ^T : (static member op_Explicit : ^T -> char)        and default ^T : int
 
 
-
-#if NAN_INFINITY_MEASURES
-        module Measure =
-
-            /// <summary>Version of <c>System.Double.PositiveInfinity</c> that is generic in its units-of-measure</summary>
-            [<GeneralizableValue>]
-            val infinity<[<Measure>] 'Measure> : float<'Measure>
-
-            /// <summary>Version of <c>System.Double.NaN</c> that is generic in its units-of-measure</summary>
-            [<GeneralizableValue>]
-            val nan<[<Measure>] 'Measure> : float<'Measure> 
-
-            /// <summary>Version of <c>System.Single.PositiveInfinity</c> that is generic in its units-of-measure</summary>
-            [<GeneralizableValue>]
-            val infinityf<[<Measure>] 'Measure> : float32<'Measure> 
-
-            /// <summary>Version of <c>System.Single.NaN</c> that is generic in its units-of-measure</summary>
-            [<GeneralizableValue>]
-            val nanf<[<Measure>] 'Measure> : float32<'Measure>
-#endif
-
 namespace Microsoft.FSharp.Control
+
     open Microsoft.FSharp.Core
 
     /// <summary>Extensions related to Lazy values.</summary>
     [<AutoOpen>]
     module LazyExtensions =
+
         type System.Lazy<'T> with
+
             /// <summary>Creates a lazy computation that evaluates to the result of the given function when forced.</summary>
             /// <param name="creator">The function to provide the value when needed.</param>
             /// <returns>The created Lazy object.</returns>
@@ -3203,7 +3337,6 @@ namespace Microsoft.FSharp.Control
             [<CompiledName("Force")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             member Force : unit -> 'T
             
-
     /// <summary>The type of delayed computations.</summary>
     /// 
     /// <remarks>Use the values in the <c>Lazy</c> module to manipulate 
@@ -3219,18 +3352,19 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Core
     open System
 
-
     /// <summary>First class event values for arbitrary delegate types.</summary>
     ///
     /// <remarks>F# gives special status to member properties compatible with type IDelegateEvent and 
     /// tagged with the CLIEventAttribute. In this case the F# compiler generates appropriate 
     /// CLI metadata to make the member appear to other CLI languages as a CLI event.</remarks>
     type IDelegateEvent<'Delegate when 'Delegate :> System.Delegate > =
+
         /// <summary>Connect a handler delegate object to the event. A handler can
         /// be later removed using RemoveHandler. The listener will
         /// be invoked when the event is fired.</summary>
         /// <param name="handler">A delegate to be invoked when the event is fired.</param>
         abstract AddHandler: handler:'Delegate -> unit
+
         /// <summary>Remove a listener delegate from an event listener store.</summary>
         /// <param name="handler">The delegate to be removed from the event listener store.</param>
         abstract RemoveHandler: handler:'Delegate -> unit 
@@ -3241,7 +3375,6 @@ namespace Microsoft.FSharp.Control
         inherit IDelegateEvent<'Delegate>
         inherit IObservable<'Args>
     
-
     /// <summary>A delegate type associated with the F# event type <c>IEvent&lt;_&gt;</c></summary>
     /// <param name="obj">The object that fired the event.</param>
     /// <param name="args">The event arguments.</param>

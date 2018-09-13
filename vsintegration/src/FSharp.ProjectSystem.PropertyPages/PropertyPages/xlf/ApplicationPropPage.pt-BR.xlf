@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="pt-BR" original="../ApplicationPropPage.resx">
+    <body>
+      <trans-unit id="AssemblyNameLabel.Text">
+        <source>Assembly &amp;name:</source>
+        <target state="translated">&amp;Nome do Assembly:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Win32ResourceFileBrowse.Text">
+        <source>...</source>
+        <target state="translated">...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ResourcesLabel.Text">
+        <source>Specify how application resources will be managed:</source>
+        <target state="translated">Especifique como os recursos do aplicativo serão gerenciados:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ResourceLabel.Text">
+        <source>&amp;Resource File:</source>
+        <target state="translated">Arquivo Fo&amp;nte:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseStandardResourceNames.Text">
+        <source>U&amp;se standard resource names</source>
+        <target state="translated">U&amp;sar os nomes de recurso padrão</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ResourcesGroupBox.Text">
+        <source>Resources</source>
+        <target state="translated">Recursos</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputTypeLabel.Text">
+        <source>O&amp;utput type:</source>
+        <target state="translated">Tipo de &amp;saída:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetFrameworkLabel.Text">
+        <source>Tar&amp;get Framework:</source>
+        <target state="translated">Estrutura de &amp;Destino:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetFSharpCoreVersionLabel.Text">
+        <source>Target F# runtime:</source>
+        <target state="translated">Runtime F# alvo:</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

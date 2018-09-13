@@ -15,11 +15,7 @@ open Microsoft.FSharp.Primitives.Basics
 
 module internal ReflectionUtils = 
 
-#if FX_NO_SYSTEM_BINDINGFLAGS
-    type BindingFlags = Microsoft.FSharp.Core.ReflectionAdapters.BindingFlags
-#else
     type BindingFlags = System.Reflection.BindingFlags
-#endif
 
     let toBindingFlags allowAccessToNonPublicMembers =
         if allowAccessToNonPublicMembers then
@@ -59,7 +55,7 @@ module internal Impl =
 
     //-----------------------------------------------------------------
     // GENERAL UTILITIES
-#if FX_PORTABLE_OR_NETSTANDARD
+#if FX_RESHAPED_REFLECTION
     let instanceFieldFlags = BindingFlags.Instance 
     let instancePropertyFlags = BindingFlags.Instance 
     let staticPropertyFlags = BindingFlags.Static
@@ -79,7 +75,7 @@ module internal Impl =
     let getInstancePropertyReader (typ: Type,propName,bindingFlags) =
         match getInstancePropertyInfo(typ, propName, bindingFlags) with
         | null -> None
-#if FX_PORTABLE_OR_NETSTANDARD
+#if FX_RESHAPED_REFLECTION
         | prop -> Some(fun (obj:obj) -> prop.GetValue(obj,null))
 #else        
         | prop -> Some(fun (obj:obj) -> prop.GetValue(obj,instancePropertyFlags ||| bindingFlags,null,null,null))
@@ -288,7 +284,7 @@ module internal Impl =
 
     let getUnionCaseRecordReader (typ:Type,tag:int,bindingFlags) = 
         let props = fieldsPropsOfUnionCase(typ,tag,bindingFlags)
-#if FX_PORTABLE_OR_NETSTANDARD
+#if FX_RESHAPED_REFLECTION
         (fun (obj:obj) -> props |> Array.map (fun prop -> prop.GetValue(obj,null)))
 #else        
         (fun (obj:obj) -> props |> Array.map (fun prop -> prop.GetValue(obj,bindingFlags,null,null,null)))
@@ -305,7 +301,7 @@ module internal Impl =
                 | Some reader -> (fun (obj:obj) -> reader obj :?> int)
                 | None -> 
                     (fun (obj:obj) -> 
-#if FX_PORTABLE_OR_NETSTANDARD
+#if FX_RESHAPED_REFLECTION
                         let m2b = typ.GetMethod("GetTag", [| typ |])
 #else                    
                         let m2b = typ.GetMethod("GetTag", BindingFlags.Static ||| bindingFlags, null, [| typ |], null)
@@ -314,7 +310,7 @@ module internal Impl =
         
     let getUnionTagMemberInfo (typ:Type,bindingFlags) = 
         match getInstancePropertyInfo (typ,"Tag",bindingFlags) with
-#if FX_PORTABLE_OR_NETSTANDARD
+#if FX_RESHAPED_REFLECTION
         | null -> (typ.GetMethod("GetTag") :> MemberInfo)
 #else        
         | null -> (typ.GetMethod("GetTag",BindingFlags.Static ||| bindingFlags) :> MemberInfo)
@@ -338,7 +334,7 @@ module internal Impl =
     let getUnionCaseConstructor (typ:Type,tag:int,bindingFlags) = 
         let meth = getUnionCaseConstructorMethod (typ,tag,bindingFlags)
         (fun args -> 
-#if FX_PORTABLE_OR_NETSTANDARD
+#if FX_RESHAPED_REFLECTION
             meth.Invoke(null,args))
 #else        
             meth.Invoke(null,BindingFlags.Static ||| BindingFlags.InvokeMethod ||| bindingFlags,null,args,null))
@@ -451,11 +447,11 @@ module internal Impl =
         //   Item1, Item2, ..., Item<maxTuple-1>
         //   Item1, Item2, ..., Item<maxTuple-1>, Rest
         // The PropertyInfo may not come back in order, so ensure ordering here.
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETSTANDARD1_6
         assert(maxTuple < 10) // Alphasort will only works for upto 9 items: Item1, Item10, Item2, Item3, ..., Item9, Rest
 #endif
         let props = props |> Array.sortBy (fun p -> p.Name) // they are not always in alphabetic order
-#if !FX_PORTABLE_OR_NETSTANDARD  
+#if !NETSTANDARD1_6  
         assert(props.Length <= maxTuple)
         assert(let haveNames   = props |> Array.map (fun p -> p.Name)
                let expectNames = Array.init props.Length (fun i -> let j = i+1 // index j = 1,2,..,props.Length <= maxTuple
@@ -473,11 +469,11 @@ module internal Impl =
         //   Item1, Item2, ..., Item<maxTuple-1>
         //   Item1, Item2, ..., Item<maxTuple-1>, Rest
         // The PropertyInfo may not come back in order, so ensure ordering here.
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETSTANDARD1_6
         assert(maxTuple < 10) // Alphasort will only works for upto 9 items: Item1, Item10, Item2, Item3, ..., Item9, Rest
 #endif
         let fields = fields |> Array.sortBy (fun fi -> fi.Name) // they are not always in alphabetic order
-#if !FX_PORTABLE_OR_NETSTANDARD  
+#if !NETSTANDARD1_6  
         assert(fields.Length <= maxTuple)
         assert(let haveNames   = fields |> Array.map (fun fi -> fi.Name)
                let expectNames = Array.init fields.Length (fun i -> let j = i+1 // index j = 1,2,..,fields.Length <= maxTuple
@@ -488,36 +484,34 @@ module internal Impl =
 #endif
         fields
 
-    let getTupleConstructorMethod(typ:Type,bindingFlags) =
+    let getTupleConstructorMethod (typ:Type) =
         let ctor =
             if typ.IsValueType then
-                let fields = typ.GetFields(bindingFlags) |> orderTupleFields
-#if FX_PORTABLE_OR_NETSTANDARD
-                ignore bindingFlags
+                let fields = typ.GetFields (instanceFieldFlags ||| BindingFlags.Public) |> orderTupleFields
+#if FX_RESHAPED_REFLECTION
                 typ.GetConstructor(fields |> Array.map (fun fi -> fi.FieldType))
 #else
-                typ.GetConstructor(BindingFlags.Instance ||| bindingFlags,null,fields |> Array.map (fun fi -> fi.FieldType),null)
+                typ.GetConstructor(BindingFlags.Public ||| BindingFlags.Instance,null,fields |> Array.map (fun fi -> fi.FieldType),null)
 #endif
             else
                 let props = typ.GetProperties() |> orderTupleProperties
-#if FX_PORTABLE_OR_NETSTANDARD
-                ignore bindingFlags
+#if FX_RESHAPED_REFLECTION
                 typ.GetConstructor(props |> Array.map (fun p -> p.PropertyType))
 #else
-                typ.GetConstructor(BindingFlags.Instance ||| bindingFlags,null,props |> Array.map (fun p -> p.PropertyType),null)
+                typ.GetConstructor(BindingFlags.Public ||| BindingFlags.Instance,null,props |> Array.map (fun p -> p.PropertyType),null)
 #endif
         match ctor with
         | null -> raise <| ArgumentException(String.Format(SR.GetString(SR.invalidTupleTypeConstructorNotDefined), typ.FullName))
         | _ -> ()
         ctor
 
-    let getTupleCtor(typ:Type,bindingFlags) =
-          let ctor = getTupleConstructorMethod(typ,bindingFlags)
+    let getTupleCtor(typ:Type) =
+          let ctor = getTupleConstructorMethod typ
           (fun (args:obj[]) ->
-#if FX_PORTABLE_OR_NETSTANDARD   
+#if FX_RESHAPED_REFLECTION   
               ctor.Invoke(args))
 #else
-              ctor.Invoke(BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| bindingFlags,null,args,null))
+              ctor.Invoke(BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public, null, args, null))
 #endif
 
     let rec getTupleReader (typ:Type) = 
@@ -525,7 +519,7 @@ module internal Impl =
         // Get the reader for the outer tuple record
         let reader =
             if typ.IsValueType then
-                let fields = (typ.GetFields(instanceFieldFlags ||| BindingFlags.Public) |> orderTupleFields)
+                let fields = (typ.GetFields (instanceFieldFlags ||| BindingFlags.Public) |> orderTupleFields)
                 ((fun (obj:obj) -> fields |> Array.map (fun field -> field.GetValue(obj))))
             else
                 let props = (typ.GetProperties(instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties)
@@ -542,7 +536,7 @@ module internal Impl =
 
     let rec getTupleConstructor (typ:Type) = 
         let etys = typ.GetGenericArguments() 
-        let maker1 =  getTupleCtor (typ,BindingFlags.Public)
+        let maker1 =  getTupleCtor typ
         if etys.Length < maxTuple 
         then maker1
         else
@@ -554,7 +548,7 @@ module internal Impl =
                 
     let getTupleConstructorInfo (typ:Type) = 
         let etys = typ.GetGenericArguments() 
-        let maker1 =  getTupleConstructorMethod (typ,BindingFlags.Public)
+        let maker1 =  getTupleConstructorMethod typ
         if etys.Length < maxTuple then
             maker1,None
         else
@@ -626,7 +620,7 @@ module internal Impl =
 
     let getRecordConstructorMethod(typ:Type,bindingFlags) = 
         let props = fieldPropsOfRecordType(typ,bindingFlags)
-#if FX_PORTABLE_OR_NETSTANDARD
+#if FX_RESHAPED_REFLECTION
         let ctor = typ.GetConstructor(props |> Array.map (fun p -> p.PropertyType))
 #else        
         let ctor = typ.GetConstructor(BindingFlags.Instance ||| bindingFlags,null,props |> Array.map (fun p -> p.PropertyType),null)
@@ -639,7 +633,7 @@ module internal Impl =
     let getRecordConstructor(typ:Type,bindingFlags) = 
         let ctor = getRecordConstructorMethod(typ,bindingFlags)
         (fun (args:obj[]) -> 
-#if FX_PORTABLE_OR_NETSTANDARD
+#if FX_RESHAPED_REFLECTION
             ctor.Invoke(args))
 #else        
             ctor.Invoke(BindingFlags.InvokeMethod  ||| BindingFlags.Instance ||| bindingFlags,null,args,null))

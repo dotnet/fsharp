@@ -43,7 +43,7 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
 /// Manage lexer resources (string interning)
 [<Sealed>]
 type LexResourceManager() =
-    let strings = new System.Collections.Generic.Dictionary<string, Parser.token>(100)
+    let strings = new System.Collections.Generic.Dictionary<string, Parser.token>(1024)
     member x.InternIdentifierToken(s) = 
         let mutable res = Unchecked.defaultof<_> 
         let ok = strings.TryGetValue(s, &res)  
@@ -355,7 +355,10 @@ module Keywords =
 
     /// Quote identifier with double backticks if needed, remove unnecessary double backticks quotation.
     let NormalizeIdentifierBackticks (s : string) : string =
-        let s = if s.StartsWith "``" && s.EndsWith "``" then s.[2..s.Length - 3] else s
+        let s =
+            if s.StartsWithOrdinal("``") && s.EndsWithOrdinal("``") then
+                s.[2..s.Length - 3]
+            else s
         QuoteIdentifierIfNeeded s
 
     /// Keywords paired with their descriptions. Used in completion and quick info.
@@ -394,6 +397,7 @@ module Keywords =
           "let",       FSComp.SR.keywordDescriptionLet()
           "let!",      FSComp.SR.keywordDescriptionLetBang()
           "match",     FSComp.SR.keywordDescriptionMatch()
+          "match!",    FSComp.SR.keywordDescriptionMatchBang()
           "member",    FSComp.SR.keywordDescriptionMember()
           "module",    FSComp.SR.keywordDescriptionModule()
           "mutable",   FSComp.SR.keywordDescriptionMutable()

@@ -38,6 +38,7 @@ module Utils =
 
             logMap := Map.add opts.ProjectFile opts.LogOutput !logMap
             { ProjectFileName = opts.ProjectFile
+              ProjectId = None
               SourceFiles = sourceFiles
               OtherOptions = otherOptions
               ReferencedProjects = referencedProjects()

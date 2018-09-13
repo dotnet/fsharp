@@ -1,0 +1,137 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="zh-Hant" original="../BuildPropPage.resx">
+    <body>
+      <trans-unit id="lblConditionalCompilationSymbols.Text">
+        <source>Conditional compilation s&amp;ymbols:</source>
+        <target state="translated">條件式編譯的符號(&amp;Y):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkPrefer32Bit.Text">
+        <source>&amp;Prefer 32-bit</source>
+        <target state="translated">建議使用 32 位元(&amp;P)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="outputLabel.Text">
+        <source>Output</source>
+        <target state="translated">輸出</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="generalLabel.Text">
+        <source>General</source>
+        <target state="translated">一般</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="treatWarningsAsErrorsLabel.Text">
+        <source>Treat warnings as errors</source>
+        <target state="translated">將警告視為錯誤</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="errorsAndWarningsLabel.Text">
+        <source>Errors and warnings</source>
+        <target state="translated">錯誤和警告</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkXMLDocumentationFile.Text">
+        <source>&amp;XML documentation file:</source>
+        <target state="translated">XML 文件檔案(&amp;X):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="btnOutputPathBrowse.Text">
+        <source>B&amp;rowse...</source>
+        <target state="translated">瀏覽(&amp;R)...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblOutputPath.Text">
+        <source>&amp;Output path:</source>
+        <target state="translated">輸出路徑(&amp;O):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbWarningAll.Text">
+        <source>A&amp;ll</source>
+        <target state="translated">全部(&amp;L)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbWarningSpecific.Text">
+        <source>Specif&amp;ic warnings:</source>
+        <target state="translated">特定警告(&amp;I):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbWarningNone.Text">
+        <source>&amp;None</source>
+        <target state="translated">無(&amp;N)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblSupressWarnings.Text">
+        <source>&amp;Suppress warnings:</source>
+        <target state="translated">隱藏警告(&amp;S):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items">
+        <source>0</source>
+        <target state="translated">0</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items1">
+        <source>1</source>
+        <target state="translated">1</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items2">
+        <source>2</source>
+        <target state="translated">2</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items3">
+        <source>3</source>
+        <target state="translated">3</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items4">
+        <source>4</source>
+        <target state="translated">4</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items5">
+        <source>5</source>
+        <target state="translated">5</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblWarningLevel.Text">
+        <source>&amp;Warning level:</source>
+        <target state="translated">警告層級(&amp;W):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkOptimizeCode.Text">
+        <source>Optimi&amp;ze code</source>
+        <target state="translated">最佳化程式碼(&amp;Z)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkTailcalls.Text">
+        <source>G&amp;enerate tail calls</source>
+        <target state="translated">產生 Tail 呼叫(&amp;E)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkDefineTrace.Text">
+        <source>Define TR&amp;ACE constant</source>
+        <target state="translated">定義 TRACE 常數(&amp;A)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblPlatformTarget.Text">
+        <source>Platform tar&amp;get:</source>
+        <target state="translated">平台目標(&amp;G):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblOtherFlags.Text">
+        <source>Other &amp;flags:</source>
+        <target state="translated">其他旗標(&amp;F):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkDefineDebug.Text">
+        <source>Define DEB&amp;UG constant</source>
+        <target state="translated">定義 DEBUG 常數(&amp;U)</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

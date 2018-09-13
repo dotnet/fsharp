@@ -6,6 +6,7 @@ open System.IO
 open System.Threading.Tasks
 open System.Diagnostics
 
+type IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider
 
 /// Checks if the filePath ends with ".fsi"
 let isSignatureFile (filePath:string) = 
@@ -143,9 +144,11 @@ type AsyncMaybeBuilder () =
         }
 
     [<DebuggerStepThrough>]
-    member __.Using (resource : ('T :> IDisposable), body : _ -> Async<_ option>) : Async<_ option> =
-        try body resource
-        finally if not (isNull resource) then resource.Dispose ()
+    member __.Using (resource : ('T :> IDisposable), body : 'T -> Async<'U option>) : Async<'U option> =
+        async {
+            use resource = resource
+            return! body resource
+        }
 
     [<DebuggerStepThrough>]
     member x.While (guard, body : Async<_ option>) : Async<_ option> =
@@ -155,7 +158,7 @@ type AsyncMaybeBuilder () =
             x.Zero ()
 
     [<DebuggerStepThrough>]
-    member x.For (sequence : seq<_>, body : 'T -> Async<unit option>) : Async<_ option> =
+    member x.For (sequence : seq<_>, body : 'T -> Async<unit option>) : Async<unit option> =
         x.Using (sequence.GetEnumerator (), fun enum ->
             x.While (enum.MoveNext, x.Delay (fun () -> body enum.Current)))
 

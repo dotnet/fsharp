@@ -4,6 +4,9 @@
 
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
+    <ProjectLanguage>FSharp</ProjectLanguage>
+    <UseFSharpProductVersion>true</UseFSharpProductVersion>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
@@ -18,27 +21,16 @@
     <OutputType>Exe</OutputType>
     <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>fsc</AssemblyName>
-    <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <AllowCrossTargeting>true</AllowCrossTargeting>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
   </PropertyGroup>
+
   <ItemGroup>
-    <FilesToLocalize Include="$(OutDir)$(AssemblyName).exe">
-      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).exe.lcl</TranslationFile>
-      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).exe.lci</LciCommentFile>
-      <HasLceComments>false</HasLceComments>
-      <InProject>false</InProject>
-    </FilesToLocalize>
+    <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="VisualFSharp.Unittests" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.fsc.exe.fs">
-      <Link>Resources/assemblyinfo.fsc.exe.fs</Link>
-    </Compile>
     <Compile Include="..\fscmain.fs">
       <Link>fscmain.fs</Link>
     </Compile>
@@ -69,16 +61,5 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
-
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).exe" />
-      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-         <Authenticode>Microsoft</Authenticode>
-         <StrongName>StrongName</StrongName>
-      </FilesToSign>
-    </ItemGroup>
-  </Target>
 
 </Project>

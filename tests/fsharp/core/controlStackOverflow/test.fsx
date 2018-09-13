@@ -8,7 +8,7 @@ module Core_controlStackOverflow
 
 #nowarn "40" // recursive references
 
-#if FX_PORTABLE_OR_NETSTANDARD
+#if NETCOREAPP1_0
 open System.Threading.Tasks
 #endif
 
@@ -36,7 +36,7 @@ let report_failure s =
      log (sprintf "FAILURE: %s failed" s)
   )
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 System.AppDomain.CurrentDomain.UnhandledException.AddHandler(
        fun _ (args:System.UnhandledExceptionEventArgs) ->
           lock syncObj (fun () ->
@@ -231,7 +231,7 @@ module StackDiveTests =
 
       let quwiAsync x =
             Async.FromContinuations(fun (c,_,_) ->
-#if FX_PORTABLE_OR_NETSTANDARD
+#if NETCOREAPP1_0
                 Task.Run(
                     fun _ -> 
                         async { 

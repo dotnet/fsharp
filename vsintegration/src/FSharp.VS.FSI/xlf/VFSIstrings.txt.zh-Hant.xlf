@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="zh-Hant" original="../VFSIstrings.resx">
+    <body>
+      <trans-unit id="cannotCreateToolWindow">
+        <source>Cannot create window F# Interactive ToolWindow</source>
+        <target state="translated">無法建立視窗 F# 互動工具視窗</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="exceptionRaisedWhenCreatingRemotingClient">
+        <source>Exception raised when creating remoting client for launched fsi.exe\n{0}</source>
+        <target state="translated">建立已啟動之 fsi.exe 的遠端處理用戶端時發生例外狀況\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="exceptionRaisedWhenRequestingToolWindow">
+        <source>Exception raised when requesting FSI ToolWindow.\n{0}</source>
+        <target state="translated">要求 FSI 工具視窗時發生例外狀況。\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="couldNotObtainFSharpLS">
+        <source>Could not load F# language service</source>
+        <target state="translated">無法載入 F# 語言服務</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="sessionTerminationDetected">
+        <source>Session termination detected. Press Enter to restart.</source>
+        <target state="translated">偵測到工作階段終止。請按 Enter 重新啟動。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsharpInteractive">
+        <source>F# Interactive</source>
+        <target state="translated">F# 互動</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="couldNotFindFsiExe">
+        <source>Could not find fsi.exe, the F# Interactive executable.\nThis file does not exist:\n\n{0}\n</source>
+        <target state="translated">找不到 F# 互動可執行檔 fsi.exe。\n這個檔案不存在:\n\n{0}\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="killingProcessRaisedException">
+        <source>Killing process raised exception:\n{0}</source>
+        <target state="translated">正在刪除引發例外狀況的處理序:\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="sessionIsNotDebugFriendly">
+        <source>The current F# Interactive session is not configured for debugging. For the best experience, enable debugging in F# Interactive settings, then reset the session.\n\nAttempt debugging with current settings?</source>
+        <target state="translated">目前的 F# 互動工作階段並未設定偵錯功能。最佳做法是啟用 F# 互動設定中的偵錯設定，然後重設此工作階段。\n\n要嘗試使用目前的設定進行偵錯嗎?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="doNotShowWarningInFuture">
+        <source>Don't show this warning again</source>
+        <target state="translated">不再顯示這項警告</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

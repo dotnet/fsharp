@@ -3,6 +3,8 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
+    <ProjectLanguage>FSharp</ProjectLanguage>
+    <UseFSharpProductVersion>true</UseFSharpProductVersion>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
@@ -23,12 +25,8 @@
     <ItemGroup>
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Framework.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Conversion.Core.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Engine.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Utilities.Core.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Tasks.Core.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.DiaSymReader.PortablePdb.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.DiaSymReader.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\System.Reflection.Metadata.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\System.Collections.Immutable.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\System.ValueTuple.dll" />
@@ -37,16 +35,6 @@
   <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FsLexToolPath)\FsLexYacc.targets" />
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
-      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-        <Authenticode>Microsoft</Authenticode>
-        <StrongName>StrongName</StrongName>
-      </FilesToSign>
-    </ItemGroup>
-  </Target>
   <ItemGroup>
     <InternalsVisibleTo Include="fsc" />
     <InternalsVisibleTo Include="FSharp.Build" />
@@ -60,29 +48,26 @@
     <InternalsVisibleTo Include="FSharp.Compiler.Interactive.Settings" />
     <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
-    <InternalsVisibleTo Include="VisualFSharp.Unittests" />
-    <InternalsVisibleTo Include="FSharp.Compiler.Unittests" />
+    <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
+    <InternalsVisibleTo Include="FSharp.Compiler.UnitTests" />
     <InternalsVisibleTo Include="FSharp.Editor" />
     <InternalsVisibleTo Include="HostedCompilerServer" />
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
   </ItemGroup>
   <ItemGroup>
-    <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
-      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
-      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
-      <HasLceComments>false</HasLceComments>
-      <InProject>false</InProject>
-    </FilesToLocalize>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs">
-      <Link>assemblyinfo.FSharp.Compiler.Private.dll.fs</Link>
-    </Compile>
     <EmbeddedText Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
     </EmbeddedText>
     <EmbeddedResource Include="..\FSStrings.resx">
       <Link>FSStrings.resx</Link>
     </EmbeddedResource>
+    <Compile Include="..\Logger.fsi">
+      <Link>Logger.fsi</Link>
+    </Compile>
+    <Compile Include="..\Logger.fs">
+      <Link>Logger.fs</Link>
+    </Compile>
     <Compile Include="..\..\utils\reshapedreflection.fs">
       <Link>Reflection\reshapedreflection.fs</Link>
     </Compile>
@@ -553,64 +538,64 @@
     </Compile>
 
     <!-- the incremental builder and service . -->
-    <Compile Include="..\vs\IncrementalBuild.fsi">
+    <Compile Include="..\service\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\IncrementalBuild.fs">
+    <Compile Include="..\service\IncrementalBuild.fs">
       <Link>Service/IncrementalBuild.fs</Link>
     </Compile>
-    <Compile Include="..\vs\Reactor.fsi">
+    <Compile Include="..\service\Reactor.fsi">
       <Link>Service/Reactor.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\Reactor.fs">
+    <Compile Include="..\service\Reactor.fs">
       <Link>Service/Reactor.fs</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceConstants.fs">
+    <Compile Include="..\service\ServiceConstants.fs">
       <Link>Service/ServiceConstants.fs</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceDeclarationLists.fsi">
+    <Compile Include="..\service\ServiceDeclarationLists.fsi">
       <Link>Service/ServiceDeclarationLists.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceDeclarationLists.fs">
+    <Compile Include="..\service\ServiceDeclarationLists.fs">
       <Link>Service/ServiceDeclarationLists.fs</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceLexing.fsi">
+    <Compile Include="..\service\ServiceLexing.fsi">
       <Link>Service/ServiceLexing.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceLexing.fs">
+    <Compile Include="..\service\ServiceLexing.fs">
       <Link>Service/ServiceLexing.fs</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceParseTreeWalk.fs">
+    <Compile Include="..\service\ServiceParseTreeWalk.fs">
       <Link>Service/ServiceParseTreeWalk.fs</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceNavigation.fsi">
+    <Compile Include="..\service\ServiceNavigation.fsi">
       <Link>Service/ServiceNavigation.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceNavigation.fs">
+    <Compile Include="..\service\ServiceNavigation.fs">
       <Link>Service/ServiceNavigation.fs</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceParamInfoLocations.fsi">
+    <Compile Include="..\service\ServiceParamInfoLocations.fsi">
       <Link>Service/ServiceParamInfoLocations.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceParamInfoLocations.fs">
+    <Compile Include="..\service\ServiceParamInfoLocations.fs">
       <Link>Service/ServiceParamInfoLocations.fs</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceUntypedParse.fsi">
+    <Compile Include="..\service\ServiceUntypedParse.fsi">
       <Link>Service/ServiceUntypedParse.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceUntypedParse.fs">
+    <Compile Include="..\service\ServiceUntypedParse.fs">
       <Link>Service/ServiceUntypedParse.fs</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceAssemblyContent.fsi">
+    <Compile Include="..\service\ServiceAssemblyContent.fsi">
       <Link>Service/ServiceAssemblyContent.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceAssemblyContent.fs">
+    <Compile Include="..\service\ServiceAssemblyContent.fs">
       <Link>Service/ServiceAssemblyContent.fs</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceXmlDocParser.fsi">
+    <Compile Include="..\service\ServiceXmlDocParser.fsi">
       <Link>Service/ServiceXmlDocParser.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceXmlDocParser.fs">
+    <Compile Include="..\service\ServiceXmlDocParser.fs">
       <Link>Service/ServiceXmlDocParser.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\reshapedmsbuild.fs">
@@ -619,40 +604,40 @@
     <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
       <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
     </Compile>
-    <Compile Include="..\vs\ExternalSymbol.fsi">
+    <Compile Include="..\service\ExternalSymbol.fsi">
       <Link>Service/ExternalSymbol.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\ExternalSymbol.fs">
+    <Compile Include="..\service\ExternalSymbol.fs">
       <Link>Service/ExternalSymbol.fs</Link>
     </Compile>
-    <Compile Include="..\vs\QuickParse.fsi">
+    <Compile Include="..\service\QuickParse.fsi">
       <Link>Service/QuickParse.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\QuickParse.fs">
+    <Compile Include="..\service\QuickParse.fs">
       <Link>Service/QuickParse.fs</Link>
     </Compile>
-    <Compile Include="..\vs\service.fsi">
+    <Compile Include="..\service\service.fsi">
       <Link>Service/service.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\service.fs">
+    <Compile Include="..\service\service.fs">
       <Link>Service/service.fs</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceInterfaceStubGenerator.fsi">
+    <Compile Include="..\service\ServiceInterfaceStubGenerator.fsi">
       <Link>Service/ServiceInterfaceStubGenerator.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceInterfaceStubGenerator.fs">
+    <Compile Include="..\service\ServiceInterfaceStubGenerator.fs">
       <Link>Service/ServiceInterfaceStubGenerator.fs</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceStructure.fsi">
+    <Compile Include="..\service\ServiceStructure.fsi">
       <Link>Service/ServiceStructure.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceStructure.fs">
+    <Compile Include="..\service\ServiceStructure.fs">
       <Link>Service/ServiceStructure.fs</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceAnalysis.fsi">
+    <Compile Include="..\service\ServiceAnalysis.fsi">
       <Link>Service/ServiceAnalysis.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceAnalysis.fs">
+    <Compile Include="..\service\ServiceAnalysis.fs">
       <Link>Service/ServiceAnalysis.fs</Link>
     </Compile>
     
@@ -661,17 +646,17 @@
       <Link>FSIstrings.txt</Link>
     </EmbeddedText>
     <Compile Include="..\fsi\fsi.fsi">
-      <Link>InteractiveSession\fsi.fsi</Link>
+      <Link>InteractiveSession/fsi.fsi</Link>
     </Compile>
     <Compile Include="..\fsi\fsi.fs">
-      <Link>InteractiveSession\fsi.fs</Link>
+      <Link>InteractiveSession/fsi.fs</Link>
     </Compile>
 
-    <Compile Include="..\MSBuildReferenceResolver.fs">
+    <Compile Include="..\MSBuildReferenceResolver.fs"  Condition="'$(MonoPackaging)' != 'true'">
       <Link>Misc/MSBuildReferenceResolver.fs</Link>
     </Compile>
     <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
-    <Compile Include="..\LegacyHostedCompilerForTesting.fs">
+    <Compile Include="..\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'">
       <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
   </ItemGroup>
@@ -687,60 +672,33 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.DiaSymReader.PortablePdb">
-      <HintPath>..\..\..\packages\Microsoft.DiaSymReader.PortablePdb.1.2.0\lib\portable-net45+win8\Microsoft.DiaSymReader.PortablePdb.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.DiaSymReader">
-      <HintPath>..\..\..\packages\Microsoft.DiaSymReader.1.1.0\lib\portable-net45+win8\Microsoft.DiaSymReader.dll</HintPath>
-    </Reference>
     <Reference Include="System.Reflection.Metadata">
-      <HintPath>..\..\..\packages\System.Reflection.Metadata.1.4.2\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
+      <HintPath>..\..\..\packages\System.Reflection.Metadata.$(SystemReflectionMetadataPackageVersion)\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
     </Reference>
     <Reference Include="System.Collections.Immutable">
-      <HintPath>..\..\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutableVersion)\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+      <HintPath>..\..\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutablePackageVersion)\lib\netstandard1.0\System.Collections.Immutable.dll</HintPath>
     </Reference>
     <Reference Include="System.ValueTuple">
-      <HintPath>..\..\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-      <Private>true</Private>
+      <HintPath>..\..\..\packages\System.ValueTuple.$(SystemValueTuplePackageVersion)\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    </Reference>
+    <Reference Include="System.IO.Compression">
+      <HintPath>..\..\..\packages\System.IO.Compression.$(SystemIoCompressionPackageVersion)\lib\net46\System.IO.Compression.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <Choose>
-    <When Condition="$(MonoPackaging) != 'true'">
-      <ItemGroup Condition="'$(TargetDotnetProfile)' != 'coreclr'">
-        <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Build.Utilities.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
-        </Reference>
-      </ItemGroup>
-    </When>
-    <Otherwise>
-      <ItemGroup>
-        <Reference Include="Microsoft.Build.Framework, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <Private>True</Private>
-        </Reference>
-        <Reference Include="Microsoft.Build.Engine, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <Private>True</Private>
-        </Reference>
-        <Reference Include="Microsoft.Build, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <Private>True</Private>
-        </Reference>
-        <Reference Include="Microsoft.Build.Utilities.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <Private>True</Private>
-        </Reference>
-        <Reference Include="Microsoft.Build.Tasks.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <Private>True</Private>
-        </Reference>
-      </ItemGroup>
-    </Otherwise>
-  </Choose>
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
+    <Reference Include="Microsoft.Build.Framework">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Framework.$(MicrosoftBuildFrameworkPackageVersion)\lib\net46\Microsoft.Build.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.$(MicrosoftBuildPackageVersion)\lib\net46\Microsoft.Build.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Utilities.Core">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Utilities.Core.$(MicrosoftBuildUtilitiesCorePackageVersion)\lib\net46\Microsoft.Build.Utilities.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Tasks.Core">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.$(MicrosoftBuildTasksCorePackageVersion)\lib\net46\Microsoft.Build.Tasks.Core.dll</HintPath>
+    </Reference>
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>

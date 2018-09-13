@@ -1,0 +1,252 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="pt-BR" original="../MenusAndCommands.vsct">
+    <body>
+      <trans-unit id="cmdIDFsiConsoleContextMenu|ButtonText">
+        <source>FSI Console Context</source>
+        <target state="translated">FSI Contexto Console</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cmdIDFsiConsoleContextMenu|CommandName">
+        <source>FSI Console Context</source>
+        <target state="translated">FSI Contexto Console</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpAddBelowMenu|ButtonText">
+        <source>Add &amp;Below</source>
+        <target state="translated">Adicionar A&amp;baixo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpAddBelowMenu|MenuText">
+        <source>Add &amp;Below</source>
+        <target state="translated">Adicionar A&amp;baixo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpAddBelowMenu|CommandName">
+        <source>Add &amp;Below</source>
+        <target state="translated">Adicionar A&amp;baixo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpAddAboveMenu|ButtonText">
+        <source>Add &amp;Above</source>
+        <target state="translated">Adicionar &amp;Acima</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpAddAboveMenu|MenuText">
+        <source>Add &amp;Above</source>
+        <target state="translated">Adicionar &amp;Acima</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpAddAboveMenu|CommandName">
+        <source>Add &amp;Above</source>
+        <target state="translated">Adicionar &amp;Acima</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cmdidFsiToolWindow|CommandName">
+        <source>FSharp.Interactive.ToolWindow</source>
+        <target state="translated">FSharp.Interactive.ToolWindow</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cmdidFsiToolWindow|ButtonText">
+        <source>F# Interactive</source>
+        <target state="translated">F# Interativo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cmdidAttachDebugger|CommandName">
+        <source>FSharp.Interactive.AttachDebugger</source>
+        <target state="translated">FSharp.Interactive.AttachDebugger</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cmdidAttachDebugger|ButtonText">
+        <source>Start Debugging</source>
+        <target state="translated">Iniciar Depuração</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cmdidDetachDebugger|CommandName">
+        <source>FSharp.Interactive.DetachDebugger</source>
+        <target state="translated">FSharp.Interactive.DetachDebugger</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cmdidDetachDebugger|ButtonText">
+        <source>Stop Debugging</source>
+        <target state="translated">Parar Depuração</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cmdidDebugSelection|ButtonText">
+        <source>Debug In Interactive</source>
+        <target state="translated">Depuração Interativa</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cmdidDebugSelection|CommandName">
+        <source>Interactive.Debug.Selection.Context</source>
+        <target state="translated">Interactive.Debug.Selection.Context</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|ButtonText">
+        <source>&amp;Send to F# Interactive</source>
+        <target state="translated">&amp;Enviar para F# Interativo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|MenuText">
+        <source>&amp;Send to F# Interactive</source>
+        <target state="translated">&amp;Enviar para F# Interativo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|CommandName">
+        <source>SendThisReferenceToInteractive</source>
+        <target state="translated">SendThisReferenceToInteractive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpSendReferencesToInteractiveCmd|ButtonText">
+        <source>&amp;Send References to F# Interactive</source>
+        <target state="translated">&amp;Enviar Referências para F# Interativo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpSendReferencesToInteractiveCmd|MenuText">
+        <source>&amp;Send References to F# Interactive</source>
+        <target state="translated">&amp;Enviar Referências para F# Interativo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpSendReferencesToInteractiveCmd|CommandName">
+        <source>SendReferencesToInteractive</source>
+        <target state="translated">SendReferencesToInteractive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|ButtonText">
+        <source>&amp;Send Project Output to F# Interactive</source>
+        <target state="translated">&amp;Enviar Saída do Projeto para F# Interativo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|MenuText">
+        <source>&amp;Send Project Output to F# Interactive</source>
+        <target state="translated">&amp;Enviar Saída do Projeto para F# Interativo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|CommandName">
+        <source>FSharpSendProjectOutputToInteractive</source>
+        <target state="translated">FSharpSendProjectOutputToInteractive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MoveUpCmd|ButtonText">
+        <source>Move &amp;Up</source>
+        <target state="translated">Mover para &amp;Cima</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MoveUpCmd|MenuText">
+        <source>Move &amp;Up</source>
+        <target state="translated">Mover para &amp;Cima</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MoveUpCmd|CommandName">
+        <source>MoveFileUp</source>
+        <target state="translated">MoveFileUp</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MoveDownCmd|ButtonText">
+        <source>Mo&amp;ve Down</source>
+        <target state="translated">Mo&amp;ver para baixo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MoveDownCmd|MenuText">
+        <source>Mo&amp;ve Down</source>
+        <target state="translated">Mo&amp;ver para baixo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MoveDownCmd|CommandName">
+        <source>MoveFileDown</source>
+        <target state="translated">MoveFileDown</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddNewItemBelow|ButtonText">
+        <source>Add Ne&amp;w Item...</source>
+        <target state="translated">Adicionar No&amp;vo Item...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddNewItemBelow|MenuText">
+        <source>Ne&amp;w Item...</source>
+        <target state="translated">No&amp;vo Item...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddNewItemBelow|ToolTipText">
+        <source>Add New Item</source>
+        <target state="translated">Adicionar novo item</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddNewItemBelow|CommandName">
+        <source>Add New Item</source>
+        <target state="translated">Adicionar novo item</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddExistingItemBelow|ButtonText">
+        <source>Add Existin&amp;g Item...</source>
+        <target state="translated">Adicionar Item Existen&amp;te...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddExistingItemBelow|MenuText">
+        <source>Existin&amp;g Item...</source>
+        <target state="translated">Item Existen&amp;te...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddExistingItemBelow|ToolTipText">
+        <source>Add Existing Item</source>
+        <target state="translated">Adicionar Item Existente</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddExistingItemBelow|CommandName">
+        <source>Add Existing Item</source>
+        <target state="translated">Adicionar Item Existente</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddNewItemAbove|ButtonText">
+        <source>Add Ne&amp;w Item...</source>
+        <target state="translated">Adicionar No&amp;vo Item...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddNewItemAbove|MenuText">
+        <source>Ne&amp;w Item...</source>
+        <target state="translated">No&amp;vo Item...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddNewItemAbove|ToolTipText">
+        <source>Add New Item</source>
+        <target state="translated">Adicionar novo item</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddNewItemAbove|CommandName">
+        <source>Add New Item</source>
+        <target state="translated">Adicionar novo item</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddExistingItemAbove|ButtonText">
+        <source>Add Existin&amp;g Item...</source>
+        <target state="translated">Adicionar Item Existen&amp;te...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddExistingItemAbove|MenuText">
+        <source>Existin&amp;g Item...</source>
+        <target state="translated">Item Existen&amp;te...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddExistingItemAbove|ToolTipText">
+        <source>Add Existing Item</source>
+        <target state="translated">Adicionar Item Existente</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddExistingItemAbove|CommandName">
+        <source>Add Existing Item</source>
+        <target state="translated">Adicionar Item Existente</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NewFolderAbove|ButtonText">
+        <source>New Fol&amp;der</source>
+        <target state="translated">Nova pa&amp;sta</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NewFolderBelow|ButtonText">
+        <source>New Fol&amp;der</source>
+        <target state="translated">Nova pa&amp;sta</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

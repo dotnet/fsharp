@@ -26,6 +26,12 @@ if [%1]==[force] (
   if exist "%PACKAGES_DIR%microsoft.dotnet.buildtools" rmdir /S /Q "%PACKAGES_DIR%microsoft.dotnet.buildtools"
 )
 
+set /p DOTNET_TOOLS_VERSION=< "%~dp0DotnetCLIToolsVersion.txt"
+if not exist "%DOTNET_TOOLS_PATH%\sdk\%DOTNET_TOOLS_VERSION%" (
+  :: dotnet cli doesn't yet exist, delete the semaphore
+  del "%BUILD_TOOLS_SEMAPHORE%" >NUL 2>&1
+)
+
 :: If sempahore exists do nothing
 if exist "%BUILD_TOOLS_SEMAPHORE%" (
   echo Tools are already initialized.
@@ -44,7 +50,6 @@ if NOT exist "%PROJECT_JSON_PATH%" mkdir "%PROJECT_JSON_PATH%"
 echo %PROJECT_JSON_CONTENTS% > "%PROJECT_JSON_FILE%"
 echo Running %0 > "%INIT_TOOLS_LOG%"
 
-set /p DOTNET_TOOLS_VERSION=< "%~dp0DotnetCLIToolsVersion.txt"
 if exist "%DOTNET_TOOLS_PATH%" goto :afterdotnettoolsrestore
 
 echo Installing dotnet OLD VERSION OF THE cli...

@@ -3,19 +3,20 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <FSCoreVersion>4.4.1.0</FSCoreVersion>
+    <FSCoreVersion>4.5.0.0</FSCoreVersion>
     <OutputPath>$(MSBuildThisFileDirectory)../../BuildFromSource/$(Configuration)/bin</OutputPath>
     <FSharpSourcesRoot>$(MSBuildThisFileDirectory)..</FSharpSourcesRoot>
 
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <UseStandardResourceNames>false</UseStandardResourceNames>
     <DefineConstants>$(DefineConstants);BUILD_FROM_SOURCE</DefineConstants>
 
     <!-- Signing flags currently done using OtherFlags.  Can migrate to properties once build target updated -->
     <KeyFile>$(MSBuildThisFileDirectory)../buildtools/keys/MSFT.snk</KeyFile>
     <PublicSign>true</PublicSign>
-    <OtherFlags>$(OtherFlags) --publicsign --keyfile:$(KeyFile)</OtherFlags>
+    <OtherFlags>$(OtherFlags) --publicsign --keyfile:"$(KeyFile)"</OtherFlags>
     <OtherFlags>$(OtherFlags) --nocopyfsharpcore</OtherFlags>
 
     <DotNetExe Condition=" '$(OS)' == 'Unix' ">dotnet</DotNetExe>
@@ -35,21 +36,6 @@
 
   <Import Project="..\FSharpSource.Profiles.targets" />
   <Import Project="$(BuildVersionFilePath)" Condition="Exists('$(BuildVersionFilePath)')" />
-
-  <Target Name="CopyAndSubstituteTextFiles" 
-          BeforeTargets="Compile"
-          Inputs="@(CopyAndSubstituteText)"
-          Outputs="@(CopyAndSubstituteText->'$(OutDir)%(TargetFilename)')"
-          Condition="'$(DesignTimeBuild)' != 'true'">
-
-    <ItemGroup>
-      <FileTextMap Include="%(CopyAndSubstituteText.TargetFilename)">
-        <FileText>$([System.Text.RegularExpressions.Regex]::Replace($([System.IO.File]::ReadAllText("%(CopyAndSubstituteText.FullPath)")), "%(CopyAndSubstituteText.Pattern1)", "%(CopyAndSubstituteText.Replacement1)"))</FileText>
-        <FileText Condition = "'$(CurrentPattern2)' != ''">$([System.Text.RegularExpressions.Regex]::Replace($(FileText), "%(CopyAndSubstituteText.Pattern2)", "%(CopyAndSubstituteText.Replacement2)"))</FileText>
-      </FileTextMap>
-    </ItemGroup>
-    <WriteLinesToFile File="$(OutDir)%(FileTextMap.Identity)" Lines="%(FileTextMap.FileText)" Overwrite="true" />
-  </Target>
 
   <ItemGroup>
     <AvailableItemName Include="FsLex">

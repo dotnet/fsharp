@@ -1,0 +1,9 @@
+<Project>
+
+  <PropertyGroup>
+    <TemplateCategory>ItemTemplates</TemplateCategory>
+  </PropertyGroup>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Templates.Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+</Project>

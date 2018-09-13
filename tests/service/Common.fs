@@ -1,5 +1,6 @@
 module internal FSharp.Compiler.Service.Tests.Common
 
+open System
 open System.IO
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler
@@ -9,7 +10,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open ReflectionAdapters
 #endif
 
-#if DOTNETCORE
+#if NETCOREAPP2_0
 let readRefs (folder : string) (projectFile: string) =
     let runProcess (workingDir: string) (exePath: string) (args: string) =
         let psi = System.Diagnostics.ProcessStartInfo()
@@ -29,13 +30,14 @@ let readRefs (folder : string) (projectFile: string) =
         let exitCode = p.ExitCode
         exitCode, ()
 
+    let projFilePath = Path.Combine(folder, projectFile)
     let runCmd exePath args = runProcess folder exePath (args |> String.concat " ")
     let msbuildExec = Dotnet.ProjInfo.Inspect.dotnetMsbuild runCmd
-    let result = Dotnet.ProjInfo.Inspect.getProjectInfo ignore msbuildExec Dotnet.ProjInfo.Inspect.getFscArgs [] projectFile
+    let result = Dotnet.ProjInfo.Inspect.getProjectInfo ignore msbuildExec Dotnet.ProjInfo.Inspect.getFscArgs [] projFilePath
     match result with
     | Ok(Dotnet.ProjInfo.Inspect.GetResult.FscArgs x) ->
         x
-        |> List.filter (fun s -> s.StartsWith("-r:"))
+        |> List.filter (fun s -> s.StartsWith("-r:", StringComparison.Ordinal))
         |> List.map (fun s -> s.Replace("-r:", ""))
     | _ -> []
 #endif
@@ -66,7 +68,7 @@ let getBackgroundCheckResultsForScriptText (input) =
 
 
 let sysLib nm = 
-#if !FX_ATLEAST_PORTABLE
+#if !NETCOREAPP2_0
     if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows 
         let programFilesx86Folder = System.Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
         programFilesx86Folder + @"\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.1\" + nm + ".dll"
@@ -89,20 +91,10 @@ module Helpers =
 let fsCoreDefaultReference() = 
     PathRelativeToTestAssembly "FSharp.Core.dll"
 
-(*
-#if !FX_ATLEAST_PORTABLE
-     if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows 
-        let programFilesx86Folder = System.Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
-        programFilesx86Folder + @"\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0\FSharp.Core.dll"  
-     else 
-#endif
-        sysLib "FSharp.Core"
-*)
-
 let mkStandardProjectReferences () = 
-#if DOTNETCORE
-            let file = "Sample_NETCoreSDK_FSharp_Library_netstandard1.6.fsproj"
-            let projDir = Path.Combine(__SOURCE_DIRECTORY__, "../projects/Sample_NETCoreSDK_FSharp_Library_netstandard1.6")
+#if NETCOREAPP2_0
+            let file = "Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj"
+            let projDir = Path.Combine(__SOURCE_DIRECTORY__, "../projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0")
             readRefs projDir file
 #else
             [ yield sysLib "mscorlib"
@@ -111,13 +103,13 @@ let mkStandardProjectReferences () =
               yield fsCoreDefaultReference() ]
 #endif              
 
-let mkProjectCommandLineArgs (dllName, fileNames) = 
+let mkProjectCommandLineArgsSilent (dllName, fileNames) = 
   let args = 
     [|  yield "--simpleresolution" 
         yield "--noframework" 
         yield "--debug:full" 
         yield "--define:DEBUG" 
-#if NETCOREAPP1_0
+#if NETCOREAPP2_0
         yield "--targetprofile:netcore" 
 #endif
         yield "--optimize-" 
@@ -133,18 +125,20 @@ let mkProjectCommandLineArgs (dllName, fileNames) =
         for r in references do
             yield "-r:" + r
      |]
+  args
+
+let mkProjectCommandLineArgs (dllName, fileNames) = 
+  let args = mkProjectCommandLineArgsSilent (dllName, fileNames)
   printfn "dllName = %A, args = %A" dllName args
   args
 
-#if DOTNETCORE
+#if NETCOREAPP2_0
 let mkProjectCommandLineArgsForScript (dllName, fileNames) = 
     [|  yield "--simpleresolution" 
         yield "--noframework" 
         yield "--debug:full" 
         yield "--define:DEBUG" 
-#if NETCOREAPP1_0
         yield "--targetprofile:netcore" 
-#endif
         yield "--optimize-" 
         yield "--out:" + dllName
         yield "--doc:test.xml" 
@@ -160,9 +154,26 @@ let mkProjectCommandLineArgsForScript (dllName, fileNames) =
      |]
 #endif
 
+let mkTestFileAndOptions source additionalArgs =
+    let fileName = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let project = Path.GetTempFileName()
+    let dllName = Path.ChangeExtension(project, ".dll")
+    let projFileName = Path.ChangeExtension(project, ".fsproj")
+    let fileSource1 = "module M"
+    File.WriteAllText(fileName, fileSource1)
+
+    let args = Array.append (mkProjectCommandLineArgs (dllName, [fileName])) additionalArgs
+    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    fileName, options
+
+let parseAndCheckFile fileName source options =
+    match checker.ParseAndCheckFileInProject(fileName, 0, source, options) |> Async.RunSynchronously with
+    | parseResults, FSharpCheckFileAnswer.Succeeded(checkResults) -> parseResults, checkResults
+    | _ -> failwithf "Parsing aborted unexpectedly..."
+
 let parseAndCheckScript (file, input) = 
 
-#if DOTNETCORE
+#if NETCOREAPP2_0
     let dllName = Path.ChangeExtension(file, ".dll")
     let projName = Path.ChangeExtension(file, ".fsproj")
     let args = mkProjectCommandLineArgsForScript (dllName, [file])
@@ -294,7 +305,7 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
 
 
 let coreLibAssemblyName =
-#if DOTNETCORE
+#if NETCOREAPP2_0
     "System.Runtime"
 #else
     "mscorlib"

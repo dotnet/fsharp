@@ -79,10 +79,6 @@ open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core.Operators
 open System.Diagnostics.CodeAnalysis                                    
 open System.Collections.Generic
-#if FX_NO_ICLONEABLE
-open Microsoft.FSharp.Core.ICloneableExtensions            
-#else
-#endif  
 
 
 module internal List = 
@@ -200,6 +196,10 @@ module internal List =
                 cons
                   
     let groupBy (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
+        match list with
+        | [] -> []
+        | _ ->
+
         let dict = Dictionary<_, _ list []> comparer
 
         // Build the groupings
@@ -685,6 +685,71 @@ module internal List =
             then cons, (partitionToFreshConsTailLeft cons predicate t)
             else (partitionToFreshConsTailRight cons predicate t), cons
 
+    let rec transposeGetHeadsFreshConsTail headsCons tailsCons list headCount =
+        match list with
+        | [] ->
+            setFreshConsTail headsCons []
+            setFreshConsTail tailsCons []
+            headCount
+        | head::tail ->
+            match head with
+            | [] ->
+                setFreshConsTail headsCons []
+                setFreshConsTail tailsCons []
+                headCount
+            | h::t ->
+                let headsCons2 = freshConsNoTail h
+                setFreshConsTail headsCons headsCons2
+                let tailsCons2 = freshConsNoTail t
+                setFreshConsTail tailsCons tailsCons2
+                transposeGetHeadsFreshConsTail headsCons2 tailsCons2 tail (headCount + 1)
+
+    /// Split off the heads of the lists
+    let transposeGetHeads list =
+        match list with
+        | [] -> [],[],0
+        | head::tail ->
+            match head with
+            | [] ->
+                let mutable j = 0
+                for t in tail do
+                    j <- j + 1
+                    if not t.IsEmpty then
+                        invalidArgDifferentListLength "list.[0]" (System.String.Format("list.[{0}]", j)) t.Length
+                [],[],0
+            | h::t ->
+                let headsCons = freshConsNoTail h
+                let tailsCons = freshConsNoTail t
+                let headCount = transposeGetHeadsFreshConsTail headsCons tailsCons tail 1
+                headsCons, tailsCons, headCount
+
+    /// Append the next element to the transposed list
+    let rec transposeToFreshConsTail cons list expectedCount =
+        match list with
+        | [] -> setFreshConsTail cons []
+        | _ ->
+            match transposeGetHeads list with
+            | [],_,_ ->
+                setFreshConsTail cons []
+            | heads,tails,headCount ->
+                if headCount < expectedCount then
+                    invalidArgDifferentListLength (System.String.Format("list.[{0}]", headCount)) "list.[0]" <| tails.[0].Length + 1
+                let cons2 = freshConsNoTail heads
+                setFreshConsTail cons cons2
+                transposeToFreshConsTail cons2 tails expectedCount
+
+    /// Build the transposed list
+    let transpose (list: 'T list list) =
+        match list with
+        | [] -> list
+        | [[]] -> []
+        | _ ->
+            let heads, tails, headCount = transposeGetHeads list
+            if headCount = 0 then [] else
+            let cons = freshConsNoTail heads
+            transposeToFreshConsTail cons tails headCount
+            cons
+
     let rec truncateToFreshConsTail cons count list =
         if count = 0 then setFreshConsTail cons [] else
         match list with
@@ -695,12 +760,13 @@ module internal List =
             truncateToFreshConsTail cons2 (count-1) t
 
     let truncate count list =
-        match list with
-        | [] -> list
-        | _ :: ([] as nil) -> if count > 0 then list else nil
-        | h::t ->
-            if count <= 0 then []
-            else
+        if count <= 0 then 
+            []
+        else
+            match list with
+            | []
+            | [_] -> list
+            | h::t ->
                 let cons = freshConsNoTail h
                 truncateToFreshConsTail cons (count-1) t
                 cons

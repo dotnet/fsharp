@@ -4,9 +4,11 @@
 /// is complete.
 module internal Microsoft.FSharp.Compiler.PostTypeCheckSemanticChecks
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.TcGlobals
+open Microsoft.FSharp.Compiler.Import
 open Microsoft.FSharp.Compiler.InfoReader
+open Microsoft.FSharp.Compiler.Tast
+open Microsoft.FSharp.Compiler.Tastops
+open Microsoft.FSharp.Compiler.TcGlobals
 
 val testFlagMemberBody : bool ref
-val CheckTopImpl : TcGlobals * Import.ImportMap * bool * InfoReader * Tast.CompilationPath list * Tast.CcuThunk * Tastops.DisplayEnv * Tast.ModuleOrNamespaceExprWithSig * Tast.Attribs * (bool * bool) -> bool
+val CheckTopImpl : TcGlobals * ImportMap * bool * InfoReader * CompilationPath list * CcuThunk * DisplayEnv * ModuleOrNamespaceExprWithSig * Attribs * (bool * bool) * isInternalTestSpanStackReferring: bool -> bool

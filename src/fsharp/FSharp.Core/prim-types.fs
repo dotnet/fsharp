@@ -20,11 +20,6 @@ namespace Microsoft.FSharp.Core
     open System.Reflection
     open System.Text
     
-
-    //-------------------------------------------------------------------------
-    // Unit
-
-    [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes")>] // No op_equality on unit  
     type Unit() =
         override x.GetHashCode() = 0
         override x.Equals(obj:obj) = 
@@ -33,19 +28,6 @@ namespace Microsoft.FSharp.Core
             member x.CompareTo(_obj:obj) = 0
         
     and unit = Unit
-
-
-namespace Microsoft.FSharp.Core
-
-    open System
-    open System.Collections
-    open System.Collections.Generic
-    open System.Diagnostics
-    open System.Globalization
-    open System.Text
-
-    //-------------------------------------------------------------------------
-    // enumerations
 
     type SourceConstructFlags = 
        | None = 0
@@ -66,21 +48,10 @@ namespace Microsoft.FSharp.Core
        | None = 0
        | Static = 1
        | Instance = 2      
-       | ModuleSuffix = 4  // append 'Module' to the end of a non-unique module
-       | UseNullAsTrueValue = 8  // Note if you change this then change CompilationRepresentationFlags_PermitNull further below
+       /// append 'Module' to the end of a non-unique module
+       | ModuleSuffix = 4  
+       | UseNullAsTrueValue = 8
        | Event = 16
-
-#if FX_NO_ICLONEABLE
-    module ICloneableExtensions =
-        type System.Array with
-            member x.Clone() =
-               let ty = (x.GetType()).GetElementType()
-               let clone = System.Array.CreateInstance(ty,x.Length)
-               x.CopyTo(clone,0)
-               clone
-    
-    open ICloneableExtensions
-#endif
 
     [<AttributeUsage(AttributeTargets.Class,AllowMultiple=false)>]
     type SealedAttribute(value:bool) =
@@ -337,12 +308,12 @@ namespace Microsoft.FSharp.Core
     [<Sealed>]
     type OptionalArgumentAttribute() =
         inherit System.Attribute()
-      
+
     [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
     [<Sealed>]
     type GeneralizableValueAttribute() =
         inherit System.Attribute()
-      
+
     [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
     [<Sealed>]
     type RequiresExplicitTypeArgumentsAttribute() =
@@ -352,13 +323,21 @@ namespace Microsoft.FSharp.Core
     [<Sealed>]
     type RequireQualifiedAccessAttribute() =
         inherit System.Attribute()
-      
+
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly,AllowMultiple=true)>]  
     [<Sealed>]
     type AutoOpenAttribute(path:string) =
         inherit System.Attribute()
         member x.Path = path
         new() =  AutoOpenAttribute("")
+
+    /// This Attribute is used to make Value bindings like
+    ///      let x = some code
+    /// operate like static properties.
+    [<AttributeUsage(AttributeTargets.Property,AllowMultiple=false)>]
+    [<Sealed>]
+    type ValueAsStaticPropertyAttribute() =
+        inherit System.Attribute()
 
     [<MeasureAnnotatedAbbreviation>] type float<[<Measure>] 'Measure> = float 
     [<MeasureAnnotatedAbbreviation>] type float32<[<Measure>] 'Measure> = float32
@@ -367,6 +346,33 @@ namespace Microsoft.FSharp.Core
     [<MeasureAnnotatedAbbreviation>] type sbyte<[<Measure>] 'Measure> = sbyte
     [<MeasureAnnotatedAbbreviation>] type int16<[<Measure>] 'Measure> = int16
     [<MeasureAnnotatedAbbreviation>] type int64<[<Measure>] 'Measure> = int64
+
+    /// <summary>Represents a managed pointer in F# code.</c></summary>
+    type byref<'T> = (# "!0&" #)
+
+    /// <summary>Represents a managed pointer in F# code.</summary>
+    type byref<'T, 'Kind> = (# "!0&" #)
+
+    /// Represents the types of byrefs in F# 4.5+
+    module ByRefKinds = 
+
+        /// Represents a byref that can be written
+        [<Sealed>]
+        type Out() = class end
+
+        /// Represents a byref that can be read
+        [<Sealed>]
+        type In() = class end
+
+        /// Represents a byref that can be both read and written
+        [<Sealed>]
+        type InOut = class end 
+
+    /// <summary>Represents a in-argument or readonly managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type inref<'T> = byref<'T, ByRefKinds.In>
+
+    /// <summary>Represents a out-argument managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type outref<'T> = byref<'T, ByRefKinds.Out>
 
 #if FX_RESHAPED_REFLECTION
     module PrimReflectionAdapters =
@@ -463,8 +469,6 @@ namespace Microsoft.FSharp.Core
     
     module TupleUtils =
     
-        open BasicInlinedOperations
-
         // adapted from System.Tuple::CombineHashCodes
         let inline mask (n:int) (m:int) = (# "and" n m : int #)
         let inline opshl (x:int) (n:int) : int =  (# "shl" x (mask n 31) : int #)
@@ -490,18 +494,6 @@ namespace Microsoft.FSharp.Core
             combineTupleHashes (get codes 0) (get codes 1)
 
 
-namespace Microsoft.FSharp.Core
-
-    open System
-    open System.Collections
-    open System.Collections.Generic
-    open System.Diagnostics
-    open System.Globalization
-    open System.Linq
-    open System.Text
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.BasicInlinedOperations
-
     //-------------------------------------------------------------------------
     // The main aim here is to bootstrap the definition of structural hashing 
     // and comparison.  Calls to these form part of the auto-generated 
@@ -510,14 +502,23 @@ namespace Microsoft.FSharp.Core
     module LanguagePrimitives =  
 
         module (* internal *) ErrorStrings =
-            // inline functions cannot call GetString, so we must make these bits public
+            // inline functions cannot call GetString, so we must make these bits public 
+            [<ValueAsStaticProperty>]
             let AddressOpNotFirstClassString = SR.GetString(SR.addressOpNotFirstClass)
+
+            [<ValueAsStaticProperty>]
             let NoNegateMinValueString = SR.GetString(SR.noNegateMinValue)
+
             // needs to be public to be visible from inline function 'average' and others
+            [<ValueAsStaticProperty>]
             let InputSequenceEmptyString = SR.GetString(SR.inputSequenceEmpty) 
+
             // needs to be public to be visible from inline function 'average' and others
+            [<ValueAsStaticProperty>]
             let InputArrayEmptyString = SR.GetString(SR.arrayWasEmpty) 
+
             // needs to be public to be visible from inline function 'average' and others
+            [<ValueAsStaticProperty>]
             let InputMustBeNonNegativeString = SR.GetString(SR.inputMustBeNonNegative)
             
         [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible")>]  // nested module OK              
@@ -537,10 +538,10 @@ namespace Microsoft.FSharp.Core
             // Byref usage checks prohibit type instantiations involving byrefs.
 
             [<NoDynamicInvocation>]
-            let inline (~&)  (obj : 'T) : 'T byref     = 
+            let inline (~&)  (obj : 'T) : byref<'T>     = 
                 ignore obj // pretend the variable is used
                 let e = new System.ArgumentException(ErrorStrings.AddressOpNotFirstClassString) 
-                (# "throw" (e :> System.Exception) : 'T byref #)
+                (# "throw" (e :> System.Exception) : byref<'T> #)
                  
             [<NoDynamicInvocation>]
             let inline (~&&) (obj : 'T) : nativeptr<'T> = 
@@ -961,11 +962,11 @@ namespace Microsoft.FSharp.Core
                     let c = int64Order lenx1 leny1 
                     if c <> 0 then c else
                     let basex0 = int64 (x.GetLowerBound(0))
-                    let basex1 = int64 (x.GetLowerBound(1))
                     let basey0 = int64 (y.GetLowerBound(0))
-                    let basey1 = int64 (y.GetLowerBound(1))
                     let c = int64Order basex0 basey0
                     if c <> 0 then c else
+                    let basex1 = int64 (x.GetLowerBound(1))
+                    let basey1 = int64 (y.GetLowerBound(1))
                     let c = int64Order basex1 basey1
                     if c <> 0 then c else
                     let rec check0 i =
@@ -2188,6 +2189,7 @@ namespace Microsoft.FSharp.Core
         let FloatComparer   = MakeGenericComparer<float>()
         let Float32Comparer = MakeGenericComparer<float32>()
         let DecimalComparer = MakeGenericComparer<decimal>()
+        let BoolComparer    = MakeGenericComparer<bool>()
 
         /// Use a type-indexed table to ensure we only create a single FastStructuralComparison function
         /// for each type
@@ -2225,6 +2227,7 @@ namespace Microsoft.FSharp.Core
                 | ty when ty.Equals(typeof<float32>)    -> null    
                 | ty when ty.Equals(typeof<decimal>)    -> null    
                 | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringComparer)
+                | ty when ty.Equals(typeof<bool>)       -> null
                 | _ -> MakeGenericComparer<'T>()
 
             static let f : System.Collections.Generic.IComparer<'T>  = 
@@ -2244,6 +2247,7 @@ namespace Microsoft.FSharp.Core
                 | ty when ty.Equals(typeof<float32>)    -> unboxPrim (box Float32Comparer)
                 | ty when ty.Equals(typeof<decimal>)    -> unboxPrim (box DecimalComparer)
                 | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringComparer)
+                | ty when ty.Equals(typeof<bool>)       -> unboxPrim (box BoolComparer)
                 | _ -> 
                     // Review: There are situations where we should be able
                     // to return System.Collections.Generic.Comparer<'T>.Default here.
@@ -2790,17 +2794,17 @@ namespace Microsoft.FSharp.Core
     // Function Values
 
     [<AbstractClass>]
-    type FSharpTypeFunc() = 
+    type FSharpTypeFunc [<DebuggerHidden>] () = 
         abstract Specialize<'T> : unit -> obj
 
     [<AbstractClass>]
-    type FSharpFunc<'T,'Res>() = 
+    type FSharpFunc<'T,'Res> [<DebuggerHidden>] () = 
         abstract Invoke : 'T -> 'Res
 
     module OptimizedClosures = 
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V>() = 
+          type FSharpFunc<'T,'U,'V> [<DebuggerHidden>] () = 
               inherit FSharpFunc<'T,('U -> 'V)>()
               abstract Invoke : 'T * 'U -> 'V
               override f.Invoke(t) = (fun u -> f.Invoke(t,u))
@@ -2813,7 +2817,7 @@ namespace Microsoft.FSharp.Core
                               member x.Invoke(t,u) = (retype func : FSharpFunc<'T,FSharpFunc<'U,'V>>).Invoke(t).Invoke(u) }
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V,'W>() = 
+          type FSharpFunc<'T,'U,'V,'W> [<DebuggerHidden>] () = 
               inherit FSharpFunc<'T,('U -> 'V -> 'W)>()
               abstract Invoke : 'T * 'U * 'V -> 'W
               override f.Invoke(t) = (fun u v -> f.Invoke(t,u,v))
@@ -2831,7 +2835,7 @@ namespace Microsoft.FSharp.Core
                               member x.Invoke(t,u,v) = (retype func : FSharpFunc<'T,('U -> 'V -> 'W)>).Invoke(t) u v }
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V,'W,'X>() = 
+          type FSharpFunc<'T,'U,'V,'W,'X> [<DebuggerHidden>] () = 
               inherit FSharpFunc<'T,('U -> 'V -> 'W -> 'X)>()
               abstract Invoke : 'T * 'U * 'V * 'W -> 'X
               static member Adapt(func : 'T -> 'U -> 'V -> 'W -> 'X) = 
@@ -2854,7 +2858,7 @@ namespace Microsoft.FSharp.Core
               override f.Invoke(t) = (fun u v w -> f.Invoke(t,u,v,w))
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V,'W,'X,'Y>() =
+          type FSharpFunc<'T,'U,'V,'W,'X,'Y> [<DebuggerHidden>] () =
               inherit FSharpFunc<'T,('U -> 'V -> 'W -> 'X -> 'Y)>()
               abstract Invoke : 'T * 'U * 'V * 'W * 'X -> 'Y
               override f.Invoke(t) = (fun u v w x -> f.Invoke(t,u,v,w,x))
@@ -2910,40 +2914,82 @@ namespace Microsoft.FSharp.Core
 
 
     type FSharpFunc<'T,'Res> with
-#if FX_NO_CONVERTER
+
+        // Note: this is not made public in the signature, because of conflicts with the Converter overload.
+        // The method remains in case someone is calling it via reflection.
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit (func : System.Func<_,_>) : ('T -> 'Res) =  (fun t -> func.Invoke(t))
+        static member op_Implicit(converter : System.Func<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
+
+        // Note: this is not made public in the signature, because of conflicts with the Converter overload.
+        // The method remains in case someone is calling it via reflection.
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit (func : ('T -> 'Res) ) =  new System.Func<'T,'Res>(func)
-#else    
+        static member op_Implicit(func : ('T -> 'Res) ) =  new System.Func<'T,'Res>(func)
+
+#if !FX_NO_CONVERTER
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit (converter : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
+        static member op_Implicit(f : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> f.Invoke(t))
+
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit (func : ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
 
-        static member FromConverter (converter : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
-        static member ToConverter ( func : ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
+        static member FromConverter (converter: System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
+
+        static member ToConverter (func: ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
 #endif
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res)                   = OptimizedClosures.invokeFast2(func, arg1, arg2) 
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res, arg3)             = OptimizedClosures.invokeFast3(func, arg1, arg2, arg3)
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res, arg3, arg4)       = OptimizedClosures.invokeFast4(func, arg1, arg2, arg3, arg4)
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res, arg3, arg4, arg5) = OptimizedClosures.invokeFast5(func, arg1, arg2, arg3, arg4, arg5)
+
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res)                   = OptimizedClosures.invokeFast2(func, arg1, arg2) 
+
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3)             = OptimizedClosures.invokeFast3(func, arg1, arg2, arg3)
+
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3, arg4)       = OptimizedClosures.invokeFast4(func, arg1, arg2, arg3, arg4)
+
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3, arg4, arg5) = OptimizedClosures.invokeFast5(func, arg1, arg2, arg3, arg4, arg5)
 
     [<AbstractClass>]
     [<Sealed>]
     type FuncConvert = 
-        static member  ToFSharpFunc (action: Action<_>) = (fun t -> action.Invoke(t))
-#if FX_NO_CONVERTER
-        static member  ToFSharpFunc (converter: System.Func<_, _>) = (fun t -> converter.Invoke(t))
-#else        
-        static member  ToFSharpFunc (converter: Converter<_,_>) = (fun t -> converter.Invoke(t))
-#endif        
-        static member FuncFromTupled (func:'T1 * 'T2 -> 'Res) = (fun a b -> func (a, b))
-        static member FuncFromTupled (func:'T1 * 'T2 * 'T3 -> 'Res) = (fun a b c -> func (a, b, c))
-        static member FuncFromTupled (func:'T1 * 'T2 * 'T3 * 'T4 -> 'Res) = (fun a b c d -> func (a, b, c, d))
-        static member FuncFromTupled (func:'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'Res) = (fun a b c d e-> func (a, b, c, d, e))
 
+        static member  inline ToFSharpFunc (action: Action<_>) = (fun t -> action.Invoke(t))
 
+#if !FX_NO_CONVERTER
+        static member  inline ToFSharpFunc (converter : Converter<_,_>) = (fun t -> converter.Invoke(t))
+#endif
+
+        // Note: this is not made public in the signature, because of conflicts with the Converter overload.
+        // The method remains in case someone is calling it via reflection.
+        static member  inline ToFSharpFunc (converter: System.Func<_, _>) = (fun t -> converter.Invoke(t))
+
+        static member  inline FromFunc (func: System.Func<_>) = (fun () -> func.Invoke())
+
+        static member  inline FromFunc (func: System.Func<_, _>) = (fun t -> func.Invoke(t))
+
+        static member  inline FromFunc (func: System.Func<_, _, _>) = (fun t1 t2 -> func.Invoke(t1,t2))
+
+        static member  inline FromFunc (func: System.Func<_, _, _, _>) = (fun t1 t2 t3 -> func.Invoke(t1,t2,t3))
+
+        static member  inline FromFunc (func: System.Func<_, _, _, _, _>) = (fun t1 t2 t3 t4 -> func.Invoke(t1,t2,t3,t4))
+
+        static member  inline FromFunc (func: System.Func<_, _, _, _, _, _>) = (fun t1 t2 t3 t4 t5 -> func.Invoke(t1,t2,t3,t4,t5))
+
+        static member  inline FromAction (action: System.Action) = (fun () -> action.Invoke())
+
+        static member  inline FromAction (action: System.Action<_>) = (fun t -> action.Invoke(t))
+
+        static member  inline FromAction (action: System.Action<_, _>) = (fun t1 t2 -> action.Invoke(t1,t2))
+
+        static member  inline FromAction (action: System.Action<_, _, _>) = (fun t1 t2 t3 -> action.Invoke(t1,t2,t3))
+
+        static member  inline FromAction (action: System.Action<_, _, _, _>) = (fun t1 t2 t3 t4 -> action.Invoke(t1,t2,t3,t4))
+
+        static member  inline FromAction (action: System.Action<_, _, _, _, _>) = (fun t1 t2 t3 t4 t5 -> action.Invoke(t1,t2,t3,t4,t5))
+
+        static member inline FuncFromTupled (func: 'T1 * 'T2 -> 'Res) = (fun a b -> func (a, b))
+
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 -> 'Res) = (fun a b c -> func (a, b, c))
+
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 * 'T4 -> 'Res) = (fun a b c d -> func (a, b, c, d))
+
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'Res) = (fun a b c d e -> func (a, b, c, d, e))
 
     //-------------------------------------------------------------------------
     // Refs
@@ -2998,7 +3044,6 @@ namespace Microsoft.FSharp.Core
 
     and 'T option = Option<'T> 
 
-
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpResult`2")>]
     [<Struct>]
@@ -3006,9 +3051,18 @@ namespace Microsoft.FSharp.Core
       | Ok of ResultValue:'T 
       | Error of ErrorValue:'TError
 
+    [<StructuralEquality; StructuralComparison>]
+    [<Struct>]
+    [<CompiledName("FSharpValueOption`1")>]
+    type ValueOption<'T> =
+        | ValueNone : 'T voption
+        | ValueSome : 'T -> 'T voption
 
-//============================================================================
-//============================================================================
+        member x.Value = match x with ValueSome x -> x | ValueNone -> raise (new System.InvalidOperationException("ValueOption.Value"))
+
+
+    and 'T voption = ValueOption<'T>
+
 namespace Microsoft.FSharp.Collections
 
     //-------------------------------------------------------------------------
@@ -3034,10 +3088,8 @@ namespace Microsoft.FSharp.Collections
        | (::)  : Head: 'T * Tail: 'T list -> 'T list
        interface System.Collections.Generic.IEnumerable<'T>
        interface System.Collections.IEnumerable
-
-#if !FSCORE_PORTABLE_OLD
        interface System.Collections.Generic.IReadOnlyCollection<'T>
-#endif
+       interface System.Collections.Generic.IReadOnlyList<'T>
         
     and 'T list = List<'T>
 
@@ -3045,29 +3097,34 @@ namespace Microsoft.FSharp.Collections
     // List (debug view)
     //-------------------------------------------------------------------------
 
-    and 
+    and
        ListDebugView<'T>(l:list<'T>) =
 
-           let ListDebugViewMaxLength = 50
-           let rec count l n = 
-               match l with 
-               | [] -> n 
-               | _::t -> if n > ListDebugViewMaxLength then n else count t (n+1) 
+           let ListDebugViewMaxLength = 50                          // default displayed Max Length
+           let ListDebugViewMaxFullLength = 5000                    // display only when FullList opened (5000 is a super big display used to cut-off an infinite list or undebuggably huge one)
+           let rec count l n max =
+               match l with
+               | [] -> n
+               | _::t -> if n > max then n else count t (n+1) max
 
-           [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
-           member x.Items =
-               let n = count l 0 
-               let items = zeroCreate n 
+           let items length =
+               let items = zeroCreate length
                let rec copy (items: 'T[]) l i = 
                    match l with
                    | [] -> () 
                    | h::t -> 
-                       if i < n then 
+                       if i < length then 
                            SetArray items i h
                            copy items t (i+1)
 
                copy items l 0
                items
+
+           [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
+           member x.Items = items (count l 0 ListDebugViewMaxLength)
+
+           [<DebuggerBrowsable(DebuggerBrowsableState.Collapsed)>]
+           member x._FullList = items (count l 0 ListDebugViewMaxFullLength)
 
     type ResizeArray<'T> = System.Collections.Generic.List<'T>
 
@@ -3221,10 +3278,11 @@ namespace Microsoft.FSharp.Collections
         interface System.Collections.IEnumerable with
             member l.GetEnumerator() = (PrivateListHelpers.mkListEnumerator l :> System.Collections.IEnumerator)
 
-#if !FSCORE_PORTABLE_OLD
         interface IReadOnlyCollection<'T> with
             member l.Count = l.Length
-#endif
+
+        interface IReadOnlyList<'T> with
+            member l.Item with get(index) = l.[index]
 
     type seq<'T> = IEnumerable<'T>
 
@@ -3251,53 +3309,6 @@ namespace Microsoft.FSharp.Core
 
     [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1046:DoNotOverloadOperatorEqualsOnReferenceTypes")>]
     module Operators = 
-
-
-#if MULTI_DIMENSIONAL_EXTENSION_PROPERTIES
-        type ``[,]``<'T> with 
-            [<CompiledName("Length1")>]
-            member arr.Length1 = (# "ldlen.multi 2 0" arr : int #)  
-            [<CompiledName("Length2")>]
-            member arr.Length2 = (# "ldlen.multi 2 1" arr : int #)  
-            [<CompiledName("Base1")>]
-            member arr.Base1 = arr.GetLowerBound(0) 
-            [<CompiledName("Base2")>]
-            member arr.Base2 = arr.GetLowerBound(1) 
-
-
-        type ``[,,]``<'T> with 
-            [<CompiledName("Length1")>]
-            member arr.Length1 = (# "ldlen.multi 3 0" arr : int #)  
-            [<CompiledName("Length2")>]
-            member arr.Length2 = (# "ldlen.multi 3 1" arr : int #)  
-            [<CompiledName("Length3")>]
-            member arr.Length3 = (# "ldlen.multi 3 2" arr : int #)  
-            [<CompiledName("Base1")>]
-            member arr.Base1 = arr.GetLowerBound(0)  
-            [<CompiledName("Base2")>]
-            member arr.Base2 = arr.GetLowerBound(1)  
-            [<CompiledName("Base3")>]
-            member arr.Base3 = arr.GetLowerBound(2)
-
-
-        type ``[,,,]``<'T> with 
-            [<CompiledName("Length1")>]
-            member arr.Length1 = (# "ldlen.multi 4 0" arr : int #)  
-            [<CompiledName("Length2")>]
-            member arr.Length2 = (# "ldlen.multi 4 1" arr : int #)  
-            [<CompiledName("Length3")>]
-            member arr.Length3 = (# "ldlen.multi 4 2" arr : int #)  
-            [<CompiledName("Length4")>]
-            member arr.Length4 = (# "ldlen.multi 4 3" arr : int #)  
-            [<CompiledName("Base1")>]
-            member arr.Base1 = arr.GetLowerBound(0)  
-            [<CompiledName("Base2")>]
-            member arr.Base2 = arr.GetLowerBound(1)  
-            [<CompiledName("Base3")>]
-            member arr.Base3 = arr.GetLowerBound(2)
-            [<CompiledName("Base4")>]
-            member arr.Base4 = arr.GetLowerBound(3)
-#endif
 
         [<CompiledName("CreateSequence")>]
         let seq (sequence: seq<'T>) = sequence 
@@ -3416,11 +3427,11 @@ namespace Microsoft.FSharp.Core
 
         let (^) (s1: string) (s2: string) = System.String.Concat(s1, s2)
 
-
         [<CompiledName("DefaultArg")>]
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         let defaultArg arg defaultValue = match arg with None -> defaultValue | Some v -> v
         
+        [<CompiledName("DefaultValueArg")>]
+        let defaultValueArg arg defaultValue = match arg with ValueNone -> defaultValue | ValueSome v -> v
 
         [<NoDynamicInvocation>]
         let inline (~-) (n: ^T) : ^T = 
@@ -3642,11 +3653,14 @@ namespace Microsoft.FSharp.Core
             | (h::t) -> 
             match list2 with
             | [] -> list1
-            | _ -> 
-              let res = [h] 
-              let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
-              PrivateListHelpers.setFreshConsTail lastCons list2
-              res
+            | _ ->
+              match t with
+              | [] -> h :: list2
+              | _ ->
+                  let res = [h] 
+                  let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
+                  PrivateListHelpers.setFreshConsTail lastCons list2
+                  res
 
         [<CompiledName("Increment")>]
         let incr cell = cell.contents <- cell.contents + 1
@@ -4160,7 +4174,7 @@ namespace Microsoft.FSharp.Core
                                     else (# "ceq" e1 e1 : int #)
                  when ^T : float32 = if   (# "clt" e1 e2 : bool #) then (-1)
                                      elif (# "cgt" e1 e2 : bool #) then (1)
-                                     elif (# "ceq" e1 e2 : bool #) then (1)
+                                     elif (# "ceq" e1 e2 : bool #) then (0)
                                      elif (# "ceq" e2 e2 : bool #) then (-1)
                                      else (# "ceq" e1 e1 : int #)
                  when ^T : char   = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)
@@ -4588,18 +4602,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : unativeint = (# "conv.ovf.i.un" value  : nativeint #)
                  when ^T : byte     = (# "conv.ovf.i.un" value  : nativeint #)
 
-#if NAN_INFINITY_MEASURES
-        module Measure =
-
-            let infinity<[<Measure>] 'Measure> : float<'Measure> = LanguagePrimitives.FloatWithMeasure System.Double.PositiveInfinity
-            let nan<[<Measure>] 'Measure> : float<'Measure> = LanguagePrimitives.FloatWithMeasure System.Double.NaN
-
-            let infinityf<[<Measure>] 'Measure> : float32<'Measure> = LanguagePrimitives.Float32WithMeasure System.Single.PositiveInfinity
-            let nanf<[<Measure>] 'Measure> : float32<'Measure> = LanguagePrimitives.Float32WithMeasure System.Single.NaN
-#endif
-
-        module OperatorIntrinsics =  begin
-
+        module OperatorIntrinsics =  
             
             open System.Collections
 #if FX_RESHAPED_REFLECTION
@@ -5502,10 +5505,7 @@ namespace Microsoft.FSharp.Core
             let TanhDynamic x           = TanhDynamicImplTable<_>.Result x 
             let PowDynamic x y          = PowDynamicImplTable<_,_>.Result x y
 
-
-        end
         open OperatorIntrinsics
-        
                    
         let inline (..) (start:^T) (finish:^T) = 
            RangeGeneric (GenericOne< (^T) >)  Checked.(+) start finish
@@ -5762,153 +5762,19 @@ namespace Microsoft.FSharp.Control
 namespace Microsoft.FSharp.Control
 
     open System
-    open System.Diagnostics
     open Microsoft.FSharp.Core
 
     type IDelegateEvent<'Delegate when 'Delegate :> System.Delegate > =
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId="AddHandler")>]
         abstract AddHandler: handler:'Delegate -> unit
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId="RemoveHandler")>]
         abstract RemoveHandler: handler:'Delegate -> unit 
 
     type IEvent<'Delegate,'Args when 'Delegate : delegate<'Args,unit> and 'Delegate :> System.Delegate > =
         inherit IDelegateEvent<'Delegate>
         inherit IObservable<'Args>
 
-
-
-    [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix",Justification="This type is an all-purpose Handler and is deliberately designed to have a simple name")>]
     [<CompiledName("FSharpHandler`1")>]
     type Handler<'Args> =  delegate of sender:obj * args:'Args -> unit 
 
     type IEvent<'Args> = IEvent<Handler<'Args>, 'Args>
 
-    // FxCop suppressions 
-    open System.Diagnostics.CodeAnalysis
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_Addition`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_BitwiseAnd`1(!!0,!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_BitwiseOr`1(!!0,!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_Division`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_Equality`1(!!0,!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_ExclusiveOr`1(!!0,!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_GreaterThanOrEqual`1(!!0,!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_GreaterThan`1(!!0,!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_LeftShift`1(!!0,System.Int32)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_LessThanOrEqual`1(!!0,!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_LessThan`1(!!0,!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_LogicalNot`1(!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_Modulus`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_Multiply`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_RightShift`1(!!0,System.Int32)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_Subtraction`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_UnaryNegation`1(!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_UnaryPlus`1(!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators+Checked.#op_Addition`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators+Checked.#op_Multiply`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators+Checked.#op_Subtraction`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators+Checked.#op_UnaryNegation`1(!!0)",Justification="This is an F# primitive operator name")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods", Scope="member", Target="Microsoft.FSharp.Quotations.FSharpExpr.#Type",Justification="This appears to be a false warning from FxCop")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods", Scope="member", Target="Microsoft.FSharp.Quotations.FSharpVar.#Type",Justification="This appears to be a false warning from FxCop")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Scope="member", Target="Microsoft.FSharp.Control.FSharpEvent`1.#Publish",Justification="")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Scope="type", Target="Microsoft.FSharp.Collections.FSharpSet`1",Justification="Adding suffix 'Collection' would break the simple user model of this type, akin to 'List'")>]
-
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Empty",Justification="This is a compilation residue from a public discrimianted union, which are allowed in FSharp.Core.dll")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Cons",Justification="This is a compilation residue from a public discrimianted union, which are allowed in FSharp.Core.dll")>]
-    [<assembly: SuppressMessage("Microsoft.Usage", "CA2224:OverrideEqualsOnOverloadingOperatorEquals", Scope="type", Target="Microsoft.FSharp.Core.Operators",Justification="This is from the use of op_Equality as a primitive F# operator name. We do not need any override")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1009:DeclareEventHandlersCorrectly", Scope="member", Target="Microsoft.FSharp.Control.FSharpEvent`1.#Publish",Justification="This appears to be a false warning from FxCop")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1030:UseEventsWhereAppropriate", Scope="member", Target="Microsoft.FSharp.Core.Operators.#Raise`1(System.Exception)",Justification="No event required here")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1724:TypeNamesShouldNotMatchNamespaces", Scope="type", Target="Microsoft.FSharp.Text.StructuredPrintfImpl.Layout",Justification="This functionality is scheduled for deletion from FSharp.Core.dll")>]
-
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1719:ParameterNamesShouldNotMatchMemberNames", Scope="member", Target="Microsoft.FSharp.Quotations.FSharpExpr.#Value(System.Object,System.Type)", MessageId="0#")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1719:ParameterNamesShouldNotMatchMemberNames", Scope="member", Target="Microsoft.FSharp.Quotations.FSharpExpr.#Value`1(!!0)", MessageId="0#")>]
-
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.LanguagePrimitives+HashCompare",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Operators+Checked",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Operators+Unchecked",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Operators+OperatorIntrinsics",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.OptimizedClosures+FSharpFunc`3",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.OptimizedClosures+FSharpFunc`4",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.OptimizedClosures+FSharpFunc`5",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.OptimizedClosures+FSharpFunc`6",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Operators+OperatorIntrinsics",Justification="The Microsoft.FSharp.Core namespace uses some nested modules and types by design")>]
-
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice2Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice4Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice5Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice6Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice1Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice2Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice3Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`4+_Choice4Of4",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`4+_Choice1Of4",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`4+_Choice2Of4",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`4+_Choice3Of4",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice1Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice7Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice4Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice5Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice6Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice1Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice3Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`3+_Choice1Of3",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`3+_Choice2Of3",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`3+_Choice3Of3",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`2+_Choice1Of2",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`2+_Choice2Of2",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice4Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice5Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice2Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice3Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Cons",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Empty",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.Choice`5",Justification="F# implements IComparable as a way to implement its generic equality")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.MatchFailureException",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.Choice`4",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.Choice`7",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.Choice`6",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.Choice`3",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.Choice`2",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.FSharpOption`1",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.FSharpRef`1",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Quotations.FSharpVar",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Collections.FSharpMap`2",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Collections.FSharpSet`1",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
-
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", Scope="member", Target="Microsoft.FSharp.Core.FSharpRef`1.#contents", MessageId="contents",Justification="This lowercase public name is provided for ML compatibility. For technical reasons it can't be placed in a different DLL")>]
-
-
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice4Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice5Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice6Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice7Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice1Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice2Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`7+_Choice3Of7",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`4+_Choice4Of4",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`4+_Choice1Of4",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`4+_Choice2Of4",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`4+_Choice3Of4",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice1Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice4Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice5Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice6Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice1Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice2Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`6+_Choice3Of6",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`3+_Choice1Of3",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`3+_Choice2Of3",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`3+_Choice3Of3",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`2+_Choice1Of2",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`2+_Choice2Of2",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice4Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice5Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice2Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice3Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Cons",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-    [<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Empty",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-
-
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1032:ImplementStandardExceptionConstructors", Scope="type", Target="Microsoft.FSharp.Core.MatchFailureException",Justification="Like F# record types, F# exception declarations implement one primary constructor which accepts initial values for all fields")>]
-    [<assembly:CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1051:DoNotDeclareVisibleInstanceFields", Scope="member", Target="Microsoft.FSharp.Core.FSharpRef`1.#contents@")>]
     do()

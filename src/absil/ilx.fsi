@@ -44,7 +44,7 @@ type IlxUnionRef =
 
 type IlxUnionSpec = 
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs
-    member EnclosingType : ILType
+    member DeclaringType : ILType
     member GenericArgs : ILGenericArgs
     member Alternatives : IlxUnionAlternative list
     member AlternativesArray : IlxUnionAlternative[]
