@@ -1324,7 +1324,7 @@ type TypeCheckInfo
             let underlyingTy = stripTyEqnsAndMeasureEqns g ty
             isStructTy g underlyingTy
 
-        let IsValRefMutable (vref: ValRef) =
+        let isValRefMutable (vref: ValRef) =
             // Mutable values, ref cells, and non-inref byrefs are mutable.
             vref.IsMutable
             || Tastops.isRefCellTy g vref.Type
@@ -1340,7 +1340,7 @@ type TypeCheckInfo
             // 'seq' in 'seq { ... }' gets colored as keywords
             | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref ->
                 Some (m, SemanticClassificationType.ComputationExpression)
-            | CNR(_, (Item.Value vref), _, _, _, _, m) when IsValRefMutable vref ->
+            | CNR(_, (Item.Value vref), _, _, _, _, m) when isValRefMutable vref ->
                 Some (m, SemanticClassificationType.MutableVar)
             | CNR(_, Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m) ->
                 Some (m, SemanticClassificationType.IntrinsicFunction)
