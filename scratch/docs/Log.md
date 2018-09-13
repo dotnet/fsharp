@@ -496,3 +496,5 @@ Parsing seem to at least accept my examples. Working on type checking now. One o
 16.3.10 of the spec seems to correspond to this, so time for some bookwork!
 
 Looks like I forgot to insert a call to `Return` between creating the lambdas that introduce the newly-bound names and calling `Apply`.
+
+My example almost works now, in that it builds and runs, but I accidentally doubly wrap the result of the builder in the functor. I think the explicit `Return` the user gives needs to be "moved" to outside the lambdas, as opposed to kept and a "new" `Return` added between them and the calls to `Apply`. The solution is to think about precisely how the desugaring should work a bit more.
