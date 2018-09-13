@@ -53,7 +53,7 @@ type Struct(i:int) =
     static member BlueStruct  = blueStruct
 
 
-#nowarn "3223"
+#nowarn "3220"
 
 // See https://github.com/Microsoft/visualfsharp/pull/3729
 module TestsExplicitUseOfTupleProperties = 
