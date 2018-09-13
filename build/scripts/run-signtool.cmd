@@ -26,6 +26,10 @@ if /i "%arg%" == "-SignType" (
     set SignType=%argv%
     shift
 )
+if /i "%arg%" == "-Configuration" (
+    set Configuration=%argv%
+    shift
+)
 if /i "%arg%" == "-ConfigFile" (
     set ConfigFile=%argv%
     shift
@@ -41,7 +45,7 @@ if not defined ConfigFile echo Configuration file not specified. && goto error
 if not exist "%MSBuild%" echo The specified MSBuild.exe does not exist. && goto error
 
 set NUGET_PACKAGES=%USERPROFILE%\.nuget\packages
-set _signtoolexe=%NUGET_PACKAGES%\RoslynTools.SignTool\1.0.0-beta-62328-01\tools\SignTool.exe
+set _signtoolexe=%NUGET_PACKAGES%\RoslynTools.SignTool\1.0.0-beta2-dev3\tools\SignTool.exe
 set SignToolArgs=-msbuildPath %MSBuild% -config "%ConfigFile%" -nugetPackagesPath "%NUGET_PACKAGES%"
 if /i "%SignType%" == "real" goto runsigntool
 if /i "%SignType%" == "test" set SignToolArgs=%SignToolArgs% -testSign && goto runsigntool
@@ -50,7 +54,7 @@ set SignToolArgs=%SignToolArgs% -test
 :runsigntool
 
 if not exist "%_signtoolexe%" echo The signing tool could not be found at location '%_signtoolexe%' && goto error
-set SignToolArgs=%SignToolArgs% "%scriptdir%..\..\release"
+set SignToolArgs=%SignToolArgs% "%scriptdir%..\..\%Configuration%"
 echo "%_signtoolexe%" %SignToolArgs%
      "%_signtoolexe%" %SignToolArgs%
 if errorlevel 1 goto error

@@ -13,9 +13,6 @@ namespace Microsoft.FSharp.Collections
 #if FX_RESHAPED_REFLECTION
     open System.Reflection
 #endif
-#if FX_NO_ICLONEABLE
-    open Microsoft.FSharp.Core.ICloneableExtensions            
-#endif
 
     /// Basic operations on arrays
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -166,6 +163,9 @@ namespace Microsoft.FSharp.Collections
                 Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 count array
 
         let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (projection:'T->'SafeKey) (getKey:'SafeKey->'Key) (array:'T[]) =
+            let length = array.Length
+            if length = 0 then Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked 0 else
+
             let dict = Dictionary comparer
 
             // Build the groupings
@@ -282,6 +282,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("DistinctBy")>]
         let distinctBy projection (array:'T[]) =
             checkNonNull "array" array
+            let length = array.Length
+            if length = 0 then Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked 0 else
+
             let temp = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
             let mutable i = 0 
             let hashSet = HashSet<_>(HashIdentity.Structural<_>)
@@ -408,10 +411,12 @@ namespace Microsoft.FSharp.Collections
             loop 0
 
         let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (array: 'T[]) =
+            let length = array.Length
+            if length = 0 then Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked 0 else
             let dict = Dictionary<_,ResizeArray<_>> comparer
 
             // Build the groupings
-            for i = 0 to (array.Length - 1) do
+            for i = 0 to length - 1 do
                 let v = array.[i]
                 let safeKey = keyf v
                 let mutable prev = Unchecked.defaultof<_>

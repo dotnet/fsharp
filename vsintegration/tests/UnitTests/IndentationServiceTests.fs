@@ -21,6 +21,7 @@ type IndentationServiceTests()  =
     let filePath = "C:\\test.fs"
     let projectOptions: FSharpProjectOptions = { 
         ProjectFileName = "C:\\test.fsproj"
+        ProjectId = None
         SourceFiles =  [| filePath |]
         ReferencedProjects = [| |]
         OtherOptions = [| |]
@@ -169,6 +170,7 @@ while true do
         |> Array.map (fun (lineNumber, expectedIndentation) ->
             ( Some(expectedIndentation), lineNumber, autoIndentTemplate ))
 
+    [<Test>]
     member this.TestIndentation() = 
         for (expectedIndentation, lineNumber, template) in testCases do 
             let sourceText = SourceText.From(template)
@@ -178,7 +180,8 @@ while true do
             match expectedIndentation with
             | None -> Assert.IsTrue(actualIndentation.IsNone, "No indentation was expected at line {0}", lineNumber)
             | Some indentation -> Assert.AreEqual(expectedIndentation.Value, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber)
-    
+
+    [<Test>]    
     member this.TestAutoIndentation() = 
         for (expectedIndentation, lineNumber, template) in autoIndentTestCases do 
 

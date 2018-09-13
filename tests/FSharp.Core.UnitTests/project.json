@@ -8,7 +8,7 @@
   "dependencies": {
     "nunit": "3.5.0",
     "nunitlite": "3.5.0",
-    "System.ValueTuple": "4.4.0",
+    "System.ValueTuple": "4.3.0",
     "FsCheck": "3.0.0-alpha3",
     "Testing.FSharp.Core": "4.2.4",
     "Microsoft.FSharp.TupleSample": "1.0.0-alpha-161112"

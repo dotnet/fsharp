@@ -34,7 +34,11 @@ type internal QueueList<'T>(firstElementsIn:'T list, lastElementsRevIn: 'T list,
 
     /// This operation is O(1), unless a push happens, which is rare.
     member x.AppendOne(y) = QueueList(firstElements, y :: lastElementsRev, numLastElements+1)
-    member x.Append(ys:seq<_>) = QueueList(firstElements, (List.rev (Seq.toList ys) @ lastElementsRev), numLastElements+1)
+    member x.Append(ys:seq<_>) =
+        let newElements = Seq.toList ys
+        let newLength = List.length newElements
+        let lastElementsRevIn = List.rev newElements @ lastElementsRev
+        QueueList(firstElements, lastElementsRevIn, numLastElementsIn + newLength)
     
     /// This operation is O(n) anyway, so executing ToList() here is OK
     interface IEnumerable<'T> with 

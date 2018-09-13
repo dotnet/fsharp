@@ -52,7 +52,7 @@ type internal FSharpFindUsagesService
             let! sourceText = document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask |> liftAsync
             let checker = checkerProvider.Checker
             let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(position).ToString()
             let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
@@ -107,22 +107,7 @@ type internal FSharpFindUsagesService
                         // In order to find all its usages we have to check all F# projects.
                         | _ -> Seq.toList document.Project.Solution.Projects
                 
-                    asyncMaybe {
-                        let! symbolUses =
-                            projectsToCheck
-                            |> Seq.map (fun project ->
-                                asyncMaybe {
-                                    let! _parsingOptions, _site, projectOptions = projectInfoManager.TryGetOptionsForProject(project.Id)
-                                    let! projectCheckResults = checker.ParseAndCheckProject(projectOptions, userOpName = userOpName) |> liftAsync
-                                    return! projectCheckResults.GetUsesOfSymbol(symbolUse.Symbol) |> liftAsync
-                                } |> Async.map (Option.defaultValue [||]))
-                            |> Async.Parallel
-                            |> liftAsync
-
-                        // FCS may return several `FSharpSymbolUse`s for same range, which have different `ItemOccurrence`s (Use, UseInAttribute, UseInType, etc.)
-                        // We don't care about the occurrence type here, so we distinct by range.
-                        return symbolUses |> Array.concat |> Array.distinctBy (fun x -> x.RangeAlternate)
-                    }
+                    SymbolHelpers.getSymbolUsesInProjects (symbolUse.Symbol, projectInfoManager, checker, projectsToCheck, userOpName) |> liftAsync
 
             for symbolUse in symbolUses do
                 match declarationRange with

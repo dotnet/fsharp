@@ -114,7 +114,7 @@
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
-        <target state="translated">Direttiva non valida '#{0} {1}'</target>
+        <target state="translated">Direttiva '#{0} {1}' non valida</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLineTooLong">
@@ -134,7 +134,7 @@
       </trans-unit>
       <trans-unit id="fsiExceptionDuringPrettyPrinting">
         <source>\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</source>
-        <target state="translated">\n\nEccezione durante la stampa.\nSegnalare il problema affinché possa essere risolto.\nTraccia: {0}\n</target>
+        <target state="translated">\n\nEccezione durante la riformattazione.\nSegnalare il problema affinché possa essere risolto.\nTraccia: {0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">

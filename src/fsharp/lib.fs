@@ -16,8 +16,8 @@ let verbose = false
 let progress = ref false 
 let tracking = ref false // intended to be a general hook to control diagnostic output when tracking down bugs
 
-let condition _s = 
-    try (System.Environment.GetEnvironmentVariable(_s) <> null) with _ -> false
+let condition s = 
+    try (System.Environment.GetEnvironmentVariable(s) <> null) with _ -> false
 
 let GetEnvInteger e dflt = match System.Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 
@@ -155,7 +155,7 @@ module IntMap =
 // Library: generalized association lists
 //------------------------------------------------------------------------
 
-module ListAssoc = 
+module ListAssoc =
 
     /// Treat a list of key-value pairs as a lookup collection.
     /// This function looks up a value based on a match from the supplied
@@ -166,12 +166,12 @@ module ListAssoc =
       | (x',y)::t -> if f x x' then y else find f x t
 
     /// Treat a list of key-value pairs as a lookup collection.
-    /// This function returns true if two keys are the same according to the predicate
-    /// function passed in.
-    let rec containsKey (f:'key->'key->bool) (x:'key) (l:('key*'value) list) : bool = 
-      match l with 
-      | [] -> false
-      | (x',_y)::t -> f x x' || containsKey f x t
+    /// This function looks up a value based on a match from the supplied
+    /// predicate function and returns None if value does not exist.
+    let rec tryFind (f:'key->'key->bool) (x:'key) (l:('key*'value) list) : 'value option = 
+        match l with 
+        | [] -> None
+        | (x',y)::t -> if f x x' then Some y else tryFind f x t
 
 //-------------------------------------------------------------------------
 // Library: lists as generalized sets
@@ -229,6 +229,23 @@ module ListSet =
     (* NOTE: quadratic! *)
     // Note: if duplicates appear, keep the ones toward the _front_ of the list
     let setify f l = List.foldBack (insert f) (List.rev l) [] |> List.rev
+
+    let hasDuplicates f l =
+        match l with
+        | [] -> false
+        | [_] -> false
+        | [x; y] -> f x y
+        | x::rest ->
+            let rec loop acc l =
+                match l with
+                | [] -> false
+                | x::rest ->
+                    if contains f x acc then
+                        true 
+                    else
+                        loop (x::acc) rest
+
+            loop [x] rest
 
 //-------------------------------------------------------------------------
 // Library: pairs

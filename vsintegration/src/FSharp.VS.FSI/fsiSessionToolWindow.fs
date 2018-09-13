@@ -79,11 +79,9 @@ type internal FsiEditorSendAction =
     | ExecuteLine
     | DebugSelection
 
-[<Guid("dee22b65-9761-4a26-8fb2-759b971d6dfc")>] //REVIEW: double check fresh guid! IIRC it is.
+[<Guid(Guids.guidFsiSessionToolWindow)>]
 type internal FsiToolWindow() as this = 
     inherit ToolWindowPane(null)
-    
-    do  assert("dee22b65-9761-4a26-8fb2-759b971d6dfc" = Guids.guidFsiSessionToolWindow)
     
     let providerGlobal = Package.GetGlobalService(typeof<IOleServiceProvider>) :?> IOleServiceProvider
     let provider       = new ServiceProvider(providerGlobal) :> System.IServiceProvider
@@ -492,21 +490,6 @@ type internal FsiToolWindow() as this =
             match RegistryHelpers.tryReadHKCU (defaultVSRegistryRoot + "\\" + settingsRegistrySubKey) debugPromptRegistryValue with
             | Some(1) -> true  // warning dialog suppressed
             | _ ->
-#if VS_VERSION_DEV12
-                let result = 
-                    VsShellUtilities.ShowMessageBox( 
-                        serviceProvider = provider, 
-                        message = VFSIstrings.SR.sessionIsNotDebugFriendly(), 
-                        title = VFSIstrings.SR.fsharpInteractive(), 
-                        icon = OLEMSGICON.OLEMSGICON_WARNING,  
-                        msgButton = OLEMSGBUTTON.OLEMSGBUTTON_YESNO,  
-                        defaultButton = OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST 
-                    ) 
-                
-                // if user picks YES, allow debugging anyways 
-                result = 6 
-
-#else
                 let mutable suppressDiag = false
                 let result =
                     Microsoft.VisualStudio.PlatformUI.MessageDialog.Show(
@@ -522,7 +505,6 @@ type internal FsiToolWindow() as this =
 
                 // if user picks YES, allow debugging anyways
                 result = Microsoft.VisualStudio.PlatformUI.MessageDialogCommand.Yes
-#endif
 
     let onAttachDebugger (sender:obj) (args:EventArgs) =
         if checkDebuggability() then

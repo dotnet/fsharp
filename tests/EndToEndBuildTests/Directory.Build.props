@@ -1,0 +1,9 @@
+<Project>
+
+  <PropertyGroup>
+    <FSharpTestCompilerVersion Condition = " '$(FSharpTestCompilerVersion)' == '' ">net40</FSharpTestCompilerVersion>
+  </PropertyGroup>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharpTests.Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+</Project>

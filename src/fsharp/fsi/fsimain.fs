@@ -22,6 +22,7 @@ open System.Windows.Forms
 #endif
 
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Interactive.Shell
 open Microsoft.FSharp.Compiler.Interactive
@@ -330,6 +331,14 @@ let MainMain argv =
     ignore argv
     let argv = System.Environment.GetCommandLineArgs()
     use e = new SaveAndRestoreConsoleEncoding()
+
+#if !FX_NO_APP_DOMAINS
+    let timesFlag = argv |> Array.exists  (fun x -> x = "/times" || x = "--times")
+    if timesFlag then 
+        AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> 
+            let stats = ILBinaryReader.GetStatistics()
+            printfn "STATS: #ByteArrayFile = %d, #MemoryMappedFileOpen = %d, #MemoryMappedFileClosed = %d, #RawMemoryFile = %d, #WeakByteArrayFile = %d" stats.byteFileCount stats.memoryMapFileOpenedCount stats.memoryMapFileClosedCount stats.rawMemoryFileCount stats.weakByteFileCount)
+#endif
 
 #if FSI_SHADOW_COPY_REFERENCES
     let isShadowCopy x = (x = "/shadowcopyreferences" || x = "--shadowcopyreferences" || x = "/shadowcopyreferences+" || x = "--shadowcopyreferences+")

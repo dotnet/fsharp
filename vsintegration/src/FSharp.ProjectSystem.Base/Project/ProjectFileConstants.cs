@@ -130,6 +130,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public const string NoWarn = "NoWarn";
         public const string TreatWarningsAsErrors = "TreatWarningsAsErrors";
         public const string WarningsAsErrors = "WarningsAsErrors";
+        public const string WarningsNotAsErrors = "WarningsNotAsErrors";
         public const string DocumentationFile = "DocumentationFile";
         public const string OtherFlags = "OtherFlags";
         public const string PlatformTarget = "PlatformTarget";

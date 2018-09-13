@@ -1,4 +1,4 @@
-﻿<Project Sdk="FSharp.NET.Sdk;Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard1.6</TargetFramework>
@@ -13,11 +13,6 @@
     <Compile Include="folder2/a.fs" />
     <Compile Include="folder2/b.fsi" />
     <Compile Include="folder2/b.fs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="FSharp.Core" Version="4.1.*" />
-    <PackageReference Include="FSharp.NET.Sdk" Version="1.0.*" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>

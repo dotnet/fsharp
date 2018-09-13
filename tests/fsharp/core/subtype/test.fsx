@@ -1873,6 +1873,51 @@ module InferenceRegression4040C =
     printfn "%A" (Foo.Test 42)
 
 
+module TestInheritFunc = 
+    type Foo() =
+        inherit FSharpFunc<int,int>()
+        override __.Invoke(a:int) = a + 1
+
+    check "cnwcki1" ((Foo() |> box |> unbox<int -> int> ) 5) 6
+
+module TestInheritFuncGeneric = 
+    type Foo<'T,'U>() =
+        inherit FSharpFunc<'T,'T>()
+        override __.Invoke(a:'T) = a
+
+    check "cnwcki2" ((Foo<int,int>() |> box |> unbox<int -> int> ) 5) 5
+
+
+module TestInheritFunc2 = 
+    type Foo() =
+        inherit OptimizedClosures.FSharpFunc<int,int,int>()
+        override f.Invoke(a:int) = (fun u -> f.Invoke(a,u))
+        override __.Invoke(a:int,b:int) = a + b + 1
+
+    check "cnwcki3" ((Foo() |> box |> unbox<int -> int -> int> ) 5 6) 12
+
+module TestInheritFunc3 = 
+    type Foo() =
+        inherit OptimizedClosures.FSharpFunc<int,int,int,int>()
+        override f.Invoke(t) = (fun u v -> f.Invoke(t,u,v))
+        override __.Invoke(a:int,b:int,c:int) = a + b + c + 1
+
+    check "cnwcki4" ((Foo() |> box |> unbox<int -> int -> int -> int> ) 5 6 7) 19
+
+#if !NETCOREAPP1_0
+
+module TestConverter =
+    open System
+
+    let fromConverter (f: Converter<'T1,'X>) = FSharp.Core.FSharpFunc.FromConverter f
+    let implicitConv (f: Converter<'T1,'X>) = FSharp.Core.FSharpFunc.op_Implicit f
+    let toConverter (f: 'T1 -> 'X) = FSharp.Core.FSharpFunc.ToConverter f
+    let toConverter2 (f: FSharpFunc<'T1, 'X>) = FSharp.Core.FSharpFunc.ToConverter f
+
+    test "cenwceoiwe1" ((id |> toConverter |> fromConverter) 6 = 6)
+    test "cenwceoiwe2" ((id |> toConverter |> fromConverter |> toConverter2 |> implicitConv) 6 = 6)
+#endif
+
 
 #if TESTS_AS_APP
 let RUN() = !failures

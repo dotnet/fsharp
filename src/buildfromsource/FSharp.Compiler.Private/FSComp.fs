@@ -163,22 +163,22 @@ type internal SR private() =
     /// Add . for indexer access.
     /// (Originally from ..\FSComp.txt:19)
     static member addIndexerDot() = (GetStringFunc("addIndexerDot",",,,") )
-    /// All elements of a list constructor expression must have the same type. This expression was expected to have type '%s', but here has type '%s'.
+    /// All elements of a list must be of the same type as the first element, which here is '%s'. This element has type '%s'.
     /// (Originally from ..\FSComp.txt:20)
     static member listElementHasWrongType(a0 : System.String, a1 : System.String) = (GetStringFunc("listElementHasWrongType",",,,%s,,,%s,,,") a0 a1)
-    /// All elements of an array constructor expression must have the same type. This expression was expected to have type '%s', but here has type '%s'.
+    /// All elements of an array must be of the same type as the first element, which here is '%s'. This element has type '%s'.
     /// (Originally from ..\FSComp.txt:21)
     static member arrayElementHasWrongType(a0 : System.String, a1 : System.String) = (GetStringFunc("arrayElementHasWrongType",",,,%s,,,%s,,,") a0 a1)
-    /// The 'if' expression is missing an 'else' branch. The 'then' branch has type '%s'. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type.
+    /// This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type '%s'.
     /// (Originally from ..\FSComp.txt:22)
     static member missingElseBranch(a0 : System.String) = (GetStringFunc("missingElseBranch",",,,%s,,,") a0)
     /// The 'if' expression needs to have type '%s' to satisfy context type requirements. It currently has type '%s'.
     /// (Originally from ..\FSComp.txt:23)
     static member ifExpression(a0 : System.String, a1 : System.String) = (GetStringFunc("ifExpression",",,,%s,,,%s,,,") a0 a1)
-    /// All branches of an 'if' expression must have the same type. This expression was expected to have type '%s', but here has type '%s'.
+    /// All branches of an 'if' expression must return values of the same type as the first branch, which here is '%s'. This branch returns a value of type '%s'.
     /// (Originally from ..\FSComp.txt:24)
     static member elseBranchHasWrongType(a0 : System.String, a1 : System.String) = (GetStringFunc("elseBranchHasWrongType",",,,%s,,,%s,,,") a0 a1)
-    /// All branches of a pattern match expression must have the same type. This expression was expected to have type '%s', but here has type '%s'.
+    /// All branches of a pattern match expression must return values of the same type as the first branch, which here is '%s'. This branch returns a value of type '%s'.
     /// (Originally from ..\FSComp.txt:25)
     static member followingPatternMatchClauseHasWrongType(a0 : System.String, a1 : System.String) = (GetStringFunc("followingPatternMatchClauseHasWrongType",",,,%s,,,%s,,,") a0 a1)
     /// A pattern match guard must be of type 'bool', but this 'when' expression is of type '%s'.
@@ -363,7 +363,7 @@ type internal SR private() =
     static member tastUnexpectedByRef() = (255, GetStringFunc("tastUnexpectedByRef",",,,") )
     /// A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'
     /// (Originally from ..\FSComp.txt:86)
-    static member tastValueMustBeLocalAndMutable() = (256, GetStringFunc("tastValueMustBeLocalAndMutable",",,,") )
+    static member tastValueMustBeMutable() = (256, GetStringFunc("tastValueMustBeMutable",",,,") )
     /// Invalid mutation of a constant expression. Consider copying the expression to a mutable local, e.g. 'let mutable x = ...'.
     /// (Originally from ..\FSComp.txt:87)
     static member tastInvalidMutationOfConstant() = (257, GetStringFunc("tastInvalidMutationOfConstant",",,,") )
@@ -3376,7 +3376,7 @@ type internal SR private() =
     /// No implementation files specified
     /// (Originally from ..\FSComp.txt:1115)
     static member fscNoImplementationFiles() = (2002, GetStringFunc("fscNoImplementationFiles",",,,") )
-    /// An %s specified version '%s', but this value is invalid and has been ignored
+    /// The attribute %s specified version '%s', but this value is invalid and has been ignored
     /// (Originally from ..\FSComp.txt:1116)
     static member fscBadAssemblyVersion(a0 : System.String, a1 : System.String) = (2003, GetStringFunc("fscBadAssemblyVersion",",,,%s,,,%s,,,") a0 a1)
     /// Conflicting options specified: 'win32manifest' and 'win32res'. Only one of these can be used.
@@ -4027,9 +4027,9 @@ type internal SR private() =
     /// Could not find method System.Runtime.CompilerServices.OffsetToStringData in references when building 'fixed' expression.
     /// (Originally from ..\FSComp.txt:1333)
     static member tcCouldNotFindOffsetToStringData() = (3208, GetStringFunc("tcCouldNotFindOffsetToStringData",",,,") )
-    /// The address of the variable '%s' cannot be used at this point. A method or function may not return the address of this local value.
+    /// The address of the variable '%s' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
     /// (Originally from ..\FSComp.txt:1334)
-    static member chkNoByrefReturnOfLocal(a0 : System.String) = (3209, GetStringFunc("chkNoByrefReturnOfLocal",",,,%s,,,") a0)
+    static member chkNoByrefAddressOfLocal(a0 : System.String) = (3209, GetStringFunc("chkNoByrefAddressOfLocal",",,,%s,,,") a0)
     /// %s is an active pattern and cannot be treated as a discriminated union case with named fields.
     /// (Originally from ..\FSComp.txt:1335)
     static member tcNamedActivePattern(a0 : System.String) = (3210, GetStringFunc("tcNamedActivePattern",",,,%s,,,") a0)
@@ -4144,168 +4144,225 @@ type internal SR private() =
     /// Used to associate, or bind, a name to a value or function.
     /// (Originally from ..\FSComp.txt:1372)
     static member keywordDescriptionLet() = (GetStringFunc("keywordDescriptionLet",",,,") )
-    /// Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.
+    /// Used in computation expressions to bind a name to the result of another computation expression.
     /// (Originally from ..\FSComp.txt:1373)
     static member keywordDescriptionLetBang() = (GetStringFunc("keywordDescriptionLetBang",",,,") )
     /// Used to branch by comparing a value to a pattern.
     /// (Originally from ..\FSComp.txt:1374)
     static member keywordDescriptionMatch() = (GetStringFunc("keywordDescriptionMatch",",,,") )
-    /// Used to declare a property or method in an object type.
+    /// Used in computation expressions to pattern match directly over the result of another computation expression.
     /// (Originally from ..\FSComp.txt:1375)
+    static member keywordDescriptionMatchBang() = (GetStringFunc("keywordDescriptionMatchBang",",,,") )
+    /// Used to declare a property or method in an object type.
+    /// (Originally from ..\FSComp.txt:1376)
     static member keywordDescriptionMember() = (GetStringFunc("keywordDescriptionMember",",,,") )
     /// Used to associate a name with a group of related types, values, and functions, to logically separate it from other code.
-    /// (Originally from ..\FSComp.txt:1376)
+    /// (Originally from ..\FSComp.txt:1377)
     static member keywordDescriptionModule() = (GetStringFunc("keywordDescriptionModule",",,,") )
     /// Used to declare a variable, that is, a value that can be changed.
-    /// (Originally from ..\FSComp.txt:1377)
+    /// (Originally from ..\FSComp.txt:1378)
     static member keywordDescriptionMutable() = (GetStringFunc("keywordDescriptionMutable",",,,") )
     /// Used to associate a name with a group of related types and modules, to logically separate it from other code.
-    /// (Originally from ..\FSComp.txt:1378)
+    /// (Originally from ..\FSComp.txt:1379)
     static member keywordDescriptionNamespace() = (GetStringFunc("keywordDescriptionNamespace",",,,") )
     /// Used to declare, define, or invoke a constructor that creates or that can create an object. Also used in generic parameter constraints to indicate that a type must have a certain constructor.
-    /// (Originally from ..\FSComp.txt:1379)
+    /// (Originally from ..\FSComp.txt:1380)
     static member keywordDescriptionNew() = (GetStringFunc("keywordDescriptionNew",",,,") )
     /// Not actually a keyword. However, not struct in combination is used as a generic parameter constraint.
-    /// (Originally from ..\FSComp.txt:1380)
+    /// (Originally from ..\FSComp.txt:1381)
     static member keywordDescriptionNot() = (GetStringFunc("keywordDescriptionNot",",,,") )
     /// Indicates the absence of an object. Also used in generic parameter constraints.
-    /// (Originally from ..\FSComp.txt:1381)
+    /// (Originally from ..\FSComp.txt:1382)
     static member keywordDescriptionNull() = (GetStringFunc("keywordDescriptionNull",",,,") )
     /// Used in discriminated unions to indicate the type of categories of values, and in delegate and exception declarations.
-    /// (Originally from ..\FSComp.txt:1382)
+    /// (Originally from ..\FSComp.txt:1383)
     static member keywordDescriptionOf() = (GetStringFunc("keywordDescriptionOf",",,,") )
     /// Used to make the contents of a namespace or module available without qualification.
-    /// (Originally from ..\FSComp.txt:1383)
+    /// (Originally from ..\FSComp.txt:1384)
     static member keywordDescriptionOpen() = (GetStringFunc("keywordDescriptionOpen",",,,") )
     /// Used with Boolean conditions as a Boolean or operator. Equivalent to ||. Also used in member constraints.
-    /// (Originally from ..\FSComp.txt:1384)
+    /// (Originally from ..\FSComp.txt:1385)
     static member keywordDescriptionOr() = (GetStringFunc("keywordDescriptionOr",",,,") )
     /// Used to implement a version of an abstract or virtual method that differs from the base version.
-    /// (Originally from ..\FSComp.txt:1385)
+    /// (Originally from ..\FSComp.txt:1386)
     static member keywordDescriptionOverride() = (GetStringFunc("keywordDescriptionOverride",",,,") )
     /// Restricts access to a member to code in the same type or module.
-    /// (Originally from ..\FSComp.txt:1386)
+    /// (Originally from ..\FSComp.txt:1387)
     static member keywordDescriptionPrivate() = (GetStringFunc("keywordDescriptionPrivate",",,,") )
     /// Allows access to a member from outside the type.
-    /// (Originally from ..\FSComp.txt:1387)
+    /// (Originally from ..\FSComp.txt:1388)
     static member keywordDescriptionPublic() = (GetStringFunc("keywordDescriptionPublic",",,,") )
     /// Used to indicate that a function is recursive.
-    /// (Originally from ..\FSComp.txt:1388)
-    static member keywordDescriptionRec() = (GetStringFunc("keywordDescriptionRec",",,,") )
-    /// Used to indicate a value to provide as the result of a computation expression.
     /// (Originally from ..\FSComp.txt:1389)
-    static member keywordDescriptionReturn() = (GetStringFunc("keywordDescriptionReturn",",,,") )
-    /// Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.
+    static member keywordDescriptionRec() = (GetStringFunc("keywordDescriptionRec",",,,") )
+    /// Used to provide a value for the result of the containing computation expression.
     /// (Originally from ..\FSComp.txt:1390)
+    static member keywordDescriptionReturn() = (GetStringFunc("keywordDescriptionReturn",",,,") )
+    /// Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.
+    /// (Originally from ..\FSComp.txt:1391)
     static member keywordDescriptionReturnBang() = (GetStringFunc("keywordDescriptionReturnBang",",,,") )
     /// Used in query expressions to specify what fields or columns to extract. Note that this is a contextual keyword, which means that it is not actually a reserved word and it only acts like a keyword in appropriate context.
-    /// (Originally from ..\FSComp.txt:1391)
+    /// (Originally from ..\FSComp.txt:1392)
     static member keywordDescriptionSelect() = (GetStringFunc("keywordDescriptionSelect",",,,") )
     /// Used to indicate a method or property that can be called without an instance of a type, or a value member that is shared among all instances of a type.
-    /// (Originally from ..\FSComp.txt:1392)
+    /// (Originally from ..\FSComp.txt:1393)
     static member keywordDescriptionStatic() = (GetStringFunc("keywordDescriptionStatic",",,,") )
     /// Used to declare a structure type. Also used in generic parameter constraints. Used for OCaml compatibility in module definitions.
-    /// (Originally from ..\FSComp.txt:1393)
+    /// (Originally from ..\FSComp.txt:1394)
     static member keywordDescriptionStruct() = (GetStringFunc("keywordDescriptionStruct",",,,") )
     /// Used in conditional expressions. Also used to perform side effects after object construction.
-    /// (Originally from ..\FSComp.txt:1394)
+    /// (Originally from ..\FSComp.txt:1395)
     static member keywordDescriptionThen() = (GetStringFunc("keywordDescriptionThen",",,,") )
     /// Used in for loops to indicate a range.
-    /// (Originally from ..\FSComp.txt:1395)
+    /// (Originally from ..\FSComp.txt:1396)
     static member keywordDescriptionTo() = (GetStringFunc("keywordDescriptionTo",",,,") )
     /// Used to introduce a block of code that might generate an exception. Used together with with or finally.
-    /// (Originally from ..\FSComp.txt:1396)
+    /// (Originally from ..\FSComp.txt:1397)
     static member keywordDescriptionTry() = (GetStringFunc("keywordDescriptionTry",",,,") )
     /// Used to declare a class, record, structure, discriminated union, enumeration type, unit of measure, or type abbreviation.
-    /// (Originally from ..\FSComp.txt:1397)
+    /// (Originally from ..\FSComp.txt:1398)
     static member keywordDescriptionType() = (GetStringFunc("keywordDescriptionType",",,,") )
     /// Used to convert to a type that is higher in the inheritance chain.
-    /// (Originally from ..\FSComp.txt:1398)
-    static member keywordDescriptionUpcast() = (GetStringFunc("keywordDescriptionUpcast",",,,") )
-    /// Used instead of let for values that require Dispose to be called to free resources.
     /// (Originally from ..\FSComp.txt:1399)
-    static member keywordDescriptionUse() = (GetStringFunc("keywordDescriptionUse",",,,") )
-    /// Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.
+    static member keywordDescriptionUpcast() = (GetStringFunc("keywordDescriptionUpcast",",,,") )
+    /// Used instead of let for values that implement IDisposable"
     /// (Originally from ..\FSComp.txt:1400)
+    static member keywordDescriptionUse() = (GetStringFunc("keywordDescriptionUse",",,,") )
+    /// Used instead of let! in computation expressions for computation expression results that implement IDisposable.
+    /// (Originally from ..\FSComp.txt:1401)
     static member keywordDescriptionUseBang() = (GetStringFunc("keywordDescriptionUseBang",",,,") )
     /// Used in a signature to indicate a value, or in a type to declare a member, in limited situations.
-    /// (Originally from ..\FSComp.txt:1401)
+    /// (Originally from ..\FSComp.txt:1402)
     static member keywordDescriptionVal() = (GetStringFunc("keywordDescriptionVal",",,,") )
     /// Indicates the .NET void type. Used when interoperating with other .NET languages.
-    /// (Originally from ..\FSComp.txt:1402)
+    /// (Originally from ..\FSComp.txt:1403)
     static member keywordDescriptionVoid() = (GetStringFunc("keywordDescriptionVoid",",,,") )
     /// Used for Boolean conditions (when guards) on pattern matches and to introduce a constraint clause for a generic type parameter.
-    /// (Originally from ..\FSComp.txt:1403)
+    /// (Originally from ..\FSComp.txt:1404)
     static member keywordDescriptionWhen() = (GetStringFunc("keywordDescriptionWhen",",,,") )
     /// Introduces a looping construct.
-    /// (Originally from ..\FSComp.txt:1404)
+    /// (Originally from ..\FSComp.txt:1405)
     static member keywordDescriptionWhile() = (GetStringFunc("keywordDescriptionWhile",",,,") )
     /// Used together with the match keyword in pattern matching expressions. Also used in object expressions, record copying expressions, and type extensions to introduce member definitions, and to introduce exception handlers.
-    /// (Originally from ..\FSComp.txt:1405)
+    /// (Originally from ..\FSComp.txt:1406)
     static member keywordDescriptionWith() = (GetStringFunc("keywordDescriptionWith",",,,") )
     /// Used in a sequence expression to produce a value for a sequence.
-    /// (Originally from ..\FSComp.txt:1406)
+    /// (Originally from ..\FSComp.txt:1407)
     static member keywordDescriptionYield() = (GetStringFunc("keywordDescriptionYield",",,,") )
     /// Used in a computation expression to append the result of a given computation expression to a collection of results for the containing computation expression.
-    /// (Originally from ..\FSComp.txt:1407)
+    /// (Originally from ..\FSComp.txt:1408)
     static member keywordDescriptionYieldBang() = (GetStringFunc("keywordDescriptionYieldBang",",,,") )
     /// In function types, delimits arguments and return values. Yields an expression (in sequence expressions); equivalent to the yield keyword. Used in match expressions
-    /// (Originally from ..\FSComp.txt:1408)
+    /// (Originally from ..\FSComp.txt:1409)
     static member keywordDescriptionRightArrow() = (GetStringFunc("keywordDescriptionRightArrow",",,,") )
     /// Assigns a value to a variable.
-    /// (Originally from ..\FSComp.txt:1409)
+    /// (Originally from ..\FSComp.txt:1410)
     static member keywordDescriptionLeftArrow() = (GetStringFunc("keywordDescriptionLeftArrow",",,,") )
     /// Converts a type to type that is higher in the hierarchy.
-    /// (Originally from ..\FSComp.txt:1410)
+    /// (Originally from ..\FSComp.txt:1411)
     static member keywordDescriptionCast() = (GetStringFunc("keywordDescriptionCast",",,,") )
     /// Converts a type to a type that is lower in the hierarchy.
-    /// (Originally from ..\FSComp.txt:1411)
+    /// (Originally from ..\FSComp.txt:1412)
     static member keywordDescriptionDynamicCast() = (GetStringFunc("keywordDescriptionDynamicCast",",,,") )
     /// Delimits a typed code quotation.
-    /// (Originally from ..\FSComp.txt:1412)
+    /// (Originally from ..\FSComp.txt:1413)
     static member keywordDescriptionTypedQuotation() = (GetStringFunc("keywordDescriptionTypedQuotation",",,,") )
     /// Delimits a untyped code quotation.
-    /// (Originally from ..\FSComp.txt:1413)
+    /// (Originally from ..\FSComp.txt:1414)
     static member keywordDescriptionUntypedQuotation() = (GetStringFunc("keywordDescriptionUntypedQuotation",",,,") )
     /// %s '%s' not found in assembly '%s'. A possible cause may be a version incompatibility. You may need to explicitly reference the correct version of this assembly to allow all referenced components to use the correct version.
-    /// (Originally from ..\FSComp.txt:1414)
+    /// (Originally from ..\FSComp.txt:1415)
     static member itemNotFoundDuringDynamicCodeGen(a0 : System.String, a1 : System.String, a2 : System.String) = (3216, GetStringFunc("itemNotFoundDuringDynamicCodeGen",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// %s '%s' not found in type '%s' from assembly '%s'. A possible cause may be a version incompatibility. You may need to explicitly reference the correct version of this assembly to allow all referenced components to use the correct version.
-    /// (Originally from ..\FSComp.txt:1415)
+    /// (Originally from ..\FSComp.txt:1416)
     static member itemNotFoundInTypeDuringDynamicCodeGen(a0 : System.String, a1 : System.String, a2 : System.String, a3 : System.String) = (3216, GetStringFunc("itemNotFoundInTypeDuringDynamicCodeGen",",,,%s,,,%s,,,%s,,,%s,,,") a0 a1 a2 a3)
     /// is
-    /// (Originally from ..\FSComp.txt:1416)
+    /// (Originally from ..\FSComp.txt:1417)
     static member descriptionWordIs() = (GetStringFunc("descriptionWordIs",",,,") )
     /// This value is not a function and cannot be applied.
-    /// (Originally from ..\FSComp.txt:1417)
+    /// (Originally from ..\FSComp.txt:1418)
     static member notAFunction() = (GetStringFunc("notAFunction",",,,") )
     /// This value is not a function and cannot be applied. Did you intend to access the indexer via %s.[index] instead?
-    /// (Originally from ..\FSComp.txt:1418)
+    /// (Originally from ..\FSComp.txt:1419)
     static member notAFunctionButMaybeIndexerWithName(a0 : System.String) = (GetStringFunc("notAFunctionButMaybeIndexerWithName",",,,%s,,,") a0)
     /// This expression is not a function and cannot be applied. Did you intend to access the indexer via expr.[index] instead?
-    /// (Originally from ..\FSComp.txt:1419)
+    /// (Originally from ..\FSComp.txt:1420)
     static member notAFunctionButMaybeIndexer() = (GetStringFunc("notAFunctionButMaybeIndexer",",,,") )
     /// 
-    /// (Originally from ..\FSComp.txt:1420)
+    /// (Originally from ..\FSComp.txt:1421)
     static member notAFunctionButMaybeIndexerErrorCode() = (3217, GetStringFunc("notAFunctionButMaybeIndexerErrorCode",",,,") )
     /// This value is not a function and cannot be applied. Did you forget to terminate a declaration?
-    /// (Originally from ..\FSComp.txt:1421)
+    /// (Originally from ..\FSComp.txt:1422)
     static member notAFunctionButMaybeDeclaration() = (GetStringFunc("notAFunctionButMaybeDeclaration",",,,") )
     /// The argument names in the signature '%s' and implementation '%s' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.
-    /// (Originally from ..\FSComp.txt:1422)
+    /// (Originally from ..\FSComp.txt:1423)
     static member ArgumentsInSigAndImplMismatch(a0 : System.String, a1 : System.String) = (3218, GetStringFunc("ArgumentsInSigAndImplMismatch",",,,%s,,,%s,,,") a0 a1)
     /// An error occurred while reading the F# metadata of assembly '%s'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.
-    /// (Originally from ..\FSComp.txt:1423)
+    /// (Originally from ..\FSComp.txt:1424)
     static member pickleUnexpectedNonZero(a0 : System.String) = (3219, GetStringFunc("pickleUnexpectedNonZero",",,,%s,,,") a0)
     /// This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.
-    /// (Originally from ..\FSComp.txt:1424)
+    /// (Originally from ..\FSComp.txt:1425)
     static member tcTupleMemberNotNormallyUsed() = (3220, GetStringFunc("tcTupleMemberNotNormallyUsed",",,,") )
     /// This expression returns a value of type '%s' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.
-    /// (Originally from ..\FSComp.txt:1425)
+    /// (Originally from ..\FSComp.txt:1426)
     static member implicitlyDiscardedInSequenceExpression(a0 : System.String) = (3221, GetStringFunc("implicitlyDiscardedInSequenceExpression",",,,%s,,,") a0)
     /// This expression returns a value of type '%s' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.
-    /// (Originally from ..\FSComp.txt:1426)
+    /// (Originally from ..\FSComp.txt:1427)
     static member implicitlyDiscardedSequenceInSequenceExpression(a0 : System.String) = (3222, GetStringFunc("implicitlyDiscardedSequenceInSequenceExpression",",,,%s,,,") a0)
+    /// The file '%s' changed on disk unexpectedly, please reload.
+    /// (Originally from ..\FSComp.txt:1428)
+    static member ilreadFileChanged(a0 : System.String) = (3223, GetStringFunc("ilreadFileChanged",",,,%s,,,") a0)
+    /// The byref pointer is readonly, so this write is not permitted.
+    /// (Originally from ..\FSComp.txt:1429)
+    static member writeToReadOnlyByref() = (3224, GetStringFunc("writeToReadOnlyByref",",,,") )
+    /// A ReadOnly attribute has been applied to a struct type with a mutable field.
+    /// (Originally from ..\FSComp.txt:1430)
+    static member readOnlyAttributeOnStructWithMutableField() = (3225, GetStringFunc("readOnlyAttributeOnStructWithMutableField",",,,") )
+    /// A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&f(x)' or '&obj.Method(arg1, arg2)'.
+    /// (Originally from ..\FSComp.txt:1431)
+    static member tcByrefReturnImplicitlyDereferenced() = (3226, GetStringFunc("tcByrefReturnImplicitlyDereferenced",",,,") )
+    /// A type annotated with IsByRefLike must also be a struct. Consider adding the [<Struct>] attribute to the type.
+    /// (Originally from ..\FSComp.txt:1432)
+    static member tcByRefLikeNotStruct() = (3227, GetStringFunc("tcByRefLikeNotStruct",",,,") )
+    /// The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
+    /// (Originally from ..\FSComp.txt:1433)
+    static member chkNoByrefAddressOfValueFromExpression() = (3228, GetStringFunc("chkNoByrefAddressOfValueFromExpression",",,,") )
+    /// The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.
+    /// (Originally from ..\FSComp.txt:1434)
+    static member chkNoReturnOfLimitedSpan() = (3229, GetStringFunc("chkNoReturnOfLimitedSpan",",,,") )
+    /// This value can't be assigned because the target '%s' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.
+    /// (Originally from ..\FSComp.txt:1435)
+    static member chkNoWriteToLimitedSpan(a0 : System.String) = (3230, GetStringFunc("chkNoWriteToLimitedSpan",",,,%s,,,") a0)
+    /// A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'
+    /// (Originally from ..\FSComp.txt:1436)
+    static member tastValueMustBeLocal() = (3231, GetStringFunc("tastValueMustBeLocal",",,,") )
+    /// A type annotated with IsReadOnly must also be a struct. Consider adding the [<Struct>] attribute to the type.
+    /// (Originally from ..\FSComp.txt:1437)
+    static member tcIsReadOnlyNotStruct() = (3232, GetStringFunc("tcIsReadOnlyNotStruct",",,,") )
+    /// Struct members cannot return the address of fields of the struct by reference
+    /// (Originally from ..\FSComp.txt:1438)
+    static member chkStructsMayNotReturnAddressesOfContents() = (3233, GetStringFunc("chkStructsMayNotReturnAddressesOfContents",",,,") )
+    /// The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.
+    /// (Originally from ..\FSComp.txt:1439)
+    static member chkNoByrefLikeFunctionCall() = (3234, GetStringFunc("chkNoByrefLikeFunctionCall",",,,") )
+    /// The Span or IsByRefLike variable '%s' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
+    /// (Originally from ..\FSComp.txt:1440)
+    static member chkNoSpanLikeVariable(a0 : System.String) = (3235, GetStringFunc("chkNoSpanLikeVariable",",,,%s,,,") a0)
+    /// A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.
+    /// (Originally from ..\FSComp.txt:1441)
+    static member chkNoSpanLikeValueFromExpression() = (3236, GetStringFunc("chkNoSpanLikeValueFromExpression",",,,") )
+    /// Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
+    /// (Originally from ..\FSComp.txt:1442)
+    static member tastCantTakeAddressOfExpression() = (3237, GetStringFunc("tastCantTakeAddressOfExpression",",,,") )
+    /// This type does not inherit Attribute, it will not work correctly with other .NET languages.
+    /// (Originally from ..\FSComp.txt:1443)
+    static member tcTypeDoesNotInheritAttribute() = (3242, GetStringFunc("tcTypeDoesNotInheritAttribute",",,,") )
+    /// The struct type '%s' has been assumed to be immutable.
+    /// (Originally from ..\FSComp.txt:1444)
+    static member tcStructTypeAssumedImmutable(a0 : System.String) = (3244, GetStringFunc("tcStructTypeAssumedImmutable",",,,%s,,,") a0)
+    /// Likely mutation of a constant expression. Consider using a mutable local, e.g. 'let mutable x = ...'.
+    /// (Originally from ..\FSComp.txt:1445)
+    static member tastLikelyMutationOfConstant() = (3245, GetStringFunc("tastLikelyMutationOfConstant",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -4391,7 +4448,7 @@ type internal SR private() =
         ignore(GetString("tastInvalidFormForPropertyGetter"))
         ignore(GetString("tastInvalidFormForPropertySetter"))
         ignore(GetString("tastUnexpectedByRef"))
-        ignore(GetString("tastValueMustBeLocalAndMutable"))
+        ignore(GetString("tastValueMustBeMutable"))
         ignore(GetString("tastInvalidMutationOfConstant"))
         ignore(GetString("tastValueHasBeenCopied"))
         ignore(GetString("tastRecursiveValuesMayNotBeInConstructionOfTuple"))
@@ -5613,7 +5670,7 @@ type internal SR private() =
         ignore(GetString("CallerMemberNameIsOverriden"))
         ignore(GetString("tcFixedNotAllowed"))
         ignore(GetString("tcCouldNotFindOffsetToStringData"))
-        ignore(GetString("chkNoByrefReturnOfLocal"))
+        ignore(GetString("chkNoByrefAddressOfLocal"))
         ignore(GetString("tcNamedActivePattern"))
         ignore(GetString("DefaultParameterValueNotAppropriateForArgument"))
         ignore(GetString("tcGlobalsSystemTypeNotFound"))
@@ -5654,6 +5711,7 @@ type internal SR private() =
         ignore(GetString("keywordDescriptionLet"))
         ignore(GetString("keywordDescriptionLetBang"))
         ignore(GetString("keywordDescriptionMatch"))
+        ignore(GetString("keywordDescriptionMatchBang"))
         ignore(GetString("keywordDescriptionMember"))
         ignore(GetString("keywordDescriptionModule"))
         ignore(GetString("keywordDescriptionMutable"))
@@ -5706,4 +5764,22 @@ type internal SR private() =
         ignore(GetString("tcTupleMemberNotNormallyUsed"))
         ignore(GetString("implicitlyDiscardedInSequenceExpression"))
         ignore(GetString("implicitlyDiscardedSequenceInSequenceExpression"))
+        ignore(GetString("ilreadFileChanged"))
+        ignore(GetString("writeToReadOnlyByref"))
+        ignore(GetString("readOnlyAttributeOnStructWithMutableField"))
+        ignore(GetString("tcByrefReturnImplicitlyDereferenced"))
+        ignore(GetString("tcByRefLikeNotStruct"))
+        ignore(GetString("chkNoByrefAddressOfValueFromExpression"))
+        ignore(GetString("chkNoReturnOfLimitedSpan"))
+        ignore(GetString("chkNoWriteToLimitedSpan"))
+        ignore(GetString("tastValueMustBeLocal"))
+        ignore(GetString("tcIsReadOnlyNotStruct"))
+        ignore(GetString("chkStructsMayNotReturnAddressesOfContents"))
+        ignore(GetString("chkNoByrefLikeFunctionCall"))
+        ignore(GetString("chkNoSpanLikeVariable"))
+        ignore(GetString("chkNoSpanLikeValueFromExpression"))
+        ignore(GetString("tastCantTakeAddressOfExpression"))
+        ignore(GetString("tcTypeDoesNotInheritAttribute"))
+        ignore(GetString("tcStructTypeAssumedImmutable"))
+        ignore(GetString("tastLikelyMutationOfConstant"))
         ()

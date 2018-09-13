@@ -600,11 +600,11 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
                 if outputFilePath = "" then 
                     [ FileSystem.GetTempPathShim() ]
                 else
-                    [ FileSystem.GetTempPathShim() ; (outputFilePath ^ "\\") ]
+                    [ FileSystem.GetTempPathShim() ; (outputFilePath + "\\") ]
 
             // Get a unique random file
             let rec GetUniqueRandomFileName(path) =
-                let tfn =  path ^ System.IO.Path.GetRandomFileName()
+                let tfn =  path + System.IO.Path.GetRandomFileName()
                 if FileSystem.SafeExists(tfn) then
                     GetUniqueRandomFileName(path)
                 else
@@ -614,7 +614,7 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
             let machine = if 2 = nPEFileType then "X64" else "X86"
             let cmdLineArgsPreamble = sprintf "/NOLOGO /READONLY /MACHINE:%s" machine
 
-            let cvtres = corSystemDir^"cvtres.exe "
+            let cvtres = corSystemDir + "cvtres.exe "
 
             let createCvtresArgs path =
                 let tempObjFileName = GetUniqueRandomFileName(path)
@@ -624,7 +624,7 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
                 for _ulr in unlinkedResources do
                     let tempResFileName = GetUniqueRandomFileName(path)
                     resFiles <- tempResFileName :: resFiles ; 
-                    cmdLineArgs <- cmdLineArgs ^ " \"" ^ tempResFileName ^ "\""
+                    cmdLineArgs <- cmdLineArgs + " \"" + tempResFileName + "\""
                 let trf = resFiles
                 let cmd = cmdLineArgs
                 cmd,tempObjFileName,trf
@@ -641,7 +641,7 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
                 tempResFiles <- files
                 (invoc,tmp,files) 
 
-            let cvtresInvocation = cvtres ^ cmdLineArgs
+            let cvtresInvocation = cvtres + cmdLineArgs
 
             try
                 let mutable iFiles = 0

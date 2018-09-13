@@ -157,7 +157,7 @@ type internal CompilationErrorLogger (debugName: string, options: FSharpErrorSev
 
     override x.ErrorCount = errorCount
 
-    member x.GetErrors() = List.ofSeq diagnostics
+    member x.GetErrors() = diagnostics.ToArray()
 
 
 /// This represents the global state established as each task function runs as part of the build.
@@ -275,10 +275,12 @@ type CompletionItemKind =
     | Method of isExtension : bool
     | Event
     | Argument
+    | CustomOperation
     | Other
 
 type UnresolvedSymbol =
-    { DisplayName: string
+    { FullName: string
+      DisplayName: string
       Namespace: string[] }
 
 type CompletionItem =
@@ -294,8 +296,8 @@ type CompletionItem =
 [<AutoOpen>]
 module internal SymbolHelpers = 
 
-    let isFunction g typ =
-        let _, tau = tryDestForallTy g typ
+    let isFunction g ty =
+        let _, tau = tryDestForallTy g ty
         isFunTy g tau 
 
     let OutputFullName isListItem ppF fnF r = 
@@ -363,7 +365,7 @@ module internal SymbolHelpers =
         | Item.Event einfo             -> rangeOfEventInfo preferFlag einfo
         | Item.ILField _               -> None
         | Item.Property(_, pinfos)      -> rangeOfPropInfo preferFlag pinfos.Head 
-        | Item.Types(_, typs)     -> typs |> List.tryPick (tryNiceEntityRefOfTy >> Option.map (rangeOfEntityRef preferFlag))
+        | Item.Types(_, tys)     -> tys |> List.tryPick (tryNiceEntityRefOfTy >> Option.map (rangeOfEntityRef preferFlag))
         | Item.CustomOperation (_, _, Some minfo)  -> rangeOfMethInfo g preferFlag minfo
         | Item.TypeVar (_, tp)  -> Some tp.Range
         | Item.ModuleOrNamespaces(modrefs) -> modrefs |> List.tryPick (rangeOfEntityRef preferFlag >> Some)
@@ -376,8 +378,8 @@ module internal SymbolHelpers =
         | Item.ImplicitOp (_, {contents = Some(TraitConstraintSln.FSMethSln(_, vref, _))}) -> Some vref.Range
         | Item.ImplicitOp _ -> None
         | Item.UnqualifiedType tcrefs -> tcrefs |> List.tryPick (rangeOfEntityRef preferFlag >> Some)
-        | Item.DelegateCtor typ 
-        | Item.FakeInterfaceCtor typ -> typ |> tryNiceEntityRefOfTy |> Option.map (rangeOfEntityRef preferFlag)
+        | Item.DelegateCtor ty 
+        | Item.FakeInterfaceCtor ty -> ty |> tryNiceEntityRefOfTy |> Option.map (rangeOfEntityRef preferFlag)
         | Item.NewDef _ -> None
 
     // Provided type definitions do not have a useful F# CCU for the purposes of goto-definition.
@@ -417,7 +419,7 @@ module internal SymbolHelpers =
         | Item.CtorGroup(_, minfos) -> minfos |> List.tryPick (ccuOfMethInfo g)
         | Item.CustomOperation (_, _, Some minfo)       -> ccuOfMethInfo g minfo
 
-        | Item.Types(_, typs)             -> typs |> List.tryPick (tryNiceEntityRefOfTy >> Option.bind computeCcuOfTyconRef)
+        | Item.Types(_, tys)             -> tys |> List.tryPick (tryNiceEntityRefOfTy >> Option.bind computeCcuOfTyconRef)
 
         | Item.ArgName (_, _, Some (ArgumentContainer.Type eref)) -> computeCcuOfTyconRef eref
 
@@ -499,7 +501,14 @@ module internal SymbolHelpers =
         let ccuFileName = libFileOfEntityRef tcref
         let v = vref.Deref
         if v.XmlDocSig = "" && v.HasDeclaringEntity then
-            v.XmlDocSig <- XmlDocSigOfVal g (buildAccessPath vref.TopValDeclaringEntity.CompilationPathOpt) v
+            let ap = buildAccessPath vref.TopValDeclaringEntity.CompilationPathOpt
+            let path =
+                if vref.TopValDeclaringEntity.IsModule then
+                    let sep = if ap.Length > 0 then "." else ""
+                    ap + sep + vref.TopValDeclaringEntity.CompiledName
+                else
+                    ap
+            v.XmlDocSig <- XmlDocSigOfVal g path v
         Some (ccuFileName, v.XmlDocSig)                
 
     let GetXmlDocSigOfRecdFieldInfo (rfinfo:RecdFieldInfo) = 
@@ -818,16 +827,16 @@ module internal SymbolHelpers =
         protectAssemblyExploration true (fun () -> 
          match item with 
          | Item.Types(it, [ty]) -> 
+             isAppTy g ty &&
              g.suppressed_types 
              |> List.exists (fun supp -> 
-                if isAppTy g ty && isAppTy g (generalizedTyconRef supp) then 
-                  // check if they are the same logical type (after removing all abbreviations)
-                  let tcr1 = tcrefOfAppTy g ty
-                  let tcr2 = tcrefOfAppTy g (generalizedTyconRef supp) 
-                  tyconRefEq g tcr1 tcr2 && 
-                  // check the display name is precisely the one we're suppressing
-                  it = supp.DisplayName
-                else false) 
+                let generalizedSupp = generalizedTyconRef supp
+                // check the display name is precisely the one we're suppressing
+                isAppTy g generalizedSupp && it = supp.DisplayName &&
+                // check if they are the same logical type (after removing all abbreviations)
+                let tcr1 = tcrefOfAppTy g ty
+                let tcr2 = tcrefOfAppTy g generalizedSupp
+                tyconRefEq g tcr1 tcr2) 
          | _ -> false)
 
     /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
@@ -865,10 +874,10 @@ module internal SymbolHelpers =
         | Item.MethodGroup(_, _, Some minfo) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
         | Item.MethodGroup(_, minfo :: _, _) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
         | Item.UnqualifiedType (tcref :: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
-        | Item.FakeInterfaceCtor typ 
-        | Item.DelegateCtor typ 
-        | Item.Types(_, typ:: _) -> 
-            match tryDestAppTy g typ with
+        | Item.FakeInterfaceCtor ty 
+        | Item.DelegateCtor ty 
+        | Item.Types(_, ty:: _) -> 
+            match tryDestAppTy g ty with
             | Some tcref -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
             | _ -> ""
         | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 
@@ -959,7 +968,8 @@ module internal SymbolHelpers =
             let g = infoReader.g
             let amap = infoReader.amap
             match item with
-            | Item.Types(_, ((TType_app(tcref, _)):: _)) -> 
+            | Item.Types(_, ((TType_app(tcref, _)):: _))
+            | Item.UnqualifiedType(tcref :: _) ->
                 let ty = generalizedTyconRef tcref
                 Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
             | _ -> false
@@ -1126,9 +1136,9 @@ module internal SymbolHelpers =
         //     type IFoo = abstract F : int
         //     type II = IFoo  // remove 'type II = ' and quickly hover over IFoo before it gets squiggled for 'invalid use of interface type'
         // and in that case we'll just show the interface type name.
-        | Item.FakeInterfaceCtor typ ->
-           let typ, _ = PrettyTypes.PrettifyType g typ
-           let layout = NicePrint.layoutTyconRef denv (tcrefOfAppTy g typ)
+        | Item.FakeInterfaceCtor ty ->
+           let ty, _ = PrettyTypes.PrettifyType g ty
+           let layout = NicePrint.layoutTyconRef denv (tcrefOfAppTy g ty)
            FSharpStructuredToolTipElement.Single(layout, xml)
         
         // The 'fake' representation of constructors of .NET delegate types

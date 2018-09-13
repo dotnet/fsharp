@@ -34,10 +34,12 @@
       <Link>NunitHelpers.fs</Link>
     </Compile>
     <Compile Include="single-test.fs" />
+
     <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
     <Content Include="packages.config" />
     <None Include="app.config" />
+    <None Include="update.base.line.with.actuals.fsx" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -45,11 +47,11 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Collections.Immutable">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutableVersion)\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutablePackageVersion)\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Reflection.Metadata">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Reflection.Metadata.1.4.2\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Reflection.Metadata.$(SystemReflectionMetadataPackageVersion)\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="nunit.framework">

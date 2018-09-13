@@ -43,7 +43,7 @@ let histcex (sample:float list) edges counts =
 		//let i2 = Array.FindIndex(edgePairs, (fun (l,u) -> (l <= x && x < u) )) in counts.(i2) <- counts.(i2) + 1
 		addone tree counts x		
 		 ) sample
-	//timer.Stop(); Debug.WriteLine( "Elapsed " ^ timer.ElapsedMilliseconds.ToString() );		
+	//timer.Stop(); Debug.WriteLine( "Elapsed " + timer.ElapsedMilliseconds.ToString() );		
 
 let histc (sample:float list ) edges =
      let N = List.length edges in    

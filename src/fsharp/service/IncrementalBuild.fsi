@@ -44,16 +44,16 @@ type internal PartialCheckResults =
       TcEnvAtEnd : TypeChecker.TcEnv
 
       /// Represents the collected errors from type checking
-      Errors : (PhasedDiagnostic * FSharpErrorSeverity) list 
+      TcErrorsRev : (PhasedDiagnostic * FSharpErrorSeverity)[] list 
 
       /// Represents the collected name resolutions from type checking
-      TcResolutions: TcResolutions list 
+      TcResolutionsRev: TcResolutions list 
 
       /// Represents the collected uses of symbols from type checking
-      TcSymbolUses: TcSymbolUses list 
+      TcSymbolUsesRev: TcSymbolUses list 
 
       /// Represents open declarations
-      TcOpenDeclarations: OpenDeclaration list
+      TcOpenDeclarationsRev: OpenDeclaration[] list
 
       TcDependencyFiles: string list
 
@@ -62,8 +62,16 @@ type internal PartialCheckResults =
 
       TimeStamp: DateTime 
       
-      /// Represents complete typechecked implementation files, including thier typechecked signatures if any.
-      ImplementationFiles: TypedImplFile list }
+      /// Represents latest complete typechecked implementation file, including its typechecked signature if any.
+      /// Empty for a signature file.
+      LatestImplementationFile: TypedImplFile option 
+      
+      /// Represents latest inferred signature contents.
+      LastestCcuSigForFile: ModuleOrNamespaceType option}
+
+    member TcErrors: (PhasedDiagnostic * FSharpErrorSeverity)[]
+
+    member TcSymbolUses: TcSymbolUses list
 
 /// Manages an incremental build graph for the build of an F# project
 [<Class>]
@@ -151,9 +159,9 @@ type internal IncrementalBuilder =
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile : CompilationThreadToken * filename:string -> Cancellable<Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity) list>
+      member GetParseResultsForFile : CompilationThreadToken * filename:string -> Cancellable<Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity)[]>
 
-      static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 -> Cancellable<IncrementalBuilder option * FSharpErrorInfo list>
+      static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 * tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot -> Cancellable<IncrementalBuilder option * FSharpErrorInfo[]>
 
       /// Increment the usage count on the IncrementalBuilder by 1. This initial usage count is 0 so immediately after creation 
       /// a call to KeepBuilderAlive should be made. The returns an IDisposable which will 

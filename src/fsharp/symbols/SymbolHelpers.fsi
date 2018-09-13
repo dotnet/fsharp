@@ -113,10 +113,12 @@ type public CompletionItemKind =
     | Method of isExtension : bool
     | Event
     | Argument
+    | CustomOperation
     | Other
 
-type internal UnresolvedSymbol =
-    { DisplayName: string
+type UnresolvedSymbol =
+    { FullName: string
+      DisplayName: string
       Namespace: string[] }
 
 type internal CompletionItem =
@@ -188,7 +190,7 @@ type internal CompilationErrorLogger =
     new: debugName:string * options: FSharpErrorSeverityOptions -> CompilationErrorLogger
             
     /// Get the captured errors
-    member GetErrors: unit -> (PhasedDiagnostic * FSharpErrorSeverity) list
+    member GetErrors: unit -> (PhasedDiagnostic * FSharpErrorSeverity)[]
 
 /// This represents the global state established as each task function runs as part of the build.
 ///

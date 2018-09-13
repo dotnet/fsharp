@@ -12,7 +12,6 @@ using IServiceProvider = System.IServiceProvider;
 using Microsoft.VisualStudio.OLE.Interop;
 using EnvDTE;
 using Microsoft.VisualStudio.FSharp.ProjectSystem;
-using Microsoft.VisualStudio.FSharp.LanguageService;
 
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation

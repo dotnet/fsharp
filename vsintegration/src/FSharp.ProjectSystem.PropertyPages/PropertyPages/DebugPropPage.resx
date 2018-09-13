@@ -523,7 +523,7 @@
     <value>StartArguments</value>
   </data>
   <data name="&gt;&gt;StartArguments.Type" xml:space="preserve">
-    <value>Microsoft.VisualStudio.Editors.PropertyPages.DebugPropPage+MultilineTextBoxRejectsEnter, FSharp.ProjectSystem.PropertyPages, Version=15.6.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>Microsoft.VisualStudio.Editors.PropertyPages.DebugPropPage+MultilineTextBoxRejectsEnter, FSharp.ProjectSystem.PropertyPages, Version=15.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="&gt;&gt;StartArguments.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -982,6 +982,6 @@
     <value>DebugPropPage</value>
   </data>
   <data name="&gt;&gt;$this.Type" xml:space="preserve">
-    <value>Microsoft.VisualStudio.Editors.PropertyPages.PropPageUserControlBase, FSharp.ProjectSystem.PropertyPages, Version=15.6.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>Microsoft.VisualStudio.Editors.PropertyPages.PropPageUserControlBase, FSharp.ProjectSystem.PropertyPages, Version=15.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

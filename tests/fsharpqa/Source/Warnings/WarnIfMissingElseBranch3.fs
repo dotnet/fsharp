@@ -1,5 +1,5 @@
 // #Warnings
-//<Expects status="Error" id="FS0001">The 'if' expression is missing an 'else' branch. The 'then' branch has type 'string'. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type.</Expects>
+//<Expects status="Error" id="FS0001">This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type 'string'.</Expects>
 
 let x = 10
 let y =

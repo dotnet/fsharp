@@ -10,7 +10,10 @@ open System
 open System.IO
 open System.Collections.Generic
 
+open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Driver
@@ -19,12 +22,7 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.TcGlobals 
 open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
@@ -242,6 +240,9 @@ type public FSharpCheckFileResults =
 
     member internal GetVisibleNamespacesAndModulesAtPoint : pos -> Async<Tast.ModuleOrNamespaceRef[]>
 
+    /// Find the most precise display environment for the given line and column.
+    member internal GetDisplayEnvForPos : pos : pos -> Async<DisplayEnv option>
+
     /// Determines if a long ident is resolvable at a specific point.
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member internal IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item * ?userOpName: string -> Async<bool>
@@ -250,11 +251,11 @@ type public FSharpCheckFileResults =
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member IsRelativeNameResolvableFromSymbol: cursorPos : pos * plid : string list * symbol: FSharpSymbol * ?userOpName: string -> Async<bool>
 
-    /// Represents complete typechecked implementation files, including thier typechecked signatures if any.
-    member ImplementationFiles: FSharpImplementationFileContents list option
+    /// Represents complete typechecked implementation file, including its typechecked signatures if any.
+    member ImplementationFile: FSharpImplementationFileContents option
 
     /// Open declarations in the file, including auto open modules.
-    member OpenDeclarations: FSharpOpenDeclaration list
+    member OpenDeclarations: FSharpOpenDeclaration[]
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
@@ -311,6 +312,9 @@ type public FSharpProjectOptions =
       // Note that this may not reduce to just the project directory, because there may be two projects in the same directory.
       ProjectFileName: string
 
+      /// This is the unique identifier for the project, it is case sensitive. If it's None, will key off of ProjectFileName in our caching.
+      ProjectId: string option
+
       /// The files in the project
       SourceFiles: string[]
 
@@ -366,7 +370,8 @@ type public FSharpChecker =
     /// <param name="keepAssemblyContents">Keep the checked contents of projects.</param>
     /// <param name="keepAllBackgroundResolutions">If false, do not keep full intermediate checking results from background checking suitable for returning from GetBackgroundCheckResultsForFileInProject. This reduces memory usage.</param>
     /// <param name="legacyReferenceResolver">An optional resolver for non-file references, for legacy purposes</param>
-    static member Create : ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool  * ?legacyReferenceResolver: ReferenceResolver.Resolver -> FSharpChecker
+    /// <param name="tryGetMetadataSnapshot">An optional resolver to access the contents of .NET binaries in a memory-efficient way</param>
+    static member Create : ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool  * ?legacyReferenceResolver: ReferenceResolver.Resolver * ?tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot -> FSharpChecker
 
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.

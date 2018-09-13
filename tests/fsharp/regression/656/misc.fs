@@ -15,8 +15,8 @@ let WriteEvent (source:string) (message:string) (entryType:EventLogEntryType) =
 
 /// Get exception message details
 let rec GetExceptionMessage (e:#Exception) = 
-	(e.GetType()).Name ^ ": " ^ e.Message ^ "\r\n StackTrace: " ^ e.StackTrace ^
-		if e.InnerException = null then "" else "Inner Exception: " ^ (GetExceptionMessage e.InnerException)
+	(e.GetType()).Name + ": " + e.Message + "\r\n StackTrace: " + e.StackTrace + 
+		if e.InnerException = null then "" else "Inner Exception: " + (GetExceptionMessage e.InnerException)
 	
 /// Log exception message	
 let LogWarning e =

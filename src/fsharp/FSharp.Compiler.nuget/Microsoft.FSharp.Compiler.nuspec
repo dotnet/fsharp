@@ -18,7 +18,7 @@
             <group targetFramework=".NETStandard1.6">
                 <dependency id="Microsoft.NETCore.Platforms" version="1.0.1" />
                 <dependency id="NETStandard.Library" version="1.6.0" />
-                <dependency id="System.Collections.Immutable" version="1.3.1" />
+                <dependency id="System.Collections.Immutable" version="1.5.0" />
                 <dependency id="System.Console" version="4.0.0" />
                 <dependency id="System.Diagnostics.Process" version="4.1.0" />
                 <dependency id="System.Diagnostics.TraceSource" version="4.0.0" />
@@ -26,16 +26,14 @@
                 <dependency id="System.Linq.Queryable" version="4.0.1" />
                 <dependency id="System.Net.Requests" version="4.0.11" />
                 <dependency id="System.Reflection.Emit" version="4.0.1" />
-                <dependency id="System.Reflection.Metadata" version="1.4.2" />
+                <dependency id="System.Reflection.Metadata" version="1.6.0" />
                 <dependency id="System.Runtime.InteropServices" version="4.1.0" />
                 <dependency id="System.Runtime.Loader" version="4.0.0" />
                 <dependency id="System.Security.Cryptography.Algorithms" version="4.2.0" />
                 <dependency id="System.Threading.Tasks.Parallel" version="4.0.1" />
                 <dependency id="System.Threading.Thread" version="4.0.0" />
                 <dependency id="System.Threading.ThreadPool" version="4.0.10" />
-                <dependency id="System.ValueTuple" version="4.4.0" />
-                <dependency id="Microsoft.DiaSymReader.PortablePdb" version="$diasymreaderportablepdbversion$" />
-                <dependency id="Microsoft.DiaSymReader" version="$diasymreaderversion$" />
+                <dependency id="System.ValueTuple" version="4.3.0" />
             </group>
         </dependencies>
         <contentFiles>
@@ -56,19 +54,28 @@
             tools, build and runtime/native make unnecessary copies.
             this approach gives a very small deployment. Which is kind of necessary.
         -->
+        <!-- assemblies -->
         <file src="fsc.exe"                                     target="lib\netstandard1.6" />
         <file src="fsi.exe"                                     target="lib\netstandard1.6" />
         <file src="FSharp.Core.dll"                             target="lib\netstandard1.6" />
         <file src="FSharp.Compiler.Private.dll"                 target="lib\netstandard1.6" />
         <file src="FSharp.Build.dll"                            target="lib\netstandard1.6" />
         <file src="FSharp.Compiler.Interactive.Settings.dll"    target="lib\netstandard1.6" />
+        <!-- symbols -->
+        <file src="fsc.pdb"                                     target="lib\netstandard1.6" />
+        <file src="fsi.pdb"                                     target="lib\netstandard1.6" />
+        <file src="FSharp.Core.pdb"                             target="lib\netstandard1.6" />
+        <file src="FSharp.Compiler.Private.pdb"                 target="lib\netstandard1.6" />
+        <file src="FSharp.Build.pdb"                            target="lib\netstandard1.6" />
+        <file src="FSharp.Compiler.Interactive.Settings.pdb"    target="lib\netstandard1.6" />
+        <!-- additional files -->
         <file src="default.win32manifest"                       target="contentFiles\any\any"  />
         <file src="Microsoft.FSharp.Targets"                    target="contentFiles\any\any"  />
         <file src="Microsoft.Portable.FSharp.Targets"           target="contentFiles\any\any"  />
         <file src="Microsoft.FSharp.NetSdk.props"               target="contentFiles\any\any"  />
         <file src="Microsoft.FSharp.NetSdk.targets"             target="contentFiles\any\any"  />
         <file src="Microsoft.FSharp.Overrides.NetSdk.targets"   target="contentFiles\any\any"  />
-
+        <!-- resources -->
         <file src="**\FSharp.Core.resources.dll"                          target="lib\netstandard1.6" />
         <file src="**\FSharp.Compiler.Private.resources.dll"              target="lib\netstandard1.6" />
         <file src="**\FSharp.Compiler.Interactive.Settings.resources.dll" target="lib\netstandard1.6" />

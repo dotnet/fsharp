@@ -2672,6 +2672,30 @@ let ``Test Project16 sym locations`` () =
             ("val x", ("file1", (11, 11), (11, 12)), ("file1", (11, 11), (11, 12)),("file1", (11, 11), (11, 12)));
             ("Impl", ("sig1", (2, 7), (2, 11)), ("file1", (2, 7), (2, 11)),("file1", (2, 7), (2, 11)))|]
 
+[<Test>]
+let ``Test project16 DeclaringEntity`` () =
+    let wholeProjectResults =
+        checker.ParseAndCheckProject(Project16.options)
+        |> Async.RunSynchronously
+    let allSymbolsUses = wholeProjectResults.GetAllUsesOfAllSymbols() |> Async.RunSynchronously
+    for sym in allSymbolsUses do
+       match sym.Symbol with 
+       | :? FSharpEntity as e when not e.IsNamespace || e.AccessPath.Contains(".") -> 
+           printfn "checking declaring type of entity '%s' --> '%s', assembly = '%s'" e.AccessPath e.CompiledName (e.Assembly.ToString())
+           shouldEqual e.DeclaringEntity.IsSome (e.AccessPath <> "global")
+           match e.AccessPath with 
+           | "C" | "D" | "E" | "F" | "G" -> 
+               shouldEqual e.AccessPath "Impl"
+               shouldEqual e.DeclaringEntity.Value.IsFSharpModule true
+               shouldEqual e.DeclaringEntity.Value.IsNamespace false
+           | "int" -> 
+               shouldEqual e.AccessPath "Microsoft.FSharp.Core"
+               shouldEqual e.DeclaringEntity.Value.AccessPath "Microsoft.FSharp"
+           | _ -> ()
+       | :? FSharpMemberOrFunctionOrValue as e when e.IsModuleValueOrMember -> 
+           printfn "checking declaring type of value '%s', assembly = '%s'" e.CompiledName (e.Assembly.ToString())
+           shouldEqual e.DeclaringEntity.IsSome true
+       | _ ->  ()
 
 
 //-----------------------------------------------------------------------------------------
@@ -3944,8 +3968,8 @@ let ``Test project28 all symbols in signature`` () =
     xmlDocSigs
       |> shouldEqual 
             [|("FSharpEntity", "M", "T:M");
-              ("FSharpMemberOrFunctionOrValue", "( |Even|Odd| )", "M:|Even|Odd|(System.Int32)");
-              ("FSharpMemberOrFunctionOrValue", "TestNumber", "M:TestNumber(System.Int32)");
+              ("FSharpMemberOrFunctionOrValue", "( |Even|Odd| )", "M:M.|Even|Odd|(System.Int32)");
+              ("FSharpMemberOrFunctionOrValue", "TestNumber", "M:M.TestNumber(System.Int32)");
               ("FSharpEntity", "DU", "T:M.DU"); 
               ("FSharpUnionCase", "A", "T:M.DU.A");
               ("FSharpField", "A", "T:M.DU.A"); 
@@ -4636,7 +4660,7 @@ module internal Project37 =
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
 namespace AttrTests
-
+type X = int list
 [<System.AttributeUsage(System.AttributeTargets.Method ||| System.AttributeTargets.Assembly) >]
 type AttrTestAttribute() =
     inherit System.Attribute()
@@ -4665,6 +4689,8 @@ module Test =
     let withTypeArray = 0
     [<AttrTest([| 0; 1; 2 |])>]
     let withIntArray = 0
+    module NestedModule = 
+        type NestedRecordType = { B : int }
 
 [<assembly: AttrTest()>]
 do ()
@@ -4722,9 +4748,56 @@ let ``Test project37 typeof and arrays in attribute constructor arguments`` () =
                 a |> shouldEqual [| 0; 1; 2 |] 
             | _ -> ()
         | _ -> ()
-    wholeProjectResults.AssemblySignature.Attributes
-    |> Seq.map (fun a -> a.AttributeType.CompiledName)
-    |> Array.ofSeq |> shouldEqual [| "AttrTestAttribute"; "AttrTest2Attribute" |]
+
+    let mscorlibAsm = 
+        wholeProjectResults.ProjectContext.GetReferencedAssemblies() 
+        |> Seq.find (fun a -> a.SimpleName = "mscorlib")
+    printfn "Attributes found in mscorlib: %A" mscorlibAsm.Contents.Attributes
+    shouldEqual (mscorlibAsm.Contents.Attributes.Count > 0) true
+
+    let fsharpCoreAsm = 
+        wholeProjectResults.ProjectContext.GetReferencedAssemblies() 
+        |> Seq.find (fun a -> a.SimpleName = "FSharp.Core")
+    printfn "Attributes found in FSharp.Core: %A" fsharpCoreAsm.Contents.Attributes
+    shouldEqual (fsharpCoreAsm.Contents.Attributes.Count > 0) true
+
+[<Test>]
+let ``Test project37 DeclaringEntity`` () =
+    let wholeProjectResults =
+        checker.ParseAndCheckProject(Project37.options)
+        |> Async.RunSynchronously
+    let allSymbolsUses = wholeProjectResults.GetAllUsesOfAllSymbols() |> Async.RunSynchronously
+    for sym in allSymbolsUses do
+       match sym.Symbol with 
+       | :? FSharpEntity as e when not e.IsNamespace || e.AccessPath.Contains(".") -> 
+           printfn "checking declaring type of entity '%s' --> '%s', assembly = '%s'" e.AccessPath e.CompiledName (e.Assembly.ToString())
+           shouldEqual e.DeclaringEntity.IsSome true
+           match e.CompiledName with 
+           | "AttrTestAttribute" -> 
+               shouldEqual e.AccessPath "AttrTests"
+           | "int" -> 
+               shouldEqual e.AccessPath "Microsoft.FSharp.Core"
+               shouldEqual e.DeclaringEntity.Value.AccessPath "Microsoft.FSharp"
+           | "list`1" -> 
+               shouldEqual e.AccessPath "Microsoft.FSharp.Collections"
+               shouldEqual e.DeclaringEntity.Value.AccessPath "Microsoft.FSharp"
+               shouldEqual e.DeclaringEntity.Value.DeclaringEntity.IsSome true
+               shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.IsNamespace true
+               shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.AccessPath "Microsoft"
+               shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.DeclaringEntity.Value.DeclaringEntity.IsSome false
+           | "Attribute" -> 
+               shouldEqual e.AccessPath "System"
+               shouldEqual e.DeclaringEntity.Value.AccessPath "global"
+           | "NestedRecordType" -> 
+                shouldEqual e.AccessPath "AttrTests.Test.NestedModule"
+                shouldEqual e.DeclaringEntity.Value.AccessPath "AttrTests.Test"
+                shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.AccessPath "AttrTests"
+                shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.DeclaringEntity.Value.AccessPath "global"
+           | _ -> ()
+       | :? FSharpMemberOrFunctionOrValue as e when e.IsModuleValueOrMember -> 
+           printfn "checking declaring type of value '%s', assembly = '%s'" e.CompiledName (e.Assembly.ToString())
+           shouldEqual e.DeclaringEntity.IsSome true
+       | _ ->  ()
 
 //-----------------------------------------------------------
 
@@ -5175,12 +5248,12 @@ type A(i:int) =
             | _ -> failwithf "Parsing aborted unexpectedly..."
 
     let declarations =
-        match fileCheckResults.ImplementationFiles with
-        | Some (implFile :: _) ->
+        match fileCheckResults.ImplementationFile with
+        | Some implFile ->
             match implFile.Declarations |> List.tryHead with
             | Some (FSharpImplementationFileDeclaration.Entity (_, subDecls)) -> subDecls
             | _ -> failwith "unexpected declaration"
-        | Some [] | None -> failwith "File check results does not contain any `ImplementationFile`s"
+        | None -> failwith "File check results does not contain any `ImplementationFile`s"
 
     match declarations |> List.tryHead with
     | Some (FSharpImplementationFileDeclaration.Entity(entity, [])) ->
@@ -5208,13 +5281,15 @@ let ``#4030, Incremental builder creation warnings`` (args, errorSeverities) =
 //------------------------------------------------------
 
 [<Test>]
-let ``Unused opens smoke test 1``() =
+let ``Unused opens in rec module smoke test 1``() =
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let base2 = Path.GetTempFileName()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
+module rec Module
+
 open System.Collections // unused
 open System.Collections.Generic // used, should not appear
 open FSharp.Control // unused
@@ -5270,11 +5345,83 @@ type UseTheThings(i:int) =
     let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunSynchronously
     let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
     let expected = 
-          [(((2, 5), (2, 23)), "open System.Collections // unused");
-           (((4, 5), (4, 19)), "open FSharp.Control // unused");
-           (((5, 5), (5, 16)), "open FSharp.Data // unused");
-           (((6, 5), (6, 25)), "open System.Globalization // unused");
-           (((23, 5), (23, 21)), "open SomeUnusedModule")]
+          [(((4, 5), (4, 23)), "open System.Collections // unused");
+           (((6, 5), (6, 19)), "open FSharp.Control // unused");
+           (((7, 5), (7, 16)), "open FSharp.Data // unused");
+           (((8, 5), (8, 25)), "open System.Globalization // unused");
+           (((25, 5), (25, 21)), "open SomeUnusedModule")]
+    unusedOpensData |> shouldEqual expected
+
+[<Test>]
+let ``Unused opens in non rec module smoke test 1``() =
+
+    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let base2 = Path.GetTempFileName()
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+    let fileSource1 = """
+module Module
+
+open System.Collections // unused
+open System.Collections.Generic // used, should not appear
+open FSharp.Control // unused
+open FSharp.Data // unused
+open System.Globalization // unused
+
+module SomeUnusedModule = 
+    let f x  = x
+
+module SomeUsedModuleContainingFunction = 
+    let g x  = x
+
+module SomeUsedModuleContainingActivePattern = 
+    let (|ActivePattern|) x  = x
+
+module SomeUsedModuleContainingExtensionMember = 
+    type System.Int32 with member x.Q = 1
+
+module SomeUsedModuleContainingUnion = 
+    type Q = A | B
+
+open SomeUnusedModule
+open SomeUsedModuleContainingFunction
+open SomeUsedModuleContainingExtensionMember
+open SomeUsedModuleContainingActivePattern
+open SomeUsedModuleContainingUnion
+
+type UseTheThings(i:int) =
+    member x.Value = Dictionary<int,int>() // use something from System.Collections.Generic, as a constructor
+    member x.UseSomeUsedModuleContainingFunction() = g 3
+    member x.UseSomeUsedModuleContainingActivePattern(ActivePattern g) = g
+    member x.UseSomeUsedModuleContainingExtensionMember() = (3).Q
+    member x.UseSomeUsedModuleContainingUnion() = A
+"""
+    File.WriteAllText(fileName1, fileSource1)
+
+    let fileNames = [fileName1]
+    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    
+    let fileCheckResults = 
+        keepAssemblyContentsChecker.ParseAndCheckFileInProject(fileName1, 0, fileSource1, options)  |> Async.RunSynchronously
+        |> function 
+            | _, FSharpCheckFileAnswer.Succeeded(res) -> res
+            | _ -> failwithf "Parsing aborted unexpectedly..."
+    //let symbolUses = fileCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously |> Array.indexed 
+    // Fragments used to check hash codes:
+    //(snd symbolUses.[42]).Symbol.IsEffectivelySameAs((snd symbolUses.[37]).Symbol)
+    //(snd symbolUses.[42]).Symbol.GetEffectivelySameAsHash()
+    //(snd symbolUses.[37]).Symbol.GetEffectivelySameAsHash()
+    let lines = File.ReadAllLines(fileName1)
+    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunSynchronously
+    let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
+    let expected = 
+          [(((4, 5), (4, 23)), "open System.Collections // unused");
+           (((6, 5), (6, 19)), "open FSharp.Control // unused");
+           (((7, 5), (7, 16)), "open FSharp.Data // unused");
+           (((8, 5), (8, 25)), "open System.Globalization // unused");
+           (((25, 5), (25, 21)), "open SomeUnusedModule")]
     unusedOpensData |> shouldEqual expected
 
 [<Test>]

@@ -39,7 +39,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
-  <ItemGroup  Condition=" '$(TargetDotnetProfile)' != 'coreclr' ">
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' ">
     <!-- need full name and SpecificVersion = true in order to convince msbuild to allow this reference when targeting portable47 -->
     <Reference Include="nunit.framework, Version=$(NUnitFullVersion), Culture=neutral, PublicKeyToken=2638cd05610744eb">
       <SpecificVersion>true</SpecificVersion>
@@ -52,7 +52,7 @@
       <HintPath Condition="'$(TargetDotnetProfile)' == 'net40'">$(FsCheckLibDir)\net452\FsCheck.dll</HintPath>
     </Reference>
     <Reference Include="System.ValueTuple">
-        <HintPath>..\..\packages\System.ValueTuple.4.4.0\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
+        <HintPath>..\..\packages\System.ValueTuple.$(SystemValueTuplePackageVersion)\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
         <Private>True</Private>
     </Reference>
   </ItemGroup>
@@ -105,6 +105,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\OptionModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\PrintfTests.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\ResultTests.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Core\ExtraTopLevelOperatorsTests.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\Cancellation.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\AsyncType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\LazyType.fs" />

@@ -797,6 +797,11 @@
         <target state="translated">palabra clave 'match'</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.MATCH.BANG">
+        <source>keyword 'match!'</source>
+        <target state="translated">palabra clave 'match!'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.MUTABLE">
         <source>keyword 'mutable'</source>
         <target state="translated">palabra clave 'mutable'</target>
@@ -1420,6 +1425,11 @@
       <trans-unit id="MatchIncomplete4">
         <source> Unmatched elements will be ignored.</source>
         <target state="translated"> Los elementos que no coinciden se omitirán.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EnumMatchIncomplete1">
+        <source>Enums may take values outside known cases.</source>
+        <target state="translated">Las enumeraciones pueden tomar valores fuera de las clases conocidas.</target>
         <note />
       </trans-unit>
       <trans-unit id="RuleNeverMatched">

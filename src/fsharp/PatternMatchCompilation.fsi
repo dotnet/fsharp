@@ -2,6 +2,7 @@
 
 module internal Microsoft.FSharp.Compiler.PatternMatchCompilation
 
+open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
@@ -42,6 +43,8 @@ and PatternValBinding =
 and TypedMatchClause =  
     | TClause of Pattern * Expr option * DecisionTreeTarget * range
 
+val ilFieldToTastConst : ILFieldInit -> Tast.Const
+
 /// Compile a pattern into a decision tree and a set of targets.
 val internal CompilePattern : 
     TcGlobals ->
@@ -67,3 +70,4 @@ val internal CompilePattern :
 
 exception internal MatchIncomplete of bool * (string * bool) option * range
 exception internal RuleNeverMatched of range
+exception internal EnumMatchIncomplete of bool * (string * bool) option * range

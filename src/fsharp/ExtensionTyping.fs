@@ -428,7 +428,7 @@ module internal ExtensionTyping =
         member __.GetGenericArguments() = x.GetGenericArguments() |> ProvidedType.CreateArray ctxt
         member __.ApplyStaticArguments(provider: ITypeProvider, fullTypePathAfterArguments, staticArgs: obj[]) = 
             provider.ApplyStaticArguments(x, fullTypePathAfterArguments,  staticArgs) |> ProvidedType.Create ctxt
-        member __.IsVoid = (typeof<System.Void>.Equals(x))
+        member __.IsVoid = (typeof<System.Void>.Equals(x) || (x.Namespace = "System" && x.Name = "Void"))
         member __.IsGenericParameter = x.IsGenericParameter
         member __.IsValueType = x.IsValueType
         member __.IsByRef = x.IsByRef
@@ -1095,7 +1095,7 @@ module internal ExtensionTyping =
         try 
             match ResolveProvidedType(resolver, m, moduleOrNamespace, typeName) with
             | Tainted.Null -> None
-            | typ -> Some typ
+            | ty -> Some ty
         with e -> 
             errorRecovery e m
             None
@@ -1199,16 +1199,8 @@ module internal ExtensionTyping =
                 staticParameters |> Array.map (fun sp -> 
                       let typeBeforeArgumentsName = typeBeforeArguments.PUntaint ((fun st -> st.Name), m)
                       let spName = sp.PUntaint ((fun sp -> sp.Name), m)
-                      if not (argSpecsTable.ContainsKey spName) then 
-                          if sp.PUntaint ((fun sp -> sp.IsOptional), m) then 
-                              match sp.PUntaint((fun sp -> sp.RawDefaultValue), m) with
-                              | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, typeBeforeArgumentsName, typeBeforeArgumentsName, spName), range0))
-                              | v -> v
-                          else
-                              error(Error(FSComp.SR.etProvidedTypeReferenceMissingArgument(spName), range0))
-                      else
-                          let arg = argSpecsTable.[spName]
-                      
+                      match argSpecsTable.TryGetValue(spName) with
+                      | true, arg ->
                           /// Find the name of the representation type for the static parameter
                           let spReprTypeName = 
                               sp.PUntaint((fun sp -> 
@@ -1232,7 +1224,16 @@ module internal ExtensionTyping =
                           | "System.Char" -> box (char arg)
                           | "System.Boolean" -> box (arg = "True")
                           | "System.String" -> box (string arg)
-                          | s -> error(Error(FSComp.SR.etUnknownStaticArgumentKind(s, typeLogicalName), range0)))
+                          | s -> error(Error(FSComp.SR.etUnknownStaticArgumentKind(s, typeLogicalName), range0))
+
+                      | _ ->
+                          if sp.PUntaint ((fun sp -> sp.IsOptional), m) then 
+                              match sp.PUntaint((fun sp -> sp.RawDefaultValue), m) with
+                              | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, typeBeforeArgumentsName, typeBeforeArgumentsName, spName), range0))
+                              | v -> v
+                          else
+                              error(Error(FSComp.SR.etProvidedTypeReferenceMissingArgument(spName), range0)))
+                    
 
             match TryApplyProvidedType(typeBeforeArguments, None, staticArgs, range0) with 
             | Some (typeWithArguments, checkTypeName) -> 

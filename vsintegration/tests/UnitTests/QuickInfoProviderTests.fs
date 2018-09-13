@@ -1,4 +1,7 @@
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
+// ------------------------------------------------------------------------------------------------------------------------
+//
 // To run the tests in this file:
 //
 // Technique 1: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
@@ -17,25 +20,35 @@
 // Technique 3: 
 // 
 //    Use F# Interactive.  This only works for FSharp.Compiler.Private.dll which has a public API
+//
+// ------------------------------------------------------------------------------------------------------------------------
 
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-[<NUnit.Framework.Category "Roslyn Services">]
-module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.QuickInfoProviderTests
+
+namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
 open System
-
 open NUnit.Framework
+open Microsoft.VisualStudio.FSharp
+
+[<SetUpFixture>]
+type public AssemblyResolverTestFixture () =
+
+    [<OneTimeSetUp>]
+    member public __.Init () = AssemblyResolver.addResolver ()
+
+[<NUnit.Framework.Category "Roslyn Services">]
+module QuickInfoProviderTests =
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open UnitTests.TestLib.LanguageService
-
 let filePath = "C:\\test.fs"
 
 let internal projectOptions = { 
     ProjectFileName = "C:\\test.fsproj"
+    ProjectId = None
     SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
     OtherOptions = [| |]
@@ -99,7 +112,7 @@ Full name: System.Console"
         
         let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
         let quickInfo =
-            FSharpQuickInfoProvider.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, parsingOptions, projectOptions, 0)
+            FSharpAsyncQuickInfoSource.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, parsingOptions, projectOptions, 0)
             |> Async.RunSynchronously
         
         let actual = quickInfo |> Option.map (fun (text, _, _, _) -> getQuickInfoText text)
@@ -230,7 +243,7 @@ let res8 = abs 5.0<kg>
         
         let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
         let quickInfo =
-            FSharpQuickInfoProvider.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, parsingOptions, projectOptions, 0)
+            FSharpAsyncQuickInfoSource.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, parsingOptions, projectOptions, 0)
             |> Async.RunSynchronously
         
         let actual = quickInfo |> Option.map (fun (text, _, _, _) -> getQuickInfoText text)

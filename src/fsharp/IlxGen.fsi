@@ -89,7 +89,7 @@ type public IlxAssemblyGenerator =
     member GenerateCode : IlxGenOptions * TypedAssemblyAfterOptimization * Attribs * Attribs -> IlxGenResults
 
     /// Create the CAS permission sets for an assembly fragment
-    member CreatePermissionSets : Attrib list ->  ILPermission list
+    member CreatePermissionSets : Attrib list ->  ILSecurityDecl list
 
     /// Invert the compilation of the given value and clear the storage of the value
     member ClearGeneratedValue : ExecutionContext * Val -> unit

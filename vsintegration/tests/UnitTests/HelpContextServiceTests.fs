@@ -22,6 +22,7 @@ type HelpContextServiceTests() =
     let fileName = "C:\\test.fs"
     let options: FSharpProjectOptions = { 
         ProjectFileName = "C:\\test.fsproj"
+        ProjectId = None
         SourceFiles =  [| fileName |]
         ReferencedProjects = [| |]
         OtherOptions = [| |]
@@ -60,9 +61,9 @@ type HelpContextServiceTests() =
             let span = Microsoft.CodeAnalysis.Text.TextSpan(marker, 0)
             let textLine = sourceText.Lines.GetLineFromPosition(marker)
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-            let tokens = Tokenizer.getColorizationData(documentId, sourceText, textLine.Span, Some "test.fs", [], CancellationToken.None)
+            let classifiedSpans = Tokenizer.getClassifiedSpans(documentId, sourceText, textLine.Span, Some "test.fs", [], CancellationToken.None)
 
-            yield FSharpHelpContextService.GetHelpTerm(checker, sourceText, fileName,  newOptions, span, tokens, version)
+            yield FSharpHelpContextService.GetHelpTerm(checker, sourceText, fileName,  newOptions, span, classifiedSpans, version)
                   |> Async.RunSynchronously
         ]
         let equalLength = List.length expectedKeywords = List.length res

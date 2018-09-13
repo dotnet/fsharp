@@ -56,7 +56,7 @@
   <Import Project="FSharpSource.Profiles.targets" />
 
   <PropertyGroup Condition="'$(TargetDotnetProfile)'=='net40'">
-    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.6</TargetFrameworkVersion>
     <TargetFrameworkProfile></TargetFrameworkProfile>
     <!-- MSbuild works out the assembly references -->
   </PropertyGroup>
@@ -101,8 +101,11 @@
     <When Condition="'$(BuildWith)' == 'LKG' AND '$(BUILD_PROTO_WITH_CORECLR_LKG)' == '1'">
       <PropertyGroup >
         <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
+
+        <DotnetSdkVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\DotnetCLIToolsVersion.txt').Trim())</DotnetSdkVersion>
+        <FSharpNetCoreLkgPath>$(MSBuildThisFileDirectory)..\Tools\dotnet20\sdk\$(DotnetSdkVersion)\FSharp</FSharpNetCoreLkgPath>
+
         <!-- When using coreclr to bootstrap to proto. We acquire the FSharp.Core LKG, targets LKG, the FSharp.Build LKG from the .NET Framework compiler tools LKG package. -->
-        <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\Tools\dotnet20\sdk\2.0.3-servicing-007056\FSharp</FSharpNetCoreLkgPath>
         <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
 
         <!-- When using coreclr to bootstrap, the compiler binary comes from the coreclr LKG, invoked using corehost.exe -->

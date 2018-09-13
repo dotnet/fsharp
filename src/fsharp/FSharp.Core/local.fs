@@ -79,10 +79,6 @@ open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core.Operators
 open System.Diagnostics.CodeAnalysis                                    
 open System.Collections.Generic
-#if FX_NO_ICLONEABLE
-open Microsoft.FSharp.Core.ICloneableExtensions            
-#else
-#endif  
 
 
 module internal List = 
@@ -200,6 +196,10 @@ module internal List =
                 cons
                   
     let groupBy (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
+        match list with
+        | [] -> []
+        | _ ->
+
         let dict = Dictionary<_, _ list []> comparer
 
         // Build the groupings
@@ -760,12 +760,13 @@ module internal List =
             truncateToFreshConsTail cons2 (count-1) t
 
     let truncate count list =
-        match list with
-        | [] -> list
-        | _ :: ([] as nil) -> if count > 0 then list else nil
-        | h::t ->
-            if count <= 0 then []
-            else
+        if count <= 0 then 
+            []
+        else
+            match list with
+            | []
+            | [_] -> list
+            | h::t ->
                 let cons = freshConsNoTail h
                 truncateToFreshConsTail cons (count-1) t
                 cons

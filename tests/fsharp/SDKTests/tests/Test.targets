@@ -1,0 +1,38 @@
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="$(BinariesDirectory)\Microsoft.FSharp.NetSdk.targets" />
+
+  <Target Name="Test">
+
+    <Message Importance="High" Text="Testing : $(MSBuildProjectName)" />
+    <ItemGroup>
+      <FoundFSharpCorePackages Include="@(PackageReference)" Condition="'%(Identity)' == 'FSharp.Core'" />
+      <FoundValueTuplePackages Include="@(PackageReference)" Condition="'%(Identity)' == 'System.ValueTuple'" />
+    </ItemGroup>
+
+    <Message Importance="High" Text="Diagnostic TestTarget PackageReference        = '@(PackageReference)' " />
+    <Message Importance="High" Text="Diagnostic TestTarget FoundFSharpCorePackages = '@(FoundFSharpCorePackages)' " />
+    <Message Importance="High" Text="Diagnostic TestTarget FoundValueTuplePackages = '@(FoundValueTuplePackages)' " />
+
+    <!-- check for invalid test settings -->
+    <Error Condition="'$(ExpectsFSharpCore)' != 'true' and '$(ExpectedFSharpCorePackageVersion)' != ''" Text="A test cannot specify both ExepctsFSharpCore=false and provide a value for ExpectedFSharpCorePackageVersion." />
+
+    <!-- validate there is only ever 0 or 1 FSharp.Core present -->
+    <Error Condition="'$(ExpectsFSharpCore)' == 'true' and @(FoundFSharpCorePackages->Count()) == 0" Text="No FSharp.Core reference found.  Expected version $(ExpectedFSharpCorePackageVersion)." />
+    <Error Condition="'$(ExpectsFSharpCore)' != 'true' and @(FoundFSharpCorePackages->Count()) &gt; 0" Text="Expected no FSharp.Core to be present, but found version %(FoundFSharpCorePackages.Version)." />
+    <Error Condition="@(FoundFSharpCorePackages->Count()) &gt; 1" Text="Found more than one version of FSharp.Core; this should never happen: version=%(FoundFSharpCorePackages.Version)." />
+
+    <!-- validate there is only ever 0 or 1 System.ValueTuple present -->
+    <Error Condition="'$(ExpectsValueTuple)' == 'true' and @(FoundValueTuplePackages->Count()) == 0" Text="No System.ValueTuple reference found.  Expected version $(ExpectedValueTuplePackageVersion)." />
+    <Error Condition="'$(ExpectsValueTuple)' != 'true' and @(FoundValueTuplePackages->Count()) &gt; 0" Text="Expected no System.ValueTuple to be present, but found version %(FoundValueTuplePackages.Version)." />
+    <Error Condition="@(FoundValueTuplePackages->Count()) &gt; 1" Text="Found more than one version of ValueTuple; this should never happen: version=%(FoundValueTuplePackages.Version)." />
+
+
+    <!-- validate the version of the listed FSharp.Core -->
+    <Error Condition="'$(ExpectsFSharpCore)' == 'true' and '%(FoundFSharpCorePackages.Version)' != '$(ExpectedFSharpCorePackageVersion)'" Text="Expected FSharp.Core version $(ExpectedFSharpCorePackageVersion) but found %(FoundFSharpCorePackages.Version)." />
+
+    <!-- validate the version of the listed System.ValueTuple -->
+    <Error Condition="'$(ExpectsValueTuple)' == 'true' and '%(FoundValueTuplePackages.Version)' != '$(ExpectedValueTuplePackageVersion)'" Text="Expected System.ValueTuple version $(ExpectedValueTuplePackageVersion) but found %(FoundValueTuplePackages.Version)." />
+  </Target>
+
+</Project>

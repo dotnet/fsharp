@@ -14,6 +14,7 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
+open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.CompileOptions
@@ -1024,13 +1025,26 @@ type TypeCheckAccumulator =
       tcGlobals:TcGlobals
       tcConfig:TcConfig
       tcEnvAtEndOfFile: TcEnv
-      tcResolutions: TcResolutions list
-      tcSymbolUses: TcSymbolUses list
-      tcOpenDeclarations: OpenDeclaration list
+
+      /// Accumulated resolutions, last file first
+      tcResolutionsRev: TcResolutions list
+
+      /// Accumulated symbol uses, last file first
+      tcSymbolUsesRev: TcSymbolUses list
+
+      /// Accumulated 'open' declarations, last file first
+      tcOpenDeclarationsRev: OpenDeclaration[] list
       topAttribs:TopAttribs option
-      typedImplFiles:TypedImplFile list
+
+      /// Result of checking most recent file, if any
+      latestImplFile:TypedImplFile option
+
+      latestCcuSigForFile: ModuleOrNamespaceType option
+
       tcDependencyFiles: string list
-      tcErrors:(PhasedDiagnostic * FSharpErrorSeverity) list } // errors=true, warnings=false
+
+      /// Accumulated errors, last file first
+      tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list }
 
       
 /// Global service state
@@ -1098,14 +1112,27 @@ type PartialCheckResults =
       TcGlobals: TcGlobals 
       TcConfig: TcConfig 
       TcEnvAtEnd: TcEnv 
-      Errors: (PhasedDiagnostic * FSharpErrorSeverity) list 
-      TcResolutions: TcResolutions list 
-      TcSymbolUses: TcSymbolUses list 
-      TcOpenDeclarations: OpenDeclaration list
+
+      /// Kept in a stack so that each incremental update shares storage with previous files
+      TcErrorsRev: (PhasedDiagnostic * FSharpErrorSeverity)[] list 
+
+      /// Kept in a stack so that each incremental update shares storage with previous files
+      TcResolutionsRev: TcResolutions list 
+
+      /// Kept in a stack so that each incremental update shares storage with previous files
+      TcSymbolUsesRev: TcSymbolUses list 
+
+      /// Kept in a stack so that each incremental update shares storage with previous files
+      TcOpenDeclarationsRev: OpenDeclaration[] list
+
       TcDependencyFiles: string list 
       TopAttribs: TopAttribs option
-      TimeStamp: System.DateTime
-      ImplementationFiles: TypedImplFile list }
+      TimeStamp: DateTime
+      LatestImplementationFile: TypedImplFile option 
+      LastestCcuSigForFile: ModuleOrNamespaceType option }
+
+    member x.TcErrors  = Array.concat (List.rev x.TcErrorsRev)
+    member x.TcSymbolUses  = List.rev x.TcSymbolUsesRev
 
     static member Create (tcAcc: TypeCheckAccumulator, timestamp) = 
         { TcState = tcAcc.tcState
@@ -1113,14 +1140,15 @@ type PartialCheckResults =
           TcGlobals = tcAcc.tcGlobals
           TcConfig = tcAcc.tcConfig
           TcEnvAtEnd = tcAcc.tcEnvAtEndOfFile
-          Errors = tcAcc.tcErrors
-          TcResolutions = tcAcc.tcResolutions
-          TcSymbolUses = tcAcc.tcSymbolUses
-          TcOpenDeclarations = tcAcc.tcOpenDeclarations
+          TcErrorsRev = tcAcc.tcErrorsRev
+          TcResolutionsRev = tcAcc.tcResolutionsRev
+          TcSymbolUsesRev = tcAcc.tcSymbolUsesRev
+          TcOpenDeclarationsRev = tcAcc.tcOpenDeclarationsRev
           TcDependencyFiles = tcAcc.tcDependencyFiles
           TopAttribs = tcAcc.topAttribs
           TimeStamp = timestamp 
-          ImplementationFiles = tcAcc.typedImplFiles }
+          LatestImplementationFile = tcAcc.latestImplFile 
+          LastestCcuSigForFile = tcAcc.latestCcuSigForFile }
 
 
 [<AutoOpen>]
@@ -1137,8 +1165,6 @@ module Utilities =
 /// a virtualized view of the assembly contents as computed by background checking.
 type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState:TcState, outfile, topAttrs, assemblyName, ilAssemRef) = 
 
-    /// Try to find an attribute that takes a string argument
-
     let generatedCcu = tcState.Ccu
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
                       
@@ -1146,18 +1172,14 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState:
         let _sigDataAttributes, sigDataResources = Driver.EncodeInterfaceData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
         [ for r in sigDataResources  do
             let ccuName = GetSignatureDataResourceName r
-            let bytes = 
-                match r.Location with 
-                | ILResourceLocation.Local b -> b()
-                | _ -> assert false; failwith "unreachable"
-            yield (ccuName, bytes) ]
+            yield (ccuName, (fun () -> r.GetBytes())) ]
 
     let autoOpenAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_AutoOpenAttribute)
     let ivtAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute)
     interface IRawFSharpAssemblyData with 
         member __.GetAutoOpenAttributes(_ilg) = autoOpenAttrs
         member __.GetInternalsVisibleToAttributes(_ilg) =  ivtAttrs
-        member __.TryGetRawILModule() = None
+        member __.TryGetILModuleDef() = None
         member __.GetRawFSharpSignatureData(_m, _ilShortAssemName, _filename) = sigData
         member __.GetRawFSharpOptimizationData(_m, _ilShortAssemName, _filename) = [ ]
         member __.GetRawTypeForwarders() = mkILExportedTypes []  // TODO: cross-project references with type forwarders
@@ -1320,19 +1342,21 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     for (err, isError) in inp.MetaCommandDiagnostics do 
                         yield err, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
 
+        let initialErrors = Array.append (Array.ofList loadClosureErrors) (errorLogger.GetErrors())
         let tcAcc = 
             { tcGlobals=tcGlobals
               tcImports=tcImports
               tcState=tcState
               tcConfig=tcConfig
               tcEnvAtEndOfFile=tcInitial
-              tcResolutions=[]
-              tcSymbolUses=[]
-              tcOpenDeclarations=[]
+              tcResolutionsRev=[]
+              tcSymbolUsesRev=[]
+              tcOpenDeclarationsRev=[]
               topAttribs=None
-              typedImplFiles=[]
+              latestImplFile=None
+              latestCcuSigForFile=None
               tcDependencyFiles=basicDependencies
-              tcErrors = loadClosureErrors @ errorLogger.GetErrors() }   
+              tcErrorsRev = [ initialErrors ] }   
         return tcAcc }
                 
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.ScanLeft
@@ -1351,9 +1375,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
                     ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filename) |> ignore
                     let sink = TcResultsSinkImpl(tcAcc.tcGlobals)
-                    let hadParseErrors = not (List.isEmpty parseErrors)
+                    let hadParseErrors = not (Array.isEmpty parseErrors)
 
-                    let! (tcEnvAtEndOfFile, topAttribs, typedImplFiles), tcState = 
+                    let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState = 
                         TypeCheckOneInputEventually 
                             ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0), 
                              tcConfig, tcAcc.tcImports, 
@@ -1363,7 +1387,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                              tcAcc.tcState, input)
                         
                     /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
-                    let typedImplFiles = if keepAssemblyContents then typedImplFiles else []
+                    let implFile = if keepAssemblyContents then implFile else None
                     let tcResolutions = if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty
                     let tcEnvAtEndOfFile = (if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls)
                     let tcSymbolUses = sink.GetSymbolUses()  
@@ -1371,14 +1395,16 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     RequireCompilationThread ctok // Note: events get raised on the CompilationThread
 
                     fileChecked.Trigger (filename)
+                    let newErrors = Array.append parseErrors (capturingErrorLogger.GetErrors())
                     return {tcAcc with tcState=tcState 
                                        tcEnvAtEndOfFile=tcEnvAtEndOfFile
                                        topAttribs=Some topAttribs
-                                       typedImplFiles=typedImplFiles
-                                       tcResolutions=tcAcc.tcResolutions @ [tcResolutions]
-                                       tcSymbolUses=tcAcc.tcSymbolUses @ [tcSymbolUses]
-                                       tcOpenDeclarations=tcAcc.tcOpenDeclarations @ sink.OpenDeclarations
-                                       tcErrors = tcAcc.tcErrors @ parseErrors @ capturingErrorLogger.GetErrors() 
+                                       latestImplFile=implFile
+                                       latestCcuSigForFile=Some ccuSigForFile
+                                       tcResolutionsRev=tcResolutions :: tcAcc.tcResolutionsRev
+                                       tcSymbolUsesRev=tcSymbolUses :: tcAcc.tcSymbolUsesRev
+                                       tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: tcAcc.tcOpenDeclarationsRev
+                                       tcErrorsRev = newErrors :: tcAcc.tcErrorsRev 
                                        tcDependencyFiles = filename :: tcAcc.tcDependencyFiles } 
                 }
                     
@@ -1416,16 +1442,16 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         let finalAcc = tcStates.[tcStates.Length-1]
 
         // Finish the checking
-        let (_tcEnvAtEndOfLastFile, topAttrs, mimpls), tcState = 
-            let results = tcStates |> List.ofArray |> List.map (fun acc-> acc.tcEnvAtEndOfFile, defaultArg acc.topAttribs EmptyTopAttrs, acc.typedImplFiles)
+        let (_tcEnvAtEndOfLastFile, topAttrs, mimpls, _), tcState = 
+            let results = tcStates |> List.ofArray |> List.map (fun acc-> acc.tcEnvAtEndOfFile, defaultArg acc.topAttribs EmptyTopAttrs, acc.latestImplFile, acc.latestCcuSigForFile)
             TypeCheckMultipleInputsFinish (results, finalAcc.tcState)
   
         let ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt = 
           try
-            // TypeCheckClosedInputSetFinish fills in tcState.Ccu but in incremental scenarios we don't want this, 
-            // so we make this temporary here
-            let oldContents = tcState.Ccu.Deref.Contents
-            try
+           // TypeCheckClosedInputSetFinish fills in tcState.Ccu but in incremental scenarios we don't want this, 
+           // so we make this temporary here
+           let oldContents = tcState.Ccu.Deref.Contents
+           try
             let tcState, tcAssemblyExpr = TypeCheckClosedInputSetFinish (mimpls, tcState)
 
             // Compute the identity of the generated assembly based on attributes, options etc.
@@ -1473,7 +1499,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
         let finalAccWithErrors = 
             { finalAcc with 
-                tcErrors = finalAcc.tcErrors @ errorLogger.GetErrors() 
+                tcErrorsRev = errorLogger.GetErrors() :: finalAcc.tcErrorsRev 
                 topAttribs = Some topAttrs
             }
         return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalAccWithErrors
@@ -1697,7 +1723,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
-    static member TryCreateBackgroundBuilderForProjectOptions (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, frameworkTcImportsCache: FrameworkImportsCache, loadClosureOpt:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds) =
+    static member TryCreateBackgroundBuilderForProjectOptions (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, frameworkTcImportsCache: FrameworkImportsCache, loadClosureOpt:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds, tryGetMetadataSnapshot) =
       let useSimpleResolutionSwitch = "--simpleresolution"
 
       cancellable {
@@ -1719,16 +1745,20 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             let tcConfigB, sourceFilesNew = 
 
                 let getSwitchValue switchstring =
-                    match commandLineArgs |> Seq.tryFindIndex(fun s -> s.StartsWith(switchstring)) with
+                    match commandLineArgs |> Seq.tryFindIndex(fun s -> s.StartsWithOrdinal(switchstring)) with
                     | Some idx -> Some(commandLineArgs.[idx].Substring(switchstring.Length))
                     | _ -> None
 
                 // see also fsc.fs:runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
-                let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, implicitIncludeDir=projectDirectory, optimizeForMemory=true, isInteractive=false, isInvalidationSupported=true, defaultCopyFSharpCore=false) 
-
-                // The following uses more memory but means we don't take read-exclusions on the DLLs we reference 
-                // Could detect well-known assemblies--ie System.dll--and open them with read-locks 
-                tcConfigB.openBinariesInMemory <- true
+                let tcConfigB = 
+                    TcConfigBuilder.CreateNew(legacyReferenceResolver, 
+                         defaultFSharpBinariesDir, 
+                         implicitIncludeDir=projectDirectory, 
+                         reduceMemoryUsage=ReduceMemoryFlag.Yes, 
+                         isInteractive=false, 
+                         isInvalidationSupported=true, 
+                         defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
+                         tryGetMetadataSnapshot=tryGetMetadataSnapshot) 
 
                 tcConfigB.resolutionEnvironment <- (ReferenceResolver.ResolutionEnvironment.EditingOrCompilation true)
 
@@ -1823,10 +1853,10 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 let errorSeverityOptions = builder.TcConfig.errorSeverityOptions
                 let errorLogger = CompilationErrorLogger("IncrementalBuilderCreation", errorSeverityOptions)
                 delayedLogger.CommitDelayedDiagnostics(errorLogger)
-                errorLogger.GetErrors() |> List.map (fun (d, severity) -> d, severity = FSharpErrorSeverity.Error)
+                errorLogger.GetErrors() |> Array.map (fun (d, severity) -> d, severity = FSharpErrorSeverity.Error)
             | _ ->
-                delayedLogger.Diagnostics
-            |> List.map (fun (d, isError) -> FSharpErrorInfo.CreateFromException(d, isError, range.Zero))
+                Array.ofList delayedLogger.Diagnostics
+            |> Array.map (fun (d, isError) -> FSharpErrorInfo.CreateFromException(d, isError, range.Zero))
 
         return builderOpt, diagnostics
       }

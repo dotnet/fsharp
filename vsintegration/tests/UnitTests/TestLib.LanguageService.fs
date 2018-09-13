@@ -3,6 +3,7 @@
 namespace UnitTests.TestLib.LanguageService
 
 open System
+open System.Reflection
 open NUnit.Framework
 open System.Diagnostics
 open System.IO
@@ -247,6 +248,7 @@ type LanguageServiceBaseTests() =
 
     let mutable defaultVS : VisualStudio = Unchecked.defaultof<_>
     let mutable currentVS : VisualStudio = Unchecked.defaultof<_>
+
     (* VsOps is internal, but this type needs to be public *)
     let mutable ops = BuiltMSBuildTestFlavour()
     let testStopwatch = new Stopwatch()
@@ -427,7 +429,6 @@ type LanguageServiceBaseTests() =
         ShiftKeyUp(currentVS)
         ops.CleanInvisibleProject(currentVS)
 
-        do AbstractIL.Diagnostics.setDiagnosticsChannel(None);
         ResetStopWatch()
         testStopwatch.Reset()
         testStopwatch.Start()

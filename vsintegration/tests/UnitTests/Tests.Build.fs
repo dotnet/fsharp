@@ -172,6 +172,21 @@ type Build() =
                     cmd
 
     [<Test>]
+    member public this.TestWarningsNotAsErrors() =
+        let tool = new Microsoft.FSharp.Build.Fsc()
+        tool.WarningsNotAsErrors <- "52;109"
+        AssertEqual "52;109" tool.WarningsNotAsErrors
+        let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--warnaserror-:52,109" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
+
+    [<Test>]
     member public this.TestVersionFile() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.VersionFile <- "src/version"

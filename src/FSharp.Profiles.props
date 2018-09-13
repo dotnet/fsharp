@@ -2,7 +2,7 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project>
 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net45'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net46'">
     <DefineConstants Condition="'$(MonoPackaging)' == 'true'">$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>
@@ -10,7 +10,6 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard1.6' or '$(TargetFramework)' == 'netcoreapp1.0'">
-    <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
     <DefineConstants>$(DefineConstants);NETSTANDARD1_6</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
@@ -51,7 +50,6 @@
     <DefineConstants>$(DefineConstants);FX_JITTRACKING_ISSUE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_INDENTED_TEXT_WRITER</DefineConstants>
     <DefineConstants Condition=" '$(FX_NO_LOADER)' != 'true' ">$(DefineConstants);FX_RESHAPED_REFLECTION_CORECLR</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_RESHAPED_MSBUILD</DefineConstants>
     <DefineConstants>$(DefineConstants);FSI_TODO_NETCORE</DefineConstants>
     <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
   </PropertyGroup>

@@ -183,6 +183,8 @@ let singleTestBuildAndRun dir p =
 
 let singleNegTest (cfg: TestConfig) testname = 
 
+    let cfg = { cfg with fsc_flags = sprintf "%s --define:NEGATIVE" cfg.fsc_flags }
+
     // REM == Set baseline (fsc vs vs, in case the vs baseline exists)
     let VSBSLFILE = 
         if (sprintf "%s.vsbsl" testname) |> (fileExists cfg)

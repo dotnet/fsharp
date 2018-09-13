@@ -797,6 +797,11 @@
         <target state="translated">'match' anahtar sözcüğü</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.MATCH.BANG">
+        <source>keyword 'match!'</source>
+        <target state="translated">'match!' anahtar sözcüğü</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.MUTABLE">
         <source>keyword 'mutable'</source>
         <target state="translated">'mutable' anahtar sözcüğü</target>
@@ -1420,6 +1425,11 @@
       <trans-unit id="MatchIncomplete4">
         <source> Unmatched elements will be ignored.</source>
         <target state="translated"> Eşleşmeyen öğeler yok sayılacak.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EnumMatchIncomplete1">
+        <source>Enums may take values outside known cases.</source>
+        <target state="translated">Numaralandırmalar, bilinen durumlar dışından değerler alabilir.</target>
         <note />
       </trans-unit>
       <trans-unit id="RuleNeverMatched">
