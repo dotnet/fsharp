@@ -490,3 +490,9 @@ One day lost to `build.cmd` not actually building everything. From what I can te
 ## 2018-09-13
 
 Parsing seem to at least accept my examples. Working on type checking now. One of the core issue right now if when to call `trans` and `translatedCtxt` on desugared CEs.
+
+...which may, in turn, be due to me not updating `varSpace` correctly.
+
+16.3.10 of the spec seems to correspond to this, so time for some bookwork!
+
+Looks like I forgot to insert a call to `Return` between creating the lambdas that introduce the newly-bound names and calling `Apply`.
