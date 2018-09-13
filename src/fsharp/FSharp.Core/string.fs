@@ -83,15 +83,19 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("ForAll")>]
         let forall predicate (str:string) =
-            let str = emptyIfNull str
-            let rec check i = (i >= str.Length) || (predicate str.[i] && check (i+1)) 
-            check 0
+            match str with
+            | null -> true
+            | _ ->
+                let rec check i = (i >= str.Length) || (predicate str.[i] && check (i+1)) 
+                check 0
 
         [<CompiledName("Exists")>]
         let exists predicate (str:string) =
-            let str = emptyIfNull str
-            let rec check i = (i < str.Length) && (predicate str.[i] || check (i+1)) 
-            check 0  
+            match str with
+            | null -> false
+            | _ ->
+                let rec check i = (i < str.Length) && (predicate str.[i] || check (i+1)) 
+                check 0  
 
         [<CompiledName("Length")>]
         let length (str:string) =
