@@ -3,14 +3,14 @@
   <PropertyGroup>
 
     <!-- System.* packages -->
-    <SystemCollectionsImmutablePackageVersion>1.3.1</SystemCollectionsImmutablePackageVersion>
+    <SystemCollectionsImmutablePackageVersion>1.4.0</SystemCollectionsImmutablePackageVersion>
     <SystemDiagnosticsProcessPackageVersion>4.3.0</SystemDiagnosticsProcessPackageVersion>
     <SystemDiagnosticsTraceSourcePackageVersion>4.3.0</SystemDiagnosticsTraceSourcePackageVersion>
     <SystemLinqExpressionsPackageVersion>4.3.0</SystemLinqExpressionsPackageVersion>
     <SystemLinqQueryablePackageVersion>4.3.0</SystemLinqQueryablePackageVersion>
     <SystemNetRequestsPackageVersion>4.3.0</SystemNetRequestsPackageVersion>
     <SystemReflectionEmitPackageVersion>4.3.0</SystemReflectionEmitPackageVersion>
-    <SystemReflectionMetadataPackageVersion>1.4.2</SystemReflectionMetadataPackageVersion>
+    <SystemReflectionMetadataPackageVersion>1.5.0</SystemReflectionMetadataPackageVersion>
     <SystemReflectionTypeExtensionsPackageVersion>4.3.0</SystemReflectionTypeExtensionsPackageVersion>
     <SystemRuntimePackageVersion>4.3.0</SystemRuntimePackageVersion>
     <SystemRuntimeInteropServicesPackageVersion>4.3.0</SystemRuntimeInteropServicesPackageVersion>

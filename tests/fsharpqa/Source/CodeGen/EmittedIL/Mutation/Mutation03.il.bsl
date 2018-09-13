@@ -36,13 +36,21 @@
   // Offset: 0x000001A8 Length: 0x0000006C
 }
 .module Mutation03.exe
+<<<<<<< HEAD
 // MVID: {5B1872AD-8C6A-2EEC-A745-0383AD72185B}
+=======
+// MVID: {5B17FC4F-8C6A-2EEC-A745-03834FFC175B}
+>>>>>>> 7dbfae8e8b72211c5dc0016cf7c7a2addcf33e58
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
+<<<<<<< HEAD
 // Image base: 0x02440000
+=======
+// Image base: 0x02DC0000
+>>>>>>> 7dbfae8e8b72211c5dc0016cf7c7a2addcf33e58
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

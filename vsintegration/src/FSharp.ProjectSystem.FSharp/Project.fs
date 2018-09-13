@@ -200,7 +200,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 resourceValue
 
             override this.Initialize() =
-                UIThread.CaptureSynchronizationContext()
+                Microsoft.VisualStudio.FSharp.LanguageService.UIThread.CaptureSynchronizationContext()
+                Microsoft.VisualStudio.FSharp.ProjectSystem.UIThread.CaptureSynchronizationContext()
 
                 base.Initialize()
 

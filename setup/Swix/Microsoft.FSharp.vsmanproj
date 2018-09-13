@@ -10,6 +10,7 @@
         <IsPackage>true</IsPackage>
         <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\insertion</OutputPath>
         <InsertionDir>$(OutputPath)</InsertionDir>
+        <ManifestBuildVersion>$(FSharpPackageVersion)</ManifestBuildVersion>
     </PropertyGroup>
 
     <ItemGroup>

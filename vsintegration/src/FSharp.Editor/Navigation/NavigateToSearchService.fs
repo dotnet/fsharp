@@ -182,7 +182,7 @@ module private Utils =
 
     type PerDocumentSavedData = { Hash: int; Items: Index.IIndexedNavigableItems }
 
-[<ExportLanguageService(typeof<INavigateToSearchService>, FSharpConstants.FSharpLanguageName); Shared>]
+[<ExportLanguageService(typeof<INavigateToSearchService_RemoveInterfaceAboveAndRenameThisAfterInternalsVisibleToUsersUpdate>, FSharpConstants.FSharpLanguageName); Shared>]
 type internal FSharpNavigateToSearchService 
     [<ImportingConstructor>] 
     (
@@ -190,16 +190,23 @@ type internal FSharpNavigateToSearchService
         projectInfoManager: FSharpProjectOptionsManager
     ) =
 
+    let kindsProvided = ImmutableHashSet.Create(NavigateToItemKind.Module, NavigateToItemKind.Class, NavigateToItemKind.Field, NavigateToItemKind.Property, NavigateToItemKind.Method, NavigateToItemKind.Enum, NavigateToItemKind.EnumItem) :> IImmutableSet<string>
+
     // Save the backing navigation data in a memory cache held in a sliding window
     let itemsByDocumentId = new MemoryCache("FSharp.Editor.FSharpNavigateToSearchService")
 
-    let getNavigableItems(document: Document, parsingOptions: FSharpParsingOptions) =
+    let getNavigableItems(document: Document, parsingOptions: FSharpParsingOptions, kinds: IImmutableSet<string>) =
         async {
             let! cancellationToken = Async.CancellationToken
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! parseResults = checkerProvider.Checker.ParseFile(document.FilePath, sourceText.ToString(), parsingOptions)
+
+            let navItems parsedInput =
+                NavigateTo.getNavigableItems parsedInput
+                |> Array.filter (fun i -> kinds.Contains(navigateToItemKindToRoslynKind i.Kind))
+
             return 
-                match parseResults.ParseTree |> Option.map NavigateTo.getNavigableItems with
+                match parseResults.ParseTree |> Option.map navItems with
                 | Some items ->
                     [| for item in items do
                          match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with 
@@ -212,7 +219,7 @@ type internal FSharpNavigateToSearchService
                 | None -> [||]
         }
 
-    let getCachedIndexedNavigableItems(document: Document, parsingOptions: FSharpParsingOptions) =
+    let getCachedIndexedNavigableItems(document: Document, parsingOptions: FSharpParsingOptions, kinds: IImmutableSet<string>) =
         async {
             let! cancellationToken = Async.CancellationToken
             let! textVersion = document.GetTextVersionAsync(cancellationToken)  |> Async.AwaitTask
@@ -221,7 +228,7 @@ type internal FSharpNavigateToSearchService
             match itemsByDocumentId.Get(key) with
             | :? PerDocumentSavedData as data when data.Hash = textVersionHash -> return data.Items
             | _ -> 
-                let! items = getNavigableItems(document, parsingOptions)
+                let! items = getNavigableItems(document, parsingOptions, kinds)
                 let indexedItems = Index.build items
                 let data = { Hash= textVersionHash; Items = indexedItems }
                 let cacheItem = CacheItem(key, data)
@@ -237,20 +244,20 @@ type internal FSharpNavigateToSearchService
         | PatternMatchKind.Fuzzy -> NavigateToMatchKind.Regular
         | _ -> NavigateToMatchKind.Regular
 
-    interface INavigateToSearchService with
-        member __.SearchProjectAsync(project, searchPattern, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
+    interface INavigateToSearchService_RemoveInterfaceAboveAndRenameThisAfterInternalsVisibleToUsersUpdate with
+        member __.SearchProjectAsync(project, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
             asyncMaybe {
                 let! parsingOptions, _site, _options = projectInfoManager.TryGetOptionsForProject(project.Id)
                 let! items =
                     project.Documents
-                    |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, parsingOptions))
+                    |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, parsingOptions, kinds))
                     |> Async.Parallel
                     |> liftAsync
                 
                 let items =
                     if searchPattern.Length = 1 then
                         items 
-                        |> Array.map (fun items -> items.Find(searchPattern)) 
+                        |> Array.map (fun items -> items.Find(searchPattern))
                         |> Array.concat
                         |> Array.filter (fun x -> x.Name.Length = 1 && String.Equals(x.Name, searchPattern, StringComparison.InvariantCultureIgnoreCase))
                     else
@@ -270,12 +277,16 @@ type internal FSharpNavigateToSearchService
             |> Async.map Seq.toImmutableArray
             |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
 
-        member __.SearchDocumentAsync(document, searchPattern, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
+        member __.SearchDocumentAsync(document, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
             asyncMaybe {
                 let! parsingOptions, _, _ = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
-                let! items = getCachedIndexedNavigableItems(document, parsingOptions) |> liftAsync
+                let! items = getCachedIndexedNavigableItems(document, parsingOptions, kinds) |> liftAsync
                 return items.Find(searchPattern)
             }
             |> Async.map (Option.defaultValue [||])
             |> Async.map Seq.toImmutableArray
             |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
+
+        member __.KindsProvided = kindsProvided
+
+        member __.CanFilter = true

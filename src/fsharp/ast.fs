@@ -100,7 +100,7 @@ type XmlDoc =
             | (lineA::rest) as lines ->
                 let lineAT = lineA.TrimStart([|' '|])
                 if lineAT = "" then processLines rest
-                else if lineAT.StartsWith "<" then lines
+                else if lineAT.StartsWithOrdinal("<") then lines
                 else ["<summary>"] @
                      (lines |> List.map (fun line -> Microsoft.FSharp.Core.XmlAdapters.escape(line))) @
                      ["</summary>"]
@@ -176,7 +176,7 @@ type LongIdentWithDots =
             | LongIdentWithDots([],_) -> failwith "rangeOfLidwd"
             | LongIdentWithDots([id],_) -> id.idRange
             | LongIdentWithDots(h::t,dotms) ->
-                let nonExtraDots = if dotms.Length = t.Length then dotms else List.take t.Length dotms
+                let nonExtraDots = if dotms.Length = t.Length then dotms else List.truncate t.Length dotms
                 unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last nonExtraDots)
 
 //------------------------------------------------------------------------

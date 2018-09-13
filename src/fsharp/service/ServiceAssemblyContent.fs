@@ -66,7 +66,7 @@ module Extensions =
             try x.MembersFunctionsAndValues with _ -> [||] :> _
 
     let isOperator (name: string) =
-        name.StartsWith "( " && name.EndsWith " )" && name.Length > 4
+        name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )") && name.Length > 4
             && name.Substring (2, name.Length - 4) 
                |> String.forall (fun c -> c <> ' ' && not (Char.IsLetter c))
 
@@ -1007,7 +1007,8 @@ module ParsedInput =
                 if ctx.Pos.Line > 1 then
                     // it's an implicit module without any open declarations    
                     let line = getLineStr (ctx.Pos.Line - 2)
-                    let isImpliciteTopLevelModule = not (line.StartsWith "module" && not (line.EndsWith "="))
+                    let isImpliciteTopLevelModule =
+                        not (line.StartsWithOrdinal("module") && not (line.EndsWithOrdinal("=")))
                     if isImpliciteTopLevelModule then 1 else ctx.Pos.Line
                 else 1
             | ScopeKind.Namespace ->
@@ -1016,7 +1017,7 @@ module ParsedInput =
                     [0..ctx.Pos.Line - 1]
                     |> List.mapi (fun i line -> i, getLineStr line)
                     |> List.tryPick (fun (i, lineStr) -> 
-                        if lineStr.StartsWith "namespace" then Some i
+                        if lineStr.StartsWithOrdinal("namespace") then Some i
                         else None)
                     |> function
                         // move to the next line below "namespace" and convert it to F# 1-based line number

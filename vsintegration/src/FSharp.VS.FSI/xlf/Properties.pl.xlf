@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptionsDescr">
         <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
-        <target state="translated">Argumenty wiersza polecenia przekazywane do pliku wykonywalnego programu F# Interactive przez program Visual Studio. (Flagi optymalizacji i debugowania są ignorowane, jeśli włączone jest debugowanie skryptów).</target>
+        <target state="translated">Argumenty wiersza polecenia przekazywane do pliku wykonywalnego narzędzia F# Interactive przez program Visual Studio. (Flagi optymalizacji i debugowania są ignorowane, jeśli włączone jest debugowanie skryptów).</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugModeDescr">
         <source>Enable debugging of F# scripts (may impact script performance, requires reset of F# Interactive)</source>
-        <target state="translated">Włącz debugowanie skryptów w języku F# (może to mieć wpływ na wydajność skryptów, wymaga zresetowania programu F# Interactive)</target>
+        <target state="translated">Włącz debugowanie skryptów w języku F# (może to mieć wpływ na wydajność skryptów, wymaga zresetowania narzędzia F# Interactive)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugging">

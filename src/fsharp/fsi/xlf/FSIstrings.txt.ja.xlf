@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">F# Interactive のプロセスの開始中に問題が発生しました。この原因は、一部の Windows システム上での Unicode 対応アプリケーションのバックグラウンド プロセス コンソールのサポートに関する既知の問題にある可能性があります。[ツール]5D; の [オプション]5D; から [F# Interactive for Visual Studio]5D; を選択し、「--fsi-server-no-unicode」と入力してください。</target>
+        <target state="translated">F# インタラクティブのプロセスの開始中に問題が発生しました。この原因は、一部の Windows システム上での Unicode 対応アプリケーションのバックグラウンド プロセス コンソールのサポートに関する既知の問題にある可能性があります。[ツール]5D; の [オプション]5D; から [F# Interactive for Visual Studio]5D; を選択し、「--fsi-server-no-unicode」と入力してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -139,7 +139,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
         <source>  F# Interactive directives:</source>
-        <target state="translated">  F# Interactive ディレクティブ:</target>
+        <target state="translated">  F# インタラクティブ ディレクティブ:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashrInfo">
@@ -174,7 +174,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader2commandLine">
         <source>  F# Interactive command line options:</source>
-        <target state="translated">  F# Interactive コマンド ライン オプション:</target>
+        <target state="translated">  F# インタラクティブ コマンド ライン オプション:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader3">
@@ -214,7 +214,7 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; '{0}' を参照しました (ファイルが F# Interactive のプロセスによってロックされている可能性があります)</target>
+        <target state="translated">--&gt; '{0}' を参照しました (ファイルが F# インタラクティブのプロセスによってロックされている可能性があります)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
@@ -254,17 +254,17 @@
       </trans-unit>
       <trans-unit id="fsiProductName">
         <source>Microsoft (R) F# Interactive version {0}</source>
-        <target state="translated">Microsoft (R) F# Interactive Version {0}</target>
+        <target state="translated">Microsoft (R) F# インタラクティブ バージョン {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiProductNameCommunity">
         <source>F# Interactive for F# {0}</source>
-        <target state="translated">F# {0} の F# Interactive</target>
+        <target state="translated">F# {0} の F# インタラクティブ</target>
         <note />
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
         <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">参照が F# 対話型プロセスによってロックされないようにします。</target>
+        <target state="translated">参照が F# インタラクティブ プロセスによってロックされないようにします。</target>
         <note />
       </trans-unit>
     </body>

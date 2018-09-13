@@ -35,8 +35,6 @@ using Microsoft.Win32;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.Build.Execution;
-
-using Microsoft.VisualStudio.FSharp.LanguageService;
 using Microsoft.VisualStudio.TextManager.Interop;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
@@ -590,10 +588,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         private Dictionary<Type, Guid> catidMapping = new Dictionary<Type, Guid>();
 
-		/// <summary>
-		/// The public package implementation.
-		/// </summary>
-		private ProjectPackage package;
+        /// <summary>
+        /// The public package implementation.
+        /// </summary>
+        private ProjectPackage package;
 
         private bool isDisposed;
 
@@ -1946,17 +1944,17 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.ProjectMgr = this;
                 this.isNewProject = false;
 
-				if ((flags & (uint)__VSCREATEPROJFLAGS.CPF_CLONEFILE) == (uint)__VSCREATEPROJFLAGS.CPF_CLONEFILE)
-				{
-					// we need to generate a new guid for the project
-					this.projectIdGuid = Guid.NewGuid();
-				}
-				else
-				{
-					this.SetProjectGuidFromProjectFile(false);
-				}
+                if ((flags & (uint)__VSCREATEPROJFLAGS.CPF_CLONEFILE) == (uint)__VSCREATEPROJFLAGS.CPF_CLONEFILE)
+                {
+                // we need to generate a new guid for the project
+                    this.projectIdGuid = Guid.NewGuid();
+                }
+                else
+                {
+                    this.SetProjectGuidFromProjectFile(false);
+                }
 
-				this.buildEngine = Utilities.InitializeMsBuildEngine(this.buildEngine);
+                this.buildEngine = Utilities.InitializeMsBuildEngine(this.buildEngine);
 
                 // based on the passed in flags, this either reloads/loads a project, or tries to create a new one
                 // now we create a new project... we do that by loading the template and then saving under a new name
@@ -1968,7 +1966,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     this.isNewProject = true;
 
                     // This should be a very fast operation if the build project is already initialized by the Factory.
-                    SetBuildProject(Utilities.ReinitializeMsBuildProject(this.buildEngine, fileName, this.buildProject));
+                    SetBuildProject(Utilities.ReinitializeMsBuildProject(this.buildEngine, fileName, this.ProjectGlobalPropertiesThatAllProjectSystemsMustSet, this.buildProject));
 
 
                     // Compute the file name
@@ -2877,7 +2875,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.isClosed = false;
                 this.eventTriggeringFlag = ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents | ProjectNode.EventTriggering.DoNotTriggerTrackerEvents;
 
-                SetBuildProject(Utilities.ReinitializeMsBuildProject(this.buildEngine, this.filename, this.buildProject));
+                SetBuildProject(Utilities.ReinitializeMsBuildProject(this.buildEngine, this.filename, this.ProjectGlobalPropertiesThatAllProjectSystemsMustSet, this.buildProject));
                 
                 // Load the guid
                 this.SetProjectGuidFromProjectFile(true);
@@ -3100,20 +3098,22 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
+        internal IDictionary<string, string> ProjectGlobalPropertiesThatAllProjectSystemsMustSet { get; set; }
+
         void SetupProjectGlobalPropertiesThatAllProjectSystemsMustSet()
         {
             // Much of the code for this method is stolen from GlobalPropertyHandler.cs.  That file is dev-9 only;
             // whereas this code is for dev10 and specific to the actual contract for project systems in dev10.
             UIThread.MustBeCalledFromUIThread();
-            
+
             // Solution properties
             IVsSolution solution = this.Site.GetService(typeof(SVsSolution)) as IVsSolution;
             Debug.Assert(solution != null, "Could not retrieve the solution service from the global service provider");
 
-            string solutionDirectory, solutionFile, userOptionsFile;
+            string solutionDirectory, solutionPath, userOptionsFile;
 
             // We do not want to throw. If we cannot set the solution related constants we set them to empty string.
-            solution.GetSolutionInfo(out solutionDirectory, out solutionFile, out userOptionsFile);
+            solution.GetSolutionInfo(out solutionDirectory, out solutionPath, out userOptionsFile);
 
             if (solutionDirectory == null)
             {
@@ -3121,24 +3121,24 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 
 
-            if (solutionFile == null)
+            if (solutionPath == null)
             {
-                solutionFile = String.Empty;
+                solutionPath = String.Empty;
             }
 
 
-            string solutionFileName = (solutionFile.Length == 0) ? String.Empty : Path.GetFileName(solutionFile);
+            string solutionFileName = (solutionPath.Length == 0) ? String.Empty : Path.GetFileName(solutionPath);
 
-            string solutionName = (solutionFile.Length == 0) ? String.Empty : Path.GetFileNameWithoutExtension(solutionFile);
+            string solutionName = (solutionPath.Length == 0) ? String.Empty : Path.GetFileNameWithoutExtension(solutionPath);
 
             string solutionExtension = String.Empty;
-            if (solutionFile.Length > 0 && Path.HasExtension(solutionFile))
+            if (solutionPath.Length > 0 && Path.HasExtension(solutionPath))
             {
-                solutionExtension = Path.GetExtension(solutionFile);
+                solutionExtension = Path.GetExtension(solutionPath);
             }
 
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionDir.ToString(), solutionDirectory);
-            this.buildProject.SetGlobalProperty(GlobalProperty.SolutionPath.ToString(), solutionFile);
+            this.buildProject.SetGlobalProperty(GlobalProperty.SolutionPath.ToString(), solutionPath);
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionFileName.ToString(), solutionFileName);
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionName.ToString(), solutionName);
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionExt.ToString(), solutionExtension);
@@ -3173,6 +3173,19 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 
             this.buildProject.SetGlobalProperty(GlobalProperty.DevEnvDir.ToString(), installDir);
+
+            this.ProjectGlobalPropertiesThatAllProjectSystemsMustSet = new Dictionary<string, string>()
+            {
+                { GlobalProperty.SolutionDir.ToString(), solutionDirectory },
+                { GlobalProperty.SolutionPath.ToString(), solutionPath },
+                { GlobalProperty.SolutionFileName.ToString(), solutionFileName },
+                { GlobalProperty.SolutionName.ToString(), solutionName },
+                { GlobalProperty.SolutionExt.ToString(), solutionExtension },
+                { GlobalProperty.BuildingInsideVisualStudio.ToString(), "true" },
+                { GlobalProperty.Configuration.ToString(), "" },
+                { GlobalProperty.Platform.ToString(), "" },
+                { GlobalProperty.DevEnvDir.ToString(), installDir }
+            };
         }
 
         private class BuildAccessorAccess
@@ -3237,12 +3250,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.SetHostObject("CoreCompile", "Fsc", this);
 
                 // Do the actual Build
-                var loggerList = new System.Collections.Generic.List<Microsoft.Build.Framework.ILogger>(this.buildEngine.Loggers);
-                if (buildLogger != null)
-                    loggerList.Add(buildLogger);
-                if (myDebugLogger != null)
-                    loggerList.Add(myDebugLogger);
-
+                var loggerList = new System.Collections.Generic.List<Microsoft.Build.Framework.ILogger>();
+                if (buildLogger != null) loggerList.Add(buildLogger);
+                if (myDebugLogger != null) loggerList.Add(myDebugLogger);
                 loggers = loggerList.ToArray();
 
                 var ba = new BuildAccessorAccess(buildKind, accessor);

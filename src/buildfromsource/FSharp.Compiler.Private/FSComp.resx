@@ -166,22 +166,22 @@
     <value>Add . for indexer access.</value>
   </data>
   <data name="listElementHasWrongType" xml:space="preserve">
-    <value>All elements of a list constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</value>
+    <value>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</value>
   </data>
   <data name="arrayElementHasWrongType" xml:space="preserve">
-    <value>All elements of an array constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</value>
+    <value>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</value>
   </data>
   <data name="missingElseBranch" xml:space="preserve">
-    <value>The 'if' expression is missing an 'else' branch. The 'then' branch has type '{0}'. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type.</value>
+    <value>This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type '{0}'.</value>
   </data>
   <data name="ifExpression" xml:space="preserve">
     <value>The 'if' expression needs to have type '{0}' to satisfy context type requirements. It currently has type '{1}'.</value>
   </data>
   <data name="elseBranchHasWrongType" xml:space="preserve">
-    <value>All branches of an 'if' expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</value>
+    <value>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</value>
   </data>
   <data name="followingPatternMatchClauseHasWrongType" xml:space="preserve">
-    <value>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</value>
+    <value>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</value>
   </data>
   <data name="patternMatchGuardIsNotBool" xml:space="preserve">
     <value>A pattern match guard must be of type 'bool', but this 'when' expression is of type '{0}'.</value>
@@ -4147,7 +4147,7 @@
     <value>Used to associate, or bind, a name to a value or function.</value>
   </data>
   <data name="keywordDescriptionLetBang" xml:space="preserve">
-    <value>Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.</value>
+    <value>Used in computation expressions to bind a name to the result of another computation expression.</value>
   </data>
   <data name="keywordDescriptionMatch" xml:space="preserve">
     <value>Used to branch by comparing a value to a pattern.</value>
@@ -4198,10 +4198,10 @@
     <value>Used to indicate that a function is recursive.</value>
   </data>
   <data name="keywordDescriptionReturn" xml:space="preserve">
-    <value>Used to indicate a value to provide as the result of a computation expression.</value>
+    <value>Used to provide a value for the result of the containing computation expression.</value>
   </data>
   <data name="keywordDescriptionReturnBang" xml:space="preserve">
-    <value>Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.</value>
+    <value>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</value>
   </data>
   <data name="keywordDescriptionSelect" xml:space="preserve">
     <value>Used in query expressions to specify what fields or columns to extract. Note that this is a contextual keyword, which means that it is not actually a reserved word and it only acts like a keyword in appropriate context.</value>
@@ -4228,10 +4228,10 @@
     <value>Used to convert to a type that is higher in the inheritance chain.</value>
   </data>
   <data name="keywordDescriptionUse" xml:space="preserve">
-    <value>Used instead of let for values that require Dispose to be called to free resources.</value>
+    <value>Used instead of let for values that implement IDisposable"</value>
   </data>
   <data name="keywordDescriptionUseBang" xml:space="preserve">
-    <value>Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.</value>
+    <value>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</value>
   </data>
   <data name="keywordDescriptionVal" xml:space="preserve">
     <value>Used in a signature to indicate a value, or in a type to declare a member, in limited situations.</value>
@@ -4327,11 +4327,11 @@
   <data name="tcByRefLikeNotStruct" xml:space="preserve">
     <value>A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</value>
   </data>
-  <data name="chkNoByrefReturnOfLocal" xml:space="preserve">
-    <value>The address of the variable '{0}' or a related expression cannot be used at this point. The address may not be passed to a call that returns an address. This is to ensure the address of the local value does not escape its scope.</value>
+  <data name="chkNoByrefAddressOfValueFromExpression" xml:space="preserve">
+    <value>The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</value>
   </data>
   <data name="chkNoReturnOfLimitedSpan" xml:space="preserve">
-    <value>The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</value>
+    <value>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</value>
   </data>
   <data name="chkNoWriteToLimitedSpan" xml:space="preserve">
     <value>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</value>
@@ -4344,5 +4344,20 @@
   </data>
   <data name="chkStructsMayNotReturnAddressesOfContents" xml:space="preserve">
     <value>Struct members cannot return the address of fields of the struct by reference</value>
+  </data>
+  <data name="chkNoByrefLikeFunctionCall" xml:space="preserve">
+    <value>The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.</value>
+  </data>
+  <data name="chkNoSpanLikeVariable" xml:space="preserve">
+    <value>The Span or IsByRefLike variable '{0}' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</value>
+  </data>
+  <data name="chkNoSpanLikeValueFromExpression" xml:space="preserve">
+    <value>A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</value>
+  </data>
+  <data name="tastCantTakeAddressOfExpression" xml:space="preserve">
+    <value>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</value>
+  </data>
+  <data name="tcTypeDoesNotInheritAttribute" xml:space="preserve">
+    <value>This type does not inherit Attribute, it will not work correctly with other .NET languages.</value>
   </data>
 </root>

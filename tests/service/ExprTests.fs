@@ -183,7 +183,7 @@ module internal Utils =
 
     let printGenericParameter (p: FSharpGenericParameter) =
         let name = 
-            if p.Name.StartsWith "?" then "_"
+            if p.Name.StartsWith("?", StringComparison.Ordinal) then "_"
             elif p.IsSolveAtCompileTime then "^" + p.Name 
             else "'" + p.Name
         let constraints =

@@ -1346,19 +1346,23 @@ let tyconRefDefnHash (_g: TcGlobals) (eref1:EntityRef) =
     hash eref1.LogicalName 
 
 let tyconRefDefnEq g (eref1:EntityRef) (eref2: EntityRef) =
-    tyconRefEq g eref1 eref2 
-    // Signature items considered equal to implementation items
-    || ((eref1.DefinitionRange = eref2.DefinitionRange || eref1.SigRange = eref2.SigRange) &&
-        (eref1.LogicalName = eref2.LogicalName))
+    tyconRefEq g eref1 eref2 || 
 
-let valRefDefnHash (_g: TcGlobals) (vref1:ValRef)=
+    // Signature items considered equal to implementation items
+    eref1.DefinitionRange <> Range.rangeStartup && eref1.DefinitionRange <> Range.range0 && eref1.DefinitionRange <> Range.rangeCmdArgs &&
+    (eref1.DefinitionRange = eref2.DefinitionRange || eref1.SigRange = eref2.SigRange) &&
+    eref1.LogicalName = eref2.LogicalName
+
+let valRefDefnHash (_g: TcGlobals) (vref1:ValRef) =
     hash vref1.DisplayName
 
 let valRefDefnEq g (vref1:ValRef) (vref2: ValRef) =
-    valRefEq g vref1 vref2 
+    valRefEq g vref1 vref2 ||
+
     // Signature items considered equal to implementation items
-    || ((vref1.DefinitionRange = vref2.DefinitionRange || vref1.SigRange = vref2.SigRange)) && 
-        (vref1.LogicalName = vref2.LogicalName)
+    vref1.DefinitionRange <> Range.rangeStartup && vref1.DefinitionRange <> Range.range0 && vref1.DefinitionRange <> Range.rangeCmdArgs &&
+    (vref1.DefinitionRange = vref2.DefinitionRange || vref1.SigRange = vref2.SigRange) && 
+    vref1.LogicalName = vref2.LogicalName
 
 let unionCaseRefDefnEq g (uc1:UnionCaseRef) (uc2: UnionCaseRef) =
     uc1.CaseName = uc2.CaseName && tyconRefDefnEq g uc1.TyconRef uc2.TyconRef
@@ -2890,7 +2894,7 @@ let rec ResolveTypeLongIdentPrim sink (ncenv:NameResolver) occurence first fully
                             | ItemOccurence.UseInAttribute -> 
                                 [yield e.Value.DisplayName
                                  yield e.Value.DemangledModuleOrNamespaceName
-                                 if e.Value.DisplayName.EndsWith "Attribute" then
+                                 if e.Value.DisplayName.EndsWithOrdinal("Attribute") then
                                      yield e.Value.DisplayName.Replace("Attribute","")]
                             | _ -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
                         |> HashSet
@@ -2905,7 +2909,8 @@ let rec ResolveTypeLongIdentPrim sink (ncenv:NameResolver) occurence first fully
                 | OpenQualified -> 
                     match LookupTypeNameInEnvHaveArity fullyQualified id.idText staticResInfo.NumStaticArgs nenv with
                     | Some tcref when IsEntityAccessible ncenv.amap m2 ad tcref -> 
-                        OneResult (ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad ResolutionInfo.Empty genOk 1 m2 tcref id2 rest2)
+                        let resInfo = ResolutionInfo.Empty.AddEntity(id.idRange, tcref)
+                        OneResult (ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad resInfo genOk 1 m2 tcref id2 rest2)
                     | _ -> 
                         NoResultsOrUsefulErrors
 
@@ -3188,7 +3193,7 @@ let ComputeItemRange wholem (lid: Ident list) rest =
     match rest with
     | [] -> wholem
     | _ -> 
-        let ids = List.take (max 0 (lid.Length - rest.Length)) lid
+        let ids = List.truncate (max 0 (lid.Length - rest.Length)) lid
         match ids with 
         | [] -> wholem
         | _ -> rangeOfLid ids
@@ -3598,7 +3603,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                 if methsWithStaticParams.IsEmpty then minfos
                 else minfos |> List.filter (fun minfo -> 
                         let nm = minfo.LogicalName
-                        not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWith(m))))
+                        not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal(m))))
 #endif
 
             minfos 
@@ -4227,7 +4232,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                         if methsWithStaticParams.IsEmpty then minfos
                         else minfos |> List.filter (fun minfo -> 
                                 let nm = minfo.LogicalName
-                                not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWith(m))))
+                                not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal(m))))
         #endif
         
                     minfos 
