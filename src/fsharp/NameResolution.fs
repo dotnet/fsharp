@@ -3580,13 +3580,19 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                 AllMethInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m ty 
                 |> List.filter minfoFilter
 
-            let minfos = 
-                let addersAndRemovers = 
-                    pinfoItems 
-                    |> List.collect (function Item.Event(FSEvent(_,_,addValRef,removeValRef)) -> [addValRef.LogicalName;removeValRef.LogicalName] | _ -> [])
-                    |> set
+            let minfos =
+                if isNil minfos then [] else
+                let addersAndRemovers =
+                    let hashSet = HashSet()
+                    for item in pinfoItems do
+                        match item with
+                        | Item.Event(FSEvent(_,_,addValRef,removeValRef)) ->
+                            hashSet.Add addValRef.LogicalName |> ignore
+                            hashSet.Add removeValRef.LogicalName |> ignore
+                        | _ -> ()
+                    hashSet
 
-                if addersAndRemovers.IsEmpty then minfos
+                if addersAndRemovers.Count = 0 then minfos
                 else minfos |> List.filter (fun minfo -> not (addersAndRemovers.Contains minfo.LogicalName))
 
 #if !NO_EXTENSIONTYPING
