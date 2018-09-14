@@ -3845,14 +3845,13 @@ let TryToResolveLongIdentAsType (ncenv: NameResolver) (nenv: NameResolutionEnv) 
         else
             (ty, LookupTypeNameInEnvNoArity OpenQualified id nenv)
             ||> List.fold (fun resTy tcref ->
-                // type.lookup : lookup a static something in a type 
-                let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
-                let ty = FreshenTycon ncenv m tcref
-                let resTy =
-                    match resTy with
-                    | Some _ -> resTy
-                    | None -> Some ty
-                resTy) 
+                // type.lookup : lookup a static something in a type
+                match resTy with
+                | Some _ -> resTy
+                | None ->
+                    let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
+                    let ty = FreshenTycon ncenv m tcref
+                    Some ty) 
     | _ -> None
 
 /// allowObsolete - specifies whether we should return obsolete types & modules 
