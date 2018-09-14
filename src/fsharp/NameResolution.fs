@@ -3829,7 +3829,7 @@ let TryToResolveLongIdentAsType (ncenv: NameResolver) (nenv: NameResolutionEnv) 
     match List.tryLast plid with
     | Some id ->
         // Look for values called 'id' that accept the dot-notation 
-        let ty, isItemVal = 
+        let ty = 
             match nenv.eUnqualifiedItems |> Map.tryFind id with
                // v.lookup : member of a value
             | Some v ->
@@ -3837,11 +3837,9 @@ let TryToResolveLongIdentAsType (ncenv: NameResolver) (nenv: NameResolutionEnv) 
                 | Item.Value x -> 
                     let ty = x.Type
                     let ty = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g ty then destRefCellTy g ty else ty
-                    Some ty, true
-                | _ -> None, false
-            | None -> None, false
-        
-        if isItemVal then ty else
+                    Some ty
+                | _ -> None
+            | None -> None
 
         match ty with
         | Some _ -> ty
