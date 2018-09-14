@@ -694,3 +694,5 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
                 | Some v when v = actualArgValue -> None
                 | _ -> Some (defaultArgName, actualArgValue))
         mangleProvidedTypeName (nm, nonDefaultArgs)
+
+    let outArgCompilerGeneratedName = "outArg"

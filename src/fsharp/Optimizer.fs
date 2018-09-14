@@ -2210,8 +2210,11 @@ and TryOptimizeValInfo cenv env m vinfo =
 //------------------------------------------------------------------------- 
   
 and AddValEqualityInfo g m (v:ValRef) info =
-    if v.IsMutable then 
-        /// the env assumes known-values do not change 
+    // ValValue is information that v = v2, where v2 does not change 
+    // So we can't record this information for mutable values. An exception can be made
+    // for "outArg" values arising from method calls since they are only temporarily mutable
+    // when their address is passed to the method call.
+    if v.IsMutable && not (v.IsCompilerGenerated && v.DisplayName.StartsWith(PrettyNaming.outArgCompilerGeneratedName)) then 
         info 
     else 
         {info with Info= MakeValueInfoForValue g m v info.Info}

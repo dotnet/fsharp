@@ -10005,7 +10005,7 @@ and TcMethodApplication
             finalUnnamedCalledOutArgs |> List.map (fun calledArg -> 
                 let calledArgTy = calledArg.CalledArgumentType
                 let outArgTy = destByrefTy cenv.g calledArgTy
-                let outv, outArgExpr = mkMutableCompGenLocal mMethExpr "outArg" outArgTy // mutable! 
+                let outv, outArgExpr = mkMutableCompGenLocal mMethExpr PrettyNaming.outArgCompilerGeneratedName  outArgTy // mutable! 
                 let expr = mkDefault(mMethExpr, outArgTy)
                 let callerArg = CallerArg(calledArgTy, mMethExpr, false, mkValAddr mMethExpr false (mkLocalValRef outv))
                 let outArg = { NamedArgIdOpt=None;CalledArg=calledArg;CallerArg=callerArg }
