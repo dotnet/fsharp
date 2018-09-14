@@ -1804,7 +1804,7 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
 
     let args = optimizeArgs args []
 
-    let expr2 =
+    let e =
         match args with
         | [ arg ] ->
             arg
@@ -1818,11 +1818,11 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
             let arg = mkArray (cenv.g.string_ty, args, m)
             mkStaticCall_String_Concat_Array cenv.g m arg
 
-    match expr2 with
+    match e with
     | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _) as op, tyargs, args, m) when IsSystemStringConcatOverload methRef || IsSystemStringConcatArray methRef ->
         OptimizeExprOpReductions cenv env (op, tyargs, args, m)
     | _ ->
-        OptimizeExpr cenv env expr2
+        OptimizeExpr cenv env e
 
 //-------------------------------------------------------------------------
 // Optimize/analyze an application of an intrinsic operator to arguments
