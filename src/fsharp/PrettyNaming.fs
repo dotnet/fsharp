@@ -484,10 +484,10 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
      
     let [<Literal>] private mangledGenericTypeNameSym = '`'
 
-    let IsMangledGenericNameAndPos (n:string) =
+    let TryDemangleGenericNameAndPos (n:string) =
         (* check what comes after the symbol is a number *)
         let pos = n.LastIndexOf mangledGenericTypeNameSym
-        if pos = -1 then None else
+        if pos = -1 then ValueNone else
         let mutable res = pos < n.Length - 1
         let mutable i = pos + 1
         while res && i < n.Length do
@@ -496,9 +496,9 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
                 res <- false
             i <- i + 1
         if res then
-            Some pos
+            ValueSome pos
         else
-            None
+            ValueNone
 
     type NameArityPair = NameArityPair of string * int
 
@@ -507,12 +507,12 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
         let num = mangledName.Substring(pos+1,mangledName.Length - pos - 1)
         NameArityPair(res, int32 num)
 
-    let inline DemangleGenericTypeNameWithPos pos (mangledName:string) =
+    let DemangleGenericTypeNameWithPos pos (mangledName:string) =
         mangledName.Substring(0,pos)
 
     let DemangleGenericTypeName (mangledName:string) =
-        match IsMangledGenericNameAndPos mangledName with
-        | Some pos -> DemangleGenericTypeNameWithPos pos mangledName
+        match TryDemangleGenericNameAndPos mangledName with
+        | ValueSome pos -> DemangleGenericTypeNameWithPos pos mangledName
         | _ -> mangledName
 
     let private chopStringTo (s:string) (c:char) =

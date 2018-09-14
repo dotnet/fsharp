@@ -480,8 +480,8 @@ let KeyTyconByDemangledNameAndArity nm (typars: _ list) x =
 
 /// Generic types can be accessed either by 'List' or 'List`1'. This lists both keys. The second form should really be deprecated.
 let KeyTyconByAccessNames nm x = 
-    match IsMangledGenericNameAndPos nm with
-    | Some pos ->
+    match TryDemangleGenericNameAndPos nm with
+    | ValueSome pos ->
         let dnm = DemangleGenericTypeNameWithPos pos nm 
         [| KeyValuePair(nm,x); KeyValuePair(dnm,x) |]
     | _ ->
