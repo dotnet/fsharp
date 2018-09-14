@@ -3830,28 +3830,28 @@ let TryToResolveLongIdentAsType (ncenv: NameResolver) (nenv: NameResolutionEnv) 
     | Some id ->
         // Look for values called 'id' that accept the dot-notation 
         let ty, isItemVal = 
-            (match nenv.eUnqualifiedItems |> Map.tryFind id with
+            match nenv.eUnqualifiedItems |> Map.tryFind id with
                // v.lookup : member of a value
-             | Some v ->
-                 match v with 
-                 | Item.Value x -> 
-                     let ty = x.Type
-                     let ty = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g ty then destRefCellTy g ty else ty
-                     Some ty, true
-                 | _ -> None, false
-             | None -> None, false)
+            | Some v ->
+                match v with 
+                | Item.Value x -> 
+                    let ty = x.Type
+                    let ty = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g ty then destRefCellTy g ty else ty
+                    Some ty, true
+                | _ -> None, false
+            | None -> None, false
         
-        if isItemVal then ty
-        else
-            (ty, LookupTypeNameInEnvNoArity OpenQualified id nenv)
-            ||> List.fold (fun resTy tcref ->
-                // type.lookup : lookup a static something in a type
-                match resTy with
-                | Some _ -> resTy
-                | None ->
-                    let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
-                    let ty = FreshenTycon ncenv m tcref
-                    Some ty) 
+        if isItemVal then ty else
+
+        match ty with
+        | Some _ -> ty
+        | _ ->
+            // type.lookup : lookup a static something in a type
+            LookupTypeNameInEnvNoArity OpenQualified id nenv
+            |> List.tryHead
+            |> Option.map (fun tcref ->
+                let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
+                FreshenTycon ncenv m tcref) 
     | _ -> None
 
 /// allowObsolete - specifies whether we should return obsolete types & modules 
