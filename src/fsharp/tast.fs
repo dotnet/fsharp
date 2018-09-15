@@ -261,7 +261,7 @@ type ValFlags(flags:int64) =
                                                       (flags       &&&    ~~~0b0011001100000000000L) 
 
 /// Represents the kind of a type parameter
-[<RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
+[<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
 type TyparKind = 
 
     | Type 
@@ -273,10 +273,10 @@ type TyparKind =
       | TyparKind.Type -> None
       | TyparKind.Measure -> Some "Measure"
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = 
+    override x.ToString() =
       match x with
       | TyparKind.Type -> "type"
       | TyparKind.Measure -> "measure"
@@ -1349,7 +1349,7 @@ and
     override x.ToString() = "TyconAugmentation(...)"
 
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (*; StructuredFormatDisplay("{DebugText}") *) >]
     /// The information for the contents of a type. Also used for a provided namespace.
     TyconRepresentation = 
 
@@ -1393,10 +1393,10 @@ and
     /// The information for exception definitions should be folded into here.
     | TNoRepr
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = "TyconRepresentation(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 and 
    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -1751,7 +1751,7 @@ and
     override x.ToString() = x.Name
 
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (*; StructuredFormatDisplay("{DebugText}") *) >]
     ExceptionInfo =
     /// Indicates that an exception is an abbreviation for the given exception 
     | TExnAbbrevRepr of TyconRef 
@@ -1765,10 +1765,11 @@ and
     /// Indicates that an exception is abstract, i.e. is in a signature file, and we do not know the representation 
     | TExnNone
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = "ExceptionInfo(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 and [<Sealed; StructuredFormatDisplay("{DebugText}")>]
     ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, entities: QueueList<Entity>) = 
@@ -2340,11 +2341,11 @@ and
     /// Indicates a constraint that a type is .NET unmanaged type
     | IsUnmanaged                 of range
 
-    // Prefer the default formatting of this union type
+    // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     //member x.DebugText  =  x.ToString()
-    //
-    //override x.ToString() = "TyparConstraint(...)"
+    
+    override x.ToString() = sprintf "%+A" x 
     
 /// The specification of a member constraint that must be solved 
 and 
@@ -2374,7 +2375,7 @@ and
     override x.ToString() = "TTrait(" + x.MemberName + ")"
     
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
     /// Indicates the solution of a member constraint during inference.
     TraitConstraintSln = 
 
@@ -2411,10 +2412,11 @@ and
     /// Indicates a trait is solved by a 'fake' instance of an operator, like '+' on integers
     | BuiltInSln
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = "TraitConstraintSln(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 /// The partial information used to index the methods of all those in a ModuleOrNamespace.
 and [<RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
@@ -3996,11 +3998,11 @@ and
     /// Raising a measure to a rational power 
     | RationalPower of Measure * Rational
 
-    // Prefer the default formatting of this union type
+    // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     //member x.DebugText  =  x.ToString()
-    //
-    //override x.ToString() = "Measure(...)"
+    
+    override x.ToString() = sprintf "%+A" x 
 
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
@@ -4249,7 +4251,7 @@ and
 and Attribs = Attrib list 
 
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
     AttribKind = 
 
     /// Indicates an attribute refers to a type defined in an imported .NET assembly 
@@ -4258,10 +4260,11 @@ and
     /// Indicates an attribute refers to a type defined in an imported F# assembly 
     | FSAttrib of ValRef
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = sprintf "AttribKind(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 /// Attrib(kind,unnamedArgs,propVal,appliedToAGetterOrSetter,targetsOpt,range)
 and 
@@ -4325,10 +4328,11 @@ and [<RequireQualifiedAccess>]
 
 /// Decision trees. Pattern matching has been compiled down to
 /// a decision tree by this point.  The right-hand-sides (actions) of
+/// a decision tree by this point.  The right-hand-sides (actions) of
 /// the decision tree are labelled by integers that are unique for that
 /// particular tree.
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
     DecisionTree = 
 
     /// TDSwitch(input, cases, default, range)
@@ -4357,10 +4361,11 @@ and
     ///    body -- the rest of the decision tree
     | TDBind of Binding * DecisionTree
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = sprintf "DecisionTree(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 /// Represents a test and a subsequent decision tree
 and 
@@ -4380,7 +4385,7 @@ and
     override x.ToString() = sprintf "DecisionTreeCase(...)"
 
 and 
-    [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison; RequireQualifiedAccess (*; StructuredFormatDisplay("{DebugText}") *) >]
     DecisionTreeTest = 
     /// Test if the input to a decision tree matches the given union case
     | UnionCase of UnionCaseRef * TypeInst
@@ -4410,10 +4415,11 @@ and
     ///     activePatternInfo -- The extracted info for the active pattern.
     | ActivePatternCase of Expr * TTypes * (ValRef * TypeInst) option * int * ActivePatternInfo
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = sprintf "DecisionTreeTest(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 /// A target of a decision tree. Can be thought of as a little function, though is compiled as a local block. 
 and 
@@ -4907,7 +4913,7 @@ and
 
 /// The contents of a module-or-namespace-fragment definition 
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
     ModuleOrNamespaceExpr = 
     /// Indicates the module is a module with a signature 
     | TMAbstract of ModuleOrNamespaceExprWithSig
@@ -4924,10 +4930,11 @@ and
     /// Indicates the module fragment is a 'rec' or 'non-rec' definition of types and modules
     | TMDefRec   of isRec:bool * Tycon list * ModuleOrNamespaceBinding list * range
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText  =  x.ToString()
 
-    override x.ToString() = "ModuleOrNamespaceExpr(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 /// A named module-or-namespace-fragment definition 
 and 
