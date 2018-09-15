@@ -7220,18 +7220,34 @@ let AdjustValToTopVal (tmp:Val) parent valData =
 /// Motivation:
 /// - For top-level let bindings with possibly failing matches, 
 ///   this makes clear that subsequent bindings (if reached) are top-level ones.
-let LinearizeTopMatchAux g parent  (spBind, m, tree, targets, m2, ty) =
-    let targetsL = Array.toList targets
+let LinearizeTopMatchAux g parent  (spBind, m, tree, targets:DecisionTreeTarget [], m2, ty) =
     (* items* package up 0, 1, more items *)
     let itemsProj tys i x = 
         match tys with 
         | []  -> failwith "itemsProj: no items?"
         | [_] -> x (* no projection needed *)
         | tys -> Expr.Op (TOp.TupleFieldGet(tupInfoRef, i), tys, [x], m)
-    let isThrowingTarget = function TTarget(_, x, _) -> isThrow x
-    if 1 + List.count isThrowingTarget targetsL = targetsL.Length then
+
+    let hasSingletonSuccessfulTarget,singletonSuccessfulTarget = 
+        let mutable successful = Unchecked.defaultof<_>
+        let mutable alreadyFound = false
+        let mutable moreThanOne = false
+        for i in 0..targets.Length-1 do
+            if not moreThanOne then
+                let current = targets.[i]
+                match current with
+                | TTarget(_, x, _) when not (isThrow x) ->
+                    if alreadyFound then
+                        moreThanOne <- true
+                    successful <- current
+                    alreadyFound <- true
+                | _ -> ()
+
+        alreadyFound && not moreThanOne, successful
+
+    if hasSingletonSuccessfulTarget then
         (* Have failing targets and ONE successful one, so linearize *)
-        let (TTarget (vs, rhs, spTarget)) = Option.get (List.tryFind (isThrowingTarget >> not) targetsL)
+        let (TTarget (vs, rhs, spTarget)) = singletonSuccessfulTarget
         (* note - old code here used copy value to generate locals - this was not right *)
         let fvs      = vs |> List.map (fun v -> fst(mkLocal v.Range v.LogicalName v.Type)) (* fresh *)
         let vtys     = vs |> List.map (fun v -> v.Type) 
