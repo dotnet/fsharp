@@ -36,13 +36,13 @@
   // Offset: 0x00000208 Length: 0x0000007A
 }
 .module GenIter01.exe
-// MVID: {5B9A68C0-F836-DC98-A745-0383C0689A5B}
+// MVID: {5B9A6329-F836-DC98-A745-038329639A5B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00950000
+// Image base: 0x01080000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
