@@ -51,11 +51,6 @@
       <Private>True</Private>
       <HintPath Condition="'$(TargetDotnetProfile)' == 'net40'">$(FsCheckLibDir)\net452\FsCheck.dll</HintPath>
     </Reference>
-    <Reference Include="System.ValueTuple">
-        <HintPath>..\..\packages\System.ValueTuple.$(SystemValueTuplePackageVersion)\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
-        <HintPath>..\..\packages\System.ValueTuple.4.3.0\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
-        <Private>True</Private>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
