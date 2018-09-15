@@ -3829,30 +3829,27 @@ let TryToResolveLongIdentAsType (ncenv: NameResolver) (nenv: NameResolutionEnv) 
     match List.tryLast plid with
     | Some id ->
         // Look for values called 'id' that accept the dot-notation 
-        let ty, isItemVal = 
-            (match nenv.eUnqualifiedItems |> Map.tryFind id with
+        let ty = 
+            match nenv.eUnqualifiedItems |> Map.tryFind id with
                // v.lookup : member of a value
-             | Some v ->
-                 match v with 
-                 | Item.Value x -> 
-                     let ty = x.Type
-                     let ty = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g ty then destRefCellTy g ty else ty
-                     Some ty, true
-                 | _ -> None, false
-             | None -> None, false)
-        
-        if isItemVal then ty
-        else
-            (ty, LookupTypeNameInEnvNoArity OpenQualified id nenv)
-            ||> List.fold (fun resTy tcref ->
-                // type.lookup : lookup a static something in a type 
+            | Some v ->
+                match v with 
+                | Item.Value x -> 
+                    let ty = x.Type
+                    let ty = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g ty then destRefCellTy g ty else ty
+                    Some ty
+                | _ -> None
+            | None -> None
+
+        match ty with
+        | Some _ -> ty
+        | _ ->
+            // type.lookup : lookup a static something in a type
+            LookupTypeNameInEnvNoArity OpenQualified id nenv
+            |> List.tryHead
+            |> Option.map (fun tcref ->
                 let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
-                let ty = FreshenTycon ncenv m tcref
-                let resTy =
-                    match resTy with
-                    | Some _ -> resTy
-                    | None -> Some ty
-                resTy) 
+                FreshenTycon ncenv m tcref) 
     | _ -> None
 
 /// allowObsolete - specifies whether we should return obsolete types & modules 
