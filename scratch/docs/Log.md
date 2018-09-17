@@ -719,26 +719,18 @@ _If_ we chose to implement `Map` from `Apply` (in order to make a single `let!` 
 ```fsharp
 option {
     let! (a,_)            = aExpr
-    and! (_,b)            = bExpr
-    and! (SingleCaseDu c) = cExpr
-    let d = 3 + 4
-    return (a + b + c) * d
+    let d = 3
+    return (a * d)
 }
 
 // desugars to:
 
-let d = 3 + 4 // Code outside the `Return` does not have names bound via `let! ... and! ...` in scope
+let d = 3
 builder.Apply(
-    builder.Apply(
-        builder.Apply(
-            builder.Return(
-                (fun (a,_) ->
-                    (fun (_,b) ->
-                        (fun (SingleCaseDu c) ->
-                            (a + b + c) * d)))),
-            aExpr), 
-        bExpr), 
-    cExpr)
+    builder.Return(
+        (fun (a,_) ->
+            (a * d))),
+    aExpr)
 ```
 
 ### `use! ... anduse! ...`
