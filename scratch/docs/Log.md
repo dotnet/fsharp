@@ -519,6 +519,9 @@ option {
 
 // desugars to:
 
+let aExprEvaluated = aExpr
+let bExprEvaluated = bExpr
+let cExprEvaluated = cExpr
 let d = 3 + 4 // Code outside the `Return` does not have names bound via `let! ... and! ...` in scope
 builder.Apply(
     builder.Apply(
@@ -528,9 +531,9 @@ builder.Apply(
                     (fun (_,b) ->
                         (fun (SingleCaseDu c) ->
                             (a + b + c) * d)))),
-            aExpr), 
-        bExpr), 
-    cExpr)
+            aExprEvaluated), 
+        bExprEvaluated), 
+    cExprEvaluated)
 ```
 
 ### What if the user calls `Yield` more than once? Do we disallow it? If we did allow it, what would the semantics/desugaring be? (This corresponds to "alternative applicatives", I think). Follow ups:
@@ -751,12 +754,64 @@ builder.Apply(
 
 My gut says we should use `Map` if it is available, else `Apply`, else `Bind`.
 
+### Active Patterns
+
+```fsharp
+let mutable spy = 0
+
+let (|NumAndDoubleNum|) (x : int) =
+    spy <- spy + 1
+    (x, x + x)
+
+option {
+    let! (a,_) = aExpr
+    and! (NumAndDoubleNum(b, doubleb)) = bExpr
+    
+    yield a + doubleb
+
+    let n = 7
+
+    yield a + b + n
+}
+
+// desugars to:
+
+let aExprEvaluated = aExpr
+let bExprEvaluated = bExpr
+
+let alt1 =
+    builder.Apply(
+        builder.Apply(
+            builder.Return(
+                (fun (a,_) ->
+                    (fun (NumAndDoubleNum(b, doubleb)) ->
+                        a + doubleb))),
+            aExprEvaluated), 
+        bExprEvaluated)
+
+let n = 7
+
+let alt2 =
+    builder.Apply(
+        builder.Apply(
+            builder.Return(
+                (fun (a,_) ->
+                    (fun (NumAndDoubleNum(b, doubleb)) ->
+                        a + b + n))),
+            aExprEvaluated), 
+        bExprEvaluated)
+
+builder.Combine(alt1, alt2)
+
+// spy = 2, is this unacceptably surprising?
+```
+
 ### Overall concepts for the full desugaring
 
 #### Rules
 1. We create a structure of nested calls to `Apply` with a `Return` on the inside wrapping a lambda at every `return` or `yield` that appears in the CE. (We can create a function up-front which "wraps" any `Return` in the calls to `Apply` and bind that to a fresh variable for later calls to `Combine` if necessary, so that other scoping rules and orderings are preserved)
 1. A `Map` implementation just falls out of the `Apply` desugaring we have, so I think we should keep that, but allow it to be overriden by an explicit `Map` definition that has been appropriately annotated (similarly, if there is an existing `Bind`, `Apply` needs an annotation to trump `Bind` in the case where both effectively implement `Map`).
-1. We should evaluate the RHS of each of the bindings only once - i.e. don't naively stamp out the expression n-times for every alternative implied by a `yield`. (This ensures side-effects of active patterns act as is probably exprected - once, and before the body of the CE and in the order they were defined)
+1. We should evaluate the RHS of each of the bindings only once - i.e. don't naively stamp out the expression n-times for every alternative implied by a `yield`. Although pattern matching has to happen for each `yield`, since until we are inside the `yield`'s lambda, we only have a functor in hand, and can't inspect the contents directly. This is only interesting since: pattern matching implies some runtime cost, and active patterns can have side-effects (arguably, that's enough of an abuse that it doesn't matter too much, but I don't like that it is perhaps surprising given the syntax of the CE).
 
 #### Remaining Questions
 * `do!` - how do we handle that with `Apply` and `Return`, etc.?
