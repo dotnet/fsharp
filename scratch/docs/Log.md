@@ -506,7 +506,7 @@ My example almost works now, in that it builds and runs, but I accidentally doub
 
 I've been thinking about the slight annoyance of the desugaring that happens in `let! ... and! ...`, specifically, how the `Return` gets "lifted" to cover the whole block below the last `and!`, including whatever expression is handed to `Return`. The tricky examples I can think of right now are:
 
-* Just moving `Return` to cover the lambda that represents everything after the last `and!` is hard enough!
+### Just moving `Return` to cover the lambda that represents everything after the last `and!` is hard enough!
 
 ```fsharp
 option {
@@ -533,7 +533,7 @@ builder.Apply(
     cExpr)
 ```
 
-* What if the user calls `Yield` more than once? Do we disallow it? If we did allow it, what would the semantics/desugaring be? (This corresponds to "alternative applicatives", I think). Follow ups:
+### What if the user calls `Yield` more than once? Do we disallow it? If we did allow it, what would the semantics/desugaring be? (This corresponds to "alternative applicatives", I think). Follow ups:
   * What if an active pattern appears on the LHS - do we call it up to (number of `yield` occurances) times?
   * What if `Return` isn't defined? Should we support semi-groups as well as monoids?
 
@@ -663,7 +663,7 @@ builder.Combine(
 /// Where `alt1`, `alt2`, `alt3` are just fresh variables
 ```
 
-* Nesting of applicative CEs & `yield!` / `return!`
+### Nesting of applicative CEs & `yield!` / `return!`
 
 ```fsharp
 option {
@@ -710,6 +710,37 @@ let alt2 =
 builder.Combine(alt1, alt2)
 ```
 
-* `let!` when `Apply` and `Return` are defined, but not `Bind` (this is highly related to the `Map` RFC for `let! ... return ...`).
+### `let!` when `Apply` and `Return` are defined, but not `Bind`
 
-* `use! ... anduse! ...`
+***N.B. This is highly related to the `Map` RFC for `let! ... return ...`***
+
+_If_ we chose to implement `Map` from `Apply` (in order to make a single `let!` for when `Apply` and `Return` are defined but not `Bind`), it could look like this:
+
+```fsharp
+option {
+    let! (a,_)            = aExpr
+    and! (_,b)            = bExpr
+    and! (SingleCaseDu c) = cExpr
+    let d = 3 + 4
+    return (a + b + c) * d
+}
+
+// desugars to:
+
+let d = 3 + 4 // Code outside the `Return` does not have names bound via `let! ... and! ...` in scope
+builder.Apply(
+    builder.Apply(
+        builder.Apply(
+            builder.Return(
+                (fun (a,_) ->
+                    (fun (_,b) ->
+                        (fun (SingleCaseDu c) ->
+                            (a + b + c) * d)))),
+            aExpr), 
+        bExpr), 
+    cExpr)
+```
+
+### `use! ... anduse! ...`
+
+Not sure how normal `use!` is handled yet, but hopefully it is largely orthogonal in its implementation from the rest of the desugaring.
