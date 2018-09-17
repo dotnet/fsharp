@@ -893,6 +893,7 @@ option {
 // desugars to:
 
 let alt1 =
+    let n = 7 // N.B. This has been duplicated in each alternative, so everything happens as many times as a `yield` occurs in the CE
     builder.Apply(
         builder.Apply(
             builder.Return(
@@ -902,9 +903,9 @@ let alt1 =
             aExpr), 
         bExpr)
 
-let n = 7
 
 let alt2 =
+    let n = 7
     builder.Apply(
         builder.Apply(
             builder.Return(
@@ -915,6 +916,8 @@ let alt2 =
         bExpr) // N.B. Second evaluation of bExpr here
 
 builder.Combine(alt1, alt2)
+
+// spy = 2, but that should make sense if we imagine that `and!` signals, amongst other things, that each yield corresponds to another stamping out
 ```
 
 #### "Just don't support yield" approach
