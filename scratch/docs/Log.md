@@ -821,17 +821,17 @@ Potentially more efficient. Side-effects from active patterns happen N times, bu
 ```fsharp
 let mutable spy = 0
 
-let (|NumAndDoubleNum|) (x : int) =
+let (|NastySideEffectfulNumAndDoubleNum|) (x : int) =
     spy <- spy + 1
     (x, x + x)
 
 option {
     let! (a,_) = aExpr
-    and! (NumAndDoubleNum(b, doubleb)) = bExpr
+    and! (NastySideEffectfulNumAndDoubleNum(b, doubleb)) = bExpr
     
     yield a + doubleb
 
-    let n = 7
+    let n = nastySideEffectfulComputation ()
 
     yield a + b + n
 }
@@ -846,19 +846,19 @@ let alt1 =
         builder.Apply(
             builder.Return(
                 (fun (a,_) ->
-                    (fun (NumAndDoubleNum(b, doubleb)) ->
+                    (fun (NastySideEffectfulNumAndDoubleNum(b, doubleb)) ->
                         a + doubleb))),
             aExprEvaluated), 
         bExprEvaluated)
 
-let n = 7
+let n = nastySideEffectfulComputation ()
 
 let alt2 =
     builder.Apply(
         builder.Apply(
             builder.Return(
                 (fun (a,_) ->
-                    (fun (NumAndDoubleNum(b, doubleb)) -> // N.B. That the RHS of the bindings are each evaluated once, but the pattern match is done once _per yield_
+                    (fun (NastySideEffectfulNumAndDoubleNum(b, doubleb)) -> // N.B. That the RHS of the bindings are each evaluated once, but the pattern match is done once _per yield_
                         a + b + n))),
             aExprEvaluated), 
         bExprEvaluated)
@@ -877,17 +877,17 @@ Prior art in loops: If a function with side-effects exists in a loop, we don't a
 ```fsharp
 let mutable spy = 0
 
-let (|NumAndDoubleNum|) (x : int) =
+let (|NastySideEffectfulNumAndDoubleNum|) (x : int) =
     spy <- spy + 1
     (x, x + x)
 
 option {
     let! (a,_) = aExpr
-    and! (NumAndDoubleNum(b, doubleb)) = bExpr
+    and! (NastySideEffectfulNumAndDoubleNum(b, doubleb)) = bExpr
     
     yield a + doubleb
 
-    let n = 7
+    let n = nastySideEffectfulComputation ()
 
     yield a + b + n
 }
@@ -895,24 +895,24 @@ option {
 // desugars to:
 
 let alt1 =
-    let n = 7 // N.B. This has been duplicated in each alternative, so everything happens as many times as a `yield` occurs in the CE
+    let n = nastySideEffectfulComputation () // N.B. This has been duplicated in each alternative, so everything happens as many times as a `yield` occurs in the CE
     builder.Apply(
         builder.Apply(
             builder.Return(
                 (fun (a,_) ->
-                    (fun (NumAndDoubleNum(b, doubleb)) ->
+                    (fun (NastySideEffectfulNumAndDoubleNum(b, doubleb)) ->
                         a + doubleb))),
             aExpr), 
         bExpr)
 
 
 let alt2 =
-    let n = 7
+    let n = nastySideEffectfulComputation ()
     builder.Apply(
         builder.Apply(
             builder.Return(
                 (fun (a,_) ->
-                    (fun (NumAndDoubleNum(b, doubleb)) ->
+                    (fun (NastySideEffectfulNumAndDoubleNum(b, doubleb)) ->
                         a + b + n))),
             aExpr), 
         bExpr) // N.B. Second evaluation of bExpr here
