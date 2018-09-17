@@ -598,7 +598,7 @@ Then thinking about more code outside of `yield` and `return` everythere it coul
 ```fsharp
 option {
     let! (a,_)            = aExpr
-    and! (b,b2)            = bExpr
+    and! (b,b2)           = bExpr
     and! (SingleCaseDu c) = cExpr
     
     let n = 7
@@ -667,8 +667,8 @@ builder.Combine(
 
 ```fsharp
 option {
-    let! (a,_)            = aExpr
-    and! (b,_)            = bExpr
+    let! (a,_) = aExpr
+    and! (b,_) = bExpr
     
     yield a
 
@@ -718,7 +718,7 @@ _If_ we chose to implement `Map` from `Apply` (in order to make a single `let!` 
 
 ```fsharp
 option {
-    let! (a,_)            = aExpr
+    let! (a,_) = aExpr
     let d = 3
     return (a * d)
 }
@@ -731,6 +731,8 @@ builder.Apply(
         (fun (a,_) ->
             (a * d))),
     aExpr)
+
+// This desugaring is just a corollary of the earlier, more complex desugarings
 ```
 
 ### `use! ... anduse! ...`
