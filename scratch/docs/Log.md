@@ -808,10 +808,13 @@ builder.Combine(alt1, alt2)
 
 ### Overall concepts for the full desugaring
 
+One claim might be: _We should evaluate the RHS of each of the bindings only once_ - i.e. don't naively stamp out the expression n-times for every alternative implied by a `yield`. Although pattern matching has to happen for each `yield`, since until we are inside the `yield`'s lambda, we only have a functor in hand, and can't inspect the contents directly. This is only interesting since: pattern matching implies some runtime cost, and active patterns can have side-effects (arguably, that's enough of an abuse that it doesn't matter too much, but I don't like that it is perhaps surprising given the syntax of the CE).
+
+Another perspective is that by "factoring out" the bindings, we've actually done away with some of the notion that the application implied by each `return` or `yield` is orthogonal, and it's everything else which is the exception, and active patterns are the ones following the rules and doing what is expected.
+
 #### Rules
 1. We create a structure of nested calls to `Apply` with a `Return` on the inside wrapping a lambda at every `return` or `yield` that appears in the CE. (We can create a function up-front which "wraps" any `Return` in the calls to `Apply` and bind that to a fresh variable for later calls to `Combine` if necessary, so that other scoping rules and orderings are preserved)
 1. A `Map` implementation just falls out of the `Apply` desugaring we have, so I think we should keep that, but allow it to be overriden by an explicit `Map` definition that has been appropriately annotated (similarly, if there is an existing `Bind`, `Apply` needs an annotation to trump `Bind` in the case where both effectively implement `Map`).
-1. We should evaluate the RHS of each of the bindings only once - i.e. don't naively stamp out the expression n-times for every alternative implied by a `yield`. Although pattern matching has to happen for each `yield`, since until we are inside the `yield`'s lambda, we only have a functor in hand, and can't inspect the contents directly. This is only interesting since: pattern matching implies some runtime cost, and active patterns can have side-effects (arguably, that's enough of an abuse that it doesn't matter too much, but I don't like that it is perhaps surprising given the syntax of the CE).
 
 #### Remaining Questions
 * `do!` - how do we handle that with `Apply` and `Return`, etc.?
