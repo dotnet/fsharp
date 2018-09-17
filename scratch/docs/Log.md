@@ -946,9 +946,9 @@ option {
      let! x = Some 10
      and! y = Some 20
      let n = 1
-     yield x + 5
+     yield x + n
      let m = 2
-     yield y + 5
+     yield y + n + m
  }
 
  // desugaring to:
@@ -961,8 +961,8 @@ builder.Apply(
                     builder.YieldFrom(
                         let n = 1 in
                         builder.Combine(
-                            builder.Yield(x + 5), // The slightly strange injection of Combine must surely already have corresponding logic when we're using Bind instead? Can we work from that to build the logic for the desuagring here?
-                            let m = 2 in builder.Yield(y + 5)))))),
+                            builder.Yield(x + n), // The slightly strange injection of Combine must surely already have corresponding logic when we're using Bind instead? Can we work from that to build the logic for the desuagring here?
+                            let m = 2 in builder.Yield(y + m)))))),
         aExpr), 
     bExpr)
 ```
