@@ -519,6 +519,7 @@ option {
 
 // desugars to:
 
+let d = 3 + 4 // Code outside the `Return` does not have names bound via `let! ... and! ...` in scope
 builder.Apply(
     builder.Apply(
         builder.Apply(
@@ -526,7 +527,6 @@ builder.Apply(
                 (fun (a,_) ->
                     (fun (_,b) ->
                         (fun (SingleCaseDu c) ->
-                            let d = 3 + 4
                             (a + b + c) * d)))),
             aExpr), 
         bExpr), 
@@ -581,6 +581,64 @@ builder.Combine(
                         (fun (_,b) ->
                             (fun (SingleCaseDu c) ->
                                 (a + c))))),
+                aExpr), 
+            bExpr), 
+        cExpr)
+)
+```
+
+Then thinking about more code outside of `yield` and `return` everythere it could conceivably be valid:
+
+```fsharp
+option {
+    let! (a,_)            = aExpr
+    and! (_,b)            = bExpr
+    and! (SingleCaseDu c) = cExpr
+    let n = 7
+    yield (a + b + c + n)
+    let m = 100
+    yield (b + m)
+    let o = -1
+    yield (a + c + n + m + o)
+}
+
+// desugars to:
+let n = 7 // Any effects here will happen before any of the `yield` lambdas - is that acceptable? Could be cause for confusion since order is different to that implied by the ordering of the lines the code appears on. Binding need to be first so that they are in scope of all of the alternatives below.
+let m = 100
+let o = -1
+builder.Combine(
+    builder.Combine(
+        builder.Apply(
+            builder.Apply(
+                builder.Apply(
+                    builder.Return(
+                        (fun (a,_) ->
+                            (fun (_,b) ->
+                                (fun (SingleCaseDu c) ->
+                                    (a + b + c + n))))),
+                    aExpr), 
+                bExpr), 
+            cExpr),
+        builder.Apply(
+            builder.Apply(
+                builder.Apply(
+                    builder.Return(
+                        (fun (a,_) ->
+                            (fun (_,b) ->
+                                (fun (SingleCaseDu c) ->
+                                    (b + m))))),
+                    aExpr), 
+                bExpr), 
+            cExpr)
+    ),
+    builder.Apply(
+        builder.Apply(
+            builder.Apply(
+                builder.Return(
+                    (fun (a,_) ->
+                        (fun (_,b) ->
+                            (fun (SingleCaseDu c) ->
+                                (a + c + n + m + o))))),
                 aExpr), 
             bExpr), 
         cExpr)
