@@ -895,24 +895,24 @@ option {
 // desugars to:
 
 let alt1 =
-    let n = nastySideEffectfulComputation () // N.B. This has been duplicated in each alternative, so everything happens as many times as a `yield` occurs in the CE
     builder.Apply(
         builder.Apply(
             builder.Return(
                 (fun (a,_) ->
                     (fun (NastySideEffectfulNumAndDoubleNum(b, doubleb)) ->
+                        let n = nastySideEffectfulComputation () // N.B. This has been duplicated in each alternative, so everything happens as many times as a `yield` occurs in the CE
                         a + doubleb))),
             aExpr), 
         bExpr)
 
 
 let alt2 =
-    let n = nastySideEffectfulComputation ()
     builder.Apply(
         builder.Apply(
             builder.Return(
                 (fun (a,_) ->
                     (fun (NastySideEffectfulNumAndDoubleNum(b, doubleb)) ->
+                        let n = nastySideEffectfulComputation () // N.B. This has been duplicated in each alternative, so everything happens as many times as a `yield` occurs in the CE
                         a + b + n))),
             aExpr), 
         bExpr) // N.B. Second evaluation of bExpr here
