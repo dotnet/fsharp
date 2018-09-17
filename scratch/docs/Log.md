@@ -533,14 +533,16 @@ builder.Apply(
     cExpr)
 ```
 
-* What if the user calls `Yield` more than once? Do we disallow it? If we did allow it, what would the semantics/desugaring be? (This corresponds to "alternative applicatives", I think)
+* What if the user calls `Yield` more than once? Do we disallow it? If we did allow it, what would the semantics/desugaring be? (This corresponds to "alternative applicatives", I think). Follow ups:
+  * What if an active pattern appears on the LHS - do we call it up to (number of `yield` occurances) times?
+  * What if `Return` isn't defined? Should we support semi-groups as well as monoids?
 
 ```fsharp
 option {
     let! (a,_)            = aExpr
     and! (_,b)            = bExpr
-    and! (SingleCaseDu c) = cExpr
-    yield (a + b + c) // Combine cases with alternation function (i.e. `Combine`), earlier yields trump later ones
+    and! (SingleCaseDu c) = cExpr // Can the pattern be an active pattern? Does that mean it's potentially called once per occurance of `yield` below?
+    yield (a + b + c) // `yield` implies alternation, i.e. a monoid (maybe we should support semi-groups too?)
     yield (b + 1)
     yield (a + c)
 }
