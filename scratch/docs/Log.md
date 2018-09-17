@@ -549,6 +549,10 @@ option {
 
 // desugars to:
 
+let aExprEvaluated = aExpr
+let bExprEvaluated = bExpr
+let cExprEvaluated = cExpr
+
 let alt1 =
     builder.Apply(
         builder.Apply(
@@ -558,9 +562,9 @@ let alt1 =
                         (fun (_,b) ->
                             (fun (SingleCaseDu c) ->
                                 (a + b + c))))),
-                aExpr), 
-            bExpr), 
-        cExpr)
+                aExprEvaluated), 
+            bExprEvaluated), 
+        cExprEvaluated)
 
 let alt2 =
     builder.Apply(
@@ -571,9 +575,9 @@ let alt2 =
                         (fun (_,b) ->
                             (fun (SingleCaseDu c) ->
                                 (b + 1))))),
-                aExpr), 
-            bExpr), 
-        cExpr)
+                aExprEvaluated), 
+            bExprEvaluated), 
+        cExprEvaluated)
 
 let alt3 =
     builder.Apply(
@@ -584,9 +588,9 @@ let alt3 =
                         (fun (_,b) ->
                             (fun (SingleCaseDu c) ->
                                 (a + c))))),
-                aExpr), 
-            bExpr), 
-        cExpr)
+                aExprEvaluated), 
+            bExprEvaluated), 
+        cExprEvaluated)
 
 builder.Combine(
     builder.Combine(alt1,alt2),
@@ -611,6 +615,10 @@ option {
 
 // desugars to:
 
+let aExprEvaluated = aExpr
+let bExprEvaluated = bExpr
+let cExprEvaluated = cExpr
+
 let n = 7
 
 let alt1 =
@@ -622,9 +630,9 @@ let alt1 =
                         (fun (b,b2) ->
                             (fun (SingleCaseDu c) ->
                                 (a + b + c + n))))),
-                aExpr), 
-            bExpr), 
-        cExpr)
+                aExprEvaluated), 
+            bExprEvaluated), 
+        cExprEvaluated)
 
 let m = 100 // By `let` binding here, we keep the expecting scoping and ordering of side-effects
 
@@ -637,9 +645,9 @@ let alt2 =
                         (fun (b,b2) ->
                             (fun (SingleCaseDu c) ->
                                 (b + m))))),
-                aExpr), 
-            bExpr), 
-        cExpr)
+                aExprEvaluated), 
+            bExprEvaluated), 
+        cExprEvaluated)
 
 let o = -1
 
@@ -652,9 +660,9 @@ let alt3 =
                         (fun (b,b2) ->
                             (fun (SingleCaseDu c) ->
                                 (a + b2 + c + n + m + o))))),
-                aExpr), 
-            bExpr), 
-        cExpr)
+                aExprEvaluated), 
+            bExprEvaluated), 
+        cExprEvaluated)
 
 builder.Combine(
     builder.Combine(alt1,alt2),
@@ -684,6 +692,9 @@ option {
 
 // desugars to:
 
+let aExprEvaluated = aExpr
+let bExprEvaluated = bExpr
+
 let alt1 =
     builder.Apply(
         builder.Apply(
@@ -691,21 +702,23 @@ let alt1 =
                 (fun (a,_) ->
                     (fun (b,_) ->
                         a))),
-            aExpr), 
-        bExpr)
+            aExprEvaluated), 
+        bExprEvaluated)
 
 let n = 7
 
 let alt2 =
     builder.YieldFrom( // What would a sensible implementation be except `id`?
+        let cExprEvaluated = cExpr
+        let dExprEvaluated = dExpr
         builder.Apply(
             builder.Apply(
                 builder.Return(
-                    (fun (a,_) ->
-                        (fun (b,_) ->
-                            a))),
-                aExpr), 
-            bExpr))
+                    (fun c ->
+                        (fun d ->
+                            b + c + d + n))),
+                cExprEvaluated), 
+            dExprEvaluated))
 
 builder.Combine(alt1, alt2)
 ```
@@ -725,12 +738,13 @@ option {
 
 // desugars to:
 
+let aExprEvaluated = aExpr
 let d = 3
 builder.Apply(
     builder.Return(
         (fun (a,_) ->
             (a * d))),
-    aExpr)
+    aExprEvaluated)
 
 // This desugaring is just a corollary of the earlier, more complex desugarings
 ```
@@ -742,7 +756,7 @@ My gut says we should use `Map` if it is available, else `Apply`, else `Bind`.
 #### Rules
 1. We create a structure of nested calls to `Apply` with a `Return` on the inside wrapping a lambda at every `return` or `yield` that appears in the CE. (We can create a function up-front which "wraps" any `Return` in the calls to `Apply` and bind that to a fresh variable for later calls to `Combine` if necessary, so that other scoping rules and orderings are preserved)
 1. A `Map` implementation just falls out of the `Apply` desugaring we have, so I think we should keep that, but allow it to be overriden by an explicit `Map` definition that has been appropriately annotated (similarly, if there is an existing `Bind`, `Apply` needs an annotation to trump `Bind` in the case where both effectively implement `Map`).
-1. We should evaluate the RHS of each of the bindings only once - i.e. don't naively stamp out the expression n-times for every alternative implied by a `yield`.
+1. We should evaluate the RHS of each of the bindings only once - i.e. don't naively stamp out the expression n-times for every alternative implied by a `yield`. (This ensures side-effects of active patterns act as is probably exprected - once, and before the body of the CE and in the order they were defined)
 
 #### Remaining Questions
 * `do!` - how do we handle that with `Apply` and `Return`, etc.?
