@@ -960,9 +960,10 @@ builder.Apply(
                 (fun y ->
                     builder.YieldFrom(
                         let n = 1 in
-                        builder.Combine(
-                            builder.Yield(x + n), // The slightly strange injection of Combine must surely already have corresponding logic when we're using Bind instead? Can we work from that to build the logic for the desuagring here?
-                            let m = 2 in builder.Yield(y + m)))))),
+                        builder.Combine( // The slightly strange injection of Combine must surely already have corresponding logic when we're using Bind instead? Can we work from that to build the logic for the desuagring here?
+                            builder.Yield(x + n), 
+                            let m = 2 in // Names only in scope as CE syntax would imply
+                            builder.Yield(y + m)))))),
         aExpr), 
     bExpr)
 ```
