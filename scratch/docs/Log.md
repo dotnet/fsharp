@@ -812,6 +812,105 @@ One claim might be: _We should evaluate the RHS of each of the bindings only onc
 
 Another perspective is that by "factoring out" the bindings, we've actually done away with some of the notion that the application implied by each `return` or `yield` is orthogonal, and it's everything else which is the exception, and active patterns are the ones following the rules and doing what is expected. From that perspective, `let! ... and! ...` can be simply considered as each `yield` and each `binding` happening separately/in parallel - of course that does make it easy to build something which looks terse but implies a very large computation (not that we can't do that already...).
 
+Might need to consult the literature on this one, although the introduction of side-effects might be what is taking us off-piste.
+
+#### "Commonising" approach
+```fsharp
+let mutable spy = 0
+
+let (|NumAndDoubleNum|) (x : int) =
+    spy <- spy + 1
+    (x, x + x)
+
+option {
+    let! (a,_) = aExpr
+    and! (NumAndDoubleNum(b, doubleb)) = bExpr
+    
+    yield a + doubleb
+
+    let n = 7
+
+    yield a + b + n
+}
+
+// desugars to:
+
+let aExprEvaluated = aExpr
+let bExprEvaluated = bExpr
+
+let alt1 =
+    builder.Apply(
+        builder.Apply(
+            builder.Return(
+                (fun (a,_) ->
+                    (fun (NumAndDoubleNum(b, doubleb)) ->
+                        a + doubleb))),
+            aExprEvaluated), 
+        bExprEvaluated)
+
+let n = 7
+
+let alt2 =
+    builder.Apply(
+        builder.Apply(
+            builder.Return(
+                (fun (a,_) ->
+                    (fun (NumAndDoubleNum(b, doubleb)) -> // N.B. That the RHS of the bindings are each evaluated once, but the pattern match is done once _per yield_
+                        a + b + n))),
+            aExprEvaluated), 
+        bExprEvaluated)
+
+builder.Combine(alt1, alt2)
+
+// spy = 2, is this unacceptably surprising?
+```
+
+#### "Duplication" approach
+```fsharp
+let mutable spy = 0
+
+let (|NumAndDoubleNum|) (x : int) =
+    spy <- spy + 1
+    (x, x + x)
+
+option {
+    let! (a,_) = aExpr
+    and! (NumAndDoubleNum(b, doubleb)) = bExpr
+    
+    yield a + doubleb
+
+    let n = 7
+
+    yield a + b + n
+}
+
+// desugars to:
+
+let alt1 =
+    builder.Apply(
+        builder.Apply(
+            builder.Return(
+                (fun (a,_) ->
+                    (fun (NumAndDoubleNum(b, doubleb)) ->
+                        a + doubleb))),
+            aExpr), 
+        bExpr)
+
+let n = 7
+
+let alt2 =
+    builder.Apply(
+        builder.Apply(
+            builder.Return(
+                (fun (a,_) ->
+                    (fun (NumAndDoubleNum(b, doubleb)) ->
+                        a + b + n))),
+            aExpr), 
+        bExpr) // N.B. Second evaluation of bExpr here
+
+builder.Combine(alt1, alt2)
+```
+
 #### Rules
 1. We create a structure of nested calls to `Apply` with a `Return` on the inside wrapping a lambda at every `return` or `yield` that appears in the CE. (We can create a function up-front which "wraps" any `Return` in the calls to `Apply` and bind that to a fresh variable for later calls to `Combine` if necessary, so that other scoping rules and orderings are preserved)
 1. A `Map` implementation just falls out of the `Apply` desugaring we have, so I think we should keep that, but allow it to be overriden by an explicit `Map` definition that has been appropriately annotated (similarly, if there is an existing `Bind`, `Apply` needs an annotation to trump `Bind` in the case where both effectively implement `Map`).
