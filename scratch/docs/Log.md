@@ -816,7 +816,7 @@ Might need to consult the literature on this one, although the introduction of s
 
 #### "Commonising" approach
 
-Potentially more efficient. Side-effects from active patterns happen N times, where everything else happens once.
+Potentially more efficient. Side-effects from active patterns happen N times, but normal `let`s and evaluation of the RHS of the `let! ... and! ...` happens only once. One could argue that, apart from the side-effect of active patterns, this more closely agrees with the syntax.
 
 ```fsharp
 let mutable spy = 0
@@ -870,7 +870,7 @@ builder.Combine(alt1, alt2)
 
 #### "Duplication" approach
 
-Evaluation of names bound in the `let! ... and! ...` happens once for each yield, but at least this agrees with the number of times the active pattern is called, and is simpler to implement and reason about.
+Evaluation of names bound in the `let! ... and! ...` happens once for each yield (so potentially a lot of times!), but at least this agrees with the number of times the active pattern is called. One could argue that things happening for each `yield` is surprising given the syntax, but perhaps the fact that `and!` is there is enough to signal that we've shifted to a different "mode". I think this approach is simpler to implement and reason about.
 
 ```fsharp
 let mutable spy = 0
