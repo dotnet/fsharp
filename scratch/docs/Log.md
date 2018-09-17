@@ -267,7 +267,7 @@ This also means we can add optimisations to reduce current desugarings which use
 
 ## 2018-09-10
 
-I don't think we need `in` between `let!`s and `and!`s in the same chain, because any later `and!` in unambiguously part of the chain (a new chain would need to be started with a fresh `let!`).
+I don't think we need `in` between `let!`s and `and!`s in the same chain, because any later `and!` in unambiguously part of the chain (a new chain would need to be started with a fresh `let!`). EDIT: That was clearly rubbish, one example of that being wrong is a `let!` nested in another `let!`. Which does the following `and!` belong to without the offside rule or `in`? Seems ambiguous to me!
 
 ### Should we desugar to `Bind`, `Apply` or `Map`?
 
@@ -310,6 +310,9 @@ val liftA2 : ('a -> 'b -> 'c) -> f 'a -> f 'b -> f 'c
 ```
 ```F#
 val apply : f ('a -> 'b) -> f 'a -> f 'b
+```
+```F#
+val merge : f 'a -> f 'b -> f('a * 'b)
 ```
 
 Imagine a simple but presumably represenative example CE:
@@ -498,3 +501,15 @@ Parsing seem to at least accept my examples. Working on type checking now. One o
 Looks like I forgot to insert a call to `Return` between creating the lambdas that introduce the newly-bound names and calling `Apply`.
 
 My example almost works now, in that it builds and runs, but I accidentally doubly wrap the result of the builder in the functor. I think the explicit `Return` the user gives needs to be "moved" to outside the lambdas, as opposed to kept and a "new" `Return` added between them and the calls to `Apply`. The solution is to think about precisely how the desugaring should work a bit more.
+
+## 2018-09-17
+
+I've been thinking about the slight annoyance of the desugaring that happens in `let! ... and! ...`, specifically, how the `Return` gets "lifted" to cover the whole block below the last `and!`, including whatever expression is handed to `Return`. The tricky examples I can think of right now are:
+
+* Just moving `Return` to cover the lambda that represents everything after the last `and!` is hard enough!
+
+* What if the user calls `Yield` more than once? Do we disallow it? If we did allow it, what would the semantics/desugaring be?
+
+* `let!` when `Apply` and `Return` are defined, but not `Bind` (this is highly related to the `Map` RFC for `let! ... return ...`).
+
+* `use! ... anduse! ...`
