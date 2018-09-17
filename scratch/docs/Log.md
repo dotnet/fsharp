@@ -934,4 +934,4 @@ If we support only `Return` and not `Yield` inside `let! ... and! ...` compuatio
 * `do!` - how do we handle that with `Apply` and `Return`, etc.?
 * I won't bother implementing support for semi-groups (i.e. when there are >1 usages of `yield` but no `Zero` defined), although I haven't actually checked what happens in that case right now...
 * Need to check this vs. the existing implementation for `Bind`, but I assume an applicative CE should end in exactly one `return` or `return!`, else contain >= 1 `yield` or `yield!`, and the last line of the expression is a `yield` or `yield!`. Is that explicitly handled currently?
-* Not sure how normal `use!` is handled yet, but hopefully it is largely orthogonal in its implementation from the rest of the desugaring. Need to work out what will happen there.
+* `Using : 'T * ('T -> M<'U>) -> M<'U> when 'U :> IDisposable` i.e. kind of a `pure` and a `map` in one. Valid for use inside an `apply` as far as I can tell at first glance (in `use!` right now, we get a `Bind` with a `Using` nested directly inside it).
