@@ -742,6 +742,7 @@ My gut says we should use `Map` if it is available, else `Apply`, else `Bind`.
 #### Rules
 1. We create a structure of nested calls to `Apply` with a `Return` on the inside wrapping a lambda at every `return` or `yield` that appears in the CE. (We can create a function up-front which "wraps" any `Return` in the calls to `Apply` and bind that to a fresh variable for later calls to `Combine` if necessary, so that other scoping rules and orderings are preserved)
 1. A `Map` implementation just falls out of the `Apply` desugaring we have, so I think we should keep that, but allow it to be overriden by an explicit `Map` definition that has been appropriately annotated (similarly, if there is an existing `Bind`, `Apply` needs an annotation to trump `Bind` in the case where both effectively implement `Map`).
+1. We should evaluate the RHS of each of the bindings only once - i.e. don't naively stamp out the expression n-times for every alternative implied by a `yield`.
 
 #### Remaining Questions
 * `do!` - how do we handle that with `Apply` and `Return`, etc.?
