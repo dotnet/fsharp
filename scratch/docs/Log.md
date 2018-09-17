@@ -80,7 +80,7 @@ Interesting existing annoyance, no idea if it's easily fixable: I tried to use a
 
 Managed to mangle the new `match!` syntax to use `letmatch!` on a branch.
 
-```F#
+```fsharp
 let x = Some 1
 let y = opt { return "A" }
 let z = Some 3.5
@@ -107,7 +107,7 @@ Arbitrary list of things to do / remember:
 * Should there be an `andUse!` or something? What usecases could there be? What would that look like?
 
 What I've done so far makes `and!` only valid within a `let!`:
-```F#
+```fsharp
     [<NoEquality; NoComparison;RequireQualifiedAccess>]
     SynAndBangExpr = 
     /// AndBang(isUse, bindings, body, wholeRange)
@@ -208,7 +208,7 @@ When writing a computation expression builder, is the choice in which of `Yield`
 @tomd I think one reason was that `let! a = x and b = y` maps pretty directly to `Merge`, so the translation is simpler
 and it also works nicely if you have something that is also a monad, because then you can translate this:  
 
-```F#
+```fsharp
 m {
   let! a = x
   and b = y
@@ -218,14 +218,14 @@ m {
 
 > into this:  
 
-```F#
+```fsharp
 m.Bind(m.Merge(x, y), fun (a, b) -> 
   m.Bind(z, fun c -> 
     m.Return(a + b + c) ) )
 ```
 > For reference, if you do not have `Bind` and have just an applicative, you will not be able to do the second `let! c = z`. You can only write, say:
 
-```F#
+```fsharp
 m {
   let! a = x
   and b = y
@@ -234,7 +234,7 @@ m {
 
 > which can be translated using just `Map`:
 
-```F#
+```fsharp
 m.Map(m.Merge(x, y), fun (a, b) -> a + b)
 ```
 
@@ -305,18 +305,18 @@ There's already been plenty of chat about the `apply` vs. `merge` way of doing t
 
 Comparing `liftA2` and `apply` because `merge` introduces a tuple, which I find arbitrary and inelegant.
 
-```F#
+```fsharp
 val liftA2 : ('a -> 'b -> 'c) -> f 'a -> f 'b -> f 'c
 ```
-```F#
+```fsharp
 val apply : f ('a -> 'b) -> f 'a -> f 'b
 ```
-```F#
+```fsharp
 val merge : f 'a -> f 'b -> f('a * 'b)
 ```
 
 Imagine a simple but presumably represenative example CE:
-```F#
+```fsharp
 option {
     let! a = aExpr
     and! b = bExpr
@@ -325,7 +325,7 @@ option {
 }
 ```
 
-```F#
+```fsharp
 builder.Apply(
     builder.Apply(
         builder.Apply(
@@ -336,7 +336,7 @@ builder.Apply(
 ```
 
 And with some extra body in the middle:
-```F#
+```fsharp
 option {
     let! a = aExpr
     and! b = bExpr
@@ -346,7 +346,7 @@ option {
 }
 ```
 I presume it would desugar (have yet to confirm this is how `let`s work yet) as so:
-```F#
+```fsharp
 builder.Apply(
     builder.Apply(
         builder.Apply(
@@ -395,7 +395,7 @@ Still trying to make the syntax parse properly. I suspect this is to do with the
 From the debugging: `LET: entering CtxtLetDecl(blockLet=%b), awaiting EQUALS to go to CtxtSeqBlock (%a)\n` when filtering `BINDER`. How does thhis need to change to accomodate `and!`? Need to explore `CtxtLetDecl` to get started.
 
 Okay, I think this:
-```F#
+```fsharp
     //  let!  ... ~~~> CtxtLetDecl 
     | BINDER b, (ctxt :: _) -> 
         let blockLet = match ctxt with CtxtSeqBlock _ -> true | _ -> false
@@ -508,8 +508,85 @@ I've been thinking about the slight annoyance of the desugaring that happens in 
 
 * Just moving `Return` to cover the lambda that represents everything after the last `and!` is hard enough!
 
-* What if the user calls `Yield` more than once? Do we disallow it? If we did allow it, what would the semantics/desugaring be?
+```fsharp
+option {
+    let! (a,_)            = aExpr
+    and! (_,b)            = bExpr
+    and! (SingleCaseDu c) = cExpr
+    let d = 3 + 4
+    return (a + b + c) * d
+}
+
+// desugars to:
+
+builder.Apply(
+    builder.Apply(
+        builder.Apply(
+            builder.Return(
+                (fun (a,_) ->
+                    (fun (_,b) ->
+                        (fun (SingleCaseDu c) ->
+                            let d = 3 + 4
+                            (a + b + c) * d)))),
+            aExpr), 
+        bExpr), 
+    cExpr)
+```
+
+* What if the user calls `Yield` more than once? Do we disallow it? If we did allow it, what would the semantics/desugaring be? (This corresponds to "alternative applicatives", I think)
+
+```fsharp
+option {
+    let! (a,_)            = aExpr
+    and! (_,b)            = bExpr
+    and! (SingleCaseDu c) = cExpr
+    yield (a + b + c) // Combine cases with alternation function (i.e. `Combine`), earlier yields trump later ones
+    yield (b + 1)
+    yield (a + c)
+}
+
+// desugars to:
+builder.Combine(
+    builder.Combine(
+        builder.Apply(
+            builder.Apply(
+                builder.Apply(
+                    builder.Return(
+                        (fun (a,_) ->
+                            (fun (_,b) ->
+                                (fun (SingleCaseDu c) ->
+                                    (a + b + c))))),
+                    aExpr), 
+                bExpr), 
+            cExpr),
+        builder.Apply(
+            builder.Apply(
+                builder.Apply(
+                    builder.Return(
+                        (fun (a,_) ->
+                            (fun (_,b) ->
+                                (fun (SingleCaseDu c) ->
+                                    (b + 1))))),
+                    aExpr), 
+                bExpr), 
+            cExpr)
+    ),
+    builder.Apply(
+        builder.Apply(
+            builder.Apply(
+                builder.Return(
+                    (fun (a,_) ->
+                        (fun (_,b) ->
+                            (fun (SingleCaseDu c) ->
+                                (a + c))))),
+                aExpr), 
+            bExpr), 
+        cExpr)
+)
+```
 
 * `let!` when `Apply` and `Return` are defined, but not `Bind` (this is highly related to the `Map` RFC for `let! ... return ...`).
 
 * `use! ... anduse! ...`
+
+* `yield!` and `return!`
