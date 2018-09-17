@@ -737,12 +737,14 @@ builder.Apply(
 
 My gut says we should use `Map` if it is available, else `Apply`, else `Bind`.
 
-### `use! ... anduse! ...`
-
-Not sure how normal `use!` is handled yet, but hopefully it is largely orthogonal in its implementation from the rest of the desugaring.
-
 ### Overall concepts for the full desugaring
 
+#### Rules
 1. We create a structure of nested calls to `Apply` with a `Return` on the inside wrapping a lambda at every `return` or `yield` that appears in the CE. (We can create a function up-front which "wraps" any `Return` in the calls to `Apply` and bind that to a fresh variable for later calls to `Combine` if necessary, so that other scoping rules and orderings are preserved)
 1. A `Map` implementation just falls out of the `Apply` desugaring we have, so I think we should keep that, but allow it to be overriden by an explicit `Map` definition that has been appropriately annotated (similarly, if there is an existing `Bind`, `Apply` needs an annotation to trump `Bind` in the case where both effectively implement `Map`).
-1. I won't bother implementing support for semi-groups (i.e. when there are >1 usages of `yield` but no `Zero` defined), although I haven't actually checked what happens in that case right now...
+
+#### Remaining Questions
+* `do!` - how do we handle that with `Apply` and `Return`, etc.?
+* I won't bother implementing support for semi-groups (i.e. when there are >1 usages of `yield` but no `Zero` defined), although I haven't actually checked what happens in that case right now...
+* Need to check this vs. the existing implementation for `Bind`, but I assume an applicative CE should end in exactly one `return` or `return!`, else contain >= 1 `yield` or `yield!`, and the last line of the expression is a `yield` or `yield!`. Is that explicitly handled currently?
+* Not sure how normal `use!` is handled yet, but hopefully it is largely orthogonal in its implementation from the rest of the desugaring. Need to work out what will happen there.
