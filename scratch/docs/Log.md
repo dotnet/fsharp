@@ -735,6 +735,8 @@ builder.Apply(
 // This desugaring is just a corollary of the earlier, more complex desugarings
 ```
 
+My gut says we should use `Map` if it is available, else `Apply`, else `Bind`.
+
 ### `use! ... anduse! ...`
 
 Not sure how normal `use!` is handled yet, but hopefully it is largely orthogonal in its implementation from the rest of the desugaring.
