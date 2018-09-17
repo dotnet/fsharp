@@ -598,7 +598,7 @@ Then thinking about more code outside of `yield` and `return` everythere it coul
 ```fsharp
 option {
     let! (a,_)            = aExpr
-    and! (_,b)            = bExpr
+    and! (b,b2)            = bExpr
     and! (SingleCaseDu c) = cExpr
     
     let n = 7
@@ -606,7 +606,7 @@ option {
     let m = 100
     yield (b + m)
     let o = -1
-    yield (a + c + n + m + o)
+    yield (a + b2 + c + n + m + o)
 }
 
 // desugars to:
@@ -619,7 +619,7 @@ let alt1 =
             builder.Apply(
                 builder.Return(
                     (fun (a,_) ->
-                        (fun (_,b) ->
+                        (fun (b,b2) ->
                             (fun (SingleCaseDu c) ->
                                 (a + b + c + n))))),
                 aExpr), 
@@ -634,7 +634,7 @@ let alt2 =
             builder.Apply(
                 builder.Return(
                     (fun (a,_) ->
-                        (fun (_,b) ->
+                        (fun (b,b2) ->
                             (fun (SingleCaseDu c) ->
                                 (b + m))))),
                 aExpr), 
@@ -649,9 +649,9 @@ let alt3 =
             builder.Apply(
                 builder.Return(
                     (fun (a,_) ->
-                        (fun (_,b) ->
+                        (fun (b,b2) ->
                             (fun (SingleCaseDu c) ->
-                                (a + c + n + m + o))))),
+                                (a + b2 + c + n + m + o))))),
                 aExpr), 
             bExpr), 
         cExpr)
@@ -663,8 +663,53 @@ builder.Combine(
 /// Where `alt1`, `alt2`, `alt3` are just fresh variables
 ```
 
+* Nesting of applicative CEs & `yield!` / `return!`
+
+```fsharp
+option {
+    let! (a,_)            = aExpr
+    and! (b,_)            = bExpr
+    
+    yield a
+
+    let n = 7
+
+    yield! (
+        option {
+            let! c = cExpr
+            and! d = dExpr
+            return (b + c + d + n)
+        })
+}
+
+// desugars to:
+
+let alt1 =
+    builder.Apply(
+        builder.Apply(
+            builder.Return(
+                (fun (a,_) ->
+                    (fun (b,_) ->
+                        a))),
+            aExpr), 
+        bExpr)
+
+let n = 7
+
+let alt2 =
+    builder.YieldFrom( // What would a sensible implementation be except `id`?
+        builder.Apply(
+            builder.Apply(
+                builder.Return(
+                    (fun (a,_) ->
+                        (fun (b,_) ->
+                            a))),
+                aExpr), 
+            bExpr))
+
+builder.Combine(alt1, alt2)
+```
+
 * `let!` when `Apply` and `Return` are defined, but not `Bind` (this is highly related to the `Map` RFC for `let! ... return ...`).
 
 * `use! ... anduse! ...`
-
-* `yield!` and `return!`
