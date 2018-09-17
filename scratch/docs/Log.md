@@ -718,7 +718,7 @@ let alt2 =
             builder.Apply(
                 builder.Return(
                     (fun c ->
-                        (fun d ->
+                        (fun d -> // TODO Where on earth does `b` get applied in?!
                             b + c + d + n))),
                 cExprEvaluated), 
             dExprEvaluated))
@@ -900,7 +900,7 @@ let alt1 =
             builder.Return(
                 (fun (a,_) ->
                     (fun (NastySideEffectfulNumAndDoubleNum(b, doubleb)) ->
-                        let n = nastySideEffectfulComputation () // N.B. This has been duplicated in each alternative, so everything happens as many times as a `yield` occurs in the CE
+                        let n = nastySideEffectfulComputation () // This comes _after_ this yield. Why is it here?!
                         a + doubleb))),
             aExpr), 
         bExpr)
@@ -935,3 +935,34 @@ If we support only `Return` and not `Yield` inside `let! ... and! ...` compuatio
 * I won't bother implementing support for semi-groups (i.e. when there are >1 usages of `yield` but no `Zero` defined), although I haven't actually checked what happens in that case right now...
 * Need to check this vs. the existing implementation for `Bind`, but I assume an applicative CE should end in exactly one `return` or `return!`, else contain >= 1 `yield` or `yield!`, and the last line of the expression is a `yield` or `yield!`. Is that explicitly handled currently?
 * `Using : 'T * ('T -> M<'U>) -> M<'U> when 'U :> IDisposable` i.e. kind of a `pure` and a `map` in one. Valid for use inside an `apply` as far as I can tell at first glance (in `use!` right now, we get a `Bind` with a `Using` nested directly inside it).
+
+## 2018-09-17
+
+How does `yield` desugar into `Combine` right now? Doesn't that mean walking down the expression an doing some rewriting? Can that help us with the issues from yesterday?
+
+After a conversation wtih @Nick: Can we do this as our desugaring for `let! ... and! ...` in the face of `yield`:
+```fsharp
+option {
+     let! x = Some 10
+     and! y = Some 20
+     let n = 1
+     yield x + 5
+     let m = 2
+     yield y + 5
+ }
+
+ // desugaring to:
+
+builder.Apply(
+    builder.Apply(
+        builder.Return(
+            (fun x -> // Any pattern matching happens once
+                (fun y ->
+                    builder.YieldFrom(
+                        let n = 1 in
+                        builder.Combine(
+                            builder.Yield(x + 5), // The slightly strange injection of Combine must surely already have corresponding logic when we're using Bind instead? Can we work from that to build the logic for the desuagring here?
+                            let m = 2 in builder.Yield(y + 5)))))),
+        aExpr), 
+    bExpr)
+```
