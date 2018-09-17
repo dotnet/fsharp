@@ -548,31 +548,34 @@ option {
 }
 
 // desugars to:
-builder.Combine(
-    builder.Combine(
+
+let alt1 =
+    builder.Apply(
         builder.Apply(
             builder.Apply(
-                builder.Apply(
-                    builder.Return(
-                        (fun (a,_) ->
-                            (fun (_,b) ->
-                                (fun (SingleCaseDu c) ->
-                                    (a + b + c))))),
-                    aExpr), 
-                bExpr), 
-            cExpr),
+                builder.Return(
+                    (fun (a,_) ->
+                        (fun (_,b) ->
+                            (fun (SingleCaseDu c) ->
+                                (a + b + c))))),
+                aExpr), 
+            bExpr), 
+        cExpr)
+
+let alt2 =
+    builder.Apply(
         builder.Apply(
             builder.Apply(
-                builder.Apply(
-                    builder.Return(
-                        (fun (a,_) ->
-                            (fun (_,b) ->
-                                (fun (SingleCaseDu c) ->
-                                    (b + 1))))),
-                    aExpr), 
-                bExpr), 
-            cExpr)
-    ),
+                builder.Return(
+                    (fun (a,_) ->
+                        (fun (_,b) ->
+                            (fun (SingleCaseDu c) ->
+                                (b + 1))))),
+                aExpr), 
+            bExpr), 
+        cExpr)
+
+let alt3 =
     builder.Apply(
         builder.Apply(
             builder.Apply(
@@ -584,7 +587,10 @@ builder.Combine(
                 aExpr), 
             bExpr), 
         cExpr)
-)
+
+builder.Combine(
+    builder.Combine(alt1,alt2),
+    alt3)
 ```
 
 Then thinking about more code outside of `yield` and `return` everythere it could conceivably be valid:
@@ -594,6 +600,7 @@ option {
     let! (a,_)            = aExpr
     and! (_,b)            = bExpr
     and! (SingleCaseDu c) = cExpr
+    
     let n = 7
     yield (a + b + c + n)
     let m = 100
@@ -603,34 +610,40 @@ option {
 }
 
 // desugars to:
-let n = 7 // Any effects here will happen before any of the `yield` lambdas - is that acceptable? Could be cause for confusion since order is different to that implied by the ordering of the lines the code appears on. Binding need to be first so that they are in scope of all of the alternatives below.
-let m = 100
+
+let n = 7
+
+let alt1 =
+    builder.Apply(
+        builder.Apply(
+            builder.Apply(
+                builder.Return(
+                    (fun (a,_) ->
+                        (fun (_,b) ->
+                            (fun (SingleCaseDu c) ->
+                                (a + b + c + n))))),
+                aExpr), 
+            bExpr), 
+        cExpr)
+
+let m = 100 // By `let` binding here, we keep the expecting scoping and ordering of side-effects
+
+let alt2 =
+    builder.Apply(
+        builder.Apply(
+            builder.Apply(
+                builder.Return(
+                    (fun (a,_) ->
+                        (fun (_,b) ->
+                            (fun (SingleCaseDu c) ->
+                                (b + m))))),
+                aExpr), 
+            bExpr), 
+        cExpr)
+
 let o = -1
-builder.Combine(
-    builder.Combine(
-        builder.Apply(
-            builder.Apply(
-                builder.Apply(
-                    builder.Return(
-                        (fun (a,_) ->
-                            (fun (_,b) ->
-                                (fun (SingleCaseDu c) ->
-                                    (a + b + c + n))))),
-                    aExpr), 
-                bExpr), 
-            cExpr),
-        builder.Apply(
-            builder.Apply(
-                builder.Apply(
-                    builder.Return(
-                        (fun (a,_) ->
-                            (fun (_,b) ->
-                                (fun (SingleCaseDu c) ->
-                                    (b + m))))),
-                    aExpr), 
-                bExpr), 
-            cExpr)
-    ),
+
+let alt3 =
     builder.Apply(
         builder.Apply(
             builder.Apply(
@@ -642,7 +655,12 @@ builder.Combine(
                 aExpr), 
             bExpr), 
         cExpr)
-)
+
+builder.Combine(
+    builder.Combine(alt1,alt2),
+    alt3)
+
+/// Where `alt1`, `alt2`, `alt3` are just fresh variables
 ```
 
 * `let!` when `Apply` and `Return` are defined, but not `Bind` (this is highly related to the `Map` RFC for `let! ... return ...`).
