@@ -815,6 +815,9 @@ Another perspective is that by "factoring out" the bindings, we've actually done
 Might need to consult the literature on this one, although the introduction of side-effects might be what is taking us off-piste.
 
 #### "Commonising" approach
+
+Potentially more efficient. Side-effects from active patterns happen N times, where everything else happens once.
+
 ```fsharp
 let mutable spy = 0
 
@@ -866,6 +869,9 @@ builder.Combine(alt1, alt2)
 ```
 
 #### "Duplication" approach
+
+Evaluation of names bound in the `let! ... and! ...` happens once for each yield, but at least this agrees with the number of times the active pattern is called, and is simpler to implement and reason about.
+
 ```fsharp
 let mutable spy = 0
 
@@ -910,6 +916,10 @@ let alt2 =
 
 builder.Combine(alt1, alt2)
 ```
+
+#### "Just don't support yield" approach
+
+If we support only `Return` and not `Yield` inside `let! ... and! ...` compuation expressions, then this problem goes away.
 
 #### Rules
 1. We create a structure of nested calls to `Apply` with a `Return` on the inside wrapping a lambda at every `return` or `yield` that appears in the CE. (We can create a function up-front which "wraps" any `Return` in the calls to `Apply` and bind that to a fresh variable for later calls to `Combine` if necessary, so that other scoping rules and orderings are preserved)
