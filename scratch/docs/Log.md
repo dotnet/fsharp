@@ -872,6 +872,8 @@ builder.Combine(alt1, alt2)
 
 Evaluation of names bound in the `let! ... and! ...` happens once for each yield (so potentially a lot of times!), but at least this agrees with the number of times the active pattern is called. One could argue that things happening for each `yield` is surprising given the syntax, but perhaps the fact that `and!` is there is enough to signal that we've shifted to a different "mode". I think this approach is simpler to implement and reason about.
 
+Prior art in loops: If a function with side-effects exists in a loop, we don't automagically pull it out so it's only called once! Yes, you can shoot your foot off by leaving something nasty in a hot loop, but you can also factor it out and save yourself. At least it's clear what is going to happen.
+
 ```fsharp
 let mutable spy = 0
 
