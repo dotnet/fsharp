@@ -712,7 +712,7 @@ builder.Combine(alt1, alt2)
 
 ### `let!` when `Apply` and `Return` are defined, but not `Bind`
 
-***N.B. This is highly related to the `Map` RFC for `let! ... return ...`***
+**N.B. This is highly related to the `Map` RFC for `let! ... return ...`**
 
 _If_ we chose to implement `Map` from `Apply` (in order to make a single `let!` for when `Apply` and `Return` are defined but not `Bind`), it could look like this:
 
