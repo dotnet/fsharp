@@ -8041,28 +8041,28 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         | SynExpr.LetOrUseAndBang(_spBind, true, _isFromSource, pat, _rhsExpr, _, [], _innerComp) -> 
             error(Error(FSComp.SR.tcInvalidUseBangBinding(), pat.Range))
 
-        // 'let! pat1 = expr1 and! pat2 = expr2 in exprBody' --> 
+        // 'let! pat1 = expr1 and! pat2 = expr2 in return expr3' --> 
         //     build.Apply(
         //         build.Apply(
         //             build.Return(
         //                 (function _arg1 -> match _arg1 with pat1 ->
         //                     (function _arg2 -> match _arg2 with pat2 -> 
-        //                         exprBody
+        //                         expr3
         //                     )
         //                 )
         //         ), expr1)
         //     ), expr2)
-        | SynExpr.LetOrUseAndBang(letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, bodyComp) ->  // TODO Handle use! / anduse!
+        | SynExpr.LetOrUseAndBang(letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, (SynExpr.YieldOrReturn((isYield, isReturn), returnExpr, returnRange) as bodyComp)) when isYield = false ->  // TODO Handle use! / anduse!
 
             printfn "type checking a let! ... and! ..." // TODO Remove
 
             // Reads in bindings [ andBangExprN ; ... ; andBangExpr2 ; andBangExpr1 ; letExpr ]
-            // creating a lambda for each one, and stacking up the calls to apply to hook up once
-            // all of the lambdas have been created.
+            // creating a lambda for each one just inside the call to Return, and stacking up the
+            // calls to Apply to hook up once all of the lambdas have been created.
             // Note how we work from the inner expression outward, meaning be create the lambda for the last
             // 'and!' _first_, and then create the calls to 'Apply' in the opposite order so that the calls to
             // 'Apply' correspond to their lambda.
-            let rec desugar (innerComp : SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) (pendingApplies : (SynExpr -> SynExpr) list) =
+            let rec desugar (innerComp : SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) (pendingApplies : SynExpr -> SynExpr) : (SynExpr -> SynExpr) * SynExpr  =
 
                 match bindings with
                 | (spBind, _, isFromSource, pat, rhsExpr, _) :: remainingBindings ->
@@ -8075,28 +8075,15 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                     let rhsExpr = if isFromSource then mkSourceExpr rhsExpr else rhsExpr
 
                     let newPendingApplies =
-                        (fun consumeExpr -> mkSynCall "Apply"  bindRange [consumeExpr; rhsExpr]) :: pendingApplies
+                        (fun consumeExpr -> mkSynCall "Apply" bindRange [consumeExpr; rhsExpr]) >> pendingApplies
 
                     let newInnerComp =
-                        let matchLambda = 
-                            SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, innerComp, innerRange, SequencePointAtTarget)], spBind, innerRange)
-
-                        // If this is the last matchLambda, we need to insert a return so that Apply takes an
-                        // F<'a -> 'b> as opposed to just an 'a -> 'b
-                        match remainingBindings with
-                        | _::_ ->
-                            matchLambda
-                        | [] ->
-                            mkSynCall "Return" bindRange [matchLambda] // TODO Fallback to 'Yield' if 'Return' isn't defined?
+                        SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, innerComp, innerRange, SequencePointAtTarget)], spBind, innerRange)
                         
                     desugar newInnerComp remainingBindings newPendingApplies
 
                 | [] ->
-                    match pendingApplies with
-                    | ap :: remainingApplies ->
-                        desugar (ap innerComp) [] remainingApplies
-                    | [] ->
-                        innerComp
+                    pendingApplies, SynExpr.YieldOrReturn((isYield,isReturn),innerComp,returnRange)
 
             let bindingsBottomToTop = 
                 let letBinding =
@@ -8115,7 +8102,10 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                 ) varSpace
 
             // TODO Collect up varSpace and use it here? Does this mean and! bindings cannot shadow each other?
-            Some (trans true q varSpace bodyComp (fun holeFill -> translatedCtxt (desugar holeFill bindingsBottomToTop [])))
+            Some (trans true q varSpace returnExpr (fun holeFill -> translatedCtxt (desugar holeFill bindingsBottomToTop id)))
+
+        | SynExpr.LetOrUseAndBang(_, false, _, _, _, _, _, _) ->  // TODO Handle use! / anduse!
+            error(new Exception("let! ... and! ... computation expressions must immediately return a value")) // TODO Make more helpful
 
         // 'use! pat = e1 and! pat = e2 in e3' --> TODO
         //| SynExpr.LetOrUseAndBang(spBind, true, isFromSource, (SynPat.Named (SynPat.Wild _, id, false, _, _) as pat) , rhsExpr, _, andBangs, innerComp)
