@@ -3639,17 +3639,15 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
     | id :: rest ->
   
       let rfinfos = 
-        ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,ty)
-        |> List.filter (fun fref -> IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef)
-        |> List.filter (fun fref -> fref.RecdField.IsStatic = statics)
+          ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,ty)
+          |> List.filter (fun fref -> fref.Name = id && IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef && fref.RecdField.IsStatic = statics)
   
       let nestedTypes = 
           ty 
           |> GetNestedTypesOfType (ad, ncenv, Some id, TypeNameResolutionStaticArgsInfo.Indefinite, false, m)  
 
       // e.g. <val-id>.<recdfield-id>.<more> 
-      (rfinfos |> List.filter (fun x -> x.Name = id)
-               |> List.collect (fun x -> x.FieldType |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
+      (rfinfos |> List.collect (fun x -> x.FieldType |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
 
       // e.g. <val-id>.<property-id>.<more> 
       let FullTypeOfPinfo(pinfo:PropInfo) = 
