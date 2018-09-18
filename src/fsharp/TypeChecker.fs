@@ -7991,7 +7991,6 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                         // error case
                         error(Error(FSComp.SR.tcCustomOperationMayNotBeUsedInConjunctionWithNonSimpleLetBindings(), mQueryOp)))
 
-
             Some (trans true q varSpace innerComp (fun holeFill -> translatedCtxt (SynExpr.LetOrUse (isRec, false, binds, holeFill, m))))
 
         // 'use x = expr in expr'
@@ -8056,11 +8055,9 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
             printfn "type checking a let! ... and! ..." // TODO Remove
 
-            // Here we wrap the expression inside the return into a nested lambda for each binding
-            // introduced by let! ... and! ...
-            // This allows us to do any of the pattern matching that appears on the LHS of a binding,
-            // and make a function such that Apply can be called
-            let rec constructPure (wrappedReturnExpr : SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
+            // Here we construct lambdas to do any of the pattern matching that
+            // appears on the LHS of a binding
+            let rec constructPure (pendingLambdas : SynExpr -> SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
 
                 match bindings with
                 | (spBind, _, _, pat, rhsExpr, _) :: remainingBindings ->
@@ -8070,13 +8067,13 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                     if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env bindRange ad "Apply" builderTy)
                     then error(Error(FSComp.SR.tcRequireBuilderMethod("Apply"), bindRange))
                         
-                    let newInnerComp =
-                        SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, wrappedReturnExpr, innerRange, SequencePointAtTarget)], spBind, innerRange)
+                    let newPendingLambdas inner =
+                        SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, inner, innerRange, SequencePointAtTarget)], spBind, innerRange)
                         
-                    constructPure newInnerComp remainingBindings
+                    constructPure newPendingLambdas remainingBindings
 
                 | [] ->
-                    SynExpr.YieldOrReturn((isYield,isReturn),wrappedReturnExpr,returnRange)
+                    pendingLambdas
 
             // Here we construct a call to Apply for each binding introduced by the let! ... and! ... syntax
             let rec constructApplies (pendingApplies : SynExpr -> SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
@@ -8115,13 +8112,18 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                 ) varSpace
 
             // Note how we work from the inner expression outward, meaning be create the lambda for the last
-            // 'and!' _first_, and then create the calls to 'Apply' in the opposite order so that the calls to
+            // 'and!' _first_, and create the calls to 'Apply' in the opposite order so that the calls to
             // 'Apply' correspond to their lambda.
 
             // TODO Collect up varSpace and use it here? Does this mean and! bindings cannot shadow each other?
-            Some (trans true q varSpace returnExpr (fun holeFill -> 
-                let wrapInCallToApplyForEachBinding = constructApplies id bindingsBottomToTop
-                wrapInCallToApplyForEachBinding (translatedCtxt (constructPure holeFill bindingsBottomToTop))))
+
+            let newReturn =
+                let returnExprWrappedInLambdas =
+                    constructPure id bindingsBottomToTop returnExpr
+                SynExpr.YieldOrReturn((isYield, isReturn), returnExprWrappedInLambdas, returnRange)
+
+            Some (trans true q varSpace newReturn (fun holeFill -> 
+                constructApplies id bindingsBottomToTop (translatedCtxt holeFill)))
 
         | SynExpr.LetOrUseAndBang(_, false, _, _, _, _, _, _) ->  // TODO Handle use! / anduse!
             error(new Exception("let! ... and! ... computation expressions must immediately return a value")) // TODO Make more helpful
