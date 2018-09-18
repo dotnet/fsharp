@@ -8060,17 +8060,14 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             let rec constructMatchLambdas (acc : SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
 
                 match bindings with
-                | (spBind, _, _, pat, rhsExpr, _) :: remainingBindings ->
-                    let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhsExpr.Range
-                    if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), bindRange))
+                | (spBind, _, _, pat, _, _) :: remainingBindings ->
+
                     let innerRange = returnExpr.Range
-                    if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env bindRange ad "Apply" builderTy)
-                    then error(Error(FSComp.SR.tcRequireBuilderMethod("Apply"), bindRange))
                         
                     let newAcc =
                         SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, acc, innerRange, SequencePointAtTarget)], spBind, innerRange)
                         
-                    constructPure newAcc remainingBindings
+                    constructMatchLambdas newAcc remainingBindings
 
                 | [] ->
                     acc
