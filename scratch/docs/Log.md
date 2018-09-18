@@ -1057,4 +1057,4 @@ builder.Apply(
         yDisFoo),
     zDisFoo)
 ```
-I've put this together by basically mapping what was done for monads onto applicatives. I've not really thought this through in terms of whether it actually solves a problem someone could have.
+I've put this together by basically mapping what was done for monads onto applicatives. I've not really thought this through in terms of whether it actually solves a problem someone could have. Could just work off ScottW's `trace` example: https://fsharpforfunandprofit.com/posts/computation-expressions-builder-part6/ for now
