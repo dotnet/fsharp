@@ -995,14 +995,17 @@ option {
         option {
             let! x = xOpt // We already checked whether `xOpt` was `None` or not above. Why do we have to do it again? Because we haven't defined `Bind`, which is precisely what we need in order to unpack it once and bind that value to a name!
             and! y = yOpt
-            return x * y
+            // TODO Should we allow `let foo = bar` here? We could translate it so that it's after the `return`, but that seems a bit magical to me. `Apply` is inherently constrained, so why try to act as if it is not?
+            return 
+                let a = 4 // Fine to put things inside the function passed to `Apply`
+                a + (x * y)
         }
 
     yield
         option {
             let! y = yOpt
             and! z = zOpt
-            return [ y ; y ; z ]
+            return y + z
         }
 }
  ```
