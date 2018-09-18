@@ -42,20 +42,10 @@ type 'a SingleCaseDu = SingleCaseDu of 'a
 
 let baz =
     opt {
-        let! x                = Some 4
-        and! (SingleCaseDu y) = Some (SingleCaseDu 30)
-        and! (z,_)            = Some (200, "whatever")
-        return (let w = 50000 in x + y + z + 1000)
+        let! x                = Some 5
+        and! (SingleCaseDu y) = Some (SingleCaseDu 40)
+        and! (z,_)            = Some (300, "whatever")
+        return (let w = 10000 in w + x + y + z + 2000)
     }
 
 printfn "baz: %+A" baz 
-
-(*
-let foo' =
-    opt {
-        let! x' = x
-        and! y' = y
-        and! z' = z
-        return sprintf "x = %d, y = %s, z = %f" x y z
-    }
-*)
