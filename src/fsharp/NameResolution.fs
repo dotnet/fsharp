@@ -4009,8 +4009,9 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
        @ (tycons |> List.map (modref.NestedTyconRef >> ItemOfTyconRef ncenv m) )
        @ [ // accessible record fields
             for tycon in tycons do
-                if IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef tycon) then
-                    let ttype = FreshenTycon ncenv m (modref.NestedTyconRef tycon)
+                let nested = modref.NestedTyconRef tycon
+                if IsEntityAccessible ncenv.amap m ad nested then
+                    let ttype = FreshenTycon ncenv m nested
                     yield! 
                         ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ttype)
                         |> List.map Item.RecdField
