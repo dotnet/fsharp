@@ -966,3 +966,43 @@ builder.Apply(
         Some 10), 
     Some 20)
 ```
+
+Another way to think about this:
+We're shoe-horning in a way to make it look like we have `Bind` (note the relevance of the name here!!!)
+When we only have `apply`. Perhaps our syntax should be around application instead?
+Which, to me, would imply a single return (which captures the thing being applied into).
+
+That's not the end of the world, since if, for example, you want to `yield` (i.e. pick the first computation that's in the `Some` case, in this builder example) you could write something like:
+
+```fsharp
+let f x y z =
+    (((x + y) * z) + 3) % 11
+
+let xOpt = Some 10
+let yOpt = Some 20
+let zOpt = Some 30
+
+option {
+    yield
+        option {
+            let! x = xOpt
+            and! y = yOpt
+            and! z = zOpt
+            return f x y z
+        }
+
+    yield
+        option {
+            let! x = xOpt // We already checked whether `xOpt` was `None` or not above. Why do we have to do it again? Because we haven't defined `Bind`, which is precisely what we need in order to unpack it once and bind that value to a name!
+            and! y = yOpt
+            return x * y
+        }
+
+    yield
+        option {
+            let! y = yOpt
+            and! z = zOpt
+            return [ y ; y ; z ]
+        }
+}
+ ```
