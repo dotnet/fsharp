@@ -200,7 +200,7 @@ type TcEnv =
       eModuleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref
 
       /// Context information for type checker
-      eContextInfo : ContextInfo 
+      eContextInfo : ContextInfo
 
       /// Here Some tcref indicates we can access protected members in all super types 
       eFamilyType: TyconRef option 
@@ -8513,7 +8513,6 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
 //------------------------------------------------------------------------- 
 
 and TcLongIdentThen cenv overallTy env tpenv (LongIdentWithDots(longId, _)) delayed =
-
     let ad = env.eAccessRights
     let typeNameResInfo = 
         // Given 'MyOverloadedType<int>.MySubType...' use arity of #given type arguments to help 
@@ -10299,11 +10298,13 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
 
 /// Typecheck and compile pattern-matching constructs
 and TcAndPatternCompileMatchClauses mExpr matchm actionOnFailure cenv inputTy resultTy env tpenv clauses =
+    let env = { env with eNameResEnv = { env.eNameResEnv with eIsMethodBody = false } }
     let tclauses, tpenv = TcMatchClauses cenv inputTy resultTy env tpenv clauses
     let v, expr = CompilePatternForMatchClauses cenv env mExpr matchm true actionOnFailure inputTy resultTy tclauses
     v, expr, tpenv
 
 and TcMatchPattern cenv inputTy env tpenv (pat:SynPat, optWhenExpr) =
+    let env = { env with eNameResEnv = { env.eNameResEnv with eIsMethodBody = false } }
     let m = pat.Range
     let patf', (tpenv, names, _) = TcPat WarnOnUpperCase cenv env None (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, false) (tpenv, Map.empty, Set.empty) inputTy pat
     let envinner, values, vspecMap = MakeAndPublishSimpleVals cenv env m names false
@@ -10323,6 +10324,10 @@ and TcMatchClauses cenv inputTy resultTy env tpenv clauses =
 
 and TcMatchClause cenv inputTy resultTy env isFirst tpenv (Clause(pat, optWhenExpr, e, patm, spTgt)) =
     let pat', optWhenExpr', vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv (pat, optWhenExpr)
+    let envinner = 
+        match e with 
+        | SynExpr.Match _ -> { envinner with eNameResEnv = { envinner.eNameResEnv with eIsMethodBody = false } }
+        |  _ -> { envinner with eNameResEnv = { envinner.eNameResEnv with eIsMethodBody = true } }
     let resultEnv = if isFirst then envinner else { envinner with eContextInfo = ContextInfo.FollowingPatternMatchClause e.Range }
     let e', tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv e
     TClause(pat', optWhenExpr', TTarget(vspecs, e', spTgt), patm), tpenv
@@ -10567,7 +10572,7 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
                 synExprContainsError rhsExpr
 
             conditionallySuppressErrorReporting atTopNonLambdaDefn (fun () -> 
-
+                
                 if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv overallExprTy envinner tpenv rhsExpr
                 else TcExprThatCantBeCtorBody cenv overallExprTy envinner tpenv rhsExpr)
 

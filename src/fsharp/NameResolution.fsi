@@ -146,6 +146,7 @@ type NameResolutionEnv =
      eUnqualifiedItems: LayeredMap<string,Item>
      ePatItems: NameMap<Item>
      eModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
+     eIsMethodBody:bool
      eFullyQualifiedModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
      eFieldLabels: NameMultiMap<RecdFieldRef>
      eTyconsByAccessNames: LayeredMultiMap<string,TyconRef>
