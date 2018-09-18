@@ -8052,23 +8052,39 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         //                 )
         //         ), expr1)
         //     ), expr2)
-        | SynExpr.LetOrUseAndBang(letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, (SynExpr.YieldOrReturn((isYield, isReturn), returnExpr, returnRange) as bodyComp)) when isYield = false ->  // TODO Handle use! / anduse!
+        | SynExpr.LetOrUseAndBang(letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, SynExpr.YieldOrReturn((isYield, isReturn), returnExpr, returnRange)) when isYield = false ->  // TODO Handle use! / anduse!
 
             printfn "type checking a let! ... and! ..." // TODO Remove
 
-            // Reads in bindings [ andBangExprN ; ... ; andBangExpr2 ; andBangExpr1 ; letExpr ]
-            // creating a lambda for each one just inside the call to Return, and stacking up the
-            // calls to Apply to hook up once all of the lambdas have been created.
-            // Note how we work from the inner expression outward, meaning be create the lambda for the last
-            // 'and!' _first_, and then create the calls to 'Apply' in the opposite order so that the calls to
-            // 'Apply' correspond to their lambda.
-            let rec desugar (innerComp : SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) (pendingApplies : SynExpr -> SynExpr) : (SynExpr -> SynExpr) * SynExpr  =
+            // Here we wrap the expression inside the return into a nested lambda for each binding
+            // introduced by let! ... and! ...
+            // This allows us to do any of the pattern matching that appears on the LHS of a binding,
+            // and make a function such that Apply can be called
+            let rec constructPure (wrappedReturnExpr : SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
 
                 match bindings with
-                | (spBind, _, isFromSource, pat, rhsExpr, _) :: remainingBindings ->
+                | (spBind, _, _, pat, rhsExpr, _) :: remainingBindings ->
                     let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhsExpr.Range
                     if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), bindRange))
-                    let innerRange = innerComp.Range
+                    let innerRange = returnExpr.Range
+                    if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env bindRange ad "Apply" builderTy)
+                    then error(Error(FSComp.SR.tcRequireBuilderMethod("Apply"), bindRange))
+                        
+                    let newInnerComp =
+                        SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, wrappedReturnExpr, innerRange, SequencePointAtTarget)], spBind, innerRange)
+                        
+                    constructPure newInnerComp remainingBindings
+
+                | [] ->
+                    SynExpr.YieldOrReturn((isYield,isReturn),wrappedReturnExpr,returnRange)
+
+            // Here we construct a call to Apply for each binding introduced by the let! ... and! ... syntax
+            let rec constructApplies (pendingApplies : SynExpr -> SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
+
+                match bindings with
+                | (spBind, _, isFromSource, _, rhsExpr, _) :: remainingBindings ->
+                    let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhsExpr.Range
+                    if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), bindRange))
                     if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env bindRange ad "Apply" builderTy)
                     then error(Error(FSComp.SR.tcRequireBuilderMethod("Apply"), bindRange))
                         
@@ -8077,13 +8093,10 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                     let newPendingApplies =
                         (fun consumeExpr -> mkSynCall "Apply" bindRange [consumeExpr; rhsExpr]) >> pendingApplies
 
-                    let newInnerComp =
-                        SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, innerComp, innerRange, SequencePointAtTarget)], spBind, innerRange)
-                        
-                    desugar newInnerComp remainingBindings newPendingApplies
+                    constructApplies newPendingApplies remainingBindings
 
                 | [] ->
-                    pendingApplies, SynExpr.YieldOrReturn((isYield,isReturn),innerComp,returnRange)
+                    pendingApplies
 
             let bindingsBottomToTop = 
                 let letBinding =
@@ -8101,8 +8114,14 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                         vspecs, envinner)
                 ) varSpace
 
+            // Note how we work from the inner expression outward, meaning be create the lambda for the last
+            // 'and!' _first_, and then create the calls to 'Apply' in the opposite order so that the calls to
+            // 'Apply' correspond to their lambda.
+
             // TODO Collect up varSpace and use it here? Does this mean and! bindings cannot shadow each other?
-            Some (trans true q varSpace returnExpr (fun holeFill -> translatedCtxt (desugar holeFill bindingsBottomToTop id)))
+            Some (trans true q varSpace returnExpr (fun holeFill -> 
+                let wrapInCallToApplyForEachBinding = constructApplies id bindingsBottomToTop
+                wrapInCallToApplyForEachBinding (translatedCtxt (constructPure holeFill bindingsBottomToTop))))
 
         | SynExpr.LetOrUseAndBang(_, false, _, _, _, _, _, _) ->  // TODO Handle use! / anduse!
             error(new Exception("let! ... and! ... computation expressions must immediately return a value")) // TODO Make more helpful
