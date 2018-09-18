@@ -8053,8 +8053,6 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         //     ), expr2)
         | SynExpr.LetOrUseAndBang(letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, SynExpr.YieldOrReturn((isYield, isReturn), returnExpr, returnRange)) when isYield = false ->  // TODO Handle use! / anduse!
 
-            printfn "type checking a let! ... and! ..." // TODO Remove
-
             // Here we construct a call to Apply for each binding introduced by the let! ... and! ... syntax
             let rec constructApplies (pendingApplies : SynExpr -> SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
 
