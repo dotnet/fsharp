@@ -1025,3 +1025,36 @@ option {
  * Look into supporting `use! ... anduse! ...`
  * Justify requiring the trailing `Return` after a `let! ... and! ...` in the tye checker rather than syntax, or move it to the parser
  * Put together an RFC
+
+ Considering `Using` (I don't have a usecase for this, but I don't really want to leave this out else the feature seems weirdly incomplete):
+```fsharp
+disposableFoo {
+     use! x = xDisFoo
+     and! y = yDisFoo // N.B. The goal is that any let! or and! binding can we replaced with a use! or anduse! binding
+     anduse! z = zDisFoo
+     return x + y
+ }
+
+ // desugaring to:
+
+builder.Apply(
+    builder.Apply(
+        builder.Apply(
+            builder.Return(
+                (fun x ->
+                    builder.Using(x, fun x ->
+                        (fun y -> // This corresponds to the and!, so doesn't generate a call to using
+                            (fun z ->
+                                builder.Using(z, fun z ->
+                                    x + y + z
+                                )
+                            )
+                        )
+                    )
+                )
+            ),
+            xDisFoo), 
+        yDisFoo),
+    zDisFoo)
+```
+I've put this together by basically mapping what was done for monads onto applicatives. I've not really thought this through in terms of whether it actually solves a problem someone could have.
