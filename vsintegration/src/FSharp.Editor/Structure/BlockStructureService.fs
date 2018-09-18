@@ -34,6 +34,7 @@ module internal BlockStructure =
         | Scope.Member -> BlockTypes.Member
         | Scope.LetOrUse
         | Scope.Match
+        | Scope.MatchBang
         | Scope.MatchClause
         | Scope.EnumCase
         | Scope.UnionCase
@@ -92,6 +93,7 @@ module internal BlockStructure =
         | Scope.Match
         | Scope.MatchClause
         | Scope.MatchLambda
+        | Scope.MatchBang
         | Scope.ThenInIfThenElse
         | Scope.ElseInIfThenElse
         | Scope.TryWith
