@@ -28,19 +28,21 @@ type OptionalBuilder =
     
 let opt = OptionalBuilder()
 
+let fOpt = Some (sprintf "f (x = %d) (y = %s) (z = %f)")
 let xOpt = Some 1
 let yOpt = Some "A"
 let zOpt = Some 3.0
 
 let foo =
     opt {
-        let! x = xOpt
+        let! f = fOpt
+        and! x = xOpt
         and! y = yOpt
         and! z = zOpt
-        return sprintf "x = %d, y = %s, z = %f" x y z
+        return f x y z
     }
 
-printfn "foo = %+A" foo 
+printfn "Result: \"%+A\"" foo 
 
 (*
 let foo' =

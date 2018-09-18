@@ -8055,23 +8055,6 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
             printfn "type checking a let! ... and! ..." // TODO Remove
 
-            // Here we construct match lambdas to do any of the pattern matching that
-            // appears on the LHS of a binding
-            let rec constructMatchLambdas (acc : SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
-
-                match bindings with
-                | (spBind, _, _, pat, _, _) :: remainingBindings ->
-
-                    let innerRange = returnExpr.Range
-                        
-                    let newAcc =
-                        SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, acc, innerRange, SequencePointAtTarget)], spBind, innerRange)
-                        
-                    constructMatchLambdas newAcc remainingBindings
-
-                | [] ->
-                    acc
-
             // Here we construct a call to Apply for each binding introduced by the let! ... and! ... syntax
             let rec constructApplies (pendingApplies : SynExpr -> SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
 
@@ -8114,9 +8097,17 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
             // TODO Collect up varSpace and use it here? Does this mean and! bindings cannot shadow each other?
 
+
+            // We construct match lambdas to do any of the pattern matching that
+            // appears on the LHS of a binding
+            let returnExprWrappedInLambdas =
+                bindingsBottomToTop
+                |> List.fold (fun acc (spBind, _, _, pat, _, _) ->
+                    let innerRange = returnExpr.Range
+                    SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, acc, innerRange, SequencePointAtTarget)], spBind, innerRange)
+                ) returnExpr
+
             let newReturn =
-                let returnExprWrappedInLambdas =
-                    constructMatchLambdas returnExpr bindingsBottomToTop
                 SynExpr.YieldOrReturn((isYield, isReturn), returnExprWrappedInLambdas, returnRange)
 
             Some (trans true q varSpace newReturn (fun holeFill -> 
