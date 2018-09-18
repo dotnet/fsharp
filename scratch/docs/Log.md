@@ -997,8 +997,7 @@ option {
             and! y = yOpt
             // TODO Should we allow `let foo = bar` here? We could translate it so that it's after the `return`, but that seems a bit magical to me. `Apply` is inherently constrained, so why try to act as if it is not?
             return 
-                let a = 4 // Fine to put things inside the function passed to `Apply`
-                a + (x * y)
+                (let a = 4 in a + (x * y)) // Fine to put things inside the function passed to `Apply`
         }
 
     yield
@@ -1019,3 +1018,8 @@ option {
 }
  ```
  ...probably not? That seems nice enough to me.
+
+ Okay, so the above seems to approximately work now. Next steps:
+ * Look at error messages
+ * Come up with some more examples of what should / should not work (and encode as tests?)
+ * Put together an RFC
