@@ -3403,10 +3403,8 @@ let ItemOfTy g x =
     let nm = if isAppTy g x then (tcrefOfAppTy g x).DisplayName else "?"
     Item.Types (nm,[x])
 
-// Filter out 'PrivateImplementationDetail' classes 
-let IsInterestingModuleName nm =
-    String.length nm >= 1 &&
-    String.sub nm 0 1 <> "<"
+// Filter out 'PrivateImplementationDetail' classes
+let IsInterestingModuleName nm = not (System.String.IsNullOrEmpty nm) && nm.[0] <> '<'
 
 let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThen f plid (modref:ModuleOrNamespaceRef) =
     let mty = modref.ModuleOrNamespaceType
