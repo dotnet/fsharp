@@ -8055,9 +8055,9 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
             printfn "type checking a let! ... and! ..." // TODO Remove
 
-            // Here we construct lambdas to do any of the pattern matching that
+            // Here we construct match lambdas to do any of the pattern matching that
             // appears on the LHS of a binding
-            let rec constructPure (pendingLambdas : SynExpr -> SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
+            let rec constructMatchLambdas (acc : SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
 
                 match bindings with
                 | (spBind, _, _, pat, rhsExpr, _) :: remainingBindings ->
@@ -8067,13 +8067,13 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                     if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env bindRange ad "Apply" builderTy)
                     then error(Error(FSComp.SR.tcRequireBuilderMethod("Apply"), bindRange))
                         
-                    let newPendingLambdas inner =
-                        SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, inner, innerRange, SequencePointAtTarget)], spBind, innerRange)
+                    let newAcc =
+                        SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, acc, innerRange, SequencePointAtTarget)], spBind, innerRange)
                         
-                    constructPure newPendingLambdas remainingBindings
+                    constructPure newAcc remainingBindings
 
                 | [] ->
-                    pendingLambdas
+                    acc
 
             // Here we construct a call to Apply for each binding introduced by the let! ... and! ... syntax
             let rec constructApplies (pendingApplies : SynExpr -> SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
@@ -8119,7 +8119,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
             let newReturn =
                 let returnExprWrappedInLambdas =
-                    constructPure id bindingsBottomToTop returnExpr
+                    constructMatchLambdas returnExpr bindingsBottomToTop
                 SynExpr.YieldOrReturn((isYield, isReturn), returnExprWrappedInLambdas, returnRange)
 
             Some (trans true q varSpace newReturn (fun holeFill -> 
