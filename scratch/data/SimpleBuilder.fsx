@@ -4,11 +4,12 @@ type OptionalBuilder =
 
     member __.Apply(fOpt : ('a -> 'b) option, xOpt : 'a option) : 'b option =
         match fOpt, xOpt with
-        | Some f, Some x -> Some <| f x
+        | Some f, Some x -> Some (f x)
         | _ -> None
 
     member __.Return(x) =
         Some x
+
 let opt = OptionalBuilder()
 
 let fOpt = Some (sprintf "f (x = %d) (y = %s) (z = %f)")
@@ -44,7 +45,7 @@ let baz =
         let! x                = Some 4
         and! (SingleCaseDu y) = Some (SingleCaseDu 30)
         and! (z,_)            = Some (200, "whatever")
-        return x + y + z + 1000
+        return (let w = 50000 in x + y + z + 1000)
     }
 
 printfn "baz: %+A" baz 
