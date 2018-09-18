@@ -42,7 +42,29 @@ let foo =
         return f x y z
     }
 
-printfn "Result: \"%+A\"" foo 
+printfn "foo: \"%+A\"" foo 
+
+let bar =
+    opt {
+        let! x = None
+        and! y = Some 1
+        and! z = Some 2
+        return x + y + z + 1
+    }
+
+printfn "bar: %+A" bar 
+
+type 'a SingleCaseDu = SingleCaseDu of 'a
+
+let baz =
+    opt {
+        let! x                = Some 4
+        and! (SingleCaseDu y) = Some (SingleCaseDu 30)
+        and! (z,_)            = Some (200, "whatever")
+        return x + y + z + 1000
+    }
+
+printfn "baz: %+A" baz 
 
 (*
 let foo' =
