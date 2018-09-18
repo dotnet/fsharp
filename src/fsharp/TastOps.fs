@@ -805,6 +805,7 @@ let argsOfAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(_, tinst) ->
 let tryDestTyparTy g ty = ty |> stripTyEqns g |> (function TType_var v -> Some v | _ -> None)
 let tryDestFunTy   g ty = ty |> stripTyEqns g |> (function TType_fun (tyv, tau) -> Some(tyv, tau) | _ -> None)
 let tryDestAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> Some tcref | _ -> None)
+
 let tryAnyParTy    g ty = ty |> stripTyEqns g |> (function TType_var v -> Some v | TType_measure unt when isUnitParMeasure g unt -> Some(destUnitParMeasure g unt) | _ -> None)
 let (|AppTy|_|) g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst) -> Some (tcref, tinst) | _ -> None) 
 let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tupInfo, tys) when not (evalTupInfoIsStruct tupInfo) -> Some tys | _ -> None)
@@ -1729,7 +1730,7 @@ let isStructTy g ty =
     | Some tcref -> 
         let tycon = tcref.Deref
         tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon
-    | _ -> false
+    | _ -> isStructTupleTy g ty
 
 let isRefTy g ty = 
     not (isStructOrEnumTyconTy g ty) &&
