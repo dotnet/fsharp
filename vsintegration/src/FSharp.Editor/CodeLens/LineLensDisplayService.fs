@@ -30,7 +30,9 @@ type internal LineLensDisplayService (view, buffer) =
                     let bounds = line.GetCharacterBounds(line.Start)
                     line.TextRight + 5.0, bounds.Top - 1.
                 with e -> 
+#if DEBUG
                     logExceptionWithContext (e, "Error in layout ui element on line")
+#endif
                     Canvas.GetLeft ui, Canvas.GetTop ui
         Canvas.SetLeft(ui, left)
         Canvas.SetTop(ui, top)
@@ -63,5 +65,11 @@ type internal LineLensDisplayService (view, buffer) =
                                     view.GetTextViewLineContainingBufferPosition l.Start
                                 self.LayoutUIElementOnLine view line grid
                             )
-            with e -> logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
+#if DEBUG
+            with e -> 
+                logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
+#else
+            with _ ->
+                ()
+#endif 
         } |> Async.Ignore
