@@ -3583,6 +3583,8 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                 minfos
                 |> List.filter (minfoFilter suppressedMethNames)
 
+            if isNil minfos then [] else
+
             let minfos =
                 let addersAndRemovers =
                     let hashSet = HashSet()
@@ -4154,13 +4156,12 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                       yield einfo.AddMethod.DisplayName
                       yield einfo.RemoveMethod.DisplayName ]
         
-            let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
         
             let pinfos = 
                 pinfosIncludingUnseen
                 |> List.filter (fun x -> not (PropInfoIsUnseen m x))
         
-            let minfoFilter (minfo: MethInfo) = 
+            let minfoFilter (suppressedMethNames:Zset<_>) (minfo: MethInfo) = 
                 // Only show the Finalize, MemberwiseClose etc. methods on System.Object for values whose static type really is 
                 // System.Object. Few of these are typically used from F#.  
                 //
@@ -4211,10 +4212,15 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
             | Item.MethodGroup _ ->
                 // REVIEW: add a name filter here in the common cases?
                 let minfos = 
-                    let minfos =
-                        AllMethInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m ty 
-                        |> List.filter minfoFilter
+                    let minfos = AllMethInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m ty 
+                    if isNil minfos then [] else
+                     
+                    let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
+                    let minfos = 
+                        minfos
+                        |> List.filter (minfoFilter suppressedMethNames)
         
+                    if isNil minfos then [] else
                     let minfos = 
                         let addersAndRemovers = 
                             let hashSet = HashSet()
