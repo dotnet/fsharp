@@ -3509,13 +3509,11 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                   yield einfo.RemoveMethod.DisplayName ]
         else []
 
-    let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
-
     let pinfos = 
         pinfosIncludingUnseen
         |> List.filter (fun x -> not (PropInfoIsUnseen m x))
 
-    let minfoFilter (minfo:MethInfo) = 
+    let minfoFilter (suppressedMethNames:Zset<_>) (minfo:MethInfo) = 
         let isApplicableMeth =
             match completionTargets with
             | ResolveCompletionTargets.All x -> x
@@ -3576,12 +3574,16 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
     // REVIEW: add a name filter here in the common cases?
     let minfos = 
         if completionTargets.ResolveAll then
-            let minfos =
-                AllMethInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m ty 
-                |> List.filter minfoFilter
+            let minfos = AllMethInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m ty 
+            if isNil minfos then [] else
+
+            let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
 
             let minfos =
-                if isNil minfos then [] else
+                minfos
+                |> List.filter (minfoFilter suppressedMethNames)
+
+            let minfos =
                 let addersAndRemovers =
                     let hashSet = HashSet()
                     for item in pinfoItems do
@@ -3615,6 +3617,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             minfos 
 
         else []
+
     // Partition methods into overload sets
     let rec partitionl (l:MethInfo list) acc = 
         match l with
