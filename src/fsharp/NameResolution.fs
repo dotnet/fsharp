@@ -4217,11 +4217,16 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
         
                     let minfos = 
                         let addersAndRemovers = 
-                            pinfoItems 
-                            |> List.collect (function Item.Event(FSEvent(_,_,addValRef,removeValRef)) -> [addValRef.LogicalName;removeValRef.LogicalName] | _ -> [])
-                            |> set
+                            let hashSet = HashSet()
+                            for item in pinfoItems do
+                                match item with
+                                | Item.Event(FSEvent(_,_,addValRef,removeValRef)) -> 
+                                    hashSet.Add addValRef.LogicalName |> ignore
+                                    hashSet.Add removeValRef.LogicalName |> ignore
+                                | _ -> ()
+                            hashSet
         
-                        if addersAndRemovers.IsEmpty then minfos
+                        if addersAndRemovers.Count = 0 then minfos
                         else minfos |> List.filter (fun minfo -> not (addersAndRemovers.Contains minfo.LogicalName))
         
         #if !NO_EXTENSIONTYPING
