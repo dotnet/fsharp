@@ -1022,5 +1022,6 @@ option {
  Okay, so the above seems to approximately work now. Next steps:
  * Look at error messages
  * Come up with some more examples of what should / should not work (and encode as tests?)
+ * Look into supporting `use! ... anduse! ...`
  * Justify requiring the trailing `Return` after a `let! ... and! ...` in the tye checker rather than syntax, or move it to the parser
  * Put together an RFC
