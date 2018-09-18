@@ -1009,3 +1009,13 @@ option {
         }
 }
  ```
+
+ Also, do we want a convenient way to call an `F<'a ->'b>` which is nicer than:
+ ```fsharp
+option {
+    let! f = fOpt // fOpt : ('a -> 'b) option
+    and! x = xOpt // xOpt : 'a option
+    return f x
+}
+ ```
+ ...probably not? That seems nice enough to me.
