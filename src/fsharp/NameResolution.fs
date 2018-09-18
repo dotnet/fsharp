@@ -3825,10 +3825,13 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
     | id :: rest  -> 
 
         (match mty.ModulesAndNamespacesByDemangledName.TryFind(id) with
-         | Some mspec 
-             when not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m (modref.NestedTyconRef mspec) allowObsolete) -> 
-             let allowObsolete = rest <> [] && allowObsolete
-             ResolvePartialLongIdentInModuleOrNamespace ncenv nenv isApplicableMeth m ad (modref.NestedTyconRef mspec) rest allowObsolete
+         | Some mspec ->
+             let nested = modref.NestedTyconRef mspec
+             if not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m nested allowObsolete) then
+                 let allowObsolete = rest <> [] && allowObsolete
+                 ResolvePartialLongIdentInModuleOrNamespace ncenv nenv isApplicableMeth m ad nested rest allowObsolete
+             else
+                 []
          | _ -> [])
 
       @ (LookupTypeNameInEntityNoArity m id modref.ModuleOrNamespaceType
@@ -4019,10 +4022,13 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
 
     | id :: rest  -> 
         (match mty.ModulesAndNamespacesByDemangledName.TryFind(id) with
-         | Some mspec 
-             when not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m (modref.NestedTyconRef mspec) allowObsolete) -> 
-             let allowObsolete = rest <> [] && allowObsolete
-             ResolvePartialLongIdentInModuleOrNamespaceForRecordFields ncenv nenv m ad (modref.NestedTyconRef mspec) rest allowObsolete
+         | Some mspec -> 
+             let nested = modref.NestedTyconRef mspec
+             if not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m nested allowObsolete) then
+                 let allowObsolete = rest <> [] && allowObsolete
+                 ResolvePartialLongIdentInModuleOrNamespaceForRecordFields ncenv nenv m ad nested rest allowObsolete
+             else
+                 []
          | _ -> [])
         @ (
             match rest with
@@ -4396,16 +4402,18 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                      |> List.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
                      |> List.filter (fun tycon -> not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tycon)))
 
-                 // Get all the types and .NET constructor groups accessible from here 
-                 yield! tycons |> List.map (modref.NestedTyconRef >> ItemOfTyconRef ncenv m)
-                 yield! tycons |> List.collect (modref.NestedTyconRef >> InfosForTyconConstructors ncenv m ad)
+                 // Get all the types and .NET constructor groups accessible from here
+                 let nestedTycons = tycons |> List.map modref.NestedTyconRef
+                 yield! nestedTycons |> List.map (ItemOfTyconRef ncenv m)
+                 yield! nestedTycons |> List.collect (InfosForTyconConstructors ncenv m ad)
         
         | id :: rest  -> 
         
-            match mty.ModulesAndNamespacesByDemangledName.TryFind(id) with
-            | Some mspec 
-                when not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m (modref.NestedTyconRef mspec) true) -> 
-                yield! ResolvePartialLongIdentInModuleOrNamespaceForItem ncenv nenv m ad (modref.NestedTyconRef mspec) rest item
+            match mty.ModulesAndNamespacesByDemangledName.TryFind id with
+            | Some mspec -> 
+                let nested = modref.NestedTyconRef mspec
+                if not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m nested true) then
+                    yield! ResolvePartialLongIdentInModuleOrNamespaceForItem ncenv nenv m ad nested rest item
             | _ -> ()
         
             for tycon in LookupTypeNameInEntityNoArity m id modref.ModuleOrNamespaceType do
