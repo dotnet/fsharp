@@ -8097,20 +8097,19 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
             // TODO Collect up varSpace and use it here? Does this mean and! bindings cannot shadow each other?
 
-            let newReturn =
+
+            Some (trans true q varSpace returnExpr (fun holeFill -> 
+
                 // We construct match lambdas to do any of the pattern matching that
                 // appears on the LHS of a binding
-                (returnExpr, bindingsBottomToTop)
+                (holeFill, bindingsBottomToTop)
                 ||> List.fold (fun acc (spBind, _, _, pat, _, _) ->
                     let innerRange = returnExpr.Range
                     SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, acc, innerRange, SequencePointAtTarget)], spBind, innerRange)
                 )
                 // We take the nested lambdas and put the return back, _outside_ them
                 // to give an F<'a -> 'b -> 'c -> ...> as Apply expects
-                |> (fun f -> SynExpr.YieldOrReturn((isYield, isReturn), f, returnRange))
-
-            Some (trans true q varSpace newReturn (fun holeFill -> 
-                holeFill
+                |> (fun f -> mkSynCall "Return" returnRange [f])
                 // We wrap the return in a call to Apply for each lambda
                 |> wrapInCallsToApply
                 // We nest the result inside the parent expression
