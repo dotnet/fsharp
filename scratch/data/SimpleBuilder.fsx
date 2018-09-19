@@ -7,8 +7,18 @@ type OptionalBuilder =
         | Some f, Some x -> Some (f x)
         | _ -> None
 
-    member __.Return(x) =
-        Some x
+    member __.Return(x) = Some x
+
+    member __.Yield(x) = Some x
+
+    member __.Delay(f) = f
+
+    member __.Zero() = Some ()
+
+    member __.Combine(xOpt, yOpt) =
+        match xOpt with
+        | Some _ -> xOpt
+        | None -> yOpt
 
 let opt = OptionalBuilder()
 
@@ -17,7 +27,7 @@ let xOpt = Some 1
 let yOpt = Some "A"
 let zOpt = Some 3.0
 
-let foo =
+let foo : string option =
     opt {
         let! f = fOpt
         and! x = xOpt
@@ -28,7 +38,7 @@ let foo =
 
 printfn "foo: \"%+A\"" foo 
 
-let bar =
+let bar : int option =
     opt {
         let! x = None
         and! y = Some 1
@@ -40,7 +50,7 @@ printfn "bar: %+A" bar
 
 type 'a SingleCaseDu = SingleCaseDu of 'a
 
-let baz =
+let baz : int option =
     opt {
         let! x                = Some 5
         and! (SingleCaseDu y) = Some (SingleCaseDu 40)
@@ -49,3 +59,67 @@ let baz =
     }
 
 printfn "baz: %+A" baz 
+
+let quux : int option =
+    opt {
+        yield bar
+        yield baz
+    }
+
+printfn "quux: %+A" quux 
+
+(*
+type TraceBuilder() =
+
+    member __.Apply(fOpt : ('a -> 'b) option, xOpt : 'a option) : 'b option =
+        match fOpt, xOpt with
+        | Some f, Some x ->
+            printfn "Applying %+A to %+A" f x
+            Some (f x)
+        | _ ->
+            printfn "Applying with None. Exiting."
+            None
+
+    member __.Return(x) = Some x
+
+    member __.Yield(x) = Some x
+
+    member __.Zero() =
+        printfn "Zero"
+        Some ()
+
+    member __.Delay(f) = 
+        printfn "Delay"
+        f
+
+    member __.Combine(xOpt, yOpt) =
+        let res =
+            match xOpt with
+            | Some _ ->
+                xOpt
+            | None ->
+                yOpt
+        printfn "Combining %+A with %+A to get %+A" xOpt yOpt res
+        res
+
+    member __.ReturnFrom(x) = x
+
+    member __.TryWith(body, handler) =
+        try __.ReturnFrom(body())
+        with e -> handler e
+
+    member __.TryFinally(body, compensation) =
+        try __.ReturnFrom(body())
+        finally compensation() 
+
+    member __.Using(disposable:#System.IDisposable, body) =
+        let body' = fun () -> body disposable
+        __.TryFinally(body', fun () -> 
+            match disposable with 
+                | null ->
+                    printfn "Not disposing: Value is null"
+                    () 
+                | disp ->
+                    printfn "Disposing %O" disp
+                    disp.Dispose())
+*)
