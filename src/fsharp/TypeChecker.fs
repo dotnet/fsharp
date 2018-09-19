@@ -6933,19 +6933,25 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
 
         expanded
 
-    let grpMultipleNstdUpdates flds =
-        let grpdByFld = flds |> Seq.groupBy (fun ((_, fld : Ident), _) -> fld.idText)
+    let reduceNstdUpdates flds =
+        let grpdByFld = flds |> List.groupBy (fun ((_, fld : Ident), _) -> fld.idText)
         [
             for (_, flds) in grpdByFld do
-                if (flds |> Seq.length < 2) then 
+                if (flds |> List.length < 2) then 
                     yield! flds
                 else
-                    yield flds |> Seq.reduce 
-                        (fun a b -> match a, b with 
-                                    | (lidwid, Some(SynExpr.Record (aBI, aCI, aFlds, aRng))), (_, Some(SynExpr.Record (_, _, bFlds, _))) ->
-                                        let combinedFlds = aFlds @ bFlds
-                                        (lidwid, Some(SynExpr.Record (aBI, aCI, combinedFlds, aRng))) 
-                                    | _ -> a)
+                    let rec grpIfNstd res xs =
+                        match xs with
+                        | [] -> res
+                        | x::[] -> x :: res 
+                        | x::y::ys -> match x, y with
+                                      | (lidwid, Some(SynExpr.Record (aBI, aCI, aFlds, aRng))), (_, Some(SynExpr.Record (_, _, bFlds, _))) ->
+                                            let combinedFlds = aFlds @ bFlds
+                                            let reducedRecd = (lidwid, Some(SynExpr.Record (aBI, aCI, combinedFlds, aRng))) 
+                                            grpIfNstd (reducedRecd :: res) ys
+                                      | _ -> grpIfNstd (x :: res) (y :: ys)
+                    
+                    yield! flds |> grpIfNstd []
         ]
 
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors 
@@ -6978,7 +6984,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                     | [] -> ()
                     | [id] -> yield (([], id), v)
                     | _ -> yield! buildForNestdFlds lidwd v                 
-            ] |> grpMultipleNstdUpdates
+            ] |> reduceNstdUpdates
                    
         match flds with 
         | [] -> []
