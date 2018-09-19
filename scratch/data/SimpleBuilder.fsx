@@ -109,9 +109,9 @@ let quux : int option =
         and! b =
             opt {
                 let! x = Some 9
-                and! y = Some 1
+                and! _ = Some "IGNORED" // Inner value goes unused, but we'd still bail out if this value were None
                 and! z = Some 4
-                return x + y + z - 10
+                return x + z - 10
             }
         and! c =
             opt {
