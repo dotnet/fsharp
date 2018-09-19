@@ -7,15 +7,17 @@ type OptionalBuilder =
         | Some f, Some x -> Some (f x)
         | _ -> None
 
-    member __.Return(x) = Some x
+    member __.Return(x : 'a) : 'a option = Some x
 
-    member __.Yield(x) = Some x
+    // Below is only needed to make yield keyword work
 
-    member __.Delay(f) = f
+    member __.Yield(x : 'a) : 'a option = Some x
 
-    member __.Zero() = Some ()
+    member __.Delay(f : 'a) : 'a = f
 
-    member __.Combine(xOpt, yOpt) =
+    member __.Zero() : unit option = Some ()
+
+    member __.Combine(xOpt : 'a option, yOpt : 'a option) : 'a option =
         match xOpt with
         | Some _ -> xOpt
         | None -> yOpt
