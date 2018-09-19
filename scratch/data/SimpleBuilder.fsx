@@ -29,13 +29,37 @@ let xOpt = Some 1
 let yOpt = Some "A"
 let zOpt = Some 3.0
 
+let superSimpleExampleDesugared : bool option =
+    opt.Apply(
+        opt.Apply(
+            opt.Return(
+                (fun x ->
+                    (fun y ->
+                        x || y
+                    )
+                )
+            ),
+            Some true), 
+        Some false)
+
+printfn "Super simple example desugared: \"%+A\"" superSimpleExampleDesugared
+
+let superSimpleExample : bool option =
+    opt {
+        let! x = Some true
+        and! y = Some false
+        return x || y
+    }
+
+printfn "Super simple example: \"%+A\"" superSimpleExample 
+
 let foo : string option =
     opt {
         let! f = fOpt
         and! x = xOpt
         and! y = yOpt
         and! z = zOpt
-        return f x y z
+        return (f x y z)
     }
 
 printfn "foo: \"%+A\"" foo 
