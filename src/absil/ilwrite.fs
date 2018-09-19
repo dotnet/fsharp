@@ -2526,7 +2526,8 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
                 SequencePoints=seqpoints }
           cenv.AddCode code
           addr
-      | MethodBody.Abstract ->
+      | MethodBody.Abstract
+      | MethodBody.PInvoke _ ->
           // Now record the PDB record for this method - we write this out later. 
           if cenv.generatePdb then 
             cenv.pdbinfo.Add  

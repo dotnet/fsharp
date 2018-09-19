@@ -699,7 +699,7 @@
       </trans-unit>
       <trans-unit id="Arrays-Line3">
         <source>they are generally faster and support fast random access.  This comes at the cost of being less safe by being mutable.</source>
-        <target state="translated">sono in genere più veloci e supportano l'accesso casuale rapido. La maggiore velocità implica però una minore sicurezza in quanto questi elementi sono modificabili.</target>
+        <target state="translated">sono in genere più veloci e supportano l'accesso casuale rapido. La maggiore velocità implica però una minore sicurezza perché questi elementi sono modificabili.</target>
         <note />
       </trans-unit>
       <trans-unit id="Arrays-Line4">
@@ -1299,12 +1299,12 @@
       </trans-unit>
       <trans-unit id="Option-Line2">
         <source>They are used extensively in F# code to represent the cases where many other</source>
-        <target state="translated">Questi valori sono ampiamente utilizzati nel codice F# per rappresentare i casi in cui molti altri</target>
+        <target state="translated">Questi valori sono ampiamente usati nel codice F# per rappresentare i casi in cui molti altri</target>
         <note />
       </trans-unit>
       <trans-unit id="Option-Line3">
         <source>languages would use null references.</source>
-        <target state="translated">linguaggi utilizzerebbero riferimenti null.</target>
+        <target state="translated">linguaggi userebbero riferimenti Null.</target>
         <note />
       </trans-unit>
       <trans-unit id="Option-Line4">

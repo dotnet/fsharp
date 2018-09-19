@@ -2,6 +2,7 @@
 
 module internal Microsoft.FSharp.Compiler.PatternMatchCompilation
 
+open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
@@ -42,6 +43,8 @@ and PatternValBinding =
 and TypedMatchClause =  
     | TClause of Pattern * Expr option * DecisionTreeTarget * range
 
+val ilFieldToTastConst : ILFieldInit -> Tast.Const
+
 /// Compile a pattern into a decision tree and a set of targets.
 val internal CompilePattern : 
     TcGlobals ->
@@ -54,8 +57,9 @@ val internal CompilePattern :
     // warn on unused? 
     bool ->   
     ActionOnFailure -> 
-    // the value being matched against, perhaps polymorphic 
-    Val * Typars -> 
+    // the value being matched against, perhaps polymorphic. Optionally includes the
+    // input expression, only for the case of immediate matching on a byref pointer
+    Val * Typars * Expr option -> 
     // input type-checked syntax of pattern matching
     TypedMatchClause list ->
     // input type 

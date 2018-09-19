@@ -7,6 +7,31 @@
         <target state="translated">始终在顶层放置 open 语句</target>
         <note />
       </trans-unit>
+      <trans-unit id="CodeLens">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Replace_LineLens">
+        <source>Show annotations to the right instead of above the line</source>
+        <target state="translated">在行右侧而非上方显示批注</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Switch">
+        <source>Enable CodeLens (Experimental)</source>
+        <target state="translated">启用 CodeLens (试验)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Prefix">
+        <source>Annotation prefix</source>
+        <target state="translated">批注前缀</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_UseColors">
+        <source>Use colors in annotations</source>
+        <target state="translated">在批注中使用颜色</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Code_Fixes">
         <source>Code Fixes</source>
         <target state="translated">代码修补程序</target>
@@ -59,7 +84,7 @@
       </trans-unit>
       <trans-unit id="Project_check_cache_size">
         <source>Number of projects whose data is cached in memory</source>
-        <target state="needs-review-translation">项目检查缓存大小</target>
+        <target state="translated">内存中缓存了其数据的项目数</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -103,38 +128,58 @@
         <note />
       </trans-unit>
       <trans-unit id="Show_Outlining">
-        <source>Show outlining and collapsable nodes for F# code</source>
-        <target state="translated">显示 F# 代码的大纲和可折叠节点</target>
+        <source>Show outlining and collapsible nodes for F# code</source>
+        <target state="translated">显示 F# 代码的大纲显示节点和可折叠节点</target>
         <note />
       </trans-unit>
       <trans-unit id="Time_until_stale_completion">
         <source>Time until stale results are used (in milliseconds)</source>
-        <target state="new">Time until stale results are used (in milliseconds)</target>
+        <target state="translated">使用过时结果前等待的时间(以毫秒计)</target>
         <note />
       </trans-unit>
       <trans-unit id="IntelliSense_Performance">
         <source>IntelliSense Performance Options</source>
-        <target state="new">IntelliSense Performance Options</target>
+        <target state="translated">IntelliSense 性能选项</target>
         <note />
       </trans-unit>
       <trans-unit id="Project_Performance">
         <source>F# Project and Caching Performance Options</source>
-        <target state="new">F# Project and Caching Performance Options</target>
+        <target state="translated">F# 项目和缓存性能选项</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Stale_IntelliSense_Results">
         <source>Enable stale data for IntelliSense features</source>
-        <target state="new">Enable stale data for IntelliSense features</target>
+        <target state="translated">针对 IntelliSense 功能启用过时数据</target>
         <note />
       </trans-unit>
       <trans-unit id="Tooltip_in_memory_cross_project_references">
         <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
-        <target state="new">In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</target>
+        <target state="translated">内存中跨项目引用将项目级数据存储在内存中，让 IDE 功能能够跨项目工作。</target>
         <note />
       </trans-unit>
       <trans-unit id="Tooltip_project_check_cache_size">
         <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="new">Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</target>
+        <target state="translated">针对 IDE 功能缓存项目数据。值越大，缓存的项目越多，因此使用的内存越多。调整此值不应影响小型或中型解决方案。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_always">
+        <source>Always add new line on enter</source>
+        <target state="new">Always add new line on enter</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_never">
+        <source>Never add new line on enter</source>
+        <target state="new">Never add new line on enter</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_only">
+        <source>Only add new line on enter after end of fully typed word</source>
+        <target state="new">Only add new line on enter after end of fully typed word</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_Key_Rule">
+        <source>Enter key behavior</source>
+        <target state="new">Enter key behavior</target>
         <note />
       </trans-unit>
     </body>

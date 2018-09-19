@@ -261,7 +261,7 @@ type ValFlags(flags:int64) =
                                                       (flags       &&&    ~~~0b0011001100000000000L) 
 
 /// Represents the kind of a type parameter
-[<RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
+[<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
 type TyparKind = 
 
     | Type 
@@ -273,10 +273,10 @@ type TyparKind =
       | TyparKind.Type -> None
       | TyparKind.Measure -> Some "Measure"
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = 
+    override x.ToString() =
       match x with
       | TyparKind.Type -> "type"
       | TyparKind.Measure -> "measure"
@@ -314,73 +314,84 @@ type TyparRigidity =
 type TyparFlags(flags:int32) =
 
     new (kind:TyparKind, rigidity:TyparRigidity, isFromError:bool, isCompGen:bool, staticReq:TyparStaticReq, dynamicReq:TyparDynamicReq, equalityDependsOn: bool, comparisonDependsOn: bool) = 
-        TyparFlags((if isFromError then                0b0000000000010 else 0) |||
-                   (if isCompGen   then                0b0000000000100 else 0) |||
+        TyparFlags((if isFromError then                0b00000000000000010 else 0) |||
+                   (if isCompGen   then                0b00000000000000100 else 0) |||
                    (match staticReq with
-                     | NoStaticReq                  -> 0b0000000000000
-                     | HeadTypeStaticReq            -> 0b0000000001000) |||
+                     | NoStaticReq                  -> 0b00000000000000000
+                     | HeadTypeStaticReq            -> 0b00000000000001000) |||
                    (match rigidity with
-                     | TyparRigidity.Rigid          -> 0b0000000000000
-                     | TyparRigidity.WillBeRigid    -> 0b0000000100000
-                     | TyparRigidity.WarnIfNotRigid -> 0b0000001000000
-                     | TyparRigidity.Flexible       -> 0b0000001100000
-                     | TyparRigidity.Anon           -> 0b0000010000000) |||
+                     | TyparRigidity.Rigid          -> 0b00000000000000000
+                     | TyparRigidity.WillBeRigid    -> 0b00000000000100000
+                     | TyparRigidity.WarnIfNotRigid -> 0b00000000001000000
+                     | TyparRigidity.Flexible       -> 0b00000000001100000
+                     | TyparRigidity.Anon           -> 0b00000000010000000) |||
                    (match kind with
-                     | TyparKind.Type               -> 0b0000000000000
-                     | TyparKind.Measure            -> 0b0000100000000) |||   
+                     | TyparKind.Type               -> 0b00000000000000000
+                     | TyparKind.Measure            -> 0b00000000100000000) |||   
                    (if comparisonDependsOn then 
-                                                       0b0001000000000 else 0) |||
+                                                       0b00000001000000000 else 0) |||
                    (match dynamicReq with
-                     | TyparDynamicReq.No           -> 0b0000000000000
-                     | TyparDynamicReq.Yes          -> 0b0010000000000) |||
+                     | TyparDynamicReq.No           -> 0b00000000000000000
+                     | TyparDynamicReq.Yes          -> 0b00000010000000000) |||
                    (if equalityDependsOn then 
-                                                       0b0100000000000 else 0))
+                                                       0b00000100000000000 else 0))
 
     /// Indicates if the type inference variable was generated after an error when type checking expressions or patterns
-    member x.IsFromError         = (flags &&& 0b0000000000010) <> 0x0
+    member x.IsFromError         = (flags &&& 0b00000000000000010) <> 0x0
 
     /// Indicates if the type variable is compiler generated, i.e. is an implicit type inference variable 
-    member x.IsCompilerGenerated = (flags &&& 0b0000000000100) <> 0x0
+    member x.IsCompilerGenerated = (flags &&& 0b00000000000000100) <> 0x0
 
     /// Indicates if the type variable has a static "head type" requirement, i.e. ^a variables used in FSharp.Core and member constraints.
     member x.StaticReq           = 
-                             match (flags &&& 0b0000000001000) with 
-                                            | 0b0000000000000 -> NoStaticReq
-                                            | 0b0000000001000 -> HeadTypeStaticReq
+                             match (flags &&& 0b00000000000001000) with 
+                                            | 0b00000000000000000 -> NoStaticReq
+                                            | 0b00000000000001000 -> HeadTypeStaticReq
                                             | _             -> failwith "unreachable"
 
     /// Indicates if the type variable can be solved or given new constraints. The status of a type variable
     /// generally always evolves towards being either rigid or solved. 
     member x.Rigidity = 
-                             match (flags &&& 0b0000011100000) with 
-                                            | 0b0000000000000 -> TyparRigidity.Rigid
-                                            | 0b0000000100000 -> TyparRigidity.WillBeRigid
-                                            | 0b0000001000000 -> TyparRigidity.WarnIfNotRigid
-                                            | 0b0000001100000 -> TyparRigidity.Flexible
-                                            | 0b0000010000000 -> TyparRigidity.Anon
+                             match (flags &&& 0b00000000011100000) with 
+                                            | 0b00000000000000000 -> TyparRigidity.Rigid
+                                            | 0b00000000000100000 -> TyparRigidity.WillBeRigid
+                                            | 0b00000000001000000 -> TyparRigidity.WarnIfNotRigid
+                                            | 0b00000000001100000 -> TyparRigidity.Flexible
+                                            | 0b00000000010000000 -> TyparRigidity.Anon
                                             | _          -> failwith "unreachable"
 
     /// Indicates whether a type variable can be instantiated by types or units-of-measure.
     member x.Kind           = 
-                             match (flags &&& 0b1000100000000) with 
-                                            | 0b0000000000000 -> TyparKind.Type
-                                            | 0b0000100000000 -> TyparKind.Measure
+                             match (flags &&& 0b00001000100000000) with 
+                                            | 0b00000000000000000 -> TyparKind.Type
+                                            | 0b00000000100000000 -> TyparKind.Measure
                                             | _             -> failwith "unreachable"
 
 
     /// Indicates that whether or not a generic type definition satisfies the comparison constraint is dependent on whether this type variable satisfies the comparison constraint.
     member x.ComparisonConditionalOn =
-                                   (flags &&& 0b0001000000000) <> 0x0
+                                   (flags &&& 0b00000001000000000) <> 0x0
+
     /// Indicates if a type parameter is needed at runtime and may not be eliminated
     member x.DynamicReq     = 
-                             match (flags &&& 0b0010000000000) with 
-                                            | 0b0000000000000 -> TyparDynamicReq.No
-                                            | 0b0010000000000 -> TyparDynamicReq.Yes
+                             match (flags &&& 0b00000010000000000) with 
+                                            | 0b00000000000000000 -> TyparDynamicReq.No
+                                            | 0b00000010000000000 -> TyparDynamicReq.Yes
                                             | _             -> failwith "unreachable"
+
     /// Indicates that whether or not a generic type definition satisfies the equality constraint is dependent on whether this type variable satisfies the equality constraint.
     member x.EqualityConditionalOn = 
-                                   (flags &&& 0b0100000000000) <> 0x0
+                                   (flags &&& 0b00000100000000000) <> 0x0
 
+    /// Indicates that whether this type parameter is a compat-flex type parameter (i.e. where "expr :> tp" only emits an optional warning)
+    member x.IsCompatFlex = 
+                                   (flags &&& 0b00010000000000000) <> 0x0
+
+    member x.WithCompatFlex(b) =  
+                  if b then 
+                      TyparFlags(flags |||    0b00010000000000000)
+                  else
+                      TyparFlags(flags &&& ~~~0b00010000000000000)
 
     /// Get the flags as included in the F# binary metadata. We pickle this as int64 to allow for future expansion
     member x.PickledBits =         flags       
@@ -1338,7 +1349,7 @@ and
     override x.ToString() = "TyconAugmentation(...)"
 
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (*; StructuredFormatDisplay("{DebugText}") *) >]
     /// The information for the contents of a type. Also used for a provided namespace.
     TyconRepresentation = 
 
@@ -1382,10 +1393,10 @@ and
     /// The information for exception definitions should be folded into here.
     | TNoRepr
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = "TyconRepresentation(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 and 
    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -1740,7 +1751,7 @@ and
     override x.ToString() = x.Name
 
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (*; StructuredFormatDisplay("{DebugText}") *) >]
     ExceptionInfo =
     /// Indicates that an exception is an abbreviation for the given exception 
     | TExnAbbrevRepr of TyconRef 
@@ -1754,10 +1765,11 @@ and
     /// Indicates that an exception is abstract, i.e. is in a signature file, and we do not know the representation 
     | TExnNone
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = "ExceptionInfo(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 and [<Sealed; StructuredFormatDisplay("{DebugText}")>]
     ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, entities: QueueList<Entity>) = 
@@ -2162,6 +2174,12 @@ and
     /// Indicates if the type inference variable was generated after an error when type checking expressions or patterns
     member x.IsFromError         = x.typar_flags.IsFromError
 
+    /// Indicates that whether this type parameter is a compat-flex type parameter (i.e. where "expr :> tp" only emits an optional warning)
+    member x.IsCompatFlex        = x.typar_flags.IsCompatFlex
+
+    /// Set whether this type parameter is a compat-flex type parameter (i.e. where "expr :> tp" only emits an optional warning)
+    member x.SetIsCompatFlex(b)  = x.typar_flags <- x.typar_flags.WithCompatFlex(b)
+
     /// Indicates whether a type variable can be instantiated by types or units-of-measure.
     member x.Kind                = x.typar_flags.Kind
 
@@ -2323,11 +2341,11 @@ and
     /// Indicates a constraint that a type is .NET unmanaged type
     | IsUnmanaged                 of range
 
-    // Prefer the default formatting of this union type
+    // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     //member x.DebugText  =  x.ToString()
-    //
-    //override x.ToString() = "TyparConstraint(...)"
+    
+    override x.ToString() = sprintf "%+A" x 
     
 /// The specification of a member constraint that must be solved 
 and 
@@ -2357,7 +2375,7 @@ and
     override x.ToString() = "TTrait(" + x.MemberName + ")"
     
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
     /// Indicates the solution of a member constraint during inference.
     TraitConstraintSln = 
 
@@ -2394,10 +2412,11 @@ and
     /// Indicates a trait is solved by a 'fake' instance of an operator, like '+' on integers
     | BuiltInSln
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = "TraitConstraintSln(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 /// The partial information used to index the methods of all those in a ModuleOrNamespace.
 and [<RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
@@ -3982,11 +4001,11 @@ and
     /// Raising a measure to a rational power 
     | RationalPower of Measure * Rational
 
-    // Prefer the default formatting of this union type
+    // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     //member x.DebugText  =  x.ToString()
-    //
-    //override x.ToString() = "Measure(...)"
+    
+    override x.ToString() = sprintf "%+A" x 
 
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
@@ -4235,7 +4254,7 @@ and
 and Attribs = Attrib list 
 
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
     AttribKind = 
 
     /// Indicates an attribute refers to a type defined in an imported .NET assembly 
@@ -4244,10 +4263,11 @@ and
     /// Indicates an attribute refers to a type defined in an imported F# assembly 
     | FSAttrib of ValRef
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = sprintf "AttribKind(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 /// Attrib(kind,unnamedArgs,propVal,appliedToAGetterOrSetter,targetsOpt,range)
 and 
@@ -4311,10 +4331,11 @@ and [<RequireQualifiedAccess>]
 
 /// Decision trees. Pattern matching has been compiled down to
 /// a decision tree by this point.  The right-hand-sides (actions) of
+/// a decision tree by this point.  The right-hand-sides (actions) of
 /// the decision tree are labelled by integers that are unique for that
 /// particular tree.
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
     DecisionTree = 
 
     /// TDSwitch(input, cases, default, range)
@@ -4343,10 +4364,11 @@ and
     ///    body -- the rest of the decision tree
     | TDBind of Binding * DecisionTree
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = sprintf "DecisionTree(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 /// Represents a test and a subsequent decision tree
 and 
@@ -4366,7 +4388,7 @@ and
     override x.ToString() = sprintf "DecisionTreeCase(...)"
 
 and 
-    [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison; RequireQualifiedAccess (*; StructuredFormatDisplay("{DebugText}") *) >]
     DecisionTreeTest = 
     /// Test if the input to a decision tree matches the given union case
     | UnionCase of UnionCaseRef * TypeInst
@@ -4396,10 +4418,11 @@ and
     ///     activePatternInfo -- The extracted info for the active pattern.
     | ActivePatternCase of Expr * TTypes * (ValRef * TypeInst) option * int * ActivePatternInfo
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = sprintf "DecisionTreeTest(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 /// A target of a decision tree. Can be thought of as a little function, though is compiled as a local block. 
 and 
@@ -4893,7 +4916,7 @@ and
 
 /// The contents of a module-or-namespace-fragment definition 
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
     ModuleOrNamespaceExpr = 
     /// Indicates the module is a module with a signature 
     | TMAbstract of ModuleOrNamespaceExprWithSig
@@ -4910,10 +4933,11 @@ and
     /// Indicates the module fragment is a 'rec' or 'non-rec' definition of types and modules
     | TMDefRec   of isRec:bool * Tycon list * ModuleOrNamespaceBinding list * range
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText  =  x.ToString()
 
-    override x.ToString() = "ModuleOrNamespaceExpr(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 /// A named module-or-namespace-fragment definition 
 and 

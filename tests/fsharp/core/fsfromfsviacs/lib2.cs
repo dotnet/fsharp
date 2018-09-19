@@ -113,3 +113,15 @@ namespace FSharpOptionalTests
         }
     }
 }
+
+namespace FSharpFuncTests
+{
+    public class ApiWrapper
+    {
+        public static Func<int, int> f1 = new Func<int, int>((int arg) => arg + 1);
+        public static Func<int, string, int> f2 = new Func<int, string, int>((int arg1, string arg2) => arg1 + arg2.Length + 1);
+        public static Func<int, string, byte, int> f3 = new Func<int, string, byte, int>((int arg1, string arg2, byte arg3) => arg1 + arg2.Length + 1 + arg3);
+        public static Func<int, string, byte, sbyte, int> f4 = new Func<int, string, byte, sbyte, int>((int arg1, string arg2, byte arg3, sbyte arg4) => arg1 + arg2.Length + 1 + arg3 + arg4);
+        public static Func<int, string, byte, sbyte, Int16, int> f5 = new Func<int, string, byte, sbyte, Int16, int>((int arg1, string arg2, byte arg3, sbyte arg4, Int16 arg5) => arg1 + arg2.Length + 1 + arg3 + arg4 + arg5);
+    }
+}

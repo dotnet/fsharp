@@ -105,16 +105,16 @@ namespace Tests
         let SafeSum6(bytes: ReadOnlySpan<byte>) =
             let mutable sum = 0
             for i in 0 .. bytes.Length - 1 do 
-                let byteAddr = &bytes.[i]
-                sum <- sum + int byteAddr
+                let byte = bytes.[i]
+                sum <- sum + int byte
             sum
 
         let SafeSum7(bytes: ReadOnlyMemory<byte>) =
             let bytes = bytes.Span
             let mutable sum = 0
             for i in 0 .. bytes.Length - 1 do 
-                let byteAddr = &bytes.[i]
-                sum <- sum + int byteAddr
+                let byte = bytes.[i]
+                sum <- sum + int byte
             sum
 
         let SafeSum8(bytes: ReadOnlyMemory<byte>) =
