@@ -4189,23 +4189,6 @@ let resolveILMethodRef td mref = resolveILMethodRefWithRescope id td mref
 let mkRefToILModule m =
   ILModuleRef.Create(m.Name, true, None)
 
-
-let ungenericizeTypeName n = 
-  let sym = '`'
-  if 
-    String.contains n sym && 
-      (* check what comes after the symbol is a number *)
-    (let m = String.rindex n sym
-     let res = ref (m < n.Length - 1)
-     for i = m + 1 to n.Length - 1 do
-       res := !res && n.[i] >= '0' && n.[i] <= '9'
-     !res)
-  then 
-      let pos = String.rindex n sym
-      String.sub n 0 pos
-  else n
-
-
 type ILEventRef =
     { erA: ILTypeRef; erB: string }
     static member Create(a, b) = {erA=a;erB=b}
