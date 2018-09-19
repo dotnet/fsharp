@@ -3827,11 +3827,10 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
         (match mty.ModulesAndNamespacesByDemangledName.TryFind(id) with
          | Some mspec ->
              let nested = modref.NestedTyconRef mspec
-             if not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m nested allowObsolete) then
-                 let allowObsolete = rest <> [] && allowObsolete
-                 ResolvePartialLongIdentInModuleOrNamespace ncenv nenv isApplicableMeth m ad nested rest allowObsolete
-             else
-                 []
+             if IsTyconUnseenObsoleteSpec ad g ncenv.amap m nested allowObsolete then [] else
+             let allowObsolete = allowObsolete && not (isNil rest)
+             ResolvePartialLongIdentInModuleOrNamespace ncenv nenv isApplicableMeth m ad nested rest allowObsolete
+
          | _ -> [])
 
       @ (LookupTypeNameInEntityNoArity m id modref.ModuleOrNamespaceType
@@ -4024,11 +4023,9 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
         (match mty.ModulesAndNamespacesByDemangledName.TryFind(id) with
          | Some mspec -> 
              let nested = modref.NestedTyconRef mspec
-             if not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m nested allowObsolete) then
-                 let allowObsolete = rest <> [] && allowObsolete
-                 ResolvePartialLongIdentInModuleOrNamespaceForRecordFields ncenv nenv m ad nested rest allowObsolete
-             else
-                 []
+             if IsTyconUnseenObsoleteSpec ad g ncenv.amap m nested allowObsolete then [] else
+             let allowObsolete = allowObsolete && not (isNil rest)
+             ResolvePartialLongIdentInModuleOrNamespaceForRecordFields ncenv nenv m ad nested rest allowObsolete
          | _ -> [])
         @ (
             match rest with
