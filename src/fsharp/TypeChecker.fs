@@ -8051,7 +8051,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         //                 )
         //         ), expr1)
         //     ), expr2)
-        | SynExpr.LetOrUseAndBang(letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, SynExpr.YieldOrReturn((isYield, isReturn), returnExpr, returnRange)) when isYield = false ->  // TODO Handle use! / anduse!
+        | SynExpr.LetOrUseAndBang(letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, SynExpr.YieldOrReturn((isYield, _), returnExpr, returnRange)) when isYield = false ->  // TODO Handle use! / anduse!
 
             let bindingsBottomToTop = 
                 let letBinding =
