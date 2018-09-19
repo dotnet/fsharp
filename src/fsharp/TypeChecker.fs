@@ -8109,7 +8109,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                 SynExpr.YieldOrReturn((isYield, isReturn), returnExprWrappedInLambdas, returnRange)
 
             Some (trans true q varSpace newReturn (fun holeFill -> 
-                constructApplies id bindingsBottomToTop (translatedCtxt holeFill)))
+                translatedCtxt (constructApplies id bindingsBottomToTop holeFill)))
 
         | SynExpr.LetOrUseAndBang(_, false, _, _, _, _, _, _) ->  // TODO Handle use! / anduse!
             error(new Exception("let! ... and! ... computation expressions must immediately return a value")) // TODO Make more helpful
