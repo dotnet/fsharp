@@ -1019,6 +1019,8 @@ option {
  ```
  ...probably not? That seems nice enough to me.
 
+## 2018-09-18
+
  Okay, so the above seems to approximately work now. Next steps:
  * Look at error messages
  * Come up with some more examples of what should / should not work (and encode as tests?)
@@ -1057,4 +1059,10 @@ builder.Apply(
         yDisFoo),
     zDisFoo)
 ```
-I've put this together by basically mapping what was done for monads onto applicatives. I've not really thought this through in terms of whether it actually solves a problem someone could have. Could just work off ScottW's `trace` example: https://fsharpforfunandprofit.com/posts/computation-expressions-builder-part6/ for now
+I've put this together by basically mapping what was done for monads onto applicatives. I've not really thought this through in terms of whether it actually solves a problem someone could have. Could just work off [ScottW's `trace` example](https://fsharpforfunandprofit.com/posts/computation-expressions-builder-part6/) for now.
+
+## 2018-09-19
+
+One other thing I haven't considered: What happens for `and!` / `anduse!` when the "name" is `_`?
+
+Alternative applicatives work now. `yield!` does the alternation because of the previously discussed issues with `yield` (forces loads of inputs to be re-evaluated and makes the desugaring unclear, whereas `yield!` enables you to say precisely what to evaluate, since its exactly what you put on the RHS), the cost being mainly that you may need to open a new `opt { }`
