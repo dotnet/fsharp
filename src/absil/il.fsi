@@ -759,7 +759,6 @@ type ILAttribute =
 
     member Method: ILMethodSpec
     member Elements: ILAttribElem list
-    member Data: byte[]
 
     member WithMethod: method: ILMethodSpec -> ILAttribute
 
@@ -1685,6 +1684,8 @@ val mkILCustomAttribute:
        ILAttribElem list (* fixed args: values and implicit types *) * 
        ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
          -> ILAttribute
+
+val getCustomAttrData: ILGlobals -> ILAttribute -> byte[]
 
 val mkPermissionSet: ILGlobals -> ILSecurityAction * (ILTypeRef * (string * ILType * ILAttribElem) list) list -> ILSecurityDecl
 

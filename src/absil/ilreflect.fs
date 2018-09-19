@@ -1419,7 +1419,7 @@ let convCustomAttr cenv emEnv (cattr: ILAttribute) =
        match convConstructorSpec cenv emEnv cattr.Method with 
        | null -> failwithf "convCustomAttr: %+A" cattr.Method
        | res -> res
-    let data = cattr.Data 
+    let data = getCustomAttrData cenv.ilg cattr
     (methInfo, data)
 
 let emitCustomAttr cenv emEnv add cattr  = add (convCustomAttr cenv emEnv cattr)
