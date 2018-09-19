@@ -752,12 +752,16 @@ type ILAttribElem =
 /// Named args: values and flags indicating if they are fields or properties.
 type ILAttributeNamedArg = string * ILType * bool * ILAttribElem
 
-/// Custom attributes.  See 'decodeILAttribData' for a helper to parse the byte[] 
-/// to ILAttribElem's as best as possible.  
+/// Custom attributes. See 'decodeILAttribData' for a helper to parse the byte[] to ILAttribElem's as best as possible.
 type ILAttribute =
-    { Method: ILMethodSpec  
-      Data: byte[] 
-      Elements: ILAttribElem list}
+    | Encoded of method: ILMethodSpec * data: byte[] * elements: ILAttribElem list
+    | Decoded of method: ILMethodSpec * fixedArgs: ILAttribElem list * namedArgs: ILAttributeNamedArg list
+
+    member Method: ILMethodSpec
+    member Elements: ILAttribElem list
+    member Data: byte[]
+
+    member WithMethod: method: ILMethodSpec -> ILAttribute
 
 [<NoEquality; NoComparison; Struct>]
 type ILAttributes =

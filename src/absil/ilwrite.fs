@@ -1382,7 +1382,7 @@ and GetMethodRefAsCustomAttribType cenv (mref:ILMethodRef) =
 let rec GetCustomAttrDataAsBlobIdx cenv (data:byte[]) = 
     if data.Length = 0 then 0 else GetBytesAsBlobIdx cenv data
 
-and GetCustomAttrRow cenv hca attr = 
+and GetCustomAttrRow cenv hca (attr: ILAttribute) =
     let cat = GetMethodRefAsCustomAttribType cenv attr.Method.MethodRef
     for element in attr.Elements do
         match element with
