@@ -88,10 +88,29 @@ printfn "baz: %+A" baz
 
 let quux : int option =
     opt {
-        yield! None
-        yield! baz
-        yield! None
+        yield!
+            opt {
+                let! x = Some 11
+                and! y = None
+                and! z = Some 2
+                return x + y + z + 1
+            }
+        yield!
+            opt {
+                let! x = None
+                and! y = Some 1
+                and! z = None
+                return x + y + z - 10
+            }
+        yield!
+            opt {
+                let! x = Some 14
+                and! y = Some 1
+                and! z = Some 2
+                return x + y + z + 1
+            }
         yield! bar
+        yield! baz
     }
 
 printfn "quux: %+A" quux 
