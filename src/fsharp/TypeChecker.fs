@@ -8053,8 +8053,13 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         //     ), expr2)
         | SynExpr.LetOrUseAndBang(letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, SynExpr.YieldOrReturn((isYield, isReturn), returnExpr, returnRange)) when isYield = false ->  // TODO Handle use! / anduse!
 
+            let bindingsBottomToTop = 
+                let letBinding =
+                    (letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm)
+                List.rev (letBinding :: andBangBindings) // [ andBangExprN ; ... ; andBangExpr2 ; andBangExpr1 ; letExpr ]
+
             // Here we construct a call to Apply for each binding introduced by the let! ... and! ... syntax
-            let rec constructApplies (pendingApplies : SynExpr -> SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
+            let rec constructAppliesForBindings (pendingApplies : SynExpr -> SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
 
                 match bindings with
                 | (spBind, _, isFromSource, _, rhsExpr, _) :: remainingBindings ->
@@ -8068,15 +8073,12 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                     let newPendingApplies =
                         (fun consumeExpr -> mkSynCall "Apply" bindRange [consumeExpr; rhsExpr]) >> pendingApplies
 
-                    constructApplies newPendingApplies remainingBindings
+                    constructAppliesForBindings newPendingApplies remainingBindings
 
                 | [] ->
                     pendingApplies
 
-            let bindingsBottomToTop = 
-                let letBinding =
-                    (letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm)
-                List.rev (letBinding :: andBangBindings) // [ andBangExprN ; ... ; andBangExpr2 ; andBangExpr1 ; letExpr ]
+            let wrapInCallsToApply = constructAppliesForBindings id bindingsBottomToTop
 
             // Add the variables to the query variable space, on demand
             let varSpace =
@@ -8096,20 +8098,23 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             // TODO Collect up varSpace and use it here? Does this mean and! bindings cannot shadow each other?
 
 
-            // We construct match lambdas to do any of the pattern matching that
-            // appears on the LHS of a binding
-            let returnExprWrappedInLambdas =
-                bindingsBottomToTop
-                |> List.fold (fun acc (spBind, _, _, pat, _, _) ->
+            Some (trans true q varSpace returnExpr (fun holeFill -> 
+
+                // We construct match lambdas to do any of the pattern matching that
+                // appears on the LHS of a binding
+                (holeFill, bindingsBottomToTop)
+                ||> List.fold (fun acc (spBind, _, _, pat, _, _) ->
                     let innerRange = returnExpr.Range
                     SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, acc, innerRange, SequencePointAtTarget)], spBind, innerRange)
-                ) returnExpr
-
-            let newReturn =
-                SynExpr.YieldOrReturn((isYield, isReturn), returnExprWrappedInLambdas, returnRange)
-
-            Some (trans true q varSpace newReturn (fun holeFill -> 
-                translatedCtxt (constructApplies id bindingsBottomToTop holeFill)))
+                )
+                // We take the nested lambdas and put the return back, _outside_ them
+                // to give an F<'a -> 'b -> 'c -> ...> as Apply expects
+                |> (fun f -> SynExpr.YieldOrReturn((isYield, isReturn), f, returnRange))
+                // We wrap the return in a call to Apply for each lambda
+                |> wrapInCallsToApply
+                // We nest the result inside the parent expression
+                |> translatedCtxt)
+            )
 
         | SynExpr.LetOrUseAndBang(_, false, _, _, _, _, _, _) ->  // TODO Handle use! / anduse!
             error(new Exception("let! ... and! ... computation expressions must immediately return a value")) // TODO Make more helpful
