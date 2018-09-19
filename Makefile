@@ -38,7 +38,7 @@ build:
 	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/FSharp.Compiler.Server.Shared/FSharp.Compiler.Server.Shared.fsproj
 	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/fsi/Fsi.fsproj
 	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/fsiAnyCpu/FsiAnyCPU.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 tests/FSharp.Core.UnitTests/FSharp.Core.Unittests.fsproj
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj
 	mkdir -p $(Configuration)/fsharp30/net40/bin
 	mkdir -p $(Configuration)/fsharp31/net40/bin
 	mkdir -p $(Configuration)/fsharp40/net40/bin
