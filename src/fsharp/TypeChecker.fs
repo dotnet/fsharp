@@ -8099,7 +8099,6 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
 
             Some (trans true q varSpace returnExpr (fun holeFill -> 
-
                 // We construct match lambdas to do any of the pattern matching that
                 // appears on the LHS of a binding
                 (holeFill, bindingsBottomToTop)
@@ -8109,7 +8108,10 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                 )
                 // We take the nested lambdas and put the return back, _outside_ them
                 // to give an F<'a -> 'b -> 'c -> ...> as Apply expects
-                |> (fun f -> mkSynCall "Return" returnRange [f])
+                |> (fun f -> 
+                    if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env returnRange ad "Return" builderTy)
+                    then error(Error(FSComp.SR.tcRequireBuilderMethod("Return"), returnRange))
+                    mkSynCall "Return" returnRange [f])
                 // We wrap the return in a call to Apply for each lambda
                 |> wrapInCallsToApply
                 // We nest the result inside the parent expression
