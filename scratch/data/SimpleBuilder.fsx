@@ -13,7 +13,7 @@ type OptionalBuilder =
 
     member __.Yield(x : 'a) : 'a option = Some x
 
-    member __.Delay(f : 'a) : 'a = f
+    member __.Delay(f : unit -> 'a) : 'a = f () // If you type `Delay : 'a -> 'a` explicitly, it builds but things get weird. Fast.
 
     member __.Zero() : unit option = Some ()
 
@@ -46,8 +46,8 @@ printfn "Super simple example desugared: \"%+A\"" superSimpleExampleDesugared
 
 let superSimpleExample : bool option =
     opt {
-        let! x = Some true
-        and! y = Some false
+        let! (x : bool) = Some true
+        and! (y : bool) = Some false
         return x || y
     }
 
@@ -88,8 +88,14 @@ printfn "baz: %+A" baz
 
 let quux : int option =
     opt {
-        yield bar
-        yield baz
+        let! x                = None
+        and! (SingleCaseDu y) = Some (SingleCaseDu 40)
+        and! (z,_)            = Some (300, "whatever")
+
+        // Given the definition of Combine in the builder, I'd expect yield to mean "return this value if it is a Some, else try the next one"
+        yield x
+        yield y
+        yield z
     }
 
 printfn "quux: %+A" quux 
