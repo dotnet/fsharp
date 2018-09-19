@@ -8062,7 +8062,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             let rec constructAppliesForBindings (pendingApplies : SynExpr -> SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
 
                 match bindings with
-                | (spBind, _, isFromSource, _, rhsExpr, _) :: remainingBindings ->
+                | (spBind, _, isFromSource, pat, rhsExpr, _) :: remainingBindings ->
                     let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhsExpr.Range
                     if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), bindRange))
                     if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env bindRange ad "Apply" builderTy)
@@ -8071,7 +8071,9 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                     let rhsExpr = if isFromSource then mkSourceExpr rhsExpr else rhsExpr
 
                     let newPendingApplies =
-                        (fun consumeExpr -> mkSynCall "Apply" bindRange [consumeExpr; rhsExpr]) >> pendingApplies
+                        (fun consumeExpr -> 
+                            printfn "Creating synthetic Apply call for pattern %+A" pat // TODO Delete
+                            mkSynCall "Apply" bindRange [consumeExpr; rhsExpr]) >> pendingApplies
 
                     constructAppliesForBindings newPendingApplies remainingBindings
 
@@ -8081,7 +8083,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             let wrapInCallsToApply = constructAppliesForBindings id bindingsBottomToTop
 
             // Add the variables to the query variable space, on demand
-            let varSpace =
+            (*let varSpace =
                 // TODO Make sure no LHS names clash, and no RHS mentions a name from another LHS
                 bindingsBottomToTop
                 |> List.fold (fun acc (_,_,_,pat,_,_) ->
@@ -8090,6 +8092,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                         let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (pat, None) 
                         vspecs, envinner)
                 ) varSpace
+            *)
 
             // Note how we work from the inner expression outward, meaning be create the lambda for the last
             // 'and!' _first_, and create the calls to 'Apply' in the opposite order so that the calls to
@@ -8097,26 +8100,26 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
             // TODO Collect up varSpace and use it here? Does this mean and! bindings cannot shadow each other?
 
-
-            Some (trans true q varSpace returnExpr (fun holeFill -> 
+            let desugared =
                 // We construct match lambdas to do any of the pattern matching that
                 // appears on the LHS of a binding
-                (holeFill, bindingsBottomToTop)
-                ||> List.fold (fun acc (spBind, _, _, pat, _, _) ->
+                bindingsBottomToTop
+                |> List.fold (fun acc (spBind, _, _, pat, _, _) ->
                     let innerRange = returnExpr.Range
+                    printfn "Creating synthetic match lambda for pattern %+A" pat // TODO Delete
                     SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, acc, innerRange, SequencePointAtTarget)], spBind, innerRange)
-                )
+                ) returnExpr
                 // We take the nested lambdas and put the return back, _outside_ them
-                // to give an F<'a -> 'b -> 'c -> ...> as Apply expects
+                // to give an f : F<'a -> 'b -> 'c -> ...> as a series of Apply calls expects
                 |> (fun f -> 
                     if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env returnRange ad "Return" builderTy)
                     then error(Error(FSComp.SR.tcRequireBuilderMethod("Return"), returnRange))
+                    printfn "Creating synthetic Return call" // TODO Delete
                     mkSynCall "Return" returnRange [f])
                 // We wrap the return in a call to Apply for each lambda
                 |> wrapInCallsToApply
-                // We nest the result inside the parent expression
-                |> translatedCtxt)
-            )
+
+            Some (translatedCtxt desugared)
 
         | SynExpr.LetOrUseAndBang(_, false, _, _, _, _, _, _) ->  // TODO Handle use! / anduse!
             error(new Exception("let! ... and! ... computation expressions must immediately return a value")) // TODO Make more helpful
@@ -8218,7 +8221,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
     let delayedExpr = 
         match TryFindIntrinsicOrExtensionMethInfo cenv env mBuilderVal ad "Delay" builderTy with 
         | [] -> basicSynExpr
-        | _ -> mkSynCall "Delay" mBuilderVal [(mkSynDelay2 basicSynExpr)]
+        | _ -> mkSynCall "Delay" mBuilderVal [(mkSynDelay2 basicSynExpr)] // TODO If Delay is defined, it is called. Does this work?
 
             
     let quotedSynExpr = 
@@ -8230,7 +8233,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
     let runExpr = 
         match TryFindIntrinsicOrExtensionMethInfo cenv env mBuilderVal ad "Run" builderTy with 
         | [] -> quotedSynExpr
-        | _ -> mkSynCall "Run" mBuilderVal [quotedSynExpr]
+        | _ -> mkSynCall "Run" mBuilderVal [quotedSynExpr] // TODO If Run is defined, it is called. Does this work?call 
 
     let lambdaExpr = 
         let mBuilderVal = mBuilderVal.MakeSynthetic()
@@ -8238,7 +8241,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
     let env =
         match comp with     
-        | SynExpr.YieldOrReturn ((true, _), _, _) -> { env with eContextInfo = ContextInfo.YieldInComputationExpression }
+        | SynExpr.YieldOrReturn ((true, _), _, _) -> { env with eContextInfo = ContextInfo.YieldInComputationExpression } // TODO Do we need our own new context info?
         | SynExpr.YieldOrReturn ((_, true), _, _) -> { env with eContextInfo = ContextInfo.ReturnInComputationExpression }
         | _  -> env
 
