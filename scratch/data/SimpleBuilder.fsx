@@ -89,38 +89,40 @@ printfn "baz: %+A" baz
 let quux : int option =
     opt {
         let! a =
-            opt {
+            opt { // Takes the first yield!'d value that is not None, i.e. takes the second block in this case
+                  // You caan view yield! (in this builder) to mean a prioritied list of values, where the highest priority Some wins
                 yield! 
                     opt {
                         let! x = Some 11
                         and! y = None
                         and! z = Some 2
-                        return x + y + z + 1
+                        return x + y + z + 1 // Bails out because y is None
                     }
                 yield! 
                     opt {
-                        let! x = Some 11
-                        and! y = Some 100
+                        let! x = Some -3
+                        and! y = Some 1
                         and! z = Some 2
-                        return x + y + z + 1
+                        return x + y + z + 4 // Computes result because all args are Some
                     }
             }
         and! b =
             opt {
-                let! x = None
+                let! x = Some 9
                 and! y = Some 1
-                and! z = None
+                and! z = Some 4
                 return x + y + z - 10
             }
         and! c =
             opt {
-                let! x = Some 14
+                let! x = Some 0
                 and! y = Some 1
                 and! z = Some 2
                 return x + y + z + 1
             }
-        and! d = baz
-        return a * b * c * d
+        and! d = baz // Makes use of an optional value from outside the computation expression (bailing out with None if it is None, as with any other value)
+        return a * b * c * d // Computes this value because all args are some
+        // Another way to view this is let! ... and! ... is a bit like a conjunction, and yield! ... yield! ... is a bit like a disjunction
     }
 
 printfn "quux: %+A" quux 
