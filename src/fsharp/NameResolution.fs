@@ -3639,28 +3639,25 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
     | id :: rest ->
   
       let rfinfos = 
-        ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,ty)
-        |> List.filter (fun fref -> IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef)
-        |> List.filter (fun fref -> fref.RecdField.IsStatic = statics)
+          ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,ty)
+          |> List.filter (fun fref -> fref.Name = id && IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef && fref.RecdField.IsStatic = statics)
   
       let nestedTypes = 
           ty 
           |> GetNestedTypesOfType (ad, ncenv, Some id, TypeNameResolutionStaticArgsInfo.Indefinite, false, m)  
 
       // e.g. <val-id>.<recdfield-id>.<more> 
-      (rfinfos |> List.filter (fun x -> x.Name = id)
-               |> List.collect (fun x -> x.FieldType |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
+      (rfinfos |> List.collect (fun x -> x.FieldType |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
 
       // e.g. <val-id>.<property-id>.<more> 
       let FullTypeOfPinfo(pinfo:PropInfo) = 
-        let rty = pinfo.GetPropertyType(amap,m) 
-        let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else  rty 
-        rty
+          let rty = pinfo.GetPropertyType(amap,m) 
+          let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else rty 
+          rty
 
       (ty
          |> AllPropInfosOfTypeInScope ncenv.InfoReader nenv (Some id,ad) IgnoreOverrides m
-         |> List.filter (fun x -> x.IsStatic = statics)
-         |> List.filter (IsPropInfoAccessible g amap m ad) 
+         |> List.filter (fun pinfo -> pinfo.IsStatic = statics && IsPropInfoAccessible g amap m ad pinfo) 
          |> List.collect (fun pinfo -> (FullTypeOfPinfo pinfo) |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
 
       // e.g. <val-id>.<event-id>.<more> 
@@ -4294,16 +4291,14 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
         | id :: rest ->
       
           let rfinfos = 
-            ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,ty)
-            |> List.filter (fun fref -> IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef)
-            |> List.filter (fun fref -> fref.RecdField.IsStatic = statics)
+              ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,ty)
+              |> List.filter (fun fref -> fref.Name = id && IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef && fref.RecdField.IsStatic = statics)
       
           let nestedTypes = ty |> GetNestedTypesOfType (ad, ncenv, Some id, TypeNameResolutionStaticArgsInfo.Indefinite, false, m)  
     
           // e.g. <val-id>.<recdfield-id>.<more> 
           for rfinfo in rfinfos do
-              if rfinfo.Name = id then
-                  yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item rfinfo.FieldType
+              yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item rfinfo.FieldType
     
           // e.g. <val-id>.<property-id>.<more> 
           let fullTypeOfPinfo (pinfo: PropInfo) = 
@@ -4314,8 +4309,7 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
           let pinfos =
               ty
               |> AllPropInfosOfTypeInScope ncenv.InfoReader nenv (Some id,ad) IgnoreOverrides m
-              |> List.filter (fun x -> x.IsStatic = statics)
-              |> List.filter (IsPropInfoAccessible g amap m ad) 
+              |> List.filter (fun pinfo -> pinfo.IsStatic = statics && IsPropInfoAccessible g amap m ad pinfo) 
 
           for pinfo in pinfos do
               yield! (fullTypeOfPinfo pinfo) |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
