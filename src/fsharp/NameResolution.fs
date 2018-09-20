@@ -3643,28 +3643,25 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
     | id :: rest ->
   
       let rfinfos = 
-        ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,ty)
-        |> List.filter (fun fref -> IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef)
-        |> List.filter (fun fref -> fref.RecdField.IsStatic = statics)
+          ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,ty)
+          |> List.filter (fun fref -> fref.Name = id && IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef && fref.RecdField.IsStatic = statics)
   
       let nestedTypes = 
           ty 
           |> GetNestedTypesOfType (ad, ncenv, Some id, TypeNameResolutionStaticArgsInfo.Indefinite, false, m)  
 
       // e.g. <val-id>.<recdfield-id>.<more> 
-      (rfinfos |> List.filter (fun x -> x.Name = id)
-               |> List.collect (fun x -> x.FieldType |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
+      (rfinfos |> List.collect (fun x -> x.FieldType |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
 
       // e.g. <val-id>.<property-id>.<more> 
       let FullTypeOfPinfo(pinfo:PropInfo) = 
-        let rty = pinfo.GetPropertyType(amap,m) 
-        let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else  rty 
-        rty
+          let rty = pinfo.GetPropertyType(amap,m) 
+          let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else rty 
+          rty
 
       (ty
          |> AllPropInfosOfTypeInScope ncenv.InfoReader nenv (Some id,ad) IgnoreOverrides m
-         |> List.filter (fun x -> x.IsStatic = statics)
-         |> List.filter (IsPropInfoAccessible g amap m ad) 
+         |> List.filter (fun pinfo -> pinfo.IsStatic = statics && IsPropInfoAccessible g amap m ad pinfo) 
          |> List.collect (fun pinfo -> (FullTypeOfPinfo pinfo) |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
 
       // e.g. <val-id>.<event-id>.<more> 
@@ -3829,10 +3826,12 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
     | id :: rest  -> 
 
         (match mty.ModulesAndNamespacesByDemangledName.TryFind(id) with
-         | Some mspec 
-             when not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m (modref.NestedTyconRef mspec) allowObsolete) -> 
-             let allowObsolete = rest <> [] && allowObsolete
-             ResolvePartialLongIdentInModuleOrNamespace ncenv nenv isApplicableMeth m ad (modref.NestedTyconRef mspec) rest allowObsolete
+         | Some mspec ->
+             let nested = modref.NestedTyconRef mspec
+             if IsTyconUnseenObsoleteSpec ad g ncenv.amap m nested allowObsolete then [] else
+             let allowObsolete = allowObsolete && not (isNil rest)
+             ResolvePartialLongIdentInModuleOrNamespace ncenv nenv isApplicableMeth m ad nested rest allowObsolete
+
          | _ -> [])
 
       @ (LookupTypeNameInEntityNoArity m id modref.ModuleOrNamespaceType
@@ -4013,8 +4012,9 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
        @ (tycons |> List.map (modref.NestedTyconRef >> ItemOfTyconRef ncenv m) )
        @ [ // accessible record fields
             for tycon in tycons do
-                if IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef tycon) then
-                    let ttype = FreshenTycon ncenv m (modref.NestedTyconRef tycon)
+                let nested = modref.NestedTyconRef tycon
+                if IsEntityAccessible ncenv.amap m ad nested then
+                    let ttype = FreshenTycon ncenv m nested
                     yield! 
                         ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ttype)
                         |> List.map Item.RecdField
@@ -4022,10 +4022,11 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
 
     | id :: rest  -> 
         (match mty.ModulesAndNamespacesByDemangledName.TryFind(id) with
-         | Some mspec 
-             when not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m (modref.NestedTyconRef mspec) allowObsolete) -> 
-             let allowObsolete = rest <> [] && allowObsolete
-             ResolvePartialLongIdentInModuleOrNamespaceForRecordFields ncenv nenv m ad (modref.NestedTyconRef mspec) rest allowObsolete
+         | Some mspec -> 
+             let nested = modref.NestedTyconRef mspec
+             if IsTyconUnseenObsoleteSpec ad g ncenv.amap m nested allowObsolete then [] else
+             let allowObsolete = allowObsolete && not (isNil rest)
+             ResolvePartialLongIdentInModuleOrNamespaceForRecordFields ncenv nenv m ad nested rest allowObsolete
          | _ -> [])
         @ (
             match rest with
@@ -4294,16 +4295,14 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
         | id :: rest ->
       
           let rfinfos = 
-            ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,ty)
-            |> List.filter (fun fref -> IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef)
-            |> List.filter (fun fref -> fref.RecdField.IsStatic = statics)
+              ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,ty)
+              |> List.filter (fun fref -> fref.Name = id && IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef && fref.RecdField.IsStatic = statics)
       
           let nestedTypes = ty |> GetNestedTypesOfType (ad, ncenv, Some id, TypeNameResolutionStaticArgsInfo.Indefinite, false, m)  
     
           // e.g. <val-id>.<recdfield-id>.<more> 
           for rfinfo in rfinfos do
-              if rfinfo.Name = id then
-                  yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item rfinfo.FieldType
+              yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item rfinfo.FieldType
     
           // e.g. <val-id>.<property-id>.<more> 
           let fullTypeOfPinfo (pinfo: PropInfo) = 
@@ -4314,8 +4313,7 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
           let pinfos =
               ty
               |> AllPropInfosOfTypeInScope ncenv.InfoReader nenv (Some id,ad) IgnoreOverrides m
-              |> List.filter (fun x -> x.IsStatic = statics)
-              |> List.filter (IsPropInfoAccessible g amap m ad) 
+              |> List.filter (fun pinfo -> pinfo.IsStatic = statics && IsPropInfoAccessible g amap m ad pinfo) 
 
           for pinfo in pinfos do
               yield! (fullTypeOfPinfo pinfo) |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
@@ -4399,16 +4397,18 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                      |> List.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
                      |> List.filter (fun tycon -> not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tycon)))
 
-                 // Get all the types and .NET constructor groups accessible from here 
-                 yield! tycons |> List.map (modref.NestedTyconRef >> ItemOfTyconRef ncenv m)
-                 yield! tycons |> List.collect (modref.NestedTyconRef >> InfosForTyconConstructors ncenv m ad)
+                 // Get all the types and .NET constructor groups accessible from here
+                 let nestedTycons = tycons |> List.map modref.NestedTyconRef
+                 yield! nestedTycons |> List.map (ItemOfTyconRef ncenv m)
+                 yield! nestedTycons |> List.collect (InfosForTyconConstructors ncenv m ad)
         
         | id :: rest  -> 
         
-            match mty.ModulesAndNamespacesByDemangledName.TryFind(id) with
-            | Some mspec 
-                when not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m (modref.NestedTyconRef mspec) true) -> 
-                yield! ResolvePartialLongIdentInModuleOrNamespaceForItem ncenv nenv m ad (modref.NestedTyconRef mspec) rest item
+            match mty.ModulesAndNamespacesByDemangledName.TryFind id with
+            | Some mspec -> 
+                let nested = modref.NestedTyconRef mspec
+                if not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m nested true) then
+                    yield! ResolvePartialLongIdentInModuleOrNamespaceForItem ncenv nenv m ad nested rest item
             | _ -> ()
         
             for tycon in LookupTypeNameInEntityNoArity m id modref.ModuleOrNamespaceType do

@@ -459,8 +459,15 @@ module String =
 
     let sub (s:string) (start:int) (len:int) = s.Substring(start,len)
 
-    let contains (s:string) (c:char) = 
-        s.IndexOf(c,0,String.length s) <> -1
+    let index (s:string) (c:char) =  
+        let r = s.IndexOf(c) 
+        if r = -1 then indexNotFound() else r
+
+    let rindex (s:string) (c:char) =
+        let r =  s.LastIndexOf(c) 
+        if r = -1 then indexNotFound() else r
+
+    let contains (s:string) (c:char) = s.IndexOf(c) <> -1
 
     let order = LanguagePrimitives.FastGenericComparer<string>
    

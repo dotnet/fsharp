@@ -1186,9 +1186,9 @@ let IsTyFuncValRefExpr = function
     | _ -> false
 
 /// Type applications of existing functions are always simple constants, with the exception of F# 'type functions' 
-/// REVIEW: we could also include any under-applied application here. 
 let rec IsSmallConstExpr x =
     match x with
+    | Expr.Op (TOp.LValueOp (LAddrOf _, _), [], [], _) -> true // &x is always a constant
     | Expr.Val (v, _, _m) -> not v.IsMutable
     | Expr.App(fe, _, _tyargs, args, _) -> isNil args && not (IsTyFuncValRefExpr fe) && IsSmallConstExpr fe
     | _ -> false
@@ -1202,11 +1202,29 @@ let ValueOfExpr expr =
 // Dead binding elimination 
 //------------------------------------------------------------------------- 
  
+// Allow discard of "let v = *byref" if "v" is unused anywhere. The read effect
+// can be discarded because it is always assumed that reading byref pointers (without using 
+// the value of the read) doesn't raise exceptions or cause other "interesting" side effects.
+//
+// This allows discarding the implicit deref when matching on struct unions, e.g.
+//    
+//    [<Struct; NoComparison; NoEquality>]
+//    type SingleRec =  
+//        | SingleUnion of int
+//        member x.Next = let (SingleUnion i) = x in SingleUnion (i+1)
+//
+// See https://github.com/Microsoft/visualfsharp/issues/5136
+let IsDiscardableEffectExpr expr = 
+    match expr with 
+    | Expr.Op (TOp.LValueOp (LByrefGet _, _), [], [], _) -> true 
+    | _ -> false
+
+/// Checks is a value binding is non-discardable
 let ValueIsUsedOrHasEffect cenv fvs (b:Binding, binfo) =
     let v = b.Var
     not (cenv.settings.EliminateUnusedBindings()) ||
     Option.isSome v.MemberInfo ||
-    binfo.HasEffect || 
+    (binfo.HasEffect && not (IsDiscardableEffectExpr b.Expr)) ||
     v.IsFixed ||
     Zset.contains v (fvs())
 
@@ -1276,7 +1294,7 @@ and OpHasEffect g m op =
     | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable || (TryFindTyconRefBoolAttribute g Range.range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = Some true)
     | TOp.ValFieldGetAddr (rfref, _readonly)  -> rfref.RecdField.IsMutable
     | TOp.UnionCaseFieldGetAddr _ -> false // union case fields are immutable
-    | TOp.LValueOp (LAddrOf _, lv) -> lv.IsMutable
+    | TOp.LValueOp (LAddrOf _, _) -> false // addresses of values are always constants
     | TOp.UnionCaseFieldSet _
     | TOp.ExnFieldSet _
     | TOp.Coerce
@@ -1856,7 +1874,7 @@ and OptimizeInterfaceImpl cenv env baseValOpt (ty, overrides) =
 
 and OptimizeExprOp cenv env (op, tyargs, args, m) =
 
-    (* Special cases *)
+    // Special cases 
     match op, tyargs, args with 
     | TOp.Coerce, [toty;fromty], [e] -> 
         let e', einfo = OptimizeExpr cenv env e
@@ -1868,26 +1886,38 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
             HasEffect = true  
             MightMakeCriticalTailcall=false
             Info=UnknownValue }
-    (* Handle addresses *)
+
+    // Handle address-of 
     | TOp.LValueOp ((LAddrOf _ as lop), lv), _, _ ->
-        let e, _ = OptimizeExpr cenv env (exprForValRef m lv)
-        let op' =
-            match e with
+        let newVal, _ = OptimizeExpr cenv env (exprForValRef m lv)
+        let newOp =
+            match newVal with
             // Do not optimize if it's a top level static binding.
             | Expr.Val (v, _, _) when not v.IsCompiledAsTopLevel -> TOp.LValueOp (lop, v)
             | _ -> op
-        Expr.Op (op', tyargs, args, m), 
+        let newExpr = Expr.Op (newOp, tyargs, args, m)
+        newExpr,
         { TotalSize = 1
           FunctionSize = 1
-          HasEffect = OpHasEffect cenv.g m op'
+          HasEffect = OpHasEffect cenv.g m newOp
           MightMakeCriticalTailcall = false
-          Info = UnknownValue }
-    (* Handle these as special cases since mutables are allowed inside their bodies *)
-    | TOp.While (spWhile, marker), _, [Expr.Lambda(_, _, _, [_], e1, _, _);Expr.Lambda(_, _, _, [_], e2, _, _)]  -> OptimizeWhileLoop cenv { env with inLoop=true } (spWhile, marker, e1, e2, m) 
-    | TOp.For(spStart, dir), _, [Expr.Lambda(_, _, _, [_], e1, _, _);Expr.Lambda(_, _, _, [_], e2, _, _);Expr.Lambda(_, _, _, [v], e3, _, _)]  -> OptimizeFastIntegerForLoop cenv { env with inLoop=true } (spStart, v, e1, dir, e2, e3, m) 
-    | TOp.TryFinally(spTry, spFinally), [resty], [Expr.Lambda(_, _, _, [_], e1, _, _); Expr.Lambda(_, _, _, [_], e2, _, _)] -> OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, resty)
-    | TOp.TryCatch(spTry, spWith), [resty], [Expr.Lambda(_, _, _, [_], e1, _, _); Expr.Lambda(_, _, _, [vf], ef, _, _); Expr.Lambda(_, _, _, [vh], eh, _, _)] -> OptimizeTryCatch cenv env (e1, vf, ef, vh, eh, m, resty, spTry, spWith)
-    | TOp.TraitCall(traitInfo), [], args -> OptimizeTraitCall cenv env (traitInfo, args, m) 
+          Info = ValueOfExpr newExpr }
+
+    // Handle these as special cases since mutables are allowed inside their bodies 
+    | TOp.While (spWhile, marker), _, [Expr.Lambda(_, _, _, [_], e1, _, _);Expr.Lambda(_, _, _, [_], e2, _, _)]  ->
+        OptimizeWhileLoop cenv { env with inLoop=true } (spWhile, marker, e1, e2, m) 
+
+    | TOp.For(spStart, dir), _, [Expr.Lambda(_, _, _, [_], e1, _, _);Expr.Lambda(_, _, _, [_], e2, _, _);Expr.Lambda(_, _, _, [v], e3, _, _)]  -> 
+        OptimizeFastIntegerForLoop cenv { env with inLoop=true } (spStart, v, e1, dir, e2, e3, m) 
+
+    | TOp.TryFinally(spTry, spFinally), [resty], [Expr.Lambda(_, _, _, [_], e1, _, _); Expr.Lambda(_, _, _, [_], e2, _, _)] -> 
+        OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, resty)
+
+    | TOp.TryCatch(spTry, spWith), [resty], [Expr.Lambda(_, _, _, [_], e1, _, _); Expr.Lambda(_, _, _, [vf], ef, _, _); Expr.Lambda(_, _, _, [vh], eh, _, _)] ->
+        OptimizeTryCatch cenv env (e1, vf, ef, vh, eh, m, resty, spTry, spWith)
+
+    | TOp.TraitCall(traitInfo), [], args ->
+        OptimizeTraitCall cenv env (traitInfo, args, m) 
 
    // This code hooks arr.Length. The idea is to ensure loops end up in the "same shape"as the forms of loops that the .NET JIT
    // guarantees to optimize.
@@ -1906,20 +1936,20 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
     | TOp.ILAsm([], [ty]), _, [a] when typeEquiv cenv.g (tyOfExpr cenv.g a) ty -> OptimizeExpr cenv env a
 
     | _ -> 
-    (* Reductions *)
-    let args', arginfos = OptimizeExprsThenConsiderSplits cenv env args
-    let knownValue = 
-        match op, arginfos with 
-        | TOp.ValFieldGet (rf), [e1info] -> TryOptimizeRecordFieldGet cenv env (e1info, rf, tyargs, m) 
-        | TOp.TupleFieldGet (tupInfo, n), [e1info] -> TryOptimizeTupleFieldGet cenv env (tupInfo, e1info, tyargs, n, m)
-        | TOp.UnionCaseFieldGet (cspec, n), [e1info] -> TryOptimizeUnionCaseGet cenv env (e1info, cspec, tyargs, n, m)
-        | _ -> None
-    match knownValue with 
-    | Some valu -> 
-        match TryOptimizeVal cenv env (false, valu, m)  with 
-        | Some res -> OptimizeExpr cenv env res  (* discard e1 since guard ensures it has no effects *)
-        | None -> OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos valu
-    | None -> OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos UnknownValue
+        // Reductions 
+        let args', arginfos = OptimizeExprsThenConsiderSplits cenv env args
+        let knownValue = 
+            match op, arginfos with 
+            | TOp.ValFieldGet (rf), [e1info] -> TryOptimizeRecordFieldGet cenv env (e1info, rf, tyargs, m) 
+            | TOp.TupleFieldGet (tupInfo, n), [e1info] -> TryOptimizeTupleFieldGet cenv env (tupInfo, e1info, tyargs, n, m)
+            | TOp.UnionCaseFieldGet (cspec, n), [e1info] -> TryOptimizeUnionCaseGet cenv env (e1info, cspec, tyargs, n, m)
+            | _ -> None
+        match knownValue with 
+        | Some valu -> 
+            match TryOptimizeVal cenv env (false, valu, m)  with 
+            | Some res -> OptimizeExpr cenv env res  (* discard e1 since guard ensures it has no effects *)
+            | None -> OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos valu
+        | None -> OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos UnknownValue
 
 
 and OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos valu =
