@@ -57,8 +57,9 @@ val internal CompilePattern :
     // warn on unused? 
     bool ->   
     ActionOnFailure -> 
-    // the value being matched against, perhaps polymorphic 
-    Val * Typars -> 
+    // the value being matched against, perhaps polymorphic. Optionally includes the
+    // input expression, only for the case of immediate matching on a byref pointer
+    Val * Typars * Expr option -> 
     // input type-checked syntax of pattern matching
     TypedMatchClause list ->
     // input type 
