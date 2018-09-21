@@ -24,12 +24,13 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
                                         solution: IVsSolution, 
                                         projectInfoManager: FSharpProjectOptionsManager,
                                         projectContextFactory: IWorkspaceProjectContextFactory,
-                                        serviceProvider: IServiceProvider) =
+                                        serviceProvider: IServiceProvider) as this =
 
     let invalidPathChars = set (Path.GetInvalidPathChars())
     let optionsAssociation = ConditionalWeakTable<IWorkspaceProjectContext, string[]>()
     let isPathWellFormed (path: string) = not (String.IsNullOrWhiteSpace path) && path |> Seq.forall (fun c -> not (Set.contains c invalidPathChars))
-    let legacyProjectQueue = ConcurrentQueue()
+   
+    let legacyProjectLookup = ConcurrentDictionary()
 
     let tryGetOrCreateProjectId (workspace: VisualStudioWorkspaceImpl) (projectFileName: string) =
         let projectDisplayName = projectDisplayNameOf projectFileName
@@ -38,31 +39,21 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
     member this.Initialize() =
         solution.AdviseSolutionEvents(this) |> ignore
 
-        workspace.WorkspaceChanged.Add <| fun args ->
-            match args.Kind with
-            | WorkspaceChangeKind.SolutionAdded ->
-                let mutable hier = Unchecked.defaultof<IVsHierarchy>
-                while legacyProjectQueue.TryDequeue(&hier) do
-                    match hier with
-                    | :? IProvideProjectSite as siteProvider ->
-                        this.SetupLegacyProjectFile(siteProvider, workspace, "LegacyProjectWorkspaceMap.Initialize")
-                    | _ -> ()
-            | _ -> ()
-
     /// Sync the Roslyn information for the project held in 'projectContext' to match the information given by 'site'.
     /// Also sync the info in ProjectInfoManager if necessary.
-    member this.SyncLegacyProject(projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace: VisualStudioWorkspaceImpl, forceUpdate, userOpName) =
+    member this.SyncLegacyProject(projectId: ProjectId, projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace: VisualStudioWorkspaceImpl, forceUpdate, userOpName) =
         let wellFormedFilePathSetIgnoreCase (paths: seq<string>) =
             HashSet(paths |> Seq.filter isPathWellFormed |> Seq.map (fun s -> try Path.GetFullPath(s) with _ -> s), StringComparer.OrdinalIgnoreCase)
 
         let mutable updated = forceUpdate
 
-        let project = workspace.CurrentSolution.Projects |> Seq.filter (fun p -> p.Name = projectContext.DisplayName) |> Seq.exactlyOne
-
         // Sync the source files in projectContext.  Note that these source files are __not__ maintained in order in projectContext
         // as edits are made. It seems this is ok because the source file list is only used to drive roslyn per-file checking.
         let updatedFiles = site.CompilationSourceFiles |> wellFormedFilePathSetIgnoreCase
-        let originalFiles = project.Documents |> Seq.map (fun file -> file.FilePath) |> wellFormedFilePathSetIgnoreCase
+        let originalFiles =  
+            match legacyProjectLookup.TryGetValue(projectId) with
+            | true, (originalFiles, _) -> originalFiles
+            | _ -> HashSet()
         
         for file in updatedFiles do
             if not(originalFiles.Contains(file)) then
@@ -75,7 +66,10 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
                 updated <- true
 
         let updatedRefs = site.CompilationReferences |> wellFormedFilePathSetIgnoreCase
-        let originalRefs = project.MetadataReferences |> Enumerable.OfType<PortableExecutableReference> |> Seq.map (fun ref -> ref.FilePath) |> wellFormedFilePathSetIgnoreCase
+        let originalRefs =
+            match legacyProjectLookup.TryGetValue(projectId) with
+            | true, (_, originalRefs) -> originalRefs
+            | _ -> HashSet()
 
         for ref in updatedRefs do
             if not(originalRefs.Contains(ref)) then
@@ -109,7 +103,10 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
 
         // update the cached options
         if updated then
-            projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, project.Id, site, userOpName + ".SyncProject", invalidateConfig=true)
+            projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, projectId, site, userOpName + ".SyncLegacyProject", invalidateConfig=true)
+
+        let info = (updatedFiles, updatedRefs)
+        legacyProjectLookup.AddOrUpdate(projectId, info, fun _ _ -> info) |> ignore
 
     member this.SetupLegacyProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl, userOpName) =
         let userOpName = userOpName + ".SetupProjectFile"
@@ -148,13 +145,13 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
                 let realProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
                 // Sync IProjectSite --> projectContext, and IProjectSite --> ProjectInfoManage
-                this.SyncLegacyProject(projectContext, site, workspace, forceUpdate=true, userOpName=userOpName)
+                this.SyncLegacyProject(realProjectId, projectContext, site, workspace, forceUpdate=true, userOpName=userOpName)
 
                 site.BuildErrorReporter <- Some (projectContext :?> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
 
                 // TODO: consider forceUpdate = false here.  forceUpdate=true may be causing repeated computation?
                 site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                              AdviseProjectSiteChanges(fun () -> this.SyncLegacyProject(projectContext, site, workspace, forceUpdate=true, userOpName="AdviseProjectSiteChanges."+userOpName)))
+                                              AdviseProjectSiteChanges(fun () -> this.SyncLegacyProject(realProjectId, projectContext, site, workspace, forceUpdate=true, userOpName="AdviseProjectSiteChanges."+userOpName)))
 
                 site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                              AdviseProjectSiteChanges(fun () -> 
@@ -174,18 +171,26 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
         member __.OnAfterLoadProject(_, _) = VSConstants.S_OK
 
         member __.OnAfterOpenProject(hier, _) = 
-            legacyProjectQueue.Enqueue(hier)
+            match hier with
+            | :? IProvideProjectSite as siteProvider ->
+                this.SetupLegacyProjectFile(siteProvider, workspace, "LegacyProjectWorkspaceMap.Initialize")
+            | _ -> ()
             VSConstants.S_OK
 
-        member this.OnAfterOpenSolution(_, _) = 
+        member __.OnAfterOpenSolution(_, _) = VSConstants.S_OK
+
+        member __.OnBeforeCloseProject(hier, _) = 
+            match hier with
+            | :? IProvideProjectSite as siteProvider ->
+                let site = siteProvider.GetProjectSite()
+                let projectFileName = site.ProjectFileName
+                let projectDisplayName = projectDisplayNameOf projectFileName
+                let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
+                legacyProjectLookup.TryRemove(projectId) |> ignore
+            | _ -> ()
             VSConstants.S_OK
 
-        member __.OnBeforeCloseProject(_, _) = VSConstants.S_OK
-
-        member __.OnBeforeCloseSolution(_) = 
-            let mutable hier = Unchecked.defaultof<IVsHierarchy>
-            while legacyProjectQueue.TryDequeue(&hier) do () // clear
-            VSConstants.S_OK
+        member __.OnBeforeCloseSolution(_) = VSConstants.S_OK
 
         member __.OnBeforeUnloadProject(_, _) = VSConstants.S_OK
 

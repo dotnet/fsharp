@@ -170,7 +170,7 @@ type internal FSharpPackage() as this =
             GetToolWindowAsITestVFSI().GetMostRecentLines(n)
 
 [<Guid(FSharpConstants.languageServiceGuidString)>]
-type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSolution) as this =
+type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSolution) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
     let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
@@ -192,7 +192,7 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
         let projectDisplayName = projectDisplayNameOf projectFileName
         Some (workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName))
 
-    let legacyProjectWorkspaceMap = LegacyProjectWorkspaceMap(this.Workspace, solution, projectInfoManager, package.ComponentModel.GetService<IWorkspaceProjectContextFactory>(), this.SystemServiceProvider)
+    let mutable legacyProjectWorkspaceMap = Unchecked.defaultof<LegacyProjectWorkspaceMap>
 
     override this.Initialize() = 
         base.Initialize()
@@ -202,6 +202,7 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
 
         this.Workspace.DocumentClosed.Add <| fun args -> tryRemoveSingleFileProject args.Document.Project.Id
 
+        legacyProjectWorkspaceMap <- LegacyProjectWorkspaceMap(this.Workspace, solution, projectInfoManager, package.ComponentModel.GetService<IWorkspaceProjectContextFactory>(), this.SystemServiceProvider)
         legacyProjectWorkspaceMap.Initialize()
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
