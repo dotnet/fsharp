@@ -1576,15 +1576,15 @@ namespace Microsoft.FSharp.Core
                   when 'T : nativeint  = (# "ceq" x y : bool #)
                   when 'T : unativeint  = (# "ceq" x y : bool #)
                   when 'T : float = 
-                    if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then
+                    if (# "ceq" x y : bool #) then
                         true
                     else
-                        (# "ceq" x y : bool #)
+                        not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #)
                   when 'T : float32 =
-                    if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then
+                    if (# "ceq" x y : bool #) then
                         true
                     else
-                        (# "ceq" x y : bool #)
+                        not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #)
                   when 'T : char    = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
                   when 'T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
