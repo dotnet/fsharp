@@ -3691,9 +3691,10 @@ let InfosForTyconConstructors (ncenv:NameResolver) m ad (tcref:TyconRef) =
             | Item.CtorGroup(nm,ctorInfos) -> 
                 let ctors = 
                     ctorInfos 
-                    |> List.filter (IsMethInfoAccessible amap m ad)
-                    |> List.filter (MethInfoIsUnseen g m ty >> not)
-                match ctors with 
+                    |> List.filter (fun minfo ->
+                        IsMethInfoAccessible amap m ad minfo &&
+                        not (MethInfoIsUnseen g m ty minfo))
+                match ctors with
                 | [] -> []
                 | _ -> [Item.MakeCtorGroup(nm,ctors)]
             | item -> 
@@ -3761,9 +3762,9 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
     match plid with 
     | [] -> 
          let tycons = 
-             mty.TypeDefinitions
-             |> List.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
-             |> List.filter (fun tycon -> not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tycon)))
+             mty.TypeDefinitions |> List.filter (fun tcref ->
+                 not (tcref.LogicalName.Contains(",")) &&
+                 not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tcref)))
          
          let accessibleSubModules =
              let moduleOrNamespaces =
@@ -3779,16 +3780,16 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
                  let demangledName = x.DemangledModuleOrNamespaceName
                  notFakeContainerModule ilTyconNames demangledName && IsInterestingModuleName demangledName)
              |> List.map modref.NestedTyconRef
-             |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
-             |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
+             |> List.filter (fun tyref ->
+                 not (IsTyconUnseen ad g ncenv.amap m tyref) &&
+                 EntityRefContainsSomethingAccessible ncenv m ad tyref)
              |> List.map ItemForModuleOrNamespaceRef
 
          // Collect up the accessible values in the module, excluding the members
          (mty.AllValsAndMembers
           |> Seq.toList
           |> List.choose (TryMkValRefInModRef modref) // if the assembly load set is incomplete and we get a None value here, then ignore the value
-          |> List.filter (fun v -> not v.IsMember)
-          |> List.filter (IsValUnseen ad g m >> not) 
+          |> List.filter (fun vref -> not vref.IsMember && not (IsValUnseen ad g m vref))
           |> List.map Item.Value)
 
          // Collect up the accessible discriminated union cases in the module 
@@ -3910,18 +3911,19 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
            let ilTyconNames = getFakeContainerModulesFromTyconRefs (nenv.TyconsByAccessNames(fullyQualified).Values)
 
            moduleOrNamespaceRefs
-           |> List.filter (fun x -> 
-                let demangledName = x.DemangledModuleOrNamespaceName
-                IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName)
-           |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
-           |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
+           |> List.filter (fun modref ->
+               let demangledName = modref.DemangledModuleOrNamespaceName
+               IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName &&
+               EntityRefContainsSomethingAccessible ncenv m ad modref &&
+               not (IsTyconUnseen ad g ncenv.amap m modref))
            |> List.map ItemForModuleOrNamespaceRef
 
        let tycons = 
            nenv.TyconsByDemangledNameAndArity(fullyQualified).Values
-           |> List.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
-           |> List.filter (fun tcref -> not tcref.IsExceptionDecl) 
-           |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
+           |> List.filter (fun tcref ->
+               not (tcref.LogicalName.Contains(",")) &&
+               not tcref.IsExceptionDecl &&
+               not (IsTyconUnseen ad g ncenv.amap m tcref))
            |> List.map (ItemOfTyconRef ncenv m)
 
        // Get all the constructors accessible from here
@@ -3979,9 +3981,10 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
        // get record type constructors
        let tycons = 
            mty.TypeDefinitions
-           |> List.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
-           |> List.filter (fun tycon -> tycon.IsRecordTycon)
-           |> List.filter (fun tycon -> not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tycon)))
+           |> List.filter (fun tcref ->
+               not (tcref.LogicalName.Contains(",")) &&
+               tcref.IsRecordTycon &&
+               not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tcref)))
 
 
        let accessibleSubModules =
@@ -3994,12 +3997,13 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
            let ilTyconNames = getFakeContainerModulesFromTycons mty.TypesByAccessNames.Values 
     
            moduleOrNamespaces
-           |> List.filter (fun x -> 
+           |> List.filter (fun x ->
                  let demangledName = x.DemangledModuleOrNamespaceName
                  notFakeContainerModule ilTyconNames demangledName && IsInterestingModuleName demangledName)
            |> List.map modref.NestedTyconRef
-           |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
-           |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
+           |> List.filter (fun tcref ->
+               not (IsTyconUnseen ad g ncenv.amap m tcref) &&
+               EntityRefContainsSomethingAccessible ncenv m ad tcref)
            |> List.map ItemForModuleOrNamespaceRef
        
        accessibleSubModules
@@ -4066,18 +4070,19 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
            let ilTyconNames = getFakeContainerModulesFromTyconRefs (nenv.TyconsByAccessNames(fullyQualified).Values)
 
            moduleOrNamespaceRefs
-           |> List.filter (fun x -> 
-                let demangledName = x.DemangledModuleOrNamespaceName
-                IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName)
-           |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
-           |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
+           |> List.filter (fun modref ->
+               let demangledName = modref.DemangledModuleOrNamespaceName
+               IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName &&
+               EntityRefContainsSomethingAccessible ncenv m ad modref &&
+               not (IsTyconUnseen ad g ncenv.amap m modref))
            |> List.map ItemForModuleOrNamespaceRef
 
        let recdTyCons = 
            nenv.TyconsByDemangledNameAndArity(fullyQualified).Values
-           |> List.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
-           |> List.filter (fun tcref -> tcref.IsRecordTycon) 
-           |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
+           |> List.filter (fun tcref ->
+               not (tcref.LogicalName.Contains(",")) &&
+               tcref.IsRecordTycon &&
+               not (IsTyconUnseen ad g ncenv.amap m tcref))
            |> List.map (ItemOfTyconRef ncenv m)
 
        let recdFields = 
@@ -4343,8 +4348,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                       mty.AllValsAndMembers
                       |> Seq.toList
                       |> List.choose (TryMkValRefInModRef modref) // if the assembly load set is incomplete and we get a None value here, then ignore the value
-                      |> List.filter (fun v -> not v.IsMember)
-                      |> List.filter (IsValUnseen ad g m >> not) 
+                      |> List.filter (fun vref -> not vref.IsMember && not (IsValUnseen ad g m vref))
                       |> List.map Item.Value
              | Item.UnionCase _ ->   
              // Collect up the accessible discriminated union cases in the module 
@@ -4384,14 +4388,16 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                                let demangledName = x.DemangledModuleOrNamespaceName
                                notFakeContainerModule ilTyconNames demangledName && IsInterestingModuleName demangledName)
                          |> List.map modref.NestedTyconRef
-                         |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
-                         |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
+                         |> List.filter (fun tcref ->
+                             not (IsTyconUnseen ad g ncenv.amap m tcref) &&
+                             EntityRefContainsSomethingAccessible ncenv m ad tcref)
                          |> List.map ItemForModuleOrNamespaceRef
 
                  let tycons = 
                      mty.TypeDefinitions
-                     |> List.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
-                     |> List.filter (fun tycon -> not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tycon)))
+                     |> List.filter (fun tcref ->
+                         not (tcref.LogicalName.Contains(",")) &&
+                         not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tcref)))
 
                  // Get all the types and .NET constructor groups accessible from here
                  let nestedTycons = tycons |> List.map modref.NestedTyconRef
