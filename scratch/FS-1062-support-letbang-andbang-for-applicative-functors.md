@@ -1,4 +1,4 @@
-# F# RFC FS-1062 - Support let! .. and... for applicative functors
+ F# RFC FS-1062 - Support let! .. and... for applicative functors
 
 The design suggestion [Support let! .. and... for applicative functors](https://github.com/fsharp/fslang-suggestions/issues/579) has been marked "approved in principle".
 This RFC covers the detailed proposal for this suggestion.
@@ -16,7 +16,7 @@ Extend computation expressions to support applicative functors via a new `let! .
 # Motivation
 [motivation]: #motivation
 
-Applicatives functors (or just "applicatives", for short) have been growing in popularity as a way to build applications and model certain domains over the last decade or so, since McBride and Paterson published [Applicative Programming with Effects](http://www.staff.city.ac.uk/~ross/papers/Applicative.html). Applicatives are now reaching a level of popularity within the community that supporting them with a convenient and readable syntax, as we do for monads, is beginning to make sense.
+Applicative functors (or just "applicatives", for short) have been growing in popularity as a way to build applications and model certain domains over the last decade or so, since McBride and Paterson published [Applicative Programming with Effects](http://www.staff.city.ac.uk/~ross/papers/Applicative.html). Applicatives are now reaching a level of popularity within the community that supporting them with a convenient and readable syntax, as we do for monads, is beginning to make sense.
 
 ## Why Applicatives?
 
@@ -40,7 +40,7 @@ The examples below all make use of types which are applicatives, but explicitly 
 
 [Capriotti & Kaposi's paper](https://paolocapriotti.com/assets/applicative.pdf) introduce an example of creating an command line argument parser, where a single applicative can both statically generate help text for the parser, and dynamically parse options given to an application.
 
-More advanced usages include self-adjusting compuations, such as [Jane Street's Incremental](https://blog.janestreet.com/introducing-incremental/), but with even greater opportunity for efficiencies via the careful balance of power and guarantees that applicatives give (such as the ability to optimise the computation, and avoid recreating the rest of the computation everytime a `Bind` is reached).
+More advanced usages include self-adjusting computations, such as [Jane Street's Incremental](https://blog.janestreet.com/introducing-incremental/), but with even greater opportunity for efficiencies via the careful balance of power and guarantees that applicatives give (such as the ability to optimise the computation, and avoid recreating the rest of the computation every time a `Bind` is reached).
 
 # Detailed design
 [design]: #detailed-design
@@ -60,7 +60,7 @@ ce {
 
 ⇒
 
-```
+```fsharp
 ce.Apply(
     ce.Apply(
         ce.Apply(
@@ -77,19 +77,15 @@ ce.Apply(
     baz)
 ```
 
-To be accepted as an applicative computation expression (CE), the CE must be of the form `let! ... and! ... return ...` (with one or more `and!`s). This means, for example, no `let!`s after an `and!` in the same CE, no normal `let`s inbetween the `let!` and `and!`s, and no usages of `yield` in place of `return`.
+To be accepted as an applicative computation expression (CE), the CE must be of the form `let! ... and! ... return ...` (with one or more `and!`s). This means, for example, no `let!`s after an `and!` in the same CE, no normal `let`s in between the `let!` and `and!`s, and no usages of `yield` in place of `return`.
 
 This may sound very constrained, but it is for good reason. The structure imposed by this rule forces the CE to be in a canonical form ([McBride & Paterson](http://www.staff.city.ac.uk/~ross/papers/Applicative.html)):
 
-> Any expression built from the Applicative combinators can be transformed
-to a canonical form in which a single pure function is ‘applied’ to the effectful parts
-in depth-first order:  
+> Any expression built from the Applicative combinators can be transformed to a canonical form in which a single pure function is ‘applied’ to the effectful parts in depth-first order:  
 `pure f <*> arg1 <*> ... <*> argN`  
-This canonical form captures the essence of Applicative programming: computations
-have a fixed structure, given by the pure function, and a sequence of subcomputations,
-given by the effectful arguments.
+This canonical form captures the essence of Applicative programming: computations have a fixed structure, given by the pure function, and a sequence of subcomputations, given by the effectful arguments.
 
-In our case, the expression to the right of `return` (i.e. `pure`) becomes the body of a lambda, whose parameters are introduced by the `let! ... and! ...` preceeding it. This leads to a very straightforward desugaring of the syntax, which therefore ensures both using and understanding the feature is only as complex as is inherently required by the abstraction.
+In our case, the expression to the right of `return` (i.e. `pure`) becomes the body of a lambda, whose parameters are introduced by the `let! ... and! ...` preceding it. This leads to a very straightforward desugaring of the syntax, which therefore ensures both using and understanding the feature is only as complex as is inherently required by the abstraction.
 
 Despite requiring the canonical form, there are still many ways to build more complex and useful expressions from this syntax. The rest of this section aims to give a tour around these various features.
 
@@ -144,7 +140,7 @@ ce {
             return x + y + z
         }
     if quux > 6
-    then 
+    then
         return quux
     else
         return 5
@@ -167,7 +163,7 @@ ce.Bind(
                         )
                     )),
                 foo),
-            bar), 
+            bar),
         baz),
     (fun quux ->
         if quux > 6
@@ -197,7 +193,7 @@ ce {
 
 Unfortunately, the naive desugaring of this can make it very easy to build a resulting chain of method calls which unintentionally ends up being very large:
 
-```
+```fsharp
 ce.Combine(
     ce.Combine(
         ce.Apply(
@@ -226,7 +222,7 @@ ce.Combine(
                             )
                         )),
                     foo),
-                bar), 
+                bar),
             baz)
     ),
     ce.Apply(
@@ -248,9 +244,9 @@ ce.Combine(
 
 *N.B.* How the size of the desugared expression grows with the product of the number of bindings introduced by the `let! ... and! ...` syntax and the number calls to `Combine` implied by the alternative cases.
 
-An attempt at a very smart desugaring which tries to cut down the resulting expression might, on the face of it, seem like a reasonable option, however, beyond the cost of analysing which values which are introduced by `let! ... and! ...` actually go on to be used, we must also consider the right-hand sides of the `let! ... and! ...` bindings and the pattern matching: Do we evaluated these once up front? Or recompute them in each alternative case at the leaf of the tree of calls to `Combine`? What if the expressions on the right-hand sides have side-effects, or the left-hand side utilises active patterns with side-effects? At that point we either make complex, uninutive rules, or force the CE writer to be explicit. Continuing in the spirit of CEs generally being straightforward desugarings, we choose the latter make make the writer clearly state their desire.
+An attempt at a very smart desugaring which tries to cut down the resulting expression might, on the face of it, seem like a reasonable option, however, beyond the cost of analysing which values which are introduced by `let! ... and! ...` actually go on to be used, we must also consider the right-hand sides of the `let! ... and! ...` bindings and the pattern matching: Do we evaluated these once up front? Or recompute them in each alternative case at the leaf of the tree of calls to `Combine`? What if the expressions on the right-hand sides have side-effects, or the left-hand side utilises active patterns with side-effects? At that point we either make complex, unintuitive rules, or force the CE writer to be explicit. Continuing in the spirit of CEs generally being straightforward desugarings, we choose the latter make make the writer clearly state their desire.
 
-In order to keep things simple, then, we keep the canonical form introduced earlier, which forces precisely one `return` after a `let! ... and! ...`. However, we can still express alternative applicatives when using the `let! ... and! ...` syntax, we just need to use the same trick as with additional `let!`s and leave the scope of the canonical applicative syntax and therefore leave the additional contraints it places upon us:
+In order to keep things simple, then, we keep the canonical form introduced earlier, which forces precisely one `return` after a `let! ... and! ...`. However, we can still express alternative applicatives when using the `let! ... and! ...` syntax, we just need to use the same trick as with additional `let!`s and leave the scope of the canonical applicative syntax and therefore leave the additional constraints it places upon us:
 
 ```fsharp
 ce {
@@ -278,7 +274,7 @@ ce {
 
 ⇒
 
-```
+```fsharp
 ce.Combine(
     ce.Combine(
         ce.Apply(
@@ -319,7 +315,7 @@ ce.Combine(
 )
 ```
 
-*N.B.* How this syntax forces the writer to be explicit about how many times `Apply` should be called, and with which arguments, for each call to `Combine`. Notice also how the right-hand sides are still repeated for each alternative case in order to keep the occurance of potential side-effects from evaluating them predictable, and also occur before the pattern matching _each time_ a new alternative case is explored.
+*N.B.* How this syntax forces the writer to be explicit about how many times `Apply` should be called, and with which arguments, for each call to `Combine`. Notice also how the right-hand sides are still repeated for each alternative case in order to keep the occurrence of potential side-effects from evaluating them predictable, and also occur before the pattern matching _each time_ a new alternative case is explored.
 
 If this syntax feels a bit heavy, remember that the `yield` keyword is not required, and the new syntax can be mixed with other styles (e.g. a custom `<|>` alternation operator) to strike an appropriate balance as each situation requires.
 
@@ -392,12 +388,12 @@ ce.Apply(
 
 This is because the operation is really equivalent to a `Map`, something which can be implemented in terms of `Return` and either `Bind` or `Apply`. We mentioned that these functions were in some sense more powerful than a plain functor's `Map`, and we are seeing an example of that here.
 
-In order to avoid breaking backwards compatability, the default resolution is to desugar via `Bind`, _failing if it is not defined on the builder_ (even though, conceptually, it chould be implemented via `Apply`). This is consistent with in previous F# versions. [Later work on supporting `Map`](https://github.com/fsharp/fslang-design/blob/master/RFCs/FS-1048-ce-builder-map.md) can then make the choice about how to resolve this in a way which works with that in mind too.
+In order to avoid breaking backwards compatibility, the default resolution is to desugar via `Bind`, _failing if it is not defined on the builder_ (even though, conceptually, it should be implemented via `Apply`). This is consistent with in previous F# versions. [Later work on supporting `Map`](https://github.com/fsharp/fslang-design/blob/master/RFCs/FS-1048-ce-builder-map.md) can then make the choice about how to resolve this in a way which works with that in mind too.
 
 # Drawbacks
 [drawbacks]: #drawbacks
 
-The new applicative compuation expressions are quite constrainted, and as has been discussed, that is precisely what allows them to be so useful. However, these constraints are potentially somewhat unintuitive to the beginner. Computation expressions already involve one of the steeper learning curves of the F# language features, so the added complexity from this feature needs to be carefully weighed against the potential guarantees, expressiveness and performance gains that they can offer.
+The new applicative computation expressions are quite constrained, and as has been discussed, that is precisely what allows them to be so useful. However, these constraints are potentially somewhat unintuitive to the beginner. Computation expressions already involve one of the steeper learning curves of the F# language features, so the added complexity from this feature needs to be carefully weighed against the potential guarantees, expressiveness and performance gains that they can offer.
 
 # Alternative Designs
 [alternative-designs]: #alternative-designs
@@ -432,8 +428,8 @@ Since the syntax is desugared into a method call on the builder object, after co
 
 Is `anduse!` an acceptable keyword for when `and!` must also imply a call to `Using`?
 
-There are various ways of desugaring `let! ... return ...` via one of `Map`, `Apply` or `Bind`. [The above](#singlelet) assumes that we are aiming for backward compatability and hence doesn't consider desugaring to `Apply` at all. Is this the best choice? Alternatives include:
+There are various ways of desugaring `let! ... return ...` via one of `Map`, `Apply` or `Bind`. [The above](#singlelet) assumes that we are aiming for backward compatibility and hence doesn't consider desugaring to `Apply` at all. Is this the best choice? Alternatives include:
 
 * Using `Apply` in preference to `Bind` for `let! ... return` whenever `Apply` is defined (on the basis that that any reasonable `Apply` implementation will be functionally equivalent, but more efficient than the corresponding `Bind`)
-* Subsuming [the RFC for desugaring this to `Map`](https://github.com/fsharp/fslang-design/blob/master/RFCs/FS-1048-ce-builder-map.md) and defining a heirarchy between `Map`, `Apply` and `Bind` and some attributes for those methods to allow the creators of builders to opt-in to "optimisations" that pick the least powerful (and hence hopefully most efficient) desugaring.
+* Subsuming [the RFC for desugaring this to `Map`](https://github.com/fsharp/fslang-design/blob/master/RFCs/FS-1048-ce-builder-map.md) and defining a hierarchy between `Map`, `Apply` and `Bind` and some attributes for those methods to allow the creators of builders to opt-in to "optimisations" that pick the least powerful (and hence hopefully most efficient) desugaring.
 * Using `Apply` in place of `Bind` only in those instances where `Bind` is not defined (no existing code should break, but this goes somewhat to the contrary of the previous proposal, which we may want to consider in the future)
