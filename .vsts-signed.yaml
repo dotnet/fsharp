@@ -34,7 +34,7 @@ steps:
   inputs:
     scriptName: 'setup\publish-assets.ps1'
     arguments: '-binariesPath $(MSBuildConfiguration) -branchName $(Build.SourceBranch) -apiKey $(FSharp.MyGetApiKey)'
-  condition: and(succeeded(), contains(variables['PB_PublishType'], 'myget'), in(variables['Build.SourceBranchName'], 'master', 'dev15.7', 'dev15.8'))
+  condition: and(succeeded(), contains(variables['PB_PublishType'], 'myget'))
 
 # Publish packages to Azure Blob Storage
 - task: MSBuild@1

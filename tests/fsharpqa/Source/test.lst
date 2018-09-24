@@ -69,7 +69,6 @@ CompilerOptions01,NoMT				CompilerOptions\fsi\times
 CompilerOptions02,NoMT				CompilerOptions\fsi\exename
 CompilerOptions01,NoMT,Determinism				CompilerOptions\fsc\determinism
 
-
 Conformance01			Conformance\BasicGrammarElements\Constants
 Conformance01			Conformance\BasicGrammarElements\OperatorNames
 Conformance01			Conformance\BasicGrammarElements\PrecedenceAndOperators
@@ -90,6 +89,7 @@ Conformance01			Conformance\DeclarationElements\AccessibilityAnnotations\OnOverr
 Conformance01			Conformance\DeclarationElements\AccessibilityAnnotations\OnTypeMembers
 Conformance01			Conformance\DeclarationElements\AccessibilityAnnotations\PermittedLocations
 Conformance01			Conformance\DeclarationElements\CustomAttributes\ArgumentsOfAllTypes
+Conformance01			Conformance\DeclarationElements\CustomAttributes\AttributeInheritance
 
 Conformance02			Conformance\DeclarationElements\CustomAttributes\AttributeUsage
 Conformance02			Conformance\DeclarationElements\CustomAttributes\Basic
@@ -227,6 +227,7 @@ Conformance08			Conformance\Signatures\SignatureConformance
 Conformance08			Conformance\Signatures\SignatureTypes
 Conformance08			Conformance\SpecialAttributesAndTypes\Imported\System.ThreadStatic
 Conformance08			Conformance\SpecialAttributesAndTypes\Imported\CallerInfo
+Conformance08			Conformance\StructFieldEqualityComparison
 Conformance08			Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes
 Conformance08			Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes
 Conformance08			Conformance\TypesAndTypeConstraints\TypeConstraints

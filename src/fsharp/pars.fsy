@@ -3087,7 +3087,7 @@ declExpr:
       { let mMatch = (rhs parseState 1)
         let mWith,(clauses,mLast) = $3 
         let spBind = SequencePointAtBinding(unionRanges mMatch mWith) 
-        SynExpr.Match(spBind, $2,clauses,false,unionRanges mMatch mLast) }
+        SynExpr.Match(spBind, $2,clauses,unionRanges mMatch mLast) }
 
   | MATCH typedSeqExpr     recover               %prec expr_match 
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileMatch())
@@ -3098,7 +3098,7 @@ declExpr:
       { let mMatch = (rhs parseState 1)
         let mWith,(clauses,mLast) = $3 
         let spBind = SequencePointAtBinding(unionRanges mMatch mWith) 
-        SynExpr.MatchBang(spBind, $2,clauses,false,unionRanges mMatch mLast) }
+        SynExpr.MatchBang(spBind, $2,clauses,unionRanges mMatch mLast) }
 
   | MATCH_BANG typedSeqExpr     recover               %prec expr_match 
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileMatch())

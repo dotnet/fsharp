@@ -39,7 +39,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <Prefer32Bit Condition="'$(Prefer32Bit)' == '' ">false</Prefer32Bit>
     <TreatWarningsAsErrors Condition="'$(TreatWarningsAsErrors)' == '' ">false</TreatWarningsAsErrors>
     <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
-    <WarningsAsErrors Condition="'$(WarningsAsErrors)' == '' " />
+    <WarningsAsErrors>3239;$(WarningsAsErrors)</WarningsAsErrors>
     <UseStandardResourceNames Condition=" '$(UseStandardResourceNames)' == '' ">true</UseStandardResourceNames>
   </PropertyGroup>
 

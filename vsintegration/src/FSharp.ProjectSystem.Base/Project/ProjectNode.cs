@@ -3250,12 +3250,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.SetHostObject("CoreCompile", "Fsc", this);
 
                 // Do the actual Build
-                var loggerList = new System.Collections.Generic.List<Microsoft.Build.Framework.ILogger>(this.buildEngine.Loggers);
-                if (buildLogger != null)
-                    loggerList.Add(buildLogger);
-                if (myDebugLogger != null)
-                    loggerList.Add(myDebugLogger);
-
+                var loggerList = new System.Collections.Generic.List<Microsoft.Build.Framework.ILogger>();
+                if (buildLogger != null) loggerList.Add(buildLogger);
+                if (myDebugLogger != null) loggerList.Add(myDebugLogger);
                 loggers = loggerList.ToArray();
 
                 var ba = new BuildAccessorAccess(buildKind, accessor);
