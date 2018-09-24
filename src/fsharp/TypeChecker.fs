@@ -8073,7 +8073,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                     let newPendingApplies =
                         (fun consumeExpr -> 
                             printfn "Creating synthetic Apply call for pattern %+A" pat // TODO Delete
-                            mkSynCall "Apply" bindRange [consumeExpr; rhsExpr]) >> pendingApplies
+                            mkSynCall "Apply" bindRange [consumeExpr; rhsExpr]) >> pendingApplies // TODO Swap order of args to Apply?
 
                     constructAppliesForBindings newPendingApplies remainingBindings
 
