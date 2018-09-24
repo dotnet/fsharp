@@ -475,7 +475,7 @@ and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
     member __.IsByRef = 
         isResolved() &&
-        tyconRefEq cenv.g cenv.g.byref_tcr entity
+        isByrefTyconRef cenv.g entity
 
     member __.IsOpaque = 
         isResolved() &&

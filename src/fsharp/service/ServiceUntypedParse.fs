@@ -265,7 +265,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                   | SynExpr.Lambda (_,_,_,e,_) -> 
                       yield! walkExpr true e 
 
-                  | SynExpr.Match (spBind,e,cl,_,_) ->
+                  | SynExpr.Match (spBind,e,cl,_) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false e 
                       for (Clause(_,whenExpr,e,_,_)) in cl do 
@@ -319,7 +319,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                           yield! walkExpr true eAndBang
                       yield! walkExpr true e2
 
-                  | SynExpr.MatchBang (spBind,e,cl,_,_) ->
+                  | SynExpr.MatchBang (spBind,e,cl,_) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false e 
                       for (Clause(_,whenExpr,e,_,_)) in cl do 
@@ -839,7 +839,7 @@ module UntypedParseImpl =
             | SynExpr.Lambda(_, _, _, e, _) -> walkExprWithKind parentKind e
             | SynExpr.MatchLambda(_, _, synMatchClauseList, _, _) -> 
                 List.tryPick walkClause synMatchClauseList
-            | SynExpr.Match(_, e, synMatchClauseList, _, _) -> 
+            | SynExpr.Match(_, e, synMatchClauseList, _) -> 
                 walkExprWithKind parentKind e |> Option.orElse (List.tryPick walkClause synMatchClauseList)
             | SynExpr.Do(e, _) -> walkExprWithKind parentKind e
             | SynExpr.Assert(e, _) -> walkExprWithKind parentKind e
@@ -871,7 +871,8 @@ module UntypedParseImpl =
             | SynExpr.JoinIn(e1, _, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.YieldOrReturn(_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.YieldOrReturnFrom(_, e, _) -> walkExprWithKind parentKind e
-            | (SynExpr.Match(_, e, synMatchClauseList, _, _) | SynExpr.MatchBang(_, e, synMatchClauseList, _, _)) -> 
+            | SynExpr.Match(_, e, synMatchClauseList, _)
+            | SynExpr.MatchBang(_, e, synMatchClauseList, _) -> 
                 walkExprWithKind parentKind e |> Option.orElse (List.tryPick walkClause synMatchClauseList)
             | SynExpr.LetOrUseAndBang(_, _, _, _, e1, _, es, e2) ->
                 [

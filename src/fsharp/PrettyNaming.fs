@@ -544,21 +544,31 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
         
     /// Return a string array delimited by the given separator.
     /// Note that a quoted string is not going to be mangled into pieces. 
+    let inline private isNotQuotedQuotation (text: string) n = n > 0 && text.[n-1] <> '\\'
     let private splitAroundQuotation (text:string) (separator:char) =
         let length = text.Length
-        let isNotQuotedQuotation n = n > 0 && text.[n-1] <> '\\'
-        let rec split (i, cur, group, insideQuotation) =        
-            if i>=length then List.rev (cur::group) else
+        let result = ResizeArray()
+        let mutable insideQuotation = false
+        let mutable start = 0
+        for i = 0 to length - 1 do
             match text.[i], insideQuotation with
             // split when seeing a separator
-            | c, false when c = separator -> split (i+1, "", cur::group, false)
+            | c, false when c = separator -> 
+                result.Add(text.Substring(start, i - start))
+                insideQuotation <- false
+                start <- i + 1
+            | _, _ when i = length - 1 ->
+                result.Add(text.Substring(start, i - start + 1))
             // keep reading if a separator is inside quotation
-            | c, true when c = separator -> split (i+1, cur+(Char.ToString c), group, true)
-            // open or close quotation 
-            | '\"', _ when isNotQuotedQuotation i -> split (i+1, cur+"\"", group, not insideQuotation) 
+            | c, true when c = separator ->
+                insideQuotation <- true
+            // open or close quotation
+            | '\"', _ when isNotQuotedQuotation text i ->
+                insideQuotation <- not insideQuotation
             // keep reading
-            | c, _ -> split (i+1, cur+(Char.ToString c), group, insideQuotation)
-        split (0, "", [], false) |> Array.ofList
+            | _ -> ()
+
+        result.ToArray()
 
     /// Return a string array delimited by the given separator up to the maximum number.
     /// Note that a quoted string is not going to be mangled into pieces.
@@ -684,3 +694,5 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
                 | Some v when v = actualArgValue -> None
                 | _ -> Some (defaultArgName, actualArgValue))
         mangleProvidedTypeName (nm, nonDefaultArgs)
+
+    let outArgCompilerGeneratedName = "outArg"

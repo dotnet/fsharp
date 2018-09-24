@@ -162,6 +162,26 @@
         <target state="translated">Los datos de proyecto se almacenan en caché para que funcionen las características del IDE. Los valores más altos utilizan más memoria porque se almacenan en caché más proyectos. El ajuste de este valor no debería afectar a soluciones de tamaño pequeño o medio.</target>
         <note />
       </trans-unit>
+      <trans-unit id="Enter_key_always">
+        <source>Always add new line on enter</source>
+        <target state="new">Always add new line on enter</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_never">
+        <source>Never add new line on enter</source>
+        <target state="new">Never add new line on enter</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_only">
+        <source>Only add new line on enter after end of fully typed word</source>
+        <target state="new">Only add new line on enter after end of fully typed word</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_Key_Rule">
+        <source>Enter key behavior</source>
+        <target state="new">Enter key behavior</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

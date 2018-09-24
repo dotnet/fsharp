@@ -18,7 +18,8 @@ type internal FSharpCompletionService
         serviceProvider: SVsServiceProvider,
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager,
-        assemblyContentProvider: AssemblyContentProvider
+        assemblyContentProvider: AssemblyContentProvider,
+        settings: EditorOptions
     ) =
     inherit CompletionServiceWithProviders(workspace)
 
@@ -30,15 +31,19 @@ type internal FSharpCompletionService
                   Completion.Create("""\s*#r\s+(@?"*(?<literal>"[^"]*"?))""", [".dll"; ".exe"], useIncludeDirectives = true)
                   Completion.Create("""\s*#I\s+(@?"*(?<literal>"[^"]*"?))""", ["\x00"], useIncludeDirectives = false) ]))
 
-    let completionRules = 
+    override this.Language = FSharpConstants.FSharpLanguageName
+    override this.GetBuiltInProviders() = builtInProviders
+    override this.GetRules() =
+        let enterKeyRule =
+            match settings.IntelliSense.EnterKeySetting with
+            | NeverNewline -> EnterKeyRule.Never
+            | NewlineOnCompleteWord -> EnterKeyRule.AfterFullyTypedWord
+            | AlwaysNewline -> EnterKeyRule.Always
+
         CompletionRules.Default
             .WithDismissIfEmpty(true)
             .WithDismissIfLastCharacterDeleted(true)
-            .WithDefaultEnterKeyRule(EnterKeyRule.Never)
-
-    override this.Language = FSharpConstants.FSharpLanguageName
-    override this.GetBuiltInProviders() = builtInProviders
-    override this.GetRules() = completionRules
+            .WithDefaultEnterKeyRule(enterKeyRule)
 
 [<Shared>]
 [<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpConstants.FSharpLanguageName)>]
@@ -48,10 +53,11 @@ type internal FSharpCompletionServiceFactory
         serviceProvider: SVsServiceProvider,
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager,
-        assemblyContentProvider: AssemblyContentProvider
+        assemblyContentProvider: AssemblyContentProvider,
+        settings: EditorOptions
     ) =
     interface ILanguageServiceFactory with
         member this.CreateLanguageService(hostLanguageServices: HostLanguageServices) : ILanguageService =
-            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider, checkerProvider, projectInfoManager, assemblyContentProvider)
+            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider, checkerProvider, projectInfoManager, assemblyContentProvider, settings)
 
 

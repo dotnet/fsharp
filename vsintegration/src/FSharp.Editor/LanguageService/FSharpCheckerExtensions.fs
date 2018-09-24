@@ -19,7 +19,7 @@ type FSharpChecker with
     member checker.ParseDocument(document: Document, parsingOptions: FSharpParsingOptions, sourceText: SourceText, userOpName: string) =
         checker.ParseDocument(document, parsingOptions, sourceText=sourceText.ToString(), userOpName=userOpName)
 
-    member checker.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, allowStaleResults: bool, userOpName: string) =
+    member checker.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, languageServicePerformanceOptions: LanguageServicePerformanceOptions, userOpName: string) =
         async {
             let parseAndCheckFile =
                 async {
@@ -34,7 +34,7 @@ type FSharpChecker with
 
             let tryGetFreshResultsWithTimeout() =
                 async {
-                    let! worker = Async.StartChild(parseAndCheckFile, millisecondsTimeout=Settings.LanguageServicePerformance.TimeUntilStaleCompletion)
+                    let! worker = Async.StartChild(parseAndCheckFile, millisecondsTimeout=languageServicePerformanceOptions.TimeUntilStaleCompletion)
                     try
                         return! worker
                     with :? TimeoutException ->
@@ -49,7 +49,7 @@ type FSharpChecker with
                     | None -> None
                 | None -> None
 
-            if allowStaleResults then
+            if languageServicePerformanceOptions.AllowStaleCompletionResults then
                 let! freshResults = tryGetFreshResultsWithTimeout()
                     
                 let! results =
@@ -69,7 +69,8 @@ type FSharpChecker with
                 return bindParsedInput results
         }
 
-    member checker.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, allowStaleResults: bool, userOpName: string, ?sourceText: SourceText) =
+
+    member checker.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, userOpName: string, ?allowStaleResults: bool, ?sourceText: SourceText) =
         async {
             let! cancellationToken = Async.CancellationToken
             let! sourceText =
@@ -77,7 +78,11 @@ type FSharpChecker with
                 | Some x -> async.Return x
                 | None -> document.GetTextAsync(cancellationToken)  |> Async.AwaitTask
             let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-            return! checker.ParseAndCheckDocument(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options, allowStaleResults, userOpName=userOpName)
+            let perfOpts =
+                match allowStaleResults with 
+                | Some b -> { document.FSharpOptions.LanguageServicePerformance with AllowStaleCompletionResults = b } 
+                | _ ->  document.FSharpOptions.LanguageServicePerformance
+            return! checker.ParseAndCheckDocument(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options, perfOpts, userOpName=userOpName)
         }
 
 

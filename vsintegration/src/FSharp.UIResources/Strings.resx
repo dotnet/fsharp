@@ -213,4 +213,16 @@
   <data name="Tooltip_project_check_cache_size" xml:space="preserve">
     <value>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</value>
   </data>
+  <data name="Enter_key_always" xml:space="preserve">
+    <value>Always add new line on enter</value>
+  </data>
+  <data name="Enter_key_never" xml:space="preserve">
+    <value>Never add new line on enter</value>
+  </data>
+  <data name="Enter_key_only" xml:space="preserve">
+    <value>Only add new line on enter after end of fully typed word</value>
+  </data>
+  <data name="Enter_Key_Rule" xml:space="preserve">
+    <value>Enter key behavior</value>
+  </data>
 </root>

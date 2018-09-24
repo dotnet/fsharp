@@ -2,7 +2,6 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
-open System.Collections.Generic
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler
@@ -103,6 +102,7 @@ module Structure =
         | For
         | While
         | Match
+        | MatchBang
         | MatchLambda
         | MatchClause
         | Lambda
@@ -151,6 +151,7 @@ module Structure =
             | For                 -> "For"
             | While               -> "While"
             | Match               -> "Match"
+            | MatchBang           -> "MatchBang"
             | MatchLambda         -> "MatchLambda"
             | MatchClause         -> "MatchClause"
             | Lambda              -> "Lambda"
@@ -266,7 +267,8 @@ module Structure =
             | SynExpr.LetOrUse (_,_,bindings, body, _) ->
                 parseBindings bindings
                 parseExpr body
-            | SynExpr.Match (seqPointAtBinding,_expr,clauses,_,r) ->
+            | SynExpr.Match (seqPointAtBinding,_expr,clauses,r)
+            | SynExpr.MatchBang (seqPointAtBinding, _expr, clauses, r) ->
                 match seqPointAtBinding with
                 | SequencePointAtBinding sr ->
                     let collapse = Range.endToEnd sr r
