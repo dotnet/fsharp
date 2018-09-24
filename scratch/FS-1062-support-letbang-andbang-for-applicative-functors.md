@@ -1,4 +1,4 @@
- F# RFC FS-1062 - Support let! .. and... for applicative functors
+# F# RFC FS-1062 - Support let! .. and... for applicative functors
 
 The design suggestion [Support let! .. and... for applicative functors](https://github.com/fsharp/fslang-suggestions/issues/579) has been marked "approved in principle".
 This RFC covers the detailed proposal for this suggestion.
@@ -6,7 +6,6 @@ This RFC covers the detailed proposal for this suggestion.
 * [x] [Approved in principle](https://github.com/fsharp/fslang-suggestions/issues/579#event-1345361104) & [prioritised](https://github.com/fsharp/fslang-suggestions/issues/579#event-1501977428)
 * [x] [Suggestion](https://github.com/fsharp/fslang-suggestions/issues/579)
 * [ ] Implementation: [In progress](https://github.com/Microsoft/visualfsharp/pull/FILL-ME-IN)
-
 
 # Summary
 [summary]: #summary
@@ -16,17 +15,17 @@ Extend computation expressions to support applicative functors via a new `let! .
 # Motivation
 [motivation]: #motivation
 
-Applicative functors (or just "applicatives", for short) have been growing in popularity as a way to build applications and model certain domains over the last decade or so, since McBride and Paterson published [Applicative Programming with Effects](http://www.staff.city.ac.uk/~ross/papers/Applicative.html). Applicatives are now reaching a level of popularity within the community that supporting them with a convenient and readable syntax, as we do for monads, is beginning to make sense.
+Applicative functors (or just "applicatives", for short) have been growing in popularity as a way to build applications and model certain domains over the last decade or so, since McBride and Paterson published [Applicative Programming with Effects](http://www.staff.city.ac.uk/~ross/papers/Applicative.html). Applicatives are now reaching a level of popularity within the community that supporting them with a convenient and readable syntax, as we do for monads, makes sense.
 
 ## Why Applicatives?
 
-_Applicative functors_ sit, in terms of power, somewhere between _functors_ (i.e. types which support `Map`), and _monads_ (i.e. types which support `Bind`).
+[Applicative functors](https://en.wikipedia.org/wiki/Applicative_functor) sit, in terms of power, somewhere between [functors](https://en.wikipedia.org/wiki/Functor#Computer_implementations) (i.e. types which support `Map`), and [monads](https://en.wikipedia.org/wiki/Monad_(functional_programming)) (i.e. types which support `Bind`).
 
 If we consider `Bind : M<'T> * ('T -> M<'U>) -> M<'U>`, we can see that the second element of the input is a function that requires a value to create the resulting "wrapped value".
 
 In contrast, `Apply : M<'T -> 'U> * M<'T> -> M<'U>` only needs a wrapped function, which is something we have whilst building our computation.
 
-So, importantly, applicatives allow us the power to use functions which are "wrapped up" inside a functor, but [preserve our ability to analyse the structure of the computation](https://paolocapriotti.com/assets/applicative.pdf) - and hence introduce optimisations or alternative interpretations - without any values present. This is a critical distinction which can have a huge impact on performance, and indeed on what is possible to construct at all, so has very tangible implications. 
+So, importantly, applicatives allow us the power to use functions which are "wrapped up" inside a functor, but [preserve our ability to analyse the structure of the computation](https://paolocapriotti.com/assets/applicative.pdf) - and hence allow for the introduction of optimisations or alternative interpretations - without any values present. This is a critical distinction which can have a huge impact on performance, and indeed on what is possible to construct at all, so has very tangible implications.
 
 ## Examples of Useful Applicatives
 
@@ -38,9 +37,9 @@ The examples below all make use of types which are applicatives, but explicitly 
 
 [McBride & Paterson's paper](http://www.staff.city.ac.uk/~ross/papers/Applicative.html) introduces a type very much like F#'s `Result<'T,'TError>` which can be used to stitch together functions and values which might fail, but conveniently accumulating up all of the errors which can then be helpfully presented at once, as opposed to immediately presenting the first error. This allows you to take [Scott Wlaschin's Railway Oriented Programming](https://fsharpforfunandprofit.com/rop/) to the next level!
 
-[Capriotti & Kaposi's paper](https://paolocapriotti.com/assets/applicative.pdf) introduce an example of creating an command line argument parser, where a single applicative can both statically generate help text for the parser, and dynamically parse options given to an application.
+[Capriotti & Kaposi's paper](https://paolocapriotti.com/assets/applicative.pdf) introduces an example of creating an command line argument parser, where a single applicative can both statically generate help text for the parser, and dynamically parse options given to an application.
 
-More advanced usages include self-adjusting computations, such as [Jane Street's Incremental](https://blog.janestreet.com/introducing-incremental/), but with even greater opportunity for efficiencies via the careful balance of power and guarantees that applicatives give (such as the ability to optimise the computation, and avoid recreating the rest of the computation every time a `Bind` is reached).
+More advanced usages include self-adjusting computations, such as [Jane Street's Incremental](https://blog.janestreet.com/introducing-incremental/) (written in OCaml), but with even greater opportunity for efficiencies via the careful balance of power and guarantees that applicatives give (such as the ability to optimise the computation, and avoid recreating the rest of the computation every time a `Bind` is reached.
 
 # Detailed design
 [design]: #detailed-design
@@ -77,7 +76,7 @@ ce.Apply(
     baz)
 ```
 
-To be accepted as an applicative computation expression (CE), the CE must be of the form `let! ... and! ... return ...` (with one or more `and!`s). This means, for example, no `let!`s after an `and!` in the same CE, no normal `let`s in between the `let!` and `and!`s, and no usages of `yield` in place of `return`.
+To be accepted as an applicative computation expression (CE), the CE must be of the form `let! ... and! ... return ...` (with one or more `and!`s). This means, for example, no `let!`s after an `and!` in the same CE, no normal `let`s in between the `let!` and `and!`s, and no usages of `yield` in place of `return`. Similarly, `do!` and `match!` are not valid in an applicative builder, although we allow `use!` and related keywords, which will be covered later.
 
 This may sound very constrained, but it is for good reason. The structure imposed by this rule forces the CE to be in a canonical form ([McBride & Paterson](http://www.staff.city.ac.uk/~ross/papers/Applicative.html)):
 
@@ -176,7 +175,7 @@ ce.Bind(
 
 ## Monoids
 
-The existing `let!` CE syntax allows us to use `Combine` (typically in conjunction with `yield`) to define monad plus instances (i.e. also interpret the type as a monoid). [Just as monad plus is to a monad, alternatives are to applicatives](https://en.wikibooks.org/wiki/Haskell/Alternative_and_MonadPlus), so we can do a similar thing for our applicative CE syntax. One motivation for this might be the command line argument example from earlier, where alternatives allow parsing discriminated unions in a way that translates to something akin to "try this case, else try this case, else try this case, ...".
+The existing `let!` CE syntax allows us to use `Combine` (typically in conjunction with `yield`) to define [monad plus](https://hackage.haskell.org/package/monadplus/docs/Control-Monad-Plus.html) instances (i.e. also interpret the type as a [monoid](https://en.wikipedia.org/wiki/Monoid)). [Just as monad plus is to a monad, alternatives are to applicatives](https://en.wikibooks.org/wiki/Haskell/Alternative_and_MonadPlus), so we can do a similar thing for our applicative CE syntax. One motivation for this might be the command line argument example from earlier, where alternatives allow parsing discriminated unions in a way that translates to something akin to "try this case, else try this case, else try this case, ...".
 
 One might assume that the syntax would be something such as:
 
@@ -242,9 +241,9 @@ ce.Combine(
 )
 ```
 
-*N.B.* How the size of the desugared expression grows with the product of the number of bindings introduced by the `let! ... and! ...` syntax and the number calls to `Combine` implied by the alternative cases.
+*N.B.* the size of the desugared expression grows with the product of the number of bindings introduced by the `let! ... and! ...` syntax and the number calls to `Combine` implied by the alternative cases.
 
-An attempt at a very smart desugaring which tries to cut down the resulting expression might, on the face of it, seem like a reasonable option, however, beyond the cost of analysing which values which are introduced by `let! ... and! ...` actually go on to be used, we must also consider the right-hand sides of the `let! ... and! ...` bindings and the pattern matching: Do we evaluated these once up front? Or recompute them in each alternative case at the leaf of the tree of calls to `Combine`? What if the expressions on the right-hand sides have side-effects, or the left-hand side utilises active patterns with side-effects? At that point we either make complex, unintuitive rules, or force the CE writer to be explicit. Continuing in the spirit of CEs generally being straightforward desugarings, we choose the latter make make the writer clearly state their desire.
+An attempt at a very smart desugaring which tries to cut down the resulting expression might, on the face of it, seem like a reasonable option. However, beyond the cost of analysing which values which are introduced by `let! ... and! ...` actually go on to be used, we must also consider the right-hand sides of the `let! ... and! ...` bindings and the pattern matching: Do we evaluated these once up front? Or recompute them in each alternative case at the leaf of the tree of calls to `Combine`? What if the expressions on the right-hand sides have side-effects, or the left-hand side utilises active patterns with side-effects? At that point we either make complex, unintuitive rules, or force the CE writer to be explicit. Continuing in the spirit of CEs generally being straightforward desugarings, we choose the latter make make the writer clearly state their desire.
 
 In order to keep things simple, then, we keep the canonical form introduced earlier, which forces precisely one `return` after a `let! ... and! ...`. However, we can still express alternative applicatives when using the `let! ... and! ...` syntax, we just need to use the same trick as with additional `let!`s and leave the scope of the canonical applicative syntax and therefore leave the additional constraints it places upon us:
 
@@ -315,7 +314,7 @@ ce.Combine(
 )
 ```
 
-*N.B.* How this syntax forces the writer to be explicit about how many times `Apply` should be called, and with which arguments, for each call to `Combine`. Notice also how the right-hand sides are still repeated for each alternative case in order to keep the occurrence of potential side-effects from evaluating them predictable, and also occur before the pattern matching _each time_ a new alternative case is explored.
+*N.B.* this syntax forces the writer to be explicit about how many times `Apply` should be called, and with which arguments, for each call to `Combine`. Notice also how the right-hand sides are still repeated for each alternative case in order to keep the occurrence of potential side-effects from evaluating them predictable, and also occur before the pattern matching _each time_ a new alternative case is explored.
 
 If this syntax feels a bit heavy, remember that the `yield` keyword is not required, and the new syntax can be mixed with other styles (e.g. a custom `<|>` alternation operator) to strike an appropriate balance as each situation requires.
 
@@ -341,11 +340,10 @@ ce.Apply(
             ce.Return(
                 (fun x ->
                     ce.Using(x, fun x ->
-                        // N.B. No ce.Using(...) call here because we used `and!` instead of `anduse!` for `y` in the CE. Similarly, we could have chose to use `let!` instead of `use!` for the first binding to avoid a call to Using
-                        (fun y ->
-                            (fun z ->
-                                ce.Using(z, fun z ->
-                                    x + y + z
+                        (fun y ->                    // <- N.B. No ce.Using(...) call here because we used `and!`
+                            (fun z ->                // instead of `anduse!` for `y` in the CE. Similarly, we
+                                ce.Using(z, fun z -> // could have chose to use `let!` instead of `use!` for the
+                                    x + y + z        // first binding to avoid a call to Using
                                 )
                             )
                         )
