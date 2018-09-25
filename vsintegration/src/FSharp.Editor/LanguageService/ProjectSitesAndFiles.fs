@@ -225,7 +225,7 @@ type internal ProjectSitesAndFiles() =
         let getReferencesForSolutionService (solutionService:IVsSolution) =
             [|
                 match referencedProjects projectSite, extraProjectInfo with
-                | None, Some (:? VisualStudioWorkspaceImpl as workspace) when not (isNull workspace.CurrentSolution)->
+                | _, Some (:? VisualStudioWorkspaceImpl as workspace) when not (isNull workspace.CurrentSolution)->
                     let path = projectSite.ProjectFileName
                     if not (String.IsNullOrWhiteSpace(path)) then
                         match projectIdOpt with
