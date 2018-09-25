@@ -907,6 +907,11 @@ let CompilePatternBasic
               else 
                   None,true)
 
+    and IsCopyableInputExpr origInputExpr = 
+        match origInputExpr with 
+        | Expr.Op (TOp.LValueOp (LByrefGet, v), [], [], _) when not v.IsMutable -> true 
+        | _ -> false
+
     and ChoosePreBinder simulSetOfEdgeDiscrims subexpr =
          match simulSetOfEdgeDiscrims with 
           // Very simple 'isinst' tests: put the result of 'isinst' in a local variable 
@@ -939,7 +944,7 @@ let CompilePatternBasic
              let argExpr = GetSubExprOfInput subexpr
              let argExpr = 
                  match argExpr, _origInputExprOpt with 
-                 | Expr.Val(v1, _, _), Some origInputExpr when valEq origInputVal v1.Deref -> origInputExpr
+                 | Expr.Val(v1, _, _), Some origInputExpr when valEq origInputVal v1.Deref && IsCopyableInputExpr origInputExpr -> origInputExpr
                  | _ -> argExpr
              let vOpt, addrExp, _readonly, _writeonly = mkExprAddrOfExprAux g true false NeverMutates argExpr None matchm
              match vOpt with 
