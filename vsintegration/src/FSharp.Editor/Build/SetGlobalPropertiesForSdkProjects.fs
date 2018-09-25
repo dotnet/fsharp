@@ -13,7 +13,7 @@ open Microsoft.VisualStudio.ProjectSystem.Build
 
 // We can't use well-known constants here because `string + string` isn't a valid constant expression in F#.
 [<AppliesTo("FSharp&LanguageService")>]
-[<ExportBuildGlobalPropertiesProvider>]
+[<ExportBuildGlobalPropertiesProvider(designTimeBuildProperties = true)>]
 type internal SetGlobalPropertiesForSdkProjects
     [<ImportingConstructor>]
     (
