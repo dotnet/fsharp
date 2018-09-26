@@ -8086,23 +8086,9 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
             let wrapInCallsToApply = constructAppliesForBindings id bindingsBottomToTop
 
-            // Add the variables to the query variable space, on demand
-            (*let varSpace =
-                // TODO Make sure no LHS names clash, and no RHS mentions a name from another LHS
-                bindingsBottomToTop
-                |> List.fold (fun acc (_,_,_,pat,_,_) ->
-                    addVarsToVarSpace acc (fun _mCustomOp env -> 
-                        use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                        let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (pat, None) 
-                        vspecs, envinner)
-                ) varSpace
-            *)
-
             // Note how we work from the inner expression outward, meaning be create the lambda for the last
             // 'and!' _first_, and create the calls to 'Apply' in the opposite order so that the calls to
             // 'Apply' correspond to their lambda.
-
-            // TODO Collect up varSpace and use it here? Does this mean and! bindings cannot shadow each other?
 
             let desugared =
                 // We construct match lambdas to do any of the pattern matching that
@@ -8117,7 +8103,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                         if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env m ad "MapUsing" builderTy)
                         then error(Error(FSComp.SR.tcRequireBuilderMethod("MapUsing"), m))
                         printfn "Creating synthetic match lambda and Using call for pattern %+A" pat // TODO Delete
-                        let consumeExpr = SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, transNoQueryOps acc, acc.Range, SequencePointAtTarget)], spBind, bindRange)
+                        let consumeExpr = SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, acc, acc.Range, SequencePointAtTarget)], spBind, bindRange)
                         let consumeExpr = mkSynCall "MapUsing" bindRange [SynExpr.Ident(id); consumeExpr ]
                         SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, consumeExpr, id.idRange, SequencePointAtTarget)], spBind, bindRange)
                     | true, _ ->
