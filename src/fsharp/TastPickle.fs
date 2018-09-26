@@ -1573,7 +1573,7 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
               p_byte 0 st; p_tys l st
     | TType_app(ERefNonLocal nleref,[]) -> p_byte 1 st; p_simpletyp nleref st
     | TType_app (tc,tinst)              -> p_byte 2 st; p_tup2 (p_tcref "typ") p_tys (tc,tinst) st
-    | TType_fun (d,r)                   -> 
+    | TType_fun (d,r,_nullness)                   -> 
         p_byte 3 st
         // Note, the "this" argument may be found in the domain position of a function type, so propagate the isStructThisArgPos value
         p_ty2 isStructThisArgPos d st
@@ -1593,7 +1593,7 @@ let _ = fill_u_ty (fun st ->
     | 0 -> let l = u_tys st                               in TType_tuple (tupInfoRef, l)
     | 1 -> u_simpletyp st 
     | 2 -> let tc = u_tcref st in let tinst = u_tys st    in TType_app (tc,tinst)
-    | 3 -> let d = u_ty st    in let r = u_ty st         in TType_fun (d,r)
+    | 3 -> let d = u_ty st    in let r = u_ty st         in TType_fun (d,r, AssumeNonNull)
     | 4 -> let r = u_tpref st                              in r.AsType
     | 5 -> let tps = u_tyar_specs st in let r = u_ty st  in TType_forall (tps,r)
     | 6 -> let unt = u_measure_expr st                     in TType_measure unt

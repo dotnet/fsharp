@@ -342,11 +342,13 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_system_Reflection_MethodInfo_ty = mkSysNonGenericTy ["System";"Reflection"] "MethodInfo"
   let v_nullable_tcr = findSysTyconRef sys "Nullable`1"
 
+  let NewNullnessVar() = Nullness.Variable { solution = None } // we don't known (and if we never find out then it's non-null)
+
   (* local helpers to build value infos *)
   let mkNullableTy ty = TType_app(v_nullable_tcr, [ty]) 
   let mkByrefTy ty = TType_app(v_byref_tcr, [ty]) 
   let mkNativePtrTy ty = TType_app(v_nativeptr_tcr, [ty]) 
-  let mkFunTy d r = TType_fun (d, r) 
+  let mkFunTy d r = TType_fun (d, r, NewNullnessVar()) 
   let (-->) d r = mkFunTy d r
   let mkIteratedFunTy dl r = List.foldBack mkFunTy dl r
   let mkSmallRefTupledTy l = match l with [] -> v_unit_ty | [h] -> h | tys -> mkRawRefTupleTy tys

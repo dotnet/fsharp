@@ -3898,6 +3898,45 @@ and
 
     override x.ToString() = x.FieldName
 
+and Nullness = 
+   | Known of NullnessInfo
+   | Variable of NullnessVar
+   member n.Evaluate() = 
+       match n with 
+       | Known info -> info
+       | Variable v -> v.Evaluate()
+   override n.ToString() = match n.Evaluate() with WithNull -> " | null"  | WithoutNull -> "" | Oblivious -> " lol"
+
+and NullnessVar = 
+    { mutable solution: Nullness option }
+
+    member nv.Evaluate() = 
+       match nv.solution with 
+       | None -> WithoutNull 
+       | Some soln -> soln.Evaluate()
+
+    member nv.IsSolved = nv.solution.IsSome
+
+    member nv.Set(nullness) = 
+       assert (not nv.IsSolved) 
+       nv.solution <- Some nullness
+
+    member nv.Unset() = 
+       assert nv.IsSolved
+       nv.solution <- None
+
+    member nv.Solution = 
+       assert nv.IsSolved
+       nv.solution.Value
+
+and NullnessInfo = 
+    // we know that there is an extra null value in the type
+    | WithNull
+    // we know that there is no extra null value in the type
+    | WithoutNull
+    // we know we don't care
+    | Oblivious
+
 and 
   /// The algebra of types
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -3921,7 +3960,7 @@ and
     /// TType_fun(domainType,rangeType).
     ///
     /// Indicates the type is a function type 
-    | TType_fun of  TType * TType
+    | TType_fun of  TType * TType * Nullness
 
     /// TType_ucase(unionCaseRef, typeInstantiation)
     ///
@@ -3943,7 +3982,7 @@ and
         | TType_forall (_tps, ty)        -> ty.GetAssemblyName()
         | TType_app (tcref, _tinst)      -> tcref.CompilationPath.ILScopeRef.QualifiedName
         | TType_tuple (_tupInfo, _tinst) -> ""
-        | TType_fun (_d,_r)              -> ""
+        | TType_fun _                    -> ""
         | TType_measure _ms              -> ""
         | TType_var tp                   -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
         | TType_ucase (_uc,_tinst)       ->
@@ -3962,7 +4001,7 @@ and
              | TupInfo.Const false -> ""
              | TupInfo.Const true -> "struct ")
              + String.concat "," (List.map string tinst) + ")"
-        | TType_fun (d,r) -> "(" + string d + " -> " + string r + ")"
+        | TType_fun (d,r,nullness) -> "(" + string d + " -> " + string r + ")" + nullness.ToString()
         | TType_ucase (uc,tinst) -> "ucase " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
         | TType_var tp -> 
             match tp.Solution with 

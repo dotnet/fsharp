@@ -2029,12 +2029,28 @@ and FSharpType(cenv, ty:TType) =
         | TType_measure (Measure.Inv _) ->  FSharpEntity(cenv, cenv.g.measureinverse_tcr) 
         | _ -> invalidOp "not a named type"
 
+    member __.HasNullAnnotation = 
+       protect <| fun () -> 
+        match stripTyparEqns ty with 
+        | TType_fun(_, _, nullness) -> match nullness.Evaluate() with WithNull -> true | _ -> false
+        | TType_app (_, _) -> false
+        | TType_tuple (_, _) -> false
+        | _ -> false
+
+    member __.IsNullOblivious = 
+       protect <| fun () -> 
+        match stripTyparEqns ty with 
+        | TType_fun(_, _, nullness) -> match nullness.Evaluate() with Oblivious -> true | _ -> false
+        | TType_app (_, _) -> false
+        | TType_tuple (_, _) -> false
+        | _ -> false
+
     member __.GenericArguments = 
        protect <| fun () -> 
         match stripTyparEqns ty with 
         | TType_app (_, tyargs) 
         | TType_tuple (_, tyargs) -> (tyargs |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection) 
-        | TType_fun(d, r) -> [| FSharpType(cenv, d); FSharpType(cenv, r) |] |> makeReadOnlyCollection
+        | TType_fun(d, r, _nullness) -> [| FSharpType(cenv, d); FSharpType(cenv, r) |] |> makeReadOnlyCollection
         | TType_measure (Measure.Con _) ->  [| |] |> makeReadOnlyCollection
         | TType_measure (Measure.Prod (t1, t2)) ->  [| FSharpType(cenv, TType_measure t1); FSharpType(cenv, TType_measure t2) |] |> makeReadOnlyCollection
         | TType_measure Measure.One ->  [| |] |> makeReadOnlyCollection
@@ -2115,7 +2131,7 @@ and FSharpType(cenv, ty:TType) =
             | TType_app (tc1, b1)  -> 10200 + int32 tc1.Stamp + List.sumBy hashType b1
             | TType_ucase _   -> 10300  // shouldn't occur in symbols
             | TType_tuple (_, l1) -> 10400 + List.sumBy hashType l1
-            | TType_fun (dty, rty) -> 10500 + hashType dty + hashType rty
+            | TType_fun (dty, rty, _nullness) -> 10500 + hashType dty + hashType rty
             | TType_measure _ -> 10600 
         hashType ty
 

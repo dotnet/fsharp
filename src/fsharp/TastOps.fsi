@@ -45,6 +45,11 @@ val stripTyEqnsWrtErasure: Erasure -> TcGlobals -> TType -> TType
 // Build common types
 //------------------------------------------------------------------------- 
 
+val KnownNull : Nullness
+val KnownNonNull : Nullness
+val AssumeNonNull : Nullness
+val NewNullnessVar : unit -> Nullness
+
 /// Build a function type
 val mkFunTy : TType -> TType -> TType
 

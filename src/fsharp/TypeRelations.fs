@@ -42,7 +42,7 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
     | TType_tuple (tupInfo1,l1)    ,TType_tuple (tupInfo2,l2)     -> 
         evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 && 
         List.lengthsEqAndForall2 (typeEquiv g) l1 l2 
-    | TType_fun (d1,r1)  ,TType_fun (d2,r2)   -> 
+    | TType_fun (d1,r1,_nullness1)  ,TType_fun (d2,r2,_nullness2)   -> 
         typeEquiv g d1 d2 && typeEquiv g r1 r2
     | TType_measure measure1, TType_measure measure2 ->
         measureEquiv g measure1 measure2
@@ -78,7 +78,7 @@ let rec TypesFeasiblyEquiv ndeep g amap m ty1 ty2 =
     | TType_tuple (tupInfo1, l1)    ,TType_tuple (tupInfo2, l2)     -> 
         evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 &&
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2 
-    | TType_fun (d1,r1)  ,TType_fun (d2,r2)   -> 
+    | TType_fun (d1,r1,_nullness1)  ,TType_fun (d2,r2,_nullness2)   -> 
         (TypesFeasiblyEquiv ndeep g amap m) d1 d2 && (TypesFeasiblyEquiv ndeep g amap m) r1 r2
     | TType_measure _, TType_measure _ ->
         true
@@ -100,7 +100,7 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
     | TType_tuple (tupInfo1,l1)    ,TType_tuple (tupInfo2,l2)     -> 
         evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 && 
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2 
-    | TType_fun (d1,r1)  ,TType_fun (d2,r2)   -> 
+    | TType_fun (d1,r1,_nullness1)  ,TType_fun (d2,r2,_nullness2)   -> 
         (TypesFeasiblyEquiv ndeep g amap m) d1 d2 && (TypesFeasiblyEquiv ndeep g amap m) r1 r2
     | TType_measure _, TType_measure _ ->
         true

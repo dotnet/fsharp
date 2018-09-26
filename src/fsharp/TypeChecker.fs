@@ -15640,7 +15640,7 @@ module EstablishTypeDefinitionCores =
                     else 
                         acc
 
-                | TType_fun (d, r) -> 
+                | TType_fun (d, r, _nullness) -> 
                     accInAbbrevType d (accInAbbrevType r acc)
                 
                 | TType_var _ -> acc

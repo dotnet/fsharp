@@ -953,7 +953,15 @@ module private PrintTypes =
         | TType_fun _ ->
             let rec loop soFarL ty = 
               match stripTyparEqns ty with 
-              | TType_fun (dty,rty) -> loop (soFarL --- (layoutTypeWithInfoAndPrec denv env 4 dty ^^ wordL (tagPunctuation "->"))) rty
+              | TType_fun (dty,rty,nullness) -> 
+                  let part1 = soFarL --- (layoutTypeWithInfoAndPrec denv env 4 dty ^^ wordL (tagPunctuation "->"))
+                  let part2 = loop part1 rty
+                  let part3 =
+                      match nullness.Evaluate() with
+                      | WithNull -> part2 ^^ wordL (tagText "| null")
+                      | WithoutNull -> part2
+                      | Oblivious -> part2 ^^ wordL (tagText "| lol")
+                  part3
               | rty -> soFarL --- layoutTypeWithInfoAndPrec denv env 5 rty
             bracketIfL (prec <= 4) (loop emptyL ty)
 

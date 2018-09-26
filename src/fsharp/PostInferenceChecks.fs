@@ -341,7 +341,7 @@ let rec CheckTypeDeep ((visitTy,visitTyconRefOpt,visitAppTyOpt,visitTraitSolutio
 
     | TType_ucase (_,tinst) -> CheckTypesDeep f g env tinst
     | TType_tuple (_,tys) -> CheckTypesDeep f g env tys
-    | TType_fun (s,t) -> CheckTypeDeep f g env true s; CheckTypeDeep f g env true t
+    | TType_fun (s,t,_nullness) -> CheckTypeDeep f g env true s; CheckTypeDeep f g env true t
     | TType_var tp -> 
           if not tp.IsSolved then 
               match visitTyarOpt with 

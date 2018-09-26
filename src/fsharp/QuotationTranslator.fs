@@ -805,7 +805,7 @@ and ConvType cenv env m ty =
 #endif
         QP.mkILNamedTy(ConvTyconRef cenv tcref m, ConvTypes cenv env m tyargs)
 
-    | TType_fun(a,b)          -> QP.mkFunTy(ConvType cenv env m a,ConvType cenv env m b)
+    | TType_fun(a,b,_nullness) -> QP.mkFunTy(ConvType cenv env m a,ConvType cenv env m b)
     | TType_tuple(tupInfo,l)  -> ConvType cenv env m (mkCompiledTupleTy cenv.g (evalTupInfoIsStruct tupInfo) l)
     | TType_var(tp)           -> QP.mkVarTy(ConvTyparRef cenv env m tp)
     | TType_forall(_spec,_ty)   -> wfail(Error(FSComp.SR.crefNoInnerGenericsInQuotations(),m))
