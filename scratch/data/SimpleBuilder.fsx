@@ -118,7 +118,7 @@ let quux : int option =
                 let! x = Some 0
                 and! y = Some 1
                 and! z = Some 2
-                return x + y + z + 1
+                return (x + y + z + 1)
             }
         and! d = baz // Makes use of an optional value from outside the computation expression (bailing out with None if it is None, as with any other value)
         return a * b * c * d // Computes this value because all args are some
@@ -146,10 +146,6 @@ type TraceOptBuilder() =
         printfn "Zero"
         Some ()
 
-    member __.Delay(f) = 
-        printfn "Delay"
-        f
-
     member __.Combine(xOpt, yOpt) =
         let res =
             match xOpt with
@@ -159,10 +155,6 @@ type TraceOptBuilder() =
                 yOpt
         printfn "Combining %+A with %+A to get %+A" xOpt yOpt res
         res
-
-    member __.MapTryWith(body, handler) =
-        try body()
-        with e -> handler e
 
     member __.MapTryFinally(body, compensation) =
         try body()
@@ -177,8 +169,8 @@ type TraceOptBuilder() =
 
 let traceOpt = TraceOptBuilder()
 
-type 'a FakeDisposable =
-    FakeDisposable of 'a
+type FakeDisposable =
+    FakeDisposable of int
     with
     interface System.IDisposable with
         member __.Dispose() =
@@ -186,11 +178,11 @@ type 'a FakeDisposable =
             printf "\"Disposed\" %+A" x
             ()
 
-let simpleFooUsing : int option =
+let simpleFooUsing : string option =
     traceOpt {
-        use! xUsing = Some (FakeDisposable 1)
-        and! y = Some 2
-        return (let (FakeDisposable x) = xUsing in x + y)
+        use! xUsing    = Some (FakeDisposable 1)
+        anduse! yUsing = Some (FakeDisposable 2)
+        return (sprintf "xUsing = %+A, yUsing = %+A" xUsing yUsing)
     }
 
 printfn "simplefooUsing: \"%+A\"" simpleFooUsing
