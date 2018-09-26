@@ -8072,7 +8072,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                     if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env bindRange ad "Apply" builderTy)
                     then error(Error(FSComp.SR.tcRequireBuilderMethod("Apply"), bindRange))
                         
-                    let rhsExpr = if isFromSource then mkSourceExpr rhsExpr else rhsExpr
+                    let rhsExpr = if isFromSource then mkSourceExpr rhsExpr else rhsExpr // TODO Can delete? Won't use query.Source?
 
                     let newPendingApplies =
                         (fun consumeExpr -> 
@@ -8103,9 +8103,9 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                         if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env m ad "MapUsing" builderTy)
                         then error(Error(FSComp.SR.tcRequireBuilderMethod("MapUsing"), m))
                         printfn "Creating synthetic match lambda and Using call for pattern %+A" pat // TODO Delete
-                        let consumeExpr = SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, acc, acc.Range, SequencePointAtTarget)], spBind, bindRange)
-                        let consumeExpr = mkSynCall "MapUsing" bindRange [SynExpr.Ident(id); consumeExpr ]
-                        SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, consumeExpr, id.idRange, SequencePointAtTarget)], spBind, bindRange)
+                        let mapUsingBodyExpr = SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, acc, acc.Range, SequencePointAtTarget)], spBind, bindRange) // TODO Where should we be suppressing sequence points?
+                        let mapUsingExpr = mkSynCall "MapUsing" bindRange [ SynExpr.Ident(id); mapUsingBodyExpr ]
+                        SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, mapUsingExpr, id.idRange, SequencePointAtTarget)], spBind, bindRange)
                     | true, _ ->
                         // TODO Support explicitly typed names on the LHS of a use!/anduse!
                         error(Error(FSComp.SR.tcInvalidUseBangBinding(), pat.Range)) // TODO Change error to mention `anduse!`
