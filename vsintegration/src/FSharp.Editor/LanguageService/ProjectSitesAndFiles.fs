@@ -225,7 +225,7 @@ type internal ProjectSitesAndFiles() =
         let getReferencesForSolutionService (solutionService:IVsSolution) =
             [|
                 match referencedProjects projectSite, extraProjectInfo with
-                | None, Some (:? VisualStudioWorkspaceImpl as workspace) when not (isNull workspace.CurrentSolution)->
+                | _, Some (:? VisualStudioWorkspaceImpl as workspace) when not (isNull workspace.CurrentSolution)->
                     let path = projectSite.ProjectFileName
                     if not (String.IsNullOrWhiteSpace(path)) then
                         match projectIdOpt with
@@ -241,13 +241,15 @@ type internal ProjectSitesAndFiles() =
                                         yield Some project.Id, project.FilePath, outputPath, siteProvider
                         | _ -> ()
 
-                | (Some references), _ ->
+                | (Some references), Some (:? VisualStudioWorkspaceImpl as workspace) ->
                     for p in references do
                         match solutionService.GetProjectOfUniqueName(p.UniqueName) with
                         | VSConstants.S_OK, (:? IProvideProjectSite as ps) ->
-                            yield None, p.FileName,  (fullOutputAssemblyPath p) |> Option.defaultValue "", ps
+                            let path = ps.GetProjectSite().ProjectFileName
+                            let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(path, projectDisplayNameOf path)
+                            yield Some projectId, p.FileName,  (fullOutputAssemblyPath p) |> Option.defaultValue "", ps
                         | _ -> ()
-                | None, _ -> ()
+                | _ -> ()
             |]
         let solutionService = try Some (serviceProvider.GetService(typeof<SVsSolution>) :?> IVsSolution) with _ -> None
         seq { match solutionService with
