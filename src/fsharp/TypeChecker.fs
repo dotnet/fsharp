@@ -8041,10 +8041,6 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             let rhsExpr = if isFromSource then mkSourceExpr rhsExpr else rhsExpr
             Some(translatedCtxt (mkSynCall "Bind" bindRange [rhsExpr; consumeExpr]))
 
-        // 'use! pat = e1 in e2' where 'pat' is not a simple name --> error
-        | SynExpr.LetOrUseAndBang(_spBind, true, _isFromSource, pat, _rhsExpr, _, [], _innerComp) -> 
-            error(Error(FSComp.SR.tcInvalidUseBangBinding(), pat.Range))
-
         // 'let! pat1 = expr1 and! pat2 = expr2 in return expr3' --> 
         //     build.Apply(
         //         build.Apply(
@@ -8056,11 +8052,14 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         //                 )
         //         ), expr1)
         //     ), expr2)
-        | SynExpr.LetOrUseAndBang(letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, SynExpr.YieldOrReturn((isYield, _), returnExpr, returnRange)) when isYield = false ->  // TODO Handle use! / anduse!
+        // 'use! pat = e1 and! pat = e2 in e3' --> TODO
+        // 'let! pat = e1 anduse! pat = e2 in e3' --> TODO
+        // 'use! pat = e1 anduse! pat = e2 in e3' --> TODO
+        | SynExpr.LetOrUseAndBang(letSpBind, letIsUse, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, SynExpr.YieldOrReturn((isYield, _), returnExpr, returnRange)) when isYield = false ->  // TODO Handle use! / anduse!
 
             let bindingsBottomToTop = 
                 let letBinding =
-                    (letSpBind, false, letIsFromSource, letPat, letRhsExpr, letm)
+                    (letSpBind, letIsUse, letIsFromSource, letPat, letRhsExpr, letm)
                 List.rev (letBinding :: andBangBindings) // [ andBangExprN ; ... ; andBangExpr2 ; andBangExpr1 ; letExpr ]
 
             // Here we construct a call to Apply for each binding introduced by the let! ... and! ... syntax
@@ -8069,7 +8068,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                 match bindings with
                 | (spBind, _, isFromSource, pat, rhsExpr, _) :: remainingBindings ->
                     let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhsExpr.Range
-                    if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), bindRange))
+                    if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), bindRange)) // TODO "Apply may not be used in queries"
                     if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env bindRange ad "Apply" builderTy)
                     then error(Error(FSComp.SR.tcRequireBuilderMethod("Apply"), bindRange))
                         
@@ -8107,12 +8106,27 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
             let desugared =
                 // We construct match lambdas to do any of the pattern matching that
-                // appears on the LHS of a binding
+                // appears on the LHS of a binding, adding a call to builder.Using(...)
+                // if required
                 bindingsBottomToTop
-                |> List.fold (fun acc (spBind, _, _, pat, _, _) ->
-                    let innerRange = returnExpr.Range
-                    printfn "Creating synthetic match lambda for pattern %+A" pat // TODO Delete
-                    SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, acc, innerRange, SequencePointAtTarget)], spBind, innerRange)
+                |> List.fold (fun acc (spBind, isUse, _, pat, rhsExpr, m) ->
+                    match isUse, pat with
+                    | true, SynPat.Named (SynPat.Wild _, id, false, _, _)
+                    | true, SynPat.LongIdent (LongIdentWithDots([id], _), _, _, _, _, _) ->
+                        let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhsExpr.Range
+                        if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env m ad "MapUsing" builderTy)
+                        then error(Error(FSComp.SR.tcRequireBuilderMethod("MapUsing"), m))
+                        printfn "Creating synthetic match lambda and Using call for pattern %+A" pat // TODO Delete
+                        let consumeExpr = SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, transNoQueryOps acc, acc.Range, SequencePointAtTarget)], spBind, bindRange)
+                        let consumeExpr = mkSynCall "MapUsing" bindRange [SynExpr.Ident(id); consumeExpr ]
+                        SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, consumeExpr, id.idRange, SequencePointAtTarget)], spBind, bindRange)
+                    | true, _ ->
+                        // TODO Support explicitly typed names on the LHS of a use!/anduse!
+                        error(Error(FSComp.SR.tcInvalidUseBangBinding(), pat.Range)) // TODO Change error to mention `anduse!`
+                    | false, _ ->
+                        let innerRange = returnExpr.Range
+                        printfn "Creating synthetic match lambda for pattern %+A" pat // TODO Delete
+                        SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, acc, innerRange, SequencePointAtTarget)], spBind, innerRange)
                 ) returnExpr
                 // We take the nested lambdas and put the return back, _outside_ them
                 // to give an f : F<'a -> 'b -> 'c -> ...> as a series of Apply calls expects
@@ -8126,21 +8140,12 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
             Some (translatedCtxt desugared)
 
-        | SynExpr.LetOrUseAndBang(_, false, _, _, _, _, _, _) ->  // TODO Handle use! / anduse!
+        // 'use! pat = e1 ... in e2' where 'pat' is not a simple name --> error
+        | SynExpr.LetOrUseAndBang(_spBind, true, _isFromSource, pat, _rhsExpr, _, _, _innerComp) -> 
+            error(Error(FSComp.SR.tcInvalidUseBangBinding(), pat.Range))
+
+        | SynExpr.LetOrUseAndBang _ ->
             error(new Exception("let! ... and! ... computation expressions must immediately return a value")) // TODO Make more helpful
-
-        // 'use! pat = e1 and! pat = e2 in e3' --> TODO
-        //| SynExpr.LetOrUseAndBang(spBind, true, isFromSource, (SynPat.Named (SynPat.Wild _, id, false, _, _) as pat) , rhsExpr, _, andBangs, innerComp)
-        //| SynExpr.LetOrUseAndBang(spBind, true, isFromSource, (SynPat.LongIdent (LongIdentWithDots([id], _), _, _, _, _, _) as pat), rhsExpr, _, andBangs, innerComp) ->
-        | SynExpr.LetOrUseAndBang(_, true, _, (SynPat.Named (SynPat.Wild _, _, false, _, _)) , _, _, _, _)
-        | SynExpr.LetOrUseAndBang(_, true, _, (SynPat.LongIdent (LongIdentWithDots([_], _), _, _, _, _, _)), _, _, _, _) ->
-
-            failwith "TODO - Type check and!"
-
-        // 'use! pat = e1 and(Use)! pat = e2 in e3' where any 'pat' is not a simple name --> error
-        //| SynExpr.LetOrUseAndBang(_spBind, true, _isFromSource, pat, _rhsExpr, _, andBangs, _innerComp) -> 
-        | SynExpr.LetOrUseAndBang(_, true, _, _, _, _, _, _) -> 
-            failwith "TODO - Type check and!"
 
         | SynExpr.Match (spMatch, expr, clauses, m) ->
             let mMatch = match spMatch with SequencePointAtBinding mMatch -> mMatch | _ -> m

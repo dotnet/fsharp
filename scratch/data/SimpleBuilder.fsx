@@ -127,8 +127,7 @@ let quux : int option =
 
 printfn "quux: %+A" quux 
 
-(*
-type TraceBuilder() =
+type TraceOptBuilder() =
 
     member __.Apply(fOpt : ('a -> 'b) option, xOpt : 'a option) : 'b option =
         match fOpt, xOpt with
@@ -161,24 +160,38 @@ type TraceBuilder() =
         printfn "Combining %+A with %+A to get %+A" xOpt yOpt res
         res
 
-    member __.ReturnFrom(x) = x
-
-    member __.TryWith(body, handler) =
-        try __.ReturnFrom(body())
+    member __.MapTryWith(body, handler) =
+        try body()
         with e -> handler e
 
-    member __.TryFinally(body, compensation) =
-        try __.ReturnFrom(body())
+    member __.MapTryFinally(body, compensation) =
+        try body()
         finally compensation() 
 
-    member __.Using(disposable:#System.IDisposable, body) =
+    member __.MapUsing(disposable:#System.IDisposable, body) =
+        printfn "Using disposable %O" disposable
         let body' = fun () -> body disposable
-        __.TryFinally(body', fun () -> 
-            match disposable with 
-                | null ->
-                    printfn "Not disposing: Value is null"
-                    () 
-                | disp ->
-                    printfn "Disposing %O" disp
-                    disp.Dispose())
-*)
+        __.MapTryFinally(body', fun () -> 
+            printfn "Disposing %O" disposable
+            disposable.Dispose())
+
+let traceOpt = TraceOptBuilder()
+
+type 'a FakeDisposable =
+    FakeDisposable of 'a
+    with
+    interface System.IDisposable with
+        member __.Dispose() =
+            let (FakeDisposable x) = __
+            printf "\"Disposed\" %+A" x
+            ()
+
+let fooUsing : string option =
+    traceOpt {
+        use! x = Some (FakeDisposable 1)
+        anduse! y = Some (FakeDisposable 2)
+        anduse! z = Some (FakeDisposable 3)
+        return sprintf "x = %+A, y = %+A, z = %+A" x y z
+    }
+
+printfn "fooUsing: \"%+A\"" fooUsing
