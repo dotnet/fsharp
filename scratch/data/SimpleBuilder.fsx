@@ -186,12 +186,33 @@ type 'a FakeDisposable =
             printf "\"Disposed\" %+A" x
             ()
 
+let simpleFooUsing : int option =
+    traceOpt {
+        use! xUsing = Some (FakeDisposable 1)
+        and! y = Some 2
+        return (let (FakeDisposable x) = xUsing in x + y)
+    }
+
+printfn "simplefooUsing: \"%+A\"" simpleFooUsing
+
 let fooUsing : string option =
     traceOpt {
-        use! x = Some (FakeDisposable 1)
-        anduse! y = Some (FakeDisposable 2)
-        anduse! z = Some (FakeDisposable 3)
-        return sprintf "x = %+A, y = %+A, z = %+A" x y z
+        use! xUsing    = Some (FakeDisposable 1)
+        anduse! yUsing = Some (FakeDisposable 2)
+        anduse! zUsing = Some (FakeDisposable 3)
+        return (let (FakeDisposable x) = xUsing in sprintf "Unwrapped x = %d" x)
     }
 
 printfn "fooUsing: \"%+A\"" fooUsing
+
+(* INVALID: Not a simple name on the LHS
+let fooUsing2 : int option =
+    traceOpt {
+        use! (FakeDisposable x)    = Some (FakeDisposable 1)
+        anduse! (FakeDisposable y) = Some (FakeDisposable 2)
+        anduse! (FakeDisposable z) = Some (FakeDisposable 3)
+        return x * y + z
+    }
+
+printfn "fooUsing2: \"%+A\"" fooUsing
+*)
