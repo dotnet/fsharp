@@ -451,7 +451,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %nonassoc paren_pat_attribs
 %left OR BAR_BAR JOIN_IN
 %left AND   /* check */
-%left AND_BANG   /* TODO check */
+%left AND_BANG   /* check */
 %left  AMP AMP_AMP 
 %nonassoc pat_conj
 %nonassoc expr_not
@@ -3006,7 +3006,7 @@ recover:
 /* EXPERIMENT */
 
 binders:
-  | BINDER headBindingPattern EQUALS typedSeqExprBlock IN opt_OBLOCKSEP morebinders typedSeqExprBlock %prec expr_let /* TODO the 'IN' in this position sort of implies that the variable is in scope in any subsequence AND! RHSs - which is not true! */
+  | BINDER headBindingPattern EQUALS typedSeqExprBlock IN opt_OBLOCKSEP morebinders typedSeqExprBlock %prec expr_let
      { let spBind = SequencePointAtBinding(rhs2 parseState 1 5)
        let m = unionRanges (rhs parseState 1) $8.Range
        SynExpr.LetOrUseAndBang(spBind,($1 = "use"),true,$2,$4,m,$7,$8) }
@@ -3022,7 +3022,6 @@ binders:
        let spBind = SequencePointAtBinding(unionRanges (rhs parseState 1) $4.Range)
        let mAll = unionRanges (rhs parseState 1) (rhs parseState 7) // TODO Check this range
        let m = $4.Range.EndRange // zero-width range
-       failwith "Inserting implicit zero from OBINDER!" // TODO Remove
        SynExpr.LetOrUseAndBang(spBind,($1 = "use"),true,$2,$4, mAll, [], SynExpr.ImplicitZero m) }
 
 
