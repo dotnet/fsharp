@@ -8091,29 +8091,35 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             // 'Apply' correspond to their lambda.
 
             let desugared =
-                // We construct match lambdas to do any of the pattern matching that
-                // appears on the LHS of a binding, adding a call to builder.Using(...)
+                // Insert calls to builder.MapUsing(...) to handle resources
                 // if required
+                let usings =
+                    bindingsBottomToTop
+                    |> List.fold (fun acc (spBind, isUse, _, pat, rhsExpr, m) ->
+                        match isUse, pat with
+                        | true, SynPat.Named (SynPat.Wild _, id, false, _, _)
+                        | true, SynPat.LongIdent (LongIdentWithDots([id], _), _, _, _, _, _) ->
+                            let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhsExpr.Range
+                            if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env m ad "MapUsing" builderTy)
+                            then error(Error(FSComp.SR.tcRequireBuilderMethod("MapUsing"), m))
+                            printfn "Creating synthetic match lambda and Using call for pattern %+A" pat // TODO Delete
+                            let mapUsingBodyExpr = SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, acc, acc.Range, SequencePointAtTarget)], spBind, bindRange) // TODO Where should we be suppressing sequence points?
+                            mkSynCall "MapUsing" bindRange [ SynExpr.Ident(id); mapUsingBodyExpr ]
+                        | true, _ ->
+                            // TODO Support explicitly typed names on the LHS of a use!/anduse!
+                            error(Error(FSComp.SR.tcInvalidUseBangBinding(), pat.Range)) // TODO Change error to mention `anduse!`
+                        | false, _ ->
+                            acc
+                    ) returnExpr
+
+                // We construct match lambdas to do any of the pattern matching that
+                // appears on the LHS of a binding
                 bindingsBottomToTop
-                |> List.fold (fun acc (spBind, isUse, _, pat, rhsExpr, m) ->
-                    match isUse, pat with
-                    | true, SynPat.Named (SynPat.Wild _, id, false, _, _)
-                    | true, SynPat.LongIdent (LongIdentWithDots([id], _), _, _, _, _, _) ->
-                        let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhsExpr.Range
-                        if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env m ad "MapUsing" builderTy)
-                        then error(Error(FSComp.SR.tcRequireBuilderMethod("MapUsing"), m))
-                        printfn "Creating synthetic match lambda and Using call for pattern %+A" pat // TODO Delete
-                        let mapUsingBodyExpr = SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, acc, acc.Range, SequencePointAtTarget)], spBind, bindRange) // TODO Where should we be suppressing sequence points?
-                        let mapUsingExpr = mkSynCall "MapUsing" bindRange [ SynExpr.Ident(id); mapUsingBodyExpr ]
-                        SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, mapUsingExpr, id.idRange, SequencePointAtTarget)], spBind, bindRange)
-                    | true, _ ->
-                        // TODO Support explicitly typed names on the LHS of a use!/anduse!
-                        error(Error(FSComp.SR.tcInvalidUseBangBinding(), pat.Range)) // TODO Change error to mention `anduse!`
-                    | false, _ ->
+                |> List.fold (fun acc (spBind, _, _, pat, _, _) ->
                         let innerRange = returnExpr.Range
                         printfn "Creating synthetic match lambda for pattern %+A" pat // TODO Delete
                         SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, acc, innerRange, SequencePointAtTarget)], spBind, innerRange)
-                ) returnExpr
+                ) usings
                 // We take the nested lambdas and put the return back, _outside_ them
                 // to give an f : F<'a -> 'b -> 'c -> ...> as a series of Apply calls expects
                 |> (fun f -> 
