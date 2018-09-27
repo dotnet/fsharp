@@ -162,7 +162,11 @@ type TraceOptBuilder() =
 
     member __.MapUsing(disposable:#System.IDisposable, body) =
         printfn "Using disposable %O" disposable
-        let body' = fun () -> body disposable
+        let body' = fun () ->
+            printfn ">Running body"
+            let res = body disposable
+            printfn "<Body run"
+            res
         __.MapTryFinally(body', fun () -> 
             printfn "Disposing %O" disposable
             disposable.Dispose())
@@ -175,17 +179,19 @@ type FakeDisposable =
     interface System.IDisposable with
         member __.Dispose() =
             let (FakeDisposable x) = __
-            printf "\"Disposed\" %+A" x
+            printfn "\"Disposed\" %+A" x
             ()
+
+printfn "\n\nStarting Using experiment...\n\n"
 
 let simpleFooUsing : string option =
     traceOpt {
         use! xUsing    = Some (FakeDisposable 1)
         anduse! yUsing = Some (FakeDisposable 2)
-        return (sprintf "xUsing = %+A, yUsing = %+A" xUsing yUsing)
+        return (printfn "Calling return expr - nothing should have been disposed yet!"; sprintf "xUsing = %+A, yUsing = %+A" xUsing yUsing)
     }
 
-printfn "simplefooUsing: \"%+A\"" simpleFooUsing
+printfn "simplefooUsing: \"%+A\"\n\n" simpleFooUsing
 
 let fooUsing : string option =
     traceOpt {
@@ -195,7 +201,7 @@ let fooUsing : string option =
         return (let (FakeDisposable x) = xUsing in sprintf "Unwrapped x = %d" x)
     }
 
-printfn "fooUsing: \"%+A\"" fooUsing
+printfn "fooUsing: \"%+A\"\n\n" fooUsing
 
 (* INVALID: Not a simple name on the LHS
 let fooUsing2 : int option =
