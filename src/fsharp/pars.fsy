@@ -3003,8 +3003,6 @@ recover:
    | error { debugPrint("recovering via error"); true }  
    | EOF { debugPrint("recovering via EOF"); false }
 
-/* EXPERIMENT */
-
 binders:
   | BINDER headBindingPattern EQUALS typedSeqExprBlock IN opt_OBLOCKSEP morebinders typedSeqExprBlock %prec expr_let
      { let spBind = SequencePointAtBinding(rhs2 parseState 1 5)
@@ -3024,9 +3022,7 @@ binders:
        let m = $4.Range.EndRange // zero-width range
        SynExpr.LetOrUseAndBang(spBind,($1 = "use"),true,$2,$4, mAll, [], SynExpr.ImplicitZero m) }
 
-
 morebinders:
-
   | AND_BANG headBindingPattern EQUALS typedSeqExprBlock IN morebinders %prec expr_let /* TODO Check precedence */
      { let spBind = SequencePointAtBinding(rhs2 parseState 1 5) (* TODO Pretty sure this is wrong *)
        let m = rhs parseState 1 (* TODO Pretty sure this is wrong *)
@@ -3040,9 +3036,6 @@ morebinders:
 
   | %prec prec_no_more_attr_bindings /* TODO Make a prec_no_more_andbang_bindings or something */
       { [] }
-
-/* END EXPERIMENT */
-
 
 declExpr:
   | defnBindings IN typedSeqExpr  %prec expr_let 

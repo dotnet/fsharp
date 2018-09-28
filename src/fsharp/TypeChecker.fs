@@ -8102,7 +8102,6 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                             let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhsExpr.Range
                             if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env m ad "MapUsing" builderTy)
                             then error(Error(FSComp.SR.tcRequireBuilderMethod("MapUsing"), m))
-                            printfn "Creating synthetic match lambda and Using call for pattern %+A" pat // TODO Delete
                             let mapUsingBodyExpr = SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, acc, acc.Range, SequencePointAtTarget)], spBind, bindRange) // TODO Where should we be suppressing sequence points?
                             mkSynCall "MapUsing" bindRange [ SynExpr.Ident(id); mapUsingBodyExpr ]
                         | true, _ ->
@@ -8117,7 +8116,6 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                 bindingsBottomToTop
                 |> List.fold (fun acc (spBind, _, _, pat, _, _) ->
                         let innerRange = returnExpr.Range
-                        printfn "Creating synthetic match lambda for pattern %+A" pat // TODO Delete
                         SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, acc, innerRange, SequencePointAtTarget)], spBind, innerRange)
                 ) usings
                 // We take the nested lambdas and put the return back, _outside_ them
@@ -8125,7 +8123,6 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                 |> (fun f -> 
                     if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env returnRange ad "Return" builderTy)
                     then error(Error(FSComp.SR.tcRequireBuilderMethod("Return"), returnRange))
-                    printfn "Creating synthetic Return call" // TODO Delete
                     mkSynCall "Return" returnRange [f])
                 // We wrap the return in a call to Apply for each lambda
                 |> wrapInCallsToApply
