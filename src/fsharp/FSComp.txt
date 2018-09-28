@@ -1442,3 +1442,4 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3237,tastCantTakeAddressOfExpression,"Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address."
 3242,tcTypeDoesNotInheritAttribute,"This type does not inherit Attribute, it will not work correctly with other .NET languages."
 3243,tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn,"Expecting 'return' but saw something else. Applicative computation expressions must be of the form 'let! <pat1> = <expr2> and! <pat2> = <expr2> and! ... and! <patN> = <exprN> return <exprBody>'."
+3244,tcInvalidAndUseBangBinding,"Pattern matching is not allowed on the left-hand side of the equals. 'use! ... anduse! ...' bindings must be of the form 'use! <var> = <expr>' or 'anduse! <var> = <expr>'."

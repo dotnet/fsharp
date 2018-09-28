@@ -8070,7 +8070,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             let rec constructAppliesForBindings (pendingApplies : SynExpr -> SynExpr) (bindings : (SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list) =
 
                 match bindings with
-                | (spBind, _, isFromSource, pat, rhsExpr, _) :: remainingBindings ->
+                | (spBind, _, isFromSource, _, rhsExpr, _) :: remainingBindings ->
                     let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhsExpr.Range
                     if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), bindRange)) // TODO "Apply may not be used in queries"
                     if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env bindRange ad "Apply" builderTy)
@@ -8109,7 +8109,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                             mkSynCall "MapUsing" bindRange [ SynExpr.Ident(id); mapUsingBodyExpr ]
                         | true, _ ->
                             // TODO Support explicitly typed names on the LHS of a use!/anduse!
-                            error(Error(FSComp.SR.tcInvalidUseBangBinding(), pat.Range)) // TODO Change error to mention `anduse!`
+                            error(Error(FSComp.SR.tcInvalidAndUseBangBinding(), pat.Range))
                         | false, _ ->
                             acc
                     ) returnExpr
