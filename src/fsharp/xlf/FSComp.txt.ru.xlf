@@ -7067,6 +7067,11 @@
         <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn">
+        <source>Expecting 'return' but saw something else. Applicative computation expressions must be of the form 'let! &lt;pat1&gt; = &lt;expr2&gt; and! &lt;pat2&gt; = &lt;expr2&gt; and! ... and! &lt;patN&gt; = &lt;exprN&gt; return &lt;exprBody&gt;'.</source>
+        <target state="new">Expecting 'return' but saw something else. Applicative computation expressions must be of the form 'let! &lt;pat1&gt; = &lt;expr2&gt; and! &lt;pat2&gt; = &lt;expr2&gt; and! ... and! &lt;patN&gt; = &lt;exprN&gt; return &lt;exprBody&gt;'.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

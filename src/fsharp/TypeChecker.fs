@@ -8041,6 +8041,10 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             let rhsExpr = if isFromSource then mkSourceExpr rhsExpr else rhsExpr
             Some(translatedCtxt (mkSynCall "Bind" bindRange [rhsExpr; consumeExpr]))
 
+        // 'use! pat = e1 ... in e2' where 'pat' is not a simple name --> error
+        | SynExpr.LetOrUseAndBang(_spBind, true, _isFromSource, pat, _rhsExpr, _, [], _innerComp) -> 
+            error(Error(FSComp.SR.tcInvalidUseBangBinding(), pat.Range))
+
         // 'let! pat1 = expr1 and! pat2 = expr2 in return expr3' --> 
         //     build.Apply(
         //         build.Apply(
@@ -8129,12 +8133,8 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
             Some (translatedCtxt desugared)
 
-        // 'use! pat = e1 ... in e2' where 'pat' is not a simple name --> error
-        | SynExpr.LetOrUseAndBang(_spBind, true, _isFromSource, pat, _rhsExpr, _, _, _innerComp) -> 
-            error(Error(FSComp.SR.tcInvalidUseBangBinding(), pat.Range))
-
-        | SynExpr.LetOrUseAndBang _ ->
-            error(new Exception("let! ... and! ... computation expressions must immediately return a value")) // TODO Make more helpful
+        | SynExpr.LetOrUseAndBang (_, _, _, _, _, _, _, innerComp) ->
+            error(Error(FSComp.SR.tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn(), innerComp.Range))
 
         | SynExpr.Match (spMatch, expr, clauses, m) ->
             let mMatch = match spMatch with SequencePointAtBinding mMatch -> mMatch | _ -> m
