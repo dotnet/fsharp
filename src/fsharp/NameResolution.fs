@@ -3507,13 +3507,11 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                   yield einfo.RemoveMethod.DisplayName ]
         else []
 
-    let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
-
     let pinfos = 
         pinfosIncludingUnseen
         |> List.filter (fun x -> not (PropInfoIsUnseen m x))
 
-    let minfoFilter (minfo:MethInfo) = 
+    let minfoFilter (suppressedMethNames:Zset<_>) (minfo:MethInfo) = 
         let isApplicableMeth =
             match completionTargets with
             | ResolveCompletionTargets.All x -> x
@@ -3574,45 +3572,55 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
     // REVIEW: add a name filter here in the common cases?
     let minfos = 
         if completionTargets.ResolveAll then
-            let minfos =
-                AllMethInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m ty 
-                |> List.filter minfoFilter
+            let minfos = AllMethInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m ty 
+            if isNil minfos then
+                []
+            else
+                let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
 
-            let minfos =
-                if isNil minfos then [] else
-                let addersAndRemovers =
-                    let hashSet = HashSet()
-                    for item in pinfoItems do
-                        match item with
-                        | Item.Event(FSEvent(_,_,addValRef,removeValRef)) ->
-                            hashSet.Add addValRef.LogicalName |> ignore
-                            hashSet.Add removeValRef.LogicalName |> ignore
-                        | _ -> ()
-                    hashSet
+                let minfos =
+                    minfos
+                    |> List.filter (minfoFilter suppressedMethNames)
 
-                if addersAndRemovers.Count = 0 then minfos
-                else minfos |> List.filter (fun minfo -> not (addersAndRemovers.Contains minfo.LogicalName))
+                if isNil minfos then
+                    []
+                else
+                    let minfos =
+                        let addersAndRemovers =
+                            let hashSet = HashSet()
+                            for item in pinfoItems do
+                                match item with
+                                | Item.Event(FSEvent(_,_,addValRef,removeValRef)) ->
+                                    hashSet.Add addValRef.LogicalName |> ignore
+                                    hashSet.Add removeValRef.LogicalName |> ignore
+                                | _ -> ()
+                            hashSet
+
+                        if addersAndRemovers.Count = 0 then minfos
+                        else minfos |> List.filter (fun minfo -> not (addersAndRemovers.Contains minfo.LogicalName))
 
 #if !NO_EXTENSIONTYPING
-            // Filter out the ones with mangled names from applying static parameters
-            let minfos = 
-                let methsWithStaticParams = 
-                    minfos 
-                    |> List.filter (fun minfo -> 
-                        match minfo.ProvidedStaticParameterInfo with 
-                        | Some (_methBeforeArguments, staticParams) -> staticParams.Length <> 0
-                        | _ -> false)
-                    |> List.map (fun minfo -> minfo.DisplayName)
+                    // Filter out the ones with mangled names from applying static parameters
+                    let minfos = 
+                        let methsWithStaticParams = 
+                            minfos 
+                            |> List.filter (fun minfo -> 
+                                match minfo.ProvidedStaticParameterInfo with 
+                                | Some (_methBeforeArguments, staticParams) -> staticParams.Length <> 0
+                                | _ -> false)
+                            |> List.map (fun minfo -> minfo.DisplayName)
 
-                if methsWithStaticParams.IsEmpty then minfos
-                else minfos |> List.filter (fun minfo -> 
-                        let nm = minfo.LogicalName
-                        not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal(m))))
+                        if methsWithStaticParams.IsEmpty then minfos
+                        else minfos |> List.filter (fun minfo -> 
+                                let nm = minfo.LogicalName
+                                not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal(m))))
 #endif
 
-            minfos 
+                    minfos 
 
-        else []
+        else 
+            []
+
     // Partition methods into overload sets
     let rec partitionl (l:MethInfo list) acc = 
         match l with
@@ -4185,13 +4193,12 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                       yield einfo.AddMethod.DisplayName
                       yield einfo.RemoveMethod.DisplayName ]
         
-            let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
         
             let pinfos = 
                 pinfosIncludingUnseen
                 |> List.filter (fun x -> not (PropInfoIsUnseen m x))
         
-            let minfoFilter (minfo: MethInfo) = 
+            let minfoFilter (suppressedMethNames:Zset<_>) (minfo: MethInfo) = 
                 // Only show the Finalize, MemberwiseClose etc. methods on System.Object for values whose static type really is 
                 // System.Object. Few of these are typically used from F#.  
                 //
@@ -4242,37 +4249,49 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
             | Item.MethodGroup _ ->
                 // REVIEW: add a name filter here in the common cases?
                 let minfos = 
-                    let minfos =
-                        AllMethInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m ty 
-                        |> List.filter minfoFilter
-        
+                    let minfos = AllMethInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m ty 
+                    if isNil minfos then [] else
+                     
+                    let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
                     let minfos = 
-                        let addersAndRemovers = 
-                            pinfoItems 
-                            |> List.collect (function Item.Event(FSEvent(_,_,addValRef,removeValRef)) -> [addValRef.LogicalName;removeValRef.LogicalName] | _ -> [])
-                            |> set
+                        minfos
+                        |> List.filter (minfoFilter suppressedMethNames)
         
-                        if addersAndRemovers.IsEmpty then minfos
-                        else minfos |> List.filter (fun minfo -> not (addersAndRemovers.Contains minfo.LogicalName))
+                    if isNil minfos then 
+                        []
+                    else
+                        let minfos = 
+                            let addersAndRemovers = 
+                                let hashSet = HashSet()
+                                for item in pinfoItems do
+                                    match item with
+                                    | Item.Event(FSEvent(_,_,addValRef,removeValRef)) -> 
+                                        hashSet.Add addValRef.LogicalName |> ignore
+                                        hashSet.Add removeValRef.LogicalName |> ignore
+                                    | _ -> ()
+                                hashSet
+        
+                            if addersAndRemovers.Count = 0 then minfos
+                            else minfos |> List.filter (fun minfo -> not (addersAndRemovers.Contains minfo.LogicalName))
         
         #if !NO_EXTENSIONTYPING
-                    // Filter out the ones with mangled names from applying static parameters
-                    let minfos = 
-                        let methsWithStaticParams = 
-                            minfos 
-                            |> List.filter (fun minfo -> 
-                                match minfo.ProvidedStaticParameterInfo with 
-                                | Some (_methBeforeArguments, staticParams) -> staticParams.Length <> 0
-                                | _ -> false)
-                            |> List.map (fun minfo -> minfo.DisplayName)
+                        // Filter out the ones with mangled names from applying static parameters
+                        let minfos = 
+                            let methsWithStaticParams = 
+                                minfos 
+                                |> List.filter (fun minfo -> 
+                                    match minfo.ProvidedStaticParameterInfo with 
+                                    | Some (_methBeforeArguments, staticParams) -> staticParams.Length <> 0
+                                    | _ -> false)
+                                |> List.map (fun minfo -> minfo.DisplayName)
         
-                        if methsWithStaticParams.IsEmpty then minfos
-                        else minfos |> List.filter (fun minfo -> 
-                                let nm = minfo.LogicalName
-                                not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal(m))))
+                            if methsWithStaticParams.IsEmpty then minfos
+                            else minfos |> List.filter (fun minfo -> 
+                                    let nm = minfo.LogicalName
+                                    not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal(m))))
         #endif
         
-                    minfos 
+                        minfos 
     
                 // Partition methods into overload sets
                 let rec partitionl (l:MethInfo list) acc = 
