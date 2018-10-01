@@ -693,9 +693,6 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) 
         eIndexedExtensionMembers = eIndexedExtensionMembers 
         eUnindexedExtensionMembers = eUnindexedExtensionMembers }
 
-let TryFindPatternByName name {ePatItems = patternMap} =
-    NameMap.tryFind name patternMap
-
 /// Add a set of type definitions to the name resolution environment 
 let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap m root nenv tcrefs =
     if isNil tcrefs then nenv else
