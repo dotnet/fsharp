@@ -190,29 +190,27 @@ module CoreTests =
         end
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
-            fsi cfg "" ["test.fsx"]
-
-            testOkFile.CheckExists()
-        end
-
-        begin
-
-            use testOkFile = fileguard cfg "test.ok"
-
-            fsiAnyCpu cfg "" ["test.fsx"]
-
-            testOkFile.CheckExists()
-        end
-
-        begin
             use testOkFile = fileguard cfg "test2.ok"
 
             fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
 
-            singleNegTest cfg "test2"
+            singleNegTest { cfg with fsc_flags = sprintf "%s --warnaserror-" cfg.fsc_flags } "test2"
 
             exec cfg ("." ++ "test2.exe") ""
+
+            testOkFile.CheckExists()
+        end
+
+        begin
+            csc cfg """/langversion:7.2 /nologo /target:library /out:cslib3.dll""" ["cslib3.cs"]
+
+            use testOkFile = fileguard cfg "test3.ok"
+
+            fsc cfg "%s -r:cslib3.dll -o:test3.exe -g" cfg.fsc_flags ["test3.fsx"]
+
+            singleNegTest { cfg with fsc_flags = sprintf "%s -r:cslib3.dll" cfg.fsc_flags } "test3"
+
+            exec cfg ("." ++ "test3.exe") ""
 
             testOkFile.CheckExists()
         end
@@ -2390,6 +2388,12 @@ module TypecheckTests =
     let ``type check neg102`` () = singleNegTest (testConfig "typecheck/sigs") "neg102"
 
     [<Test>]
+    let ``type check neg103`` () = singleNegTest (testConfig "typecheck/sigs") "neg103"
+
+    [<Test>]
+    let ``type check neg104`` () = singleNegTest (testConfig "typecheck/sigs") "neg104"
+
+    [<Test>]
     let ``type check neg106`` () = singleNegTest (testConfig "typecheck/sigs") "neg106"
 
     [<Test>]
@@ -2402,10 +2406,7 @@ module TypecheckTests =
     let ``type check neg109`` () = singleNegTest (testConfig "typecheck/sigs") "neg109"
 
     [<Test>]
-    let ``type check neg103`` () = singleNegTest (testConfig "typecheck/sigs") "neg103"
-
-    [<Test>]
-    let ``type check neg104`` () = singleNegTest (testConfig "typecheck/sigs") "neg104"
+    let ``type check neg110`` () = singleNegTest (testConfig "typecheck/sigs") "neg110"
 
     [<Test>] 
     let ``type check neg_issue_3752`` () = singleNegTest (testConfig "typecheck/sigs") "neg_issue_3752"
