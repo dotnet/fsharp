@@ -5718,13 +5718,13 @@ let CombineCcuContentFragments m l =
             let tab2 = mty2.AllEntitiesByLogicalMangledName
             let entities = 
                 [ for e1 in mty1.AllEntities do 
-                      match tab2.TryFind e1.LogicalName with
-                      | Some e2 -> yield CombineEntites path e1 e2
-                      | None -> yield e1 
+                      match tab2.TryGetValue e1.LogicalName with
+                      | true, e2 -> yield CombineEntites path e1 e2
+                      | _ -> yield e1
                   for e2 in mty2.AllEntities do 
-                      match tab1.TryFind e2.LogicalName with
-                      | Some _ -> ()
-                      | None -> yield e2 ]
+                      match tab1.TryGetValue e2.LogicalName with
+                      | true, _ -> ()
+                      | _ -> yield e2 ]
 
             let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
 
