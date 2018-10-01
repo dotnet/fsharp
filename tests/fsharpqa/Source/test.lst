@@ -267,7 +267,7 @@ Misc01			Warnings
 Misc01			ErrorMessages\NameResolution
 Misc01			ErrorMessages\UnitGenericAbstractType
 Misc01			ErrorMessages\ConfusingTypeName
-Misc01			ErrorMessages\ApplicativeComputationExpressions
+Misc01,AppCE	ErrorMessages\ApplicativeComputationExpressions
 
 Misc02			Libraries\Portable
 Misc02			Misc
