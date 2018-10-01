@@ -154,12 +154,11 @@ let unsplitTypeName (ns, n) =
     | [] -> String.concat "." ns + "." + n 
     | _ -> n 
 
-let splitTypeNameRightAux nm = 
-    if String.contains nm '.' then 
-      let idx = String.rindex nm '.'
-      let s1, s2 = splitNameAt nm idx
-      Some s1, s2 
-    else None, nm
+let splitTypeNameRightAux (nm:string) = 
+    let idx = nm.LastIndexOf '.'
+    if idx = -1 then None, nm else
+    let s1, s2 = splitNameAt nm idx
+    Some s1, s2
 
 let splitTypeNameRight nm =
     memoizeNamespaceRightTable.GetOrAdd(nm, splitTypeNameRightAux)
@@ -4188,23 +4187,6 @@ let resolveILMethodRef td mref = resolveILMethodRefWithRescope id td mref
 
 let mkRefToILModule m =
   ILModuleRef.Create(m.Name, true, None)
-
-
-let ungenericizeTypeName n = 
-  let sym = '`'
-  if 
-    String.contains n sym && 
-      (* check what comes after the symbol is a number *)
-    (let m = String.rindex n sym
-     let res = ref (m < n.Length - 1)
-     for i = m + 1 to n.Length - 1 do
-       res := !res && n.[i] >= '0' && n.[i] <= '9'
-     !res)
-  then 
-      let pos = String.rindex n sym
-      String.sub n 0 pos
-  else n
-
 
 type ILEventRef =
     { erA: ILTypeRef; erB: string }

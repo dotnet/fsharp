@@ -484,30 +484,36 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
      
     let [<Literal>] private mangledGenericTypeNameSym = '`'
 
-    let IsMangledGenericName (n:string) = 
-        n.IndexOf mangledGenericTypeNameSym <> -1 &&
+    let TryDemangleGenericNameAndPos (n:string) =
         (* check what comes after the symbol is a number *)
-        let m = n.LastIndexOf mangledGenericTypeNameSym
-        let mutable res = m < n.Length - 1
-        for i = m + 1 to n.Length - 1 do
-            res <- res && n.[i] >= '0' && n.[i] <= '9'
-        res
+        let pos = n.LastIndexOf mangledGenericTypeNameSym
+        if pos = -1 then ValueNone else
+        let mutable res = pos < n.Length - 1
+        let mutable i = pos + 1
+        while res && i < n.Length do
+            let char = n.[i]
+            if not (char >= '0' && char <= '9') then
+                res <- false
+            i <- i + 1
+        if res then
+            ValueSome pos
+        else
+            ValueNone
 
     type NameArityPair = NameArityPair of string * int
 
-    let DecodeGenericTypeName n = 
-        if IsMangledGenericName n then 
-            let pos = n.LastIndexOf mangledGenericTypeNameSym
-            let res = n.Substring(0,pos)
-            let num = n.Substring(pos+1,n.Length - pos - 1)
-            NameArityPair(res, int32 num)
-        else NameArityPair(n,0)
+    let DecodeGenericTypeName pos (mangledName:string) =
+        let res = mangledName.Substring(0,pos)
+        let num = mangledName.Substring(pos+1,mangledName.Length - pos - 1)
+        NameArityPair(res, int32 num)
 
-    let DemangleGenericTypeName n = 
-        if  IsMangledGenericName n then 
-            let pos = n.LastIndexOf mangledGenericTypeNameSym
-            n.Substring(0,pos)
-        else n
+    let DemangleGenericTypeNameWithPos pos (mangledName:string) =
+        mangledName.Substring(0,pos)
+
+    let DemangleGenericTypeName (mangledName:string) =
+        match TryDemangleGenericNameAndPos mangledName with
+        | ValueSome pos -> DemangleGenericTypeNameWithPos pos mangledName
+        | _ -> mangledName
 
     let private chopStringTo (s:string) (c:char) =
         match s.IndexOf c with
