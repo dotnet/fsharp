@@ -4360,4 +4360,10 @@
   <data name="tcTypeDoesNotInheritAttribute" xml:space="preserve">
     <value>This type does not inherit Attribute, it will not work correctly with other .NET languages.</value>
   </data>
+  <data name="tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn" xml:space="preserve">
+    <value>Expecting 'return' but saw something else. Applicative computation expressions must be of the form 'let! &lt;pat1&gt; = &lt;expr2&gt; and! &lt;pat2&gt; = &lt;expr2&gt; and! ... and! &lt;patN&gt; = &lt;exprN&gt; return &lt;exprBody&gt;'.</value>
+  </data>
+  <data name="tcInvalidAndUseBangBinding" xml:space="preserve">
+    <value>Pattern matching is not allowed on the left-hand side of the equals. 'use! ... anduse! ...' bindings must be of the form 'use! &lt;var&gt; = &lt;expr&gt;' or 'anduse! &lt;var&gt; = &lt;expr&gt;'.</value>
+  </data>
 </root>

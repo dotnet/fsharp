@@ -4357,6 +4357,12 @@ type internal SR private() =
     /// This type does not inherit Attribute, it will not work correctly with other .NET languages.
     /// (Originally from ..\FSComp.txt:1443)
     static member tcTypeDoesNotInheritAttribute() = (3242, GetStringFunc("tcTypeDoesNotInheritAttribute",",,,") )
+    /// Expecting 'return' but saw something else. Applicative computation expressions must be of the form 'let! <pat1> = <expr2> and! <pat2> = <expr2> and! ... and! <patN> = <exprN> return <exprBody>'.
+    /// (Originally from ..\FSComp.txt:1444)
+    static member tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn() = (3243, GetStringFunc("tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn",",,,") )
+    /// Pattern matching is not allowed on the left-hand side of the equals. 'use! ... anduse! ...' bindings must be of the form 'use! <var> = <expr>' or 'anduse! <var> = <expr>'.
+    /// (Originally from ..\FSComp.txt:1445)
+    static member tcInvalidAndUseBangBinding() = (3244, GetStringFunc("tcInvalidAndUseBangBinding",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5774,4 +5780,6 @@ type internal SR private() =
         ignore(GetString("chkNoSpanLikeValueFromExpression"))
         ignore(GetString("tastCantTakeAddressOfExpression"))
         ignore(GetString("tcTypeDoesNotInheritAttribute"))
+        ignore(GetString("tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn"))
+        ignore(GetString("tcInvalidAndUseBangBinding"))
         ()
