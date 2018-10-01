@@ -1,3 +1,5 @@
+namespace ComputationsExpressions.Test
+
 /// Used for tracking what operations a Trace builder was asked to perform
 type TraceOp =
     | Apply of arg : obj // We only capture the arg here, because function equality is awkward
