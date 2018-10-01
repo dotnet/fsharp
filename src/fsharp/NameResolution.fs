@@ -1008,17 +1008,17 @@ type TypeNameResolutionInfo =
 /// be used to qualify access if needed 
 let LookupTypeNameInEntityHaveArity nm (staticResInfo: TypeNameResolutionStaticArgsInfo) (mty:ModuleOrNamespaceType) = 
     let attempt1 = mty.TypesByMangledName.TryFind (staticResInfo.MangledNameForType nm)
-    match attempt1 with 
-    | Some _ as r ->  r
+    match attempt1 with
     | None -> mty.TypesByMangledName.TryFind nm
+    | _ -> attempt1
 
 /// Unqualified lookups of type names where the number of generic arguments is known 
 /// from context, e.g. List<arg>.  Rebindings due to 'open' may have rebound identifiers.
 let LookupTypeNameInEnvHaveArity fq nm numTyArgs (nenv:NameResolutionEnv) = 
     let key = if IsMangledGenericName nm then DecodeGenericTypeName nm else NameArityPair(nm,numTyArgs)
-    match nenv.TyconsByDemangledNameAndArity(fq).TryFind(key)  with
-    | Some res -> Some res
+    match nenv.TyconsByDemangledNameAndArity(fq).TryFind key with
     | None -> nenv.TyconsByAccessNames(fq).TryFind nm |> Option.map List.head
+    | res -> res
 
 /// Implements unqualified lookups of type names where the number of generic arguments is NOT known 
 /// from context. 
@@ -1039,14 +1039,14 @@ let LookupTypeNameInEnvHaveArity fq nm numTyArgs (nenv:NameResolutionEnv) =
 
 let LookupTypeNameNoArity nm (byDemangledNameAndArity: LayeredMap<NameArityPair,_>) (byAccessNames: LayeredMultiMap<string,_>) = 
     if IsMangledGenericName nm then 
-      match byDemangledNameAndArity.TryFind (DecodeGenericTypeName nm) with 
-      | Some res -> [res]
-      | None -> 
-          match byAccessNames.TryFind nm with
-          | Some res -> res
-          | None -> []
+        match byDemangledNameAndArity.TryGetValue (DecodeGenericTypeName nm) with 
+        | true, res -> [res]
+        | _ ->
+            match byAccessNames.TryGetValue nm with
+            | true, res -> res
+            | _ -> []
     else 
-      byAccessNames.[nm]
+        byAccessNames.[nm]
 
 /// Qualified lookup of type names in the environment
 let LookupTypeNameInEnvNoArity fq nm (nenv: NameResolutionEnv) = 
@@ -1843,15 +1843,15 @@ let rec ResolveLongIndentAsModuleOrNamespace sink atMostOne amap m first fullyQu
             let occurence = if isOpenDecl then ItemOccurence.Open else ItemOccurence.Use
             CallNameResolutionSink sink (m, nenv, item, item, emptyTyparInst, occurence, nenv.DisplayEnv, ad)
 
-        match moduleOrNamespaces.TryFind id.idText with
-        | Some modrefs ->
+        match moduleOrNamespaces.TryGetValue id.idText with
+        | true, modrefs ->
             /// Look through the sub-namespaces and/or modules
             let rec look depth (modref: ModuleOrNamespaceRef) (mty:ModuleOrNamespaceType) (lid:Ident list) =
                 match lid with 
                 | [] -> success (depth,modref,mty)
                 | id :: rest ->
-                    match mty.ModulesAndNamespacesByDemangledName.TryFind id.idText with
-                    | Some mspec -> 
+                    match mty.ModulesAndNamespacesByDemangledName.TryGetValue id.idText with
+                    | true, mspec ->
                         let subref = modref.NestedTyconRef mspec
                         if IsEntityAccessible amap m ad subref then
                             notifyNameResolution subref id.idRange
@@ -1867,7 +1867,7 @@ let rec ResolveLongIndentAsModuleOrNamespace sink atMostOne amap m first fullyQu
                     look 1 modref modref.ModuleOrNamespaceType rest
                 else
                     raze (namespaceNotFound.Force())) 
-        | None -> raze (namespaceNotFound.Force())
+        | _ -> raze (namespaceNotFound.Force())
 
 
 let ResolveLongIndentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv:NameResolutionEnv) ad id rest isOpenDecl f =
@@ -2254,12 +2254,12 @@ let (|AccessibleEntityRef|_|) amap m ad (modref: ModuleOrNamespaceRef) mspec =
 let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeNameResInfo: TypeNameResolutionInfo) ad resInfo depth m modref (mty:ModuleOrNamespaceType) (id:Ident) (rest :Ident list) =
     // resInfo records the modules or namespaces actually relevant to a resolution
     let m = unionRanges m id.idRange
-    match mty.AllValsByLogicalName.TryFind(id.idText) with
-    | Some vspec when IsValAccessible ad (mkNestedValRef modref vspec) -> 
+    match mty.AllValsByLogicalName.TryGetValue id.idText with
+    | true, vspec when IsValAccessible ad (mkNestedValRef modref vspec) -> 
         success(resInfo,Item.Value (mkNestedValRef modref vspec),rest)
     | _->
-    match mty.ExceptionDefinitionsByDemangledName.TryFind(id.idText) with
-    | Some excon when IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef excon) -> 
+    match mty.ExceptionDefinitionsByDemangledName.TryGetValue id.idText with
+    | true, excon when IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef excon) -> 
         success (resInfo,Item.ExnCase (modref.NestedTyconRef excon),rest)
     | _ ->
         // Something in a discriminated union without RequireQualifiedAccess attribute?
@@ -2305,8 +2305,8 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
         let moduleSearch() = 
             match rest with
             | id2::rest2 ->
-                match mty.ModulesAndNamespacesByDemangledName.TryFind(id.idText) with
-                | Some(AccessibleEntityRef ncenv.amap m ad modref submodref) -> 
+                match mty.ModulesAndNamespacesByDemangledName.TryGetValue id.idText with
+                | true, AccessibleEntityRef ncenv.amap m ad modref submodref -> 
                     let resInfo = resInfo.AddEntity(id.idRange,submodref)
 
                     OneResult (ResolveExprLongIdentInModuleOrNamespace ncenv nenv typeNameResInfo ad resInfo (depth+1) m submodref submodref.ModuleOrNamespaceType id2 rest2)
@@ -2391,10 +2391,10 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) first fullyQualified 
             let typeError = ref None
             // Single identifier.  Lookup the unqualified names in the environment
             let envSearch = 
-                match nenv.eUnqualifiedItems.TryFind(id.idText) with
+                match nenv.eUnqualifiedItems.TryGetValue id.idText with
 
                 // The name is a type name and it has not been clobbered by some other name
-                | Some (Item.UnqualifiedType tcrefs) -> 
+                | true, Item.UnqualifiedType tcrefs -> 
                   
                     // Do not use type names from the environment if an explicit type instantiation is 
                     // given and the number of type parameters do not match
@@ -2411,9 +2411,9 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) first fullyQualified 
                         Some(item,rest)
                     | Exception e -> typeError := Some e; None
 
-                | Some res -> 
+                | true, res ->
                     Some (FreshenUnqualifiedItem ncenv m res, [])
-                | None -> 
+                | _ -> 
                     None
 
             match envSearch with 
@@ -2495,8 +2495,8 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) first fullyQualified 
                 match fullyQualified with 
                 | FullyQualified -> false
                 | _ -> 
-                    match nenv.eUnqualifiedItems.TryFind(nm) with 
-                    | Some(Item.Value _) -> true 
+                    match nenv.eUnqualifiedItems.TryGetValue nm with 
+                    | true, Item.Value _ -> true 
                     | _ -> false
 
             if ValIsInEnv id.idText then
@@ -2527,10 +2527,10 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) first fullyQualified 
                       | FullyQualified -> 
                           NoResultsOrUsefulErrors
                       | OpenQualified -> 
-                          match nenv.eUnqualifiedItems.TryFind id.idText with
-                          | Some (Item.UnqualifiedType _) 
-                          | None -> NoResultsOrUsefulErrors
-                          | Some res -> OneSuccess (resInfo,FreshenUnqualifiedItem ncenv m res,rest)
+                          match nenv.eUnqualifiedItems.TryGetValue id.idText with
+                          | true, Item.UnqualifiedType _ 
+                          | false, _ -> NoResultsOrUsefulErrors
+                          | true, res -> OneSuccess (resInfo,FreshenUnqualifiedItem ncenv m res,rest)
                   
                   moduleSearch ad () +++ tyconSearch ad +++ envSearch
 
@@ -2594,17 +2594,17 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv num
         let ucinfo = FreshenUnionCaseRef ncenv m ucref
         success (resInfo,Item.UnionCase(ucinfo,showDeprecated),rest)
     | _ -> 
-    match mty.ExceptionDefinitionsByDemangledName.TryFind(id.idText) with
-    | Some exnc when IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef exnc) -> 
+    match mty.ExceptionDefinitionsByDemangledName.TryGetValue id.idText with
+    | true, exnc when IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef exnc) -> 
         success (resInfo,Item.ExnCase (modref.NestedTyconRef exnc),rest)
     | _ ->
     // An active pattern constructor in a module 
-    match (ActivePatternElemsOfModuleOrNamespace modref).TryFind(id.idText) with
-    | Some ( APElemRef(_,vref,_) as apref) when IsValAccessible ad vref -> 
+    match (ActivePatternElemsOfModuleOrNamespace modref).TryGetValue id.idText with
+    | true, (APElemRef(_,vref,_) as apref) when IsValAccessible ad vref -> 
         success (resInfo,Item.ActivePatternCase apref,rest)
     | _ -> 
-    match mty.AllValsByLogicalName.TryFind(id.idText) with
-    | Some vspec when IsValAccessible ad (mkNestedValRef modref vspec) -> 
+    match mty.AllValsByLogicalName.TryGetValue id.idText with
+    | true, vspec when IsValAccessible ad (mkNestedValRef modref vspec) -> 
         success(resInfo,Item.Value (mkNestedValRef modref vspec),rest)
     | _ ->
     let tcrefs = lazy (
@@ -2634,8 +2634,8 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv num
     let moduleSearch() = 
         match rest with
         | id2::rest2 ->
-            match mty.ModulesAndNamespacesByDemangledName.TryFind(id.idText) with
-            | Some(AccessibleEntityRef ncenv.amap m ad modref submodref) -> 
+            match mty.ModulesAndNamespacesByDemangledName.TryGetValue id.idText with
+            | true, AccessibleEntityRef ncenv.amap m ad modref submodref -> 
                 let resInfo = resInfo.AddEntity(id.idRange,submodref)
                 OneResult (ResolvePatternLongIdentInModuleOrNamespace ncenv nenv numTyArgsOpt ad resInfo (depth+1) m submodref submodref.ModuleOrNamespaceType id2 rest2)
             | _ -> 
@@ -2682,8 +2682,8 @@ let rec ResolvePatternLongIdentPrim sink (ncenv:NameResolver) fullyQualified war
             // Single identifiers in patterns - bind to constructors and active patterns 
             // For the special case of 
             //   let C = x 
-            match nenv.ePatItems.TryFind(id.idText) with
-            | Some res when not newDef  -> FreshenUnqualifiedItem ncenv m res
+            match nenv.ePatItems.TryGetValue id.idText with
+            | true, res when not newDef  -> FreshenUnqualifiedItem ncenv m res
             | _ -> 
             // Single identifiers in patterns - variable bindings 
             if not newDef &&
@@ -2829,8 +2829,8 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace sink nenv (ncenv:NameRes
     | id2::rest2 ->
         let m = unionRanges m id.idRange
         let modulSearch = 
-            match modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryFind(id.idText) with
-            | Some(AccessibleEntityRef ncenv.amap m ad modref submodref) -> 
+            match modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryGetValue id.idText with
+            | true, AccessibleEntityRef ncenv.amap m ad modref submodref -> 
                 let item = Item.ModuleOrNamespaces [submodref]
                 CallNameResolutionSink sink (id.idRange, nenv, item, item, emptyTyparInst, ItemOccurence.Use, nenv.DisplayEnv, ad)                
                 let resInfo = resInfo.AddEntity(id.idRange,submodref)
@@ -2995,8 +2995,8 @@ let rec ResolveFieldInModuleOrNamespace (ncenv:NameResolver) nenv ad (resInfo:Re
     let modulSearch() = 
         match rest with
         | id2::rest2 ->
-            match modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryFind(id.idText) with
-            | Some(AccessibleEntityRef ncenv.amap m ad modref submodref) -> 
+            match modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryGetValue id.idText with
+            | true, AccessibleEntityRef ncenv.amap m ad modref submodref -> 
                 let resInfo = resInfo.AddEntity(id.idRange,submodref)
                 ResolveFieldInModuleOrNamespace ncenv nenv ad resInfo (depth+1) m submodref submodref.ModuleOrNamespaceType id2 rest2
                 |> OneResult
@@ -3030,9 +3030,9 @@ let SuggestLabelsOfRelatedRecords g (nenv:NameResolutionEnv) (id:Ident) (allFiel
             else
                 let possibleRecords =
                     [for fld in givenFields do
-                        match Map.tryFind fld nenv.eFieldLabels with
-                        | None -> ()
-                        | Some recordTypes -> yield! (recordTypes |> List.map (fun r -> r.TyconRef.DisplayName, fld)) ]
+                        match nenv.eFieldLabels.TryGetValue fld with
+                        | true, recordTypes -> yield! (recordTypes |> List.map (fun r -> r.TyconRef.DisplayName, fld))
+                        | _ -> () ]
                     |> List.groupBy fst
                     |> List.map (fun (r,fields) -> r, fields |> List.map snd)
                     |> List.filter (fun (_,fields) -> givenFields.IsSubsetOf fields)
@@ -3170,8 +3170,8 @@ let private ResolveExprDotLongIdent (ncenv:NameResolver) m ad nenv ty (id:Ident)
             if isAppTy ncenv.g ty then 
                 NoResultsOrUsefulErrors
             else 
-                match nenv.eFieldLabels |> Map.tryFind id.idText with 
-                | Some(rfref :: _) ->
+                match nenv.eFieldLabels.TryGetValue id.idText with 
+                | true, rfref :: _ ->
                     // NOTE (instantiationGenerator cleanup): we need to freshen here because we don't know the type. 
                     // But perhaps the caller should freshen?? 
                     let item = FreshenRecdFieldRef ncenv m rfref
@@ -3408,17 +3408,17 @@ let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThen f plid (m
     match plid with 
     | [] -> f modref
     | id:: rest -> 
-        match mty.ModulesAndNamespacesByDemangledName.TryFind(id) with
-        | Some mty -> PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThen f rest (modref.NestedTyconRef mty) 
-        | None -> []
+        match mty.ModulesAndNamespacesByDemangledName.TryGetValue id with
+        | true, mty -> PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThen f rest (modref.NestedTyconRef mty) 
+        | _ -> []
 
 let PartialResolveLongIndentAsModuleOrNamespaceThen (nenv:NameResolutionEnv) plid f =
-    match plid with 
+    match plid with
     | id:: rest -> 
-        match Map.tryFind id nenv.eModulesAndNamespaces with
-        | Some modrefs -> 
+        match nenv.eModulesAndNamespaces.TryGetValue id with
+        | true, modrefs -> 
             List.collect (PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThen f rest) modrefs
-        | None ->
+        | _ ->
             []
     | [] -> []
 
@@ -3827,8 +3827,8 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
 
     | id :: rest  -> 
 
-        (match mty.ModulesAndNamespacesByDemangledName.TryFind(id) with
-         | Some mspec ->
+        (match mty.ModulesAndNamespacesByDemangledName.TryGetValue id with
+         | true, mspec ->
              let nested = modref.NestedTyconRef mspec
              if IsTyconUnseenObsoleteSpec ad g ncenv.amap m nested allowObsolete then [] else
              let allowObsolete = allowObsolete && not (isNil rest)
@@ -3852,16 +3852,16 @@ let TryToResolveLongIdentAsType (ncenv: NameResolver) (nenv: NameResolutionEnv) 
     | Some id ->
         // Look for values called 'id' that accept the dot-notation 
         let ty = 
-            match nenv.eUnqualifiedItems |> Map.tryFind id with
+            match nenv.eUnqualifiedItems.TryGetValue id with
                // v.lookup : member of a value
-            | Some v ->
+            | true, v ->
                 match v with 
                 | Item.Value x -> 
                     let ty = x.Type
                     let ty = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g ty then destRefCellTy g ty else ty
                     Some ty
                 | _ -> None
-            | None -> None
+            | _ -> None
 
         match ty with
         | Some _ -> ty
@@ -3951,16 +3951,16 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
                 [])
         // Look for values called 'id' that accept the dot-notation 
         let values, isItemVal = 
-            (match nenv.eUnqualifiedItems |> Map.tryFind id with
+            (match nenv.eUnqualifiedItems.TryGetValue id with
                // v.lookup : member of a value
-             | Some v ->
+             | true, v ->
                  match v with 
                  | Item.Value x -> 
                      let ty = x.Type
                      let ty = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g ty then destRefCellTy g ty else ty
                      (ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest ty), true
                  | _ -> [], false
-             | None -> [], false)
+             | _ -> [], false)
 
         let staticSometingInType = 
             [ if not isItemVal then 
@@ -4026,8 +4026,8 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
          ]
 
     | id :: rest  -> 
-        (match mty.ModulesAndNamespacesByDemangledName.TryFind(id) with
-         | Some mspec -> 
+        (match mty.ModulesAndNamespacesByDemangledName.TryGetValue id with
+         | true, mspec -> 
              let nested = modref.NestedTyconRef mspec
              if IsTyconUnseenObsoleteSpec ad g ncenv.amap m nested allowObsolete then [] else
              let allowObsolete = allowObsolete && not (isNil rest)
@@ -4422,8 +4422,8 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
         
         | id :: rest  -> 
         
-            match mty.ModulesAndNamespacesByDemangledName.TryFind id with
-            | Some mspec -> 
+            match mty.ModulesAndNamespacesByDemangledName.TryGetValue id with
+            | true, mspec -> 
                 let nested = modref.NestedTyconRef mspec
                 if not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m nested true) then
                     yield! ResolvePartialLongIdentInModuleOrNamespaceForItem ncenv nenv m ad nested rest item
@@ -4440,20 +4440,20 @@ let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f pli
     match plid with 
     | [] -> f modref
     | id :: rest -> 
-        match mty.ModulesAndNamespacesByDemangledName.TryFind id with
-        | Some mty -> 
+        match mty.ModulesAndNamespacesByDemangledName.TryGetValue id with
+        | true, mty -> 
             PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest (modref.NestedTyconRef mty) 
-        | None -> Seq.empty
+        | _ -> Seq.empty
 
 let PartialResolveLongIndentAsModuleOrNamespaceThenLazy (nenv:NameResolutionEnv) plid f =
     seq {
         match plid with 
         | id :: rest -> 
-            match Map.tryFind id nenv.eModulesAndNamespaces with
-            | Some modrefs -> 
+            match nenv.eModulesAndNamespaces.TryGetValue id with
+            | true, modrefs -> 
                 for modref in modrefs do
                     yield! PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest modref
-            | None -> ()
+            | _ -> ()
         | [] -> ()
     }
 
@@ -4526,8 +4526,8 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
                     else Seq.empty)
             
             // Look for values called 'id' that accept the dot-notation 
-            match Map.tryFind id nenv.eUnqualifiedItems with
-            | Some (Item.Value x) ->
+            match nenv.eUnqualifiedItems.TryGetValue id with
+            | true, Item.Value x ->
                 let ty = x.Type
                 let ty = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g ty then destRefCellTy g ty else ty
                 yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item ty
