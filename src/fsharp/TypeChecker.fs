@@ -1923,6 +1923,7 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
 let BuildFieldMap cenv env isPartial ty flds m = 
     let ad = env.eAccessRights
     if isNil flds then invalidArg "flds" "BuildFieldMap"
+    let fldCount = flds.Length
    
     let frefSets = 
         let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
@@ -1942,7 +1943,7 @@ let BuildFieldMap cenv env isPartial ty flds m =
                 warning (Error(FSComp.SR.tcFieldsDoNotDetermineUniqueRecordType(), m))
 
             // try finding a record type with the same number of fields as the ones that are given.
-            match tcrefs |> List.tryFind (fun tc -> tc.TrueFieldsAsList.Length = flds.Length) with
+            match tcrefs |> List.tryFind (fun tc -> tc.TrueFieldsAsList.Length = fldCount) with
             | Some tcref -> tcref            
             | _ -> 
                 // OK, there isn't a unique, good type dictated by the intersection for the field refs. 
