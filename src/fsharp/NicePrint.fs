@@ -102,7 +102,7 @@ module private PrintIL =
     open Microsoft.FSharp.Compiler.AbstractIL.IL
         
     let fullySplitILTypeRef (tref:ILTypeRef) = 
-        (List.collect IL.splitNamespace (tref.Enclosing @ [IL.ungenericizeTypeName tref.Name])) 
+        (List.collect IL.splitNamespace (tref.Enclosing @ [PrettyNaming.DemangleGenericTypeName tref.Name])) 
 
     let layoutILTypeRefName denv path =
         let path = 
@@ -193,7 +193,7 @@ module private PrintIL =
         let args = signatur.ArgTypes |> List.map (layoutILType denv ilTyparSubst) 
         let res  = 
             match cons with
-            | Some className -> layoutILTypeRefName denv (SplitNamesForILPath (ungenericizeTypeName className)) ^^ (pruneParms className ilTyparSubst |> paramsL) // special case for constructor return-type (viz., the class itself)
+            | Some className -> layoutILTypeRefName denv (SplitNamesForILPath (PrettyNaming.DemangleGenericTypeName className)) ^^ (pruneParms className ilTyparSubst |> paramsL) // special case for constructor return-type (viz., the class itself)
             | None           -> signatur.ReturnType |> layoutILType denv ilTyparSubst
         match args with
         | []   -> WordL.structUnit ^^ WordL.arrow ^^ res
@@ -226,7 +226,7 @@ module private PrintIL =
         // return type be passed along as the `cons` parameter.)
         let res  = 
             match cons with
-            | Some className -> layoutILTypeRefName denv (SplitNamesForILPath (ungenericizeTypeName className)) ^^ (pruneParms className ilTyparSubst |> paramsL) // special case for constructor return-type (viz., the class itself)
+            | Some className -> layoutILTypeRefName denv (SplitNamesForILPath (PrettyNaming.DemangleGenericTypeName className)) ^^ (pruneParms className ilTyparSubst |> paramsL) // special case for constructor return-type (viz., the class itself)
             | None           -> retType |> layoutILType denv ilTyparSubst
         match parameters with
         | []   -> WordL.structUnit ^^ WordL.arrow ^^ res

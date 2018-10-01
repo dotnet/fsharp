@@ -1540,9 +1540,6 @@ val typeNameForGlobalFunctions: string
 
 val isTypeNameForGlobalFunctions: string -> bool
 
-val ungenericizeTypeName: string -> string (* e.g. List`1 --> List *)
-
-
 // ====================================================================
 // PART 2
 // 
