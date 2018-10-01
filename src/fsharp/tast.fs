@@ -3261,7 +3261,7 @@ and
             ValueSome tcr.binding
 
     /// Is the destination assembly available?
-    member tcr.CanDeref = tcr.TryDeref.IsSome
+    member tcr.CanDeref = ValueOption.isSome tcr.TryDeref
 
     /// Gets the data indicating the compiled representation of a type or module in terms of Abstract IL data structures.
     member x.CompiledRepresentation = x.Deref.CompiledRepresentation
@@ -3812,7 +3812,7 @@ and
         | None -> error(InternalError(sprintf "union case %s not found in type %s" x.CaseName x.TyconRef.LogicalName, x.TyconRef.Range))
 
     /// Try to dereference the reference 
-    member x.TryUnionCase =  x.TyconRef.TryDeref |> ValueOption.bind (fun tcref -> tcref.GetUnionCaseByName x.CaseName |> ValueOption.ofOption)
+    member x.TryUnionCase = x.TyconRef.TryDeref |> ValueOption.bind (fun tcref -> tcref.GetUnionCaseByName x.CaseName |> ValueOption.ofOption)
 
     /// Get the attributes associated with the union case
     member x.Attribs = x.UnionCase.Attribs
@@ -5449,7 +5449,7 @@ let primEntityRefEq compilingFslib fslibCcu (x : EntityRef) (y : EntityRef) =
          (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) && 
           let v1 = x.TryDeref 
           let v2 = y.TryDeref
-          v1.IsSome && v2.IsSome && v1.Value === v2.Value)) then
+          ValueOption.isSome v1 && ValueOption.isSome v2 && v1.Value === v2.Value)) then
         true
     else
         compilingFslib && fslibEntityRefEq fslibCcu x y  
@@ -5475,7 +5475,7 @@ let primValRefEq compilingFslib fslibCcu (x : ValRef) (y : ValRef) =
             // e.g. CompactFramework doesn't have support for quotations.
             let v1 = x.TryDeref 
             let v2 = y.TryDeref
-            v1.IsSome && v2.IsSome && v1.Value === v2.Value)
+            ValueOption.isSome v1 && ValueOption.isSome v2 && v1.Value === v2.Value)
         || (if compilingFslib then fslibValRefEq fslibCcu x y else false)
 
 //---------------------------------------------------------------------------
