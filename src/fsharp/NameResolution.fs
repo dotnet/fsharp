@@ -430,8 +430,7 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap:Import.Import
             // Method must be static, have 'Extension' attribute, must not be curried, must have at least one argument
             if not minfo.IsInstance && 
                not minfo.IsExtensionMember && 
-               minfo.NumArgs.Length = 1 && 
-               minfo.NumArgs.Head >= 1 && 
+               (match minfo.NumArgs with [x] when x >= 1 -> true | _ -> false) && 
                MethInfoHasAttribute g m g.attrib_ExtensionAttribute minfo
             then
                 let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
