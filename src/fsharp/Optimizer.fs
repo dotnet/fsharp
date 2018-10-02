@@ -2364,11 +2364,13 @@ and OptimizeVal cenv env expr (v:ValRef, m) =
 //------------------------------------------------------------------------- 
 
 and StripToNominalTyconRef cenv ty = 
-    if isAppTy cenv.g ty then destAppTy cenv.g ty 
-    elif isRefTupleTy cenv.g ty then 
-        let tyargs = destRefTupleTy cenv.g ty
-        mkCompiledTupleTyconRef cenv.g false (List.length tyargs), tyargs 
-    else failwith "StripToNominalTyconRef: unreachable" 
+    match tryAppTy cenv.g ty with
+    | ValueSome x -> x
+    | _ ->
+        if isRefTupleTy cenv.g ty then
+            let tyargs = destRefTupleTy cenv.g ty
+            mkCompiledTupleTyconRef cenv.g false (List.length tyargs), tyargs 
+        else failwith "StripToNominalTyconRef: unreachable" 
 
 and CanDevirtualizeApplication cenv v vref ty args  = 
      valRefEq cenv.g v vref
