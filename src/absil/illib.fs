@@ -432,18 +432,12 @@ module List =
     let existsSquared f xss = xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
     let mapiFoldSquared f z xss =  mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i,j,x)))
 
-[<Struct>]
-type ValueOption<'T> =
-    | ValueSome of 'T
-    | ValueNone
-    member x.IsSome = match x with ValueSome _ -> true | ValueNone -> false
-    member x.IsNone = match x with ValueSome _ -> false | ValueNone -> true
-    member x.Value = match x with ValueSome r -> r | ValueNone -> failwith "ValueOption.Value: value is None"
-
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ValueOption =
     let inline ofOption x = match x with Some x -> ValueSome x | None -> ValueNone
     let inline bind f x = match x with ValueSome x -> f x | ValueNone -> ValueNone
+    let inline isSome x = match x with ValueSome _ -> true | ValueNone -> false
+    let inline isNone x = match x with ValueSome _ -> false | ValueNone -> true
 
 type String with
     member inline x.StartsWithOrdinal(value) =
