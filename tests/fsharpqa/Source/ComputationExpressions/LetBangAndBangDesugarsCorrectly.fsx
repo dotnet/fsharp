@@ -1,9 +1,9 @@
 // #Misc #AppCE
 
-//<Expects status=success>val result : Trace int = Trace 3</Expects>
-//<Expects status=success>val trace : TraceOp list = [ Apply 2 ; Apply 1 ; Return ]</Expects>
+//<Expects status=success>val result : int ApplicativeBuilderLib.Trace = Trace 3</Expects>
+//<Expects status=success>val trace : ApplicativeBuilderLib.TraceOp list = .Return; Apply; Apply.</Expects>
 
-open ComputationsExpressions.Test
+open ApplicativeBuilderLib
 
 let result, trace =
     let tracer = TraceBuilder()

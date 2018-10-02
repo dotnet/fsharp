@@ -1,9 +1,9 @@
-namespace ComputationsExpressions.Test
+namespace ApplicativeBuilderLib
 
 /// Used for tracking what operations a Trace builder was asked to perform
 type TraceOp =
-    | Apply of arg : obj // We only capture the arg here, because function equality is awkward
-    | Return // Similarly, we don't capture the arg here for reasons of function equality pain
+    | Apply
+    | Return
     | EnterUsing of resource : obj
     | StartUsingBody of resource : obj
     | EndUsingBody of resource : obj
@@ -21,10 +21,10 @@ type TraceBuilder() =
 
     let mutable trace : TraceOp list = []
 
-    member __.GetTrace () = trace
+    member __.GetTrace () = List.rev trace
 
-    member __.Apply((Trace f), (Trace x) as xTrace) =
-        trace <- Apply xTrace :: trace
+    member __.Apply((Trace f) as fTrace, (Trace x) as xTrace) =
+        trace <- Apply :: trace
         Trace (f x)
 
     member __.Return(x) =
