@@ -3093,8 +3093,8 @@ let ResolveFieldPrim sink (ncenv:NameResolver) nenv ad ty (mp,id:Ident) allField
 
         if isAppTy g ty then 
             match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText,m,ty) with
-            | Some (RecdFieldInfo(_,rfref)) -> [ResolutionInfo.Empty, FieldResolution(rfref,false)]
-            | None ->
+            | ValueSome (RecdFieldInfo(_,rfref)) -> [ResolutionInfo.Empty, FieldResolution(rfref,false)]
+            | _ ->
                 if isRecdTy g ty then
                     // record label doesn't belong to record type -> suggest other labels of same record
                     let suggestLabels() = SuggestOtherLabelsOfSameRecordType g nenv ty id allFields

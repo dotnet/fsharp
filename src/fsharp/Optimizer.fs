@@ -455,8 +455,8 @@ let BindExternalLocalVal cenv (v:Val) vval env =
             // Passing an empty remap is sufficient for FSharp.Core.dll because it turns out the remapped type signature can
             // still be resolved.
             match tryRescopeVal cenv.g.fslibCcu Remap.Empty v with 
-            | Some vref -> BindValueForFslib vref.nlr v vval env 
-            | None -> env
+            | ValueSome vref -> BindValueForFslib vref.nlr v vval env 
+            | _ -> env
         else env
     env
 

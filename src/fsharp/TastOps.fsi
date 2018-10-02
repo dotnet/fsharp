@@ -9,6 +9,7 @@ open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Rational
@@ -482,7 +483,8 @@ val isFSharpStructOrEnumTy : TcGlobals -> TType -> bool
 val isFSharpEnumTy     : TcGlobals -> TType -> bool
 val isTyparTy          : TcGlobals -> TType -> bool
 val isAnyParTy         : TcGlobals -> TType -> bool
-val tryAnyParTy        : TcGlobals -> TType -> Typar option
+val tryAnyParTy        : TcGlobals -> TType -> ValueOption<Typar>
+val tryAnyParTyOption  : TcGlobals -> TType -> Typar option
 val isMeasureTy        : TcGlobals -> TType -> bool
 
 val mkAppTy : TyconRef -> TypeInst -> TType
@@ -493,14 +495,15 @@ val isProvenUnionCaseTy : TType -> bool
 val isAppTy        : TcGlobals -> TType -> bool
 val destAppTy      : TcGlobals -> TType -> TyconRef * TypeInst
 val tcrefOfAppTy   : TcGlobals -> TType -> TyconRef
-val tryDestAppTy   : TcGlobals -> TType -> TyconRef option
-val tryDestTyparTy : TcGlobals -> TType -> Typar option
-val tryDestFunTy : TcGlobals -> TType -> (TType * TType) option
+val tryDestAppTy   : TcGlobals -> TType -> ValueOption<TyconRef>
+val tryDestTyparTy : TcGlobals -> TType -> ValueOption<Typar>
+val tryDestFunTy : TcGlobals -> TType -> ValueOption<(TType * TType)>
 val argsOfAppTy    : TcGlobals -> TType -> TypeInst
 val mkInstForAppTy  : TcGlobals -> TType -> TyparInst
 
 /// Try to get a TyconRef for a type without erasing type abbreviations
-val tryNiceEntityRefOfTy : TType -> TyconRef option
+val tryNiceEntityRefOfTy : TType -> ValueOption<TyconRef>
+val tryNiceEntityRefOfTyOption : TType -> TyconRef option
 
 
 val domainOfFunTy  : TcGlobals -> TType -> TType
@@ -729,7 +732,7 @@ val tagEntityRefName: xref: EntityRef -> name: string -> StructuredFormat.Tagged
 
 /// Return the full text for an item as we want it displayed to the user as a fully qualified entity
 val fullDisplayTextOfModRef : ModuleOrNamespaceRef -> string
-val fullDisplayTextOfParentOfModRef : ModuleOrNamespaceRef -> string option
+val fullDisplayTextOfParentOfModRef : ModuleOrNamespaceRef -> ValueOption<string>
 val fullDisplayTextOfValRef   : ValRef -> string
 val fullDisplayTextOfValRefAsLayout   : ValRef -> StructuredFormat.Layout
 val fullDisplayTextOfTyconRef  : TyconRef -> string
@@ -883,8 +886,8 @@ val SigTypeOfImplFile : TypedImplFile -> ModuleOrNamespaceType
 //------------------------------------------------------------------------- 
 
 
-val tryRescopeEntity : CcuThunk -> Entity -> EntityRef option
-val tryRescopeVal    : CcuThunk -> Remap -> Val -> ValRef option
+val tryRescopeEntity : CcuThunk -> Entity -> ValueOption<EntityRef>
+val tryRescopeVal    : CcuThunk -> Remap -> Val -> ValueOption<ValRef>
 
 val MakeExportRemapping : CcuThunk -> ModuleOrNamespace -> Remap
 val ApplyExportRemappingToEntity :  TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace 
@@ -1024,7 +1027,7 @@ val mkVoidPtrTy  : TcGlobals -> TType
 val mkArrayType      : TcGlobals -> TType -> TType
 val isOptionTy     : TcGlobals -> TType -> bool
 val destOptionTy   : TcGlobals -> TType -> TType
-val tryDestOptionTy : TcGlobals -> TType -> TType option
+val tryDestOptionTy : TcGlobals -> TType -> ValueOption<TType>
 
 val isLinqExpressionTy     : TcGlobals -> TType -> bool
 val destLinqExpressionTy   : TcGlobals -> TType -> TType

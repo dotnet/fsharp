@@ -187,7 +187,7 @@ let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref
                       (loop ndeep g.obj_ty state)
             else
                 match tryDestTyparTy g ty with
-                | Some tp ->
+                | ValueSome tp ->
                     let state = loop (ndeep+1) g.obj_ty state 
                     List.foldBack 
                         (fun x vacc -> 
@@ -208,7 +208,7 @@ let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref
                                   loop (ndeep + 1)  cty vacc) 
                         tp.Constraints 
                         state
-                | None -> 
+                | _ -> 
                     let state = 
                         if followInterfaces then 
                             List.foldBack 
@@ -1436,7 +1436,7 @@ type MethInfo =
                         // if multiple caller info attributes are specified, pick the "wrong" one here
                         // so that we get an error later
                         match tryDestOptionTy g ty with
-                        | Some optTy when typeEquiv g g.int32_ty optTy -> CallerFilePath
+                        | ValueSome optTy when typeEquiv g g.int32_ty optTy -> CallerFilePath
                         | _ -> CallerLineNumber
 
                 (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo))
