@@ -985,10 +985,8 @@ type TypeNameResolutionStaticArgsInfo =
 
     // Get the first possible mangled name of the type, assuming the args are generic args
     member x.MangledNameForType nm = 
-        if IsMangledGenericName nm || x.NumStaticArgs = 0 then nm
-        else nm+"`"+string x.NumStaticArgs
-
-
+        if x.NumStaticArgs = 0 || TryDemangleGenericNameAndPos nm <> ValueNone then nm
+        else nm + "`" + string x.NumStaticArgs
 
 [<NoEquality; NoComparison>]
 /// Represents information which guides name resolution of types.
@@ -1018,7 +1016,11 @@ let LookupTypeNameInEntityHaveArity nm (staticResInfo: TypeNameResolutionStaticA
 /// Unqualified lookups of type names where the number of generic arguments is known 
 /// from context, e.g. List<arg>.  Rebindings due to 'open' may have rebound identifiers.
 let LookupTypeNameInEnvHaveArity fq nm numTyArgs (nenv:NameResolutionEnv) = 
-    let key = if IsMangledGenericName nm then DecodeGenericTypeName nm else NameArityPair(nm,numTyArgs)
+    let key =
+        match TryDemangleGenericNameAndPos nm with
+        | ValueSome pos -> DecodeGenericTypeName pos nm
+        | _ -> NameArityPair(nm,numTyArgs)
+
     match nenv.TyconsByDemangledNameAndArity(fq).TryFind(key)  with
     | Some res -> Some res
     | None -> nenv.TyconsByAccessNames(fq).TryFind nm |> Option.map List.head
@@ -1041,15 +1043,17 @@ let LookupTypeNameInEnvHaveArity fq nm numTyArgs (nenv:NameResolutionEnv) =
 // also be used to qualify access if needed, though this is almost never needed.  
 
 let LookupTypeNameNoArity nm (byDemangledNameAndArity: LayeredMap<NameArityPair,_>) (byAccessNames: LayeredMultiMap<string,_>) = 
-    if IsMangledGenericName nm then 
-      match byDemangledNameAndArity.TryFind (DecodeGenericTypeName nm) with 
-      | Some res -> [res]
-      | None -> 
-          match byAccessNames.TryFind nm with
-          | Some res -> res
-          | None -> []
-    else 
-      byAccessNames.[nm]
+    match TryDemangleGenericNameAndPos nm with
+    | ValueSome pos -> 
+        let demangled = DecodeGenericTypeName pos nm
+        match byDemangledNameAndArity.TryFind demangled with 
+        | Some res -> [res]
+        | None ->
+            match byAccessNames.TryFind nm with
+            | Some res -> res
+            | None -> []
+    | _ ->
+        byAccessNames.[nm]
 
 /// Qualified lookup of type names in the environment
 let LookupTypeNameInEnvNoArity fq nm (nenv: NameResolutionEnv) = 
