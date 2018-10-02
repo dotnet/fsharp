@@ -1513,7 +1513,7 @@ module private TastDefinitionPrinting =
     /// Another re-implementation of type printing, this time based off provided info objects.
     let layoutProvidedTycon (denv:DisplayEnv) (infoReader:InfoReader) ad m start lhsL ty =
       let g = denv.g
-      let tcref,_ = destAppTy g ty
+      let tcref = tcrefOfAppTy g ty
 
       if isEnumTy g ty then 
         let fieldLs = 

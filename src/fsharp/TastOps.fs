@@ -1674,7 +1674,7 @@ let rankOfArrayTy g ty = rankOfArrayTyconRef g (tcrefOfAppTy g ty)
 
 let isFSharpObjModelRefTy g ty = 
     isFSharpObjModelTy g ty && 
-    let tcr, _ = destAppTy g ty
+    let tcr = tcrefOfAppTy g ty
     match tcr.FSharpObjectModelTypeInfo.fsobjmodel_kind with 
     | TTyconClass | TTyconInterface   | TTyconDelegate _ -> true
     | TTyconStruct | TTyconEnum -> false
@@ -7626,17 +7626,16 @@ let isSealedTy g ty =
     | ProvidedTypeMetadata st -> st.IsSealed
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsSealed
-    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-
+    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
        if (isFSharpInterfaceTy g ty || isFSharpClassTy g ty) then 
-          let tcref, _ = destAppTy g ty
-          (TryFindFSharpBoolAttribute g g.attrib_SealedAttribute tcref.Attribs = Some(true))
+          let tcref = tcrefOfAppTy g ty
+          TryFindFSharpBoolAttribute g g.attrib_SealedAttribute tcref.Attribs = Some true
        else 
           // All other F# types, array, byref, tuple types are sealed
           true
    
 let isComInteropTy g ty =
-    let tcr, _ = destAppTy g ty
+    let tcr = tcrefOfAppTy g ty
     match g.attrib_ComImportAttribute with
     | None -> false
     | Some attr -> TryFindFSharpBoolAttribute g attr tcr.Attribs = Some(true)

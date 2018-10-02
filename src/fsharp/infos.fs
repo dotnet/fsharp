@@ -67,15 +67,14 @@ let GetSuperTypeOfType g amap m ty =
         | Some super -> Some(Import.ImportProvidedType amap m super)
 #endif
     | ILTypeMetadata (TILObjectReprData(scoref,_,tdef)) -> 
-        let _,tinst = destAppTy g ty
+        let tinst = argsOfAppTy g ty
         match tdef.Extends with 
         | None -> None
         | Some ilty -> Some (ImportILType scoref amap m tinst ilty)
 
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-
-        if isFSharpObjModelTy g ty  || isExnDeclTy g ty then 
-            let tcref,_tinst = destAppTy g ty
+        if isFSharpObjModelTy g ty || isExnDeclTy g ty then 
+            let tcref = tcrefOfAppTy g ty
             Some (instType (mkInstForAppTy g ty) (superOfTycon g tcref.Deref))
         elif isArrayTy g ty then
             Some g.system_Array_ty
@@ -105,8 +104,8 @@ type SkipUnrefInterfaces = Yes | No
 /// traverse the type hierarchy to collect further interfaces.
 let rec GetImmediateInterfacesOfType skipUnref g amap m ty = 
     let itys = 
-        if isAppTy g ty then
-            let tcref,tinst = destAppTy g ty
+        match tryAppTy g ty with
+        | ValueSome(tcref,tinst) ->
             if tcref.IsMeasureableReprTycon then             
                 [ match tcref.TypeReprInfo with 
                   | TMeasureableRepr reprTy -> 
@@ -142,8 +141,7 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
 
                 | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
                     tcref.ImmediateInterfaceTypesOfFSharpTycon |> List.map (instType (mkInstForAppTy g ty)) 
-        else 
-            []
+        | _ -> []
         
     // .NET array types are considered to implement IList<T>
     let itys =

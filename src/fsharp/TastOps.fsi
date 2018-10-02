@@ -493,6 +493,7 @@ val mkProvenUnionCaseTy : UnionCaseRef -> TypeInst -> TType
 val isProvenUnionCaseTy : TType -> bool
 
 val isAppTy        : TcGlobals -> TType -> bool
+val tryAppTy       : TcGlobals -> TType -> ValueOption<TyconRef * TypeInst>
 val destAppTy      : TcGlobals -> TType -> TyconRef * TypeInst
 val tcrefOfAppTy   : TcGlobals -> TType -> TyconRef
 val tryDestAppTy   : TcGlobals -> TType -> ValueOption<TyconRef>

@@ -2046,13 +2046,13 @@ type LookupKind =
 
 /// Try to find a union case of a type, with the given name
 let TryFindUnionCaseOfType g ty nm =
-    if isAppTy g ty then 
-        let tcref,tinst = destAppTy g ty
+    match tryAppTy g ty with
+    | ValueSome(tcref,tinst) ->
         match tcref.GetUnionCaseByName nm with 
-        | None -> None
-        | Some ucase -> Some(UnionCaseInfo(tinst,tcref.MakeNestedUnionCaseRef ucase))
-    else 
-        None
+        | None -> ValueNone
+        | Some ucase -> ValueSome(UnionCaseInfo(tinst,tcref.MakeNestedUnionCaseRef ucase))
+    | _ ->
+        ValueNone
 
 let CoreDisplayName(pinfo:PropInfo) =   
     match pinfo with
@@ -2104,13 +2104,13 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
         let unionCaseSearch = 
             match lookupKind with 
             | LookupKind.Expr | LookupKind.Pattern -> TryFindUnionCaseOfType g ty nm  
-            | _ -> None
+            | _ -> ValueNone
 
         // Lookup: datatype constructors take precedence 
         match unionCaseSearch with 
-        | Some ucase -> 
+        | ValueSome ucase -> 
             OneResult (success(resInfo,Item.UnionCase(ucase,false),rest))
-        | None -> 
+        | _ -> 
             let isLookUpExpr = lookupKind = LookupKind.Expr
             match TryFindIntrinsicNamedItemOfType ncenv.InfoReader (nm,ad) findFlag m ty with
             | Some (PropertyItem psets) when isLookUpExpr -> 
@@ -2199,7 +2199,7 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                 match lookupKind with 
                 | LookupKind.Expr | LookupKind.Pattern ->
                     if isAppTy g ty then 
-                        let tcref,_ = destAppTy g ty
+                        let tcref = tcrefOfAppTy g ty
                         tcref.UnionCasesArray
                         |> Array.map (fun uc -> uc.DisplayName)
                     else 
@@ -3450,12 +3450,14 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
         ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,ty)
         |> List.filter (fun rfref -> rfref.IsStatic = statics && IsFieldInfoAccessible ad rfref)
 
-    let ucinfos = 
-        if completionTargets.ResolveAll && statics && isAppTy g ty then 
-            let tc,tinst = destAppTy g ty
-            tc.UnionCasesAsRefList 
-            |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
-            |> List.map (fun ucref ->  Item.UnionCase(UnionCaseInfo(tinst,ucref),false))
+    let ucinfos =
+        if completionTargets.ResolveAll && statics then
+            match tryAppTy g ty with
+            | ValueSome (tc,tinst) ->
+                tc.UnionCasesAsRefList
+                |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
+                |> List.map (fun ucref -> Item.UnionCase(UnionCaseInfo(tinst,ucref),false))
+            | _ -> []
         else []
 
     let einfos = 
@@ -4137,12 +4139,14 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                 |> List.filter (fun rfref -> rfref.IsStatic = statics  &&  IsFieldInfoAccessible ad rfref)
                 |> List.map Item.RecdField
         | Item.UnionCase _ ->
-            if statics && isAppTy g ty then 
-                let tc, tinst = destAppTy g ty
-                yield!
-                    tc.UnionCasesAsRefList 
-                    |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
-                    |> List.map (fun ucref ->  Item.UnionCase(UnionCaseInfo(tinst,ucref),false))
+            if statics then
+                match tryAppTy g ty with
+                | ValueSome(tc, tinst) ->
+                    yield!
+                        tc.UnionCasesAsRefList 
+                        |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
+                        |> List.map (fun ucref -> Item.UnionCase(UnionCaseInfo(tinst,ucref),false))
+                | _ -> ()
         | Item.Event _ ->
             yield!
                 ncenv.InfoReader.GetEventInfosOfType(None,ad,m,ty)
