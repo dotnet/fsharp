@@ -193,7 +193,8 @@ let GetRangeOfDiagnostic(err:PhasedDiagnostic) =
       | NonRigidTypar(_, _, _, _, _, m)
       | ConstraintSolverTupleDiffLengths(_, _, _, m, _) 
       | ConstraintSolverInfiniteTypes(_, _, _, _, m, _) 
-      | ConstraintSolverMissingConstraint(_, _, _, m, _) 
+      | ConstraintSolverMissingConstraint(_, _, _, m, _)
+      | ConstraintSolverNullnessWarning(_, _, _, m, _)
       | ConstraintSolverTypesNotInEqualityRelation(_, _, _, m, _, _)
       | ConstraintSolverError(_, m, _) 
       | ConstraintSolverTypesNotInSubsumptionRelation(_, _, _, m, _) 
@@ -629,6 +630,20 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
       | ConstraintSolverMissingConstraint(denv, tpr, tpc, m, m2) -> 
           os.Append(ConstraintSolverMissingConstraintE().Format (NicePrint.stringOfTyparConstraint denv (tpr, tpc))) |> ignore
           if m.StartLine <> m2.StartLine then 
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+
+      | ConstraintSolverNullnessWarning(_denv, nullness, nullness2, m, m2) ->
+          
+          let msg =
+              // TODO: Put this in FSComp.SR.
+              match nullness, nullness2 with
+              | WithNull, WithoutNull -> "Expected the type to have null."
+              | WithoutNull, WithNull -> "Expected the type to not have null."
+              | _ -> String.Empty
+
+          os.Append(msg) |> ignore
+
+          if m.StartLine <> m2.StartLine then
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
 
       | ConstraintSolverTypesNotInEqualityRelation(denv, (TType_measure _ as t1), (TType_measure _ as t2), m, m2, _) -> 
