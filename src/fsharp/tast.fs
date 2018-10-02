@@ -5447,9 +5447,9 @@ let primEntityRefEq compilingFslib fslibCcu (x : EntityRef) (y : EntityRef) =
          // The tcrefs may have forwarders. If they may possibly be equal then resolve them to get their canonical references
          // and compare those using pointer equality.
          (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) && 
-          let v1 = x.TryDeref 
-          let v2 = y.TryDeref
-          ValueOption.isSome v1 && ValueOption.isSome v2 && v1.Value === v2.Value)) then
+            match x.TryDeref with
+            | ValueSome v1 -> match y.TryDeref with ValueSome v2 -> v1 === v2 | _ -> false
+            | _ -> match y.TryDeref with ValueNone -> true | _ -> false)) then
         true
     else
         compilingFslib && fslibEntityRefEq fslibCcu x y  
@@ -5473,9 +5473,9 @@ let primValRefEq compilingFslib fslibCcu (x : ValRef) (y : ValRef) =
     else
            (// Use TryDeref to guard against the platforms/times when certain F# language features aren't available,
             // e.g. CompactFramework doesn't have support for quotations.
-            let v1 = x.TryDeref 
-            let v2 = y.TryDeref
-            ValueOption.isSome v1 && ValueOption.isSome v2 && v1.Value === v2.Value)
+            match x.TryDeref with
+            | ValueSome v1 -> match y.TryDeref with ValueSome v2 -> v1 === v2 | _ -> false
+            | _ -> match y.TryDeref with ValueNone -> true | _ -> false)
         || (if compilingFslib then fslibValRefEq fslibCcu x y else false)
 
 //---------------------------------------------------------------------------
