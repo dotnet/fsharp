@@ -2,8 +2,8 @@
 
 //#Expects: Success
 // << OUTPUT
-//Trace 6, \\[Return; Apply; Apply; Apply; EnterUsing 1; StartUsingBody 1; EnterUsing 3;
-// StartUsingBody 3; EndUsingBody 3; ExitUsing 3; EndUsingBody 1; ExitUsing 1\\]
+//Trace 6, .Return; Apply; Apply; Apply; EnterUsing 1; StartUsingBody 1; EnterUsing 3;
+// StartUsingBody 3; EndUsingBody 3; ExitUsing 3; EndUsingBody 1; ExitUsing 1.
 //OUTPUT
 
 open ApplicativeBuilderLib
@@ -21,4 +21,4 @@ module UseAndLet =
                 return 1 + 2 + 3
             }
         
-        printf "%+A, %+A" ceResult (tracer.GetTrace ())
+        printfn "%+A, %+A" ceResult (tracer.GetTrace ())

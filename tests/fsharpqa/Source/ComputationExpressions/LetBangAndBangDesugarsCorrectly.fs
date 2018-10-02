@@ -2,7 +2,7 @@
 
 //#Expects: Success
 // << OUTPUT
-//Trace 3, \\[Return; Apply; Apply\\]
+//Trace 3, .Return; Apply; Apply.
 //OUTPUT
 
 open ApplicativeBuilderLib
@@ -19,4 +19,4 @@ module LetBang =
                 return 1 + 2
             }
 
-        printf "%+A, %+A" ceResult (tracer.GetTrace ())
+        printfn "%+A, %+A" ceResult (tracer.GetTrace ())
