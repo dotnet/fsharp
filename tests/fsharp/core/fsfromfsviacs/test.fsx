@@ -166,12 +166,10 @@ module TestExtensions =
     check "dfeweeon1" (System.DateTime.Now.ExtendCSharpTypeWithInRefReturnExtension()).Date  x.Date
     check "dfeweeon2" (x.ExtendCSharpTypeWithInRefReturnExtension()).Date x.Date
 
-    check "dfeweeon3" (x.ExtendCSharpTypeWithRefReturnExtension()).Date x.Date
-
     let mutable mx = x
     check "dfeweeon4" (mx.ExtendCSharpTypeWithOutRefExtension(); mx) x.Date
 
-    check "dfeweeon5" (x.ExtendCSharpTypeWithInRefExtension()) x.Year
+    check "dfeweeon5" (mx.ExtendCSharpTypeWithInRefExtension()) x.Year
 
 
 let ToFSharpFunc() = 

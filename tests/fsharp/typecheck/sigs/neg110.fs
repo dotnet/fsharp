@@ -1,4 +1,4 @@
-module Neg109
+module rec Neg110
 // check that a decent error is given when a type that does not inherit from System.Attribute is used as attribute
 type NotAttribute() = class end
 

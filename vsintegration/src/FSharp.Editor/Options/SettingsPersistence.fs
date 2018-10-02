@@ -29,7 +29,7 @@ type SettingsStore(serviceProvider: IServiceProvider) =
     let read() =
         match cache.TryGetValue(typeof<'t>) with
         | true, value -> value :?> 't
-        | _ -> failwithf "Settings %s are not registered." typeof<'t>.Name 
+        | _ -> failwithf "Settings %s are not registered." typeof<'t>.Name
 
     let write settings = cache.[settings.GetType()] <- settings
 
@@ -37,18 +37,18 @@ type SettingsStore(serviceProvider: IServiceProvider) =
         let result, json = settings.GetType() |> storageKey |> settingsManager.TryGetValue
         if result = GetValueResult.Success then
             // if it fails we just return what we got
-            try JsonConvert.PopulateObject(json, settings) with _ -> () 
+            try JsonConvert.PopulateObject(json, settings) with _ -> ()
         settings
-        
+
     member __.Read() = read()
 
     member __.Write settings =
         write settings
         // we replace default serialization with Newtonsoft.Json for easy schema evolution
         settingsManager.SetValueAsync(settings.GetType() |> storageKey, JsonConvert.SerializeObject settings, false)
-        |> Async.AwaitTask |> Async.StartImmediate   
+        |> Async.AwaitTask |> Async.StartImmediate
 
-    member __.Register defaultSettings =                       
+    member __.Register defaultSettings =
         defaultSettings |> updateFromStore |> write
         let subset = defaultSettings.GetType() |> storageKey |> settingsManager.GetSubset
 
@@ -56,4 +56,3 @@ type SettingsStore(serviceProvider: IServiceProvider) =
             read() |> updateFromStore |> write
             System.Threading.Tasks.Task.CompletedTask )
         |> subset.add_SettingChangedAsync
-         
