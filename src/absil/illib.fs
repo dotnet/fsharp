@@ -452,22 +452,12 @@ type String with
     member inline x.EndsWithOrdinal(value) =
         x.EndsWith(value, StringComparison.Ordinal)
 
-module String = 
-    let indexNotFound() = raise (new KeyNotFoundException("An index for the character was not found in the string"))
-
+module String =
     let make (n: int) (c: char) : string = new String(c, n)
 
     let get (str:string) i = str.[i]
 
     let sub (s:string) (start:int) (len:int) = s.Substring(start,len)
-
-    let index (s:string) (c:char) =  
-        let r = s.IndexOf(c) 
-        if r = -1 then indexNotFound() else r
-
-    let rindex (s:string) (c:char) =
-        let r =  s.LastIndexOf(c) 
-        if r = -1 then indexNotFound() else r
 
     let contains (s:string) (c:char) = s.IndexOf(c) <> -1
 
