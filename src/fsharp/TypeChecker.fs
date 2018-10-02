@@ -1923,6 +1923,7 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
 let BuildFieldMap cenv env isPartial ty flds m = 
     let ad = env.eAccessRights
     if isNil flds then invalidArg "flds" "BuildFieldMap"
+    let fldCount = flds.Length
    
     let frefSets = 
         let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
@@ -1942,7 +1943,7 @@ let BuildFieldMap cenv env isPartial ty flds m =
                 warning (Error(FSComp.SR.tcFieldsDoNotDetermineUniqueRecordType(), m))
 
             // try finding a record type with the same number of fields as the ones that are given.
-            match tcrefs |> List.tryFind (fun tc -> tc.TrueFieldsAsList.Length = flds.Length) with
+            match tcrefs |> List.tryFind (fun tc -> tc.TrueFieldsAsList.Length = fldCount) with
             | Some tcref -> tcref            
             | _ -> 
                 // OK, there isn't a unique, good type dictated by the intersection for the field refs. 
@@ -4470,9 +4471,9 @@ and TcTyparOrMeasurePar optKind cenv (env:TcEnv) newOk tpenv (Typar(id, _, _) as
             // CallNameResolutionSink cenv.tcSink (tp.Range.StartRange, env.NameEnv, item, item, ItemOccurence.UseInType, env.DisplayEnv, env.eAccessRights)
             res, tpenv
     let key = id.idText
-    match env.eNameResEnv.eTypars.TryFind key with
-    | Some res -> checkRes res
-    | None -> 
+    match env.eNameResEnv.eTypars.TryGetValue key with
+    | true, res -> checkRes res
+    | _ -> 
     match TryFindUnscopedTypar key tpenv with
     | Some res -> checkRes res
     | None -> 
@@ -5101,17 +5102,17 @@ and TcPatBindingName cenv env id ty isMemberThis vis1 topValData (inlineFlag, de
     let names = Map.add id.idText (PrelimValScheme1(id, declaredTypars, ty, topValData, None, isMutable, inlineFlag, baseOrThis, argAttribs, vis, compgen)) names
     let takenNames = Set.add id.idText takenNames
     (fun (TcPatPhase2Input (values, isLeftMost)) -> 
-        let (vspec, typeScheme) = 
-            match values.TryFind id.idText with
-            | Some value ->
-                let name = id.idText
+        let (vspec, typeScheme) =
+            let name = id.idText
+            match values.TryGetValue name with
+            | true, value ->
                 if not (String.IsNullOrEmpty name) && Char.IsLower(name.[0]) then
-                    match TryFindPatternByName name env.eNameResEnv with
-                    | Some (Item.Value vref) when vref.LiteralValue.IsSome ->
-                        warning(Error(FSComp.SR.checkLowercaseLiteralBindingInPattern(id.idText), id.idRange))
-                    | Some _ | None -> ()
+                    match env.eNameResEnv.ePatItems.TryGetValue name with
+                    | true, Item.Value vref when vref.LiteralValue.IsSome ->
+                        warning(Error(FSComp.SR.checkLowercaseLiteralBindingInPattern name, id.idRange))
+                    | _ -> ()
                 value
-            | None -> error(Error(FSComp.SR.tcNameNotBoundInPattern(id.idText), id.idRange))
+            | _ -> error(Error(FSComp.SR.tcNameNotBoundInPattern name, id.idRange))
 
         // isLeftMost indicates we are processing the left-most path through a disjunctive or pattern.
         // For those binding locations, CallNameResolutionSink is called in MakeAndPublishValue, like all other bindings
@@ -5198,10 +5199,10 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
           // matching 
           error (UnionPatternsBindDifferentNames m)
         names1 |> Map.iter (fun _ (PrelimValScheme1(id1, _, ty1, _, _, _, _, _, _, _, _)) -> 
-          match Map.tryFind id1.idText names2 with 
-          | None -> () 
-          | Some (PrelimValScheme1(_, _, ty2, _, _, _, _, _, _, _, _)) -> 
-              UnifyTypes cenv env m ty1 ty2)
+          match names2.TryGetValue id1.idText with 
+          | true, PrelimValScheme1(_, _, ty2, _, _, _, _, _, _, _, _) -> 
+              UnifyTypes cenv env m ty1 ty2
+          | _ -> ())
         (fun values -> TPat_disjs ([pat1' values;pat2' values.RightPath], m)), (tpenv, names1, takenNames1)
 
     | SynPat.Ands (pats, m) ->
@@ -5442,9 +5443,9 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         let ftys = fields |> List.map (fun fsp -> actualTyOfRecdField inst fsp, fsp) 
         let fldsmap', acc = 
           ((tpenv, names, takenNames), ftys) ||> List.mapFold (fun s (ty, fsp) -> 
-              match Map.tryFind fsp.rfield_id.idText fldsmap with
-              | Some v -> TcPat warnOnUpper cenv env None vFlags s ty v
-              | None -> (fun _ -> TPat_wild m), s)
+              match fldsmap.TryGetValue fsp.rfield_id.idText with
+              | true, v -> TcPat warnOnUpper cenv env None vFlags s ty v
+              | _ -> (fun _ -> TPat_wild m), s)
         (fun values -> TPat_recd (tcref, tinst, List.map (fun f -> f values) fldsmap', m)), 
         acc
 
@@ -11687,10 +11688,10 @@ and TcIncrementalLetRecGeneralization cenv scopem
         // pathological situations
         let freeInUncheckedRecBinds = 
             lazy ((emptyFreeTyvars, cenv.recUses.Contents) ||> Map.fold (fun acc vStamp _ -> 
-                       match Map.tryFind vStamp uncheckedRecBindsTable with
-                       | Some fwdBind ->
-                           accFreeInType CollectAllNoCaching  fwdBind.RecBindingInfo.Val.Type acc
-                       | None ->
+                       match uncheckedRecBindsTable.TryGetValue vStamp with
+                       | true, fwdBind ->
+                           accFreeInType CollectAllNoCaching fwdBind.RecBindingInfo.Val.Type acc
+                       | _ ->
                            acc))
 
         let rec loop (preGeneralizationRecBinds: PreGeneralizationRecursiveBinding list, 
@@ -16113,12 +16114,12 @@ module TcDeclarations =
 
           else
             let isInSameModuleOrNamespace = 
-                 match envForDecls.eModuleOrNamespaceTypeAccumulator.Value.TypesByMangledName.TryFind(tcref.LogicalName) with 
-                  | Some tycon -> (tyconOrder.Compare(tcref.Deref, tycon) = 0)
-                  | None -> 
+                 match envForDecls.eModuleOrNamespaceTypeAccumulator.Value.TypesByMangledName.TryGetValue tcref.LogicalName with 
+                 | true, tycon -> tyconOrder.Compare(tcref.Deref, tycon) = 0
+                 | _ -> 
                         //false
                         // There is a special case we allow when compiling FSharp.Core.dll which permits interface implementations across namespace fragments
-                        (cenv.g.compilingFslib && tcref.LogicalName.StartsWithOrdinal("Tuple`"))
+                        cenv.g.compilingFslib && tcref.LogicalName.StartsWithOrdinal("Tuple`")
         
             let nReqTypars = reqTypars.Length
 
