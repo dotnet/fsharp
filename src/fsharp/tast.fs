@@ -270,8 +270,8 @@ type TyparKind =
 
     member x.AttrName =
       match x with
-      | TyparKind.Type -> None
-      | TyparKind.Measure -> Some "Measure"
+      | TyparKind.Type -> ValueNone
+      | TyparKind.Measure -> ValueSome "Measure"
 
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     //member x.DebugText  =  x.ToString()
@@ -966,14 +966,14 @@ and /// Represents a type definition, exception definition, module definition or
     /// Get the union cases and other union-type information for a type, if any
     member x.UnionTypeInfo = 
         match x.TypeReprInfo with 
-        | TUnionRepr x -> Some x 
-        |  _ -> None
+        | TUnionRepr x -> ValueSome x 
+        |  _ -> ValueNone
 
     /// Get the union cases for a type, if any
     member x.UnionCasesArray = 
         match x.UnionTypeInfo with 
-        | Some x -> x.CasesTable.CasesByIndex 
-        | None -> [| |] 
+        | ValueSome x -> x.CasesTable.CasesByIndex 
+        | ValueNone -> [| |] 
 
     /// Get the union cases for a type, if any, as a list
     member x.UnionCasesAsList = x.UnionCasesArray |> Array.toList
@@ -981,8 +981,8 @@ and /// Represents a type definition, exception definition, module definition or
     /// Get a union case of a type by name
     member x.GetUnionCaseByName n =
         match x.UnionTypeInfo with 
-        | Some x  -> NameMap.tryFind n x.CasesTable.CasesByName
-        | None -> None
+        | ValueSome x  -> NameMap.tryFind n x.CasesTable.CasesByName
+        | ValueNone -> None
 
     
     /// Create a new entity with empty, unlinked data. Only used during unpickling of F# metadata.
@@ -5423,7 +5423,7 @@ let fslibValRefEq fslibCcu vref1 vref2 =
             // is not significant
             nlr1.ItemKey.PartialKey = nm2.PartialKey  &&
             fslibRefEq nlr1.EnclosingEntity.nlr pp2
-        | None -> 
+        | _ -> 
             false
     // Note: I suspect this private-to-private reference comparison is not needed
     | (VRefLocal e1, VRefLocal e2) ->

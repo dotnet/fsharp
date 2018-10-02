@@ -80,8 +80,8 @@ module Impl =
         | None -> mkLocalEntityRef entity
         | Some viewedCcu -> 
         match tryRescopeEntity viewedCcu entity with
-        | None -> mkLocalEntityRef entity
-        | Some eref -> eref
+        | ValueNone -> mkLocalEntityRef entity
+        | ValueSome eref -> eref
 
     let entityIsUnresolved(entity:EntityRef) = 
         match entity with
