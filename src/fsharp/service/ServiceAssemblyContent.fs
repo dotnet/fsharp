@@ -707,13 +707,11 @@ module ParsedInput =
             | SynExpr.JoinIn (e1, _, e2, _) -> List.iter walkExpr [e1; e2]
             | SynExpr.LetOrUseAndBang (_, _, _, pat, e1, _, es, e2) ->
                 walkPat pat
-                [
-                    yield e1
-                    for (_,_,_,_,eAndBang,_) in es do
-                        yield eAndBang
-                    yield e2
-                ]
-                |> List.iter walkExpr
+                walkExpr e1
+                for (_,_,_,patAndBang,eAndBang,_) in es do
+                    walkPat patAndBang
+                    walkExpr eAndBang
+                walkExpr e2
             | SynExpr.TraitCall (ts, sign, e, _) ->
                 List.iter walkTypar ts
                 walkMemberSig sign
