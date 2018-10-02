@@ -1,8 +1,7 @@
 // #Misc #AppCE
 
-//<Expects status=success>^$</Expects>
-//<Expects status=success>val result : int ApplicativeBuilderLib.Trace = Trace 3</Expects>
-//<Expects status=success>val trace : ApplicativeBuilderLib.TraceOp list = .Return; Apply; Apply.</Expects>
+//#Expects: Success: val result : int ApplicativeBuilderLib.Trace = Trace 3
+//#Expects: Success: val trace : ApplicativeBuilderLib.TraceOp list = .Return; Apply; Apply.
 
 open ApplicativeBuilderLib
 
