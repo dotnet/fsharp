@@ -690,7 +690,7 @@ type TypeCheckInfo
                             // These come through as an empty plid and residue "". Otherwise we try an environment lookup
                             // and then return to the qualItems. This is because the expression typings are a little inaccurate, primarily because
                             // it appears we're getting some typings recorded for non-atomic expressions like "f x"
-                            when (match plid with [] -> true | _ -> false)  -> 
+                            when isNil plid ->
                         // lookup based on expression typings successful
                         Some (items |> List.map (CompletionItem (tryDestAppTy g ty) None), denv, m)
                     | GetPreciseCompletionListFromExprTypingsResult.NoneBecauseThereWereTypeErrors, _ ->
@@ -700,7 +700,7 @@ type TypeCheckInfo
                     | GetPreciseCompletionListFromExprTypingsResult.NoneBecauseTypecheckIsStaleAndTextChanged, _ ->         
                         // we want to report no result and let second-chance intellisense kick in
                         None
-                    | _, true when (match plid with [] -> true | _ -> false)  -> 
+                    | _, true when isNil plid ->
                         // If the user just pressed '.' after an _expression_ (not a plid), it is never right to show environment-lookup top-level completions.
                         // The user might by typing quickly, and the LS didn't have an expression type right before the dot yet.
                         // Second-chance intellisense will bring up the correct list in a moment.
