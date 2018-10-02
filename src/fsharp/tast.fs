@@ -3046,13 +3046,12 @@ and
     static member TryDerefEntityPath(ccu: CcuThunk, path:string[], i:int, entity:Entity) = 
         if i >= path.Length then ValueSome entity
         else  
-            let next = entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind(path.[i])
-            match next with 
-            | Some res -> NonLocalEntityRef.TryDerefEntityPath(ccu, path, (i+1), res)
+            match entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryGetValue path.[i] with 
+            | true, res -> NonLocalEntityRef.TryDerefEntityPath(ccu, path, (i+1), res)
 #if !NO_EXTENSIONTYPING
-            | None -> NonLocalEntityRef.TryDerefEntityPathViaProvidedType(ccu, path, i, entity)
+            | _ -> NonLocalEntityRef.TryDerefEntityPathViaProvidedType(ccu, path, i, entity)
 #else
-            | None -> ValueNone
+            | _ -> ValueNone
 #endif
 
 #if !NO_EXTENSIONTYPING
@@ -4199,9 +4198,10 @@ and
     /// Try to resolve a path into the CCU by referencing the .NET/CLI type forwarder table of the CCU
     member ccu.TryForward(nlpath:string[],item:string) : EntityRef option  = 
         ccu.EnsureDerefable(nlpath)
-        match ccu.TypeForwarders.TryFind(nlpath,item) with
-        | Some entity -> Some(entity.Force())
-        | None -> None
+        let key = nlpath,item
+        match ccu.TypeForwarders.TryGetValue key with
+        | true, entity -> Some(entity.Force())
+        | _ -> None
         //printfn "trying to forward %A::%s from ccu '%s', res = '%A'" p n ccu.AssemblyName res.IsSome
 
     /// Used to make forward calls into the type/assembly loader when comparing member signatures during linking
@@ -5719,13 +5719,13 @@ let CombineCcuContentFragments m l =
             let tab2 = mty2.AllEntitiesByLogicalMangledName
             let entities = 
                 [ for e1 in mty1.AllEntities do 
-                      match tab2.TryFind e1.LogicalName with
-                      | Some e2 -> yield CombineEntites path e1 e2
-                      | None -> yield e1 
+                      match tab2.TryGetValue e1.LogicalName with
+                      | true, e2 -> yield CombineEntites path e1 e2
+                      | _ -> yield e1
                   for e2 in mty2.AllEntities do 
-                      match tab1.TryFind e2.LogicalName with
-                      | Some _ -> ()
-                      | None -> yield e2 ]
+                      match tab1.TryGetValue e2.LogicalName with
+                      | true, _ -> ()
+                      | _ -> yield e2 ]
 
             let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
 

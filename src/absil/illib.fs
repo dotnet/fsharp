@@ -1123,7 +1123,7 @@ module NameMap =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameMultiMap = 
     let existsInRange f (m: NameMultiMap<'T>) = NameMap.exists (fun _ l -> List.exists f l) m
-    let find v (m: NameMultiMap<'T>) = match Map.tryFind v m with None -> [] | Some r -> r
+    let find v (m: NameMultiMap<'T>) = match m.TryGetValue v with true, r -> r | _ -> []
     let add v x (m: NameMultiMap<'T>) = NameMap.add v (x :: find v m) m
     let range (m: NameMultiMap<'T>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []
     let rangeReversingEachBucket (m: NameMultiMap<'T>) = Map.foldBack (fun _ x sofar -> List.rev x @ sofar) m []
@@ -1137,7 +1137,7 @@ module NameMultiMap =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module MultiMap = 
     let existsInRange f (m: MultiMap<_,_>) = Map.exists (fun _ l -> List.exists f l) m
-    let find v (m: MultiMap<_,_>) = match Map.tryFind v m with None -> [] | Some r -> r
+    let find v (m: MultiMap<_,_>) = match m.TryGetValue v with true, r -> r | _ -> []
     let add v x (m: MultiMap<_,_>) = Map.add v (x :: find v m) m
     let range (m: MultiMap<_,_>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []
     let empty : MultiMap<_,_> = Map.empty
@@ -1148,11 +1148,6 @@ type LayeredMap<'Key,'Value  when 'Key : comparison> = Map<'Key,'Value>
 type Map<'Key,'Value when 'Key : comparison> with
     static member Empty : Map<'Key,'Value> = Map.empty
 
-    member m.TryGetValue (key,res:byref<'Value>) = 
-        match m.TryFind key with 
-        | None -> false
-        | Some r -> res <- r; true
-
     member x.Values = [ for (KeyValue(_,v)) in x -> v ]
     member x.AddAndMarkAsCollapsible (kvs: _[])   = (x,kvs) ||> Array.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
     member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
@@ -1162,12 +1157,13 @@ type Map<'Key,'Value when 'Key : comparison> with
 [<Sealed>]
 type LayeredMultiMap<'Key,'Value when 'Key : equality and 'Key : comparison>(contents : LayeredMap<'Key,'Value list>) = 
     member x.Add (k,v) = LayeredMultiMap(contents.Add(k,v :: x.[k]))
-    member x.Item with get k = match contents.TryFind k with None -> [] | Some l -> l
+    member x.Item with get k = match contents.TryGetValue k with true, l -> l | _ -> []
     member x.AddAndMarkAsCollapsible (kvs: _[])  = 
         let x = (x,kvs) ||> Array.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
         x.MarkAsCollapsible()
     member x.MarkAsCollapsible() = LayeredMultiMap(contents.MarkAsCollapsible())
     member x.TryFind k = contents.TryFind k
+    member x.TryGetValue k = contents.TryGetValue k
     member x.Values = contents.Values |> List.concat
     static member Empty : LayeredMultiMap<'Key,'Value> = LayeredMultiMap LayeredMap.Empty
 
