@@ -1,5 +1,6 @@
 // #Misc #AppCE
 
+//<Expects status=success>^$</Expects>
 //<Expects status=success>val result : int ApplicativeBuilderLib.Trace = Trace 3</Expects>
 //<Expects status=success>val trace : ApplicativeBuilderLib.TraceOp list =</Expects>
 //<Expects status=success>  .Return; Apply; Apply; EnterUsing 1; StartUsingBody 1; EnterUsing 2;</Expects>
