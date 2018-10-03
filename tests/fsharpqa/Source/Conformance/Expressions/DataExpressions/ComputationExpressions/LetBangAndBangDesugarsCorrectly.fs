@@ -14,9 +14,9 @@ module LetBang =
 
         let ceResult : int Trace =
             tracer {
-                let! x = Trace 1
-                and! y = Trace 2
-                return 1 + 2
+                let! x = Trace 3
+                and! y = Trace true
+                return if y then x else -1
             }
 
         printfn "%+A, %+A" ceResult (tracer.GetTrace ())
