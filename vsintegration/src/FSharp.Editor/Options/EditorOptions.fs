@@ -6,7 +6,7 @@ open System.Runtime.InteropServices
 open Microsoft.VisualStudio.Shell
 
 open Microsoft.VisualStudio.FSharp.UIResources
-open OptionsUIHelpers
+open Microsoft.VisualStudio.Shell
 
 module DefaultTuning = 
     let UnusedDeclarationsAnalyzerInitialDelay = 0 (* 1000 *) (* milliseconds *)
@@ -134,20 +134,22 @@ module internal WorkspaceSettingFromDocumentExtension =
 
 module internal OptionsUI =
 
+    open OptionsUIHelpers
+
     [<Guid(Guids.intelliSenseOptionPageIdString)>]
     type internal IntelliSenseOptionPage() =
         inherit AbstractOptionPage<IntelliSenseOptions>()
         override this.CreateView() =
             let view = IntelliSenseOptionControl()
             view.charTyped.Unchecked.Add <| fun _ -> view.charDeleted.IsChecked <- System.Nullable false
-           
-            let path = "EnterKeySetting" 
+
+            let path = "EnterKeySetting"
             bindRadioButton view.nevernewline path EnterKeySetting.NeverNewline 
             bindRadioButton view.newlinecompleteline path EnterKeySetting.NewlineOnCompleteWord 
             bindRadioButton view.alwaysnewline path EnterKeySetting.AlwaysNewline
 
-            upcast view              
-            
+            upcast view
+
     [<Guid(Guids.quickInfoOptionPageIdString)>]
     type internal QuickInfoOptionPage() =
         inherit AbstractOptionPage<QuickInfoOptions>()
@@ -164,14 +166,14 @@ module internal OptionsUI =
     type internal CodeFixesOptionPage() =
         inherit AbstractOptionPage<CodeFixesOptions>()
         override this.CreateView() =
-            upcast CodeFixesOptionControl()            
+            upcast CodeFixesOptionControl()
 
     [<Guid(Guids.languageServicePerformanceOptionPageIdString)>]
     type internal LanguageServicePerformanceOptionPage() =
         inherit AbstractOptionPage<LanguageServicePerformanceOptions>()
         override this.CreateView() =
             upcast LanguageServicePerformanceOptionControl()
-    
+
     [<Guid(Guids.codeLensOptionPageIdString)>]
     type internal CodeLensOptionPage() =
         inherit AbstractOptionPage<CodeLensOptions>()
