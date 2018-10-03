@@ -3020,7 +3020,7 @@ binders:
        let spBind = SequencePointAtBinding(unionRanges (rhs parseState 1) $4.Range)
        let mAll = unionRanges (rhs parseState 1) (rhs parseState 7) // TODO Check this range
        let m = $4.Range.EndRange // zero-width range
-       SynExpr.LetOrUseAndBang(spBind,($1 = "use"),true,$2,$4, mAll, [], SynExpr.ImplicitZero m) }
+       SynExpr.LetOrUseAndBang(spBind,($1 = "use"),true,$2,$4, mAll, $7, SynExpr.ImplicitZero m) }
 
   | OBINDER headBindingPattern EQUALS typedSeqExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let // TODO Fix CompletionInDifferentEnvs3
      { // error recovery that allows intellisense when writing incomplete computation expressions
