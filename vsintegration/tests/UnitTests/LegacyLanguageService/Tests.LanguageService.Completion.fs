@@ -3349,18 +3349,19 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [] 
 
     [<Test>]
-    member public this.``CompletionInDifferentEnvs6``() = 
+    member public this.``CompletionInDifferentEnvs6``() =
         AssertCtrlSpaceCompleteContains
-            ["let count = async { return 6 }"
+            ["let foo = async { return 6 }"
+             "let bar = async { return 6 }"
              "async { let! x = foo"
              "        and! y = "]
              "and! y = "
-            ["count"]
-            [] 
+            ["foo";"bar"]
+            ["x"] 
 
             (**)
     [<Test>]
-    member public this.``Bug229433.AfterMismatchedParensCauseWeirdParseTreeAndExceptionDuringTypecheck``() =        
+    member public this.``Bug229433.AfterMismatchedParensCauseWeirdParseTreeAndExceptionDuringTypecheck``() =
         AssertAutoCompleteContains [ """
             type T() =
                 member this.Bar() = ()
