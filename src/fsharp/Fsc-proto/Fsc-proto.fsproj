@@ -461,10 +461,15 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="System.Reflection.Metadata">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Reflection.Metadata.$(SystemReflectionMetadataPackageVersion)\lib\netstandard2.0\System.Reflection.Metadata.dll</HintPath>
+      <HintPath Condition="'$(MonoPackaging)' != 'true'">$(FSharpSourcesRoot)\..\packages\System.Reflection.Metadata.$(SystemReflectionMetadataPackageVersion)\lib\netstandard2.0\System.Reflection.Metadata.dll</HintPath>
+      <HintPath Condition="'$(MonoPackaging)' == 'true'">$(FSharpSourcesRoot)\..\packages\System.Reflection.Metadata.$(SystemReflectionMetadataPackageVersion)\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
     </Reference>
     <Reference Include="System.Collections.Immutable">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutablePackageVersion)\lib\netstandard2.0\System.Collections.Immutable.dll</HintPath>
+      <HintPath Condition="'$(MonoPackaging)' != 'true'">$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutablePackageVersion)\lib\netstandard2.0\System.Collections.Immutable.dll</HintPath>
+      <HintPath Condition="'$(MonoPackaging)' == 'true'">$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutablePackageVersion)\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.$(SystemValueTuplePackageVersion)\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>

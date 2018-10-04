@@ -56,8 +56,9 @@
   <Import Project="FSharpSource.Profiles.targets" />
 
   <PropertyGroup Condition="'$(TargetDotnetProfile)'=='net40'">
-    <TargetFramework Condition="'$(TargetFramework)' == ''">net472</TargetFramework>
-    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.7.2</TargetFrameworkVersion>
+    <!-- target .NET 4.7.2, except on Mono which doesn't have 4.7.2 reference assemblies yet -->
+    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == '' AND '$(MonoPackaging)' != 'true'">v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == '' AND '$(MonoPackaging)' == 'true'">v4.6</TargetFrameworkVersion>
     <TargetFrameworkProfile></TargetFrameworkProfile>
     <!-- MSbuild works out the assembly references -->
   </PropertyGroup>
