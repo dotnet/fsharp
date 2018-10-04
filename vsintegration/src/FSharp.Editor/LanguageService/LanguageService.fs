@@ -175,24 +175,8 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
 
     let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
 
-    let projectDisplayNameOf projectFileName =
-        if String.IsNullOrWhiteSpace projectFileName then projectFileName
-        else Path.GetFileNameWithoutExtension projectFileName
-
-    let singleFileProjects = ConcurrentDictionary<_, IWorkspaceProjectContext>()
-
-    let tryRemoveSingleFileProject projectId =
-        match singleFileProjects.TryRemove(projectId) with
-        | true, project ->
-            projectInfoManager.ClearInfoForSingleFileProject(projectId)
-            project.Dispose()
-        | _ -> ()
-
-    let tryGetOrCreateProjectId (workspace: VisualStudioWorkspaceImpl) (projectFileName: string) =
-        let projectDisplayName = projectDisplayNameOf projectFileName
-        Some (workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName))
-
     let mutable legacyProjectWorkspaceMap = Unchecked.defaultof<LegacyProjectWorkspaceMap>
+    let mutable singleFileWorkspaceMap = Unchecked.defaultof<SingleFileWorkspaceMap>
 
     override this.Initialize() = 
         base.Initialize()
@@ -200,34 +184,15 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
 
-        this.Workspace.DocumentClosed.Add <| fun args -> tryRemoveSingleFileProject args.Document.Project.Id
-
-        legacyProjectWorkspaceMap <- LegacyProjectWorkspaceMap(this.Workspace, solution, projectInfoManager, package.ComponentModel.GetService<IWorkspaceProjectContextFactory>(), this.SystemServiceProvider)
+        let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
+        legacyProjectWorkspaceMap <- LegacyProjectWorkspaceMap(this.Workspace, solution, projectInfoManager, projectContextFactory, this.SystemServiceProvider)
         legacyProjectWorkspaceMap.Initialize()
+
+        singleFileWorkspaceMap <- SingleFileWorkspaceMap(this.Workspace, projectInfoManager, projectContextFactory)
+        singleFileWorkspaceMap.Initialize()
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
-
-    member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
-        let loadTime = DateTime.Now
-        let projectFileName = fileName
-        let projectDisplayName = projectDisplayNameOf projectFileName
-
-        let mutable projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
-
-        if isNull (workspace.ProjectTracker.GetProject projectId) then
-            let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
-
-            let projectContext = projectContextFactory.CreateProjectContext(FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectId.Id, hier, null)
-            
-            projectId <- workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
-
-            projectContext.AddSourceFile(fileName)
-            
-            singleFileProjects.[projectId] <- projectContext
-
-        let _referencedProjectFileNames, parsingOptions, projectOptions = projectInfoManager.ComputeSingleFileOptions (tryGetOrCreateProjectId workspace, fileName, loadTime, fileContents) |> Async.RunSynchronously
-        projectInfoManager.AddOrUpdateSingleFileProject(projectId, (loadTime, parsingOptions, projectOptions))
 
     override this.ContentTypeName = FSharpConstants.FSharpContentTypeName
     override this.LanguageName = FSharpConstants.FSharpLanguageName
@@ -279,14 +244,14 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
                             // This is the path when opening out-of-project .fs/.fsi files in CPS projects
 
                             let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
-                            this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
+                            singleFileWorkspaceMap.AddFile(filename, fileContents, hier)
                     | _ -> ()
                 | _ ->
 
                     // This is the path for both in-project and out-of-project .fsx files
 
                     let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
-                    this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
+                    singleFileWorkspaceMap.AddFile(filename, fileContents, hier)
 
             | _ -> ()
         | _ -> ()
