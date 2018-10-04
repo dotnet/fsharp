@@ -67,15 +67,14 @@ let GetSuperTypeOfType g amap m ty =
         | Some super -> Some(Import.ImportProvidedType amap m super)
 #endif
     | ILTypeMetadata (TILObjectReprData(scoref,_,tdef)) -> 
-        let _,tinst = destAppTy g ty
+        let tinst = argsOfAppTy g ty
         match tdef.Extends with 
         | None -> None
         | Some ilty -> Some (ImportILType scoref amap m tinst ilty)
 
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-
-        if isFSharpObjModelTy g ty  || isExnDeclTy g ty then 
-            let tcref,_tinst = destAppTy g ty
+        if isFSharpObjModelTy g ty || isExnDeclTy g ty then 
+            let tcref = tcrefOfAppTy g ty
             Some (instType (mkInstForAppTy g ty) (superOfTycon g tcref.Deref))
         elif isArrayTy g ty then
             Some g.system_Array_ty
@@ -105,8 +104,8 @@ type SkipUnrefInterfaces = Yes | No
 /// traverse the type hierarchy to collect further interfaces.
 let rec GetImmediateInterfacesOfType skipUnref g amap m ty = 
     let itys = 
-        if isAppTy g ty then
-            let tcref,tinst = destAppTy g ty
+        match tryAppTy g ty with
+        | ValueSome(tcref,tinst) ->
             if tcref.IsMeasureableReprTycon then             
                 [ match tcref.TypeReprInfo with 
                   | TMeasureableRepr reprTy -> 
@@ -142,8 +141,7 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
 
                 | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
                     tcref.ImmediateInterfaceTypesOfFSharpTycon |> List.map (instType (mkInstForAppTy g ty)) 
-        else 
-            []
+        | _ -> []
         
     // .NET array types are considered to implement IList<T>
     let itys =
@@ -187,7 +185,7 @@ let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref
                       (loop ndeep g.obj_ty state)
             else
                 match tryDestTyparTy g ty with
-                | Some tp ->
+                | ValueSome tp ->
                     let state = loop (ndeep+1) g.obj_ty state 
                     List.foldBack 
                         (fun x vacc -> 
@@ -208,7 +206,7 @@ let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref
                                   loop (ndeep + 1)  cty vacc) 
                         tp.Constraints 
                         state
-                | None -> 
+                | _ -> 
                     let state = 
                         if followInterfaces then 
                             List.foldBack 
@@ -1450,7 +1448,7 @@ type MethInfo =
                         // if multiple caller info attributes are specified, pick the "wrong" one here
                         // so that we get an error later
                         match tryDestOptionTy g ty with
-                        | Some optTy when typeEquiv g g.int32_ty optTy -> CallerFilePath
+                        | ValueSome optTy when typeEquiv g g.int32_ty optTy -> CallerFilePath
                         | _ -> CallerLineNumber
 
                 (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo))

@@ -455,8 +455,8 @@ let BindExternalLocalVal cenv (v:Val) vval env =
             // Passing an empty remap is sufficient for FSharp.Core.dll because it turns out the remapped type signature can
             // still be resolved.
             match tryRescopeVal cenv.g.fslibCcu Remap.Empty v with 
-            | Some vref -> BindValueForFslib vref.nlr v vval env 
-            | None -> env
+            | ValueSome vref -> BindValueForFslib vref.nlr v vval env 
+            | _ -> env
         else env
     env
 
@@ -2364,11 +2364,13 @@ and OptimizeVal cenv env expr (v:ValRef, m) =
 //------------------------------------------------------------------------- 
 
 and StripToNominalTyconRef cenv ty = 
-    if isAppTy cenv.g ty then destAppTy cenv.g ty 
-    elif isRefTupleTy cenv.g ty then 
-        let tyargs = destRefTupleTy cenv.g ty
-        mkCompiledTupleTyconRef cenv.g false (List.length tyargs), tyargs 
-    else failwith "StripToNominalTyconRef: unreachable" 
+    match tryAppTy cenv.g ty with
+    | ValueSome x -> x
+    | _ ->
+        if isRefTupleTy cenv.g ty then
+            let tyargs = destRefTupleTy cenv.g ty
+            mkCompiledTupleTyconRef cenv.g false (List.length tyargs), tyargs 
+        else failwith "StripToNominalTyconRef: unreachable" 
 
 and CanDevirtualizeApplication cenv v vref ty args  = 
      valRefEq cenv.g v vref
@@ -3090,7 +3092,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     | None -> false
                     | Some mbrTyconRef ->
                     // Check we can deref system_MarshalByRefObject_tcref. When compiling against the Silverlight mscorlib we can't
-                    if mbrTyconRef.TryDeref.IsSome then
+                    if ValueOption.isSome mbrTyconRef.TryDeref then
                         // Check if this is a subtype of MarshalByRefObject
                         assert (cenv.g.system_MarshalByRefObject_ty.IsSome)
                         ExistsSameHeadTypeInHierarchy cenv.g cenv.amap vref.Range (generalizedTyconRef tcref) cenv.g.system_MarshalByRefObject_ty.Value
