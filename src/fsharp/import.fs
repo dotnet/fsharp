@@ -109,8 +109,8 @@ let ImportTypeRefData (env:ImportMap) m (scoref,path,typeName) =
             ()
 #endif
     match tryRescopeEntity ccu tycon with 
-    | None -> error (Error(FSComp.SR.impImportedAssemblyUsesNotPublicType(String.concat "." (Array.toList path@[typeName])),m))
-    | Some tcref -> tcref
+    | ValueNone -> error (Error(FSComp.SR.impImportedAssemblyUsesNotPublicType(String.concat "." (Array.toList path@[typeName])),m))
+    | ValueSome tcref -> tcref
     
 
 /// Import a reference to a type definition, given an AbstractIL ILTypeRef, without caching

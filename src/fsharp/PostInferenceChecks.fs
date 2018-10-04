@@ -457,8 +457,8 @@ let CheckTypeForAccess (cenv:cenv) env objName valAcc m ty =
             // We deliberately only check the fully stripped type for accessibility, 
             // because references to private type abbreviations are permitted
             match tryDestAppTy cenv.g ty with 
-            | None -> ()
-            | Some tcref ->
+            | ValueNone -> ()
+            | ValueSome tcref ->
                 let thisCompPath = compPathOfCcu cenv.viewCcu
                 let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
                 if isLessAccessible tyconAcc valAcc then
@@ -473,8 +473,8 @@ let WarnOnWrongTypeForAccess (cenv:cenv) env objName valAcc m ty =
             // We deliberately only check the fully stripped type for accessibility, 
             // because references to private type abbreviations are permitted
             match tryDestAppTy cenv.g ty with 
-            | None -> ()
-            | Some tcref ->
+            | ValueNone -> ()
+            | ValueSome tcref ->
                 let thisCompPath = compPathOfCcu cenv.viewCcu
                 let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
                 if isLessAccessible tyconAcc valAcc then
@@ -598,8 +598,8 @@ let CheckTypeAux permitByRefLike (cenv:cenv) env m ty onInnerByrefError =
             if isByrefLikeTyconRef cenv.g m tcref then
                 let visitTye ty0 =
                     match tryDestAppTy cenv.g ty0 with
-                    | None -> ()
-                    | Some tcref2 ->  
+                    | ValueNone -> ()
+                    | ValueSome tcref2 ->  
                         if isByrefTyconRef cenv.g tcref2 then 
                             errorR(Error(FSComp.SR.chkNoByrefsOfByrefs(NicePrint.minimalStringOfType cenv.denv ty), m)) 
                 CheckTypesDeep (visitTye, None, None, None, None) cenv.g env tinst
@@ -977,7 +977,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
         
         // Disallow calls to abstract base methods on IL types. 
         match tryDestAppTy g baseVal.Type with
-        | Some tcref when tcref.IsILTycon ->
+        | ValueSome tcref when tcref.IsILTycon ->
             try
                 // This is awkward - we have to explicitly re-resolve back to the IL metadata to determine if the method is abstract.
                 // We believe this may be fragile in some situations, since we are using the Abstract IL code to compare
@@ -1671,7 +1671,9 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v,bindRhs,_) as bi
               CheckForByrefLikeType cenv env v.Range v.Type (fun () -> errorR(Error(FSComp.SR.chkNoByrefAsTopValue(),v.Range)))
           | _ -> ()
 
-        if Option.isSome v.PublicPath then 
+        match v.PublicPath with
+        | None -> ()
+        | _ ->
             if 
               // Don't support implicit [<ReflectedDefinition>] on generated members, except the implicit members
               // for 'let' bound functions in classes.

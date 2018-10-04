@@ -2609,13 +2609,13 @@ type TcConfigBuilder =
     member tcConfigB.RemoveReferencedAssemblyByPath (m, path) =
         tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs |> List.filter (fun ar-> ar.Range <> m || ar.Text <> path)
     
-    static member SplitCommandLineResourceInfo ri = 
-        if String.contains ri ',' then 
-            let p = String.index ri ',' 
+    static member SplitCommandLineResourceInfo (ri:string) =
+        let p = ri.IndexOf ','
+        if p <> -1 then
             let file = String.sub ri 0 p 
             let rest = String.sub ri (p+1) (String.length ri - p - 1) 
-            if String.contains rest ',' then 
-                let p = String.index rest ',' 
+            let p = rest.IndexOf ',' 
+            if p <> -1 then
                 let name = String.sub rest 0 p+".resources" 
                 let pubpri = String.sub rest (p+1) (rest.Length - p - 1) 
                 if pubpri = "public" then file, name, ILResourceAccess.Public 

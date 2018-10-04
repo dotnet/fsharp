@@ -5123,13 +5123,13 @@
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
-        <source>Type parameters must be placed directly adjacent to the type name, e.g. \"type C&lt;'T&gt;\", not     type \"C   &lt;'T&gt;\"</source>
-        <target state="translated">형식 매개 변수는 형식 이름 바로 옆에 배치해야 합니다(예: type \"C   &lt;'T&gt;\"가 아니라 \"type C&lt;'T&gt;\").</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="needs-review-translation">형식 매개 변수는 형식 이름 바로 옆에 배치해야 합니다(예: type \"C   &lt;'T&gt;\"가 아니라 \"type C&lt;'T&gt;\").</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
-        <source>Type arguments must be placed directly adjacent to the type name, e.g. \"C&lt;'T&gt;\", not \"C  &lt;'T&gt;\"</source>
-        <target state="translated">형식 인수는 형식 이름 바로 옆에 배치해야 합니다(예: \"C  &lt;'T&gt;\"가 아니라 \"C&lt;'T&gt;\").</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="needs-review-translation">형식 인수는 형식 이름 바로 옆에 배치해야 합니다(예: \"C  &lt;'T&gt;\"가 아니라 \"C&lt;'T&gt;\").</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">

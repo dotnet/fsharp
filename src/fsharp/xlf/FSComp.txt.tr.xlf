@@ -5123,13 +5123,13 @@
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
-        <source>Type parameters must be placed directly adjacent to the type name, e.g. \"type C&lt;'T&gt;\", not     type \"C   &lt;'T&gt;\"</source>
-        <target state="translated">Tür parametreleri doğrudan tür adının bitişiğine yerleştirilmelidir, örn. type \"C   &lt;'T&gt;\" değil \"type C&lt;'T&gt;\"</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="needs-review-translation">Tür parametreleri doğrudan tür adının bitişiğine yerleştirilmelidir, örn. type \"C   &lt;'T&gt;\" değil \"type C&lt;'T&gt;\"</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
-        <source>Type arguments must be placed directly adjacent to the type name, e.g. \"C&lt;'T&gt;\", not \"C  &lt;'T&gt;\"</source>
-        <target state="translated">Tür bağımsız değişkenleri doğrudan tür adının bitişiğine yerleştirilmelidir, örn. \"C  &lt;'T&gt;\" değil \"C&lt;'T&gt;\"</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="needs-review-translation">Tür bağımsız değişkenleri doğrudan tür adının bitişiğine yerleştirilmelidir, örn. \"C  &lt;'T&gt;\" değil \"C&lt;'T&gt;\"</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">

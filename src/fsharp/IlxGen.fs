@@ -471,8 +471,8 @@ and GenUnionRef (amap: ImportMap) m (tcref: TyconRef) =
     let tycon = tcref.Deref
     assert(not tycon.IsTypeAbbrev)
     match tycon.UnionTypeInfo with 
-    | None -> failwith "GenUnionRef m"
-    | Some funion -> 
+    | ValueNone -> failwith "GenUnionRef m"
+    | ValueSome funion -> 
       cached funion.CompiledRepresentation (fun () -> 
           let tyenvinner = TypeReprEnv.ForTycon tycon
           match tcref.CompiledRepresentation with
@@ -739,8 +739,8 @@ let AddStorageForVal (g: TcGlobals) (v,s) eenv =
         // Passing an empty remap is sufficient for FSharp.Core.dll because it turns out the remapped type signature can
         // still be resolved.
         match tryRescopeVal g.fslibCcu Remap.Empty  v with 
-        | None -> eenv
-        | Some vref -> 
+        | ValueNone -> eenv
+        | ValueSome vref -> 
             match vref.TryDeref with
             | ValueNone -> 
                 //let msg = sprintf "could not dereference external value reference to something in FSharp.Core.dll during code generation, v.MangledName = '%s', v.Range = %s" v.MangledName (stringOfRange v.Range)
@@ -3425,21 +3425,21 @@ and GenDefaultValue cenv cgbuf eenv (ty,m) =
         CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) AI_ldnull
     else
         match tryDestAppTy cenv.g ty with 
-        | Some tcref when (tyconRefEq cenv.g cenv.g.system_SByte_tcref tcref || 
-                           tyconRefEq cenv.g cenv.g.system_Int16_tcref tcref || 
-                           tyconRefEq cenv.g cenv.g.system_Int32_tcref tcref || 
-                           tyconRefEq cenv.g cenv.g.system_Bool_tcref tcref || 
-                           tyconRefEq cenv.g cenv.g.system_Byte_tcref tcref || 
-                           tyconRefEq cenv.g cenv.g.system_Char_tcref tcref || 
-                           tyconRefEq cenv.g cenv.g.system_UInt16_tcref tcref || 
-                           tyconRefEq cenv.g cenv.g.system_UInt32_tcref tcref) ->
+        | ValueSome tcref when (tyconRefEq cenv.g cenv.g.system_SByte_tcref tcref || 
+                                   tyconRefEq cenv.g cenv.g.system_Int16_tcref tcref || 
+                                   tyconRefEq cenv.g cenv.g.system_Int32_tcref tcref || 
+                                   tyconRefEq cenv.g cenv.g.system_Bool_tcref tcref || 
+                                   tyconRefEq cenv.g cenv.g.system_Byte_tcref tcref || 
+                                   tyconRefEq cenv.g cenv.g.system_Char_tcref tcref || 
+                                   tyconRefEq cenv.g cenv.g.system_UInt16_tcref tcref || 
+                                   tyconRefEq cenv.g cenv.g.system_UInt32_tcref tcref) ->
             CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) iLdcZero
-        | Some tcref when (tyconRefEq cenv.g cenv.g.system_Int64_tcref tcref || 
-                           tyconRefEq cenv.g cenv.g.system_UInt64_tcref tcref) ->
+        | ValueSome tcref when (tyconRefEq cenv.g cenv.g.system_Int64_tcref tcref || 
+                                 tyconRefEq cenv.g cenv.g.system_UInt64_tcref tcref) ->
             CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (iLdcInt64 0L)
-        | Some tcref when (tyconRefEq cenv.g cenv.g.system_Single_tcref tcref) ->
+        | ValueSome tcref when (tyconRefEq cenv.g cenv.g.system_Single_tcref tcref) ->
             CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (iLdcSingle 0.0f)
-        | Some tcref when (tyconRefEq cenv.g cenv.g.system_Double_tcref tcref) ->
+        | ValueSome tcref when (tyconRefEq cenv.g cenv.g.system_Double_tcref tcref) ->
             CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (iLdcDouble 0.0)
         | _ -> 
             let ilTy = GenType cenv.amap m eenv.tyenv ty
@@ -5118,7 +5118,7 @@ and ComputeFlagFixupsForMemberBinding cenv (v:Val,memberInfo:ValMemberInfo) =
      else 
          memberInfo.ImplementedSlotSigs |> List.map (fun slotsig -> 
              let oty = slotsig.ImplementedType
-             let otcref,_ = destAppTy cenv.g oty
+             let otcref = tcrefOfAppTy cenv.g oty
              let tcref = v.MemberApparentEntity
              
              let useMethodImpl = 

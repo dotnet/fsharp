@@ -270,8 +270,8 @@ type TyparKind =
 
     member x.AttrName =
       match x with
-      | TyparKind.Type -> None
-      | TyparKind.Measure -> Some "Measure"
+      | TyparKind.Type -> ValueNone
+      | TyparKind.Measure -> ValueSome "Measure"
 
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     //member x.DebugText  =  x.ToString()
@@ -480,10 +480,11 @@ let KeyTyconByDemangledNameAndArity nm (typars: _ list) x =
 
 /// Generic types can be accessed either by 'List' or 'List`1'. This lists both keys. The second form should really be deprecated.
 let KeyTyconByAccessNames nm x = 
-    if IsMangledGenericName nm then 
-        let dnm = DemangleGenericTypeName nm 
+    match TryDemangleGenericNameAndPos nm with
+    | ValueSome pos ->
+        let dnm = DemangleGenericTypeNameWithPos pos nm 
         [| KeyValuePair(nm,x); KeyValuePair(dnm,x) |]
-    else
+    | _ ->
         [| KeyValuePair(nm,x) |]
 
 type ModuleOrNamespaceKind = 
@@ -965,14 +966,14 @@ and /// Represents a type definition, exception definition, module definition or
     /// Get the union cases and other union-type information for a type, if any
     member x.UnionTypeInfo = 
         match x.TypeReprInfo with 
-        | TUnionRepr x -> Some x 
-        |  _ -> None
+        | TUnionRepr x -> ValueSome x 
+        |  _ -> ValueNone
 
     /// Get the union cases for a type, if any
     member x.UnionCasesArray = 
         match x.UnionTypeInfo with 
-        | Some x -> x.CasesTable.CasesByIndex 
-        | None -> [| |] 
+        | ValueSome x -> x.CasesTable.CasesByIndex 
+        | ValueNone -> [| |] 
 
     /// Get the union cases for a type, if any, as a list
     member x.UnionCasesAsList = x.UnionCasesArray |> Array.toList
@@ -980,8 +981,8 @@ and /// Represents a type definition, exception definition, module definition or
     /// Get a union case of a type by name
     member x.GetUnionCaseByName n =
         match x.UnionTypeInfo with 
-        | Some x  -> NameMap.tryFind n x.CasesTable.CasesByName
-        | None -> None
+        | ValueSome x  -> NameMap.tryFind n x.CasesTable.CasesByName
+        | ValueNone -> None
 
     
     /// Create a new entity with empty, unlinked data. Only used during unpickling of F# metadata.
@@ -3045,13 +3046,12 @@ and
     static member TryDerefEntityPath(ccu: CcuThunk, path:string[], i:int, entity:Entity) = 
         if i >= path.Length then ValueSome entity
         else  
-            let next = entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind(path.[i])
-            match next with 
-            | Some res -> NonLocalEntityRef.TryDerefEntityPath(ccu, path, (i+1), res)
+            match entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryGetValue path.[i] with 
+            | true, res -> NonLocalEntityRef.TryDerefEntityPath(ccu, path, (i+1), res)
 #if !NO_EXTENSIONTYPING
-            | None -> NonLocalEntityRef.TryDerefEntityPathViaProvidedType(ccu, path, i, entity)
+            | _ -> NonLocalEntityRef.TryDerefEntityPathViaProvidedType(ccu, path, i, entity)
 #else
-            | None -> ValueNone
+            | _ -> ValueNone
 #endif
 
 #if !NO_EXTENSIONTYPING
@@ -3260,7 +3260,7 @@ and
             ValueSome tcr.binding
 
     /// Is the destination assembly available?
-    member tcr.CanDeref = tcr.TryDeref.IsSome
+    member tcr.CanDeref = ValueOption.isSome tcr.TryDeref
 
     /// Gets the data indicating the compiled representation of a type or module in terms of Abstract IL data structures.
     member x.CompiledRepresentation = x.Deref.CompiledRepresentation
@@ -3811,7 +3811,7 @@ and
         | None -> error(InternalError(sprintf "union case %s not found in type %s" x.CaseName x.TyconRef.LogicalName, x.TyconRef.Range))
 
     /// Try to dereference the reference 
-    member x.TryUnionCase =  x.TyconRef.TryDeref |> ValueOption.bind (fun tcref -> tcref.GetUnionCaseByName x.CaseName |> ValueOption.ofOption)
+    member x.TryUnionCase = x.TyconRef.TryDeref |> ValueOption.bind (fun tcref -> tcref.GetUnionCaseByName x.CaseName |> ValueOption.ofOption)
 
     /// Get the attributes associated with the union case
     member x.Attribs = x.UnionCase.Attribs
@@ -4198,9 +4198,10 @@ and
     /// Try to resolve a path into the CCU by referencing the .NET/CLI type forwarder table of the CCU
     member ccu.TryForward(nlpath:string[],item:string) : EntityRef option  = 
         ccu.EnsureDerefable(nlpath)
-        match ccu.TypeForwarders.TryFind(nlpath,item) with
-        | Some entity -> Some(entity.Force())
-        | None -> None
+        let key = nlpath,item
+        match ccu.TypeForwarders.TryGetValue key with
+        | true, entity -> Some(entity.Force())
+        | _ -> None
         //printfn "trying to forward %A::%s from ccu '%s', res = '%A'" p n ccu.AssemblyName res.IsSome
 
     /// Used to make forward calls into the type/assembly loader when comparing member signatures during linking
@@ -5422,7 +5423,7 @@ let fslibValRefEq fslibCcu vref1 vref2 =
             // is not significant
             nlr1.ItemKey.PartialKey = nm2.PartialKey  &&
             fslibRefEq nlr1.EnclosingEntity.nlr pp2
-        | None -> 
+        | _ -> 
             false
     // Note: I suspect this private-to-private reference comparison is not needed
     | (VRefLocal e1, VRefLocal e2) ->
@@ -5446,9 +5447,9 @@ let primEntityRefEq compilingFslib fslibCcu (x : EntityRef) (y : EntityRef) =
          // The tcrefs may have forwarders. If they may possibly be equal then resolve them to get their canonical references
          // and compare those using pointer equality.
          (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) && 
-          let v1 = x.TryDeref 
-          let v2 = y.TryDeref
-          v1.IsSome && v2.IsSome && v1.Value === v2.Value)) then
+            match x.TryDeref with
+            | ValueSome v1 -> match y.TryDeref with ValueSome v2 -> v1 === v2 | _ -> false
+            | _ -> match y.TryDeref with ValueNone -> true | _ -> false)) then
         true
     else
         compilingFslib && fslibEntityRefEq fslibCcu x y  
@@ -5472,9 +5473,9 @@ let primValRefEq compilingFslib fslibCcu (x : ValRef) (y : ValRef) =
     else
            (// Use TryDeref to guard against the platforms/times when certain F# language features aren't available,
             // e.g. CompactFramework doesn't have support for quotations.
-            let v1 = x.TryDeref 
-            let v2 = y.TryDeref
-            v1.IsSome && v2.IsSome && v1.Value === v2.Value)
+            match x.TryDeref with
+            | ValueSome v1 -> match y.TryDeref with ValueSome v2 -> v1 === v2 | _ -> false
+            | _ -> match y.TryDeref with ValueNone -> true | _ -> false)
         || (if compilingFslib then fslibValRefEq fslibCcu x y else false)
 
 //---------------------------------------------------------------------------
@@ -5718,13 +5719,13 @@ let CombineCcuContentFragments m l =
             let tab2 = mty2.AllEntitiesByLogicalMangledName
             let entities = 
                 [ for e1 in mty1.AllEntities do 
-                      match tab2.TryFind e1.LogicalName with
-                      | Some e2 -> yield CombineEntites path e1 e2
-                      | None -> yield e1 
+                      match tab2.TryGetValue e1.LogicalName with
+                      | true, e2 -> yield CombineEntites path e1 e2
+                      | _ -> yield e1
                   for e2 in mty2.AllEntities do 
-                      match tab1.TryFind e2.LogicalName with
-                      | Some _ -> ()
-                      | None -> yield e2 ]
+                      match tab1.TryGetValue e2.LogicalName with
+                      | true, _ -> ()
+                      | _ -> yield e2 ]
 
             let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
 
