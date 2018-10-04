@@ -3336,6 +3336,27 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["b"]
             ["i"]
 
+    [<Test>]
+    member public this.``CompletionInDifferentEnvs5``() = 
+        AssertCtrlSpaceCompleteContains
+            ["let foo = async { return 2 }"
+             "let bar = async { return 5 }"
+             "async { let! x = foo"
+             "        and! y = bar"
+             "        return "]
+             "return "
+            ["x";"y"]
+            [] 
+
+    [<Test>]
+    member public this.``CompletionInDifferentEnvs6``() = 
+        AssertCtrlSpaceCompleteContains
+            ["let count = async { return 6 }"
+             "async { let! x = foo"
+             "        and! y = "]
+             "and! y = "
+            ["count"]
+            [] 
 
             (**)
     [<Test>]
