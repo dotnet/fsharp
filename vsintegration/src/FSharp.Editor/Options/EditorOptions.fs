@@ -28,12 +28,12 @@ type EnterKeySetting =
 type IntelliSenseOptions =
   { ShowAfterCharIsTyped: bool
     ShowAfterCharIsDeleted: bool
-    ShowAllSymbols : bool
+    IncludeSymbolsFromUnopenedNamespacesOrModules : bool
     EnterKeySetting : EnterKeySetting }
     static member Default =
       { ShowAfterCharIsTyped = true
         ShowAfterCharIsDeleted = true
-        ShowAllSymbols = true
+        IncludeSymbolsFromUnopenedNamespacesOrModules = false
         EnterKeySetting = EnterKeySetting.NeverNewline}
 
 
