@@ -130,7 +130,8 @@ Testing the .NET Core version of the F# compiler on macOS and Linux is TBD.
 
 To build and test Visual F# IDE Tools, install these requirements:
 
-- [Visual Studio 2017](https://www.visualstudio.com/downloads/)
+- Download [Visual Studio 2017](https://www.visualstudio.com/downloads/)
+- Launch the Visual Studio Installer
   - Under the "Windows" workloads, select ".NET desktop development"
     - Select "F# desktop language support" under the optional components
   - Under the "Other Toolsets" workloads, select "Visual Studio extension development"
