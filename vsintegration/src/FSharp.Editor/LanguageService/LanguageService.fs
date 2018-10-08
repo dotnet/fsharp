@@ -161,7 +161,8 @@ type internal FSharpPackage() as this =
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
     override this.CreateLanguageService() = FSharpLanguageService(this, this.GetService(typeof<SVsSolution>) :?> IVsSolution)
     override this.CreateEditorFactories() = seq { yield FSharpEditorFactory(this) :> IVsEditorFactory }
-    override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()
+    override this.RegisterMiscellaneousFilesWorkspaceInformation(miscFilesWorkspace) =
+        miscFilesWorkspace.RegisterLanguage(Guid(FSharpConstants.languageServiceGuidString),FSharpConstants.FSharpLanguageName,".fsx")
 
     interface Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI with
         member this.SendTextInteraction(s:string) =
@@ -176,7 +177,6 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
     let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
 
     let mutable legacyProjectWorkspaceMap = Unchecked.defaultof<LegacyProjectWorkspaceMap>
-    let mutable singleFileWorkspaceMap = Unchecked.defaultof<SingleFileWorkspaceMap>
 
     override this.Initialize() = 
         base.Initialize()
@@ -187,9 +187,6 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
         let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
         legacyProjectWorkspaceMap <- LegacyProjectWorkspaceMap(this.Workspace, solution, projectInfoManager, projectContextFactory, this.SystemServiceProvider)
         legacyProjectWorkspaceMap.Initialize()
-
-        singleFileWorkspaceMap <- SingleFileWorkspaceMap(this.Workspace, projectInfoManager, projectContextFactory)
-        singleFileWorkspaceMap.Initialize()
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
@@ -206,8 +203,6 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
     override this.SetupNewTextView(textView) =
         base.SetupNewTextView(textView)
 
-        let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
-
         // Toggles outlining (or code folding) based on settings
         let outliningManagerService = this.Package.ComponentModel.GetService<IOutliningManagerService>()
         let wpfTextView = this.EditorAdaptersFactoryService.GetWpfTextView(textView)
@@ -215,43 +210,3 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
         if not (isNull outliningManager) then
             let settings = this.Workspace.Services.GetService<EditorOptions>()
             outliningManager.Enabled <- settings.Advanced.IsOutliningEnabled
-
-        match textView.GetBuffer() with
-        | (VSConstants.S_OK, textLines) ->
-            let filename = VsTextLines.GetFilename textLines
-
-            match VsRunningDocumentTable.FindDocumentWithoutLocking(package.RunningDocumentTable,filename) with
-            | Some (hier, _) ->
-
-
-                // Check if the file is in a CPS project or not.
-                // CPS projects don't implement IProvideProjectSite and IVSProjectHierarchy
-                // Simple explanation:
-                //    Legacy projects have IVSHierarchy and IProjectSite
-                //    CPS Projects, out-of-project file and script files don't
-
-                match hier with
-                | :? IProvideProjectSite as _siteProvider when not (IsScript(filename)) ->
-
-                    // This is the path for .fs/.fsi files in legacy projects
-                    ()
-                | h when not (isNull h) && not (IsScript(filename)) ->
-                    let docId = this.Workspace.CurrentSolution.GetDocumentIdsWithFilePath(filename).FirstOrDefault()
-                    match docId with
-                    | null ->
-                        if not (h.IsCapabilityMatch("CPS")) then
-
-                            // This is the path when opening out-of-project .fs/.fsi files in CPS projects
-
-                            let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
-                            singleFileWorkspaceMap.AddFile(filename, fileContents, hier)
-                    | _ -> ()
-                | _ ->
-
-                    // This is the path for both in-project and out-of-project .fsx files
-
-                    let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
-                    singleFileWorkspaceMap.AddFile(filename, fileContents, hier)
-
-            | _ -> ()
-        | _ -> ()
