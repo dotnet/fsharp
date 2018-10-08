@@ -74,7 +74,7 @@ type internal FSharpEditorFormattingService
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
             let indentStyle = options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
-            let projectOptionsOpt = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
+            let! projectOptionsOpt = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
             let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, checkerProvider.Checker, indentStyle, projectOptionsOpt, position)
                 
             return

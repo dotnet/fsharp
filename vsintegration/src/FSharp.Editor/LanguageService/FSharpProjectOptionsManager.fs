@@ -47,26 +47,20 @@ type internal FSharpProjectOptionsManager
     member this.ClearInfoForProject(projectId:ProjectId) = projectOptionsTable.ClearInfoForProject(projectId)
 
     /// Get the exact options for a single-file script
-    member this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, fileContents) =
+    member this.ComputeSingleFileOptions (fileName, loadTime, fileContents) =
         async {
-            let extraProjectInfo = Some(box workspace)
-            if SourceFile.MustBeSingleFileProject(fileName) then 
-                // NOTE: we don't use a unique stamp for single files, instead comparing options structurally.
-                // This is because we repeatedly recompute the options.
-                let optionsStamp = None 
-                let! options, _diagnostics = checkerProvider.Checker.GetProjectOptionsFromScript(fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo, ?optionsStamp=optionsStamp) 
-                // NOTE: we don't use FCS cross-project references from scripts to projects.  THe projects must have been
-                // compiled and #r will refer to files on disk
-                let referencedProjectFileNames = [| |] 
-                let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, options)
-                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, options.ExtraProjectInfo, Some projectOptionsTable)
-                let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
-                return (deps, parsingOptions, projectOptions)
-            else
-                let site = ProjectSitesAndFiles.ProjectSiteOfSingleFile(fileName)
-                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, extraProjectInfo, Some projectOptionsTable)
-                let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
-                return (deps, parsingOptions, projectOptions)
+            // NOTE: we don't use a unique stamp for single files, instead comparing options structurally.
+            // This is because we repeatedly recompute the options.
+            let extraProjectInfo = None
+            let optionsStamp = None 
+            let! options, _diagnostics = checkerProvider.Checker.GetProjectOptionsFromScript(fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo, ?optionsStamp=optionsStamp) 
+            // NOTE: we don't use FCS cross-project references from scripts to projects.  THe projects must have been
+            // compiled and #r will refer to files on disk
+            let referencedProjectFileNames = [| |] 
+            let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, options)
+            let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, None, fileName, options.ExtraProjectInfo, Some projectOptionsTable)
+            let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
+            return (deps, parsingOptions, projectOptions)
         }
 
     /// Update the info for a project in the project table
@@ -102,21 +96,22 @@ type internal FSharpProjectOptionsManager
             match this.TryGetOptionsForProject(projectId) with
             | Some(x) -> return Some(x)
             | _ ->
-                let! cancellationToken = Async.CancellationToken
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                // NOTE: we don't use FCS cross-project references from scripts to projects.  The projects must have been
-                // compiled and #r will refer to files on disk.
-                let tryGetOrCreateProjectId _ = None 
-                let! _referencedProjectFileNames, parsingOptions, projectOptions = this.ComputeSingleFileOptions (tryGetOrCreateProjectId, document.FilePath, DateTime.Now, sourceText.ToString())
-                projectOptionsTable.AddOrUpdateProject(projectId, (fun _ -> [||], parsingOptions, None, projectOptions))
-                return Some (parsingOptions, None, projectOptions)
+                // This is to handle misc single files
+                let! textVersion = document.GetTextVersionAsync() |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync() |> Async.AwaitTask
+                let! _referencedProjectFileNames, parsingOptions, projectOptions = this.ComputeSingleFileOptions(document.FilePath, DateTime(int64(textVersion.GetHashCode())), sourceText.ToString())
+                let result = (parsingOptions, None, projectOptions)
+                return Some(result)
         }
 
     /// Get the options for a document or project relevant for syntax processing.
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project options for a script.
-    member this.TryGetOptionsForEditingDocumentOrProject(document:Document) = 
-        let projectId = document.Project.Id
-        this.TryGetOptionsForProject(projectId) |> Option.map(fun (parsingOptions, _, projectOptions) -> parsingOptions, projectOptions)
+    member this.TryGetOptionsForEditingDocumentOrProject(document:Document) =
+        async {
+            match! this.TryGetOptionsForDocumentOrProject(document) with
+            | Some(parsingOptions, _, projectOptions) -> return Some(parsingOptions, projectOptions)
+            | _ -> return None
+        }
 
     /// get a siteprovider
     member this.ProvideProjectSiteProvider(project:Project) = provideProjectSiteProvider(workspace, project, serviceProvider, Some projectOptionsTable)

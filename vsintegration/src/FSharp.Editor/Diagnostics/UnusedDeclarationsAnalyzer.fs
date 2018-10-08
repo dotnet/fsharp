@@ -106,18 +106,16 @@ type internal UnusedDeclarationsAnalyzer() =
 
             do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
             do! Async.Sleep DefaultTuning.UnusedDeclarationsAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
-            match getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document) with
-            | Some (_parsingOptions, projectOptions) ->
-                let! sourceText = document.GetTextAsync()
-                let checker = getChecker document
-                let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName = userOpName)
-                let! allSymbolUsesInFile = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
-                let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile (isScriptFile document.FilePath)
-                return
-                    unusedRanges
-                    |> Seq.map (fun m -> Diagnostic.Create(Descriptor, RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
-                    |> Seq.toImmutableArray
-            | None -> return ImmutableArray.Empty
+            let! _parsingOptions, projectOptions = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
+            let! sourceText = document.GetTextAsync()
+            let checker = getChecker document
+            let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName = userOpName)
+            let! allSymbolUsesInFile = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
+            let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile (isScriptFile document.FilePath)
+            return
+                unusedRanges
+                |> Seq.map (fun m -> Diagnostic.Create(Descriptor, RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
+                |> Seq.toImmutableArray
         }
         |> Async.map (Option.defaultValue ImmutableArray.Empty)
         |> RoslynHelpers.StartAsyncAsTask cancellationToken

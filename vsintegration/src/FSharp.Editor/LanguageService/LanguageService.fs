@@ -175,6 +175,7 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
     let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
+    let miscFilesWorkspace = package.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
 
     let mutable legacyProjectWorkspaceMap = Unchecked.defaultof<LegacyProjectWorkspaceMap>
 
@@ -183,6 +184,8 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
 
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
+        miscFilesWorkspace.Options <- miscFilesWorkspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
+        miscFilesWorkspace.Options <- miscFilesWorkspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
 
         let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
         legacyProjectWorkspaceMap <- LegacyProjectWorkspaceMap(this.Workspace, solution, projectInfoManager, projectContextFactory, this.SystemServiceProvider)
