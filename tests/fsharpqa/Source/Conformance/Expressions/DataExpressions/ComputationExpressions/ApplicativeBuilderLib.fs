@@ -39,7 +39,7 @@ type TraceBuilder() =
 
     /// Doesn't actually do any disposing here, since we are just interesting
     /// in checking the order of events in this test
-    member __.MapUsing(resource(*:#System.IDisposable*), body) =
+    member __.ApplyUsing(resource(*:#System.IDisposable*), body) =
         trace <- EnterUsing resource :: trace
         let body' = fun () ->
             trace <- StartUsingBody resource :: trace

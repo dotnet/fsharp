@@ -8103,7 +8103,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             // 'Apply' correspond to their lambda.
 
             let desugared =
-                // Insert calls to builder.MapUsing(...) to handle resources
+                // Insert calls to builder.ApplyUsing(...) to handle resources
                 // if required
                 let usings =
                     bindingsBottomToTop
@@ -8112,10 +8112,10 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                         | true, SynPat.Named (SynPat.Wild _, id, false, _, _)
                         | true, SynPat.LongIdent (LongIdentWithDots([id], _), _, _, _, _, _) ->
                             let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhsExpr.Range
-                            if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env m ad "MapUsing" builderTy)
-                            then error(Error(FSComp.SR.tcRequireBuilderMethod("MapUsing"), m))
-                            let mapUsingBodyExpr = SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, acc, acc.Range, SequencePointAtTarget)], spBind, bindRange) // TODO Where should we be suppressing sequence points?
-                            mkSynCall "MapUsing" bindRange [ SynExpr.Ident(id); mapUsingBodyExpr ]
+                            if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env m ad "ApplyUsing" builderTy)
+                            then error(Error(FSComp.SR.tcRequireBuilderMethod("ApplyUsing"), m))
+                            let applyUsingBodyExpr = SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, acc, acc.Range, SequencePointAtTarget)], spBind, bindRange) // TODO Where should we be suppressing sequence points?
+                            mkSynCall "ApplyUsing" bindRange [ SynExpr.Ident(id); applyUsingBodyExpr ]
                         | true, _ ->
                             // TODO Support explicitly typed names on the LHS of a use!/anduse!
                             error(Error(FSComp.SR.tcInvalidAndUseBangBinding(), pat.Range))
