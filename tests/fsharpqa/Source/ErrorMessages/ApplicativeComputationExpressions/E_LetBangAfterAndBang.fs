@@ -3,11 +3,11 @@
 
 namespace ApplicativeComputationExpressions
 
-module E_LetBangAndBangNotTerminatedWithReturn =
+module E_LetBangAfterAndBang =
 
     eventually {
         let! x = Eventually.NotYetDone (fun () -> Eventually.Done 4)
         and! y = Eventually.Done 6
-        let _ = 42 // Invalid: We expect a return to terminate the the let! ... and! ... sequence
-        return x + y
+        let! z = Eventually.NotYetDone (fun () -> Eventually.Done 11)
+        return x + y + z
     }
