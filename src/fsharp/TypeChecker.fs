@@ -8054,7 +8054,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         | SynExpr.LetOrUseAndBang(_, _, _, _, _, _, _::_, SynExpr.Sequential(_, _, SynExpr.YieldOrReturn((isYield, _), _, _), moreBodyExpr, _)) when isYield = false ->
             error(Error(FSComp.SR.tcMoreAfterReturnInApplicativeComputationExpression(), moreBodyExpr.Range))
 
-        // 'let! pat1 = expr1 and! pat2 = expr2 in return expr3' --> 
+        // 'let! pat1 = expr1 and! pat2 = expr2 in return expr3' -->
         //     build.Apply(
         //         build.Apply(
         //             build.Return(
