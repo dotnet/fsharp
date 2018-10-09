@@ -261,7 +261,7 @@ type ValFlags(flags:int64) =
                                                       (flags       &&&    ~~~0b0011001100000000000L) 
 
 /// Represents the kind of a type parameter
-[<RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
+[<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
 type TyparKind = 
 
     | Type 
@@ -270,13 +270,13 @@ type TyparKind =
 
     member x.AttrName =
       match x with
-      | TyparKind.Type -> None
-      | TyparKind.Measure -> Some "Measure"
+      | TyparKind.Type -> ValueNone
+      | TyparKind.Measure -> ValueSome "Measure"
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = 
+    override x.ToString() =
       match x with
       | TyparKind.Type -> "type"
       | TyparKind.Measure -> "measure"
@@ -480,10 +480,11 @@ let KeyTyconByDemangledNameAndArity nm (typars: _ list) x =
 
 /// Generic types can be accessed either by 'List' or 'List`1'. This lists both keys. The second form should really be deprecated.
 let KeyTyconByAccessNames nm x = 
-    if IsMangledGenericName nm then 
-        let dnm = DemangleGenericTypeName nm 
+    match TryDemangleGenericNameAndPos nm with
+    | ValueSome pos ->
+        let dnm = DemangleGenericTypeNameWithPos pos nm 
         [| KeyValuePair(nm,x); KeyValuePair(dnm,x) |]
-    else
+    | _ ->
         [| KeyValuePair(nm,x) |]
 
 type ModuleOrNamespaceKind = 
@@ -965,14 +966,14 @@ and /// Represents a type definition, exception definition, module definition or
     /// Get the union cases and other union-type information for a type, if any
     member x.UnionTypeInfo = 
         match x.TypeReprInfo with 
-        | TUnionRepr x -> Some x 
-        |  _ -> None
+        | TUnionRepr x -> ValueSome x 
+        |  _ -> ValueNone
 
     /// Get the union cases for a type, if any
     member x.UnionCasesArray = 
         match x.UnionTypeInfo with 
-        | Some x -> x.CasesTable.CasesByIndex 
-        | None -> [| |] 
+        | ValueSome x -> x.CasesTable.CasesByIndex 
+        | ValueNone -> [| |] 
 
     /// Get the union cases for a type, if any, as a list
     member x.UnionCasesAsList = x.UnionCasesArray |> Array.toList
@@ -980,8 +981,8 @@ and /// Represents a type definition, exception definition, module definition or
     /// Get a union case of a type by name
     member x.GetUnionCaseByName n =
         match x.UnionTypeInfo with 
-        | Some x  -> NameMap.tryFind n x.CasesTable.CasesByName
-        | None -> None
+        | ValueSome x  -> NameMap.tryFind n x.CasesTable.CasesByName
+        | ValueNone -> None
 
     
     /// Create a new entity with empty, unlinked data. Only used during unpickling of F# metadata.
@@ -1349,7 +1350,7 @@ and
     override x.ToString() = "TyconAugmentation(...)"
 
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (*; StructuredFormatDisplay("{DebugText}") *) >]
     /// The information for the contents of a type. Also used for a provided namespace.
     TyconRepresentation = 
 
@@ -1393,10 +1394,10 @@ and
     /// The information for exception definitions should be folded into here.
     | TNoRepr
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = "TyconRepresentation(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 and 
    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -1751,7 +1752,7 @@ and
     override x.ToString() = x.Name
 
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (*; StructuredFormatDisplay("{DebugText}") *) >]
     ExceptionInfo =
     /// Indicates that an exception is an abbreviation for the given exception 
     | TExnAbbrevRepr of TyconRef 
@@ -1765,10 +1766,11 @@ and
     /// Indicates that an exception is abstract, i.e. is in a signature file, and we do not know the representation 
     | TExnNone
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = "ExceptionInfo(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 and [<Sealed; StructuredFormatDisplay("{DebugText}")>]
     ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, entities: QueueList<Entity>) = 
@@ -2340,11 +2342,11 @@ and
     /// Indicates a constraint that a type is .NET unmanaged type
     | IsUnmanaged                 of range
 
-    // Prefer the default formatting of this union type
+    // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     //member x.DebugText  =  x.ToString()
-    //
-    //override x.ToString() = "TyparConstraint(...)"
+    
+    override x.ToString() = sprintf "%+A" x 
     
 /// The specification of a member constraint that must be solved 
 and 
@@ -2374,7 +2376,7 @@ and
     override x.ToString() = "TTrait(" + x.MemberName + ")"
     
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
     /// Indicates the solution of a member constraint during inference.
     TraitConstraintSln = 
 
@@ -2411,10 +2413,11 @@ and
     /// Indicates a trait is solved by a 'fake' instance of an operator, like '+' on integers
     | BuiltInSln
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = "TraitConstraintSln(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 /// The partial information used to index the methods of all those in a ModuleOrNamespace.
 and [<RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
@@ -3043,13 +3046,12 @@ and
     static member TryDerefEntityPath(ccu: CcuThunk, path:string[], i:int, entity:Entity) = 
         if i >= path.Length then ValueSome entity
         else  
-            let next = entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind(path.[i])
-            match next with 
-            | Some res -> NonLocalEntityRef.TryDerefEntityPath(ccu, path, (i+1), res)
+            match entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryGetValue path.[i] with 
+            | true, res -> NonLocalEntityRef.TryDerefEntityPath(ccu, path, (i+1), res)
 #if !NO_EXTENSIONTYPING
-            | None -> NonLocalEntityRef.TryDerefEntityPathViaProvidedType(ccu, path, i, entity)
+            | _ -> NonLocalEntityRef.TryDerefEntityPathViaProvidedType(ccu, path, i, entity)
 #else
-            | None -> ValueNone
+            | _ -> ValueNone
 #endif
 
 #if !NO_EXTENSIONTYPING
@@ -3258,7 +3260,7 @@ and
             ValueSome tcr.binding
 
     /// Is the destination assembly available?
-    member tcr.CanDeref = tcr.TryDeref.IsSome
+    member tcr.CanDeref = ValueOption.isSome tcr.TryDeref
 
     /// Gets the data indicating the compiled representation of a type or module in terms of Abstract IL data structures.
     member x.CompiledRepresentation = x.Deref.CompiledRepresentation
@@ -3809,7 +3811,7 @@ and
         | None -> error(InternalError(sprintf "union case %s not found in type %s" x.CaseName x.TyconRef.LogicalName, x.TyconRef.Range))
 
     /// Try to dereference the reference 
-    member x.TryUnionCase =  x.TyconRef.TryDeref |> ValueOption.bind (fun tcref -> tcref.GetUnionCaseByName x.CaseName |> ValueOption.ofOption)
+    member x.TryUnionCase = x.TyconRef.TryDeref |> ValueOption.bind (fun tcref -> tcref.GetUnionCaseByName x.CaseName |> ValueOption.ofOption)
 
     /// Get the attributes associated with the union case
     member x.Attribs = x.UnionCase.Attribs
@@ -3996,11 +3998,11 @@ and
     /// Raising a measure to a rational power 
     | RationalPower of Measure * Rational
 
-    // Prefer the default formatting of this union type
+    // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     //member x.DebugText  =  x.ToString()
-    //
-    //override x.ToString() = "Measure(...)"
+    
+    override x.ToString() = sprintf "%+A" x 
 
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
@@ -4196,9 +4198,10 @@ and
     /// Try to resolve a path into the CCU by referencing the .NET/CLI type forwarder table of the CCU
     member ccu.TryForward(nlpath:string[],item:string) : EntityRef option  = 
         ccu.EnsureDerefable(nlpath)
-        match ccu.TypeForwarders.TryFind(nlpath,item) with
-        | Some entity -> Some(entity.Force())
-        | None -> None
+        let key = nlpath,item
+        match ccu.TypeForwarders.TryGetValue key with
+        | true, entity -> Some(entity.Force())
+        | _ -> None
         //printfn "trying to forward %A::%s from ccu '%s', res = '%A'" p n ccu.AssemblyName res.IsSome
 
     /// Used to make forward calls into the type/assembly loader when comparing member signatures during linking
@@ -4249,7 +4252,7 @@ and
 and Attribs = Attrib list 
 
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
     AttribKind = 
 
     /// Indicates an attribute refers to a type defined in an imported .NET assembly 
@@ -4258,10 +4261,11 @@ and
     /// Indicates an attribute refers to a type defined in an imported F# assembly 
     | FSAttrib of ValRef
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = sprintf "AttribKind(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 /// Attrib(kind,unnamedArgs,propVal,appliedToAGetterOrSetter,targetsOpt,range)
 and 
@@ -4325,10 +4329,11 @@ and [<RequireQualifiedAccess>]
 
 /// Decision trees. Pattern matching has been compiled down to
 /// a decision tree by this point.  The right-hand-sides (actions) of
+/// a decision tree by this point.  The right-hand-sides (actions) of
 /// the decision tree are labelled by integers that are unique for that
 /// particular tree.
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
     DecisionTree = 
 
     /// TDSwitch(input, cases, default, range)
@@ -4357,10 +4362,11 @@ and
     ///    body -- the rest of the decision tree
     | TDBind of Binding * DecisionTree
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = sprintf "DecisionTree(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 /// Represents a test and a subsequent decision tree
 and 
@@ -4380,7 +4386,7 @@ and
     override x.ToString() = sprintf "DecisionTreeCase(...)"
 
 and 
-    [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison; RequireQualifiedAccess (*; StructuredFormatDisplay("{DebugText}") *) >]
     DecisionTreeTest = 
     /// Test if the input to a decision tree matches the given union case
     | UnionCase of UnionCaseRef * TypeInst
@@ -4410,10 +4416,11 @@ and
     ///     activePatternInfo -- The extracted info for the active pattern.
     | ActivePatternCase of Expr * TTypes * (ValRef * TypeInst) option * int * ActivePatternInfo
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText  =  x.ToString()
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = sprintf "DecisionTreeTest(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 /// A target of a decision tree. Can be thought of as a little function, though is compiled as a local block. 
 and 
@@ -4907,7 +4914,7 @@ and
 
 /// The contents of a module-or-namespace-fragment definition 
 and 
-    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
     ModuleOrNamespaceExpr = 
     /// Indicates the module is a module with a signature 
     | TMAbstract of ModuleOrNamespaceExprWithSig
@@ -4924,10 +4931,11 @@ and
     /// Indicates the module fragment is a 'rec' or 'non-rec' definition of types and modules
     | TMDefRec   of isRec:bool * Tycon list * ModuleOrNamespaceBinding list * range
 
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    // %+A formatting is used, so this is not needed
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText  =  x.ToString()
 
-    override x.ToString() = "ModuleOrNamespaceExpr(...)"
+    override x.ToString() = sprintf "%+A" x 
 
 /// A named module-or-namespace-fragment definition 
 and 
@@ -5415,7 +5423,7 @@ let fslibValRefEq fslibCcu vref1 vref2 =
             // is not significant
             nlr1.ItemKey.PartialKey = nm2.PartialKey  &&
             fslibRefEq nlr1.EnclosingEntity.nlr pp2
-        | None -> 
+        | _ -> 
             false
     // Note: I suspect this private-to-private reference comparison is not needed
     | (VRefLocal e1, VRefLocal e2) ->
@@ -5439,9 +5447,9 @@ let primEntityRefEq compilingFslib fslibCcu (x : EntityRef) (y : EntityRef) =
          // The tcrefs may have forwarders. If they may possibly be equal then resolve them to get their canonical references
          // and compare those using pointer equality.
          (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) && 
-          let v1 = x.TryDeref 
-          let v2 = y.TryDeref
-          v1.IsSome && v2.IsSome && v1.Value === v2.Value)) then
+            match x.TryDeref with
+            | ValueSome v1 -> match y.TryDeref with ValueSome v2 -> v1 === v2 | _ -> false
+            | _ -> match y.TryDeref with ValueNone -> true | _ -> false)) then
         true
     else
         compilingFslib && fslibEntityRefEq fslibCcu x y  
@@ -5465,9 +5473,9 @@ let primValRefEq compilingFslib fslibCcu (x : ValRef) (y : ValRef) =
     else
            (// Use TryDeref to guard against the platforms/times when certain F# language features aren't available,
             // e.g. CompactFramework doesn't have support for quotations.
-            let v1 = x.TryDeref 
-            let v2 = y.TryDeref
-            v1.IsSome && v2.IsSome && v1.Value === v2.Value)
+            match x.TryDeref with
+            | ValueSome v1 -> match y.TryDeref with ValueSome v2 -> v1 === v2 | _ -> false
+            | _ -> match y.TryDeref with ValueNone -> true | _ -> false)
         || (if compilingFslib then fslibValRefEq fslibCcu x y else false)
 
 //---------------------------------------------------------------------------
@@ -5711,13 +5719,13 @@ let CombineCcuContentFragments m l =
             let tab2 = mty2.AllEntitiesByLogicalMangledName
             let entities = 
                 [ for e1 in mty1.AllEntities do 
-                      match tab2.TryFind e1.LogicalName with
-                      | Some e2 -> yield CombineEntites path e1 e2
-                      | None -> yield e1 
+                      match tab2.TryGetValue e1.LogicalName with
+                      | true, e2 -> yield CombineEntites path e1 e2
+                      | _ -> yield e1
                   for e2 in mty2.AllEntities do 
-                      match tab1.TryFind e2.LogicalName with
-                      | Some _ -> ()
-                      | None -> yield e2 ]
+                      match tab1.TryGetValue e2.LogicalName with
+                      | true, _ -> ()
+                      | _ -> yield e2 ]
 
             let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
 

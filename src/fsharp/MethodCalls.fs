@@ -346,9 +346,9 @@ type CalledMeth<'T>
                                 Choice1Of2(AssignedItemSetter(id, AssignedILFieldSetter(finfo), e))
                             | _ ->              
                               match infoReader.TryFindRecdOrClassFieldInfoOfType(nm, m, returnedObjTy) with
-                              | Some rfinfo -> 
+                              | ValueSome rfinfo -> 
                                   Choice1Of2(AssignedItemSetter(id, AssignedRecdFieldSetter(rfinfo), e))
-                              | None -> 
+                              | _ -> 
                                   Choice2Of2(arg))
 
             let names = namedCallerArgs |> List.map (fun (CallerNamedArg(nm, _)) -> nm.idText) 
