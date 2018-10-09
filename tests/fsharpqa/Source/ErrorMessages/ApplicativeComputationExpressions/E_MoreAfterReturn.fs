@@ -9,5 +9,8 @@ module E_MoreAfterReturn =
         let! x = Eventually.NotYetDone (fun () -> Eventually.Done 4)
         and! y = Eventually.Done 6
         return x + y
-        let _ = 42
+        let w = 42
+        let! a = Eventually.Done -1
+        and! b = Eventually.Done 30
+        return a * b
     }
