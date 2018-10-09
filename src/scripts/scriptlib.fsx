@@ -60,10 +60,10 @@ module Scripting =
 
     let (++) a b = Path.Combine(a,b)
 
-    let getBasename a = Path.GetFileNameWithoutExtension a
+    let getBasename (a: string) = Path.GetFileNameWithoutExtension a
     let getFullPath a = Path.GetFullPath a
-    let getFilename a = Path.GetFileName a
-    let getDirectoryName a = Path.GetDirectoryName a
+    let getFilename (a: string) = Path.GetFileName a
+    let getDirectoryName (a: string) = Path.GetDirectoryName a
 
     let copyFile source dir =
         let dest = 
