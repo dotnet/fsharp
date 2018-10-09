@@ -1445,3 +1445,4 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3244,tcInvalidAndUseBangBinding,"Pattern matching is not allowed on the left-hand side of the equals. 'use! ... anduse! ...' bindings must be of the form 'use! <var> = <expr>' or 'anduse! <var> = <expr>'."
 3245,tcYieldInsteadOfReturnInApplicativeComputationExpression,"'yield' is not valid in this position in an applicative computation expression. Did you mean 'return' instead?"
 3246,parsNoBodyInApplicativeComputationExpression,"No body given after the applicative bindings. Expected a 'return' to terminate this applicative computation expression."
+3247,tcMoreAfterReturnInApplicativeComputationExpression,"Saw unexpected expression sequenced after 'return'. Applicative computation expressions must be terminated with a single 'return'."

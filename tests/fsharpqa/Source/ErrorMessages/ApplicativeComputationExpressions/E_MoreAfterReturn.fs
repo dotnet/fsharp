@@ -1,5 +1,5 @@
 // #ErrorMessages
-//<Expects id="FS3247" status="error" span="(12,9)">Saw unexpected expression after 'return'. Applicative computation expressions must be terminated with a 'return'.</Expects>
+//<Expects id="FS3247" status="error" span="(12,9)">Saw unexpected expression sequenced after 'return'. Applicative computation expressions must be terminated with a single 'return'.</Expects>
 
 namespace ApplicativeComputationExpressions
 

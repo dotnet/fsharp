@@ -7087,6 +7087,11 @@
         <target state="new">No body given after the applicative bindings. Expected a 'return' to terminate this applicative computation expression.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMoreAfterReturnInApplicativeComputationExpression">
+        <source>Saw unexpected expression sequenced after 'return'. Applicative computation expressions must be terminated with a single 'return'.</source>
+        <target state="new">Saw unexpected expression sequenced after 'return'. Applicative computation expressions must be terminated with a single 'return'.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
