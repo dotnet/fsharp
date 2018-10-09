@@ -3190,10 +3190,10 @@ type internal SR private() =
     /// This operation accesses a mutable top-level value defined in another assembly in an unsupported way. The value cannot be accessed through its address. Consider copying the expression to a mutable local, e.g. 'let mutable x = ...', and if necessary assigning the value back after the completion of the operation
     /// (Originally from ..\FSComp.txt:1042)
     static member tastInvalidAddressOfMutableAcrossAssemblyBoundary() = (1188, GetStringFunc("tastInvalidAddressOfMutableAcrossAssemblyBoundary",",,,") )
-    /// Type parameters must be placed directly adjacent to the type name, e.g. \"type C<'T>\", not     type \"C   <'T>\"
+    /// Remove spaces between the type name and type parameter, e.g. \"type C<'T>\", not type \"C   <'T>\". Type parameters must be placed directly adjacent to the type name.
     /// (Originally from ..\FSComp.txt:1043)
     static member parsNonAdjacentTypars() = (1189, GetStringFunc("parsNonAdjacentTypars",",,,") )
-    /// Type arguments must be placed directly adjacent to the type name, e.g. \"C<'T>\", not \"C  <'T>\"
+    /// Remove spaces between the type name and type parameter, e.g. \"C<'T>\", not \"C <'T>\". Type parameters must be placed directly adjacent to the type name.
     /// (Originally from ..\FSComp.txt:1044)
     static member parsNonAdjacentTyargs() = (1190, GetStringFunc("parsNonAdjacentTyargs",",,,") )
     /// The use of the type syntax 'int C' and 'C  <int>' is not permitted here. Consider adjusting this type to be written in the form 'C<int>'
@@ -4357,12 +4357,21 @@ type internal SR private() =
     /// This type does not inherit Attribute, it will not work correctly with other .NET languages.
     /// (Originally from ..\FSComp.txt:1443)
     static member tcTypeDoesNotInheritAttribute() = (3242, GetStringFunc("tcTypeDoesNotInheritAttribute",",,,") )
-    /// Expecting 'return' but saw something else. Applicative computation expressions must be of the form 'let! <pat1> = <expr2> and! <pat2> = <expr2> and! ... and! <patN> = <exprN> return <exprBody>'.
+    /// Expecting 'and!', 'anduse!' or 'return' but saw something else. Applicative computation expressions must be of the form 'let! <pat1> = <expr2> and! <pat2> = <expr2> and! ... and! <patN> = <exprN> return <exprBody>'.
     /// (Originally from ..\FSComp.txt:1444)
     static member tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn() = (3243, GetStringFunc("tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn",",,,") )
     /// Pattern matching is not allowed on the left-hand side of the equals. 'use! ... anduse! ...' bindings must be of the form 'use! <var> = <expr>' or 'anduse! <var> = <expr>'.
     /// (Originally from ..\FSComp.txt:1445)
     static member tcInvalidAndUseBangBinding() = (3244, GetStringFunc("tcInvalidAndUseBangBinding",",,,") )
+    /// 'yield' is not valid in this position in an applicative computation expression. Did you mean 'return' instead?
+    /// (Originally from ..\FSComp.txt:1446)
+    static member tcYieldInsteadOfReturnInApplicativeComputationExpression() = (3245, GetStringFunc("tcYieldInsteadOfReturnInApplicativeComputationExpression",",,,") )
+    /// No body given after the applicative bindings. Expected a 'return' to terminate this applicative computation expression.
+    /// (Originally from ..\FSComp.txt:1447)
+    static member parsNoBodyInApplicativeComputationExpression() = (3246, GetStringFunc("parsNoBodyInApplicativeComputationExpression",",,,") )
+    /// Saw unexpected expression sequenced after 'return'. Applicative computation expressions must be terminated with a single 'return'.
+    /// (Originally from ..\FSComp.txt:1448)
+    static member tcMoreAfterReturnInApplicativeComputationExpression() = (3247, GetStringFunc("tcMoreAfterReturnInApplicativeComputationExpression",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5782,4 +5791,7 @@ type internal SR private() =
         ignore(GetString("tcTypeDoesNotInheritAttribute"))
         ignore(GetString("tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn"))
         ignore(GetString("tcInvalidAndUseBangBinding"))
+        ignore(GetString("tcYieldInsteadOfReturnInApplicativeComputationExpression"))
+        ignore(GetString("parsNoBodyInApplicativeComputationExpression"))
+        ignore(GetString("tcMoreAfterReturnInApplicativeComputationExpression"))
         ()
