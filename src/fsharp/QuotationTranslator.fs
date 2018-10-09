@@ -161,7 +161,7 @@ let (|ObjectInitializationCheck|_|) g expr =
            [| TTarget([], Expr.App(Expr.Val(failInitRef, _, _), _, _, _, _), _); _ |], _, resultTy
         ) when 
             IsCompilerGeneratedName name &&
-            name.StartsWith "init" &&
+            name.StartsWithOrdinal("init") &&
             selfRef.BaseOrThisInfo = MemberThisVal &&
             valRefEq g failInitRef (ValRefForIntrinsic g.fail_init_info) &&
             isUnitTy g resultTy -> Some()
@@ -260,8 +260,9 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         // Check to see if there aren't enough arguments or if there is a tuple-arity mismatch
         // If so, adjust and try again
-        if curriedArgs.Length < curriedArgInfos.Length ||
-           ((List.take curriedArgInfos.Length curriedArgs,curriedArgInfos) ||> List.exists2 (fun arg argInfo -> 
+        let nCurriedArgInfos = curriedArgInfos.Length
+        if curriedArgs.Length < nCurriedArgInfos ||
+           ((List.truncate nCurriedArgInfos curriedArgs,curriedArgInfos) ||> List.exists2 (fun arg argInfo -> 
                        (argInfo.Length > (tryDestRefTupleExpr arg).Length)))
         then
             if verboseCReflect then 
@@ -277,7 +278,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             ConvExpr cenv env (MakeApplicationAndBetaReduce cenv.g (expr,exprty,[tyargs],curriedArgs,m)) 
         else
             // Too many arguments? Chop 
-            let (curriedArgs:Expr list ),laterArgs = List.chop curriedArgInfos.Length curriedArgs 
+            let (curriedArgs:Expr list ),laterArgs = List.splitAt nCurriedArgInfos curriedArgs 
 
             let callR = 
                 // We now have the right number of arguments, w.r.t. currying and tupling.
@@ -392,7 +393,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     // initialization check
     | Expr.Sequential(ObjectInitializationCheck cenv.g, x1, NormalSeq, _, _) -> ConvExpr cenv env x1
     | Expr.Sequential (x0,x1,NormalSeq,_,_)  -> QP.mkSequential(ConvExpr cenv env x0, ConvExpr cenv env x1)
-    | Expr.Obj (_,typ,_,_,[TObjExprMethod(TSlotSig(_,ctyp, _,_,_,_),_,tps,[tmvs],e,_) as tmethod],_,m) when isDelegateTy cenv.g typ -> 
+    | Expr.Obj (_,ty,_,_,[TObjExprMethod(TSlotSig(_,ctyp, _,_,_,_),_,tps,[tmvs],e,_) as tmethod],_,m) when isDelegateTy cenv.g ty -> 
          let f = mkLambdas m tps tmvs (e,GetFSharpViewOfReturnType cenv.g (returnTyOfMethod cenv.g tmethod))
          let fR = ConvExpr cenv env f 
          let tyargR = ConvType cenv env m ctyp 
@@ -440,7 +441,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.UnionCaseFieldGet (ucref,n),tyargs,[e] -> 
             ConvUnionFieldGet cenv env m ucref n tyargs e
 
-        | TOp.ValFieldGetAddr(_rfref),_tyargs,_ -> 
+        | TOp.ValFieldGetAddr(_rfref, _readonly),_tyargs,_ -> 
             wfail(Error(FSComp.SR.crefQuotationsCantContainAddressOf(), m)) 
 
         | TOp.UnionCaseFieldGetAddr _,_tyargs,_ -> 
@@ -532,7 +533,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             // rebuild reraise<T>() and Convert 
             mkReraiseLibCall cenv.g toTy m |> ConvExpr cenv env 
 
-        | TOp.LValueOp(LGetAddr,vref),[],[] -> 
+        | TOp.LValueOp(LAddrOf _,vref),[],[] -> 
             QP.mkAddressOf(ConvValRef false cenv env m vref [])
 
         | TOp.LValueOp(LByrefSet,vref),[],[e] -> 
@@ -575,8 +576,8 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
              let methArgTypesR = List.map (ConvILType cenv env m) ilMethRef.ArgTypes
              let methRetTypeR = ConvILType cenv env m ilMethRef.ReturnType
              let methName = ilMethRef.Name
-             let isPropGet = isProp && methName.StartsWith("get_",System.StringComparison.Ordinal)
-             let isPropSet = isProp && methName.StartsWith("set_",System.StringComparison.Ordinal)
+             let isPropGet = isProp && methName.StartsWithOrdinal("get_")
+             let isPropSet = isProp && methName.StartsWithOrdinal("set_")
              let tyargs = (enclTypeArgs@methTypeArgs)
              ConvObjectModelCall cenv env m (isPropGet,isPropSet,isNewObj,parentTyconR,methArgTypesR,methRetTypeR,methName,tyargs,methTypeArgs.Length,callArgs)
 
@@ -600,7 +601,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.UnionCaseTagGet _tycr,_tinst,[_cx]          -> wfail(Error(FSComp.SR.crefQuotationsCantFetchUnionIndexes(), m))
         | TOp.UnionCaseFieldSet (_c,_i),_tinst,[_cx;_x]     -> wfail(Error(FSComp.SR.crefQuotationsCantSetUnionFields(), m))
         | TOp.ExnFieldSet(_tcref,_i),[],[_ex;_x] -> wfail(Error(FSComp.SR.crefQuotationsCantSetExceptionFields(), m))
-        | TOp.RefAddrGet,_,_                       -> wfail(Error(FSComp.SR.crefQuotationsCantRequireByref(), m))
+        | TOp.RefAddrGet _,_,_                       -> wfail(Error(FSComp.SR.crefQuotationsCantRequireByref(), m))
         | TOp.TraitCall (_ss),_,_                    -> wfail(Error(FSComp.SR.crefQuotationsCantCallTraitMembers(), m))
         | _ -> 
             wfail(InternalError( "Unexpected expression shape",m))
@@ -679,9 +680,9 @@ and ConvLValueExprCore cenv env expr =
     match expr with 
     | Expr.Op(op,tyargs,args,m) -> 
         match op, args, tyargs  with
-        | TOp.LValueOp(LGetAddr,vref),_,_ -> ConvValRef false cenv env m vref [] 
-        | TOp.ValFieldGetAddr(rfref),_,_ -> ConvClassOrRecdFieldGet cenv env m rfref tyargs args
-        | TOp.UnionCaseFieldGetAddr(ucref,n),[e],_ -> ConvUnionFieldGet cenv env m ucref n tyargs e
+        | TOp.LValueOp(LAddrOf _,vref),_,_ -> ConvValRef false cenv env m vref [] 
+        | TOp.ValFieldGetAddr(rfref, _),_,_ -> ConvClassOrRecdFieldGet cenv env m rfref tyargs args
+        | TOp.UnionCaseFieldGetAddr(ucref,n, _),[e],_ -> ConvUnionFieldGet cenv env m ucref n tyargs e
         | TOp.ILAsm([ I_ldflda(fspec) ],_rtys),_,_  -> ConvLdfld  cenv env m fspec tyargs args
         | TOp.ILAsm([ I_ldsflda(fspec) ],_rtys),_,_  -> ConvLdfld  cenv env m fspec tyargs args
         | TOp.ILAsm(([ I_ldelema(_ro,_isNativePtr,shape,_tyarg) ] ),_), (arr::idxs), [elemty]  -> 
@@ -804,8 +805,8 @@ and ConvTyparRef cenv env m (tp:Typar) =
 and FilterMeasureTyargs tys = 
     tys |> List.filter (fun ty -> match ty with TType_measure _ -> false | _ -> true) 
 
-and ConvType cenv env m typ =
-    match stripTyEqnsAndMeasureEqns cenv.g typ with 
+and ConvType cenv env m ty =
+    match stripTyEqnsAndMeasureEqns cenv.g ty with 
     | TType_app(tcref,[tyarg]) when isArrayTyconRef cenv.g tcref -> 
         QP.mkArrayTy(rankOfArrayTyconRef cenv.g tcref,ConvType cenv env m tyarg)
 
@@ -828,8 +829,8 @@ and ConvType cenv env m typ =
     | TType_forall(_spec,_ty)   -> wfail(Error(FSComp.SR.crefNoInnerGenericsInQuotations(),m))
     | _ -> wfail(Error (FSComp.SR.crefQuotationsCantContainThisType(),m))
 
-and ConvTypes cenv env m typs =
-    List.map (ConvType cenv env m) (FilterMeasureTyargs typs)
+and ConvTypes cenv env m tys =
+    List.map (ConvType cenv env m) (FilterMeasureTyargs tys)
 
 and ConvConst cenv env m c ty =
     match TryEliminateDesugaredConstants cenv.g m c with 

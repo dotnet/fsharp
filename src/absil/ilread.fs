@@ -1937,8 +1937,8 @@ and seekReadMethodRefParent (ctxt: ILMetadataReader)  mdv numtypars (TaggedIndex
     | tag when tag = mrp_TypeRef -> seekReadTypeRefAsType ctxt AsObject (* not ok - no way to tell if a member ref parent is a value type or not *) List.empty idx
     | tag when tag = mrp_ModuleRef -> mkILTypeForGlobalFunctions (ILScopeRef.Module (seekReadModuleRef ctxt mdv idx))
     | tag when tag = mrp_MethodDef -> 
-        let (MethodData(enclTyp, cc, nm, argtys, retty, minst)) = seekReadMethodDefAsMethodData ctxt idx
-        let mspec = mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty, minst)
+        let (MethodData(enclTy, cc, nm, argtys, retty, minst)) = seekReadMethodDefAsMethodData ctxt idx
+        let mspec = mkILMethSpecInTy (enclTy, cc, nm, argtys, retty, minst)
         mspec.DeclaringType
     | tag when tag = mrp_TypeSpec -> readBlobHeapAsType ctxt numtypars (seekReadTypeSpecRow ctxt mdv idx)
     | _ -> failwith "seekReadMethodRefParent"
@@ -1946,25 +1946,25 @@ and seekReadMethodRefParent (ctxt: ILMetadataReader)  mdv numtypars (TaggedIndex
 and seekReadMethodDefOrRef (ctxt: ILMetadataReader)  numtypars (TaggedIndex(tag, idx)) =
     match tag with 
     | tag when tag = mdor_MethodDef -> 
-        let (MethodData(enclTyp, cc, nm, argtys, retty, minst)) = seekReadMethodDefAsMethodData ctxt idx
-        VarArgMethodData(enclTyp, cc, nm, argtys, None, retty, minst)
+        let (MethodData(enclTy, cc, nm, argtys, retty, minst)) = seekReadMethodDefAsMethodData ctxt idx
+        VarArgMethodData(enclTy, cc, nm, argtys, None, retty, minst)
     | tag when tag = mdor_MemberRef -> 
         seekReadMemberRefAsMethodData ctxt numtypars idx
     | _ -> failwith "seekReadMethodDefOrRef"
 
 and seekReadMethodDefOrRefNoVarargs (ctxt: ILMetadataReader)  numtypars x =
-     let (VarArgMethodData(enclTyp, cc, nm, argtys, varargs, retty, minst)) =     seekReadMethodDefOrRef ctxt numtypars x 
+     let (VarArgMethodData(enclTy, cc, nm, argtys, varargs, retty, minst)) =     seekReadMethodDefOrRef ctxt numtypars x 
      if varargs <> None then dprintf "ignoring sentinel and varargs in ILMethodDef token signature"
-     MethodData(enclTyp, cc, nm, argtys, retty, minst)
+     MethodData(enclTy, cc, nm, argtys, retty, minst)
 
 and seekReadCustomAttrType (ctxt: ILMetadataReader)  (TaggedIndex(tag, idx) ) =
     match tag with 
     | tag when tag = cat_MethodDef -> 
-        let (MethodData(enclTyp, cc, nm, argtys, retty, minst)) = seekReadMethodDefAsMethodData ctxt idx
-        mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty, minst)
+        let (MethodData(enclTy, cc, nm, argtys, retty, minst)) = seekReadMethodDefAsMethodData ctxt idx
+        mkILMethSpecInTy (enclTy, cc, nm, argtys, retty, minst)
     | tag when tag = cat_MemberRef -> 
-        let (MethodData(enclTyp, cc, nm, argtys, retty, minst)) = seekReadMemberRefAsMethDataNoVarArgs ctxt 0 idx
-        mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty, minst)
+        let (MethodData(enclTy, cc, nm, argtys, retty, minst)) = seekReadMemberRefAsMethDataNoVarArgs ctxt 0 idx
+        mkILMethSpecInTy (enclTy, cc, nm, argtys, retty, minst)
     | _ -> failwith "seekReadCustomAttrType ctxt"
     
 and seekReadImplAsScopeRef (ctxt: ILMetadataReader)  mdv (TaggedIndex(tag, idx) ) =
@@ -2082,16 +2082,16 @@ and sigptrGetTy (ctxt: ILMetadataReader)  numtypars bytes sigptr =
         let n, sigptr = sigptrGetZInt32 bytes sigptr
         ILType.TypeVar (uint16 (n + numtypars)), sigptr
     elif b0 = et_BYREF then 
-        let typ, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
-        ILType.Byref typ, sigptr
+        let ty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
+        ILType.Byref ty, sigptr
     elif b0 = et_PTR then 
-        let typ, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
-        ILType.Ptr typ, sigptr
+        let ty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
+        ILType.Ptr ty, sigptr
     elif b0 = et_SZARRAY then 
-        let typ, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
-        mkILArr1DTy typ, sigptr
+        let ty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
+        mkILArr1DTy ty, sigptr
     elif b0 = et_ARRAY then
-        let typ, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
+        let ty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
         let rank, sigptr = sigptrGetZInt32 bytes sigptr
         let numSized, sigptr = sigptrGetZInt32 bytes sigptr
         let sizes, sigptr = sigptrFold sigptrGetZInt32 numSized bytes sigptr
@@ -2102,7 +2102,7 @@ and sigptrGetTy (ctxt: ILMetadataReader)  numtypars bytes sigptr =
               (if i <  numLoBounded then Some (List.item i lobounds) else None), 
               (if i <  numSized then Some (List.item i sizes) else None)
             ILArrayShape (Array.toList (Array.init rank dim))
-        mkILArrTy (typ, shape), sigptr
+        mkILArrTy (ty, shape), sigptr
         
     elif b0 = et_VOID then ILType.Void, sigptr
     elif b0 = et_TYPEDBYREF then 
@@ -2110,8 +2110,8 @@ and sigptrGetTy (ctxt: ILMetadataReader)  numtypars bytes sigptr =
         t, sigptr
     elif b0 = et_CMOD_REQD || b0 = et_CMOD_OPT  then 
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
-        let typ, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
-        ILType.Modified((b0 = et_CMOD_REQD), seekReadTypeDefOrRefAsTypeRef ctxt tdorIdx, typ), sigptr
+        let ty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
+        ILType.Modified((b0 = et_CMOD_REQD), seekReadTypeDefOrRefAsTypeRef ctxt tdorIdx, ty), sigptr
     elif b0 = et_FNPTR then
         let ccByte, sigptr = sigptrGetByte bytes sigptr
         let generic, cc = byteAsCallConv ccByte
@@ -2148,8 +2148,8 @@ and sigptrGetLocal (ctxt: ILMetadataReader)  numtypars bytes sigptr =
             true, sigptr'
         else 
             false, sigptr
-    let typ, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
-    let loc : ILLocal = { IsPinned = pinned; Type = typ; DebugInfo = None }
+    let ty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
+    let loc : ILLocal = { IsPinned = pinned; Type = ty; DebugInfo = None }
     loc, sigptr
          
 and readBlobHeapAsMethodSig (ctxt: ILMetadataReader)  numtypars blobIdx  =
@@ -2240,15 +2240,15 @@ and seekReadMemberRefAsMethodDataUncached ctxtH (MemberRefAsMspecIdx (numtypars,
     let mdv = ctxt.mdfile.GetView()
     let (mrpIdx, nameIdx, typeIdx) = seekReadMemberRefRow ctxt mdv idx
     let nm = readStringHeap ctxt nameIdx
-    let enclTyp = seekReadMethodRefParent ctxt mdv numtypars mrpIdx
-    let _generic, genarity, cc, retty, argtys, varargs = readBlobHeapAsMethodSig ctxt enclTyp.GenericArgs.Length typeIdx
+    let enclTy = seekReadMethodRefParent ctxt mdv numtypars mrpIdx
+    let _generic, genarity, cc, retty, argtys, varargs = readBlobHeapAsMethodSig ctxt enclTy.GenericArgs.Length typeIdx
     let minst =  List.init genarity (fun n -> mkILTyvarTy (uint16 (numtypars+n))) 
-    (VarArgMethodData(enclTyp, cc, nm, argtys, varargs, retty, minst))
+    (VarArgMethodData(enclTy, cc, nm, argtys, varargs, retty, minst))
 
 and seekReadMemberRefAsMethDataNoVarArgs ctxt numtypars idx : MethodData =
-   let (VarArgMethodData(enclTyp, cc, nm, argtys, varargs, retty, minst)) =  seekReadMemberRefAsMethodData ctxt numtypars idx
+   let (VarArgMethodData(enclTy, cc, nm, argtys, varargs, retty, minst)) =  seekReadMemberRefAsMethodData ctxt numtypars idx
    if Option.isSome varargs then dprintf "ignoring sentinel and varargs in ILMethodDef token signature"
-   (MethodData(enclTyp, cc, nm, argtys, retty, minst))
+   (MethodData(enclTy, cc, nm, argtys, retty, minst))
 
 and seekReadMethodSpecAsMethodData (ctxt: ILMetadataReader) numtypars idx =  
     ctxt.seekReadMethodSpecAsMethodData (MethodSpecAsMspecIdx (numtypars, idx))
@@ -2257,7 +2257,7 @@ and seekReadMethodSpecAsMethodDataUncached ctxtH (MethodSpecAsMspecIdx (numtypar
     let (ctxt: ILMetadataReader)  = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
     let (mdorIdx, instIdx) = seekReadMethodSpecRow ctxt mdv idx
-    let (VarArgMethodData(enclTyp, cc, nm, argtys, varargs, retty, _)) = seekReadMethodDefOrRef ctxt numtypars mdorIdx
+    let (VarArgMethodData(enclTy, cc, nm, argtys, varargs, retty, _)) = seekReadMethodDefOrRef ctxt numtypars mdorIdx
     let minst = 
         let bytes = readBlobHeap ctxt instIdx
         let sigptr = 0
@@ -2266,7 +2266,7 @@ and seekReadMethodSpecAsMethodDataUncached ctxtH (MethodSpecAsMspecIdx (numtypar
         let numgpars, sigptr = sigptrGetZInt32 bytes sigptr
         let argtys, _sigptr = sigptrFold (sigptrGetTy ctxt numtypars) numgpars bytes sigptr
         argtys
-    VarArgMethodData(enclTyp, cc, nm, argtys, varargs, retty, minst)
+    VarArgMethodData(enclTy, cc, nm, argtys, varargs, retty, minst)
 
 and seekReadMemberRefAsFieldSpec (ctxt: ILMetadataReader)  numtypars idx = 
    ctxt.seekReadMemberRefAsFieldSpec (MemberRefAsFspecIdx (numtypars, idx))
@@ -2276,9 +2276,9 @@ and seekReadMemberRefAsFieldSpecUncached ctxtH (MemberRefAsFspecIdx (numtypars, 
    let mdv = ctxt.mdfile.GetView()
    let (mrpIdx, nameIdx, typeIdx) = seekReadMemberRefRow ctxt mdv idx
    let nm = readStringHeap ctxt nameIdx
-   let enclTyp = seekReadMethodRefParent ctxt mdv numtypars mrpIdx
+   let enclTy = seekReadMethodRefParent ctxt mdv numtypars mrpIdx
    let retty = readBlobHeapAsFieldSig ctxt numtypars typeIdx
-   mkILFieldSpecInTy(enclTyp, nm, retty)
+   mkILFieldSpecInTy(enclTy, nm, retty)
 
 // One extremely annoying aspect of the MD format is that given a 
 // ILMethodDef token it is non-trivial to find which ILTypeDef it belongs 
@@ -2313,7 +2313,7 @@ and seekReadMethodDefAsMethodDataUncached ctxtH idx =
    let minst = mkILFormalGenericArgs typeGenericArgsCount methodGenericArgs
 
    // Read the method def parent. 
-   let enclTyp = seekReadTypeDefAsType ctxt AsObject (* not ok: see note *) finst tidx
+   let enclTy = seekReadTypeDefAsType ctxt AsObject (* not ok: see note *) finst tidx
 
    // Return the constituent parts: put it together at the place where this is called. 
    let (_code_rva, _implflags, _flags, nameIdx, typeIdx, _paramIdx) = seekReadMethodRow ctxt mdv idx
@@ -2323,7 +2323,7 @@ and seekReadMethodDefAsMethodDataUncached ctxtH idx =
    let _generic, _genarity, cc, retty, argtys, varargs = readBlobHeapAsMethodSig ctxt typeGenericArgsCount typeIdx
    if varargs <> None then dprintf "ignoring sentinel and varargs in ILMethodDef token signature"
 
-   MethodData(enclTyp, cc, nm, argtys, retty, minst)
+   MethodData(enclTy, cc, nm, argtys, retty, minst)
 
 
 and seekReadFieldDefAsFieldSpec (ctxt: ILMetadataReader)  idx =
@@ -2351,10 +2351,10 @@ and seekReadFieldDefAsFieldSpecUncached ctxtH idx =
    let finst = mkILFormalGenericArgs 0 (seekReadGenericParams ctxt 0 (tomd_TypeDef, tidx))
 
    // Read the field def parent. 
-   let enclTyp = seekReadTypeDefAsType ctxt AsObject (* not ok: see note *) finst tidx
+   let enclTy = seekReadTypeDefAsType ctxt AsObject (* not ok: see note *) finst tidx
 
    // Put it together. 
-   mkILFieldSpecInTy(enclTyp, nm, retty)
+   mkILFieldSpecInTy(enclTy, nm, retty)
 
 and seekReadMethod (ctxt: ILMetadataReader)  mdv numtypars (idx:int) =
      let (codeRVA, implflags, flags, nameIdx, typeIdx, paramIdx) = seekReadMethodRow ctxt mdv idx
@@ -2446,11 +2446,11 @@ and seekReadMethodImpls (ctxt: ILMetadataReader)  numtypars tidx =
           let mimpls = seekReadIndexedRows (ctxt.getNumRows TableNames.MethodImpl, seekReadMethodImplRow ctxt mdv, (fun (a, _, _) -> a), simpleIndexCompare tidx, isSorted ctxt TableNames.MethodImpl, (fun (_, b, c) -> b, c))
           mimpls |> List.map (fun (b, c) -> 
               { OverrideBy=
-                  let (MethodData(enclTyp, cc, nm, argtys, retty, minst)) = seekReadMethodDefOrRefNoVarargs ctxt numtypars b
-                  mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty, minst)
+                  let (MethodData(enclTy, cc, nm, argtys, retty, minst)) = seekReadMethodDefOrRefNoVarargs ctxt numtypars b
+                  mkILMethSpecInTy (enclTy, cc, nm, argtys, retty, minst)
                 Overrides=
-                  let (MethodData(enclTyp, cc, nm, argtys, retty, minst)) = seekReadMethodDefOrRefNoVarargs ctxt numtypars c
-                  let mspec = mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty, minst)
+                  let (MethodData(enclTy, cc, nm, argtys, retty, minst)) = seekReadMethodDefOrRefNoVarargs ctxt numtypars c
+                  let mspec = mkILMethSpecInTy (enclTy, cc, nm, argtys, retty, minst)
                   OverridesSpec(mspec.MethodRef, mspec.DeclaringType) }))
 
 and seekReadMultipleMethodSemantics (ctxt: ILMetadataReader)  (flags, id) =
@@ -2461,8 +2461,8 @@ and seekReadMultipleMethodSemantics (ctxt: ILMetadataReader)  (flags, id) =
        hsCompare id, 
        isSorted ctxt TableNames.MethodSemantics, 
        (fun (a, b, _c) -> 
-           let (MethodData(enclTyp, cc, nm, argtys, retty, minst)) = seekReadMethodDefAsMethodData ctxt b
-           a, (mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty, minst)).MethodRef))
+           let (MethodData(enclTy, cc, nm, argtys, retty, minst)) = seekReadMethodDefAsMethodData ctxt b
+           a, (mkILMethSpecInTy (enclTy, cc, nm, argtys, retty, minst)).MethodRef))
     |> List.filter (fun (flags2, _) -> flags = flags2) 
     |> List.map snd 
 
@@ -2753,8 +2753,8 @@ and seekReadTopCode (ctxt: ILMetadataReader)  pev mdv numtypars (sz:int) start s
              elif !b = (i_constrained &&& 0xff) then 
                  let uncoded = seekReadUncodedToken pev (start + (!curr))
                  curr := !curr + 4
-                 let typ = seekReadTypeDefOrRef ctxt numtypars AsObject [] (uncodedTokenToTypeDefOrRefOrSpec uncoded)
-                 prefixes.constrained <- Some typ
+                 let ty = seekReadTypeDefOrRef ctxt numtypars AsObject [] (uncodedTokenToTypeDefOrRefOrSpec uncoded)
+                 prefixes.constrained <- Some ty
              else prefixes.tl <- Tailcall
          end
          get ()
@@ -2813,7 +2813,7 @@ and seekReadTopCode (ctxt: ILMetadataReader)  pev mdv numtypars (sz:int) start s
        
              let (tab, idx) = seekReadUncodedToken pev (start + (!curr))
              curr := !curr + 4
-             let  (VarArgMethodData(enclTyp, cc, nm, argtys, varargs, retty, minst)) =
+             let  (VarArgMethodData(enclTy, cc, nm, argtys, varargs, retty, minst)) =
                if tab = TableNames.Method then 
                  seekReadMethodDefOrRef ctxt numtypars (TaggedIndex(mdor_MethodDef, idx))
                elif tab = TableNames.MemberRef then 
@@ -2821,7 +2821,7 @@ and seekReadTopCode (ctxt: ILMetadataReader)  pev mdv numtypars (sz:int) start s
                elif tab = TableNames.MethodSpec then 
                  seekReadMethodSpecAsMethodData ctxt numtypars idx  
                else failwith "bad table in MethodDefOrRefOrSpec" 
-             match enclTyp with
+             match enclTy with
              | ILType.Array (shape, ty) ->
                match nm with
                | "Get" -> I_ldelem_any(shape, ty)
@@ -2830,13 +2830,13 @@ and seekReadTopCode (ctxt: ILMetadataReader)  pev mdv numtypars (sz:int) start s
                | ".ctor" ->  I_newarr(shape, ty)
                | _ -> failwith "bad method on array type"
              | _ ->
-               let mspec = mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty, minst)
+               let mspec = mkILMethSpecInTy (enclTy, cc, nm, argtys, retty, minst)
                f prefixes (mspec, varargs)
          | I_type_instr f ->
              let uncoded = seekReadUncodedToken pev (start + (!curr))
              curr := !curr + 4
-             let typ = seekReadTypeDefOrRef ctxt numtypars AsObject [] (uncodedTokenToTypeDefOrRefOrSpec uncoded)
-             f prefixes typ
+             let ty = seekReadTypeDefOrRef ctxt numtypars AsObject [] (uncodedTokenToTypeDefOrRefOrSpec uncoded)
+             f prefixes ty
          | I_string_instr f ->
              let (tab, idx) = seekReadUncodedToken pev (start + (!curr))
              curr := !curr + 4
@@ -2872,8 +2872,8 @@ and seekReadTopCode (ctxt: ILMetadataReader)  pev mdv numtypars (sz:int) start s
              (* REVIEW: this incorrectly labels all MemberRef tokens as ILMethod's: we should go look at the MemberRef sig to determine if it is a field or method *)        
              let token_info = 
                if tab = TableNames.Method || tab = TableNames.MemberRef (* REVIEW:generics or tab = TableNames.MethodSpec *) then 
-                 let (MethodData(enclTyp, cc, nm, argtys, retty, minst)) = seekReadMethodDefOrRefNoVarargs ctxt numtypars (uncodedTokenToMethodDefOrRef (tab, idx))
-                 ILToken.ILMethod (mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty, minst))
+                 let (MethodData(enclTy, cc, nm, argtys, retty, minst)) = seekReadMethodDefOrRefNoVarargs ctxt numtypars (uncodedTokenToMethodDefOrRef (tab, idx))
+                 ILToken.ILMethod (mkILMethSpecInTy (enclTy, cc, nm, argtys, retty, minst))
                elif tab = TableNames.Field then 
                  ILToken.ILField (seekReadFieldDefAsFieldSpec ctxt idx)
                elif tab = TableNames.TypeDef || tab = TableNames.TypeRef || tab = TableNames.TypeSpec  then 

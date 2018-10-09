@@ -204,7 +204,7 @@
       </trans-unit>
       <trans-unit id="5014">
         <source>Console Application (.NET Framework)</source>
-        <target state="needs-review-translation">Aplicativo do Console</target>
+        <target state="translated">Aplicativo do Console (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5015">
@@ -214,7 +214,7 @@
       </trans-unit>
       <trans-unit id="5016">
         <source>Library (.NET Framework)</source>
-        <target state="needs-review-translation">Biblioteca</target>
+        <target state="translated">Biblioteca (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5017">
@@ -224,7 +224,7 @@
       </trans-unit>
       <trans-unit id="5018">
         <source>Tutorial (.NET Framework)</source>
-        <target state="needs-review-translation">Tutorial</target>
+        <target state="translated">Tutorial (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5019">
@@ -434,12 +434,12 @@
       </trans-unit>
       <trans-unit id="ProductDetails">
         <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="needs-review-translation">Microsoft Visual F# Tools 10.1 para F# 4.1</target>
+        <target state="translated">Microsoft Visual F# Tools 10.2 para F# 4.5</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
         <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="needs-review-translation">Microsoft Visual F# Tools 10.1 para F# 4.1</target>
+        <target state="translated">Microsoft Visual F# Tools 10.2 para F# 4.5</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -454,7 +454,7 @@
       </trans-unit>
       <trans-unit id="9001">
         <source>Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="needs-review-translation">Visual F# Tools 10.1 para F# 4.1</target>
+        <target state="translated">Visual F# Tools 10.2 para F# 4.5</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">

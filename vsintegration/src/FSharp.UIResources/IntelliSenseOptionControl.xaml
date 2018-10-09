@@ -7,29 +7,36 @@
              xmlns:local="clr-namespace:Microsoft.VisualStudio.FSharp.UIResources"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="400">
-  <UserControl.Resources>
-    <ResourceDictionary>
-      <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="OptionPageStyle.xaml"/>
-      </ResourceDictionary.MergedDictionaries>
-    </ResourceDictionary>
-  </UserControl.Resources>
-  <Grid>
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-      <StackPanel>
-        <GroupBox Header="{x:Static local:Strings.Completion_Lists}">
-          <StackPanel>
-            <CheckBox x:Name="charTyped" IsChecked="{Binding ShowAfterCharIsTyped}"
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="OptionPageStyle.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <GroupBox Header="{x:Static local:Strings.Completion_Lists}">
+                    <StackPanel>
+                        <CheckBox x:Name="charTyped" IsChecked="{Binding ShowAfterCharIsTyped}"
                       Content="{x:Static local:Strings.Show_completion_list_after_a_character_is_typed}"/>
-            <StackPanel Margin="15 0 0 0">
-              <CheckBox x:Name="charDeleted" IsEnabled="{Binding IsChecked, ElementName=charTyped}" IsChecked="{Binding ShowAfterCharIsDeleted}"
+                        <StackPanel Margin="15 0 0 0">
+                            <CheckBox x:Name="charDeleted" IsEnabled="{Binding IsChecked, ElementName=charTyped}" IsChecked="{Binding ShowAfterCharIsDeleted}"
                         Content="{x:Static local:Strings.Show_completion_list_after_a_character_is_deleted}"/>
-            </StackPanel>
-            <CheckBox x:Name="showAllSymbols" IsChecked="{Binding ShowAllSymbols}"
+                        </StackPanel>
+                        <CheckBox x:Name="showAllSymbols" IsChecked="{Binding IncludeSymbolsFromUnopenedNamespacesOrModules}"
                       Content="{x:Static local:Strings.Show_all_symbols}"/>
-          </StackPanel>
-        </GroupBox>
+                    </StackPanel>
+                </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.Enter_Key_Rule}">
+                    <StackPanel>
+                        <RadioButton x:Name="nevernewline" Content="{x:Static local:Strings.Enter_key_never}"/>
+                        <RadioButton x:Name="newlinecompleteline" Content="{x:Static local:Strings.Enter_key_only}"/>
+                        <RadioButton x:Name="alwaysnewline" Content="{x:Static local:Strings.Enter_key_always}"/>
+                    </StackPanel>
+                </GroupBox>
             </StackPanel>
-    </ScrollViewer>
-  </Grid>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

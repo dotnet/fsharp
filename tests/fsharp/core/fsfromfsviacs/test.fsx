@@ -16,6 +16,11 @@ let test (s : string) b =
     if b then stderr.WriteLine " OK"
     else report_failure (s)
 
+let check (s : string) x y = 
+    stderr.Write(s)
+    if x = y then stderr.WriteLine " OK"
+    else report_failure (sprintf "%s: expected %A, got %A" s y x)
+
 #if NO_LIB_REFERENCE // Test for https://github.com/Microsoft/visualfsharp/issues/2453#issuecomment-280946177
 module TestExtensions = 
     open CustomExtensions
@@ -154,8 +159,19 @@ let TestAccessibility() =
 
 module TestExtensions = 
     open CustomExtensions
-    test "dfeweeon" (r1.ExtendFSharpType() = 5)
-    test "dfeweeon" (Lib2().ExtendCSharpType() = 4)
+    check "dfeweeon" (r1.ExtendFSharpType()) 5
+    check "dfeweeon" (Lib2().ExtendCSharpType()) 4
+
+    let x = System.DateTime.Now
+    check "dfeweeon1" (System.DateTime.Now.ExtendCSharpTypeWithInRefReturnExtension()).Date  x.Date
+    check "dfeweeon2" (x.ExtendCSharpTypeWithInRefReturnExtension()).Date x.Date
+
+    check "dfeweeon3" (x.ExtendCSharpTypeWithRefReturnExtension()).Date x.Date
+
+    let mutable mx = x
+    check "dfeweeon4" (mx.ExtendCSharpTypeWithOutRefExtension(); mx) x.Date
+
+    check "dfeweeon5" (x.ExtendCSharpTypeWithInRefExtension()) x.Year
 
 
 let ToFSharpFunc() = 

@@ -135,6 +135,9 @@ module Array =
           
         loop p l 0
 
+    let existsTrue (arr: bool[]) = 
+        let rec loop n =  (n < arr.Length) &&  (arr.[n] || loop (n+1))
+        loop 0
     
     let findFirstIndexWhereTrue (arr: _[]) p = 
         let rec look lo hi = 
@@ -263,6 +266,10 @@ module List =
        let rec loop i xs = match xs with [] -> false | h::t -> f i h || loop (i+1) t
        loop 0 xs
     
+    let existsTrue (xs: bool list) = 
+       let rec loop i xs = match xs with [] -> false | h::t -> h || loop (i+1) t
+       loop 0 xs
+
     let lengthsEqAndForall2 p l1 l2 = 
         List.length l1 = List.length l2 &&
         List.forall2 p l1 l2
@@ -272,29 +279,10 @@ module List =
         | [] -> None
         | h::t -> if f h then Some (h,n) else findi (n+1) f t
 
-    let chop n l = 
-        if n = List.length l then (l,[]) else // avoids allocation unless necessary 
-        let rec loop n l acc = 
-            if n <= 0 then (List.rev acc,l) else 
-            match l with 
-            | [] -> failwith "List.chop: overchop"
-            | (h::t) -> loop (n-1) t (h::acc) 
-        loop n l [] 
-
-    let take n l = 
-        if n = List.length l then l else 
-        let rec loop acc n l = 
-            match l with
-            | []    -> List.rev acc
-            | x::xs -> if n<=0 then List.rev acc else loop (x::acc) (n-1) xs
-
-        loop [] n l
-
     let rec drop n l = 
         match l with 
         | []    -> []
         | _::xs -> if n=0 then l else drop (n-1) xs
-
 
     let splitChoose select l =
         let rec ch acc1 acc2 l = 
@@ -444,10 +432,7 @@ module List =
     let existsSquared f xss = xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
     let mapiFoldSquared f z xss =  mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i,j,x)))
 
-[<Struct>]
-type ValueOption<'T> =
-    | ValueSome of 'T
-    | ValueNone
+type ValueOption<'T> with 
     member x.IsSome = match x with ValueSome _ -> true | ValueNone -> false
     member x.IsNone = match x with ValueSome _ -> false | ValueNone -> true
     member x.Value = match x with ValueSome r -> r | ValueNone -> failwith "ValueOption.Value: value is None"
@@ -456,26 +441,25 @@ type ValueOption<'T> =
 module ValueOption =
     let inline ofOption x = match x with Some x -> ValueSome x | None -> ValueNone
     let inline bind f x = match x with ValueSome x -> f x | ValueNone -> ValueNone
+    let inline get x = match x with ValueSome x -> x | ValueNone -> failwith "ValueOption.get"
+    let inline isSome x = match x with ValueSome _ -> true | ValueNone -> false
+    let inline isNone x = match x with ValueSome _ -> false | ValueNone -> true
 
-module String = 
-    let indexNotFound() = raise (new KeyNotFoundException("An index for the character was not found in the string"))
+type String with
+    member inline x.StartsWithOrdinal(value) =
+        x.StartsWith(value, StringComparison.Ordinal)
 
+    member inline x.EndsWithOrdinal(value) =
+        x.EndsWith(value, StringComparison.Ordinal)
+
+module String =
     let make (n: int) (c: char) : string = new String(c, n)
 
     let get (str:string) i = str.[i]
 
     let sub (s:string) (start:int) (len:int) = s.Substring(start,len)
 
-    let index (s:string) (c:char) =  
-        let r = s.IndexOf(c) 
-        if r = -1 then indexNotFound() else r
-
-    let rindex (s:string) (c:char) =
-        let r =  s.LastIndexOf(c) 
-        if r = -1 then indexNotFound() else r
-
-    let contains (s:string) (c:char) = 
-        s.IndexOf(c,0,String.length s) <> -1
+    let contains (s:string) (c:char) = s.IndexOf(c) <> -1
 
     let order = LanguagePrimitives.FastGenericComparer<string>
    
@@ -536,7 +520,7 @@ module String =
     let (|StartsWith|_|) pattern value =
         if String.IsNullOrWhiteSpace value then
             None
-        elif value.StartsWith pattern then
+        elif value.StartsWithOrdinal(pattern) then
             Some()
         else None
 
@@ -554,7 +538,7 @@ module String =
         while not (isNull !line) do
             yield !line
             line := reader.ReadLine()
-        if str.EndsWith("\n") then
+        if str.EndsWithOrdinal("\n") then
             // last trailing space not returned
             // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
             yield String.Empty
@@ -1139,7 +1123,7 @@ module NameMap =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameMultiMap = 
     let existsInRange f (m: NameMultiMap<'T>) = NameMap.exists (fun _ l -> List.exists f l) m
-    let find v (m: NameMultiMap<'T>) = match Map.tryFind v m with None -> [] | Some r -> r
+    let find v (m: NameMultiMap<'T>) = match m.TryGetValue v with true, r -> r | _ -> []
     let add v x (m: NameMultiMap<'T>) = NameMap.add v (x :: find v m) m
     let range (m: NameMultiMap<'T>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []
     let rangeReversingEachBucket (m: NameMultiMap<'T>) = Map.foldBack (fun _ x sofar -> List.rev x @ sofar) m []
@@ -1153,7 +1137,7 @@ module NameMultiMap =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module MultiMap = 
     let existsInRange f (m: MultiMap<_,_>) = Map.exists (fun _ l -> List.exists f l) m
-    let find v (m: MultiMap<_,_>) = match Map.tryFind v m with None -> [] | Some r -> r
+    let find v (m: MultiMap<_,_>) = match m.TryGetValue v with true, r -> r | _ -> []
     let add v x (m: MultiMap<_,_>) = Map.add v (x :: find v m) m
     let range (m: MultiMap<_,_>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []
     let empty : MultiMap<_,_> = Map.empty
@@ -1164,11 +1148,6 @@ type LayeredMap<'Key,'Value  when 'Key : comparison> = Map<'Key,'Value>
 type Map<'Key,'Value when 'Key : comparison> with
     static member Empty : Map<'Key,'Value> = Map.empty
 
-    member m.TryGetValue (key,res:byref<'Value>) = 
-        match m.TryFind key with 
-        | None -> false
-        | Some r -> res <- r; true
-
     member x.Values = [ for (KeyValue(_,v)) in x -> v ]
     member x.AddAndMarkAsCollapsible (kvs: _[])   = (x,kvs) ||> Array.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
     member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
@@ -1178,12 +1157,13 @@ type Map<'Key,'Value when 'Key : comparison> with
 [<Sealed>]
 type LayeredMultiMap<'Key,'Value when 'Key : equality and 'Key : comparison>(contents : LayeredMap<'Key,'Value list>) = 
     member x.Add (k,v) = LayeredMultiMap(contents.Add(k,v :: x.[k]))
-    member x.Item with get k = match contents.TryFind k with None -> [] | Some l -> l
+    member x.Item with get k = match contents.TryGetValue k with true, l -> l | _ -> []
     member x.AddAndMarkAsCollapsible (kvs: _[])  = 
         let x = (x,kvs) ||> Array.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
         x.MarkAsCollapsible()
     member x.MarkAsCollapsible() = LayeredMultiMap(contents.MarkAsCollapsible())
     member x.TryFind k = contents.TryFind k
+    member x.TryGetValue k = contents.TryGetValue k
     member x.Values = contents.Values |> List.concat
     static member Empty : LayeredMultiMap<'Key,'Value> = LayeredMultiMap LayeredMap.Empty
 

@@ -404,7 +404,7 @@ type UnsharedRow(elems: RowElement[]) =
 // This lets us translate AbsIL type variable number to IL type variable numbering 
 type ILTypeWriterEnv = { EnclosingTyparCount: int }
 let envForTypeDef (td:ILTypeDef)               = { EnclosingTyparCount=td.GenericParams.Length }
-let envForMethodRef env (typ:ILType)           = { EnclosingTyparCount=(match typ with ILType.Array _ -> env.EnclosingTyparCount | _ -> typ.GenericArgs.Length) }
+let envForMethodRef env (ty:ILType)           = { EnclosingTyparCount=(match ty with ILType.Array _ -> env.EnclosingTyparCount | _ -> ty.GenericArgs.Length) }
 let envForNonGenericMethodRef _mref            = { EnclosingTyparCount=System.Int32.MaxValue }
 let envForFieldSpec (fspec:ILFieldSpec)        = { EnclosingTyparCount=fspec.DeclaringType.GenericArgs.Length }
 let envForOverrideSpec (ospec:ILOverridesSpec) = { EnclosingTyparCount=ospec.DeclaringType.GenericArgs.Length }
@@ -741,7 +741,7 @@ and GetModuleRefAsFileIdx cenv mref =
 
 let isScopeRefLocal scoref = (scoref = ILScopeRef.Local) 
 let isTypeRefLocal (tref:ILTypeRef) = isScopeRefLocal tref.Scope
-let isTypeLocal (typ:ILType) = typ.IsNominal && isNil typ.GenericArgs && isTypeRefLocal typ.TypeRef
+let isTypeLocal (ty:ILType) = ty.IsNominal && isNil ty.GenericArgs && isTypeRefLocal ty.TypeRef
 
 // -------------------------------------------------------------------- 
 // Scopes to Implementation elements.
@@ -867,23 +867,23 @@ and EmitType cenv env bb ty =
   // REVIEW: what are these doing here? 
     | ILType.Value tspec when tspec.Name = "System.String" ->   bb.EmitByte et_STRING 
     | ILType.Value tspec when tspec.Name = "System.Object" ->   bb.EmitByte et_OBJECT 
-    | typ when isILSByteTy typ ->   bb.EmitByte et_I1 
-    | typ when isILInt16Ty typ ->   bb.EmitByte et_I2 
-    | typ when isILInt32Ty typ ->    bb.EmitByte et_I4 
-    | typ when isILInt64Ty typ ->     bb.EmitByte et_I8 
-    | typ when isILByteTy typ ->     bb.EmitByte et_U1 
-    | typ when isILUInt16Ty typ ->     bb.EmitByte et_U2 
-    | typ when isILUInt32Ty typ ->     bb.EmitByte et_U4 
-    | typ when isILUInt64Ty typ ->     bb.EmitByte et_U8 
-    | typ when isILDoubleTy typ ->     bb.EmitByte et_R8 
-    | typ when isILSingleTy typ ->     bb.EmitByte et_R4 
-    | typ when isILBoolTy typ ->     bb.EmitByte et_BOOLEAN 
-    | typ when isILCharTy typ ->     bb.EmitByte et_CHAR 
-    | typ when isILStringTy typ ->     bb.EmitByte et_STRING 
-    | typ when isILObjectTy typ ->     bb.EmitByte et_OBJECT 
-    | typ when isILIntPtrTy typ ->     bb.EmitByte et_I 
-    | typ when isILUIntPtrTy typ ->     bb.EmitByte et_U 
-    | typ when isILTypedReferenceTy typ ->     bb.EmitByte et_TYPEDBYREF 
+    | ty when isILSByteTy ty ->   bb.EmitByte et_I1 
+    | ty when isILInt16Ty ty ->   bb.EmitByte et_I2 
+    | ty when isILInt32Ty ty ->    bb.EmitByte et_I4 
+    | ty when isILInt64Ty ty ->     bb.EmitByte et_I8 
+    | ty when isILByteTy ty ->     bb.EmitByte et_U1 
+    | ty when isILUInt16Ty ty ->     bb.EmitByte et_U2 
+    | ty when isILUInt32Ty ty ->     bb.EmitByte et_U4 
+    | ty when isILUInt64Ty ty ->     bb.EmitByte et_U8 
+    | ty when isILDoubleTy ty ->     bb.EmitByte et_R8 
+    | ty when isILSingleTy ty ->     bb.EmitByte et_R4 
+    | ty when isILBoolTy ty ->     bb.EmitByte et_BOOLEAN 
+    | ty when isILCharTy ty ->     bb.EmitByte et_CHAR 
+    | ty when isILStringTy ty ->     bb.EmitByte et_STRING 
+    | ty when isILObjectTy ty ->     bb.EmitByte et_OBJECT 
+    | ty when isILIntPtrTy ty ->     bb.EmitByte et_I 
+    | ty when isILUIntPtrTy ty ->     bb.EmitByte et_U 
+    | ty when isILTypedReferenceTy ty ->     bb.EmitByte et_TYPEDBYREF 
 
     | ILType.Boxed tspec ->  EmitTypeSpec cenv env bb (et_CLASS, tspec)
     | ILType.Value tspec ->  EmitTypeSpec cenv env bb (et_VALUETYPE, tspec)
@@ -899,12 +899,12 @@ and EmitType cenv env bb ty =
             bb.EmitByte et_MVAR
             bb.EmitZ32 (int32 tv -  cgparams)
 
-    | ILType.Byref typ -> 
+    | ILType.Byref ty -> 
         bb.EmitByte et_BYREF
-        EmitType cenv env bb typ
-    | ILType.Ptr typ ->  
+        EmitType cenv env bb ty
+    | ILType.Ptr ty ->  
         bb.EmitByte et_PTR
-        EmitType cenv env bb typ
+        EmitType cenv env bb ty
     | ILType.Void ->   
         bb.EmitByte et_VOID 
     | ILType.FunctionPointer x ->
@@ -1074,6 +1074,7 @@ let GetMemberAccessFlags access =
     | ILMemberAccess.Public -> 0x00000006
     | ILMemberAccess.Private  -> 0x00000001
     | ILMemberAccess.Family  -> 0x00000004
+    | ILMemberAccess.CompilerControlled -> 0x00000000
     | ILMemberAccess.FamilyAndAssembly -> 0x00000002
     | ILMemberAccess.FamilyOrAssembly -> 0x00000005
     | ILMemberAccess.Assembly -> 0x00000003
@@ -1085,6 +1086,7 @@ let GetTypeAccessFlags  access =
     | ILTypeDefAccess.Nested ILMemberAccess.Public -> 0x00000002
     | ILTypeDefAccess.Nested ILMemberAccess.Private  -> 0x00000003
     | ILTypeDefAccess.Nested ILMemberAccess.Family  -> 0x00000004
+    | ILTypeDefAccess.Nested ILMemberAccess.CompilerControlled -> failwith "bad type acccess"
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyAndAssembly -> 0x00000006
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly -> 0x00000007
     | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> 0x00000005
@@ -1264,22 +1266,22 @@ let GetMethodRefAsMethodDefIdx cenv (mref:ILMethodRef) =
     with e ->
         failwithf "Error in GetMethodRefAsMethodDefIdx for mref = %A, error: %s" (mref.Name, tref.Name)  e.Message
 
-let rec MethodRefInfoAsMemberRefRow cenv env fenv (nm, typ, callconv, args, ret, varargs, genarity) =
-    MemberRefRow(GetTypeAsMemberRefParent cenv env typ, 
+let rec MethodRefInfoAsMemberRefRow cenv env fenv (nm, ty, callconv, args, ret, varargs, genarity) =
+    MemberRefRow(GetTypeAsMemberRefParent cenv env ty, 
                  GetStringHeapIdx cenv nm, 
                  GetMethodRefInfoAsBlobIdx cenv fenv (callconv, args, ret, varargs, genarity))
 
 and GetMethodRefInfoAsBlobIdx cenv env info = 
     GetBytesAsBlobIdx cenv (GetCallsigAsBytes cenv env info)
 
-let GetMethodRefInfoAsMemberRefIdx cenv env  ((_, typ, _, _, _, _, _) as minfo) = 
-    let fenv = envForMethodRef env typ
+let GetMethodRefInfoAsMemberRefIdx cenv env  ((_, ty, _, _, _, _, _) as minfo) = 
+    let fenv = envForMethodRef env ty
     FindOrAddSharedRow cenv TableNames.MemberRef (MethodRefInfoAsMemberRefRow cenv env fenv  minfo)
 
-let GetMethodRefInfoAsMethodRefOrDef isAlwaysMethodDef cenv env ((nm, typ:ILType, cc, args, ret, varargs, genarity) as minfo) =
-    if Option.isNone varargs && (isAlwaysMethodDef || isTypeLocal typ) then
-        if not typ.IsNominal then failwith "GetMethodRefInfoAsMethodRefOrDef: unexpected local tref-typ"
-        try (mdor_MethodDef, GetMethodRefAsMethodDefIdx cenv (mkILMethRef (typ.TypeRef, cc, nm, genarity, args, ret)))
+let GetMethodRefInfoAsMethodRefOrDef isAlwaysMethodDef cenv env ((nm, ty:ILType, cc, args, ret, varargs, genarity) as minfo) =
+    if Option.isNone varargs && (isAlwaysMethodDef || isTypeLocal ty) then
+        if not ty.IsNominal then failwith "GetMethodRefInfoAsMethodRefOrDef: unexpected local tref-ty"
+        try (mdor_MethodDef, GetMethodRefAsMethodDefIdx cenv (mkILMethRef (ty.TypeRef, cc, nm, genarity, args, ret)))
         with MethodDefNotFound -> (mdor_MemberRef, GetMethodRefInfoAsMemberRefIdx cenv env minfo)
     else (mdor_MemberRef, GetMethodRefInfoAsMemberRefIdx cenv env minfo)
 
@@ -1288,8 +1290,8 @@ let GetMethodRefInfoAsMethodRefOrDef isAlwaysMethodDef cenv env ((nm, typ:ILType
 // ILMethodSpec --> ILMethodRef/ILMethodDef/ILMethodSpec
 // -------------------------------------------------------------------- 
 
-let rec GetMethodSpecInfoAsMethodSpecIdx cenv env (nm, typ, cc, args, ret, varargs, minst:ILGenericArgs) = 
-    let mdorTag, mdorRow = GetMethodRefInfoAsMethodRefOrDef false cenv env (nm, typ, cc, args, ret, varargs, minst.Length)
+let rec GetMethodSpecInfoAsMethodSpecIdx cenv env (nm, ty, cc, args, ret, varargs, minst:ILGenericArgs) = 
+    let mdorTag, mdorRow = GetMethodRefInfoAsMethodRefOrDef false cenv env (nm, ty, cc, args, ret, varargs, minst.Length)
     let blob = 
         emitBytesViaBuffer (fun bb -> 
             bb.EmitByte e_IMAGE_CEE_CS_CALLCONV_GENERICINST
@@ -1316,8 +1318,8 @@ and GetMethodSpecInfoAsUncodedToken cenv env ((_, _, _, _, _, _, minst:ILGeneric
 and GetMethodSpecAsUncodedToken cenv env mspec = 
     GetMethodSpecInfoAsUncodedToken cenv env (InfoOfMethodSpec mspec)
 
-and GetMethodRefInfoOfMethodSpecInfo (nm, typ, cc, args, ret, varargs, minst:ILGenericArgs) = 
-    (nm, typ, cc, args, ret, varargs, minst.Length)
+and GetMethodRefInfoOfMethodSpecInfo (nm, ty, cc, args, ret, varargs, minst:ILGenericArgs) = 
+    (nm, ty, cc, args, ret, varargs, minst.Length)
 
 and GetMethodSpecAsMethodDefOrRef cenv env (mspec, varargs) =
     GetMethodRefInfoAsMethodRefOrDef false cenv env (GetMethodRefInfoOfMethodSpecInfo (InfoOfMethodSpec (mspec, varargs)))
@@ -1346,9 +1348,9 @@ let rec GetOverridesSpecAsMemberRefIdx cenv env ospec =
     FindOrAddSharedRow cenv TableNames.MemberRef  row
      
 and GetOverridesSpecAsMethodDefOrRef cenv env (ospec:ILOverridesSpec) =
-    let typ = ospec.DeclaringType
-    if isTypeLocal typ then 
-        if not typ.IsNominal then failwith "GetOverridesSpecAsMethodDefOrRef: unexpected local tref-typ" 
+    let ty = ospec.DeclaringType
+    if isTypeLocal ty then 
+        if not ty.IsNominal then failwith "GetOverridesSpecAsMethodDefOrRef: unexpected local tref-ty" 
         try (mdor_MethodDef, GetMethodRefAsMethodDefIdx cenv ospec.MethodRef)
         with MethodDefNotFound ->  (mdor_MemberRef, GetOverridesSpecAsMemberRefIdx cenv env ospec) 
     else 
@@ -1441,10 +1443,10 @@ and GetFieldSpecSigAsBlobIdx cenv env x =
     GetBytesAsBlobIdx cenv (GetFieldSpecSigAsBytes cenv env x)
 
 and GetFieldSpecAsFieldDefOrRef cenv env (fspec:ILFieldSpec) =
-    let typ = fspec.DeclaringType
-    if isTypeLocal typ then
-        if not typ.IsNominal then failwith "GetFieldSpecAsFieldDefOrRef: unexpected local tref-typ"
-        let tref = typ.TypeRef
+    let ty = fspec.DeclaringType
+    if isTypeLocal ty then
+        if not ty.IsNominal then failwith "GetFieldSpecAsFieldDefOrRef: unexpected local tref-ty"
+        let tref = ty.TypeRef
         let tidx = GetIdxForTypeDef cenv (TdKey(tref.Enclosing, tref.Name))
         let fdkey = FieldDefKey (tidx, fspec.Name, fspec.FormalType)
         (true, FindFieldDefIdx cenv fdkey)
@@ -1972,8 +1974,8 @@ module Codebuf =
             emitInstrCode codebuf i_ldtoken
             codebuf.EmitUncodedToken 
               (match tok with 
-              | ILToken.ILType typ -> 
-                  match GetTypeAsTypeDefOrRef cenv env typ with 
+              | ILToken.ILType ty -> 
+                  match GetTypeAsTypeDefOrRef cenv env ty with 
                   | (tag, idx) when tag = tdor_TypeDef -> getUncodedToken TableNames.TypeDef idx
                   | (tag, idx) when tag = tdor_TypeRef -> getUncodedToken TableNames.TypeRef idx
                   | (tag, idx) when tag = tdor_TypeSpec -> getUncodedToken TableNames.TypeSpec idx
@@ -2128,8 +2130,8 @@ module Codebuf =
                         conv (r1, labelsToRange lab2pc r2) ExceptionClauseKind.FaultClause
                     | ILExceptionClause.FilterCatch ((filterStart, _), r3) -> 
                         conv (r1, labelsToRange lab2pc r3) (ExceptionClauseKind.FilterClause (pc2pos.[lab2pc.[filterStart]]))
-                    | ILExceptionClause.TypeCatch (typ, r2) -> 
-                        conv (r1, labelsToRange lab2pc r2) (TypeFilterClause (getTypeDefOrRefAsUncodedToken (GetTypeAsTypeDefOrRef cenv env typ)))
+                    | ILExceptionClause.TypeCatch (ty, r2) -> 
+                        conv (r1, labelsToRange lab2pc r2) (TypeFilterClause (getTypeDefOrRefAsUncodedToken (GetTypeAsTypeDefOrRef cenv env ty)))
                 SEHTree.Node (Some n, children) )
 
         trees 
@@ -2524,7 +2526,8 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
                 SequencePoints=seqpoints }
           cenv.AddCode code
           addr
-      | MethodBody.Abstract ->
+      | MethodBody.Abstract
+      | MethodBody.PInvoke _ ->
           // Now record the PDB record for this method - we write this out later. 
           if cenv.generatePdb then 
             cenv.pdbinfo.Add  

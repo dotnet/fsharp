@@ -8,19 +8,22 @@
         <description>
             FSharp.Core redistributables from Visual F# Tools version 10.2 For F# 4.5
                 Supported Platforms:
-                    .NET 4.5+           (net45)
+                    .NET Framework 4.5+ (net45)
                     netstandard1.6      (netstandard1.6)
                     netstandard2.0      (netstandard2.0)
+
                 Commit hash: $githeadsha$.
         </description>
-        <language>en-US</language>
+        <owners>$owners$</owners>
         <version>$version$</version>
         <authors>$authors$</authors>
+        <copyright>$copyright$</copyright>
         <licenseUrl>$licenseUrl$</licenseUrl>
         <projectUrl>$projectUrl$</projectUrl>
         <iconUrl>http://fsharp.org/img/logo.png</iconUrl>
         <tags>$tags$</tags>
-        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <requireLicenseAcceptance>$requireLicenseAcceptance$</requireLicenseAcceptance>
+        <language>en-US</language>
         <dependencies>
             <group targetFramework=".NETStandard1.6">
                 <dependency id="System.Collections" version="4.0.11" />

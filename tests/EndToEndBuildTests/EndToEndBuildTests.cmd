@@ -11,6 +11,10 @@ set __scriptpath=%~dp0
 call %__scriptpath%BasicProvider\TestBasicProvider.cmd
 @if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
 
+@echo %__scriptpath%ComboProvider\TestComboProvider.cmd
+call %__scriptpath%ComboProvider\TestComboProvider.cmd
+@if ERRORLEVEL 1 echo Error: TestComboProvider failed  && goto :failure
+
 :success
 endlocal
 echo Succeeded

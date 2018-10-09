@@ -136,13 +136,15 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
 
     /// Returns `true` if given string is an operator display name, e.g. ( |>> )
     let IsOperatorName (name: string) =
-        let name = if name.StartsWith "( " && name.EndsWith " )" then name.[2..name.Length - 3] else name
+        let name =
+            if name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )") then
+                name.[2 .. name.Length - 3]
+            else name
         // there is single operator containing a space - range operator with step: `.. ..`
-        let res = name = ".. .." || name |> Seq.forall (fun c -> opCharSet.Contains c && c <> ' ')
-        res
+        name = ".. .." || name |> Seq.forall (fun c -> c <> ' ' && opCharSet.Contains c)
 
     let IsMangledOpName (n:string) =
-        n.StartsWith (opNamePrefix, StringComparison.Ordinal)
+        n.StartsWithOrdinal(opNamePrefix)
 
     /// Compiles a custom operator into a mangled operator name.
     /// For example, "!%" becomes "op_DereferencePercent".
@@ -427,7 +429,7 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
         // This function recognises these "infix operator" names.
         let s = DecompileOpName s
         let skipIgnoredChars = s.TrimStart(ignoredChars)
-        let afterSkipStartsWith prefix   = skipIgnoredChars.StartsWith(prefix,StringComparison.Ordinal)
+        let afterSkipStartsWith prefix   = skipIgnoredChars.StartsWithOrdinal(prefix)
         let afterSkipStarts     prefixes = Array.exists afterSkipStartsWith prefixes
         // The following conditions follow the declExpr infix clauses.
         // The test corresponds to the lexer definition for the token.
@@ -468,7 +470,7 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
         if IsCompilerGeneratedName nm then nm else nm+compilerGeneratedMarker
 
     let GetBasicNameOfPossibleCompilerGeneratedName (name:string) =
-            match name.IndexOf compilerGeneratedMarker with 
+            match name.IndexOf(compilerGeneratedMarker, StringComparison.Ordinal) with 
             | -1 | 0 -> name
             | n -> name.[0..n-1]
 
@@ -482,30 +484,36 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
      
     let [<Literal>] private mangledGenericTypeNameSym = '`'
 
-    let IsMangledGenericName (n:string) = 
-        n.IndexOf mangledGenericTypeNameSym <> -1 &&
+    let TryDemangleGenericNameAndPos (n:string) =
         (* check what comes after the symbol is a number *)
-        let m = n.LastIndexOf mangledGenericTypeNameSym
-        let mutable res = m < n.Length - 1
-        for i = m + 1 to n.Length - 1 do
-            res <- res && n.[i] >= '0' && n.[i] <= '9'
-        res
+        let pos = n.LastIndexOf mangledGenericTypeNameSym
+        if pos = -1 then ValueNone else
+        let mutable res = pos < n.Length - 1
+        let mutable i = pos + 1
+        while res && i < n.Length do
+            let char = n.[i]
+            if not (char >= '0' && char <= '9') then
+                res <- false
+            i <- i + 1
+        if res then
+            ValueSome pos
+        else
+            ValueNone
 
     type NameArityPair = NameArityPair of string * int
 
-    let DecodeGenericTypeName n = 
-        if IsMangledGenericName n then 
-            let pos = n.LastIndexOf mangledGenericTypeNameSym
-            let res = n.Substring(0,pos)
-            let num = n.Substring(pos+1,n.Length - pos - 1)
-            NameArityPair(res, int32 num)
-        else NameArityPair(n,0)
+    let DecodeGenericTypeName pos (mangledName:string) =
+        let res = mangledName.Substring(0,pos)
+        let num = mangledName.Substring(pos+1,mangledName.Length - pos - 1)
+        NameArityPair(res, int32 num)
 
-    let DemangleGenericTypeName n = 
-        if  IsMangledGenericName n then 
-            let pos = n.LastIndexOf mangledGenericTypeNameSym
-            n.Substring(0,pos)
-        else n
+    let DemangleGenericTypeNameWithPos pos (mangledName:string) =
+        mangledName.Substring(0,pos)
+
+    let DemangleGenericTypeName (mangledName:string) =
+        match TryDemangleGenericNameAndPos mangledName with
+        | ValueSome pos -> DemangleGenericTypeNameWithPos pos mangledName
+        | _ -> mangledName
 
     let private chopStringTo (s:string) (c:char) =
         match s.IndexOf c with
@@ -518,13 +526,13 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
     let TryChopPropertyName (s: string) =
         // extract the logical name from any mangled name produced by MakeMemberDataAndMangledNameForMemberVal
         if s.Length <= 4 then None else
-        if s.StartsWith("get_", StringComparison.Ordinal) ||
-           s.StartsWith("set_", StringComparison.Ordinal)
+        if s.StartsWithOrdinal("get_") ||
+           s.StartsWithOrdinal("set_")
         then Some (s.Substring(4, s.Length - 4))
         else
         let s = chopStringTo s '.'
-        if s.StartsWith("get_", StringComparison.Ordinal) ||
-           s.StartsWith("set_", StringComparison.Ordinal)
+        if s.StartsWithOrdinal("get_") ||
+           s.StartsWithOrdinal("set_")
         then Some (s.Substring(4, s.Length - 4))
         else None
 
@@ -537,26 +545,36 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
         | Some res -> res
 
     let SplitNamesForILPath (s : string) : string list = 
-        if s.StartsWith("``",StringComparison.Ordinal) && s.EndsWith("``",StringComparison.Ordinal) && s.Length > 4 then [s.Substring(2, s.Length-4)] // identifier is enclosed in `` .. ``, so it is only a single element (this is very approximate)
+        if s.StartsWithOrdinal("``") && s.EndsWithOrdinal("``") && s.Length > 4 then [s.Substring(2, s.Length-4)] // identifier is enclosed in `` .. ``, so it is only a single element (this is very approximate)
         else s.Split [| '.' ; '`' |] |> Array.toList      // '.' chops members / namespaces / modules; '`' chops generic parameters for .NET types
         
     /// Return a string array delimited by the given separator.
     /// Note that a quoted string is not going to be mangled into pieces. 
+    let inline private isNotQuotedQuotation (text: string) n = n > 0 && text.[n-1] <> '\\'
     let private splitAroundQuotation (text:string) (separator:char) =
         let length = text.Length
-        let isNotQuotedQuotation n = n > 0 && text.[n-1] <> '\\'
-        let rec split (i, cur, group, insideQuotation) =        
-            if i>=length then List.rev (cur::group) else
+        let result = ResizeArray()
+        let mutable insideQuotation = false
+        let mutable start = 0
+        for i = 0 to length - 1 do
             match text.[i], insideQuotation with
             // split when seeing a separator
-            | c, false when c = separator -> split (i+1, "", cur::group, false)
+            | c, false when c = separator -> 
+                result.Add(text.Substring(start, i - start))
+                insideQuotation <- false
+                start <- i + 1
+            | _, _ when i = length - 1 ->
+                result.Add(text.Substring(start, i - start + 1))
             // keep reading if a separator is inside quotation
-            | c, true when c = separator -> split (i+1, cur+(Char.ToString c), group, true)
-            // open or close quotation 
-            | '\"', _ when isNotQuotedQuotation i -> split (i+1, cur+"\"", group, not insideQuotation) 
+            | c, true when c = separator ->
+                insideQuotation <- true
+            // open or close quotation
+            | '\"', _ when isNotQuotedQuotation text i ->
+                insideQuotation <- not insideQuotation
             // keep reading
-            | c, _ -> split (i+1, cur+(Char.ToString c), group, insideQuotation)
-        split (0, "", [], false) |> Array.ofList
+            | _ -> ()
+
+        result.ToArray()
 
     /// Return a string array delimited by the given separator up to the maximum number.
     /// Note that a quoted string is not going to be mangled into pieces.
@@ -682,3 +700,5 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
                 | Some v when v = actualArgValue -> None
                 | _ -> Some (defaultArgName, actualArgValue))
         mangleProvidedTypeName (nm, nonDefaultArgs)
+
+    let outArgCompilerGeneratedName = "outArg"

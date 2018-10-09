@@ -26,7 +26,6 @@ open Microsoft.Build.Framework
         
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 open NUnit.Framework
-
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
@@ -123,7 +122,7 @@ type TheTests() =
     static member internal CreateProject(filename : string, forceUTF8 : string, configChangeNotifier, serviceProvider) =
         UIStuff.SetupSynchronizationContext()
         let buildEngine = Utilities.InitializeMsBuildEngine(null)
-        let buildProject = Utilities.InitializeMsBuildProject(buildEngine, filename)
+        let buildProject = Utilities.InitializeMsBuildProject(buildEngine, filename, null)
         let package = new FSharpProjectPackage()
         let project = new UnitTestingFSharpProjectNode(package)
         try

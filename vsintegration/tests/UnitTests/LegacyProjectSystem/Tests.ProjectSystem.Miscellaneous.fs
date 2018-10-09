@@ -122,7 +122,7 @@ type Miscellaneous() =
         printfn "here1"
         let buildEngine = Utilities.InitializeMsBuildEngine(null)
         printfn "here2"
-        let buildProject = Utilities.InitializeMsBuildProject(buildEngine, fsproj)
+        let buildProject = Utilities.InitializeMsBuildProject(buildEngine, fsproj, null)
         printfn "here3"
         let package = new FSharpProjectPackage()
         let project = new UnitTestingFSharpProjectNode(package)
@@ -428,7 +428,10 @@ type Miscellaneous() =
         
     [<Test>]
     member public this.``BuildMacroValues`` () = 
+        let logger (message:string) = System.IO.File.AppendAllText(@"c:\temp\logfile.txt", (message + Environment.NewLine))
+
         DoWithTempFile "MyAssembly.fsproj" (fun file ->
+
             File.AppendAllText(file, TheTests.FsprojTextWithProjectReferences([],[],[],""))
             let sp, cnn = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier()
             use project = TheTests.CreateProject(file, "false", cnn, sp) 
@@ -438,6 +441,23 @@ type Miscellaneous() =
             let targetDir = project.GetBuildMacroValue("TargetDir")
             let expectedTargetDir = Path.Combine(Path.GetDirectoryName(file), @"bin\Debug\")
             AssertEqual expectedTargetDir targetDir
+
+            // Verify Solution values
+            let solutionDir = project.GetBuildMacroValue("SolutionDir")
+            Assert.IsNotNull (solutionDir, "SolutionDir is NULL")
+            Assert.IsFalse ( (solutionDir = "*Undefined*"), "SolutionDir not defined")
+
+            let solutionFileName = project.GetBuildMacroValue("SolutionFileName")
+            Assert.IsNotNull (solutionFileName, "SolutionFileName is null")
+            Assert.IsFalse ( (solutionFileName = "*Undefined*"), "SolutionFileName not defined")
+
+            let solutionName = project.GetBuildMacroValue("SolutionName")
+            Assert.IsNotNull (solutionName, "SolutionName is null")
+            Assert.IsFalse ( (solutionName = "*Undefined*"), "SolutionName not defined")
+
+            let solutionExt = project.GetBuildMacroValue("SolutionExt")
+            Assert.IsNotNull (solutionExt, "SolutionExt is null")
+            Assert.IsFalse ( (solutionExt = "*Undefined*"), "SolutionExt not defined")
         )
      
     [<Test>]

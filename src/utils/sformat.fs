@@ -372,7 +372,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
           | UnitType
           | ObjectType of Type
 
-        let isNamedType(typ:Type) = not (typ.IsArray || typ.IsByRef || typ.IsPointer)
+        let isNamedType (ty:Type) = not (ty.IsArray || ty.IsByRef || ty.IsPointer)
         let equivHeadTypes (ty1:Type) (ty2:Type) = 
             isNamedType(ty1) &&
             if ty1.IsGenericType then 
@@ -383,11 +383,11 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         let option = typedefof<obj option>
         let func = typedefof<(obj -> obj)>
 
-        let isOptionTy typ = equivHeadTypes typ (typeof<int option>)
-        let isUnitType typ = equivHeadTypes typ (typeof<unit>)
-        let isListType typ = 
-            FSharpType.IsUnion typ && 
-            (let cases = FSharpType.GetUnionCases typ 
+        let isOptionTy ty = equivHeadTypes ty (typeof<int option>)
+        let isUnitType ty = equivHeadTypes ty (typeof<unit>)
+        let isListType ty = 
+            FSharpType.IsUnion ty && 
+            (let cases = FSharpType.GetUnionCases ty 
              cases.Length > 0 && equivHeadTypes (typedefof<list<_>>) cases.[0].DeclaringType)
 
         [<NoEquality; NoComparison>]
@@ -465,19 +465,19 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             // statically-known type information to aid in the
             // analysis of null values. 
 
-            let GetValueInfo bindingFlags (x : 'a, typ : Type)  (* x could be null *) = 
+            let GetValueInfo bindingFlags (x : 'a, ty : Type)  (* x could be null *) = 
                 let obj = (box x)
                 match obj with 
                 | null ->
                    let isNullaryUnion =
-                      match typ.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false) with
+                      match ty.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false) with
                       | [|:? CompilationRepresentationAttribute as attr|] -> 
                           (attr.Flags &&& CompilationRepresentationFlags.UseNullAsTrueValue) = CompilationRepresentationFlags.UseNullAsTrueValue
                       | _ -> false
                    if isNullaryUnion then
-                     let nullaryCase = FSharpType.GetUnionCases typ |> Array.filter (fun uc -> uc.GetFields().Length = 0) |> Array.item 0
+                     let nullaryCase = FSharpType.GetUnionCases ty |> Array.filter (fun uc -> uc.GetFields().Length = 0) |> Array.item 0
                      ConstructorValue(nullaryCase.Name, [])
-                   elif isUnitType typ then UnitValue
+                   elif isUnitType ty then UnitValue
                    else ObjectValue(obj)
                 | _ -> 
                   GetValueInfoOfObject bindingFlags (obj) 
@@ -490,12 +490,12 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
         let string_of_int (i:int) = i.ToString()
 
-        let typeUsesSystemObjectToString (typ:System.Type) =
+        let typeUsesSystemObjectToString (ty:System.Type) =
             try 
 #if FX_RESHAPED_REFLECTION
-                let methInfo = typ.GetRuntimeMethod("ToString",[| |])
+                let methInfo = ty.GetRuntimeMethod("ToString",[| |])
 #else
-                let methInfo = typ.GetMethod("ToString",BindingFlags.Public ||| BindingFlags.Instance,null,[| |],null)
+                let methInfo = ty.GetMethod("ToString",BindingFlags.Public ||| BindingFlags.Instance,null,[| |],null)
 #endif
                 methInfo.DeclaringType = typeof<System.Object>
             with e -> false
@@ -735,18 +735,18 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         // pprinter: using general-purpose reflection...
         // -------------------------------------------------------------------- 
           
-        let getValueInfo bindingFlags (x:'a, typ:Type) = Value.GetValueInfo bindingFlags (x, typ)
+        let getValueInfo bindingFlags (x:'a, ty:Type) = Value.GetValueInfo bindingFlags (x, ty)
 
         let unpackCons recd =
             match recd with 
             | [(_,h);(_,t)] -> (h,t)
             | _             -> failwith "unpackCons"
 
-        let getListValueInfo bindingFlags (x:obj, typ:Type) =
+        let getListValueInfo bindingFlags (x:obj, ty:Type) =
             match x with 
             | null -> None 
             | _ -> 
-                match getValueInfo bindingFlags (x, typ) with
+                match getValueInfo bindingFlags (x, ty) with
                 | ConstructorValue ("Cons",recd) -> Some (unpackCons recd)
                 | ConstructorValue ("Empty",[]) -> None
                 | _ -> failwith "List value had unexpected ValueInfo"
@@ -867,10 +867,10 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             | ShowTopLevelBinding
 
         // polymorphic and inner recursion limitations prevent us defining polyL in the recursive loop 
-        let polyL bindingFlags (objL: ShowMode -> int -> Precedence -> ValueInfo -> obj -> Layout) showMode i prec  (x:'a ,typ : Type) (* x could be null *) =
-            objL showMode i prec (getValueInfo bindingFlags (x, typ))  (box x) 
+        let polyL bindingFlags (objL: ShowMode -> int -> Precedence -> ValueInfo -> obj -> Layout) showMode i prec  (x:'a ,ty : Type) (* x could be null *) =
+            objL showMode i prec (getValueInfo bindingFlags (x, ty))  (box x) 
 
-        let anyL showMode bindingFlags (opts:FormatOptions) (x:'a, typ:Type) =
+        let anyL showMode bindingFlags (opts:FormatOptions) (x:'a, ty:Type) =
             // showMode = ShowTopLevelBinding on the outermost expression when called from fsi.exe,
             // This allows certain outputs, e.g. objects that would print as <seq> to be suppressed, etc. See 4343.
             // Calls to layout proper sub-objects should pass showMode = ShowAll.
@@ -887,8 +887,8 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             let stopShort _ = exceededPrintSize() // for unfoldL
 
             // Recursive descent
-            let rec objL depthLim prec (x:obj, typ:Type) = polyL bindingFlags objWithReprL ShowAll  depthLim prec (x, typ) // showMode for inner expr 
-            and sameObjL depthLim prec (x:obj, typ:Type) = polyL bindingFlags objWithReprL showMode depthLim prec (x, typ) // showMode preserved 
+            let rec objL depthLim prec (x:obj, ty:Type) = polyL bindingFlags objWithReprL ShowAll  depthLim prec (x, ty) // showMode for inner expr 
+            and sameObjL depthLim prec (x:obj, ty:Type) = polyL bindingFlags objWithReprL showMode depthLim prec (x, ty) // showMode preserved 
 
             and objWithReprL showMode depthLim prec (info:ValueInfo) (x:obj) (* x could be null *) =
                 try
@@ -1039,9 +1039,9 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                     bracketIfL (prec <= Precedence.BracketIfTuple) basicL 
 
                 | RecordValue items -> 
-                    let itemL (name,x,typ) =
+                    let itemL (name,x,ty) =
                       countNodes 1 // record labels are counted as nodes. [REVIEW: discussion under 4090].
-                      (tagRecordField name,objL depthLim Precedence.BracketIfTuple (x, typ))
+                      (tagRecordField name,objL depthLim Precedence.BracketIfTuple (x, ty))
                     makeRecordL (List.map itemL items)
 
                 | ConstructorValue (constr,recd) when // x is List<T>. Note: "null" is never a valid list value. 
@@ -1154,7 +1154,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                            let word = "seq"
                            let it = ie.GetEnumerator() 
                            let ty = ie.GetType().GetInterfaces() |> Array.filter (fun ty -> ty.IsGenericType && ty.Name = "IEnumerable`1") |> Array.tryItem 0
-                           let ty = Option.map (fun (typ:Type) -> typ.GetGenericArguments().[0]) ty
+                           let ty = Option.map (fun (ty:Type) -> ty.GetGenericArguments().[0]) ty
                            try 
                              let itemLs = boundedUnfoldL (objL depthLim Precedence.BracketIfTuple) (fun () -> if it.MoveNext() then Some((it.Current, match ty with | None -> it.Current.GetType() | Some ty -> ty),()) else None) stopShort () (1+opts.PrintLength/30)
                              (wordL (tagClass word) --- makeListL itemLs) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
@@ -1216,7 +1216,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                            | _ -> basicL 
                 | UnitValue -> countNodes 1; measureL
 
-            polyL bindingFlags objWithReprL showMode opts.PrintDepth Precedence.BracketIfTuple (x, typ)
+            polyL bindingFlags objWithReprL showMode opts.PrintDepth Precedence.BracketIfTuple (x, ty)
 
         // --------------------------------------------------------------------
         // pprinter: leafFormatter

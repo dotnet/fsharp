@@ -720,6 +720,7 @@ type ILMethodBody =
 [<RequireQualifiedAccess>]
 type ILMemberAccess = 
     | Assembly
+    | CompilerControlled
     | FamilyAndAssembly
     | FamilyOrAssembly
     | Family
@@ -795,6 +796,8 @@ type ILReturn =
       MetadataIndex: int32  }
 
     member CustomAttrs: ILAttributes
+
+    member WithCustomAttrs: customAttrs: ILAttributes -> ILReturn
 
 [<RequireQualifiedAccess>]
 type ILSecurityAction = 
@@ -1536,9 +1539,6 @@ val splitTypeNameRight: string -> string option * string
 val typeNameForGlobalFunctions: string
 
 val isTypeNameForGlobalFunctions: string -> bool
-
-val ungenericizeTypeName: string -> string (* e.g. List`1 --> List *)
-
 
 // ====================================================================
 // PART 2

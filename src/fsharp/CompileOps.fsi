@@ -363,6 +363,9 @@ type TcConfigBuilder =
       /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
       /// and from which we can read the metadata. Only used when metadataOnly=true.
       mutable tryGetMetadataSnapshot : ILReaderTryGetMetadataSnapshot
+
+      /// if true - 'let mutable x = Span.Empty', the value 'x' is a stack referring span. Used for internal testing purposes only until we get true stack spans.
+      mutable internalTestSpanStackReferring : bool
     }
 
     static member Initial: TcConfigBuilder

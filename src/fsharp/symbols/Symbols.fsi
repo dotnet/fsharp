@@ -872,6 +872,9 @@ and [<Class>] public FSharpParameter =
     /// Indicate this is an out argument
     member IsOutArg: bool
 
+    /// Indicate this is an in argument
+    member IsInArg: bool
+
     /// Indicate this is an optional argument
     member IsOptionalArg: bool
 
@@ -920,8 +923,8 @@ and [<Class>] public FSharpActivePatternGroup =
 and [<Class>] public FSharpType =
 
     /// Internal use only. Create a ground type.
-    internal new : g:TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * typ:TType -> FSharpType
-    internal new : SymbolEnv * typ:TType -> FSharpType
+    internal new : g:TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * ty:TType -> FSharpType
+    internal new : SymbolEnv * ty:TType -> FSharpType
 
     /// Indicates this is a named type in an unresolved assembly 
     member IsUnresolved : bool
@@ -981,7 +984,7 @@ and [<Class>] public FSharpType =
 
     /// Adjust the type by removing any occurrences of type inference variables, replacing them
     /// systematically with lower-case type inference variables such as <c>'a</c>.
-    static member Prettify : typ:FSharpType -> FSharpType
+    static member Prettify : ty:FSharpType -> FSharpType
 
     /// Adjust a group of types by removing any occurrences of type inference variables, replacing them
     /// systematically with lower-case type inference variables such as <c>'a</c>.

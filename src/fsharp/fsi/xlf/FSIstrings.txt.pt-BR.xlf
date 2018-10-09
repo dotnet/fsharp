@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">Um problema ocorreu na inicialização do processo interativo #F. Isto pode ter ocorrido devido a um problema conhecido com processo de fundo do console de apoio pelo aplicativos habilitados Unicode em alguns sistemas do Windows. Tente Ferramentas-&gt;Opções-&gt;Interativo F# para Visual Studio e insira '--fsi-server-no-unicode'.</target>
+        <target state="translated">Um problema ocorreu na inicialização do processo F# Interativo. Isto pode ter ocorrido devido a um problema conhecido com processo de fundo do console de apoio pelo aplicativos habilitados Unicode em alguns sistemas do Windows. Tente Ferramentas-&gt;Opções-&gt;F# Interativo para Visual Studio e insira '--fsi-server-no-unicode'.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -134,12 +134,12 @@
       </trans-unit>
       <trans-unit id="fsiExceptionDuringPrettyPrinting">
         <source>\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</source>
-        <target state="translated">\n\nExceção levantadas durante formatação.\nReporte esta exceção para ela que possa ser corrigida.\nRastrear: {0}\n</target>
+        <target state="translated">\n\nExceção levantadas durante a reformatação automática.\nReporte esta exceção para ela que possa ser corrigida.\nRastrear: {0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
         <source>  F# Interactive directives:</source>
-        <target state="translated">  Diretrizes interativas F#:</target>
+        <target state="translated">  Diretrizes F# Interativo:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashrInfo">
@@ -174,7 +174,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader2commandLine">
         <source>  F# Interactive command line options:</source>
-        <target state="translated">  Opções de linha de comando F# interativo:</target>
+        <target state="translated">  Opções de linha de comando F# Interativo:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader3">
@@ -254,7 +254,7 @@
       </trans-unit>
       <trans-unit id="fsiProductName">
         <source>Microsoft (R) F# Interactive version {0}</source>
-        <target state="translated">Microsoft (R) F# Interactive versão {0}</target>
+        <target state="translated">Microsoft (R) F# Interativo versão {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiProductNameCommunity">
@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
         <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">Impede que as referências sejam bloqueadas pelo processo de F# interativo</target>
+        <target state="translated">Impede que as referências sejam bloqueadas pelo processo de F# Interativo</target>
         <note />
       </trans-unit>
     </body>

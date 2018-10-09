@@ -800,6 +800,55 @@ namespace Microsoft.FSharp.Core
     /// <c>System.Int64</c>.</summary>
     type int64<[<Measure>] 'Measure> = int64
 
+    /// <summary>Represents a managed pointer in F# code.</summary>
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
+#else
+    [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
+#endif
+    type byref<'T, 'Kind> = (# "!0&" #)
+
+    /// <summary>Represents a managed pointer in F# code. For F# 4.5+ this is considered equivalent to <c>byref&lt;'T, ByRefKinds.InOut&gt;</c></summary>
+    type byref<'T> = (# "!0&" #)
+
+    /// Represents the types of byrefs in F# 4.5+
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
+#else
+    [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
+#endif
+    module ByRefKinds = 
+
+        /// Represents a byref that can be written
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
+#else
+        [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
+#endif
+        type Out
+
+        /// Represents a byref that can be read
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
+#else
+        [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
+#endif
+        type In
+
+        /// Represents a byref that can be both read and written
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
+#else
+        [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
+#endif
+        type InOut
+
+    /// <summary>Represents a in-argument or readonly managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type inref<'T> = byref<'T, ByRefKinds.In>
+
+    /// <summary>Represents a out-argument managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type outref<'T> = byref<'T, ByRefKinds.Out>
+
     /// <summary>Language primitives associated with the F# language</summary>
     module LanguagePrimitives =
 
@@ -1097,7 +1146,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="obj">The input object.</param>
             /// <returns>The managed pointer.</returns>
             [<NoDynamicInvocation>]
-            val inline ( ~& ) : obj:'T -> 'T byref
+            val inline ( ~& ) : obj:'T -> byref<'T>
 
             /// <summary>Address-of. Uses of this value may result in the generation of unverifiable code.</summary>
             /// <param name="obj">The input object.</param>
@@ -1801,7 +1850,7 @@ namespace Microsoft.FSharp.Core
     ///
     /// <remarks>Use the constructors <c>ValueSome</c> and <c>ValueNone</c> to create values of this type.
     /// Use the values in the <c>ValueOption</c> module to manipulate values of this type,
-    /// or pattern match against the values directly.
+    /// or pattern match against the values directly.</remarks>
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpValueOption`1")>]
     [<Struct>]
@@ -1821,7 +1870,7 @@ namespace Microsoft.FSharp.Core
     ///
     /// <remarks>Use the constructors <c>ValueSome</c> and <c>ValueNone</c> to create values of this type.
     /// Use the values in the <c>ValueOption</c> module to manipulate values of this type,
-    /// or pattern match against the values directly.
+    /// or pattern match against the values directly.</remarks>
     and 'T voption = ValueOption<'T>
 
     /// <summary>Helper type for error handling without exceptions.</summary>
@@ -3258,6 +3307,7 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation>]
             [<CompiledName("ToChar")>]
             val inline char        : value:^T -> char      when ^T : (static member op_Explicit : ^T -> char)        and default ^T : int
+
 
 namespace Microsoft.FSharp.Control
 

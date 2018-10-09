@@ -95,8 +95,8 @@ module public AstTraversal =
         default this.VisitComponentInfo (_) = None
 
         /// VisitLetOrUse allows overriding behavior when visiting module or local let or use bindings
-        abstract VisitLetOrUse : SynBinding list * range -> 'T option
-        default this.VisitLetOrUse (_, _) = None
+        abstract VisitLetOrUse : TraversePath * (SynBinding -> 'T option) * SynBinding list * range -> 'T option
+        default this.VisitLetOrUse (_, _, _, _) = None
 
         /// VisitType allows overriding behavior when visiting simple pats
         abstract VisitSimplePats : SynSimplePat list -> 'T option
@@ -173,7 +173,7 @@ module public AstTraversal =
                 | SynModuleDecl.ModuleAbbrev(_ident, _longIdent, _range) -> None
                 | SynModuleDecl.NestedModule(_synComponentInfo, _isRec, synModuleDecls, _, _range) -> synModuleDecls |> List.map (fun x -> dive x x.Range (traverseSynModuleDecl path)) |> pick decl
                 | SynModuleDecl.Let(_, synBindingList, range) ->
-                    match visitor.VisitLetOrUse(synBindingList, range) with
+                    match visitor.VisitLetOrUse(path, traverseSynBinding path, synBindingList, range) with
                     | Some x -> Some x
                     | None -> synBindingList |> List.map (fun x -> dive x x.RangeOfBindingAndRhs (traverseSynBinding path)) |> pick decl
                 | SynModuleDecl.DoExpr(_sequencePointInfoForBinding, synExpr, _range) -> traverseSynExpr path synExpr  
@@ -377,7 +377,7 @@ module public AstTraversal =
                     synMatchClauseList 
                     |> List.map (fun x -> dive x x.Range (traverseSynMatchClause path))
                     |> pick expr
-                | SynExpr.Match(_sequencePointInfoForBinding, synExpr, synMatchClauseList, _, _range) -> 
+                | SynExpr.Match(_sequencePointInfoForBinding, synExpr, synMatchClauseList, _range) -> 
                     [yield dive synExpr synExpr.Range traverseSynExpr
                      yield! synMatchClauseList |> List.map (fun x -> dive x x.RangeOfGuardAndRhs (traverseSynMatchClause path))]
                     |> pick expr
@@ -395,7 +395,7 @@ module public AstTraversal =
                         |> pick expr
                 | SynExpr.TypeApp(synExpr, _, _synTypeList, _commas, _, _, _range) -> traverseSynExpr synExpr
                 | SynExpr.LetOrUse(_, _, synBindingList, synExpr, range) -> 
-                    match visitor.VisitLetOrUse(synBindingList, range) with
+                    match visitor.VisitLetOrUse(path, traverseSynBinding path, synBindingList, range) with
                     | Some x -> Some x
                     | None ->
                         [yield! synBindingList |> List.map (fun x -> dive x x.RangeOfBindingAndRhs (traverseSynBinding path))
@@ -425,7 +425,8 @@ module public AstTraversal =
                 | SynExpr.LongIdent(_, _longIdent, _altNameRefCell, _range) -> None
                 | SynExpr.LongIdentSet(_longIdent, synExpr, _range) -> traverseSynExpr synExpr
                 | SynExpr.DotGet(synExpr, _dotm, _longIdent, _range) -> traverseSynExpr synExpr
-                | SynExpr.DotSet(synExpr, _longIdent, synExpr2, _range) ->
+                | SynExpr.Set(synExpr, synExpr2, _)
+                | SynExpr.DotSet(synExpr, _, synExpr2, _) ->
                     [dive synExpr synExpr.Range traverseSynExpr
                      dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr
@@ -471,7 +472,7 @@ module public AstTraversal =
                      dive synExpr synExpr.Range traverseSynExpr
                      dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr
-                | SynExpr.MatchBang(_sequencePointInfoForBinding, synExpr, synMatchClauseList, _, _range) -> 
+                | SynExpr.MatchBang(_sequencePointInfoForBinding, synExpr, synMatchClauseList, _range) -> 
                     [yield dive synExpr synExpr.Range traverseSynExpr
                      yield! synMatchClauseList |> List.map (fun x -> dive x x.RangeOfGuardAndRhs (traverseSynMatchClause path))]
                     |> pick expr
@@ -614,7 +615,7 @@ module public AstTraversal =
                 ] |> pick m
             | SynMemberDefn.AutoProperty(_attribs, _isStatic, _id, _tyOpt, _propKind, _, _xmlDoc, _access, synExpr, _, _) -> traverseSynExpr path synExpr
             | SynMemberDefn.LetBindings(synBindingList, _, _, range) -> 
-                match visitor.VisitLetOrUse(synBindingList, range) with
+                match visitor.VisitLetOrUse(path, traverseSynBinding path, synBindingList, range) with
                 | Some x -> Some x
                 | None -> synBindingList |> List.map (fun x -> dive x x.RangeOfBindingAndRhs (traverseSynBinding path)) |> pick m
             | SynMemberDefn.AbstractSlot(_synValSig, _memberFlags, _range) -> None

@@ -3,12 +3,19 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
+
 open Microsoft.CodeAnalysis
+
+open Microsoft.FSharp.Compiler.SourceCodeServices
+
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.VisualStudio.Shell.Interop
 
 type internal QuickInfoNavigation
     (
-        gotoDefinitionService: FSharpGoToDefinitionService,
+        statusBar: StatusBar,
+        checker: FSharpChecker,
+        projectInfoManager: FSharpProjectOptionsManager,
         initialDoc: Document,
         thisSymbolUseRange: range
     ) =
@@ -36,8 +43,10 @@ type internal QuickInfoNavigation
             let! targetDoc = solution.TryGetDocumentFromFSharpRange (range, initialDoc.Project.Id)
             let! targetSource = targetDoc.GetTextAsync()
             let! targetTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (targetSource, range)
-            // to ensure proper navigation decsions we need to check the type of document the navigation call
-            // is originating from and the target we're provided by default
+            let gtd = GoToDefinition(checker, projectInfoManager)
+
+            // To ensure proper navigation decsions, we need to check the type of document the navigation call
+            // is originating from and the target we're provided by default:
             //  - signature files (.fsi) should navigate to other signature files 
             //  - implementation files (.fs) should navigate to other implementation files
             let (|Signature|Implementation|) filepath =
@@ -46,11 +55,13 @@ type internal QuickInfoNavigation
             match initialDoc.FilePath, targetPath with
             | Signature, Signature
             | Implementation, Implementation ->
-                return gotoDefinitionService.TryNavigateToTextSpan (targetDoc, targetTextSpan)
-            // adjust the target from signature to implementation
+                return gtd.TryNavigateToTextSpan(targetDoc, targetTextSpan, statusBar)
+
+            // Adjust the target from signature to implementation.
             | Implementation, Signature  ->
-                return! gotoDefinitionService.NavigateToSymbolDefinitionAsync (targetDoc, targetSource, range) |> liftAsync
-            // adjust the target from implmentation to signature
+                return! gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, range, statusBar)
+                
+            // Adjust the target from implmentation to signature.
             | Signature, Implementation ->
-                return! gotoDefinitionService.NavigateToSymbolDeclarationAsync (targetDoc, targetSource, range) |> liftAsync
+                return! gtd.NavigateToSymbolDeclarationAsync(targetDoc, targetSource, range, statusBar)
         } |> Async.Ignore |> Async.StartImmediate

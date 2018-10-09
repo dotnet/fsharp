@@ -4,35 +4,42 @@ namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 
 open System
+open System.Collections.Generic
+open System.Threading
+open System.Windows
 open System.Windows.Controls
 open System.Windows.Media
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Formatting
+open System.Windows.Media.Animation
+
 open Microsoft.CodeAnalysis
-open System.Threading
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open System.Windows
-open System.Collections.Generic
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Ast
 open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Classification
-open Internal.Utilities.StructuredFormat
-open System.Windows.Media.Animation
+
+open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Ast
+open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.Range
 
 open Microsoft.VisualStudio.FSharp.Editor.Logging
+
+open Microsoft.VisualStudio.Shell.Interop
+
+open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Classification
+open Microsoft.VisualStudio.Text.Formatting
+
+open Internal.Utilities.StructuredFormat
 
 type internal CodeLens(taggedText, computed, fullTypeSignature, uiElement) =
-      member val TaggedText: Async<(ResizeArray<Layout.TaggedText> * QuickInfoNavigation) option> = taggedText
-      member val Computed: bool = computed with get, set
-      member val FullTypeSignature: string = fullTypeSignature 
-      member val UiElement: UIElement = uiElement with get, set
+    member val TaggedText: Async<(ResizeArray<Layout.TaggedText> * QuickInfoNavigation) option> = taggedText
+    member val Computed: bool = computed with get, set
+    member val FullTypeSignature: string = fullTypeSignature 
+    member val UiElement: UIElement = uiElement with get, set
 
 type internal FSharpCodeLensService
     (
+        serviceProvider: IServiceProvider,
         workspace: Workspace, 
         documentId: Lazy<DocumentId>,
         buffer: ITextBuffer, 
@@ -40,9 +47,9 @@ type internal FSharpCodeLensService
         projectInfoManager: FSharpProjectOptionsManager,
         classificationFormatMapService: IClassificationFormatMapService,
         typeMap: Lazy<ClassificationTypeMap>,
-        gotoDefinitionService: FSharpGoToDefinitionService,
-        codeLens : CodeLensDisplayService
-     ) as self =
+        codeLens : CodeLensDisplayService,
+        settings: EditorOptions
+    ) as self =
 
     let lineLens = codeLens
 
@@ -55,7 +62,7 @@ type internal FSharpCodeLensService
 
             override __.VisitTypeAbbrev( _, range) = Some range
 
-            override __.VisitLetOrUse(binding, range) = Some range
+            override __.VisitLetOrUse(_, _, _, range) = Some range
 
             override __.VisitBinding (fn, binding) =
                 Some binding.RangeOfBindingAndRhs
@@ -85,7 +92,7 @@ type internal FSharpCodeLensService
                 let textBlock = new TextBlock(Background = Brushes.AliceBlue, Opacity = 0.0, TextTrimming = TextTrimming.None)
                 DependencyObjectExtensions.SetDefaultTextProperties(textBlock, formatMap.Value)
 
-                let prefix = Documents.Run Settings.CodeLens.Prefix
+                let prefix = Documents.Run settings.CodeLens.Prefix
                 prefix.Foreground <- SolidColorBrush(Color.FromRgb(153uy, 153uy, 153uy))
                 textBlock.Inlines.Add prefix
 
@@ -93,7 +100,7 @@ type internal FSharpCodeLensService
 
                     let coloredProperties = layoutTagToFormatting text.Tag
                     let actualProperties =
-                        if Settings.CodeLens.UseColors
+                        if settings.CodeLens.UseColors
                         then
                             // If color is gray (R=G=B), change to correct gray color.
                             // Otherwise, use the provided color.
@@ -136,7 +143,7 @@ type internal FSharpCodeLensService
             logInfof "Rechecking code due to buffer edit!"
             let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
             let! _, options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
-            let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(document, options, true, "LineLens")
+            let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(document, options, "LineLens", allowStaleResults=true)
             logInfof "Getting uses of all symbols!"
             let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
             let textSnapshot = buffer.CurrentSnapshot
@@ -172,7 +179,8 @@ type internal FSharpCodeLensService
                                 let taggedText = ResizeArray()
                                     
                                 Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
-                                let navigation = QuickInfoNavigation(gotoDefinitionService, document, realPosition)
+                                let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar, IVsStatusbar>()) 
+                                let navigation = QuickInfoNavigation(statusBar, checker, projectInfoManager, document, realPosition)
                                 // Because the data is available notify that this line should be updated, displaying the results
                                 return Some (taggedText, navigation)
                             | None -> 

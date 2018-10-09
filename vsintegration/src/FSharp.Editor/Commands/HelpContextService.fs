@@ -23,9 +23,9 @@ type internal FSharpHelpContextService
     ) =
 
     static let userOpName = "ImplementInterfaceCodeFix"
-    static member GetHelpTerm(checker: FSharpChecker, sourceText : SourceText, fileName, options, span: TextSpan, tokens: List<ClassifiedSpan>, textVersion) : Async<string option> = 
+    static member GetHelpTerm(checker: FSharpChecker, sourceText : SourceText, fileName, options, span: TextSpan, tokens: List<ClassifiedSpan>, textVersion, perfOptions) : Async<string option> = 
         asyncMaybe {
-            let! _, _, check = checker.ParseAndCheckDocument(fileName, textVersion, sourceText.ToString(), options, allowStaleResults = true, userOpName = userOpName)
+            let! _, _, check = checker.ParseAndCheckDocument(fileName, textVersion, sourceText.ToString(), options, perfOptions, userOpName = userOpName)
             let textLines = sourceText.Lines
             let lineInfo = textLines.GetLineFromPosition(span.Start)
             let line = lineInfo.LineNumber
@@ -105,7 +105,8 @@ type internal FSharpHelpContextService
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
                 let classifiedSpans = Tokenizer.getClassifiedSpans(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
-                return! FSharpHelpContextService.GetHelpTerm(checkerProvider.Checker, sourceText, document.FilePath, projectOptions, textSpan, classifiedSpans, textVersion.GetHashCode())
+                let perfOptions = document.FSharpOptions.LanguageServicePerformance
+                return! FSharpHelpContextService.GetHelpTerm(checkerProvider.Checker, sourceText, document.FilePath, projectOptions, textSpan, classifiedSpans, textVersion.GetHashCode(), perfOptions)
             } 
             |> Async.map (Option.defaultValue "")
             |> RoslynHelpers.StartAsyncAsTask cancellationToken

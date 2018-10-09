@@ -83,18 +83,18 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Wszystkie elementy wyrażenia konstruktora listy muszą mieć ten sam typ. Oczekiwano, że to wyrażenie będzie miało typ „{0}”, ale tutaj ma typ „{1}”.</target>
+        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="needs-review-translation">Wszystkie elementy wyrażenia konstruktora listy muszą mieć ten sam typ. Oczekiwano, że to wyrażenie będzie miało typ „{0}”, ale tutaj ma typ „{1}”.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Wszystkie elementy wyrażenia konstruktora tablicy muszą mieć ten sam typ. Oczekiwano, że to wyrażenie będzie miało typ „{0}”, ale tutaj ma typ „{1}”.</target>
+        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="needs-review-translation">Wszystkie elementy wyrażenia konstruktora tablicy muszą mieć ten sam typ. Oczekiwano, że to wyrażenie będzie miało typ „{0}”, ale tutaj ma typ „{1}”.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
-        <source>The 'if' expression is missing an 'else' branch. The 'then' branch has type '{0}'. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type.</source>
-        <target state="translated">W wyrażeniu „if” brakuje gałęzi „else”. Gałąź „then” ma typ „{0}”. Jako że „if” jest wyrażeniem, a nie instrukcją, dodaj gałąź „else”, która będzie zwracać wartość tego samego typu.</target>
+        <source>This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type '{0}'.</source>
+        <target state="needs-review-translation">W wyrażeniu „if” brakuje gałęzi „else”. Gałąź „then” ma typ „{0}”. Jako że „if” jest wyrażeniem, a nie instrukcją, dodaj gałąź „else”, która będzie zwracać wartość tego samego typu.</target>
         <note />
       </trans-unit>
       <trans-unit id="ifExpression">
@@ -103,13 +103,13 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Wszystkie gałęzie wyrażenia „if” muszą mieć ten sam typ. Oczekiwano, że to wyrażenie będzie miało typ „{0}”, ale tutaj ma typ „{1}”.</target>
+        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="needs-review-translation">Wszystkie gałęzie wyrażenia „if” muszą mieć ten sam typ. Oczekiwano, że to wyrażenie będzie miało typ „{0}”, ale tutaj ma typ „{1}”.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
-        <target state="needs-review-translation">Wszystkie gałęzie wyrażenia dopasowania do wzorca muszą mieć ten sam typ. Oczekiwano, że to wyrażenie będzie miało typ „{0}”, ale tutaj ma typ „{1}”.</target>
+        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="needs-review-translation">Wszystkie gałęzie wyrażenia dopasowania do wzorca muszą zwracać wartości tego samego typu. Pierwsza gałąź zwróciła wartość typu „{0}”, ale ta gałąź zwróciła wartość typu „{1}”</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -410,11 +410,6 @@
       <trans-unit id="tastUnexpectedByRef">
         <source>Unexpected use of a byref-typed variable</source>
         <target state="translated">Nieoczekiwane użycie zmiennej typu byref</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tastValueMustBeMutable">
-        <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
-        <target state="translated">Aby można było zmodyfikować zawartość lub pobrać adres typu wartości, wartość musi być modyfikowalna, na przykład „let mutable x = ...”</target>
         <note />
       </trans-unit>
       <trans-unit id="tastInvalidMutationOfConstant">
@@ -5128,13 +5123,13 @@
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
-        <source>Type parameters must be placed directly adjacent to the type name, e.g. \"type C&lt;'T&gt;\", not     type \"C   &lt;'T&gt;\"</source>
-        <target state="translated">Parametry typu muszą być umieszczone w bezpośrednim sąsiedztwie nazwy typu (np. \"type C&lt;'T&gt;\", a nie     type \"C   &lt;'T&gt;\")</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="needs-review-translation">Parametry typu muszą być umieszczone w bezpośrednim sąsiedztwie nazwy typu (np. \"type C&lt;'T&gt;\", a nie     type \"C   &lt;'T&gt;\")</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
-        <source>Type arguments must be placed directly adjacent to the type name, e.g. \"C&lt;'T&gt;\", not \"C  &lt;'T&gt;\"</source>
-        <target state="translated">Argumenty typu muszą być umieszczone w bezpośrednim sąsiedztwie nazwy typu (np. \"C&lt;'T&gt;\", a nie \"C  &lt;'T&gt;\")</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="needs-review-translation">Argumenty typu muszą być umieszczone w bezpośrednim sąsiedztwie nazwy typu (np. \"C&lt;'T&gt;\", a nie \"C  &lt;'T&gt;\")</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
@@ -5439,7 +5434,7 @@
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
         <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="translated">Element {0} określił wersję „{1}”, ale ta wartość jest nieprawidłowa i została zignorowana</target>
+        <target state="translated">Atrybut {0} określił wersję „{1}”, ale ta wartość jest nieprawidłowa i została zignorowana</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">
@@ -6522,11 +6517,6 @@
         <target state="translated">Nie można odnaleźć metody System.Runtime.CompilerServices.OffsetToStringData w odwołaniach podczas kompilowania wyrażenia „fixed”.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoByrefReturnOfLocal">
-        <source>The address of the variable '{0}' cannot be used at this point. A method or function may not return the address of this local value.</source>
-        <target state="translated">Adres zmiennej „{0}” nie może być użyty w tym punkcie. Metoda lub funkcja może nie zwrócić adresu tej wartości lokalnej.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcNamedActivePattern">
         <source>{0} is an active pattern and cannot be treated as a discriminated union case with named fields.</source>
         <target state="translated">{0} jest wzorcem aktywnym i nie można go traktować jako przypadku unii rozłącznej z nazwanymi polami.</target>
@@ -6718,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
-        <source>Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.</source>
-        <target state="translated">Używane w asynchronicznych przepływach pracy do powiązywania nazwy z wynikiem obliczenia asynchronicznego lub w innych wyrażeniach obliczenia do powiązywania nazwy z wynikiem, którego typ to obliczenie.</target>
+        <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
+        <target state="review-required-translation">Używane w asynchronicznych przepływach pracy do powiązywania nazwy z wynikiem obliczenia asynchronicznego lub w innych wyrażeniach obliczenia do powiązywania nazwy z wynikiem, którego typ to obliczenie.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6798,13 +6788,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
-        <source>Used to indicate a value to provide as the result of a computation expression.</source>
-        <target state="translated">Używane do wskazywania wartości do podania jako wyniku wyrażenia obliczenia.</target>
+        <source>Used to provide a value for the result of the containing computation expression.</source>
+        <target state="review-required-translation">Używane do wskazywania wartości do podania jako wyniku wyrażenia obliczenia.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
-        <source>Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.</source>
-        <target state="translated">Używane do wskazywania wyrażenia obliczenia, które po obliczeniu udostępnia wynik zawartego wyrażenia obliczenia.</target>
+        <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
+        <target state="review-required-translation">Używane do wskazywania wyrażenia obliczenia, które po obliczeniu udostępnia wynik zawartego wyrażenia obliczenia.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6848,13 +6838,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Używane zamiast instrukcji let na potrzeby wartości, które wymagają wywołania operacji Dispose w celu zwolnienia zasobów.</target>
+        <source>Used instead of let for values that implement IDisposable"</source>
+        <target state="needs-review-translation">Używane zamiast instrukcji let na potrzeby wartości, które wymagają wywołania operacji Dispose w celu zwolnienia zasobów.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
-        <source>Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Używane zamiast instrukcji let! w asynchronicznych przepływach pracy i innych wyrażeniach obliczenia na potrzeby wartości, które wymagają wywołania operacji Dispose w celu zwolnienia zasobów.</target>
+        <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
+        <target state="review-required-translation">Używane zamiast instrukcji let! w asynchronicznych przepływach pracy i innych wyrażeniach obliczenia na potrzeby wartości, które wymagają wywołania operacji Dispose w celu zwolnienia zasobów.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">
@@ -6984,12 +6974,97 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionMatchBang">
         <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
-        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <target state="translated">Używane w wyrażeniach obliczenia do dopasowania do wzorca bezpośrednio w wyniku innego wyrażenia obliczenia.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">
         <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
         <target state="translated">Plik „{0}” nieoczekiwanie uległ zmianie na dysku. Załaduj go ponownie.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="writeToReadOnlyByref">
+        <source>The byref pointer is readonly, so this write is not permitted.</source>
+        <target state="translated">Wskaźnik byref jest tylko do odczytu, więc ten zapis nie jest dozwolony.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastValueMustBeMutable">
+        <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
+        <target state="translated">Aby można było zmodyfikować zawartość lub pobrać adres typu wartości, wartość musi być modyfikowalna, na przykład „let mutable x = ...”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="readOnlyAttributeOnStructWithMutableField">
+        <source>A ReadOnly attribute has been applied to a struct type with a mutable field.</source>
+        <target state="translated">Atrybut ReadOnly został zastosowany do typu struktury z polem modyfikowalnym.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcByrefReturnImplicitlyDereferenced">
+        <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
+        <target state="translated">Wskaźnik byref zwracany przez funkcję lub metodę jest niejawnie wyłuskiwany, począwszy od wersji 4.5 języka F#. Aby pobrać wartość zwracaną jako wskaźnik, użyj operatora address-of, np. „&amp;f(x)” lub „&amp;obj.Method(arg1, arg2)”.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcByRefLikeNotStruct">
+        <source>A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
+        <target state="translated">Typ z adnotacją IsByRefLike musi również być strukturą. Rozważ dodanie atrybutu [&lt;Struct&gt;] do tego typu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefAddressOfLocal">
+        <source>The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">W tym miejscu nie można użyć adresu zmiennej „{0}” ani powiązanego wyrażenia. Ma to na celu uniemożliwienie adresowi wartości lokalnej wykroczenia poza zakres.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoWriteToLimitedSpan">
+        <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
+        <target state="translated">Ta wartość nie może zostać przypisana, ponieważ element docelowy „{0}” może odwoływać się do pamięci innej niż pamięć lokalna dla stosu, natomiast przypisywane wyrażenie może potencjalnie odwoływać się do pamięci lokalnej dla stosu. Dzięki temu łatwiej uniemożliwić wskaźnikom do pamięci powiązanej ze stosem wykroczenie poza ich zakres.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastValueMustBeLocal">
+        <source>A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</source>
+        <target state="translated">Wartość zdefiniowana w module musi być modyfikowalna w celu uzyskania jej adresu, np. „let mutable x = ...”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcIsReadOnlyNotStruct">
+        <source>A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
+        <target state="translated">Typ z adnotacją IsReadOnly musi również być strukturą. Rozważ dodanie atrybutu [&lt;Struct&gt;] do tego typu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkStructsMayNotReturnAddressesOfContents">
+        <source>Struct members cannot return the address of fields of the struct by reference</source>
+        <target state="translated">Składowe struktury nie mogą zwracać adresów pól struktury przez odwołanie</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefLikeFunctionCall">
+        <source>The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">W tym miejscu nie można użyć wywołania funkcji lub metody, ponieważ jeden argument, który jest elementem byref typu Span lub IsByRefLike innego niż lokalnego dla stosu, został użyty z innym argumentem, który jest typem Span lub IsByRefLike lokalnym dla stosu. Ma to na celu zapewnienie, że adres wartości lokalnej nie wykracza poza swój zakres.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefAddressOfValueFromExpression">
+        <source>The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">W tym miejscu nie można użyć adresu wartości zwróconej z wyrażenia. Ma to na celu uniemożliwienie adresowi wartości lokalnej wykroczenia poza zakres.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoSpanLikeVariable">
+        <source>The Span or IsByRefLike variable '{0}' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">W tym miejscu nie można użyć zmiennej Span lub IsByRefLike „{0}”. Ma to na celu uniemożliwienie adresowi wartości lokalnej wykroczenia poza zakres.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoSpanLikeValueFromExpression">
+        <source>A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">W tym miejscu nie można użyć wartości Span lub IsByRefLike zwróconej z wyrażenia. Ma to na celu uniemożliwienie adresowi wartości lokalnej wykroczenia poza zakres.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastCantTakeAddressOfExpression">
+        <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
+        <target state="translated">Nie można uzyskać adresu wartości zwróconej przez wyrażenie. Przypisz zwróconą wartość do wartości powiązanej za pomocą instrukcji let przed uzyskaniem adresu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoReturnOfLimitedSpan">
+        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
+        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDoesNotInheritAttribute">
+        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
+        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnmatchedBraceBar">

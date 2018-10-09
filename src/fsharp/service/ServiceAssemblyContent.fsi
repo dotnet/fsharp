@@ -57,7 +57,9 @@ type public AssemblySymbol =
       AutoOpenParent: Idents option
       Symbol: FSharpSymbol
       /// Function that returns `EntityKind` based of given `LookupKind`.
-      Kind: LookupType -> EntityKind }
+      Kind: LookupType -> EntityKind
+      /// Cache display name and namespace, used for completion.
+      UnresolvedSymbol: UnresolvedSymbol }
 
 /// `RawEntity` list retrieved from an assembly.
 type internal AssemblyContentCacheEntry =
@@ -145,7 +147,7 @@ module public ParsedInput =
         (( (* requiresQualifiedAccessParent: *) Idents option * (* autoOpenParent: *) Idents option * (*  entityNamespace *) Idents option * (* entity: *) Idents) -> (Entity * InsertContext)[])
     
     /// Returns `InsertContext` based on current position and symbol idents.
-    val tryFindNearestPointToInsertOpenDeclaration : currentLine: int -> ast: Ast.ParsedInput -> entity: Idents -> insertionPoint: OpenStatementInsertionPoint -> InsertContext option
+    val findNearestPointToInsertOpenDeclaration : currentLine: int -> ast: Ast.ParsedInput -> entity: Idents -> insertionPoint: OpenStatementInsertionPoint -> InsertContext
 
     /// Returns lond identifier at position.
     val getLongIdentAt : ast: Ast.ParsedInput -> pos: Range.pos -> Ast.LongIdent option

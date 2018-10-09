@@ -1178,7 +1178,7 @@ type internal FsiDynamicCompiler
                             | Item.Value vref ->
                                 let optValue = newState.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(newState.emEnv), vref.Deref)
                                 match optValue with
-                                | Some (res, typ) -> Some(FsiValue(res, typ, FSharpType(cenv, vref.Type)))
+                                | Some (res, ty) -> Some(FsiValue(res, ty, FSharpType(cenv, vref.Type)))
                                 | None -> None 
                             | _ -> None
 
@@ -1225,7 +1225,7 @@ type internal FsiDynamicCompiler
              //
              let optValue = istate.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(istate.emEnv), vref.Deref);
              match optValue with
-             | Some (res, typ) -> istate, Completed(Some(FsiValue(res, typ, FSharpType(tcGlobals, istate.tcState.Ccu, istate.tcState.CcuSig, istate.tcImports, vref.Type))))
+             | Some (res, ty) -> istate, Completed(Some(FsiValue(res, ty, FSharpType(tcGlobals, istate.tcState.Ccu, istate.tcState.CcuSig, istate.tcImports, vref.Type))))
              | _ -> istate, Completed None
 
         // Return the interactive state.
@@ -2343,7 +2343,7 @@ type internal FsiInteractionProcessor
 
         let nItems = NameResolution.ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox istate.tcGlobals amap rangeStdin) rangeStdin ad lid false
         let names  = nItems |> List.map (fun d -> d.DisplayName) 
-        let names  = names |> List.filter (fun name -> name.StartsWith(stem,StringComparison.Ordinal)) 
+        let names  = names |> List.filter (fun name -> name.StartsWithOrdinal(stem)) 
         names
 
     member __.ParseAndCheckInteraction (ctok, legacyReferenceResolver, checker, istate, text:string) =

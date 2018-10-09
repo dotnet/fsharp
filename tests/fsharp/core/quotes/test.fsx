@@ -1744,30 +1744,6 @@ module QuotationStructUnionTests =
     //test "check NewUnionCase"   (<@ A1(1,2) @> |> (function NewUnionCase(unionCase,[ Int32 1; Int32 2 ]) -> true | _ -> false))
 
 
-module FlexibleUnionConstructorTests = 
-
-    [<Struct>]
-    type T = | A of seq<int>
-
-    type U = | B of seq<int>
-    let testList = [1..3]
-    let testFunction caseName x =
-        match x with
-        | Call(None, _, 
-               [PropertyGet (None,_,_) ;
-                 Let (_, Lambda (_, NewUnionCase(unioncase, _)), 
-                    Lambda(_, Application(_, Coerce(_, ty))))]) -> 
-                 unioncase.Name = caseName &&
-                 ty.Name = "IEnumerable`1"
-        | _ -> false
-
-    test "check struct flexible union constructor"   
-        (<@ testList |> A @> |> testFunction "A")
-    
-    test "check flexible union constructor"   
-        (<@ testList |> B @> |> testFunction "B")
-
-
 module EqualityOnExprDoesntFail = 
     let q = <@ 1 @>
     check "we09ceo" (q.Equals(1)) false
