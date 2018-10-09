@@ -7083,8 +7083,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsNoBodyInApplicativeComputationExpression">
-        <source>No body given after bindings. Expected a 'return' to terminate this applicative computation expression.</source>
-        <target state="new">No body given after bindings. Expected a 'return' to terminate this applicative computation expression.</target>
+        <source>No body given after the applicative bindings. Expected a 'return' to terminate this applicative computation expression.</source>
+        <target state="new">No body given after the applicative bindings. Expected a 'return' to terminate this applicative computation expression.</target>
         <note />
       </trans-unit>
     </body>

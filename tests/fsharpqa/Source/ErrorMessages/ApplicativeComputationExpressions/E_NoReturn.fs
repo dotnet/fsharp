@@ -1,5 +1,5 @@
 // #ErrorMessages
-//<Expects id="FS3246" status="error" span="(11,9)">Unexpected end of computation expression. Expected a 'return' to terminate this applicative computation expression.</Expects>
+//<Expects id="FS3246" status="error" span="(9,9)">No body given after the applicative bindings. Expected a 'return' to terminate this applicative computation expression.</Expects>
 
 namespace ApplicativeComputationExpressions
 
