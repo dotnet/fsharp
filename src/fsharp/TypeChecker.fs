@@ -8043,7 +8043,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             Some(translatedCtxt (mkSynCall "Bind" bindRange [rhsExpr; consumeExpr]))
 
         // 'use! pat = e1 ... in e2' where 'pat' is not a simple name --> error
-        | SynExpr.LetOrUseAndBang(_spBind, true, _isFromSource, pat, _rhsExpr, _, [], _innerComp) -> 
+        | SynExpr.LetOrUseAndBang(_spBind, true, _isFromSource, pat, _rhsExpr, _, [], _innerComp) ->
             error(Error(FSComp.SR.tcInvalidUseBangBinding(), pat.Range))
 
         // 'let! pat1 = expr1 and! pat2 = expr2 ... and! patN = exprN in yield expr3' --> error
