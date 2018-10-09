@@ -7077,6 +7077,11 @@
         <target state="new">Pattern matching is not allowed on the left-hand side of the equals. 'use! ... anduse! ...' bindings must be of the form 'use! &lt;var&gt; = &lt;expr&gt;' or 'anduse! &lt;var&gt; = &lt;expr&gt;'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcYieldInsteadOfReturnInApplicativeComputationExpression">
+        <source>'yield' is not valid in this position in an applicative computation expression. Did you mean 'return' instead?</source>
+        <target state="new">'yield' is not valid in this position in an applicative computation expression. Did you mean 'return' instead?</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
