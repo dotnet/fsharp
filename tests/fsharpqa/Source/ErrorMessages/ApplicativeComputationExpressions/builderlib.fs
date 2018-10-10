@@ -142,8 +142,8 @@ type EventuallyNoApplyUsingBuilder() =
 [<AutoOpen>]
 module TheEventuallyBuilder =
     let eventually = new EventuallyBuilder()
-    let eventullyNoApply = new EventuallyNoApplyBuilder()
-    let eventullyNoApplyUsing = new EventuallyNoApplyUsingBuilder()
+    let eventuallyNoApply = new EventuallyNoApplyBuilder()
+    let eventuallyNoApplyUsing = new EventuallyNoApplyUsingBuilder()
 
 type FakeDisposable =
     FakeDisposable of int

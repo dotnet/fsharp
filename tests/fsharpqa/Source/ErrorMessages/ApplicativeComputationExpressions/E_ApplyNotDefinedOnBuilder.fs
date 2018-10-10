@@ -1,12 +1,13 @@
 // #ErrorMessages
-//<Expects id="FS12345" status="error" span="(9,9)">'Apply' is not defined on the computation expression builder</Expects>
+//<Expects id="FS0708" status="error" span="(11,13)">This control construct may only be used if the computation expression builder defines a 'Apply' method</Expects>
 
 namespace ApplicativeComputationExpressions
 
 module E_ApplyNotDefinedOnBuilder =
 
-    eventuallyNoApply {
-        let! x = Eventually.NotYetDone (fun () -> Eventually.Done 4)
-        and! y = Eventually.Done 6
-        return x + y
-    }
+    let example =
+        eventuallyNoApply {
+            let! x = Eventually.NotYetDone (fun () -> Eventually.Done 4)
+            and! y = Eventually.Done 6
+            return x + y
+        }
