@@ -54,7 +54,7 @@ module internal BlockStructure =
         | Scope.Quote
         | Scope.SpecialFunc
         | Scope.Lambda
-        | Scope.LetOrUseBang
+        | Scope.LetOrUseOrAndOrAndUseBang
         | Scope.Val
         | Scope.YieldOrReturn
         | Scope.YieldOrReturnBang
@@ -108,7 +108,7 @@ module internal BlockStructure =
         | Scope.CompExprInternal
         | Scope.Quote
         | Scope.Lambda
-        | Scope.LetOrUseBang
+        | Scope.LetOrUseOrAndOrAndUseBang
         | Scope.Val
         | Scope.YieldOrReturn
         | Scope.YieldOrReturnBang
