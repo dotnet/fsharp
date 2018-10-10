@@ -60,15 +60,15 @@ module Scripting =
 
     let (++) a b = Path.Combine(a,b)
 
-    let getBasename a = Path.GetFileNameWithoutExtension a
-    let getFullPath a = Path.GetFullPath a
-    let getFilename a = Path.GetFileName a
-    let getDirectoryName a = Path.GetDirectoryName a
+    let getBasename (a: string) = Path.GetFileNameWithoutExtension(a)
+    let getFullPath a = Path.GetFullPath(a)
+    let getFilename (a: string) = Path.GetFileName(a)
+    let getDirectoryName (a: string) = Path.GetDirectoryName(a)
 
     let copyFile source dir =
         let dest = 
             if not (Directory.Exists dir) then Directory.CreateDirectory dir |>ignore
-            let result = Path.Combine(dir, Path.GetFileName source)
+            let result = Path.Combine(dir, getFilename source)
             result
         //printfn "Copy %s --> %s" source dest
         File.Copy(source, dest, true)
@@ -96,7 +96,7 @@ module Scripting =
         let processExePath baseDir exe =
             if Path.IsPathRooted(exe) then exe
             else 
-                match Path.GetDirectoryName(exe) with
+                match getDirectoryName exe with
                 | "" -> exe
                 | _ -> Path.Combine(baseDir,exe) |> Path.GetFullPath
 
