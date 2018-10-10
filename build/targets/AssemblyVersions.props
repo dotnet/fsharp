@@ -26,7 +26,7 @@
     <FSCoreVersion>$(FSCoreMajorVersion).0.0</FSCoreVersion>
 
     <FSPackageMajorVersion>10.3</FSPackageMajorVersion>
-    <FSPackageVersion>$(FSPackageMajorVersion).3</FSPackageVersion>
+    <FSPackageVersion>$(FSPackageMajorVersion).0</FSPackageVersion>
     <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
 
     <VSMajorVersion>16</VSMajorVersion>
