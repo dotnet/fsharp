@@ -54,8 +54,6 @@ type TraceBuilder =
             (*resource.Dispose()*)
             ())
 
-/// A builder which records what operations it is asked to perform
-/// and records automatically inserted Run and Delay calls
 type TraceWithDelayAndRunBuilder() =
     inherit TraceBuilder()
 
@@ -66,3 +64,17 @@ type TraceWithDelayAndRunBuilder() =
     member __.Delay(thunk) =
         __.trace <- Delay :: __.trace
         thunk ()
+
+type TraceWithDelayBuilder() =
+    inherit TraceBuilder()
+
+    member __.Delay(thunk) =
+        __.trace <- Delay :: __.trace
+        thunk ()
+
+type TraceWithRunBuilder() =
+    inherit TraceBuilder()
+
+    member __.Run(x) =
+        __.trace <- Run :: __.trace
+        x
