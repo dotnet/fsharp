@@ -3360,7 +3360,7 @@ declExpr:
 
   | DO_BANG typedSeqExpr IN opt_OBLOCKSEP typedSeqExprBlock %prec expr_let 
      { let spBind = NoSequencePointAtDoBinding
-       SynExpr.LetOrUseAndBang(spBind,false,true,SynPat.Const(SynConst.Unit,$2.Range),$2, unionRanges (rhs parseState 1) $5.Range, [], $5) }
+       SynExpr.LetOrUseOrAndBang(spBind,false,true,SynPat.Const(SynConst.Unit,$2.Range),$2, unionRanges (rhs parseState 1) $5.Range, [], $5) }
 
   | ODO_BANG typedSeqExprBlock hardwhiteDefnBindingsTerminator %prec expr_let 
      { SynExpr.DoBang($2, unionRanges (rhs parseState 1) $2.Range) }
