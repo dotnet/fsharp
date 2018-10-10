@@ -3357,7 +3357,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
              "        and! y = "]
              "and! y = "
             ["foo";"bar"]
-            ["x"] 
+            [(*"x"*)]
 
             (**)
     [<Test>]
