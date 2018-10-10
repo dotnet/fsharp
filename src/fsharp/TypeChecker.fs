@@ -8047,11 +8047,11 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             error(Error(FSComp.SR.tcInvalidUseBangBinding(), pat.Range))
 
         // 'let! pat1 = expr1 and! pat2 = expr2 ... and! patN = exprN in yield expr3' --> error
-        | SynExpr.LetOrUseOrAndBang(_, _, _, _, _, _, _::_, SynExpr.YieldOrReturn((isYield, _), _, yieldRange)) when isYield = true ->
+        | SynExpr.LetOrUseOrAndBang(andBangs=_::_; body=SynExpr.YieldOrReturn((isYield, _), _, yieldRange)) when isYield = true ->
             error(Error(FSComp.SR.tcYieldInsteadOfReturnInApplicativeComputationExpression(), yieldRange))
 
         // 'let! pat1 = expr1 and! pat2 = expr2 in return expr3 ; moreBody' --> error
-        | SynExpr.LetOrUseOrAndBang(_, _, _, _, _, _, _::_, SynExpr.Sequential(_, _, SynExpr.YieldOrReturn((isYield, _), _, _), moreBodyExpr, _)) when isYield = false ->
+        | SynExpr.LetOrUseOrAndBang(andBangs=_::_; body=SynExpr.Sequential(expr1=SynExpr.YieldOrReturn((isYield, _), _, _); expr2=moreBodyExpr)) when isYield = false ->
             error(Error(FSComp.SR.tcMoreAfterReturnInApplicativeComputationExpression(), moreBodyExpr.Range))
 
         // 'let! pat1 = expr1 and! pat2 = expr2 in return expr3' -->
