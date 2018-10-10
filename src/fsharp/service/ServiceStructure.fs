@@ -115,7 +115,7 @@ module Structure =
         | Attribute
         | Interface
         | HashDirective
-        | LetOrUseBang
+        | LetOrUseOrAndOrAndUseBang
         | TypeExtension
         | YieldOrReturn
         | YieldOrReturnBang
@@ -164,7 +164,7 @@ module Structure =
             | Attribute           -> "Attribute"
             | Interface           -> "Interface"
             | HashDirective       -> "HashDirective"
-            | LetOrUseBang        -> "LetOrUseBang"
+            | LetOrUseOrAndOrAndUseBang -> "LetOrUseOrAndOrAndUseBang"
             | TypeExtension       -> "TypeExtension"
             | YieldOrReturn       -> "YieldOrReturn"
             | YieldOrReturnBang   -> "YieldOrReturnBang"
@@ -256,7 +256,7 @@ module Structure =
                     // on the same line if there is an `=` the range will be adjusted during the
                     // tooltip creation
                     let r = Range.endToEnd pat.Range e.Range
-                    rcheck Scope.LetOrUseBang Collapse.Below r r
+                    rcheck Scope.LetOrUseOrAndOrAndUseBang Collapse.Below r r
                     parseExpr e
                 )
                 parseExpr eBody

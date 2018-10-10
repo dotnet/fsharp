@@ -53,7 +53,7 @@ module public Structure =
         | Attribute
         | Interface
         | HashDirective
-        | LetOrUseBang
+        | LetOrUseOrAndOrAndUseBang
         | TypeExtension
         | YieldOrReturn
         | YieldOrReturnBang
