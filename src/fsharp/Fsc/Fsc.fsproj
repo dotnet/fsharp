@@ -24,9 +24,6 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <StartArguments>C:\Users\Tom\Documents\FSharpContribs\visualfsharp\scratch\data\SimpleBuilder.fsx</StartArguments>
-  </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <ItemGroup>
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
