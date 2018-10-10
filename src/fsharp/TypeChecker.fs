@@ -8047,28 +8047,45 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             error(Error(FSComp.SR.tcInvalidUseBangBinding(), pat.Range))
 
         // 'let! pat1 = expr1 and! pat2 = expr2 ... and! patN = exprN in yield expr3' --> error
-        | SynExpr.LetOrUseOrAndBang(andBangs=_::_; body=SynExpr.YieldOrReturn((isYield, _), _, yieldRange)) when isYield = true ->
+        | SynExpr.LetOrUseOrAndBang(andBangs=_::_; body=SynExpr.YieldOrReturn((true, _), _, yieldRange)) ->
             error(Error(FSComp.SR.tcYieldInsteadOfReturnInApplicativeComputationExpression(), yieldRange))
 
         // 'let! pat1 = expr1 and! pat2 = expr2 in return expr3 ; moreBody' --> error
-        | SynExpr.LetOrUseOrAndBang(andBangs=_::_; body=SynExpr.Sequential(expr1=SynExpr.YieldOrReturn((isYield, _), _, _); expr2=moreBodyExpr)) when isYield = false ->
+        | SynExpr.LetOrUseOrAndBang(andBangs=_::_; body=SynExpr.Sequential(expr1=SynExpr.YieldOrReturn((_, true), _, _); expr2=moreBodyExpr)) ->
             error(Error(FSComp.SR.tcMoreAfterReturnInApplicativeComputationExpression(), moreBodyExpr.Range))
 
         // 'let! pat1 = expr1 and! pat2 = expr2 in return expr3' -->
         //     build.Apply(
         //         build.Apply(
         //             build.Return(
-        //                 (function _arg1 -> match _arg1 with pat1 ->
-        //                     (function _arg2 -> match _arg2 with pat2 -> 
+        //                 (fun x ->
+        //                     (fun y ->
         //                         expr3
         //                     )
         //                 )
         //         ), expr1)
         //     ), expr2)
-        // 'use! pat = e1 and! pat = e2 in e3' --> TODO
-        // 'let! pat = e1 anduse! pat = e2 in e3' --> TODO
-        // 'use! pat = e1 anduse! pat = e2 in e3' --> TODO
-        | SynExpr.LetOrUseOrAndBang(letSpBind, letIsUse, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, SynExpr.YieldOrReturn((isYield, _), returnExpr, returnRange)) when isYield = false ->  // TODO Handle use! / anduse!
+        //
+        // 'use! pat = e1 anduse! pat = e2 in e3' -->
+        //     build.Apply(
+        //         build.Apply(
+        //             build.Return(
+        //                 (fun x ->
+        //                     (fun y ->
+        //                         ce.ApplyUsing(x, fun x ->
+        //                             ce.ApplyUsing(y, fun y ->
+        //                                 expr3
+        //                             )
+        //                         )
+        //                     )
+        //                 )
+        //         ), e1)
+        //     ), e2)
+        //
+        // Similarly for:
+        // 'use! pat = e1 and! pat = e2 in e3'
+        // 'let! pat = e1 anduse! pat = e2 in return e3'
+        | SynExpr.LetOrUseOrAndBang(letSpBind, letIsUse, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, SynExpr.YieldOrReturn((_, true), returnExpr, returnRange)) ->
 
             let bindingsBottomToTop = 
                 let letBinding =
@@ -8110,7 +8127,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                     |> List.fold (fun acc (spBind, isUse, _, pat, rhsExpr, m) ->
                         match isUse, pat with
                         | true, SynPat.Named (SynPat.Wild _, id, false, _, _)
-                        | true, SynPat.LongIdent (LongIdentWithDots([id], _), _, _, _, _, _) ->
+                        | true, SynPat.LongIdent (longDotId=LongIdentWithDots([id], _)) ->
                             let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhsExpr.Range
                             if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env m ad "ApplyUsing" builderTy)
                             then error(Error(FSComp.SR.tcRequireBuilderMethod("ApplyUsing"), m))
@@ -8141,7 +8158,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
             Some (translatedCtxt desugared)
 
-        | SynExpr.LetOrUseOrAndBang (_, _, _, _, _, _, _, innerComp) ->
+        | SynExpr.LetOrUseOrAndBang (body=innerComp) ->
             error(Error(FSComp.SR.tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn(), innerComp.Range))
 
         | SynExpr.Match (spMatch, expr, clauses, m) ->
