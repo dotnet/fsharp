@@ -253,7 +253,7 @@ module Structure =
                 |> List.iter (fun e ->
                     // for `let!`, `use!`, `and!` or `anduse!` the pattern begins at the end of the
                     // keyword so that this scope can be used without adjustment if there is no `=`
-                    // on the same line if there is an `=` the range will be adjusted during the
+                    // on the same line. If there is an `=` the range will be adjusted during the
                     // tooltip creation
                     let r = Range.endToEnd pat.Range e.Range
                     rcheck Scope.LetOrUseOrAndBang Collapse.Below r r
