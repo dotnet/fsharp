@@ -316,7 +316,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                       yield! walkBindSeqPt spBind
                       yield! walkExpr true e1
                       for (andBangSpBind,_,_,_,eAndBang,_) in es do
-                          yield! walkBindSeqPt andBangSpBind // TODO Check this is valid & useful
+                          yield! walkBindSeqPt andBangSpBind
                           yield! walkExpr true eAndBang
                       yield! walkExpr true e2
 
