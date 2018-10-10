@@ -8134,7 +8134,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                             let applyUsingBodyExpr = SynExpr.MatchLambda(false, bindRange, [Clause(pat, None, acc, acc.Range, SequencePointAtTarget)], spBind, bindRange) // TODO Where should we be suppressing sequence points?
                             mkSynCall "ApplyUsing" bindRange [ SynExpr.Ident(id); applyUsingBodyExpr ]
                         | true, _ ->
-                            // TODO Support explicitly typed names on the LHS of a use!/anduse!
+                            // SynPat.Typed unsupported for now...
                             error(Error(FSComp.SR.tcInvalidAndUseBangBinding(), pat.Range))
                         | false, _ ->
                             acc
@@ -8147,13 +8147,13 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                         let innerRange = returnExpr.Range
                         SynExpr.MatchLambda(false, pat.Range, [Clause(pat, None, acc, innerRange, SequencePointAtTarget)], spBind, innerRange)
                 ) usings
-                // We take the nested lambdas and put the return back, _outside_ them
-                // to give an f : F<'a -> 'b -> 'c -> ...> as a series of Apply calls expects
+                // We take the nested lambdas and rewrap the call to 'Return' _outside_ them
+                // to give an f : F<'a -> 'b -> 'c -> ... > as a series of Apply calls expects
                 |> (fun f -> 
                     if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env returnRange ad "Return" builderTy)
                     then error(Error(FSComp.SR.tcRequireBuilderMethod("Return"), returnRange))
                     mkSynCall "Return" returnRange [f])
-                // We wrap the return in a call to Apply for each lambda
+                // We finally wrap the return in a call to Apply for each lambda
                 |> wrapInCallsToApply
 
             Some (translatedCtxt desugared)
