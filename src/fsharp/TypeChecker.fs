@@ -3467,7 +3467,7 @@ let (|SimpleSemicolonSequence|_|) acceptDeprecated c =
         | SynExpr.ForEach (_, _, _, _, _, body, _) -> YieldFree body
         | SynExpr.YieldOrReturnFrom _ 
         | SynExpr.YieldOrReturn _ 
-        | SynExpr.LetOrUseAndBang _ 
+        | SynExpr.LetOrUseOrAndBang _ 
         | SynExpr.ImplicitZero _ 
         | SynExpr.Do _ -> false
         | _ -> true
@@ -3486,7 +3486,7 @@ let (|SimpleSemicolonSequence|_|) acceptDeprecated c =
         | SynExpr.LetOrUse _ 
         | SynExpr.Do _ 
         | SynExpr.MatchBang _ 
-        | SynExpr.LetOrUseAndBang _ 
+        | SynExpr.LetOrUseOrAndBang _ 
         | SynExpr.ImplicitZero _ 
         | SynExpr.While _ -> false
         | _ -> true
@@ -6138,7 +6138,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         error(Error(FSComp.SR.tcConstructRequiresSequenceOrComputations(), m))
 
     | SynExpr.DoBang  (_, m) 
-    | SynExpr.LetOrUseAndBang  (range=m) -> 
+    | SynExpr.LetOrUseOrAndBang  (range=m) -> 
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
     | SynExpr.MatchBang (_, _, _, m) ->
@@ -7882,7 +7882,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                                     // Rebind using either for ... or let!....
                                     let rebind = 
                                         if maintainsVarSpaceUsingBind then 
-                                            SynExpr.LetOrUseAndBang(NoSequencePointAtLetBinding, false, false, intoPat, dataCompAfterOp, intoPat.Range, [], contExpr) 
+                                            SynExpr.LetOrUseOrAndBang(NoSequencePointAtLetBinding, false, false, intoPat, dataCompAfterOp, intoPat.Range, [], contExpr) 
                                         else 
                                             SynExpr.ForEach (NoSequencePointAtForLoop, SeqExprOnly false, false, intoPat, dataCompAfterOp, contExpr, intoPat.Range)
 
@@ -7904,7 +7904,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                     // Rebind using either for ... or let!....
                     let rebind = 
                         if lastUsesBind then 
-                            SynExpr.LetOrUseAndBang(NoSequencePointAtLetBinding, false, false, varSpacePat, dataCompPrior, compClausesExpr.Range, [], compClausesExpr) 
+                            SynExpr.LetOrUseOrAndBang(NoSequencePointAtLetBinding, false, false, varSpacePat, dataCompPrior, compClausesExpr.Range, [], compClausesExpr) 
                         else 
                             SynExpr.ForEach (NoSequencePointAtForLoop, SeqExprOnly false, false, varSpacePat, dataCompPrior, compClausesExpr, compClausesExpr.Range)
                     
@@ -7953,7 +7953,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                         | SuppressSequencePointOnStmtOfSequential -> SequencePointAtBinding m
                         | SuppressSequencePointOnExprOfSequential -> NoSequencePointAtDoBinding 
                         | SequencePointsAtSeq -> SequencePointAtBinding m
-                    Some(trans true q varSpace (SynExpr.LetOrUseAndBang(sp, false, true, SynPat.Const(SynConst.Unit, rhsExpr.Range), rhsExpr, m, [], innerComp2)) translatedCtxt)
+                    Some(trans true q varSpace (SynExpr.LetOrUseOrAndBang(sp, false, true, SynPat.Const(SynConst.Unit, rhsExpr.Range), rhsExpr, m, [], innerComp2)) translatedCtxt)
                 // "expr; cexpr" is treated as sequential execution
                 | _ -> 
                     Some (trans true q varSpace innerComp2 (fun holeFill -> translatedCtxt (SynExpr.Sequential(sp, true, innerComp1, holeFill, m))))
@@ -8009,7 +8009,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             Some (translatedCtxt (mkSynCall "Using" bindRange [rhsExpr; consumeExpr ]))
 
         // 'let! pat = expr in expr' --> build.Bind(e1, (function  _argN -> match _argN with pat -> expr))
-        | SynExpr.LetOrUseAndBang(spBind, false, isFromSource, pat, rhsExpr, _, [], innerComp) -> 
+        | SynExpr.LetOrUseOrAndBang(spBind, false, isFromSource, pat, rhsExpr, _, [], innerComp) -> 
 
             let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhsExpr.Range
             if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), bindRange))
@@ -8029,8 +8029,8 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                         translatedCtxt (mkSynCall "Bind"  bindRange [rhsExpr; consumeExpr])))
 
         // 'use! pat = e1 in e2' --> build.Bind(e1, (function  _argN -> match _argN with pat -> build.Using(x, (fun _argN -> match _argN with pat -> e2))))
-        | SynExpr.LetOrUseAndBang(spBind, true, isFromSource, (SynPat.Named (SynPat.Wild _, id, false, _, _) as pat) , rhsExpr, _, [], innerComp)
-        | SynExpr.LetOrUseAndBang(spBind, true, isFromSource, (SynPat.LongIdent (LongIdentWithDots([id], _), _, _, _, _, _) as pat), rhsExpr, _, [], innerComp) ->
+        | SynExpr.LetOrUseOrAndBang(spBind, true, isFromSource, (SynPat.Named (SynPat.Wild _, id, false, _, _) as pat) , rhsExpr, _, [], innerComp)
+        | SynExpr.LetOrUseOrAndBang(spBind, true, isFromSource, (SynPat.LongIdent (LongIdentWithDots([id], _), _, _, _, _, _) as pat), rhsExpr, _, [], innerComp) ->
 
             let bindRange = match spBind with SequencePointAtBinding(m) -> m | _ -> rhsExpr.Range
             if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), bindRange))
@@ -8043,15 +8043,15 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             Some(translatedCtxt (mkSynCall "Bind" bindRange [rhsExpr; consumeExpr]))
 
         // 'use! pat = e1 ... in e2' where 'pat' is not a simple name --> error
-        | SynExpr.LetOrUseAndBang(_spBind, true, _isFromSource, pat, _rhsExpr, _, [], _innerComp) ->
+        | SynExpr.LetOrUseOrAndBang(_spBind, true, _isFromSource, pat, _rhsExpr, _, [], _innerComp) ->
             error(Error(FSComp.SR.tcInvalidUseBangBinding(), pat.Range))
 
         // 'let! pat1 = expr1 and! pat2 = expr2 ... and! patN = exprN in yield expr3' --> error
-        | SynExpr.LetOrUseAndBang(_, _, _, _, _, _, _::_, SynExpr.YieldOrReturn((isYield, _), _, yieldRange)) when isYield = true ->
+        | SynExpr.LetOrUseOrAndBang(_, _, _, _, _, _, _::_, SynExpr.YieldOrReturn((isYield, _), _, yieldRange)) when isYield = true ->
             error(Error(FSComp.SR.tcYieldInsteadOfReturnInApplicativeComputationExpression(), yieldRange))
 
         // 'let! pat1 = expr1 and! pat2 = expr2 in return expr3 ; moreBody' --> error
-        | SynExpr.LetOrUseAndBang(_, _, _, _, _, _, _::_, SynExpr.Sequential(_, _, SynExpr.YieldOrReturn((isYield, _), _, _), moreBodyExpr, _)) when isYield = false ->
+        | SynExpr.LetOrUseOrAndBang(_, _, _, _, _, _, _::_, SynExpr.Sequential(_, _, SynExpr.YieldOrReturn((isYield, _), _, _), moreBodyExpr, _)) when isYield = false ->
             error(Error(FSComp.SR.tcMoreAfterReturnInApplicativeComputationExpression(), moreBodyExpr.Range))
 
         // 'let! pat1 = expr1 and! pat2 = expr2 in return expr3' -->
@@ -8068,7 +8068,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         // 'use! pat = e1 and! pat = e2 in e3' --> TODO
         // 'let! pat = e1 anduse! pat = e2 in e3' --> TODO
         // 'use! pat = e1 anduse! pat = e2 in e3' --> TODO
-        | SynExpr.LetOrUseAndBang(letSpBind, letIsUse, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, SynExpr.YieldOrReturn((isYield, _), returnExpr, returnRange)) when isYield = false ->  // TODO Handle use! / anduse!
+        | SynExpr.LetOrUseOrAndBang(letSpBind, letIsUse, letIsFromSource, letPat, letRhsExpr, letm, andBangBindings, SynExpr.YieldOrReturn((isYield, _), returnExpr, returnRange)) when isYield = false ->  // TODO Handle use! / anduse!
 
             let bindingsBottomToTop = 
                 let letBinding =
@@ -8141,7 +8141,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
             Some (translatedCtxt desugared)
 
-        | SynExpr.LetOrUseAndBang (_, _, _, _, _, _, _, innerComp) ->
+        | SynExpr.LetOrUseOrAndBang (_, _, _, _, _, _, _, innerComp) ->
             error(Error(FSComp.SR.tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn(), innerComp.Range))
 
         | SynExpr.Match (spMatch, expr, clauses, m) ->
@@ -8209,7 +8209,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                         SynExpr.ImplicitZero m
                     else
                         SynExpr.YieldOrReturn((false, true), SynExpr.Const(SynConst.Unit, m), m)
-                trans true q varSpace (SynExpr.LetOrUseAndBang(NoSequencePointAtDoBinding, false, false, SynPat.Const(SynConst.Unit, mUnit), rhsExpr, m, [], bodyExpr)) translatedCtxt
+                trans true q varSpace (SynExpr.LetOrUseOrAndBang(NoSequencePointAtDoBinding, false, false, SynPat.Const(SynConst.Unit, mUnit), rhsExpr, m, [], bodyExpr)) translatedCtxt
             // "expr;" in final position is treated as { expr; zero }
             // Suppress the sequence point on the "zero"
             | _ -> 
@@ -8388,7 +8388,7 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
             //SEQPOINT NEEDED - we must consume spBind on this path
             Some(mkSeqUsing cenv env wholeExprMark bindPatTy genOuterTy inputExpr consumeExpr, tpenv)
 
-        | SynExpr.LetOrUseAndBang(_, _, _, _, _, m, _, _) -> 
+        | SynExpr.LetOrUseOrAndBang(_, _, _, _, _, m, _, _) -> 
             error(Error(FSComp.SR.tcUseForInSequenceExpression(), m))
 
         | SynExpr.Match (spMatch, expr, clauses, _) ->
@@ -9004,7 +9004,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             | SynExpr.YieldOrReturn _
             | SynExpr.YieldOrReturnFrom _
             | SynExpr.MatchBang _
-            | SynExpr.LetOrUseAndBang _
+            | SynExpr.LetOrUseOrAndBang _
             | SynExpr.DoBang _ 
             | SynExpr.TraitCall _ 
                 -> false

@@ -312,7 +312,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                       yield! walkExpr false e2 
                       yield! walkExpr false e3 
 
-                  | SynExpr.LetOrUseAndBang  (spBind,_,_,_,e1,_,es,e2) -> 
+                  | SynExpr.LetOrUseOrAndBang  (spBind,_,_,_,e1,_,es,e2) -> 
                       yield! walkBindSeqPt spBind
                       yield! walkExpr true e1
                       for (andBangSpBind,_,_,_,eAndBang,_) in es do
@@ -875,7 +875,7 @@ module UntypedParseImpl =
             | SynExpr.Match(_, e, synMatchClauseList, _)
             | SynExpr.MatchBang(_, e, synMatchClauseList, _) -> 
                 walkExprWithKind parentKind e |> Option.orElse (List.tryPick walkClause synMatchClauseList)
-            | SynExpr.LetOrUseAndBang(_, _, _, _, e1, _, es, e2) ->
+            | SynExpr.LetOrUseOrAndBang(_, _, _, _, e1, _, es, e2) ->
                 [
                     yield e1
                     for (_,_,_,_,eAndBang,_) in es do

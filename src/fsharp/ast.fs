@@ -697,7 +697,7 @@ and
     /// F# syntax: let! pat = expr anduse! ... and! ... and! pat = expr in expr
     /// F# syntax: use! pat = expr and! ... anduse! ... and! pat = expr in expr
     /// Computation expressions only
-    | LetOrUseAndBang of bindSeqPoint:SequencePointInfoForBinding * bool * bool * SynPat * rhs:SynExpr * range:range * andBangs:(SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list * body:SynExpr // TODO Why is the range not the last arg anymore? Consider swapping that back?
+    | LetOrUseOrAndBang of bindSeqPoint:SequencePointInfoForBinding * bool * bool * SynPat * rhs:SynExpr * range:range * andBangs:(SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list * body:SynExpr // TODO Why is the range not the last arg anymore? Consider swapping that back?
 
     /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
     | MatchBang of  matchSeqPoint:SequencePointInfoForBinding * expr:SynExpr * clauses:SynMatchClause list * range:range (* bool indicates if this is an exception match in a computation expression which throws unmatched exceptions *)
@@ -789,7 +789,7 @@ and
         | SynExpr.ImplicitZero (range=m)
         | SynExpr.YieldOrReturn (range=m)
         | SynExpr.YieldOrReturnFrom (range=m)
-        | SynExpr.LetOrUseAndBang (range=m)
+        | SynExpr.LetOrUseOrAndBang (range=m)
         | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m)
         | SynExpr.Fixed (range=m) -> m
@@ -851,7 +851,7 @@ and
         | SynExpr.ImplicitZero (range=m)
         | SynExpr.YieldOrReturn (range=m)
         | SynExpr.YieldOrReturnFrom (range=m)
-        | SynExpr.LetOrUseAndBang (range=m)
+        | SynExpr.LetOrUseOrAndBang (range=m)
         | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m) -> m
         | SynExpr.DotGet (expr,_,lidwd,m) -> if lidwd.ThereIsAnExtraDotAtTheEnd then unionRanges expr.Range lidwd.RangeSansAnyExtraDot else m
@@ -915,7 +915,7 @@ and
         | SynExpr.ImplicitZero (range=m)
         | SynExpr.YieldOrReturn (range=m)
         | SynExpr.YieldOrReturnFrom (range=m)
-        | SynExpr.LetOrUseAndBang (range=m)
+        | SynExpr.LetOrUseOrAndBang (range=m)
         | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m)  -> m
         // these are better than just .Range, and also commonly applicable inside queries
@@ -1622,7 +1622,7 @@ let rec IsControlFlowExpression e =
     // Treat "ident { ... }" as a control flow expression
     | SynExpr.App (_, _, SynExpr.Ident _, SynExpr.CompExpr _,_)
     | SynExpr.IfThenElse _
-    | SynExpr.LetOrUseAndBang _
+    | SynExpr.LetOrUseOrAndBang _
     | SynExpr.Match _
     | SynExpr.TryWith _
     | SynExpr.TryFinally _
@@ -2429,6 +2429,6 @@ let rec synExprContainsError inpExpr =
 
           | SynExpr.MatchBang (_,e,cl,_) ->
               walkExpr e || walkMatchClauses cl
-          | SynExpr.LetOrUseAndBang  (rhs=e1;body=e2;andBangs=es) ->
+          | SynExpr.LetOrUseOrAndBang  (rhs=e1;body=e2;andBangs=es) ->
               walkExpr e1 || walkExprs [ for (_,_,_,_,e,_) in es do yield e ] || walkExpr e2
     walkExpr inpExpr

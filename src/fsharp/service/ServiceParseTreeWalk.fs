@@ -436,7 +436,7 @@ module public AstTraversal =
                 | SynExpr.ImplicitZero(_range) -> None
                 | SynExpr.YieldOrReturn(_, synExpr, _range) -> traverseSynExpr synExpr
                 | SynExpr.YieldOrReturnFrom(_, synExpr, _range) -> traverseSynExpr synExpr
-                | SynExpr.LetOrUseAndBang(_sequencePointInfoForBinding, _, _, synPat, synExpr, _range, andBangSynExprs, synExpr2) -> 
+                | SynExpr.LetOrUseOrAndBang(_sequencePointInfoForBinding, _, _, synPat, synExpr, _range, andBangSynExprs, synExpr2) -> 
                     [
                         yield dive synPat synPat.Range traversePat
                         yield dive synExpr synExpr.Range traverseSynExpr

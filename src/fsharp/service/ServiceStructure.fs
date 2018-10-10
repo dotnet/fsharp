@@ -115,7 +115,7 @@ module Structure =
         | Attribute
         | Interface
         | HashDirective
-        | LetOrUseOrAndOrAndUseBang
+        | LetOrUseOrAndBang
         | TypeExtension
         | YieldOrReturn
         | YieldOrReturnBang
@@ -164,7 +164,7 @@ module Structure =
             | Attribute           -> "Attribute"
             | Interface           -> "Interface"
             | HashDirective       -> "HashDirective"
-            | LetOrUseOrAndOrAndUseBang -> "LetOrUseOrAndOrAndUseBang"
+            | LetOrUseOrAndBang   -> "LetOrUseOrAndBang"
             | TypeExtension       -> "TypeExtension"
             | YieldOrReturn       -> "YieldOrReturn"
             | YieldOrReturnBang   -> "YieldOrReturnBang"
@@ -245,7 +245,7 @@ module Structure =
             | SynExpr.DoBang (e,r) ->
                 rcheck Scope.Do Collapse.Below r <| Range.modStart 3 r
                 parseExpr e
-            | SynExpr.LetOrUseAndBang (_,_,_,pat,eLet,_,es,eBody) ->
+            | SynExpr.LetOrUseOrAndBang (_,_,_,pat,eLet,_,es,eBody) ->
                 [
                     yield eLet
                     yield! [ for (_,_,_,_,eAndBang,_) in es do yield eAndBang ]
