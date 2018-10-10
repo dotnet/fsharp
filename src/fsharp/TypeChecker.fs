@@ -8245,26 +8245,24 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
     let delayedExpr = 
         match TryFindIntrinsicOrExtensionMethInfo cenv env mBuilderVal ad "Delay" builderTy with 
         | [] -> basicSynExpr
-        | _ -> mkSynCall "Delay" mBuilderVal [(mkSynDelay2 basicSynExpr)] // TODO If Delay is defined, it is called. Does this work?
+        | _ -> mkSynCall "Delay" mBuilderVal [(mkSynDelay2 basicSynExpr)]
 
-            
     let quotedSynExpr = 
         if isAutoQuote then 
             SynExpr.Quote(mkSynIdGet (mBuilderVal.MakeSynthetic()) (CompileOpName "<@ @>"), (*isRaw=*)false, delayedExpr, (*isFromQueryExpression=*)true, mWhole) 
         else delayedExpr
 
-            
     let runExpr = 
         match TryFindIntrinsicOrExtensionMethInfo cenv env mBuilderVal ad "Run" builderTy with 
         | [] -> quotedSynExpr
-        | _ -> mkSynCall "Run" mBuilderVal [quotedSynExpr] // TODO If Run is defined, it is called. Does this work?call 
+        | _ -> mkSynCall "Run" mBuilderVal [quotedSynExpr]
 
     let lambdaExpr = 
         let mBuilderVal = mBuilderVal.MakeSynthetic()
         SynExpr.Lambda (false, false, SynSimplePats.SimplePats ([mkSynSimplePatVar false (mkSynId mBuilderVal builderValName)], mBuilderVal), runExpr, mBuilderVal)
 
     let env =
-        match comp with     
+        match comp with
         | SynExpr.YieldOrReturn ((true, _), _, _) -> { env with eContextInfo = ContextInfo.YieldInComputationExpression }
         | SynExpr.YieldOrReturn ((_, true), _, _) -> { env with eContextInfo = ContextInfo.ReturnInComputationExpression }
         | _  -> env

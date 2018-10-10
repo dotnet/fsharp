@@ -8,6 +8,8 @@ type TraceOp =
     | StartUsingBody of resource : obj
     | EndUsingBody of resource : obj
     | ExitUsing of resource : obj
+    | Run
+    | Delay
 
 /// A pseudo identity functor
 type 'a Trace =
@@ -17,18 +19,19 @@ type 'a Trace =
         sprintf "%+A" this
 
 /// A builder which records what operations it is asked to perform
-type TraceBuilder() =
+type TraceBuilder =
 
-    let mutable trace : TraceOp list = []
+    val mutable trace : TraceOp list
+    new () = { trace = [] }
 
-    member __.GetTrace () = List.rev trace
+    member __.GetTrace () = List.rev __.trace
 
-    member __.Apply((Trace f) as fTrace, (Trace x) as xTrace) =
-        trace <- Apply :: trace
+    member __.Apply(Trace f, Trace x) =
+        __.trace <- Apply :: __.trace
         Trace (f x)
 
     member __.Return(x) =
-        trace <- Return :: trace
+        __.trace <- Return :: __.trace
         Trace x
 
     member __.MapTryFinally(body, compensation) =
@@ -40,13 +43,26 @@ type TraceBuilder() =
     /// Doesn't actually do any disposing here, since we are just interesting
     /// in checking the order of events in this test
     member __.ApplyUsing(resource(*:#System.IDisposable*), body) =
-        trace <- EnterUsing resource :: trace
+        __.trace <- EnterUsing resource :: __.trace
         let body' = fun () ->
-            trace <- StartUsingBody resource :: trace
+            __.trace <- StartUsingBody resource :: __.trace
             let res = body resource
-            trace <- EndUsingBody resource :: trace
+            __.trace <- EndUsingBody resource :: __.trace
             res
         __.MapTryFinally(body', fun () ->
-            trace <- ExitUsing resource :: trace
+            __.trace <- ExitUsing resource :: __.trace
             (*resource.Dispose()*)
             ())
+
+/// A builder which records what operations it is asked to perform
+/// and records automatically inserted Run and Delay calls
+type TraceWithDelayAndRunBuilder() =
+    inherit TraceBuilder()
+
+    member __.Run(x) =
+        __.trace <- Run :: __.trace
+        x
+
+    member __.Delay(thunk) =
+        __.trace <- Delay :: __.trace
+        thunk ()
