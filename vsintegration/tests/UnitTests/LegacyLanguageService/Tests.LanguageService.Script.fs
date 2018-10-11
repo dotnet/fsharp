@@ -1337,7 +1337,7 @@ type UsingMSBuild() as this =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
-        let fsVersion = "10.2.3.0"
+        let fsVersion = "10.3.0.0"
         let binariesFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
         PlaceIntoProjectFileBeforeImport
             (project, sprintf @"
