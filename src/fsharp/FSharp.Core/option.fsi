@@ -6,6 +6,8 @@ open System
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 /// <summary>Basic operations on options.</summary>
 module Option =
     /// <summary>Returns true if the option is not None.</summary>
