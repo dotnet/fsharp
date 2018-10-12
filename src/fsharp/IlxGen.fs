@@ -106,7 +106,7 @@ let mainMethName = CompilerGeneratedName "main"
 type AttributeDecoder(namedArgs) = 
     let nameMap = namedArgs |> List.map (fun (AttribNamedArg(s,_,_,c)) -> s,c) |> NameMap.ofList
     let findConst x = match NameMap.tryFind x nameMap with | Some(AttribExpr(_,Expr.Const(c,_,_))) -> Some c | _ -> None
-    let findAppTr x = match NameMap.tryFind x nameMap with | Some(AttribExpr(_,Expr.App(_,_,[TType_app(tr,_)],_,_))) -> Some tr | _ -> None
+    let findAppTr x = match NameMap.tryFind x nameMap with | Some(AttribExpr(_,Expr.App(_,_,[TType_app(tr,_,_)],_,_))) -> Some tr | _ -> None
 
     member self.FindInt16  x dflt = match findConst x with | Some(Const.Int16 x) -> x | _ -> dflt
     member self.FindInt32  x dflt = match findConst x with | Some(Const.Int32 x) -> x | _ -> dflt
@@ -433,8 +433,7 @@ and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
     ignore voidOK    
 #endif
     match stripTyEqnsAndMeasureEqns g ty with 
-    | TType_app (tcref, tinst) -> GenNamedTyAppAux amap m tyenv ptrsOK tcref tinst
-        
+    | TType_app (tcref, tinst, _nullness) -> GenNamedTyAppAux amap m tyenv ptrsOK tcref tinst
 
     | TType_tuple (tupInfo, args) -> GenTypeAux amap m tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
 
@@ -5472,7 +5471,7 @@ and GenBindingRhs cenv cgbuf eenv sp (vspec:Val) e =
                 (match StorageForVal vspec.Range vspec eenv with Local _ -> true | _ -> false) && 
                 (isLocalTypeFunc || 
                     (match ttype with 
-                     TType_var(typar) -> match typar.Solution with Some(TType_app(t,_))-> t.IsStructOrEnumTycon | _ -> false
+                     TType_var(typar) -> match typar.Solution with Some(TType_app(t,_,_))-> t.IsStructOrEnumTycon | _ -> false
                      | _ -> false))
             ) ->
             // type lambda with erased type arguments that is stored as local variable (not method or property)- inline body

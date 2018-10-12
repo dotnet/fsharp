@@ -116,7 +116,7 @@ let ActivePatternElemsOfModuleOrNamespace (modref:ModuleOrNamespaceRef) : NameMa
 /// When reporting symbols, we care about abbreviations, e.g. 'int' and 'int32' count as two separate symbols
 let (|AbbrevOrAppTy|_|) (ty: TType) = 
     match stripTyparEqns ty with 
-    | TType_app (tcref,_) -> Some tcref
+    | TType_app (tcref, _, _) -> Some tcref
     | _ -> None
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]

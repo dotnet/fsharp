@@ -474,6 +474,7 @@ val destTyparTy       : TcGlobals -> TType -> Typar
 val destAnyParTy      : TcGlobals -> TType -> Typar
 val destMeasureTy     : TcGlobals -> TType -> Measure
 val tryDestForallTy   : TcGlobals -> TType -> Typars * TType
+val nullnessOfTy      : TcGlobals -> TType -> Nullness
 
 val isFunTy            : TcGlobals -> TType -> bool
 val isForallTy         : TcGlobals -> TType -> bool

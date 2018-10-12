@@ -665,7 +665,7 @@ and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
             let (TILObjectReprData(_scoref, _enc, tdef)) = entity.ILTyconInfo
             let formalTypars = entity.Typars(range.Zero)
             let formalTypeInst = generalizeTypars formalTypars
-            let ty = TType_app(entity, formalTypeInst)
+            let ty = TType_app(entity, formalTypeInst, KnownNonNull)
             let formalTypeInfo = ILTypeInfo.FromType cenv.g ty
             tdef.Fields.AsList
             |> List.map (fun tdef -> let ilFieldInfo = ILFieldInfo(formalTypeInfo, tdef)
@@ -1982,7 +1982,7 @@ and FSharpType(cenv, ty:TType) =
     let isUnresolved() = 
        ErrorLogger.protectAssemblyExploration true <| fun () -> 
         match stripTyparEqns ty with 
-        | TType_app (tcref, _) -> FSharpEntity(cenv, tcref).IsUnresolved
+        | TType_app (tcref, _, _) -> FSharpEntity(cenv, tcref).IsUnresolved
         | TType_measure (Measure.Con tcref) ->  FSharpEntity(cenv, tcref).IsUnresolved
         | TType_measure (Measure.Prod _) ->  FSharpEntity(cenv, cenv.g.measureproduct_tcr).IsUnresolved 
         | TType_measure Measure.One ->  FSharpEntity(cenv, cenv.g.measureone_tcr).IsUnresolved 
@@ -2022,7 +2022,7 @@ and FSharpType(cenv, ty:TType) =
     member __.TypeDefinition = 
        protect <| fun () -> 
         match stripTyparEqns ty with 
-        | TType_app (tcref, _) -> FSharpEntity(cenv, tcref) 
+        | TType_app (tcref, _, _) -> FSharpEntity(cenv, tcref) 
         | TType_measure (Measure.Con tcref) ->  FSharpEntity(cenv, tcref) 
         | TType_measure (Measure.Prod _) ->  FSharpEntity(cenv, cenv.g.measureproduct_tcr) 
         | TType_measure Measure.One ->  FSharpEntity(cenv, cenv.g.measureone_tcr) 
@@ -2032,23 +2032,23 @@ and FSharpType(cenv, ty:TType) =
     member __.HasNullAnnotation = 
        protect <| fun () -> 
         match stripTyparEqns ty with 
-        | TType_fun(_, _, nullness) -> match nullness.Evaluate() with WithNull -> true | _ -> false
-        | TType_app (_, _) -> false
+        | TType_app (_, _, nullness) 
+        | TType_fun(_, _, nullness) -> match nullness.Evaluate() with NullnessInfo.WithNull -> true | _ -> false
         | TType_tuple (_, _) -> false
         | _ -> false
 
     member __.IsNullOblivious = 
        protect <| fun () -> 
         match stripTyparEqns ty with 
-        | TType_fun(_, _, nullness) -> match nullness.Evaluate() with Oblivious -> true | _ -> false
-        | TType_app (_, _) -> false
+        | TType_app (_, _, nullness)
+        | TType_fun(_, _, nullness) -> match nullness.Evaluate() with NullnessInfo.Oblivious -> true | _ -> false
         | TType_tuple (_, _) -> false
         | _ -> false
 
     member __.GenericArguments = 
        protect <| fun () -> 
         match stripTyparEqns ty with 
-        | TType_app (_, tyargs) 
+        | TType_app (_, tyargs, _) 
         | TType_tuple (_, tyargs) -> (tyargs |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection) 
         | TType_fun(d, r, _nullness) -> [| FSharpType(cenv, d); FSharpType(cenv, r) |] |> makeReadOnlyCollection
         | TType_measure (Measure.Con _) ->  [| |] |> makeReadOnlyCollection
@@ -2128,7 +2128,7 @@ and FSharpType(cenv, ty:TType) =
             match ty with
             | TType_forall _ ->  10000
             | TType_var tp  -> 10100 + int32 tp.Stamp
-            | TType_app (tc1, b1)  -> 10200 + int32 tc1.Stamp + List.sumBy hashType b1
+            | TType_app (tc1, b1, _)  -> 10200 + int32 tc1.Stamp + List.sumBy hashType b1
             | TType_ucase _   -> 10300  // shouldn't occur in symbols
             | TType_tuple (_, l1) -> 10400 + List.sumBy hashType l1
             | TType_fun (dty, rty, _nullness) -> 10500 + hashType dty + hashType rty

@@ -3900,18 +3900,20 @@ and
 and Nullness = 
    | Known of NullnessInfo
    | Variable of NullnessVar
+
    member n.Evaluate() = 
        match n with 
        | Known info -> info
        | Variable v -> v.Evaluate()
-   override n.ToString() = match n.Evaluate() with WithNull -> " | null"  | WithoutNull -> "" | Oblivious -> " lol"
+
+   override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> " | null"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.Oblivious -> " lol"
 
 and NullnessVar = 
     { mutable solution: Nullness option }
 
     member nv.Evaluate() = 
        match nv.solution with 
-       | None -> WithoutNull 
+       | None -> NullnessInfo.WithoutNull
        | Some soln -> soln.Evaluate()
 
     member nv.IsSolved = nv.solution.IsSome
@@ -3928,12 +3930,14 @@ and NullnessVar =
        assert nv.IsSolved
        nv.solution.Value
 
-and NullnessInfo = 
-    // we know that there is an extra null value in the type
+and 
+    [<RequireQualifiedAccess>]
+    NullnessInfo = 
+    /// we know that there is an extra null value in the type
     | WithNull
-    // we know that there is no extra null value in the type
+    /// we know that there is no extra null value in the type
     | WithoutNull
-    // we know we don't care
+    /// we know we don't care
     | Oblivious
 
 and 
@@ -3946,17 +3950,17 @@ and
     /// Indicates the type is a universal type, only used for types of values and members 
     | TType_forall of Typars * TType
 
-    /// TType_app(tyconRef, typeInstantiation).
+    /// TType_app(tyconRef, typeInstantiation, nullness).
     ///
     /// Indicates the type is built from a named type and a number of type arguments
-    | TType_app of TyconRef * TypeInst
+    | TType_app of TyconRef * TypeInst * Nullness
 
     /// TType_tuple(elementTypes).
     ///
     /// Indicates the type is a tuple type. elementTypes must be of length 2 or greater.
     | TType_tuple of TupInfo * TTypes
 
-    /// TType_fun(domainType,rangeType).
+    /// TType_fun(domainType, rangeType, nullness).
     ///
     /// Indicates the type is a function type 
     | TType_fun of  TType * TType * Nullness
@@ -3974,12 +3978,13 @@ and
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of Measure
 
+
     /// For now, used only as a discriminant in error message.
     /// See https://github.com/Microsoft/visualfsharp/issues/2561
     member x.GetAssemblyName() =
         match x with
         | TType_forall (_tps, ty)        -> ty.GetAssemblyName()
-        | TType_app (tcref, _tinst)      -> tcref.CompilationPath.ILScopeRef.QualifiedName
+        | TType_app (tcref, _tinst, _)   -> tcref.CompilationPath.ILScopeRef.QualifiedName
         | TType_tuple (_tupInfo, _tinst) -> ""
         | TType_fun _                    -> ""
         | TType_measure _ms              -> ""
@@ -3994,7 +3999,7 @@ and
     override x.ToString() =  
         match x with 
         | TType_forall (_tps,ty) -> "forall ...  " + ty.ToString()
-        | TType_app (tcref, tinst) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
+        | TType_app (tcref, tinst, nullness) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">") + nullness.ToString() 
         | TType_tuple (tupInfo, tinst) -> 
             (match tupInfo with 
              | TupInfo.Const false -> ""
