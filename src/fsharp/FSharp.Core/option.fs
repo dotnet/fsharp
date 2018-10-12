@@ -4,6 +4,7 @@ namespace Microsoft.FSharp.Core
 
 open Microsoft.FSharp.Core.Operators
 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Option = 
 
     [<CompiledName("GetValue")>]
