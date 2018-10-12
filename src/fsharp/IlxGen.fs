@@ -471,8 +471,8 @@ and GenUnionRef (amap: ImportMap) m (tcref: TyconRef) =
     let tycon = tcref.Deref
     assert(not tycon.IsTypeAbbrev)
     match tycon.UnionTypeInfo with 
-    | None -> failwith "GenUnionRef m"
-    | Some funion -> 
+    | ValueNone -> failwith "GenUnionRef m"
+    | ValueSome funion -> 
       cached funion.CompiledRepresentation (fun () -> 
           let tyenvinner = TypeReprEnv.ForTycon tycon
           match tcref.CompiledRepresentation with
@@ -739,8 +739,8 @@ let AddStorageForVal (g: TcGlobals) (v,s) eenv =
         // Passing an empty remap is sufficient for FSharp.Core.dll because it turns out the remapped type signature can
         // still be resolved.
         match tryRescopeVal g.fslibCcu Remap.Empty  v with 
-        | None -> eenv
-        | Some vref -> 
+        | ValueNone -> eenv
+        | ValueSome vref -> 
             match vref.TryDeref with
             | ValueNone -> 
                 //let msg = sprintf "could not dereference external value reference to something in FSharp.Core.dll during code generation, v.MangledName = '%s', v.Range = %s" v.MangledName (stringOfRange v.Range)
@@ -3425,21 +3425,21 @@ and GenDefaultValue cenv cgbuf eenv (ty,m) =
         CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) AI_ldnull
     else
         match tryDestAppTy cenv.g ty with 
-        | Some tcref when (tyconRefEq cenv.g cenv.g.system_SByte_tcref tcref || 
-                           tyconRefEq cenv.g cenv.g.system_Int16_tcref tcref || 
-                           tyconRefEq cenv.g cenv.g.system_Int32_tcref tcref || 
-                           tyconRefEq cenv.g cenv.g.system_Bool_tcref tcref || 
-                           tyconRefEq cenv.g cenv.g.system_Byte_tcref tcref || 
-                           tyconRefEq cenv.g cenv.g.system_Char_tcref tcref || 
-                           tyconRefEq cenv.g cenv.g.system_UInt16_tcref tcref || 
-                           tyconRefEq cenv.g cenv.g.system_UInt32_tcref tcref) ->
+        | ValueSome tcref when (tyconRefEq cenv.g cenv.g.system_SByte_tcref tcref || 
+                                   tyconRefEq cenv.g cenv.g.system_Int16_tcref tcref || 
+                                   tyconRefEq cenv.g cenv.g.system_Int32_tcref tcref || 
+                                   tyconRefEq cenv.g cenv.g.system_Bool_tcref tcref || 
+                                   tyconRefEq cenv.g cenv.g.system_Byte_tcref tcref || 
+                                   tyconRefEq cenv.g cenv.g.system_Char_tcref tcref || 
+                                   tyconRefEq cenv.g cenv.g.system_UInt16_tcref tcref || 
+                                   tyconRefEq cenv.g cenv.g.system_UInt32_tcref tcref) ->
             CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) iLdcZero
-        | Some tcref when (tyconRefEq cenv.g cenv.g.system_Int64_tcref tcref || 
-                           tyconRefEq cenv.g cenv.g.system_UInt64_tcref tcref) ->
+        | ValueSome tcref when (tyconRefEq cenv.g cenv.g.system_Int64_tcref tcref || 
+                                 tyconRefEq cenv.g cenv.g.system_UInt64_tcref tcref) ->
             CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (iLdcInt64 0L)
-        | Some tcref when (tyconRefEq cenv.g cenv.g.system_Single_tcref tcref) ->
+        | ValueSome tcref when (tyconRefEq cenv.g cenv.g.system_Single_tcref tcref) ->
             CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (iLdcSingle 0.0f)
-        | Some tcref when (tyconRefEq cenv.g cenv.g.system_Double_tcref tcref) ->
+        | ValueSome tcref when (tyconRefEq cenv.g cenv.g.system_Double_tcref tcref) ->
             CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (iLdcDouble 0.0)
         | _ -> 
             let ilTy = GenType cenv.amap m eenv.tyenv ty
@@ -5118,28 +5118,35 @@ and ComputeFlagFixupsForMemberBinding cenv (v:Val,memberInfo:ValMemberInfo) =
      else 
          memberInfo.ImplementedSlotSigs |> List.map (fun slotsig -> 
              let oty = slotsig.ImplementedType
-             let otcref,_ = destAppTy cenv.g oty
+             let otcref = tcrefOfAppTy cenv.g oty
              let tcref = v.MemberApparentEntity
              
-             let useMethodImpl = 
-                 // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode during code generation
-                 let isCompare = 
-                     (Option.isSome tcref.GeneratedCompareToValues && typeEquiv cenv.g oty cenv.g.mk_IComparable_ty) ||
-                     (Option.isSome tcref.GeneratedCompareToValues && tyconRefEq cenv.g cenv.g.system_GenericIComparable_tcref otcref)
-                     
-                 let isGenericEquals =
-                     (Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues &&  tyconRefEq cenv.g cenv.g.system_GenericIEquatable_tcref otcref)
-                     
-                 let isStructural =
-                     (Option.isSome tcref.GeneratedCompareToWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralComparable_ty) ||
-                     (Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralEquatable_ty)
-                 isInterfaceTy cenv.g oty && not isCompare && not isStructural && not isGenericEquals
+             let useMethodImpl =
+                // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode during code generation
+                isInterfaceTy cenv.g oty &&
+                (let isCompare =
+                    Option.isSome tcref.GeneratedCompareToValues &&
+                     (typeEquiv cenv.g oty cenv.g.mk_IComparable_ty ||
+                      tyconRefEq cenv.g cenv.g.system_GenericIComparable_tcref otcref)
+                 
+                 not isCompare) &&
 
+                (let isGenericEquals =
+                    Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && tyconRefEq cenv.g cenv.g.system_GenericIEquatable_tcref otcref
+                 
+                 not isGenericEquals) &&
+                (let isStructural =
+                    (Option.isSome tcref.GeneratedCompareToWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralComparable_ty) ||
+                    (Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralEquatable_ty)
+
+                 not isStructural)
 
              let nameOfOverridingMethod = GenNameOfOverridingMethod cenv (useMethodImpl,slotsig)
 
-             (if useMethodImpl then fixupMethodImplFlags >> renameMethodDef nameOfOverridingMethod
-              else fixupVirtualSlotFlags >> renameMethodDef nameOfOverridingMethod))
+             if useMethodImpl then 
+                fixupMethodImplFlags >> renameMethodDef nameOfOverridingMethod
+             else 
+                fixupVirtualSlotFlags >> renameMethodDef nameOfOverridingMethod)
               
 and ComputeMethodImplAttribs cenv (_v:Val) attrs =
     let implflags = 

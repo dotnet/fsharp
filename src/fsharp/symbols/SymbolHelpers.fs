@@ -365,7 +365,7 @@ module internal SymbolHelpers =
         | Item.Event einfo             -> rangeOfEventInfo preferFlag einfo
         | Item.ILField _               -> None
         | Item.Property(_, pinfos)      -> rangeOfPropInfo preferFlag pinfos.Head 
-        | Item.Types(_, tys)     -> tys |> List.tryPick (tryNiceEntityRefOfTy >> Option.map (rangeOfEntityRef preferFlag))
+        | Item.Types(_, tys)     -> tys |> List.tryPick (tryNiceEntityRefOfTyOption >> Option.map (rangeOfEntityRef preferFlag))
         | Item.CustomOperation (_, _, Some minfo)  -> rangeOfMethInfo g preferFlag minfo
         | Item.TypeVar (_, tp)  -> Some tp.Range
         | Item.ModuleOrNamespaces(modrefs) -> modrefs |> List.tryPick (rangeOfEntityRef preferFlag >> Some)
@@ -379,7 +379,7 @@ module internal SymbolHelpers =
         | Item.ImplicitOp _ -> None
         | Item.UnqualifiedType tcrefs -> tcrefs |> List.tryPick (rangeOfEntityRef preferFlag >> Some)
         | Item.DelegateCtor ty 
-        | Item.FakeInterfaceCtor ty -> ty |> tryNiceEntityRefOfTy |> Option.map (rangeOfEntityRef preferFlag)
+        | Item.FakeInterfaceCtor ty -> ty |> tryNiceEntityRefOfTyOption |> Option.map (rangeOfEntityRef preferFlag)
         | Item.NewDef _ -> None
 
     // Provided type definitions do not have a useful F# CCU for the purposes of goto-definition.
@@ -419,7 +419,7 @@ module internal SymbolHelpers =
         | Item.CtorGroup(_, minfos) -> minfos |> List.tryPick (ccuOfMethInfo g)
         | Item.CustomOperation (_, _, Some minfo)       -> ccuOfMethInfo g minfo
 
-        | Item.Types(_, tys)             -> tys |> List.tryPick (tryNiceEntityRefOfTy >> Option.bind computeCcuOfTyconRef)
+        | Item.Types(_, tys)             -> tys |> List.tryPick (tryNiceEntityRefOfTyOption >> Option.bind computeCcuOfTyconRef)
 
         | Item.ArgName (_, _, Some (ArgumentContainer.Type eref)) -> computeCcuOfTyconRef eref
 
@@ -713,8 +713,12 @@ module internal SymbolHelpers =
             // In this case just bail out and assume items are not equal
             protectAssemblyExploration false (fun () -> 
               let equalHeadTypes(ty1, ty2) =
-                  if isAppTy g ty1 && isAppTy g ty2 then tyconRefEq g (tcrefOfAppTy g ty1) (tcrefOfAppTy g ty2) 
-                  else typeEquiv g ty1 ty2
+                  match tryDestAppTy g ty1 with
+                  | ValueSome tcref1 ->
+                    match tryDestAppTy g ty2 with
+                    | ValueSome tcref2 -> tyconRefEq g tcref1 tcref2
+                    | _ -> typeEquiv g ty1 ty2
+                  | _ -> typeEquiv g ty1 ty2
 
               ItemsAreEffectivelyEqual g item1 item2 || 
 
@@ -768,8 +772,9 @@ module internal SymbolHelpers =
             protectAssemblyExploration 1027 (fun () -> 
               match item with 
               | ItemWhereTypIsPreferred ty -> 
-                  if isAppTy g ty then hash (tcrefOfAppTy g ty).LogicalName
-                  else 1010
+                  match tryDestAppTy g ty with
+                  | ValueSome tcref -> hash (tcref).LogicalName
+                  | _ -> 1010
               | Item.ILField(ILFieldInfo(_, fld)) -> 
                   System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode fld // hash on the object identity of the AbstractIL metadata blob for the field
               | Item.TypeVar (nm, _tp) -> hash nm
@@ -878,7 +883,7 @@ module internal SymbolHelpers =
         | Item.DelegateCtor ty 
         | Item.Types(_, ty:: _) -> 
             match tryDestAppTy g ty with
-            | Some tcref -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
+            | ValueSome tcref -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
             | _ -> ""
         | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
@@ -1180,7 +1185,7 @@ module internal SymbolHelpers =
                     ([], modrefs) 
                     ||> Seq.fold (fun st modref -> 
                         match fullDisplayTextOfParentOfModRef modref with 
-                        | Some(txt) -> txt::st 
+                        | ValueSome txt -> txt::st 
                         | _ -> st) 
                     |> Seq.mapi (fun i x -> i, x) 
                     |> Seq.toList
