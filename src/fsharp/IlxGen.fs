@@ -5279,25 +5279,32 @@ and ComputeFlagFixupsForMemberBinding cenv (v:Val,memberInfo:ValMemberInfo) =
              let otcref = tcrefOfAppTy cenv.g oty
              let tcref = v.MemberApparentEntity
              
-             let useMethodImpl = 
-                 // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode during code generation
-                 let isCompare = 
-                     (Option.isSome tcref.GeneratedCompareToValues && typeEquiv cenv.g oty cenv.g.mk_IComparable_ty) ||
-                     (Option.isSome tcref.GeneratedCompareToValues && tyconRefEq cenv.g cenv.g.system_GenericIComparable_tcref otcref)
-                     
-                 let isGenericEquals =
-                     (Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues &&  tyconRefEq cenv.g cenv.g.system_GenericIEquatable_tcref otcref)
-                     
-                 let isStructural =
-                     (Option.isSome tcref.GeneratedCompareToWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralComparable_ty) ||
-                     (Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralEquatable_ty)
-                 isInterfaceTy cenv.g oty && not isCompare && not isStructural && not isGenericEquals
+             let useMethodImpl =
+                // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode during code generation
+                isInterfaceTy cenv.g oty &&
+                (let isCompare =
+                    Option.isSome tcref.GeneratedCompareToValues &&
+                     (typeEquiv cenv.g oty cenv.g.mk_IComparable_ty ||
+                      tyconRefEq cenv.g cenv.g.system_GenericIComparable_tcref otcref)
+                 
+                 not isCompare) &&
 
+                (let isGenericEquals =
+                    Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && tyconRefEq cenv.g cenv.g.system_GenericIEquatable_tcref otcref
+                 
+                 not isGenericEquals) &&
+                (let isStructural =
+                    (Option.isSome tcref.GeneratedCompareToWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralComparable_ty) ||
+                    (Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralEquatable_ty)
+
+                 not isStructural)
 
              let nameOfOverridingMethod = GenNameOfOverridingMethod cenv (useMethodImpl,slotsig)
 
-             (if useMethodImpl then fixupMethodImplFlags >> renameMethodDef nameOfOverridingMethod
-              else fixupVirtualSlotFlags >> renameMethodDef nameOfOverridingMethod))
+             if useMethodImpl then 
+                fixupMethodImplFlags >> renameMethodDef nameOfOverridingMethod
+             else 
+                fixupVirtualSlotFlags >> renameMethodDef nameOfOverridingMethod)
               
 and ComputeMethodImplAttribs cenv (_v:Val) attrs =
     let implflags = 
