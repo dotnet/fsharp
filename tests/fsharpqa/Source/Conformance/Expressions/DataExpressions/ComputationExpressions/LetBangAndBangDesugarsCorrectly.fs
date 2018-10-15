@@ -7,7 +7,7 @@
 
 open ApplicativeBuilderLib
 
-module LetBang =
+module LetBangAndBang =
 
     let () =
         let tracer = TraceBuilder()

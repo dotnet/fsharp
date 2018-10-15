@@ -7,21 +7,22 @@
 
 open ApplicativeBuilderLib
 
-module LetBangAndBangAfterLetBang =
+module LetBangAndBangAfterMonadicOperations =
 
     let () =
-        let tracer = TraceBuilder()
+        let tracer = MonadicTraceBuilder()
 
         let ceResult : int Trace =
             tracer {
-                let foo = Trace "foo"
-                match! foo with
+                let fb = Trace "foobar"
+                match! fb with
                 | "bar" ->
-                    return 0
+                    let! bar = fb
+                    return String.length bar
                 | _ ->
                     let! x = Trace 3
-                    and! y = foo
-                    return if y = "foo" then x else -1
+                    and! y = Trace true
+                    return if y then x else -1
             }
 
         printfn "%+A, %+A" ceResult (tracer.GetTrace ())
