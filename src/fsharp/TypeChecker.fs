@@ -5316,12 +5316,14 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                     for (id, pat) in pairs do
                         match argNames |> List.tryFindIndex (fun id2 -> id.idText = id2.idText)  with
                         | None -> 
-                            let caseName = 
-                                match item with
-                                | Item.UnionCase(uci, _) -> uci.Name
-                                | Item.ExnCase tcref -> tcref.DisplayName
-                                | _ -> failwith "impossible"
-                            error(Error(FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName(caseName, id.idText), id.idRange))
+                            match item with
+                            | Item.UnionCase(uci, _) ->
+                                error(Error(FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName(uci.Name, id.idText), id.idRange))
+                            | Item.ExnCase tcref -> 
+                                error(Error(FSComp.SR.tcExceptionConstructorDoesNotHaveFieldWithGivenName(tcref.DisplayName, id.idText), id.idRange))
+                            | _ ->
+                                error(Error(FSComp.SR.tcConstructorDoesNotHaveFieldWithGivenName(id.idText), id.idRange))
+
                         | Some idx ->
                             match box result.[idx] with
                             | null -> 
@@ -8644,13 +8646,16 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
                                 assert (isNull(box fittedArgs.[currentIndex]))
                                 fittedArgs.[currentIndex] <- List.item currentIndex args // grab original argument, not item from the list of named parameters
                                 currentIndex <- currentIndex + 1
-                            else
-                                let caseName = 
-                                    match item with
-                                    | Item.UnionCase(uci, _) -> uci.Name
-                                    | Item.ExnCase tcref -> tcref.DisplayName
-                                    | _ -> failwith "impossible"
-                                error(Error(FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName(caseName, id.idText), id.idRange))
+                            else                                
+                                match item with
+                                | Item.UnionCase(uci, _) ->
+                                    error(Error(FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName(uci.Name, id.idText), id.idRange))
+                                | Item.ExnCase tcref ->
+                                    error(Error(FSComp.SR.tcExceptionConstructorDoesNotHaveFieldWithGivenName(tcref.DisplayName, id.idText), id.idRange))
+                                | Item.ActivePatternResult(_,_,_,_) ->
+                                    error(Error(FSComp.SR.tcActivePatternsDoNotHaveFields(), id.idRange))
+                                | _ -> 
+                                    error(Error(FSComp.SR.tcConstructorDoesNotHaveFieldWithGivenName(id.idText), id.idRange))
 
                     assert (Seq.forall (box >> ((<>) null) ) fittedArgs)
                     List.ofArray fittedArgs
