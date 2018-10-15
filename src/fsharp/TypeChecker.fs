@@ -8048,7 +8048,13 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
         // 'let! pat1 = expr1 and! pat2 = expr2 ... and! patN = exprN in yield expr3' --> error
         | SynExpr.LetOrUseOrAndBang(andBangs=_::_; body=SynExpr.YieldOrReturn((true, _), _, yieldRange)) ->
-            error(Error(FSComp.SR.tcYieldInsteadOfReturnInApplicativeComputationExpression(), yieldRange))
+            error(Error(FSComp.SR.tcInvalidKeywordInsteadOfReturnInApplicativeComputationExpression "yield", yieldRange))
+
+        // 'let! pat1 = expr1 and! pat2 = expr2 ... and! patN = exprN in yield! expr3' --> error
+        // 'let! pat1 = expr1 and! pat2 = expr2 ... and! patN = exprN in return! expr3' --> error
+        | SynExpr.LetOrUseOrAndBang(andBangs=_::_; body=SynExpr.YieldOrReturnFrom((isYieldBang, _), _, range)) ->
+            let keyword = if isYieldBang then "yield!" else "return!"
+            error(Error(FSComp.SR.tcInvalidKeywordInsteadOfReturnInApplicativeComputationExpression keyword, range))
 
         // 'let! pat1 = expr1 and! pat2 = expr2 in return expr3 ; moreBody' --> error
         | SynExpr.LetOrUseOrAndBang(andBangs=_::_; body=SynExpr.Sequential(expr1=SynExpr.YieldOrReturn((_, true), _, _); expr2=moreBodyExpr)) ->

@@ -4366,8 +4366,8 @@
   <data name="tcInvalidAndUseBangBinding" xml:space="preserve">
     <value>Pattern matching is not allowed on the left-hand side of the equals. 'use! ... anduse! ...' bindings must be of the form 'use! &lt;var&gt; = &lt;expr&gt;' or 'anduse! &lt;var&gt; = &lt;expr&gt;'.</value>
   </data>
-  <data name="tcYieldInsteadOfReturnInApplicativeComputationExpression" xml:space="preserve">
-    <value>'yield' is not valid in this position in an applicative computation expression. Did you mean 'return' instead?</value>
+  <data name="tcInvalidKeywordInsteadOfReturnInApplicativeComputationExpression" xml:space="preserve">
+    <value>'{0}' is not valid in this position in an applicative computation expression. Did you mean 'return' instead?</value>
   </data>
   <data name="parsNoBodyInApplicativeComputationExpression" xml:space="preserve">
     <value>No body given after the applicative bindings. Expected a 'return' to terminate this applicative computation expression.</value>

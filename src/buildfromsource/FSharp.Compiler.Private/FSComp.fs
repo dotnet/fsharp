@@ -4363,9 +4363,9 @@ type internal SR private() =
     /// Pattern matching is not allowed on the left-hand side of the equals. 'use! ... anduse! ...' bindings must be of the form 'use! <var> = <expr>' or 'anduse! <var> = <expr>'.
     /// (Originally from ..\FSComp.txt:1445)
     static member tcInvalidAndUseBangBinding() = (3244, GetStringFunc("tcInvalidAndUseBangBinding",",,,") )
-    /// 'yield' is not valid in this position in an applicative computation expression. Did you mean 'return' instead?
+    /// '%s' is not valid in this position in an applicative computation expression. Did you mean 'return' instead?
     /// (Originally from ..\FSComp.txt:1446)
-    static member tcYieldInsteadOfReturnInApplicativeComputationExpression() = (3245, GetStringFunc("tcYieldInsteadOfReturnInApplicativeComputationExpression",",,,") )
+    static member tcInvalidKeywordInsteadOfReturnInApplicativeComputationExpression(a0 : System.String) = (3245, GetStringFunc("tcInvalidKeywordInsteadOfReturnInApplicativeComputationExpression",",,,%s,,,") a0)
     /// No body given after the applicative bindings. Expected a 'return' to terminate this applicative computation expression.
     /// (Originally from ..\FSComp.txt:1447)
     static member parsNoBodyInApplicativeComputationExpression() = (3246, GetStringFunc("parsNoBodyInApplicativeComputationExpression",",,,") )
@@ -5791,7 +5791,7 @@ type internal SR private() =
         ignore(GetString("tcTypeDoesNotInheritAttribute"))
         ignore(GetString("tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn"))
         ignore(GetString("tcInvalidAndUseBangBinding"))
-        ignore(GetString("tcYieldInsteadOfReturnInApplicativeComputationExpression"))
+        ignore(GetString("tcInvalidKeywordInsteadOfReturnInApplicativeComputationExpression"))
         ignore(GetString("parsNoBodyInApplicativeComputationExpression"))
         ignore(GetString("tcMoreAfterReturnInApplicativeComputationExpression"))
         ()
