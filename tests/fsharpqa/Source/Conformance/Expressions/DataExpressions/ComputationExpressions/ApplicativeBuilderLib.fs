@@ -8,6 +8,7 @@ type TraceOp =
     | StartUsingBody of resource : obj
     | EndUsingBody of resource : obj
     | ExitUsing of resource : obj
+    | Bind
     | Run
     | Delay
 
@@ -78,3 +79,11 @@ type TraceWithRunBuilder() =
     member __.Run(x) =
         __.trace <- Run :: __.trace
         x
+
+type MonadicTraceBuilder() =
+    inherit TraceBuilder()
+
+    member __.Bind(x : 'a Trace, f : 'a -> 'b Trace) : 'b Trace =
+        __.trace <- Bind :: __.trace
+        let (Trace x') = x
+        f x'
