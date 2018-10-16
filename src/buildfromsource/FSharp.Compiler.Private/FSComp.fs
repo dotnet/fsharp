@@ -3916,6 +3916,15 @@ type internal SR private() =
     /// Union case/exception '%s' does not have field named '%s'.
     /// (Originally from ..\FSComp.txt:1296)
     static member tcUnionCaseConstructorDoesNotHaveFieldWithGivenName(a0 : System.String, a1 : System.String) = (3174, GetStringFunc("tcUnionCaseConstructorDoesNotHaveFieldWithGivenName",",,,%s,,,%s,,,") a0 a1)
+    /// The exception '%s' does not have a field named '%s'.
+    /// (Originally from ..\FSComp.txt:1297)
+    static member tcExceptionConstructorDoesNotHaveFieldWithGivenName(a0 : System.String, a1 : System.String) = (3174, GetStringFunc("tcExceptionConstructorDoesNotHaveFieldWithGivenName",",,,%s,,,%s,,,") a0 a1)
+    /// Active patterns do not have fields. This syntax is invalid.
+    /// (Originally from ..\FSComp.txt:1298)
+    static member tcActivePatternsDoNotHaveFields() = (3174, GetStringFunc("tcActivePatternsDoNotHaveFields",",,,") )
+    /// The constructor does not have a field named '%s'.
+    /// (Originally from ..\FSComp.txt:1299)
+    static member tcConstructorDoesNotHaveFieldWithGivenName(a0 : System.String) = (3174, GetStringFunc("tcConstructorDoesNotHaveFieldWithGivenName",",,,%s,,,") a0)
     /// Union case/exception field '%s' cannot be used more than once.
     /// (Originally from ..\FSComp.txt:1297)
     static member tcUnionCaseFieldCannotBeUsedMoreThanOnce(a0 : System.String) = (3175, GetStringFunc("tcUnionCaseFieldCannotBeUsedMoreThanOnce",",,,%s,,,") a0)
