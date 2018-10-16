@@ -446,7 +446,7 @@ let ConstraintSolverTupleDiffLengthsE() = DeclareResourceString("ConstraintSolve
 let ConstraintSolverInfiniteTypesE() = DeclareResourceString("ConstraintSolverInfiniteTypes", "%s%s")
 let ConstraintSolverMissingConstraintE() = DeclareResourceString("ConstraintSolverMissingConstraint", "%s")
 let ConstraintSolverTypesNotInEqualityRelation1E() = DeclareResourceString("ConstraintSolverTypesNotInEqualityRelation1", "%s%s")
-let ConstraintSolverNullnessWarningWithTypesE() = DeclareResourceString("ConstraintSolverNullnessWarningWithTypes", "%s%s%s")
+let ConstraintSolverNullnessWarningWithTypesE() = DeclareResourceString("ConstraintSolverNullnessWarningWithTypes", "%s%s")
 let ConstraintSolverNullnessWarningWithTypeE() = DeclareResourceString("ConstraintSolverNullnessWarningWithType", "%s")
 let ConstraintSolverTypesNotInEqualityRelation2E() = DeclareResourceString("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
 let ConstraintSolverTypesNotInSubsumptionRelationE() = DeclareResourceString("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
@@ -637,17 +637,11 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           if m.StartLine <> m2.StartLine then 
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
 
-      | ConstraintSolverNullnessWarningWithTypes(denv, ty1, ty2, nullness, nullness2, m, m2) ->
+      | ConstraintSolverNullnessWarningWithTypes(denv, ty1, ty2, _nullness, _nullness2, m, m2) ->
           
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-          let msg =
-              // TODO: Put this in FSComp.SR.
-              match nullness, nullness2 with
-              | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> "Expected the type to have null."
-              | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> "Expected the type to not have null."
-              | _ -> String.Empty
 
-          os.Append(ConstraintSolverNullnessWarningWithTypesE().Format t1 t2 msg) |> ignore
+          os.Append(ConstraintSolverNullnessWarningWithTypesE().Format t1 t2) |> ignore
 
           if m.StartLine <> m2.StartLine then
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore

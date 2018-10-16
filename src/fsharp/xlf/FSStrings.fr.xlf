@@ -1617,6 +1617,16 @@
         <target state="translated">erreur interne : {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithType">
+        <source>Nullness warning: The type '{0}' does not support nullness.</source>
+        <target state="new">Nullness warning: The type '{0}' does not support nullness.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
