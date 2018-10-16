@@ -190,13 +190,11 @@ module internal Helpers =
             member x.GetDisplayName(pbstrName) =
                 pbstrName <- "Keyword";
                 VSConstants.S_OK }
-          
 
-
-[<Guid("35A5E6B8-4012-41fc-A652-2CDC56D74E9F")>]
+[<Guid(Guids.guidFsiLanguageService)>]
 type internal FsiLanguageService() = 
     inherit LanguageService()
-    do  assert("35A5E6B8-4012-41fc-A652-2CDC56D74E9F" = Guids.guidFsiLanguageService)
+
     let mutable preferences        = null : LanguagePreferences     
     let mutable scanner            = null : IScanner
     let mutable sessions           = None : Session.FsiSessions option
@@ -224,32 +222,12 @@ type internal FsiLanguageService() =
         (new FsiAuthoringScope(sessions,readOnlySpan) :> AuthoringScope)
                 
     override this.Name = "FSharpInteractive" // LINK: see ProvidePackage attribute on the package.
-
     
     override this.GetFormatFilterList() = ""
 
     // Reading MPF sources suggest this is called by codeWinMan.OnNewView(textView) to install a ViewFilter on the TextView.    
     override this.CreateViewFilter(mgr:CodeWindowManager,newView:IVsTextView) = new FsiViewFilter(mgr,newView) :> ViewFilter
 
-    // Editor prefrerences require language service to provide at least one colorable item, otherwise weird failures happen
-    // See env\msenv\textmgr\editpref.cpp, CEditorPreferences::BuildDefaultColorableItemListHelper:
-    // HRESULT CEditorPreferences::BuildDefaultColorableItemListHelper(COLORABLEITEMLIST *pColorableItemList, IVsProvideColorableItems *pColorProv)
-    // {
-    //    HRESULT hr;
-    //
-    //    int cItems;
-    //
-    //    hr = pColorProv->GetItemCount (&cItems);
-    //    if (FAILED(hr))
-    //        return hr;
-    //
-    //    if (!cItems)
-    //    {
-    //        ASSERT(FALSE); // something's way wrong
-    //        return E_FAIL;
-    //    }
-    //    ...
-    // }
     override this.GetItemCount count =
         count <- 1
         VSConstants.S_OK

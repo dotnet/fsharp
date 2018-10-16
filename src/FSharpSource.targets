@@ -3,97 +3,60 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <FSCoreVersion>4.4.1.0</FSCoreVersion>
+    <RepoRoot>$(MSBuildThisFileDirectory)..\</RepoRoot>
   </PropertyGroup>
 
-  <Choose>
-    <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' ">
-      <PropertyGroup>
-        <SkipSigning>false</SkipSigning><!-- Skip using the ,net toolset to generate signing . -->
-        <UseOpenSourceSign>true</UseOpenSourceSign>
-      </PropertyGroup>
-      <Choose>
-        <When Condition="'$(ProjectLanguage)' == 'FSharp'">
-          <Choose>
-            <!-- Some unit test assemblies must not have strong names since they reference other assemblies that don't have strong names -->
-            <!-- These unit test assemblies can't use InternalsVisibleTo into assemblies with strong names. -->
-            <When Condition="'$(StrongNames)' == 'false'" >
-              <PropertyGroup>
-                <SkipSigning>true</SkipSigning>
-                <UseOpenSourceSign>false</UseOpenSourceSign>
-                <MicroBuildAssemblyVersion Condition="'$(MicroBuildAssemblyVersion)' == ''">$(FSCoreVersion)</MicroBuildAssemblyVersion>
-                <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
-              </PropertyGroup>
-            </When>
-            <!-- In the Microsoft build we just delay-sign everything with the MSFT key -->
-            <!-- We have to do unit test DLLs well because they can see the internals of other strong-named DLLs -->
-            <Otherwise>
-              <PropertyGroup>
-                <DelaySign>true</DelaySign>
-                <StrongNames>true</StrongNames>
-                <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
-                <!-- certain delivered F# VS assemblies use a specific MicroBuildAssemblyVersion, otherwise use FSCoreVersion -->
-                <MicroBuildAssemblyVersion Condition="'$(UseVsMicroBuildAssemblyVersion)' == 'true'">15.4.1.0</MicroBuildAssemblyVersion>
-                <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
-              </PropertyGroup>
-            </Otherwise>
-          </Choose>
-        </When>
-        <Otherwise>
-          <!-- Not F# code -->
-          <PropertyGroup>
-            <SignAssembly>true</SignAssembly>
-            <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
-            <StrongNames>true</StrongNames>
-            <DelaySign>true</DelaySign>
-            <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
-            <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
-          </PropertyGroup>
-        </Otherwise>
-      </Choose>
-    </When>
-    <Otherwise>
-      <PropertyGroup Condition="'$(StrongNames)' != 'true'">
-        <!-- For the proto build we don't use strong names. -->
-        <DefineConstants>NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
-        <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
-        <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
-      </PropertyGroup>
-    </Otherwise>
-  </Choose>
+  <PropertyGroup>
+    <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
+  </PropertyGroup>
 
-  <PropertyGroup Condition="'$(UseMicroBuild)' != 'true'">
-    <OtherFlags >$(OtherFlags) --version:"$(MicroBuildAssemblyVersion)"</OtherFlags>
+  <!-- Some unit test assemblies must not have strong names since they reference other assemblies that don't have strong names -->
+  <!-- These unit test assemblies can't use InternalsVisibleTo into assemblies with strong names. -->
+  <PropertyGroup Condition="'$(StrongNames)' == 'false'">
+    <SkipSigning>true</SkipSigning>
+    <UseOpenSourceSign>false</UseOpenSourceSign>
+    <SignAssembly>false</SignAssembly>
+    <DefineConstants>NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <!-- On mono, use test.snk to sign private compiler binaries -->
+  <PropertyGroup Condition="'$(StrongNames)' != 'false' AND '$(MonoPackaging)' == 'true' AND '$(AssemblyName)' != 'FSharp.Core' AND '$(AssemblyName)' != 'FSharp.Compiler.Interactive.Settings'" >
+    <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\test.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>false</DelaySign>
+    <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <!-- On proto, use the FSharp.Core assembly version for everything (it only matters we get it right for FSharp.Core), and pass the version flag explicitly if not using MicroBuild -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
+    <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
+    <OtherFlags>$(OtherFlags) --version:"$(MicroBuildAssemblyVersion)"</OtherFlags>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(UseSourceLink)' == 'true'">
     <SourceLink>$(IntermediateOutputPath)source_link.json</SourceLink>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(StrongNames)' != 'true'">
-    <DefineConstants>NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
-  </PropertyGroup>
-
+  <!-- We assume MSBuild 15.0 or greater. Note the Mono packaging doesn't actually rely on any specific version of MSBuild any longer except to build the MSBuild task-->
   <PropertyGroup>
     <DefineConstants>MSBUILD_AT_LEAST_14;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
+  <!-- Disable uwa toolchain nuget package resolve logic. -->
   <PropertyGroup>
-    <!-- Disable uwa toolchain nuget package resolve logic. -->
     <NuGetTargets  Condition="'$(NuGetTargets)' == ''">false</NuGetTargets>
   </PropertyGroup>  
 
   <PropertyGroup>
     <NugetLocalPackagesDir>$(FSharpSourcesRoot)\..\packages</NugetLocalPackagesDir>
-    <FsCheckVersion>2.6.2</FsCheckVersion>
-    <FsCheckFullVersion>2.6.2.0</FsCheckFullVersion>
+    <FsCheckVersion>3.0.0-alpha3</FsCheckVersion>
+    <FsCheckFullVersion>3.0.0.0</FsCheckFullVersion>
     <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib\</FsCheckLibDir>
   </PropertyGroup>
 
   <Import Project="FSharpSource.Profiles.targets" />
 
   <PropertyGroup Condition="'$(TargetDotnetProfile)'=='net40'">
-    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.6</TargetFrameworkVersion>
     <TargetFrameworkProfile></TargetFrameworkProfile>
     <!-- MSbuild works out the assembly references -->
   </PropertyGroup>
@@ -130,15 +93,19 @@
     <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '3.0'">fsharp30\$(TargetDotnetProfile)</TargetFrameworkOutputDirectory>
     <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '3.1'">fsharp31\$(TargetDotnetProfile)</TargetFrameworkOutputDirectory>
     <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '4.0'">fsharp40\$(TargetDotnetProfile)</TargetFrameworkOutputDirectory>
-    <IntermediateOutputPath>obj\$(TargetFrameworkOutputDirectory)\</IntermediateOutputPath>
+    <TargetFrameworkOutputDirectory>$(TargetDotnetProfile)</TargetFrameworkOutputDirectory>
+    <IntermediateOutputPath>obj\$(Configuration)\$(TargetFrameworkOutputDirectory)\</IntermediateOutputPath>
   </PropertyGroup>
 
   <Choose>
     <When Condition="'$(BuildWith)' == 'LKG' AND '$(BUILD_PROTO_WITH_CORECLR_LKG)' == '1'">
       <PropertyGroup >
         <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
+
+        <DotnetSdkVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\DotnetCLIToolsVersion.txt').Trim())</DotnetSdkVersion>
+        <FSharpNetCoreLkgPath>$(MSBuildThisFileDirectory)..\Tools\dotnet20\sdk\$(DotnetSdkVersion)\FSharp</FSharpNetCoreLkgPath>
+
         <!-- When using coreclr to bootstrap to proto. We acquire the FSharp.Core LKG, targets LKG, the FSharp.Build LKG from the .NET Framework compiler tools LKG package. -->
-        <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\Tools\dotnet20\sdk\2.0.3-servicing-007056\FSharp</FSharpNetCoreLkgPath>
         <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
 
         <!-- When using coreclr to bootstrap, the compiler binary comes from the coreclr LKG, invoked using corehost.exe -->
@@ -160,8 +127,8 @@
       <PropertyGroup>
         <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFrameworkOutputDirectory)\bin</OutputPath>
         <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
-        <FscToolExe>fsc-proto.exe</FscToolExe>
-        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.Portable.FSharp-proto.targets</FSharpTargetsPath>
+        <FscToolExe>fsc.exe</FscToolExe>
+        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.Portable.FSharp.targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
     <Otherwise>
@@ -169,8 +136,8 @@
       <PropertyGroup>
         <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFrameworkOutputDirectory)\bin</OutputPath>
         <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
-        <FscToolExe>fsc-proto.exe</FscToolExe>
-        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.FSharp-proto.targets</FSharpTargetsPath>
+        <FscToolExe>fsc.exe</FscToolExe>
+        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </Otherwise>
   </Choose>
@@ -206,8 +173,8 @@
 
     <NuGetToolPath Condition="'$(NuGetToolPath)' == ''">$(FSharpSourcesRoot)\..\.nuget\</NuGetToolPath>
     <NuGetConfigCommandLine>-ConfigFile "$(NuGetConfigFile)"</NuGetConfigCommandLine>
-    <NugetRestoreCommand>"$(NuGetToolPath)NuGet.exe install -OutputDirectory "$(PackagesDir)" -Config "$(NuGetToolPath)NuGet.Config"</NugetRestoreCommand>
-    <DnuRestoreCommand>"$(NuGetToolPath)NuGet.exe" restore -OutputDirectory "$(PackagesDir)" -Config "$(NuGetToolPath)NuGet.Config"</DnuRestoreCommand>
+    <NugetRestoreCommand>"$(NuGetToolPath)NuGet.exe install -OutputDirectory "$(PackagesDir)" -Config "$(NuGetToolPath)..\NuGet.Config"</NugetRestoreCommand>
+    <DnuRestoreCommand>"$(NuGetToolPath)NuGet.exe" restore -OutputDirectory "$(PackagesDir)" -Config "$(NuGetToolPath)..\NuGet.Config"</DnuRestoreCommand>
 
     <!-- Current version of .NET Core does not support all semantics used in our packages, 
          so we ignore the pre-calculation in the lock file and calculate asset applicability in the build task -->
@@ -248,12 +215,12 @@
   <Import Project="Microbuild.Settings.targets" Condition="'$(UseMicroBuild)' == 'true'"/>
 
   <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(TargetDotnetProfile)' == 'coreclr' ">
-   <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(PackagesDir) -Config $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json" />
+   <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(PackagesDir) -Config $(MSBuildThisFileDirectory)..\NuGet.Config project.json" />
   </Target>
 
   <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(DOTNET_PUBLISH)' == 'true' ">
     <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
-    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore &#45;&#45;configfile $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json"/>
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore &#45;&#45;configfile $(MSBuildThisFileDirectory)..\NuGet.Config project.json"/>
   </Target>
 
   <Target Name="dotnetpublish" AfterTargets="Build" Condition=" '$(DOTNET_PUBLISH)' == 'true' ">
@@ -284,15 +251,7 @@
     </Exec>
 
     <!-- https://raw.githubusercontent.com/KevinRansom/visualfsharp/98e8c9a2ca09a36ebd024eb424fc050a831053cd/build.cmd  -->
-    <Exec Command="git rev-parse HEAD" ConsoleToMsBuild="true" Condition = " '$(TF_BUILD)' != 'True' ">
-      <Output TaskParameter="ConsoleOutput" PropertyName="LatestCommit" />
-    </Exec>
-
-    <Exec Command="git merge-base --fork-point refs/remotes/visualfsharptools/master HEAD" ConsoleToMsBuild="true" Condition = " '$(TF_BUILD)' == 'True' ">
-      <Output TaskParameter="ConsoleOutput" PropertyName="LatestCommit" />
-    </Exec>
-
-    <WriteLinesToFile File="$(IntermediateOutputPath)source_link.json" Overwrite="true" Lines='{"documents": { "$(SourceLinkRoot)\\*" : "$(RemoteUri.Replace(".git", "").Replace("github.com", "raw.githubusercontent.com"))/$(LatestCommit)/*" }}' />
+    <WriteLinesToFile File="$(IntermediateOutputPath)source_link.json" Overwrite="true" Lines='{"documents": { "$(SourceLinkRoot)\\*" : "$(RemoteUri.Replace(".git", "").Replace("github.com", "raw.githubusercontent.com"))/$(GitHeadSha)/*" }}' />
   </Target>
 
     <!-- If BuildVersionFilePath not specified then do nothing  -->
@@ -340,17 +299,17 @@
   </Target>
 
   <UsingTask TaskName="FSharpEmbedResourceText"
-             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build-proto.dll"
+             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build.dll"
              Condition="'$(Configuration)' != 'Proto'" />
   <UsingTask TaskName="FSharpEmbedResXSource"
-             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build-proto.dll"
+             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build.dll"
              Condition="'$(Configuration)' != 'Proto'" />
   <UsingTask TaskName="WriteCodeFragment"
-             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build-proto.dll"
+             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build.dll"
              Condition="'$(Configuration)' != 'Proto'" />
 
   <Target Name="GenerateFSharpTextResources"
-          BeforeTargets="CoreResGen;PrepareForBuild"
+          BeforeTargets="GetXlfSources;CoreResGen;PrepareForBuild"
           Condition="'$(Configuration)' != 'Proto'">
 
     <MakeDir Directories="$(IntermediateOutputPath)" />
@@ -380,42 +339,8 @@
 
   </Target>
 
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-    <GeneratedFSharpInternalsVisibleToFile>$(IntermediateOutputPath)$(MSBuildProjectName).InternalsVisibleTo$(DefaultLanguageSourceExtension)</GeneratedFSharpInternalsVisibleToFile>
-  </PropertyGroup>
-
-  <ItemDefinitionGroup>
-    <InternalsVisibleTo>
-      <Visible>false</Visible>
-    </InternalsVisibleTo>
-  </ItemDefinitionGroup>
-
-  <Target Name="PrepareFSharpGenerateInternalsVisibleToFile"
-          Condition="'$(Configuration)' != 'Proto' and '@(InternalsVisibleTo)' != ''">
-    <PropertyGroup>
-      <_PublicKey>002400000480000094000000060200000024000052534131000400000100010007D1FA57C4AED9F0A32E84AA0FAEFD0DE9E8FD6AEC8F87FB03766C834C99921EB23BE79AD9D5DCC1DD9AD236132102900B723CF980957FC4E177108FC607774F29E8320E92EA05ECE4E821C0A5EFE8F1645C4C0C93C1AB99285D622CAA652C1DFAD63D745D6F2DE5F17E5EAF0FC4963D261C8A12436518206DC093344D5AD293</_PublicKey>
-    </PropertyGroup>
-    <ItemGroup>
-      <_InternalsVisibleToAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-        <_Parameter1 Condition="'%(InternalsVisibleTo.Key)' != ''">%(InternalsVisibleTo.Identity), PublicKey=%(InternalsVisibleTo.Key)</_Parameter1>
-        <_Parameter1 Condition="'%(InternalsVisibleTo.Key)' == ''">%(InternalsVisibleTo.Identity), PublicKey=$(_PublicKey)</_Parameter1>
-      </_InternalsVisibleToAttribute>
-    </ItemGroup>
-  </Target>
-
-  <Target Name="GenerateFSharpInternalsVisibleToFile"
-          Inputs="$(MSBuildProjectFile)"
-          Outputs="$(GeneratedFSharpInternalsVisibleToFile)"
-          DependsOnTargets="PrepareFSharpGenerateInternalsVisibleToFile;PrepareForBuild"
-          Condition="'$(Configuration)' != 'Proto' and '@(InternalsVisibleTo)' != ''"
-          BeforeTargets="CoreCompile">
-    <WriteCodeFragment AssemblyAttributes="@(_InternalsVisibleToAttribute)"
-                       Language="$(Language)"
-                       OutputFile="$(GeneratedFSharpInternalsVisibleToFile)">
-      <Output TaskParameter="OutputFile" ItemName="CompileBefore" />
-      <Output TaskParameter="OutputFile" ItemName="FileWrites" />
-    </WriteCodeFragment>
-  </Target>
+  <Import Project="..\build\targets\GenerateAssemblyAttributes.targets" />
+  <Import Project="..\build\targets\GenerateInternalsVisibleTo.targets" />
 
   <UsingTask TaskName="ReplaceFileText" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup>

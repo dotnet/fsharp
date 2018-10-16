@@ -1,0 +1,582 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="ru" original="../VSPackage.resx">
+    <body>
+      <trans-unit id="ProjectReferenceError2">
+        <source>You must build the target project before it can be referenced.</source>
+        <target state="translated">Для ссылки на конечный проект необходимо сначала выполнить его сборку.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Application">
+        <source>Application</source>
+        <target state="translated">Приложение</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GeneralCaption">
+        <source>General</source>
+        <target state="translated">Общее</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AssemblyName">
+        <source>Assembly Name</source>
+        <target state="translated">Имя сборки</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AssemblyNameDescription">
+        <source>The name of the output file that will hold assembly metadata.</source>
+        <target state="translated">Имя выходного файла, который будет содержать метаданные сборки.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputType">
+        <source>Output Type</source>
+        <target state="translated">Тип выходных данных</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputTypeDescription">
+        <source>The type of application to build.</source>
+        <target state="translated">Тип собираемого приложения.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DefaultNamespace">
+        <source>Default Namespace</source>
+        <target state="translated">Пространство имен по умолчанию</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DefaultNamespaceDescription">
+        <source>Specifies the default namespace for added items, such as classes, that are added via the Add New Item Dialog Box.</source>
+        <target state="translated">Определяет пространство имен, используемое по умолчанию для добавляемых элементов, например, для классов, добавляемых через диалоговое окно "Добавить новый элемент".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartupObject">
+        <source>Startup Object</source>
+        <target state="translated">Автоматически запускаемый объект</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartupObjectDescription">
+        <source>The name of the class that contains the static Main method that you want called when you launch your application.</source>
+        <target state="translated">Имя класса, содержащего статический метод Main, который нужно вызвать при запуске приложения.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ApplicationIcon">
+        <source>Application Icon</source>
+        <target state="translated">Значок приложения</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ApplicationIconDescription">
+        <source>Sets the .ico file to use as your application icon.</source>
+        <target state="translated">Устанавливает ICO-файл в качестве значка приложения.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project">
+        <source>Project</source>
+        <target state="translated">Проект</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFile">
+        <source>Project File</source>
+        <target state="translated">Файл проекта</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFileDescription">
+        <source>The name of the file containing build, configuration, and other information about the project.</source>
+        <target state="translated">Имя файла, содержащего сведения о сборке и конфигурации, а также другую информацию о проекте.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFolder">
+        <source>Project Folder</source>
+        <target state="translated">Папка проекта</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFolderDescription">
+        <source>The absolute location of the project.</source>
+        <target state="translated">Абсолютный путь к расположению проекта.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputFile">
+        <source>Output File</source>
+        <target state="translated">Выходной файл</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputFileDescription">
+        <source>The name of the project's primary output file.</source>
+        <target state="translated">Имя основного выходного файла проекта.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatform">
+        <source>Target Platform</source>
+        <target state="translated">Целевая платформа</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatformDescription">
+        <source>The version of the Common Language Runtime to use for output assembly</source>
+        <target state="translated">Версия общеязыковой среды выполнения (CLR) для выходной сборки</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatformLocation">
+        <source>Target Platform Location</source>
+        <target state="translated">Расположение целевой платформы</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatformLocationDescription">
+        <source>The location of the target platform</source>
+        <target state="translated">Расположение конечной платформы</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFileExtensionFilter">
+        <source>F# Project File (*.fsproj)</source>
+        <target state="translated">Файл проекта F# (*.fsproj)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ComponentFileExtensionFilter">
+        <source>Component File (*.dll;*.exe)</source>
+        <target state="translated">Файл компонента (*.dll;*.exe)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OtherFlags">
+        <source>Other Flags</source>
+        <target state="translated">Другие флаги</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OtherFlagsDescription">
+        <source>Other compiler flags</source>
+        <target state="translated">Другие флаги компилятора</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Build">
+        <source>Build</source>
+        <target state="translated">Сборка</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5001">
+        <source>F# Script File</source>
+        <target state="translated">Файл скрипта F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5002">
+        <source>A blank F# script file (.fsx)</source>
+        <target state="translated">Пустой файл скрипта F# (.fsx)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5003">
+        <source>Script.fsx</source>
+        <target state="translated">Script.fsx</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5005">
+        <source>FSharp Text Editor</source>
+        <target state="translated">Текстовый редактор FSharp</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5006">
+        <source>Code</source>
+        <target state="translated">Код</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5007">
+        <source>General</source>
+        <target state="translated">Общее</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5008">
+        <source>Windows</source>
+        <target state="translated">Windows</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5009">
+        <source>Silverlight</source>
+        <target state="translated">Silverlight</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5011">
+        <source>F# Source File</source>
+        <target state="translated">Исходный файл F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5012">
+        <source>A blank F# source file (.fs)</source>
+        <target state="translated">Пустой исходный файл F# (.fs)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5013">
+        <source>File.fs</source>
+        <target state="translated">File.fs</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5014">
+        <source>Console Application (.NET Framework)</source>
+        <target state="translated">Консольное приложение (.NET Framework)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5015">
+        <source>A project for creating a command-line application</source>
+        <target state="translated">Проект приложения для командной строки</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5016">
+        <source>Library (.NET Framework)</source>
+        <target state="translated">Библиотека (.NET Framework)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5017">
+        <source>A project for creating an F# library</source>
+        <target state="translated">Проект для создания библиотеки F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5018">
+        <source>Tutorial (.NET Framework)</source>
+        <target state="translated">Учебник (.NET Framework)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5019">
+        <source>A tutorial project providing a walkthrough of the F# language</source>
+        <target state="translated">Обучающий проект, предоставляющий обзор языка F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5020">
+        <source>Silverlight Library</source>
+        <target state="translated">Библиотека Silverlight</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5021">
+        <source>A project for creating an F# Silverlight library</source>
+        <target state="translated">Проект для создания библиотеки F# Silverlight</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5022">
+        <source>Application Configuration File</source>
+        <target state="translated">Файл конфигурации приложения</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5023">
+        <source>A file for storing application configuration and settings values</source>
+        <target state="translated">Файл для хранения конфигурации приложения и значений параметров</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5024">
+        <source>Source File</source>
+        <target state="translated">Исходный файл</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5025">
+        <source>A blank F# source file (.fs)</source>
+        <target state="translated">Пустой исходный файл F# (.fs)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5026">
+        <source>Script File</source>
+        <target state="translated">Файл скрипта</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5027">
+        <source>A blank F# script file (.fsx)</source>
+        <target state="translated">Пустой файл скрипта F# (.fsx)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5028">
+        <source>Signature File</source>
+        <target state="translated">Файл подписи</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5029">
+        <source>A blank F# signature file (.fsi)</source>
+        <target state="translated">Пустой файл подписи F# (.fsi)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5030">
+        <source>Text File</source>
+        <target state="translated">Текстовый файл</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5031">
+        <source>An empty text file</source>
+        <target state="translated">Пустой текстовый файл</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5032">
+        <source>XML File</source>
+        <target state="translated">XML-файл</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5033">
+        <source>A blank XML file</source>
+        <target state="translated">Пустой XML-файл</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5034">
+        <source>Portable Library (.NET 4.5, Windows Store, Silverlight 5, Xamarin)</source>
+        <target state="translated">Переносимая библиотека (.NET 4.5, Магазин Windows, Silverlight 5, Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5035">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Silverlight 5, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 47</source>
+        <target state="translated">Проект для создания библиотеки F# (DLL), которая может работать в .NET Framework 4.5 и выше, Магазине Windows и Silverlight 5, Xamarin.iOS, Xamarin.Android и Xamarin.iOS (Classic). Профиль 47</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5036">
+        <source>Data</source>
+        <target state="translated">Данные</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5037">
+        <source>OData Service Connection (LINQ, type provider)</source>
+        <target state="translated">Подключение к службе OData (LINQ, поставщик типов)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5038">
+        <source>A project item for consuming a Open Data Protocol (OData) web service using ODataService type provider.</source>
+        <target state="translated">Элемент проекта для использования веб-службы OData с помощью поставщика типов ODataService.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5040">
+        <source>A project item for consuming a .NET Managed Resources File (Resx) using ResxFile type provider.</source>
+        <target state="translated">Элемент проекта для использования файла управляемых ресурсов .NET (RESX) с помощью поставщика типов ResxFile.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5041">
+        <source>SQL Database Connection (LINQ to SQL, type provider)</source>
+        <target state="translated">Подключение к базе данных SQL (LINQ to SQL, поставщик типов)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5042">
+        <source>A project item for using the SqlDataConnection (LINQ to SQL) type provider to generate types and consume data in a live SQL database.</source>
+        <target state="translated">Элемент проекта для использования поставщика типов SqlDataConnection (LINQ to SQL) с целью создания типов и использования данных в активной базе данных SQL.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5043">
+        <source>SQL Database Connection (LINQ to Entities, type provider)</source>
+        <target state="translated">Подключение к базе данных SQL (LINQ to Entities, поставщик типов)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5044">
+        <source>A project item for using the SqlEntityConnection (Entity Data Model) type provider to generate types and consume data in a live SQL database.</source>
+        <target state="translated">Элемент проекта для использования поставщика типов SqlEntityConnection (модель EDM) с целью создания типов и использования данных в активной базе данных SQL.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5045">
+        <source>WSDL Service Connection (type provider)</source>
+        <target state="translated">Подключение к службе WSDL (поставщик типов)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5046">
+        <source>A project item for consuming a Web Service using WsdlService type provider.</source>
+        <target state="translated">Элемент проекта для использования веб-службы с помощью поставщика типов WsdlService.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5047">
+        <source>Portable Library (.NET 4.5, Windows Store, Xamarin)</source>
+        <target state="translated">Переносимая библиотека (.NET 4.5, Магазин Windows, Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5048">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 7</source>
+        <target state="translated">Проект для создания библиотеки F# (DLL), которая может работать в .NET Framework 4.5 и Магазине Windows, Xamarin.iOS, Xamarin.Android и Xamarin.iOS (Classic). Профиль 7</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5049">
+        <source>Portable Library (.NET 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin)</source>
+        <target state="translated">Переносимая библиотека (.NET 4.5, Магазин Windows, Windows Phone 8 Silverlight, Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5050">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 78</source>
+        <target state="translated">Проект для создания библиотеки F# (DLL), которая может работать в .NET Framework 4.5, Магазине Windows и Windows Phone 8 Silverlight, Xamarin.iOS, Xamarin.Android и Xamarin.iOS (Classic). Профиль 78</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5051">
+        <source>Portable Library (.NET 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin)</source>
+        <target state="translated">Переносимая библиотека (.NET 4.5, Магазин Windows, Windows Phone 8.1, Windows Phone 8 Silverlight, Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5052">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 259</source>
+        <target state="translated">Проект для создания библиотеки F# (DLL), которая может работать в .NET Framework 4.5, Магазине Windows, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin.iOS, Xamarin.Android и Xamarin.iOS (Classic). Профиль 259</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5053">
+        <source>Resources File</source>
+        <target state="translated">Файл ресурсов</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5054">
+        <source>A file for storing resources</source>
+        <target state="translated">Файл для хранения ресурсов</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6000">
+        <source>F# Tools</source>
+        <target state="translated">Инструменты F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6001">
+        <source>F# Interactive</source>
+        <target state="translated">F# Interactive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6002">
+        <source>F# Project Files (*.fsproj);*.fsproj</source>
+        <target state="translated">Файлы проектов F# (*.fsproj);*.fsproj</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6003">
+        <source>Visual F# Files (*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</source>
+        <target state="translated">Файлы Visual F# (*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="7000">
+        <source>Visual F#</source>
+        <target state="translated">Visual F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="7001">
+        <source>Customizes the environment to maximize code editor screen space and improve the visibility of F# commands and tool windows.</source>
+        <target state="translated">Настраивает среду разработки так, чтобы максимально увеличить размер окна редактора исходного кода и улучшить видимость команд F# и окон инструментов.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductDetails">
+        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="translated">Microsoft Visual F# Tools 10.2 для F# 4.5</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="9002">
+        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="translated">Microsoft Visual F# Tools 10.2 для F# 4.5</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductID">
+        <source>1.0</source>
+        <target state="translated">1.0</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductName">
+        <source>Microsoft Visual F# Tools</source>
+        <target state="translated">Microsoft Visual F# Tools</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="9001">
+        <source>Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="translated">Visual F# Tools 10.2 для F# 4.5</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="9027">
+        <source>F# Interactive</source>
+        <target state="translated">F# Interactive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductRegistryName">
+        <source>Microsoft Visual F#</source>
+        <target state="translated">Microsoft Visual F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidOutputType">
+        <source>Invalid OutputType value</source>
+        <target state="translated">Недопустимое значение OutputType</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidRunPostBuildEvent">
+        <source>Invalid RunPostBuildEvent value</source>
+        <target state="translated">Недопустимое значение RunPostBuildEvent</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidTargetFrameworkVersion">
+        <source>Invalid TargetFrameworkVersion number</source>
+        <target state="translated">Недопустимое значение TargetFrameworkVersion</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectRenderFolderMultiple">
+        <source>The project '{0}' could not be opened because opening it would cause a folder to be rendered multiple times in the solution explorer. One such problematic item is '{1}'. To open this project in Visual Studio, first edit the project file and fix the problem.</source>
+        <target state="translated">Не удалось открыть проект "{0}", поскольку его открытие вызовет многократное отображение папки в обозревателе решений. Одним из таких проблематичных элементов является "{1}". Чтобы открыть этот проект в Visual Studio, сначала измените файл проекта и устраните проблему.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropertyDefaultNamespace">
+        <source>Default Namespace:\nThe string for the default namespace must be a valid identifier</source>
+        <target state="translated">Пространство имен по умолчанию:\nстрока для пространства имен по умолчанию должна быть допустимым идентификатором</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TemplateNotFound">
+        <source>Template file not found: {0}</source>
+        <target state="translated">Файл шаблона не найден: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NeedReloadToChangeTargetFx">
+        <source>Changing the Target Framework requires that the current project be closed and then reopened.\nAny unsaved changes within the project will be automatically saved.\n\nChanging Target Framework may require manual modification of project files in order to build.\n\nAre you sure you want to change the Target Framework for this project?</source>
+        <target state="translated">Для смены целевой рабочей среды необходимо закрыть текущий проект, а затем открыть заново.\nВсе несохраненные изменения будут сохранены автоматически.\n\nПосле смены целевой рабочей среды может потребоваться вручную внести изменения в файлы проектов, чтобы выполнить их сборку.\n\nДействительно изменить целевую рабочую среду данного проекта?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceDialogTitle">
+        <source>Add Reference</source>
+        <target state="translated">Добавить ссылку</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6005">
+        <source>Change path and command line arguments passed to the F# Interactive</source>
+        <target state="translated">Изменение пути и аргументов командной строки, передаваемых в программу F# Interactive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6006">
+        <source>Enable or disable Type Providers</source>
+        <target state="translated">Включение или отключение поставщиков типов</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6007">
+        <source>Visual F# Items</source>
+        <target state="translated">Элементы Visual F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceDialogTitle_Dev11">
+        <source>Reference Manager - {0}</source>
+        <target state="translated">Диспетчер ссылок - {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Dev11SupportsOnlySilverlight5">
+        <source>F# projects in the current version of Visual Studio support only Silverlight 5.</source>
+        <target state="translated">Проекты F# в текущей версии Visual Studio поддерживают только Silverlight 5.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceAssemblyPageDialogRetargetingText">
+        <source>The project will be retargeted, and its targeted frameworks will be reduced.</source>
+        <target state="translated">Требуемые версии .NET Framework проекта будут изменены и ограничены.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceAssemblyPageDialogNoItemsText">
+        <source>All of the Framework assemblies are already referenced. Please use the Object Browser to explore the references in the Framework.</source>
+        <target state="translated">Ссылки на все сборки .NET Framework уже заданы. С помощью обозревателя объектов рассмотрите ссылки в .NET Framework.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpCoreVersionIsNotLegacyCompatible">
+        <source>Referencing this version of FSharp.Core will cause your project to be incompatible with older versions of Visual Studio.  Do you want to continue?</source>
+        <target state="translated">При задании ссылки на эту версию FSharp.Core проект будет несовместим с предыдущими версиями Visual Studio. Вы хотите продолжить?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ComputingSourcesAndFlags">
+        <source>Updating compilation sources and flags...</source>
+        <target state="translated">Обновление источников и флагов компиляции...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpdatingSolutionConfiguration">
+        <source>Updating solution configuration...</source>
+        <target state="translated">Изменение конфигурации решения...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedBodyAbove">
+        <source>The file '{0}' cannot be placed above '{1}' in the Solution Explorer.\n\n{2}.</source>
+        <target state="translated">Файл "{0}" невозможно расположить выше "{1}" в обозревателе решений.\n\n{2}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedBodyBelow">
+        <source>The file '{0}' cannot be placed below '{1}' in the Solution Explorer.\n\n{2}.</source>
+        <target state="translated">Файл "{0}" невозможно расположить ниже "{1}" в обозревателе решений.\n\n{2}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedDifferentSubtree">
+        <source>The file is in a different subtree</source>
+        <target state="translated">Этот файл находится в другом поддереве</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedMultipleFiles">
+        <source>The '{0}' folder cannot be moved as it already exists in the Solution Explorer in a different location</source>
+        <target state="translated">Папку "{0}" невозможно переместить, так как она уже существует в обозревателе решений с другим расположением</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

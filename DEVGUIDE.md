@@ -1,27 +1,38 @@
 # Development Guide
 
-Follow the instructions below to build and develop the F# Compiler, Core Library and tools on Windows, macOS and Linux.
+## Get the Latest F# Compiler Source Code
 
-* [Developing the F# Compiler (Windows)](#developing-the-f-compiler-windows)
-* [Developing the F# Compiler (Linux)](#developing-the-f-compiler-linux)
-* [Developing the F# Compiler (macOS)](#developing-the-f-compiler-macos)
-* [Developing the Visual F# IDE Tools (Windows Only)](#developing-the-visual-f-ide-tools-windows-only) 
-* [Notes and Resources](#notes)
+Get the latest source code from the master branch by running this git command:
 
-###  Developing the F# Compiler (Windows)
-
-Install
-
-- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
-- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760) or Visual Studio 2013 (or later)
-
-**NOTE on Windows:**
-1. It is recommended to run the build.cmd and the qualifiers below on a command prompt with path set to have the location of MSBuild. If we have Visual Studio, we can also run using `Developer Command Prompt for Visual Studio 20xx` (depends on Visual Studio version). This developer command prompt is easier to use than normal command prompt, because it already has the correct path of Visual Studio and .NET's tooling set for us to use (including MSBuild).
-2. The running command prompt must be run under Administrator right (`Run as Administrator`).
-
+    git clone https://github.com/Microsoft/visualfsharp.git
+    
 Before running the build scripts, ensure that you have cleaned up the visualfsharp repo by running this git command:
 
     git clean -xfd
+
+This will remove any files that are not under version control. This is necessary only if you have already attempted to build the solution or have made other changes that might prevent it from building.
+
+## Installing Dependencies and Building
+
+Follow the instructions below to build and develop the F# Compiler, Core Library and tools on Windows, macOS and Linux.
+
+- [Developing the F# Compiler (Windows)](#developing-the-f-compiler-windows)
+- [Developing the F# Compiler (Linux)](#developing-the-f-compiler-linux)
+- [Developing the F# Compiler (macOS)](#developing-the-f-compiler-macos)
+- [Developing the Visual F# IDE Tools (Windows Only)](#developing-the-visual-f-ide-tools-windows-only)
+- [Notes and Resources](#notes)
+
+### Developing the F# Compiler (Windows)
+
+Install
+
+- [.NET 4.6](https://www.microsoft.com/en-gb/download/details.aspx?id=48130)
+
+**NOTE on Windows:**
+
+1. It is recommended to run `build.cmd` in a command prompt with path set to have the location of MSBuild. If you have Visual Studio, we can run using `Developer Command Prompt for Visual Studio 20xx` (depends on Visual Studio version). This developer command prompt is easier to use than normal command prompt, because it already has the correct path of Visual Studio and .NET's tooling set for us to use (including MSBuild).
+
+2. The command prompt must have Administrator rights (`Run as Administrator`).
 
 On Windows you can build the F# compiler for .NET Framework as follows:
 
@@ -60,42 +71,67 @@ After you build the first time you can open and use this solution:
 
 or just build it directly:
 
-    msbuild FSharp.sln 
+    msbuild FSharp.sln
 
-Building ``FSharp.sln`` builds nearly everything. However building portable profiles of 
-FSharp.Core.dll is not included.  If you are just developing the core compiler and library
-then building the solution will be enough.
+If you are just developing the core compiler and library then building ``FSharp.sln`` will be enough.
 
-###  Developing the F# Compiler (Linux)
+### Developing the F# Compiler (Linux)
 
 For Linux/Mono, follow [these instructions](http://www.mono-project.com/docs/getting-started/install/linux/). Also you may need:
 
-    sudo apt-get install mono-complete autoconf libtool pkg-config make git automake
+    sudo apt-get install mono-complete make git
 
 Then:
-    
-    ./autoconf.sh --prefix /usr
+
     make
-    make install
 
-Full testing is not yet enabled on Linux, nor is a .NET Core build of the compiler.
+Then to replace your machine-wide installation:
 
-You can alternatively use
-
-    ./build.sh
-
-###  Developing the F# Compiler (macOS)
-
-Install Xamarin Studio, then
-
-    ./autogen.sh --prefix=/Library/Frameworks/Mono.framework/Versions/Current/
-    make
     sudo make install
+
+Full testing is not yet enabled on Linux.
+
+### Developing the F# Compiler (macOS)
+
+Install XCode command line tools (or homebrew equivalents) and Mono or Visual Studio for Mac.
+
+Then:
+
+    make
+
+Then to replace your machine-wide installation:
+
+    sudo make install
+
+Full testing is not yet enabled on macOS.
+
+### [Optional] Specifying the install path (Linux or macOS)
+
+You can specify a custom installation path using the DESTDIR shell variable
+
+    DESTDIR=/my/path/to/fsharp make install
+
+### Developing the F# Compiler (Linux or macOS - .NET Core)
+
+Install [the latest .NET SDK](https://www.microsoft.com/net/download/).  Then use
+
+    src/buildfromsource.sh
+
+Outputs are placed in
+
+    BuildFromSource/Debug/...
+    BuildFromSource/Release/...
+
+This uses an installed .NET SDK 2.0 to build the various duplicated project
+
+Testing the .NET Core version of the F# compiler on macOS and Linux is TBD.
 
 ### Developing the Visual F# IDE Tools (Windows Only)
 
 To build and test Visual F# IDE Tools, install these requirements:
-- [Visual Studio 2017](https://www.visualstudio.com/downloads/)
+
+- Download [Visual Studio 2017](https://www.visualstudio.com/downloads/)
+- Launch the Visual Studio Installer
   - Under the "Windows" workloads, select ".NET desktop development"
     - Select "F# desktop language support" under the optional components
   - Under the "Other Toolsets" workloads, select "Visual Studio extension development"
@@ -108,16 +144,16 @@ Steps to build:
 
 Use ``VisualFSharp.sln`` if you're building the Visual F# IDE Tools.
 
-Note on Debug vs Release: ``Release`` Configuration has a degraded debugging experience, so if you want to test a change locally, it is recommended to do it in the ``Debug`` configuration. For more information see https://github.com/Microsoft/visualfsharp/issues/2771 and https://github.com/Microsoft/visualfsharp/pull/2773.
+Note on Debug vs Release: ``Release`` Configuration has a degraded debugging experience, so if you want to test a change locally, it is recommended to do it in the ``Debug`` configuration. For more information see issues [#2771](https://github.com/Microsoft/visualfsharp/issues/2771) and [#2773](https://github.com/Microsoft/visualfsharp/pull/2773).
 
-Note: if you face this error [#2351](https://github.com/Microsoft/visualfsharp/issues/2351):
+Note ([#2351](https://github.com/Microsoft/visualfsharp/issues/2351)): if you face this error:
 
->  error VSSDK1077: Unable to locate the extensions directory. "ExternalSettingsManager::GetScopePaths failed to initialize PkgDefManager for C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\devenv.exe".
+> error VSSDK1077: Unable to locate the extensions directory. "ExternalSettingsManager::GetScopePaths failed to initialize PkgDefManager for C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\devenv.exe".
 
 Or hard crash on launch ("Unknown Error"), delete these folders:
 
-* `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)RoslynDev`
-* `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)`
+- `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)RoslynDev`
+- `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)`
 
 #### [Optional] Install the Visual F# IDE Tools  (Windows Only)
 
@@ -131,18 +167,18 @@ components installed in that VS installation.  You can revert this step by disab
 For **Debug**, uninstall then reinstall:
 
     VSIXInstaller.exe /u:"VisualFSharp"
-    VSIXInstaller.exe debug\net40\bin\VisualFSharpOpenSource.vsix
+    VSIXInstaller.exe debug\net40\bin\VisualFSharpFull.vsix
 
 For **Release**, uninstall then reinstall:
 
     VSIXInstaller.exe /u:"VisualFSharp"
-    VSIXInstaller.exe release\net40\bin\VisualFSharpOpenSource.vsix
+    VSIXInstaller.exe release\net40\bin\VisualFSharpFull.vsix
 
 Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools with updated F# Interactive.
 
 #### [Optional] F5 testing of local changes
 
-To test your changes locally _without_ overwriting your default installed Visual F# tools, set the `VisualFSharp\Vsix\VisualFSharpOpenSource`
+To test your changes locally _without_ overwriting your default installed Visual F# tools, set the `VisualFSharp\Vsix\VisualFSharpFull`
 project as the startup project.  When you hit F5 a new instance of Visual Studio will be started in the `RoslynDev` hive with your
 changes, but the root (default) hive will remain untouched. You can also start this hive automatically using
 
@@ -170,18 +206,16 @@ For **Release**:
 
     vsintegration\update-vsintegration.cmd release
 
-# Notes
+## Debugging the F# Compiler
+
+See the "Debugging The Compiler" section of this [article](https://medium.com/@willie.tetlow/f-mentorship-week-1-36f51d3812d4)
+
+## Notes
 
 #### Windows: Links to  Additional frameworks
 
 - [Git for windows](http://msysgit.github.io/)
-- [.NET 3.5](http://www.microsoft.com/en-us/download/details.aspx?id=21)
-- [.NET 4.5](http://www.microsoft.com/en-us/download/details.aspx?id=30653)
-- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
 - [.NET 4.6](http://www.microsoft.com/en-us/download/details.aspx?id=48137)
-- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
-- [Windows 7 SDK](http://www.microsoft.com/en-us/download/details.aspx?id=8279)
-- [Windows 8 SDK](http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx)
 - [Windows 8.1 SDK](http://msdn.microsoft.com/en-us/library/windows/desktop/bg162891.aspx)
 - [Windows 10 SDK](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk)
 
@@ -196,15 +230,32 @@ For **Release**:
  - We use the proto compiler to compile the source for `FSharp.Core.dll` in this distribution.
  - We use the proto compiler to compile the source for `FSharp.Compiler.dll`, `fsc.exe`, `fsi.exe`, and other binaries found in this distribution.
 
+#### Updating FSComp.fs
+
+If you change error messages you may need to update FSComp.fs in `src\buildfromsource\FSharp.Compiler.Private`.
+
+To do this, build the non-buildfromsource version of FSharp.Compiler.Private (src\fsharp\FSharp.Compiler.Private) then check its obj\ directory for `FSComp.fs` and manually copy that into the buildfromsource directory.
+
+    .\build net40
+    copy /y src\fsharp\FSharp.Compiler.Private\obj\release\net40\FSComp.* src\buildfromsource\FSharp.Compiler.Private\
+
+You can also change build.cmd to default COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES to 1 under ":ARGUMENTS_OK" label.
+
 #### Configuring proxy server
 
 If you are behind a proxy server, NuGet client tool must be configured to use it:
 
-    .nuget\nuget.exe config -set http_proxy=proxy.domain.com:8080 -ConfigFile .nuget\NuGet.Config
-    .nuget\nuget.exe config -set http_proxy.user=user_name -ConfigFile .nuget\NuGet.Config
-    .nuget\nuget.exe config -set http_proxy.password=user_password -ConfigFile .nuget\NuGet.Config
+    .nuget\nuget.exe config -set http_proxy=proxy.domain.com:8080 -ConfigFile NuGet.Config
+    .nuget\nuget.exe config -set http_proxy.user=user_name -ConfigFile NuGet.Config
+    .nuget\nuget.exe config -set http_proxy.password=user_password -ConfigFile NuGet.Config
 
 Where you should set proper proxy address, user name and password.
+
+#### When modifying, adding, or removing keywords or compiler messages
+
+If your changes involve modifying the list of language keywords in any way, (e.g. when implementing a new keyword), the XLF localization files need to be synced with the corresponding resx files. This can be done automatically by running `msbuild FSharp.Compiler.Private.fsproj /t:UpdateXlf` (located in [src\fsharp\FSharp.Compiler.Private](https://github.com/Microsoft/visualfsharp/tree/master/src/fsharp/FSharp.Compiler.Private)). This only works on Windows/.NETStandard framework, so changing this from any other platform requires editing and syncing all of the XLF files manually.
+
+After this, you must copy any differing `resx` files from the output directory into the corresponding subdirectory in [src\buildfromsource](https://github.com/Microsoft/visualfsharp/tree/master/src/fsharp/FSharp.Compiler.Private). This step will soon be eliminated (see issue [#3905](https://github.com/Microsoft/visualfsharp/issues/3905)).
 
 #### Resources
 

@@ -23,18 +23,23 @@ open SingleTest
 // Use these lines if you want to test CoreCLR
 let FSC_BASIC = FSC_CORECLR
 let FSI_BASIC = FSI_CORECLR
+let FSIANYCPU_BASIC = FSI_CORECLR
 #else
 let FSC_BASIC = FSC_OPT_PLUS_DEBUG
 let FSI_BASIC = FSI_FILE
+let FSIANYCPU_BASIC = FSIANYCPU_FILE
 #endif
 
+(*
 [<Test>]
 let diamondAssembly () = 
     let cfg = testConfig "typeProviders/diamondAssembly"
 
     rm cfg "provider.dll"
 
-    fsc cfg "%s" "--out:provided.dll -a" [".." ++ "helloWorld" ++ "provided.fs"]
+    // Add a version flag to make this generate native resources. The native resources aren't important and 
+    // can be dropped when the provided.dll is linked but we need to tolerate generated DLLs that have them
+    fsc cfg "%s" "--out:provided.dll -a --version:0.0.0.1" [".." ++ "helloWorld" ++ "provided.fs"]
 
     fsc cfg "%s" "--out:provider.dll -a" [".." ++ "helloWorld" ++ "provider.fsx"]
 
@@ -246,16 +251,69 @@ let ``negative type provider tests`` (name:string) =
 
         SingleTest.singleNegTest cfg name
 
-[<Test>]
-let splitAssembly () = 
-    let cfg = testConfig "typeProviders/splitAssembly"
+let splitAssembly subdir project =
+
+    let cfg = testConfig project
+
+    let clean() = 
+        rm cfg "providerDesigner.dll"
+        rmdir cfg "typeproviders"
+        rmdir cfg "tools"
+        rmdir cfg (".." ++ "typeproviders")
+        rmdir cfg (".." ++ "tools")
+
+    clean()
 
     fsc cfg "--out:provider.dll -a" ["provider.fs"]
 
     fsc cfg "--out:providerDesigner.dll -a" ["providerDesigner.fsx"]
 
     SingleTest.singleTestBuildAndRunAux cfg FSC_BASIC
-        
+
+    SingleTest.singleTestBuildAndRunAux cfg FSI_BASIC
+
+    SingleTest.singleTestBuildAndRunAux cfg FSIANYCPU_BASIC
+
+    // Do the same thing with different load locations for the type provider design-time component
+
+    clean()
+
+    // check a few load locations
+    let someLoadPaths = 
+        [ subdir ++ "fsharp41" ++ "net461"
+          subdir ++ "fsharp41" ++ "net45"
+          // include up one directory
+          ".." ++ subdir ++ "fsharp41" ++ "net45"
+          subdir ++ "fsharp41" ++ "netstandard2.0" ]
+
+    for dir in someLoadPaths do
+
+        clean()
+
+        // put providerDesigner.dll into a different place
+        mkdir cfg dir
+        fsc cfg "--out:%s/providerDesigner.dll -a" dir ["providerDesigner.fsx"]
+
+        SingleTest.singleTestBuildAndRunAux cfg FSC_BASIC
+
+    for dir in someLoadPaths do
+
+        clean()
+
+        // put providerDesigner.dll into a different place
+        mkdir cfg dir
+        fsc cfg "--out:%s/providerDesigner.dll -a" dir ["providerDesigner.fsx"]
+
+        SingleTest.singleTestBuildAndRunAux cfg FSI_BASIC
+
+    clean()
+
+[<Test>]
+let splitAssemblyTools () = splitAssembly "tools" "typeProviders/splitAssemblyTools"
+
+[<Test>]
+let splitAssemblyTypeProviders () = splitAssembly "typeproviders" "typeProviders/splitAssemblyTypeproviders"
+
 [<Test>]
 let wedgeAssembly () = 
     let cfg = testConfig "typeProviders/wedgeAssembly"
@@ -301,3 +359,4 @@ let wedgeAssembly () =
     peverify cfg "test3.exe"
 
     exec cfg ("." ++ "test3.exe") ""
+*)

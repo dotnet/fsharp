@@ -3,8 +3,12 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
+    <ProjectLanguage>FSharp</ProjectLanguage>
+    <UseFSharpProductVersion>true</UseFSharpProductVersion>
   </PropertyGroup>
+
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -13,6 +17,7 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <ProjectGuid>{702A7979-BCF9-4C41-853E-3ADFC9897890}</ProjectGuid>
   </PropertyGroup>
+
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
@@ -20,9 +25,8 @@
       <HasLceComments>false</HasLceComments>
       <InProject>false</InProject>
     </FilesToLocalize>
-    <InternalsVisibleTo Include="VisualFSharp.Unittests" />
+    <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
     <EmbeddedText Include="FSBuild.txt" />
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Build.dll.fs" />
     <Compile Include="..\..\utils\CompilerLocationUtils.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs" />
     <Compile Include="FSharpCommandLineBuilder.fs" />
@@ -31,46 +35,54 @@
     <Compile Include="FSharpEmbedResXSource.fs" />
     <Compile Include="WriteCodeFragment.fs" />
     <Compile Include="CreateFSharpManifestResourceName.fs" />
-    <CopyAndSubstituteText Include="Microsoft.FSharp.Targets">
-        <TargetFilename>Microsoft.FSharp.Targets</TargetFilename>
-        <Pattern1>{BuildSuffix}</Pattern1>
-        <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="Microsoft.Portable.FSharp.Targets">
-      <TargetFilename>Microsoft.Portable.FSharp.Targets</TargetFilename>
-      <Pattern1>{BuildSuffix}</Pattern1>
-      <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="Microsoft.FSharp.NetSdk.props">
-        <TargetFilename>Microsoft.FSharp.NetSdk.props</TargetFilename>
-        <Pattern1>{BuildSuffix}</Pattern1>
-        <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="Microsoft.FSharp.NetSdk.targets">
-        <TargetFilename>Microsoft.FSharp.NetSdk.targets</TargetFilename>
-        <Pattern1>{BuildSuffix}</Pattern1>
-        <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
+    <None Include="Microsoft.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Microsoft.Portable.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Microsoft.FSharp.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' ">
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr'">
-    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
+    <Reference Include="Microsoft.Build.Framework">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Framework.$(MicrosoftBuildFrameworkPackageVersion)\lib\net46\Microsoft.Build.Framework.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.dll</HintPath>
+    <Reference Include="Microsoft.Build">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.$(MicrosoftBuildPackageVersion)\lib\net46\Microsoft.Build.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Build.Utilities.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath>
+    <Reference Include="Microsoft.Build.Utilities.Core">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Utilities.Core.$(MicrosoftBuildUtilitiesCorePackageVersion)\lib\net46\Microsoft.Build.Utilities.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
+    <Reference Include="Microsoft.Build.Tasks.Core">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.$(MicrosoftBuildTasksCorePackageVersion)\lib\net46\Microsoft.Build.Tasks.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Tasks.Core">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.$(MicrosoftBuildTasksCorePackageVersion)\lib\net46\Microsoft.Build.Tasks.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System.IO.Compression">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.IO.Compression.$(SystemIoCompressionPackageVersion)\lib\net46\System.IO.Compression.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharp.Data.TypeProviders">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Type.Providers.Redist.$(MicrosoftVisualFSharpTypeProvidersRedistPackageVersion)\content\4.3.0.0\FSharp.Data.TypeProviders.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' ">
+    <Reference Include="Microsoft.Build.Framework, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Framework.14.3.0\lib\net45\Microsoft.Build.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.14.3.0\lib\net45\Microsoft.Build.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Utilities.Core, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Utilities.Core.14.3.0\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Tasks.Core, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.14.3.0\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -80,14 +92,4 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
-      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-         <Authenticode>Microsoft</Authenticode>
-         <StrongName>StrongName</StrongName>
-      </FilesToSign>
-    </ItemGroup>
-  </Target>
 </Project>

@@ -1,5 +1,5 @@
 rem Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-@if "%_echo%"=="" echo off 
+@if "%_echo%"=="" echo off
 
 setlocal enableDelayedExpansion
 
@@ -17,12 +17,12 @@ echo Build and run a subset of test suites
 echo.
 echo Usage:
 echo.
-echo build.cmd ^<all^|net40^|coreclr^|vs^>
+echo build.cmd ^<all^|net40^|coreclr^|vs^|fcs^>
 echo           ^<proto^|protofx^>
-echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|microbuild^|nuget^>
+echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|ci_part4^|microbuild^|nuget^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
-echo           ^<test^|no-test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
+echo           ^<nobuild^|test^|no-test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^|end-2-end^>
 echo           ^<include tag^>
 echo           ^<init^>
 echo.
@@ -64,7 +64,6 @@ set BUILD_FROMSOURCE=0
 set BUILD_VS=0
 set BUILD_FCS=0
 set BUILD_CONFIG=release
-set BUILD_CONFIG_LOWERCASE=release
 set BUILD_DIAG=
 set BUILD_PUBLICSIGN=0
 
@@ -75,8 +74,14 @@ set TEST_NET40_FSHARPQA_SUITE=0
 set TEST_CORECLR_COREUNIT_SUITE=0
 set TEST_CORECLR_FSHARP_SUITE=0
 set TEST_VS_IDEUNIT_SUITE=0
+set TEST_FCS=0
+set TEST_END_2_END=0
 set INCLUDE_TEST_SPEC_NUNIT=
 set INCLUDE_TEST_TAGS=
+
+set COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=0
+
+set SIGN_TYPE=%PB_SIGNTYPE%
 
 REM ------------------ Parse all arguments -----------------------
 
@@ -114,6 +119,10 @@ if /i "%_autoselect_tests%" == "1" (
         set TEST_NET40_FSHARPQA_SUITE=1
     )
 
+    if /i "%BUILD_FCS%" == "1" (
+        set TEST_FCS=1
+    )
+
     if /i "%BUILD_CORECLR%" == "1" (
         set TEST_CORECLR_FSHARP_SUITE=1
         set TEST_CORECLR_COREUNIT_SUITE=1
@@ -149,6 +158,7 @@ if /i "%ARG%" == "net40" (
     set _autoselect=0
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_NET40=1
+    set COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=1
 )
 
 if /i "%ARG%" == "coreclr" (
@@ -168,6 +178,7 @@ if /i "%ARG%" == "vs" (
     set _autoselect=0
     set BUILD_NET40=1
     set BUILD_VS=1
+    set COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=1
 )
 
 if /i "%ARG%" == "fcs" (
@@ -184,6 +195,7 @@ if /i "%ARG%" == "nobuild" (
 )
 if /i "%ARG%" == "all" (
     set _autoselect=0
+    set COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=1
     set BUILD_PROTO=1
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_NET40=1
@@ -205,6 +217,7 @@ if /i "%ARG%" == "microbuild" (
     set BUILD_VS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
     set BUILD_NUGET=1
+    set BUILD_MICROBUILD=1
 
     set TEST_NET40_COMPILERUNIT_SUITE=1
     set TEST_NET40_COREUNIT_SUITE=1
@@ -234,20 +247,22 @@ REM These divide "ci" into three chunks which can be done in parallel
 if /i "%ARG%" == "ci_part1" (
     set _autoselect=0
 
-    REM what we do
+    REM what we do - build and test Visual F# Tools, including setup and nuget
     set BUILD_PROTO=1
+    set BUILD_NUGET=1
     set BUILD_NET40=1
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_VS=1
-    set BUILD_FCS=1
     set TEST_VS_IDEUNIT_SUITE=1
+    set BUILD_CORECLR=1
+    set BUILD_SETUP=%FSC_BUILD_SETUP%
     set CI=1
 )
 
 if /i "%ARG%" == "ci_part2" (
     set _autoselect=0
 
-    REM what we do
+    REM what we do - test F# on .NET Framework
     set BUILD_PROTO=1
     set BUILD_NET40=1
     set BUILD_NET40_FSHARP_CORE=1
@@ -261,18 +276,37 @@ if /i "%ARG%" == "ci_part2" (
 if /i "%ARG%" == "ci_part3" (
     set _autoselect=0
 
-    REM what we do
+    REM what we do: test F# on Core CLR: nuget requires coreclr, fcs requires coreclr
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_PROTO=1
     set BUILD_CORECLR=1
     set BUILD_NET40_FSHARP_CORE=1
-    set BUILD_NUGET=1
     set BUILD_NET40=1
-    set BUILD_VS=1
-    set BUILD_SETUP=%FSC_BUILD_SETUP%
     set TEST_CORECLR_FSHARP_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=1
     set CI=1
+)
+
+if /i "%ARG%" == "ci_part4" (
+    set _autoselect=0
+
+    REM what we do: test F# on Core CLR: nuget requires coreclr, fcs requires coreclr
+    set BUILD_PROTO_WITH_CORECLR_LKG=1
+    set BUILD_PROTO=1
+    set BUILD_CORECLR=1
+    set BUILD_NET40_FSHARP_CORE=1
+    set BUILD_NET40=1
+    set BUILD_FCS=1
+    set TEST_FCS=1
+    set CI=1
+)
+
+if /i "%ARG%" == "end-2-end" (
+    set BUILD_PROTO=1
+    set BUILD_CORECLR=1
+    set BUILD_NET40_FSHARP_CORE=1
+    set BUILD_NET40=1
+    set TEST_END_2_END=1
 )
 
 if /i "%ARG%" == "proto" (
@@ -291,6 +325,14 @@ if /i "%ARG%" == "debug" (
 
 if /i "%ARG%" == "release" (
     set BUILD_CONFIG=release
+)
+
+if /i "%ARG%" == "test-sign" (
+    set SIGN_TYPE=test
+)
+
+if /i "%ARG%" == "real-sign" (
+    set SIGN_TYPE=real
 )
 
 if /i "%ARG%" == "test" (
@@ -325,6 +367,8 @@ if /i "%ARG%" == "test-all" (
     set TEST_NET40_FSHARPQA_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=1
     set TEST_VS_IDEUNIT_SUITE=1
+    set TEST_FCS=1
+    set TEST_END_2_END=1
 )
 
 if /i "%ARG%" == "test-net40-fsharpqa" (
@@ -369,6 +413,12 @@ if /i "%ARG%" == "test-net40-fsharp" (
     set TEST_NET40_FSHARP_SUITE=1
 )
 
+if /i "%ARG%" == "test-fcs" (
+    set _autoselect=0
+    set BUILD_FCS=1
+    set TEST_FCS=1
+)
+
 if /i "%ARG%" == "test-coreclr-fsharp" (
     set _autoselect=0
     set BUILD_NET40=1
@@ -409,6 +459,41 @@ if /i "%PB_SKIPTESTS%" == "true" (
     set TEST_VS_IDEUNIT_SUITE=0
 )
 
+if /i "%TEST_NET40_FSHARP_SUITE" == "1" (
+    if /i "%TEST_CORECLR_FSHARP_SUITE%" == "1" (
+        TEST_END_2_END=1
+    )
+)
+
+if /i "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
+    set NEEDS_DOTNET_CLI_TOOLS=1
+)
+
+if /i "%BUILD_CORECLR%" == "1" (
+    set NEEDS_DOTNET_CLI_TOOLS=1
+)
+
+if /i "%BUILD_FROMSOURCE%" == "1" (
+    set NEEDS_DOTNET_CLI_TOOLS=1
+)
+
+if /i "%BUILD_FCS%" == "1" (
+    set NEEDS_DOTNET_CLI_TOOLS=1
+)
+
+rem Decide if Proto need building
+if NOT EXIST Proto\net40\bin\fsc.exe (
+  set BUILD_PROTO=1
+)
+
+rem
+rem This stops the dotnet cli from hunting around and 
+rem finding the highest possible dotnet sdk version to use.
+rem
+rem description of dotnet lookup here:  
+rem     https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet?tabs=netcore2x
+set DOTNET_MULTILEVEL_LOOKUP=false
+
 echo Build/Tests configuration:
 echo.
 echo BUILD_PROTO=%BUILD_PROTO%
@@ -423,10 +508,16 @@ echo BUILD_SETUP=%BUILD_SETUP%
 echo BUILD_NUGET=%BUILD_NUGET%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
+echo BUILD_MICROBUILD=%BUILD_MICROBUILD%
 echo.
 echo PB_SKIPTESTS=%PB_SKIPTESTS%
 echo PB_RESTORESOURCE=%PB_RESTORESOURCE%
 echo.
+echo SIGN_TYPE=%SIGN_TYPE%
+echo.
+echo COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=%COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES%
+echo.
+echo TEST_FCS=%TEST_FCS%
 echo TEST_NET40_COMPILERUNIT_SUITE=%TEST_NET40_COMPILERUNIT_SUITE%
 echo TEST_NET40_COREUNIT_SUITE=%TEST_NET40_COREUNIT_SUITE%
 echo TEST_NET40_FSHARP_SUITE=%TEST_NET40_FSHARP_SUITE%
@@ -443,26 +534,13 @@ echo TEMP=%TEMP%
 :: If this is not set, VsDevCmd.bat will change %cd% to [USERPROFILE]\source, causing the build to fail.
 SET VSCMD_START_DIR=%cd%
 
-:: try to find an RC or RTM edition of VS2017
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
+:: Try find installation path of VS2017 with vswhere.exe
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\" (
+    for /f "usebackq delims=" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -prerelease -property installationPath`) do set VS_INSTALLATION_PATH=%%i
 )
 
-:: Allow build from Preview editions
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Professional\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Community\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat"
+if "%VS_INSTALLATION_PATH%" NEQ "" (
+    call "%VS_INSTALLATION_PATH%\Common7\Tools\VsDevCmd.bat"
 )
 
 :: If there's no installation of VS2017 or VS2017 Preview, use the build tools
@@ -477,8 +555,16 @@ echo.
 echo.
 
 echo ---------------- Done with arguments, starting preparation -----------------
+rem set TargetFrameworkSDKToolsDirectory --- needed for sdk to find al.exe. 
+if not "%TargetFrameworkSDKToolsDirectory%" == "" ( goto have_TargetFrameworkSDKToolsDirectory ) 
+set TargetFrameworkSDKToolsDirectory=%WindowsSDK_ExecutablePath_x64%
 
-set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.1.192
+if not "%TargetFrameworkSDKToolsDirectory%" == "" ( goto have_TargetFrameworkSDKToolsDirectory ) 
+set TargetFrameworkSDKToolsDirectory=%WindowsSDK_ExecutablePath_x86%
+
+:have_TargetFrameworkSDKToolsDirectory 
+
+set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.6.170
 if "%VSSDKInstall%"=="" (
      set VSSDKInstall=%~dp0packages\%BuildToolsPackage%\tools\vssdk
 )
@@ -496,10 +582,15 @@ if "%RestorePackages%"=="" (
 @echo VSSDKInstall:   %VSSDKInstall%
 @echo VSSDKToolsPath: %VSSDKToolsPath%
 @echo VSSDKIncludes:  %VSSDKIncludes%
+@echo TargetFrameworkSDKToolsDirectory:  %TargetFrameworkSDKToolsDirectory%
 
 @call src\update.cmd signonly
 
 :: Check prerequisites
+if not "%VisualStudioVersion%" == "" goto vsversionset
+if exist "%VS160COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=16.0
+if not "%VisualStudioVersion%" == "" goto vsversionset
+
 if not "%VisualStudioVersion%" == "" goto vsversionset
 if exist "%VS150COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=15.0
 if not "%VisualStudioVersion%" == "" goto vsversionset
@@ -520,6 +611,10 @@ if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" se
 :vsversionset
 if "%VisualStudioVersion%" == "" echo Error: Could not find an installation of Visual Studio && goto :failure
 
+if exist "%VS160COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
+    set _msbuildexe="%VS160COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe"
+    goto :havemsbuild
+)
 if exist "%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
     set _msbuildexe="%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe"
     goto :havemsbuild
@@ -538,21 +633,6 @@ goto :eof
 :havemsbuild
 set _nrswitch=/nr:false
 
-:: See <http://www.appveyor.com/docs/environment-variables>
-if defined APPVEYOR (
-   rem See <http://www.appveyor.com/docs/build-phase>
-   if exist "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" (
-    rem HACK HACK HACK
-   set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-   )
-)
-
-if defined TF_BUILD (
-    echo Adding remote 'visualfsharptools' for internal build.
-    git remote add visualfsharptools https://github.com/Microsoft/visualfsharp.git
-    git fetch --all
-)
-
 set msbuildflags=%_nrswitch% /nologo
 REM set msbuildflags=%_nrswitch% /nologo
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
@@ -561,18 +641,20 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 echo ---------------- Done with prepare, starting package restore ----------------
 
 set _nugetexe="%~dp0.nuget\NuGet.exe"
-set _nugetconfig="%~dp0.nuget\NuGet.Config"
+set _nugetconfig="%~dp0NuGet.Config"
 
 if "%RestorePackages%" == "true" (
-    cd fcs
-    .paket\paket.exe restore
-    cd..
-    @if ERRORLEVEL 1 echo Error: Paket restore failed  && goto :failure
+    if "%BUILD_FCS%" == "1" (
+      cd fcs
+      .paket\paket.exe restore
+      cd..
+      @if ERRORLEVEL 1 echo Error: Paket restore failed  && goto :failure
+    )
 
     %_ngenexe% install %_nugetexe%  /nologo
     set _nugetoptions=-PackagesDirectory packages -ConfigFile %_nugetconfig%
     if not "%PB_RESTORESOURCE%" == "" (
-        set _nugetoptions=!_nugetoptions! -Source %PB_RESTORESOURCE%
+        set _nugetoptions=!_nugetoptions! -FallbackSource %PB_RESTORESOURCE%
     )
 
     echo _nugetoptions=!_nugetoptions!
@@ -580,14 +662,16 @@ if "%RestorePackages%" == "true" (
     %_nugetexe% restore packages.config !_nugetoptions!
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 
-    if "%BUILD_VS%" == "1" (
-        %_nugetexe% restore vsintegration\packages.config !_nugetoptions!
-        @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
-    )
-
     if "%BUILD_SETUP%" == "1" (
         %_nugetexe% restore setup\packages.config !_nugetoptions!
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
+    )
+
+    if not "%SIGN_TYPE%" == "" (
+        set signtoolnugetoptions=-PackagesDirectory "%USERPROFILE%\.nuget\packages" -ConfigFile %_nugetconfig%
+        if not "%PB_RESTORESOURCE%" == "" set signtoolnugetoptions=!signtoolnugetoptions! -FallbackSource %PB_RESTORESOURCE%
+        %_nugetexe% restore build\config\packages.config !signtoolnugetoptions!
+        @if ERRORLEVEL 1 echo Error: Nuget restore failed && goto :failure
     )
 
     set restore_fsharp_suite=0
@@ -600,9 +684,58 @@ if "%RestorePackages%" == "true" (
     )
 )
 
-if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
+if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
     :: Restore the Tools directory
-    call %~dp0init-tools.cmd
+    call "%~dp0init-tools.cmd"
+)
+set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
+set _dotnet20exe=%~dp0Tools\dotnet20\dotnet.exe
+set NUGET_PACKAGES=%~dp0packages
+set path=%~dp0Tools\dotnet20\;%path%
+
+echo ----------- Done with package restore, starting dependency uptake check -------------
+
+if not "%PB_PackageVersionPropsUrl%" == "" (
+    set dependencyUptakeDir=%~dp0Tools\dependencyUptake
+    if not exist "!dependencyUptakeDir!" mkdir "!dependencyUptakeDir!"
+
+    :: download package version overrides
+    echo powershell -noprofile -executionPolicy RemoteSigned -command "Invoke-WebRequest -Uri '%PB_PackageVersionPropsUrl%' -OutFile '!dependencyUptakeDir!\PackageVersions.props'"
+         powershell -noprofile -executionPolicy RemoteSigned -command "Invoke-WebRequest -Uri '%PB_PackageVersionPropsUrl%' -OutFile '!dependencyUptakeDir!\PackageVersions.props'"
+    if ERRORLEVEL 1 echo Error downloading package version properties && goto :failure
+
+    :: prepare dependency uptake files
+    echo %_msbuildexe% %msbuildflags% %~dp0build\projects\PrepareDependencyUptake.proj /t:Build
+         %_msbuildexe% %msbuildflags% %~dp0build\projects\PrepareDependencyUptake.proj /t:Build
+    if ERRORLEVEL 1 echo Error building dependency uptake files && goto :failure
+
+    :: restore dependencies
+    %_nugetexe% restore !dependencyUptakeDir!\packages.config -PackagesDirectory packages -ConfigFile !dependencyUptakeDir!\NuGet.config
+    if ERRORLEVEL 1 echo Error restoring dependency uptake packages && goto :failure
+
+    :: set DotNetPackageVersionPropsPath
+    set DotNetPackageVersionPropsPath=!dependencyUptakeDir!\PackageVersions.props
+)
+
+echo ----------- Done with package restore, starting dependency uptake check -------------
+
+if not "%PB_PackageVersionPropsUrl%" == "" (
+    set dependencyUptakeDir=%~dp0Tools\dependencyUptake
+    if not exist "!dependencyUptakeDir!" mkdir "!dependencyUptakeDir!"
+
+    :: download package version overrides
+    echo powershell -noprofile -executionPolicy RemoteSigned -command "Invoke-WebRequest -Uri '%PB_PackageVersionPropsUrl%' -OutFile '!dependencyUptakeDir!\PackageVersions.props'"
+         powershell -noprofile -executionPolicy RemoteSigned -command "Invoke-WebRequest -Uri '%PB_PackageVersionPropsUrl%' -OutFile '!dependencyUptakeDir!\PackageVersions.props'"
+    if ERRORLEVEL 1 echo Error downloading package version properties && goto :failure
+
+    :: prepare dependency uptake files
+    echo %_msbuildexe% %msbuildflags% %~dp0build\projects\PrepareDependencyUptake.proj /t:Build
+         %_msbuildexe% %msbuildflags% %~dp0build\projects\PrepareDependencyUptake.proj /t:Build
+    if ERRORLEVEL 1 echo Error building dependency uptake files && goto :failure
+
+    :: restore dependencies
+    %_nugetexe% restore !dependencyUptakeDir!\packages.config -PackagesDirectory packages -ConfigFile !dependencyUptakeDir!\NuGet.config
+    if ERRORLEVEL 1 echo Error restoring dependency uptake packages && goto :failure
 )
 
 set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
@@ -612,10 +745,10 @@ set path=%~dp0Tools\dotnet20\;%path%
 
 set _fsiexe="packages\FSharp.Compiler.Tools.4.1.27\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
-%_ngenexe% install %_fsiexe% /nologo 
+%_ngenexe% install %_fsiexe% /nologo
 
 if not exist %_nugetexe% echo Error: Could not find %_nugetexe% && goto :failure
-%_ngenexe% install %_nugetexe% /nologo 
+%_ngenexe% install %_nugetexe% /nologo
 
 echo ---------------- Done with package restore, verify buildfrom source ---------------
 if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
@@ -626,14 +759,8 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 )
 
 echo ---------------- Done with package restore, starting proto ------------------------
-
-rem Decide if Proto need building
-if NOT EXIST Proto\net40\bin\fsc-proto.exe (
-  set BUILD_PROTO=1
-)
-
-set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
-set _architecture=win7-x64
+set logdir=%~dp0%BUILD_CONFIG%\logs
+if not exist "!logdir!" mkdir "!logdir!"
 
 rem Build Proto
 if "%BUILD_PROTO%" == "1" (
@@ -641,8 +768,8 @@ if "%BUILD_PROTO%" == "1" (
 
   if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 
-    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto
-         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto
+    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:%~dp0%BUILD_CONFIG%\logs\protobuild-coreclr.build.binlog
+         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:%~dp0%BUILD_CONFIG%\logs\protobuild-coreclr.build.binlog
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
   )
 
@@ -651,33 +778,95 @@ if "%BUILD_PROTO%" == "1" (
     echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
          %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
 
-    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto
-         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto
+    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:%~dp0%BUILD_CONFIG%\logs\protobuild-net40.build.binlog
+         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:%~dp0%BUILD_CONFIG%\logs\protobuild-net40.build.binlog
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
   )
 
-  echo %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
-       %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+  echo %_ngenexe% install Proto\net40\bin\fsc.exe /nologo 
+       %_ngenexe% install Proto\net40\bin\fsc.exe /nologo 
   @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
-echo ---------------- Done with proto, starting build ------------------------
+if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
+    echo ---------------- Done with proto, starting SDK restore ------------------------
+    :: Restore projects using dotnet CLI tool 
+    echo %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
+         %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
+)
+
+echo ---------------- Done with SDK restore, starting build ------------------------
 
 if "%BUILD_PHASE%" == "1" (
-    echo %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore
-         %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore
 
-    echo %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
-         %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
+    echo %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore %BUILD_DIAG%  /bl:%~dp0%BUILD_CONFIG%\net40\binmsbuild.build-everything.restore.%BUILD_CONFIG%.binlog
+         %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore %BUILD_DIAG%  /bl:%~dp0%BUILD_CONFIG%\net40\binmsbuild.build-everything.restore.%BUILD_CONFIG%.binlog
+
+    echo %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%  /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-everything.build.%BUILD_CONFIG%.binlog
+         %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%  /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-everything.build.%BUILD_CONFIG%.binlog
 
    @if ERRORLEVEL 1 echo Error build failed && goto :failure
 )
 
-echo ---------------- Done with build, starting pack/update/prepare ---------------
+echo ---------------- Done with build, starting assembly version checks ---------------
+set asmvercheckpath=%~dp0tests\fsharpqa\testenv\src\AssemblyVersionCheck
+
+if "%BUILD_NET40%" == "1" (
+  echo "%~dp0%BUILD_CONFIG%\net40\bin\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0%BUILD_CONFIG%"
+       "%~dp0%BUILD_CONFIG%\net40\bin\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0%BUILD_CONFIG%"
+  if ERRORLEVEL 1 echo Error verifying assembly versions and commit hashes. && goto :failure
+)
+
+echo ---------------- Done with assembly version checks, starting assembly signing ---------------
+
+if not "%SIGN_TYPE%" == "" (
+    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -Configuration %BUILD_CONFIG% -ConfigFile build\config\AssemblySignToolData.json
+    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -Configuration %BUILD_CONFIG% -ConfigFile build\config\AssemblySignToolData.json
+    if ERRORLEVEL 1 echo Error running sign tool && goto :failure
+)
+
+echo ---------------- Done with assembly signing, start package creation ---------------
+
+echo %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%  /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
+     %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%  /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
+if ERRORLEVEL 1 echo Error building NuGet packages && goto :failure
+
+if not "%SIGN_TYPE%" == "" (
+    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -Configuration %BUILD_CONFIG% -ConfigFile build\config\PackageSignToolData.json
+    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -Configuration %BUILD_CONFIG% -ConfigFile build\config\PackageSignToolData.json
+    if ERRORLEVEL 1 echo Error running sign tool && goto :failure
+)
+
+if "%BUILD_SETUP%" == "1" (
+    echo %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%  /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-insertion.build.%BUILD_CONFIG%.binlog
+         %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%  /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-insertion.build.%BUILD_CONFIG%.binlog
+    if ERRORLEVEL 1 echo Error building insertion packages && goto :failure
+)
+
+if not "%SIGN_TYPE%" == "" (
+    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -Configuration %BUILD_CONFIG% -ConfigFile build\config\InsertionSignToolData.json
+    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -Configuration %BUILD_CONFIG% -ConfigFile build\config\InsertionSignToolData.json
+    if ERRORLEVEL 1 echo Error running sign tool && goto :failure
+)
+
+echo ---------------- Done with signing, building insertion files ---------------
+
+if "%BUILD_SETUP%" == "1" (
+    echo %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG%  /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.setup-swix.build.%BUILD_CONFIG%.binlog
+         %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG%  /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.setup-swix.build.%BUILD_CONFIG%.binlog
+    if ERRORLEVEL 1 echo Error building .vsmanproj && goto :failure
+)
+
+echo ---------------- Done building insertion files, starting pack/update/prepare ---------------
 
 if "%BUILD_NET40_FSHARP_CORE%" == "1" (
   echo ----------------  start update.cmd ---------------
   call src\update.cmd %BUILD_CONFIG% -ngen
+)
+
+if "%COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES%" == "1" (
+  echo ----------------  copy fscomp resource for build from sources ---------------
+  copy /y src\fsharp\FSharp.Compiler.Private\obj\%BUILD_CONFIG%\net40\FSComp.* src\buildfromsource\FSharp.Compiler.Private
 )
 
 @echo set NUNITPATH=packages\NUnit.Console.3.0.0\tools\
@@ -717,7 +906,7 @@ echo SNEXE32:           %SNEXE32%
 echo SNEXE64:           %SNEXE64%
 echo
 
-if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" if "%TEST_NET40_COREUNIT_SUITE%" == "0" if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" if "%TEST_VS_IDEUNIT_SUITE%" == "0" if "%TEST_NET40_FSHARP_SUITE%" == "0" if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
+if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" if "%TEST_FCS%" == "0" if "%TEST_NET40_COREUNIT_SUITE%" == "0" if "TEST_CORECLR_FSHARP_SUITE" == "0" if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" if "%TEST_VS_IDEUNIT_SUITE%" == "0" if "%TEST_NET40_FSHARP_SUITE%" == "0" if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
 
 if "%no_test%" == "1" goto :success
 
@@ -751,7 +940,7 @@ ECHO link_exe=%link_exe%
 ECHO NUNIT3_CONSOLE=%NUNIT3_CONSOLE%
 ECHO NUNITPATH=%NUNITPATH%
 
-REM ---------------- net40-fsharp  -----------------------
+REM ---------------- test-net40-fsharp  -----------------------
 
 if "%TEST_NET40_FSHARP_SUITE%" == "1" (
 
@@ -779,6 +968,48 @@ if "%TEST_NET40_FSHARP_SUITE%" == "1" (
     )
 )
 
+REM ---------------- test-fcs  -----------------------
+
+if "%TEST_FCS%" == "1" (
+
+    del /q fcs\FSharp.Compiler.Service.Tests\TestResults\*.trx
+    echo "!_dotnet20exe!" test fcs/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -c Release --logger:trx
+         "!_dotnet20exe!" test fcs/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -c Release --logger:trx
+
+    if errorlevel 1 (
+        type fcs\FSharp.Compiler.Service.Tests\TestResults\*.trx
+        echo -----------------------------------------------------------------
+        echo Error: Running FCS tests failed. See XML logging output above. Search for 'outcome="Failed"' or 'Failed '
+        echo .
+        echo Error: Note that tests were run with both .NET Core and .NET Framework.
+        echo Error: Try running tests locally and using 
+        echo .
+        echo    dotnet test fcs/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -c Release --logger:trx
+        echo .
+        echo Error: and look for results in
+        echo .
+        echo    fcs\FSharp.Compiler.Service.Tests\TestResults\*.trx
+        echo .
+        echo -----------------------------------------------------------------
+        goto :failure
+    )
+)
+
+REM ---------------- end2end  -----------------------
+if "%TEST_END_2_END%" == "1" (
+
+    pushd %~dp0tests\EndToEndBuildTests
+
+    echo Execute end to end compiler tests
+    echo call EndToEndBuildTests.cmd
+    call EndToEndBuildTests.cmd
+    if errorlevel 1 (
+        popd
+        Echo end to end tests failed.
+        goto :failure
+    )
+)
+
 REM ---------------- net40-fsharpqa  -----------------------
 
 set OSARCH=%PROCESSOR_ARCHITECTURE%
@@ -790,6 +1021,7 @@ set HOSTED_COMPILER=1
 
 if "%TEST_NET40_FSHARPQA_SUITE%" == "1" (
 
+    set CSC_PIPE=%~dp0packages\Microsoft.Net.Compilers.2.7.0\tools\csc.exe
     set FSC=!FSCBINPATH!\fsc.exe
     set FSCOREDLLPATH=!FSCBinPath!\FSharp.Core.dll
     set PATH=!FSCBINPATH!;!PATH!
@@ -832,8 +1064,8 @@ if "%TEST_NET40_COMPILERUNIT_SUITE%" == "1" (
         set OUTPUTARG=--output:"!OUTPUTFILE!" 
     )
     set ERRORFILE=!RESULTSDIR!\test-net40-compilerunit-errors.log
-    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG!  !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\..\..\net40\bin\FSharp.Compiler.Unittests.dll" !WHERE_ARG_NUNIT!
-         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG!  !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\..\..\net40\bin\FSharp.Compiler.Unittests.dll" !WHERE_ARG_NUNIT!
+    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG!  !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\..\..\net40\bin\FSharp.Compiler.UnitTests.dll" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG!  !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\..\..\net40\bin\FSharp.Compiler.UnitTests.dll" !WHERE_ARG_NUNIT!
 
     if errorlevel 1 (
         echo -----------------------------------------------------------------
@@ -842,6 +1074,32 @@ if "%TEST_NET40_COMPILERUNIT_SUITE%" == "1" (
         type "!ERRORFILE!"
         echo -----------------------------------------------------------------
         echo Error: Running tests net40-compilerunit failed, see logs above -- FAILED
+        echo -----------------------------------------------------------------
+        goto :failure
+    )
+
+    set OUTPUTARG=
+    set ERRORARG=
+    set OUTPUTFILE=
+    set ERRORFILE=
+    set XMLFILE=!RESULTSDIR!\test-net40-buildunit-results.xml
+    if "%CI%" == "1" (
+        set OUTPUTFILE=!RESULTSDIR!\test-net40-buildunit-output.log
+        set ERRORFILE=!RESULTSDIR!\test-net40-buildunit-errors.log
+        set ERRORARG=--err:"!ERRORFILE!" 
+        set OUTPUTARG=--output:"!OUTPUTFILE!" 
+    )
+    set ERRORFILE=!RESULTSDIR!\test-net40-buildunit-errors.log
+    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
+
+    if errorlevel 1 (
+        echo -----------------------------------------------------------------
+        type "!OUTPUTFILE!"
+        echo -----------------------------------------------------------------
+        type "!ERRORFILE!"
+        echo -----------------------------------------------------------------
+        echo Error: Running tests net40-compilernit failed, see logs above -- FAILED
         echo -----------------------------------------------------------------
         goto :failure
     )
@@ -863,11 +1121,8 @@ if "%TEST_NET40_COREUNIT_SUITE%" == "1" (
         set OUTPUTARG=--output:"!OUTPUTFILE!" 
     )
 
-    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.Unittests.dll" !WHERE_ARG_NUNIT!
-         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.Unittests.dll" !WHERE_ARG_NUNIT!
-
-    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
-         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
+    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Core.UnitTests.dll" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Core.UnitTests.dll" !WHERE_ARG_NUNIT!
 
     if errorlevel 1 (
         echo -----------------------------------------------------------------
@@ -889,13 +1144,20 @@ if "%TEST_CORECLR_COREUNIT_SUITE%" == "1" (
     set OUTPUTFILE=!RESULTSDIR!\test-coreclr-coreunit-output.log
     set ERRORFILE=!RESULTSDIR!\test-coreclr-coreunit-errors.log
 
-    echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Build.Unittests\FSharp.Build.Unittests.dll" !WHERE_ARG_NUNIT!
-         "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Build.Unittests\FSharp.Build.Unittests.dll" !WHERE_ARG_NUNIT!
+    echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Build.UnitTests\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
+         "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Build.UnitTests\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
 
-    echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
-         "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
+    if errorlevel 1 (
+        echo -----------------------------------------------------------------
+        echo Error: Running tests coreclr-coreunit failed, see logs above-- FAILED
+        echo -----------------------------------------------------------------
+        goto :failure
+    )
 
-    if ERRORLEVEL 1 (
+    echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.UnitTests\FSharp.Core.UnitTests.dll" !WHERE_ARG_NUNIT!
+         "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.UnitTests\FSharp.Core.UnitTests.dll" !WHERE_ARG_NUNIT!
+
+    if errorlevel 1 (
         echo -----------------------------------------------------------------
         echo Error: Running tests coreclr-coreunit failed, see logs above-- FAILED
         echo -----------------------------------------------------------------
@@ -942,9 +1204,19 @@ if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
         set OUTPUTARG=--output:"!OUTPUTFILE!" 
     )
 
+    rem Verify that VisualFSharp.UnitTests.dll can be loaded by nunit.  Report load errors.
     pushd !FSCBINPATH!
-    echo "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\VisualFSharp.Unittests.dll" !WHERE_ARG_NUNIT!
-         "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\VisualFSharp.Unittests.dll" !WHERE_ARG_NUNIT!
+    echo "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\GetTypesVSUnitTests.dll" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\GetTypesVSUnitTests.dll" !WHERE_ARG_NUNIT!
+    popd
+
+    if errorlevel 1 (
+        goto :failure
+    )
+
+    pushd !FSCBINPATH!
+    echo "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\VisualFSharp.UnitTests.dll" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\VisualFSharp.UnitTests.dll" !WHERE_ARG_NUNIT!
     popd
 
     if errorlevel 1 (
@@ -955,6 +1227,8 @@ if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
         type "!ERRORFILE!"
         echo -------end vs-ide-unit errors ------------------------
         echo Error: Running tests vs-ideunit failed, see logs above, search for "Errors and Failures"  -- FAILED
+        echo Command Line for running tests
+        echo "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\VisualFSharp.UnitTests.dll" !WHERE_ARG_NUNIT!
         echo ----------------------------------------------------------------------------------------------------
         goto :failure
     )

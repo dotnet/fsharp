@@ -1,0 +1,312 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="tr" original="../WCF.resx">
+    <body>
+      <trans-unit id="AddSvcRefDlg_DefaultDialogTitle">
+        <source>Add Service Reference</source>
+        <target state="translated">Hizmet Başvurusu Ekle</target>
+        <note>Title for the "Add Service Reference" dialog</note>
+      </trans-unit>
+      <trans-unit id="CodeGenerator_UnableToGetCodeDomProvider">
+        <source>Unable to find a code generator (CodeDomProvider).</source>
+        <target state="translated">Kod oluşturucusu (CodeDomProvider) bulunamıyor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Configuration_CantSaveTemporaryConfigurations">
+        <source>Configuration could not be saved. Make sure the configuration file exists and can be edited.</source>
+        <target state="translated">Yapılandırma kaydedilemedi. Yapılandırma dosyasının var olduğundan ve düzenlenebildiğinden emin olun.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Configuration_IVsProjectSpecialFilesNotSupported">
+        <source>The current project does not support configuration files.</source>
+        <target state="translated">Geçerli proje yapılandırma dosyalarını desteklemiyor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_NoServicesFoundInSolution">
+        <source>No services found in the solution.</source>
+        <target state="translated">Çözümde herhangi bir hizmet bulunamadı.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_ErrorOnOK">
+        <source>There was an error downloading metadata from the address. Please verify that you have entered a valid address.</source>
+        <target state="translated">Adresten meta veri indirilirken bir hata oluştu. Lütfen geçerli bir adres girdiğinizi doğrulayın.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_ServicesFoundAtUrl_2Args">
+        <source>{0} service(s) found at address '{1}'.</source>
+        <target state="translated">{1}' adresinde {0} hizmet bulundu.</target>
+        <note>{0} = count, {1} = URL where the services were found</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_ServicesFoundInSolution_1Arg">
+        <source>{0} service(s) found in the solution.</source>
+        <target state="translated">Çözümde {0} hizmet bulundu.</target>
+        <note>{0} = # of services</note>
+      </trans-unit>
+      <trans-unit id="Configuration_OnlyRootItemIdSupported">
+        <source>It is only possible to access the default (ITEMID_ROOT) configuration file.</source>
+        <target state="translated">Yalnızca varsayılan (ITEMID_ROOT) yapılandırma dosyasına erişmek mümkün.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_InvalidNamespace">
+        <source>'{0}' is not a valid namespace for the service reference.</source>
+        <target state="translated">'{0}', hizmet başvurusu için geçerli bir ad alanı değil.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NamespaceConflictsOther">
+        <source>Cannot create a service reference with namespace '{0}' because the name is already in use by an existing service reference, folder or file.</source>
+        <target state="translated">'{0}' ad alanı daha önce var olan bir hizmet başvurusu, klasör veya dosya tarafından kullanıldığı için bu adlı bir hizmet başvurusu oluşturulamaz.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_AddMultipleReference">
+        <source>Unable to add a new reference. One or more references already exists or the 'Metadata' section is not empty in the .svcmap file. Edit the .svcmap file and clear all the entries from the 'Metadata' section.</source>
+        <target state="translated">Yeni başvuru eklenemiyor. Bir veya daha fazla başvuru zaten var veya .svcmap dosyasındaki 'Metadata' bölümü boş değil. .svcmap dosyasını düzenleyin ve 'Metadata' bölümündeki tüm girdileri temizleyin.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NamespaceCantBeEmpty">
+        <source>A namespace needs to be specified for this service reference.</source>
+        <target state="translated">Bu hizmet başvurusu için ad alanı belirtilmelidir.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_InvalidName">
+        <source>{0}' is not a valid name for a service reference.</source>
+        <target state="translated">'{0}', hizmet başvurusu için geçerli bir ad değil.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NameCantBeEmpty">
+        <source>Empty string is not a valid name for a reference group.</source>
+        <target state="translated">Boş dize başvuru grubu için geçerli bir ad değildir.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NameConflictsOther">
+        <source>Cannot create a reference group named '{0}' because the name is already being used by an existing reference group, folder or file.</source>
+        <target state="translated">'{0}' adı daha önce var olan bir başvuru grubu, klasör veya dosya tarafından kullanıldığı için bu adlı bir başvuru grubu oluşturulamaz.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NameCantStartEndWithSpace">
+        <source>Cannot create a reference group with namespace or name with leading or trailing whitespace characters.</source>
+        <target state="translated">Adının başında ya da sonunda boşluk karakterleri olan veya ad alanı içeren bir başvuru grubu oluşturulamaz.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NotFoundThroughPath">
+        <source>The .svcmap file cannot be found. It may have been moved or deleted.  To generate a new .svcmap file, delete the service reference and add it again.</source>
+        <target state="translated">.svcmap dosyası bulunamıyor. Taşınmış veya silinmiş olabilir.  Yeni bir .svcmap dosyası oluşturmak için hizmet başvurusunu silin ve yeniden ekleyin.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NotSupportedInCurrentProject">
+        <source>The current project does not support service references. To enable Windows Communication Foundation support, change the target version of the Microsoft .NET Framework.</source>
+        <target state="translated">Geçerli proje hizmet başvurularını desteklemiyor. Windows Communication Foundation desteğini etkinleştirmek için hedef Microsoft .NET Framework sürümünü değiştirin.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_DeleteFailedConfigurationError">
+        <source>The configuration for the service reference could not be deleted due to the following issue: {0}</source>
+        <target state="translated">Şu sorundan dolayı hizmet başvurusu yapılandırması silinemedi: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_UpdateFailedConfigurationError">
+        <source>The configuration for the service reference could not be updated due to the following issue: {0}</source>
+        <target state="translated">Hizmet başvurusu yapılandırması şu sorun nedeniyle güncelleştirilemedi: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_AddFailedConfigurationError">
+        <source>The configuration for the service reference could not be added due to the following issue: {0}</source>
+        <target state="translated">Şu sorundan dolayı hizmet başvurusu yapılandırması eklenemedi: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_NothingSelectedOnGo">
+        <source>Please enter the address for a service.</source>
+        <target state="translated">Lütfen hizmetin adresini girin.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_Error_DiscoverUrl_1Arg">
+        <source>An error occurred while attempting to find services at '{0}'.</source>
+        <target state="translated">'{0}' konumunda hizmetleri bulmaya çalışırken bir hata oluştu.</target>
+        <note>{0} = a URL path</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_Error_ServicesInSolution">
+        <source>An error occurred while searching for services in the solution.</source>
+        <target state="translated">Çözüm içinde hizmetleri ararken bir hata oluştu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_Error_StartService_1Arg1">
+        <source>An error occurred while attempting to start services at '{0}'".</source>
+        <target state="translated">'{0}' konumunda hizmetleri başlatmaya çalışırken bir hata oluştu.</target>
+        <note>{0} = a URL path</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_PleaseWait">
+        <source>Please wait for service information to be downloaded or click Stop.</source>
+        <target state="translated">Lütfen hizmet bilgilerinin indirilmesini bekleyin veya Durdur'a tıklayın.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_FailedToGetReferencedAssembliesFromProject">
+        <source>Cannot get referenced assemblies from the project system.</source>
+        <target state="translated">Proje sisteminden başvurulan bütünleştirilmiş kodlar alınamıyor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_SvcMapFileIsMissing">
+        <source>The service reference is invalid, because the .svcmap file ('{0}') cannot be found. It may have been moved, deleted or excluded from the project.  To generate a new .svcmap file, delete the service reference and add it again.</source>
+        <target state="translated">.svcmap dosyası ('{0}') bulunamadığından hizmet başvurusu geçersiz. Dosya taşınmış, silinmiş veya projeden çıkartılmış olabilir. Yeni bir .svcmap dosyası oluşturmak için hizmet başvurusunu silin ve yeniden ekleyin.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_SvcMapFileBadFormat">
+        <source>The service reference is invalid. The .svcmap file ('{0}') cannot be loaded. It may be corrupted or in a bad format: {1}</source>
+        <target state="translated">Hizmet başvurusu geçersiz. .svcmap dosyası ('{0}') yüklenemiyor. Bozuk veya biçimi hatalı olabilir: {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRegDlg_ShowErrorDetails">
+        <source>(Details)</source>
+        <target state="translated">(Ayrıntılar)</target>
+        <note>This is the text for a link to additional error information.</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_OPSelectContract">
+        <source>Select a service contract to view its operations.</source>
+        <target state="translated">İşlemlerini görüntülemek için bir hizmet sözleşmesi seçin.</target>
+        <note>This is the message displayed when user selects non-cotract nodes.</note>
+      </trans-unit>
+      <trans-unit id="CSRDlg_Title">
+        <source>Service Reference Settings</source>
+        <target state="translated">Hizmet Başvuru Ayarları</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CSRDlg_CustomType">
+        <source>( Custom )</source>
+        <target state="translated">(Özel)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CSRDlg_AssemblyNotFoundError">
+        <source>The assembly '{0}' could not be found.</source>
+        <target state="translated">'{0}' bütünleştirilmiş kodu bulunamadı.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CSRDlg_NullURL">
+        <source>Address should be a valid non-empty URL.</source>
+        <target state="translated">Adres, boş olmayan geçerli bir URL olmalıdır.</target>
+        <note>Error message to display when user enters empty URL in the address change text box</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_ServicesFound_1Arg">
+        <source>{0} service(s) found.</source>
+        <target state="translated">{0} hizmet bulundu.</target>
+        <note>{0} = count</note>
+      </trans-unit>
+      <trans-unit id="Err_UserCancelled">
+        <source>The operation was cancelled.</source>
+        <target state="translated">İşlem iptal edildi.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpdateDialog_Title_1Arg">
+        <source>Updating Service Reference '{0}'</source>
+        <target state="translated">'{0}' Hizmet Başvurusu Güncelleştiriliyor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_UpdateComplete">
+        <source>Service reference update complete.</source>
+        <target state="translated">Hizmet başvurusu güncelleştirme tamamlandı.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_GeneratingProxy">
+        <source>Generating service reference client code...</source>
+        <target state="translated">Hizmet başvurusu istemci kodu oluşturuluyor...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_GeneratingProxyComplete">
+        <source>Generation of service reference client code complete.</source>
+        <target state="translated">Hizmet başvurusu istemci kodu oluşturma tamamlandı.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_StartUpdate_1Arg">
+        <source>Updating service reference '{0}'...</source>
+        <target state="translated">'{0}' hizmet başvurusu güncelleştiriliyor...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_UpdatingConfig">
+        <source>Updating configuration...</source>
+        <target state="translated">Yapılandırma güncelleştiriliyor...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_UpdatingConfigComplete">
+        <source>Configuration update complete.</source>
+        <target state="translated">Yapılandırma güncelleştirmesi tamamlandı.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_UpdateCancelled">
+        <source>Service reference update was cancelled.</source>
+        <target state="translated">Hizmet başvurusu güncelleştirme iptal edildi.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_UpdateFailed">
+        <source>Service reference update failed.</source>
+        <target state="translated">Hizmet başvurusu güncelleştirme başarısız oldu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_AddServiceComplete">
+        <source>Add service reference complete.</source>
+        <target state="translated">Hizmet başvurusu ekleme tamamlandı.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_AddServiceFailed">
+        <source>Add service reference failed.</source>
+        <target state="translated">Hizmet başvurusu ekleme başarısız.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_StartAddService_1Arg">
+        <source>Creating new service reference to '{0}'...</source>
+        <target state="translated">'{0}' için yeni hizmet başvurusu oluşturuluyor...</target>
+        <note>{0}=URL</note>
+      </trans-unit>
+      <trans-unit id="CSRDlg_NoAssemblySelected">
+        <source>No assembly is selected.</source>
+        <target state="translated">Bir bütünleştirilmiş kod seçilmedi.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_AsyncOpPending">
+        <source>The requested operation is not valid while an asynchronous operation is in progress.</source>
+        <target state="translated">Asenkron bir işlem yürütülürken istenen işlem geçerli değil.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CSRDlg_MultipleURL">
+        <source>Multiple addresses (editable in .svcmap file)</source>
+        <target state="translated">Birden çok adres (.svcmap dosyasında düzenlenebilir)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_ContractsFoundAtUrl_2Args">
+        <source>{0} contract(s) found at address '{1}'.</source>
+        <target state="translated">{1}' adresinde {0} sözleşme bulundu.</target>
+        <note>{0} = count, {1} = URL where the contracts were found</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_Error_CantCreateTempFile">
+        <source>Unable to create temporary configuration file for downloading service information.</source>
+        <target state="translated">Hizmet bilgilerini indirmek için geçici yapılandırma dosyası oluşturulamıyor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConfigurationFileOpenedInIncompatibleEditor">
+        <source>The file is already opened in an incompatible editor.</source>
+        <target state="translated">Dosya uyumsuz bir düzenleyicide önceden açılmış.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_DownloadingMetadata">
+        <source>Downloading service information...</source>
+        <target state="translated">Hizmet bilgileri indiriliyor...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_Error_ExistingRefGroupNotSupported">
+        <source>The current version of the software does not support adding a service reference to an existing service reference group.</source>
+        <target state="translated">Yazılımın mevcut sürümü, mevcut hizmet başvuru grubuna bir hizmet başvurusu eklemeyi desteklemiyor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Discovery_ErrorBuildSolution">
+        <source>If the service is defined in the current solution, try building the solution and adding the service reference again.</source>
+        <target state="translated">Hizmet geçerli çözüm içerisinde tanımlıysa çözümü yeniden derlemeyi ve hizmet başvurusunu yeniden eklemeyi deneyin.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_MismatchBeginEndBatch">
+        <source>Mismatching Begin/EndBatch calls. You have called EndBatch more times than BeginBatch.</source>
+        <target state="translated">Eşleşmeyen Begin/EndBatch çağrıları. EndBatch'i BeginBatch'den daha fazla çağırdınız.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SingleFileGenerator_FailedToGenerateTypes_1Arg">
+        <source>Failed to generate code for the service reference '{0}'.  Please check other error and warning messages for details.</source>
+        <target state="translated">'{0}' hizmet başvurusu için kod oluşturulamadı. Ayrıntılar için diğer hata ve uyarı iletilerini kontrol edin.</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

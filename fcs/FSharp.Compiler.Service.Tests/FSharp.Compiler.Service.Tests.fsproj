@@ -1,50 +1,40 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
   </PropertyGroup>
   <Import Project="..\fcs.props" />
+  <Import Project="..\netfx.props" />
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">$(MSBuildProjectDirectory)\..\..\..\</SolutionDir>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>EE85AAB7-CDA0-4C4E-BDA0-A64DDDD13E3F</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <ProjectLanguage>FSharp</ProjectLanguage>
-    <Name>FSharp.Compiler.Service.Tests</Name>
-    <AssemblyName>FSharp.Compiler.Service.Tests</AssemblyName>
-    <TargetType>LIBRARY</TargetType>
-    <NoWarn>58;75</NoWarn>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <ResolveNuGetPackages>false</ResolveNuGetPackages>
-    <OutputPath>..\..\$(Configuration)\fcs\net45\</OutputPath>
-    <Tailcalls>true</Tailcalls>
-    <WarningLevel>3</WarningLevel>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworks>net46;netcoreapp2.0</TargetFrameworks>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <NoWarn>$(NoWarn);44;75;</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable>false</IsPackable>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies> <!-- Tests won't run without this, at least on OSX, see https://github.com/NuGet/Home/issues/4837#issuecomment-354536302 -->
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <Prefer32Bit>true</Prefer32Bit>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
+    <DefineConstants>$(DefineConstants);FX_NO_RUNTIMEENVIRONMENT</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_PROJECTCRACKER</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ReshapedReflection.fs">
+      <Link>ReshapedReflection.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Common.fs">
       <Link>Common.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\AssemblyReaderShim.fs">
+      <Link>AssemblyReaderShim.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\EditorTests.fs">
       <Link>EditorTests.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Symbols.fs">
+      <Link>Symbols.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\FileSystemTests.fs">
       <Link>FileSystemTests.fs</Link>
@@ -73,19 +63,26 @@
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\StructureTests.fs">
       <Link>StructureTests.fs</Link>
     </Compile>
-    <None Include="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\FSharp.Core.optdata">
-      <Link>FSharp.Core.optdata</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\FSharp.Core.sigdata">
-      <Link>FSharp.Core.sigdata</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\TokenizerTests.fs">
+      <Link>TokenizerTests.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Program.fs" Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
+      <Link>Program.fs</Link>
+    </Compile>
     <None Include="App.config" />
-    <None Include="paket.references" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="FSharp.Core" Version="4.5.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.6.0" />
+    <PackageReference Include="NUnit" Version="3.9.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
+    <PackageReference Include="Dotnet.ProjInfo" Version="0.9.0" />
+    <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
     <Reference Include="mscorlib" />
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.IO" />
     <Reference Include="System" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Windows.Forms" />
@@ -98,98 +95,7 @@
     <Reference Include="System.Xaml" />
     <Reference Include="WindowsBase" />
     <Reference Include="UIAutomationTypes" />
+    <ProjectReference Include="CSharp_Analysis\CSharp_Analysis.csproj" />
+    <ProjectReference Include="..\FSharp.Compiler.Service.ProjectCracker\FSharp.Compiler.Service.ProjectCracker.fsproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Reference Include="System.Collections.Immutable">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutableVersion)\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="nunit.framework">
-      <Private>True</Private>
-      <HintPath>..\..\packages\NUnit.3.5.0\lib\net45\nunit.framework.dll</HintPath>
-    </Reference>
-    <!-- we test against FSharp.Core 4.4.1.0 -->
-    <Reference Include="FSharp.Core">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\FSharp.Core.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj">
-      <Name>CSharp_Analysis</Name>
-      <Project>{887630A3-4B1D-40EA-B8B3-2D842E9C40DB}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\fcs\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj">
-      <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
-      <Name>FSharp.Compiler.Service</Name>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\fcs\FSharp.Compiler.Service.ProjectCracker\FSharp.Compiler.Service.ProjectCracker.fsproj">
-      <Name>FSharp.Compiler.Service.ProjectCracker</Name>
-      <Project>{893c3cd9-5af8-4027-a667-21e62fc2c703}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets" />
-  <Choose>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.6')">
-      <ItemGroup>
-        <Reference Include="Microsoft.Build">
-          <HintPath>..\packages\Microsoft.Build\lib\net45\Microsoft.Build.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
-  <Choose>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.6')">
-      <ItemGroup>
-        <Reference Include="Microsoft.Build.Engine">
-          <HintPath>..\packages\Microsoft.Build.Engine\lib\net45\Microsoft.Build.Engine.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
-  <Choose>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.6')">
-      <ItemGroup>
-        <Reference Include="Microsoft.Build.Framework">
-          <HintPath>..\packages\Microsoft.Build.Framework\lib\net45\Microsoft.Build.Framework.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
-  <Choose>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.6')">
-      <ItemGroup>
-        <Reference Include="Microsoft.Build.Utilities.Core">
-          <HintPath>..\packages\Microsoft.Build.Utilities.Core\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
-  <Choose>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
-      <ItemGroup>
-        <Reference Include="System.Core">
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
-  <Choose>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
-      <ItemGroup>
-        <Reference Include="System.ComponentModel.Composition">
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
 </Project>

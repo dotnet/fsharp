@@ -2,19 +2,14 @@
 
 module internal Microsoft.FSharp.Compiler.TypeChecker
 
-open Internal.Utilities
 open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Import
 open Microsoft.FSharp.Compiler.TcGlobals
@@ -30,7 +25,7 @@ type TcEnv =
 val CreateInitialTcEnv : TcGlobals * ImportMap * range * assemblyName: string * (CcuThunk * string list * string list) list -> TcEnv 
 val AddCcuToTcEnv      : TcGlobals * ImportMap * range * TcEnv * assemblyName: string * ccu: CcuThunk * autoOpens: string list * internalsVisibleToAttributes: string list -> TcEnv 
 val AddLocalRootModuleOrNamespace : NameResolution.TcResultsSink -> TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespaceType -> TcEnv
-val TcOpenDecl         : NameResolution.TcResultsSink  -> TcGlobals -> ImportMap -> range -> range -> TcEnv -> Ast.LongIdent -> TcEnv 
+val TcOpenDecl         : NameResolution.TcResultsSink  -> TcGlobals -> ImportMap -> range -> range -> TcEnv -> LongIdent -> TcEnv 
 
 type TopAttribs =
     { mainMethodAttrs : Attribs;
@@ -44,14 +39,14 @@ val EmptyTopAttrs : TopAttribs
 val CombineTopAttrs : TopAttribs -> TopAttribs -> TopAttribs
 
 val TypeCheckOneImplFile : 
-      TcGlobals * NiceNameGenerator * ImportMap * CcuThunk * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink
+      TcGlobals * NiceNameGenerator * ImportMap * CcuThunk * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink * bool
       -> TcEnv 
       -> Tast.ModuleOrNamespaceType option
       -> ParsedImplFileInput
-      -> Eventually<TopAttribs * Tast.TypedImplFile * TcEnv * bool>
+      -> Eventually<TopAttribs * Tast.TypedImplFile * ModuleOrNamespaceType * TcEnv * bool>
 
 val TypeCheckOneSigFile : 
-      TcGlobals * NiceNameGenerator * ImportMap * CcuThunk  * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink 
+      TcGlobals * NiceNameGenerator * ImportMap * CcuThunk  * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink * bool
       -> TcEnv                             
       -> ParsedSigFileInput
       -> Eventually<TcEnv * ModuleOrNamespaceType * bool>
@@ -84,7 +79,6 @@ exception FunctionValueUnexpected of DisplayEnv * TType * range
 exception UnionPatternsBindDifferentNames of range
 exception VarBoundTwice of Ast.Ident
 exception ValueRestriction of DisplayEnv * bool * Val * Typar * range
-exception FieldNotMutable of DisplayEnv * RecdFieldRef * range
 exception ValNotMutable of DisplayEnv * ValRef * range
 exception ValNotLocal of DisplayEnv * ValRef * range
 exception InvalidRuntimeCoercion of DisplayEnv * TType * TType * range
@@ -112,6 +106,4 @@ exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileNam
 
 val TcFieldInit : range -> ILFieldInit -> Tast.Const
 
-val IsSecurityAttribute : TcGlobals -> ImportMap -> Dictionary<Stamp,bool> -> Attrib -> range -> bool
-val IsSecurityCriticalAttribute : TcGlobals -> Attrib -> bool
 val LightweightTcValForUsingInBuildMethodCall : g : TcGlobals -> vref:ValRef -> vrefFlags : ValUseFlag -> vrefTypeInst : TTypes -> m : range -> Expr * TType

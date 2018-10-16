@@ -21,6 +21,7 @@
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);PackagesFolder=$(PackagesFolder)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);FSharpPackageVersion=$(FSharpPackageVersion)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);VSGeneralVersion=$(VSGeneralVersion)</PackagePreprocessorDefinitions>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,9 +31,10 @@
 
   <Target Name="CheckPropertiesArePassed">
     <Error Condition="'$(FSharpPackageVersion)' == ''" Text="A 'FSharpPackageVersion' property must be passed to the project." />
+    <Error Condition="'$(VSGeneralVersion)' == ''" Text="A 'VSGeneralVersion' property must be passed to the project." />
   </Target>
-  
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
-    <!-- SWIX plugin adds the built vsix to signing automatically -->
+
+  <Target Name="SignFiles">
+    <!-- Signing is handled by the RoslynSignTool -->
   </Target>
 </Project>

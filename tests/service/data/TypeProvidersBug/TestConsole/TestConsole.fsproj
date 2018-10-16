@@ -47,7 +47,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
     <Reference Include="FSharp.Core">
-      <HintPath>..\..\..\..\..\packages\Microsoft.Portable.FSharp.Core.4.1.20\lib\profiles\net40\FSharp.Core.dll</HintPath>
+      <HintPath>..\..\..\..\..\packages\Microsoft.Portable.FSharp.Core.10.1.0\lib\profiles\net40\FSharp.Core.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <ProjectReference Include="..\TypeProvidersBug\TypeProvidersBug.fsproj">
@@ -60,5 +60,5 @@
       <Private>True</Private>
     </Reference>
   </ItemGroup>
-  <Import Project="..\..\..\..\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets" />
+  <Import Project="..\..\..\..\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets"  Condition="Exists('..\..\..\..\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets')"  />
 </Project>

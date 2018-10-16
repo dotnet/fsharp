@@ -1,71 +1,22 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\fcs.props" />
+  <Import Project="..\..\netfx.props" />
   <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\src</FSharpSourcesRoot>
-  </PropertyGroup>
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">$(MSBuildProjectDirectory)\..\..\</SolutionDir>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>92793069-816f-4f69-84ac-0966f8275e65</ProjectGuid>
+    <TargetFrameworks>net46</TargetFrameworks>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Tokenizer</RootNamespace>
-    <AssemblyName>Tokenizer</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <Name>Tokenizer</Name>
-    <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
-    <TargetFrameworkProfile />
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <Tailcalls>false</Tailcalls>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <WarningLevel>3</WarningLevel>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DocumentationFile>bin\Debug\Tokenizer.xml</DocumentationFile>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <Tailcalls>true</Tailcalls>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <WarningLevel>3</WarningLevel>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DocumentationFile>bin\Release\Tokenizer.xml</DocumentationFile>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
-  <ItemGroup>
-    <!-- we test against FSharp.Core 4.4.1.0 -->
-    <Reference Include="FSharp.Core">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\FSharp.Core.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
-  </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.fs" />
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj">
-      <Name>FSharp.Compiler.Service</Name>
-      <Project>{2e4d67b4-522d-4cf7-97e4-ba940f0b18f3}</Project>
-      <Private>True</Private>
-    </ProjectReference>
+    <PackageReference Include="FSharp.Core" Version="4.1.*" />
+    <ProjectReference Include="..\..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
-  <PropertyGroup>
-    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
-  </PropertyGroup>
-  <Import Project="$(SolutionDir)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.IO" />
+  </ItemGroup>
 </Project>

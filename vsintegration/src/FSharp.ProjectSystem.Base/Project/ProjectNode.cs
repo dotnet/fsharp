@@ -35,8 +35,6 @@ using Microsoft.Win32;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.Build.Execution;
-
-using Microsoft.VisualStudio.FSharp.LanguageService;
 using Microsoft.VisualStudio.TextManager.Interop;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
@@ -590,10 +588,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         private Dictionary<Type, Guid> catidMapping = new Dictionary<Type, Guid>();
 
-		/// <summary>
-		/// The public package implementation.
-		/// </summary>
-		private ProjectPackage package;
+        /// <summary>
+        /// The public package implementation.
+        /// </summary>
+        private ProjectPackage package;
 
         private bool isDisposed;
 
@@ -1946,17 +1944,17 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.ProjectMgr = this;
                 this.isNewProject = false;
 
-				if ((flags & (uint)__VSCREATEPROJFLAGS.CPF_CLONEFILE) == (uint)__VSCREATEPROJFLAGS.CPF_CLONEFILE)
-				{
-					// we need to generate a new guid for the project
-					this.projectIdGuid = Guid.NewGuid();
-				}
-				else
-				{
-					this.SetProjectGuidFromProjectFile(false);
-				}
+                if ((flags & (uint)__VSCREATEPROJFLAGS.CPF_CLONEFILE) == (uint)__VSCREATEPROJFLAGS.CPF_CLONEFILE)
+                {
+                // we need to generate a new guid for the project
+                    this.projectIdGuid = Guid.NewGuid();
+                }
+                else
+                {
+                    this.SetProjectGuidFromProjectFile(false);
+                }
 
-				this.buildEngine = Utilities.InitializeMsBuildEngine(this.buildEngine);
+                this.buildEngine = Utilities.InitializeMsBuildEngine(this.buildEngine);
 
                 // based on the passed in flags, this either reloads/loads a project, or tries to create a new one
                 // now we create a new project... we do that by loading the template and then saving under a new name
@@ -1968,7 +1966,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     this.isNewProject = true;
 
                     // This should be a very fast operation if the build project is already initialized by the Factory.
-                    SetBuildProject(Utilities.ReinitializeMsBuildProject(this.buildEngine, fileName, this.buildProject));
+                    SetBuildProject(Utilities.ReinitializeMsBuildProject(this.buildEngine, fileName, this.ProjectGlobalPropertiesThatAllProjectSystemsMustSet, this.buildProject));
 
 
                     // Compute the file name
@@ -2182,7 +2180,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Do the build by invoking msbuild
         /// </summary>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "vsopts")]
-        internal virtual BuildResult Build(ConfigCanonicalName configCanonicalName, IVsOutputWindowPane output, string target)
+        internal virtual BuildResult Build(ConfigCanonicalName configCanonicalName, IVsOutputWindowPane output, string target, IEnumerable<KeyValuePair<string, string>> extraProperties)
         {
             bool engineLogOnlyCritical = BuildPrelude(output);
             BuildResult result = BuildResult.FAILED;
@@ -2190,7 +2188,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             try
             {
                 this.SetBuildConfigurationProperties(configCanonicalName);
-                result = this.InvokeMsBuild(target);
+                result = this.InvokeMsBuild(target, extraProperties);
             }
             finally
             {
@@ -2877,7 +2875,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.isClosed = false;
                 this.eventTriggeringFlag = ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents | ProjectNode.EventTriggering.DoNotTriggerTrackerEvents;
 
-                SetBuildProject(Utilities.ReinitializeMsBuildProject(this.buildEngine, this.filename, this.buildProject));
+                SetBuildProject(Utilities.ReinitializeMsBuildProject(this.buildEngine, this.filename, this.ProjectGlobalPropertiesThatAllProjectSystemsMustSet, this.buildProject));
                 
                 // Load the guid
                 this.SetProjectGuidFromProjectFile(true);
@@ -3100,20 +3098,22 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
+        internal IDictionary<string, string> ProjectGlobalPropertiesThatAllProjectSystemsMustSet { get; set; }
+
         void SetupProjectGlobalPropertiesThatAllProjectSystemsMustSet()
         {
             // Much of the code for this method is stolen from GlobalPropertyHandler.cs.  That file is dev-9 only;
             // whereas this code is for dev10 and specific to the actual contract for project systems in dev10.
             UIThread.MustBeCalledFromUIThread();
-            
+
             // Solution properties
             IVsSolution solution = this.Site.GetService(typeof(SVsSolution)) as IVsSolution;
             Debug.Assert(solution != null, "Could not retrieve the solution service from the global service provider");
 
-            string solutionDirectory, solutionFile, userOptionsFile;
+            string solutionDirectory, solutionPath, userOptionsFile;
 
             // We do not want to throw. If we cannot set the solution related constants we set them to empty string.
-            solution.GetSolutionInfo(out solutionDirectory, out solutionFile, out userOptionsFile);
+            solution.GetSolutionInfo(out solutionDirectory, out solutionPath, out userOptionsFile);
 
             if (solutionDirectory == null)
             {
@@ -3121,24 +3121,24 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 
 
-            if (solutionFile == null)
+            if (solutionPath == null)
             {
-                solutionFile = String.Empty;
+                solutionPath = String.Empty;
             }
 
 
-            string solutionFileName = (solutionFile.Length == 0) ? String.Empty : Path.GetFileName(solutionFile);
+            string solutionFileName = (solutionPath.Length == 0) ? String.Empty : Path.GetFileName(solutionPath);
 
-            string solutionName = (solutionFile.Length == 0) ? String.Empty : Path.GetFileNameWithoutExtension(solutionFile);
+            string solutionName = (solutionPath.Length == 0) ? String.Empty : Path.GetFileNameWithoutExtension(solutionPath);
 
             string solutionExtension = String.Empty;
-            if (solutionFile.Length > 0 && Path.HasExtension(solutionFile))
+            if (solutionPath.Length > 0 && Path.HasExtension(solutionPath))
             {
-                solutionExtension = Path.GetExtension(solutionFile);
+                solutionExtension = Path.GetExtension(solutionPath);
             }
 
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionDir.ToString(), solutionDirectory);
-            this.buildProject.SetGlobalProperty(GlobalProperty.SolutionPath.ToString(), solutionFile);
+            this.buildProject.SetGlobalProperty(GlobalProperty.SolutionPath.ToString(), solutionPath);
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionFileName.ToString(), solutionFileName);
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionName.ToString(), solutionName);
             this.buildProject.SetGlobalProperty(GlobalProperty.SolutionExt.ToString(), solutionExtension);
@@ -3173,6 +3173,19 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 
             this.buildProject.SetGlobalProperty(GlobalProperty.DevEnvDir.ToString(), installDir);
+
+            this.ProjectGlobalPropertiesThatAllProjectSystemsMustSet = new Dictionary<string, string>()
+            {
+                { GlobalProperty.SolutionDir.ToString(), solutionDirectory },
+                { GlobalProperty.SolutionPath.ToString(), solutionPath },
+                { GlobalProperty.SolutionFileName.ToString(), solutionFileName },
+                { GlobalProperty.SolutionName.ToString(), solutionName },
+                { GlobalProperty.SolutionExt.ToString(), solutionExtension },
+                { GlobalProperty.BuildingInsideVisualStudio.ToString(), "true" },
+                { GlobalProperty.Configuration.ToString(), "" },
+                { GlobalProperty.Platform.ToString(), "" },
+                { GlobalProperty.DevEnvDir.ToString(), installDir }
+            };
         }
 
         private class BuildAccessorAccess
@@ -3237,12 +3250,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.SetHostObject("CoreCompile", "Fsc", this);
 
                 // Do the actual Build
-                var loggerList = new System.Collections.Generic.List<Microsoft.Build.Framework.ILogger>(this.buildEngine.Loggers);
-                if (buildLogger != null)
-                    loggerList.Add(buildLogger);
-                if (myDebugLogger != null)
-                    loggerList.Add(myDebugLogger);
-
+                var loggerList = new System.Collections.Generic.List<Microsoft.Build.Framework.ILogger>();
+                if (buildLogger != null) loggerList.Add(buildLogger);
+                if (myDebugLogger != null) loggerList.Add(myDebugLogger);
                 loggers = loggerList.ToArray();
 
                 var ba = new BuildAccessorAccess(buildKind, accessor);
@@ -3277,16 +3287,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 
                 projectInstance.SetProperty("UTFOutput", "true");
 
-#if FX_PREFERRED_UI_LANG
                 // The CoreCLR build of FSC will use the CultureName since lcid doesn't apply very well
                 // so that the errors reported by fsc.exe are in the right locale
                 projectInstance.SetProperty("PREFERREDUILANG", System.Threading.Thread.CurrentThread.CurrentUICulture.Name);
-#else
-                // When building, we need to set the flags for the fsc.exe that we spawned
-                // so that the errors reported by fsc.exe are in the right locale
-                projectInstance.SetProperty("LCID", System.Threading.Thread.CurrentThread.CurrentUICulture.LCID.ToString());
-#endif
-
                 this.BuildProject.ProjectCollection.HostServices.SetNodeAffinity(projectInstance.FullPath, NodeAffinity.InProc);
                 BuildRequestData requestData = new BuildRequestData(projectInstance, targetsToBuild, this.BuildProject.ProjectCollection.HostServices, BuildRequestDataFlags.ReplaceExistingProjectInstance);
                 submission = BuildManager.DefaultBuildManager.PendBuildRequest(requestData);
@@ -4122,15 +4125,23 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         internal BuildResult Build(string target)
         {
-            return this.Build(new ConfigCanonicalName(), null, target);
+            return this.Build(new ConfigCanonicalName(), null, target, null);
+        }
+
+        /// <summary>
+        /// Overloaded method. Invokes MSBuild using the default configuration and does without logging on the output window pane.
+        /// </summary>
+        internal BuildResult BuildWithExtraProperties(string target, IEnumerable<KeyValuePair<string, string>> extraProperties)
+        {
+            return this.Build(new ConfigCanonicalName(), null, target, extraProperties);
         }
 
         /// <summary>
         /// Overloaded method. Invokes MSBuild using the default configuration.
         /// </summary>
-        internal BuildResult BuildToOutput(string target, IVsOutputWindowPane output)
+        internal BuildResult BuildToOutput(string target, IVsOutputWindowPane output, IEnumerable<KeyValuePair<string, string>> extraProperties)
         {
-            return this.Build(new ConfigCanonicalName(), output, target);
+            return this.Build(new ConfigCanonicalName(), output, target, extraProperties);
         }
 
         /// <summary>
@@ -4922,8 +4933,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                             
                             if (context == AddItemContext.Paste && FindChild(file) != null)
                             {
-                                // if we are doing 'Paste' and source file belongs to current project - generate fresh unique name
-                                newFileName = GenerateCopyOfFileName(baseDir, fileName);
+                                newFileName = Path.Combine(baseDir, fileName);
+                                if (FindChild(newFileName) != null)
+                                {
+                                    // if we are doing 'Paste' and source file belongs to current project - generate fresh unique name
+                                    newFileName = GenerateCopyOfFileName(baseDir, fileName);
+                                }
                             }
                             else if (!IsContainedWithinProjectDirectory(file))
                             {
@@ -6515,9 +6530,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 return new Tuple<uint, int>(0, VSConstants.E_FAIL);
             }
+
             var projectInstance = this.buildProject.CreateProjectInstance();
-            projectInstance.SetProperty("DesignTimeReference", String.Join(";", prgAssemblySpecs));
-            BuildSubmission submission = DoMSBuildSubmission(BuildKind.SYNC, target, ref projectInstance, null);
+            var extraProperties = new KeyValuePair<string,string>[] 
+            {
+                new KeyValuePair<string, string>("DesignTimeBuild", "true"),
+                new KeyValuePair<string, string>("DesignTimeReference", String.Join(";", prgAssemblySpecs))
+            }.AsEnumerable();
+
+            BuildSubmission submission = DoMSBuildSubmission(BuildKind.SYNC, target, ref projectInstance, null, extraProperties);
             if (submission.BuildResult.OverallResult != BuildResultCode.Success)
             {
                 // can fail, e.g. if call happens during project unload/close, in which case failure is ok

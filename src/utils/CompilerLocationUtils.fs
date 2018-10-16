@@ -12,7 +12,7 @@ open System.Runtime.InteropServices
 module internal FSharpEnvironment =
 
     /// The F# version reported in the banner
-    let FSharpBannerVersion = "4.1"
+    let FSharpBannerVersion = "10.2.3 for F# 4.5"
 
     let versionOf<'t> =
 #if FX_RESHAPED_REFLECTION
@@ -210,41 +210,20 @@ module internal FSharpEnvironment =
             let result = tryAppConfig "fsharp-compiler-location"
             match result with 
             | Some _ ->  result 
-            | None -> 
-            
+            | None ->
+
             let safeExists f = (try File.Exists(f) with _ -> false)
             // Look in the probePoint if given, e.g. look for a compiler alongside of FSharp.Build.dll
             match probePoint with 
             | Some p when safeExists (Path.Combine(p,"FSharp.Core.dll")) -> Some p 
             | _ -> 
-                
-            // On windows the location of the compiler is via a registry key
-
-            // Note: If the keys below change, be sure to update code in:
-            // Property pages (ApplicationPropPage.vb)
-
-            let key1 = @"Software\Microsoft\FSharp\4.1\Runtime\v4.0"
-            let key2 = @"Software\Microsoft\FSharp\4.0\Runtime\v4.0"
-
-            let result = tryRegKey key1
-            match result with 
-            | Some _ ->  result 
-            | None -> 
-            let result =  tryRegKey key2
-            match result with 
-            | Some _ ->  result 
-            | None ->
-
-            // On Unix we let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
-            let result = 
-                let var = System.Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN")
-                if String.IsNullOrEmpty(var) then None
-                else Some(var)
-            match result with 
-            | Some _ -> result
-            | None -> 
-            // For the prototype compiler, we can just use the current domain
-            tryCurrentDomain()
+            // We let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
+            let result = System.Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN")
+            if not (String.IsNullOrEmpty(result)) then
+                Some result
+            else
+                // For the prototype compiler, we can just use the current domain
+                tryCurrentDomain()
         with e -> 
             System.Diagnostics.Debug.Assert(false, "Error while determining default location of F# compiler")
             None

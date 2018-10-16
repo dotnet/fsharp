@@ -1,0 +1,11 @@
+FSharp.Compiler.Service.Tests/TestResults/*
+FSharp.Compiler.Service.netstandard/illex.fs
+FSharp.Compiler.Service.netstandard/ilpars.fs
+FSharp.Compiler.Service.netstandard/ilpars.fsi
+FSharp.Compiler.Service.netstandard/lex.fs
+FSharp.Compiler.Service.netstandard/pars.fs
+FSharp.Compiler.Service.netstandard/pars.fsi
+FSharp.Compiler.Service.netstandard/pplex.fs
+FSharp.Compiler.Service.netstandard/pppars.fs
+FSharp.Compiler.Service.netstandard/pppars.fsi
+

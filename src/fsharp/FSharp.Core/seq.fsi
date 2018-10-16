@@ -14,7 +14,7 @@ namespace Microsoft.FSharp.Collections
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Seq = 
 
-        /// <summary>Returns a new sequence that contains the cartesian product of the two input sequences.</summary>
+        /// <summary>Returns a new sequence that contains all pairings of elements from the first and second sequences.</summary>
         /// <param name="source1">The first sequence.</param>
         /// <param name="source2">The second sequence.</param>
         /// <returns>The result sequence.</returns>
@@ -1275,6 +1275,16 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("TryPick")>]
         val tryPick: chooser:('T -> 'U option) -> source:seq<'T> -> 'U option
+
+        /// <summary>Returns the transpose of the given sequence of sequences.</summary>
+        /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as
+        /// that sequence is iterated. As a result this function should not be used with
+        /// large or infinite sequences.</remarks>
+        /// <param name="source">The input sequence.</param>
+        /// <returns>The transposed sequence.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        [<CompiledName("Transpose")>]
+        val transpose: source:seq<'Collection> -> seq<seq<'T>> when 'Collection :> seq<'T>
 
         /// <summary>Returns a sequence that when enumerated returns at most N elements.</summary>
         ///

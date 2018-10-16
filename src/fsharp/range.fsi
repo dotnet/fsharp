@@ -1,10 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-#if COMPILER_PUBLIC_API
 module public Microsoft.FSharp.Compiler.Range
-#else
-module internal Microsoft.FSharp.Compiler.Range
-#endif
 
 open System.Text
 open System.Collections.Generic

@@ -1,0 +1,582 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="ko" original="../VSPackage.resx">
+    <body>
+      <trans-unit id="ProjectReferenceError2">
+        <source>You must build the target project before it can be referenced.</source>
+        <target state="translated">대상 프로젝트를 빌드해야 참조할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Application">
+        <source>Application</source>
+        <target state="translated">응용 프로그램</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GeneralCaption">
+        <source>General</source>
+        <target state="translated">일반</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AssemblyName">
+        <source>Assembly Name</source>
+        <target state="translated">어셈블리 이름</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AssemblyNameDescription">
+        <source>The name of the output file that will hold assembly metadata.</source>
+        <target state="translated">어셈블리 메타데이터를 저장할 출력 파일의 이름입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputType">
+        <source>Output Type</source>
+        <target state="translated">출력 형식</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputTypeDescription">
+        <source>The type of application to build.</source>
+        <target state="translated">빌드할 응용 프로그램의 유형입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DefaultNamespace">
+        <source>Default Namespace</source>
+        <target state="translated">기본 네임스페이스</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DefaultNamespaceDescription">
+        <source>Specifies the default namespace for added items, such as classes, that are added via the Add New Item Dialog Box.</source>
+        <target state="translated">클래스처럼 [새 항목 추가]5D; 대화 상자를 통해 추가한 항목에 대해 기본 네임스페이스를 지정합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartupObject">
+        <source>Startup Object</source>
+        <target state="translated">시작 개체</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartupObjectDescription">
+        <source>The name of the class that contains the static Main method that you want called when you launch your application.</source>
+        <target state="translated">응용 프로그램을 시작할 때 호출할 정적 Main 메서드를 포함하는 클래스의 이름입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ApplicationIcon">
+        <source>Application Icon</source>
+        <target state="translated">응용 프로그램 아이콘</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ApplicationIconDescription">
+        <source>Sets the .ico file to use as your application icon.</source>
+        <target state="translated">응용 프로그램 아이콘으로 사용할 .ico 파일을 설정합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project">
+        <source>Project</source>
+        <target state="translated">프로젝트</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFile">
+        <source>Project File</source>
+        <target state="translated">프로젝트 파일</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFileDescription">
+        <source>The name of the file containing build, configuration, and other information about the project.</source>
+        <target state="translated">빌드, 구성 및 기타 프로젝트 정보가 들어 있는 파일의 이름입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFolder">
+        <source>Project Folder</source>
+        <target state="translated">프로젝트 폴더</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFolderDescription">
+        <source>The absolute location of the project.</source>
+        <target state="translated">프로젝트의 절대 위치입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputFile">
+        <source>Output File</source>
+        <target state="translated">출력 파일</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputFileDescription">
+        <source>The name of the project's primary output file.</source>
+        <target state="translated">프로젝트의 기본 출력 파일 이름입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatform">
+        <source>Target Platform</source>
+        <target state="translated">대상 플랫폼</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatformDescription">
+        <source>The version of the Common Language Runtime to use for output assembly</source>
+        <target state="translated">출력 어셈블리에 사용할 공용 언어 런타임의 버전입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatformLocation">
+        <source>Target Platform Location</source>
+        <target state="translated">대상 플랫폼 위치</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatformLocationDescription">
+        <source>The location of the target platform</source>
+        <target state="translated">대상 플랫폼의 위치입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFileExtensionFilter">
+        <source>F# Project File (*.fsproj)</source>
+        <target state="translated">F# 프로젝트 파일 (*.fsproj)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ComponentFileExtensionFilter">
+        <source>Component File (*.dll;*.exe)</source>
+        <target state="translated">구성 요소 파일 (*.dll;*.exe)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OtherFlags">
+        <source>Other Flags</source>
+        <target state="translated">다른 플래그</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OtherFlagsDescription">
+        <source>Other compiler flags</source>
+        <target state="translated">다른 컴파일러 플래그</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Build">
+        <source>Build</source>
+        <target state="translated">빌드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5001">
+        <source>F# Script File</source>
+        <target state="translated">F# 스크립트 파일</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5002">
+        <source>A blank F# script file (.fsx)</source>
+        <target state="translated">빈 F# 스크립트 파일(.fsx)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5003">
+        <source>Script.fsx</source>
+        <target state="translated">Script.fsx</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5005">
+        <source>FSharp Text Editor</source>
+        <target state="translated">FSharp 텍스트 편집기</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5006">
+        <source>Code</source>
+        <target state="translated">코드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5007">
+        <source>General</source>
+        <target state="translated">일반</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5008">
+        <source>Windows</source>
+        <target state="translated">Windows</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5009">
+        <source>Silverlight</source>
+        <target state="translated">Silverlight</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5011">
+        <source>F# Source File</source>
+        <target state="translated">F# 소스 파일</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5012">
+        <source>A blank F# source file (.fs)</source>
+        <target state="translated">빈 F# 소스 파일(.fs)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5013">
+        <source>File.fs</source>
+        <target state="translated">File.fs</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5014">
+        <source>Console Application (.NET Framework)</source>
+        <target state="translated">콘솔 응용 프로그램(.NET Framework)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5015">
+        <source>A project for creating a command-line application</source>
+        <target state="translated">명령줄 응용 프로그램을 만드는 프로젝트입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5016">
+        <source>Library (.NET Framework)</source>
+        <target state="translated">라이브러리(.NET Framework)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5017">
+        <source>A project for creating an F# library</source>
+        <target state="translated">F# 라이브러리를 만드는 프로젝트</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5018">
+        <source>Tutorial (.NET Framework)</source>
+        <target state="translated">자습서(.NET Framework)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5019">
+        <source>A tutorial project providing a walkthrough of the F# language</source>
+        <target state="translated">F# 언어를 연습할 수 있는 자습서 프로젝트</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5020">
+        <source>Silverlight Library</source>
+        <target state="translated">Silverlight 라이브러리</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5021">
+        <source>A project for creating an F# Silverlight library</source>
+        <target state="translated">F# Silverlight 라이브러리를 만드는 프로젝트</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5022">
+        <source>Application Configuration File</source>
+        <target state="translated">응용 프로그램 구성 파일</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5023">
+        <source>A file for storing application configuration and settings values</source>
+        <target state="translated">응용 프로그램 구성 및 설정 값을 저장하는 파일입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5024">
+        <source>Source File</source>
+        <target state="translated">소스 파일</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5025">
+        <source>A blank F# source file (.fs)</source>
+        <target state="translated">빈 F# 소스 파일(.fs)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5026">
+        <source>Script File</source>
+        <target state="translated">스크립트 파일</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5027">
+        <source>A blank F# script file (.fsx)</source>
+        <target state="translated">빈 F# 스크립트 파일(.fsx)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5028">
+        <source>Signature File</source>
+        <target state="translated">서명 파일</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5029">
+        <source>A blank F# signature file (.fsi)</source>
+        <target state="translated">빈 F# 시그니처 파일(.fsi)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5030">
+        <source>Text File</source>
+        <target state="translated">텍스트 파일</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5031">
+        <source>An empty text file</source>
+        <target state="translated">빈 텍스트 파일입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5032">
+        <source>XML File</source>
+        <target state="translated">XML 파일</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5033">
+        <source>A blank XML file</source>
+        <target state="translated">빈 XML 파일입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5034">
+        <source>Portable Library (.NET 4.5, Windows Store, Silverlight 5, Xamarin)</source>
+        <target state="translated">이식 가능한 라이브러리(.NET 4.5, Windows 스토어, Silverlight 5, Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5035">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Silverlight 5, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 47</source>
+        <target state="translated">.NET Framework 4.5, Windows Store, Silverlight 5, Xamarin.iOS, Xamarin.Android 및 Xamarin.iOS(클래식)에서 실행할 수 있는 F# 라이브러리(.dll)를 만드는 프로젝트입니다. 프로필 47</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5036">
+        <source>Data</source>
+        <target state="translated">데이터</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5037">
+        <source>OData Service Connection (LINQ, type provider)</source>
+        <target state="translated">OData 서비스 연결(LINQ, 형식 공급자)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5038">
+        <source>A project item for consuming a Open Data Protocol (OData) web service using ODataService type provider.</source>
+        <target state="translated">ODataService 형식 공급자를 사용하는 개방형 데이터 프로토콜(OData) 웹 서비스를 소비하는 프로젝트 항목입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5040">
+        <source>A project item for consuming a .NET Managed Resources File (Resx) using ResxFile type provider.</source>
+        <target state="translated">ResxFile 형식 공급자를 사용하는 .NET 관리 리소스 파일(Resx)을 소비하기 위한 프로젝트 항목입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5041">
+        <source>SQL Database Connection (LINQ to SQL, type provider)</source>
+        <target state="translated">SQL Database 연결(LINQ to SQL, 형식 공급자)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5042">
+        <source>A project item for using the SqlDataConnection (LINQ to SQL) type provider to generate types and consume data in a live SQL database.</source>
+        <target state="translated">SqlDataConnection(LINQ to SQL) 형식 공급자를 사용하여 형식을 생성하고 라이브 SQL Database의 데이터를 소비하기 위한 프로젝트 항목입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5043">
+        <source>SQL Database Connection (LINQ to Entities, type provider)</source>
+        <target state="translated">SQL Database 연결(LINQ to Entities, 형식 공급자)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5044">
+        <source>A project item for using the SqlEntityConnection (Entity Data Model) type provider to generate types and consume data in a live SQL database.</source>
+        <target state="translated">SqlEntityConnection(엔터티 데이터 모델) 형식 공급자를 사용하여 형식을 생성하고 라이브 SQL Database의 데이터를 소비하기 위한 프로젝트 항목입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5045">
+        <source>WSDL Service Connection (type provider)</source>
+        <target state="translated">WSDL 서비스 연결(형식 공급자)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5046">
+        <source>A project item for consuming a Web Service using WsdlService type provider.</source>
+        <target state="translated">WsdlService 형식 공급자를 사용하여 웹 서비스를 소비하는 프로젝트 항목입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5047">
+        <source>Portable Library (.NET 4.5, Windows Store, Xamarin)</source>
+        <target state="translated">이식 가능한 라이브러리(.NET 4.5, Windows 스토어, Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5048">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 7</source>
+        <target state="translated">.NET Framework 4.5, Windows 스토어, Xamarin.iOS, Xamarin.Android 및 Xamarin.iOS(클래식)에서 실행할 수 있는 F# 라이브러리(.dll)를 만드는 프로젝트입니다. 프로필 7</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5049">
+        <source>Portable Library (.NET 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin)</source>
+        <target state="translated">이식 가능한 라이브러리(.NET 4.5, Windows 스토어, Windows Phone 8 Silverlight, Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5050">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 78</source>
+        <target state="translated">.NET Framework 4.5, Windows 스토어, Windows Phone 8 Silverlight, Xamarin.iOS, Xamarin.Android 및 Xamarin.iOS(클래식)에서 실행할 수 있는 F# 라이브러리(.dll)를 만드는 프로젝트입니다. 프로필 78</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5051">
+        <source>Portable Library (.NET 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin)</source>
+        <target state="translated">이식 가능한 라이브러리(.NET 4.5, Windows 스토어, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5052">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 259</source>
+        <target state="translated">.NET Framework 4.5, Windows 스토어, Windows Phone 8.1, Windows Phone 8 Silverlight, Xamarin.iOS, Xamarin.Android 및 Xamarin.iOS(클래식)에서 실행할 수 있는 F# 라이브러리(.dll)를 만드는 프로젝트입니다. 프로필 259</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5053">
+        <source>Resources File</source>
+        <target state="translated">리소스 파일</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5054">
+        <source>A file for storing resources</source>
+        <target state="translated">리소스를 저장하는 파일입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6000">
+        <source>F# Tools</source>
+        <target state="translated">F# 도구</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6001">
+        <source>F# Interactive</source>
+        <target state="translated">F# 대화형</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6002">
+        <source>F# Project Files (*.fsproj);*.fsproj</source>
+        <target state="translated">F# 프로젝트 파일 (*.fsproj);*.fsproj</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6003">
+        <source>Visual F# Files (*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</source>
+        <target state="translated">Visual F# 파일 (*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="7000">
+        <source>Visual F#</source>
+        <target state="translated">Visual F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="7001">
+        <source>Customizes the environment to maximize code editor screen space and improve the visibility of F# commands and tool windows.</source>
+        <target state="translated">코드 편집기 화면 공간을 최대화하고 F# 명령과 도구 창이 분명하게 보이도록 환경을 사용자 지정합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductDetails">
+        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="translated">F# 4.5용 Microsoft Visual F# Tools 10.2</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="9002">
+        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="translated">F# 4.5용 Microsoft Visual F# Tools 10.2</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductID">
+        <source>1.0</source>
+        <target state="translated">1.0</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductName">
+        <source>Microsoft Visual F# Tools</source>
+        <target state="translated">Microsoft Visual F# Tools</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="9001">
+        <source>Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="translated">F# 4.5용 Visual F# Tools 10.2</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="9027">
+        <source>F# Interactive</source>
+        <target state="translated">F# 대화형</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductRegistryName">
+        <source>Microsoft Visual F#</source>
+        <target state="translated">Microsoft Visual F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidOutputType">
+        <source>Invalid OutputType value</source>
+        <target state="translated">잘못된 OutputType 값</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidRunPostBuildEvent">
+        <source>Invalid RunPostBuildEvent value</source>
+        <target state="translated">잘못된 RunPostBuildEvent 값</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidTargetFrameworkVersion">
+        <source>Invalid TargetFrameworkVersion number</source>
+        <target state="translated">잘못된 TargetFrameworkVersion 번호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectRenderFolderMultiple">
+        <source>The project '{0}' could not be opened because opening it would cause a folder to be rendered multiple times in the solution explorer. One such problematic item is '{1}'. To open this project in Visual Studio, first edit the project file and fix the problem.</source>
+        <target state="translated">{0}' 프로젝트를 열면 솔루션 탐색기에서 폴더가 여러 번 렌더링될 수 있기 때문에 이 프로젝트를 열 수 없습니다. 문제가 있는 항목 중 하나가 '{1}'입니다. Visual Studio에서 이 프로젝트를 열려면 먼저 프로젝트 파일을 편집하여 문제를 해결하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropertyDefaultNamespace">
+        <source>Default Namespace:\nThe string for the default namespace must be a valid identifier</source>
+        <target state="translated">기본 네임스페이스:\n기본 네임스페이스의 문자열은 유효한 식별자여야 합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TemplateNotFound">
+        <source>Template file not found: {0}</source>
+        <target state="translated">템플릿 파일 {0}을(를) 찾을 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NeedReloadToChangeTargetFx">
+        <source>Changing the Target Framework requires that the current project be closed and then reopened.\nAny unsaved changes within the project will be automatically saved.\n\nChanging Target Framework may require manual modification of project files in order to build.\n\nAre you sure you want to change the Target Framework for this project?</source>
+        <target state="translated">대상 프레임워크를 변경하려면 현재 프로젝트를 닫았다가 다시 열어야 합니다.\n프로젝트의 저장되지 않은 변경 사항은 모두 자동으로 저장됩니다.\n\n대상 프레임워크를 변경하려면 프로젝트 파일을 빌드할 수 있도록 수동으로 수정해야 할 수 있습니다.\n\n이 프로젝트의 대상 프레임워크를 변경하시겠습니까?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceDialogTitle">
+        <source>Add Reference</source>
+        <target state="translated">참조 추가</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6005">
+        <source>Change path and command line arguments passed to the F# Interactive</source>
+        <target state="translated">F# 대화형에 전달된 경로 및 명령줄 인수를 변경합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6006">
+        <source>Enable or disable Type Providers</source>
+        <target state="translated">형식 공급자의 사용 여부를 설정합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6007">
+        <source>Visual F# Items</source>
+        <target state="translated">Visual F# 항목</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceDialogTitle_Dev11">
+        <source>Reference Manager - {0}</source>
+        <target state="translated">참조 관리자 - {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Dev11SupportsOnlySilverlight5">
+        <source>F# projects in the current version of Visual Studio support only Silverlight 5.</source>
+        <target state="translated">현재 Visual Studio 버전의 F# 프로젝트는 Silverlight 5만 지원합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceAssemblyPageDialogRetargetingText">
+        <source>The project will be retargeted, and its targeted frameworks will be reduced.</source>
+        <target state="translated">프로젝트의 대상이 다시 지정되고 해당 대상 프레임워크가 축소됩니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceAssemblyPageDialogNoItemsText">
+        <source>All of the Framework assemblies are already referenced. Please use the Object Browser to explore the references in the Framework.</source>
+        <target state="translated">모든 Framework 어셈블리가 이미 참조되었습니다. [개체 브라우저]5D;를 사용하여 Framework에서 참조를 탐색하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpCoreVersionIsNotLegacyCompatible">
+        <source>Referencing this version of FSharp.Core will cause your project to be incompatible with older versions of Visual Studio.  Do you want to continue?</source>
+        <target state="translated">이 버전의 FSharp.Core를 참조하면 프로젝트가 이전 버전의 Visual Studio와 호환되지 않습니다.  계속하시겠습니까?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ComputingSourcesAndFlags">
+        <source>Updating compilation sources and flags...</source>
+        <target state="translated">컴파일 소스 및 플래그를 업데이트하는 중...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpdatingSolutionConfiguration">
+        <source>Updating solution configuration...</source>
+        <target state="translated">솔루션 구성을 업데이트하는 중...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedBodyAbove">
+        <source>The file '{0}' cannot be placed above '{1}' in the Solution Explorer.\n\n{2}.</source>
+        <target state="translated">{0}' 파일을 솔루션 탐색기에서 '{1}' 위에 배치할 수 없습니다.\n\n{2}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedBodyBelow">
+        <source>The file '{0}' cannot be placed below '{1}' in the Solution Explorer.\n\n{2}.</source>
+        <target state="translated">{0}' 파일을 솔루션 탐색기에서 '{1}' 아래에 배치할 수 없습니다.\n\n{2}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedDifferentSubtree">
+        <source>The file is in a different subtree</source>
+        <target state="translated">파일이 다른 하위 트리에 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedMultipleFiles">
+        <source>The '{0}' folder cannot be moved as it already exists in the Solution Explorer in a different location</source>
+        <target state="translated">솔루션 탐색기의 다른 위치에 이미 존재하므로 '{0}' 폴더를 이동할 수 없습니다.</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

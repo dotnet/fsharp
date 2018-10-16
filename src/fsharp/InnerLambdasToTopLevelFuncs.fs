@@ -2,12 +2,9 @@
 
 module internal Microsoft.FSharp.Compiler.InnerLambdasToTopLevelFuncs 
 
-open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
+open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-
-open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
@@ -19,21 +16,7 @@ open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.Detuple.GlobalUsageAnalysis
 open Microsoft.FSharp.Compiler.Lib
 
-
 let verboseTLR = false
-
-#if TLR_LIFT
-/// Turns on explicit lifting of TLR constants to toplevel
-/// e.g. use true if want the TLR constants to be initialised once.
-///
-/// NOTE: liftTLR is incomplete and disabled
-///       Approach is to filter Top* let binds whilst "under lambdas",
-///       and wrap them around that expr ASAP (when get to TopLevel position).
-///       However, for arity assigned public vals (not TLR at moment),
-///       assumptions that their RHS are lambdas get broken since the
-///       lambda can be wrapped with bindings...
-let liftTLR    = ref false
-#endif
 
 //-------------------------------------------------------------------------
 // library helpers
@@ -166,7 +149,7 @@ let IsRefusedTLR g (f:Val) =
     // things marked ValInline.Never are special 
     let dllImportStubOrOtherNeverInline = (f.InlineInfo = ValInline.Never)
     // Cannot have static fields of byref type 
-    let byrefVal = isByrefLikeTy g f.Type
+    let byrefVal = isByrefLikeTy g f.Range f.Type
     // Special values are instance methods etc. on .NET types.  For now leave these alone 
     let specialVal = f.MemberInfo.IsSome
     let alreadyChosen = f.ValReprInfo.IsSome
@@ -179,9 +162,8 @@ let IsMandatoryTopLevel (f:Val) =
     specialVal || isModulBinding
 
 let IsMandatoryNonTopLevel g (f:Val) =
-    let byrefVal = isByrefLikeTy g f.Type
+    let byrefVal = isByrefLikeTy g f.Range f.Type
     byrefVal
-
 
 //-------------------------------------------------------------------------
 // pass1: decide which f are to be TLR? and if so, arity(f)
@@ -744,7 +726,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
        //        temp
 
 
-       let vals = vals |> List.filter (fun v -> not (isByrefLikeTy g v.Type))
+       let vals = vals |> List.filter (fun v -> not (isByrefLikeTy g v.Range v.Type))
        // Remove values which have been labelled TLR, no need to close over these
        let vals = vals |> List.filter (Zset.memberOf topValS >> not) 
        
@@ -843,7 +825,7 @@ let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
         let wf     = Zmap.force f arityM ("createFHat - wf",(fun v -> showL (valL v)))
         let fc     = Zmap.force f fclassM ("createFHat - fc",nameOfVal)
         let envp   = Zmap.force fc envPackM ("CreateNewValuesForTLR - envp",string)
-        let name   = f.LogicalName (* ^ "_TLR_" ^ string wf *)
+        let name   = f.LogicalName (* + "_TLR_" + string wf *)
         let m      = f.Range
         let tps,tau    = f.TypeScheme
         let argtys,res = stripFunTy g tau
@@ -937,25 +919,8 @@ module Pass4_RewriteAssembly =
     let SetPreDecs z pdt = {z with rws_preDecs=pdt}
 
     /// collect Top* repr bindings - if needed... 
-#if TLR_LIFT
-    let LiftTopBinds isRec _penv z binds =
-        let isTopBind (bind: Binding) = Option.isSome bind.Var.ValReprInfo
-        let topBinds,otherBinds = List.partition isTopBind binds
-        let liftTheseBindings =
-            !liftTLR &&             // lifting enabled 
-            not z.rws_mustinline &&   // can't lift bindings in a mustinline context - they would become private an not inlined 
-            z.rws_innerLevel>0 &&   // only collect Top* bindings when at inner levels (else will drop them!) 
-            not (isNil topBinds) // only collect topBinds if there are some! 
-        if liftTheseBindings then
-            let LiftedDeclaration = isRec,topBinds                                           // LiftedDeclaration Top* decs 
-            let z = {z with rws_preDecs = TreeNode [z.rws_preDecs;LeafNode LiftedDeclaration]}   // logged at end 
-            z,otherBinds
-        else
-            z,binds (* not "topBinds @ otherBinds" since that has changed order... *)
-#else
     let LiftTopBinds _isRec _penv z binds =
         z,binds 
-#endif
        
     /// Wrap preDecs (in order) over an expr - use letrec/let as approp 
     let MakePreDec  m (isRec,binds: Bindings) expr = 
@@ -1023,7 +988,7 @@ module Pass4_RewriteAssembly =
             // Take off the variables
             let tps,vss,b,rty = stripTopLambda (b,f.Type)
             // Don't take all the variables - only up to length wf
-            let vssTake,vssDrop = List.chop wf vss
+            let vssTake,vssDrop = List.splitAt wf vss
             // put the variables back on
             let b,rty = mkMultiLambdasCore b.Range vssDrop (b,rty)
             // fHat, args 
@@ -1283,9 +1248,9 @@ module Pass4_RewriteAssembly =
     and TransValBindings penv z binds = List.mapFold (TransValBinding penv) z  binds
     and TransModuleExpr penv z x = 
         match x with  
-        | ModuleOrNamespaceExprWithSig(mty,def,m) ->  
+        | ModuleOrNamespaceExprWithSig(mty, def, m) ->  
             let def,z = TransModuleDef penv z def
-            ModuleOrNamespaceExprWithSig(mty,def,m),z
+            ModuleOrNamespaceExprWithSig(mty, def, m),z
         
     and TransModuleDefs penv z x = List.mapFold (TransModuleDef penv) z x
     and TransModuleDef penv (z: RewriteState) x : ModuleOrNamespaceExpr * RewriteState = 

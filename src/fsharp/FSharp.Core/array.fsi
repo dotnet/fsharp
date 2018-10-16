@@ -12,7 +12,7 @@ namespace Microsoft.FSharp.Collections
     [<RequireQualifiedAccess>]
     module Array = 
 
-        /// <summary>Builds a new array that contains the cartesian product of the two input arrays.</summary>
+        /// <summary>Returns a new array that contains all pairings of elements from the first and second arrays.</summary>
         /// <param name="array1">The first input array.</param>
         /// <param name="array2">The second input array.</param>
         /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
@@ -985,6 +985,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ToSeq")>]
         val toSeq: array:'T[] -> seq<'T>
 
+        /// <summary>Returns the transpose of the given sequence of arrays.</summary>
+        /// <param name="arrays">The input sequence of arrays.</param>
+        /// <returns>The transposed array.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        [<CompiledName("Transpose")>]
+        val transpose: arrays:seq<'T[]> -> 'T[][]
+
         /// <summary>Returns at most N elements in a new array.</summary>
         /// <param name="count">The maximum number of items to return.</param>
         /// <param name="array">The input array.</param>
@@ -1102,7 +1110,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Zip3")>]
         val zip3: array1:'T1[] -> array2:'T2[] -> array3:'T3[] -> ('T1 * 'T2 * 'T3)[]
 
-#if !FX_NO_TPL_PARALLEL
         /// <summary>Provides parallel operations on arrays </summary>
         module Parallel =
 
@@ -1198,4 +1205,3 @@ namespace Microsoft.FSharp.Collections
             /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
             [<CompiledName("Partition")>]
             val partition : predicate:('T -> bool) -> array:'T[] -> 'T[] * 'T[]
-#endif            

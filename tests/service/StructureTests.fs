@@ -1,5 +1,5 @@
 #if INTERACTIVE
-#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
@@ -53,7 +53,7 @@ let (=>) (source: string) (expectedRanges: (Range * Range) list) =
                 |> List.ofSeq
             let expected = List.sort expectedRanges
             if actual <> expected then
-            failwithf "Expected %s, but was %s" (formatList expected) (formatList actual)
+                failwithf "Expected %s, but was %s" (formatList expected) (formatList actual)
         | None -> failwithf "Expected there to be a parse tree for source:\n%s" source
     with _ ->
         printfn "AST:\n%+A" ast
@@ -301,6 +301,28 @@ match None with     // 2
          (6, 4, 10, 10), (5, 6, 10, 10)
          (6, 4, 10, 10), (6, 19, 10, 10)
          (9, 8, 10, 10), (8, 10, 10, 10) ]
+
+[<Test>]
+let ``matchbang``() =
+    """
+async {                                   // 2
+    match! async { return None } with     // 3
+    | Some _ ->                           // 4
+        ()                                // 5
+    | None ->                             // 6
+        match None with                   // 7
+        | Some _ -> ()                    // 8
+        | None ->                         // 9
+            let x = ()                    // 10
+            ()                            // 11
+}                                         // 12
+"""
+    => [ (1, 0, 12, 1), (1, 0, 12, 1)
+         (2, 0, 12, 1), (2, 7, 12, 0)
+         (3, 4, 11, 14), (3, 37, 11, 14)
+         (7, 8, 11, 14), (6, 10, 11, 14)
+         (7, 8, 11, 14), (7, 23, 11, 14)
+         (10, 12, 11, 14), (9, 14, 11, 14) ]
          
 [<Test>]
 let ``computation expressions``() =

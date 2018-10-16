@@ -1,0 +1,582 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="cs" original="../VSPackage.resx">
+    <body>
+      <trans-unit id="ProjectReferenceError2">
+        <source>You must build the target project before it can be referenced.</source>
+        <target state="translated">Než bude moci být projekt odkazován, musí být cílový projekt nejprve sestaven.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Application">
+        <source>Application</source>
+        <target state="translated">Aplikace</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GeneralCaption">
+        <source>General</source>
+        <target state="translated">Obecné</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AssemblyName">
+        <source>Assembly Name</source>
+        <target state="translated">Název sestavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AssemblyNameDescription">
+        <source>The name of the output file that will hold assembly metadata.</source>
+        <target state="translated">Název výstupního souboru, ve kterém se uloží metadata sestavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputType">
+        <source>Output Type</source>
+        <target state="translated">Typ výstupu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputTypeDescription">
+        <source>The type of application to build.</source>
+        <target state="translated">Typ aplikace, která má být vytvořena</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DefaultNamespace">
+        <source>Default Namespace</source>
+        <target state="translated">Výchozí obor názvů</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DefaultNamespaceDescription">
+        <source>Specifies the default namespace for added items, such as classes, that are added via the Add New Item Dialog Box.</source>
+        <target state="translated">Určuje výchozí obor názvů pro přidané položky, například třídy, které budou přidány prostřednictvím dialogového okna Přidat novou položku.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartupObject">
+        <source>Startup Object</source>
+        <target state="translated">Spouštěcí objekt</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartupObjectDescription">
+        <source>The name of the class that contains the static Main method that you want called when you launch your application.</source>
+        <target state="translated">Název třídy obsahující statickou metodu Main, která se má volat při spuštění aplikace</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ApplicationIcon">
+        <source>Application Icon</source>
+        <target state="translated">Ikona aplikace</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ApplicationIconDescription">
+        <source>Sets the .ico file to use as your application icon.</source>
+        <target state="translated">Nastaví soubor ICO, který se má použít jako ikona vaší aplikace.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project">
+        <source>Project</source>
+        <target state="translated">Projekt</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFile">
+        <source>Project File</source>
+        <target state="translated">Soubor projektu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFileDescription">
+        <source>The name of the file containing build, configuration, and other information about the project.</source>
+        <target state="translated">Název souboru, který obsahuje sestavení, konfiguraci a informace o projektu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFolder">
+        <source>Project Folder</source>
+        <target state="translated">Složka projektu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFolderDescription">
+        <source>The absolute location of the project.</source>
+        <target state="translated">Absolutní umístění projektu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputFile">
+        <source>Output File</source>
+        <target state="translated">Výstupní soubor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputFileDescription">
+        <source>The name of the project's primary output file.</source>
+        <target state="translated">Název hlavního výstupního souboru projektu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatform">
+        <source>Target Platform</source>
+        <target state="translated">Cílová platforma</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatformDescription">
+        <source>The version of the Common Language Runtime to use for output assembly</source>
+        <target state="translated">Verze modulu CLR (Common Language Runtime), která má být použita pro výstupní sestavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatformLocation">
+        <source>Target Platform Location</source>
+        <target state="translated">Umístění cílové platformy</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatformLocationDescription">
+        <source>The location of the target platform</source>
+        <target state="translated">Umístění cílové platformy</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFileExtensionFilter">
+        <source>F# Project File (*.fsproj)</source>
+        <target state="translated">Soubor projektu F# (*.fsproj)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ComponentFileExtensionFilter">
+        <source>Component File (*.dll;*.exe)</source>
+        <target state="translated">Soubor součásti (*.dll;*.exe)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OtherFlags">
+        <source>Other Flags</source>
+        <target state="translated">Další příznaky</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OtherFlagsDescription">
+        <source>Other compiler flags</source>
+        <target state="translated">Další příznaky kompilátoru</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Build">
+        <source>Build</source>
+        <target state="translated">Sestavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5001">
+        <source>F# Script File</source>
+        <target state="translated">Soubor skriptu F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5002">
+        <source>A blank F# script file (.fsx)</source>
+        <target state="translated">Prázdný soubor skriptu F# (.fsx)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5003">
+        <source>Script.fsx</source>
+        <target state="translated">Skript.fsx</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5005">
+        <source>FSharp Text Editor</source>
+        <target state="translated">Textový editor FSharp</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5006">
+        <source>Code</source>
+        <target state="translated">Kód</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5007">
+        <source>General</source>
+        <target state="translated">Obecné</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5008">
+        <source>Windows</source>
+        <target state="translated">Windows</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5009">
+        <source>Silverlight</source>
+        <target state="translated">Silverlight</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5011">
+        <source>F# Source File</source>
+        <target state="translated">Zdrojový soubor F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5012">
+        <source>A blank F# source file (.fs)</source>
+        <target state="translated">Prázdný zdrojový soubor F# (.fs)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5013">
+        <source>File.fs</source>
+        <target state="translated">Soubor.fs</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5014">
+        <source>Console Application (.NET Framework)</source>
+        <target state="translated">Konzolová aplikace (.NET Framework)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5015">
+        <source>A project for creating a command-line application</source>
+        <target state="translated">Projekt pro vytvoření aplikace příkazového řádku</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5016">
+        <source>Library (.NET Framework)</source>
+        <target state="translated">Knihovna (.NET Framework)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5017">
+        <source>A project for creating an F# library</source>
+        <target state="translated">Projekt pro vytvoření knihovny F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5018">
+        <source>Tutorial (.NET Framework)</source>
+        <target state="translated">Kurz (.NET Framework)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5019">
+        <source>A tutorial project providing a walkthrough of the F# language</source>
+        <target state="translated">Výukový projekt, který poskytuje návod pro jazyk F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5020">
+        <source>Silverlight Library</source>
+        <target state="translated">Knihovna Silverlight</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5021">
+        <source>A project for creating an F# Silverlight library</source>
+        <target state="translated">Projekt pro vytvoření Silverlight knihoven F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5022">
+        <source>Application Configuration File</source>
+        <target state="translated">Konfigurační soubor aplikace</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5023">
+        <source>A file for storing application configuration and settings values</source>
+        <target state="translated">Soubor pro ukládání konfigurace aplikace a hodnot nastavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5024">
+        <source>Source File</source>
+        <target state="translated">Zdrojový soubor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5025">
+        <source>A blank F# source file (.fs)</source>
+        <target state="translated">Prázdný zdrojový soubor F# (.fs)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5026">
+        <source>Script File</source>
+        <target state="translated">Soubor skriptu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5027">
+        <source>A blank F# script file (.fsx)</source>
+        <target state="translated">Prázdný soubor skriptu F# (.fsx)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5028">
+        <source>Signature File</source>
+        <target state="translated">Soubor podpisu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5029">
+        <source>A blank F# signature file (.fsi)</source>
+        <target state="translated">Prázdný podpisový soubor F# (.fsi)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5030">
+        <source>Text File</source>
+        <target state="translated">Textový soubor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5031">
+        <source>An empty text file</source>
+        <target state="translated">Prázdný textový soubor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5032">
+        <source>XML File</source>
+        <target state="translated">Soubor XML</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5033">
+        <source>A blank XML file</source>
+        <target state="translated">Prázdný XML soubor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5034">
+        <source>Portable Library (.NET 4.5, Windows Store, Silverlight 5, Xamarin)</source>
+        <target state="translated">Přenosná knihovna (.NET 4.5, Windows Store, Silverlight 5, Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5035">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Silverlight 5, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 47</source>
+        <target state="translated">Projekt pro vytváření knihovny F# (.dll), kterou jde spustit na platformě .NET Framework 4.5, Windows Store, Silverlight 5, Xamarin.iOS, Xamarin.Android a Xamarin.iOS(Classic). Profil 47</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5036">
+        <source>Data</source>
+        <target state="translated">Data</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5037">
+        <source>OData Service Connection (LINQ, type provider)</source>
+        <target state="translated">Připojení služby OData (LINQ, zprostředkovatel typu)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5038">
+        <source>A project item for consuming a Open Data Protocol (OData) web service using ODataService type provider.</source>
+        <target state="translated">Položka projektu určená pro zpracování obsahu webové služby typu Open Data Protocol (OData) pomocí zprostředkovatele typu ODataService.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5040">
+        <source>A project item for consuming a .NET Managed Resources File (Resx) using ResxFile type provider.</source>
+        <target state="translated">Položka projektu určená pro zpracování obsahu souboru spravovaných prostředků .NET (Resx) pomocí zprostředkovatele typu ResxFile.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5041">
+        <source>SQL Database Connection (LINQ to SQL, type provider)</source>
+        <target state="translated">Připojení k databázi SQL (LINQ to SQL, zprostředkovatel typu)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5042">
+        <source>A project item for using the SqlDataConnection (LINQ to SQL) type provider to generate types and consume data in a live SQL database.</source>
+        <target state="translated">Položka projektu určená pro vygenerování typů a zpracování dat v živé databázi SQL pomocí zprostředkovatele typu SqlDataConnection (LINQ to SQL).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5043">
+        <source>SQL Database Connection (LINQ to Entities, type provider)</source>
+        <target state="translated">Připojení k databázi SQL (LINQ to Entities zprostředkovatel typu)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5044">
+        <source>A project item for using the SqlEntityConnection (Entity Data Model) type provider to generate types and consume data in a live SQL database.</source>
+        <target state="translated">Položka projektu určená pro vygenerování typů a zpracování dat v živé databázi SQL pomocí zprostředkovatele typu SqlEntityConnection (Entity Data Model).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5045">
+        <source>WSDL Service Connection (type provider)</source>
+        <target state="translated">Připojení služby WSDL (zprostředkovatel typu)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5046">
+        <source>A project item for consuming a Web Service using WsdlService type provider.</source>
+        <target state="translated">Položka projektu určená pro zpracování obsahu webové služby pomocí zprostředkovatele typu WsdlService.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5047">
+        <source>Portable Library (.NET 4.5, Windows Store, Xamarin)</source>
+        <target state="translated">Přenosná knihovna (.NET 4.5, Windows Store, Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5048">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 7</source>
+        <target state="translated">Projekt pro tvorbu knihovny F# (.dll) spustitelný v rozhraní .NET Framework 4.5, Windows Store, Xamarin.iOS, Xamarin.Android a Xamarin.iOS(Classic). Profil 7</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5049">
+        <source>Portable Library (.NET 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin)</source>
+        <target state="translated">Přenosná knihovna (.NET 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5050">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 78</source>
+        <target state="translated">Projekt pro vytvoření knihovny v jazyce F# (.dll), kterou lze spustit na platformě .NET Framework 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin.iOS, Xamarin.Android a Xamarin.iOS(Classic). Profil 78</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5051">
+        <source>Portable Library (.NET 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin)</source>
+        <target state="translated">Přenosná knihovna (.NET 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5052">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 259</source>
+        <target state="translated">Projekt pro vytvoření knihovny v jazyce F# (.dll), která se dá spustit na platformě .NET Framework 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin.iOS, Xamarin.Android a Xamarin.iOS(Classic). Profil 259</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5053">
+        <source>Resources File</source>
+        <target state="translated">Soubor prostředků</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5054">
+        <source>A file for storing resources</source>
+        <target state="translated">Soubor pro uložení prostředků</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6000">
+        <source>F# Tools</source>
+        <target state="translated">Nástroje F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6001">
+        <source>F# Interactive</source>
+        <target state="translated">F# Interactive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6002">
+        <source>F# Project Files (*.fsproj);*.fsproj</source>
+        <target state="translated">Soubory projektů F# (*.fsproj);*.fsproj</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6003">
+        <source>Visual F# Files (*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</source>
+        <target state="translated">Soubory Visual F# (*.fs, *.fsi, *.fsx, *.fsscript); *.fs, *.fsi, *.fsx,*.fsscript</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="7000">
+        <source>Visual F#</source>
+        <target state="translated">Visual F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="7001">
+        <source>Customizes the environment to maximize code editor screen space and improve the visibility of F# commands and tool windows.</source>
+        <target state="translated">Přizpůsobí prostředí pro maximalizaci místa na obrazovce editoru kódu a zlepšení viditelnosti okna příkazů a nástrojů F#.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductDetails">
+        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="translated">Microsoft Visual F# Tools 10.2 pro F# 4.5</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="9002">
+        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="translated">Microsoft Visual F# Tools 10.2 pro F# 4.5</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductID">
+        <source>1.0</source>
+        <target state="translated">1.0</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductName">
+        <source>Microsoft Visual F# Tools</source>
+        <target state="translated">Microsoft Visual F# Tools</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="9001">
+        <source>Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="translated">Visual F# Tools 10.2 pro F# 4.5</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="9027">
+        <source>F# Interactive</source>
+        <target state="translated">F# Interactive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductRegistryName">
+        <source>Microsoft Visual F#</source>
+        <target state="translated">Microsoft Visual F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidOutputType">
+        <source>Invalid OutputType value</source>
+        <target state="translated">Neplatná hodnota atributu OutputType</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidRunPostBuildEvent">
+        <source>Invalid RunPostBuildEvent value</source>
+        <target state="translated">Neplatná hodnota atributu RunPostBuildEvent</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidTargetFrameworkVersion">
+        <source>Invalid TargetFrameworkVersion number</source>
+        <target state="translated">Neplatné číslo atributu TargetFrameworkVersion</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectRenderFolderMultiple">
+        <source>The project '{0}' could not be opened because opening it would cause a folder to be rendered multiple times in the solution explorer. One such problematic item is '{1}'. To open this project in Visual Studio, first edit the project file and fix the problem.</source>
+        <target state="translated">Projekt '{0}' nelze otevřít, protože otevření by způsobilo vícenásobné vykreslení složky v průzkumníku řešení. Jedna z problematických položek je '{1}'. Chcete-li tento projekt otevřít v aplikaci Visual Studio, upravte nejdřív soubor projektu a problém vyřešte.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropertyDefaultNamespace">
+        <source>Default Namespace:\nThe string for the default namespace must be a valid identifier</source>
+        <target state="translated">Výchozí obor názvů:\nŘetězec výchozího oboru názvů musí být platný identifikátor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TemplateNotFound">
+        <source>Template file not found: {0}</source>
+        <target state="translated">Soubor šablony nebyl nalezen: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NeedReloadToChangeTargetFx">
+        <source>Changing the Target Framework requires that the current project be closed and then reopened.\nAny unsaved changes within the project will be automatically saved.\n\nChanging Target Framework may require manual modification of project files in order to build.\n\nAre you sure you want to change the Target Framework for this project?</source>
+        <target state="translated">Změna cílového rámce vyžaduje zavření a opětovné otevření aktuálního projektu. \nJakékoliv neuložené změny v rámci projektu budou automaticky uloženy.\n\nZměna cílového rámce může vyžadovat ruční úpravy souborů projektu, aby mohlo být provedeno sestavení.\n\nJste si jisti, že chcete změnit cílový rámec tohoto projektu?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceDialogTitle">
+        <source>Add Reference</source>
+        <target state="translated">Přidat odkaz</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6005">
+        <source>Change path and command line arguments passed to the F# Interactive</source>
+        <target state="translated">Změnit cestu a argumenty příkazového řádku předané F# Interactive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6006">
+        <source>Enable or disable Type Providers</source>
+        <target state="translated">Povolit nebo zakázat zprostředkovatele typů</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6007">
+        <source>Visual F# Items</source>
+        <target state="translated">Položky Visual F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceDialogTitle_Dev11">
+        <source>Reference Manager - {0}</source>
+        <target state="translated">Správce odkazů - {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Dev11SupportsOnlySilverlight5">
+        <source>F# projects in the current version of Visual Studio support only Silverlight 5.</source>
+        <target state="translated">F# projekty v aktuální verzi aplikace Visual Studio podporují pouze Silverlight ve verzi 5.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceAssemblyPageDialogRetargetingText">
+        <source>The project will be retargeted, and its targeted frameworks will be reduced.</source>
+        <target state="translated">Cíl projektu bude změněn a jeho cílová rozhraní budou zredukována.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceAssemblyPageDialogNoItemsText">
+        <source>All of the Framework assemblies are already referenced. Please use the Object Browser to explore the references in the Framework.</source>
+        <target state="translated">Na všechna sestavení rozhraní je již odkazováno. Pro prozkoumání odkazů rozhraní použijte prohlížeč objektů.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpCoreVersionIsNotLegacyCompatible">
+        <source>Referencing this version of FSharp.Core will cause your project to be incompatible with older versions of Visual Studio.  Do you want to continue?</source>
+        <target state="translated">Odkazování na tuto verzi oboru názvů FSharp.Core zapříčíní nekompatibilitu projektu se staršími verzemi Visual Studia. Chcete pokračovat?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ComputingSourcesAndFlags">
+        <source>Updating compilation sources and flags...</source>
+        <target state="translated">Aktualizují se zdroje a příznaky kompilace...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpdatingSolutionConfiguration">
+        <source>Updating solution configuration...</source>
+        <target state="translated">Aktualizuje se konfigurace řešení...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedBodyAbove">
+        <source>The file '{0}' cannot be placed above '{1}' in the Solution Explorer.\n\n{2}.</source>
+        <target state="translated">Soubor {0} nemůže být umístěn nad {1} v Průzkumníkovi řešení.\n\n{2}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedBodyBelow">
+        <source>The file '{0}' cannot be placed below '{1}' in the Solution Explorer.\n\n{2}.</source>
+        <target state="translated">Soubor {0} nemůže být umístěn pod {1} v Průzkumníkovi řešení.\n\n{2}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedDifferentSubtree">
+        <source>The file is in a different subtree</source>
+        <target state="translated">Soubor je v jiném podstromu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedMultipleFiles">
+        <source>The '{0}' folder cannot be moved as it already exists in the Solution Explorer in a different location</source>
+        <target state="translated">Složku {0} nejde přesunout, protože už existuje v Průzkumníkovi řešení v jiném umístění.</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

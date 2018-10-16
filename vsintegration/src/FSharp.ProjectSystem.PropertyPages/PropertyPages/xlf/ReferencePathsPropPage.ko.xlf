@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="ko" original="../ReferencePathsPropPage.resx">
+    <body>
+      <trans-unit id="AddFolder.Text">
+        <source>&amp;Add Folder</source>
+        <target state="translated">폴더 추가(&amp;A)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpdateFolder.Text">
+        <source>&amp;Update</source>
+        <target state="translated">업데이트(&amp;U)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferencePathLabel.Text">
+        <source>Reference &amp;paths:</source>
+        <target state="translated">참조 경로(&amp;P):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderBrowse.AccessibleName">
+        <source>Browse</source>
+        <target state="translated">찾아보기</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderBrowse.Text">
+        <source>...</source>
+        <target state="translated">...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MoveUp.AccessibleName">
+        <source>Move up</source>
+        <target state="translated">위로 이동</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MoveDown.AccessibleName">
+        <source>Move down</source>
+        <target state="translated">아래로 이동</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveFolder.AccessibleName">
+        <source>Delete</source>
+        <target state="translated">삭제</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderLabel.Text">
+        <source>&amp;Folder:</source>
+        <target state="translated">폴더(&amp;F):</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

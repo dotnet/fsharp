@@ -1,0 +1,14 @@
+<Project>
+
+  <Import Project="Directory.Build.targets" />
+
+  <ItemGroup>
+    <!-- everything under the `Template` directory is not to be considered part of the project -->
+    <Compile Remove="**\Template\**" />
+    <EmbeddedResource Remove="**\Template\**" />
+    <None Remove="**\Template\**" />
+  </ItemGroup>
+
+  <Target Name="CoreCompile" />
+
+</Project>

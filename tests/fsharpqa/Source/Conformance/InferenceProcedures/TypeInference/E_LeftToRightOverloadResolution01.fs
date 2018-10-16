@@ -1,6 +1,6 @@
 // #Regression #TypeInference 
 // Regression for FSHARP1.0:5749
-// Better error message for overload resolution to help ease pain assocaited with mismatch of intellisense information
+// Better error message for overload resolution to help ease pain associated with mismatch of intellisense information
 
 
 let array = [| "Ted"; "Katie"; |]

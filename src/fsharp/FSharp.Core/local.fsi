@@ -63,6 +63,7 @@ module internal List =
     val toArray : 'T list -> 'T[]
     val inline ofSeq : seq<'T> -> 'T List
     val splitAt : int -> 'T list -> ('T list * 'T list)
+    val transpose : 'T list list -> 'T list list
     val truncate : int -> 'T list -> 'T list
 
 module internal Array =

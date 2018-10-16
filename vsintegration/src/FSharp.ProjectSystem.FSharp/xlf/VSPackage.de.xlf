@@ -1,0 +1,582 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="de" original="../VSPackage.resx">
+    <body>
+      <trans-unit id="ProjectReferenceError2">
+        <source>You must build the target project before it can be referenced.</source>
+        <target state="translated">Sie müssen das Zielprojekt erstellen, bevor darauf verwiesen werden kann.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Application">
+        <source>Application</source>
+        <target state="translated">Anwendung</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GeneralCaption">
+        <source>General</source>
+        <target state="translated">Allgemein</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AssemblyName">
+        <source>Assembly Name</source>
+        <target state="translated">Assemblyname</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AssemblyNameDescription">
+        <source>The name of the output file that will hold assembly metadata.</source>
+        <target state="translated">Der Name der Ausgabedatei, in der die Assemblymetadaten gespeichert werden.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputType">
+        <source>Output Type</source>
+        <target state="translated">Ausgabetyp</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputTypeDescription">
+        <source>The type of application to build.</source>
+        <target state="translated">Typ der zu erstellenden Anwendung.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DefaultNamespace">
+        <source>Default Namespace</source>
+        <target state="translated">Standardnamespace</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DefaultNamespaceDescription">
+        <source>Specifies the default namespace for added items, such as classes, that are added via the Add New Item Dialog Box.</source>
+        <target state="translated">Gibt den Standardnamespace für hinzugefügte Elemente, wie Klassen, an, die über das Dialogfeld "Neue Elemente hinzufügen" hinzugefügt werden.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartupObject">
+        <source>Startup Object</source>
+        <target state="translated">Startobjekt</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartupObjectDescription">
+        <source>The name of the class that contains the static Main method that you want called when you launch your application.</source>
+        <target state="translated">Der Name der Klasse, die die statische Hauptmethode enthält, die beim Start der Anwendung aufgerufen werden soll.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ApplicationIcon">
+        <source>Application Icon</source>
+        <target state="translated">Anwendungssymbol</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ApplicationIconDescription">
+        <source>Sets the .ico file to use as your application icon.</source>
+        <target state="translated">Legt die ICO-Datei fest, die als Anwendungssymbol verwendet werden soll.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project">
+        <source>Project</source>
+        <target state="translated">Projekt</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFile">
+        <source>Project File</source>
+        <target state="translated">Projektdatei</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFileDescription">
+        <source>The name of the file containing build, configuration, and other information about the project.</source>
+        <target state="translated">Der Name der Datei mit den Build-, Konfigurations- und anderen Informationen zum Projekt.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFolder">
+        <source>Project Folder</source>
+        <target state="translated">Projektordner</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFolderDescription">
+        <source>The absolute location of the project.</source>
+        <target state="translated">Der absolute Speicherort des Projekts.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputFile">
+        <source>Output File</source>
+        <target state="translated">Ausgabedatei</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputFileDescription">
+        <source>The name of the project's primary output file.</source>
+        <target state="translated">Der Name der primären Ausgabedatei des Projekts.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatform">
+        <source>Target Platform</source>
+        <target state="translated">Zielplattform</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatformDescription">
+        <source>The version of the Common Language Runtime to use for output assembly</source>
+        <target state="translated">Für die Ausgabeassembly verwendete Version von Common Language Runtime.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatformLocation">
+        <source>Target Platform Location</source>
+        <target state="translated">Zielplattform-Speicherort</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatformLocationDescription">
+        <source>The location of the target platform</source>
+        <target state="translated">Der Speicherort der Zielplattform</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFileExtensionFilter">
+        <source>F# Project File (*.fsproj)</source>
+        <target state="translated">F#-Projektdatei (*.fsproj)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ComponentFileExtensionFilter">
+        <source>Component File (*.dll;*.exe)</source>
+        <target state="translated">Komponentendatei (*.dll;*.exe)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OtherFlags">
+        <source>Other Flags</source>
+        <target state="translated">Andere Flags</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OtherFlagsDescription">
+        <source>Other compiler flags</source>
+        <target state="translated">Andere Compilerflags</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Build">
+        <source>Build</source>
+        <target state="translated">Build</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5001">
+        <source>F# Script File</source>
+        <target state="translated">F#-Skriptdatei</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5002">
+        <source>A blank F# script file (.fsx)</source>
+        <target state="translated">Eine leere F#-Skriptdatei (.fsx)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5003">
+        <source>Script.fsx</source>
+        <target state="translated">Script.fsx</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5005">
+        <source>FSharp Text Editor</source>
+        <target state="translated">FSharp-Text-Editor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5006">
+        <source>Code</source>
+        <target state="translated">Code</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5007">
+        <source>General</source>
+        <target state="translated">Allgemein</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5008">
+        <source>Windows</source>
+        <target state="translated">Windows</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5009">
+        <source>Silverlight</source>
+        <target state="translated">Silverlight</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5011">
+        <source>F# Source File</source>
+        <target state="translated">F#-Quelldatei</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5012">
+        <source>A blank F# source file (.fs)</source>
+        <target state="translated">Eine leere F#-Quelldatei (.fs)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5013">
+        <source>File.fs</source>
+        <target state="translated">File.fs</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5014">
+        <source>Console Application (.NET Framework)</source>
+        <target state="translated">Konsolenanwendung (.NET Framework)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5015">
+        <source>A project for creating a command-line application</source>
+        <target state="translated">Ein Projekt zum Erstellen einer Befehlszeilenanwendung</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5016">
+        <source>Library (.NET Framework)</source>
+        <target state="translated">Bibliothek (.NET Framework)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5017">
+        <source>A project for creating an F# library</source>
+        <target state="translated">Ein Projekt zum Erstellen einer F#-Bibliothek</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5018">
+        <source>Tutorial (.NET Framework)</source>
+        <target state="translated">Tutorial (.NET Framework)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5019">
+        <source>A tutorial project providing a walkthrough of the F# language</source>
+        <target state="translated">Ein Tutorialprojekt, das erste Schritte mit der F#-Programmiersprache aufzeigt</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5020">
+        <source>Silverlight Library</source>
+        <target state="translated">Silverlight-Bibliothek</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5021">
+        <source>A project for creating an F# Silverlight library</source>
+        <target state="translated">Ein Projekt zum Erstellen einer F#-Silverlight-Bibliothek</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5022">
+        <source>Application Configuration File</source>
+        <target state="translated">Anwendungskonfigurationsdatei</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5023">
+        <source>A file for storing application configuration and settings values</source>
+        <target state="translated">Eine Datei zum Speichern von Anwendungskonfigurations- und Einstellungswerten</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5024">
+        <source>Source File</source>
+        <target state="translated">Quelldatei</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5025">
+        <source>A blank F# source file (.fs)</source>
+        <target state="translated">Eine leere F#-Quelldatei (.fs)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5026">
+        <source>Script File</source>
+        <target state="translated">Skriptdatei</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5027">
+        <source>A blank F# script file (.fsx)</source>
+        <target state="translated">Eine leere F#-Skriptdatei (.fsx)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5028">
+        <source>Signature File</source>
+        <target state="translated">Signaturdatei</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5029">
+        <source>A blank F# signature file (.fsi)</source>
+        <target state="translated">Eine leere F#-Signaturdatei (.fsi)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5030">
+        <source>Text File</source>
+        <target state="translated">Textdatei</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5031">
+        <source>An empty text file</source>
+        <target state="translated">Eine leere Textdatei</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5032">
+        <source>XML File</source>
+        <target state="translated">XML-Datei</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5033">
+        <source>A blank XML file</source>
+        <target state="translated">Eine leere XML-Datei</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5034">
+        <source>Portable Library (.NET 4.5, Windows Store, Silverlight 5, Xamarin)</source>
+        <target state="translated">Portable Bibliothek (.NET 4.5, Windows Store, Silverlight 5, Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5035">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Silverlight 5, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 47</source>
+        <target state="translated">Ein Projekt zum Erstellen einer F#-Bibliothek (.dll), die unter .NET Framework 4.5, Windows Store, Silverlight 5, Xamarin.iOS, Xamarin.Android und Xamarin.iOS(Classic) ausgeführt werden kann.  Profil 47</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5036">
+        <source>Data</source>
+        <target state="translated">Daten</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5037">
+        <source>OData Service Connection (LINQ, type provider)</source>
+        <target state="translated">OData-Dienstverbindung (LINQ, Typanbieter)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5038">
+        <source>A project item for consuming a Open Data Protocol (OData) web service using ODataService type provider.</source>
+        <target state="translated">Ein Projektelement zum Verwenden eines Open Data Protocol (OData)-Webdiensts mithilfe eines ODataService-Typanbieters.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5040">
+        <source>A project item for consuming a .NET Managed Resources File (Resx) using ResxFile type provider.</source>
+        <target state="translated">Ein Projektelement zum Verwenden einer verwalteten .NET-Ressourcendatei (Resx) mithilfe eines ResxFile-Typanbieters.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5041">
+        <source>SQL Database Connection (LINQ to SQL, type provider)</source>
+        <target state="translated">SQL-Datenbankverbindung (LINQ to SQL, Typanbieter)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5042">
+        <source>A project item for using the SqlDataConnection (LINQ to SQL) type provider to generate types and consume data in a live SQL database.</source>
+        <target state="translated">Ein Projektelement zum Generieren von Typen und Verwenden von Daten in einer Live-SQL-Datenbank mithilfe des SqlDataConnection (LINQ to SQL)-Typanbieters.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5043">
+        <source>SQL Database Connection (LINQ to Entities, type provider)</source>
+        <target state="translated">SQL-Datenbankverbindung (LINQ to Entities, Typanbieter)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5044">
+        <source>A project item for using the SqlEntityConnection (Entity Data Model) type provider to generate types and consume data in a live SQL database.</source>
+        <target state="translated">Ein Projektelement zum Generieren von Typen und Verwenden von Daten in einer Live-SQL-Datenbank mithilfe des SqlEntityConnection (Entity Data Model)-Typanbieters.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5045">
+        <source>WSDL Service Connection (type provider)</source>
+        <target state="translated">WSDL-Dienstverbindung (Typanbieter)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5046">
+        <source>A project item for consuming a Web Service using WsdlService type provider.</source>
+        <target state="translated">Ein Projektelement zum Verwenden eines Webdiensts mithilfe eines WsdlService-Typanbieters.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5047">
+        <source>Portable Library (.NET 4.5, Windows Store, Xamarin)</source>
+        <target state="translated">Portable Bibliothek (.NET 4.5, Windows Store, Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5048">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 7</source>
+        <target state="translated">Ein Projekt zum Erstellen einer F#-Bibliothek (.dll), die unter .NET Framework 4.5, Windows Store, Xamarin.iOS, Xamarin.Android und Xamarin.iOS(Classic) ausgeführt werden kann.  Profil 7</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5049">
+        <source>Portable Library (.NET 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin)</source>
+        <target state="translated">Portable Bibliothek (.NET 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5050">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 78</source>
+        <target state="translated">Ein Projekt für die Erstellung einer F#-Bibliothek (.dll), die auf .NET Framework 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin.iOS, Xamarin.Android und Xamarin.iOS(Classic) ausgeführt werden kann.  Profil 78</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5051">
+        <source>Portable Library (.NET 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin)</source>
+        <target state="translated">Portable Bibliothek (.NET 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5052">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 259</source>
+        <target state="translated">Ein Projekt für die Erstellung einer F#-Bibliothek (.dll), die auf .NET Framework 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin.iOS, Xamarin.Android und Xamarin.iOS(Classic) ausgeführt werden kann.  Profil 259</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5053">
+        <source>Resources File</source>
+        <target state="translated">Ressourcendatei</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5054">
+        <source>A file for storing resources</source>
+        <target state="translated">Eine Datei zum Speichern von Ressourcen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6000">
+        <source>F# Tools</source>
+        <target state="translated">F#-Tools</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6001">
+        <source>F# Interactive</source>
+        <target state="translated">F# Interactive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6002">
+        <source>F# Project Files (*.fsproj);*.fsproj</source>
+        <target state="translated">F#-Projektdateien (*.fsproj);*.fsproj</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6003">
+        <source>Visual F# Files (*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</source>
+        <target state="translated">Visual F#-Dateien (*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="7000">
+        <source>Visual F#</source>
+        <target state="translated">Visual F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="7001">
+        <source>Customizes the environment to maximize code editor screen space and improve the visibility of F# commands and tool windows.</source>
+        <target state="translated">Passt die Umgebung an, um den Bildschirmbereich im Code-Editor zu maximieren und die Anzeige von F#-Befehlen und Toolfenstern zu verbessern.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductDetails">
+        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="translated">Microsoft Visual F# Tools 10.2 für F# 4.5</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="9002">
+        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="translated">Microsoft Visual F# Tools 10.2 für F# 4.5</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductID">
+        <source>1.0</source>
+        <target state="translated">1.0</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductName">
+        <source>Microsoft Visual F# Tools</source>
+        <target state="translated">Microsoft Visual F# Tools</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="9001">
+        <source>Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="translated">Visual F# Tools 10.2 für F# 4.5</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="9027">
+        <source>F# Interactive</source>
+        <target state="translated">F# Interactive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductRegistryName">
+        <source>Microsoft Visual F#</source>
+        <target state="translated">Microsoft Visual F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidOutputType">
+        <source>Invalid OutputType value</source>
+        <target state="translated">Ungültiger OutputType-Wert</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidRunPostBuildEvent">
+        <source>Invalid RunPostBuildEvent value</source>
+        <target state="translated">Ungültiger RunPostBuildEvent-Wert</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidTargetFrameworkVersion">
+        <source>Invalid TargetFrameworkVersion number</source>
+        <target state="translated">Ungültige TargetFrameworkVersion-Nummer</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectRenderFolderMultiple">
+        <source>The project '{0}' could not be opened because opening it would cause a folder to be rendered multiple times in the solution explorer. One such problematic item is '{1}'. To open this project in Visual Studio, first edit the project file and fix the problem.</source>
+        <target state="translated">Das Projekt "{0}" konnte nicht geöffnet werden, da das Öffnen zu einem mehrfachen Rendern eines Ordners im Projektmappen-Explorer führen würde. Ein solch problematisches Element ist "{1}". Bearbeiten Sie zuerst die Projektdatei, und beheben Sie das Problem, um dieses Projekt in Visual Studio zu öffnen.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropertyDefaultNamespace">
+        <source>Default Namespace:\nThe string for the default namespace must be a valid identifier</source>
+        <target state="translated">Standardnamespace:\nDie Zeichenfolge für den Standardnamespace muss ein gültiger Bezeichner sein.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TemplateNotFound">
+        <source>Template file not found: {0}</source>
+        <target state="translated">Die Vorlagendatei wurde nicht gefunden: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NeedReloadToChangeTargetFx">
+        <source>Changing the Target Framework requires that the current project be closed and then reopened.\nAny unsaved changes within the project will be automatically saved.\n\nChanging Target Framework may require manual modification of project files in order to build.\n\nAre you sure you want to change the Target Framework for this project?</source>
+        <target state="translated">Zum Ändern des Zielframeworks muss das aktuelle Projekt geschlossen und dann neu geöffnet werden.\nAlle nicht gespeicherten Änderungen innerhalb des Projekts werden automatisch gespeichert.\n\nZum Ändern des Zielframeworks müssen unter Umständen Projektdateien manuell geändert werden, um das Erstellen zu ermöglichen.\n\nMöchten Sie das Zielframework für dieses Projekt wirklich ändern?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceDialogTitle">
+        <source>Add Reference</source>
+        <target state="translated">Verweis hinzufügen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6005">
+        <source>Change path and command line arguments passed to the F# Interactive</source>
+        <target state="translated">Die Argumente zum Ändern des Pfads und die Befehlszeilenargumente wurden an F# Interactive übergeben.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6006">
+        <source>Enable or disable Type Providers</source>
+        <target state="translated">Typanbieter aktivieren oder deaktivieren</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6007">
+        <source>Visual F# Items</source>
+        <target state="translated">Visual F#-Elemente</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceDialogTitle_Dev11">
+        <source>Reference Manager - {0}</source>
+        <target state="translated">Verweis-Manager – {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Dev11SupportsOnlySilverlight5">
+        <source>F# projects in the current version of Visual Studio support only Silverlight 5.</source>
+        <target state="translated">F#-Projekte in der aktuellen Version von Visual Studio unterstützen nur Silverlight 5.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceAssemblyPageDialogRetargetingText">
+        <source>The project will be retargeted, and its targeted frameworks will be reduced.</source>
+        <target state="translated">Das Projekt wird einem anderen Ziel zugeordnet sowie das ihm zugeordnete Framework reduziert.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceAssemblyPageDialogNoItemsText">
+        <source>All of the Framework assemblies are already referenced. Please use the Object Browser to explore the references in the Framework.</source>
+        <target state="translated">Alle der Framework-Assemblys sind bereits referenziert. Verwenden Sie den Objektkatalog, um die Verweise im Framework zu durchsuchen.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpCoreVersionIsNotLegacyCompatible">
+        <source>Referencing this version of FSharp.Core will cause your project to be incompatible with older versions of Visual Studio.  Do you want to continue?</source>
+        <target state="translated">Das Verweisen auf diese Version von FSharp.Core führt dazu, dass Ihr Projekt nicht mehr mit älteren Versionen von Visual Studio kompatibel ist. Möchten Sie diesen Vorgang fortsetzen?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ComputingSourcesAndFlags">
+        <source>Updating compilation sources and flags...</source>
+        <target state="translated">Kompilierungsquellen und Flags werden aktualisiert...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpdatingSolutionConfiguration">
+        <source>Updating solution configuration...</source>
+        <target state="translated">Lösungskonfiguration wird aktualisiert...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedBodyAbove">
+        <source>The file '{0}' cannot be placed above '{1}' in the Solution Explorer.\n\n{2}.</source>
+        <target state="translated">Die Datei "{0}" kann im Projektmappen-Explorer nicht über "{1}" platziert werden.\n\n{2}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedBodyBelow">
+        <source>The file '{0}' cannot be placed below '{1}' in the Solution Explorer.\n\n{2}.</source>
+        <target state="translated">Die Datei "{0}" kann im Projektmappen-Explorer nicht unter "{1}" platziert werden.\n\n{2}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedDifferentSubtree">
+        <source>The file is in a different subtree</source>
+        <target state="translated">Die Datei befindet sich in einem anderen Unterbaum.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedMultipleFiles">
+        <source>The '{0}' folder cannot be moved as it already exists in the Solution Explorer in a different location</source>
+        <target state="translated">Der Ordner "{0}" kann nicht verschoben werden. Er ist im Projektmappen-Explorer bereits an einer anderen Stelle vorhanden.</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

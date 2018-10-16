@@ -3,7 +3,7 @@
 // Regression for Dev10:841369
 // Intra assembly tail calls weren't being taken which caused a stackoverflow exception in the compiler (also taking down the IDE)
 
-namespace FSharp.Core.Unittests.SurfaceArea
+namespace FSharp.Core.UnitTests.SurfaceArea
 
 //open NUnit.Framework
 
@@ -2287,6 +2287,7 @@ Microsoft.FSharp.Core.Operators: T Ceiling[T](T)
 Microsoft.FSharp.Core.Operators: T Cos[T](T)
 Microsoft.FSharp.Core.Operators: T Cosh[T](T)
 Microsoft.FSharp.Core.Operators: T DefaultArg[T](Microsoft.FSharp.Core.FSharpOption`1[T], T)
+Microsoft.FSharp.Core.Operators: T DefaultValueArg[T](Microsoft.FSharp.Core.FSharpValueOption`1[T], T)
 Microsoft.FSharp.Core.Operators: T Exit[T](Int32)
 Microsoft.FSharp.Core.Operators: T Exp[T](T)
 Microsoft.FSharp.Core.Operators: T FailWith[T](System.String)

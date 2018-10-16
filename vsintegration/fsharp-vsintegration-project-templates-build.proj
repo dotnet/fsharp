@@ -11,5 +11,10 @@
   </ItemGroup>
 
   <Import Project="..\src\root.traversal.targets"/>
+
+  <Target Name="Restore">
+    <MSBuild Projects="@(ProjectFiles)" Targets="Restore" />
+  </Target>
+
 </Project>
 

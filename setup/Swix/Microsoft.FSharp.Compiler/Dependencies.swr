@@ -1,0 +1,9 @@
+use vs
+
+package name=Microsoft.FSharp.Compiler
+        version=$(FSharpPackageVersion)
+
+vs.dependencies
+  vs.dependency id=Microsoft.FSharp.Dependencies
+                version=$(FSharpPackageVersion)
+                type=Required

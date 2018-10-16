@@ -594,6 +594,9 @@
   <data name="Parser.TOKEN.MATCH" xml:space="preserve">
     <value>keyword 'match'</value>
   </data>
+  <data name="Parser.TOKEN.MATCH.BANG" xml:space="preserve">
+    <value>keyword 'match!'</value>
+  </data>
   <data name="Parser.TOKEN.MUTABLE" xml:space="preserve">
     <value>keyword 'mutable'</value>
   </data>
@@ -886,19 +889,19 @@
     <value>This expression is a function value, i.e. is missing arguments. Its type is {0}.</value>
   </data>
   <data name="UnitTypeExpected" xml:space="preserve">
-    <value>The result of this expression is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</value>
+    <value>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</value>
   </data>
   <data name="UnitTypeExpectedWithEquality" xml:space="preserve">
-    <value>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</value>
+    <value>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</value>
   </data>
   <data name="UnitTypeExpectedWithPossiblePropertySetter" xml:space="preserve">
-    <value>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{0}.{1} &lt;- expression'.</value>
+    <value>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</value>
   </data>
   <data name="UnitTypeExpectedWithPossibleAssignment" xml:space="preserve">
-    <value>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{0} &lt;- expression'.</value>
+    <value>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</value>
   </data>
   <data name="UnitTypeExpectedWithPossibleAssignmentToMutable" xml:space="preserve">
-    <value>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{0} &lt;- expression'.</value>
+    <value>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</value>
   </data>
   <data name="RecursiveUseCheckedAtRuntime" xml:space="preserve">
     <value>This recursive use will be checked for initialization-soundness at runtime. This warning is usually harmless, and may be suppressed by using '#nowarn "21"' or '--nowarn:21'.</value>
@@ -968,6 +971,9 @@
   </data>
   <data name="MatchIncomplete4" xml:space="preserve">
     <value> Unmatched elements will be ignored.</value>
+  </data>
+  <data name="EnumMatchIncomplete1" xml:space="preserve">
+    <value>Enums may take values outside known cases.</value>
   </data>
   <data name="RuleNeverMatched" xml:space="preserve">
     <value>This rule will never be matched</value>

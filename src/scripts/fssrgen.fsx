@@ -1,4 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+open System
+open System.IO
+
 let PrintErr(filename, line, msg) =
     printfn "%s(%d): error : %s" filename line msg
         
@@ -229,14 +232,14 @@ let StringBoilerPlate filename =
     // BEGIN BOILERPLATE        
     
     static let getCurrentAssembly () =
-    #if DNXCORE50 || NETSTANDARD1_5 || NETSTANDARD1_6 || NETCOREAPP1_0
+    #if FX_RESHAPED_REFLECTION
         typeof<SR>.GetTypeInfo().Assembly
     #else
         System.Reflection.Assembly.GetExecutingAssembly()
     #endif
         
     static let getTypeInfo (t: System.Type) =
-    #if DNXCORE50 || NETSTANDARD1_5 || NETSTANDARD1_6 || NETCOREAPP1_0
+    #if FX_RESHAPED_REFLECTION
         t.GetTypeInfo()
     #else
         t
@@ -362,8 +365,8 @@ let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
             allStrs.Add(str,(line,ident))
             
         printfn "fssrgen.fsx: Generating %s" outFilename
-        use outStream = System.IO.File.Create outFilename
-        use out = new System.IO.StreamWriter(outStream)
+
+        use out = new System.IO.StringWriter()
         fprintfn out "// This is a generated file; the original input is '%s'" filename
         fprintfn out "namespace %s" justfilename
         if Option.isNone outXmlFilenameOpt then
@@ -377,8 +380,8 @@ let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
         printfn "fssrgen.fsx: Generating resource methods for %s" outFilename
         // gen each resource method
         stringInfos |> Seq.iter (fun (lineNum, (optErrNum,ident), str, holes, netFormatString) ->
-            let formalArgs = new System.Text.StringBuilder()
-            let actualArgs = new System.Text.StringBuilder()
+            let formalArgs = System.Text.StringBuilder()
+            let actualArgs = System.Text.StringBuilder()
             let firstTime = ref true
             let n = ref 0
             formalArgs.Append "(" |> ignore
@@ -420,7 +423,14 @@ let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
                 fprintfn out "        ignore(GetString(\"%s\"))" ident
             )
             fprintfn out "        ()"  // in case there are 0 strings, we need the generated code to parse
-            // gen to resx
+
+        let outFileNewText = out.ToString()
+        let nothingChanged = try File.Exists(outFilename) && File.ReadAllText(outFilename) = outFileNewText with _ -> false
+        if not nothingChanged then 
+           File.WriteAllText(outFilename, outFileNewText, System.Text.Encoding.UTF8)
+
+        if Option.isSome outXmlFilenameOpt then
+            // gen resx
             let xd = new System.Xml.XmlDocument()
             xd.LoadXml(xmlBoilerPlateString)
             stringInfos |> Seq.iter (fun (lineNum, (optErrNum,ident), str, holes, netFormatString) ->
@@ -432,8 +442,16 @@ let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
                 xnc.AppendChild(xd.CreateTextNode netFormatString) |> ignore
                 xd.LastChild.AppendChild xn |> ignore
             )
-            use outXmlStream = System.IO.File.Create outXmlFilenameOpt.Value
-            xd.Save outXmlStream
+            let outXmlFileNewText = 
+                use outXmlStream = new System.IO.StringWriter()
+                xd.Save outXmlStream
+                outXmlStream.ToString()
+            let outXmlFile = outXmlFilenameOpt.Value
+            let nothingChanged = try File.Exists(outXmlFile) && File.ReadAllText(outXmlFile) = outXmlFileNewText with _ -> false
+            if not nothingChanged then 
+               File.WriteAllText(outXmlFile, outXmlFileNewText, System.Text.Encoding.Unicode)
+
+
         printfn "fssrgen.fsx: Done %s" outFilename
         0
     with e -> 

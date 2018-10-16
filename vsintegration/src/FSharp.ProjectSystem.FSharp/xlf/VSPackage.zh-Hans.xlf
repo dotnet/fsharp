@@ -1,0 +1,582 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="zh-Hans" original="../VSPackage.resx">
+    <body>
+      <trans-unit id="ProjectReferenceError2">
+        <source>You must build the target project before it can be referenced.</source>
+        <target state="translated">必须先生成目标项目，然后才能对其进行引用。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Application">
+        <source>Application</source>
+        <target state="translated">应用程序</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GeneralCaption">
+        <source>General</source>
+        <target state="translated">常规</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AssemblyName">
+        <source>Assembly Name</source>
+        <target state="translated">程序集名称</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AssemblyNameDescription">
+        <source>The name of the output file that will hold assembly metadata.</source>
+        <target state="translated">将用来保存程序集元数据的输出文件的名称。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputType">
+        <source>Output Type</source>
+        <target state="translated">输出类型</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputTypeDescription">
+        <source>The type of application to build.</source>
+        <target state="translated">要生成的应用程序的类型。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DefaultNamespace">
+        <source>Default Namespace</source>
+        <target state="translated">默认命名空间</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DefaultNamespaceDescription">
+        <source>Specifies the default namespace for added items, such as classes, that are added via the Add New Item Dialog Box.</source>
+        <target state="translated">为通过“添加新项”对话框添加的项(如类)指定默认命名空间。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartupObject">
+        <source>Startup Object</source>
+        <target state="translated">启动对象</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartupObjectDescription">
+        <source>The name of the class that contains the static Main method that you want called when you launch your application.</source>
+        <target state="translated">包含要在应用程序启动时调用的静态 Main 方法的类的名称。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ApplicationIcon">
+        <source>Application Icon</source>
+        <target state="translated">应用程序图标</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ApplicationIconDescription">
+        <source>Sets the .ico file to use as your application icon.</source>
+        <target state="translated">设置用作应用程序图标的 .ico 文件。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project">
+        <source>Project</source>
+        <target state="translated">项目</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFile">
+        <source>Project File</source>
+        <target state="translated">项目文件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFileDescription">
+        <source>The name of the file containing build, configuration, and other information about the project.</source>
+        <target state="translated">包含有关项目的生成、配置和其他信息的文件的名称。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFolder">
+        <source>Project Folder</source>
+        <target state="translated">项目文件夹</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFolderDescription">
+        <source>The absolute location of the project.</source>
+        <target state="translated">项目的绝对位置。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputFile">
+        <source>Output File</source>
+        <target state="translated">输出文件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputFileDescription">
+        <source>The name of the project's primary output file.</source>
+        <target state="translated">项目的主输出文件的名称。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatform">
+        <source>Target Platform</source>
+        <target state="translated">目标平台</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatformDescription">
+        <source>The version of the Common Language Runtime to use for output assembly</source>
+        <target state="translated">用于输出程序集的公共语言运行时的版本</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatformLocation">
+        <source>Target Platform Location</source>
+        <target state="translated">目标平台位置</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetPlatformLocationDescription">
+        <source>The location of the target platform</source>
+        <target state="translated">目标平台的位置</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFileExtensionFilter">
+        <source>F# Project File (*.fsproj)</source>
+        <target state="translated">F# 项目文件(*.fsproj)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ComponentFileExtensionFilter">
+        <source>Component File (*.dll;*.exe)</source>
+        <target state="translated">组件文件(*.dll;*.exe)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OtherFlags">
+        <source>Other Flags</source>
+        <target state="translated">其他标志</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OtherFlagsDescription">
+        <source>Other compiler flags</source>
+        <target state="translated">其他编译器标志</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Build">
+        <source>Build</source>
+        <target state="translated">生成</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5001">
+        <source>F# Script File</source>
+        <target state="translated">F# 脚本文件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5002">
+        <source>A blank F# script file (.fsx)</source>
+        <target state="translated">空白 F# 脚本文件(.fsx)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5003">
+        <source>Script.fsx</source>
+        <target state="translated">Script.fsx</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5005">
+        <source>FSharp Text Editor</source>
+        <target state="translated">FSharp 文本编辑器</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5006">
+        <source>Code</source>
+        <target state="translated">代码</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5007">
+        <source>General</source>
+        <target state="translated">常规</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5008">
+        <source>Windows</source>
+        <target state="translated">Windows</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5009">
+        <source>Silverlight</source>
+        <target state="translated">Silverlight</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5011">
+        <source>F# Source File</source>
+        <target state="translated">F# 源文件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5012">
+        <source>A blank F# source file (.fs)</source>
+        <target state="translated">空白 F# 源文件(.fs)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5013">
+        <source>File.fs</source>
+        <target state="translated">File.fs</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5014">
+        <source>Console Application (.NET Framework)</source>
+        <target state="translated">控制台应用程序(.NET Framework)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5015">
+        <source>A project for creating a command-line application</source>
+        <target state="translated">用于创建命令行应用程序的项目</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5016">
+        <source>Library (.NET Framework)</source>
+        <target state="translated">库(.NET Framework)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5017">
+        <source>A project for creating an F# library</source>
+        <target state="translated">用于创建 F# 库的项目</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5018">
+        <source>Tutorial (.NET Framework)</source>
+        <target state="translated">教程(.NET Framework)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5019">
+        <source>A tutorial project providing a walkthrough of the F# language</source>
+        <target state="translated">提供 F# 语言演练的教程项目</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5020">
+        <source>Silverlight Library</source>
+        <target state="translated">Silverlight 库</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5021">
+        <source>A project for creating an F# Silverlight library</source>
+        <target state="translated">用于创建 F# Silverlight 库的项目</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5022">
+        <source>Application Configuration File</source>
+        <target state="translated">应用程序配置文件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5023">
+        <source>A file for storing application configuration and settings values</source>
+        <target state="translated">用于存储应用程序配置和设置值的文件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5024">
+        <source>Source File</source>
+        <target state="translated">源文件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5025">
+        <source>A blank F# source file (.fs)</source>
+        <target state="translated">空白 F# 源文件(.fs)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5026">
+        <source>Script File</source>
+        <target state="translated">脚本文件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5027">
+        <source>A blank F# script file (.fsx)</source>
+        <target state="translated">空白 F# 脚本文件(.fsx)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5028">
+        <source>Signature File</source>
+        <target state="translated">签名文件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5029">
+        <source>A blank F# signature file (.fsi)</source>
+        <target state="translated">空白 F# 签名文件(.fsi)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5030">
+        <source>Text File</source>
+        <target state="translated">文本文件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5031">
+        <source>An empty text file</source>
+        <target state="translated">空文本文件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5032">
+        <source>XML File</source>
+        <target state="translated">XML 文件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5033">
+        <source>A blank XML file</source>
+        <target state="translated">空白 XML 文件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5034">
+        <source>Portable Library (.NET 4.5, Windows Store, Silverlight 5, Xamarin)</source>
+        <target state="translated">可移植库(.NET 4.5、Windows Store、Silverlight 5、Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5035">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Silverlight 5, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 47</source>
+        <target state="translated">一个用于创建可在以下对象上运行的 F# 库(.dll) 的项目：.NET Framework 4.5、Windows 应用商店、Silverlight 5、Xamarin.iOS、Xamarin.Android 和 Xamarin.iOS(Classic)。配置文件 47)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5036">
+        <source>Data</source>
+        <target state="translated">数据</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5037">
+        <source>OData Service Connection (LINQ, type provider)</source>
+        <target state="translated">OData 服务连接(LINQ，类型提供程序)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5038">
+        <source>A project item for consuming a Open Data Protocol (OData) web service using ODataService type provider.</source>
+        <target state="translated">通过 ODataService 类型提供程序使用 Open Data Protocol (OData) Web 服务的项目项。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5040">
+        <source>A project item for consuming a .NET Managed Resources File (Resx) using ResxFile type provider.</source>
+        <target state="translated">通过 ResxFile 类型提供程序使用 .NET 托管资源文件(Resx)的项目项。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5041">
+        <source>SQL Database Connection (LINQ to SQL, type provider)</source>
+        <target state="translated">SQL 数据库连接(LINQ to SQL，类型提供程序)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5042">
+        <source>A project item for using the SqlDataConnection (LINQ to SQL) type provider to generate types and consume data in a live SQL database.</source>
+        <target state="translated">通过 SqlDataConnection (LINQ to SQL)类型提供程序生成类型并使用实时 SQL 数据库中的数据的项目项。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5043">
+        <source>SQL Database Connection (LINQ to Entities, type provider)</source>
+        <target state="translated">SQL 数据库连接(LINQ to Entities，类型提供程序)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5044">
+        <source>A project item for using the SqlEntityConnection (Entity Data Model) type provider to generate types and consume data in a live SQL database.</source>
+        <target state="translated">通过 SqlEntityConnection (实体数据模型)类型提供程序生成类型并使用实时 SQL 数据库中的数据的项目项。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5045">
+        <source>WSDL Service Connection (type provider)</source>
+        <target state="translated">WSDL 服务连接(类型提供程序)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5046">
+        <source>A project item for consuming a Web Service using WsdlService type provider.</source>
+        <target state="translated">通过 WsdlService 类型提供程序使用 Web 服务的项目项。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5047">
+        <source>Portable Library (.NET 4.5, Windows Store, Xamarin)</source>
+        <target state="translated">可移植的库(.NET 4.5、Windows 应用商店、Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5048">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 7</source>
+        <target state="translated">一个用于创建可在以下对象上运行的 F# 库(.dll) 的项目：.NET Framework 4.5、Windows 应用商店、Xamarin.iOS、Xamarin.Android 和 Xamarin.iOS(Classic)。配置文件7)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5049">
+        <source>Portable Library (.NET 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin)</source>
+        <target state="translated">可移植的库(.NET 4.5、Windows 应用商店、Windows Phone 8 Silverlight、Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5050">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 78</source>
+        <target state="translated">一个用于创建可在以下对象上运行的 F# 库(.dll) 的项目：.NET Framework 4.5、Windows 应用商店、Windows Phone 8 Silverlight、Xamarin.iOS、Xamarin.Android 和 Xamarin.iOS(Classic)。配置文件 78)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5051">
+        <source>Portable Library (.NET 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin)</source>
+        <target state="translated">可移植的库(.NET 4.5、Windows 应用商店、Windows Phone 8.1 Windows Phone Silverlight 8、Xamarin)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5052">
+        <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 259</source>
+        <target state="translated">一个用于创建可在以下对象上运行的 F# 库(.dll) 的项目：.NET Framework 4.5、Windows 应用商店、Windows Phone 8.1、Windows Phone Silverlight 8、Xamarin.iOS、Xamarin.Android 和 Xamarin.iOS(Classic)。配置文件 259)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5053">
+        <source>Resources File</source>
+        <target state="translated">资源文件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="5054">
+        <source>A file for storing resources</source>
+        <target state="translated">用于存储资源的文件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6000">
+        <source>F# Tools</source>
+        <target state="translated">F# 工具</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6001">
+        <source>F# Interactive</source>
+        <target state="translated">F# 交互窗口</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6002">
+        <source>F# Project Files (*.fsproj);*.fsproj</source>
+        <target state="translated">F# 项目文件(*.fsproj);*.fsproj</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6003">
+        <source>Visual F# Files (*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</source>
+        <target state="translated">Visual F# 文件(*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="7000">
+        <source>Visual F#</source>
+        <target state="translated">Visual F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="7001">
+        <source>Customizes the environment to maximize code editor screen space and improve the visibility of F# commands and tool windows.</source>
+        <target state="translated">对环境进行自定义，以使代码编辑器的屏幕空间最大化，并改善 F# 命令和工具窗口的可见性。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductDetails">
+        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="translated">Microsoft Visual F# Tools 10.2 for F# 4.5</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="9002">
+        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="translated">Microsoft Visual F# Tools 10.2 for F# 4.5</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductID">
+        <source>1.0</source>
+        <target state="translated">1.0</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductName">
+        <source>Microsoft Visual F# Tools</source>
+        <target state="translated">Microsoft Visual F# Tools</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="9001">
+        <source>Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="translated">Visual F# Tools 10.2 for F# 4.5</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="9027">
+        <source>F# Interactive</source>
+        <target state="translated">F# 交互窗口</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductRegistryName">
+        <source>Microsoft Visual F#</source>
+        <target state="translated">Microsoft Visual F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidOutputType">
+        <source>Invalid OutputType value</source>
+        <target state="translated">OutputType 值无效</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidRunPostBuildEvent">
+        <source>Invalid RunPostBuildEvent value</source>
+        <target state="translated">RunPostBuildEvent 值无效</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidTargetFrameworkVersion">
+        <source>Invalid TargetFrameworkVersion number</source>
+        <target state="translated">TargetFrameworkVersion 号无效</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectRenderFolderMultiple">
+        <source>The project '{0}' could not be opened because opening it would cause a folder to be rendered multiple times in the solution explorer. One such problematic item is '{1}'. To open this project in Visual Studio, first edit the project file and fix the problem.</source>
+        <target state="translated">未能打开项目“{0}”，因为打开此项目会导致在解决方案资源管理器中多次呈现某个文件夹。一个具有此类有问题的项为“{1}”。若要在 Visual Studio 中打开此项目，请先编辑项目文件并修复相应的问题。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropertyDefaultNamespace">
+        <source>Default Namespace:\nThe string for the default namespace must be a valid identifier</source>
+        <target state="translated">默认命名空间:\n默认命名空间的字符串必须是有效的标识符</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TemplateNotFound">
+        <source>Template file not found: {0}</source>
+        <target state="translated">未找到模板文件: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NeedReloadToChangeTargetFx">
+        <source>Changing the Target Framework requires that the current project be closed and then reopened.\nAny unsaved changes within the project will be automatically saved.\n\nChanging Target Framework may require manual modification of project files in order to build.\n\nAre you sure you want to change the Target Framework for this project?</source>
+        <target state="translated">更改目标框架需要先关闭然后重新打开当前项目。\n将自动保存项目中所有未保存的更改。\n\n更改目标框架可能需要手动修改项目文件才能进行生成。\n\n是否确实要为此项目更改目标框架?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceDialogTitle">
+        <source>Add Reference</source>
+        <target state="translated">添加引用</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6005">
+        <source>Change path and command line arguments passed to the F# Interactive</source>
+        <target state="translated">更改传递给 F# 交互窗口的路径和命令行参数</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6006">
+        <source>Enable or disable Type Providers</source>
+        <target state="translated">启用或禁用类型提供程序</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6007">
+        <source>Visual F# Items</source>
+        <target state="translated">Visual F# 项</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceDialogTitle_Dev11">
+        <source>Reference Manager - {0}</source>
+        <target state="translated">引用管理器 - {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Dev11SupportsOnlySilverlight5">
+        <source>F# projects in the current version of Visual Studio support only Silverlight 5.</source>
+        <target state="translated">当前版本的 Visual Studio 中的 F# 项目仅支持 Silverlight 5。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceAssemblyPageDialogRetargetingText">
+        <source>The project will be retargeted, and its targeted frameworks will be reduced.</source>
+        <target state="translated">项目将重定目标，并且将减少其目标框架。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReferenceAssemblyPageDialogNoItemsText">
+        <source>All of the Framework assemblies are already referenced. Please use the Object Browser to explore the references in the Framework.</source>
+        <target state="translated">已引用所有框架程序集。请使用对象浏览器浏览框架中的引用。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpCoreVersionIsNotLegacyCompatible">
+        <source>Referencing this version of FSharp.Core will cause your project to be incompatible with older versions of Visual Studio.  Do you want to continue?</source>
+        <target state="translated">引用此版本的 FSharp.Core 将导致您的项目与旧版 Visual Studio 不兼容。是否要继续?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ComputingSourcesAndFlags">
+        <source>Updating compilation sources and flags...</source>
+        <target state="translated">正在更新编译源和标记...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpdatingSolutionConfiguration">
+        <source>Updating solution configuration...</source>
+        <target state="translated">正在更新解决方案配置...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedBodyAbove">
+        <source>The file '{0}' cannot be placed above '{1}' in the Solution Explorer.\n\n{2}.</source>
+        <target state="translated">不能将文件“{0}”放置在解决方案资源管理器的“{1}”上方。\n\n{2}。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedBodyBelow">
+        <source>The file '{0}' cannot be placed below '{1}' in the Solution Explorer.\n\n{2}.</source>
+        <target state="translated">不能将文件“{0}”放置在解决方案资源管理器的“{1}”下方。\n\n{2}。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedDifferentSubtree">
+        <source>The file is in a different subtree</source>
+        <target state="translated">该文件位于不同的子树中</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBePlacedMultipleFiles">
+        <source>The '{0}' folder cannot be moved as it already exists in the Solution Explorer in a different location</source>
+        <target state="translated">无法移动“{0}”文件夹，因为它已存在于解决方案资源管理器的其他位置中</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

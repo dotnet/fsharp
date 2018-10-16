@@ -3,6 +3,9 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
+    <ProjectLanguage>FSharp</ProjectLanguage>
+    <UseFSharpProductVersion>true</UseFSharpProductVersion>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
@@ -13,7 +16,6 @@
     <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>fsiAnyCpu</AssemblyName>
     <BaseAddress>0x0A000000</BaseAddress>
-    <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition="'$(TargetDotnetProfile)'=='net40'">FSI_SHADOW_COPY_REFERENCES;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition="'$(TargetDotnetProfile)'=='net40'">FSI_SERVER;$(DefineConstants)</DefineConstants>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -22,17 +24,6 @@
     <TargetFrameworkVersion Condition="'$(TargetDotnetProfile)' != 'coreclr'">v4.6</TargetFrameworkVersion>
   </PropertyGroup>
   <ItemGroup>
-    <FilesToLocalize Include="$(OutDir)$(AssemblyName).exe">
-      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).exe.lcl</TranslationFile>
-      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).exe.lci</LciCommentFile>
-      <HasLceComments>false</HasLceComments>
-	  <InProject>false</InProject>
-    </FilesToLocalize>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.fsi.exe.fs">
-      <Link>assemblyinfo.fsi.exe.fs</Link>
-    </Compile>
     <Compile Include="..\fsi\console.fs">
       <Link>console.fs</Link>
     </Compile>
@@ -64,15 +55,4 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
-
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).exe" />
-      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-         <Authenticode>Microsoft</Authenticode>
-         <StrongName>StrongName</StrongName>
-      </FilesToSign>
-    </ItemGroup>
-  </Target>
 </Project>

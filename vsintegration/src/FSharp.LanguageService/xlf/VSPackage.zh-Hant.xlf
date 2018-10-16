@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="zh-Hant" original="../VSPackage.resx">
+    <body>
+      <trans-unit id="100">
+        <source>F#</source>
+        <target state="translated">F#</target>
+        <note>lock</note>
+      </trans-unit>
+      <trans-unit id="ExcludedCode">
+        <source>Excluded Code</source>
+        <target state="translated">排除程式碼</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PreprocessorKeyword">
+        <source>Preprocessor Keyword</source>
+        <target state="translated">前置處理器關鍵字</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Operator">
+        <source>Operator</source>
+        <target state="translated">運算子</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpFile">
+        <source>F# File (*.fs)</source>
+        <target state="translated">F# 檔案 (*.fs)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInterfaceFile">
+        <source>F# Interface File (*.fsi)</source>
+        <target state="translated">F# 介面檔案 (*.fsi)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSXFile">
+        <source>F# Script File (*.fsx)</source>
+        <target state="translated">F# 指令碼檔案 (*.fsx)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpScriptFile">
+        <source>F# Script File (*.fsscript)</source>
+        <target state="translated">F# 指令碼檔案 (*.fsscript)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Comment">
+        <source>Comment</source>
+        <target state="translated">註解</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Identifier">
+        <source>Identifier</source>
+        <target state="translated">識別碼</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Keyword">
+        <source>Keyword</source>
+        <target state="translated">關鍵字</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Number">
+        <source>Number</source>
+        <target state="translated">數字</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="String">
+        <source>String</source>
+        <target state="translated">字串</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

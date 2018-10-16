@@ -1,0 +1,162 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="zh-Hans" original="../FSharp.Editor.resx">
+    <body>
+      <trans-unit id="AddNewKeyword">
+        <source>Add 'new' keyword</source>
+        <target state="translated">添加“新”关键字</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ImplementInterface">
+        <source>Implement interface</source>
+        <target state="translated">实现接口</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ImplementInterfaceWithoutTypeAnnotation">
+        <source>Implement interface without type annotation</source>
+        <target state="translated">无类型批注的实现接口</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PrefixValueNameWithUnderscore">
+        <source>Prefix '{0}' with underscore</source>
+        <target state="translated">带下划线的前缀“{0}”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RenameValueToUnderscore">
+        <source>Rename '{0}' to '_'</source>
+        <target state="translated">将“{0}”重命名为“_”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SimplifyName">
+        <source>Simplify name</source>
+        <target state="translated">简化名称</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NameCanBeSimplified">
+        <source>Name can be simplified.</source>
+        <target state="translated">可简化名称。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpFunctionsOrMethodsClassificationType">
+        <source>F# Functions / Methods</source>
+        <target state="translated">F# 函数/方法</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpMutableVarsClassificationType">
+        <source>F# Mutable Variables / Reference Cells</source>
+        <target state="translated">F# 可变变量/引用单元格</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpPrintfFormatClassificationType">
+        <source>F# Printf Format</source>
+        <target state="translated">F# Printf 格式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpPropertiesClassificationType">
+        <source>F# Properties</source>
+        <target state="translated">F# 属性</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpDisposablesClassificationType">
+        <source>F# Disposable Types</source>
+        <target state="translated">F# 可释放类型</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnusedOpens">
+        <source>Remove unused open declarations</source>
+        <target state="translated">删除未使用的 open 声明</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnusedOpens">
+        <source>Open declaration can be removed.</source>
+        <target state="translated">可删除 open 声明。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6008">
+        <source>IntelliSense</source>
+        <target state="translated">Intellisense</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6009">
+        <source>QuickInfo</source>
+        <target state="translated">QuickInfo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddAssemblyReference">
+        <source>Add an assembly reference to '{0}'</source>
+        <target state="translated">添加对“{0}”的程序集引用</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddProjectReference">
+        <source>Add a project reference to '{0}'</source>
+        <target state="translated">添加对“{0}”的项目引用</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6010">
+        <source>Code Fixes</source>
+        <target state="translated">代码修补程序</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6011">
+        <source>Performance</source>
+        <target state="translated">性能</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TheValueIsUnused">
+        <source>The value is unused</source>
+        <target state="translated">未使用该值</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotDetermineSymbol">
+        <source>Cannot determine the symbol under the caret</source>
+        <target state="translated">无法确定插入点下的符号</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotNavigateUnknown">
+        <source>Cannot navigate to the requested location</source>
+        <target state="translated">无法转到到所需位置</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LocatingSymbol">
+        <source>Locating the symbol under the caret...</source>
+        <target state="translated">正在确定插入点下的符号…</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NavigatingTo">
+        <source>Navigating to symbol...</source>
+        <target state="translated">正在转到符号...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NavigateToFailed">
+        <source>Navigate to symbol failed: {0}</source>
+        <target state="translated">未能转到符号: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExceptionsHeader">
+        <source>Exceptions:</source>
+        <target state="translated">异常: </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GenericParametersHeader">
+        <source>Generic parameters:</source>
+        <target state="translated">泛型参数:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RenameValueToDoubleUnderscore">
+        <source>Rename '{0}' to '__'</source>
+        <target state="translated">将“{0}”重命名为“__”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6012">
+        <source>Advanced</source>
+        <target state="translated">高级</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6013">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

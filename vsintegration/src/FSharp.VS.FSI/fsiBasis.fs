@@ -64,7 +64,12 @@ module internal Guids =
     let guidFsiPackage                  = "eeeeeeee-9342-42f1-8ea9-42f0e8a6be55" // FSI-LINKAGE-POINT: when packaged here
     let guidFSharpProjectPkgString      = "91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C" // FSI-LINKAGE-POINT: when packaged in project system
 
+    [<Literal>]
+    /// "35A5E6B8-4012-41fc-A652-2CDC56D74E9F"
     let guidFsiLanguageService          = "35A5E6B8-4012-41fc-A652-2CDC56D74E9F"        // The FSI lang service
+
+    [<Literal>]
+    /// "dee22b65-9761-4a26-8fb2-759b971d6dfc"
     let guidFsiSessionToolWindow        = "dee22b65-9761-4a26-8fb2-759b971d6dfc"
 
     // FSI Package command set

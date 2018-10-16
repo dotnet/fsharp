@@ -39,11 +39,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {            
             pdwEffect = (uint)DropEffect.None;
 
-            if (this.SourceDraggedOrCutOrCopied)
-            {
-                return VSConstants.S_OK;
-            }
-
             this.dropDataType = QueryDropDataType(pDataObject);
             if (this.dropDataType != DropDataType.None)
             {

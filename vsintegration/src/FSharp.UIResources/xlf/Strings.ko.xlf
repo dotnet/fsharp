@@ -1,0 +1,187 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="ko" original="../Strings.resx">
+    <body>
+      <trans-unit id="Always_place_opens_at_top_level">
+        <source>Always place open statements at the top level</source>
+        <target state="translated">항상 최상위에 open 문 배치</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Replace_LineLens">
+        <source>Show annotations to the right instead of above the line</source>
+        <target state="translated">선 위가 아니라 오른쪽에 주석 표시</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Switch">
+        <source>Enable CodeLens (Experimental)</source>
+        <target state="translated">CodeLens 사용(실험적)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Prefix">
+        <source>Annotation prefix</source>
+        <target state="translated">주석 접두사</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_UseColors">
+        <source>Use colors in annotations</source>
+        <target state="translated">주석에서 색 사용</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Code_Fixes">
+        <source>Code Fixes</source>
+        <target state="translated">코드 수정 사항</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Completion_Lists">
+        <source>Completion Lists</source>
+        <target state="translated">완성 목록</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Language_Service_Performance">
+        <source>Performance</source>
+        <target state="translated">성능</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Dash_underline">
+        <source>D_ash underline</source>
+        <target state="translated">대시 밑줄(_A)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Dot_underline">
+        <source>D_ot underline</source>
+        <target state="translated">점 밑줄(_O)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Navigation_links">
+        <source>Navigation links</source>
+        <target state="translated">탐색 링크</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_all_symbols">
+        <source>Show s_ymbols in unopened namespaces</source>
+        <target state="translated">열려 있지 않은 네임스페이스에 기호 표시(_Y)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_completion_list_after_a_character_is_deleted">
+        <source>Show completion list after a character is _deleted</source>
+        <target state="translated">문자를 삭제하면 완성 목록 표시(_D)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_completion_list_after_a_character_is_typed">
+        <source>_Show completion list after a character is typed</source>
+        <target state="translated">문자를 입력하면 완성 목록 표시(_S)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_in_memory_cross_project_references">
+        <source>_Enable in-memory cross project references</source>
+        <target state="translated">메모리 내 크로스 프로젝트 참조 사용(_E)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project_check_cache_size">
+        <source>Number of projects whose data is cached in memory</source>
+        <target state="translated">메모리에 데이터가 캐시된 프로젝트 수</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_navigation_links_as">
+        <source>S_how navigation links as</source>
+        <target state="translated">탐색 링크를 다음으로 표시(_H)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Simplify_name_code_fix">
+        <source>Simplify names (remove unnecessary qualifiers)</source>
+        <target state="translated">이름 단순화(불필요한 한정자 제거)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Solid_underline">
+        <source>_Solid underline</source>
+        <target state="translated">실선 밑줄(_S)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Unused_opens_code_fix">
+        <source>Remove unused open statements</source>
+        <target state="translated">사용되지 않는 open 문 제거</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Unused_declaration_code_fix">
+        <source>Analyze and suggest fixes for unused values</source>
+        <target state="translated">사용되지 않는 값에 대해 수정 사항 분석 및 제안</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Block_Structure">
+        <source>Block Structure Guides</source>
+        <target state="translated">블록 구조 가이드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_guides">
+        <source>Show structure guidelines for F# code</source>
+        <target state="translated">F# 코드에 대한 구조체 지침 표시</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Outlining">
+        <source>Outlining</source>
+        <target state="translated">개요</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Outlining">
+        <source>Show outlining and collapsible nodes for F# code</source>
+        <target state="translated">F# 코드에 대한 개요 및 축소 가능한 노드 표시</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Time_until_stale_completion">
+        <source>Time until stale results are used (in milliseconds)</source>
+        <target state="translated">부실 결과가 사용될 때까지 시간(밀리초)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IntelliSense_Performance">
+        <source>IntelliSense Performance Options</source>
+        <target state="translated">IntelliSense 성능 옵션</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project_Performance">
+        <source>F# Project and Caching Performance Options</source>
+        <target state="translated">F# 프로젝트 및 캐싱 성능 옵션</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Stale_IntelliSense_Results">
+        <source>Enable stale data for IntelliSense features</source>
+        <target state="translated">IntelliSense 기능에 대해 부실 데이터 사용</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_in_memory_cross_project_references">
+        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
+        <target state="translated">메모리 내 크로스 프로젝트 참조가 메모리에 프로젝트 수준 데이터를 저장하여 IDE 기능이 프로젝트에서 작동하도록 합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_project_check_cache_size">
+        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
+        <target state="translated">프로젝트 데이터가 IDE 기능에 대해 캐시됩니다. 값이 클수록 프로제트가 더 많이 캐시되므로 메모리를 더 많이 사용합니다. 이 값을 조정해도 중소 규모 솔루션에 영향을 미치지 않습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_always">
+        <source>Always add new line on enter</source>
+        <target state="new">Always add new line on enter</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_never">
+        <source>Never add new line on enter</source>
+        <target state="new">Never add new line on enter</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_only">
+        <source>Only add new line on enter after end of fully typed word</source>
+        <target state="new">Only add new line on enter after end of fully typed word</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_Key_Rule">
+        <source>Enter key behavior</source>
+        <target state="new">Enter key behavior</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

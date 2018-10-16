@@ -10,26 +10,26 @@
   <PropertyGroup>
     <FeedTasksPackage>Microsoft.DotNet.Build.Tasks.Feed</FeedTasksPackage>
     <!-- This version should be kept in sync with `packages.config` -->
-    <FeedTasksPackageVersion>1.0.0-prerelease-02219-01</FeedTasksPackageVersion>
+    <FeedTasksPackageVersion>2.1.0-prerelease-02419-02</FeedTasksPackageVersion>
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)packages\$(FeedTasksPackage).$(FeedTasksPackageVersion)\build\$(FeedTasksPackage).targets" />
 
   <ItemGroup>
-    <NuGetPackages Include="$(MSBuildThisFileDirectory)artifacts\**\*.nupkg" />
-    <OtherAssets Include="$(MSBuildThisFileDirectory)insertion\**" />
+    <!-- this should pick up both *.nupkg and *.symbols.nupkg -->
+    <NuGetPackages Include="$(MSBuildThisFileDirectory)$(Configuration)\artifacts\Microsoft.FSharp.Compiler.*.nupkg" />
   </ItemGroup>
 
   <Target Name="Build">
     <PushToBlobFeed ExpectedFeedUrl="$(ExpectedFeedUrl)"
                     AccountKey="$(AccountKey)"
                     ItemsToPush="@(NuGetPackages)"
-                    Overwrite="$(PublishOverwrite)" />
-    <PushToBlobFeed ExpectedFeedUrl="$(ExpectedFeedUrl)"
-                    AccountKey="$(AccountKey)"
-                    ItemsToPush="@(OtherAssets)"
-                    PublishFlatContainer="true"
-                    Overwrite="$(PublishOverwrite)" />
+                    Overwrite="$(PublishOverwrite)"
+                    ManifestBranch="$(ManifestBranch)"
+                    ManifestBuildId="$(ManifestBuildId)"
+                    ManifestCommit="$(ManifestCommit)"
+                    ManifestName="fsharp"
+                    SkipCreateManifest="false" />
   </Target>
 
 </Project>

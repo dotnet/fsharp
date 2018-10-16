@@ -104,6 +104,8 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
             return results
         }
 
+    override __.Priority = 10 // Default = 50
+
     override this.SupportedDiagnostics = RoslynHelpers.SupportedDiagnostics()
 
     override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =

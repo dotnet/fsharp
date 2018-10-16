@@ -204,4 +204,10 @@
   <data name="RenameValueToDoubleUnderscore" xml:space="preserve">
     <value>Rename '{0}' to '__'</value>
   </data>
+  <data name="6012" xml:space="preserve">
+    <value>Advanced</value>
+  </data>
+  <data name="6013" xml:space="preserve">
+    <value>CodeLens</value>
+  </data>
 </root>

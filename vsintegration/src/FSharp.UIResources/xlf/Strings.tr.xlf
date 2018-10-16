@@ -1,0 +1,187 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="tr" original="../Strings.resx">
+    <body>
+      <trans-unit id="Always_place_opens_at_top_level">
+        <source>Always place open statements at the top level</source>
+        <target state="translated">Açık deyimleri her zaman en üst düzeye yerleştir</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Replace_LineLens">
+        <source>Show annotations to the right instead of above the line</source>
+        <target state="translated">Ek açıklamaları satırın üstü yerine sağ tarafta göster</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Switch">
+        <source>Enable CodeLens (Experimental)</source>
+        <target state="translated">CodeLens’i Etkinleştir (Deneysel)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Prefix">
+        <source>Annotation prefix</source>
+        <target state="translated">Ek açıklama ön eki</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_UseColors">
+        <source>Use colors in annotations</source>
+        <target state="translated">Ek açıklamalarda renk kullan</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Code_Fixes">
+        <source>Code Fixes</source>
+        <target state="translated">Kod Düzeltmeleri</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Completion_Lists">
+        <source>Completion Lists</source>
+        <target state="translated">Tamamlama Listeleri</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Language_Service_Performance">
+        <source>Performance</source>
+        <target state="translated">Performans</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Dash_underline">
+        <source>D_ash underline</source>
+        <target state="translated">T_ire alt çizgi</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Dot_underline">
+        <source>D_ot underline</source>
+        <target state="translated">N_okta alt çizgi</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Navigation_links">
+        <source>Navigation links</source>
+        <target state="translated">Gezinti bağlantıları</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_all_symbols">
+        <source>Show s_ymbols in unopened namespaces</source>
+        <target state="translated">Açılmamış ad alanlarında s_embolleri göster</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_completion_list_after_a_character_is_deleted">
+        <source>Show completion list after a character is _deleted</source>
+        <target state="translated">Bir karakter _silindikten sonra tamamlanma listesini göster</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_completion_list_after_a_character_is_typed">
+        <source>_Show completion list after a character is typed</source>
+        <target state="translated">Bir karakter yazıldıktan sonra tamamlanma listesini _göster</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_in_memory_cross_project_references">
+        <source>_Enable in-memory cross project references</source>
+        <target state="translated">_Bellek içi çapraz proje başvurularını etkinleştir</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project_check_cache_size">
+        <source>Number of projects whose data is cached in memory</source>
+        <target state="translated">Verileri bellekte önbelleğe alınan proje sayısı</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_navigation_links_as">
+        <source>S_how navigation links as</source>
+        <target state="translated">Gezinti bağlantılarını farklı _göster</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Simplify_name_code_fix">
+        <source>Simplify names (remove unnecessary qualifiers)</source>
+        <target state="translated">Adları basitleştir (gereksiz niteleyicileri kaldır)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Solid_underline">
+        <source>_Solid underline</source>
+        <target state="translated">_Kesintisiz alt çizgi</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Unused_opens_code_fix">
+        <source>Remove unused open statements</source>
+        <target state="translated">Kullanılmayan açık deyimleri kaldır</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Unused_declaration_code_fix">
+        <source>Analyze and suggest fixes for unused values</source>
+        <target state="translated">Kullanılmayan değerlere yönelik düzeltmeleri çözümle</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Block_Structure">
+        <source>Block Structure Guides</source>
+        <target state="translated">Blok Yapısı Kılavuzları</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_guides">
+        <source>Show structure guidelines for F# code</source>
+        <target state="translated">F# kodu için yapı yönergelerini göster</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Outlining">
+        <source>Outlining</source>
+        <target state="translated">Ana Hat</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Outlining">
+        <source>Show outlining and collapsible nodes for F# code</source>
+        <target state="translated">F# kodu için ana hattı ve daraltılabilir düğümleri göster</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Time_until_stale_completion">
+        <source>Time until stale results are used (in milliseconds)</source>
+        <target state="translated">Eski sonuçların kullanılması için geçecek süre (milisaniye cinsinden)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IntelliSense_Performance">
+        <source>IntelliSense Performance Options</source>
+        <target state="translated">IntelliSense Performans Seçenekleri</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project_Performance">
+        <source>F# Project and Caching Performance Options</source>
+        <target state="translated">F# Proje ve Önbelleğe Alma Performansı Seçenekleri</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Stale_IntelliSense_Results">
+        <source>Enable stale data for IntelliSense features</source>
+        <target state="translated">IntelliSense özellikleri için eski verileri etkinleştir</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_in_memory_cross_project_references">
+        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
+        <target state="translated">Bellek içi projeler arası başvurular, IDE özelliklerinin farklı projelerde çalışmasına imkan tanımak için bellekte proje düzeyi veriler depolar.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_project_check_cache_size">
+        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
+        <target state="translated">IDE özellikleri için proje verileri önbelleğe alınır. Değer yüksek olduğunda daha fazla proje önbelleğe alındığından daha fazla bellek kullanılır. Bu değerin ayarlanması küçük veya orta ölçekli çözümleri etkilememelidir.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_always">
+        <source>Always add new line on enter</source>
+        <target state="new">Always add new line on enter</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_never">
+        <source>Never add new line on enter</source>
+        <target state="new">Never add new line on enter</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_only">
+        <source>Only add new line on enter after end of fully typed word</source>
+        <target state="new">Only add new line on enter after end of fully typed word</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_Key_Rule">
+        <source>Enter key behavior</source>
+        <target state="new">Enter key behavior</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

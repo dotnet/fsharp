@@ -13,29 +13,13 @@
 
     <Target Name="CollectSetupProjects">
         <ItemGroup>
-            <WixSetupProjects Include="FSharp.Wix.Extensions.csproj">
-                <ProjectPath>FSharp.Wix.Extensions\FSharp.Wix.Extensions.csproj</ProjectPath>
-            </WixSetupProjects>
-        </ItemGroup>
-
-        <CreateItem Include="@(SetupLanguages)"
-                    AdditionalMetadata="ProjectPath=FSharp.SDK\FSharp.SDK.wixproj">
-            <Output ItemName="WixSetupProjects" TaskParameter="Include"/>
-        </CreateItem>
-
-        <ItemGroup>
-            <SwixSetupProjects Include="Microsoft.FSharp.SDK.Core.swixproj">
-                <ProjectPath>Swix\Microsoft.FSharp.SDK.Core\Microsoft.FSharp.SDK.Core.swixproj</ProjectPath>
-            </SwixSetupProjects>
             <VsixProjects Include="VisualFSharpFull.csproj">
                 <ProjectPath>..\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj</ProjectPath>
             </VsixProjects>
+            <VsixProjects Include="VisualFSharpTemplates.csproj">
+                <ProjectPath>..\vsintegration\Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj</ProjectPath>
+            </VsixProjects>
         </ItemGroup>
-
-        <CreateItem Include="@(SetupLanguages)"
-                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.SDK.Resources\Microsoft.FSharp.SDK.Resources.swixproj">
-            <Output ItemName="SwixSetupProjects" TaskParameter="Include"/>
-        </CreateItem>
 
         <CreateItem Include="@(SetupLanguages)"
                     AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.Vsix.Resources\Microsoft.FSharp.Vsix.Resources.swixproj">
@@ -46,13 +30,9 @@
             <SwixSetupProjects Include="Microsoft.FSharp.Dependencies.swixproj">
                 <ProjectPath>Swix\Microsoft.FSharp.Dependencies\Microsoft.FSharp.Dependencies.swixproj</ProjectPath>
             </SwixSetupProjects>
-        </ItemGroup>
-
-        <ItemGroup>
-            <InsertionItems Include="$(VsixBuildLocation)\VisualFSharpFull.vsix" />
-            <InsertionItems Include="$(VsixBuildLocation)\VisualFSharpTemplate.vsix" />
-            <InsertionItems Include="$(VsixBuildLocation)\Microsoft.FSharp.VSIX.Full.Core.json" />
-            <InsertionItems Include="$(VsixBuildLocation)\Microsoft.FSharp.VSIX.Templates.json" />
+            <SwixSetupProjects Include="Microsoft.FSharp.IDE.swixproj">
+                <ProjectPath>Swix\Microsoft.FSharp.IDE\Microsoft.FSharp.IDE.swixproj</ProjectPath>
+            </SwixSetupProjects>
         </ItemGroup>
     </Target>
 
@@ -60,23 +40,12 @@
         <PropertyGroup>
           <CustomProps>AssemblySearchPaths={HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}</CustomProps>
         </PropertyGroup>
-        <!-- Wix targets files doesn't handle localization parameters correctly. Cleaning before building files accross languages -->
-        <MSBuild Projects="%(WixSetupProjects.ProjectPath)"
-                 Targets="Clean;Build"
-                 Properties="LocaleCode=%(WixSetupProjects.LocaleCode);LocaleId=%(WixSetupProjects.LocaleId);LocaleParentCulture=%(WixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(WixSetupProjects.LocaleSpecificCulture);IsLangPack=%(WixSetupProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);$(CustomProps)" />
         <MSBuild Projects="%(VsixProjects.ProjectPath)"
                  Targets="Build"
-                 Properties="IsLangPack=%(VsixProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);OutputPath=$(InsertionDir);$(CustomProps)" />
+                 Properties="Configuration=$(Configuration);IsLangPack=%(VsixProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);OutputPath=$(VsixBuildLocation);DisableOutputPathCopying=true;$(CustomProps)" />
         <MSBuild Projects="%(SwixSetupProjects.ProjectPath)"
                  Targets="Build"
-                 Properties="LocaleCode=%(SwixSetupProjects.LocaleCode);LocaleId=%(SwixSetupProjects.LocaleId);LocaleParentCulture=%(SwixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SwixSetupProjects.LocaleSpecificCulture);IsLangPack=%(SwixSetupProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);$(CustomProps)" />
-
-        <!-- copy json stuff -->
-        <Copy SourceFiles="@(InsertionItems)" DestinationFolder="$(InsertionDir)" />
-
-        <MSBuild Projects="Swix\Microsoft.FSharp.vsmanproj"
-                 Targets="Build"
-                 Properties="$(CustomProps)" />
+                 Properties="LocaleCode=%(SwixSetupProjects.LocaleCode);LocaleId=%(SwixSetupProjects.LocaleId);LocaleParentId=%(SwixSetupProjects.LocaleParentId);LocaleParentCulture=%(SwixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SwixSetupProjects.LocaleSpecificCulture);IsLangPack=%(SwixSetupProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);VSGeneralVersion=$(VSGeneralVersion);$(CustomProps)"/>
     </Target>
 
     <Target Name="CopyLocalizationResources" BeforeTargets="Build">

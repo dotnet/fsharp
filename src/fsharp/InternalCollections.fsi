@@ -75,10 +75,3 @@ namespace Internal.Utilities.Collections
     /// Resize
     member Resize : 'Token * keepStrongly: int * ?keepMax : int -> unit
 
-  [<Sealed>]
-  type internal List = 
-    /// Return a new list with one element for each unique 'Key. Multiple 'TValues are flattened. 
-    /// The original order of the first instance of 'Key is preserved.
-    static member groupByFirst : l:('Key * 'Value) list -> ('Key * 'Value list) list when 'Key : equality
-    /// Return each distinct item in the list using reference equality.
-    static member referenceDistinct : 'T list -> 'T list when 'T : not struct

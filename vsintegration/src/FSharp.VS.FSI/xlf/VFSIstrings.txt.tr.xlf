@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="tr" original="../VFSIstrings.resx">
+    <body>
+      <trans-unit id="cannotCreateToolWindow">
+        <source>Cannot create window F# Interactive ToolWindow</source>
+        <target state="translated">F# Etkileşimli ToolWindow penceresi oluşturulamıyor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="exceptionRaisedWhenCreatingRemotingClient">
+        <source>Exception raised when creating remoting client for launched fsi.exe\n{0}</source>
+        <target state="translated">Başlatılmış fsi.exe için uzaktan iletişim istemcisi oluşturulurken özel durum tetiklendi\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="exceptionRaisedWhenRequestingToolWindow">
+        <source>Exception raised when requesting FSI ToolWindow.\n{0}</source>
+        <target state="translated">FSI ToolWindow istenirken özel durum tetiklendi.\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="couldNotObtainFSharpLS">
+        <source>Could not load F# language service</source>
+        <target state="translated">F# dil hizmeti yüklenemedi</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="sessionTerminationDetected">
+        <source>Session termination detected. Press Enter to restart.</source>
+        <target state="translated">Oturum sonlandırma algılandı. Yeniden başlatmak için Enter'a basın.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsharpInteractive">
+        <source>F# Interactive</source>
+        <target state="translated">F# Etkileşimli</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="couldNotFindFsiExe">
+        <source>Could not find fsi.exe, the F# Interactive executable.\nThis file does not exist:\n\n{0}\n</source>
+        <target state="translated">F# Etkileşimli çalıştırılabilir dosyası olan fsi.exe bulunamıyor.\nBu dosya yok:\n\n{0}\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="killingProcessRaisedException">
+        <source>Killing process raised exception:\n{0}</source>
+        <target state="translated">Sonlandırma işlemi özel durum tetikledi:\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="sessionIsNotDebugFriendly">
+        <source>The current F# Interactive session is not configured for debugging. For the best experience, enable debugging in F# Interactive settings, then reset the session.\n\nAttempt debugging with current settings?</source>
+        <target state="translated">Geçerli F# Etkileşimli oturumu hata ayıklama için yapılandırılmamış. En iyi deneyim için, F# Etkileşimli ayarlarında hata ayıklamayı etkinleştirin ve ardından oturumu sıfırlayın.\n\nGeçerli ayarlarla hata ayıklama denensin mi?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="doNotShowWarningInFuture">
+        <source>Don't show this warning again</source>
+        <target state="translated">Bu uyarıyı bir daha gösterme</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

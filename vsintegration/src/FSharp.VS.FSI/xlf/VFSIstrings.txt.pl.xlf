@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="pl" original="../VFSIstrings.resx">
+    <body>
+      <trans-unit id="cannotCreateToolWindow">
+        <source>Cannot create window F# Interactive ToolWindow</source>
+        <target state="translated">Nie można utworzyć okna ToolWindow narzędzia F# Interactive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="exceptionRaisedWhenCreatingRemotingClient">
+        <source>Exception raised when creating remoting client for launched fsi.exe\n{0}</source>
+        <target state="translated">Wywołano wyjątek podczas tworzenia klienta zdalnego dla uruchomionego pliku fsi.exe\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="exceptionRaisedWhenRequestingToolWindow">
+        <source>Exception raised when requesting FSI ToolWindow.\n{0}</source>
+        <target state="translated">Wywołano wyjątek podczas żądania elementu ToolWindow narzędzia FSI.\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="couldNotObtainFSharpLS">
+        <source>Could not load F# language service</source>
+        <target state="translated">Nie można załadować usługi języka F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="sessionTerminationDetected">
+        <source>Session termination detected. Press Enter to restart.</source>
+        <target state="translated">Wykryto zakończenie sesji. Naciśnij klawisz Enter, aby uruchomić ją ponownie.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsharpInteractive">
+        <source>F# Interactive</source>
+        <target state="translated">F# Interactive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="couldNotFindFsiExe">
+        <source>Could not find fsi.exe, the F# Interactive executable.\nThis file does not exist:\n\n{0}\n</source>
+        <target state="translated">Nie można odnaleźć pliku wykonywalnego narzędzia F# Interactive (fsi.exe).\nTen plik nie istnieje:\n\n{0}\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="killingProcessRaisedException">
+        <source>Killing process raised exception:\n{0}</source>
+        <target state="translated">Zamknięcie procesu wywołało wyjątek:\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="sessionIsNotDebugFriendly">
+        <source>The current F# Interactive session is not configured for debugging. For the best experience, enable debugging in F# Interactive settings, then reset the session.\n\nAttempt debugging with current settings?</source>
+        <target state="translated">Bieżąca sesja narzędzia F# Interactive nie jest skonfigurowana do debugowania. Aby uzyskać najlepszy efekt, włącz debugowanie w ustawieniach narzędzia F# Interactive, a następnie zresetuj sesję.\n\nPodjąć próbę debugowania z bieżącymi ustawieniami?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="doNotShowWarningInFuture">
+        <source>Don't show this warning again</source>
+        <target state="translated">Nie pokazuj tego ostrzeżenia ponownie</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

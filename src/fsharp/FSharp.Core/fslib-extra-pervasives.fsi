@@ -122,6 +122,10 @@ module ExtraTopLevelOperators =
     [<CompiledName("CreateDictionary")>]
     val dict : keyValuePairs:seq<'Key * 'Value> -> System.Collections.Generic.IDictionary<'Key,'Value> when 'Key : equality
 
+    /// <summary>Builds a read-only lookup table from a sequence of key/value pairs. The key objects are indexed using generic hashing and equality.</summary>
+    [<CompiledName("CreateReadOnlyDictionary")>]
+    val readOnlyDict : keyValuePairs:seq<'Key * 'Value> -> System.Collections.Generic.IReadOnlyDictionary<'Key,'Value> when 'Key : equality
+
     /// <summary>Builds a 2D array from a sequence of sequences of elements.</summary>
     [<CompiledName("CreateArray2D")>]
     val array2D : rows:seq<#seq<'T>> -> 'T[,]

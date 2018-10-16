@@ -1,0 +1,2948 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="zh-Hant" original="../Microsoft.VisualStudio.Editors.Designer.resx">
+    <body>
+      <trans-unit id="CMN_AllFilesFilter">
+        <source>All Files</source>
+        <target state="translated">所有檔案</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_PropertyPageControlName">
+        <source>Property Page</source>
+        <target state="translated">屬性頁</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ReferencesTitle">
+        <source>References</source>
+        <target state="translated">參考</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_VersionTitle">
+        <source>Version</source>
+        <target state="translated">版本</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SigningTitle">
+        <source>Signing</source>
+        <target state="translated">簽署</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ApplicationTitle">
+        <source>Application</source>
+        <target state="translated">應用程式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_CompileTitle">
+        <source>Compile</source>
+        <target state="translated">編譯</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_DebugTitle">
+        <source>Debug</source>
+        <target state="translated">偵錯</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_DeployTitle">
+        <source>Deploy</source>
+        <target state="translated">部署</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_VdtGeneralTitle">
+        <source>Database</source>
+        <target state="translated">資料庫</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Security">
+        <source>Security</source>
+        <target state="translated">安全性</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_BuildTitle">
+        <source>Build</source>
+        <target state="translated">建置</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_BuildEventsTitle">
+        <source>Build Events</source>
+        <target state="translated">建置事件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ReferencePathsTitle">
+        <source>Reference Paths</source>
+        <target state="translated">參考路徑</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_PreBuildCommandLineTitle">
+        <source>Pre-build Event Command Line</source>
+        <target state="translated">建置前事件命令列</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_PostBuildCommandLineTitle">
+        <source>Post-build Event Command Line</source>
+        <target state="translated">建置後事件命令列</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_OutputPathNotSecure">
+        <source>The output path is not trusted.
+The application may throw security exceptions when it attempts to perform actions which require full trust.
+Click OK to ignore and continue. Click CANCEL to choose a different output path.</source>
+        <target state="translated">輸出路徑不受信任。
+應用程式嘗試執行需要完全信任的動作時，可能會擲回安全性例外狀況。
+按一下 [確定] 略過並繼續。按一下 [取消] 選擇其他輸出路徑。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_BrowseText">
+        <source>&lt;Browse...&gt;</source>
+        <target state="translated">&lt;瀏覽...&gt;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_StartupObjectNone">
+        <source>(None)</source>
+        <target state="translated">(無)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_KeyFileNewText">
+        <source>&lt;New...&gt;</source>
+        <target state="translated">&lt;新增...&gt;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_KeyFileBrowseText">
+        <source>&lt;Browse...&gt;</source>
+        <target state="translated">&lt;瀏覽...&gt;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ComboBoxSelect_None">
+        <source>(None)</source>
+        <target state="translated">(無)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ActiveConfigOrPlatformFormatString_1Arg">
+        <source>Active ({0})</source>
+        <target state="translated">使用中 ({0})</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AllConfigurations">
+        <source>All Configurations</source>
+        <target state="translated">所有組態</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AllPlatforms">
+        <source>All Platforms</source>
+        <target state="translated">所有平台</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_NotApplicable">
+        <source>N/A</source>
+        <target state="translated">N/A</target>
+        <note>This is used in the platform and configuration comboboxes when showing pages that don't care about the current platform/configuration</note>
+      </trans-unit>
+      <trans-unit id="PPG_ConfigNotFound_2Args">
+        <source>Could not find the configuration '{0}' for platform '{1}'.</source>
+        <target state="translated">找不到平台 '{1}' 的組態 '{0}'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_NeutralLanguage_None">
+        <source>(None)</source>
+        <target state="translated">(無)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SelectFileTitle">
+        <source>Select File</source>
+        <target state="translated">選取檔案</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AddExistingFilesTitle">
+        <source>Add existing file to project</source>
+        <target state="translated">將現有的檔案加入專案</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AddIconFilesFilter">
+        <source>Icon Files</source>
+        <target state="translated">圖示檔</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ExeFilesFilter">
+        <source>Executable Files</source>
+        <target state="translated">可執行檔</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SelectWorkingDirectoryTitle">
+        <source>Select Working Directory</source>
+        <target state="translated">選取工作目錄</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SelectOutputPathTitle">
+        <source>Select Output Path</source>
+        <target state="translated">選取輸出路徑</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SelectReferencePath">
+        <source>Select Reference Path</source>
+        <target state="translated">選取參考路徑</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AddWin32ResourceFilter">
+        <source>Win32 Resource Files</source>
+        <target state="translated">Win32 資源檔</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AddWin32ResourceTitle">
+        <source>Add Win32 resource file to project</source>
+        <target state="translated">將 Win32 資源檔加入專案</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_InvalidFolderPath">
+        <source>Folder path does not exist.
+Please select a valid folder path.</source>
+        <target state="translated">資料夾路徑不存在。
+請選取有效的資料夾路徑。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AdvancedCompilerSettings_Title">
+        <source>Advanced Compiler Settings</source>
+        <target state="translated">進階編譯器設定</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AdvancedBuildSettings_Title">
+        <source>Advanced Build Settings</source>
+        <target state="translated">進階建置設定</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_CompilerWarnings_Title">
+        <source>Compiler Warnings</source>
+        <target state="translated">編譯器警告</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ReferencePaths_Title">
+        <source>Reference Paths</source>
+        <target state="translated">參考路徑</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_CompatibleSettings_Title">
+        <source>Compatible Settings</source>
+        <target state="translated">相容設定</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AssemblyInfo_Title">
+        <source>Assembly Information</source>
+        <target state="translated">組件資訊</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AssemblyInfo_InvalidVersion">
+        <source>Invalid version format, expected "[Major]", "[Major].[Minor]", "[Major].[Minor].[Build]" or "[Major].[Minor].[Build].[Revision]"</source>
+        <target state="translated">無效的版本格式，必須是 "[Major]"、"[Major].[Minor]"、"[Major].[Minor].[Build]" 或 "[Major].[Minor].[Build].[Revision]"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AssemblyInfo_BadWildcard">
+        <source>A wildcard ("*") is not allowed in this field.</source>
+        <target state="translated">此欄位不允許萬用字元 ("*")。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AssemblyInfo_VersionOutOfRange_2Args">
+        <source>Each part of the version number for '{0}' must be an integer between 0 and {1}.</source>
+        <target state="translated">'{0}' 的版本號碼的每個部分都必須是介於 0 和 {1} 之間的整數。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_DefaultIconText">
+        <source>(Default Icon)</source>
+        <target state="translated">(預設圖示)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_InvalidSubMainStartup">
+        <source>Startup object must be a form when 'Enable application framework' is checked.</source>
+        <target state="translated">核取 [啟用應用程式架構] 時，啟始物件必須是表單。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_StartupObjectNotSet">
+        <source>(Not set)</source>
+        <target state="translated">(未設定)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_CantAddIcon">
+        <source>Icon could not be added to the project.</source>
+        <target state="translated">無法將圖示加入專案。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_BadIcon">
+        <source>Invalid icon file.</source>
+        <target state="translated">圖示檔無效。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_BadIcon_1Arg">
+        <source>{0} is not a valid icon file.</source>
+        <target state="translated">{0} 不是有效的圖示檔。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_BadGuid">
+        <source>The GUID should match the format dddddddd-dddd-dddd-dddd-dddddddddddd.</source>
+        <target state="translated">GUID 應符合 dddddddd-dddd-dddd-dddd-dddddddddddd 格式。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_MyAppCommentLine1">
+        <source>NOTE: This file is auto-generated; do not modify it directly.  To make changes,</source>
+        <target state="translated">注意:這是自動產生的檔案，請勿直接修改它。若要進行變更，</target>
+        <note>These comments are placed in the ApplicationEvents.vb file if it is generated by the project designer.  The same comments appear in the templates, under vsproject\Templates\Windows\VisualBasic\ProjectTemplates\WindowsApplication\MyEvents.vb (MyEvents.vb is renamed to ApplicationEvents.vb after project creation), and these comments should be kept in sync</note>
+      </trans-unit>
+      <trans-unit id="PPG_Application_MyAppCommentLine2">
+        <source> or if you encounter build errors in this file, go to the Project Designer</source>
+        <target state="translated"> 或者您在這個檔案發生建置錯誤，請到專案設計工具</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_MyAppCommentLine3">
+        <source> (go to Project Properties or double-click the My Project node in</source>
+        <target state="translated"> (移至專案屬性或者在 [方案總管] 中按兩下 [My Project] 節點)，</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_MyAppCommentLine4">
+        <source> Solution Explorer), and make changes on the Application tab.</source>
+        <target state="translated"> 然後在 [應用程式] 索引標籤上進行變更。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_InvalidIdentifierStartupForm_1Arg">
+        <source>'{0}' is not a valid identifier. Please select a different Startup form.</source>
+        <target state="translated">'{0}' 不是有效的識別碼。請選取其他的啟動表單。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_InvalidIdentifierSplashScreenForm_1Arg">
+        <source>'{0}' is not a valid identifier. Please select a different Splash screen form.</source>
+        <target state="translated">'{0}' 不是有效的識別碼。請選取其他的啟動顯示畫面表單。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_SplashSameAsStart">
+        <source>The splash screen form cannot be the start-up form.</source>
+        <target state="translated">啟動顯示畫面表單不能是啟動表單。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_StartupFormLabelText">
+        <source>Startup f&amp;orm:</source>
+        <target state="translated">啟動表單(&amp;O):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_AppEventsCommentLine1">
+        <source>The following events are available for MyApplication:</source>
+        <target state="translated">MyApplication 可以使用下列事件:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_AppEventsCommentLine3">
+        <source>Startup: Raised when the application starts, before the startup form is created.</source>
+        <target state="translated">Startup:在應用程式啟動時，但尚未建立啟動表單之前引發。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_AppEventsCommentLine4">
+        <source>Shutdown: Raised after all application forms are closed.  This event is not raised if the application terminates abnormally.</source>
+        <target state="translated">Shutdown:在所有應用程式表單關閉之後引發。如果應用程式不正常終止，就不會引發此事件。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_AppEventsCommentLine5">
+        <source>UnhandledException: Raised if the application encounters an unhandled exception.</source>
+        <target state="translated">UnhandledException:在應用程式發生未處理的例外狀況時引發。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_AppEventsCommentLine6">
+        <source>StartupNextInstance: Raised when launching a single-instance application and the application is already active. </source>
+        <target state="translated">StartupNextInstance:在啟動單一執行個體應用程式且應用程式已於使用中時引發。 </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_AppEventsCommentLine7">
+        <source>NetworkAvailabilityChanged: Raised when the network connection is connected or disconnected.</source>
+        <target state="translated">NetworkAvailabilityChanged:在建立或中斷網路連線時引發。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_AdvancedBuildSettings_InvalidBaseAddress">
+        <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, 0x11000000.</source>
+        <target state="translated">基底位址必須是小於或等於 8 位數的十六進位數字，例如 0x11000000。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_Notification_None">
+        <source>None</source>
+        <target state="translated">無</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_Notification_Warning">
+        <source>Warning</source>
+        <target state="translated">警告</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_Notification_Error">
+        <source>Error</source>
+        <target state="translated">錯誤</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_OptionStrict_Custom">
+        <source>(custom)</source>
+        <target state="translated">(自訂)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_42016">
+        <source>Implicit conversion</source>
+        <target state="translated">隱含轉換</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_42017_42018_42019">
+        <source>Late binding; call could fail at run time</source>
+        <target state="translated">晚期繫結，執行階段時呼叫可能失敗</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_42020">
+        <source>Implicit type; object assumed</source>
+        <target state="translated">隱含類型，假設是 Object</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_42104">
+        <source>Use of variable prior to assignment</source>
+        <target state="translated">在指派之前使用變數</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_420XX">
+        <source>Function/Operator without return value</source>
+        <target state="translated">無傳回值的函式/運算子</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_42024">
+        <source>Unused local variable</source>
+        <target state="translated">未使用的區域變數</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_42025">
+        <source>Instance variable accesses shared member</source>
+        <target state="translated">執行個體變數存取共用成員</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_42004">
+        <source>Recursive operator or property access</source>
+        <target state="translated">遞迴運算子或屬性存取</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_42029">
+        <source>Duplicate or overlapping catch blocks</source>
+        <target state="translated">重複或重疊的 catch 區塊</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Compile_ResetIndeterminateWarningLevels">
+        <source>The warning settings for one or more configurations conflict.
+Changing this setting will reset the settings in all configurations.</source>
+        <target state="translated">一或多個組態衝突的警告設定。
+變更此設定將重設所有組態中的設定。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MyApplication_StartupMode_FormCloses">
+        <source>When startup form closes</source>
+        <target state="translated">啟動表單關閉時</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MyApplication_StartupMode_AppExits">
+        <source>When last form closes</source>
+        <target state="translated">最後表單關閉時</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MyApplication_AuthenMode_Windows">
+        <source>Windows</source>
+        <target state="translated">Windows</target>
+        <note>Authentication modes</note>
+      </trans-unit>
+      <trans-unit id="PPG_MyApplication_AuthenMode_ApplicationDefined">
+        <source>Application-defined</source>
+        <target state="translated">由應用程式定義</target>
+        <note>Authentication modes</note>
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_Cancel">
+        <source>Cancel</source>
+        <target state="translated">取消</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_Calculate">
+        <source>&amp;Calculate Permissions</source>
+        <target state="translated">計算使用權限(&amp;C)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_Stopped">
+        <source>Stopped...</source>
+        <target state="translated">已停止...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_Starting">
+        <source>Starting...</source>
+        <target state="translated">正在啟動...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_Building">
+        <source>Building...</source>
+        <target state="translated">正在建置...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_Analyzing">
+        <source>Analyzing...</source>
+        <target state="translated">正在分析...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_AnalyzeFailed">
+        <source>Analyze Failed</source>
+        <target state="translated">分析失敗</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_Aborting">
+        <source>Aborting...</source>
+        <target state="translated">正在中止...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_Cancelling">
+        <source>Canceling...</source>
+        <target state="translated">正在取消...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_InternetZone">
+        <source>Internet</source>
+        <target state="translated">網際網路</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_LocalIntranetZone">
+        <source>Local Intranet</source>
+        <target state="translated">近端內部網路</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_CustomZone">
+        <source>(Custom)</source>
+        <target state="translated">(自訂)</target>
+        <note>Don't use</note>
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_ZoneDefault">
+        <source>(Zone Default)</source>
+        <target state="translated">(區域預設)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_Included">
+        <source>Include</source>
+        <target state="translated">包含</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_Excluded">
+        <source>Exclude</source>
+        <target state="translated">排除</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_FullTrustToolTip">
+        <source>The application will require elevated permissions to run in the selected zone. Click the help link above for more info.</source>
+        <target state="translated">應用程式必須有更高的使用權限，才能在選取的區域中執行。如需詳細資訊，請按一下上方的 [說明] 連結。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_BadPermissionToolTip">
+        <source>This permission could not be loaded. Press the delete key to remove it from your project.</source>
+        <target state="translated">無法載入此使用權限。請按 DELETE 鍵，將它從專案中移除。</target>
+        <note>Don't use</note>
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_HeaderIncluded">
+        <source>Included</source>
+        <target state="translated">包含</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_HeaderPermission">
+        <source>Permission</source>
+        <target state="translated">使用權限</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_HeaderSetting">
+        <source>Setting</source>
+        <target state="translated">設定</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_HelpLabelText">
+        <source>Specify the code access security permissions that your ClickOnce application requires in order to run. Learn more about code access security...</source>
+        <target state="translated">指定執行 ClickOnce 應用程式所需的程式碼存取安全性權限。進一步了解程式碼存取安全性...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_HelpLabelLink">
+        <source>Learn more about code access security...</source>
+        <target state="translated">進一步了解程式碼存取安全性...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_BadDropDownValue">
+        <source>Invalid value</source>
+        <target state="translated">值無效</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_SecurityPermissionCannotBeExcluded">
+        <source>The SecurityPermission must be included in your application with the Execute flag set or your application will not run. Mark this permission as "Zone Default" or "Include."</source>
+        <target state="translated">應用程式必須包含 SecurityPermission，而且必須設定執行旗標，否則應用程式將無法執行。請將此使用權限標記為 [區域預設] 或 [包含]。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_ExecuteCannotBeExcluded">
+        <source>The SecurityPermission must be included in your application with the Execute flag set or your application will not run. The Execute flag has been added to the SecurityPermission in your manifest.</source>
+        <target state="translated">應用程式必須包含 SecurityPermission，而且必須設定執行旗標，否則應用程式將無法執行。已將執行旗標新增至資訊清單中的 SecurityPermission。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_SwitchToFullTrustDialog">
+        <source>This application requires full trust to run correctly. Would you like to set this as a full trust application?</source>
+        <target state="translated">此應用程式需要完全信任才能正確執行。要將它設定為完全信任應用程式嗎?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_SwitchToFullTrustDialogTitle">
+        <source>Full Trust Required</source>
+        <target state="translated">需要完全信任</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_CouldNotSaveManifest">
+        <source>An error occurred and the app.manifest file could not be saved.
+Error:</source>
+        <target state="translated">發生錯誤，無法儲存 app.manifest 檔案。
+錯誤:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_CouldNotLoadManifest">
+        <source>An error occurred and the app.manifest file could not be loaded. Please remove any changes you have made to the file and reload the Security property page again.</source>
+        <target state="translated">發生錯誤且無法載入 app.manifest 檔案。請移除您對檔案進行的任何變更，並重新載入 [安全性] 屬性頁。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_CheckAccessibilityName">
+        <source>Included</source>
+        <target state="translated">包含</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_BlankAccessibilityName">
+        <source>Not Included</source>
+        <target state="translated">不包含</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_BangAccessibilityName">
+        <source>Included with warning</source>
+        <target state="translated">包含在警告中</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_PermCalcFailed">
+        <source>Calculating permissions failed.</source>
+        <target state="translated">計算使用權限失敗。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_PermCalcFailedCaption">
+        <source>Error</source>
+        <target state="translated">錯誤</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityAdvancedPage_Title">
+        <source>Advanced Security Settings</source>
+        <target state="translated">進階安全性設定</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_BuildFailed">
+        <source>Build Failed.  Click CANCEL and correct the build failure before analyzing again.</source>
+        <target state="translated">建置失敗。請按 [取消] 並更正建置失敗錯誤後，再分析一次。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_BuildComplete">
+        <source>Build completed...</source>
+        <target state="translated">建置完成...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_BuildUnableToStart">
+        <source>Unable to start the build.</source>
+        <target state="translated">無法啟動建置。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_MgdStatus_BuildFailedToStart">
+        <source>Serious error.  The build must begin in order to analyze permissions.  It has not started.</source>
+        <target state="translated">嚴重錯誤。必須開始建置才能分析使用權限，但建置尚未啟動。</target>
+        <note>Don't use</note>
+      </trans-unit>
+      <trans-unit id="PPG_CustomPermissionSet">
+        <source>(Custom)</source>
+        <target state="translated">(自訂)</target>
+        <note>Don't use</note>
+      </trans-unit>
+      <trans-unit id="PPG_NonePermissionSet">
+        <source>(None)</source>
+        <target state="translated">(無)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_KeyFileBrowse_Title">
+        <source>Selecting existing key file</source>
+        <target state="translated">選取現有的金鑰檔</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_KeyFileBrowse_Filter">
+        <source>Key Files</source>
+        <target state="translated">金鑰檔</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_KeyFileNew_Title">
+        <source>Create key file</source>
+        <target state="translated">建立金鑰檔</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_OldPassWrong">
+        <source>The old password is invalid.</source>
+        <target state="translated">舊密碼無效。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_OldPassEmpty">
+        <source>Enter the old password.</source>
+        <target state="translated">請輸入舊密碼。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_NewPassEmpty">
+        <source>Enter a new password.</source>
+        <target state="translated">請輸入新密碼。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_NewPassMismatch">
+        <source>The new passwords do not match. Enter the password again.</source>
+        <target state="translated">新密碼不相符。請重新輸入密碼。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_NewPassTooShort">
+        <source>The new password must be at least 6 characters in length. Enter the password again.</source>
+        <target state="translated">新密碼長度必須至少為 6 個字元。請重新輸入密碼。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_BrowseCertTitle">
+        <source>Select a Certificate</source>
+        <target state="translated">選取憑證</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_BrowseCertStorePrompt">
+        <source>Select a certificate to sign your ClickOnce manifests</source>
+        <target state="translated">選取簽署 ClickOnce 資訊清單的憑證</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_BrowseCertFileFilter">
+        <source>Certificate Files</source>
+        <target state="translated">憑證檔</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_IssuedTo">
+        <source>Issued To</source>
+        <target state="translated">核發對象</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_IssuedBy">
+        <source>Issued By</source>
+        <target state="translated">核發者</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_Purpose">
+        <source>Intended Purpose</source>
+        <target state="translated">預期的用途</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_ExpirationDate">
+        <source>Expiration Date</source>
+        <target state="translated">到期日</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_InvalidPassword">
+        <source>The password is invalid.</source>
+        <target state="translated">密碼無效。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_InvalidPasswordTitle">
+        <source>Invalid password</source>
+        <target state="translated">密碼無效</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_NoPrivateKey">
+        <source>The selected file does not contain a private key. You must choose a certificate that contains a private key.</source>
+        <target state="translated">選取的檔案未包含私密金鑰。您必須選擇含有私密金鑰的憑證。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_NoPrivateKeyTitle">
+        <source>Invalid key</source>
+        <target state="translated">金鑰無效</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_CertCreationError">
+        <source>Certificate Creation Error</source>
+        <target state="translated">建立憑證發生錯誤</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_AllPurposes">
+        <source>&lt;All&gt;</source>
+        <target state="translated">&lt;全部&gt;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_PasswordMismatch">
+        <source>The passwords do not match.</source>
+        <target state="translated">密碼不相符。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_NoPassword">
+        <source>Enter a password.</source>
+        <target state="translated">請輸入密碼。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_NoConfirm">
+        <source>Confirm the password.</source>
+        <target state="translated">請確認密碼。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_NoData">
+        <source>(none)</source>
+        <target state="translated">(無)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_OpenExistingKeyPasswordTitle">
+        <source>Enter password to open file</source>
+        <target state="translated">輸入密碼以開啟檔案</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_OpenExistingKeyPasswordPrompt">
+        <source>Enter &amp;password to open file {0}</source>
+        <target state="translated">輸入密碼以開啟檔案 {0}(&amp;P)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_CreateNewKeyPasswordPrompt">
+        <source>Enter &amp;password for new file {0}</source>
+        <target state="translated">輸入新檔案 {0} 的密碼(&amp;P)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_ProjectAlreadyContainsFile">
+        <source>The project already contains a file with that name. Choose another certificate file or rename the file in your project.</source>
+        <target state="translated">專案已經包含相同名稱的檔案。請選擇另一個憑證檔，或將專案中的檔案重新命名。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_CouldNotImportFile">
+        <source>The file '{0}' could not be imported: {1}</source>
+        <target state="translated">無法匯入檔案 '{0}': {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_KeyFileNameSuffix">
+        <source>_TemporaryKey.pfx</source>
+        <target state="translated">_TemporaryKey.pfx</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Signing_CertificateNotCodeSigning">
+        <source>The selected certificate is not valid for code signing. Choose another certificate file.</source>
+        <target state="translated">選取的憑證對程式碼簽署無效。請選擇其他憑證檔。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_UndoTransaction">
+        <source>Change property: {0}</source>
+        <target state="translated">變更屬性: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WindowsApp">
+        <source>Windows Application</source>
+        <target state="translated">Windows 應用程式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WindowsService">
+        <source>Windows Service</source>
+        <target state="translated">Windows 服務</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WindowsClassLib">
+        <source>Class Library</source>
+        <target state="translated">類別庫</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_CommandLineApp">
+        <source>Console Application</source>
+        <target state="translated">主控台應用程式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WebControlLib">
+        <source>Web Control Library</source>
+        <target state="translated">Web 控制項程式庫</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Reference_CanNotRemoveReference">
+        <source>Cannot remove '{0}'. {1}
+</source>
+        <target state="translated">無法移除 '{0}'。{1}
+</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Reference_RemoveImportsFailUnexpected">
+        <source>Adding or removing '{0}' as a project import failed because of an unexpected error from the project system.  The error returned was:  '{1}'.</source>
+        <target state="translated">由於專案系統發生未預期的錯誤，導致專案匯入時新增或移除 '{0}' 失敗。傳回的錯誤是: '{1}'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Reference_AddWebReference">
+        <source>Adding web reference failed. {0}
+</source>
+        <target state="translated">新增 Web 參考失敗。{0}
+</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Reference_FailedToUpdateWebReference">
+        <source>Updating web reference '{0}' failed.
+{1}</source>
+        <target state="translated">更新 Web 參考 '{0}' 失敗。
+{1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WebReferenceTypeName">
+        <source>Web Reference Properties</source>
+        <target state="translated">Web 參考屬性</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_UrlBehavior_Static">
+        <source>Static</source>
+        <target state="translated">靜態</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_UrlBehavior_Dynamic">
+        <source>Dynamic</source>
+        <target state="translated">動態</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WebReferenceNameDescription">
+        <source>Name of the web reference</source>
+        <target state="translated">Web 參考的名稱</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_UrlBehaviorName">
+        <source>URL Behavior</source>
+        <target state="translated">URL 行為</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_UrlBehaviorDescription">
+        <source>Web reference URL behavior</source>
+        <target state="translated">Web 參考 URL 行為</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WebReferenceUrlName">
+        <source>Web Reference URL</source>
+        <target state="translated">Web 參考 URL</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WebReferenceUrlDescription">
+        <source>Web Reference URL</source>
+        <target state="translated">Web 參考 URL</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ReferenceDetail_Title">
+        <source>Reference Properties</source>
+        <target state="translated">參考屬性</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_RemoteMachineBlankError">
+        <source>The remote machine name cannot be blank.  Please specify the name of the machine to debug remotely.</source>
+        <target state="translated">遠端電腦名稱不能為空白。請指定電腦名稱以進行遠端偵錯。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_ProgramNotExist">
+        <source>The external program cannot be found. Please enter a valid executable file.</source>
+        <target state="translated">找不到外部程式。請輸入有效的可執行檔。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_NeedExternalProgram">
+        <source>The external program property cannot be empty. Please enter a valid executable file.</source>
+        <target state="translated">外部程式屬性不可為空白。請輸入有效的可執行檔。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_NotAnExeError">
+        <source>We can only debug an EXE file. Please enter a valid executable file.</source>
+        <target state="translated">僅可為 EXE 檔案偵錯。請輸入有效的可執行檔。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_NeedURL">
+        <source>The URL property cannot be empty. Please enter a valid URL.</source>
+        <target state="translated">URL 屬性不可為空白。請輸入有效的 URL。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_InvalidURL">
+        <source>The URL is invalid. Please enter a valid URL like "http://www.microsoft.com/"</source>
+        <target state="translated">URL 無效。請輸入有效的 URL，例如 "http://www.microsoft.com/"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_WorkingDirError">
+        <source>The working directory you entered does not exist. Please enter a valid working directory.</source>
+        <target state="translated">您輸入的工作目錄不存在。請輸入有效的工作目錄。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_ReferenceNotFound">
+        <source>&lt;The system cannot find the reference specified&gt;</source>
+        <target state="translated">&lt;系統找不到指定的參考&gt;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_UnusedReferenceTitle">
+        <source>Unused References</source>
+        <target state="translated">未使用的參考</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_UnusedReferenceRemoveButton">
+        <source>&amp;Remove</source>
+        <target state="translated">移除(&amp;R)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_UnusedReferenceNoUnusedReferences">
+        <source>No unused references</source>
+        <target state="translated">沒有未使用的參考</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_UnusedReferenceCompileFail">
+        <source>Project compilation failed. Cannot determine unused references.</source>
+        <target state="translated">專案編譯失敗。無法判斷未使用的參考。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_UnusedReferenceCompileWaiting">
+        <source>Gathering list of unused references...</source>
+        <target state="translated">正在蒐集未使用的參考清單...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_UnusedReferenceError">
+        <source>Error getting unused references.</source>
+        <target state="translated">取得未使用的參考時發生錯誤。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_InvalidHexString">
+        <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, &amp;H11000000.</source>
+        <target state="translated">基底位址必須是少於或等於 8 位數的十六進位數字，例如 &amp;H11000000。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_NeedResFile">
+        <source>"Resource files must have a .res file extension. Please enter a valid resource file name."</source>
+        <target state="translated">"資源檔必須具有 .res 副檔名。請輸入有效的資源檔名稱。"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_ResourceFileNotExist">
+        <source>"The resource file entered does not exist."</source>
+        <target state="translated">"輸入的資源檔不存在。"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_Title">
+        <source>Project Designer</source>
+        <target state="translated">專案設計工具</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_SettingsTabTitle">
+        <source>Settings</source>
+        <target state="translated">設定</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_ResourceTabTitle">
+        <source>Resources</source>
+        <target state="translated">資源</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_ErrorLoading_Msg">
+        <source>An error occurred trying to load the project properties window.  Close the window and try again.
+{0}</source>
+        <target state="translated">嘗試載入專案屬性視窗時發生錯誤。請關閉視窗後再試一次。
+{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_ErrorLoadingPropPage">
+        <source>An error occurred trying to load the page.</source>
+        <target state="translated">嘗試載入頁面時發生錯誤。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_DesignerLoader_NotDeferred">
+        <source>The designer cannot be shown because the document for it was never loaded.</source>
+        <target state="translated">無法顯示設計工具，因為設計工具的文件尚未載入。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_ClickHereCreateResx">
+        <source>This project does not contain a default resources file.  Click here to create one.</source>
+        <target state="translated">此專案未包含預設的資源檔。請按一下這裡建立資源檔。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_ClickHereCreateSettings">
+        <source>This project does not contain a default settings file.  Click here to create one.</source>
+        <target state="translated">此專案未包含預設的設定檔。請按一下這裡建立資源檔。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_FileNotFound_1Arg">
+        <source>Could not find the file '{0}'.</source>
+        <target state="translated">找不到檔案 '{0}'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_EditorAlreadyOpen_1Arg">
+        <source>The file '{0}' is already open in an editor.  Please close the file and try again.</source>
+        <target state="translated">檔案 '{0}' 已在編輯器中開啟。請關閉檔案後再試一次。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_OverflowButton_AccessibilityName">
+        <source>All Project Designer Pages</source>
+        <target state="translated">所有的專案設計工具頁面</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_OverflowButton_Tooltip">
+        <source>More Settings</source>
+        <target state="translated">其他設定</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_SpecialFileNotSupported">
+        <source>The requested file type is not supported in projects of this type.</source>
+        <target state="translated">這種類型的專案不支援所要求的檔案類型。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_AssemblyName">
+        <source>Assembly Name</source>
+        <target state="translated">組件名稱</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_RootNamespace">
+        <source>Root Namespace</source>
+        <target state="translated">根命名空間</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_StartupObject">
+        <source>Startup Object</source>
+        <target state="translated">啟始物件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_ApplicationIcon">
+        <source>Application Icon</source>
+        <target state="translated">應用程式圖示</target>
+        <note>Property Friendly Names (for transaction names) - NOTE: All of these are optional</note>
+      </trans-unit>
+      <trans-unit id="PPG_Property_AssemblyVersion">
+        <source>Assembly Version</source>
+        <target state="translated">組件版本</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_AssemblyFileVersion">
+        <source>Assembly File Version</source>
+        <target state="translated">組件檔版本</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_AssemblyGuid">
+        <source>Assembly GUID</source>
+        <target state="translated">組件 GUID</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_CustomSubMain">
+        <source>Enable application framework</source>
+        <target state="translated">啟用應用程式架構</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_StartProgram">
+        <source>External Program Path</source>
+        <target state="translated">外部程式路徑</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_StartURL">
+        <source>Start Browser With URL</source>
+        <target state="translated">瀏覽器起始 URL</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_StartWorkingDirectory">
+        <source>Working Directory</source>
+        <target state="translated">工作目錄</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Property_RemoteDebugMachine">
+        <source>Remote Machine Name</source>
+        <target state="translated">遠端電腦名稱</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_HostingPanelName">
+        <source>Project Designer Page Container</source>
+        <target state="translated">專案設計工具頁面容器</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_TabButtonDefaultAction">
+        <source>Switch Project Designer Page</source>
+        <target state="translated">切換專案設計工具頁面</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_TabListDescription">
+        <source>Allow switching between active pages of the project designer (use Ctrl+PageUp and Ctrl+PageDown)</source>
+        <target state="translated">允許在使用中的專案設計工具頁面之間進行切換 (使用 Ctrl+PageUp 和 Ctrl+PageDown)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="APPDES_PageName">
+        <source>{0} page:</source>
+        <target state="translated">{0} 頁:</target>
+        <note>{0} = sub page name</note>
+      </trans-unit>
+      <trans-unit id="DFX_DesignerReadOnlyCaption">
+        <source>{0} [Read Only]</source>
+        <target state="translated">{0} [唯讀]</target>
+        <note>Attach a readonly to the designer caption {0}=Designer caption</note>
+      </trans-unit>
+      <trans-unit id="DFX_DesignerLoaderIVsTextStreamNotFound">
+        <source>The editor could not get the IVsTextStream for file {0}.</source>
+        <target state="translated">編輯器無法取得檔案 {0} 的 IVsTextStream。</target>
+        <note>#exception {0}=filename</note>
+      </trans-unit>
+      <trans-unit id="DFX_DesignerLoaderIVsTextStreamNotFoundNoFile">
+        <source>The editor could not get the IVsTextStream.</source>
+        <target state="translated">編輯器無法取得 IVsTextStream。</target>
+        <note>#exception (no file name)</note>
+      </trans-unit>
+      <trans-unit id="DFX_EditorNoDesignerService">
+        <source>No DesignerService for file '{0}'.</source>
+        <target state="translated">檔案 '{0}' 沒有 DesignerService。</target>
+        <note>#{0}=file name</note>
+      </trans-unit>
+      <trans-unit id="DFX_InvalidPhysicalViewName">
+        <source>Invalid physical view name.</source>
+        <target state="translated">實體檢視名稱無效。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DFX_UnableCreateTextBuffer">
+        <source>Unable to create text buffer.</source>
+        <target state="translated">無法建立文字緩衝區。</target>
+        <note># com exception</note>
+      </trans-unit>
+      <trans-unit id="DFX_NoLocalRegistry">
+        <source>No LocalRegistry service.</source>
+        <target state="translated">沒有 LocalRegistry 服務。</target>
+        <note>#exception</note>
+      </trans-unit>
+      <trans-unit id="DFX_ReplaceTextStreamFailed">
+        <source>Replacing text stream failed:{0}</source>
+        <target state="translated">取代文字資料流失敗:{0}</target>
+        <note>#exception {0}=err msg</note>
+      </trans-unit>
+      <trans-unit id="DFX_BufferReadOnly">
+        <source>Buffer is read only.</source>
+        <target state="translated">緩衝區為唯讀。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DFX_IncompatibleBuffer">
+        <source>File is already opened in an incompatible editor.</source>
+        <target state="translated">已經在不相容的編輯器中開啟了檔案。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DFX_NotSupported">
+        <source>Unsupported format.</source>
+        <target state="translated">不支援的格式。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DFX_WindowPane_UnknownError">
+        <source>Unknown Error.</source>
+        <target state="translated">未知的錯誤。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DFX_CreateEditorInstanceFailed_Ex">
+        <source>Unable to create the designer.  {0}</source>
+        <target state="translated">無法建立設計工具。{0}</target>
+        <note># {0}=inner exception</note>
+      </trans-unit>
+      <trans-unit id="DFX_UnableToCheckout">
+        <source>Unable to check out the current file.  The file may be read-only or locked, or you may need to check the file out manually.</source>
+        <target state="translated">無法簽出目前檔案。檔案可能處於唯讀或鎖定的狀態，或者您需要手動簽出檔案。</target>
+        <note># General checkout exception message</note>
+      </trans-unit>
+      <trans-unit id="DFX_Error_Default_Caption">
+        <source>Microsoft Visual Studio</source>
+        <target state="translated">Microsoft Visual Studio</target>
+        <note>Error reporting</note>
+      </trans-unit>
+      <trans-unit id="OptionPage_Editor_InvalidTabSize">
+        <source>Please enter an integer between 1 and 60.</source>
+        <target state="translated">請輸入介於 1 和 60 之間的整數。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OptionPage_Editor_InvalidIndentSize">
+        <source>Please enter an integer between 1 and 60.</source>
+        <target state="translated">請輸入介於 1 和 60 之間的整數。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OptionPage_Environment_StartUpShowEmptyEnvironment">
+        <source>Show empty environment</source>
+        <target state="translated">顯示空白環境</target>
+        <note>These are items in a combobox (and so they don't need periods)</note>
+      </trans-unit>
+      <trans-unit id="OptionPage_Environment_StartUpLoadLastLoadedSolution">
+        <source>Load last loaded solution</source>
+        <target state="translated">載入上次載入的解決方案</target>
+        <note>These are items in a combobox (and so they don't need periods)</note>
+      </trans-unit>
+      <trans-unit id="OptionPage_Environment_StartUpShowNewProjectDialogBox">
+        <source>Show New Project dialog box</source>
+        <target state="translated">顯示 [新增專案] 對話方塊</target>
+        <note>These are items in a combobox (and so they don't need periods)</note>
+      </trans-unit>
+      <trans-unit id="OptionPage_Environment_StartUpShowOpenProjectDialogBox">
+        <source>Show Open Project dialog box</source>
+        <target state="translated">顯示 [開啟專案] 對話方塊</target>
+        <note>These are items in a combobox (and so they don't need periods)</note>
+      </trans-unit>
+      <trans-unit id="OptionPage_Environment_ShowHelpOptionRequiresRestartOfIde">
+        <source>Changes in Help Options will not take effect until the environment is restarted.</source>
+        <target state="translated">在重新啟動環境之前，[說明] 選項中的變更將不會生效。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OptionPage_Project_IllegalDefaultProjectDirectory">
+        <source>The location specified is on an invalid or read-only disk, or contains a device name reserved for the system.</source>
+        <target state="translated">指定的位置不正確或是唯讀磁碟，或含有為系統保留的裝置名稱。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CategoryCOM">
+        <source>COM</source>
+        <target state="translated">COM</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CategoryComponentModel">
+        <source>Component Design</source>
+        <target state="translated">元件設計</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CategorySerialization">
+        <source>Serialization</source>
+        <target state="translated">序列化</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CategoryWeb">
+        <source>Web</source>
+        <target state="translated">Web</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_COMClassAttrName">
+        <source>COMClass</source>
+        <target state="translated">COMClass</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_COMClassAttrDescription">
+        <source>Expose {0} to COM.</source>
+        <target state="translated">將 {0} 公開至 COM。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_COMClassAttrDisplayName">
+        <source>COM Class</source>
+        <target state="translated">COM 類別</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_COMVisibleAttrName">
+        <source>COMVisible</source>
+        <target state="translated">COMVisible</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_COMVisibleAttrDescription">
+        <source>Make {0} visible through COM.</source>
+        <target state="translated">讓 {0} 可以透過 COM 顯示。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_COMVisibleAttrDisplayName">
+        <source>COM Visible</source>
+        <target state="translated">COM 可見</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DispIdAttrName">
+        <source>DispId</source>
+        <target state="translated">DispId</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DispIdAttrDescription">
+        <source>Set explicit DispId to this {0}.</source>
+        <target state="translated">將明確 DispId 設定為這個 {0}。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DispIdAttrDisplayName">
+        <source>DispId</source>
+        <target state="translated">DispId</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DispIdPropName">
+        <source>Value</source>
+        <target state="translated">值</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DispIdPropDescription">
+        <source>Explicit DispId value for this {0}.</source>
+        <target state="translated">這個 {0} 的明確 DispId 值。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DispIdPropDisplayName">
+        <source>Value</source>
+        <target state="translated">值</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DispIdInvalidValue">
+        <source>DispId value should be an integer greater than or equal to 1.</source>
+        <target state="translated">DispId 值必須是大於或等於 1 的整數。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CategoryAttrName">
+        <source>Category</source>
+        <target state="translated">分類</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CategoryAttrDescription">
+        <source>Category group for the property.</source>
+        <target state="translated">屬性的分類群組。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CategoryAttrDisplayName">
+        <source>Category</source>
+        <target state="translated">分類</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DefaultEventAttrName">
+        <source>Default Event</source>
+        <target state="translated">預設事件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DefaultEventAttrDescription">
+        <source>Default event for the class.</source>
+        <target state="translated">類別的預設事件。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DefaultEventAttrDisplayName">
+        <source>Default Event</source>
+        <target state="translated">預設事件</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DefaultValueAttrName">
+        <source>Default Value</source>
+        <target state="translated">預設值</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DefaultValueAttrDescription">
+        <source>Default value for the property.</source>
+        <target state="translated">屬性的預設值。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DefaultValueAttrDisplayName">
+        <source>Default Value</source>
+        <target state="translated">預設值</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_NonSerializedAttrName">
+        <source>NonSerialized</source>
+        <target state="translated">NonSerialized</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_NonSerializedAttrDescription">
+        <source>Field should not be serialized.</source>
+        <target state="translated">欄位不可以序列化。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_NonSerializedAttrDisplayName">
+        <source>Non Serialized</source>
+        <target state="translated">非序列化</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_SerializableAttrName">
+        <source>Serializable</source>
+        <target state="translated">可序列化</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_SerializableAttrDescription">
+        <source>Enable serialization for this {0} and its members.</source>
+        <target state="translated">啟用這個 {0} 及其成員的序列化。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_SerializableAttrDisplayName">
+        <source>Serializable</source>
+        <target state="translated">可序列化</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodAttrName">
+        <source>WebMethod</source>
+        <target state="translated">WebMethod</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodAttrDescription">
+        <source>Expose method via web services.</source>
+        <target state="translated">透過 Web 服務公開方法。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodAttrDisplayName">
+        <source>Web Method</source>
+        <target state="translated">Web 方法</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodDescName">
+        <source>Description</source>
+        <target state="translated">描述</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodDescDescription">
+        <source>Description for the Web Method.</source>
+        <target state="translated">Web 方法的描述。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodDescDisplayName">
+        <source>Description</source>
+        <target state="translated">描述</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodEnableSessionName">
+        <source>EnableSession</source>
+        <target state="translated">EnableSession</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodEnableSessionDescription">
+        <source>Maintain session state.</source>
+        <target state="translated">維護工作階段狀態。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodEnableSessionDisplayName">
+        <source>Enable Session</source>
+        <target state="translated">啟用工作階段</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodTransactionName">
+        <source>TransactionOptions</source>
+        <target state="translated">TransactionOptions</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodTransactionDescription">
+        <source>Set transaction options.</source>
+        <target state="translated">設定異動選項。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebMethodTransactionDisplayName">
+        <source>Transaction Options</source>
+        <target state="translated">異動選項</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceAttrName">
+        <source>WebService</source>
+        <target state="translated">WebService</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceAttrDescription">
+        <source>Configure the Web Service settings.</source>
+        <target state="translated">設定 Web 服務的設定。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceAttrDisplayName">
+        <source>Web Service</source>
+        <target state="translated">Web 服務</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceNameName">
+        <source>Name</source>
+        <target state="translated">名稱</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceNameDescription">
+        <source>Name for the web service.</source>
+        <target state="translated">Web 服務的名稱。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceNameDisplayName">
+        <source>Name</source>
+        <target state="translated">名稱</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceDescName">
+        <source>Description</source>
+        <target state="translated">描述</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceDescDescription">
+        <source>Description for the web service.</source>
+        <target state="translated">Web 服務的描述。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceDescDisplayName">
+        <source>Description</source>
+        <target state="translated">描述</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceNSName">
+        <source>Namespace</source>
+        <target state="translated">命名空間</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceNSDescription">
+        <source>Namespace for the web service.</source>
+        <target state="translated">Web 服務的命名空間。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_WebServiceNSDisplayName">
+        <source>Namespace</source>
+        <target state="translated">命名空間</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Default">
+        <source>Default</source>
+        <target state="translated">預設</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Action">
+        <source>Action</source>
+        <target state="translated">動作</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Appearance">
+        <source>Appearance</source>
+        <target state="translated">外觀</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Behavior">
+        <source>Behavior</source>
+        <target state="translated">行為</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Data">
+        <source>Data</source>
+        <target state="translated">資料</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_DragDrop">
+        <source>DragDrop</source>
+        <target state="translated">拖放</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Focus">
+        <source>Focus</source>
+        <target state="translated">焦點</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Format">
+        <source>Format</source>
+        <target state="translated">格式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Key">
+        <source>Key</source>
+        <target state="translated">索引鍵</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Layout">
+        <source>Layout</source>
+        <target state="translated">配置</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_Mouse">
+        <source>Mouse</source>
+        <target state="translated">滑鼠</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_CAT_WindowStyle">
+        <source>WindowStyle</source>
+        <target state="translated">WindowStyle</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AttrEditor_DE_None">
+        <source>(None)</source>
+        <target state="translated">(無)</target>
+        <note>Default Event</note>
+      </trans-unit>
+      <trans-unit id="PermissionSet_Requires">
+        <source>Requires:</source>
+        <target state="translated">需要:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_ResourceNameColumn">
+        <source>Name</source>
+        <target state="translated">名稱</target>
+        <note>Column names for the string table</note>
+      </trans-unit>
+      <trans-unit id="RSE_TypeColumn">
+        <source>Type</source>
+        <target state="translated">類型</target>
+        <note>Column names for the string table</note>
+      </trans-unit>
+      <trans-unit id="RSE_ResourceColumn">
+        <source>Value</source>
+        <target state="translated">值</target>
+        <note>Column names for the string table</note>
+      </trans-unit>
+      <trans-unit id="RSE_CommentColumn">
+        <source>Comment</source>
+        <target state="translated">註解</target>
+        <note>Column names for the string table</note>
+      </trans-unit>
+      <trans-unit id="SingleFileGenerator_FailedToGenerateFile_1Arg">
+        <source>Failed to generate file: {0}</source>
+        <target state="translated">無法產生檔案: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantEditEmbeddedResource">
+        <source>Editing embedded resources directly is not supported. Do you wish to convert this item to a linked resource in order to edit it?</source>
+        <target state="translated">不支援直接編輯內嵌資源。要將此項目轉換成連結資源以便進行編輯嗎?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_RenameNotSupported">
+        <source>The current object is auto-generated and only supports renaming through the Managed Resources Editor.</source>
+        <target state="translated">目前的物件是自動產生的，而且僅支援透過受控資源編輯器重新命名。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantFindResourceFile_1Arg">
+        <source>Cannot find the file '{0}'.  It may have been moved or deleted.</source>
+        <target state="translated">找不到檔案 '{0}'，可能已移動或刪除。</target>
+        <note>{0} = file name and path</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_LoadingResource_1Arg">
+        <source>Unable to load resource from file '{0}'.</source>
+        <target state="translated">無法從檔案 '{0}' 載入資源。</target>
+        <note>{0} = file name and path</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_NameBlank">
+        <source>The resource name cannot be empty.</source>
+        <target state="translated">資源名稱不能為空白。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_DuplicateName_1Arg">
+        <source>There is already another resource with the name '{0}'.</source>
+        <target state="translated">已經有另一個名為 '{0}' 的資源。</target>
+        <note>{0} = Resource name</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_UnexpectedResourceType">
+        <source>The resource was not of the expected type.</source>
+        <target state="translated">資源不是預期的類型。</target>
+        <note>This error can happen if, for example, you try to add foo.bmp to the resource editor, but foo.bmp is really a metafile.</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantCreateNewResource_2Args">
+        <source>Unable to create new resource file '{0}'.  {1}</source>
+        <target state="translated">無法建立新的資源檔 '{0}'。{1}</target>
+        <note>{0} = file name and path, {1} = additional error information</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantPlay_1Arg">
+        <source>Unable to play the audio resource.  {0}</source>
+        <target state="translated">無法播放音效資源。{0}</target>
+        <note>{0} = Additional error information.</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantSaveResource_1Arg">
+        <source>Resource '{0}' cannot be saved to a file.</source>
+        <target state="translated">無法將資源 '{0}' 儲存到檔案中。</target>
+        <note>{0} = Resource name</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_UserCancel">
+        <source>The operation has been canceled by the user.</source>
+        <target state="translated">使用者已取消作業。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_BadData">
+        <source>The resource value contains invalid data or has an incorrect format.</source>
+        <target state="translated">資源值含有無效資料，或者格式不正確。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_BadIdentifier_2Arg">
+        <source>The name of the resource '{0}' cannot be used as a valid identifier, because it contains one or more invalid characters: '{1}'.  Please remove or replace those characters and try again.</source>
+        <target state="translated">資源 '{0}' 的名稱無法作為有效的識別碼，因為它含有一或多個無效的字元: '{1}'。請移除或取代這些字元後再試一次。</target>
+        <note>{0} = Resource name</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_MaxFilesLimitation">
+        <source>Too many files specified.  Please select fewer files and try again.</source>
+        <target state="translated">指定了太多檔案，請少選一些檔案後再試一次。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_InternalException">
+        <source>Unexpected error.</source>
+        <target state="translated">未預期的錯誤。</target>
+        <note>Theoretically possible but we really don't expect to happen.  Unexpected, internal error.</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_Unexpected_NoResource_1Arg">
+        <source>Unable to load internal localized resource '{0}'.</source>
+        <target state="translated">無法載入內部的當地語系化資源 '{0}'。</target>
+        <note>Theoretically possible but we really don't expect to happen.  Unexpected, internal error.</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantConvertFromString_2Args">
+        <source>The value could not be converted into a resource of type {0}.
+
+{1}</source>
+        <target state="translated">無法將值轉換成 {0} 類型的資源。
+
+{1}</target>
+        <note>{0} = the type that was expected by the resource editor (e.g. System.Drawing.Point)
+{1} = more specific additional error message from the system</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantUseEmptyValue">
+        <source>The value cannot be empty in a resource of type {0}.</source>
+        <target state="translated">在 {0} 類型的資源中值不可為空白。</target>
+        <note>{0} = the type that was expected by the resource editor (e.g. System.Drawing.Point)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantBeEmpty">
+        <source>One or more of the selected resource values could not be cleared.</source>
+        <target state="translated">有一或多個選取的資源值無法清除。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantEditInDebugMode">
+        <source>The resource file cannot be modified at this time.</source>
+        <target state="translated">此時無法修改資源檔。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_UpdateADependentFile">
+        <source>You are trying to edit a resource file that is a part of another project item (such as a form or a control).  Editing this item could corrupt the project item, and you will have to recover it by hand.  In addition, changes made to this resource file may be lost if further changes are made to the project item.
+
+Do you really want to edit this file?</source>
+        <target state="translated">您嘗試編輯的資源檔是另一個專案項目 (例如表單或控制項) 的一部分。編輯此項目可能導致專案項目損毀，而必須手動復原。此外，如果進一步對專案項目進行變更，可能會遺失此資源檔的變更。
+
+確定要編輯此檔案嗎?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantAddUnsupportedResource_1Arg">
+        <source>The resource '{0}' cannot be added.</source>
+        <target state="translated">無法新增資源 '{0}'。</target>
+        <note>{0} - name of the resource</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantAddFileToDeviceProject_1Arg">
+        <source>The device does not support '{0}' files.</source>
+        <target state="translated">裝置不支援 '{0}' 檔案。</target>
+        <note>{0} - the extension of the file name like 'tiff'</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_TypeIsNotSupported_1Arg">
+        <source>The resource item uses the type '{0}', which is not supported in this project.</source>
+        <target state="translated">資源項目使用 '{0}' 類型，但此專案不支援該類型。</target>
+        <note>{0} - name of the type</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantSaveResouce_1Arg">
+        <source>The resource item(s) {0} cannot be saved correctly.  The item(s) will be discarded.</source>
+        <target state="translated">無法正確儲存資源項目 {0}，將捨棄這些項目。</target>
+        <note>{0} - name list of the resource</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_Name">
+        <source>'{0}'</source>
+        <target state="translated">'{0}'</target>
+        <note>{0} - name</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_NameList">
+        <source>{0}, '{1}'</source>
+        <target state="translated">{0}、'{1}'</target>
+        <note># {0} - name list
+# {1} - another name</note>
+      </trans-unit>
+      <trans-unit id="RSE_NothingValue">
+        <source>(Nothing/null)</source>
+        <target state="translated">(Nothing/null)</target>
+        <note>Displayed in a string table for values of Nothing/null
+CONSIDER: get this from CodeDom</note>
+      </trans-unit>
+      <trans-unit id="RSE_UnknownType">
+        <source>(Unknown type)</source>
+        <target state="translated">(未知的類型)</target>
+        <note>This actually shouldn't be needed, but if we get an exception trying to get the type name of an entry in the resx file (not supposed to happen), then we'll display this as its type.</note>
+      </trans-unit>
+      <trans-unit id="RSE_NonEditableValue">
+        <source>(Value cannot be displayed)</source>
+        <target state="translated">(無法顯示值)</target>
+        <note>Displayed in a string table for values which cannot be edited by the user</note>
+      </trans-unit>
+      <trans-unit id="RSE_DetailsCol_Name">
+        <source>Name</source>
+        <target state="translated">名稱</target>
+        <note>Columns for the "Details" view of the resource editor</note>
+      </trans-unit>
+      <trans-unit id="RSE_DetailsCol_Filename">
+        <source>Filename</source>
+        <target state="translated">檔名</target>
+        <note>Columns for the "Details" view of the resource editor</note>
+      </trans-unit>
+      <trans-unit id="RSE_DetailsCol_ImageType">
+        <source>Type</source>
+        <target state="translated">類型</target>
+        <note>Columns for the "Details" view of the resource editor</note>
+      </trans-unit>
+      <trans-unit id="RSE_DetailsCol_Size">
+        <source>Size</source>
+        <target state="translated">大小</target>
+        <note>Columns for the "Details" view of the resource editor</note>
+      </trans-unit>
+      <trans-unit id="RSE_DetailsCol_Comment">
+        <source>Comment</source>
+        <target state="translated">註解</target>
+        <note>Columns for the "Details" view of the resource editor</note>
+      </trans-unit>
+      <trans-unit id="RSE_DetailsCol_Encoding">
+        <source>Text Encoding</source>
+        <target state="translated">文字編碼方式</target>
+        <note>Columns for the "Details" view of the resource editor</note>
+      </trans-unit>
+      <trans-unit id="RSE_GraphicSizeFormat">
+        <source>{0} x {1}</source>
+        <target state="translated">{0} x {1}</target>
+        <note>Format string for showing a graphic's size
+
+#  {0} = width (as an integer)
+#  {1} = height (as an integer)
+#Example, for a bitmap of width=123, height = 456, the English version of this string would be "123x456"</note>
+      </trans-unit>
+      <trans-unit id="RSE_FileSizeFormatKB">
+        <source>{0} KB</source>
+        <target state="translated">{0} KB</target>
+        <note>#Format string for showing a file's size
+# {0} = length in kilobytes</note>
+      </trans-unit>
+      <trans-unit id="RSE_FileSizeFormatBytes_1Arg">
+        <source>{0} byte(s)</source>
+        <target state="translated">{0} 位元組</target>
+        <note>Format string for showing a file's size.
+{0} = length in bytes</note>
+      </trans-unit>
+      <trans-unit id="RSE_Cat_Strings">
+        <source>Strings</source>
+        <target state="translated">字串</target>
+        <note>Resource category names (these show up in the category buttons in the ToolStrip at the top of the resource editor)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Cat_Images">
+        <source>Images</source>
+        <target state="translated">影像</target>
+        <note>Resource category names (these show up in the category buttons in the ToolStrip at the top of the resource editor)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Cat_Icons">
+        <source>Icons</source>
+        <target state="translated">圖示</target>
+        <note>Resource category names (these show up in the category buttons in the ToolStrip at the top of the resource editor)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Cat_Audio">
+        <source>Audio</source>
+        <target state="translated">音訊</target>
+        <note>Resource category names (these show up in the category buttons in the ToolStrip at the top of the resource editor)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Cat_Files">
+        <source>Files</source>
+        <target state="translated">檔案</target>
+        <note>Resource category names (these show up in the category buttons in the ToolStrip at the top of the resource editor)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Cat_Other">
+        <source>Other</source>
+        <target state="translated">其他</target>
+        <note>Resource category names (these show up in the category buttons in the ToolStrip at the top of the resource editor)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add">
+        <source>&amp;Add</source>
+        <target state="translated">新增(&amp;A)</target>
+        <note>Add, Delete and Views button text in the main ToolStrip</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Remove">
+        <source>&amp;Remove</source>
+        <target state="translated">移除(&amp;R)</target>
+        <note>Add, Delete and Views button text in the main ToolStrip</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Views">
+        <source>&amp;Views</source>
+        <target state="translated">檢視(&amp;V)</target>
+        <note>Add, Delete and Views button text in the main ToolStrip</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_ExistingFile">
+        <source>&amp;Existing File...</source>
+        <target state="translated">現有檔案(&amp;E)...</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_String">
+        <source>New &amp;String</source>
+        <target state="translated">新增字串(&amp;S)</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_Image">
+        <source>New &amp;Image</source>
+        <target state="translated">新增影像(&amp;I)</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_Image_PNG">
+        <source>&amp;PNG Image...</source>
+        <target state="translated">PNG 影像(&amp;P)...</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_Image_BMP">
+        <source>&amp;BMP Image...</source>
+        <target state="translated">BMP 影像(&amp;B)...</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_Image_GIF">
+        <source>&amp;GIF Image...</source>
+        <target state="translated">GIF 影像(&amp;G)...</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_Image_JPEG">
+        <source>&amp;JPEG Image...</source>
+        <target state="translated">JPEG 影像(&amp;J)...</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_Image_TIFF">
+        <source>&amp;TIFF Image...</source>
+        <target state="translated">TIFF 影像(&amp;T)...</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_Icon">
+        <source>New I&amp;con...</source>
+        <target state="translated">新增圖示(&amp;C)...</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Add_TextFile">
+        <source>New &amp;Text File...</source>
+        <target state="translated">新增文字檔(&amp;T)...</target>
+        <note>Menu items under the "Add" button</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_BMP">
+        <source>Windows Bitmap</source>
+        <target state="translated">Windows 點陣圖</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_EXIF">
+        <source>EXIF Image</source>
+        <target state="translated">EXIF 影像</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_GIF">
+        <source>Graphics Interchange Format</source>
+        <target state="translated">圖形交換格式 (GIF)</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_JPEG">
+        <source>JPEG File Interchange Format</source>
+        <target state="translated">JPEG 檔案交換格式</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_MEMBMP">
+        <source>Windows Bitmap</source>
+        <target state="translated">Windows 點陣圖</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_PNG">
+        <source>Portable Network Graphics</source>
+        <target state="translated">可攜式網路圖形</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_TIFF">
+        <source>Tag Image File Format</source>
+        <target state="translated">TIF 檔案格式</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_Icon">
+        <source>Icon</source>
+        <target state="translated">圖示</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_TextFile">
+        <source>Text File</source>
+        <target state="translated">文字檔</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RSE_Type_BinaryFile">
+        <source>Binary File</source>
+        <target state="translated">二進位檔案</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Type_Wave">
+        <source>Wave Sound</source>
+        <target state="translated">聲音音效</target>
+        <note>Friendly Image types</note>
+      </trans-unit>
+      <trans-unit id="RES_PersistenceMode_Linked">
+        <source>Linked at compile time</source>
+        <target state="translated">於編譯時間連結</target>
+        <note>File Persistence Mode</note>
+      </trans-unit>
+      <trans-unit id="RES_PersistenceMode_Embeded">
+        <source>Embedded in .resx</source>
+        <target state="translated">內嵌於 .resx</target>
+        <note>File Persistence Mode</note>
+      </trans-unit>
+      <trans-unit id="RSE_Filter_Bitmap">
+        <source>Bitmaps</source>
+        <target state="translated">點陣圖</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_Filter_Icon">
+        <source>Icons</source>
+        <target state="translated">圖示</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_Filter_Audio">
+        <source>Audio</source>
+        <target state="translated">音訊</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_Filter_Text">
+        <source>Text Files</source>
+        <target state="translated">文字檔</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_Filter_All">
+        <source>All Files</source>
+        <target state="translated">所有檔案</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_FilterSave_BMP">
+        <source>Windows Bitmap</source>
+        <target state="translated">Windows 點陣圖</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_FilterSave_PNG">
+        <source>Portable Network Graphics</source>
+        <target state="translated">可攜式網路圖形</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_FilterSave_GIF">
+        <source>Graphics Interchange Format</source>
+        <target state="translated">圖形交換格式 (GIF)</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_FilterSave_JPEG">
+        <source>JPEG File Interchange Format</source>
+        <target state="translated">JPEG 檔案交換格式</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_FilterSave_TIFF">
+        <source>Tag Image File Format</source>
+        <target state="translated">TIF 檔案格式</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_FilterSave_Icon">
+        <source>Icon</source>
+        <target state="translated">圖示</target>
+        <note># File dialog filters
+#
+# E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
+#  represent the first part of that filter
+#</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Views_List">
+        <source>&amp;List</source>
+        <target state="translated">清單(&amp;L)</target>
+        <note>Resource editor listview view styles (like changing the view style of a folder in Windows XP)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Views_Details">
+        <source>&amp;Details</source>
+        <target state="translated">詳細資料(&amp;D)</target>
+        <note>Resource editor listview view styles (like changing the view style of a folder in Windows XP)</note>
+      </trans-unit>
+      <trans-unit id="RSE_Btn_Views_Thumbnail">
+        <source>&amp;Thumbnail</source>
+        <target state="translated">縮圖(&amp;T)</target>
+        <note>Resource editor listview view styles (like changing the view style of a folder in Windows XP)</note>
+      </trans-unit>
+      <trans-unit id="RSE_ResourceEditor">
+        <source>Managed Resources Editor</source>
+        <target state="translated">受控資源編輯器</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_DlgTitle_AddExisting">
+        <source>Add existing file to resources</source>
+        <target state="translated">將現有的檔案加入資源</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_DlgTitle_Import_1Arg">
+        <source>Import file into resource '{0}'</source>
+        <target state="translated">將檔案匯入資源 '{0}'</target>
+        <note>{0} = Name of resource being imported into</note>
+      </trans-unit>
+      <trans-unit id="RSE_DlgTitle_Export_1Arg">
+        <source>Export resource '{0}' to file</source>
+        <target state="translated">將資源 '{0}' 匯出到檔案</target>
+        <note>{0} = Name of resource being exported from</note>
+      </trans-unit>
+      <trans-unit id="RSE_DlgTitle_AddNew">
+        <source>Please specify where to save the new file</source>
+        <target state="translated">請指定新檔案的儲存位置</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Dlg_ReplaceExistingFile">
+        <source>The file '{0}' already exists.  Do you want to replace it?</source>
+        <target state="translated">檔案 '{0}' 已經存在。要取代它嗎?</target>
+        <note>{0} = full file path and name</note>
+      </trans-unit>
+      <trans-unit id="RSE_Dlg_ReplaceExistingFiles">
+        <source>The following files already exist.  Do you want to replace them?</source>
+        <target state="translated">下列檔案已經存在。要取代它們嗎?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Dlg_ExportMultiple">
+        <source>Select a folder in which to export the resources.</source>
+        <target state="translated">選取要匯出資源的資料夾。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Dlg_ContinueAnyway">
+        <source>Do you want to continue anyway?</source>
+        <target state="translated">您仍然要繼續嗎?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Dlg_SetCustomTool">
+        <source>Do you want to enable strongly-typed resource generation for this file?</source>
+        <target state="translated">您要對這個檔案啟用強類型的資源產生嗎?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Task_BadLink_2Args">
+        <source>Resource '{0}' could not be loaded because the file to which it is linked could not be found: {1}.</source>
+        <target state="translated">無法載入資源 '{0}'，因為找不到連結的檔案: {1}。</target>
+        <note>{0} = resource name that had the error, {1} = file path/name that could not be found</note>
+      </trans-unit>
+      <trans-unit id="RSE_Task_CantInstantiate_2Args">
+        <source>Resource '{0}' could not be instantiated.  {1}</source>
+        <target state="translated">無法將資源 '{0}' 具現化。{1}</target>
+        <note>{0} = resource name that had the error, {1} = extended error information</note>
+      </trans-unit>
+      <trans-unit id="RSE_Task_NonrecommendedName_1Arg">
+        <source>Resource '{0}' has a name that is not recommended and that may cause compilation errors in your code.  Please choose another name.</source>
+        <target state="translated">資源 '{0}' 使用不建議採用的名稱，可能導致程式碼發生編譯錯誤。請選擇其他名稱。</target>
+        <note>{0} = resource name that had the error</note>
+      </trans-unit>
+      <trans-unit id="RSE_Task_CantChangeCustomToolOrNamespace">
+        <source>Unable to set the Custom Tool or Custom Tool Namespace properties of this file in order to change strongly-typed resource generation options.  If the project file is checked in, try checking it out.</source>
+        <target state="translated">無法設定此檔案的自訂工具或自訂工具命名空間屬性，因此無法變更強型別的資源產生選項。如果專案檔已簽入，請試著將它簽出。</target>
+        <note>One possible source for this error is that source code control checkout failed or was canceled.</note>
+      </trans-unit>
+      <trans-unit id="RSE_Task_WarningCustomToolNotSet">
+        <source>Double-click here to enable strongly-typed resources for this file.</source>
+        <target state="translated">按兩下這裡，啟用此檔案的強類型資源。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Task_InvalidName_1Arg">
+        <source>The resource name '{0}' is not a valid identifier.</source>
+        <target state="translated">資源名稱 '{0}' 不是有效的識別項。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_EncodingDisplayName">
+        <source>{0} - Codepage {1}</source>
+        <target state="translated">{0} - 字碼頁 {1}</target>
+        <note>{0} = encoding name (e.g., "Western European (Windows)"), {1} = code page # (e.g., 85001)</note>
+      </trans-unit>
+      <trans-unit id="RSE_DefaultEncoding">
+        <source>(Default)</source>
+        <target state="translated">(預設)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Undo_ChangeName">
+        <source>Change resource name</source>
+        <target state="translated">變更資源名稱</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_Undo_AddResources_1Arg">
+        <source>Add {0} new resource(s)</source>
+        <target state="translated">新增 {0} 個新資源</target>
+        <note>{0} = number of resources added</note>
+      </trans-unit>
+      <trans-unit id="RSE_Undo_RemoveResources_1Arg">
+        <source>Remove {0} resource(s)</source>
+        <target state="translated">移除 {0} 個資源</target>
+        <note>{0} = number of resources removed</note>
+      </trans-unit>
+      <trans-unit id="RSE_Undo_DeleteResourceCell">
+        <source>Delete values in {0} cell(s)</source>
+        <target state="translated">刪除 {0} 個儲存格中的值</target>
+        <note>{0} = number of cells cleared</note>
+      </trans-unit>
+      <trans-unit id="RSE_CategiesLabel">
+        <source>&amp;Categories:</source>
+        <target state="translated">分類(&amp;C):</target>
+        <note>The label in the menu strip for the combobox that holds the categories of resources to display</note>
+      </trans-unit>
+      <trans-unit id="RSE_PropDesc_Name">
+        <source>Name used to identify the resource in code.</source>
+        <target state="translated">用來在程式碼中識別資源的名稱。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_PropDesc_Comment">
+        <source>Additional information about the resource.  This property is only meaningful at design time.</source>
+        <target state="translated">資源的其他資訊。這個屬性僅在設計階段時有意義。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_PropDesc_Encoding">
+        <source>Character encoding of the file.</source>
+        <target state="translated">檔案的字元編碼方式。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_PropDesc_Filename">
+        <source>The path to the linked resource.</source>
+        <target state="translated">連結資源的路徑。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_PropDesc_FileType">
+        <source>Specifies whether the file resource is text or binary.</source>
+        <target state="translated">指定檔案資源是文字或二進位格式。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_PropDesc_Persistence">
+        <source>Specifies whether the resource is embedded or linked.  Embedded resources are saved in the resource file.  Linked resources reside in an external location on disk.</source>
+        <target state="translated">指定資源為內嵌還是連結。內嵌資源儲存在資源檔中，而連結資源則位於磁碟上的外部位置。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_PropDesc_Type">
+        <source>The resource will be generated as this type in the strongly-typed resource class.  For example, the resource might be generated as a String or Bitmap object.</source>
+        <target state="translated">將會在強型別資源類別中以此類型產生資源。例如，可能會將資源產生為 String 或 Bitmap 物件。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RSE_PropDesc_Value">
+        <source>The value of the resource.</source>
+        <target state="translated">資源的值。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RFS_CantCreateResourcesFolder_Folder_ExMsg">
+        <source>Unable to add a '{0}' folder to this project.
+
+{1}</source>
+        <target state="translated">無法將 '{0}' 資料夾新增至此專案。
+
+{1}</target>
+        <note>{0} = name of folder trying to add (by default, this will be "Resources"), {1} = additional error information</note>
+      </trans-unit>
+      <trans-unit id="RFS_CantAddFileToProject_File_ExMsg">
+        <source>Unable to add '{0}' to the project.
+
+{1}</source>
+        <target state="translated">無法將 '{0}' 加入專案。
+
+{1}</target>
+        <note>{0} = file name and path, {1} = additional error information.</note>
+      </trans-unit>
+      <trans-unit id="RFS_CantAddFileToProject_File">
+        <source>Unable to add '{0}' to the project.</source>
+        <target state="translated">無法將 '{0}' 加入專案。</target>
+        <note>{0} = file name and path</note>
+      </trans-unit>
+      <trans-unit id="RFS_QueryReplaceFile_File">
+        <source>A file with the name '{0}' already exists.  Do you want to replace it?</source>
+        <target state="translated">名稱為 '{0}' 的檔案已經存在。要取代它嗎?</target>
+        <note>{0} = file name and path</note>
+      </trans-unit>
+      <trans-unit id="RFS_QueryReplaceFileTitle_Editor">
+        <source>{0} - Destination File Exists</source>
+        <target state="translated">{0} - 目的檔案已經存在</target>
+        <note>{0} = Name of the editor, e.g. "Managed Resources Editor" or "Resource Picker"</note>
+      </trans-unit>
+      <trans-unit id="RFS_QueryRemoveLink_Folder_Link">
+        <source>There is already a linked file with the name "{0}" in the project folder "{1}".  Do you want to remove it?</source>
+        <target state="translated">已經有名為 "{0}" 的連結檔案存在專案資料夾 "{1}" 中。要移除它嗎?</target>
+        <note>{0} = file name (no path), {1} = Path of resource folder</note>
+      </trans-unit>
+      <trans-unit id="RFS_QueryRemoveLinkTitle_Editor">
+        <source>{0} - Destination File Exists</source>
+        <target state="translated">{0} - 目的檔案已經存在</target>
+        <note>{0} = Name of the editor, e.g. "Managed Resources Editor" or "Resource Picker"</note>
+      </trans-unit>
+      <trans-unit id="RFS_FindNotFound_File">
+        <source>Cannot find the file '{0}'.  It may have been moved or deleted.</source>
+        <target state="translated">找不到檔案 '{0}'，可能已移動或刪除。</target>
+        <note>{0} = file name and path</note>
+      </trans-unit>
+      <trans-unit id="SD_ComboBoxItem_ConnectionStringType">
+        <source>Connection string</source>
+        <target state="translated">連接字串</target>
+        <note>Added as the last item in the list of available types to let the user browse for a new type</note>
+      </trans-unit>
+      <trans-unit id="SD_ComboBoxItem_WebReferenceType">
+        <source>Web Service URL</source>
+        <target state="translated">Web 服務 URL</target>
+        <note>Added as the last item in the list of available types to let the user browse for a new type</note>
+      </trans-unit>
+      <trans-unit id="SD_ComboBoxItem_BrowseType">
+        <source>Browse...</source>
+        <target state="translated">瀏覽...</target>
+        <note>Added as the last item in the list of available types to let the user browse for a new type</note>
+      </trans-unit>
+      <trans-unit id="SD_ComboBoxItem_ApplicationScope">
+        <source>Application</source>
+        <target state="translated">應用程式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ComboBoxItem_WebApplicationScope">
+        <source>Application (Web)</source>
+        <target state="translated">應用程式 (Web)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ComboBoxItem_UserScope">
+        <source>User</source>
+        <target state="translated">使用者</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ComboBoxItem_WebUserScope">
+        <source>User (Web)</source>
+        <target state="translated">使用者 (Web)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_GridViewNameColumnHeaderText">
+        <source>Name</source>
+        <target state="translated">名稱</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_GridViewTypeColumnHeaderText">
+        <source>Type</source>
+        <target state="translated">類型</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_GridViewScopeColumnHeaderText">
+        <source>Scope</source>
+        <target state="translated">範圍</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_GridViewValueColumnHeaderText">
+        <source>Value</source>
+        <target state="translated">值</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UnknownType">
+        <source>Type '{0}' is not defined.</source>
+        <target state="translated">類型 '{0}' 未定義。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_NameChanged">
+        <source>Name changed</source>
+        <target state="translated">名稱已變更</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_TypeChanged">
+        <source>Type changed</source>
+        <target state="translated">類型已變更</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_ScopeChanged">
+        <source>Scope changed</source>
+        <target state="translated">範圍已變更</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_RoamingChanged">
+        <source>Roaming changed</source>
+        <target state="translated">漫遊已變更</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_DescriptionChanged">
+        <source>Description changed</source>
+        <target state="translated">描述已變更</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_ProviderChanged">
+        <source>Provider changed</source>
+        <target state="translated">提供者已變更</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_SerializedValueChanged">
+        <source>Value changed</source>
+        <target state="translated">值已變更</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_GenerateDefaultValueInCode">
+        <source>Generate default value in code changed</source>
+        <target state="translated">在已變更的程式碼中產生預設值</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_UndoTran_RemoveMultipleSettings_1Arg">
+        <source>Remove {0} setting(s)</source>
+        <target state="translated">移除 {0} 項設定</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_Err_CantLoadSettingsFile">
+        <source>Unable to load settings file.  It might be corrupted or contain invalid XML or contain duplicate identifiers.</source>
+        <target state="translated">無法載入設定檔。檔案可能已損毀，或是包含無效的 XML 或重複的識別碼。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_NewValuesAdded">
+        <source>New values from the app.config file were automatically added</source>
+        <target state="translated">app.config 檔的新值已自動加入</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ReplaceValueWithAppConfigValueTitle">
+        <source>Value of setting '{0}' was changed in the app.config file.</source>
+        <target state="translated">在 app.config 檔中，設定 '{0}' 的值已經變更。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ReplaceValueWithAppConfigValue">
+        <source>The current value in the .settings file is '{0}'
+The new value in the app.config file is '{1}'
+
+Do you want to update the value in the .settings file?</source>
+        <target state="translated">.settings 檔的目前值是 '{0}'
+app.config 檔的新值是 '{1}'
+
+要更新 .settings 檔的值嗎?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_FailedToLoadAppConfigValues">
+        <source>An error occurred while reading the app.config file. The file might be corrupted or contain invalid XML.</source>
+        <target state="translated">讀取 app.config 檔時發生錯誤。檔案可能已損毀或是包含無效的 XML。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_FailedToSaveAppConfigValues">
+        <source>An error occurred while saving values to the app.config file. The file might be corrupted or contain invalid XML.</source>
+        <target state="translated">將值儲存到 app.config 檔時發生錯誤。檔案可能已損毀或是包含無效的 XML。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_DuplicateName_1Arg">
+        <source>There is already another setting with the name '{0}'.</source>
+        <target state="translated">已經有另一個名為 '{0}' 的設定。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_InvalidIdentifier_1Arg">
+        <source>'{0}' is not a valid identifier.</source>
+        <target state="translated">'{0}' 不是有效的識別碼。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_InvalidTypeName_1Arg">
+        <source>'{0}' is not a valid type name.</source>
+        <target state="translated">'{0}' 不是有效的類型名稱。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_NameEmpty">
+        <source>The setting name cannot be empty.</source>
+        <target state="translated">設定名稱不可為空白。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_InvalidValue_2Arg">
+        <source>'{0}' cannot be converted to an instance of type '{1}'.</source>
+        <target state="translated">'{0}' 不能轉換成類型 '{1}' 的執行個體。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_GenericTypesNotSupported_1Arg">
+        <source>Generic types are not supported.</source>
+        <target state="translated">不支援泛型類型。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_AbstractTypesNotSupported_1Arg">
+        <source>Abstract types are not supported.</source>
+        <target state="translated">不支援抽象類型。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_RenameNotSupported">
+        <source>The current object is auto-generated and only supports renaming through the Settings Designer.</source>
+        <target state="translated">目前的物件是自動產生的，而且僅支援透過設定設計工具重新命名。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_ModifyParamsNotSupported">
+        <source>The current object is auto-generated and does not support modifying parameters.</source>
+        <target state="translated">目前的物件是自動產生的，而且不支援修改參數的功能。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_CantEditInDebugMode">
+        <source>The settings file cannot be modified at this time.</source>
+        <target state="translated">目前無法修改設定檔。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_MNU_AddSettingText">
+        <source>&amp;Add Setting</source>
+        <target state="translated">新增設定(&amp;A)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_MNU_RemoveSettingText">
+        <source>R&amp;emove Setting</source>
+        <target state="translated">移除設定(&amp;E)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_FullDescriptionText">
+        <source>Application settings allow you to store and retrieve property settings and other information for your application dynamically. For example, the application can save a user's color preferences, then retrieve them the next time it runs.</source>
+        <target state="translated">應用程式設定可以讓您動態儲存及擷取應用程式的屬性設定和其他資訊。例如，應用程式可以儲存使用者的色彩偏好設定，然後下次執行應用程式時再擷取這些設定。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_LinkPartOfDescriptionText">
+        <source>Learn more about application settings...</source>
+        <target state="translated">進一步了解有關應用程式設定...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_IncludeSensitiveInfoInConnectionStringWarning">
+        <source>This connection string appears to contain sensitive data (for example, a password), which is required to connect to the database. However, storing sensitive data in the connection string can be a security risk. Do you want to include sensitive data in the connection string?</source>
+        <target state="translated">這個連接字串似乎含有連接資料庫所需的敏感性資料 (例如密碼)。但是，將敏感性資料儲存在連接字串中可能會有安全性的風險。要在連接字串中包含敏感性資料嗎?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_SelectATypeTreeView_AccessibleName">
+        <source>Select a Type</source>
+        <target state="translated">選取類型</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_CODEGENCMT_COMMON1">
+        <source>This class allows you to handle specific events on the settings class:</source>
+        <target state="translated">這個類別可以讓您處理設定類別上的特定事件:</target>
+        <note>Comments for user part of extending generated settings class</note>
+      </trans-unit>
+      <trans-unit id="SD_CODEGENCMT_COMMON2">
+        <source> The SettingChanging event is raised before a setting's value is changed.</source>
+        <target state="translated"> 在設定值變更之前引發 SettingChanging 事件。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_CODEGENCMT_COMMON3">
+        <source> The PropertyChanged event is raised after a setting's value is changed.</source>
+        <target state="translated"> 在設定值變更之後引發 PropertyChanged 事件。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_CODEGENCMT_COMMON4">
+        <source> The SettingsLoaded event is raised after the setting values are loaded.</source>
+        <target state="translated"> 在載入設定值之後引發 SettingsLoaded 事件。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_CODEGENCMT_COMMON5">
+        <source> The SettingsSaving event is raised before the setting values are saved.</source>
+        <target state="translated"> 在儲存設定值之前引發 SettingsSaving 事件。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_CODEGENCMT_HOWTO_ATTACHEVTS">
+        <source>To add event handlers for saving and changing settings, uncomment the lines below:</source>
+        <target state="translated">若要加入用於儲存與變更設定的事件處理常式，請取消註解下列程式行:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_CODEGENCMT_HANDLE_CHANGING">
+        <source>Add code to handle the SettingChangingEvent event here.</source>
+        <target state="translated">在此加入程式碼以處理 SettingChangingEvent 事件。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_CODEGENCMT_HANDLE_SAVING">
+        <source>Add code to handle the SettingsSaving event here.</source>
+        <target state="translated">在此加入程式碼以處理 SettingsSaving 事件。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_CODEGEN_FAILEDOPENCREATEEXTENDINGFILE">
+        <source>Failed to create or open file.</source>
+        <target state="translated">無法建立或開啟檔案。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_Description">
+        <source>Description of the setting.</source>
+        <target state="translated">設定的描述。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_GenerateDefaultValueInCode">
+        <source>Specifies whether or not the default setting value should be generated in the strongly-typed settings class.</source>
+        <target state="translated">指定是否應該在強類型設定類別中產生預設的設定值。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_Group">
+        <source>Specifies the group to which this Settings file belongs.</source>
+        <target state="translated">指定此設定檔所屬的群組。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_GroupDescription">
+        <source>Description of the group to which this Settings file belongs.</source>
+        <target state="translated">此設定檔所屬群組的說明。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_Roaming">
+        <source>Indicates whether the setting should roam when Windows roaming profiles are enabled.</source>
+        <target state="translated">表示啟用 Windows 漫遊設定檔時是否要使用漫遊設定。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_Name">
+        <source>Name used to identify the setting.</source>
+        <target state="translated">用來識別設定的名稱。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_Provider">
+        <source>The provider (System.Configuration.Provider.ProviderBase) used to manage the setting.</source>
+        <target state="translated">用來管理設定的提供者 (System.Configuration.Provider.ProviderBase)。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_Scope">
+        <source>Specifies whether the setting is per-application (read-only) or per-user (read-write).</source>
+        <target state="translated">指定設定是針對應用程式 (唯讀) 或是針對使用者 (讀寫)。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_SerializedSettingType">
+        <source>The setting will be generated as this type in the strongly-typed settings class. For example, the setting might be generated as a String or Integer object.</source>
+        <target state="translated">將會在強型別設定類別中以此類型產生設定。例如，可能會將設定產生為 String 或 Integer 物件。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_DESCR_Value">
+        <source>The current value for the setting.</source>
+        <target state="translated">目前的設定值。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_SyncFiles_1Arg">
+        <source>The following files will be deleted:
+
+{0}</source>
+        <target state="translated">下列檔案將刪除:
+
+{0}</target>
+        <note>Synchronize with user.config file</note>
+      </trans-unit>
+      <trans-unit id="SD_SyncFilesNoFilesFound_1Arg">
+        <source>No user.config files were found in any of the following locations:
+
+{0}</source>
+        <target state="translated">在下列位置中找不到 user.config 檔案:
+
+{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_SyncFilesOneOrMoreFailed">
+        <source>One or more user.config files was not removed.</source>
+        <target state="translated">一或多個 user.config 檔案尚未移除。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_SFG_AutoSaveRegionText">
+        <source>My.Settings Auto-Save Functionality</source>
+        <target state="translated">My.Settings 自動儲存功能</target>
+        <note>in-code comment used to generate a region that hides My.Settings AutoSave functionality</note>
+      </trans-unit>
+      <trans-unit id="General_MissingService">
+        <source>Unable to find service '{0}'.  Ensure that the application is installed correctly.</source>
+        <target state="translated">找不到服務 '{0}'。請確認此應用程式已正確安裝。</target>
+        <note>Settings Global-Object-Provider Strings</note>
+      </trans-unit>
+      <trans-unit id="PPG_Application_RootNamespaceJSharp">
+        <source>Default pac&amp;kage:</source>
+        <target state="translated">預設套件(&amp;K):</target>
+        <note>J# Specific String for Root Namespace</note>
+      </trans-unit>
+      <trans-unit id="RSE_AccessModifier_Custom">
+        <source>(Custom)</source>
+        <target state="translated">(自訂)</target>
+        <note>Entry in the "Accessibility dropdown"</note>
+      </trans-unit>
+      <trans-unit id="RSE_NoCodeGeneration">
+        <source>No code generation</source>
+        <target state="translated">沒有程式碼產生</target>
+        <note>Entry in the "Accessibility dropdown"</note>
+      </trans-unit>
+      <trans-unit id="PPG_WindowsApp_WPF">
+        <source>WPF Application</source>
+        <target state="translated">WPF 應用程式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_InvalidShutdownMode">
+        <source>(Invalid value: "{0}")</source>
+        <target state="translated">(無效值: "{0}")</target>
+        <note>Goes into the ShutdownMode combobox</note>
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_ShutdownMode_OnExplicitShutdown">
+        <source>On explicit shutdown</source>
+        <target state="translated">在明確關機時</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_ShutdownMode_OnLastWindowClose">
+        <source>On last window close</source>
+        <target state="translated">在最後一個視窗關閉時</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_ShutdownMode_OnMainWindowClose">
+        <source>On main window close</source>
+        <target state="translated">在主視窗關閉時</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_Xaml_CouldntFindRootElement">
+        <source>Could not find the expected root element "{0}" in the application definition file.</source>
+        <target state="translated">應用程式定義檔案中找不到預期的根項目 "{0}"。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_Xaml_UnexpectedFormat_2Args">
+        <source>The .xaml file was in an unexpected format, near line {0} column {1}.</source>
+        <target state="translated">此 .xaml 檔在第 {0} 行第 {1} 欄不是預期的格式。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_StartupObjectLabelText">
+        <source>Startup &amp;object:</source>
+        <target state="translated">啟始物件(&amp;O):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_StartupUriLabelText">
+        <source>Startup &amp;URI:</source>
+        <target state="translated">啟動 URI(&amp;U):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_AppXamlOpenInUnsupportedEditor">
+        <source>The application definition file is already opened in an incompatible editor.  Please close the other editor and reload the project properties page.</source>
+        <target state="translated">此應用程式定義檔案已經在不相容的編輯器中開啟。請先關閉其他編輯器，然後重新載入此專案屬性頁。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_CantOpenOrCreateAppXaml_1Arg">
+        <source>There was an error trying to open or create the application definition file for this project.  {0}</source>
+        <target state="translated">嘗試開啟或建立此專案的應用程式定義檔案時發生錯誤。{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_ErrorControlMessage_1Arg">
+        <source>An error occurred trying to load the application definition file for this project.  The file '{0}' could not be parsed.  Please edit the file in the XAML editor to fix the error.</source>
+        <target state="translated">嘗試載入此專案的應用程式定義檔案時發生錯誤。無法剖析檔案 '{0}'。請在 XAML 編輯器中編輯此檔案以修正錯誤。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_CantReadPropertyValue">
+        <source>(Error)</source>
+        <target state="translated">(錯誤)</target>
+        <note>Used inside UI elements when there is an error (e.g. combobox text)</note>
+      </trans-unit>
+      <trans-unit id="PPG_Unexpected">
+        <source>An unspecified error has occurred.</source>
+        <target state="translated">發生未指定的錯誤。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_CantFindAppXaml">
+        <source>This project does not contain an application definition file.</source>
+        <target state="translated">此專案未包含應用程式定義檔案。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WPFApp_CouldntCreateApplicationEventsFile_1Arg">
+        <source>An error occurred trying to create the application events file.  {0}</source>
+        <target state="translated">嘗試建立應用程式事件檔時發生錯誤。{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="General_InvalidArgument_1Arg">
+        <source>Invalid argument '{0}'</source>
+        <target state="translated">引數 '{0}' 無效</target>
+        <note>{0} = name of invalid argument</note>
+      </trans-unit>
+      <trans-unit id="PPG_CommandLineApp_WPF">
+        <source>WPF Console Application</source>
+        <target state="translated">WPF 主控台應用程式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WindowsClassLib_WPF">
+        <source>WPF Class Library</source>
+        <target state="translated">WPF 類別庫</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_DefaultManifestText">
+        <source>Embed manifest with default settings</source>
+        <target state="translated">用預設設定嵌入資訊清單</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_NoManifestText">
+        <source>Create application without a manifest</source>
+        <target state="translated">建立無資訊清單應用程式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Application_BadManifest">
+        <source>Invalid manifest file.</source>
+        <target state="translated">資訊清單檔案無效。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services">
+        <source>Services</source>
+        <target state="translated">服務</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_HelpLabelText">
+        <source>Client application services enable your Windows-based applications to use the ASP.NET login (authentication), roles, and profile (settings) services.  </source>
+        <target state="translated">用戶端應用程式服務可以讓您的 Windows 應用程式使用 ASP.NET 登入 (驗證)、角色和設定檔 (設定) 服務。  </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_HelpLabelLink">
+        <source>Learn more about client application services...</source>
+        <target state="translated">進一步了解用戶端應用程式服務...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ServicesAdvancedPage_Title">
+        <source>Advanced Settings for Services</source>
+        <target state="translated">服務的進階設定</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_ConfirmRemoveServices">
+        <source>Disabling application services will clear the default services for Authentication, Roles, and Settings.  Click OK to disable application services.</source>
+        <target state="translated">停用應用程式服務將會清除驗證、角色和設定的預設服務。按一下 [確定] 即可停用應用程式服務。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_ConfirmRemoveServices_Caption">
+        <source>Disable Application Services</source>
+        <target state="translated">停用應用程式服務</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_Seconds">
+        <source>seconds</source>
+        <target state="translated">秒</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_Minutes">
+        <source>minutes</source>
+        <target state="translated">分鐘</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_Hours">
+        <source>hours</source>
+        <target state="translated">小時</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_Days">
+        <source>days</source>
+        <target state="translated">天數</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_VersionWarning">
+        <source>To enable client application services, you must set the Target Framework for your application to .NET Framework 3.5 or later. In C#, you can do this on the Application property page. In Visual Basic, you can do this one the Compile property page by clicking Advanced Compile Options.</source>
+        <target state="translated">若要啟用用戶端應用程式服務，必須將應用程式的目標 Framework 設定成 .NET Framework 3.5 (含) 以後版本。在 C#，您可以在 [應用程式]5D; 屬性頁上進行此設定。在 Visual Basic，您可以按一下 [進階編譯選項]5D;，在 [編譯]5D; 屬性頁上進行此設定。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_InvalidAppConfigXml">
+        <source>An error occurred while reading the Application configuration file.  The file might be corrupted or contain invalid XML.</source>
+        <target state="translated">讀取應用程式組態檔時發生錯誤。此檔案可能已損毀或包含無效的 XML。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_InvalidUrl">
+        <source>The URL is invalid. Please enter a valid URL like http://microsoft.com/services</source>
+        <target state="translated">URL 無效。請輸入有效的 URL，例如 http://microsoft.com/services</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_InvalidUrls">
+        <source>A service URL in the application configuration file is not in the expected format.</source>
+        <target state="translated">應用程式組態檔中某項服務的 URL 不是預期的格式。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_ConnectionStringsDontMatch">
+        <source>Authentication, Roles and Web Settings providers have been configured via the Application configuration file such that they do not share a common connection string.</source>
+        <target state="translated">驗證、角色和 Web 設定提供者已透過應用程式組態檔設定成不共用通用的連接字串。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_Services_connectionStringValueDefaultDisplayValue">
+        <source>Specify a connection string to a SQL Server database, or use the special connection string "Data Source = |SQL/CE|", which causes SQL Server Compact to generate local database files for offline storage.</source>
+        <target state="translated">指定 SQL Server 資料庫的連接字串，或者使用特殊連接字串 "Data Source = |SQL/CE|"，它會使 SQL Server Compact 產生離線存放區使用的本機資料庫檔案。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_UnreferencedTypeNameList_1Arg">
+        <source>The following type names were not understood: '{0}'.  Make sure you have references to these types.</source>
+        <target state="translated">不了解下列類型名稱: '{0}'。請確認您具備這些類型的參考。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_DuplicateNameList_1Arg">
+        <source>There are already settings with the following names: {0}.</source>
+        <target state="translated">已經有使用下列名稱的設定: {0}。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SD_ERR_CantAuthenticate">
+        <source>The username/password combination cannot be authenticated.</source>
+        <target state="translated">無法驗證此使用者名稱/密碼組合。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_WindowsFormsApp">
+        <source>Windows Forms Application</source>
+        <target state="translated">Windows Forms 應用程式</target>
+        <note>The "Windows Forms" distinguishes it from a WPF application</note>
+      </trans-unit>
+      <trans-unit id="PPG_ServiceReferenceNamespaceDescription">
+        <source>Namespace of the service reference.</source>
+        <target state="translated">服務參考的命名空間。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ServiceReferenceTypeName">
+        <source>Service Reference Properties</source>
+        <target state="translated">服務參考屬性</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ServiceReferenceUrlDescription">
+        <source>Metadata Location Url</source>
+        <target state="translated">中繼資料位置 URL</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ServiceReferenceUrlName">
+        <source>Metadata Location</source>
+        <target state="translated">中繼資料位置</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ServiceReferenceProperty_MultipleUrlNotSupported">
+        <source>A service reference with multiple source urls is not supported.</source>
+        <target state="translated">不支援具有多個來源 URL 的服務參考。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ServiceReferenceProperty_SetReferenceUrlEmpty">
+        <source>Cannot change reference Url to empty. The reference url must be a valid URL.</source>
+        <target state="translated">無法將參考 URL 變更為空白。參考 URL 必須是有效的 URL。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DFX_OneOrMoreFilesReloaded">
+        <source>One or more files were reloaded during the checkout. Please retry your operation.</source>
+        <target state="translated">在簽出期間重新載入了一或多個檔案。請重試作業。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_ProjectReloadedSomePropertiesMayNotHaveBeenSet">
+        <source>The project was reloaded, and some changes on this page may have been lost.</source>
+        <target state="translated">專案已重新載入，此頁面上的某些變更可能已遺失。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PPG_SecurityPage_XBAPOutOfTrustZoneToolTip">
+        <source>The application will fail to run in the selected zone because of this requested elevated permission. Click the help link above for more info.</source>
+        <target state="translated">由於這項要求的更高權限，此應用程式將無法在選取的區域中執行。如需詳細資訊，請按一下上方的 [說明]5D; 連結。</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

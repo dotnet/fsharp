@@ -229,14 +229,14 @@ let StringBoilerPlate filename =
     // BEGIN BOILERPLATE        
     
     static let getCurrentAssembly () =
-    #if DNXCORE50 || NETSTANDARD1_5 || NETSTANDARD1_6 || NETCOREAPP1_0
+    #if FX_RESHAPED_REFLECTION
         typeof<SR>.GetTypeInfo().Assembly
     #else
         System.Reflection.Assembly.GetExecutingAssembly()
     #endif
         
     static let getTypeInfo (t: System.Type) =
-    #if DNXCORE50 || NETSTANDARD1_5 || NETSTANDARD1_6 || NETCOREAPP1_0
+    #if FX_RESHAPED_REFLECTION
         t.GetTypeInfo()
     #else
         t

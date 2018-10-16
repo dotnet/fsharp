@@ -17,14 +17,16 @@ open Microsoft.VisualStudio.FSharp.Interactive
 
 type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
 
-    let projectSystemPackage =
+    let loadPackage (guidString: string) =
       lazy(
         let shell = serviceProvider.GetService(typeof<SVsShell>) :?> IVsShell
-        let packageToBeLoadedGuid = ref (Guid "{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}")  // FSharp ProjectSystem guid        
+        let packageToBeLoadedGuid = ref (Guid(guidString))       
         match shell.LoadPackage packageToBeLoadedGuid with
         | VSConstants.S_OK, pkg ->
             pkg :?> Package
         | _ -> null)
+
+    let fsiPackage = loadPackage FSharpConstants.fsiPackageGuidString
 
     let mutable nextTarget = null
 
@@ -38,13 +40,13 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
     interface IOleCommandTarget with
         member x.Exec (pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut) =
             if pguidCmdGroup = VSConstants.VsStd11 && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive then
-                Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.ExecuteSelection null null
+                Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.ExecuteSelection null null
                 VSConstants.S_OK
             elif pguidCmdGroup = VSConstants.VsStd11 && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive then
-                Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.ExecuteLine null null
+                Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.ExecuteLine null null
                 VSConstants.S_OK
             elif pguidCmdGroup = Guids.guidInteractive && nCmdId = uint32 Guids.cmdIDDebugSelection then
-                Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.DebugSelection null null
+                Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.DebugSelection null null
                 VSConstants.S_OK
             elif not (isNull nextTarget) then
                 nextTarget.Exec(&pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut)
@@ -62,7 +64,7 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
             elif pguidCmdGroup = Guids.guidInteractive then
                 for i = 0 to int cCmds-1 do
                     if prgCmds.[i].cmdID = uint32 Guids.cmdIDDebugSelection then
-                        let dbgState = Hooks.GetDebuggerState projectSystemPackage.Value
+                        let dbgState = Hooks.GetDebuggerState fsiPackage.Value
                         if dbgState = FsiDebuggerState.AttachedNotToFSI then
                             prgCmds.[i].cmdf <- uint32 OLECMDF.OLECMDF_INVISIBLE
                         else

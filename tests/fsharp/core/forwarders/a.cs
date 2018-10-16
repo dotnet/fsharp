@@ -9,7 +9,7 @@
 //   4. From F#, reference both the _split_ DLLs and the original b.dll and the original c.dll 
 //      and use a mix of types and functions from a.dll, b.dll and c.dll
 //
-// The aim is to shake out type identity issues assocaited with type forwarders.
+// The aim is to shake out type identity issues associated with type forwarders.
 
 #if PART1
 public class C

@@ -7,12 +7,11 @@
 
 module internal Microsoft.FSharp.Compiler.CheckFormatStrings
 
-open Internal.Utilities
 open Microsoft.FSharp.Compiler 
+open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.Tast 
 open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 
-val ParseFormatString : Range.range -> TcGlobals -> source: string option -> fmt: string -> bty: TType -> cty: TType -> dty: TType -> (TType * TType) * (Range.range * int) list
+val ParseFormatString : Range.range -> TcGlobals -> formatStringCheckContext: FormatStringCheckContext option -> fmt: string -> bty: TType -> cty: TType -> dty: TType -> (TType * TType) * (Range.range * int) list
 
 val TryCountFormatStringArguments : m:Range.range -> g:TcGlobals -> fmt:string -> bty:TType -> cty:TType -> int option

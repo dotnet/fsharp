@@ -3,11 +3,6 @@
 /// Solves constraints using a mutable constraint-solver state
 module internal Microsoft.FSharp.Compiler.ConstraintSolver
 
-open Internal.Utilities
-open Internal.Utilities.Collections
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Ast
@@ -16,7 +11,6 @@ open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Import
 open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.MethodCalls
@@ -27,6 +21,9 @@ val NewAnonTypar : TyparKind * range * TyparRigidity * TyparStaticReq * TyparDyn
 
 /// Create an inference type variable 
 val NewInferenceType : unit -> TType
+
+/// Create an inference type variable for the kind of a byref pointer
+val NewByRefKindInferenceType : TcGlobals -> range -> TType
 
 /// Create an inference type variable representing an error condition when checking an expression
 val NewErrorType : unit -> TType
@@ -76,7 +73,8 @@ type ContextInfo =
 | FollowingPatternMatchClause of range
 /// The type equation comes from a pattern match guard.
 | PatternMatchGuard of range
-
+/// The type equation comes from a sequence expression.
+| SequenceExpression of TType
 
 exception ConstraintSolverTupleDiffLengths              of DisplayEnv * TType list * TType list * range * range
 exception ConstraintSolverInfiniteTypes                 of ContextInfo * DisplayEnv * TType * TType * range * range
@@ -115,8 +113,8 @@ type OptionalTrace =
 | WithTrace of Trace
 
 val SimplifyMeasuresInTypeScheme             : TcGlobals -> bool -> Typars -> TType -> TyparConstraint list -> Typars
-val SolveTyparEqualsTyp                      : ConstraintSolverEnv -> int -> range -> OptionalTrace -> TType -> TType -> OperationResult<unit>
-val SolveTypEqualsTypKeepAbbrevs             : ConstraintSolverEnv -> int -> range -> OptionalTrace -> TType -> TType -> OperationResult<unit>
+val SolveTyparEqualsType                     : ConstraintSolverEnv -> int -> range -> OptionalTrace -> TType -> TType -> OperationResult<unit>
+val SolveTypeEqualsTypeKeepAbbrevs           : ConstraintSolverEnv -> int -> range -> OptionalTrace -> TType -> TType -> OperationResult<unit>
 val CanonicalizeRelevantMemberConstraints    : ConstraintSolverEnv -> int -> OptionalTrace -> Typars -> OperationResult<unit>
 val ResolveOverloading                       : ConstraintSolverEnv -> OptionalTrace -> string -> ndeep: int -> TraitConstraintInfo option -> int * int -> AccessorDomain -> CalledMeth<Expr> list ->  bool -> TType option -> CalledMeth<Expr> option * OperationResult<unit>
 val UnifyUniqueOverloading                   : ConstraintSolverEnv -> int * int -> string -> AccessorDomain -> CalledMeth<SynExpr> list -> TType -> OperationResult<bool> 
@@ -142,7 +140,7 @@ val AddCxTypeIsUnmanaged                      : DisplayEnv -> ConstraintSolverSt
 val AddCxTypeIsEnum                           : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> unit
 val AddCxTypeIsDelegate                       : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> TType -> unit
 
-val CodegenWitnessThatTypSupportsTraitConstraint : TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
+val CodegenWitnessThatTypeSupportsTraitConstraint : TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
 
 val ChooseTyparSolutionAndSolve : ConstraintSolverState -> DisplayEnv -> Typar -> unit
 

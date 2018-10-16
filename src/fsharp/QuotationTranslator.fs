@@ -4,9 +4,7 @@ module internal Microsoft.FSharp.Compiler.QuotationTranslator
 
 open Internal.Utilities
 open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.Tast
@@ -16,26 +14,23 @@ open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.TypeRelations
 open Microsoft.FSharp.Compiler.Range
 open System.Collections.Generic
 
 module QP = Microsoft.FSharp.Compiler.QuotationPickler
 
-
 let verboseCReflect = condition "VERBOSE_CREFLECT"
-
 
 [<RequireQualifiedAccess>]
 type IsReflectedDefinition =
-|   Yes
-|   No
+    | Yes
+    | No
 
 [<RequireQualifiedAccess>]
 type QuotationSerializationFormat =
-/// Indicates that type references are emitted as integer indexes into a supplied table
-|   FSharp_40_Plus
-|   FSharp_20_Plus
+    /// Indicates that type references are emitted as integer indexes into a supplied table
+    | FSharp_40_Plus
+    | FSharp_20_Plus
 
 type QuotationGenerationScope = 
     { g: TcGlobals 
@@ -71,16 +66,16 @@ type QuotationGenerationScope =
 
     static member ComputeQuotationFormat g = 
         let deserializeExValRef = ValRefForIntrinsic g.deserialize_quoted_FSharp_40_plus_info 
-        if deserializeExValRef.TryDeref.IsSome then 
+        if ValueOption.isSome deserializeExValRef.TryDeref then 
             QuotationSerializationFormat.FSharp_40_Plus
         else 
             QuotationSerializationFormat.FSharp_20_Plus
 
 type QuotationTranslationEnv = 
-    { //Map from Val to binding index
+    { /// Map from Val to binding index
       vs: ValMap<int> 
       nvs: int
-      //Map from typar stamps to binding index
+      /// Map from typar stamps to binding index
       tyvs: StampMap<int>
       // Map for values bound by the 
       //     'let v = isinst e in .... if nonnull v then ...v .... ' 
@@ -133,7 +128,7 @@ let (|ModuleValueOrMemberUse|_|) g expr =
             Some(vref,vFlags,f,fty,tyargs,actualArgs @ args)
         | Expr.App(f,_fty,[],actualArgs,_)  ->
             loop f (actualArgs @ args)
-        | (Expr.Val(vref,vFlags,_m) as f) when (match vref.ActualParent with ParentNone -> false | _ -> true) -> 
+        | (Expr.Val(vref,vFlags,_m) as f) when (match vref.DeclaringEntity with ParentNone -> false | _ -> true) -> 
             let fty = tyOfExpr g f
             Some(vref,vFlags,f,fty,[],args)
         | _ -> 
@@ -166,7 +161,7 @@ let (|ObjectInitializationCheck|_|) g expr =
            [| TTarget([], Expr.App(Expr.Val(failInitRef, _, _), _, _, _, _), _); _ |], _, resultTy
         ) when 
             IsCompilerGeneratedName name &&
-            name.StartsWith "init" &&
+            name.StartsWithOrdinal("init") &&
             selfRef.BaseOrThisInfo = MemberThisVal &&
             valRefEq g failInitRef (ValRefForIntrinsic g.fail_init_info) &&
             isUnitTy g resultTy -> Some()
@@ -258,15 +253,16 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             match takesInstanceArg,curriedArgs with 
             | false,curriedArgs -> [],curriedArgs
             | true,(objArg::curriedArgs) -> [objArg],curriedArgs
-            | true,[] -> wfail(InternalError("warning: unexpected missing object argument when generating quotation for call to F# object member "^vref.LogicalName,m)) 
+            | true,[] -> wfail(InternalError("warning: unexpected missing object argument when generating quotation for call to F# object member " + vref.LogicalName,m)) 
 
         if verboseCReflect then 
             dprintfn "vref.DisplayName = %A,  #objArgs = %A, #curriedArgs = %A" vref.DisplayName objArgs.Length curriedArgs.Length
 
         // Check to see if there aren't enough arguments or if there is a tuple-arity mismatch
         // If so, adjust and try again
-        if curriedArgs.Length < curriedArgInfos.Length ||
-           ((List.take curriedArgInfos.Length curriedArgs,curriedArgInfos) ||> List.exists2 (fun arg argInfo -> 
+        let nCurriedArgInfos = curriedArgInfos.Length
+        if curriedArgs.Length < nCurriedArgInfos ||
+           ((List.truncate nCurriedArgInfos curriedArgs,curriedArgInfos) ||> List.exists2 (fun arg argInfo -> 
                        (argInfo.Length > (tryDestRefTupleExpr arg).Length)))
         then
             if verboseCReflect then 
@@ -275,14 +271,14 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             // partially applied arguments to 'let' bindings 
             let topValInfo = 
                match vref.ValReprInfo with 
-               | None -> error(InternalError("no arity information found for F# value "^vref.LogicalName,vref.Range))
+               | None -> error(InternalError("no arity information found for F# value " + vref.LogicalName,vref.Range))
                | Some a -> a 
 
             let expr,exprty = AdjustValForExpectedArity cenv.g m vref vFlags topValInfo 
             ConvExpr cenv env (MakeApplicationAndBetaReduce cenv.g (expr,exprty,[tyargs],curriedArgs,m)) 
         else
             // Too many arguments? Chop 
-            let (curriedArgs:Expr list ),laterArgs = List.chop curriedArgInfos.Length curriedArgs 
+            let (curriedArgs:Expr list ),laterArgs = List.splitAt nCurriedArgInfos curriedArgs 
 
             let callR = 
                 // We now have the right number of arguments, w.r.t. currying and tupling.
@@ -304,7 +300,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                         // We only count one argument block for these.
                         let callArgs = (objArgs::untupledCurriedArgs) |> List.concat
 
-                        let parentTyconR = ConvTyconRef cenv vref.TopValActualParent m 
+                        let parentTyconR = ConvTyconRef cenv vref.TopValDeclaringEntity m 
                         let isNewObj = isNewObj || valUseFlags || isSelfInit
                         // The signature types are w.r.t. to the formal context 
                         let envinner = BindFormalTypars env tps 
@@ -397,7 +393,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     // initialization check
     | Expr.Sequential(ObjectInitializationCheck cenv.g, x1, NormalSeq, _, _) -> ConvExpr cenv env x1
     | Expr.Sequential (x0,x1,NormalSeq,_,_)  -> QP.mkSequential(ConvExpr cenv env x0, ConvExpr cenv env x1)
-    | Expr.Obj (_,typ,_,_,[TObjExprMethod(TSlotSig(_,ctyp, _,_,_,_),_,tps,[tmvs],e,_) as tmethod],_,m) when isDelegateTy cenv.g typ -> 
+    | Expr.Obj (_,ty,_,_,[TObjExprMethod(TSlotSig(_,ctyp, _,_,_,_),_,tps,[tmvs],e,_) as tmethod],_,m) when isDelegateTy cenv.g ty -> 
          let f = mkLambdas m tps tmvs (e,GetFSharpViewOfReturnType cenv.g (returnTyOfMethod cenv.g tmethod))
          let fR = ConvExpr cenv env f 
          let tyargR = ConvType cenv env m ctyp 
@@ -431,7 +427,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.UnionCaseFieldGet (ucref,n),tyargs,[e] -> 
             ConvUnionFieldGet cenv env m ucref n tyargs e
 
-        | TOp.ValFieldGetAddr(_rfref),_tyargs,_ -> 
+        | TOp.ValFieldGetAddr(_rfref, _readonly),_tyargs,_ -> 
             wfail(Error(FSComp.SR.crefQuotationsCantContainAddressOf(), m)) 
 
         | TOp.UnionCaseFieldGetAddr _,_tyargs,_ -> 
@@ -456,7 +452,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         | TOp.ILAsm([ I_stfld(_,_,fspec) | I_stsfld (_,fspec) ],_),enclTypeArgs,args  -> 
             let tyargsR = ConvTypes cenv env m enclTypeArgs
-            let parentTyconR = ConvILTypeRefUnadjusted cenv m fspec.EnclosingTypeRef
+            let parentTyconR = ConvILTypeRefUnadjusted cenv m fspec.DeclaringTypeRef
             let argsR = ConvLValueArgs cenv env args
             QP.mkFieldSet( (parentTyconR, fspec.Name),tyargsR, argsR)
 
@@ -523,7 +519,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             // rebuild reraise<T>() and Convert 
             mkReraiseLibCall cenv.g toTy m |> ConvExpr cenv env 
 
-        | TOp.LValueOp(LGetAddr,vref),[],[] -> 
+        | TOp.LValueOp(LAddrOf _,vref),[],[] -> 
             QP.mkAddressOf(ConvValRef false cenv env m vref [])
 
         | TOp.LValueOp(LByrefSet,vref),[],[e] -> 
@@ -531,7 +527,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         | TOp.LValueOp(LSet,vref),[],[e] -> 
             // Sets of module values become property sets
-            match vref.ActualParent with 
+            match vref.DeclaringEntity with 
             | Parent tcref when IsCompiledAsStaticProperty cenv.g vref.Deref  -> 
                 let parentTyconR = ConvTyconRef cenv tcref m 
                 let propName = vref.CompiledName
@@ -561,13 +557,13 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             | _ -> wfail(Error(FSComp.SR.crefQuotationsCantContainDescendingForLoops(), m))
 
         | TOp.ILCall(_,_,_,isNewObj,valUseFlags,isProp,_,ilMethRef,enclTypeArgs,methTypeArgs,_tys),[],callArgs -> 
-             let parentTyconR = ConvILTypeRefUnadjusted cenv m ilMethRef.EnclosingTypeRef
+             let parentTyconR = ConvILTypeRefUnadjusted cenv m ilMethRef.DeclaringTypeRef
              let isNewObj = isNewObj || (match valUseFlags with CtorValUsedAsSuperInit | CtorValUsedAsSelfInit -> true | _ -> false)
              let methArgTypesR = List.map (ConvILType cenv env m) ilMethRef.ArgTypes
              let methRetTypeR = ConvILType cenv env m ilMethRef.ReturnType
              let methName = ilMethRef.Name
-             let isPropGet = isProp && methName.StartsWith("get_",System.StringComparison.Ordinal)
-             let isPropSet = isProp && methName.StartsWith("set_",System.StringComparison.Ordinal)
+             let isPropGet = isProp && methName.StartsWithOrdinal("get_")
+             let isPropSet = isProp && methName.StartsWithOrdinal("set_")
              let tyargs = (enclTypeArgs@methTypeArgs)
              ConvObjectModelCall cenv env m (isPropGet,isPropSet,isNewObj,parentTyconR,methArgTypesR,methRetTypeR,methName,tyargs,methTypeArgs.Length,callArgs)
 
@@ -591,7 +587,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.UnionCaseTagGet _tycr,_tinst,[_cx]          -> wfail(Error(FSComp.SR.crefQuotationsCantFetchUnionIndexes(), m))
         | TOp.UnionCaseFieldSet (_c,_i),_tinst,[_cx;_x]     -> wfail(Error(FSComp.SR.crefQuotationsCantSetUnionFields(), m))
         | TOp.ExnFieldSet(_tcref,_i),[],[_ex;_x] -> wfail(Error(FSComp.SR.crefQuotationsCantSetExceptionFields(), m))
-        | TOp.RefAddrGet,_,_                       -> wfail(Error(FSComp.SR.crefQuotationsCantRequireByref(), m))
+        | TOp.RefAddrGet _,_,_                       -> wfail(Error(FSComp.SR.crefQuotationsCantRequireByref(), m))
         | TOp.TraitCall (_ss),_,_                    -> wfail(Error(FSComp.SR.crefQuotationsCantCallTraitMembers(), m))
         | _ -> 
             wfail(InternalError( "Unexpected expression shape",m))
@@ -601,7 +597,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
 and ConvLdfld cenv env m (fspec: ILFieldSpec) enclTypeArgs args =
     let tyargsR = ConvTypes cenv env m enclTypeArgs
-    let parentTyconR = ConvILTypeRefUnadjusted cenv m fspec.EnclosingTypeRef
+    let parentTyconR = ConvILTypeRefUnadjusted cenv m fspec.DeclaringTypeRef
     let argsR = ConvLValueArgs cenv env args
     QP.mkFieldGet( (parentTyconR, fspec.Name),tyargsR, argsR)
 
@@ -670,9 +666,9 @@ and ConvLValueExprCore cenv env expr =
     match expr with 
     | Expr.Op(op,tyargs,args,m) -> 
         match op, args, tyargs  with
-        | TOp.LValueOp(LGetAddr,vref),_,_ -> ConvValRef false cenv env m vref [] 
-        | TOp.ValFieldGetAddr(rfref),_,_ -> ConvClassOrRecdFieldGet cenv env m rfref tyargs args
-        | TOp.UnionCaseFieldGetAddr(ucref,n),[e],_ -> ConvUnionFieldGet cenv env m ucref n tyargs e
+        | TOp.LValueOp(LAddrOf _,vref),_,_ -> ConvValRef false cenv env m vref [] 
+        | TOp.ValFieldGetAddr(rfref, _),_,_ -> ConvClassOrRecdFieldGet cenv env m rfref tyargs args
+        | TOp.UnionCaseFieldGetAddr(ucref,n, _),[e],_ -> ConvUnionFieldGet cenv env m ucref n tyargs e
         | TOp.ILAsm([ I_ldflda(fspec) ],_rtys),_,_  -> ConvLdfld  cenv env m fspec tyargs args
         | TOp.ILAsm([ I_ldsflda(fspec) ],_rtys),_,_  -> ConvLdfld  cenv env m fspec tyargs args
         | TOp.ILAsm(([ I_ldelema(_ro,_isNativePtr,shape,_tyarg) ] ),_), (arr::idxs), [elemty]  -> 
@@ -719,7 +715,7 @@ and ConvModuleValueApp cenv env m (vref:ValRef) tyargs (args: Expr list list) =
     EmitDebugInfoIfNecessary cenv env m (ConvModuleValueAppCore cenv env m vref tyargs args)
 
 and ConvModuleValueAppCore cenv env m (vref:ValRef) tyargs (args: Expr list list) =
-    match vref.ActualParent with 
+    match vref.DeclaringEntity with 
     | ParentNone -> failwith "ConvModuleValueApp"
     | Parent(tcref) -> 
         let isProperty = IsCompiledAsStaticProperty cenv.g vref.Deref
@@ -750,7 +746,7 @@ and private ConvValRefCore holeOk cenv env m (vref:ValRef) tyargs =
         QP.mkThisVar(ConvType cenv env m v.Type)
     else 
         let vty = v.Type
-        match v.ActualParent with 
+        match v.DeclaringEntity with 
         | ParentNone -> 
               // References to local values are embedded by value
               if not holeOk then wfail(Error(FSComp.SR.crefNoSetOfHole(),m))
@@ -795,8 +791,8 @@ and ConvTyparRef cenv env m (tp:Typar) =
 and FilterMeasureTyargs tys = 
     tys |> List.filter (fun ty -> match ty with TType_measure _ -> false | _ -> true) 
 
-and ConvType cenv env m typ =
-    match stripTyEqnsAndMeasureEqns cenv.g typ with 
+and ConvType cenv env m ty =
+    match stripTyEqnsAndMeasureEqns cenv.g ty with 
     | TType_app(tcref,[tyarg]) when isArrayTyconRef cenv.g tcref -> 
         QP.mkArrayTy(rankOfArrayTyconRef cenv.g tcref,ConvType cenv env m tyarg)
 
@@ -815,8 +811,8 @@ and ConvType cenv env m typ =
     | TType_forall(_spec,_ty)   -> wfail(Error(FSComp.SR.crefNoInnerGenericsInQuotations(),m))
     | _ -> wfail(Error (FSComp.SR.crefQuotationsCantContainThisType(),m))
 
-and ConvTypes cenv env m typs =
-    List.map (ConvType cenv env m) (FilterMeasureTyargs typs)
+and ConvTypes cenv env m tys =
+    List.map (ConvType cenv env m) (FilterMeasureTyargs tys)
 
 and ConvConst cenv env m c ty =
     match TryEliminateDesugaredConstants cenv.g m c with 
@@ -1033,14 +1029,14 @@ let ConvExprPublic cenv env e =
 
 let ConvMethodBase cenv env (methName, v:Val) = 
     let m = v.Range 
-    let parentTyconR = ConvTyconRef cenv v.TopValActualParent m 
+    let parentTyconR = ConvTyconRef cenv v.TopValDeclaringEntity m 
 
     match v.MemberInfo with 
     | Some vspr when not v.IsExtensionMember -> 
 
         let vref = mkLocalValRef v
         let tps,argInfos,retTy,_ = GetTypeOfMemberInMemberForm cenv.g vref 
-        let numEnclTypeArgs = vref.MemberApparentParent.TyparsNoRange.Length
+        let numEnclTypeArgs = vref.MemberApparentEntity.TyparsNoRange.Length
         let argTys = argInfos |> List.concat |> List.map fst 
 
         let isNewObj = (vspr.MemberFlags.MemberKind = MemberKind.Constructor)

@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="tr" original="../VSPackage.resx">
+    <body>
+      <trans-unit id="100">
+        <source>F#</source>
+        <target state="translated">F#</target>
+        <note>lock</note>
+      </trans-unit>
+      <trans-unit id="ExcludedCode">
+        <source>Excluded Code</source>
+        <target state="translated">Dışarıda Tutulmuş Kod</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PreprocessorKeyword">
+        <source>Preprocessor Keyword</source>
+        <target state="translated">Ön İşlemci Anahtar Sözcüğü</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Operator">
+        <source>Operator</source>
+        <target state="translated">İşleç</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpFile">
+        <source>F# File (*.fs)</source>
+        <target state="translated">F# Dosyası (*.fs)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInterfaceFile">
+        <source>F# Interface File (*.fsi)</source>
+        <target state="translated">F# Arabirim Dosyası (*.fsi)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSXFile">
+        <source>F# Script File (*.fsx)</source>
+        <target state="translated">F# Betik Dosyası (*.fsx)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpScriptFile">
+        <source>F# Script File (*.fsscript)</source>
+        <target state="translated">F# Betik Dosyası (*.fsscript)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Comment">
+        <source>Comment</source>
+        <target state="translated">Açıklama</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Identifier">
+        <source>Identifier</source>
+        <target state="translated">Tanımlayıcı</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Keyword">
+        <source>Keyword</source>
+        <target state="translated">Anahtar Sözcük</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Number">
+        <source>Number</source>
+        <target state="translated">Sayı</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="String">
+        <source>String</source>
+        <target state="translated">Dize</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

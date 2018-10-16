@@ -3,16 +3,50 @@
 <CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable">
   <Extern href="stdidcmd.h"/>
   <Extern href="vsshlids.h"/>
-  <Include href="..\FSharp.VS.FSI\fsiCommands.vsct"/>    <!-- FSI-LINKAGE-POINT -->
   <Include href="KnownImageIds.vsct"/>
 
   <!-- Stake a claime to existing commands so they aren't marked as unused and removed. -->
   <UsedCommands>
+    <UsedCommand guid="guidVSStd97" id="cmdidCut"/>
+    <UsedCommand guid="guidVSStd97" id="cmdidCopy"/>
+    <UsedCommand guid="guidVSStd97" id="cmdidPaste"/>
+    <UsedCommand guid="guidVSStd97" id="cmdidClearPane"/>
     <UsedCommand guid="guidVSStd2K" id="ECMD_ADDREFERENCE" />
     <UsedCommand guid="guidVSStd2K" id="ECMD_ADDREFERENCECTX" />
   </UsedCommands>
 
   <CommandPlacements>
+    <CommandPlacement guid="guidVSStd97" id="cmdidCut" priority="0x0100">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleEditGrp"/>
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidCopy" priority="0x0300">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleEditGrp"/>
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidPaste" priority="0x0500">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleEditGrp"/>
+    </CommandPlacement>
+    <!-- Context menu, clear group -->
+    <!-- uncomment here to add standard VS "WordWrap" toggle command to the context menu (note, it indicates toggle status with a box around the icon)
+    <CommandPlacement guid="GUID_CMDSETID_StandardCommandSet2K" id="ECMD_TOGGLEWORDWRAP" priority="0x0100">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleClearGrp"/>
+    </CommandPlacement>
+    -->
+    <CommandPlacement guid="guidVSStd97" id="cmdidClearPane" priority="0x0200">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleClearGrp"/>
+    </CommandPlacement>
+    <!-- Context menu, session group -->
+    <CommandPlacement guid="guidVSStd11" id="cmdidInteractiveSessionInterrupt" priority="0x0100">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd11" id="cmdidInteractiveSessionRestart" priority="0x0300">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
+    </CommandPlacement>
+    <CommandPlacement guid="guidFsiConsoleCmdSet" id="cmdidAttachDebugger" priority="0x0700">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
+    </CommandPlacement>
+    <CommandPlacement guid="guidFsiConsoleCmdSet" id="cmdidDetachDebugger" priority="0x0800">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
+    </CommandPlacement>
     <CommandPlacement guid ="FSharpProjectCmdSet"  id ="MyFSharpGroup" priority ="0x100">
       <Parent guid ="guidSHLMainMenu" id ="IDM_VS_CTXT_ITEMNODE" />
     </CommandPlacement>
@@ -35,7 +69,78 @@
       <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE"/>
     </CommandPlacement>
   </CommandPlacements>
-  
+
+  <Commands package="guidFsiPkg">
+    <Groups>
+      <Group guid="guidFsiPackageCmdSet" id="MyMenuGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
+      </Group>
+      <Group guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp" priority="0x100">
+        <Parent guid="guidFsiConsoleCmdSet" id="cmdIDFsiConsoleContextMenu"/>
+      </Group>
+      <Group guid="guidFsiConsoleCmdSet" id="FsiConsoleEditGrp" priority="0x200">
+        <Parent guid="guidFsiConsoleCmdSet" id="cmdIDFsiConsoleContextMenu"/>
+      </Group>
+      <Group guid="guidFsiConsoleCmdSet" id="FsiConsoleClearGrp" priority="0x300">
+        <Parent guid="guidFsiConsoleCmdSet" id="cmdIDFsiConsoleContextMenu"/>
+      </Group>
+    </Groups>
+    <Menus>
+      <Menu guid="guidFsiConsoleCmdSet" id="cmdIDFsiConsoleContextMenu" priority="0x0000" type="Context">
+        <Parent guid="guidFsiConsoleCmdSet" id="0"/>
+        <Strings>
+          <ButtonText>FSI Console Context</ButtonText>
+          <CommandName>FSI Console Context</CommandName>
+        </Strings>
+      </Menu>
+    </Menus>
+
+    <Buttons>
+      <Button guid="guidFsiPackageCmdSet" id="cmdidFsiToolWindow" priority="0x8000" type="Button"> <!-- low priority -->
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1"/>
+        <!-- Icon guid="guidImages" id="bmpPic2" /--> 
+        <Icon guid="guidFsiConsoleBmp" id="bmpConsole" />
+        <Strings>
+          <CommandName>FSharp.Interactive.ToolWindow</CommandName>
+          <ButtonText>F# Interactive</ButtonText>
+        </Strings>
+      </Button>
+
+      <!-- In Dev11+, shell now has 
+      <Button guid ="guidVSStd11" id ="cmdidInteractiveSessionInterrupt" priority ="0x100" type ="Button">
+      <Button guid ="guidVSStd11" id ="cmdidInteractiveSessionRestart" priority ="0x105" type ="Button">
+      -->
+      <Button guid="guidFsiConsoleCmdSet" id="cmdidAttachDebugger" priority="0x0100" type="Button">
+        <Strings>
+          <CommandName>FSharp.Interactive.AttachDebugger</CommandName>
+          <ButtonText>Start Debugging</ButtonText>
+        </Strings>
+        <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
+      </Button>
+      
+      <Button guid="guidFsiConsoleCmdSet" id="cmdidDetachDebugger" priority="0x0101" type="Button">
+        <Strings>
+          <CommandName>FSharp.Interactive.DetachDebugger</CommandName>
+          <ButtonText>Stop Debugging</ButtonText>
+        </Strings>
+        <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
+      </Button>
+
+      <!-- The following places a button on the F# Editor Context Menu -->
+      <!-- In Dev11+, shell now has 
+      <Button guid ="guidVSStd11" id ="cmdidExecuteSelectionInInteractive" priority ="0x100" type ="Button">
+      -->
+      <Button guid ="guidInteractive" id ="cmdidDebugSelection" priority ="0x106" type ="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_CODEWIN_LANGUAGE"/>
+        <Strings>
+          <ButtonText>Debug In Interactive</ButtonText>
+          <CommandName>Interactive.Debug.Selection.Context</CommandName>
+        </Strings>
+       <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
+      </Button>
+    </Buttons>
+  </Commands>
+
   <Commands package ="FSharpProjectPackage">
     <Groups>
       <Group guid ="FSharpProjectCmdSet"  id ="MyFSharpGroup" priority ="0x100" />
@@ -45,7 +150,7 @@
       <Group guid="FSharpProjectCmdSet" id="FSharpSendReferencesToInteractiveGroup" priority="0x105" />
       <Group guid="FSharpProjectCmdSet" id="FSharpSendProjectOutputToInteractiveGroup" priority="0x105" />
     </Groups>
-    <Menus >
+    <Menus>
       <Menu guid ="FSharpProjectCmdSet"  id ="FSharpAddBelowMenu" priority ="0x305" type ="Menu">
         <Parent guid="FSharpProjectCmdSet" id="MyFSharpGroup"/>
         <Strings>
@@ -204,15 +309,96 @@
       </Button>
     </Buttons>
     <Bitmaps>
+      <Bitmap guid="guidImages" href="Resources\Images_32bit.bmp" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows"/>
+      <Bitmap guid="guidFsiConsoleBmp" href="Resources\TabIcon.png" />
+      <Bitmap guid="guidCancelEvaluationBmp" href="Resources\CancelEvaluation.bmp" usedList="bmpConsole"/>
+      <Bitmap guid="guidResetSessionBmp" href="Resources\ResetSession.bmp" usedList="bmpConsole"/>
       <Bitmap guid="FSharpMoveUpBmp" href="Resources\MoveUp.bmp" usedList="moveUp"/>
       <Bitmap guid="FSharpMoveDownBmp" href="Resources\MoveDown.bmp" usedList="moveDown"/>
     </Bitmaps>
   </Commands>
   <KeyBindings>
+    <KeyBinding guid ="guidVSStd11" id ="cmdidExecuteSelectionInInteractive" editor="guidFSharpEditorFactory" key1="VK_RETURN" mod1="Alt"  />
+    <KeyBinding guid ="guidVSStd11" id ="cmdidExecuteLineInInteractive" editor="guidFSharpEditorFactory" key1="VK_OEM_7" mod1="Alt"  />
+
+    <!-- CRTL-ALT-F for FSI window - following similar bindings for "other windows" -->
+    <KeyBinding guid="guidFsiPackageCmdSet" id="cmdidFsiToolWindow"    editor="guidVSStd97" key1="F" mod1="Control Alt" />
+
+    <!-- CRTL-Break when in FSI ToolWindow is Interrupt -->
+    <KeyBinding guid="guidVSStd11" id="cmdidInteractiveSessionInterrupt" editor="guidFsiToolWindow" key1="VK_CANCEL" mod1="Control" />
+
+    <!-- CRTL-Alt-R when in FSI ToolWindow is Reset -->
+    <KeyBinding guid="guidVSStd11" id="cmdidInteractiveSessionRestart" editor="guidFsiToolWindow" key1="R" mod1="Control Alt" />
+
+     <!-- CRTL-Alt-C when in FSI ToolWindow is Clear All -->
+    <KeyBinding guid="guidVSStd97" id="cmdidClearPane" editor="guidFsiToolWindow" key1="C" mod1="Control Alt" />
+
+    <!-- CRTL-Alt-D when in FSI ToolWindow is attach debugger -->
+    <KeyBinding guid="guidFsiConsoleCmdSet" id="cmdidAttachDebugger" editor="guidFsiToolWindow" key1="D" mod1="Control Alt" />
+
+    <!-- CRTL-Shift-D when in FSI ToolWindow is detach debugger -->
+    <KeyBinding guid="guidFsiConsoleCmdSet" id="cmdidDetachDebugger" editor="guidFsiToolWindow" key1="D" mod1="Control Shift" />
     <KeyBinding guid="FSharpProjectCmdSet" id="MoveUpCmd" editor="SlnExplorerGuid" key1="VK_UP" mod1="Alt" />
     <KeyBinding guid="FSharpProjectCmdSet" id="MoveDownCmd" editor="SlnExplorerGuid" key1="VK_DOWN" mod1="Alt" />
   </KeyBindings>
   <Symbols>
+    <!-- FSI-LINKAGE-POINT: choose the right package guid. -->
+    <!-- GuidSymbol name="guidFsiPkg" value="{eeeeeeee-9342-42f1-8ea9-42f0e8a6be55}" /-->  <!-- fsi package guid    -->
+    <GuidSymbol name="guidFsiPkg" value="{871D2A70-12A2-4e42-9440-425DD92A4116}" />        <!-- fsharp package guid -->
+
+    <GuidSymbol name="guidFSharpEditorFactory" value="{8a5aa6cf-46e3-4520-a70a-7393d15233e9}" /> <!-- FSharpEditorFactory Guid --> 
+    <GuidSymbol name="GUID_CMDSETID_StandardCommandSet2K" value="{1496A755-94DE-11D0-8C3F-00C04FC2AAE2}" /> <!-- See stdidcmd.h -->
+    <GuidSymbol name="guidFsiToolWindow"      value="{dee22b65-9761-4a26-8fb2-759b971d6dfc}" />
+    <GuidSymbol name="guidFsharpEditorUIContext" value="{63492653-460B-4bcc-B57B-233FD0F1F33D}" />
+    <GuidSymbol name="guidFsharpLanguageService" value="{BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B}" />
+
+    <!-- This is the guid used to group the menu commands together -->
+    <GuidSymbol name="guidFsiPackageCmdSet" value="{0be3b0d7-4fc2-45bf-a168-957e8a8834d0}">
+      <IDSymbol name="MyMenuGroup" value="0x1020" />
+      <IDSymbol name="cmdidFsiToolWindow" value="0x0101" />
+    </GuidSymbol> 
+
+    <GuidSymbol name="guidImages" value="{43ba0ca6-658b-43a7-8773-b5f9506b4335}" >
+      <IDSymbol name="bmpPic1" value="1" />
+      <IDSymbol name="bmpPic2" value="2" />
+      <IDSymbol name="bmpPicSearch" value="3" />
+      <IDSymbol name="bmpPicX" value="4" />
+      <IDSymbol name="bmpPicArrows" value="5" />
+    </GuidSymbol>
+
+    <GuidSymbol name="guidFsiConsoleCmdSet" value="{0E455B35-F2EB-431b-A0BE-B268D8A7D17F}" >
+      <IDSymbol name="cmdIDFsiConsoleContextMenu" value="0x2100" />
+      <IDSymbol name="MyMenuGroup" value="0x1020" />
+      <IDSymbol name="FsiConsoleEditGrp" value="0x1030" />
+      <IDSymbol name="FsiConsoleClearGrp" value="0x1040" />
+      <IDSymbol name="FsiConsoleSessionsGrp" value="0x1050" />
+      <IDSymbol name="cmdidFsiConsole" value="0x101" />
+      <IDSymbol name="cmdidAttachDebugger" value="0x104" />
+      <IDSymbol name="cmdidDetachDebugger" value="0x105" />
+     </GuidSymbol>
+
+    <GuidSymbol name="guidFsiConsoleBmp" value="{01F8DC29-935A-4460-8D5D-F213B4CFA7EA}" >
+      <IDSymbol name="bmpConsole" value="0x01" />
+    </GuidSymbol>
+
+    <GuidSymbol name="guidCancelEvaluationBmp" value="{28D7068A-2B32-4CD0-AA0E-AB119744E7C0}" >
+      <IDSymbol name="bmpConsole" value="0x01" />
+    </GuidSymbol>
+
+    <GuidSymbol name="guidResetSessionBmp" value="{E8B33A9E-F5A0-492B-BB84-EC294A164CFD}" >
+      <IDSymbol name="bmpConsole" value="0x01" />
+    </GuidSymbol>
+
+    <GuidSymbol name="guidVSStd11" value="{D63DB1F0-404E-4B21-9648-CA8D99245EC3}" >
+      <IDSymbol name="cmdidExecuteSelectionInInteractive" value ="0x018"/>
+      <IDSymbol name="cmdidExecuteLineInInteractive" value ="0x019"/>
+      <IDSymbol name="cmdidInteractiveSessionInterrupt" value ="0x01A"/>
+      <IDSymbol name="cmdidInteractiveSessionRestart" value ="0x01B"/>
+    </GuidSymbol>
+
+    <GuidSymbol name="guidInteractive" value="{8B9BF77B-AF94-4588-8847-2EB2BFFD29EB}" >
+      <IDSymbol name="cmdidDebugSelection" value ="0x01"/>
+    </GuidSymbol>
     <GuidSymbol name ="FSharpProjectPackage" value ="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}" />
     <GuidSymbol name ="FSharpProjectCmdSet" value ="{75AC5611-A912-4195-8A65-457AE17416FB}">
       <IDSymbol name ="MyFSharpGroup" value ="0x4001"/>
