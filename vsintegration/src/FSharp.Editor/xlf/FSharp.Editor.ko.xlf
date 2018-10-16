@@ -153,6 +153,11 @@
         <note />
       </trans-unit>
       <trans-unit id="6013">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6014">
         <source>Formatting</source>
         <target state="new">Formatting</target>
         <note />

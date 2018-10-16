@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">Возникла проблема при запуске процесса F# Interactive. Это может быть вызвано известной проблемой с поддержкой консоли фонового процесса для приложений с поддержкой Юникода в некоторых системах Windows. Попробуйте выбрать "Сервис-&gt;Параметры-&gt;F# Interactive для Visual Studio" и ввести "--fsi-server-no-unicode".</target>
+        <target state="translated">Возникла проблема при запуске процесса F# Interactive. Это может быть вызвано известной проблемой с поддержкой консоли фонового процесса для приложений с поддержкой Юникода в некоторых системах Windows. Попробуйте выбрать "Сервис" -&gt; "Параметры" -&gt; "F# Interactive для Visual Studio" и ввести "--fsi-server-no-unicode".</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -134,7 +134,7 @@
       </trans-unit>
       <trans-unit id="fsiExceptionDuringPrettyPrinting">
         <source>\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</source>
-        <target state="translated">\n\nВозникло исключение при качественной печати.\nОтправьте отчет об этой неполадке для ее устранения.\nТрассировка: {0}\n</target>
+        <target state="translated">\n\nВозникло исключение при автоматическом форматировании.\nОтправьте отчет об этой неполадке для ее устранения.\nТрассировка: {0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
         <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">Предотвращает блокировку ссылок интерактивным процессом F#.</target>
+        <target state="translated">Предотвращает блокировку ссылок процессом F# Interactive.</target>
         <note />
       </trans-unit>
     </body>

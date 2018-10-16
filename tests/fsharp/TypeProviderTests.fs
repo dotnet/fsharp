@@ -30,6 +30,7 @@ let FSI_BASIC = FSI_FILE
 let FSIANYCPU_BASIC = FSIANYCPU_FILE
 #endif
 
+(*
 [<Test>]
 let diamondAssembly () = 
     let cfg = testConfig "typeProviders/diamondAssembly"
@@ -358,3 +359,4 @@ let wedgeAssembly () =
     peverify cfg "test3.exe"
 
     exec cfg ("." ++ "test3.exe") ""
+*)

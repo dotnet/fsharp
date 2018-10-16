@@ -83,18 +83,18 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">列表构造函数表达式的所有元素必须具有同一类型。此表达式的类型应为“{0}”，但此处类型为“{1}”。</target>
+        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="needs-review-translation">列表构造函数表达式的所有元素必须具有同一类型。此表达式的类型应为“{0}”，但此处类型为“{1}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">数组构造函数表达式的所有元素必须具有同一类型。此表达式的类型应为“{0}”，但此处类型为“{1}”。</target>
+        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="needs-review-translation">数组构造函数表达式的所有元素必须具有同一类型。此表达式的类型应为“{0}”，但此处类型为“{1}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
-        <source>The 'if' expression is missing an 'else' branch. The 'then' branch has type '{0}'. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type.</source>
-        <target state="translated">if 表达式缺少 "else" branch。"then" branch 的类型为“{0}”。因为 "if" 是一个表达式，而非语句，请添加将返回同一类型值的 "else" branch。</target>
+        <source>This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type '{0}'.</source>
+        <target state="needs-review-translation">if 表达式缺少 "else" branch。"then" branch 的类型为“{0}”。因为 "if" 是一个表达式，而非语句，请添加将返回同一类型值的 "else" branch。</target>
         <note />
       </trans-unit>
       <trans-unit id="ifExpression">
@@ -103,13 +103,13 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">if 表达式的所有分支必须具有同一类型。此表达式的类型应为“{0}”，但此处类型为“{1}”。</target>
+        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="needs-review-translation">if 表达式的所有分支必须具有同一类型。此表达式的类型应为“{0}”，但此处类型为“{1}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">模式匹配表达式的所有分支必须具有同一类型。此表达式的类型应为“{0}”，但此处类型为“{1}”。</target>
+        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="needs-review-translation">模式匹配表达式的所有分支必须返回相同类型的值。第一个分支返回“{0}”类型的值，但此分支返回“{1}”类型的值。</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -410,11 +410,6 @@
       <trans-unit id="tastUnexpectedByRef">
         <source>Unexpected use of a byref-typed variable</source>
         <target state="translated">对 byref 类型化变量的意外使用</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tastValueMustBeMutable">
-        <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
-        <target state="translated">值必须是可变的，以便更改内容或采用值类型的地址，例如“let mutable x = ...”</target>
         <note />
       </trans-unit>
       <trans-unit id="tastInvalidMutationOfConstant">
@@ -5128,13 +5123,13 @@
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
-        <source>Type parameters must be placed directly adjacent to the type name, e.g. \"type C&lt;'T&gt;\", not     type \"C   &lt;'T&gt;\"</source>
-        <target state="translated">必须将类型参数直接放置到类型名称的旁边，例如 \"type C&lt;'T&gt;\"，而非 type \"C   &lt;'T&gt;\"</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="needs-review-translation">必须将类型参数直接放置到类型名称的旁边，例如 \"type C&lt;'T&gt;\"，而非 type \"C   &lt;'T&gt;\"</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
-        <source>Type arguments must be placed directly adjacent to the type name, e.g. \"C&lt;'T&gt;\", not \"C  &lt;'T&gt;\"</source>
-        <target state="translated">必须将类型参数直接放置到类型名称的旁边，例如 \"C&lt;'T&gt;\"，而非 \"C  &lt;'T&gt;\"</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="needs-review-translation">必须将类型参数直接放置到类型名称的旁边，例如 \"C&lt;'T&gt;\"，而非 \"C  &lt;'T&gt;\"</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
@@ -5439,7 +5434,7 @@
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
         <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="translated">{0} 指定的版本“{1}”，但此值无效，已被忽略</target>
+        <target state="translated">属性 {0} 指定版本“{1}”，但此值无效，已被忽略</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">
@@ -6333,8 +6328,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseConstructorDoesNotHaveFieldWithGivenName">
-        <source>Union case/exception '{0}' does not have field named '{1}'.</source>
-        <target state="translated">联合用例/异常“{0}”没有名为“{1}”的字段。</target>
+        <source>The union case '{0}' does not have a field named '{1}'.</source>
+        <target state="needs-review-translation">联合用例/异常“{0}”没有名为“{1}”的字段。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseFieldCannotBeUsedMoreThanOnce">
@@ -6520,11 +6515,6 @@
       <trans-unit id="tcCouldNotFindOffsetToStringData">
         <source>Could not find method System.Runtime.CompilerServices.OffsetToStringData in references when building 'fixed' expression.</source>
         <target state="translated">生成 "fixed" 表达式时，在引用中找不到方法 System.Runtime.CompilerServices.OffsetToStringData。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="chkNoByrefReturnOfLocal">
-        <source>The address of the variable '{0}' cannot be used at this point. A method or function may not return the address of this local value.</source>
-        <target state="translated">当前无法使用变量 {0} 的地址。方法或函数可能没有返回该本地值的地址。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamedActivePattern">
@@ -6718,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
-        <source>Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.</source>
-        <target state="translated">在异步工作流中用于将名称绑定到异步计算的结果，或在其他计算表达式中，用于将名称绑定到属于计算类型的结果。</target>
+        <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
+        <target state="review-required-translation">在异步工作流中用于将名称绑定到异步计算的结果，或在其他计算表达式中，用于将名称绑定到属于计算类型的结果。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6798,13 +6788,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
-        <source>Used to indicate a value to provide as the result of a computation expression.</source>
-        <target state="translated">用于表示一个可作为计算表达式的结果提供的值。</target>
+        <source>Used to provide a value for the result of the containing computation expression.</source>
+        <target state="review-required-translation">用于表示一个可作为计算表达式的结果提供的值。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
-        <source>Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.</source>
-        <target state="translated">用于表示一种计算表达式，该表达式在计算时，提供包含计算表达式的结果。</target>
+        <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
+        <target state="review-required-translation">用于表示一种计算表达式，该表达式在计算时，提供包含计算表达式的结果。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6848,13 +6838,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that require Dispose to be called to free resources.</source>
-        <target state="translated">用于替代 let，以便要求 Dispose 的值可调用到免费资源。</target>
+        <source>Used instead of let for values that implement IDisposable"</source>
+        <target state="needs-review-translation">用于替代 let，以便要求 Dispose 的值可调用到免费资源。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
-        <source>Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.</source>
-        <target state="translated">用于替代异步工作流和其他计算表达式中的 let!，以便要求 Dispose 的值可调用到免费资源。</target>
+        <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
+        <target state="review-required-translation">用于替代异步工作流和其他计算表达式中的 let!，以便要求 Dispose 的值可调用到免费资源。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">
@@ -6982,9 +6972,114 @@
         <target state="translated">此表达式返回类型为“{0}”的值，但被隐式放弃。请考虑使用 "let" 将结果绑定到名称，例如 "let result = expression"。如果要使用该表达式作为序列中的值，则使用显式 "yield!"。</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionMatchBang">
+        <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
+        <target state="translated">在计算表达式中用于直接对另一个计算表达式的结果进行模式匹配。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilreadFileChanged">
         <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
         <target state="translated">文件“{0}”在磁盘上意外更改，请重新加载。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="writeToReadOnlyByref">
+        <source>The byref pointer is readonly, so this write is not permitted.</source>
+        <target state="translated">此 byref 指针为只读，因此，不允许此写入。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastValueMustBeMutable">
+        <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
+        <target state="translated">值必须是可变的，以便更改内容或采用值类型的地址，例如“let mutable x = ...”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="readOnlyAttributeOnStructWithMutableField">
+        <source>A ReadOnly attribute has been applied to a struct type with a mutable field.</source>
+        <target state="translated">已对包含可变字段的结构类型应用只读属性。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcByrefReturnImplicitlyDereferenced">
+        <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
+        <target state="translated">截至 F# 4.5，隐式取消引用函数或方法返回的 byref 指针。若要获取返回值作为指针，请使用 address-of 运算符，例如 “&amp;f(x)” 或 “&amp;obj.Method(arg1, arg2)”。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcByRefLikeNotStruct">
+        <source>A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
+        <target state="translated">使用 IsByRefLike 注释的类型也必须为结构。考虑将 [&lt;Struct&gt;] 属性添加到类型中。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefAddressOfLocal">
+        <source>The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">此时无法使用变量“{0}”或相关表达式的地址。这是为了确保本地值的地址不超出其范围。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoWriteToLimitedSpan">
+        <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
+        <target state="translated">无法分配此值，因为目标“{0}”可能涉及非堆栈本地内存，而分配的表达式经评估可能涉及堆栈本地内存。这有助于防止指向堆栈绑定内存的指针超出其范围。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastValueMustBeLocal">
+        <source>A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</source>
+        <target state="translated">在模块中定义的值必须是可变的，以便获取其地址，例如 “let mutable x = ...”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcIsReadOnlyNotStruct">
+        <source>A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
+        <target state="translated">使用 IsReadOnly 注释的类型也必须为结构。考虑将 [&lt;Struct&gt;] 属性添加到类型中。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkStructsMayNotReturnAddressesOfContents">
+        <source>Struct members cannot return the address of fields of the struct by reference</source>
+        <target state="translated">结构成员无法通过引用返回此结构的字段地址</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefLikeFunctionCall">
+        <source>The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">此时无法使用函数或方法调用，因为结合使用了一个非堆栈本地 Span 或 IsByRefLike 类型的 byref 参数和另一堆栈本地 Span 或 IsByRefLike 类型的参数。这是为了确保本地值的地址不超出其范围。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefAddressOfValueFromExpression">
+        <source>The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">此时无法使用从表达式返回的值的地址。这是为了确保本地值的地址不超出其范围。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoSpanLikeVariable">
+        <source>The Span or IsByRefLike variable '{0}' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">此时无法使用 Span 或 IsByRefLike 变量“{0}”。这是为了确保本地值的地址不超出其范围。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoSpanLikeValueFromExpression">
+        <source>A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">此时无法使用从表达式返回的 Span 或 IsByRefLike 值。这是为了确保本地值的地址不超出其范围。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastCantTakeAddressOfExpression">
+        <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
+        <target state="translated">无法采用从表达式返回的地址值。在采用地址前将返回值分配给 let 绑定值。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoReturnOfLimitedSpan">
+        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
+        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDoesNotInheritAttribute">
+        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
+        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcExceptionConstructorDoesNotHaveFieldWithGivenName">
+        <source>The exception '{0}' does not have a field named '{1}'.</source>
+        <target state="new">The exception '{0}' does not have a field named '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcConstructorDoesNotHaveFieldWithGivenName">
+        <source>The constructor does not have a field named '{0}'.</source>
+        <target state="new">The constructor does not have a field named '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcActivePatternsDoNotHaveFields">
+        <source>Active patterns do not have fields. This syntax is invalid.</source>
+        <target state="new">Active patterns do not have fields. This syntax is invalid.</target>
         <note />
       </trans-unit>
     </body>

@@ -31,13 +31,15 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Tests.FSharpSuite", 
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.UnitTests", "tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj", "{A8D9641A-9170-4CF4-8FE0-6DB8C134E1B5}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Core.UnitTests", "tests\FSharp.Core.UnitTests\FSharp.Core.Unittests.fsproj", "{88E2D422-6852-46E3-A740-83E391DC7973}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Core.UnitTests", "tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj", "{88E2D422-6852-46E3-A740-83E391DC7973}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Compiler", "Compiler", "{3881429D-A97A-49EB-B7AE-A82BA5FE9C77}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{B8DDA694-7939-42E3-95E5-265C2217C142}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{3058BC79-8E79-4645-B05D-48CC182FA8A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fsharpqafiles", "tests\fsharpqa\fsharpqafiles.csproj", "{AAAAD274-696A-49EC-AAAA-F870BE91AAAA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -181,6 +183,17 @@ Global
 		{88E2D422-6852-46E3-A740-83E391DC7973}.Release|Any CPU.Build.0 = Release|Any CPU
 		{88E2D422-6852-46E3-A740-83E391DC7973}.Release|x86.ActiveCfg = Release|Any CPU
 		{88E2D422-6852-46E3-A740-83E391DC7973}.Release|x86.Build.0 = Release|Any CPU
+		{AAAAD274-696A-49EC-AAAA-F870BE91AAAA}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{AAAAD274-696A-49EC-AAAA-F870BE91AAAA}.Debug|x86.ActiveCfg = Debug|x86
+		{AAAAD274-696A-49EC-AAAA-F870BE91AAAA}.Debug|x86.Build.0 = Debug|x86
+		{AAAAD274-696A-49EC-AAAA-F870BE91AAAA}.Proto|Any CPU.ActiveCfg = Debug|x86
+		{AAAAD274-696A-49EC-AAAA-F870BE91AAAA}.Proto|Any CPU.Build.0 = Debug|x86
+		{AAAAD274-696A-49EC-AAAA-F870BE91AAAA}.Proto|x86.ActiveCfg = Debug|x86
+		{AAAAD274-696A-49EC-AAAA-F870BE91AAAA}.Proto|x86.Build.0 = Debug|x86
+		{AAAAD274-696A-49EC-AAAA-F870BE91AAAA}.Release|Any CPU.ActiveCfg = Debug|x86
+		{AAAAD274-696A-49EC-AAAA-F870BE91AAAA}.Release|Any CPU.Build.0 = Debug|x86
+		{AAAAD274-696A-49EC-AAAA-F870BE91AAAA}.Release|x86.ActiveCfg = Debug|x86
+		{AAAAD274-696A-49EC-AAAA-F870BE91AAAA}.Release|x86.Build.0 = Debug|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -197,5 +210,9 @@ Global
 		{C163E892-5BF7-4B59-AA99-B0E8079C67C4} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 		{A8D9641A-9170-4CF4-8FE0-6DB8C134E1B5} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 		{88E2D422-6852-46E3-A740-83E391DC7973} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
+		{AAAAD274-696A-49EC-AAAA-F870BE91AAAA} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BD5177C7-1380-40E7-94D2-7768E1A8B1B8}
 	EndGlobalSection
 EndGlobal

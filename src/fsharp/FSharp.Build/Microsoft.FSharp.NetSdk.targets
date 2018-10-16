@@ -36,11 +36,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </ItemGroup>
 
   <PropertyGroup>
-    <_TargetFrameworkVersionWithoutV>$(TargetFrameworkVersion)</_TargetFrameworkVersionWithoutV>
-    <_TargetFrameworkVersionWithoutV Condition="$(TargetFrameworkVersion.StartsWith('v'))">$(TargetFrameworkVersion.Substring(1))</_TargetFrameworkVersionWithoutV>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' " >mscorlib</TargetProfile>
     <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' != '.NETFramework' " >netcore</TargetProfile>
     <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' == '.NETStandard' and '$(_TargetFrameworkVersionWithoutV)' >= '2.0' " >netstandard</TargetProfile>
@@ -54,58 +49,8 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </PropertyGroup>
 
   <PropertyGroup>
-    <_FrameworkNeedsValueTupleReference Condition=" ('$(TargetFrameworkIdentifier)' == '.NETStandard' or '$(TargetFrameworkIdentifier)' == '.NETCoreApp') and !('$(_TargetFrameworkVersionWithoutV)' >= '2.0') ">true</_FrameworkNeedsValueTupleReference>
-    <_FrameworkNeedsValueTupleReference Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' and 
-                                                    ('$(_TargetFrameworkVersionWithoutV)' == '' or
-                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.0' or 
-                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.5' or 
-                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6' or
-                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6.1' or
-                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6.2' or
-                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.7') ">true</_FrameworkNeedsValueTupleReference>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
-
-  <Target Name="FSharpCorePackageReferences" BeforeTargets="CollectPackageReferences;">
-    <ItemGroup>
-      <FSharpCorePackages Include="@(PackageReference)" Condition=" '%(Identity)' == 'FSharp.Core' " />
-      <PackageReference Update="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)" 
-                        Condition=" ('%(PackageReference.Identity)' == 'FSharp.Core') 
-                                and ('%(PackageReference.Version)' == '$(DefaultFSharpPackageVersion)') 
-                                and ('%(PackageReference.DefaultInclude)' == 'true') 
-                                and ('$(DisableImplicitFSharpCoreReference)' != 'true') 
-                                and ('$(FSharpCoreImplicitPackageVersion)' != '') 
-                                and (@(FSharpCorePackages->Count()) == 1) " />
-      <PackageReference Remove="FSharp.Core" 
-                       Condition=" (('$(DisableImplicitFSharpCoreReference)' == 'true') or (@(FSharpCorePackages->Count()) &gt; 1))
-                                and ('%(PackageReference.Identity)' == 'FSharp.Core') 
-                                and ('%(PackageReference.Version)' == '$(DefaultFSharpPackageVersion)') 
-                                and ('%(PackageReference.DefaultInclude)' == 'true') " />
-    </ItemGroup>
-  </Target>
-
-  <Target Name="ValueTuplePackageReferences" BeforeTargets="CollectPackageReferences;">
-    <Message Text="PackageReferences: ValueTuplePackageReferences start : @(PackageReference)" />
-    <ItemGroup>
-      <ValueTuplePackages Include="@(PackageReference)" Condition=" '%(Identity)' == 'System.ValueTuple' " />
-      <PackageReference Update="System.ValueTuple" Version="$(ValueTupleImplicitPackageVersion)"
-                        Condition=" ('%(PackageReference.Identity)' == 'System.ValueTuple')
-                                and ('%(PackageReference.Version)' == '$(DefaultValueTuplePackageVersion)') 
-                                and ('%(PackageReference.DefaultInclude)' == 'true') 
-                                and ('$(ValueTupleImplicitPackageVersion)' != '') 
-                                and ('$(DisableImplicitSystemValueTupleReference)' != 'true') 
-                                and ('$(_FrameworkNeedsValueTupleReference)' == 'true') 
-                                and (@(ValueTuplePackages->Count()) == 1) " />
-      <PackageReference Remove="System.ValueTuple" 
-                        Condition=" ( ('$(DisableImplicitSystemValueTupleReference)' == 'true') or ('$(_FrameworkNeedsValueTupleReference)' != 'true') or (@(ValueTuplePackages->Count()) &gt; 1) ) 
-                                and ('%(PackageReference.Identity)' == 'System.ValueTuple') 
-                                and ('%(PackageReference.Version)' == '$(DefaultValueTuplePackageVersion)') 
-                                and ('%(PackageReference.DefaultInclude)' == 'true') " />
-    </ItemGroup>
-  </Target>
 
   <Target Name="PackageFSharpDesignTimeTools" DependsOnTargets="_GetFrameworkAssemblyReferences">
     <PropertyGroup>

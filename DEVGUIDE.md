@@ -1,5 +1,19 @@
 # Development Guide
 
+## Get the Latest F# Compiler Source Code
+
+Get the latest source code from the master branch by running this git command:
+
+    git clone https://github.com/Microsoft/visualfsharp.git
+    
+Before running the build scripts, ensure that you have cleaned up the visualfsharp repo by running this git command:
+
+    git clean -xfd
+
+This will remove any files that are not under version control. This is necessary only if you have already attempted to build the solution or have made other changes that might prevent it from building.
+
+## Installing Dependencies and Building
+
 Follow the instructions below to build and develop the F# Compiler, Core Library and tools on Windows, macOS and Linux.
 
 - [Developing the F# Compiler (Windows)](#developing-the-f-compiler-windows)
@@ -19,10 +33,6 @@ Install
 1. It is recommended to run `build.cmd` in a command prompt with path set to have the location of MSBuild. If you have Visual Studio, we can run using `Developer Command Prompt for Visual Studio 20xx` (depends on Visual Studio version). This developer command prompt is easier to use than normal command prompt, because it already has the correct path of Visual Studio and .NET's tooling set for us to use (including MSBuild).
 
 2. The command prompt must have Administrator rights (`Run as Administrator`).
-
-Before running the build scripts, ensure that you have cleaned up the visualfsharp repo by running this git command:
-
-    git clean -xfd
 
 On Windows you can build the F# compiler for .NET Framework as follows:
 
@@ -120,7 +130,8 @@ Testing the .NET Core version of the F# compiler on macOS and Linux is TBD.
 
 To build and test Visual F# IDE Tools, install these requirements:
 
-- [Visual Studio 2017](https://www.visualstudio.com/downloads/)
+- Download [Visual Studio 2017](https://www.visualstudio.com/downloads/)
+- Launch the Visual Studio Installer
   - Under the "Windows" workloads, select ".NET desktop development"
     - Select "F# desktop language support" under the optional components
   - Under the "Other Toolsets" workloads, select "Visual Studio extension development"
@@ -195,7 +206,11 @@ For **Release**:
 
     vsintegration\update-vsintegration.cmd release
 
-# Notes
+## Debugging the F# Compiler
+
+See the "Debugging The Compiler" section of this [article](https://medium.com/@willie.tetlow/f-mentorship-week-1-36f51d3812d4)
+
+## Notes
 
 #### Windows: Links to  Additional frameworks
 
@@ -221,6 +236,10 @@ If you change error messages you may need to update FSComp.fs in `src\buildfroms
 
 To do this, build the non-buildfromsource version of FSharp.Compiler.Private (src\fsharp\FSharp.Compiler.Private) then check its obj\ directory for `FSComp.fs` and manually copy that into the buildfromsource directory.
 
+    .\build net40
+    copy /y src\fsharp\FSharp.Compiler.Private\obj\release\net40\FSComp.* src\buildfromsource\FSharp.Compiler.Private\
+
+You can also change build.cmd to default COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES to 1 under ":ARGUMENTS_OK" label.
 
 #### Configuring proxy server
 

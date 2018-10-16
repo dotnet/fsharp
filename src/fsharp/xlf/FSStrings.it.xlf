@@ -797,6 +797,11 @@
         <target state="translated">parola chiave 'match'</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.MATCH.BANG">
+        <source>keyword 'match!'</source>
+        <target state="translated">parola chiave 'match!'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.MUTABLE">
         <source>keyword 'mutable'</source>
         <target state="translated">parola chiave 'mutable'</target>

@@ -12,12 +12,14 @@
     <PackageProjectUrl Condition="'$(PackageProjectUrl)' == ''">https://github.com/Microsoft/visualfsharp</PackageProjectUrl>
     <PackageAuthors    Condition="'$(PackageAuthors)' == ''"   >Microsoft and F# Software Foundation</PackageAuthors>
     <PackageTags       Condition="'$(PackageTags)' == ''"      >Visual F# Compiler FSharp functional programming</PackageTags>
+    <PackageOwners     Condition="'$(PackageOwners)' == ''"    >Microsoft and F# Software Foundation</PackageOwners>
+    <PackageCopyright  Condition="'$(PackageCopyright)' == ''" >(C) Microsoft Corporation. All rights reserved.</PackageCopyright>
+    <PackageRequireLicenceAcceptence  Condition="'$(PackageRequireLicenceAcceptence)' == ''"    >true</PackageRequireLicenceAcceptence>
     <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\artifacts</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageNuspec Include="FSharp.Core.LatestNuget.nuspec" />
-    <PackageNuspec Include="FSharp.Core.4.1.xxx.nuspec" />
+    <PackageNuspec Include="FSharp.Core.nuspec" />
     <PackageNuspec Include="Microsoft.Portable.FSharp.Core.nuspec" />
   </ItemGroup>
 
@@ -55,16 +57,13 @@
       <PackageVersion Condition="'@(PackageNuspec)' == 'Microsoft.Portable.FSharp.Core.nuspec'">$(FSharpCoreFrozenPortableTargetPackageVersion)</PackageVersion>
       <PackageMajorVersion Condition="'@(PackageNuspec)' == 'Microsoft.Portable.FSharp.Core.nuspec'">$(FSharpCoreFrozenPortableTargetMajorVersion)</PackageMajorVersion>
 
-      <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.1.xxx.nuspec'">$(FSharpCore41TargetPackageVersion)</PackageVersion>
-      <PackageMajorVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.1.xxx.nuspec'">$(FSharpCore41TargetMajorVersion)</PackageMajorVersion>
-
-      <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.LatestNuget.nuspec'">$(FSharpCoreLatestTargetPackageVersion)</PackageVersion>
-      <PackageMajorVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.LatestNuget.nuspec'">$(FSharpCoreLatestTargetMajorVersion)</PackageMajorVersion>
+      <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.nuspec'">$(FSCorePackageVersion)</PackageVersion>
+      <PackageMajorVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.nuspec'">$(FSCoreMajorVersion)</PackageMajorVersion>
 
       <!-- can't have &lt; and &gt; which happens when building locally -->
       <NormalizedGitHeadSha>$(GitHeadSha)</NormalizedGitHeadSha>
       <NormalizedGitHeadSha Condition="'$(NormalizedGitHeadSha)' == '&lt;developer build&gt;'">[developer build]</NormalizedGitHeadSha>
-      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)" -prop "githeadsha=$(NormalizedGitHeadSha)"</PackageProperties>
+      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)" -prop "githeadsha=$(NormalizedGitHeadSha)" -prop "owners=$(PackageOwners)" -prop "copyright=$(PackageCopyright)" -prop "requireLicenseAcceptance=$(PackageRequireLicenceAcceptence)"</PackageProperties>
     </PropertyGroup>
 
     <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts\$(PackageMajorVersion)" />

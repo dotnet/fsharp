@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectFiles Include="tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj" />
     <ProjectFiles Include="tests\Salsa\VisualFSharp.Salsa.fsproj" />
     <ProjectFiles Include="tests\UnitTests\VisualFSharp.UnitTests.fsproj" />
     <ProjectFiles Include="..\tests\service\data\TestTP\TestTP.fsproj" />
@@ -24,6 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <SdkProjects Include="tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj" />
     <SdkProjects Include="tests\Salsa\VisualFSharp.Salsa.fsproj" />
     <SdkProjects Include="tests\UnitTests\VisualFSharp.UnitTests.fsproj" />
   </ItemGroup>

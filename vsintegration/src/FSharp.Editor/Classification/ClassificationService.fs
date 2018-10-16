@@ -19,6 +19,8 @@ open Microsoft.CodeAnalysis.Text
 // IVT, we'll maintain the status quo.
 #nowarn "44"
 
+open Microsoft.FSharp.Compiler.SourceCodeServices
+
 [<ExportLanguageService(typeof<IEditorClassificationService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpClassificationService
     [<ImportingConstructor>]
@@ -56,7 +58,10 @@ type internal FSharpClassificationService
                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                     | None -> ()
                     | Some span -> 
-                        let span = Tokenizer.fixupSpan(sourceText, span)
+                        let span = 
+                            match classificationType with
+                            | SemanticClassificationType.Printf -> span
+                            | _ -> Tokenizer.fixupSpan(sourceText, span)
                         result.Add(ClassifiedSpan(span, FSharpClassificationTypes.getClassificationTypeName(classificationType)))
             } 
             |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask cancellationToken

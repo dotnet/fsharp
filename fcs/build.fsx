@@ -24,7 +24,7 @@ let isMono = false
 // Utilities
 // --------------------------------------------------------------------------------------
 
-let dotnetExePath = DotNetCli.InstallDotNetSDK "2.1.100"
+let dotnetExePath = DotNetCli.InstallDotNetSDK "2.1.201"
 
 let runDotnet workingDir args =
     let result =
@@ -77,11 +77,13 @@ Target "Restore" (fun _ ->
     // We assume a paket restore has already been run
     runDotnet __SOURCE_DIRECTORY__ "restore FSharp.Compiler.Service.sln -v n"
     for p in [ "../packages.config" ] do
-        ExecProcess (fun info ->
-            info.FileName <- FullName @"./../.nuget/NuGet.exe"
-            info.WorkingDirectory <- FullName @"./.."
-            info.Arguments <- sprintf "restore %s -PackagesDirectory \"%s\" -ConfigFile \"%s\""   (FullName p) (FullName "./../packages") (FullName "./../NuGet.Config")) TimeSpan.MaxValue
-        |> assertExitCodeZero           
+        let rec executeProcess count =
+            let result = ExecProcess (fun info ->
+                info.FileName <- FullName @"./../.nuget/NuGet.exe"
+                info.WorkingDirectory <- FullName @"./.."
+                info.Arguments <- sprintf "restore %s -PackagesDirectory \"%s\" -ConfigFile \"%s\""   (FullName p) (FullName "./../packages") (FullName "./../NuGet.Config")) TimeSpan.MaxValue
+            if result <> 0 && count > 1 then  executeProcess (count - 1) else result
+        (executeProcess 5) |> assertExitCodeZero
 )
 
 Target "BuildVersion" (fun _ ->

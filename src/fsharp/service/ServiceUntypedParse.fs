@@ -212,6 +212,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
 
                   | SynExpr.NamedIndexedPropertySet (_,e1,e2,_)
                   | SynExpr.DotSet (e1,_,e2,_)
+                  | SynExpr.Set (e1,e2,_)
                   | SynExpr.LibraryOnlyUnionCaseFieldSet (e1,_,_,e2,_)
                   | SynExpr.App (_,_,e1,e2,_) -> 
                       yield! walkExpr false e1 
@@ -264,7 +265,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                   | SynExpr.Lambda (_,_,_,e,_) -> 
                       yield! walkExpr true e 
 
-                  | SynExpr.Match (spBind,e,cl,_,_) ->
+                  | SynExpr.Match (spBind,e,cl,_) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false e 
                       for (Clause(_,whenExpr,e,_,_)) in cl do 
@@ -314,7 +315,14 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                   | SynExpr.LetOrUseBang  (spBind,_,_,_,e1,e2,_) -> 
                       yield! walkBindSeqPt spBind
                       yield! walkExpr true e1
-                      yield! walkExpr true e2 ]
+                      yield! walkExpr true e2
+
+                  | SynExpr.MatchBang (spBind,e,cl,_) ->
+                      yield! walkBindSeqPt spBind
+                      yield! walkExpr false e 
+                      for (Clause(_,whenExpr,e,_,_)) in cl do 
+                          yield! walkExprOpt false whenExpr
+                          yield! walkExpr true e ]
             
             // Process a class declaration or F# type declaration
             let rec walkTycon (TypeDefn(ComponentInfo(_, _, _, _, _, _, _, _), repr, membDefns, m)) =
@@ -473,6 +481,13 @@ module UntypedParseImpl =
                     else
                         // see comment below for SynExpr.DotSet
                         Some((unionRanges synExpr.Range r))
+            | SynExpr.Set(synExpr, synExpr2, range) ->
+                if AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
+                    traverseSynExpr synExpr
+                elif AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr2.Range pos then
+                    traverseSynExpr synExpr2
+                else
+                    Some(range)
             | SynExpr.DotSet(synExpr, LongIdentWithDots(longIdent,_), synExpr2, _range) ->
                 if AstTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
@@ -633,6 +648,10 @@ module UntypedParseImpl =
                         | SynExpr.DotSet(exprLeft, lidwd, exprRhs, _m) ->
                             [ dive exprLeft exprLeft.Range traverseSynExpr
                               dive lidwd lidwd.Range (traverseLidOrElse(Some exprLeft))
+                              dive exprRhs exprRhs.Range traverseSynExpr
+                            ] |> pick expr
+                        | SynExpr.Set(exprLeft, exprRhs, _m) ->
+                            [ dive exprLeft exprLeft.Range traverseSynExpr
                               dive exprRhs exprRhs.Range traverseSynExpr
                             ] |> pick expr
                         | SynExpr.NamedIndexedPropertySet(lidwd, exprIndexer, exprRhs, _m) ->
@@ -818,7 +837,7 @@ module UntypedParseImpl =
             | SynExpr.Lambda(_, _, _, e, _) -> walkExprWithKind parentKind e
             | SynExpr.MatchLambda(_, _, synMatchClauseList, _, _) -> 
                 List.tryPick walkClause synMatchClauseList
-            | SynExpr.Match(_, e, synMatchClauseList, _, _) -> 
+            | SynExpr.Match(_, e, synMatchClauseList, _) -> 
                 walkExprWithKind parentKind e |> Option.orElse (List.tryPick walkClause synMatchClauseList)
             | SynExpr.Do(e, _) -> walkExprWithKind parentKind e
             | SynExpr.Assert(e, _) -> walkExprWithKind parentKind e
@@ -836,6 +855,7 @@ module UntypedParseImpl =
             | SynExpr.LongIdentSet(_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.DotGet(e, _, _, _) -> walkExprWithKind parentKind e
             | SynExpr.DotSet(e, _, _, _) -> walkExprWithKind parentKind e
+            | SynExpr.Set(e, _, _) -> walkExprWithKind parentKind e
             | SynExpr.DotIndexedGet(e, args, _, _) -> walkExprWithKind parentKind e |> Option.orElse (List.tryPick walkIndexerArg args)
             | SynExpr.DotIndexedSet(e, args, _, _, _, _) -> walkExprWithKind parentKind e |> Option.orElse (List.tryPick walkIndexerArg args)
             | SynExpr.NamedIndexedPropertySet(_, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
@@ -849,6 +869,9 @@ module UntypedParseImpl =
             | SynExpr.JoinIn(e1, _, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.YieldOrReturn(_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.YieldOrReturnFrom(_, e, _) -> walkExprWithKind parentKind e
+            | SynExpr.Match(_, e, synMatchClauseList, _)
+            | SynExpr.MatchBang(_, e, synMatchClauseList, _) -> 
+                walkExprWithKind parentKind e |> Option.orElse (List.tryPick walkClause synMatchClauseList)
             | SynExpr.LetOrUseBang(_, _, _, _, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.DoBang(e, _) -> walkExprWithKind parentKind e
             | SynExpr.TraitCall (ts, sign, e, _) ->
@@ -1226,6 +1249,9 @@ module UntypedParseImpl =
                             | _ -> defaultTraverse synBinding
 
                         match headPat with
+                        | SynPat.LongIdent(longDotId = lidwd) when rangeContainsPos lidwd.Range pos ->
+                            // let fo|o x = ()
+                            Some CompletionContext.Invalid
                         | SynPat.LongIdent(_,_,_,ctorArgs,_,_) ->
                             match ctorArgs with
                             | SynConstructorArgs.Pats(pats) ->
@@ -1242,6 +1268,9 @@ module UntypedParseImpl =
                                     | _ -> visitParam pat
                                 )
                             | _ -> defaultTraverse synBinding
+                        | SynPat.Named(range = range) when rangeContainsPos range pos ->
+                            // let fo|o = 1
+                            Some CompletionContext.Invalid
                         | _ -> defaultTraverse synBinding 
                     
                     member __.VisitHashDirective(range) = 
@@ -1261,7 +1290,7 @@ module UntypedParseImpl =
                         if rangeContainsPos range pos then Some CompletionContext.Invalid
                         else None
 
-                    member __.VisitLetOrUse(bindings, range) =
+                    member __.VisitLetOrUse(_, _, bindings, range) =
                         match bindings with
                         | [] when range.StartLine = pos.Line -> Some CompletionContext.Invalid
                         | _ -> None
@@ -1330,7 +1359,7 @@ module UntypedParseImpl =
                       else None)
              else
                 // Paired [< and >] were not found, try to determine that we are after [< without closing >]
-                match lineStr.LastIndexOf "[<" with
+                match lineStr.LastIndexOf("[<", StringComparison.Ordinal) with
                 | -1 -> None
                 | openParenIndex when pos.Column >= openParenIndex + 2 -> 
                     let str = lineStr.[openParenIndex + 2..pos.Column - 1].TrimStart()

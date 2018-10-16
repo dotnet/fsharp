@@ -181,6 +181,9 @@
     <value>Advanced</value>
   </data>
   <data name="6013" xml:space="preserve">
+    <value>CodeLens</value>
+  </data>
+  <data name="6014" xml:space="preserve">
     <value>Formatting</value>
   </data>
   <data name="TheValueIsUnused" xml:space="preserve">

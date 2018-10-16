@@ -21,7 +21,8 @@ type internal FSharpEditorFormattingService
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager
+        projectInfoManager: FSharpProjectOptionsManager,
+        settings: EditorOptions
     ) =
     
     static let toIList (xs : 'a seq) = ResizeArray(xs) :> IList<'a>
@@ -55,7 +56,7 @@ type internal FSharpEditorFormattingService
                     x.Tag <> FSharpTokenTag.LINE_COMMENT)
 
             let! (left, right) =
-                FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, filePath, parsingOptions, position, "FormattingService")
+                FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, filePath, parsingOptions, position, "FormattingService", forFormatting=true)
 
             if right.StartColumn = firstMeaningfulToken.LeftColumn then
                 // Replace the indentation on this line with the indentation of the left bracket
@@ -163,7 +164,7 @@ type internal FSharpEditorFormattingService
             
             match projectInfoManager.TryGetOptionsForEditingDocumentOrProject document with
             | Some (parsingOptions, _) ->
-                let! textChanges = FSharpEditorFormattingService.GetPasteChanges(document.Id, sourceText, document.FilePath, Settings.Formatting, tabSize, parsingOptions, currentClipboard, span)
+                let! textChanges = FSharpEditorFormattingService.GetPasteChanges(document.Id, sourceText, document.FilePath, settings.Formatting, tabSize, parsingOptions, currentClipboard, span)
                 return textChanges |> Option.defaultValue Seq.empty |> toIList
             | None ->
                 return toIList Seq.empty

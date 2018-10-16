@@ -226,9 +226,25 @@ module ListSet =
         | (h::t) -> if contains f h l1 then h::intersect f l1 t else intersect f l1 t
         | [] -> []
 
-    (* NOTE: quadratic! *)
     // Note: if duplicates appear, keep the ones toward the _front_ of the list
-    let setify f l = List.foldBack (insert f) (List.rev l) [] |> List.rev
+    let setify f l = List.fold (fun acc x -> insert f x acc) [] l |> List.rev
+
+    let hasDuplicates f l =
+        match l with
+        | [] -> false
+        | [_] -> false
+        | [x; y] -> f x y
+        | x::rest ->
+            let rec loop acc l =
+                match l with
+                | [] -> false
+                | x::rest ->
+                    if contains f x acc then
+                        true 
+                    else
+                        loop (x::acc) rest
+
+            loop [x] rest
 
 //-------------------------------------------------------------------------
 // Library: pairs

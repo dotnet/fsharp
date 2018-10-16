@@ -10,12 +10,11 @@ To run tests, use variations such as the following, depending on which test suit
     build.cmd vs test
     build.cmd all test
 
+You can also submit pull requests to http://github.com/Microsoft/visualfsharp and run the tests via continuous integration. Most people do wholesale testing that way.
+
 ## Prerequisites
 
-In order to run the FSharpQA suite, you will need to install [Perl](http://www.perl.org/get.html) (ActiveState Perl 5.16.3 is known to work fine).
-Perl must be included in the `%PATH%` for the below steps to work. It is also recommended that you run tests from an elevated command prompt, as there are a couple of test cases which require administrative privileges.
-
-The Perl requirement is gradually being removed.
+It is recommended that you run tests from an elevated command prompt, as there are a couple of test cases which require administrative privileges.
 
 ## Test Suites
 
@@ -38,16 +37,26 @@ The F# tests are split as follows:
 
 This is compiled using [tests\fsharp\FSharp.Tests.FSharpSuite.fsproj](tests/fsharp/FSharp.Tests.FSharpSuite.fsproj) to a unit test DLL which acts as a driver script. Each individual test is an NUnit test case, and so you can run it like any other NUnit test.
 
+    .\build.cmd net40 test-net40-fsharp
+
 Tests are grouped in folders per area. Each test compiles and executes a `test.fsx|fs` file in its folder using some combination of compiler or FSI flags specified in the FSharpSuite test project.  
-If the compilation and execution encounter no errors, the test is considered to have passed.
+If the compilation and execution encounter no errors, the test is considered to have passed. 
+
+There are also negative tests checking code expected to fail compilation. See note about baseline under "Other Tips" bellow for tests checking expectations against "baseline" files.
 
 ### FSharpQA Suite
+
+The FSharpQA suite relies on [Perl](http://www.perl.org/get.html), StrawberryPerl64 package from nuget is used automatically by the test suite.
 
 These tests use the `RunAll.pl` framework to execute, however the easiest way to run them is via the `build.cmd` script, see [usage examples](https://github.com/Microsoft/visualfsharp/blob/master/build.cmd#L31).
 
 Tests are grouped in folders per area. Each folder contains a number of source code files and a single `env.lst` file. The `env.lst` file defines a series of test cases, one per line.
-Each test case runs an optional "pre command," compiles a given set of source files using given flags, optionally runs the resulting binary, then optionally runs a final "post command." 
+
+Each test case runs an optional "pre command," compiles a given set of source files using given flags, optionally runs the resulting binary, then optionally runs a final "post command".
+
 If all of these steps complete without issue, the test is considered to have passed.
+
+Read more at [tests/fsharpqa/readme.md](tests/fsharpqa/readme.md).
 
 #### Test lists
 
@@ -68,7 +77,6 @@ Note that for compatibility reasons, the IDE unit tests should be run in a 32-bi
 using the `--x86` flag to `nunit3-console.exe`
 
 
-
 ### Logs and output
 
 All test execution logs and result files will be dropped into the `tests\TestResults` folder, and have file names matching
@@ -79,11 +87,29 @@ All test execution logs and result files will be dropped into the `tests\TestRes
     net40-coreunit-suite-*.*
     vs-ideunit-suite-*.*
 
+### Baselines
+
+FSharp Test Suite works with couples of .bsl (or .bslpp) files considered "expected" and called baseline, those are matched against the actual output which resides under .err or .vserr files of same name at the during test execution.
+When doing so keep in mind to carefully review the diff before comitting updated baseline files.
+.bslpp (baseline pre-process) files are specially designed to enable substitution of certain tokens to generate the .bsl file. You can look further about the pre-processing logic under [tests/fsharp/TypeProviderTests.fs](tests/fsharp/TypeProviderTests.fs), this is used only for type provider tests for now.
+
+To update baselines use this:
+
+    fsi tests\scripts\update-baselines.fsx
+
+Use `-n` to dry-run:
+
+    fsi tests\scripts\update-baselines.fsx -n
+
 ### Other Tips
 
-* Run as Administrator, or a handful of tests will fail
+#### Run as Administrator
 
-* Making the tests run faster
-  * NGen-ing the F# bits (fsc, fsi, FSharp.Core, etc) will result in tests executing much faster. Make sure you run `src\update.cmd` with the `-ngen` flag before running tests.
-  * The FSharp and FSharpQA suites will run test cases in parallel by default. You can comment out the relevant line (look for `PARALLEL_ARG`) to disable this.
-  * By default, tests from the FSharpQA suite are run using a persistent, hosted version of the compiler. This speeds up test execution, as there is no need for the `fsc.exe` process to spin up repeatedly. To disable this, uncomment the relevant line (look for `HOSTED_COMPILER`).
+Do this, or a handful of tests will fail.
+
+#### Making the tests run faster
+
+* NGen-ing the F# bits (fsc, fsi, FSharp.Core, etc) will result in tests executing much faster. Make sure you run `src\update.cmd` with the `-ngen` flag before running tests.
+* The FSharp and FSharpQA suites will run test cases in parallel by default. You can comment out the relevant line (look for `PARALLEL_ARG`) to disable this.
+* By default, tests from the FSharpQA suite are run using a persistent, hosted version of the compiler. This speeds up test execution, as there is no need for the `fsc.exe` process to spin up repeatedly. To disable this, uncomment the relevant line (look for `HOSTED_COMPILER`).
+

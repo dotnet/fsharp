@@ -852,6 +852,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Truncate")>]
         let truncate count (source: seq<'T>) =
             checkNonNull "source" source
+            if count <= 0 then empty else
             seq { let i = ref 0
                   use ie = source.GetEnumerator()
                   while !i < count && ie.MoveNext() do
@@ -1031,6 +1032,8 @@ namespace Microsoft.FSharp.Collections
         let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (seq:seq<'T>) =
             checkNonNull "seq" seq
 
+            if isEmpty seq then empty else
+
             let dict = Dictionary<_,ResizeArray<_>> comparer
 
             // Previously this was 1, but I think this is rather stingy, considering that we are already paying
@@ -1084,6 +1087,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Distinct")>]
         let distinct source =
             checkNonNull "source" source
+            if isEmpty source then empty else
             seq { let hashSet = HashSet<'T>(HashIdentity.Structural<'T>)
                   for v in source do
                       if hashSet.Add(v) then
@@ -1092,6 +1096,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("DistinctBy")>]
         let distinctBy projection source =
             checkNonNull "source" source
+            if isEmpty source then empty else
             seq { let hashSet = HashSet<_>(HashIdentity.Structural<_>)
                   for v in source do
                     if hashSet.Add(projection v) then
@@ -1135,6 +1140,7 @@ namespace Microsoft.FSharp.Collections
 
         let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:seq<'T>) =
             checkNonNull "source" source
+            if isEmpty source then empty else
 
             let dict = Dictionary comparer
 

@@ -347,6 +347,33 @@ namespace Microsoft.FSharp.Core
     [<MeasureAnnotatedAbbreviation>] type int16<[<Measure>] 'Measure> = int16
     [<MeasureAnnotatedAbbreviation>] type int64<[<Measure>] 'Measure> = int64
 
+    /// <summary>Represents a managed pointer in F# code.</c></summary>
+    type byref<'T> = (# "!0&" #)
+
+    /// <summary>Represents a managed pointer in F# code.</summary>
+    type byref<'T, 'Kind> = (# "!0&" #)
+
+    /// Represents the types of byrefs in F# 4.5+
+    module ByRefKinds = 
+
+        /// Represents a byref that can be written
+        [<Sealed>]
+        type Out() = class end
+
+        /// Represents a byref that can be read
+        [<Sealed>]
+        type In() = class end
+
+        /// Represents a byref that can be both read and written
+        [<Sealed>]
+        type InOut = class end 
+
+    /// <summary>Represents a in-argument or readonly managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type inref<'T> = byref<'T, ByRefKinds.In>
+
+    /// <summary>Represents a out-argument managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type outref<'T> = byref<'T, ByRefKinds.Out>
+
 #if FX_RESHAPED_REFLECTION
     module PrimReflectionAdapters =
         
@@ -511,10 +538,10 @@ namespace Microsoft.FSharp.Core
             // Byref usage checks prohibit type instantiations involving byrefs.
 
             [<NoDynamicInvocation>]
-            let inline (~&)  (obj : 'T) : 'T byref     = 
+            let inline (~&)  (obj : 'T) : byref<'T>     = 
                 ignore obj // pretend the variable is used
                 let e = new System.ArgumentException(ErrorStrings.AddressOpNotFirstClassString) 
-                (# "throw" (e :> System.Exception) : 'T byref #)
+                (# "throw" (e :> System.Exception) : byref<'T> #)
                  
             [<NoDynamicInvocation>]
             let inline (~&&) (obj : 'T) : nativeptr<'T> = 
@@ -1549,15 +1576,15 @@ namespace Microsoft.FSharp.Core
                   when 'T : nativeint  = (# "ceq" x y : bool #)
                   when 'T : unativeint  = (# "ceq" x y : bool #)
                   when 'T : float = 
-                    if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then
+                    if (# "ceq" x y : bool #) then
                         true
                     else
-                        (# "ceq" x y : bool #)
+                        not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #)
                   when 'T : float32 =
-                    if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then
+                    if (# "ceq" x y : bool #) then
                         true
                     else
-                        (# "ceq" x y : bool #)
+                        not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #)
                   when 'T : char    = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
                   when 'T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
@@ -2162,6 +2189,7 @@ namespace Microsoft.FSharp.Core
         let FloatComparer   = MakeGenericComparer<float>()
         let Float32Comparer = MakeGenericComparer<float32>()
         let DecimalComparer = MakeGenericComparer<decimal>()
+        let BoolComparer    = MakeGenericComparer<bool>()
 
         /// Use a type-indexed table to ensure we only create a single FastStructuralComparison function
         /// for each type
@@ -2199,6 +2227,7 @@ namespace Microsoft.FSharp.Core
                 | ty when ty.Equals(typeof<float32>)    -> null    
                 | ty when ty.Equals(typeof<decimal>)    -> null    
                 | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringComparer)
+                | ty when ty.Equals(typeof<bool>)       -> null
                 | _ -> MakeGenericComparer<'T>()
 
             static let f : System.Collections.Generic.IComparer<'T>  = 
@@ -2218,6 +2247,7 @@ namespace Microsoft.FSharp.Core
                 | ty when ty.Equals(typeof<float32>)    -> unboxPrim (box Float32Comparer)
                 | ty when ty.Equals(typeof<decimal>)    -> unboxPrim (box DecimalComparer)
                 | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringComparer)
+                | ty when ty.Equals(typeof<bool>)       -> unboxPrim (box BoolComparer)
                 | _ -> 
                     // Review: There are situations where we should be able
                     // to return System.Collections.Generic.Comparer<'T>.Default here.
@@ -2764,17 +2794,17 @@ namespace Microsoft.FSharp.Core
     // Function Values
 
     [<AbstractClass>]
-    type FSharpTypeFunc() = 
+    type FSharpTypeFunc [<DebuggerHidden>] () = 
         abstract Specialize<'T> : unit -> obj
 
     [<AbstractClass>]
-    type FSharpFunc<'T,'Res>() = 
+    type FSharpFunc<'T,'Res> [<DebuggerHidden>] () = 
         abstract Invoke : 'T -> 'Res
 
     module OptimizedClosures = 
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V>() = 
+          type FSharpFunc<'T,'U,'V> [<DebuggerHidden>] () = 
               inherit FSharpFunc<'T,('U -> 'V)>()
               abstract Invoke : 'T * 'U -> 'V
               override f.Invoke(t) = (fun u -> f.Invoke(t,u))
@@ -2787,7 +2817,7 @@ namespace Microsoft.FSharp.Core
                               member x.Invoke(t,u) = (retype func : FSharpFunc<'T,FSharpFunc<'U,'V>>).Invoke(t).Invoke(u) }
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V,'W>() = 
+          type FSharpFunc<'T,'U,'V,'W> [<DebuggerHidden>] () = 
               inherit FSharpFunc<'T,('U -> 'V -> 'W)>()
               abstract Invoke : 'T * 'U * 'V -> 'W
               override f.Invoke(t) = (fun u v -> f.Invoke(t,u,v))
@@ -2805,7 +2835,7 @@ namespace Microsoft.FSharp.Core
                               member x.Invoke(t,u,v) = (retype func : FSharpFunc<'T,('U -> 'V -> 'W)>).Invoke(t) u v }
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V,'W,'X>() = 
+          type FSharpFunc<'T,'U,'V,'W,'X> [<DebuggerHidden>] () = 
               inherit FSharpFunc<'T,('U -> 'V -> 'W -> 'X)>()
               abstract Invoke : 'T * 'U * 'V * 'W -> 'X
               static member Adapt(func : 'T -> 'U -> 'V -> 'W -> 'X) = 
@@ -2828,7 +2858,7 @@ namespace Microsoft.FSharp.Core
               override f.Invoke(t) = (fun u v w -> f.Invoke(t,u,v,w))
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V,'W,'X,'Y>() =
+          type FSharpFunc<'T,'U,'V,'W,'X,'Y> [<DebuggerHidden>] () =
               inherit FSharpFunc<'T,('U -> 'V -> 'W -> 'X -> 'Y)>()
               abstract Invoke : 'T * 'U * 'V * 'W * 'X -> 'Y
               override f.Invoke(t) = (fun u v w x -> f.Invoke(t,u,v,w,x))
@@ -2884,40 +2914,82 @@ namespace Microsoft.FSharp.Core
 
 
     type FSharpFunc<'T,'Res> with
-#if FX_NO_CONVERTER
+
+        // Note: this is not made public in the signature, because of conflicts with the Converter overload.
+        // The method remains in case someone is calling it via reflection.
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit (func : System.Func<_,_>) : ('T -> 'Res) =  (fun t -> func.Invoke(t))
+        static member op_Implicit(converter : System.Func<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
+
+        // Note: this is not made public in the signature, because of conflicts with the Converter overload.
+        // The method remains in case someone is calling it via reflection.
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit (func : ('T -> 'Res) ) =  new System.Func<'T,'Res>(func)
-#else    
+        static member op_Implicit(func : ('T -> 'Res) ) =  new System.Func<'T,'Res>(func)
+
+#if !FX_NO_CONVERTER
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit (converter : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
+        static member op_Implicit(f : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> f.Invoke(t))
+
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit (func : ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
 
-        static member FromConverter (converter : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
-        static member ToConverter ( func : ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
+        static member FromConverter (converter: System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
+
+        static member ToConverter (func: ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
 #endif
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res)                   = OptimizedClosures.invokeFast2(func, arg1, arg2) 
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res, arg3)             = OptimizedClosures.invokeFast3(func, arg1, arg2, arg3)
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res, arg3, arg4)       = OptimizedClosures.invokeFast4(func, arg1, arg2, arg3, arg4)
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res, arg3, arg4, arg5) = OptimizedClosures.invokeFast5(func, arg1, arg2, arg3, arg4, arg5)
+
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res)                   = OptimizedClosures.invokeFast2(func, arg1, arg2) 
+
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3)             = OptimizedClosures.invokeFast3(func, arg1, arg2, arg3)
+
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3, arg4)       = OptimizedClosures.invokeFast4(func, arg1, arg2, arg3, arg4)
+
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3, arg4, arg5) = OptimizedClosures.invokeFast5(func, arg1, arg2, arg3, arg4, arg5)
 
     [<AbstractClass>]
     [<Sealed>]
     type FuncConvert = 
-        static member  ToFSharpFunc (action: Action<_>) = (fun t -> action.Invoke(t))
-#if FX_NO_CONVERTER
-        static member  ToFSharpFunc (converter: System.Func<_, _>) = (fun t -> converter.Invoke(t))
-#else        
-        static member  ToFSharpFunc (converter: Converter<_,_>) = (fun t -> converter.Invoke(t))
-#endif        
-        static member FuncFromTupled (func:'T1 * 'T2 -> 'Res) = (fun a b -> func (a, b))
-        static member FuncFromTupled (func:'T1 * 'T2 * 'T3 -> 'Res) = (fun a b c -> func (a, b, c))
-        static member FuncFromTupled (func:'T1 * 'T2 * 'T3 * 'T4 -> 'Res) = (fun a b c d -> func (a, b, c, d))
-        static member FuncFromTupled (func:'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'Res) = (fun a b c d e-> func (a, b, c, d, e))
 
+        static member  inline ToFSharpFunc (action: Action<_>) = (fun t -> action.Invoke(t))
 
+#if !FX_NO_CONVERTER
+        static member  inline ToFSharpFunc (converter : Converter<_,_>) = (fun t -> converter.Invoke(t))
+#endif
+
+        // Note: this is not made public in the signature, because of conflicts with the Converter overload.
+        // The method remains in case someone is calling it via reflection.
+        static member  inline ToFSharpFunc (converter: System.Func<_, _>) = (fun t -> converter.Invoke(t))
+
+        static member  inline FromFunc (func: System.Func<_>) = (fun () -> func.Invoke())
+
+        static member  inline FromFunc (func: System.Func<_, _>) = (fun t -> func.Invoke(t))
+
+        static member  inline FromFunc (func: System.Func<_, _, _>) = (fun t1 t2 -> func.Invoke(t1,t2))
+
+        static member  inline FromFunc (func: System.Func<_, _, _, _>) = (fun t1 t2 t3 -> func.Invoke(t1,t2,t3))
+
+        static member  inline FromFunc (func: System.Func<_, _, _, _, _>) = (fun t1 t2 t3 t4 -> func.Invoke(t1,t2,t3,t4))
+
+        static member  inline FromFunc (func: System.Func<_, _, _, _, _, _>) = (fun t1 t2 t3 t4 t5 -> func.Invoke(t1,t2,t3,t4,t5))
+
+        static member  inline FromAction (action: System.Action) = (fun () -> action.Invoke())
+
+        static member  inline FromAction (action: System.Action<_>) = (fun t -> action.Invoke(t))
+
+        static member  inline FromAction (action: System.Action<_, _>) = (fun t1 t2 -> action.Invoke(t1,t2))
+
+        static member  inline FromAction (action: System.Action<_, _, _>) = (fun t1 t2 t3 -> action.Invoke(t1,t2,t3))
+
+        static member  inline FromAction (action: System.Action<_, _, _, _>) = (fun t1 t2 t3 t4 -> action.Invoke(t1,t2,t3,t4))
+
+        static member  inline FromAction (action: System.Action<_, _, _, _, _>) = (fun t1 t2 t3 t4 t5 -> action.Invoke(t1,t2,t3,t4,t5))
+
+        static member inline FuncFromTupled (func: 'T1 * 'T2 -> 'Res) = (fun a b -> func (a, b))
+
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 -> 'Res) = (fun a b c -> func (a, b, c))
+
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 * 'T4 -> 'Res) = (fun a b c d -> func (a, b, c, d))
+
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'Res) = (fun a b c d e -> func (a, b, c, d, e))
 
     //-------------------------------------------------------------------------
     // Refs
@@ -2972,7 +3044,6 @@ namespace Microsoft.FSharp.Core
 
     and 'T option = Option<'T> 
 
-
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpResult`2")>]
     [<Struct>]
@@ -2980,6 +3051,17 @@ namespace Microsoft.FSharp.Core
       | Ok of ResultValue:'T 
       | Error of ErrorValue:'TError
 
+    [<StructuralEquality; StructuralComparison>]
+    [<Struct>]
+    [<CompiledName("FSharpValueOption`1")>]
+    type ValueOption<'T> =
+        | ValueNone : 'T voption
+        | ValueSome : 'T -> 'T voption
+
+        member x.Value = match x with ValueSome x -> x | ValueNone -> raise (new System.InvalidOperationException("ValueOption.Value"))
+
+
+    and 'T voption = ValueOption<'T>
 
 namespace Microsoft.FSharp.Collections
 
@@ -3345,11 +3427,11 @@ namespace Microsoft.FSharp.Core
 
         let (^) (s1: string) (s2: string) = System.String.Concat(s1, s2)
 
-
         [<CompiledName("DefaultArg")>]
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         let defaultArg arg defaultValue = match arg with None -> defaultValue | Some v -> v
         
+        [<CompiledName("DefaultValueArg")>]
+        let defaultValueArg arg defaultValue = match arg with ValueNone -> defaultValue | ValueSome v -> v
 
         [<NoDynamicInvocation>]
         let inline (~-) (n: ^T) : ^T = 
@@ -5422,7 +5504,6 @@ namespace Microsoft.FSharp.Core
             let TanDynamic x            = TanDynamicImplTable<_>.Result x 
             let TanhDynamic x           = TanhDynamicImplTable<_>.Result x 
             let PowDynamic x y          = PowDynamicImplTable<_,_>.Result x y
-
 
         open OperatorIntrinsics
                    

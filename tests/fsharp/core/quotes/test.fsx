@@ -1,4 +1,4 @@
-﻿// #Conformance #Quotations #Interop #Classes #ObjectConstructors #Attributes #Reflection 
+﻿// #Conformance #Quotations #Interop #Classes #ObjectConstructors #Attributes #Reflection #ComputationExpression
 #if TESTS_AS_APP
 module Core_quotes
 #endif
@@ -3152,6 +3152,30 @@ module TestFuncNoArgs =
         check "clew0mmlvew" (foo.ToString()) "() => new SomeType()"
 
     testFunc2()
+
+module TestMatchBang =
+    let myAsync = async {
+        do! Async.Sleep 1
+        return Some 42 }
+
+    /// Unpacks code quotations containing computation expressions (CE)
+    let (|CEDelay|CEBind|Expr|) expr =
+        match expr with
+        | Application (Lambda (_, Call (_, mDelay, [Lambda (_, innerExpr)])), _) when mDelay.Name = "Delay" -> CEDelay innerExpr
+        | Call (_, mBind, [_; Lambda (_, innerExpr)]) when mBind.Name = "Bind" -> CEBind innerExpr
+        | _ -> Expr expr
+
+    let testSimpleMatchBang() =
+        let quot1 = <@ async { match! myAsync with | Some (x: int) -> () | None -> () } @>
+        check "matchbangquot1"
+            (match quot1 with
+            | CEDelay(CEBind(IfThenElse expr)) -> Ok ()
+            | CEDelay(CEBind(expr)) -> Error "if statement (representing `match`) is missing"
+            | CEDelay(expr) -> Error "Bind is incorrect"
+            | expr -> Error "Delay is incorrect")
+            (Ok ())
+
+    testSimpleMatchBang()        
     
 
 #if !FX_RESHAPED_REFLECTION

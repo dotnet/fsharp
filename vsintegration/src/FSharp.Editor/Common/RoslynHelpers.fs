@@ -14,6 +14,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.VisualStudio.FSharp.Editor.Logging
 
 [<RequireQualifiedAccess>]
 module internal RoslynHelpers =
@@ -159,6 +160,16 @@ module internal RoslynHelpers =
         let textSpan = sourceText.Lines.GetTextSpan linePositionSpan
         Location.Create(filePath, textSpan, linePositionSpan)
 
+    let StartAsyncSafe cancellationToken context computation =
+        let computation =
+            async {
+                try
+                    return! computation
+                with e ->
+                    logExceptionWithContext(e, context)
+                    return Unchecked.defaultof<_>
+            }
+        Async.Start (computation, cancellationToken)
 
 module internal OpenDeclarationHelper =
     /// <summary>
@@ -171,9 +182,15 @@ module internal OpenDeclarationHelper =
         let mutable minPos = None
 
         let insert line lineStr (sourceText: SourceText) : SourceText =
-            let pos = sourceText.Lines.[line].Start
+            let ln = sourceText.Lines.[line]
+            let pos = ln.Start
             minPos <- match minPos with None -> Some pos | Some oldPos -> Some (min oldPos pos)
-            sourceText.WithChanges(TextChange(TextSpan(pos, 0), lineStr + Environment.NewLine))
+
+            // find the line break characters on the previous line to use, Environment.NewLine should not be used
+            // as it makes assumptions on the line endings in the source.
+            let lineBreak = ln.Text.ToString(TextSpan(ln.End, ln.EndIncludingLineBreak - ln.End))
+
+            sourceText.WithChanges(TextChange(TextSpan(pos, 0), lineStr + lineBreak))
 
         let getLineStr line = sourceText.Lines.[line].ToString().Trim()
         let pos = ParsedInput.adjustInsertionPoint getLineStr ctx
