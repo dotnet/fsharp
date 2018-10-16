@@ -560,11 +560,6 @@ let tryNormalizeMeasureInType g ty =
 // Some basic type builders
 //---------------------------------------------------------------------------
 
-let NewNullnessVar() = Nullness.Variable { solution = None } // we don't known (and if we never find out then it's non-null)
-let KnownNull = Nullness.Known NullnessInfo.WithNull
-let KnownNonNull = Nullness.Known NullnessInfo.WithoutNull
-let AssumeNonNull = KnownNonNull
-
 let mkNativePtrTy (g:TcGlobals) ty = 
     assert g.nativeptr_tcr.CanDeref // this should always be available, but check anyway
     TType_app (g.nativeptr_tcr, [ty], KnownNonNull)
@@ -708,14 +703,37 @@ let reduceTyconMeasureableOrProvided (g:TcGlobals) (tycon:Tycon) tyargs =
 let reduceTyconRefMeasureableOrProvided (g:TcGlobals) (tcref:TyconRef) tyargs = 
     reduceTyconMeasureableOrProvided g tcref.Deref tyargs
 
+let tryAddNullToTy (ty:TType) = 
+    let ty = stripTyparEqns ty
+    match ty with
+    | TType_var _ -> None
+    | TType_app (tcr, tinst, _nullness) -> Some (TType_app (tcr, tinst, KnownNull))
+    | TType_ucase _ -> None
+    | TType_tuple _ -> None
+    | TType_fun (d, r, _nullness) -> Some (TType_fun (d, r, KnownNull))
+    | TType_forall _ -> None
+    | TType_measure _ -> None
+
+// TODO NULLNESS: Assess for completeness
+let applyNullness nullness (ty:TType) =
+  match nullness with 
+  | NullnessInfo.WithoutNull 
+  | NullnessInfo.Oblivious -> ty
+  | NullnessInfo.WithNull -> 
+      match tryAddNullToTy ty with 
+      | None -> ty
+      | Some ty -> ty
+
 let rec stripTyEqnsA g canShortcut ty = 
     let ty = stripTyparEqnsAux canShortcut ty 
     match ty with 
-    | TType_app (tcref, tinst, _nullness) ->  // TODO: what happens to this nullness?  Currently it is lost.  Noted in RFC
+    | TType_app (tcref, tinst, nullness) ->
         let tycon = tcref.Deref
         match tycon.TypeAbbrev with 
         | Some abbrevTy -> 
-            stripTyEqnsA g canShortcut (applyTyconAbbrev abbrevTy tycon tinst)
+            let reducedTy = applyTyconAbbrev abbrevTy tycon tinst
+            let reducedTy2 = applyNullness (nullness.Evaluate()) reducedTy
+            stripTyEqnsA g canShortcut reducedTy2
         | None -> 
             // This is the point where we get to add additional coditional normalizing equations 
             // into the type system. Such power!
@@ -727,7 +745,9 @@ let rec stripTyEqnsA g canShortcut ty =
 
             // Add the equation double<1> = double for units of measure.
             elif tycon.IsMeasureableReprTycon && List.forall (isDimensionless g) tinst then
-                stripTyEqnsA g canShortcut (reduceTyconMeasureableOrProvided g tycon tinst)
+                let reducedTy = reduceTyconMeasureableOrProvided g tycon tinst
+                let reducedTy2 = applyNullness (nullness.Evaluate()) reducedTy
+                stripTyEqnsA g canShortcut reducedTy2
             else 
                 ty
     | ty -> ty
@@ -745,10 +765,12 @@ let evalTupInfoIsStruct aexpr =
 let rec stripTyEqnsAndErase eraseFuncAndTuple (g:TcGlobals) ty =
     let ty = stripTyEqns g ty
     match ty with
-    | TType_app (tcref, args, _nullness) ->  // TODO: what happens to this nullness?  Currently it is lost.  Noted in RFC
+    | TType_app (tcref, args, nullness) ->  // TODO: what happens to this nullness?  Currently it is lost.  Noted in RFC
         let tycon = tcref.Deref
         if tycon.IsErased  then
-            stripTyEqnsAndErase eraseFuncAndTuple g (reduceTyconMeasureableOrProvided g tycon args)
+            let reducedTy = reduceTyconMeasureableOrProvided g tycon args
+            let reducedTy2 = applyNullness (nullness.Evaluate()) reducedTy
+            stripTyEqnsAndErase eraseFuncAndTuple g reducedTy2
         elif tyconRefEq g tcref g.nativeptr_tcr && eraseFuncAndTuple then 
             stripTyEqnsAndErase eraseFuncAndTuple g g.nativeint_ty
         else
@@ -7475,15 +7497,26 @@ let IsUnionTypeWithNullAsTrueValue (g:TcGlobals) (tycon:Tycon) =
 let TyconCompilesInstanceMembersAsStatic g tycon = IsUnionTypeWithNullAsTrueValue g tycon
 let TcrefCompilesInstanceMembersAsStatic g (tcref: TyconRef) = TyconCompilesInstanceMembersAsStatic g tcref.Deref
 
+// TODO NULLNESS: Consider whether we need to adjust this predicate, and the compatibility issues with doing this
 let TypeNullNever g ty = 
     let underlyingTy = stripTyEqnsAndMeasureEqns g ty
     (isStructTy g underlyingTy) ||
     (isByrefTy g underlyingTy)
 
-
+/// Indicates if the type admits the use of 'null' as a value
+// TODO NULLNESS: Consider whether we need to adjust this predicate, and the compatibility issues with doing this
+let TypeNullIsExtraValueNew g m ty = 
+    if isILReferenceTy g ty then
+        false
+    elif TypeNullNever g ty then 
+        false
+    else 
+        // Putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
+        match tryDestAppTy g ty with ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true | _ -> false
 
 /// Indicates if the type admits the use of 'null' as a value
-let TypeNullIsExtraValue g m ty = 
+// TODO NULLNESS: Consider whether we need to adjust this predicate, and the compatibility issues with doing this
+let TypeNullIsExtraValueOld g m ty = 
     if isILReferenceTy g ty || isDelegateTy g ty then
         // Putting AllowNullLiteralAttribute(false) on an IL or provided type means 'null' can't be used with that type
         not (match tryDestAppTy g ty with ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some false | _ -> false)
@@ -7493,22 +7526,24 @@ let TypeNullIsExtraValue g m ty =
         // Putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
         match tryDestAppTy g ty with ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true | _ -> false
 
+// TODO NULLNESS: Consider whether we need to adjust this predicate, and the compatibility issues with doing this
 let TypeNullIsTrueValue g ty =
     (match tryDestAppTy g ty with
      | ValueSome tcref -> IsUnionTypeWithNullAsTrueValue g tcref.Deref
      | _ -> false) || (isUnitTy g ty)
 
+/// Indicates if unbox<T>(null) is actively rejected at runtime.   See nullability RFC.  This applies to types that don't have null
+/// as a valid runtime representation under old compatiblity rules.
+//
+// TODO NULLNESS: Consider whether we need to adjust this predicate, and the compatibility issues with doing this
 let TypeNullNotLiked g m ty = 
-       not (TypeNullIsExtraValue g m ty) 
+       not (TypeNullIsExtraValueOld g m ty) 
     && not (TypeNullIsTrueValue g ty) 
     && not (TypeNullNever g ty) 
 
-let TypeSatisfiesNullConstraint g m ty = 
-    TypeNullIsExtraValue g m ty  
-
 let rec TypeHasDefaultValue g m ty = 
     let ty = stripTyEqnsAndMeasureEqns g ty
-    TypeSatisfiesNullConstraint g m ty  
+    TypeNullIsExtraValueOld g m ty   // consider, should this be TypeNullIsExtraValueNew
     || (isStructTy g ty &&
         // Is it an F# struct type?
         (if isFSharpStructTy g ty then 

@@ -7067,6 +7067,11 @@
         <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTypeDoesNotHaveAnyNull">
+        <source>The type '{0}' never has 'null' as a value. To specify a nullable value type use Nullable&lt;{1}&gt;</source>
+        <target state="new">The type '{0}' never has 'null' as a value. To specify a nullable value type use Nullable&lt;{1}&gt;</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

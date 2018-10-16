@@ -793,11 +793,11 @@ and FilterMeasureTyargs tys =
 
 and ConvType cenv env m ty =
     match stripTyEqnsAndMeasureEqns cenv.g ty with 
-    | TType_app(tcref,[tyarg]) when isArrayTyconRef cenv.g tcref -> 
+    | TType_app(tcref,[tyarg],_) when isArrayTyconRef cenv.g tcref -> 
         QP.mkArrayTy(rankOfArrayTyconRef cenv.g tcref,ConvType cenv env m tyarg)
 
     | TType_ucase(UCRef(tcref,_),tyargs) // Note: we erase union case 'types' when converting to quotations
-    | TType_app(tcref,tyargs) -> 
+    | TType_app(tcref,tyargs,_) -> 
 #if !NO_EXTENSIONTYPING
         match TryElimErasableTyconRef cenv m tcref with 
         | Some baseTy -> ConvType cenv env m baseTy

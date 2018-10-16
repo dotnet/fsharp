@@ -458,6 +458,10 @@ and
     | StaticConstantExpr of expr:SynExpr * range:range
     /// F# syntax : ident=1 etc., used in static parameters to type providers
     | StaticConstantNamed of expr:SynType * SynType * range:range
+
+    /// F# syntax : type | null
+    | WithNull of SynType * range:range
+
     /// Get the syntactic range of source code covered by this construct.
     member x.Range =
         match x with
@@ -475,6 +479,7 @@ and
         | SynType.StaticConstantNamed (range=m)
         | SynType.HashConstraint (range=m)
         | SynType.MeasureDivide (range=m)
+        | SynType.WithNull (range=m)
         | SynType.MeasurePower (range=m) -> m
         | SynType.LongIdent(lidwd) -> lidwd.Range
 

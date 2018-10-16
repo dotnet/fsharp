@@ -194,7 +194,8 @@ let GetRangeOfDiagnostic(err:PhasedDiagnostic) =
       | ConstraintSolverTupleDiffLengths(_, _, _, m, _) 
       | ConstraintSolverInfiniteTypes(_, _, _, _, m, _) 
       | ConstraintSolverMissingConstraint(_, _, _, m, _)
-      | ConstraintSolverNullnessWarning(_, _, _, m, _)
+      | ConstraintSolverNullnessWarningWithTypes(_, _, _, _, _, m, _)
+      | ConstraintSolverNullnessWarningWithType(_, _, _, m, _)
       | ConstraintSolverTypesNotInEqualityRelation(_, _, _, m, _, _)
       | ConstraintSolverError(_, m, _) 
       | ConstraintSolverTypesNotInSubsumptionRelation(_, _, _, m, _) 
@@ -372,6 +373,8 @@ let GetDiagnosticNumber(err:PhasedDiagnostic) =
       | :? TypeProviderError as e -> e.Number
 #endif
       | ErrorsFromAddingSubsumptionConstraint (_, _, _, _, _, ContextInfo.DowncastUsedInsteadOfUpcast _, _) -> fst (FSComp.SR.considerUpcast("", ""))
+      | ConstraintSolverNullnessWarningWithTypes _ -> 3244
+      | ConstraintSolverNullnessWarningWithType _ -> 3245
       | _ -> 193
    GetFromException err.Exception
    
@@ -443,6 +446,8 @@ let ConstraintSolverTupleDiffLengthsE() = DeclareResourceString("ConstraintSolve
 let ConstraintSolverInfiniteTypesE() = DeclareResourceString("ConstraintSolverInfiniteTypes", "%s%s")
 let ConstraintSolverMissingConstraintE() = DeclareResourceString("ConstraintSolverMissingConstraint", "%s")
 let ConstraintSolverTypesNotInEqualityRelation1E() = DeclareResourceString("ConstraintSolverTypesNotInEqualityRelation1", "%s%s")
+let ConstraintSolverNullnessWarningWithTypesE() = DeclareResourceString("ConstraintSolverNullnessWarningWithTypes", "%s%s%s")
+let ConstraintSolverNullnessWarningWithTypeE() = DeclareResourceString("ConstraintSolverNullnessWarningWithType", "%s")
 let ConstraintSolverTypesNotInEqualityRelation2E() = DeclareResourceString("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
 let ConstraintSolverTypesNotInSubsumptionRelationE() = DeclareResourceString("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
 let ErrorFromAddingTypeEquation1E() = DeclareResourceString("ErrorFromAddingTypeEquation1", "%s%s%s")
@@ -632,16 +637,25 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           if m.StartLine <> m2.StartLine then 
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
 
-      | ConstraintSolverNullnessWarning(_denv, nullness, nullness2, m, m2) ->
+      | ConstraintSolverNullnessWarningWithTypes(denv, ty1, ty2, nullness, nullness2, m, m2) ->
           
+          let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
           let msg =
               // TODO: Put this in FSComp.SR.
               match nullness, nullness2 with
-              | WithNull, WithoutNull -> "Expected the type to have null."
-              | WithoutNull, WithNull -> "Expected the type to not have null."
+              | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> "Expected the type to have null."
+              | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> "Expected the type to not have null."
               | _ -> String.Empty
 
-          os.Append(msg) |> ignore
+          os.Append(ConstraintSolverNullnessWarningWithTypesE().Format t1 t2 msg) |> ignore
+
+          if m.StartLine <> m2.StartLine then
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+
+      | ConstraintSolverNullnessWarningWithType(denv, ty, _nullness, m, m2) ->
+          
+          let t = NicePrint.minimalStringOfType denv ty
+          os.Append(ConstraintSolverNullnessWarningWithTypeE().Format (t)) |> ignore
 
           if m.StartLine <> m2.StartLine then
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
@@ -1259,7 +1273,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
               // we need to check if unit was used as a type argument
               let rec hasUnitTType_app (types: TType list) =
                   match types with
-                  | TType_app (maybeUnit, []) :: ts -> 
+                  | TType_app (maybeUnit, [], _) :: ts -> 
                       match maybeUnit.TypeAbbrev with
                       | Some ttype when Tastops.isUnitTy g ttype -> true
                       | _ -> hasUnitTType_app ts
@@ -1267,7 +1281,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
                   | [] -> false
 
               match minfoVirt.ApparentEnclosingType with
-              | TType_app (t, types) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
+              | TType_app (t, types, _) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
                   // match abstract member with 'unit' passed as generic argument
                   os.Append(OverrideDoesntOverride4E().Format sig1) |> ignore
               | _ -> 

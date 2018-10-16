@@ -4357,6 +4357,9 @@ type internal SR private() =
     /// This type does not inherit Attribute, it will not work correctly with other .NET languages.
     /// (Originally from ..\FSComp.txt:1443)
     static member tcTypeDoesNotInheritAttribute() = (3242, GetStringFunc("tcTypeDoesNotInheritAttribute",",,,") )
+    /// The type '%s' never has 'null' as a value. To specify a nullable value type use Nullable<%s>
+    /// (Originally from ..\FSComp.txt:1444)
+    static member tcTypeDoesNotHaveAnyNull(a0 : System.String, a1 : System.String) = (3243, GetStringFunc("tcTypeDoesNotHaveAnyNull",",,,%s,,,%s,,,") a0 a1)
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5774,4 +5777,5 @@ type internal SR private() =
         ignore(GetString("chkNoSpanLikeValueFromExpression"))
         ignore(GetString("tastCantTakeAddressOfExpression"))
         ignore(GetString("tcTypeDoesNotInheritAttribute"))
+        ignore(GetString("tcTypeDoesNotHaveAnyNull"))
         ()

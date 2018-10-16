@@ -3906,7 +3906,7 @@ and Nullness =
        | Known info -> info
        | Variable v -> v.Evaluate()
 
-   override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> " | null"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.Oblivious -> " lol"
+   override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.Oblivious -> " lol"
 
 and NullnessVar = 
     { mutable solution: Nullness option }
@@ -5819,3 +5819,9 @@ let FSharpOptimizationDataResourceName2 = "FSharpOptimizationInfo."
 let FSharpSignatureDataResourceName2 = "FSharpSignatureInfo."
 
 
+let NewNullnessVar() = Nullness.Variable { solution = None } // we don't known (and if we never find out then it's non-null)
+
+let ObliviousToNull = Nullness.Known NullnessInfo.Oblivious
+let KnownNull = Nullness.Known NullnessInfo.WithNull
+let KnownNonNull = Nullness.Known NullnessInfo.WithoutNull
+let AssumeNonNull = KnownNonNull

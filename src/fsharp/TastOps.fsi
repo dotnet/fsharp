@@ -46,11 +46,6 @@ val stripTyEqnsWrtErasure: Erasure -> TcGlobals -> TType -> TType
 // Build common types
 //------------------------------------------------------------------------- 
 
-val KnownNull : Nullness
-val KnownNonNull : Nullness
-val AssumeNonNull : Nullness
-val NewNullnessVar : unit -> Nullness
-
 /// Build a function type
 val mkFunTy : TType -> TType -> TType
 
@@ -83,6 +78,9 @@ val stripExpr : Expr -> Expr
 /// Get the values for a set of bindings
 val valsOfBinds : Bindings -> Vals 
 val (|ExprValWithPossibleTypeInst|_|) : Expr -> (ValRef * ValUseFlag * TType list * range) option
+
+/// Ensure that a type admits nullness
+val tryAddNullToTy: TType -> TType option
 
 //-------------------------------------------------------------------------
 // Build decision trees imperatively
@@ -1137,12 +1135,10 @@ val ModuleNameIsMangled : TcGlobals -> Attribs -> bool
 
 val CompileAsEvent : TcGlobals -> Attribs -> bool
 
-val TypeNullIsExtraValue : TcGlobals -> range -> TType -> bool
-val TypeNullIsTrueValue : TcGlobals -> TType -> bool
-val TypeNullNotLiked : TcGlobals -> range -> TType -> bool
+val TypeNullIsExtraValueNew : TcGlobals -> range -> TType -> bool
+val TypeNullIsExtraValueOld : TcGlobals -> range -> TType -> bool
 val TypeNullNever : TcGlobals -> TType -> bool
 
-val TypeSatisfiesNullConstraint : TcGlobals -> range -> TType -> bool
 val TypeHasDefaultValue : TcGlobals -> range -> TType -> bool
 
 val isAbstractTycon : Tycon -> bool

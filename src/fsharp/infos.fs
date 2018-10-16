@@ -93,7 +93,7 @@ let GetSuperTypeOfType g amap m ty =
             None
 
 /// Make a type for System.Collections.Generic.IList<ty>
-let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty = TType_app(g.tcref_System_Collections_Generic_IList,[ty])
+let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty = TType_app(g.tcref_System_Collections_Generic_IList,[ty],AssumeNonNull)
 
 [<RequireQualifiedAccess>]
 /// Indicates whether we can skip interface types that lie outside the reference set
@@ -123,6 +123,7 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
 #if !NO_EXTENSIONTYPING
                 | ProvidedTypeMetadata info -> 
                     [ for ity in info.ProvidedType.PApplyArray((fun st -> st.GetInterfaces()), "GetInterfaces", m) do
+                          // TODO NULLNESS: the nullness of ty should propagate to each of these
                           yield Import.ImportProvidedType amap m ity ]
 #endif
                 | ILTypeMetadata (TILObjectReprData(scoref,_,tdef)) -> 
@@ -134,6 +135,7 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
                     // succeeded with more reported. There are pathological corner cases where this 
                     // doesn't apply: e.g. for mscorlib interfaces like IComparable, but we can always 
                     // assume those are present. 
+                    // TODO NULLNESS: the nullness of ty should propagate to each of these
                     tdef.Implements |> List.choose (fun ity -> 
                          if skipUnref = SkipUnrefInterfaces.No || CanImportILType scoref amap m ity then 
                              Some (ImportILType scoref amap m tinst ity)
@@ -1500,7 +1502,7 @@ type MethInfo =
             let formalRetTy, formalParams = 
                 match x with
                 | ILMeth(_,ilminfo,_) -> 
-                    let ftinfo = ILTypeInfo.FromType g (TType_app(tcref,formalEnclosingTyparTys))
+                    let ftinfo = ILTypeInfo.FromType g (TType_app(tcref,formalEnclosingTyparTys,AssumeNonNull)) // TODO NULLNESS - is this the right assumption?
                     let formalRetTy = ImportReturnTypeFromMetaData amap m ilminfo.RawMetadata.Return.Type ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys
                     let formalParams = 
                         [ [ for p in ilminfo.RawMetadata.Parameters do 
@@ -1752,7 +1754,7 @@ type RecdFieldInfo =
     member x.FieldType = actualTyOfRecdFieldRef x.RecdFieldRef x.TypeInst
 
     /// Get the enclosing (declaring) type of the field in an F#-declared record, class or struct type 
-    member x.DeclaringType = TType_app (x.RecdFieldRef.TyconRef,x.TypeInst)
+    member x.DeclaringType = TType_app (x.RecdFieldRef.TyconRef,x.TypeInst, AssumeNonNull) // TODO NULLNESS - is this the right assumption?
     override x.ToString() = x.TyconRef.ToString() + "::" + x.Name
     
 

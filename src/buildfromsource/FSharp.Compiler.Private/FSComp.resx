@@ -4360,4 +4360,7 @@
   <data name="tcTypeDoesNotInheritAttribute" xml:space="preserve">
     <value>This type does not inherit Attribute, it will not work correctly with other .NET languages.</value>
   </data>
+  <data name="tcTypeDoesNotHaveAnyNull" xml:space="preserve">
+    <value>The type '{0}' never has 'null' as a value. To specify a nullable value type use Nullable&lt;{1}&gt;</value>
+  </data>
 </root>

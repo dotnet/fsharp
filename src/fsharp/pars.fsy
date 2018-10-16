@@ -203,6 +203,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token GREATER_RBRACK STRUCT SIG 
 %token STATIC MEMBER CLASS ABSTRACT OVERRIDE DEFAULT CONSTRUCTOR INHERIT 
 %token EXTERN VOID PUBLIC PRIVATE INTERNAL GLOBAL
+%token HACKNULL
 
 /* for parser 'escape hatch' out of expression context without consuming the 'recover' token */
 %token TYPE_COMING_SOON TYPE_IS_HERE MODULE_COMING_SOON MODULE_IS_HERE
@@ -4371,6 +4372,18 @@ appTypeConPower:
     { $1 }
 
 appType:
+  | appType BAR NULL
+    { SynType.WithNull($1,lhs parseState) }
+
+  | appType HACKNULL
+    { SynType.WithNull($1,lhs parseState) }
+
+  | appType QMARK
+    { SynType.WithNull($1,lhs parseState) }
+
+  | appType OR NULL
+    { SynType.WithNull($1,lhs parseState) }
+
   | appType arrayTypeSuffix 
       {  SynType.Array($2,$1,lhs parseState) }
 

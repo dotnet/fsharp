@@ -906,30 +906,40 @@ module private PrintTypes =
             | [arg] ->  layoutTypeWithInfoAndPrec denv env 2 arg ^^ tcL
             | args  -> bracketIfL (prec <= 1) (bracketL (layoutTypesWithInfoAndPrec denv env 2 (sepL (tagPunctuation ",")) args) --- tcL)
 
+    and layoutNullness part2 (nullness: Nullness) =
+        match nullness.Evaluate() with
+        | NullnessInfo.WithNull -> part2 ^^ rightL (tagText "?")
+        | NullnessInfo.WithoutNull -> part2
+        | NullnessInfo.Oblivious -> part2 ^^ wordL (tagText "obliv")
+
     /// Layout a type, taking precedence into account to insert brackets where needed
     and layoutTypeWithInfoAndPrec denv env prec ty =
 
         match stripTyparEqns ty with 
 
         // Always prefer to format 'byref<ty,ByRefKind.In>' as 'inref<ty>'
-        | ty when isInByrefTy denv.g ty && (match ty with TType_app (tc, _) when denv.g.inref_tcr.CanDeref  && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
+        | ty when isInByrefTy denv.g ty && (match ty with TType_app (tc, _, _) when denv.g.inref_tcr.CanDeref  && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
             layoutTypeWithInfoAndPrec denv env prec (mkInByrefTy denv.g (destByrefTy denv.g ty))
 
         // Always prefer to format 'byref<ty,ByRefKind.Out>' as 'outref<ty>'
-        | ty when isOutByrefTy denv.g ty && (match ty with TType_app (tc, _) when denv.g.outref_tcr.CanDeref  && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
+        | ty when isOutByrefTy denv.g ty && (match ty with TType_app (tc, _, _) when denv.g.outref_tcr.CanDeref  && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
             layoutTypeWithInfoAndPrec denv env prec (mkOutByrefTy denv.g (destByrefTy denv.g ty))
 
         // Always prefer to format 'byref<ty,ByRefKind.InOut>' as 'byref<ty>'
-        | ty when isByrefTy denv.g ty && (match ty with TType_app (tc, _) when denv.g.byref_tcr.CanDeref  && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
+        | ty when isByrefTy denv.g ty && (match ty with TType_app (tc, _, _) when denv.g.byref_tcr.CanDeref  && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
             layoutTypeWithInfoAndPrec denv env prec (mkByrefTy denv.g (destByrefTy denv.g ty))
 
         // Always prefer 'float' to 'float<1>'
-        | TType_app (tc,args) when tc.IsMeasureableReprTycon && List.forall (isDimensionless denv.g) args ->
-          layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided denv.g tc args)
+        | TType_app (tc,args,nullness) when tc.IsMeasureableReprTycon && List.forall (isDimensionless denv.g) args ->
+          let part1 = layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided denv.g tc args)
+          let part2 = layoutNullness part1 nullness
+          part2
 
         // Layout a type application 
-        | TType_app (tc,args) -> 
-          layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec tc.IsPrefixDisplay args 
+        | TType_app (tc,args, nullness) -> 
+          let part1 = layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec tc.IsPrefixDisplay args 
+          let part2 = layoutNullness part1 nullness
+          part2
 
         | TType_ucase (UCRef(tc,_),args) -> 
           layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec tc.IsPrefixDisplay args 
@@ -956,11 +966,7 @@ module private PrintTypes =
               | TType_fun (dty,rty,nullness) -> 
                   let part1 = soFarL --- (layoutTypeWithInfoAndPrec denv env 4 dty ^^ wordL (tagPunctuation "->"))
                   let part2 = loop part1 rty
-                  let part3 =
-                      match nullness.Evaluate() with
-                      | WithNull -> part2 ^^ wordL (tagText "| null")
-                      | WithoutNull -> part2
-                      | Oblivious -> part2 ^^ wordL (tagText "| lol")
+                  let part3 = layoutNullness part2 nullness
                   part3
               | rty -> soFarL --- layoutTypeWithInfoAndPrec denv env 5 rty
             bracketIfL (prec <= 4) (loop emptyL ty)
