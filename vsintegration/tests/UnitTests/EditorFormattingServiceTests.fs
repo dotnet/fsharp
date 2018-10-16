@@ -81,8 +81,8 @@ marker4"""
         let changesOpt = FSharpEditorFormattingService.GetFormattingChanges(documentId, sourceText, filePath, checker, indentStyle, Some (parsingOptions, projectOptions), position) |> Async.RunSynchronously
         match changesOpt with
         | None -> Assert.Fail("Expected a text change, but got None")
-        | Some change ->
-            let changedText = sourceText.WithChanges(change)
+        | Some changes ->
+            let changedText = sourceText.WithChanges(changes)
             let lineText = changedText.Lines.[lineNumber].ToString()
             Assert.IsTrue(lineText.StartsWith(expectedLine), "Changed line does not start with expected text")
 
@@ -129,10 +129,10 @@ somethingElseHere
         
         if enabled then
             match changesOpt with
-            | Some [change] ->
-                let changedText = sourceText.WithChanges(change).ToString()
+            | Some changes ->
+                let changedText = sourceText.WithChanges(changes).ToString()
                 Assert.AreEqual(expected, changedText)
-            | _ -> Assert.Fail (sprintf "Expected a single text change, but got %+A" changesOpt)
+            | _ -> Assert.Fail (sprintf "Expected text changes, but got %+A" changesOpt)
         else
             Assert.AreEqual(None, changesOpt, "Expected no changes as FormatOnPaste is disabled")
 
@@ -177,10 +177,10 @@ somethingElseHere
             |> Option.map List.ofSeq
 
         match changesOpt with
-        | Some [change] ->
-            let changedText = sourceText.WithChanges(change).ToString()
+        | Some changes ->
+            let changedText = sourceText.WithChanges(changes).ToString()
             Assert.AreEqual(expected, changedText)
-        | _ -> Assert.Fail (sprintf "Expected a single text change, but got %+A" changesOpt)
+        | _ -> Assert.Fail (sprintf "Expected a changes, but got %+A" changesOpt)
 
     [<Test>]
     member this.TestPasteChanges_PastingWithAutoIndentationInPasteSpan() =
@@ -226,7 +226,7 @@ somethingElseHere
             |> Option.map List.ofSeq
 
         match changesOpt with
-        | Some [change] ->
-            let changedText = sourceText.WithChanges(change).ToString()
+        | Some changes ->
+            let changedText = sourceText.WithChanges(changes).ToString()
             Assert.AreEqual(expected, changedText)
-        | _ -> Assert.Fail (sprintf "Expected a single text change, but got %+A" changesOpt)
+        | _ -> Assert.Fail (sprintf "Expected a changes, but got %+A" changesOpt)
