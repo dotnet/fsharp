@@ -1382,8 +1382,9 @@ and GetMethodRefAsCustomAttribType cenv (mref:ILMethodRef) =
 let rec GetCustomAttrDataAsBlobIdx cenv (data:byte[]) = 
     if data.Length = 0 then 0 else GetBytesAsBlobIdx cenv data
 
-and GetCustomAttrRow cenv hca attr = 
+and GetCustomAttrRow cenv hca (attr: ILAttribute) =
     let cat = GetMethodRefAsCustomAttribType cenv attr.Method.MethodRef
+    let data = getCustomAttrData cenv.ilg attr
     for element in attr.Elements do
         match element with
         | ILAttribElem.Type (Some ty) when ty.IsNominal -> GetTypeRefAsTypeRefIdx cenv ty.TypeRef |> ignore
@@ -1393,7 +1394,7 @@ and GetCustomAttrRow cenv hca attr =
     UnsharedRow
             [| HasCustomAttribute (fst hca, snd hca);
                CustomAttributeType (fst cat, snd cat);
-               Blob (GetCustomAttrDataAsBlobIdx cenv attr.Data)
+               Blob (GetCustomAttrDataAsBlobIdx cenv data)
             |]
 
 and GenCustomAttrPass3Or4 cenv hca attr = 

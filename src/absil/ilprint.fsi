@@ -9,6 +9,6 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open System.IO
 
 #if DEBUG
-val public output_module      : TextWriter -> ILModuleDef -> unit
+val public output_module: TextWriter -> ilg: ILGlobals -> ILModuleDef -> unit
 #endif
 

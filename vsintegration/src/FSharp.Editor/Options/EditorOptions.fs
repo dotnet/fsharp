@@ -94,6 +94,12 @@ type AdvancedOptions =
       { IsBlockStructureEnabled = true
         IsOutliningEnabled = true }
 
+[<CLIMutable>]
+type FormattingOptions =
+    { FormatOnPaste: bool }
+    static member Default =
+        { FormatOnPaste = true }
+
 [<Export>]
 [<Export(typeof<IPersistSettings>)>]
 type EditorOptions 
@@ -111,6 +117,7 @@ type EditorOptions
         store.Register AdvancedOptions.Default
         store.Register IntelliSenseOptions.Default
         store.Register CodeLensOptions.Default
+        store.Register FormattingOptions.Default
 
     member __.IntelliSense : IntelliSenseOptions = store.Read()
     member __.QuickInfo : QuickInfoOptions = store.Read()
@@ -118,6 +125,7 @@ type EditorOptions
     member __.LanguageServicePerformance : LanguageServicePerformanceOptions = store.Read()
     member __.Advanced: AdvancedOptions = store.Read()
     member __.CodeLens: CodeLensOptions = store.Read()
+    member __.Formatting : FormattingOptions = store.Read()
 
     interface Microsoft.CodeAnalysis.Host.IWorkspaceService
 
@@ -185,3 +193,9 @@ module internal OptionsUI =
         inherit AbstractOptionPage<AdvancedOptions>()
         override __.CreateView() =
             upcast AdvancedOptionsControl()
+
+    [<Guid(Guids.formattingOptionPageIdString)>]
+    type internal FormattingOptionPage() =
+        inherit AbstractOptionPage<FormattingOptions>()
+        override __.CreateView() =
+            upcast FormattingOptionsControl()

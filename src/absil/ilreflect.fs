@@ -1414,12 +1414,12 @@ let emitMethodBody cenv modB emEnv ilG _name (mbody: ILLazyMethodBody) =
     | MethodBody.Native           -> failwith "emitMethodBody: native"               
     | MethodBody.NotAvailable     -> failwith "emitMethodBody: metadata only"
 
-let convCustomAttr cenv emEnv cattr =
+let convCustomAttr cenv emEnv (cattr: ILAttribute) =
     let methInfo = 
        match convConstructorSpec cenv emEnv cattr.Method with 
        | null -> failwithf "convCustomAttr: %+A" cattr.Method
        | res -> res
-    let data = cattr.Data 
+    let data = getCustomAttrData cenv.ilg cattr
     (methInfo, data)
 
 let emitCustomAttr cenv emEnv add cattr  = add (convCustomAttr cenv emEnv cattr)
