@@ -116,7 +116,7 @@ let ActivePatternElemsOfModuleOrNamespace (modref:ModuleOrNamespaceRef) : NameMa
 /// When reporting symbols, we care about abbreviations, e.g. 'int' and 'int32' count as two separate symbols
 let (|AbbrevOrAppTy|_|) (ty: TType) = 
     match stripTyparEqns ty with 
-    | TType_app (tcref,_) -> Some tcref
+    | TType_app (tcref, _, _) -> Some tcref
     | _ -> None
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -849,7 +849,7 @@ let AddDeclaredTyparsToNameEnv check nenv typars =
 /// a fresh set of inference type variables for the type parameters of the union type.
 let FreshenTycon (ncenv: NameResolver) m (tcref:TyconRef) = 
     let tinst = ncenv.InstantiationGenerator m (tcref.Typars m)
-    let improvedTy = ncenv.g.decompileType tcref tinst
+    let improvedTy = ncenv.g.decompileType tcref tinst KnownNonNull
     improvedTy
 
 /// Convert a reference to a union case into a UnionCaseInfo that includes

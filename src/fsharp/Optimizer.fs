@@ -1745,7 +1745,7 @@ let TryDetectQueryQuoteAndRun cenv (expr:Expr) =
                 let resultExprAfterConvertToResultTy = 
                     match reqdResultInfo, exprIsEnumerableInfo with 
                     | Some _, Some _ | None, None -> resultExpr // the expression is a QuerySource, the result is a QuerySource, nothing to do
-                    | Some resultElemTy, None -> mkCallGetQuerySourceAsEnumerable cenv.g expr.Range resultElemTy (TType_app(cenv.g.tcref_System_Collections_IEnumerable, [])) resultExpr
+                    | Some resultElemTy, None -> mkCallGetQuerySourceAsEnumerable cenv.g expr.Range resultElemTy (TType_app(cenv.g.tcref_System_Collections_IEnumerable, [], KnownNonNull)) resultExpr
                     | None, Some (resultElemTy, qTy)  ->  mkCallNewQuerySource cenv.g expr.Range resultElemTy qTy resultExpr 
                 Some resultExprAfterConvertToResultTy
             | None -> 

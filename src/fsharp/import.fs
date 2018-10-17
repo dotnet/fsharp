@@ -149,8 +149,8 @@ let CanImportILTypeRef (env:ImportMap) m (tref:ILTypeRef) =
 /// 
 /// Prefer the F# abbreviation for some built-in types, e.g. 'string' rather than 
 /// 'System.String', since we prefer the F# abbreviation to the .NET equivalents. 
-let ImportTyconRefApp (env:ImportMap) tcref tyargs = 
-    env.g.improveType tcref tyargs 
+let ImportTyconRefApp (env:ImportMap) tcref tyargs nullness = 
+    env.g.improveType tcref tyargs nullness
 
 /// Import an IL type as an F# type.
 let rec ImportILType (env:ImportMap) m tinst ty =  
@@ -166,7 +166,8 @@ let rec ImportILType (env:ImportMap) m tinst ty =
     | ILType.Boxed  tspec | ILType.Value tspec ->
         let tcref = ImportILTypeRef env m tspec.TypeRef 
         let inst = tspec.GenericArgs |> List.map (ImportILType env m tinst) 
-        ImportTyconRefApp env tcref inst
+        let nullness = ObliviousToNull // TODO: give this the right setting
+        ImportTyconRefApp env tcref inst nullness
 
     | ILType.Modified(_,tref,ILType.Byref ty) when tref.Name = "System.Runtime.InteropServices.InAttribute" -> mkInByrefTy env.g (ImportILType env m tinst ty)
     | ILType.Byref ty -> mkByrefTy env.g (ImportILType env m tinst ty)
@@ -298,11 +299,11 @@ let rec ImportProvidedType (env:ImportMap) (m:range) (* (tinst:TypeInst) *) (st:
                 if tp.Kind = TyparKind.Measure then  
                     let rec conv ty = 
                         match ty with 
-                        | TType_app (tcref,[t1;t2]) when tyconRefEq g tcref g.measureproduct_tcr -> Measure.Prod (conv t1, conv t2)
-                        | TType_app (tcref,[t1]) when tyconRefEq g tcref g.measureinverse_tcr -> Measure.Inv (conv t1)
-                        | TType_app (tcref,[]) when tyconRefEq g tcref g.measureone_tcr -> Measure.One 
-                        | TType_app (tcref,[]) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Con tcref
-                        | TType_app (tcref,_) -> 
+                        | TType_app (tcref,[t1;t2],_) when tyconRefEq g tcref g.measureproduct_tcr -> Measure.Prod (conv t1, conv t2)
+                        | TType_app (tcref,[t1],_) when tyconRefEq g tcref g.measureinverse_tcr -> Measure.Inv (conv t1)
+                        | TType_app (tcref,[],_) when tyconRefEq g tcref g.measureone_tcr -> Measure.One 
+                        | TType_app (tcref,[],_) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Con tcref
+                        | TType_app (tcref,_,_) -> 
                             errorR(Error(FSComp.SR.impInvalidMeasureArgument1(tcref.CompiledName, tp.Name),m))
                             Measure.One
                         | _ -> 
@@ -313,7 +314,9 @@ let rec ImportProvidedType (env:ImportMap) (m:range) (* (tinst:TypeInst) *) (st:
                 else
                     genericArg)
 
-        ImportTyconRefApp env tcref genericArgs
+        let nullness = ObliviousToNull
+
+        ImportTyconRefApp env tcref genericArgs nullness
 
 
 /// Import a provided method reference as an Abstract IL method reference

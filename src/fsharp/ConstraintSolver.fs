@@ -83,7 +83,7 @@ let NewErrorMeasure () = Measure.Var (NewErrorMeasureVar ())
 let NewByRefKindInferenceType (g: TcGlobals) m = 
     let tp = NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, HeadTypeStaticReq, true), false, TyparDynamicReq.No, [], false, false)
     if g.byrefkind_InOut_tcr.CanDeref then
-        tp.SetConstraints [TyparConstraint.DefaultsTo(10, TType_app(g.byrefkind_InOut_tcr, []), m)]
+        tp.SetConstraints [TyparConstraint.DefaultsTo(10, TType_app(g.byrefkind_InOut_tcr, [], KnownNonNull), m)]
     mkTyparTy tp
 
 let NewInferenceTypes l = l |> List.map (fun _ -> NewInferenceType ()) 
@@ -156,6 +156,8 @@ exception ConstraintSolverInfiniteTypes of ContextInfo * DisplayEnv * TType * TT
 exception ConstraintSolverTypesNotInEqualityRelation of DisplayEnv * TType * TType * range * range * ContextInfo
 exception ConstraintSolverTypesNotInSubsumptionRelation of DisplayEnv * TType * TType * range  * range 
 exception ConstraintSolverMissingConstraint of DisplayEnv * Tast.Typar * Tast.TyparConstraint * range  * range 
+exception ConstraintSolverNullnessWarningWithTypes of DisplayEnv * TType * TType * NullnessInfo * NullnessInfo * range  * range 
+exception ConstraintSolverNullnessWarningWithType of DisplayEnv * TType * NullnessInfo * range  * range 
 exception ConstraintSolverError of string * range * range
 exception ConstraintSolverRelatedInformation of string option * range * exn 
 
@@ -226,9 +228,9 @@ let MakeConstraintSolverEnv contextInfo css m denv =
 let rec occursCheck g un ty = 
     match stripTyEqns g ty with 
     | TType_ucase(_, l)
-    | TType_app (_, l) 
+    | TType_app (_, l, _) 
     | TType_tuple (_, l) -> List.exists (occursCheck g un) l
-    | TType_fun (d, r) -> occursCheck g un d || occursCheck g un r
+    | TType_fun (d, r, _nullness) -> occursCheck g un d || occursCheck g un r
     | TType_var r   ->  typarEq un r 
     | TType_forall (_, tau) -> occursCheck g un tau
     | _ -> false 
@@ -575,10 +577,10 @@ let SimplifyMeasure g vars ms =
 let rec SimplifyMeasuresInType g resultFirst ((generalizable, generalized) as param) ty =
     match stripTyparEqns ty with 
     | TType_ucase(_, l)
-    | TType_app (_, l) 
+    | TType_app (_, l, _) 
     | TType_tuple (_, l) -> SimplifyMeasuresInTypes g param l
 
-    | TType_fun (d, r) -> if resultFirst then SimplifyMeasuresInTypes g param [r;d] else SimplifyMeasuresInTypes g param [d;r]        
+    | TType_fun (d, r, _nullness) -> if resultFirst then SimplifyMeasuresInTypes g param [r;d] else SimplifyMeasuresInTypes g param [d;r]        
     | TType_var _   -> param
     | TType_forall (_, tau) -> SimplifyMeasuresInType g resultFirst param tau
     | TType_measure unt -> 
@@ -612,10 +614,10 @@ let rec SimplifyMeasuresInConstraints g param cs =
 let rec GetMeasureVarGcdInType v ty =
     match stripTyparEqns ty with 
     | TType_ucase(_, l)
-    | TType_app (_, l) 
+    | TType_app (_, l, _) 
     | TType_tuple (_, l) -> GetMeasureVarGcdInTypes v l
 
-    | TType_fun (d, r) -> GcdRational (GetMeasureVarGcdInType v d) (GetMeasureVarGcdInType v r)
+    | TType_fun (d, r, _nullness) -> GcdRational (GetMeasureVarGcdInType v d) (GetMeasureVarGcdInType v r)
     | TType_var _   -> ZeroRational
     | TType_forall (_, tau) -> GetMeasureVarGcdInType v tau
     | TType_measure unt -> MeasureVarExponent v unt
@@ -777,6 +779,49 @@ and solveTypMeetsTyparConstraints (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
           SolveMemberConstraint csenv false false ndeep m2 trace traitInfo ++ (fun _ -> CompleteD) 
     ))))
 
+and SolveNullnessEquiv (csenv:ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
+    match nullness1, nullness2 with
+    | Nullness.Variable nv1, Nullness.Variable nv2 when nv1 === nv2 -> 
+        CompleteD
+    | Nullness.Variable nv1, _ when not nv1.IsSolved -> 
+        trace.Exec (fun () -> nv1.Set nullness2) (fun () -> nv1.Unset())
+        CompleteD
+    | _, Nullness.Variable nv2 when not nv2.IsSolved -> 
+        trace.Exec (fun () -> nv2.Set nullness1) (fun () -> nv2.Unset())
+        CompleteD
+    | Nullness.Variable nv1, _ -> SolveNullnessEquiv csenv m2 trace ty1 ty2 nv1.Solution nullness2
+    | _, Nullness.Variable nv2 -> SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 nv2.Solution
+    | Nullness.Known n1, Nullness.Known n2 -> 
+        match n1, n2 with 
+        | NullnessInfo.Oblivious, _ -> CompleteD
+        | _, NullnessInfo.Oblivious -> CompleteD
+        | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
+        | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
+        | _, _ -> 
+            printfn "generating warning: %A %A %A %A" n1 n2 csenv.m m2
+            WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
+        
+and SolveNullnessSubsumesNullness (csenv:ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
+    match nullness1, nullness2 with
+    | Nullness.Variable nv1, Nullness.Variable nv2 when nv1 === nv2 -> 
+        CompleteD
+    | Nullness.Variable nv1, _ when not nv1.IsSolved -> 
+        trace.Exec (fun () -> nv1.Set nullness2) (fun () -> nv1.Unset())
+        CompleteD
+    | _, Nullness.Variable nv2 when not nv2.IsSolved -> 
+        trace.Exec (fun () -> nv2.Set nullness2) (fun () -> nv2.Unset())
+        CompleteD
+    | Nullness.Variable nv1, _ -> SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 nv1.Solution nullness2
+    | _, Nullness.Variable nv2 -> SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 nullness1 nv2.Solution
+    | Nullness.Known n1, Nullness.Known n2 -> 
+        match n1, n2 with 
+        | NullnessInfo.Oblivious, _ -> CompleteD
+        | _, NullnessInfo.Oblivious -> CompleteD
+        | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
+        | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
+        | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
+        | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
+             WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
         
 /// Add the constraint "ty1 = ty2" to the constraint problem. 
 /// Propagate all effects of adding this constraint, e.g. to solve type variables 
@@ -808,18 +853,34 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
     | _, TType_var r when (r.Rigidity <> TyparRigidity.Rigid) && not csenv.MatchingOnly -> SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1
 
     // Catch float<_>=float<1>, float32<_>=float32<1> and decimal<_>=decimal<1> 
-    | (_, TType_app (tc2, [ms])) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
-        -> SolveTypeEqualsType csenv ndeep m2 trace None ms (TType_measure Measure.One)
-    | (TType_app (tc2, [ms]), _) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
-        -> SolveTypeEqualsType csenv ndeep m2 trace None ms (TType_measure Measure.One)
+    | (_, TType_app (tc2, [ms2], nullness2)) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms2])) ->
+        SolveTypeEqualsType csenv ndeep m2 trace None (TType_measure Measure.One) ms2 ++ (fun () -> 
+           SolveNullnessEquiv csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) nullness2
+        )
 
-    | TType_app (tc1, l1)  , TType_app (tc2, l2) when tyconRefEq g tc1 tc2  -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
-    | TType_app (_, _)   , TType_app (_, _)   ->  localAbortD
+    | (TType_app (tc1, [ms1], nullness1), _) when (tc1.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc1 [ms1])) ->
+        SolveTypeEqualsType csenv ndeep m2 trace None ms1 (TType_measure Measure.One) ++ (fun () -> 
+           SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 (nullnessOfTy g sty2)
+        )
+
+    | TType_app (tc1, l1, nullness1), TType_app (tc2, l2, nullness2) when tyconRefEq g tc1 tc2  ->
+        SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2 ++ (fun () -> 
+           SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 nullness2
+        )
+
+    | TType_app _, TType_app _ ->  localAbortD
+
     | TType_tuple (tupInfo1, l1)      , TType_tuple (tupInfo2, l2)      -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
-    | TType_fun (d1, r1)   , TType_fun (d2, r2)   -> SolveFunTypeEqn csenv ndeep m2 trace None d1 d2 r1 r2
+
+    | TType_fun (d1, r1, nullness1)   , TType_fun (d2, r2, nullness2)   -> 
+        SolveFunTypeEqn csenv ndeep m2 trace None d1 d2 r1 r2 ++ (fun () -> 
+           SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 nullness2
+        )
+
     | TType_measure ms1   , TType_measure ms2   -> UnifyMeasures csenv trace ms1 ms2
+
     | TType_forall(tps1, rty1), TType_forall(tps2, rty2) -> 
         if tps1.Length <> tps2.Length then localAbortD else
         let aenv = aenv.BindEquivTypars tps1 tps2 
@@ -828,6 +889,7 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
         SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty1 rty2 
 
     | TType_ucase (uc1, l1)  , TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2  -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
+
     | _  -> localAbortD
 
 
@@ -890,29 +952,40 @@ and SolveTypeSubsumesType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalT
     | TType_tuple (tupInfo1, l1)      , TType_tuple (tupInfo2, l2)      -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2 (* nb. can unify since no variance *)
-    | TType_fun (d1, r1)  , TType_fun (d2, r2)   -> SolveFunTypeEqn csenv ndeep m2 trace cxsln d1 d2 r1 r2 (* nb. can unify since no variance *)
+    | TType_fun (d1, r1, nullness1)  , TType_fun (d2, r2, nullness2)   -> 
+        (* nb. can unify since no variance *)
+        SolveFunTypeEqn csenv ndeep m2 trace cxsln d1 d2 r1 r2 ++ (fun () -> 
+           SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 nullness1 nullness2
+        )
     | TType_measure ms1, TType_measure ms2    -> UnifyMeasures csenv trace ms1 ms2
 
     // Enforce the identities float=float<1>, float32=float32<1> and decimal=decimal<1> 
-    | (_, TType_app (tc2, [ms])) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
-        -> SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms (TType_measure Measure.One)
-    | (TType_app (tc2, [ms]), _) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
-        -> SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms (TType_measure Measure.One)
+    | (_, TType_app (tc2, [ms2], nullness2)) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms2])) ->
+        SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms2 (TType_measure Measure.One) ++ (fun () -> 
+           SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) nullness2
+        )
+
+    | (TType_app (tc1, [ms1], nullness1), _) when (tc1.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc1 [ms1])) ->
+        SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms1 (TType_measure Measure.One) ++ (fun () -> 
+           SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 nullness1 (nullnessOfTy g sty2)
+        )
 
     // Special subsumption rule for byref tags
-    | TType_app (tc1, l1)  , TType_app (tc2, l2) when tyconRefEq g tc1 tc2  && g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tc1 ->
+    | TType_app (tc1, l1, _nullness1)  , TType_app (tc2, l2, _nullness2) when tyconRefEq g tc1 tc2  && g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tc1 ->
         match l1, l2 with 
         | [ h1; tag1 ], [ h2; tag2 ] -> 
             SolveTypeEqualsType csenv ndeep m2 trace None h1 h2 ++ (fun () -> 
             match stripTyEqnsA csenv.g canShortcut tag1, stripTyEqnsA csenv.g canShortcut tag2 with 
-            | TType_app(tagc1, []), TType_app(tagc2, []) 
+            | TType_app(tagc1, [], _), TType_app(tagc2, [], _) 
                 when (tyconRefEq g tagc2 g.byrefkind_InOut_tcr && 
                       (tyconRefEq g tagc1 g.byrefkind_In_tcr || tyconRefEq g tagc1 g.byrefkind_Out_tcr) ) -> CompleteD
             | _ -> SolveTypeEqualsType csenv ndeep m2 trace cxsln tag1 tag2)
         | _ -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2
 
-    | TType_app (tc1, l1)  , TType_app (tc2, l2) when tyconRefEq g tc1 tc2  -> 
-        SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2
+    | TType_app (tc1, l1, nullness1)  , TType_app (tc2, l2, nullness2) when tyconRefEq g tc1 tc2  -> 
+        SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2 ++ (fun () -> 
+           SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 nullness1 nullness2
+        )
 
     | TType_ucase (uc1, l1)  , TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2  -> 
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2
@@ -1685,6 +1758,20 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
 
         CompleteD)))
 
+and SolveNullnessSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty nullness =
+    let m = csenv.m
+    let denv = csenv.DisplayEnv
+    match nullness with
+    | Nullness.Variable nv1 when not nv1.IsSolved -> 
+        trace.Exec (fun () -> nv1.Set KnownNull) (fun () -> nv1.Unset())
+        CompleteD
+    | Nullness.Variable nv -> SolveNullnessSupportsNull csenv ndeep m2 trace ty nv.Solution
+    | Nullness.Known n1 -> 
+        match n1  with 
+        | NullnessInfo.Oblivious -> CompleteD
+        | NullnessInfo.WithNull -> CompleteD
+        | NullnessInfo.WithoutNull -> WarnD(ConstraintSolverNullnessWarningWithType(denv, ty, n1, m, m2)) 
+
 and SolveTypeSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     let g = csenv.g
     let m = csenv.m
@@ -1693,8 +1780,13 @@ and SolveTypeSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     | ValueSome destTypar ->
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.SupportsNull m)
     | ValueNone ->
-        if TypeSatisfiesNullConstraint g m ty then CompleteD else 
-        match ty with 
+        if TypeNullIsExtraValueNew g m ty then CompleteD else
+        match stripTyparEqns ty with 
+        | TType_fun (_, _, nullness) -> SolveNullnessSupportsNull csenv ndeep m2 trace ty nullness
+        | TType_app (_, _, nullness) -> SolveNullnessSupportsNull csenv ndeep m2 trace ty nullness
+        | _ -> 
+        if TypeNullIsExtraValueOld g m ty then CompleteD else
+        match stripTyparEqns ty with 
         | NullableTy g _ ->
             ErrorD (ConstraintSolverError(FSComp.SR.csNullableTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
         | _ -> 

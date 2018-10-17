@@ -3897,6 +3897,49 @@ and
 
     override x.ToString() = x.FieldName
 
+and Nullness = 
+   | Known of NullnessInfo
+   | Variable of NullnessVar
+
+   member n.Evaluate() = 
+       match n with 
+       | Known info -> info
+       | Variable v -> v.Evaluate()
+
+   override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.Oblivious -> " lol"
+
+and NullnessVar = 
+    { mutable solution: Nullness option }
+
+    member nv.Evaluate() = 
+       match nv.solution with 
+       | None -> NullnessInfo.WithoutNull
+       | Some soln -> soln.Evaluate()
+
+    member nv.IsSolved = nv.solution.IsSome
+
+    member nv.Set(nullness) = 
+       assert (not nv.IsSolved) 
+       nv.solution <- Some nullness
+
+    member nv.Unset() = 
+       assert nv.IsSolved
+       nv.solution <- None
+
+    member nv.Solution = 
+       assert nv.IsSolved
+       nv.solution.Value
+
+and 
+    [<RequireQualifiedAccess>]
+    NullnessInfo = 
+    /// we know that there is an extra null value in the type
+    | WithNull
+    /// we know that there is no extra null value in the type
+    | WithoutNull
+    /// we know we don't care
+    | Oblivious
+
 and 
   /// The algebra of types
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -3907,20 +3950,20 @@ and
     /// Indicates the type is a universal type, only used for types of values and members 
     | TType_forall of Typars * TType
 
-    /// TType_app(tyconRef, typeInstantiation).
+    /// TType_app(tyconRef, typeInstantiation, nullness).
     ///
     /// Indicates the type is built from a named type and a number of type arguments
-    | TType_app of TyconRef * TypeInst
+    | TType_app of TyconRef * TypeInst * Nullness
 
     /// TType_tuple(elementTypes).
     ///
     /// Indicates the type is a tuple type. elementTypes must be of length 2 or greater.
     | TType_tuple of TupInfo * TTypes
 
-    /// TType_fun(domainType,rangeType).
+    /// TType_fun(domainType, rangeType, nullness).
     ///
     /// Indicates the type is a function type 
-    | TType_fun of  TType * TType
+    | TType_fun of  TType * TType * Nullness
 
     /// TType_ucase(unionCaseRef, typeInstantiation)
     ///
@@ -3935,14 +3978,15 @@ and
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of Measure
 
+
     /// For now, used only as a discriminant in error message.
     /// See https://github.com/Microsoft/visualfsharp/issues/2561
     member x.GetAssemblyName() =
         match x with
         | TType_forall (_tps, ty)        -> ty.GetAssemblyName()
-        | TType_app (tcref, _tinst)      -> tcref.CompilationPath.ILScopeRef.QualifiedName
+        | TType_app (tcref, _tinst, _)   -> tcref.CompilationPath.ILScopeRef.QualifiedName
         | TType_tuple (_tupInfo, _tinst) -> ""
-        | TType_fun (_d,_r)              -> ""
+        | TType_fun _                    -> ""
         | TType_measure _ms              -> ""
         | TType_var tp                   -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
         | TType_ucase (_uc,_tinst)       ->
@@ -3955,13 +3999,13 @@ and
     override x.ToString() =  
         match x with 
         | TType_forall (_tps,ty) -> "forall ...  " + ty.ToString()
-        | TType_app (tcref, tinst) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
+        | TType_app (tcref, tinst, nullness) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">") + nullness.ToString() 
         | TType_tuple (tupInfo, tinst) -> 
             (match tupInfo with 
              | TupInfo.Const false -> ""
              | TupInfo.Const true -> "struct ")
              + String.concat "," (List.map string tinst) + ")"
-        | TType_fun (d,r) -> "(" + string d + " -> " + string r + ")"
+        | TType_fun (d,r,nullness) -> "(" + string d + " -> " + string r + ")" + nullness.ToString()
         | TType_ucase (uc,tinst) -> "ucase " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
         | TType_var tp -> 
             match tp.Solution with 
@@ -5775,3 +5819,9 @@ let FSharpOptimizationDataResourceName2 = "FSharpOptimizationInfo."
 let FSharpSignatureDataResourceName2 = "FSharpSignatureInfo."
 
 
+let NewNullnessVar() = Nullness.Variable { solution = None } // we don't known (and if we never find out then it's non-null)
+
+let ObliviousToNull = Nullness.Known NullnessInfo.Oblivious
+let KnownNull = Nullness.Known NullnessInfo.WithNull
+let KnownNonNull = Nullness.Known NullnessInfo.WithoutNull
+let AssumeNonNull = KnownNonNull

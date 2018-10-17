@@ -79,6 +79,9 @@ val stripExpr : Expr -> Expr
 val valsOfBinds : Bindings -> Vals 
 val (|ExprValWithPossibleTypeInst|_|) : Expr -> (ValRef * ValUseFlag * TType list * range) option
 
+/// Ensure that a type admits nullness
+val tryAddNullToTy: TType -> TType option
+
 //-------------------------------------------------------------------------
 // Build decision trees imperatively
 //------------------------------------------------------------------------- 
@@ -469,6 +472,7 @@ val destTyparTy       : TcGlobals -> TType -> Typar
 val destAnyParTy      : TcGlobals -> TType -> Typar
 val destMeasureTy     : TcGlobals -> TType -> Measure
 val tryDestForallTy   : TcGlobals -> TType -> Typars * TType
+val nullnessOfTy      : TcGlobals -> TType -> Nullness
 
 val isFunTy            : TcGlobals -> TType -> bool
 val isForallTy         : TcGlobals -> TType -> bool
@@ -1131,12 +1135,10 @@ val ModuleNameIsMangled : TcGlobals -> Attribs -> bool
 
 val CompileAsEvent : TcGlobals -> Attribs -> bool
 
-val TypeNullIsExtraValue : TcGlobals -> range -> TType -> bool
-val TypeNullIsTrueValue : TcGlobals -> TType -> bool
-val TypeNullNotLiked : TcGlobals -> range -> TType -> bool
+val TypeNullIsExtraValueNew : TcGlobals -> range -> TType -> bool
+val TypeNullIsExtraValueOld : TcGlobals -> range -> TType -> bool
 val TypeNullNever : TcGlobals -> TType -> bool
 
-val TypeSatisfiesNullConstraint : TcGlobals -> range -> TType -> bool
 val TypeHasDefaultValue : TcGlobals -> range -> TType -> bool
 
 val isAbstractTycon : Tycon -> bool

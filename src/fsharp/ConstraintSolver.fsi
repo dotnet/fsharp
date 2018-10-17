@@ -81,6 +81,8 @@ exception ConstraintSolverInfiniteTypes                 of ContextInfo * Display
 exception ConstraintSolverTypesNotInEqualityRelation    of DisplayEnv * TType * TType * range * range * ContextInfo
 exception ConstraintSolverTypesNotInSubsumptionRelation of DisplayEnv * TType * TType * range * range
 exception ConstraintSolverMissingConstraint             of DisplayEnv * Typar * TyparConstraint * range * range
+exception ConstraintSolverNullnessWarningWithTypes      of DisplayEnv * TType * TType * NullnessInfo * NullnessInfo * range  * range 
+exception ConstraintSolverNullnessWarningWithType       of DisplayEnv * TType * NullnessInfo * range  * range 
 exception ConstraintSolverError                         of string * range * range
 exception ConstraintSolverRelatedInformation            of string option * range * exn
 exception ErrorFromApplyingDefault                      of TcGlobals * DisplayEnv * Typar * TType * exn * range

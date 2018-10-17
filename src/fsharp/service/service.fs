@@ -965,10 +965,10 @@ type TypeCheckInfo
                         items |> List.sortBy (fun d ->
                             let n = 
                                 match d.Item with  
-                                | Item.Types (_,(TType_app(tcref,_) :: _)) -> 1 + tcref.TyparsNoRange.Length
+                                | Item.Types (_,(TType_app(tcref,_,_) :: _)) -> 1 + tcref.TyparsNoRange.Length
                                 // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
-                                | Item.FakeInterfaceCtor (TType_app(tcref,_)) 
-                                | Item.DelegateCtor (TType_app(tcref,_)) -> 1000 + tcref.TyparsNoRange.Length
+                                | Item.FakeInterfaceCtor (TType_app(tcref,_,_)) 
+                                | Item.DelegateCtor (TType_app(tcref,_,_)) -> 1000 + tcref.TyparsNoRange.Length
                                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                                 | Item.CtorGroup (_, (cinfo :: _)) -> 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length 
                                 | _ -> 0
@@ -982,11 +982,11 @@ type TypeCheckInfo
                     let items =
                         items |> List.groupBy (fun d ->
                             match d.Item with  
-                            | Item.Types (_,(TType_app(tcref,_) :: _))
+                            | Item.Types (_,(TType_app(tcref,_,_) :: _))
                             | Item.ExnCase tcref -> tcref.LogicalName
                             | Item.UnqualifiedType(tcref :: _)
-                            | Item.FakeInterfaceCtor (TType_app(tcref,_)) 
-                            | Item.DelegateCtor (TType_app(tcref,_)) -> tcref.CompiledName
+                            | Item.FakeInterfaceCtor (TType_app(tcref,_,_)) 
+                            | Item.DelegateCtor (TType_app(tcref,_,_)) -> tcref.CompiledName
                             | Item.CtorGroup (_, (cinfo :: _)) ->
                                 cinfo.ApparentEnclosingTyconRef.CompiledName
                             | _ -> d.Item.DisplayName)
@@ -1210,7 +1210,7 @@ type TypeCheckInfo
                       //Item.Value(vref)
                       None
 
-                  | Item.Types (_, TType_app (tr, _) :: _) when tr.IsLocalRef && tr.IsTypeAbbrev -> None
+                  | Item.Types (_, TType_app (tr, _, _) :: _) when tr.IsLocalRef && tr.IsTypeAbbrev -> None
 
                   | Item.Types (_, [ AppTy g (tr, _) ]) when not tr.IsLocalRef ->
                       match tr.TypeReprInfo, tr.PublicPath with
@@ -1284,7 +1284,7 @@ type TypeCheckInfo
 
         let (|OptionalArgumentAttribute|_|) ttype =
             match ttype with
-            | TType.TType_app(tref, _) when tref.Stamp = g.attrib_OptionalArgumentAttribute.TyconRef.Stamp -> Some()
+            | TType.TType_app(tref, _, _) when tref.Stamp = g.attrib_OptionalArgumentAttribute.TyconRef.Stamp -> Some()
             | _ -> None
 
         let (|KeywordIntrinsicValue|_|) (vref: ValRef) =
@@ -1370,7 +1370,7 @@ type TypeCheckInfo
                 Some (m, SemanticClassificationType.Interface)
             | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists (isStructTy g) -> 
                 Some (m, SemanticClassificationType.ValueType)
-            | CNR(_, Item.Types(_, TType_app(tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, _, _, _, m) when isStructTyconRef tyconRef ->
+            | CNR(_, Item.Types(_, TType_app(tyconRef, (TType_measure _ :: _), _) :: _), LegitTypeOccurence, _, _, _, m) when isStructTyconRef tyconRef ->
                 Some (m, SemanticClassificationType.ValueType)
             | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists isDisposableTy ->
                 Some (m, SemanticClassificationType.Disposable)

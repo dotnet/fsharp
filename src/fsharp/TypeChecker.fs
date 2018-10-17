@@ -1393,7 +1393,7 @@ let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, (ValSche
                 if Tastops.MemberIsExplicitImpl cenv.g memberInfo then
                     let slotSig = List.head memberInfo.ImplementedSlotSigs
                     match slotSig.ImplementedType with
-                    | TType_app (tyconref, _) -> Some tyconref.Accessibility
+                    | TType_app (tyconref, _, _nullness) -> Some tyconref.Accessibility
                     | _ -> None
                 else
                     None
@@ -1867,7 +1867,9 @@ let FreshenTyconRef m rigid (tcref:TyconRef) declaredTyconTypars =
       tps |> List.iter (fun tp -> tp.SetRigidity rigid)  
         
     let renaming, tinst = FixupNewTypars m [] [] tpsorig tps
-    (TType_app(tcref, List.map mkTyparTy tpsorig), tps, renaming, TType_app(tcref, tinst))
+    let origObjTy = TType_app(tcref, List.map mkTyparTy tpsorig, KnownNonNull)
+    let freshTy = TType_app(tcref, tinst, KnownNonNull)
+    (origObjTy, tps, renaming, freshTy)
     
 let FreshenPossibleForallTy g m rigid ty = 
     let tpsorig, tau = tryDestForallTy g ty
@@ -1881,7 +1883,7 @@ let FreshenPossibleForallTy g m rigid ty =
 
 let infoOfTyconRef m (tcref:TyconRef) = 
     let tps, renaming, tinst = FreshenTypeInst m (tcref.Typars m)
-    tps, renaming, tinst, TType_app (tcref, tinst)
+    tps, renaming, tinst, TType_app (tcref, tinst, AssumeNonNull)
 
 
 /// Given a abstract method, which may be a generic method, freshen the type in preparation 
@@ -2193,7 +2195,7 @@ module GeneralizationHelpers =
             match tp.Constraints |> List.partition (function (TyparConstraint.CoercesTo _) -> true | _ -> false) with 
             | [TyparConstraint.CoercesTo(cxty, _)], others -> 
                  // Throw away null constraints if they are implied 
-                 if others |> List.exists (function (TyparConstraint.SupportsNull(_)) -> not (TypeSatisfiesNullConstraint cenv.g m cxty) | _ -> true) 
+                 if others |> List.exists (function (TyparConstraint.SupportsNull(_)) -> not (TypeNullIsExtraValueOld cenv.g m cxty) | _ -> true) 
                  then None
                  else Some cxty
             | _ -> None
@@ -4646,6 +4648,19 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
         errorR(Error(FSComp.SR.parsInvalidLiteralInType(), m)) 
         NewErrorType (), tpenv
 
+    | SynType.WithNull(innerTy, m) -> 
+        let innerTyC, tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv innerTy
+        if TypeNullNever cenv.g innerTyC then
+            let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC
+            errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString, tyString), m)) 
+        match tryAddNullToTy innerTyC with 
+        | None -> 
+            let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC
+            errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString, tyString), m)) 
+            innerTyC, tpenv
+        | Some innerTyNull ->
+            AddCxTypeMustSupportNull env.DisplayEnv cenv.css m NoTrace innerTyNull
+            innerTyNull, tpenv
 
     | SynType.MeasurePower(ty, exponent, m) ->
         match optKind with
@@ -4959,7 +4974,7 @@ and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (synArgTys:
         List.iter2 (UnifyTypes cenv env m) tinst actualArgTys
 
     // Try to decode System.Tuple --> F~ tuple types etc.
-    let ty = cenv.g.decompileType tcref actualArgTys
+    let ty = cenv.g.decompileType tcref actualArgTys KnownNonNull
 
     ty, tpenv
 
@@ -4983,7 +4998,7 @@ and TcNestedTypeApplication cenv newOk checkCxs occ env tpenv mWholeTypeApp ty t
     let ty = convertToTypeWithMetadataIfPossible cenv.g ty
     if not (isAppTy cenv.g ty) then error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), mWholeTypeApp))
     match ty with 
-    | TType_app(tcref, tinst) -> 
+    | TType_app(tcref, tinst, _nullness) -> 
         let pathTypeArgs = List.truncate (max (tinst.Length - tcref.Typars(mWholeTypeApp).Length) 0) tinst
         TcTypeApp cenv newOk checkCxs occ env tpenv mWholeTypeApp tcref pathTypeArgs tyargs 
     | _ -> error(InternalError("TcNestedTypeApplication: expected type application", mWholeTypeApp))
@@ -8638,7 +8653,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
                                 (currentIndex <> SEEN_NAMED_ARGUMENT) &&
                                 (currentIndex < numArgTys) &&
                                 match stripTyEqns cenv.g argTys.[currentIndex] with
-                                | TType_app(tcref, _) -> tyconRefEq cenv.g cenv.g.bool_tcr tcref || tyconRefEq cenv.g cenv.g.system_Bool_tcref tcref
+                                | TType_app(tcref, _, _) -> tyconRefEq cenv.g cenv.g.bool_tcr tcref || tyconRefEq cenv.g cenv.g.system_Bool_tcref tcref
                                 | TType_var(_) -> true
                                 | _ -> false
 
@@ -15307,8 +15322,8 @@ module EstablishTypeDefinitionCores =
                 
             let allowNullLiteralAttributeCheck() = 
                 if hasAllowNullLiteralAttr then 
-                    tycon.TypeContents.tcaug_super |> Option.iter (fun ty -> if not (TypeNullIsExtraValue cenv.g m ty) then errorR (Error(FSComp.SR.tcAllowNullTypesMayOnlyInheritFromAllowNullTypes(), m)))
-                    tycon.ImmediateInterfaceTypesOfFSharpTycon |> List.iter (fun ty -> if not (TypeNullIsExtraValue cenv.g m ty) then errorR (Error(FSComp.SR.tcAllowNullTypesMayOnlyInheritFromAllowNullTypes(), m)))
+                    tycon.TypeContents.tcaug_super |> Option.iter (fun ty -> if not (TypeNullIsExtraValueOld cenv.g m ty) then errorR (Error(FSComp.SR.tcAllowNullTypesMayOnlyInheritFromAllowNullTypes(), m)))
+                    tycon.ImmediateInterfaceTypesOfFSharpTycon |> List.iter (fun ty -> if not (TypeNullIsExtraValueOld cenv.g m ty) then errorR (Error(FSComp.SR.tcAllowNullTypesMayOnlyInheritFromAllowNullTypes(), m)))
                 
                 
             let structLayoutAttributeCheck(allowed) = 
@@ -15633,7 +15648,7 @@ module EstablishTypeDefinitionCores =
                 match stripTyparEqns ty with 
                 | TType_tuple (_, l) -> accInAbbrevTypes l acc
                 | TType_ucase (UCRef(tc, _), tinst) 
-                | TType_app (tc, tinst) -> 
+                | TType_app (tc, tinst, _) -> 
                     let tycon2 = tc.Deref
                     let acc = accInAbbrevTypes tinst acc
                     // Record immediate recursive references 
@@ -15646,7 +15661,7 @@ module EstablishTypeDefinitionCores =
                     else 
                         acc
 
-                | TType_fun (d, r) -> 
+                | TType_fun (d, r, _nullness) -> 
                     accInAbbrevType d (accInAbbrevType r acc)
                 
                 | TType_var _ -> acc
@@ -15743,7 +15758,7 @@ module EstablishTypeDefinitionCores =
             and accStructFieldType structTycon structTyInst fspec fieldTy (doneTypes, acc) =
                 let fieldTy = stripTyparEqns fieldTy
                 match fieldTy with
-                | TType_app (tcref2 , tinst2) when tcref2.IsStructOrEnumTycon ->
+                | TType_app (tcref2, tinst2, _nullness) when tcref2.IsStructOrEnumTycon ->
                     // The field is a struct.
                     // An edge (tycon, tycon2) should be recorded, unless it is the "static self-typed field" case.
                     let tycon2 = tcref2.Deref
@@ -15763,7 +15778,7 @@ module EstablishTypeDefinitionCores =
                     else
                         let acc = insertEdgeToTycon tycon2 acc // collect edge (tycon, tycon2), if tycon2 is initial.
                         accStructInstanceFields fieldTy tycon2 tinst2 (doneTypes, acc) // recurse through struct field looking for more edges
-                | TType_app (tcref2 , tinst2) when tcref2.IsTypeAbbrev  ->
+                | TType_app (tcref2, tinst2, _nullness) when tcref2.IsTypeAbbrev  ->
                     // The field is a type abbreviation. Expand and repeat.
                     accStructFieldType structTycon structTyInst fspec (reduceTyconRefAbbrev tcref2 tinst2) (doneTypes, acc)
                 | _ ->

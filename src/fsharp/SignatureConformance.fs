@@ -193,8 +193,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 elif fNull && not aNull then 
                   errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
 
-                let aNull2 = TypeNullIsExtraValue g m (generalizedTyconRef (mkLocalTyconRef implTycon))
-                let fNull2 = TypeNullIsExtraValue g m (generalizedTyconRef (mkLocalTyconRef implTycon))
+                let aNull2 = TypeNullIsExtraValueOld g m (generalizedTyconRef (mkLocalTyconRef implTycon))
+                let fNull2 = TypeNullIsExtraValueOld g m (generalizedTyconRef (mkLocalTyconRef implTycon))
                 if aNull2 && not fNull2 then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull2(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
                 elif fNull2 && not aNull2 then 
