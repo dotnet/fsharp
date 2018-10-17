@@ -1607,7 +1607,7 @@ module internal Parser =
                 let isExe = options.IsExe
                 try Some (ParseInput(lexfun, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe)))
                 with e ->
-                    errHandler.ErrorLogger.ErrorR(e)
+                    errHandler.ErrorLogger.StopProcessingRecovery e Range.range0 // don't re-raise any exceptions, we must return None.
                     None)
         errHandler.CollectedDiagnostics, parseResult, errHandler.AnyErrors
 

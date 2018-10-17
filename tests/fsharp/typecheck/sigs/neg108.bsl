@@ -1,2 +1,5 @@
 
-neg108.fs(5,3,5,15): typecheck error FS3242: This type does not inherit Attribute, it will not work correctly with other .NET languages.
+neg108.fs(4,19,4,23): typecheck error FS0001: This expression was expected to have type
+    'Test'    
+but here has type
+    'Unit -> Test'    

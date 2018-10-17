@@ -7057,9 +7057,39 @@
         <target state="translated">Невозможно получить адрес значения, возвращенного из выражения. Используйте возвращенное значение в качестве значения с привязкой let, прежде чем получить адрес.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
+        <source>Byref types are not allowed to have optional type extensions.</source>
+        <target state="new">Byref types are not allowed to have optional type extensions.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkNoReturnOfLimitedSpan">
         <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
         <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInvalidFunctionParameterType">
+        <source>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</source>
+        <target state="new">The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInvalidFunctionReturnType">
+        <source>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</source>
+        <target state="new">The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
+        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
+        <target state="new">Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotPartiallyApplyExtensionMethodForByref">
+        <source>Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</source>
+        <target state="new">Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotCallExtensionMemberInrefToByref">
+        <source>Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</source>
+        <target state="new">Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotInheritAttribute">
