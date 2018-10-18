@@ -23,38 +23,26 @@ type internal FSharpIndentationService
     static member IsSmartIndentEnabled (options: Microsoft.CodeAnalysis.Options.OptionSet) =
         options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName) = FormattingOptions.IndentStyle.Smart
 
-    static member GetDesiredIndentation(documentId: DocumentId, sourceText: SourceText, filePath: string, lineNumber: int, tabSize: int, indentStyle: FormattingOptions.IndentStyle, options: (FSharpParsingOptions * FSharpProjectOptions) option): Option<int> =
-
-        // Match indentation with previous line
-        let rec tryFindPreviousNonEmptyLine l =
-            if l <= 0 then None
-            else
-                let previousLine = sourceText.Lines.[l - 1]
-                if not (String.IsNullOrEmpty(previousLine.ToString())) then
-                    Some previousLine
-                else
-                    tryFindPreviousNonEmptyLine (l - 1)
-
-        let rec tryFindLastNonWhitespaceOrCommentToken (line: TextLine) = maybe {
-           let! parsingOptions, _projectOptions = options
+    static member IndentShouldFollow (documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, parsingOptions: FSharpParsingOptions) =
+        let lastTokenOpt =
            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
-           let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
+           let tokens = Tokenizer.tokenizeLine(documentId, sourceText, position, filePath, defines)
 
-           return!
-               tokens
-               |> Array.rev
-               |> Array.tryFind (fun x ->
-                   x.Tag <> FSharpTokenTag.WHITESPACE &&
-                   x.Tag <> FSharpTokenTag.COMMENT &&
-                   x.Tag <> FSharpTokenTag.LINE_COMMENT)
-        }
+           tokens
+           |> Array.rev
+           |> Array.tryFind (fun x ->
+               x.Tag <> FSharpTokenTag.WHITESPACE &&
+               x.Tag <> FSharpTokenTag.COMMENT &&
+               x.Tag <> FSharpTokenTag.LINE_COMMENT)
 
         let (|Eq|_|) y x =
             if x = y then Some()
             else None
 
-        let (|NeedIndent|_|) (token: Tokenizer.SavedTokenInfo) =
-            match token.Tag with
+        match lastTokenOpt with
+        | None -> false
+        | Some lastToken ->
+            match lastToken.Tag with
             | Eq FSharpTokenTag.EQUALS // =
             | Eq FSharpTokenTag.LARROW // <-
             | Eq FSharpTokenTag.RARROW // ->
@@ -70,8 +58,20 @@ type internal FSharpIndentationService
             | Eq FSharpTokenTag.STRUCT // struct
             | Eq FSharpTokenTag.CLASS // class
             | Eq FSharpTokenTag.TRY -> // try
-                Some ()
-            | _ -> None
+                true
+            | _ -> false
+
+    static member GetDesiredIndentation(documentId: DocumentId, sourceText: SourceText, filePath: string, lineNumber: int, tabSize: int, indentStyle: FormattingOptions.IndentStyle, options: (FSharpParsingOptions * FSharpProjectOptions) option): Option<int> =
+
+        // Match indentation with previous line
+        let rec tryFindPreviousNonEmptyLine l =
+            if l <= 0 then None
+            else
+                let previousLine = sourceText.Lines.[l - 1]
+                if not (String.IsNullOrEmpty(previousLine.ToString())) then
+                    Some previousLine
+                else
+                    tryFindPreviousNonEmptyLine (l - 1)
 
         maybe {
             let! previousLine = tryFindPreviousNonEmptyLine lineNumber
@@ -81,18 +81,15 @@ type internal FSharpIndentationService
                 |> Seq.takeWhile ((=) ' ')
                 |> Seq.length
 
+            let! parsingOptions, _ = options
+
             // Only use smart indentation after tokens that need indentation
             // if the option is enabled
-            let lastToken =
-                if indentStyle = FormattingOptions.IndentStyle.Smart then
-                    tryFindLastNonWhitespaceOrCommentToken previousLine
-                else
-                    None
-
             return
-                match lastToken with
-                | Some NeedIndent -> (lastIndent/tabSize + 1) * tabSize
-                | _ -> lastIndent
+                if indentStyle = FormattingOptions.IndentStyle.Smart && FSharpIndentationService.IndentShouldFollow(documentId, sourceText, filePath, previousLine.Start, parsingOptions) then
+                    (lastIndent/tabSize + 1) * tabSize
+                else
+                    lastIndent
         }
 
     interface ISynchronousIndentationService with
