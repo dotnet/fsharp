@@ -1310,12 +1310,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                   minfos 
                     // curried members may not be used to satisfy constraints
                     |> List.choose (fun minfo ->
-                          if minfo.IsCurried then None
-                          elif (minfos |> List.exists(fun minfo1 ->
-                                    match minfo1.DeclaringTyconRef.TypeContents.tcaug_super with
-                                    | Some(TType_app(parent, _)) -> tyconRefEq g parent minfo.DeclaringTyconRef
-                                    | _ -> false)) then None
-                          else
+                          if minfo.IsCurried then None else
                           let callerArgs = argtys |> List.map (fun argty -> CallerArg(argty, m, false, dummyExpr))
                           let minst = FreshenMethInfo m minfo
                           let objtys = minfo.GetObjArgTypes(amap, m, minst)
@@ -2426,7 +2421,17 @@ and ResolveOverloading
                     
 
                 let bestMethods =
-                    let indexedApplicableMeths = applicableMeths |> List.indexed
+                    let indexedApplicableMeths =
+                        applicableMeths
+                        |> List.filter (fun (meth,_,_) ->
+                            applicableMeths
+                            |> List.exists(fun (meth1,_,_) ->
+                                match meth1.Method.DeclaringTyconRef.TypeContents.tcaug_super with
+                                | Some(TType_app(parent, _)) -> tyconRefEq g parent meth.Method.DeclaringTyconRef
+                                | _ -> false)
+                            |> not
+                            ) 
+                        |> List.indexed
                     indexedApplicableMeths |> List.choose (fun (i, candidate) -> 
                         if indexedApplicableMeths |> List.forall (fun (j, other) -> 
                              i = j ||
