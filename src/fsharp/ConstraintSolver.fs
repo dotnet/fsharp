@@ -2421,17 +2421,7 @@ and ResolveOverloading
                     
 
                 let bestMethods =
-                    let indexedApplicableMeths =
-                        applicableMeths
-                        |> List.filter (fun (meth,_,_) ->
-                            applicableMeths
-                            |> List.exists(fun (meth1,_,_) ->
-                                match meth1.Method.DeclaringTyconRef.TypeContents.tcaug_super with
-                                | Some(TType_app(parent, _)) -> tyconRefEq g parent meth.Method.DeclaringTyconRef
-                                | _ -> false)
-                            |> not
-                            ) 
-                        |> List.indexed
+                    let indexedApplicableMeths = applicableMeths |> List.indexed
                     indexedApplicableMeths |> List.choose (fun (i, candidate) -> 
                         if indexedApplicableMeths |> List.forall (fun (j, other) -> 
                              i = j ||
