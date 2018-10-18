@@ -2018,8 +2018,12 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                     let checkForDup erasureFlag (minfo2:MethInfo) = minfo2.IsDispatchSlot && MethInfosEquivByNameAndSig erasureFlag true g cenv.amap m minfo minfo2
                     match parentMethsOfSameName |> List.tryFind (checkForDup EraseAll) with
                     | None -> ()
-                    | Some minfo ->
-                        let mtext = NicePrint.stringOfMethInfo cenv.amap m cenv.denv minfo
+                    | Some minfo1 ->
+                        match minfo with
+                        | FSMeth(_,_,vref,_) ->
+                            vref.MemberInfo |> Option.iter(fun v -> v.MemberFlags.IsNonExplicitOverride <- true)
+                        | _ -> ()
+                        let mtext = NicePrint.stringOfMethInfo cenv.amap m cenv.denv minfo1
                         if parentMethsOfSameName |> List.exists (checkForDup EraseNone) then 
                             warning(Error(FSComp.SR.tcNewMemberHidesAbstractMember(mtext),m))
                         else
