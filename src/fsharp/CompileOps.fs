@@ -2250,6 +2250,7 @@ type TcConfigBuilder =
       mutable embedResources : string list
       mutable errorSeverityOptions: FSharpErrorSeverityOptions
       mutable mlCompatibility: bool
+      mutable assumeNullOnImport: bool
       mutable checkOverflow: bool
       mutable showReferenceResolutions:bool
       mutable outputFile : string option
@@ -2410,6 +2411,7 @@ type TcConfigBuilder =
           subsystemVersion = 4, 0 // per spec for 357994
           useHighEntropyVA = false
           mlCompatibility = false
+          assumeNullOnImport = false
           checkOverflow = false
           showReferenceResolutions = false
           outputFile = None
@@ -2882,6 +2884,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     member x.embedResources  = data.embedResources
     member x.errorSeverityOptions = data.errorSeverityOptions
     member x.mlCompatibility = data.mlCompatibility
+    member x.assumeNullOnImport = data.assumeNullOnImport
     member x.checkOverflow = data.checkOverflow
     member x.showReferenceResolutions = data.showReferenceResolutions
     member x.outputFile  = data.outputFile
@@ -4794,7 +4797,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
         let tcGlobals = TcGlobals(tcConfig.compilingFslib, ilGlobals, fslibCcu, 
                                     tcConfig.implicitIncludeDir, tcConfig.mlCompatibility, 
-                                    tcConfig.isInteractive, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations, tcConfig.noDebugData )
+                                    tcConfig.isInteractive, tcConfig.assumeNullOnImport, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations, tcConfig.noDebugData )
 
 #if DEBUG
         // the global_g reference cell is used only for debug printing

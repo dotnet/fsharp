@@ -798,7 +798,6 @@ and SolveNullnessEquiv (csenv:ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
         | _, _ -> 
-            printfn "generating warning: %A %A %A %A" n1 n2 csenv.m m2
             WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
         
 and SolveNullnessSubsumesNullness (csenv:ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =

@@ -1137,6 +1137,8 @@ val CompileAsEvent : TcGlobals -> Attribs -> bool
 
 val TypeNullIsExtraValueNew : TcGlobals -> range -> TType -> bool
 val TypeNullIsExtraValueOld : TcGlobals -> range -> TType -> bool
+val TyconRefNullIsExtraValueOld :  TcGlobals -> range -> TyconRef -> bool
+val TyconRefNullIsExtraValueNew :  TcGlobals -> range -> TyconRef -> bool
 val TypeNullNever : TcGlobals -> TType -> bool
 
 val TypeHasDefaultValue : TcGlobals -> range -> TType -> bool

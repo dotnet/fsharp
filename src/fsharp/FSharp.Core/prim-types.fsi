@@ -2241,11 +2241,46 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("IsNull")>]
         val inline isNull : value:'T -> bool when 'T : null
         
+        /// <summary>Determines whether the given value is null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("IsNullV")>]
+        val inline isNullV : value:Nullable<'T> -> bool
+        
         /// <summary>Determines whether the given value is not null.</summary>
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is not null, false otherwise.</returns>
         [<CompiledName("IsNotNull")>]
         val inline internal isNotNull : value:'T -> bool when 'T : null
+
+        /// <summary>Get the null value for a value type.</summary>
+        /// <returns>The null value for a value type.</returns>
+        [<CompiledName("NullV")>]
+        val inline nullV<'T when 'T : struct and 'T : (new : unit -> 'T) and 'T :> ValueType> :  Nullable<'T>
+
+        /// <summary>Asserts that the value is non-null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("NotNull")>]
+        val inline notNull : value:'T -> 'T when 'T : not struct and 'T : null
+
+        /// <summary>Asserts that the value is non-null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("NotNullV")>]
+        val inline notNullV : value:Nullable<'T> -> 'T 
+
+        /// <summary>Asserts that the value is non-null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("WithNull")>]
+        val inline withNull : value:'T -> 'T when 'T : not struct and 'T : null
+
+        /// <summary>Asserts that the value is non-null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("WithNullV")>]
+        val inline withNullV : value:'T -> Nullable<'T> 
 
         /// <summary>Throw a <c>System.Exception</c> exception.</summary>
         /// <param name="message">The exception message.</param>

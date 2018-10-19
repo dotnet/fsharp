@@ -166,7 +166,7 @@ let rec ImportILType (env:ImportMap) m tinst ty =
     | ILType.Boxed  tspec | ILType.Value tspec ->
         let tcref = ImportILTypeRef env m tspec.TypeRef 
         let inst = tspec.GenericArgs |> List.map (ImportILType env m tinst) 
-        let nullness = ObliviousToNull // TODO: give this the right setting
+        let nullness = if env.g.assumeNullOnImport && TyconRefNullIsExtraValueOld env.g m tcref then KnownNull else ObliviousToNull
         ImportTyconRefApp env tcref inst nullness
 
     | ILType.Modified(_,tref,ILType.Byref ty) when tref.Name = "System.Runtime.InteropServices.InAttribute" -> mkInByrefTy env.g (ImportILType env m tinst ty)
@@ -314,7 +314,7 @@ let rec ImportProvidedType (env:ImportMap) (m:range) (* (tinst:TypeInst) *) (st:
                 else
                     genericArg)
 
-        let nullness = ObliviousToNull
+        let nullness = if env.g.assumeNullOnImport && TyconRefNullIsExtraValueOld env.g m tcref then KnownNull else ObliviousToNull
 
         ImportTyconRefApp env tcref genericArgs nullness
 

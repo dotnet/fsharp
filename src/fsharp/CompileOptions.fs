@@ -832,6 +832,7 @@ let advancedFlagsFsc tcConfigB =
 let testFlag tcConfigB = 
         CompilerOption("test", tagString, OptionString (fun s -> 
                                             match s with
+                                            | "AssumeNullOnImport" -> tcConfigB.assumeNullOnImport <- true
                                             | "StackSpan"        -> tcConfigB.internalTestSpanStackReferring <- true
                                             | "ErrorRanges"      -> tcConfigB.errorStyle <- ErrorStyle.TestErrors
                                             | "MemberBodyRanges" -> PostTypeCheckSemanticChecks.testFlagMemberBody := true

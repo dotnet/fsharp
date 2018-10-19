@@ -7503,28 +7503,31 @@ let TypeNullNever g ty =
     (isStructTy g underlyingTy) ||
     (isByrefTy g underlyingTy)
 
-/// Indicates if the type admits the use of 'null' as a value
-// TODO NULLNESS: Consider whether we need to adjust this predicate, and the compatibility issues with doing this
-let TypeNullIsExtraValueNew g m ty = 
-    if isILReferenceTy g ty then
+let TyconRefNullIsExtraValueOld g m (tcref: TyconRef) = 
+    not tcref.IsStructOrEnumTycon &&
+    not (isByrefLikeTyconRef g m tcref) && 
+    (if tcref.IsILTycon then 
+        // Putting AllowNullLiteralAttribute(false) on an IL or provided type means 'null' can't be used with that type
+        (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref <> Some false)
+     else 
+        (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true))
+
+let TyconRefNullIsExtraValueNew g m (tcref: TyconRef) = 
+    not tcref.IsStructOrEnumTycon &&
+    not (isByrefLikeTyconRef g m tcref) && 
+    (if tcref.IsILTycon then 
         false
-    elif TypeNullNever g ty then 
-        false
-    else 
-        // Putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
-        match tryDestAppTy g ty with ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true | _ -> false
+     else 
+        // Putting AllowNullLiteralAttribute(true) on an F# type means it always admits null even in the new model
+        (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true))
 
 /// Indicates if the type admits the use of 'null' as a value
-// TODO NULLNESS: Consider whether we need to adjust this predicate, and the compatibility issues with doing this
+let TypeNullIsExtraValueNew g m ty = 
+    match tryDestAppTy g ty with ValueSome tcref -> TyconRefNullIsExtraValueNew g m tcref | _ -> true
+
+/// Indicates if the type admits the use of 'null' as a value
 let TypeNullIsExtraValueOld g m ty = 
-    if isILReferenceTy g ty || isDelegateTy g ty then
-        // Putting AllowNullLiteralAttribute(false) on an IL or provided type means 'null' can't be used with that type
-        not (match tryDestAppTy g ty with ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some false | _ -> false)
-    elif TypeNullNever g ty then 
-        false
-    else 
-        // Putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
-        match tryDestAppTy g ty with ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true | _ -> false
+    match tryDestAppTy g ty with ValueSome tcref -> TyconRefNullIsExtraValueOld g m tcref | _ -> true
 
 // TODO NULLNESS: Consider whether we need to adjust this predicate, and the compatibility issues with doing this
 let TypeNullIsTrueValue g ty =

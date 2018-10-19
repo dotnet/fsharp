@@ -176,7 +176,7 @@ let tname_IAsyncResult = "System.IAsyncResult"
 //------------------------------------------------------------------------- 
 
 type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, directoryToResolveRelativePaths, 
-                      mlCompatibility: bool, isInteractive:bool, 
+                      mlCompatibility: bool, isInteractive:bool, assumeNullOnImport: bool,
                       // The helper to find system types amongst referenced DLLs
                       tryFindSysTypeCcu, 
                       emitDebugInfoInQuotations: bool, noDebugData: bool) =
@@ -896,6 +896,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.ilg=ilg
       // A table of all intrinsics that the compiler cares about
   member __.knownIntrinsics                = v_knownIntrinsics
+  member __.assumeNullOnImport = assumeNullOnImport
       // A table of known modules in FSharp.Core. Not all modules are necessarily listed, but the more we list the
       // better the job we do of mapping from provided expressions back to FSharp.Core F# functions and values.
   member __.knownFSharpCoreModules         = v_knownFSharpCoreModules

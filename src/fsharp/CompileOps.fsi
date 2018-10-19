@@ -270,6 +270,7 @@ type TcConfigBuilder =
       mutable embedResources: string list
       mutable errorSeverityOptions: FSharpErrorSeverityOptions
       mutable mlCompatibility:bool
+      mutable assumeNullOnImport: bool
       mutable checkOverflow:bool
       mutable showReferenceResolutions:bool
       mutable outputFile: string option
@@ -425,6 +426,7 @@ type TcConfig =
     member embedResources: string list
     member errorSeverityOptions: FSharpErrorSeverityOptions
     member mlCompatibility:bool
+    member assumeNullOnImport: bool
     member checkOverflow:bool
     member showReferenceResolutions:bool
     member outputFile: string option
