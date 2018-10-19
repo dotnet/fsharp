@@ -1114,7 +1114,6 @@ and
     { IsInstance: bool
       IsDispatchSlot: bool
       IsOverrideOrExplicitImpl: bool
-      mutable IsNonExplicitOverride: bool
       IsFinal: bool
       MemberKind: MemberKind }
 
@@ -2095,12 +2094,12 @@ let mkSynBinding (xmlDoc,headPat) (vis,isInline,isMutable,mBind,spBind,retInfo,o
     let rhsExpr,retTyOpt = mkSynBindingRhs staticOptimizations origRhsExpr mRhs retInfo
     Binding (vis,NormalBinding,isInline,isMutable,attrs,xmlDoc,info,headPat,retTyOpt,rhsExpr,mBind,spBind)
 
-let NonVirtualMemberFlags k = { MemberKind=k;                           IsInstance=true;  IsDispatchSlot=false; IsOverrideOrExplicitImpl=false; IsFinal=false; IsNonExplicitOverride = false }
-let CtorMemberFlags =         { MemberKind=MemberKind.Constructor;      IsInstance=false; IsDispatchSlot=false; IsOverrideOrExplicitImpl=false; IsFinal=false; IsNonExplicitOverride = false }
-let ClassCtorMemberFlags =    { MemberKind=MemberKind.ClassConstructor; IsInstance=false; IsDispatchSlot=false; IsOverrideOrExplicitImpl=false; IsFinal=false; IsNonExplicitOverride = false }
-let OverrideMemberFlags k =   { MemberKind=k;                           IsInstance=true;  IsDispatchSlot=false; IsOverrideOrExplicitImpl=true;  IsFinal=false; IsNonExplicitOverride = false }
-let AbstractMemberFlags k =   { MemberKind=k;                           IsInstance=true;  IsDispatchSlot=true;  IsOverrideOrExplicitImpl=false; IsFinal=false; IsNonExplicitOverride = false }
-let StaticMemberFlags k =     { MemberKind=k;                           IsInstance=false; IsDispatchSlot=false; IsOverrideOrExplicitImpl=false; IsFinal=false; IsNonExplicitOverride = false }
+let NonVirtualMemberFlags k = { MemberKind=k;                           IsInstance=true;  IsDispatchSlot=false; IsOverrideOrExplicitImpl=false; IsFinal=false }
+let CtorMemberFlags =         { MemberKind=MemberKind.Constructor;      IsInstance=false; IsDispatchSlot=false; IsOverrideOrExplicitImpl=false; IsFinal=false }
+let ClassCtorMemberFlags =    { MemberKind=MemberKind.ClassConstructor; IsInstance=false; IsDispatchSlot=false; IsOverrideOrExplicitImpl=false; IsFinal=false }
+let OverrideMemberFlags k =   { MemberKind=k;                           IsInstance=true;  IsDispatchSlot=false; IsOverrideOrExplicitImpl=true;  IsFinal=false }
+let AbstractMemberFlags k =   { MemberKind=k;                           IsInstance=true;  IsDispatchSlot=true;  IsOverrideOrExplicitImpl=false; IsFinal=false }
+let StaticMemberFlags k =     { MemberKind=k;                           IsInstance=false; IsDispatchSlot=false; IsOverrideOrExplicitImpl=false; IsFinal=false }
 
 let inferredTyparDecls = SynValTyparDecls([],true,[])
 let noInferredTypars = SynValTyparDecls([],false,[])

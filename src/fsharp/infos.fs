@@ -370,7 +370,7 @@ type ValRef with
     member vref.IsDefiniteFSharpOverrideMember = 
         let membInfo = vref.MemberInfo.Value   
         let flags = membInfo.MemberFlags
-        not flags.IsDispatchSlot && (flags.IsOverrideOrExplicitImpl || flags.IsNonExplicitOverride || not (isNil membInfo.ImplementedSlotSigs))
+        not flags.IsDispatchSlot && (flags.IsOverrideOrExplicitImpl || not (isNil membInfo.ImplementedSlotSigs))
 
     /// Check if an F#-declared member value is an  explicit interface member implementation
     member vref.IsFSharpExplicitInterfaceImplementation g = 

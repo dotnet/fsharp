@@ -1445,8 +1445,10 @@ and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution 
             /// between potential overloads because a generic instantiation derived from the left hand type differs 
             /// to a generic instantiation for an operator based on the right hand type. 
             
-            let minfos = List.reduce (ListSet.unionFavourLeft MethInfo.MethInfosUseIdenticalDefinitions) minfos
+            let minfos = minfos |> ExcludeHiddenOfMethInfos csenv.g csenv.amap m
             minfos
+            |> List.filter(fun minfo1 -> 
+                not(minfos |> List.exists (fun minfo2 -> minfo1.IsDispatchSlot && MethInfosEquivByNameAndSig EraseAll true csenv.g csenv.amap m minfo1 minfo2)))
         else 
             []
     // The trait name "op_Explicit" also covers "op_Implicit", so look for that one too.

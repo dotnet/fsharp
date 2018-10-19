@@ -1369,8 +1369,7 @@ let u_MemberFlags st =
       IsDispatchSlot=x4
       IsOverrideOrExplicitImpl=x5
       IsFinal=x6
-      MemberKind=x7
-      IsNonExplicitOverride = false}
+      MemberKind=x7}
 
 let fill_u_Expr_hole,u_expr_fwd = u_hole()
 let fill_p_Expr_hole,p_expr_fwd = p_hole()
