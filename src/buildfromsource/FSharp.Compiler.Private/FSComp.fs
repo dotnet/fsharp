@@ -4367,7 +4367,7 @@ type internal SR private() =
     /// (Originally from ..\FSComp.txt:1446)
     static member tcTypeDoesNotInheritAttribute() = (3242, GetStringFunc("tcTypeDoesNotInheritAttribute",",,,") )
     /// The type '%s' never has 'null' as a value. To specify a nullable value type use Nullable<%s>
-    /// (Originally from ..\FSComp.txt:1444)
+    /// (Originally from ..\FSComp.txt:1447)
     static member tcTypeDoesNotHaveAnyNull(a0 : System.String, a1 : System.String) = (3243, GetStringFunc("tcTypeDoesNotHaveAnyNull",",,,%s,,,%s,,,") a0 a1)
 
     /// Call this method once to validate that all known resources are valid; throws if not

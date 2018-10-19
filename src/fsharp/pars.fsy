@@ -4372,9 +4372,6 @@ appTypeConPower:
     { $1 }
 
 appType:
-  | appType BAR NULL
-    { SynType.WithNull($1,lhs parseState) }
-
   | appType HACKNULL
     { SynType.WithNull($1,lhs parseState) }
 
