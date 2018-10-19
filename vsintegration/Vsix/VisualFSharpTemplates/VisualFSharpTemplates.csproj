@@ -11,9 +11,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="$(FSharpSourcesRoot)\..\packages\FSharp.Core.4.5.2\FSharp.Core.4.5.2.nupkg">
+    <Content Include="$(FSharpSourcesRoot)\..\packages\FSharp.Core.4.5.3\FSharp.Core.4.5.3.nupkg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>packages\FSharp.Core.4.5.2.nupkg</Link>
+      <Link>packages\FSharp.Core.4.5.3.nupkg</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.4.0\System.ValueTuple.4.4.0.nupkg">
