@@ -744,10 +744,8 @@ and solveTypMeetsTyparConstraints (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
     let g = csenv.g
     // Propagate compat flex requirements from 'tp' to 'ty'
     do! SolveTypIsCompatFlex csenv trace r.IsCompatFlex ty
-        
     // Propagate dynamic requirements from 'tp' to 'ty'
     do! SolveTypDynamicReq csenv trace r.DynamicReq ty
-
     // Propagate static requirements from 'tp' to 'ty' 
     do! SolveTypStaticReq csenv trace r.StaticReq ty
     
@@ -1012,12 +1010,12 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
     // Assert the object type if the constraint is for an instance member    
     if memFlags.IsInstance then 
         match tys, argtys with 
-            | [ty], (h :: _) -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace h ty 
-            | _ -> do! ErrorD (ConstraintSolverError(FSComp.SR.csExpectedArguments(), m, m2))
+        | [ty], (h :: _) -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace h ty 
+        | _ -> do! ErrorD (ConstraintSolverError(FSComp.SR.csExpectedArguments(), m, m2))
     // Trait calls are only supported on pseudo type (variables) 
     for e in tys do
       do! SolveTypStaticReq csenv trace HeadTypeStaticReq e
-        
+    
     let argtys = if memFlags.IsInstance then List.tail argtys else argtys
 
     let minfos = GetRelevantMethodsForTrait csenv permitWeakResolution nm traitInfo
