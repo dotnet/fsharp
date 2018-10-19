@@ -617,12 +617,6 @@ module OperationResult =
         | OkResult(warnings, _) -> OkResult(warnings, ())
         | ErrorResult(warnings, err) -> ErrorResult(warnings, err)
 
-    // Alternative ignore
-    (* 
-    let inline ignore (res: OperationResult<'a>) : OperationResult<'a> =
-        res ++ (fun _ -> CompleteD)
-    *)
-
 // Code below is for --flaterrors flag that is only used by the IDE
 
 let stringThatIsAProxyForANewlineInFlatErrors = new System.String [|char 29 |]
