@@ -1539,7 +1539,8 @@ module internal Parser =
         let lexResourceManager = new Lexhelp.LexResourceManager()
         
         // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
-        let lexargs = mkLexargs(fileName, defines, lightSyntaxStatus, lexResourceManager, ref [], errHandler.ErrorLogger)
+        // TODO(pathmap): expose PathMap on the service API, and thread it through here
+        let lexargs = mkLexargs(fileName, defines, lightSyntaxStatus, lexResourceManager, ref [], errHandler.ErrorLogger, PathMap.empty)
         let lexargs = { lexargs with applyLineDirectives = false }
 
         let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)

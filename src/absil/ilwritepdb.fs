@@ -129,7 +129,7 @@ type idd =
 // Portable PDB Writer
 //---------------------------------------------------------------------
 let cvMagicNumber = 0x53445352L
-let pdbGetCvDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) (cvChunk:BinaryChunk) = 
+let pdbGetCvDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) (cvChunk:BinaryChunk) =
     let iddCvBuffer =
         // Debug directory entry
         let path = (System.Text.Encoding.UTF8.GetBytes filepath)
@@ -219,7 +219,7 @@ let getRowCounts tableRowCounts =
     tableRowCounts |> Seq.iter(fun x -> builder.Add(x))
     builder.MoveToImmutable()
 
-let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sourceLink:string) showTimes (info:PdbData) isDeterministic =
+let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sourceLink:string) showTimes (info:PdbData) isDeterministic (pathMap:PathMap) =
     sortMethods showTimes info
     let externalRowCounts = getRowCounts info.TableRowCounts
     let docs = 
@@ -229,6 +229,8 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
 
     let metadata = MetadataBuilder()
     let serializeDocumentName (name:string) =
+        let name = PathMap.apply pathMap name
+
         let count s c = s |> Seq.filter(fun ch -> if c = ch then true else false) |> Seq.length
 
         let s1, s2 = '/', '\\'
@@ -474,12 +476,12 @@ let compressPortablePdbStream (uncompressedLength:int64) (contentId:BlobContentI
     stream.WriteTo(compressionStream)
     (uncompressedLength, contentId, compressedStream)
 
-let writePortablePdbInfo (contentId:BlobContentId) (stream:MemoryStream) showTimes fpdb cvChunk =
+let writePortablePdbInfo (contentId:BlobContentId) (stream:MemoryStream) showTimes fpdb pathMap cvChunk =
     try FileSystem.FileDelete fpdb with _ -> ()
     use pdbFile = new FileStream(fpdb, FileMode.Create, FileAccess.ReadWrite)
     stream.WriteTo(pdbFile)
     reportTime showTimes "PDB: Closed"
-    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) fpdb cvChunk None 0L None
+    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) (PathMap.apply pathMap fpdb) cvChunk None 0L None
 
 let embedPortablePdbInfo (uncompressedLength:int64)  (contentId:BlobContentId) (stream:MemoryStream) showTimes fpdb cvChunk pdbChunk =
     reportTime showTimes "PDB: Closed"

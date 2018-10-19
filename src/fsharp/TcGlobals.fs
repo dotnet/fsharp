@@ -179,7 +179,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                       mlCompatibility: bool, isInteractive:bool, 
                       // The helper to find system types amongst referenced DLLs
                       tryFindSysTypeCcu, 
-                      emitDebugInfoInQuotations: bool, noDebugData: bool) =
+                      emitDebugInfoInQuotations: bool, noDebugData: bool,
+                      pathMap: PathMap) =
       
   let vara = NewRigidTypar "a" envRange
   let varb = NewRigidTypar "b" envRange
@@ -901,6 +902,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.mlCompatibility                = mlCompatibility
   member __.emitDebugInfoInQuotations      = emitDebugInfoInQuotations
   member __.directoryToResolveRelativePaths= directoryToResolveRelativePaths
+  member __.pathMap = pathMap
   member __.unionCaseRefEq x y = primUnionCaseRefEq compilingFslib fslibCcu x y
   member __.valRefEq x y = primValRefEq compilingFslib fslibCcu x y
   member __.fslibCcu                 = fslibCcu

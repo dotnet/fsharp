@@ -2348,6 +2348,8 @@ type TcConfigBuilder =
       mutable tryGetMetadataSnapshot : ILReaderTryGetMetadataSnapshot
 
       mutable internalTestSpanStackReferring : bool
+
+      mutable pathMap : PathMap
       }
 
     static member Initial =
@@ -2485,6 +2487,7 @@ type TcConfigBuilder =
           shadowCopyReferences = false
           tryGetMetadataSnapshot = (fun _ -> None)
           internalTestSpanStackReferring = false
+          pathMap = PathMap.empty
         }
 
     static member CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
@@ -2608,6 +2611,9 @@ type TcConfigBuilder =
              
     member tcConfigB.RemoveReferencedAssemblyByPath (m, path) =
         tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs |> List.filter (fun ar-> ar.Range <> m || ar.Text <> path)
+
+    member tcConfigB.AddPathMapping (oldPrefix, newPrefix) =
+        tcConfigB.pathMap <- tcConfigB.pathMap |> PathMap.addMapping oldPrefix newPrefix
     
     static member SplitCommandLineResourceInfo (ri:string) =
         let p = ri.IndexOf ','
@@ -2925,6 +2931,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     member x.optSettings        = data.optSettings
     member x.emitTailcalls      = data.emitTailcalls
     member x.deterministic      = data.deterministic
+    member x.pathMap            = data.pathMap
     member x.preferredUiLang    = data.preferredUiLang
     member x.lcid               = data.lcid
     member x.optsOn             = data.optsOn
@@ -3580,7 +3587,7 @@ let ParseOneInputLexbuf (tcConfig:TcConfig, lexResourceManager, conditionalCompi
     try 
         let skip = true in (* don't report whitespace from lexer *)
         let lightSyntaxStatus = LightSyntaxStatus (tcConfig.ComputeLightSyntaxInitialStatus(filename), true) 
-        let lexargs = mkLexargs (filename, conditionalCompilationDefines@tcConfig.conditionalCompilationDefines, lightSyntaxStatus, lexResourceManager, ref [], errorLogger)
+        let lexargs = mkLexargs (filename, conditionalCompilationDefines@tcConfig.conditionalCompilationDefines, lightSyntaxStatus, lexResourceManager, ref [], errorLogger, tcConfig.pathMap)
         let shortFilename = SanitizeFileName filename tcConfig.implicitIncludeDir 
         let input = 
             Lexhelp.usingLexbufForParsing (lexbuf, filename) (fun lexbuf ->
@@ -3782,7 +3789,9 @@ let MakeILResource rname bytes =
       CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
       MetadataIndex = NoMetadataIdx }
 
-let PickleToResource inMem file g scope rname p x = 
+let PickleToResource inMem file (g: TcGlobals) scope rname p x =
+    let file = PathMap.apply g.pathMap file
+
     { Name = rname
       Location = (let bytes = pickleObjWithDanglingCcus inMem file g scope p x in ILResourceLocation.LocalOut bytes)
       Access = ILResourceAccess.Public
@@ -3792,15 +3801,23 @@ let PickleToResource inMem file g scope rname p x =
 let GetSignatureData (file, ilScopeRef, ilModule, byteReader) : PickledDataWithReferences<PickledCcuInfo> = 
     unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo (byteReader())
 
-let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: CcuThunk, file, inMem) : ILResource = 
+let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: CcuThunk, file, inMem) : ILResource =
     let mspec = ccu.Contents
     let mspec = ApplyExportRemappingToEntity tcGlobals exportRemapping mspec
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
     // don't complain when they see the resource.
-    let rname = if ccu.AssemblyName = GetFSharpCoreLibraryName() then FSharpSignatureDataResourceName2 else FSharpSignatureDataResourceName 
+    let rname = if ccu.AssemblyName = GetFSharpCoreLibraryName() then FSharpSignatureDataResourceName2 else FSharpSignatureDataResourceName
+
+    let includeDir =
+        if String.IsNullOrEmpty tcConfig.implicitIncludeDir then ""
+        else
+            tcConfig.implicitIncludeDir
+            |> System.IO.Path.GetFullPath
+            |> PathMap.applyDir tcGlobals.pathMap
+
     PickleToResource inMem file tcGlobals ccu (rname+ccu.AssemblyName) pickleCcuInfo 
         { mspec=mspec 
-          compileTimeWorkingDir=tcConfig.implicitIncludeDir
+          compileTimeWorkingDir=includeDir
           usesQuotations = ccu.UsesFSharp20PlusQuotations }
 
 let GetOptimizationData (file, ilScopeRef, ilModule, byteReader) = 
@@ -3809,7 +3826,7 @@ let GetOptimizationData (file, ilScopeRef, ilModule, byteReader) =
 let WriteOptimizationData (tcGlobals, file, inMem, ccu: CcuThunk, modulInfo) = 
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
     // don't complain when they see the resource.
-    let rname = if ccu.AssemblyName = GetFSharpCoreLibraryName() then FSharpOptimizationDataResourceName2 else FSharpOptimizationDataResourceName 
+    let rname = if ccu.AssemblyName = GetFSharpCoreLibraryName() then FSharpOptimizationDataResourceName2 else FSharpOptimizationDataResourceName
     PickleToResource inMem file tcGlobals ccu (rname+ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
 
 //----------------------------------------------------------------------------
@@ -4770,8 +4787,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                   
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
         let tcGlobals = TcGlobals(tcConfig.compilingFslib, ilGlobals, fslibCcu, 
-                                    tcConfig.implicitIncludeDir, tcConfig.mlCompatibility, 
-                                    tcConfig.isInteractive, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations, tcConfig.noDebugData )
+                                    tcConfig.implicitIncludeDir, tcConfig.mlCompatibility,
+                                    tcConfig.isInteractive, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations,
+                                    tcConfig.noDebugData, tcConfig.pathMap)
 
 #if DEBUG
         // the global_g reference cell is used only for debug printing

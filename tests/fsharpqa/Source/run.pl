@@ -75,7 +75,10 @@ if (defined($ENV{EXCLUDEIF})){
 $VerifyStrongName = 1 if ($ENV{VERIFYSTRONGNAME} =~ /TRUE/i);
 
 # Check for any compiler flags
-my $SCFLAGS = $ENV{SCFLAGS};
+my $CWD = cwd();
+$_ = $ENV{SCFLAGS};
+s/\$CWD/$CWD/g;
+my $SCFLAGS = $_;
 
 # Check for any compiler 'tail' flags
 my $TAILFLAGS = $ENV{TAILFLAGS};
@@ -159,12 +162,12 @@ if (exists($ENV{PRECMD})) {
   #    SOURCE=foo.fs PRECMD="\$FSC_PIPE bar.fs"
   # and it will expanded into $FSC_PIPE before invoking it
   $_ = $ENV{PRECMD};
-  s/^\$FSC_PIPE/$FSC_PIPE/;
+  s/^\$FSC_PIPE/$FSC_PIPE/g;
   s/\$FSI_PIPE/$FSI_PIPE/g;
-  s/^\$FSI32_PIPE/$FSI32_PIPE/;
-  s/\$ISCFLAGS/$ISCFLAGS/;
-  s/^\$CSC_PIPE/$CSC_PIPE/;
-  s/^\$VBC_PIPE/$VBC_PIPE/;
+  s/^\$FSI32_PIPE/$FSI32_PIPE/g;
+  s/\$ISCFLAGS/$ISCFLAGS/g;
+  s/^\$CSC_PIPE/$CSC_PIPE/g;
+  s/^\$VBC_PIPE/$VBC_PIPE/g;
   RunExit(TEST_FAIL, "Fail to execute the PRECMD" . @CommandOutput . "\n")  if RunCommand("PRECMD",$_ ,1); 
 }
 
@@ -487,11 +490,9 @@ sub RunCommand {
 # GetSrc -- Find the source file to build
 #
 sub GetSrc() {
-  my $cwd = cwd();
-  
   # The environment SOURCE var usually defines what to compile
   $_ = $ENV{SOURCE};
-  s/\$CWD/$cwd/;
+  s/\$CWD/$CWD/;
   my $source = $_;
   return($source) if defined($source);
 

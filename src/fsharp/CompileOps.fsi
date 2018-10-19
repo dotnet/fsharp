@@ -6,6 +6,7 @@ module internal Microsoft.FSharp.Compiler.CompileOps
 open System
 open System.Text
 open System.Collections.Generic
+open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
@@ -366,6 +367,8 @@ type TcConfigBuilder =
 
       /// if true - 'let mutable x = Span.Empty', the value 'x' is a stack referring span. Used for internal testing purposes only until we get true stack spans.
       mutable internalTestSpanStackReferring : bool
+
+      mutable pathMap : PathMap
     }
 
     static member Initial: TcConfigBuilder
@@ -389,6 +392,7 @@ type TcConfigBuilder =
     member RemoveReferencedAssemblyByPath: range * string -> unit
     member AddEmbeddedSourceFile: string -> unit
     member AddEmbeddedResource: string -> unit
+    member AddPathMapping: oldPrefix: string * newPrefix: string -> unit
     
     static member SplitCommandLineResourceInfo: string -> string * string * ILResourceAccess
 
@@ -491,6 +495,7 @@ type TcConfig =
     member optSettings  : Optimizer.OptimizationSettings 
     member emitTailcalls: bool
     member deterministic: bool
+    member pathMap: PathMap
     member preferredUiLang: string option
     member optsOn       : bool 
     member productNameForBannerText: string
