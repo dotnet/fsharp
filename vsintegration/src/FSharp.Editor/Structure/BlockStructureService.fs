@@ -150,10 +150,13 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
  
     override __.GetBlockStructureAsync(document, cancellationToken) : Task<BlockStructure> =
         asyncMaybe {
-            let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
-            let! sourceText = document.GetTextAsync(cancellationToken)
-            let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
-            return createBlockSpans document.FSharpOptions.Advanced.IsBlockStructureEnabled sourceText parsedInput |> Seq.toImmutableArray
+            try
+                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
+                return createBlockSpans document.FSharpOptions.Advanced.IsBlockStructureEnabled sourceText parsedInput |> Seq.toImmutableArray
+            with
+            | _ex -> return ImmutableArray<_>.Empty
         } 
         |> Async.map (Option.defaultValue ImmutableArray<_>.Empty)
         |> Async.map BlockStructure

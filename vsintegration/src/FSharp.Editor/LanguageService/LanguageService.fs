@@ -143,19 +143,24 @@ type internal FSharpPackage() as this =
             vfsiToolWindow <- this.FindToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>, 0, true) :?> Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow
         vfsiToolWindow :> Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI
 
+    let getCommandService () = 
+        this.GetService<IMenuCommandService>() :?> OleMenuCommandService // FSI-LINKAGE-POINT
+
     // FSI-LINKAGE-POINT: unsited init
     do Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
-    override this.Initialize() =
-        base.Initialize()
+    override this.InitializeAsync(cancellationToken, progress) = 
+        let baseTask = base.InitializeAsync(cancellationToken, progress)
+        async {
+            do! Async.AwaitTask baseTask
 
-        // FSI-LINKAGE-POINT: sited init
-        let commandService = this.GetService(typeof<IMenuCommandService>) :?> OleMenuCommandService // FSI-LINKAGE-POINT
-        Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
-        // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
-        let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
-
-        ()
+            // FSI-LINKAGE-POINT: sited init
+            let commandService = getCommandService ()
+            Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
+            // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
+            let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
+            ()
+        } |> RoslynHelpers.StartAsyncAsTask cancellationToken :> System.Threading.Tasks.Task
 
     override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()

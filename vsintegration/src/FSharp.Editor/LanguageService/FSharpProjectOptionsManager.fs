@@ -3,7 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Collections.Concurrent
 open System.Collections.Immutable
 open System.ComponentModel.Composition
 open System.IO
@@ -29,6 +28,7 @@ type internal FSharpProjectOptionsManager
     (
         checkerProvider: FSharpCheckerProvider,
         [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspaceImpl,
+        [<Import(typeof<MiscellaneousFilesWorkspace>)>] miscWorkspace: MiscellaneousFilesWorkspace,
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider,
         settings: EditorOptions
     ) =
@@ -36,32 +36,26 @@ type internal FSharpProjectOptionsManager
     // A table of information about projects, excluding single-file projects.
     let projectOptionsTable = FSharpProjectOptionsTable()
 
+    let cache = new FSharpProjectOptionsCache(checkerProvider, settings, projectOptionsTable, serviceProvider)
+
     let tryGetOrCreateProjectId (projectFileName:string) =
         let projectDisplayName = projectDisplayNameOf projectFileName
         Some (workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName))
+
+    do
+        workspace.DocumentClosed.Add(fun args -> 
+            cache.ClearSingleDocumentCacheById(args.Document.Id)
+        )
+
+        miscWorkspace.DocumentClosed.Add(fun args ->
+            cache.ClearSingleDocumentCacheById(args.Document.Id)
+        )
 
     /// Retrieve the projectOptionsTable
     member __.FSharpOptions = projectOptionsTable
 
     /// Clear a project from the project table
     member this.ClearInfoForProject(projectId:ProjectId) = projectOptionsTable.ClearInfoForProject(projectId)
-
-    /// Get the exact options for a single-file script
-    member this.ComputeSingleFileOptions (fileName, loadTime, fileContents) =
-        async {
-            // NOTE: we don't use a unique stamp for single files, instead comparing options structurally.
-            // This is because we repeatedly recompute the options.
-            let extraProjectInfo = None
-            let optionsStamp = None 
-            let! options, _diagnostics = checkerProvider.Checker.GetProjectOptionsFromScript(fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo, ?optionsStamp=optionsStamp) 
-            // NOTE: we don't use FCS cross-project references from scripts to projects.  THe projects must have been
-            // compiled and #r will refer to files on disk
-            let referencedProjectFileNames = [| |] 
-            let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, options)
-            let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, None, fileName, options.ExtraProjectInfo, Some projectOptionsTable)
-            let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
-            return (deps, parsingOptions, projectOptions)
-        }
 
     /// Update the info for a project in the project table
     member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, site, userOpName, invalidateConfig) =
@@ -90,19 +84,7 @@ type internal FSharpProjectOptionsManager
 
     /// Get the exact options for a document or project
     member this.TryGetOptionsForDocumentOrProject(document: Document) =
-        async { 
-            let projectId = document.Project.Id
-
-            match this.TryGetOptionsForProject(projectId) with
-            | Some(x) -> return Some(x)
-            | _ ->
-                // This is to handle misc single files
-                let! textVersion = document.GetTextVersionAsync() |> Async.AwaitTask
-                let! sourceText = document.GetTextAsync() |> Async.AwaitTask
-                let! _referencedProjectFileNames, parsingOptions, projectOptions = this.ComputeSingleFileOptions(document.FilePath, DateTime(int64(textVersion.GetHashCode())), sourceText.ToString())
-                let result = (parsingOptions, None, projectOptions)
-                return Some(result)
-        }
+        cache.TryGetProjectOptionsAsync(document)
 
     /// Get the options for a document or project relevant for syntax processing.
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project options for a script.

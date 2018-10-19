@@ -51,6 +51,7 @@
     <Compile Include="LanguageService\ProjectSitesAndFiles.fs" />
     <Compile Include="LanguageService\ProvideFSharpVersionRegistrationAttribute.fs" />
     <Compile Include="LanguageService\FSharpCheckerProvider.fs" />
+    <Compile Include="LanguageService\FSharpProjectOptionsCache.fs" />
     <Compile Include="LanguageService\FSharpProjectOptionsManager.fs" />
     <Compile Include="LanguageService\LegacyProjectWorkspaceMap.fs" />
     <Compile Include="LanguageService\LanguageService.fs" />
