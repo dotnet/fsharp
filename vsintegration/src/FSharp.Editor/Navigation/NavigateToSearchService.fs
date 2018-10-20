@@ -245,7 +245,7 @@ type internal FSharpNavigateToSearchService
         | _ -> NavigateToMatchKind.Regular
 
     interface INavigateToSearchService_RemoveInterfaceAboveAndRenameThisAfterInternalsVisibleToUsersUpdate with
-        member __.SearchProjectAsync(project, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
+        member __.SearchProjectAsync(project, _priorityDocuments, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
             asyncMaybe {
                 let! parsingOptions, _site, _options = projectInfoManager.TryGetOptionsForProject(project.Id)
                 let! items =
