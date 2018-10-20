@@ -1445,7 +1445,7 @@ and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution 
             /// between potential overloads because a generic instantiation derived from the left hand type differs 
             /// to a generic instantiation for an operator based on the right hand type. 
             
-            let minfos = minfos |> ExcludeHiddenOfMethInfos csenv.g csenv.amap m
+            let minfos = List.reduce (ListSet.unionFavourLeft MethInfo.MethInfosUseIdenticalDefinitions) minfos
             let relevantMinfos = minfos |> List.filter(fun minfo -> not minfo.IsDispatchSlot && not minfo.IsVirtual && minfo.IsInstance)
             minfos
             |> List.filter(fun minfo1 ->
