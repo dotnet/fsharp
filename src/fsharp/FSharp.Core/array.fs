@@ -1243,6 +1243,12 @@ namespace Microsoft.FSharp.Collections
             elif array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             else invalidArg "array" (SR.GetString(SR.inputSequenceTooLong))
 
+        [<CompiledName("TryExactlyOne")>]
+        let tryExactlyOne (array:'T[]) =
+            checkNonNull "array" array
+            if array.Length = 1 then Some array.[0]
+            else None
+
         let transposeArrays (array:'T[][]) =
             let len = array.Length
             if len = 0 then Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked 0 else
