@@ -5123,13 +5123,13 @@
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
-        <source>Type parameters must be placed directly adjacent to the type name, e.g. \"type C&lt;'T&gt;\", not     type \"C   &lt;'T&gt;\"</source>
-        <target state="translated">Los parámetros de tipo se deben colocar directamente adyacentes al nombre de tipo; por ejemplo, \"type C&lt;'T&gt;\", no     type \"C   &lt;'T&gt;\".</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="needs-review-translation">Los parámetros de tipo se deben colocar directamente adyacentes al nombre de tipo; por ejemplo, \"type C&lt;'T&gt;\", no     type \"C   &lt;'T&gt;\".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
-        <source>Type arguments must be placed directly adjacent to the type name, e.g. \"C&lt;'T&gt;\", not \"C  &lt;'T&gt;\"</source>
-        <target state="translated">Los argumentos de tipo se deben colocar directamente adyacentes al nombre de tipo; por ejemplo, \"C&lt;'T&gt;\", no \"C  &lt;'T&gt;\".</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="needs-review-translation">Los argumentos de tipo se deben colocar directamente adyacentes al nombre de tipo; por ejemplo, \"C&lt;'T&gt;\", no \"C  &lt;'T&gt;\".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
@@ -6328,8 +6328,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseConstructorDoesNotHaveFieldWithGivenName">
-        <source>Union case/exception '{0}' does not have field named '{1}'.</source>
-        <target state="translated">La excepción o el caso de unión '{0}' no tiene un campo denominado '{1}'.</target>
+        <source>The union case '{0}' does not have a field named '{1}'.</source>
+        <target state="needs-review-translation">La excepción o el caso de unión '{0}' no tiene un campo denominado '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseFieldCannotBeUsedMoreThanOnce">
@@ -7065,6 +7065,21 @@
       <trans-unit id="tcTypeDoesNotInheritAttribute">
         <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
         <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcExceptionConstructorDoesNotHaveFieldWithGivenName">
+        <source>The exception '{0}' does not have a field named '{1}'.</source>
+        <target state="new">The exception '{0}' does not have a field named '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcConstructorDoesNotHaveFieldWithGivenName">
+        <source>The constructor does not have a field named '{0}'.</source>
+        <target state="new">The constructor does not have a field named '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcActivePatternsDoNotHaveFields">
+        <source>Active patterns do not have fields. This syntax is invalid.</source>
+        <target state="new">Active patterns do not have fields. This syntax is invalid.</target>
         <note />
       </trans-unit>
     </body>

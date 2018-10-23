@@ -221,7 +221,7 @@ type internal FSharpCompletionProvider
             let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
             let getAllSymbols(fileCheckResults: FSharpCheckFileResults) =
-                if settings.IntelliSense.ShowAllSymbols
+                if settings.IntelliSense.IncludeSymbolsFromUnopenedNamespacesOrModules
                 then assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
                 else []
             let! results = 

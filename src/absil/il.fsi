@@ -752,12 +752,22 @@ type ILAttribElem =
 /// Named args: values and flags indicating if they are fields or properties.
 type ILAttributeNamedArg = string * ILType * bool * ILAttribElem
 
-/// Custom attributes.  See 'decodeILAttribData' for a helper to parse the byte[] 
-/// to ILAttribElem's as best as possible.  
+/// Custom attribute.
 type ILAttribute =
-    { Method: ILMethodSpec  
-      Data: byte[] 
-      Elements: ILAttribElem list}
+    /// Attribute with args encoded to a binary blob according to ECMA-335 II.21 and II.23.3.
+    /// 'decodeILAttribData' is used to parse the byte[] blob to ILAttribElem's as best as possible.
+    | Encoded of method: ILMethodSpec * data: byte[] * elements: ILAttribElem list
+
+    /// Attribute with args in decoded form.
+    | Decoded of method: ILMethodSpec * fixedArgs: ILAttribElem list * namedArgs: ILAttributeNamedArg list
+
+    /// Attribute instance constructor.
+    member Method: ILMethodSpec
+
+    /// Decoded arguments. May be empty in encoded attribute form.
+    member Elements: ILAttribElem list
+
+    member WithMethod: method: ILMethodSpec -> ILAttribute
 
 [<NoEquality; NoComparison; Struct>]
 type ILAttributes =
@@ -1540,9 +1550,6 @@ val typeNameForGlobalFunctions: string
 
 val isTypeNameForGlobalFunctions: string -> bool
 
-val ungenericizeTypeName: string -> string (* e.g. List`1 --> List *)
-
-
 // ====================================================================
 // PART 2
 // 
@@ -1681,6 +1688,8 @@ val mkILCustomAttribute:
        ILAttribElem list (* fixed args: values and implicit types *) * 
        ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
          -> ILAttribute
+
+val getCustomAttrData: ILGlobals -> ILAttribute -> byte[]
 
 val mkPermissionSet: ILGlobals -> ILSecurityAction * (ILTypeRef * (string * ILType * ILAttribElem) list) list -> ILSecurityDecl
 

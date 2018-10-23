@@ -474,8 +474,8 @@ and SolveTypStaticReq (csenv:ConstraintSolverEnv) trace req ty =
             IterateD (fun ((tpr:Typar), _) -> SolveTypStaticReqTypar csenv trace req tpr) vs
         | _ -> 
             match tryAnyParTy csenv.g ty with
-            | Some tpr -> SolveTypStaticReqTypar csenv trace req tpr
-            | None -> CompleteD
+            | ValueSome tpr -> SolveTypStaticReqTypar csenv trace req tpr
+            | ValueNone -> CompleteD
       
 let TransactDynamicReq (trace:OptionalTrace) (tpr:Typar) req = 
     let orig = tpr.DynamicReq
@@ -487,7 +487,7 @@ let SolveTypDynamicReq (csenv:ConstraintSolverEnv) trace req ty =
     | TyparDynamicReq.No -> CompleteD
     | TyparDynamicReq.Yes -> 
         match tryAnyParTy csenv.g ty with
-        | Some tpr when tpr.DynamicReq <> TyparDynamicReq.Yes ->
+        | ValueSome tpr when tpr.DynamicReq <> TyparDynamicReq.Yes ->
             TransactDynamicReq trace tpr TyparDynamicReq.Yes
         | _ -> CompleteD
 
@@ -499,7 +499,7 @@ let TransactIsCompatFlex (trace:OptionalTrace) (tpr:Typar) req =
 let SolveTypIsCompatFlex (csenv:ConstraintSolverEnv) trace req ty =
     if req then 
         match tryAnyParTy csenv.g ty with
-        | Some tpr when not tpr.IsCompatFlex -> TransactIsCompatFlex trace tpr req
+        | ValueSome tpr when not tpr.IsCompatFlex -> TransactIsCompatFlex trace tpr req
         | _ -> CompleteD
     else
         CompleteD
@@ -687,8 +687,8 @@ let CheckWarnIfRigid (csenv:ConstraintSolverEnv) ty1 (r:Typar) ty =
     if not r.Rigidity.WarnIfUnified then CompleteD else
     let needsWarning =
         match tryAnyParTy g ty with
-        | None -> true
-        | Some tp2 ->
+        | ValueNone -> true
+        | ValueSome tp2 ->
             not tp2.IsCompilerGenerated &&
                 (r.IsCompilerGenerated ||
                  // exclude this warning for two identically named user-specified type parameters, e.g. from different mutually recursive functions or types
@@ -758,8 +758,8 @@ and solveTypMeetsTyparConstraints (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
               CompleteD
           else
               match tryDestTyparTy g ty with
-              | None -> CompleteD
-              | Some destTypar ->
+              | ValueNone -> CompleteD
+              | ValueSome destTypar ->
                   AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.DefaultsTo(priority, dty, m))
           
       | TyparConstraint.SupportsNull m2                -> SolveTypeSupportsNull               csenv ndeep m2 trace ty
@@ -1468,7 +1468,7 @@ and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution 
 
 /// The nominal support of the member constraint 
 and GetSupportOfMemberConstraint (csenv:ConstraintSolverEnv) (TTrait(tys, _, _, _, _, _)) =
-    tys |> List.choose (tryAnyParTy csenv.g)
+    tys |> List.choose (tryAnyParTyOption csenv.g)
     
 /// Check if the support is fully solved.  
 and SupportOfMemberConstraintIsFullySolved (csenv:ConstraintSolverEnv) (TTrait(tys, _, _, _, _, _)) =
@@ -1502,9 +1502,9 @@ and SolveRelevantMemberConstraints (csenv:ConstraintSolverEnv) ndeep permitWeakR
                 /// Normalize the typar 
                 let ty = mkTyparTy tp
                 match tryAnyParTy csenv.g ty with
-                | Some tp ->
+                | ValueSome tp ->
                     SolveRelevantMemberConstraintsForTypar csenv ndeep permitWeakResolution trace tp
-                | None -> 
+                | ValueNone -> 
                     ResultD false)) 
 
 and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep permitWeakResolution (trace:OptionalTrace) tp =
@@ -1717,9 +1717,9 @@ and SolveTypeSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     let m = csenv.m
     let denv = csenv.DisplayEnv
     match tryDestTyparTy g ty with
-    | Some destTypar ->
+    | ValueSome destTypar ->
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.SupportsNull m)
-    | None ->
+    | ValueNone ->
         if TypeSatisfiesNullConstraint g m ty then CompleteD else 
         match ty with 
         | NullableTy g _ ->
@@ -1733,12 +1733,12 @@ and SolveTypeSupportsComparison (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     let amap = csenv.amap
     let denv = csenv.DisplayEnv
     match tryDestTyparTy g ty with
-    | Some destTypar ->
+    | ValueSome destTypar ->
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.SupportsComparison m)
-    | None ->
+    | ValueNone ->
         // Check it isn't ruled out by the user
         match tryDestAppTy g ty with 
-        | Some tcref when HasFSharpAttribute g g.attrib_NoComparisonAttribute tcref.Attribs ->
+        | ValueSome tcref when HasFSharpAttribute g g.attrib_NoComparisonAttribute tcref.Attribs ->
             ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportComparison1(NicePrint.minimalStringOfType denv ty), m, m2))
         | _ ->
             match ty with 
@@ -1777,11 +1777,11 @@ and SolveTypeSupportsEquality (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     let m = csenv.m
     let denv = csenv.DisplayEnv
     match tryDestTyparTy g ty with
-    | Some destTypar ->
+    | ValueSome destTypar ->
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.SupportsEquality m)
-    | None ->
+    | _ ->
         match tryDestAppTy g ty with 
-        | Some tcref when HasFSharpAttribute g g.attrib_NoEqualityAttribute tcref.Attribs ->
+        | ValueSome tcref when HasFSharpAttribute g g.attrib_NoEqualityAttribute tcref.Attribs ->
             ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportEquality1(NicePrint.minimalStringOfType denv ty), m, m2))
         | _ ->
             match ty with 
@@ -1814,9 +1814,9 @@ and SolveTypeIsEnum (csenv:ConstraintSolverEnv) ndeep m2 trace ty underlying =
         let m = csenv.m
         let denv = csenv.DisplayEnv
         match tryDestTyparTy g ty with
-        | Some destTypar ->
+        | ValueSome destTypar ->
             return! AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsEnum(underlying, m))
-        | None ->
+        | _ ->
             if isEnumTy g ty then 
                 do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace underlying (underlyingTypeOfEnumTy g ty) 
                 return! CompleteD
@@ -1830,9 +1830,9 @@ and SolveTypeIsDelegate (csenv:ConstraintSolverEnv) ndeep m2 trace ty aty bty =
         let m = csenv.m
         let denv = csenv.DisplayEnv
         match tryDestTyparTy g ty with
-        | Some destTypar ->
+        | ValueSome destTypar ->
             return! AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsDelegate(aty, bty, m))
-        | None ->
+        | _ ->
             if isDelegateTy g ty then 
                 match TryDestStandardDelegateType csenv.InfoReader m AccessibleFromSomewhere ty with 
                 | Some (tupledArgTy, rty) ->
@@ -1850,9 +1850,9 @@ and SolveTypeIsNonNullableValueType (csenv:ConstraintSolverEnv) ndeep m2 trace t
         let m = csenv.m
         let denv = csenv.DisplayEnv
         match tryDestTyparTy g ty with
-        | Some destTypar ->
+        | ValueSome destTypar ->
             return! AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsNonNullableStruct m)
-        | None ->
+        | _ ->
             let underlyingTy = stripTyEqnsAndMeasureEqns g ty
             if isStructTy g underlyingTy then
                 if tyconRefEq g g.system_Nullable_tcref (tcrefOfAppTy g underlyingTy) then
@@ -1866,9 +1866,9 @@ and SolveTypeIsUnmanaged (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     let m = csenv.m
     let denv = csenv.DisplayEnv
     match tryDestTyparTy g ty with
-    | Some destTypar ->
+    | ValueSome destTypar ->
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsUnmanaged m)
-    | None ->
+    | _ ->
         if isUnmanagedTy g ty then
             CompleteD
         else
@@ -1880,9 +1880,9 @@ and SolveTypeChoice (csenv:ConstraintSolverEnv) ndeep m2 trace ty tys =
     let m = csenv.m
     let denv = csenv.DisplayEnv
     match tryDestTyparTy g ty with
-    | Some destTypar ->
+    | ValueSome destTypar ->
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.SimpleChoice(tys, m)) 
-    | None ->
+    | _ ->
         if List.exists (typeEquivAux Erasure.EraseMeasures g ty) tys then CompleteD
         else ErrorD (ConstraintSolverError(FSComp.SR.csTypeNotCompatibleBecauseOfPrintf((NicePrint.minimalStringOfType denv ty), (String.concat "," (List.map (NicePrint.prettyStringOfTy denv) tys))), m, m2))
 
@@ -1892,9 +1892,9 @@ and SolveTypeIsReferenceType (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     let m = csenv.m
     let denv = csenv.DisplayEnv
     match tryDestTyparTy g ty with
-    | Some destTypar ->
+    | ValueSome destTypar ->
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsReferenceType m)
-    | None ->
+    | _ ->
         if isRefTy g ty then CompleteD
         else ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresReferenceSemantics(NicePrint.minimalStringOfType denv ty), m, m))
 
@@ -1905,9 +1905,9 @@ and SolveTypeRequiresDefaultConstructor (csenv:ConstraintSolverEnv) ndeep m2 tra
     let denv = csenv.DisplayEnv
     let ty = stripTyEqnsAndMeasureEqns g origTy
     match tryDestTyparTy g ty with
-    | Some destTypar ->
+    | ValueSome destTypar ->
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.RequiresDefaultConstructor m)
-    | None ->
+    | _ ->
         if isStructTy g ty && TypeHasDefaultValue g m ty then 
             CompleteD
         else
@@ -1915,13 +1915,13 @@ and SolveTypeRequiresDefaultConstructor (csenv:ConstraintSolverEnv) ndeep m2 tra
                |> List.exists (fun x -> x.IsNullary && IsMethInfoAccessible amap m AccessibleFromEverywhere x)
             then 
                 match tryDestAppTy g ty with
-                | Some tcref when HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs ->
+                | ValueSome tcref when HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs ->
                     ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresNonAbstract(NicePrint.minimalStringOfType denv origTy), m, m2))
                 | _ ->
                     CompleteD
             else
                 match tryDestAppTy g ty with
-                | Some tcref when
+                | ValueSome tcref when
                     tcref.PreEstablishedHasDefaultConstructor || 
                     // F# 3.1 feature: records with CLIMutable attribute should satisfy 'default constructor' constraint
                     (tcref.IsRecordTycon && HasFSharpAttribute g g.attrib_CLIMutableAttribute tcref.Attribs) ->
@@ -2351,7 +2351,7 @@ and ResolveOverloading
 
                             // Func<_> is always considered better than any other delegate type
                             match tryDestAppTy csenv.g ty1 with 
-                            | Some tcref1 when 
+                            | ValueSome tcref1 when 
                                 tcref1.DisplayName = "Func" &&  
                                 (match tcref1.PublicPath with Some p -> p.EnclosingPath = [| "System" |] | _ -> false) && 
                                 isDelegateTy g ty1 &&
@@ -2684,7 +2684,7 @@ let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo:Trai
                   match sln with 
                   | ILMethSln(origTy, extOpt, mref, minst) ->
                        let metadataTy = convertToTypeWithMetadataIfPossible g origTy
-                       let tcref, _tinst = destAppTy g metadataTy
+                       let tcref = tcrefOfAppTy g metadataTy
                        let mdef = IL.resolveILMethodRef tcref.ILTyconRawMetadata mref
                        let ilMethInfo =
                            match extOpt with 

@@ -1,7 +1,17 @@
-
     Copyright (c) Microsoft Corporation.  All Rights Reserved.  
-
     See License.txt in the project root for license information.
+    
+## About the release notes
+
+We deliver F# and F# components in Visual Studio and .NET Core releases. These can include bug fixes, new tooling features, new compiler features, performance improvements, infrastructure improvements, and new langauge versions. The most recent release of F# or any F# component will be at the top of this document.
+    
+## Visual Studio 15.8.5
+
+* Fix (#5504) - Internal MSBuild Error when building non-.NET SDK projects with MSBuild parallelism
+* Fix (#5518) - Visual Studio-deployed components are not NGEN'd
+* Fix ([Devcom 322883](https://developercommunity.visualstudio.com/content/problem/322883/all-net-framework-f-projects-build-to-4500-regardl.html)) - FSharp.Core 4.5.0.0 binary is deployed to FSharp.Core 4.4.3.0 location
+
+All other closed issues for the VS 15.8 release can be found [here](https://github.com/Microsoft/visualfsharp/milestone/14).
 
 ## F# 4.5
 

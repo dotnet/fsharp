@@ -3193,10 +3193,10 @@
     <value>This operation accesses a mutable top-level value defined in another assembly in an unsupported way. The value cannot be accessed through its address. Consider copying the expression to a mutable local, e.g. 'let mutable x = ...', and if necessary assigning the value back after the completion of the operation</value>
   </data>
   <data name="parsNonAdjacentTypars" xml:space="preserve">
-    <value>Type parameters must be placed directly adjacent to the type name, e.g. \"type C&lt;'T&gt;\", not     type \"C   &lt;'T&gt;\"</value>
+    <value>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</value>
   </data>
   <data name="parsNonAdjacentTyargs" xml:space="preserve">
-    <value>Type arguments must be placed directly adjacent to the type name, e.g. \"C&lt;'T&gt;\", not \"C  &lt;'T&gt;\"</value>
+    <value>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</value>
   </data>
   <data name="parsNonAtomicType" xml:space="preserve">
     <value>The use of the type syntax 'int C' and 'C  &lt;int&gt;' is not permitted here. Consider adjusting this type to be written in the form 'C&lt;int&gt;'</value>
@@ -3916,7 +3916,16 @@
     <value>Array method '{0}' is supplied by the runtime and cannot be directly used in code. For operations with array elements consider using family of GetArray/SetArray functions from LanguagePrimitives.IntrinsicFunctions module.</value>
   </data>
   <data name="tcUnionCaseConstructorDoesNotHaveFieldWithGivenName" xml:space="preserve">
-    <value>Union case/exception '{0}' does not have field named '{1}'.</value>
+    <value>The union case '{0}' does not have a field named '{1}'.</value>
+  </data>
+  <data name="tcExceptionConstructorDoesNotHaveFieldWithGivenName" xml:space="preserve">
+    <value>The exception '{0}' does not have a field named '{1}'.</value>
+  </data>
+  <data name="tcActivePatternsDoNotHaveFields" xml:space="preserve">
+    <value>Active patterns do not have fields. This syntax is invalid.</value>
+  </data>
+  <data name="tcConstructorDoesNotHaveFieldWithGivenName" xml:space="preserve">
+    <value>The constructor does not have a field named '{0}'.</value>
   </data>
   <data name="tcUnionCaseFieldCannotBeUsedMoreThanOnce" xml:space="preserve">
     <value>Union case/exception field '{0}' cannot be used more than once.</value>
