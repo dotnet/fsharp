@@ -148,12 +148,14 @@ type internal Cursor =
 type internal Anchor = 
     {top:int; left:int}
     static member Current(inset) = {top=Console.CursorTop;left= max inset Console.CursorLeft}
-
+    static member Top(inset) = {top = 0; left = inset}
     member p.PlaceAt(inset, index) =
         //printf "p.top = %d, p.left = %d, inset = %d, index = %d\n" p.top p.left inset index;
         let left = inset + (( (p.left - inset) + index) % (Console.BufferWidth - inset))
         let top = p.top + ( (p.left - inset) + index) / (Console.BufferWidth - inset)
         Cursor.ResetTo(top,left)
+
+
 
 type internal ReadLineConsole() =
     let history = new History()
@@ -330,7 +332,7 @@ type internal ReadLineConsole() =
                     changed := false;
                     x.GetOptions(input.ToString());
                 else
-                   !optionsCache,false
+                    !optionsCache,false
             optionsCache := opts;
             
             if (opts.Count > 0) then
@@ -368,7 +370,6 @@ type internal ReadLineConsole() =
                 input.Remove(!current - 1, 1) |> ignore;
                 current := !current - 1;
                 render();
-         
         let enter() = 
             Console.Write("\n");
             let line = input.ToString();
@@ -377,7 +378,25 @@ type internal ReadLineConsole() =
                 if (line.Length > 0) then 
                     history.AddLast(line);
                 line;
-        
+        let clear() = 
+            current := input.Length
+            let setPrompt(prompt) = 
+                if prompt then //we only allow clearing if prompt is ">"
+                    Console.Clear()
+                    Console.Write ( x.Prompt)
+                    Console.Write( input.ToString())
+                    anchor := Anchor.Top(x.Inset)   
+            let previous = history.Previous()
+            history.Next() |> ignore
+            if previous = "" then
+                setPrompt(true)
+            else
+                setPrompt(previous.[previous.Length - 2..previous.Length - 1] = ";;")            
+
+            
+        let home() =
+            current := 0;
+            (!anchor).PlaceAt(x.Inset,0)
         let rec read() = 
             let key = Console.ReadKey true
 
@@ -409,52 +428,45 @@ type internal ReadLineConsole() =
                 setInput(String.Empty);
                 change()
             | ConsoleKey.Home ->
-                current := 0;
-                (!anchor).PlaceAt(x.Inset,0)
+                home()
                 change()
             | ConsoleKey.End ->
                 current := input.Length;
                 (!anchor).PlaceAt(x.Inset,!rendered);
                 change()
             | _ ->
-            match (key.Modifiers, key.KeyChar) with
-            // Control-A
-            | (ConsoleModifiers.Control, '\001') ->
-                current := 0;
-                (!anchor).PlaceAt(x.Inset,0)
+            match (key.Modifiers, key.Key) with
+            | (ConsoleModifiers.Control, ConsoleKey.A) ->
+                home()
                 change ()
-            // Control-E
-            | (ConsoleModifiers.Control, '\005') ->
+            | (ConsoleModifiers.Control, ConsoleKey.E) ->
                 current := input.Length;
                 (!anchor).PlaceAt(x.Inset,!rendered)
                 change ()
-            // Control-B
-            | (ConsoleModifiers.Control, '\002') ->
+            | (ConsoleModifiers.Control, ConsoleKey.B) ->
                 moveLeft()
                 change ()
-            // Control-f
-            | (ConsoleModifiers.Control, '\006') ->
+            | (ConsoleModifiers.Control, ConsoleKey.F) ->
                 moveRight()
                 change ()
-            // Control-k delete to end of line
-            | (ConsoleModifiers.Control, '\011') ->
+            | (ConsoleModifiers.Control, ConsoleKey.K) ->
                 deleteToEndOfLine()
                 change()
-            // Control-P
-            | (ConsoleModifiers.Control, '\016') ->
+            | (ConsoleModifiers.Control,ConsoleKey.P) ->
                 setInput(history.Previous());
                 change()
-            // Control-n
-            | (ConsoleModifiers.Control, '\014') ->
+            | (ConsoleModifiers.Control, ConsoleKey.N) ->
                 setInput(history.Next());
                 change()
-            // Control-d
-            | (ConsoleModifiers.Control, '\004') ->
+            | (ConsoleModifiers.Control, ConsoleKey.D) ->
                 if (input.Length = 0) then
                     exit 0 //quit
                 else
                     delete()
                     change()
+            | (ConsoleModifiers.Control, ConsoleKey.L) ->
+                clear()
+                change()
             | _ ->
                 // Note: If KeyChar=0, the not a proper char, e.g. it could be part of a multi key-press character,
                 //       e.g. e-acute is ' and e with the French (Belgium) IME and US Intl KB.
