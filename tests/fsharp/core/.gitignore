@@ -9,6 +9,9 @@ tmptest1.exe
 
 access/fsc.cmd.args
 
+byrefs/*.err
+byrefs/*.vserr
+
 fsi-reference/ImplementationAssembly/ReferenceAssemblyExample.dll
 fsi-reference/ReferenceAssembly/ReferenceAssemblyExample.dll
 
@@ -49,6 +52,9 @@ quotesInMultipleModules/module2-opt.exe
 
 resources/Resources.resources
 
+span/*.err
+span/*.vserr
+
 topinit/app69514.exe
 topinit/app69514.pdb
 topinit/app69514-noopt.exe
@@ -77,3 +83,7 @@ members/basics/tmptest.exe
 members/basics/tmptest.fs
 members/basics/tmptest.fsi
 members/basics/tmptest1.exe
+
+versionAttributes/out.stderr.txt
+versionAttributes/out.stdout.txt
+versionAttributes/*.exe

@@ -1172,8 +1172,7 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState:
         let _sigDataAttributes, sigDataResources = Driver.EncodeInterfaceData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
         [ for r in sigDataResources  do
             let ccuName = GetSignatureDataResourceName r
-            let bytes = r.GetBytes()
-            yield (ccuName, bytes) ]
+            yield (ccuName, (fun () -> r.GetBytes())) ]
 
     let autoOpenAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_AutoOpenAttribute)
     let ivtAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute)
@@ -1747,7 +1746,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             let tcConfigB, sourceFilesNew = 
 
                 let getSwitchValue switchstring =
-                    match commandLineArgs |> Seq.tryFindIndex(fun s -> s.StartsWith(switchstring)) with
+                    match commandLineArgs |> Seq.tryFindIndex(fun s -> s.StartsWithOrdinal(switchstring)) with
                     | Some idx -> Some(commandLineArgs.[idx].Substring(switchstring.Length))
                     | _ -> None
 

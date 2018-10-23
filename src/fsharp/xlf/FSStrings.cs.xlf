@@ -797,6 +797,11 @@
         <target state="translated">klíčové slovo match</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.MATCH.BANG">
+        <source>keyword 'match!'</source>
+        <target state="translated">klíčové slovo match!</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.MUTABLE">
         <source>keyword 'mutable'</source>
         <target state="translated">klíčové slovo mutable</target>
@@ -1424,7 +1429,7 @@
       </trans-unit>
       <trans-unit id="EnumMatchIncomplete1">
         <source>Enums may take values outside known cases.</source>
-        <target state="new">Enums may take values outside known cases.</target>
+        <target state="translated">Výčty můžou získávat hodnoty mimo známé případy.</target>
         <note />
       </trans-unit>
       <trans-unit id="RuleNeverMatched">

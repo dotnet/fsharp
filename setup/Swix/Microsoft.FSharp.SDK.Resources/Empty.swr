@@ -1,7 +1,0 @@
-use vs
-
-package name=Microsoft.FSharp.SDK.Resources
-        version=$(FSharpPackageVersion)
-        vs.package.language=$(LocaleSpecificCulture)
-        vs.package.installSize=1
-        vs.package.providerKey=Microsoft.FSharp.SDK.Resources,$(LocaleSpecificCulture),v10.1

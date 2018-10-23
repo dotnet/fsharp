@@ -47,7 +47,7 @@ type AccessorDomain =
         | AccessibleFromSomewhere  -> 4
     static member CustomEquals(g:TcGlobals, ad1:AccessorDomain, ad2:AccessorDomain) = 
         match ad1, ad2 with 
-        | AccessibleFrom(cs1,tc1), AccessibleFrom(cs2,tc2) -> (cs1 = cs2) && (match tc1,tc2 with None,None -> true | Some tc1, Some tc2 -> tyconRefEq g tc1 tc2 | _ -> false)
+        | AccessibleFrom(cs1, tc1), AccessibleFrom(cs2, tc2) -> (cs1 = cs2) && (match tc1, tc2 with None, None -> true | Some tc1, Some tc2 -> tyconRefEq g tc1 tc2 | _ -> false)
         | AccessibleFromEverywhere, AccessibleFromEverywhere -> true
         | AccessibleFromSomeFSharpCode, AccessibleFromSomeFSharpCode  -> true
         | AccessibleFromSomewhere, AccessibleFromSomewhere  -> true
@@ -59,7 +59,7 @@ let IsAccessible ad taccess =
     | AccessibleFromEverywhere -> canAccessFromEverywhere taccess
     | AccessibleFromSomeFSharpCode -> canAccessFromSomewhere taccess
     | AccessibleFromSomewhere -> true
-    | AccessibleFrom (cpaths,_tcrefViewedFromOption) -> 
+    | AccessibleFrom (cpaths, _tcrefViewedFromOption) -> 
         List.exists (canAccessFrom taccess) cpaths
 
 /// Indicates if an IL member is accessible (ignoring its enclosing type)
@@ -73,7 +73,7 @@ let private IsILMemberAccessible g amap m (tcrefOfViewedItem : TyconRef) ad acce
             access = ILMemberAccess.Family  || 
             access = ILMemberAccess.FamilyOrAssembly) 
 
-    | AccessibleFrom (cpaths,tcrefViewedFromOption) ->
+    | AccessibleFrom (cpaths, tcrefViewedFromOption) ->
 
             let accessibleByFamily =
               ((access = ILMemberAccess.Family  || 
@@ -115,14 +115,14 @@ let private IsILTypeDefAccessible (amap : Import.ImportMap) m ad encTyconRefOpt 
         | AccessibleFromSomeFSharpCode 
         | AccessibleFrom _ -> tdef.Access = ILTypeDefAccess.Public
 
-/// Indicates if a TyconRef is visible through the AccessibleFrom(cpaths,_).
+/// Indicates if a TyconRef is visible through the AccessibleFrom(cpaths, _).
 /// Note that InternalsVisibleTo extends those cpaths.
 let private IsTyconAccessibleViaVisibleTo ad (tcrefOfViewedItem:TyconRef) =
     match ad with 
     | AccessibleFromEverywhere 
     | AccessibleFromSomewhere 
     | AccessibleFromSomeFSharpCode -> false
-    | AccessibleFrom (cpaths,_tcrefViewedFromOption) ->
+    | AccessibleFrom (cpaths, _tcrefViewedFromOption) ->
         canAccessFromOneOf cpaths tcrefOfViewedItem.CompilationPath
     
 /// Indicates if given IL based TyconRef is accessible. If TyconRef is nested then we'll 
@@ -162,8 +162,8 @@ let private IsILTypeInfoAccessible amap m ad (tcrefOfViewedItem : TyconRef) =
     check None (enc @ [tdef])
                        
 /// Indicates if an IL member associated with the given ILType is accessible
-let private IsILTypeAndMemberAccessible g amap m adType ad (typ: ILTypeInfo) access = 
-    IsILTypeInfoAccessible amap m adType typ.TyconRefOfRawMetadata && IsILMemberAccessible g amap m typ.TyconRefOfRawMetadata ad access
+let private IsILTypeAndMemberAccessible g amap m adType ad (ty: ILTypeInfo) access = 
+    IsILTypeInfoAccessible amap m adType ty.TyconRefOfRawMetadata && IsILMemberAccessible g amap m ty.TyconRefOfRawMetadata ad access
 
 /// Indicates if an entity is accessible
 let IsEntityAccessible amap m ad (tcref:TyconRef) = 
@@ -176,7 +176,7 @@ let IsEntityAccessible amap m ad (tcref:TyconRef) =
 let CheckTyconAccessible amap m ad tcref =
     let res = IsEntityAccessible amap m ad tcref
     if not res then  
-        errorR(Error(FSComp.SR.typeIsNotAccessible tcref.DisplayName,m))
+        errorR(Error(FSComp.SR.typeIsNotAccessible tcref.DisplayName, m))
     res
 
 /// Indicates if a type definition and its representation contents are accessible
@@ -189,14 +189,15 @@ let CheckTyconReprAccessible amap m ad tcref =
     CheckTyconAccessible amap m ad tcref &&
     (let res = IsAccessible ad tcref.TypeReprAccessibility
      if not res then 
-         errorR (Error (FSComp.SR.unionCasesAreNotAccessible tcref.DisplayName,m))
+         errorR (Error (FSComp.SR.unionCasesAreNotAccessible tcref.DisplayName, m))
      res)
             
 /// Indicates if a type is accessible (both definition and instantiation)
 let rec IsTypeAccessible g amap m ad ty = 
-    not (isAppTy g ty) ||
-    let tcref,tinst = destAppTy g ty
-    IsEntityAccessible amap m ad tcref && IsTypeInstAccessible g amap m ad tinst
+    match tryAppTy g ty with
+    | ValueNone -> true
+    | ValueSome(tcref, tinst) ->
+        IsEntityAccessible amap m ad tcref && IsTypeInstAccessible g amap m ad tinst
 
 and IsTypeInstAccessible g amap m ad tinst = 
     match tinst with 
@@ -210,7 +211,7 @@ let IsProvidedMemberAccessible (amap:Import.ImportMap) m ad ty access =
     if not isTyAccessible then false
     else
         not (isAppTy g ty) ||
-        let tcrefOfViewedItem,_ = destAppTy g ty
+        let tcrefOfViewedItem = tcrefOfAppTy g ty
         IsILMemberAccessible g amap m tcrefOfViewedItem ad access
 
 /// Compute the accessibility of a provided member
@@ -224,14 +225,14 @@ let ComputeILAccess isPublic isFamily isFamilyOrAssembly isFamilyAndAssembly =
 /// IndiCompute the accessibility of a provided member
 let IsILFieldInfoAccessible g amap m ad x = 
     match x with 
-    | ILFieldInfo (tinfo,fd) -> IsILTypeAndMemberAccessible g amap m ad ad tinfo fd.Access
+    | ILFieldInfo (tinfo, fd) -> IsILTypeAndMemberAccessible g amap m ad ad tinfo fd.Access
 #if !NO_EXTENSIONTYPING
     | ProvidedField (amap, tpfi, m) -> 
         let access = tpfi.PUntaint((fun fi -> ComputeILAccess fi.IsPublic fi.IsFamily fi.IsFamilyOrAssembly fi.IsFamilyAndAssembly), m)
         IsProvidedMemberAccessible amap m ad x.ApparentEnclosingType access
 #endif
 
-let GetILAccessOfILEventInfo (ILEventInfo (tinfo,edef)) =
+let GetILAccessOfILEventInfo (ILEventInfo (tinfo, edef)) =
     (resolveILMethodRef tinfo.RawMetadata edef.AddMethod).Access 
 
 let IsILEventInfoAccessible g amap m ad einfo =
@@ -240,10 +241,10 @@ let IsILEventInfoAccessible g amap m ad einfo =
 
 let private IsILMethInfoAccessible g amap m adType ad ilminfo = 
     match ilminfo with 
-    | ILMethInfo (_,typ,None,mdef,_) -> IsILTypeAndMemberAccessible g amap m adType ad (ILTypeInfo.FromType g typ) mdef.Access 
-    | ILMethInfo (_,_,Some declaringTyconRef,mdef,_) -> IsILMemberAccessible g amap m declaringTyconRef ad mdef.Access
+    | ILMethInfo (_, ty, None, mdef, _) -> IsILTypeAndMemberAccessible g amap m adType ad (ILTypeInfo.FromType g ty) mdef.Access 
+    | ILMethInfo (_, _, Some declaringTyconRef, mdef, _) -> IsILMemberAccessible g amap m declaringTyconRef ad mdef.Access
 
-let GetILAccessOfILPropInfo (ILPropInfo(tinfo,pdef)) =
+let GetILAccessOfILPropInfo (ILPropInfo(tinfo, pdef)) =
     let tdef = tinfo.RawMetadata
     let ilAccess =
         match pdef.GetMethod with 
@@ -263,7 +264,7 @@ let IsValAccessible ad (vref:ValRef) =
 
 let CheckValAccessible  m ad (vref:ValRef) = 
     if not (IsValAccessible ad vref) then 
-        errorR (Error (FSComp.SR.valueIsNotAccessible vref.DisplayName,m))
+        errorR (Error (FSComp.SR.valueIsNotAccessible vref.DisplayName, m))
         
 let IsUnionCaseAccessible amap m ad (ucref:UnionCaseRef) =
     IsTyconReprAccessible amap m ad ucref.TyconRef &&
@@ -273,7 +274,7 @@ let CheckUnionCaseAccessible amap m ad (ucref:UnionCaseRef) =
     CheckTyconReprAccessible amap m ad ucref.TyconRef &&
     (let res = IsAccessible ad ucref.UnionCase.Accessibility
      if not res then 
-        errorR (Error (FSComp.SR.unionCaseIsNotAccessible ucref.CaseName,m))
+        errorR (Error (FSComp.SR.unionCaseIsNotAccessible ucref.CaseName, m))
      res)
 
 let IsRecdFieldAccessible amap m ad (rfref:RecdFieldRef) =
@@ -284,7 +285,7 @@ let CheckRecdFieldAccessible amap m ad (rfref:RecdFieldRef) =
     CheckTyconReprAccessible amap m ad rfref.TyconRef &&
     (let res = IsAccessible ad rfref.RecdField.Accessibility
      if not res then 
-        errorR (Error (FSComp.SR.fieldIsNotAccessible rfref.FieldName,m))
+        errorR (Error (FSComp.SR.fieldIsNotAccessible rfref.FieldName, m))
      res)
 
 let CheckRecdFieldInfoAccessible amap m ad (rfinfo:RecdFieldInfo) = 
@@ -292,7 +293,7 @@ let CheckRecdFieldInfoAccessible amap m ad (rfinfo:RecdFieldInfo) =
 
 let CheckILFieldInfoAccessible g amap m ad finfo =
     if not (IsILFieldInfoAccessible g amap m ad finfo) then 
-        errorR (Error (FSComp.SR.structOrClassFieldIsNotAccessible finfo.FieldName,m))
+        errorR (Error (FSComp.SR.structOrClassFieldIsNotAccessible finfo.FieldName, m))
     
 /// Uses a separate accessibility domains for containing type and method itself
 /// This makes sense cases like
@@ -307,12 +308,12 @@ let CheckILFieldInfoAccessible g amap m ad finfo =
 /// when calling x.SomeMethod() we need to use 'adTyp' do verify that type of x is accessible from C 
 /// and 'ad' to determine accessibility of SomeMethod.
 /// I.e when calling x.Public() and x.Protected() -in both cases first check should succeed and second - should fail in the latter one. 
-let IsTypeAndMethInfoAccessible amap m adTyp ad = function
-    | ILMeth (g,x,_) -> IsILMethInfoAccessible g amap m adTyp ad x 
-    | FSMeth (_,_,vref,_) -> IsValAccessible ad vref
-    | DefaultStructCtor(g,typ) -> IsTypeAccessible g amap m ad typ
+let IsTypeAndMethInfoAccessible amap m accessDomainTy ad = function
+    | ILMeth (g, x, _) -> IsILMethInfoAccessible g amap m accessDomainTy ad x 
+    | FSMeth (_, _, vref, _) -> IsValAccessible ad vref
+    | DefaultStructCtor(g, ty) -> IsTypeAccessible g amap m ad ty
 #if !NO_EXTENSIONTYPING
-    | ProvidedMeth(amap,tpmb,_,m) as etmi -> 
+    | ProvidedMeth(amap, tpmb, _, m) as etmi -> 
         let access = tpmb.PUntaint((fun mi -> ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly), m)        
         IsProvidedMemberAccessible amap m ad etmi.ApparentEnclosingType access
 #endif
@@ -320,8 +321,8 @@ let IsMethInfoAccessible amap m ad minfo = IsTypeAndMethInfoAccessible amap m ad
 
 let IsPropInfoAccessible g amap m ad = function 
     | ILProp ilpinfo -> IsILPropInfoAccessible g amap m ad ilpinfo
-    | FSProp (_,_,Some vref,_) 
-    | FSProp (_,_,_,Some vref) -> IsValAccessible ad vref
+    | FSProp (_, _, Some vref, _) 
+    | FSProp (_, _, _, Some vref) -> IsValAccessible ad vref
 #if !NO_EXTENSIONTYPING
     | ProvidedProp (amap, tppi, m) as pp-> 
         let access = 
@@ -340,6 +341,4 @@ let IsPropInfoAccessible g amap m ad = function
 
 let IsFieldInfoAccessible ad (rfref:RecdFieldInfo) =
     IsAccessible ad rfref.RecdField.Accessibility
-
-
 

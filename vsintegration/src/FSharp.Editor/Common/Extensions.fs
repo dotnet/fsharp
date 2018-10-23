@@ -6,6 +6,7 @@ module internal Microsoft.VisualStudio.FSharp.Editor.Extensions
 open System
 open System.IO
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Host
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -24,6 +25,20 @@ type System.IServiceProvider with
     member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
     member x.GetService<'S, 'T>() = x.GetService(typeof<'S>) :?> 'T
 
+type ProjectId with
+    member this.ToFSharpProjectIdString() =
+        this.Id.ToString("D").ToLowerInvariant()
+
+type Document with
+    member this.TryGetLanguageService<'T when 'T :> ILanguageService>() =
+        match this.Project with
+        | null -> None
+        | project ->
+            match project.LanguageServices with
+            | null -> None
+            | languageServices ->
+                languageServices.GetService<'T>()
+                |> Some
 
 type FSharpNavigationDeclarationItem with
     member x.RoslynGlyph : Glyph =

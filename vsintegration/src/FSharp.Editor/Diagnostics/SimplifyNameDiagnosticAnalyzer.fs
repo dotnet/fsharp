@@ -42,13 +42,13 @@ type internal SimplifyNameDiagnosticAnalyzer() =
             customTags = DiagnosticCustomTags.Unnecessary)
 
     static member LongIdentPropertyKey = "FullName"
-    
+    override __.Priority = 100 // Default = 50
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
     override this.AnalyzeSyntaxAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
         asyncMaybe {
-            do! Option.guard Settings.CodeFixes.SimplifyName
+            do! Option.guard document.FSharpOptions.CodeFixes.SimplifyName
             do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
             do! Async.Sleep DefaultTuning.SimplifyNameInitialDelay |> liftAsync 
             let! _parsingOptions, projectOptions = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
@@ -62,7 +62,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                 | _ ->
                     let! sourceText = document.GetTextAsync()
                     let checker = getChecker document
-                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = true, userOpName=userOpName)
+                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName=userOpName)
                     let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
                     let mutable result = ResizeArray()
                     let symbolUses =

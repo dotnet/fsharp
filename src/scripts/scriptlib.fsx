@@ -7,6 +7,7 @@ namespace global
 
 open System
 open System.IO
+open System.Text
 open System.Diagnostics
 
 [<AutoOpen>]
@@ -59,15 +60,15 @@ module Scripting =
 
     let (++) a b = Path.Combine(a,b)
 
-    let getBasename a = Path.GetFileNameWithoutExtension a
-    let getFullPath a = Path.GetFullPath a
-    let getFilename a = Path.GetFileName a
-    let getDirectoryName a = Path.GetDirectoryName a
+    let getBasename (a: string) = Path.GetFileNameWithoutExtension(a)
+    let getFullPath a = Path.GetFullPath(a)
+    let getFilename (a: string) = Path.GetFileName(a)
+    let getDirectoryName (a: string) = Path.GetDirectoryName(a)
 
     let copyFile source dir =
         let dest = 
             if not (Directory.Exists dir) then Directory.CreateDirectory dir |>ignore
-            let result = Path.Combine(dir, Path.GetFileName source)
+            let result = Path.Combine(dir, getFilename source)
             result
         //printfn "Copy %s --> %s" source dest
         File.Copy(source, dest, true)
@@ -95,7 +96,7 @@ module Scripting =
         let processExePath baseDir exe =
             if Path.IsPathRooted(exe) then exe
             else 
-                match Path.GetDirectoryName(exe) with
+                match getDirectoryName exe with
                 | "" -> exe
                 | _ -> Path.Combine(baseDir,exe) |> Path.GetFullPath
 
@@ -117,15 +118,23 @@ module Scripting =
             let p = new Process()
             p.EnableRaisingEvents <- true
             p.StartInfo <- processInfo
+            let out = StringBuilder()
+            let err = StringBuilder()
 
             cmdArgs.RedirectOutput|> Option.iter (fun f ->
                 processInfo.RedirectStandardOutput <- true
-                p.OutputDataReceived.Add (fun ea -> if ea.Data <> null then f ea.Data)
+                p.OutputDataReceived.Add (fun ea -> 
+                    if ea.Data <> null then 
+                        out.Append(ea.Data + Environment.NewLine) |> ignore
+                        f ea.Data)
             )
 
             cmdArgs.RedirectError |> Option.iter (fun f ->
                 processInfo.RedirectStandardError <- true
-                p.ErrorDataReceived.Add (fun ea -> if ea.Data <> null then f ea.Data)
+                p.ErrorDataReceived.Add (fun ea -> 
+                    if ea.Data <> null then 
+                        err.Append(ea.Data + Environment.NewLine) |> ignore
+                        f ea.Data)
             )
 
             cmdArgs.RedirectInput
@@ -151,7 +160,7 @@ module Scripting =
             match p.ExitCode with
             | 0 -> Success
             | err -> 
-                let msg = sprintf "Error running command '%s' with args '%s' in directory '%s'" exePath arguments workDir 
+                let msg = sprintf "Error running command '%s' with args '%s' in directory '%s'.\n---- stdout below --- \n%s\n---- stderr below --- \n%s " exePath arguments workDir (out.ToString()) (err.ToString())
                 ErrorLevel (msg, err)
 
     type OutPipe (writer: TextWriter) =

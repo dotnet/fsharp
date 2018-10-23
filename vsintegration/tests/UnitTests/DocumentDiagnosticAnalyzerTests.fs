@@ -26,6 +26,7 @@ type DocumentDiagnosticAnalyzerTests()  =
     let endMarker = "(*end*)"
     let projectOptions: FSharpProjectOptions = { 
         ProjectFileName = "C:\\test.fsproj"
+        ProjectId = None
         SourceFiles =  [| filePath |]
         ReferencedProjects = [| |]
         OtherOptions = [| |]

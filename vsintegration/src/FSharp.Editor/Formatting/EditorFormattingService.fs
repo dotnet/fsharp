@@ -13,6 +13,7 @@ open Microsoft.CodeAnalysis.Text
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open System.Threading
+open System.Windows.Forms
 
 [<Shared>]
 [<ExportLanguageService(typeof<IEditorFormattingService>, FSharpConstants.FSharpLanguageName)>]
@@ -20,8 +21,13 @@ type internal FSharpEditorFormattingService
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager
+        projectInfoManager: FSharpProjectOptionsManager,
+        settings: EditorOptions
     ) =
+    
+    static let toIList (xs : 'a seq) = ResizeArray(xs) :> IList<'a>
+    
+    static let getIndentation (line : string) = line |> Seq.takeWhile ((=) ' ') |> Seq.length
 
     static member GetFormattingChanges(documentId: DocumentId, sourceText: SourceText, filePath: string, checker: FSharpChecker, indentStyle: FormattingOptions.IndentStyle, options: (FSharpParsingOptions * FSharpProjectOptions) option, position: int) =
         // Logic for determining formatting changes:
@@ -50,7 +56,7 @@ type internal FSharpEditorFormattingService
                     x.Tag <> FSharpTokenTag.LINE_COMMENT)
 
             let! (left, right) =
-                FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, filePath, parsingOptions, position, "FormattingService")
+                FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, filePath, parsingOptions, position, "FormattingService", forFormatting=true)
 
             if right.StartColumn = firstMeaningfulToken.LeftColumn then
                 // Replace the indentation on this line with the indentation of the left bracket
@@ -68,6 +74,77 @@ type internal FSharpEditorFormattingService
             else
                 return! None
         }
+        
+    static member GetPasteChanges(documentId: DocumentId, sourceText: SourceText, filePath: string, formattingOptions: Microsoft.VisualStudio.FSharp.Editor.FormattingOptions, tabSize: int, parsingOptions: FSharpParsingOptions, currentClipboard: string, span: TextSpan) =
+        asyncMaybe {
+            
+            do! Option.guard formattingOptions.FormatOnPaste
+
+            let startLineIdx = sourceText.Lines.IndexOf span.Start
+            
+            // If we're starting and ending on the same line, we've got nothing to format
+            do! Option.guard (startLineIdx <> sourceText.Lines.IndexOf span.End)
+            
+            let startLine = sourceText.Lines.[startLineIdx]
+
+            // VS quirk: if we're pasting on an empty line which has automatically been
+            // indented (i.e. by ISynchronousIndentationService), then the pasted span
+            // includes this automatic indentation. When pasting, we only care about what
+            // was actually in the clipboard.
+            let fixedSpan =
+                let pasteText = sourceText.GetSubText(span)
+                let pasteTextString = pasteText.ToString()
+
+                if currentClipboard.Length > 0 && pasteTextString.EndsWith currentClipboard then
+                    let prepended = pasteTextString.[0..pasteTextString.Length-currentClipboard.Length-1]
+                    
+                    // Only strip off leading indentation if the pasted span is otherwise
+                    // identical to the clipboard (ignoring leading spaces).
+                    if prepended |> Seq.forall ((=) ' ') then
+                        TextSpan(span.Start + prepended.Length, span.Length - prepended.Length)
+                    else
+                        span
+                else
+                    span
+
+            // Calculate the indentation of the line we pasted onto
+            let currentIndent =
+                let priorStartSpan = TextSpan(startLine.Span.Start, startLine.Span.Length - (startLine.Span.End - fixedSpan.Start))
+                
+                sourceText.GetSubText(priorStartSpan).ToString()
+                |> Seq.takeWhile ((=) ' ')
+                |> Seq.length
+
+            let fixedPasteText = sourceText.GetSubText(fixedSpan)
+            let leadingIndentation = fixedPasteText.ToString() |> getIndentation
+                
+            let stripIndentation charsToRemove =
+                let searchIndent = String.replicate charsToRemove " "
+                let newText = String.replicate currentIndent " "
+            
+                fixedPasteText.Lines
+                |> Seq.indexed
+                |> Seq.choose (fun (i, line) ->
+                    if line.ToString().StartsWith searchIndent then
+                        TextChange(TextSpan(line.Start + fixedSpan.Start, charsToRemove), if i = 0 then "" else newText)
+                        |> Some
+                    else
+                        None
+                )
+            
+            if leadingIndentation > 0 then
+                return stripIndentation leadingIndentation
+            else
+                let nextLineShouldBeIndented = FSharpIndentationService.IndentShouldFollow(documentId, sourceText, filePath, span.Start, parsingOptions)
+                
+                let removeIndentation =
+                    let nextLineIndent = fixedPasteText.Lines.[1].ToString() |> getIndentation
+
+                    if nextLineShouldBeIndented then nextLineIndent - tabSize
+                    else nextLineIndent
+                
+                return stripIndentation removeIndentation
+        }
 
     member __.GetFormattingChangesAsync (document: Document, position: int, cancellationToken: CancellationToken) =
         async {
@@ -76,20 +153,27 @@ type internal FSharpEditorFormattingService
             let indentStyle = options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
             let projectOptionsOpt = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
             let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, checkerProvider.Checker, indentStyle, projectOptionsOpt, position)
-                
-            return
-                match textChange with
-                | Some change ->
-                    ResizeArray([change]) :> IList<_>
-                
-                | None ->
-                    ResizeArray() :> IList<_>
+            return textChange |> Option.toList |> toIList
+        }
+        
+    member __.OnPasteAsync (document: Document, span: TextSpan, currentClipboard: string, cancellationToken: CancellationToken) =
+        async {
+            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+            let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
+            let tabSize = options.GetOption<int>(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
+            
+            match projectInfoManager.TryGetOptionsForEditingDocumentOrProject document with
+            | Some (parsingOptions, _) ->
+                let! textChanges = FSharpEditorFormattingService.GetPasteChanges(document.Id, sourceText, document.FilePath, settings.Formatting, tabSize, parsingOptions, currentClipboard, span)
+                return textChanges |> Option.defaultValue Seq.empty |> toIList
+            | None ->
+                return toIList Seq.empty
         }
         
     interface IEditorFormattingService with
         member val SupportsFormatDocument = false
         member val SupportsFormatSelection = false
-        member val SupportsFormatOnPaste = false
+        member val SupportsFormatOnPaste = true
         member val SupportsFormatOnReturn = true
 
         override __.SupportsFormattingOnTypedCharacter (document, ch) =
@@ -104,8 +188,10 @@ type internal FSharpEditorFormattingService
             async { return ResizeArray() :> IList<_> }
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
-        override __.GetFormattingChangesOnPasteAsync (_document, _span, cancellationToken) =
-            async { return ResizeArray() :> IList<_> }
+        override this.GetFormattingChangesOnPasteAsync (document, span, cancellationToken) =
+            let currentClipboard = Clipboard.GetText()
+
+            this.OnPasteAsync (document, span, currentClipboard, cancellationToken)
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
         override this.GetFormattingChangesAsync (document, _typedChar, position, cancellationToken) =

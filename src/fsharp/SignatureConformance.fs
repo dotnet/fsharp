@@ -147,7 +147,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                               (errorR(Error(FSComp.SR.typrelSigImplNotCompatibleConstraintsDifferRemove(sigTypar.Name, Layout.showL(NicePrint.layoutTyparConstraint denv (sigTypar,sigTyparCx))),m)); false)
                           else  
                               true) &&
-                  (not checkingSig || checkAttribs aenv implTypar.Attribs sigTypar.Attribs (fun attribs -> implTypar.typar_attribs <- attribs)))
+                  (not checkingSig || checkAttribs aenv implTypar.Attribs sigTypar.Attribs (fun attribs -> implTypar.SetAttribs attribs)))
 
         and checkTypeDef (aenv: TypeEquivEnv) (implTycon:Tycon) (sigTycon:Tycon) =
             let m = implTycon.Range
@@ -177,45 +177,62 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                    |> ListSet.setify (typeEquiv g) 
                    |> List.filter (isInterfaceTy g)
                 let aintfs     = flatten aintfs 
-                let aintfsUser = flatten aintfsUser 
                 let fintfs     = flatten fintfs 
               
                 let unimpl = ListSet.subtract (fun fity aity -> typeAEquiv g aenv aity fity) fintfs aintfs
-                (unimpl |> List.forall (fun ity -> errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName, NicePrint.minimalStringOfType denv ity),m)); false)) &&
+                (unimpl 
+                 |> List.forall (fun ity -> 
+                    let errorMessage = FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName, NicePrint.minimalStringOfType denv ity)
+                    errorR (Error(errorMessage,m)); false)) &&
+                    
+                let aintfsUser = flatten aintfsUser
+
                 let hidden = ListSet.subtract (typeAEquiv g aenv) aintfsUser fintfs
-                hidden |> List.iter (fun ity -> (if implTycon.IsFSharpInterfaceTycon then error else warning) (InterfaceNotRevealed(denv,ity,implTycon.Range)))
+                let continueChecks,warningOrError = if implTycon.IsFSharpInterfaceTycon then false,errorR else true,warning
+                (hidden |> List.forall (fun ity -> warningOrError (InterfaceNotRevealed(denv,ity,implTycon.Range)); continueChecks)) &&
 
                 let aNull = IsUnionTypeWithNullAsTrueValue g implTycon
                 let fNull = IsUnionTypeWithNullAsTrueValue g sigTycon
                 if aNull && not fNull then 
-                  errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
                 elif fNull && not aNull then 
-                  errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
+                else
 
                 let aNull2 = TypeNullIsExtraValue g m (generalizedTyconRef (mkLocalTyconRef implTycon))
                 let fNull2 = TypeNullIsExtraValue g m (generalizedTyconRef (mkLocalTyconRef implTycon))
                 if aNull2 && not fNull2 then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull2(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
                 elif fNull2 && not aNull2 then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull2(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
+                else
 
                 let aSealed = isSealedTy g (generalizedTyconRef (mkLocalTyconRef implTycon))
                 let fSealed = isSealedTy g (generalizedTyconRef (mkLocalTyconRef sigTycon))
-                if  aSealed && not fSealed  then 
+                if aSealed && not fSealed then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSealed(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
-                if  not aSealed && fSealed  then 
+                    false
+                elif not aSealed && fSealed then
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
+                else
 
                 let aPartial = isAbstractTycon implTycon
                 let fPartial = isAbstractTycon sigTycon
                 if aPartial && not fPartial then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
-
-                if not aPartial && fPartial then 
+                    false
+                elif not aPartial && fPartial then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureIsAbstract(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
-
-                if not (typeAEquiv g aenv (superOfTycon g implTycon) (superOfTycon g sigTycon)) then 
+                    false
+                elif not (typeAEquiv g aenv (superOfTycon g implTycon) (superOfTycon g sigTycon)) then 
                     errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypesHaveDifferentBaseTypes(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
+                else
 
                 checkTypars m aenv implTypars sigTypars &&
                 checkTypeRepr m aenv implTycon sigTycon.TypeReprInfo &&
@@ -231,14 +248,15 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             | Some (ValReprInfo (implTyparNames,implArgInfos,implRetInfo) as implValInfo), Some (ValReprInfo (sigTyparNames,sigArgInfos,sigRetInfo) as sigValInfo) ->
                 let ntps = implTyparNames.Length
                 let mtps = sigTyparNames.Length
+                let nSigArgInfos = sigArgInfos.Length
                 if ntps <> mtps then
                   err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityGenericParametersDiffer(x, y, z, string mtps, string ntps))
                 elif implValInfo.KindsOfTypars <> sigValInfo.KindsOfTypars then
                   err(FSComp.SR.ValueNotContainedMutabilityGenericParametersAreDifferentKinds)
-                elif not (sigArgInfos.Length <= implArgInfos.Length && List.forall2 (fun x y -> List.length x <= List.length y) sigArgInfos (fst (List.chop sigArgInfos.Length implArgInfos))) then 
-                  err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityAritiesDiffer(x, y, z, id.idText, string sigArgInfos.Length, id.idText, id.idText))
+                elif not (nSigArgInfos <= implArgInfos.Length && List.forall2 (fun x y -> List.length x <= List.length y) sigArgInfos (fst (List.splitAt nSigArgInfos implArgInfos))) then 
+                  err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityAritiesDiffer(x, y, z, id.idText, string nSigArgInfos, id.idText, id.idText))
                 else 
-                  let implArgInfos = implArgInfos |> List.take sigArgInfos.Length  
+                  let implArgInfos = implArgInfos |> List.truncate nSigArgInfos
                   let implArgInfos = (implArgInfos, sigArgInfos) ||> List.map2 (fun l1 l2 -> l1 |> List.take l2.Length)
                   // Propagate some information signature to implementation. 
 
@@ -550,9 +568,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                        Printf.bprintf os "%s" fx.DisplayName),m))
             
             let valuesPartiallyMatch (av:Val) (fv:Val) =
-                (av.LinkagePartialKey.MemberParentMangledName = fv.LinkagePartialKey.MemberParentMangledName) &&
-                (av.LinkagePartialKey.LogicalName = fv.LinkagePartialKey.LogicalName) &&
-                (av.LinkagePartialKey.TotalArgCount = fv.LinkagePartialKey.TotalArgCount)    
+                let akey = av.GetLinkagePartialKey()
+                let fkey = fv.GetLinkagePartialKey()
+                (akey.MemberParentMangledName = fkey.MemberParentMangledName) &&
+                (akey.LogicalName = fkey.LogicalName) &&
+                (akey.TotalArgCount = fkey.TotalArgCount)    
                                        
             (implModType.AllValsAndMembersByLogicalNameUncached, signModType.AllValsAndMembersByLogicalNameUncached)
               ||> NameMap.suball2 

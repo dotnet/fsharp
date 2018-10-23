@@ -35,14 +35,15 @@ type internal UnusedOpensDiagnosticAnalyzer() =
             isEnabledByDefault = true, 
             customTags = DiagnosticCustomTags.Unnecessary)
 
+    override __.Priority = 90 // Default = 50
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
     override this.AnalyzeSyntaxAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
 
     static member GetUnusedOpenRanges(document: Document, options, checker: FSharpChecker) : Async<Option<range list>> =
         asyncMaybe {
-            do! Option.guard Settings.CodeFixes.UnusedOpens
+            do! Option.guard document.FSharpOptions.CodeFixes.UnusedOpens
             let! sourceText = document.GetTextAsync()
-            let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
+            let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, userOpName = userOpName)
 #if DEBUG
             let sw = Stopwatch.StartNew()
 #endif

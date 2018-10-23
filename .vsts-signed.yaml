@@ -1,0 +1,96 @@
+jobs:
+- job: Full_Signed
+  pool:
+    name: VSEng-MicroBuildVS2017
+  timeoutInMinutes: 300
+  variables:
+    MSBuildConfiguration: 'Release'
+  steps:
+  # Install Signing Plugin
+  - task: ms-vseng.MicroBuildTasks.30666190-6959-11e5-9f96-f56098202fef.MicroBuildSigningPlugin@1
+    displayName: Install Signing Plugin
+    inputs:
+      signType: real
+    condition: and(succeeded(), in(variables['PB_SignType'], 'test', 'real'))
+
+  # Install Swix Plugin
+  - task: ms-vseng.MicroBuildTasks.32f78468-e895-4f47-962c-58a699361df8.MicroBuildSwixPlugin@1
+    displayName: Install Swix Plugin
+
+  # Run build.cmd
+  - task: CmdLine@1
+    displayName: Run build.cmd
+    inputs:
+      filename: build.cmd
+      arguments: microbuild
+
+  # Publish nightly package to MyGet
+  - task: PowerShell@1
+    displayName: Publish nightly package to MyGet
+    inputs:
+      scriptName: 'setup\publish-assets.ps1'
+      arguments: '-binariesPath $(MSBuildConfiguration) -branchName $(Build.SourceBranch) -apiKey $(FSharp.MyGetApiKey)'
+    condition: and(succeeded(), contains(variables['PB_PublishType'], 'myget'))
+
+  # Publish packages to Azure Blob Storage
+  - task: MSBuild@1
+    displayName: Publish packages to Azure Blob Storage
+    inputs:
+      solution: PublishToBlob.proj
+      msbuildArguments: '/t:Build /p:ExpectedFeedUrl=$(PB_PublishBlobFeedUrl) /p:AccountKey=$(PB_PublishBlobFeedKey) /p:ManifestBranch=$(SourceBranch) /p:ManifestCommit=$(SourceVersion) /p:ManifestBuildId=$(OfficialBuildId)'
+    condition: and(succeeded(), contains(variables['PB_PublishType'], 'blob'))
+
+  # Create static drop
+  - task: PublishBuildArtifacts@1
+    displayName: Create static drop
+    inputs:
+      PathtoPublish: '$(MSBuildConfiguration)'
+      ArtifactName: '$(Build.BuildNumber)'
+      publishLocation: FilePath
+      TargetPath: '$(DropRoot)\$(Build.DefinitionName)\$(Build.SourceBranchName)'
+      Parallel: true
+      ParallelCount: 64
+    condition: and(succeeded(), contains(variables['PB_PublishType'], 'drop'))
+
+  # Publish symbols
+  - task: PublishSymbols@1
+    displayName: Publish symbols
+    inputs:
+      SymbolsPath: '$(DropRoot)\$(Build.DefinitionName)\$(Build.SourceBranchName)\$(Build.BuildNumber)\Symbols'
+      SearchPattern: '**\*.dll;**\*.exe;**\*.pdb'
+      SymbolsFolder: '$(Build.SourcesDirectory)\$(MSBuildConfiguration)'
+      TreatNotIndexedAsWarning: true
+      SymbolsProduct: '$(Build.DefinitionName)'
+      SymbolsVersion: '$(Build.BuildNumber)'
+    continueOnError: true
+    condition: and(succeeded(), contains(variables['PB_PublishType'], 'symbols'))
+
+  # Upload VSTS Drop
+  - task: ms-vseng.MicroBuildTasks.4305a8de-ba66-4d8b-b2d1-0dc4ecbbf5e8.MicroBuildUploadVstsDropFolder@1
+    displayName: Upload VSTS Drop
+    inputs:
+      DropFolder: '$(Build.SourcesDirectory)\$(MSBuildConfiguration)\insertion'
+    condition: and(succeeded(), contains(variables['PB_PublishType'], 'vsts'))
+
+  # Execute cleanup tasks
+  - task: ms-vseng.MicroBuildTasks.521a94ea-9e68-468a-8167-6dcf361ea776.MicroBuildCleanup@1
+    displayName: Execute cleanup tasks
+    condition: succeededOrFailed()
+
+  # Publish Artifact: MicroBuildOutputs
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifact: MicroBuildOutputs'
+    inputs:
+      PathtoPublish: '$(Build.StagingDirectory)\MicroBuild\Output'
+      ArtifactName: MicroBuildOutputs
+      publishLocation: Container
+    condition: and(succeeded(), contains(variables['PB_PublishType'], 'microbuild'))
+
+  # Publish Symbols to Symweb
+  - task: ms-vscs-artifact.build-tasks.artifactSymbolTask-1.artifactSymbolTask@0
+    displayName: Publish symbols to SymWeb
+    inputs:
+      symbolServiceURI: 'https://microsoft.artifacts.visualstudio.com/DefaultCollection'
+      sourcePath: '$(DropRoot)\$(Build.DefinitionName)\$(Build.SourceBranchName)\$(Build.BuildNumber)\Symbols'
+      usePat: false
+    condition: and(succeeded(), contains(variables['PB_PublishType'], 'symweb'))

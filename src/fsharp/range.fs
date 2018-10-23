@@ -3,6 +3,7 @@
 /// Anything to do with special names of identifiers and other lexical rules 
 module Microsoft.FSharp.Compiler.Range
 
+open System
 open System.IO
 open System.Collections.Generic
 open System.Collections.Concurrent
@@ -41,6 +42,7 @@ type pos(code:int64) =
     static member Decode (code:int64) : pos = pos code
     override p.Equals(obj) = match obj with :? pos as p2 -> code = p2.Encoding | _ -> false
     override p.GetHashCode() = hash code
+    override p.ToString() = sprintf "(%d,%d)" p.Line p.Column
 
 [<Literal>]
 let fileIndexBitCount = 24
@@ -180,7 +182,7 @@ type range(code1:int64, code2: int64) =
             |> Seq.skip (r.StartLine - 1)
             |> Seq.take (r.EndLine - r.StartLine + 1)
             |> String.concat "\n"
-            |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n") + 1 - startCol + endCol)
+            |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
         with e ->
             e.ToString()        
 #endif

@@ -33,11 +33,30 @@ module internal SymbolHelpers =
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document) 
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document.FilePath, textVersionHash, sourceText.ToString(), projectOptions, allowStaleResults = true, userOpName = userOpName) 
+            let settings = document.FSharpOptions
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document.FilePath, textVersionHash, sourceText.ToString(), projectOptions, settings.LanguageServicePerformance, userOpName = userOpName) 
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=userOpName)
             let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol) |> liftAsync
             return symbolUses
         }
+
+    let getSymbolUsesInProjects (symbol: FSharpSymbol, projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, projects: Project list, userOpName) =
+        projects
+        |> Seq.map (fun project ->
+            async {
+                match projectInfoManager.TryGetOptionsForProject(project.Id) with
+                | Some (_parsingOptions, _site, projectOptions) ->
+                    let! projectCheckResults = checker.ParseAndCheckProject(projectOptions, userOpName = userOpName)
+                    let! uses = projectCheckResults.GetUsesOfSymbol(symbol) 
+                    let distinctUses = uses |> Array.distinctBy (fun symbolUse -> symbolUse.RangeAlternate)
+                    return distinctUses
+                | None -> return [||]
+            })
+        |> Async.Parallel
+        |> Async.map Array.concat
+        // FCS may return several `FSharpSymbolUse`s for same range, which have different `ItemOccurrence`s (Use, UseInAttribute, UseInType, etc.)
+        // We don't care about the occurrence type here, so we distinct by range.
+        |> Async.map (Array.distinctBy (fun x -> x.RangeAlternate))
 
     let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults,
                                  projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, solution: Solution, userOpName) =
@@ -55,17 +74,7 @@ module internal SymbolHelpers =
                                 yield! project.GetDependentProjects() ]
                             |> List.distinctBy (fun x -> x.Id)
 
-                    projects
-                    |> Seq.map (fun project ->
-                        async {
-                            match projectInfoManager.TryGetOptionsForProject(project.Id) with
-                            | Some (_parsingOptions, _site, projectOptions) ->
-                                let! projectCheckResults = checker.ParseAndCheckProject(projectOptions, userOpName = userOpName)
-                                return! projectCheckResults.GetUsesOfSymbol(symbol)
-                            | None -> return [||]
-                        })
-                    |> Async.Parallel
-                    |> Async.map Array.concat
+                    getSymbolUsesInProjects (symbol, projectInfoManager, checker, projects, userOpName)
             
             return
                 (symbolUses
@@ -98,7 +107,7 @@ module internal SymbolHelpers =
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, symbolSpan.Start, document.FilePath, defines, SymbolLookupKind.Greedy, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = true, userOpName = userOpName)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(symbolSpan.Start)
             let textLinePos = sourceText.Lines.GetLinePosition(symbolSpan.Start)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line

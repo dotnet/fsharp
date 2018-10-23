@@ -17,6 +17,8 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
+open Microsoft.VisualStudio.Core.Imaging
+open Microsoft.VisualStudio.Imaging
 
 [<RequireQualifiedAccess>]
 type internal LexerSymbolKind = 
@@ -139,6 +141,101 @@ module internal Tokenizer =
             | Private -> Glyph.StructurePrivate
         | FSharpGlyph.Variable -> Glyph.Local
         | FSharpGlyph.Error -> Glyph.Error
+
+    let GetImageIdForSymbol(symbol:FSharpSymbol, kind:LexerSymbolKind) =
+        let imageId =
+            match kind with
+            | LexerSymbolKind.Operator -> KnownImageIds.Operator
+            | _ ->
+                match symbol with
+                | :? FSharpUnionCase as x ->
+                    match Some x.Accessibility with
+                    | Public -> KnownImageIds.EnumerationPublic
+                    | Internal -> KnownImageIds.EnumerationInternal
+                    | Protected -> KnownImageIds.EnumerationProtected
+                    | Private -> KnownImageIds.EnumerationPrivate
+                | :? FSharpActivePatternCase -> KnownImageIds.EnumerationPublic
+                | :? FSharpField as x ->
+                if x.IsLiteral then
+                    match Some x.Accessibility with
+                    | Public -> KnownImageIds.ConstantPublic
+                    | Internal -> KnownImageIds.ConstantInternal
+                    | Protected -> KnownImageIds.ConstantProtected
+                    | Private -> KnownImageIds.ConstantPrivate
+                else
+                    match Some x.Accessibility with
+                    | Public -> KnownImageIds.FieldPublic
+                    | Internal -> KnownImageIds.FieldInternal
+                    | Protected -> KnownImageIds.FieldProtected
+                    | Private -> KnownImageIds.FieldPrivate
+                | :? FSharpParameter -> KnownImageIds.Parameter
+                | :? FSharpMemberOrFunctionOrValue as x ->
+                    if x.LiteralValue.IsSome then
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.ConstantPublic
+                        | Internal -> KnownImageIds.ConstantInternal
+                        | Protected -> KnownImageIds.ConstantProtected
+                        | Private -> KnownImageIds.ConstantPrivate
+                    elif x.IsExtensionMember then KnownImageIds.ExtensionMethod
+                    elif x.IsProperty || x.IsPropertyGetterMethod || x.IsPropertySetterMethod then
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.PropertyPublic
+                        | Internal -> KnownImageIds.PropertyInternal
+                        | Protected -> KnownImageIds.PropertyProtected
+                        | Private -> KnownImageIds.PropertyPrivate
+                    elif x.IsEvent then
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.EventPublic
+                        | Internal -> KnownImageIds.EventInternal
+                        | Protected -> KnownImageIds.EventProtected
+                        | Private -> KnownImageIds.EventPrivate
+                    else
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.MethodPublic
+                        | Internal -> KnownImageIds.MethodInternal
+                        | Protected -> KnownImageIds.MethodProtected
+                        | Private -> KnownImageIds.MethodPrivate
+                | :? FSharpEntity as x ->
+                    if x.IsValueType then
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.StructurePublic
+                        | Internal -> KnownImageIds.StructureInternal
+                        | Protected -> KnownImageIds.StructureProtected
+                        | Private -> KnownImageIds.StructurePrivate
+                    elif x.IsFSharpModule then
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.ModulePublic
+                        | Internal -> KnownImageIds.ModuleInternal
+                        | Protected -> KnownImageIds.ModuleProtected
+                        | Private -> KnownImageIds.ModulePrivate
+                    elif x.IsEnum || x.IsFSharpUnion then
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.EnumerationPublic
+                        | Internal -> KnownImageIds.EnumerationInternal
+                        | Protected -> KnownImageIds.EnumerationProtected
+                        | Private -> KnownImageIds.EnumerationPrivate
+                    elif x.IsInterface then
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.InterfacePublic
+                        | Internal -> KnownImageIds.InterfaceInternal
+                        | Protected -> KnownImageIds.InterfaceProtected
+                        | Private -> KnownImageIds.InterfacePrivate
+                    elif x.IsDelegate then
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.DelegatePublic
+                        | Internal -> KnownImageIds.DelegateInternal
+                        | Protected -> KnownImageIds.DelegateProtected
+                        | Private -> KnownImageIds.DelegatePrivate
+                    elif x.IsNamespace then
+                        KnownImageIds.Namespace
+                    else
+                        match Some x.Accessibility with
+                        | Public -> KnownImageIds.ClassPublic
+                        | Internal -> KnownImageIds.ClassInternal
+                        | Protected -> KnownImageIds.ClassProtected
+                        | Private -> KnownImageIds.ClassPrivate
+                | _ -> KnownImageIds.None
+        ImageId(KnownImageIds.ImageCatalogGuid, imageId)
 
     let GetGlyphForSymbol (symbol: FSharpSymbol, kind: LexerSymbolKind) =
         match kind with
@@ -441,7 +538,8 @@ module internal Tokenizer =
             dict.TryAdd(defines, data) |> ignore
             data
 
-    let getColorizationData(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, 
+    /// Generates a list of Classified Spans for tokens which undergo syntactic classification (i.e., are not typechecked).
+    let getClassifiedSpans(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, 
                              cancellationToken: CancellationToken) : List<ClassifiedSpan> =
             try
                 let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
@@ -713,10 +811,10 @@ module internal Tokenizer =
         let isFixableIdentifier (s: string) = 
             not (String.IsNullOrEmpty s) && Lexhelp.Keywords.NormalizeIdentifierBackticks s |> isIdentifier
         
-        let forbiddenChars = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\'' |]
+        let forbiddenChars = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"' |]
         
         let isTypeNameIdent (s: string) =
-            not (String.IsNullOrEmpty s) && s.IndexOfAny forbiddenChars = -1 && isFixableIdentifier s 
+            not (String.IsNullOrEmpty s) && s.IndexOfAny forbiddenChars = -1 && isFixableIdentifier s
         
         let isUnionCaseIdent (s: string) =
             isTypeNameIdent s && Char.IsUpper(s.Replace(doubleBackTickDelimiter, "").[0])

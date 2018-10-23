@@ -1,5 +1,6 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  
-  <Import Project="$(MSBuildProgramFiles32)\Microsoft SDKs\F#\10.1\Framework\v4.0\Microsoft.FSharp.Targets" />
-  
+
+  <Import Condition="'$(FSharpCompilerPath)' != ''" Project="$(FSharpCompilerPath)\Microsoft.FSharp.targets" />
+  <Import Condition="'$(FSharpCompilerPath)' == ''" Project="$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\FSharp\Microsoft.FSharp.targets" />
+
 </Project>

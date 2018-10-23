@@ -32,7 +32,7 @@ let DecideLambda exprF cenv topValInfo expr ety z   =
     match expr with 
     | Expr.Lambda _
     | Expr.TyLambda _ ->
-        let _tps,ctorThisValOpt,baseValOpt,vsl,body,_bodyty = destTopLambda cenv.g cenv.amap topValInfo (expr, ety) 
+        let _tps, ctorThisValOpt, baseValOpt, vsl, body, _bodyty = destTopLambda cenv.g cenv.amap topValInfo (expr, ety) 
         let snoc = fun x y -> y :: x
         let args = List.concat vsl
         let args = Option.fold snoc args baseValOpt
@@ -44,20 +44,20 @@ let DecideLambda exprF cenv topValInfo expr ety z   =
     | _ -> z
 
 ///Special cases where representation uses Lambda. 
-let DecideExprOp exprF z (op,tyargs,args) =
+let DecideExprOp exprF z (op, tyargs, args) =
     (* Special cases *)
-    match op,tyargs,args with 
+    match op, tyargs, args with 
     // Handle these as special cases since mutables are allowed inside their bodies 
-    | TOp.While _,_,[Expr.Lambda(_,_,_,[_],e1,_,_);Expr.Lambda(_,_,_,[_],e2,_,_)]  ->
+    | TOp.While _, _, [Expr.Lambda(_, _, _, [_], e1, _, _);Expr.Lambda(_, _, _, [_], e2, _, _)]  ->
         Some (exprF (exprF z e1) e2)
 
-    | TOp.TryFinally _,[_],[Expr.Lambda(_,_,_,[_],e1,_,_); Expr.Lambda(_,_,_,[_],e2,_,_)] ->
+    | TOp.TryFinally _, [_], [Expr.Lambda(_, _, _, [_], e1, _, _); Expr.Lambda(_, _, _, [_], e2, _, _)] ->
         Some (exprF (exprF z e1) e2)
 
-    | TOp.For(_),_,[Expr.Lambda(_,_,_,[_],e1,_,_);Expr.Lambda(_,_,_,[_],e2,_,_);Expr.Lambda(_,_,_,[_],e3,_,_)] ->
+    | TOp.For(_), _, [Expr.Lambda(_, _, _, [_], e1, _, _);Expr.Lambda(_, _, _, [_], e2, _, _);Expr.Lambda(_, _, _, [_], e3, _, _)] ->
         Some (exprF (exprF (exprF z e1) e2) e3)
 
-    | TOp.TryCatch _,[_],[Expr.Lambda(_,_,_,[_],e1,_,_); Expr.Lambda(_,_,_,[_],_e2,_,_); Expr.Lambda(_,_,_,[_],e3,_,_)] ->
+    | TOp.TryCatch _, [_], [Expr.Lambda(_, _, _, [_], e1, _, _); Expr.Lambda(_, _, _, [_], _e2, _, _); Expr.Lambda(_, _, _, [_], e3, _, _)] ->
         Some (exprF (exprF (exprF z e1) _e2) e3)
         // In Check code it said
         //     e2; -- don't check filter body - duplicates logic in 'catch' body 
@@ -68,46 +68,46 @@ let DecideExprOp exprF z (op,tyargs,args) =
 /// Find all the mutable locals that escape a lambda expression or object expression 
 let DecideExpr cenv exprF z expr  = 
     match expr with 
-    | Expr.Lambda(_,_ctorThisValOpt,_baseValOpt,argvs,_,m,rty) -> 
-        let topValInfo = ValReprInfo ([],[argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)],ValReprInfo.unnamedRetVal) 
+    | Expr.Lambda(_, _ctorThisValOpt, _baseValOpt, argvs, _, m, rty) -> 
+        let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
         let ty = mkMultiLambdaTy m argvs rty 
         let z = DecideLambda (Some exprF)  cenv topValInfo expr ty z
         Some z
 
-    | Expr.TyLambda(_,tps,_,_m,rty)  -> 
-        let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps,[],ValReprInfo.unnamedRetVal) 
-        let ty = tryMkForallTy tps rty 
+    | Expr.TyLambda(_, tps, _, _m, rty)  -> 
+        let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 
+        let ty = mkForallTyIfNeeded tps rty 
         let z = DecideLambda (Some exprF)  cenv topValInfo expr ty z
         Some z
 
-    | Expr.Obj (_,_,baseValOpt,superInitCall,overrides,iimpls,_m) -> 
-        let CheckMethod z (TObjExprMethod(_,_attribs,_tps,vs,body,_m)) = 
+    | Expr.Obj (_, _, baseValOpt, superInitCall, overrides, iimpls, _m) -> 
+        let CheckMethod z (TObjExprMethod(_, _attribs, _tps, vs, body, _m)) = 
             let vs = List.concat vs
             let syntacticArgs = (match baseValOpt with Some x -> x:: vs | None -> vs)
             let z = Zset.union z (DecideEscapes syntacticArgs body)
             exprF z body
 
-        let CheckMethods z l = (z,l) ||> List.fold CheckMethod 
+        let CheckMethods z l = (z, l) ||> List.fold CheckMethod 
     
-        let CheckInterfaceImpl z (_ty,overrides) = CheckMethods z overrides 
+        let CheckInterfaceImpl z (_ty, overrides) = CheckMethods z overrides 
 
         let z = exprF z superInitCall
         let z = CheckMethods z overrides 
-        let z =  (z,iimpls) ||> List.fold CheckInterfaceImpl 
+        let z =  (z, iimpls) ||> List.fold CheckInterfaceImpl 
         Some z
 
-    | Expr.Op (c,tyargs,args,_m) ->
-          DecideExprOp exprF z (c,tyargs,args) 
+    | Expr.Op (c, tyargs, args, _m) ->
+          DecideExprOp exprF z (c, tyargs, args) 
 
     | _ -> None
 
 /// Find all the mutable locals that escape a binding
-let DecideBinding cenv z (TBind(v,expr,_m) as bind) = 
+let DecideBinding cenv z (TBind(v, expr, _m) as bind) = 
     let topValInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData 
     DecideLambda None cenv topValInfo expr v.Type z 
 
 /// Find all the mutable locals that escape a set of bindings
-let DecideBindings cenv z binds = (z,binds) ||> List.fold (DecideBinding cenv)
+let DecideBindings cenv z binds = (z, binds) ||> List.fold (DecideBinding cenv)
 
 /// Find all the mutable locals to promote to reference cells in an implementation file
 let DecideImplFile g amap implFile =
@@ -134,33 +134,33 @@ let TransformExpr g (nvs: ValMap<_>) exprF expr =
 
     match expr with
     // Rewrite uses of mutable values 
-    | Expr.Val (ValDeref(v),_,m) when nvs.ContainsVal v -> 
+    | Expr.Val (ValDeref(v), _, m) when nvs.ContainsVal v -> 
 
-       let _nv,nve = nvs.[v]
+       let _nv, nve = nvs.[v]
        Some (mkRefCellGet g m v.Type nve)
 
     // Rewrite assignments to mutable values 
-    | Expr.Op(TOp.LValueOp (LSet, ValDeref(v))    ,[],[arg],m)  when nvs.ContainsVal v -> 
+    | Expr.Op(TOp.LValueOp (LSet, ValDeref(v)), [], [arg], m) when nvs.ContainsVal v -> 
 
-       let _nv,nve = nvs.[v]
+       let _nv, nve = nvs.[v]
        let arg = exprF arg 
        Some (mkRefCellSet g m v.Type nve arg)
 
     // Rewrite taking the address of mutable values 
-    | Expr.Op(TOp.LValueOp (LGetAddr,ValDeref(v)),[],[]   ,m)  when nvs.ContainsVal v -> 
+    | Expr.Op(TOp.LValueOp (LAddrOf readonly, ValDeref(v)), [], [], m) when nvs.ContainsVal v -> 
        let _nv,nve = nvs.[v]
-       Some (mkRecdFieldGetAddrViaExprAddr (nve,mkRefCellContentsRef g,[v.Type],m))
+       Some (mkRecdFieldGetAddrViaExprAddr (readonly, nve, mkRefCellContentsRef g, [v.Type], m))
 
     | _ -> None
 
 
 /// Rewrite bindings for mutable locals which we are transforming
-let TransformBinding g (nvs: ValMap<_>) exprF (TBind(v,expr,m)) = 
+let TransformBinding g (nvs: ValMap<_>) exprF (TBind(v, expr, m)) = 
     if nvs.ContainsVal v then 
-       let nv,_nve = nvs.[v]
+       let nv, _nve = nvs.[v]
        let exprRange = expr.Range
        let expr = exprF expr
-       Some(TBind(nv, mkRefCell g exprRange v.Type expr,m))
+       Some(TBind(nv, mkRefCell g exprRange v.Type expr, m))
     else
        None
 
@@ -171,7 +171,7 @@ let TransformImplFile g amap implFile =
         implFile
     else
         for fv in fvs do
-            warning (Error(FSComp.SR.abImplicitHeapAllocation(fv.DisplayName),fv.Range))
+            warning (Error(FSComp.SR.abImplicitHeapAllocation(fv.DisplayName), fv.Range))
 
         let nvs = 
             [ for fv in fvs do
@@ -183,9 +183,10 @@ let TransformImplFile g amap implFile =
             |> ValMap.OfList
 
         implFile |> 
-          RewriteImplFile { PreIntercept = Some(TransformExpr g nvs)
-                            PreInterceptBinding = Some(TransformBinding g nvs)
-                            PostTransform = (fun _ -> None)
-                            IsUnderQuotations = false } 
+          RewriteImplFile 
+              { PreIntercept = Some(TransformExpr g nvs)
+                PreInterceptBinding = Some(TransformBinding g nvs)
+                PostTransform = (fun _ -> None)
+                IsUnderQuotations = false } 
 
 

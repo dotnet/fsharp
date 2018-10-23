@@ -2,7 +2,7 @@
 
 The Visual F# team is proud to be a contributor to F#, and urge you to join in too. F# users and the F# community are grateful for all contributions to F#.
 
-Besides this overview, we recommend ["Becoming a contributor"](http://mrange.wordpress.com/2014/12/11/becoming-an-fsharp-contributor/), a community blog post by Mårten Rånge. 
+Besides this overview, we recommend ["A journey into the F~ compiler"](https://skillsmatter.com/skillscasts/11629-a-journey-into-the-f-sharp-compiler/), a talk by Steffen Forkmann. 
 For those contributing to the core of the F# compiler, we recommend ["The F# Compiler Technical Overview"](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html)
 
 ### Getting Started
@@ -68,8 +68,6 @@ Contributions to this repository will be rigorously policed for quality.
 
 All code submissions should be submitted with regression test cases, and will be subject to peer review by the community and Microsoft.  The bar for contributions will be high. This will result in a higher-quality, more stable product.
 
-- We expect contributors to be actively involved in quality assurance.
-- We expect contributors to be actively involved in quality assurance.
 - We expect contributors to be actively involved in quality assurance.
 - Partial, incomplete, or poorly-tested contributions will not be accepted.
 - Contributions may be put on hold according to stability, testing, and design-coherence requirements.

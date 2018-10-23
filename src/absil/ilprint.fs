@@ -25,18 +25,19 @@ let pretty () = true
 let tyvar_generator = 
   let i = ref 0 
   fun n -> 
-    incr i; n^string !i
+    incr i; n + string !i
 
 // Carry an environment because the way we print method variables 
 // depends on the gparams of the current scope. 
 type ppenv = 
-    { ppenvClassFormals: int;
+    { ilGlobals: ILGlobals
+      ppenvClassFormals: int;
       ppenvMethodFormals: int }
 let ppenv_enter_method  mgparams env = 
     {env with ppenvMethodFormals=mgparams}
 let ppenv_enter_tdef gparams env =
     {env with ppenvClassFormals=List.length gparams; ppenvMethodFormals=0}
-let mk_ppenv = { ppenvClassFormals=0; ppenvMethodFormals=0 }
+let mk_ppenv ilg = { ilGlobals = ilg; ppenvClassFormals = 0; ppenvMethodFormals = 0 }
 let debug_ppenv = mk_ppenv 
 let ppenv_enter_modul env = { env with  ppenvClassFormals=0; ppenvMethodFormals=0 }
 
@@ -397,6 +398,7 @@ let output_member_access os access =
     | ILMemberAccess.Public -> "public"
     | ILMemberAccess.Private  -> "private"
     | ILMemberAccess.Family  -> "family"
+    | ILMemberAccess.CompilerControlled -> "privatescope"
     | ILMemberAccess.FamilyAndAssembly -> "famandassem"
     | ILMemberAccess.FamilyOrAssembly -> "famorassem"
     | ILMemberAccess.Assembly -> "assembly")
@@ -468,10 +470,11 @@ let output_basic_type os x =
 let output_custom_attr_data os data = 
   output_string os " = "; output_parens output_bytes os data
       
-let goutput_custom_attr env os attr =
+let goutput_custom_attr env os (attr: ILAttribute) =
   output_string os " .custom "
   goutput_mspec env os attr.Method
-  output_custom_attr_data os attr.Data
+  let data = getCustomAttrData env.ilGlobals attr
+  output_custom_attr_data os data
 
 let goutput_custom_attrs env os (attrs : ILAttributes) =
   List.iter (fun attr -> goutput_custom_attr env os attr;  output_string os "\n" ) attrs.AsList
@@ -789,19 +792,19 @@ let goutput_mbody is_entrypoint env os (md: ILMethodDef) =
 let goutput_mdef env os (md:ILMethodDef) =
   let attrs = 
       if md.IsVirtual then
-            "virtual "^
-            (if md.IsFinal then "final " else "")^
-            (if md.IsNewSlot then "newslot " else "")^
-            (if md.IsCheckAccessOnOverride then " strict " else "")^
-            (if md.IsAbstract then " abstract " else "")^
+            "virtual " +
+            (if md.IsFinal then "final " else "") +
+            (if md.IsNewSlot then "newslot " else "") +
+            (if md.IsCheckAccessOnOverride then " strict " else "") +
+            (if md.IsAbstract then " abstract " else "") +
               "  "
       elif md.IsNonVirtualInstance then     ""
       elif md.IsConstructor then "rtspecialname"
       elif md.IsStatic then
-            "static "^
+            "static " +
             (match md.Body.Contents with 
               MethodBody.PInvoke (attr) -> 
-                "pinvokeimpl(\""^ attr.Where.Name^"\" as \""^ attr.Name ^"\""^
+                "pinvokeimpl(\"" + attr.Where.Name + "\" as \"" + attr.Name + "\"" +
                 (match attr.CallingConv with 
                 | PInvokeCallingConvention.None -> ""
                 | PInvokeCallingConvention.Cdecl -> " cdecl"
@@ -1028,9 +1031,9 @@ let goutput_manifest env os m =
   output_string os " } \n"
 
 
-let output_module_fragment_aux _refs os  modul = 
+let output_module_fragment_aux _refs os (ilg: ILGlobals) modul =
   try 
-    let env = mk_ppenv 
+    let env = mk_ppenv ilg
     let env = ppenv_enter_modul env 
     goutput_tdefs false ([]) env os modul.TypeDefs;
     goutput_tdefs true ([]) env os modul.TypeDefs;
@@ -1038,9 +1041,9 @@ let output_module_fragment_aux _refs os  modul =
     output_string os "*** Error during printing : "; output_string os (e.ToString()); os.Flush();
     reraise()
 
-let output_module_fragment os  modul = 
+let output_module_fragment os (ilg: ILGlobals) modul =
   let refs = computeILRefs modul 
-  output_module_fragment_aux refs os  modul;
+  output_module_fragment_aux refs os ilg modul
   refs
 
 let output_module_refs os refs = 
@@ -1058,14 +1061,14 @@ let goutput_module_manifest env os modul =
   output_string os "\n";
   (output_option (goutput_manifest env)) os modul.Manifest
 
-let output_module os  modul = 
+let output_module os (ilg: ILGlobals) modul =
   try 
     let refs = computeILRefs modul 
-    let env = mk_ppenv 
+    let env = mk_ppenv ilg
     let env = ppenv_enter_modul env 
     output_module_refs  os refs;
     goutput_module_manifest env os modul;
-    output_module_fragment_aux refs os  modul;
+    output_module_fragment_aux refs os ilg modul;
   with e ->  
     output_string os "*** Error during printing : "; output_string os (e.ToString()); os.Flush();
     raise e

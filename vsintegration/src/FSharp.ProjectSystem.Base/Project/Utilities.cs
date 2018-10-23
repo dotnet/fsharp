@@ -719,7 +719,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="buildEngine">The build engine to use to create a build project.</param>
         /// <param name="fullProjectPath">The full path of the project.</param>
         /// <returns>A loaded msbuild project.</returns>
-        public static Microsoft.Build.Evaluation.Project InitializeMsBuildProject(Microsoft.Build.Evaluation.ProjectCollection buildEngine, string fullProjectPath)
+        public static Microsoft.Build.Evaluation.Project InitializeMsBuildProject(Microsoft.Build.Evaluation.ProjectCollection buildEngine, string fullProjectPath, IDictionary<String,String> globalProperties)
         {
             if (buildEngine == null)
             {
@@ -738,7 +738,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             if (buildProject == null)
             {
-                buildProject = buildEngine.LoadProject(fullProjectPath);
+                var lclGlobalProperties = (null == globalProperties) ? new Dictionary<string, string>() : new Dictionary<string, string>(globalProperties)
+                {
+                    { "FSharpCompilerPath", Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) }
+                };
+                buildProject = buildEngine.LoadProject(fullProjectPath, lclGlobalProperties, null);
                 buildProject.IsBuildEnabled = true;
             }
 
@@ -752,7 +756,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="fullProjectPath">The full path of the project.</param>
         /// <param name="exitingBuildProject">An Existing build project that will be reloaded.</param>
         /// <returns>A loaded msbuild project.</returns>
-        public static Microsoft.Build.Evaluation.Project ReinitializeMsBuildProject(Microsoft.Build.Evaluation.ProjectCollection buildEngine, string fullProjectPath, Microsoft.Build.Evaluation.Project exitingBuildProject)
+        public static Microsoft.Build.Evaluation.Project ReinitializeMsBuildProject(Microsoft.Build.Evaluation.ProjectCollection buildEngine, string fullProjectPath, IDictionary<String,String> globalProperties, Microsoft.Build.Evaluation.Project exitingBuildProject)
         {
             // If we have a build project that has been loaded with another file unload it.
             try
@@ -768,7 +772,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
             }
 
-            return Utilities.InitializeMsBuildProject(buildEngine, fullProjectPath);
+            return Utilities.InitializeMsBuildProject(buildEngine, fullProjectPath, globalProperties);
         }
 
         public static Microsoft.Build.Evaluation.ProjectCollection InitializeMsBuildEngine(Microsoft.Build.Evaluation.ProjectCollection existingEngine)

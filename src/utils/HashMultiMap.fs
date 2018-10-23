@@ -146,7 +146,7 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
 
         member s.ContainsKey(k) = s.ContainsKey(k)
 
-        member s.TryGetValue(k,r) = if s.ContainsKey(k) then (r <- s.[k]; true) else false
+        member s.TryGetValue(k,r) = match s.TryFind k with Some v-> (r <- v; true) | _ -> false
 
         member s.Remove(k:'Key) = 
             let res = s.ContainsKey(k) in 
@@ -159,14 +159,17 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
         member s.Clear() = s.Clear()            
 
         member s.Remove(x) = 
-            let res = s.ContainsKey(x.Key) 
-            if res && Unchecked.equals s.[x.Key] x.Value then 
-                s.Remove(x.Key); 
-            res
+            match s.TryFind x.Key with
+            | Some v -> 
+                if Unchecked.equals v x.Value then
+                    s.Remove(x.Key)
+                true
+            | _ -> false
 
-        member s.Contains(x) = 
-            s.ContainsKey(x.Key) && 
-            Unchecked.equals s.[x.Key] x.Value
+        member s.Contains(x) =
+            match s.TryFind x.Key with
+            | Some v when Unchecked.equals v x.Value -> true
+            | _ -> false
 
         member s.CopyTo(arr,arrIndex) = s |> Seq.iteri (fun j x -> arr.[arrIndex+j] <- x)
 

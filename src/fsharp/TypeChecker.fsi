@@ -39,14 +39,14 @@ val EmptyTopAttrs : TopAttribs
 val CombineTopAttrs : TopAttribs -> TopAttribs -> TopAttribs
 
 val TypeCheckOneImplFile : 
-      TcGlobals * NiceNameGenerator * ImportMap * CcuThunk * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink
+      TcGlobals * NiceNameGenerator * ImportMap * CcuThunk * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink * bool
       -> TcEnv 
       -> Tast.ModuleOrNamespaceType option
       -> ParsedImplFileInput
       -> Eventually<TopAttribs * Tast.TypedImplFile * ModuleOrNamespaceType * TcEnv * bool>
 
 val TypeCheckOneSigFile : 
-      TcGlobals * NiceNameGenerator * ImportMap * CcuThunk  * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink 
+      TcGlobals * NiceNameGenerator * ImportMap * CcuThunk  * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink * bool
       -> TcEnv                             
       -> ParsedSigFileInput
       -> Eventually<TcEnv * ModuleOrNamespaceType * bool>
@@ -79,7 +79,6 @@ exception FunctionValueUnexpected of DisplayEnv * TType * range
 exception UnionPatternsBindDifferentNames of range
 exception VarBoundTwice of Ast.Ident
 exception ValueRestriction of DisplayEnv * bool * Val * Typar * range
-exception FieldNotMutable of DisplayEnv * RecdFieldRef * range
 exception ValNotMutable of DisplayEnv * ValRef * range
 exception ValNotLocal of DisplayEnv * ValRef * range
 exception InvalidRuntimeCoercion of DisplayEnv * TType * TType * range
@@ -107,6 +106,4 @@ exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileNam
 
 val TcFieldInit : range -> ILFieldInit -> Tast.Const
 
-val IsSecurityAttribute : TcGlobals -> ImportMap -> Dictionary<Stamp,bool> -> Attrib -> range -> bool
-val IsSecurityCriticalAttribute : TcGlobals -> Attrib -> bool
 val LightweightTcValForUsingInBuildMethodCall : g : TcGlobals -> vref:ValRef -> vrefFlags : ValUseFlag -> vrefTypeInst : TTypes -> m : range -> Expr * TType

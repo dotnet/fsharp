@@ -1,0 +1,19 @@
+<Project ToolsVersion="4.0" DefaultTargets="Test" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="Test.props" />
+
+  <!-- if no FSharp.Core is specified, ensure the default is present -->
+  <!-- if no System.ValueTuple is specified, ensure the default is present -->
+
+  <PropertyGroup>
+    <ExpectsFSharpCore>true</ExpectsFSharpCore>
+    <ExpectedFSharpCorePackageVersion>$(DefaultFSharpCorePackageVersion)</ExpectedFSharpCorePackageVersion>
+
+    <ExpectsValueTuple>true</ExpectsValueTuple>
+    <ExpectedValueTuplePackageVersion>$(DefaultValueTuplePackageVersion)</ExpectedValueTuplePackageVersion>
+
+  </PropertyGroup>
+
+  <Import Project="Test.targets" />
+
+</Project>

@@ -1,14 +1,25 @@
 
-neg103.fs(2,552,2,557): typecheck error FS0039: The type 'fail1' is not defined.
+neg103.fs(7,12,7,22): typecheck error FS0001: This expression was expected to have type
+    'Async<'a>'    
+but here has type
+    'string'    
 
-neg103.fs(2,552,2,557): typecheck error FS0039: The type 'fail1' is not defined.
+neg103.fs(12,7,12,15): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'MyUnion'    
 
-neg103.fs(3,624,3,629): typecheck error FS0039: The value or constructor 'fail2' is not defined. Maybe you want one of the following:
+neg103.fs(17,7,17,15): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'MyUnion'    
 
-   Failure
+neg103.fs(21,7,21,9): typecheck error FS0001: This expression was expected to have type
+    'Async<int>'    
+but here has type
+    'int'    
 
-   failwith
-
-   failwithf
-
-neg103.fs(5,538,5,540): typecheck error FS0003: This value is not a function and cannot be applied.
+neg103.fs(25,11,25,19): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'MyUnion'    

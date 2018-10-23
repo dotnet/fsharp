@@ -32,7 +32,7 @@
         "net40\\bin\\*\\FSharp.ProjectSystem.PropertyPages.resources.dll",
         "net40\\bin\\FSharp.ProjectSystem.FSharp.dll",
         "net40\\bin\\*\\FSharp.ProjectSystem.FSharp.resources.dll",
-        "net40\\bin\\PatternMatcher.dll",
+        "net40\\bin\\FSharp.PatternMatcher.dll",
         "coreclr\\bin\\FSharp.Core.dll",
         "coreclr\\bin\\*\\FSharp.Core.resources.dll",
         "coreclr\\bin\\FSharp.Build.dll",
@@ -57,18 +57,16 @@
     }
   ],
   "exclude": [
-    "Microsoft.Build.Conversion.Core.dll",
+    "e_sqlite3.dll",
+    "FSharp.Core.4.5.2.nupkg",
+    "FSharp.Data.TypeProviders.dll",
     "Microsoft.Build.dll",
-    "Microsoft.Build.Engine.dll",
     "Microsoft.Build.Framework.dll",
     "Microsoft.Build.Tasks.Core.dll",
     "Microsoft.Build.Utilities.Core.dll",
-    "Microsoft.DiaSymReader.dll",
-    "Microsoft.DiaSymReader.PortablePdb.dll",
     "Newtonsoft.Json.dll",
     "System.Collections.Immutable.dll",
     "System.Reflection.Metadata.dll",
-    "System.ValueTuple.4.3.1.nupkg",
     "System.ValueTuple.4.4.0.nupkg",
     "System.ValueTuple.dll"
   ]

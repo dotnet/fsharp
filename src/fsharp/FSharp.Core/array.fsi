@@ -12,7 +12,7 @@ namespace Microsoft.FSharp.Collections
     [<RequireQualifiedAccess>]
     module Array = 
 
-        /// <summary>Builds a new array that contains the cartesian product of the two input arrays.</summary>
+        /// <summary>Returns a new array that contains all pairings of elements from the first and second arrays.</summary>
         /// <param name="array1">The first input array.</param>
         /// <param name="array2">The second input array.</param>
         /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>

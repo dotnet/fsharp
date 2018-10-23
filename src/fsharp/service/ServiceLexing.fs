@@ -6,8 +6,10 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
+open System
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler.AbstractIL.Internal  
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library  
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
@@ -259,7 +261,7 @@ module internal TokenClassifications =
         | ELIF | RARROW | LARROW | SIG | STRUCT 
         | UPCAST   | DOWNCAST   | NULL   | RESERVED    | MODULE    | AND    | AS   | ASSERT   | ASR
         | DOWNTO   | EXCEPTION   | FALSE   | FOR   | FUN   | FUNCTION
-        | FINALLY   | LAZY   | MATCH  | MUTABLE   | NEW   | OF    | OPEN   | OR | VOID | EXTERN
+        | FINALLY   | LAZY   | MATCH  | MATCH_BANG  | MUTABLE   | NEW   | OF    | OPEN   | OR | VOID | EXTERN
         | INTERFACE | REC   | TO   | TRUE   | TRY   | TYPE   |  VAL   | INLINE   | WHEN  | WHILE   | WITH
         | IF | THEN  | ELSE | DO | DONE | LET(_) | IN (*| NAMESPACE*) | CONST
         | HIGH_PRECEDENCE_PAREN_APP | FIXED
@@ -377,7 +379,13 @@ module internal LexerStateEncoding =
 
     let bitOfBool b = if b then 1 else 0
     let boolOfBit n = (n = 1L)
-        
+
+    let inline colorStateOfLexState (state: FSharpTokenizerLexState) =
+        enum<FSharpTokenizerColorState> (int32 ((state.OtherBits &&& lexstateMask) >>> lexstateStart))
+
+    let inline lexStateOfColorState (state: FSharpTokenizerColorState) =
+        (int64 state <<< lexstateStart) &&& lexstateMask
+
     let encodeLexCont (colorState:FSharpTokenizerColorState) ncomments (b:pos) ifdefStack light = 
         let mutable ifdefStackCount = 0
         let mutable ifdefStackBits = 0
@@ -388,9 +396,8 @@ module internal LexerStateEncoding =
                     ifdefStackBits <- (ifdefStackBits ||| (1 <<< ifdefStackCount))
             ifdefStackCount <- ifdefStackCount + 1
 
-        let lexstate = int64 colorState
         let bits = 
-            ((lexstate <<< lexstateStart)  &&& lexstateMask)
+            lexStateOfColorState colorState
             ||| ((ncomments <<< ncommentsStart) &&& ncommentsMask)
             ||| ((int64 (bitOfBool light) <<< hardwhitePosStart) &&& hardwhitePosMask)
             ||| ((int64 ifdefStackCount <<< ifdefstackCountStart) &&& ifdefstackCountMask)
@@ -410,7 +417,7 @@ module internal LexerStateEncoding =
                 let mask = 1 <<< bit
                 let ifDef = (if ifdefStack &&& mask = 0 then IfDefIf else IfDefElse)
                 ifDefs<-(ifDef,range0)::ifDefs
-        enum<FSharpTokenizerColorState> (int32 ((bits &&& lexstateMask)  >>> lexstateStart)),
+        colorStateOfLexState state,
         int32 ((bits &&& ncommentsMask) >>> ncommentsStart),
         pos.Decode state.PosBits,
         ifDefs,
@@ -515,7 +522,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
 
     // Process: anywhite* #<directive>
     let processDirective (str:string) directiveLength delay cont =
-        let hashIdx = str.IndexOf("#")
+        let hashIdx = str.IndexOf("#", StringComparison.Ordinal)
         if (hashIdx <> 0) then delay(WHITESPACE cont, 0, hashIdx - 1)
         delay(HASH_IF(range0, "", cont), hashIdx, hashIdx + directiveLength)
         hashIdx + directiveLength + 1
@@ -627,34 +634,34 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                           delayToken(greaters.[i] false, leftc + i, rightc - opstr.Length + i + 1)
                       false, (greaters.[0] false, leftc, rightc - opstr.Length + 1)
                   // break up any operators that start with '.' so that we can get auto-popup-completion for e.g. "x.+1"  when typing the dot
-                  | INFIX_STAR_STAR_OP opstr when opstr.StartsWith(".") ->
+                  | INFIX_STAR_STAR_OP opstr when opstr.StartsWithOrdinal(".") ->
                       delayToken(INFIX_STAR_STAR_OP(opstr.Substring(1)), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
-                  | PLUS_MINUS_OP opstr when opstr.StartsWith(".") ->
+                  | PLUS_MINUS_OP opstr when opstr.StartsWithOrdinal(".") ->
                       delayToken(PLUS_MINUS_OP(opstr.Substring(1)), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
-                  | INFIX_COMPARE_OP opstr when opstr.StartsWith(".") ->
+                  | INFIX_COMPARE_OP opstr when opstr.StartsWithOrdinal(".") ->
                       delayToken(INFIX_COMPARE_OP(opstr.Substring(1)), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
-                  | INFIX_AT_HAT_OP opstr when opstr.StartsWith(".") ->
+                  | INFIX_AT_HAT_OP opstr when opstr.StartsWithOrdinal(".") ->
                       delayToken(INFIX_AT_HAT_OP(opstr.Substring(1)), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
-                  | INFIX_BAR_OP opstr when opstr.StartsWith(".") ->
+                  | INFIX_BAR_OP opstr when opstr.StartsWithOrdinal(".") ->
                       delayToken(INFIX_BAR_OP(opstr.Substring(1)), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
-                  | PREFIX_OP opstr when opstr.StartsWith(".") ->
+                  | PREFIX_OP opstr when opstr.StartsWithOrdinal(".") ->
                       delayToken(PREFIX_OP(opstr.Substring(1)), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
-                  | INFIX_STAR_DIV_MOD_OP opstr when opstr.StartsWith(".") ->
+                  | INFIX_STAR_DIV_MOD_OP opstr when opstr.StartsWithOrdinal(".") ->
                       delayToken(INFIX_STAR_DIV_MOD_OP(opstr.Substring(1)), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
-                  | INFIX_AMP_OP opstr when opstr.StartsWith(".") ->
+                  | INFIX_AMP_OP opstr when opstr.StartsWithOrdinal(".") ->
                       delayToken(INFIX_AMP_OP(opstr.Substring(1)), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
-                  | ADJACENT_PREFIX_OP opstr when opstr.StartsWith(".") ->
+                  | ADJACENT_PREFIX_OP opstr when opstr.StartsWithOrdinal(".") ->
                       delayToken(ADJACENT_PREFIX_OP(opstr.Substring(1)), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
-                  | FUNKY_OPERATOR_NAME opstr when opstr.StartsWith(".") ->
+                  | FUNKY_OPERATOR_NAME opstr when opstr.StartsWithOrdinal(".") ->
                       delayToken(FUNKY_OPERATOR_NAME(opstr.Substring(1)), leftc+1, rightc)
                       false, (DOT, leftc, leftc)
                   | _ -> false, (token, leftc, rightc)
@@ -742,16 +749,11 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
             
         tokenDataOption, lexintFinal
 
-    static member ColorStateOfLexState (lexState: FSharpTokenizerLexState) = 
-        let tag,_ncomments,_position,_ifdefStack,_lightSyntaxStatusInital = LexerStateEncoding.decodeLexCont lexState 
-        tag
+    static member ColorStateOfLexState(lexState: FSharpTokenizerLexState) = 
+        LexerStateEncoding.colorStateOfLexState lexState
 
-    static member LexStateOfColorState (colorState: FSharpTokenizerColorState) = 
-        let ncomments = 0L
-        let position = pos0 
-        let ifdefStack = []
-        let light = true
-        LexerStateEncoding.encodeLexCont colorState ncomments position ifdefStack light
+    static member LexStateOfColorState(colorState: FSharpTokenizerColorState) = 
+        { PosBits = 0L; OtherBits = LexerStateEncoding.lexStateOfColorState colorState }
 
 [<Sealed>]
 type FSharpSourceTokenizer(defineConstants : string list, filename : string option) =     

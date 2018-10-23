@@ -30,8 +30,8 @@
   <ItemGroup Condition="'$(BUILD_VS)'=='1'">
     <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-src-build.proj" />
     <ProjectsWithNet40 Include="vsintegration/Utils/LanguageServiceProfiling/LanguageServiceProfiling.fsproj" />
-    <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-project-templates-build.proj" />
     <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-item-templates-build.proj" />
+    <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-project-templates-build.proj" />
     <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-vsix-build.proj" />
   </ItemGroup>
 
@@ -62,12 +62,12 @@
   <!-- +++++++++++++++++++++++ Project selection for testing +++++++++++++++++++++++++++++++ -->
 
   <ItemGroup Condition="'$(TEST_NET40_COMPILERUNIT_SUITE)'=='1'" >
-    <ProjectsWithNet40 Include="tests/FSharp.Core.UnitTests/FSharp.Core.Unittests.fsproj"/>
+    <ProjectsWithNet40 Include="tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj"/>
     <ProjectsWithNet40 Include="tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj"/>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_CORECLR_COREUNIT_SUITE)'=='1'">
-    <ProjectsWithCoreClr Include="tests/FSharp.Core.UnitTests/FSharp.Core.Unittests.fsproj"/>
+    <ProjectsWithCoreClr Include="tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj"/>
     <ProjectsWithCoreClr Include="tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj"/>
   </ItemGroup>
 
@@ -77,6 +77,7 @@
 
   <ItemGroup Condition="'$(TEST_NET40_FSHARP_SUITE)'=='1'" >
     <ProjectsWithNet40 Include="tests/fsharp/FSharp.Tests.FSharpSuite.fsproj" />
+    <ProjectsWithNet40 Include="tests/fsharp/SDKTests/AllSdkTargetsTests.proj" /> 
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_CORECLR_FSHARP_SUITE)'=='1'" >

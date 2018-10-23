@@ -1,9 +1,9 @@
 {
     "dependencies": {
-        "Microsoft.Build": "15.1.548",
-        "Microsoft.Build.Framework": "15.1.548",
-        "Microsoft.Build.Tasks.Core": "15.1.548",
-        "Microsoft.Build.Utilities.Core": "15.1.548",
+        "Microsoft.Build": "15.6.85",
+        "Microsoft.Build.Framework": "15.6.85",
+        "Microsoft.Build.Tasks.Core": "15.6.85",
+        "Microsoft.Build.Utilities.Core": "15.6.85",
         "Microsoft.NETCore.Platforms": "1.1.0",
         "Microsoft.Win32.Registry": {
             "version": "4.3.0",

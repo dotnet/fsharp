@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly Mutation02
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Mutation02
 {
-  // Offset: 0x00000000 Length: 0x0000019A
+  // Offset: 0x00000000 Length: 0x000001A2
 }
 .mresource public FSharpOptimizationData.Mutation02
 {
-  // Offset: 0x000001A0 Length: 0x0000006C
+  // Offset: 0x000001A8 Length: 0x0000006C
 }
 .module Mutation02.exe
-// MVID: {59B19213-8C6A-2F0D-A745-03831392B159}
+// MVID: {5B9A632A-8C6A-2F0D-A745-03832A639A5B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01720000
+// Image base: 0x02750000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -56,7 +56,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$Mutation02>'.$Mutation02::'x@4-13'
+    IL_0000:  ldsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$Mutation02>'.$Mutation02::x@4
     IL_0005:  ret
   } // end of method Mutation02::get_x
 
@@ -71,7 +71,7 @@
 .class private abstract auto ansi sealed '<StartupCode$Mutation02>'.$Mutation02
        extends [mscorlib]System.Object
 {
-  .field static assembly valuetype [mscorlib]System.TimeSpan 'x@4-13'
+  .field static assembly valuetype [mscorlib]System.TimeSpan x@4
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -88,7 +88,7 @@
     .line 4,4 : 1,33 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Mutation\\Mutation02.fs'
     IL_0000:  ldsfld     valuetype [mscorlib]System.TimeSpan [mscorlib]System.TimeSpan::MinValue
     IL_0005:  dup
-    IL_0006:  stsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$Mutation02>'.$Mutation02::'x@4-13'
+    IL_0006:  stsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$Mutation02>'.$Mutation02::x@4
     IL_000b:  stloc.0
     .line 5,5 : 1,13 ''
     IL_000c:  call       valuetype [mscorlib]System.TimeSpan Mutation02::get_x()

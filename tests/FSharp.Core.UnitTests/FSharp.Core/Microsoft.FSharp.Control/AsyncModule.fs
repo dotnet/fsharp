@@ -565,7 +565,7 @@ type AsyncModule() =
         Assert.AreEqual("boom", !r)
 
 
-    [<Test>]
+    [<Test; Ignore("See https://github.com/Microsoft/visualfsharp/issues/4887")>]
     member this.``SleepContinuations``() = 
         let okCount = ref 0
         let errCount = ref 0

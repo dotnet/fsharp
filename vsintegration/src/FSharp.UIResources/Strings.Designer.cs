@@ -88,6 +88,51 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to CodeLens.
+        /// </summary>
+        public static string CodeLens {
+            get {
+                return ResourceManager.GetString("CodeLens", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Annotation prefix.
+        /// </summary>
+        public static string CodeLens_Prefix {
+            get {
+                return ResourceManager.GetString("CodeLens_Prefix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show annotations to the right instead of above the line.
+        /// </summary>
+        public static string CodeLens_Replace_LineLens {
+            get {
+                return ResourceManager.GetString("CodeLens_Replace_LineLens", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show type signature annotations in the editor.
+        /// </summary>
+        public static string CodeLens_Switch {
+            get {
+                return ResourceManager.GetString("CodeLens_Switch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use colors in annotations.
+        /// </summary>
+        public static string CodeLens_UseColors {
+            get {
+                return ResourceManager.GetString("CodeLens_UseColors", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Completion Lists.
         /// </summary>
         public static string Completion_Lists {
@@ -124,6 +169,69 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Re-format indentation on paste.
+        /// </summary>
+        public static string Format_on_paste {
+            get {
+                return ResourceManager.GetString("Format_on_paste", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enable stale data for IntelliSense features.
+        /// </summary>
+        public static string Enable_Stale_IntelliSense_Results {
+            get {
+                return ResourceManager.GetString("Enable_Stale_IntelliSense_Results", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Always add new line on enter.
+        /// </summary>
+        public static string Enter_key_always {
+            get {
+                return ResourceManager.GetString("Enter_key_always", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Never add new line on enter.
+        /// </summary>
+        public static string Enter_key_never {
+            get {
+                return ResourceManager.GetString("Enter_key_never", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Only add new line on enter after end of fully typed word.
+        /// </summary>
+        public static string Enter_key_only {
+            get {
+                return ResourceManager.GetString("Enter_key_only", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter key behavior.
+        /// </summary>
+        public static string Enter_Key_Rule {
+            get {
+                return ResourceManager.GetString("Enter_Key_Rule", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IntelliSense Performance Options.
+        /// </summary>
+        public static string IntelliSense_Performance {
+            get {
+                return ResourceManager.GetString("IntelliSense_Performance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Performance.
         /// </summary>
         public static string Language_Service_Performance {
@@ -151,11 +259,20 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Project check cache size.
+        ///   Looks up a localized string similar to Number of projects whose data is cached in memory.
         /// </summary>
         public static string Project_check_cache_size {
             get {
                 return ResourceManager.GetString("Project_check_cache_size", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to F# Project and Caching Performance Options.
+        /// </summary>
+        public static string Project_Performance {
+            get {
+                return ResourceManager.GetString("Project_Performance", resourceCulture);
             }
         }
         
@@ -205,7 +322,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Show outlining and collapsable nodes for F# code.
+        ///   Looks up a localized string similar to Show outlining and collapsible nodes for F# code.
         /// </summary>
         public static string Show_Outlining {
             get {
@@ -228,6 +345,33 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Solid_underline {
             get {
                 return ResourceManager.GetString("Solid_underline", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Time until stale results are used (in milliseconds).
+        /// </summary>
+        public static string Time_until_stale_completion {
+            get {
+                return ResourceManager.GetString("Time_until_stale_completion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to In-memory cross-project references store project-level data in memory to allow IDE features to work across projects..
+        /// </summary>
+        public static string Tooltip_in_memory_cross_project_references {
+            get {
+                return ResourceManager.GetString("Tooltip_in_memory_cross_project_references", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions..
+        /// </summary>
+        public static string Tooltip_project_check_cache_size {
+            get {
+                return ResourceManager.GetString("Tooltip_project_check_cache_size", resourceCulture);
             }
         }
         

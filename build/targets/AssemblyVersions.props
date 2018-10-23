@@ -3,6 +3,8 @@
   <PropertyGroup>
     <!-- Put build number 0 and today's date if this was a local build -->
     <BUILD_BUILDNUMBER Condition="'$(BUILD_BUILDNUMBER)' == ''">$([System.DateTime]::Now.ToString(yyyyMMdd.0))</BUILD_BUILDNUMBER>
+    <!-- Remove '.DRAFT' suffix if it exists -->
+    <BUILD_BUILDNUMBER>$(BUILD_BUILDNUMBER.Replace(".DRAFT", ""))</BUILD_BUILDNUMBER>
 
     <!--
     Given $(BUILD_BUILDNUMBER) = '20161225.1'
@@ -19,10 +21,19 @@
     <_Build_Number>$(BUILD_BUILDNUMBER.Substring(9))</_Build_Number>
     <Build_FileVersion>$(_Build_Year).$(_Build_Month).$(_Build_Day).$(_Build_Number)</Build_FileVersion>
 
-    <FSCoreVersion>4.4.3.0</FSCoreVersion>
-    <FSProductVersion>10.1.1.0</FSProductVersion>
-    <FSPackageVersion>10.1.4</FSPackageVersion>
-    <VSAssemblyVersion>15.6.0.0</VSAssemblyVersion>
+    <FSCoreMajorVersion>4.5</FSCoreMajorVersion>
+    <FSCorePackageVersion>$(FSCoreMajorVersion).3</FSCorePackageVersion>
+    <FSCoreVersion>$(FSCoreMajorVersion).0.0</FSCoreVersion>
+
+    <FSPackageMajorVersion>10.2</FSPackageMajorVersion>
+    <FSPackageVersion>$(FSPackageMajorVersion).3</FSPackageVersion>
+    <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
+
+    <VSMajorVersion>15</VSMajorVersion>
+    <VSMinorVersion>8</VSMinorVersion>
+    <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
+    <VSAssemblyVersion>$(VSMajorVersion).$(VSMinorVersion).0.0</VSAssemblyVersion>
+
     <MicroBuildAssemblyVersion Condition="'$(MicroBuildAssemblyVersion)' == ''">$(FSCoreVersion)</MicroBuildAssemblyVersion>
 
     <!-- certain delivered F# VS assemblies use a specific MicroBuildAssemblyVersion, otherwise use FSCoreVersion -->

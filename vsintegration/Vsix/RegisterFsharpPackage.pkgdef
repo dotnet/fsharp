@@ -52,7 +52,7 @@
 "1"="{92EF0900-2251-11D2-B72E-0000F87572EF}" 
 
 [$RootKey$\Packages\{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}]
-"ProductVersion"="10.1"
+"ProductVersion"="10.2"
 "ProductName"="Visual F#"
 "CompanyName"="Microsoft Corp."
 
@@ -62,42 +62,42 @@
 [$RootKey$\CLSID\{e1194663-db3c-49eb-8b45-276fcdc440ea}]
 "InprocServer32"="$WinDir$\SYSTEM32\MSCOREE.DLL"
 "Class"="Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpBuildPropertyPage"
-"Assembly"="FSharp.ProjectSystem.FSharp, Version=15.6.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+"Assembly"="FSharp.ProjectSystem.FSharp, Version=15.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
 "ThreadingModel"="Both"
 @="Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpBuildPropertyPage"
 
 [$RootKey$\CLSID\{6d2d9b56-2691-4624-a1bf-d07a14594748}]
 "InprocServer32"="$WinDir$\SYSTEM32\MSCOREE.DLL"
 "Class"="Microsoft.VisualStudio.Editors.PropertyPages.FSharpApplicationPropPageComClass"
-"Assembly"="FSharp.ProjectSystem.PropertyPages, Version=15.6.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+"Assembly"="FSharp.ProjectSystem.PropertyPages, Version=15.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
 "ThreadingModel"="Both"
 @="Microsoft.VisualStudio.Editors.PropertyPages.FSharpApplicationPropPageComClass"
 
 [$RootKey$\CLSID\{dd84aa8f-71bb-462a-8ef8-c9992cb325b7}]
 "InprocServer32"="$System$mscoree.dll"
 "Class"="Microsoft.VisualStudio.Editors.PropertyPages.FSharpBuildEventsPropPageComClass"
-"Assembly"="FSharp.ProjectSystem.PropertyPages, Version=15.6.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+"Assembly"="FSharp.ProjectSystem.PropertyPages, Version=15.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
 "ThreadingModel"="Both"
 @="Microsoft.VisualStudio.Editors.PropertyPages.FSharpBuildEventsPropPageComClass"
 
 [$RootKey$\CLSID\{fac0a17e-2e70-4211-916a-0d34fb708bff}]
 "InprocServer32"="$System$mscoree.dll"
 "Class"="Microsoft.VisualStudio.Editors.PropertyPages.FSharpBuildPropPageComClass"
-"Assembly"="FSharp.ProjectSystem.PropertyPages, Version=15.6.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+"Assembly"="FSharp.ProjectSystem.PropertyPages, Version=15.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
 "ThreadingModel"="Both"
 @="Microsoft.VisualStudio.Editors.PropertyPages.FSharpBuildPropPageComClass"
 
 [$RootKey$\CLSID\{9cfbeb2a-6824-43e2-bd3b-b112febc3772}]
 "InprocServer32"="$WinDir$\SYSTEM32\MSCOREE.DLL"
 "Class"="Microsoft.VisualStudio.Editors.PropertyPages.FSharpDebugPropPageComClass"
-"Assembly"="FSharp.ProjectSystem.PropertyPages, Version=15.6.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+"Assembly"="FSharp.ProjectSystem.PropertyPages, Version=15.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
 "ThreadingModel"="Both"
 @="Microsoft.VisualStudio.Editors.PropertyPages.FSharpDebugPropPageComClass"
 
 [$RootKey$\CLSID\{df16b1a2-0e91-4499-ae60-c7144e614bf1}]
 "InprocServer32"="$WinDir$\SYSTEM32\MSCOREE.DLL"
 "Class"="Microsoft.VisualStudio.Editors.PropertyPages.FSharpReferencePathsPropPageComClass"
-"Assembly"="FSharp.ProjectSystem.PropertyPages, Version=15.6.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+"Assembly"="FSharp.ProjectSystem.PropertyPages, Version=15.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
 "ThreadingModel"="Both"
 @="Microsoft.VisualStudio.Editors.PropertyPages.FSharpReferencePathsPropPageComClass"
 
