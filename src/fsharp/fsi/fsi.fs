@@ -1060,7 +1060,7 @@ type internal FsiDynamicCompiler
 #if DEBUG
         if fsiOptions.ShowILCode then 
             fsiConsoleOutput.uprintnfn "--------------------";
-            ILAsciiWriter.output_module outWriter mainmod3;
+            ILAsciiWriter.output_module outWriter ilGlobals mainmod3;
             fsiConsoleOutput.uprintnfn "--------------------"
 #else
         ignore(fsiOptions)
