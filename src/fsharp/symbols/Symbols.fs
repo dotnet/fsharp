@@ -86,7 +86,7 @@ module Impl =
     let entityIsUnresolved(entity:EntityRef) = 
         match entity with
         | ERefNonLocal(NonLocalEntityRef(ccu, _)) -> 
-            ccu.IsUnresolvedReference && entity.TryDeref.IsNone
+            ccu.IsUnresolvedReference && ValueOption.isNone entity.TryDeref
         | _ -> false
 
     let checkEntityIsResolved(entity:EntityRef) = 
@@ -756,10 +756,10 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
 
 
     let isUnresolved() = 
-        entityIsUnresolved v.TyconRef || v.TryUnionCase.IsNone
+        entityIsUnresolved v.TyconRef || ValueOption.isNone v.TryUnionCase
     let checkIsResolved() = 
         checkEntityIsResolved v.TyconRef
-        if v.TryUnionCase.IsNone then 
+        if ValueOption.isNone v.TryUnionCase then 
             invalidOp (sprintf "The union case '%s' could not be found in the target type" v.CaseName)
 
     member __.IsUnresolved = 
@@ -874,8 +874,8 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
         d.TryDeclaringTyconRef |> Option.exists entityIsUnresolved ||
         match d with 
         | AnonField _ -> false
-        | RecdOrClass v ->  v.TryRecdField.IsNone 
-        | Union (v, _) -> v.TryUnionCase.IsNone 
+        | RecdOrClass v ->  ValueOption.isNone v.TryRecdField
+        | Union (v, _) -> ValueOption.isNone v.TryUnionCase
         | ILField _ -> false
 
     let checkIsResolved() = 
@@ -883,10 +883,10 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
         match d with 
         | AnonField _ -> ()
         | RecdOrClass v -> 
-            if v.TryRecdField.IsNone then 
+            if ValueOption.isNone v.TryRecdField then 
                 invalidOp (sprintf "The record field '%s' could not be found in the target type" v.FieldName)
         | Union (v, _) -> 
-            if v.TryUnionCase.IsNone then 
+            if ValueOption.isNone v.TryUnionCase then 
                 invalidOp (sprintf "The union case '%s' could not be found in the target type" v.CaseName)
         | ILField _ -> ()
 
@@ -1378,7 +1378,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     let isUnresolved() = 
         match fsharpInfo() with 
         | None -> false
-        | Some v -> v.TryDeref.IsNone
+        | Some v -> ValueOption.isNone v.TryDeref
 
     let checkIsResolved() = 
         if isUnresolved() then 

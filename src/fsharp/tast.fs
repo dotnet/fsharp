@@ -3263,7 +3263,7 @@ and
             ValueSome tcr.binding
 
     /// Is the destination assembly available?
-    member tcr.CanDeref = tcr.TryDeref.IsSome
+    member tcr.CanDeref = ValueOption.isSome tcr.TryDeref
 
     /// Gets the data indicating the compiled representation of a type or module in terms of Abstract IL data structures.
     member x.CompiledRepresentation = x.Deref.CompiledRepresentation
@@ -5199,6 +5199,7 @@ let arityOfVal (v:Val) = (match v.ValReprInfo with None -> ValReprInfo.emptyValD
 
 let tupInfoRef = TupInfo.Const false
 let tupInfoStruct = TupInfo.Const true
+let mkTupInfo b = if b then tupInfoStruct else tupInfoRef
 let structnessDefault = false
 let mkRawRefTupleTy tys = TType_tuple (tupInfoRef, tys)
 let mkRawStructTupleTy tys = TType_tuple (tupInfoStruct, tys)

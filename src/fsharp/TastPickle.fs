@@ -1433,7 +1433,7 @@ let p_trait (TTrait(a,b,c,d,e,f)) st  =
 
 let u_anonInfo_data st = 
     let (ccu, info, nms) = u_tup3 u_ccuref u_bool (u_array u_ident) st 
-    AnonRecdTypeInfo.Create (ccu, TupInfo.Const info, nms)
+    AnonRecdTypeInfo.Create (ccu, mkTupInfo info, nms)
 
 let u_anonInfo st = 
     u_osgn_decl st.ianoninfos u_anonInfo_data st 

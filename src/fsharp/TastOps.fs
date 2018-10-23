@@ -675,7 +675,7 @@ let mkOuterCompiledTupleTy g isStruct tupElemTys =
             let marker = TType_app (mkCompiledTupleTyconRef g isStruct 1, [tyB])
             TType_app (tcref, tysA@[marker])
         | _ ->
-            TType_app (tcref, tysA@[TType_tuple (TupInfo.Const isStruct, tysB)])
+            TType_app (tcref, tysA@[TType_tuple (mkTupInfo isStruct, tysB)])
 
 //---------------------------------------------------------------------------
 // Remove inference equations and abbreviations from types 
@@ -7556,7 +7556,9 @@ let rec TypeHasDefaultValue g m ty =
          elif isStructTupleTy g ty then 
             destStructTupleTy g ty |> List.forall (TypeHasDefaultValue g m)
          elif isStructAnonRecdTy g ty then 
-            tryDestAnonRecdTy g ty |> ValueOption.get |> snd |> List.forall (TypeHasDefaultValue g m)
+            match tryDestAnonRecdTy g ty with
+            | ValueNone -> true
+            | ValueSome (_, ptys) -> ptys |> List.forall (TypeHasDefaultValue g m)
          else
             // All struct types defined in other .NET languages have a DefaultValue regardless of their
             // instantiation
@@ -7570,8 +7572,9 @@ let (|SpecialComparableHeadType|_|) g ty =
         let _tupInfo, elemTys = destAnyTupleTy g ty
         Some elemTys 
     elif isAnonRecdTy g ty then 
-        let _anonInfo, elemTys = tryDestAnonRecdTy g ty |> ValueOption.get
-        Some elemTys 
+        match tryDestAnonRecdTy g ty with
+        | ValueNone -> Some []
+        | ValueSome (_anonInfo, elemTys) -> Some elemTys 
     else
         match tryAppTy g ty with
         | ValueSome (tcref, tinst) ->
@@ -8338,12 +8341,12 @@ let rec mkCompiledTuple g isStruct (argtys, args, m) =
                     ty8, arg8
                 | _ ->
                     let ty8enc = TType_app((if isStruct then g.struct_tuple1_tcr else g.ref_tuple1_tcr), [ty8])
-                    let v8enc = Expr.Op (TOp.Tuple (TupInfo.Const isStruct), [ty8], [arg8], m) 
+                    let v8enc = Expr.Op (TOp.Tuple (mkTupInfo isStruct), [ty8], [arg8], m) 
                     ty8enc, v8enc
             | _ -> 
                 let a, b, c, d = mkCompiledTuple g isStruct (argtysB, argsB, m)
                 let ty8plus = TType_app(a, b)
-                let v8plus = Expr.Op (TOp.Tuple(TupInfo.Const isStruct), b, c, d)
+                let v8plus = Expr.Op (TOp.Tuple(mkTupInfo isStruct), b, c, d)
                 ty8plus, v8plus
         let argtysAB = argtysA @ [ty8] 
         (mkCompiledTupleTyconRef g isStruct (List.length argtysAB), argtysAB, argsA @ [v8], m)

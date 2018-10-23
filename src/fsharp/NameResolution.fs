@@ -1100,7 +1100,7 @@ let AddEntityForProvidedType (amap: Import.ImportMap, modref: ModuleOrNamespaceR
     let tycon = Construct.NewProvidedTycon(resolutionEnvironment, st, importProvidedType, isSuppressRelocate, m)
     modref.ModuleOrNamespaceType.AddProvidedTypeEntity(tycon)
     let tcref = modref.NestedTyconRef tycon
-    System.Diagnostics.Debug.Assert(modref.TryDeref.IsSome)
+    System.Diagnostics.Debug.Assert(ValueOption.isSome modref.TryDeref)
     tcref
 
 

@@ -713,13 +713,13 @@ let UnifyTupleTypeAndInferCharacteristics contextInfo cenv denv m knownTy isExpl
     let tupInfo, ptys = 
         if isAnyTupleTy cenv.g knownTy then 
             let tupInfo, ptys = destAnyTupleTy cenv.g knownTy 
-            let tupInfo = (if isExplicitStruct then TupInfo.Const isExplicitStruct else tupInfo)
+            let tupInfo = (if isExplicitStruct then tupInfoStruct else tupInfo)
             let ptys = 
                 if List.length ps = List.length ptys then ptys 
                 else NewInferenceTypes ps
             tupInfo, ptys
         else
-            TupInfo.Const isExplicitStruct, NewInferenceTypes ps
+            mkTupInfo isExplicitStruct, NewInferenceTypes ps
 
     let contextInfo =
         match contextInfo with
@@ -739,7 +739,7 @@ let UnifyAnonRecdTypeAndInferCharacteristics contextInfo cenv denv m ty isExplic
             // Note: use the assembly of the known type, not the current assembly
             // Note: use the structness of the known type, unless explicit
             // Note: use the names of our type, since they are always explicit
-            let tupInfo = (if isExplicitStruct then TupInfo.Const isExplicitStruct else anonInfo.TupInfo)
+            let tupInfo = (if isExplicitStruct then tupInfoStruct else anonInfo.TupInfo)
             let anonInfo = AnonRecdTypeInfo.Create(anonInfo.Assembly, tupInfo, unsortedNames)
             let ptys = 
                 if List.length ptys = Array.length unsortedNames then ptys
@@ -747,7 +747,7 @@ let UnifyAnonRecdTypeAndInferCharacteristics contextInfo cenv denv m ty isExplic
             anonInfo, ptys
         | ValueNone -> 
             // Note: no known anonymous record type - use our assembly
-            let anonInfo = AnonRecdTypeInfo.Create(cenv.topCcu, TupInfo.Const isExplicitStruct, unsortedNames)
+            let anonInfo = AnonRecdTypeInfo.Create(cenv.topCcu, mkTupInfo isExplicitStruct, unsortedNames)
             anonInfo, NewInferenceTypes (Array.toList anonInfo.SortedNames)
     let ty2 = TType_anon (anonInfo, ptys)
     AddCxTypeEqualsType contextInfo denv cenv.css m ty ty2
@@ -4619,7 +4619,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
         | _ -> error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), m))
 
     | SynType.Tuple(isStruct, args, m) ->   
-        let tupInfo = TupInfo.Const isStruct
+        let tupInfo = mkTupInfo isStruct
         if isStruct then 
             let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv args m
             TType_tuple(tupInfo,args'),tpenv
@@ -4633,7 +4633,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
                 TType_tuple(tupInfo,args'),tpenv
 
     | SynType.AnonRecd(isStruct, args,m) ->   
-        let tupInfo = TupInfo.Const isStruct
+        let tupInfo = mkTupInfo isStruct
         let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv (args |> List.map snd |> List.map (fun x -> (false,x))) m
         let unsortedIds = args |> List.map fst |> List.toArray
         let anonInfo = AnonRecdTypeInfo.Create(cenv.topCcu, tupInfo, unsortedIds)
