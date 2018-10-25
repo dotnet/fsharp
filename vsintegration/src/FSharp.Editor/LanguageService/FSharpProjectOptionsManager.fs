@@ -58,7 +58,7 @@ type internal FSharpProjectOptionsManager
     member this.AddOrUpdateSingleFileProject(projectId, data) = singleFileProjectTable.[projectId] <- data
 
     /// Get the exact options for a single-file script
-    member this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, fileContents) =
+    member this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, fileContents, solution) =
         async {
             let extraProjectInfo = Some(box workspace)
             if SourceFile.MustBeSingleFileProject(fileName) then 
@@ -70,22 +70,22 @@ type internal FSharpProjectOptionsManager
                 // compiled and #r will refer to files on disk
                 let referencedProjectFileNames = [| |] 
                 let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, options)
-                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, options.ExtraProjectInfo, Some projectOptionsTable)
+                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, options.ExtraProjectInfo, solution, Some projectOptionsTable)
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
                 return (deps, parsingOptions, projectOptions)
             else
                 let site = ProjectSitesAndFiles.ProjectSiteOfSingleFile(fileName)
-                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, extraProjectInfo, Some projectOptionsTable)
+                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, extraProjectInfo, solution, Some projectOptionsTable)
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
                 return (deps, parsingOptions, projectOptions)
         }
 
     /// Update the info for a project in the project table
-    member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, site, userOpName, invalidateConfig) =
+    member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, site, userOpName, invalidateConfig, solution) =
         Logger.Log LogEditorFunctionId.LanguageService_UpdateProjectInfo
         projectOptionsTable.AddOrUpdateProject(projectId, (fun isRefresh ->
             let extraProjectInfo = Some(box workspace)
-            let referencedProjects, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, Some(projectId), site.ProjectFileName, extraProjectInfo,  Some projectOptionsTable)
+            let referencedProjects, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, Some(projectId), site.ProjectFileName, extraProjectInfo, solution, Some projectOptionsTable)
             if invalidateConfig then checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = not isRefresh, userOpName = userOpName + ".UpdateProjectInfo")
             let referencedProjectIds = referencedProjects |> Array.choose tryGetOrCreateProjectId
             let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
@@ -122,13 +122,29 @@ type internal FSharpProjectOptionsManager
                     // NOTE: we don't use FCS cross-project references from scripts to projects.  The projects must have been
                     // compiled and #r will refer to files on disk.
                     let tryGetOrCreateProjectId _ = None 
-                    let! _referencedProjectFileNames, parsingOptions, projectOptions = this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, sourceText.ToString())
+                    let! _referencedProjectFileNames, parsingOptions, projectOptions = this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, sourceText.ToString(), document.Project.Solution)
                     this.AddOrUpdateSingleFileProject(projectId, (loadTime, parsingOptions, projectOptions))
                     return Some (parsingOptions, None, projectOptions)
                 with ex -> 
                     Assert.Exception(ex)
                     return None
-            | _ -> return this.TryGetOptionsForProject(projectId)
+            | _ ->
+                match this.TryGetOptionsForProject(projectId) with
+                | Some(parsingOptions, site, projectOptions) ->
+                    let projectOptions = 
+                        { projectOptions with
+                            ReferencedProjects = 
+                                document.Project.ProjectReferences
+                                |> Seq.choose (fun projectReference ->
+                                    let referenceProject = document.Project.Solution.GetProject(projectReference.ProjectId)
+                                    match this.TryGetOptionsForProject(projectReference.ProjectId) with
+                                    | Some(_, _, referenceProjectOptions) -> Some(referenceProject.OutputFilePath, referenceProjectOptions)
+                                    | _ -> None
+                                )
+                                |> Seq.toArray
+                        }
+                    return Some(parsingOptions, site, projectOptions)
+                | _ -> return None
         }
 
     /// Get the options for a document or project relevant for syntax processing.
@@ -143,7 +159,7 @@ type internal FSharpProjectOptionsManager
     member this.ProvideProjectSiteProvider(project:Project) = provideProjectSiteProvider(workspace, project, serviceProvider, Some projectOptionsTable)
 
     /// Tell the checker to update the project info for the specified project id
-    member this.UpdateProjectInfoWithProjectId(projectId:ProjectId, userOpName, invalidateConfig) =
+    member this.UpdateProjectInfoWithProjectId(projectId:ProjectId, userOpName, invalidateConfig, solution) =
         let hier = workspace.GetHierarchy(projectId)
         match hier with
         | null -> ()
@@ -153,13 +169,13 @@ type internal FSharpProjectOptionsManager
                 let siteProvider = this.ProvideProjectSiteProvider(project)
                 let projectSite = siteProvider.GetProjectSite()
                 if projectSite.CompilationSourceFiles.Length <> 0 then
-                    this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, projectSite, userOpName, invalidateConfig)
+                    this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, projectSite, userOpName, invalidateConfig, solution)
         | _ -> ()
 
     /// Tell the checker to update the project info for the specified project id
-    member this.UpdateDocumentInfoWithProjectId(projectId:ProjectId, documentId:DocumentId, userOpName, invalidateConfig) =
+    member this.UpdateDocumentInfoWithProjectId(projectId:ProjectId, documentId:DocumentId, userOpName, invalidateConfig, solution) =
         if workspace.IsDocumentOpen(documentId) then
-            this.UpdateProjectInfoWithProjectId(projectId, userOpName, invalidateConfig)
+            this.UpdateProjectInfoWithProjectId(projectId, userOpName, invalidateConfig, solution)
 
     [<Export>]
     /// This handles commandline change notifications from the Dotnet Project-system
@@ -181,6 +197,6 @@ type internal FSharpProjectOptionsManager
         let referencePaths = references |> Seq.map(fun r -> fullPath r.Reference) |> Seq.toArray
 
         projectOptionsTable.SetOptionsWithProjectId(projectId, sourcePaths, referencePaths, options.ToArray())
-        this.UpdateProjectInfoWithProjectId(projectId, "HandleCommandLineChanges", invalidateConfig=true)
+        this.UpdateProjectInfoWithProjectId(projectId, "HandleCommandLineChanges", invalidateConfig=true, solution=workspace.CurrentSolution)
 
     member __.Checker = checkerProvider.Checker

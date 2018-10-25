@@ -103,7 +103,7 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
 
         // update the cached options
         if updated then
-            projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, projectId, site, userOpName + ".SyncLegacyProject", invalidateConfig=true)
+            projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, projectId, site, userOpName + ".SyncLegacyProject", invalidateConfig=true, solution=workspace.CurrentSolution)
 
         let info = (updatedFiles, updatedRefs)
         legacyProjectLookup.AddOrUpdate(projectId, info, fun _ _ -> info) |> ignore
@@ -159,7 +159,7 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
                                                 optionsAssociation.Remove(projectContext) |> ignore
                                                 projectContext.Dispose()))
 
-                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites(Some realProjectId, site, serviceProvider, Some (workspace :>obj), Some projectInfoManager.FSharpOptions ) do
+                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites(Some realProjectId, site, serviceProvider, Some (workspace :>obj), workspace.CurrentSolution, Some projectInfoManager.FSharpOptions) do
                     setup referencedSite
 
         setup (siteProvider.GetProjectSite()) 

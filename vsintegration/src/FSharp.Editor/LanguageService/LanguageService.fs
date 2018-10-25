@@ -240,7 +240,7 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
             
             singleFileProjects.[projectId] <- projectContext
 
-        let _referencedProjectFileNames, parsingOptions, projectOptions = projectInfoManager.ComputeSingleFileOptions (tryGetOrCreateProjectId workspace, fileName, loadTime, fileContents) |> Async.RunSynchronously
+        let _referencedProjectFileNames, parsingOptions, projectOptions = projectInfoManager.ComputeSingleFileOptions (tryGetOrCreateProjectId workspace, fileName, loadTime, fileContents, workspace.CurrentSolution) |> Async.RunSynchronously
         projectInfoManager.AddOrUpdateSingleFileProject(projectId, (loadTime, parsingOptions, projectOptions))
 
     override this.ContentTypeName = FSharpConstants.FSharpContentTypeName
