@@ -1,20 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
-<Project InitialTargets="CheckPropertiesArePassed" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
-    <OutputArchitecture>neutral</OutputArchitecture>
-    <OutputLocalized>false</OutputLocalized>
-    <OutputType>vsix</OutputType>
-    <IsPackage>true</IsPackage>
-    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
-    <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
-    <OutputPath>$(BinariesFolder)\insertion</OutputPath>
-    <OutputName>Microsoft.FSharp.Compiler.Resources.$(LocaleCode)</OutputName>
-    <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj</IntermediateOutputPath>
-  </PropertyGroup>
+<Project InitialTargets="CheckPropertiesArePassed">
 
-  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <OutputName>Microsoft.FSharp.Compiler.Resources.$(LocaleCode)</OutputName>
+  </PropertyGroup>
 
   <PropertyGroup>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
@@ -35,7 +27,6 @@
     <Error Condition="'$(IsLangPack)' == ''" Text="A 'IsLangPack' property must be passed to the project." />
   </Target>
 
-  <Target Name="SignFiles">
-    <!-- Signing is handled by the RoslynSignTool -->
-  </Target>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
+
 </Project>

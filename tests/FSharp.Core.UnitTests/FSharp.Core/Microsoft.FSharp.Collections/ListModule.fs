@@ -98,36 +98,36 @@ type ListModule() =
         
 
         ()
-        
+
     [<Test>]
-    member this.AverageBy() =  
-        // empty double List   
+    member this.AverageBy() =
+        // empty double List
         let emptyDouList = List.empty<System.Double>
-        CheckThrowsArgumentException (fun () ->  List.averageBy (fun x -> x + 6.7) emptyDouList |> ignore    )
-        
+        CheckThrowsArgumentException (fun () -> List.averageBy (fun x -> x + 6.7) emptyDouList |> ignore)
+
         // empty float32 List
         let emptyFloat32List: float32 list = []
-        CheckThrowsArgumentException (fun () -> List.averageBy (fun x -> x + 9.8f ) emptyFloat32List |> ignore)
-        
+        CheckThrowsArgumentException (fun () -> List.averageBy (fun x -> x + 9.8f) emptyFloat32List |> ignore)
+
         // empty decimal List
         let emptyDecimalList = List.empty<System.Decimal>
-        CheckThrowsArgumentException (fun () -> List.averageBy (fun x -> x + 9.8M) emptyDecimalList |>ignore )
+        CheckThrowsArgumentException (fun () -> List.averageBy (fun x -> x + 9.8M) emptyDecimalList |> ignore)
 
         // float32 List
-        let floatList: float32 list = [ 1.2f;3.5f;6.7f ]      
-        let averageOfFloat = List.averageBy (fun x -> x + 9.8f ) floatList        
-        Assert.AreEqual(averageOfFloat, 13.5999994f)
-        
+        let floatList: float32 list = [ 1.5f; 2.5f; 3.5f; 4.5f ] // using values that behave nicely with IEEE floats
+        let averageOfFloat = List.averageBy (fun x -> x + 1.0f) floatList
+        Assert.AreEqual(4.0f, averageOfFloat)
+
         // double List
-        let doubleList: System.Double list = [ 1.0;8.0 ]
-        let averageOfDouble = List.averageBy (fun x -> x + 6.7) doubleList        
-        Assert.AreEqual(11.2, averageOfDouble)
-        
+        let doubleList: System.Double list = [ 1.0; 8.0 ] // using values that behave nicely with IEEE doubles
+        let averageOfDouble = List.averageBy (fun x -> x + 1.0) doubleList
+        Assert.AreEqual(5.5, averageOfDouble)
+
         // decimal List
         let decimalList: decimal list = [ 0M;19M;19.03M ]
-        let averageOfDecimal = List.averageBy (fun x -> x + 9.8M) decimalList        
+        let averageOfDecimal = List.averageBy (fun x -> x + 9.8M) decimalList
         Assert.AreEqual(22.476666666666666666666666667M, averageOfDecimal)
-            
+
         ()
 
     [<Test>]

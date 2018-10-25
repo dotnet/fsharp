@@ -60,12 +60,12 @@ module Scripting =
 
     let (++) a b = Path.Combine(a,b)
 
-    let getBasename (a: string) = Path.GetFileNameWithoutExtension(a)
-    let getFullPath a = Path.GetFullPath(a)
-    let getFilename (a: string) = Path.GetFileName(a)
-    let getDirectoryName (a: string) = Path.GetDirectoryName(a)
+    let getBasename (a:string) = Path.GetFileNameWithoutExtension a
+    let getFullPath (a:string) = Path.GetFullPath a
+    let getFilename (a:string) = Path.GetFileName a
+    let getDirectoryName (a:string) = Path.GetDirectoryName a
 
-    let copyFile source dir =
+    let copyFile (source:string) dir =
         let dest = 
             if not (Directory.Exists dir) then Directory.CreateDirectory dir |>ignore
             let result = Path.Combine(dir, getFilename source)
@@ -93,7 +93,7 @@ module Scripting =
 
     module Process =
 
-        let processExePath baseDir exe =
+        let processExePath baseDir (exe:string) =
             if Path.IsPathRooted(exe) then exe
             else 
                 match getDirectoryName exe with
@@ -108,7 +108,7 @@ module Scripting =
             processInfo.UseShellExecute <- false
             processInfo.WorkingDirectory <- workDir
 
-#if NETSTANDARD1_6
+#if !NET46
             ignore envs  // work out what to do about this
 #else
             envs
