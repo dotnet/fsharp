@@ -7,11 +7,11 @@ but given a
     'inref<DateTime>'    
 The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
 
-test3.fsx(44,9,44,20): typecheck error FS3237: Cannot call the byref extension method 'Change. The first parameter requires the value to be mutable or a non-readonly byref type.
+test3.fsx(44,9,44,20): typecheck error FS3247: Cannot call the byref extension method 'Change. The first parameter requires the value to be mutable or a non-readonly byref type.
 
 test3.fsx(49,19,49,30): typecheck error FS3237: Cannot call the byref extension method 'Test2. The first parameter requires the value to be mutable or a non-readonly byref type.
 
-test3.fsx(55,9,55,21): typecheck error FS3237: Cannot call the byref extension method 'Change. The first parameter requires the value to be mutable or a non-readonly byref type.
+test3.fsx(55,9,55,21): typecheck error FS3247: Cannot call the byref extension method 'Change. The first parameter requires the value to be mutable or a non-readonly byref type.
 
 test3.fsx(59,17,59,29): typecheck error FS3239: Cannot partially apply the extension method 'NotChange' because the first parameter is a byref type.
 

@@ -5,6 +5,7 @@
   <Import Project="..\fcs.props" />
   <Import Project="..\netfx.props" />
   <Import Project="..\..\src\buildtools\buildtools.targets" />
+  <Import Project="..\..\src\buildtools\buildtools.proj" />
   <PropertyGroup>
     <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
