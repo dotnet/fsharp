@@ -655,6 +655,11 @@
     <Reference Include="System.ValueTuple">
       <HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
+    <PackageReference Include="FsLexYacc" Version="7.0.6" PrivateAssets="all" />
   </ItemGroup>
+  <PropertyGroup>
+    <FsLexYaccTargets>$(NuGetPackageRoot)FsLexYacc\7.0.6\build\FsLexYacc.targets</FsLexYaccTargets>
+  </PropertyGroup>
+  <Import Project="$(FsLexYaccTargets)" Condition="Exists('$(FsLexYaccTargets)')" />
   <Target Name="GenerateCode" AfterTargets="Restore" BeforeTargets="BeforeBuild" DependsOnTargets="CallFsLex;CallFsYacc" Condition="'$(TargetFramework)' != ''"></Target>
 </Project>
