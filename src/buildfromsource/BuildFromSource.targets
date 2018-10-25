@@ -34,7 +34,6 @@
     <TargetDotnetProfile  Condition=" $(TargetFramework.StartsWith('netframework')) ">net40</TargetDotnetProfile>
   </PropertyGroup>
 
-  <Import Project="..\FSharpSource.Profiles.targets" />
   <Import Project="$(BuildVersionFilePath)" Condition="Exists('$(BuildVersionFilePath)')" />
 
   <ItemGroup>

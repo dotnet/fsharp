@@ -2,20 +2,12 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
 
   <ItemGroup>
-    <PackageProjects Include="src\fsharp\FSharp.Compiler.nuget\Microsoft.FSharp.Compiler.nuget.proj" Condition="'$(BUILD_CORECLR)'=='1'" />
-    <PackageProjects Include="src\fsharp\FSharp.Core.nuget\FSharp.Core.nuget.proj" Condition="'$(BUILD_NUGET)'=='1'" />
+    <PackageProjects Include="src\fsharp\FSharp.Compiler.nuget\Microsoft.FSharp.Compiler.csproj" Condition="'$(BUILD_CORECLR)'=='1'" />
+    <PackageProjects Include="src\fsharp\FSharp.Core\FSharp.Core.fsproj" Condition="'$(BUILD_NUGET)'=='1'" />
   </ItemGroup>
 
-  <Target Name="Build">
-    <MSBuild Projects="@(PackageProjects)" Targets="Build" BuildInParallel="true" Properties="Configuration=$(Configuration)" />
-  </Target>
-
-  <Target Name="Rebuild">
-    <MSBuild Projects="@(PackageProjects)" Targets="Rebuild" BuildInParallel="true" Properties="Configuration=$(Configuration)" />
-  </Target>
-
-  <Target Name="Clean">
-    <MSBuild Projects="@(PackageProjects)" Targets="Clean" BuildInParallel="true" Properties="Configuration=$(Configuration)" />
+  <Target Name="Pack">
+    <MSBuild Projects="@(PackageProjects)" Targets="Pack" BuildInParallel="true" Properties="Configuration=$(Configuration)" />
   </Target>
 
 </Project>

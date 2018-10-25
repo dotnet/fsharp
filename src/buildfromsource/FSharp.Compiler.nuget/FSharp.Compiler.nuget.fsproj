@@ -25,7 +25,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-      <NuspecFile>$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.nuget\Microsoft.FSharp.Compiler.nuspec</NuspecFile>
+      <NuspecFile>Microsoft.FSharp.Compiler.nuspec</NuspecFile>
       <NuspecProperties>licenseUrl=$(PackageLicenceUrl);version=$(PackageVersion);authors=$(PackageAuthors);projectUrl=$(PackageProjectUrl);tags=$(PackageTags)</NuspecProperties>
       <NuspecBasePath>$(OutputPath)/$(TargetFramework)</NuspecBasePath>
   </PropertyGroup>

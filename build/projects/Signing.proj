@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- necessary for package restore -->
+    <TargetFramework>net46</TargetFramework>
+    <BuildDependsOn>$(BuildDependsOn);DoSigning</BuildDependsOn>
+    <BinaryLocation>$(MSBuildThisFileDirectory)..\..\$(Configuration)</BinaryLocation>
+    <SignToolExe>$(NuGetPackageRoot)\RoslynTools.SignTool\$(RoslynToolsSignToolPackageVersion)\tools\SignTool.exe</SignToolExe>
+    <SignToolArgs>-msbuildPath "$(MSBuildBinPath)\msbuild.exe" -config "$(ConfigFile)" -nugetPackagesPath "$(NuGetPackageRoot)"</SignToolArgs>
+    <SignToolArgs Condition="'$(SignType)' == 'test'">$(SignToolArgs) -testSign</SignToolArgs>
+    <SignToolArgs Condition="'$(SignType)' == ''">$(SignToolArgs) -test</SignToolArgs>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="RoslynTools.SignTool" Version="$(RoslynToolsSignToolPackageVersion)" />
+  </ItemGroup>
+
+  <Target Name="ValidateArguments">
+    <Error Message="Configuration must be manually specified." Condition="'$(Configuration)' == ''" />
+    <Error Message="Configuration file must be manually specified." Condition="'$(ConfigFile)' == ''" />
+  </Target>
+
+  <Target Name="DoSigning"
+          DependsOnTargets="ValidateArguments">
+    <Exec Command='"$(SignToolExe)" $(SignToolArgs) "$(BinaryLocation)"' />
+  </Target>
+
+</Project>

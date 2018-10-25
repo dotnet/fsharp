@@ -1,0 +1,15 @@
+<Project>
+  <!-- SDK targets override -->
+  <PropertyGroup>
+    <ProtoOutputPath>$(MSBuildThisFileDirectory)..\Proto\net40\bin</ProtoOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="Exists('$(ProtoOutputPath)')">
+    <FscToolPath>$(ProtoOutputPath)</FscToolPath>
+    <FscToolExe Condition="'$(OS)' != 'Unix'">fsc.exe</FscToolExe>
+    <FscToolExe Condition="'$(OS)' == 'Unix'">RunFsc.sh</FscToolExe>
+    <FSharpTargetsPath>$(ProtoOutputPath)\Microsoft.FSharp.Targets</FSharpTargetsPath>
+    <FSharpPropsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
+    <FSharpTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
+    <FSharpOverridesTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
+  </PropertyGroup>
+</Project>

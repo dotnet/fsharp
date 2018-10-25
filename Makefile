@@ -1,10 +1,29 @@
 include $(topsrcdir)mono/config.make
 
-.PHONY: restore build build-proto
+DOTNET_VERSION=`cat DotnetCLIToolsVersion.txt`
 
-restore:
+.PHONY: proto restore build
+
+global.json:
+	echo { \"sdk\": { \"version\": \"$(DOTNET_VERSION)\" } }>global.json
+
+proto: global.json
+	dotnet restore proto.proj
+	dotnet build proto.proj -f net46
+	cp src/RunFsc.sh Proto/net40/bin/
+	chmod u+x Proto/net40/bin/RunFsc.sh
+
+restore: global.json
+	dotnet restore src/fsharp/FSharp.Core/FSharp.Core.fsproj
+	dotnet restore src/fsharp/FSharp.Build/FSharp.Build.fsproj
+	dotnet restore src/fsharp/FSharp.Compiler.Private/FSharp.Compiler.Private.fsproj
+	dotnet restore src/fsharp/Fsc/Fsc.fsproj
+	dotnet restore src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj
+	dotnet restore src/fsharp/FSharp.Compiler.Server.Shared/FSharp.Compiler.Server.Shared.fsproj
+	dotnet restore src/fsharp/fsi/Fsi.fsproj
+	dotnet restore src/fsharp/fsiAnyCpu/FsiAnyCPU.fsproj
 	MONO_ENV_OPTIONS=$(monoopts) mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile ./NuGet.Config
-	chmod u+x packages/FSharp.Compiler.Tools.4.1.27/tools/fsi.exe 
+	chmod u+x packages/FSharp.Compiler.Tools.4.1.27/tools/fsi.exe
 	chmod u+x packages/FsLexYacc.7.0.6/build/fslex.exe
 	chmod u+x packages/FsLexYacc.7.0.6/build/fsyacc.exe
 
@@ -20,25 +39,21 @@ all:
 	@echo monolibdir=$(monolibdir)
 	@echo monobindir=$(monobindir)
 	@echo -----------
+	$(MAKE) proto
 	$(MAKE) restore
-	$(MAKE) build-proto
 	$(MAKE) build
 
-build-proto:
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=Proto /p:TargetDotnetProfile=$(TargetDotnetProfile) src/fsharp/FSharp.Build-proto/FSharp.Build-proto.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=Proto /p:TargetDotnetProfile=$(TargetDotnetProfile) src/fsharp/Fsc-proto/Fsc-proto.fsproj
-
 # The main targets
-build:
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/FSharp.Core/FSharp.Core.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/FSharp.Build/FSharp.Build.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/FSharp.Compiler.Private/FSharp.Compiler.Private.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/Fsc/Fsc.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/FSharp.Compiler.Server.Shared/FSharp.Compiler.Server.Shared.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/fsi/Fsi.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/fsiAnyCpu/FsiAnyCPU.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj
+build: global.json
+	dotnet build -c $(Configuration) -f net45 src/fsharp/FSharp.Core/FSharp.Core.fsproj
+	dotnet build -c $(Configuration) -f net46 src/fsharp/FSharp.Build/FSharp.Build.fsproj
+	dotnet build -c $(Configuration) -f net46 src/fsharp/FSharp.Compiler.Private/FSharp.Compiler.Private.fsproj
+	dotnet build -c $(Configuration) -f net46 src/fsharp/Fsc/Fsc.fsproj
+	dotnet build -c $(Configuration) -f net46 src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj
+	dotnet build -c $(Configuration) -f net46 src/fsharp/FSharp.Compiler.Server.Shared/FSharp.Compiler.Server.Shared.fsproj
+	dotnet build -c $(Configuration) -f net46 src/fsharp/fsi/Fsi.fsproj
+	dotnet build -c $(Configuration) -f net46 src/fsharp/fsiAnyCpu/FsiAnyCPU.fsproj
+	dotnet build -c $(Configuration) /p:TargetDotnetProfile=net40 tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj
 	mkdir -p $(Configuration)/fsharp30/net40/bin
 	mkdir -p $(Configuration)/fsharp31/net40/bin
 	mkdir -p $(Configuration)/fsharp40/net40/bin

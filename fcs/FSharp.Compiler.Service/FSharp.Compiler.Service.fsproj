@@ -46,12 +46,12 @@
     <Compile Include="..\FSharp.Compiler.Service\AssemblyInfo.fs">
       <Link>AssemblyInfo/AssemblyInfo.fs</Link>
     </Compile>
-    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\FSComp.txt">
+    <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\FSComp.txt">
       <Link>FSComp.txt</Link>
-    </FsSrGen>
-    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\fsi\FSIstrings.txt">
+    </EmbeddedText>
+    <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
-    </FsSrGen>
+    </EmbeddedText>
     <EmbeddedResource Include="$(FSharpSourcesRoot)/fsharp/FSStrings.resx">
       <Link>FSStrings.resx</Link>
       <LogicalName>FSStrings.resources</LogicalName>
@@ -635,7 +635,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FSharp.Core" Version="4.5.2" />
+    <PackageReference Update="FSharp.Core" Version="4.5.2" />
     <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
     <PackageReference Include="System.Reflection.Metadata" Version="1.6.0" />
   </ItemGroup>
@@ -655,7 +655,5 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\scripts\fssrgen.targets" Condition="'$(TargetFramework)' != ''" />
-  <Import Project="$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.6\build\FsLexYacc.targets" Condition="'$(TargetFramework)' != '' AND Exists('$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.6\build\FsLexYacc.targets')" />
-	<Target Name="GenerateCode" AfterTargets="Restore" BeforeTargets="BeforeBuild" DependsOnTargets="CallFsLex;CallFsYacc;ProcessFsSrGen" Condition="'$(TargetFramework)' != ''"></Target>
+	<Target Name="GenerateCode" AfterTargets="Restore" BeforeTargets="BeforeBuild" DependsOnTargets="CallFsLex;CallFsYacc" Condition="'$(TargetFramework)' != ''"></Target>
 </Project>

@@ -331,7 +331,7 @@ module CoreTests =
 
         fsc cfg "%s -a -o:lib.dll" cfg.fsc_flags ["lib.fs"]
 
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        copy_y cfg  (cfg.BinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
         peverify cfg "lib.dll"
 
         fsc cfg "%s -r:lib.dll" cfg.fsc_flags ["test.fsx"]
@@ -484,7 +484,7 @@ module CoreTests =
 
         fsc cfg "%s -a -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
 
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        copy_y cfg  (cfg.BinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
         peverify cfg "lib.dll"
 
@@ -794,7 +794,7 @@ module CoreTests =
 
         fsc cfg "%s -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
 
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        copy_y cfg  (cfg.BinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
         peverify cfg "test.exe"
 
@@ -1637,13 +1637,13 @@ module CoreTests =
     let verify () = 
         let cfg = testConfig "core/verify"
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "FSharp.Build.dll")
+        peverifyWithArgs cfg "/nologo" (cfg.BinPath ++ "FSharp.Build.dll")
 
-       // peverifyWithArgs cfg "/nologo /MD" (cfg.FSCBinPath ++ "FSharp.Compiler.dll")
+       // peverifyWithArgs cfg "/nologo /MD" (cfg.BinPath ++ "FSharp.Compiler.dll")
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "fsi.exe")
+        peverifyWithArgs cfg "/nologo" (cfg.BinPath ++ "fsi.exe")
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "FSharp.Compiler.Interactive.Settings.dll")
+        peverifyWithArgs cfg "/nologo" (cfg.BinPath ++ "FSharp.Compiler.Interactive.Settings.dll")
 
         fsc cfg "%s -o:xmlverify.exe -g" cfg.fsc_flags ["xmlverify.fs"]
 
@@ -1933,7 +1933,7 @@ module TypecheckTests =
     let ``sigs pos27`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos27.exe" cfg.fsc_flags ["pos27.fs"]
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        copy_y cfg  (cfg.BinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
         peverify cfg "pos27.exe"
 
     [<Test>]
@@ -2592,7 +2592,7 @@ open System.Runtime.InteropServices
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
 #endif
 
-#if !NETSTANDARD1_6
+#if NET46
 module ProductVersionTest =
 
     let informationalVersionAttrName = typeof<System.Reflection.AssemblyInformationalVersionAttribute>.FullName
