@@ -14699,11 +14699,11 @@ module EstablishTypeDefinitionCores =
     let AdjustModuleName modKind nm = (match modKind with FSharpModuleWithSuffix -> nm+FSharpModuleSuffix | _ -> nm)
 
 
-    let TypeNamesInMutRecDecls (compDecls: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo, _, _>) =
+    let TypeNamesInMutRecDecls cenv env (compDecls: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo, _, _>) =
         [ for d in compDecls do 
                 match d with 
-                | MutRecShape.Tycon (MutRecDefnsPhase1DataForTycon(ComponentInfo(_, _, _, ids, _, _, _, _), _, _, _, _, isAtOriginalTyconDefn), _) -> 
-                    if isAtOriginalTyconDefn then 
+                | MutRecShape.Tycon (MutRecDefnsPhase1DataForTycon(ComponentInfo(_, typars, _, ids, _, _, _, _), _, _, _, _, isAtOriginalTyconDefn), _) -> 
+                    if isAtOriginalTyconDefn &&  (TcTyparDecls cenv env typars |> List.forall (fun p -> p.Kind = TyparKind.Measure)) then 
                         yield (List.last ids).idText
                 | _ -> () ]
          |> set
@@ -14750,7 +14750,7 @@ module EstablishTypeDefinitionCores =
         let envForDecls, mtypeAcc = MakeInnerEnv envInitial id modKind    
         let mspec = NewModuleOrNamespace (Some envInitial.eCompPath) vis id (xml.ToXmlDoc()) modAttrs (MaybeLazy.Strict (NewEmptyModuleOrNamespaceType modKind))
         let innerParent = Parent (mkLocalModRef mspec)
-        let innerTypeNames = TypeNamesInMutRecDecls decls
+        let innerTypeNames = TypeNamesInMutRecDecls cenv envForDecls decls
         MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), (innerParent, innerTypeNames, envForDecls)
 
     /// Establish 'type <vis1> C < T1... TN >  = <vis2> ...' including 
