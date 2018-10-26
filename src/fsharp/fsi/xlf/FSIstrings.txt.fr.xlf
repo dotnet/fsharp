@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="fr" original="../FSIstrings.resx">
     <body>
@@ -134,7 +134,7 @@
       </trans-unit>
       <trans-unit id="fsiExceptionDuringPrettyPrinting">
         <source>\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</source>
-        <target state="translated">\n\nException déclenchée durant l'impression en mode Pretty.\nSignalez ce problème afin qu'il soit corrigé.\nTrace : {0}\n</target>
+        <target state="translated">\n\nException déclenchée durant l'impression automatique.\nSignalez ce problème afin qu'il soit corrigé.\nTrace : {0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
@@ -184,7 +184,7 @@
       </trans-unit>
       <trans-unit id="fsiLoadingFilesPrefixText">
         <source>Loading</source>
-        <target state="translated">Chargement en cours</target>
+        <target state="translated">Chargement</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInterrupt">
@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
         <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">Empêche le blocage des références par le processus interactif F#</target>
+        <target state="translated">Empêche le blocage des références par le processus de F# Interactive</target>
         <note />
       </trans-unit>
     </body>
