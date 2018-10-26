@@ -1509,6 +1509,7 @@ let rangeOfLid (lid: Ident list) =
 [<RequireQualifiedAccess>]
 type ScopedPragma =
    | WarningOff of range:range * int
+   | WarningOn  of range:range * int
    // Note: this type may be extended in the future with optimization on/off switches etc.
 
 // These are the results of parsing + folding in the implicit file name

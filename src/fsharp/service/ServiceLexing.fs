@@ -732,7 +732,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                     | true,"quit" 
                     | true,"help" 
                     // These are for script and non-script
-                    | _,"nowarn" -> 
+                    | _,"nowarn"
+                    | _,"warnon" -> 
                         // Merge both tokens into one.
                         let lexcontFinal = if (isCached) then lexcontInitial else LexerStateEncoding.computeNextLexState token lexcontInitial 
                         let tokenData = {tokenData with RightColumn=rightc;ColorClass=FSharpTokenColorKind.PreprocessorKeyword;CharClass=FSharpTokenCharKind.Keyword;FSharpTokenTriggerClass=FSharpTokenTriggerClass.None} 

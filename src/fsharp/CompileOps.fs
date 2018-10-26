@@ -3307,7 +3307,12 @@ let GetScopedPragmasForHashDirective hd =
           for s in numbers do
           match GetWarningNumber(m, s) with 
             | None -> ()
-            | Some n -> yield ScopedPragma.WarningOff(m, n) 
+            | Some n -> yield ScopedPragma.WarningOff(m, n)
+      | ParsedHashDirective("warnon", numbers, m) ->
+          for s in numbers do
+          match GetWarningNumber(m, s) with
+            | None -> ()
+            | Some n -> yield ScopedPragma.WarningOn(m, n)
       | _ -> () ]
 
 
@@ -3330,7 +3335,7 @@ let GetScopedPragmasForInput input =
 type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, errorLogger:ErrorLogger) =
     inherit ErrorLogger("ErrorLoggerFilteringByScopedPragmas")
 
-    override x.DiagnosticSink (phasedError, isError) = 
+    override __.DiagnosticSink (phasedError, isError) =
         if isError then 
             errorLogger.DiagnosticSink (phasedError, isError)
         else 
@@ -3338,16 +3343,32 @@ type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, errorLogger:
             let warningNum = GetDiagnosticNumber phasedError
             match GetRangeOfDiagnostic phasedError with 
             | Some m -> 
-                not (scopedPragmas |> List.exists (fun pragma ->
-                    match pragma with 
-                    | ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma) -> 
-                        warningNum = warningNumFromPragma && 
-                        (not checkFile || m.FileIndex = pragmaRange.FileIndex) &&
-                        Range.posGeq m.Start pragmaRange.Start))  
+                let lastCorrespondingPragma =
+                    scopedPragmas
+                    |> List.choose (function
+                        | ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma)
+                            when warningNum = warningNumFromPragma &&
+                                (not checkFile || m.FileIndex = pragmaRange.FileIndex) &&
+                                Range.posGeq m.Start pragmaRange.Start
+                            -> Some false
+                        | ScopedPragma.WarningOn(pragmaRange, warningNumFromPragma)
+                            when warningNum = warningNumFromPragma &&
+                                (not checkFile || m.FileIndex = pragmaRange.FileIndex) &&
+                                Range.posGeq m.Start pragmaRange.Start
+                            -> Some true
+
+                        | _ -> None
+                    )
+                    |> List.tryLast
+                
+                match lastCorrespondingPragma with
+                | Some report -> report
+                | None -> true
             | None -> true
+
           if report then errorLogger.DiagnosticSink(phasedError, false)
 
-    override x.ErrorCount = errorLogger.ErrorCount
+    override __.ErrorCount = errorLogger.ErrorCount
 
 let GetErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, errorLogger) = 
     (ErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, errorLogger) :> ErrorLogger)

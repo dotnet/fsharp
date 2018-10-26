@@ -1963,6 +1963,10 @@ type internal FsiInteractionProcessor
                 List.iter (fun (d:string) -> tcConfigB.TurnWarningOff(m,d)) numbers
                 istate,Completed None
 
+            | IHash (ParsedHashDirective("warnon",numbers,m),_) ->
+                List.iter (fun (d:string) -> tcConfigB.TurnWarningOn(m,d)) numbers
+                istate,Completed None
+
             | IHash (ParsedHashDirective("terms",[],_),_) -> 
                 tcConfigB.showTerms <- not tcConfig.showTerms
                 istate,Completed None
