@@ -254,12 +254,12 @@
       </trans-unit>
       <trans-unit id="fsiProductName">
         <source>Microsoft (R) F# Interactive version {0}</source>
-        <target state="translated">Microsoft (R) F# Interactive 版本 {0}</target>
+        <target state="translated">Microsoft (R) F# 互動版本 {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiProductNameCommunity">
         <source>F# Interactive for F# {0}</source>
-        <target state="translated">適用於 F# {0} 的 F# Interactive</target>
+        <target state="translated">適用於 F# {0} 的 F# 互動</target>
         <note />
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
