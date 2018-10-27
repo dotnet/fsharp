@@ -1621,7 +1621,7 @@ module MultipleOverloadedOperatorTests = begin
 
     let f1 (x:DateTime) (y:TimeSpan) : DateTime = x - y
     let g1 (x:DateTime) (y:DateTime) : TimeSpan = x - y
-    // Return type is not sufficient:
+    // Return type is also sufficient:
     let f2 (x:DateTime) y : DateTime = x - y
     let g2 (x:DateTime) y : TimeSpan = x - y
     // Just argument types are also sufficient:
