@@ -711,7 +711,7 @@ type public FSharpChecker =
     member internal ReferenceResolver : ReferenceResolver.Resolver
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
-    member TokenizeLine: line:string * state:int64 -> FSharpTokenInfo [] * int64
+    member TokenizeLine: line:string * state:FSharpTokenizerLexState-> FSharpTokenInfo [] * FSharpTokenizerLexState
 
     /// Tokenize an entire file, line by line
     member TokenizeFile: source:string -> FSharpTokenInfo [] []
