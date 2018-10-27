@@ -1474,9 +1474,10 @@ and GetSupportOfMemberConstraint (csenv:ConstraintSolverEnv) (TTrait(tys, _, _, 
 and SupportOfMemberConstraintIsFullySolved (csenv:ConstraintSolverEnv) (TTrait(tys, _, _, _, _, _)) =
     tys |> List.forall (isAnyParTy csenv.g >> not)
 
-/// Check if some part of the support is solved.  
-and SupportOfMemberConstraintIsPartiallySolved (csenv:ConstraintSolverEnv) (TTrait(tys, _, _, _, _, _)) =
-    tys |> List.exists (isAnyParTy csenv.g >> not)
+// This may be relevant to future bug fixes, see https://github.com/Microsoft/visualfsharp/issues/3814
+// /// Check if some part of the support is solved.  
+// and SupportOfMemberConstraintIsPartiallySolved (csenv:ConstraintSolverEnv) (TTrait(tys, _, _, _, _, _)) =
+//     tys |> List.exists (isAnyParTy csenv.g >> not)
     
 /// Get all the unsolved typars (statically resolved or not) relevant to the member constraint
 and GetFreeTyparsOfMemberConstraint (csenv:ConstraintSolverEnv) (TTrait(tys, _, _, argtys, rty, _)) =
