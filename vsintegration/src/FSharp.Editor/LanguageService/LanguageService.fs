@@ -206,7 +206,7 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
         let projectDisplayName = projectDisplayNameOf projectFileName
         Some (workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName))
 
-    let mutable legacyProjectWorkspaceMap = Unchecked.defaultof<LegacyProjectWorkspaceMap>
+    let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(package.ComponentModel.GetService<VisualStudioWorkspaceImpl>(), solution, projectInfoManager, package.ComponentModel.GetService<IWorkspaceProjectContextFactory>())
 
     override this.Initialize() = 
         base.Initialize()
@@ -215,9 +215,6 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
 
         this.Workspace.DocumentClosed.Add <| fun args -> tryRemoveSingleFileProject args.Document.Project.Id
-
-        legacyProjectWorkspaceMap <- LegacyProjectWorkspaceMap(this.Workspace, solution, projectInfoManager, package.ComponentModel.GetService<IWorkspaceProjectContextFactory>(), this.SystemServiceProvider)
-        legacyProjectWorkspaceMap.Initialize()
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
