@@ -1782,7 +1782,11 @@ module MethodOverloadingForTraitConstraintsIsNotDeterminedUntilSignatureIsKnnown
 
     let inline Test2< ^t> a = Test<X, ^t> a
 
-    check "slvde0vver90u" (Test2<int> 0) 2
+    // NOTE, this is seen to be a bug, see https://github.com/Microsoft/visualfsharp/issues/3814
+    // The result should be 2.  
+    // This test has been added to pin down current behaviour pending a future bug fix.
+    check "slvde0vver90u1" (Test2<int> 0) 1
+    check "slvde0vver90u2" (Test2<int64> 0L) 1
 
 /// In this case, the presence of the "Equals" method on System.Object was causing method overloading to be resolved too
 /// early, when ^t was not yet known.  The underlying problem was that we were proceeding with weak resolution
@@ -1799,6 +1803,9 @@ module MethodOverloadingForTraitConstraintsWhereSomeMethodsComeFromObjectTypeIsN
     let a  = Test()
     let b  = Test()
 
+     // NOTE, this is seen to be a bug, see https://github.com/Microsoft/visualfsharp/issues/3814
+     // The result should be false.  
+     // This test has been added to pin down current behaviour pending a future bug fix.
     check "cewjewcwec09ew" (Equals a b) true
 
 module SRTPFix = 
