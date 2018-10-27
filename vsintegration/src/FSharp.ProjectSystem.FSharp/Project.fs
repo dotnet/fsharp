@@ -366,8 +366,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             let mutable normalizedRefs : string[] option = None
 
-            let mutable binOutputPath : string option = None
-
 #if DEBUG
             let logger = new Microsoft.Build.Logging.ConsoleLogger(Microsoft.Build.Framework.LoggerVerbosity.Diagnostic,
                                 (fun s -> Trace.WriteLine("MSBuild: " + s)),
@@ -1260,7 +1258,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let updatedNormalizedRefs = flags |> Array.choose (fun flag -> if flag.StartsWith("-r:") then Some flag.[3..] else None) |> Array.map (fun fn -> Path.GetFullPath(Path.Combine(x.ProjectFolder, fn)))
                 sourcesAndFlags <- Some (updatedNormalizedSources, flags)
                 normalizedRefs <- Some updatedNormalizedRefs
-                binOutputPath <- x.GetCurrentOutputAssembly() |> Option.ofObj
 
                 if projectSite.State = ProjectSiteOptionLifetimeState.Opening then
                     // This is the first time, so set up interface for language service to talk to us
@@ -1288,7 +1285,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             member __.CompilationSourceFiles = match sourcesAndFlags with None -> [| |] | Some (sources,_) -> sources
             member __.CompilationOptions = match sourcesAndFlags with None -> [| |] | Some (_,flags) -> flags
             member __.CompilationReferences = match normalizedRefs with None -> [| |] | Some refs -> refs
-            member __.CompilationBinOutputPath = binOutputPath
+            member x.CompilationBinOutputPath = x.GetCurrentOutputAssembly()
 
             override x.ComputeSourcesAndFlags() =
 
@@ -1410,7 +1407,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member __.CompilationSourceFiles = x.CompilationSourceFiles
                     member __.CompilationOptions = x.CompilationOptions
                     member __.CompilationReferences = x.CompilationReferences
-                    member __.CompilationBinOutputPath = x.CompilationBinOutputPath
+                    member __.CompilationBinOutputPath = 
+                        let outputPath = x.CompilationBinOutputPath
+                        if String.IsNullOrWhiteSpace(outputPath) then None else Some(outputPath)
 
                     member __.Description = 
                         match sourcesAndFlags with
@@ -1453,7 +1452,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member __.CompilationSourceFiles = sourceFiles
                     member __.CompilationOptions = options
                     member __.CompilationReferences = refs
-                    member __.CompilationBinOutputPath = outputPath
+                    member __.CompilationBinOutputPath = if String.IsNullOrWhiteSpace(outputPath) then None else Some(outputPath)
                     member __.ProjectFileName = projFileName
                     member __.BuildErrorReporter 
                         with get() = staticBuildErrorReporter

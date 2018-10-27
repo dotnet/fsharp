@@ -20,23 +20,23 @@ open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell.Interop
 
 [<Sealed>]
-type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl, 
+type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
                                         solution: IVsSolution, 
                                         projectInfoManager: FSharpProjectOptionsManager,
-                                        projectContextFactory: IWorkspaceProjectContextFactory,
-                                        serviceProvider: IServiceProvider) as this =
+                                        projectContextFactory: IWorkspaceProjectContextFactory) as this =
 
     let invalidPathChars = set (Path.GetInvalidPathChars())
     let optionsAssociation = ConditionalWeakTable<IWorkspaceProjectContext, string[]>()
     let isPathWellFormed (path: string) = not (String.IsNullOrWhiteSpace path) && path |> Seq.forall (fun c -> not (Set.contains c invalidPathChars))
    
     let legacyProjectLookup = ConcurrentDictionary()
+    let setupQueue = ConcurrentQueue()
 
     let tryGetOrCreateProjectId (workspace: VisualStudioWorkspaceImpl) (projectFileName: string) =
         let projectDisplayName = projectDisplayNameOf projectFileName
         Some (workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName))
 
-    member this.Initialize() =
+    do
         solution.AdviseSolutionEvents(this) |> ignore
 
     /// Sync the Roslyn information for the project held in 'projectContext' to match the information given by 'site'.
@@ -110,74 +110,77 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
 
     member this.SetupLegacyProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl, userOpName) =
         let userOpName = userOpName + ".SetupProjectFile"
-        let  rec setup (site: IProjectSite) =
+        let rec setup (site: IProjectSite) =
             let projectGuid = Guid(site.ProjectGuid)
             let projectFileName = site.ProjectFileName
             let projectDisplayName = projectDisplayNameOf projectFileName
 
-            // This projectId is not guaranteed to be the same ProjectId that will actually be created once we call CreateProjectContext
-            // in Roslyn versions once https://github.com/dotnet/roslyn/pull/26931 is merged. Roslyn will still guarantee that once
-            // there is a project in the workspace with the same path, it'll return the ID of that. So this is sufficient to use
-            // in that case as long as we only use it to call GetProject.
-            let fakeProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
+            let hierarchy =
+                site.ProjectProvider
+                |> Option.map (fun p -> p :?> IVsHierarchy)
+                |> Option.toObj
 
-            if isNull (workspace.ProjectTracker.GetProject fakeProjectId) then
-                let hierarchy =
-                    site.ProjectProvider
-                    |> Option.map (fun p -> p :?> IVsHierarchy)
-                    |> Option.toObj
+            // Roslyn is expecting site to be an IVsHierarchy.
+            // It just so happens that the object that implements IProvideProjectSite is also
+            // an IVsHierarchy. This assertion is to ensure that the assumption holds true.
+            Debug.Assert(not (isNull hierarchy), "About to CreateProjectContext with a non-hierarchy site")
 
-                // Roslyn is expecting site to be an IVsHierarchy.
-                // It just so happens that the object that implements IProvideProjectSite is also
-                // an IVsHierarchy. This assertion is to ensure that the assumption holds true.
-                Debug.Assert(not (isNull hierarchy), "About to CreateProjectContext with a non-hierarchy site")
-
-                let projectContext = 
-                    projectContextFactory.CreateProjectContext(
-                        FSharpConstants.FSharpLanguageName,
-                        projectDisplayName,
-                        projectFileName,
-                        projectGuid,
-                        hierarchy,
-                        Option.toObj site.CompilationBinOutputPath)
+            let projectContext = 
+                projectContextFactory.CreateProjectContext(
+                    FSharpConstants.FSharpLanguageName,
+                    projectDisplayName,
+                    projectFileName,
+                    projectGuid,
+                    hierarchy,
+                    Option.toObj site.CompilationBinOutputPath)
                 
-                // The real project ID that was actually added. See comments for fakeProjectId why this one is actually good.
-                let realProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
+            // The real project ID that was actually added. See comments for fakeProjectId why this one is actually good.
+            let realProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
-                // Sync IProjectSite --> projectContext, and IProjectSite --> ProjectInfoManage
-                this.SyncLegacyProject(realProjectId, projectContext, site, workspace, forceUpdate=true, userOpName=userOpName)
+            // Sync IProjectSite --> projectContext, and IProjectSite --> ProjectInfoManage
+            this.SyncLegacyProject(realProjectId, projectContext, site, workspace, forceUpdate=true, userOpName=userOpName)
 
-                site.BuildErrorReporter <- Some (projectContext :?> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
+            site.BuildErrorReporter <- Some (projectContext :?> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
 
-                // TODO: consider forceUpdate = false here.  forceUpdate=true may be causing repeated computation?
-                site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                              AdviseProjectSiteChanges(fun () -> this.SyncLegacyProject(realProjectId, projectContext, site, workspace, forceUpdate=true, userOpName="AdviseProjectSiteChanges."+userOpName)))
+            // TODO: consider forceUpdate = false here.  forceUpdate=true may be causing repeated computation?
+            site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
+                                            AdviseProjectSiteChanges(fun () -> this.SyncLegacyProject(realProjectId, projectContext, site, workspace, forceUpdate=true, userOpName="AdviseProjectSiteChanges."+userOpName)))
 
-                site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                             AdviseProjectSiteChanges(fun () -> 
-                                                projectInfoManager.ClearInfoForProject(realProjectId)
-                                                optionsAssociation.Remove(projectContext) |> ignore
-                                                projectContext.Dispose()))
-
-                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites(Some realProjectId, site, serviceProvider, Some (workspace :>obj), workspace.CurrentSolution, Some projectInfoManager.FSharpOptions) do
-                    setup referencedSite
+            site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
+                                            AdviseProjectSiteChanges(fun () -> 
+                                            projectInfoManager.ClearInfoForProject(realProjectId)
+                                            optionsAssociation.Remove(projectContext) |> ignore
+                                            projectContext.Dispose()))
 
         setup (siteProvider.GetProjectSite()) 
 
     interface IVsSolutionEvents with
 
-        member __.OnAfterCloseSolution(_) = VSConstants.S_OK
+        member __.OnAfterCloseSolution(_) = 
+            // Clear
+            let mutable setup = Unchecked.defaultof<_>
+            while setupQueue.TryDequeue(&setup) do ()
+            VSConstants.S_OK
 
         member __.OnAfterLoadProject(_, _) = VSConstants.S_OK
 
         member __.OnAfterOpenProject(hier, _) = 
             match hier with
             | :? IProvideProjectSite as siteProvider ->
-                this.SetupLegacyProjectFile(siteProvider, workspace, "LegacyProjectWorkspaceMap.Initialize")
+                let setup = fun () -> this.SetupLegacyProjectFile(siteProvider, workspace, "LegacyProjectWorkspaceMap.OnAfterOpenProject")
+                let _, o = solution.GetProperty(int __VSPROPID.VSPROPID_IsSolutionOpen)
+                if (match o with | :? bool as isOpen -> isOpen | _ -> false) then
+                    setup ()
+                else
+                    setupQueue.Enqueue(setup)
             | _ -> ()
             VSConstants.S_OK
 
-        member __.OnAfterOpenSolution(_, _) = VSConstants.S_OK
+        member __.OnAfterOpenSolution(_, _) =
+            let mutable setup = Unchecked.defaultof<_>
+            while setupQueue.TryDequeue(&setup) do
+                setup ()
+            VSConstants.S_OK
 
         member __.OnBeforeCloseProject(hier, _) = 
             match hier with

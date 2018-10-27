@@ -99,19 +99,33 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
         match cache.TryGetValue(projectId) with
         | false, _ ->
 
+            // Because this code can be kicked off before the hack, HandleCommandLineChanges, occurs,
+            //     the command line options will not be available and we should bail if one of the project references does not give us anything.
+            let mutable canBail = false
+
             let referencedProjects =
                 if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
                     project.ProjectReferences
                     |> Seq.choose (fun projectReference ->
                         let referenceProject = project.Solution.GetProject(projectReference.ProjectId)
-                        tryComputeOptions referenceProject
-                        |> Option.map (fun (_, projectOptions) ->
-                            (referenceProject.OutputFilePath, projectOptions)
-                        )
+                        let result =
+                            tryComputeOptions referenceProject
+                            |> Option.map (fun (_, projectOptions) ->
+                                (referenceProject.OutputFilePath, projectOptions)
+                            )
+
+                        if result.IsNone then
+                            canBail <- true
+
+                        result
                     )
                     |> Seq.toArray
                 else
                     [||]
+
+            if canBail then
+                None
+            else
 
             let hier = workspace.GetHierarchy(projectId)
             let projectSite = 
@@ -137,10 +151,10 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     Stamp = Some(int64 <| projectStamp.GetHashCode())
                 }
 
+            // This can happen if we didn't receive the callback from HandleCommandLineChanges yet.
             if Array.isEmpty projectOptions.SourceFiles then
                 None
             else
-
                 checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = true, userOpName = "computeOptions")
 
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
@@ -210,6 +224,14 @@ type internal FSharpProjectOptionsManager
     let tryGetOrCreateProjectId (projectFileName:string) =
         let projectDisplayName = projectDisplayNameOf projectFileName
         Some (workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName))
+
+    do
+        // We need to listen to this event for lifecycle purposes.
+        workspace.WorkspaceChanged.Add(fun args ->
+            match args.Kind with
+            | WorkspaceChangeKind.ProjectRemoved -> reactor.ClearOptionsByProjectId(args.ProjectId)
+            | _ -> ()
+        )
 
     /// Retrieve the projectOptionsTable
     member __.FSharpOptions = projectOptionsTable
