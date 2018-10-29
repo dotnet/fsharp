@@ -44,8 +44,8 @@ module internal SymbolHelpers =
         projects
         |> Seq.map (fun project ->
             async {
-                match projectInfoManager.TryGetOptionsForProject(project.Id) with
-                | Some (_parsingOptions, _site, projectOptions) ->
+                match! projectInfoManager.TryGetOptionsByProject(project) with
+                | Some (_parsingOptions, projectOptions) ->
                     let! projectCheckResults = checker.ParseAndCheckProject(projectOptions, userOpName = userOpName)
                     let! uses = projectCheckResults.GetUsesOfSymbol(symbol) 
                     let distinctUses = uses |> Array.distinctBy (fun symbolUse -> symbolUse.RangeAlternate)

@@ -247,7 +247,7 @@ type internal FSharpNavigateToSearchService
     interface INavigateToSearchService_RemoveInterfaceAboveAndRenameThisAfterInternalsVisibleToUsersUpdate with
         member __.SearchProjectAsync(project, _priorityDocuments, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
             asyncMaybe {
-                let! parsingOptions, _site, _options = projectInfoManager.TryGetOptionsForProject(project.Id)
+                let! parsingOptions, _options = projectInfoManager.TryGetOptionsByProject(project)
                 let! items =
                     project.Documents
                     |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, parsingOptions, kinds))
