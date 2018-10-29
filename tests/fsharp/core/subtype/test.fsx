@@ -1804,9 +1804,9 @@ module MethodOverloadingForTraitConstraintsWhereSomeMethodsComeFromObjectTypeIsN
     let b  = Test()
 
      // NOTE, this is seen to be a bug, see https://github.com/Microsoft/visualfsharp/issues/3814
-     // The result should be false.  
+     // The result should be true.  
      // This test has been added to pin down current behaviour pending a future bug fix.
-    check "cewjewcwec09ew" (Equals a b) true
+    check "cewjewcwec09ew" (Equals a b) false
 
 module SRTPFix = 
 
