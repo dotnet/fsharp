@@ -173,14 +173,15 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
     let loop (agent: MailboxProcessor<FSharpProjectOptionsMessage>) =
         async {
             while true do
-                try
-                    match! agent.Receive() with
-                    | FSharpProjectOptionsMessage.TryGetOptions(project, reply) ->
+                match! agent.Receive() with
+                | FSharpProjectOptionsMessage.TryGetOptions(project, reply) ->
+                    try
                         reply.Reply(tryComputeOptions project)
-                    | FSharpProjectOptionsMessage.ClearOptions(projectId) ->
-                        cache.Remove(projectId) |> ignore
-                with
-                | _ -> ()
+                    with
+                    | _ ->
+                        reply.Reply(None)
+                | FSharpProjectOptionsMessage.ClearOptions(projectId) ->
+                    cache.Remove(projectId) |> ignore
         }
 
     let agent = MailboxProcessor.Start((fun agent -> loop agent), cancellationToken = cancellationTokenSource.Token)
