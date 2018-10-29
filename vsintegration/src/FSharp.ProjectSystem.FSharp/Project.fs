@@ -1285,7 +1285,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             member __.CompilationSourceFiles = match sourcesAndFlags with None -> [| |] | Some (sources,_) -> sources
             member __.CompilationOptions = match sourcesAndFlags with None -> [| |] | Some (_,flags) -> flags
             member __.CompilationReferences = match normalizedRefs with None -> [| |] | Some refs -> refs
-            member x.CompilationBinOutputPath = x.GetCurrentOutputAssembly()
 
             override x.ComputeSourcesAndFlags() =
 
@@ -1408,7 +1407,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member __.CompilationOptions = x.CompilationOptions
                     member __.CompilationReferences = x.CompilationReferences
                     member __.CompilationBinOutputPath = 
-                        let outputPath = x.CompilationBinOutputPath
+                        let outputPath = x.GetCurrentOutputAssembly()
                         if String.IsNullOrWhiteSpace(outputPath) then None else Some(outputPath)
 
                     member __.Description = 
@@ -1436,7 +1435,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             // that does _not_ reference "this" to get its information.
             // CreateStaticProjectSite can be called on a project that failed to load (as in Close)
             member private x.CreateStaticProjectSite() =
-                let outputPath = x.CompilationBinOutputPath
+                let outputPath = x.GetCurrentOutputAssembly()
                 let sourceFiles = x.CompilationSourceFiles
                 let options = x.CompilationOptions
                 let refs = x.CompilationReferences
