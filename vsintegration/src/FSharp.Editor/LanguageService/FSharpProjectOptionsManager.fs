@@ -27,11 +27,11 @@ type private CpsStamp = DateTime
 [<AutoOpen>]
 module private FSharpProjectOptionsHelpers =
 
-    let mapCpsProjectToSite(workspace:VisualStudioWorkspaceImpl, project:Project, serviceProvider:System.IServiceProvider, cpsCommandLineOptions: IDictionary<ProjectId, CpsStamp * string[] * string[] * string[]>) =
+    let mapCpsProjectToSite(workspace:VisualStudioWorkspaceImpl, project:Project, serviceProvider:System.IServiceProvider, cpsCommandLineOptions: IDictionary<ProjectId, CpsStamp * string[] * string[]>) =
         let hier = workspace.GetHierarchy(project.Id)
         let cpsStampOpt, sourcePaths, referencePaths, options =
             match cpsCommandLineOptions.TryGetValue(project.Id) with
-            | true, (cpsStamp, sourcePaths, referencePaths, options) -> Some(cpsStamp), sourcePaths, referencePaths, options
+            | true, (cpsStamp, sourcePaths, options) -> Some(cpsStamp), sourcePaths, [||], options
             | false, _ -> None, [||], [||], [||]
         cpsStampOpt,
         {
@@ -94,7 +94,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
     let cancellationTokenSource = new CancellationTokenSource()
 
     // Hack to store command line options from HandleCommandLineChanges
-    let cpsCommandLineOptions = new ConcurrentDictionary<ProjectId, DateTime * string[] * string[] * string[]>()
+    let cpsCommandLineOptions = new ConcurrentDictionary<ProjectId, DateTime * string[] * string[]>()
 
     let cache = Dictionary<ProjectId, CpsStamp option * VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
     
@@ -142,12 +142,28 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     let cpsStampOpt, provideSite = mapCpsProjectToSite(workspace, project, serviceProvider, cpsCommandLineOptions)
                     cpsStampOpt, provideSite.GetProjectSite()
 
+            let otherOptions =
+                project.ProjectReferences
+                |> Seq.map (fun x -> "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath)
+                |> Array.ofSeq
+                |> Array.append (
+                        project.MetadataReferences.OfType<VisualStudioMetadataReference.Snapshot>()
+                        |> Seq.map (fun x -> "-r:" + x.FilePath)
+                        |> Array.ofSeq
+                        |> Array.append (
+                                // Clear any references from CompilationOptions. 
+                                // We get the references from Project.ProjectReferences/Project.MetadataReferences.
+                                projectSite.CompilationOptions 
+                                |> Array.filter (fun x -> not (x.Contains("-r:")))
+                            )
+                    )
+
             let projectOptions =
                 {
                     ProjectFileName = projectSite.ProjectFileName
-                    ProjectId = None
+                    ProjectId = Some(projectId.ToFSharpProjectIdString())
                     SourceFiles = projectSite.CompilationSourceFiles
-                    OtherOptions = projectSite.CompilationOptions
+                    OtherOptions = otherOptions
                     ReferencedProjects = referencedProjects
                     IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
                     UseScriptResolutionRules = SourceFile.MustBeSingleFileProject (Path.GetFileName(project.FilePath))
@@ -155,7 +171,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     UnresolvedReferences = None
                     OriginalLoadReferences = []
                     ExtraProjectInfo= None
-                    Stamp = Some(int64 <| projectStamp.GetHashCode())
+                    Stamp = Some(int64 (projectStamp.GetHashCode()))
                 }
 
             // This can happen if we didn't receive the callback from HandleCommandLineChanges yet.
@@ -173,7 +189,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
         | true, (cpsStampOpt, projectStamp2, parsingOptions, projectOptions) ->
             let cpsStampOpt2 =
                 match cpsCommandLineOptions.TryGetValue(projectId) with
-                | true, (cpsStampOpt2, _, _, _) -> Some(cpsStampOpt2)
+                | true, (cpsStampOpt2, _, _) -> Some(cpsStampOpt2)
                 | _ -> None
             if projectStamp <> projectStamp2 || cpsStampOpt <> cpsStampOpt2 then
                 cache.Remove(projectId) |> ignore
@@ -203,8 +219,8 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
     member __.ClearOptionsByProjectId(projectId) =
         agent.Post(FSharpProjectOptionsMessage.ClearOptions(projectId))
 
-    member __.SetCpsCommandLineOptions(projectId, stamp, sourcePaths, referencePaths, options) =
-        cpsCommandLineOptions.[projectId] <- (stamp, sourcePaths, referencePaths, options)
+    member __.SetCpsCommandLineOptions(projectId, stamp, sourcePaths, options) =
+        cpsCommandLineOptions.[projectId] <- (stamp, sourcePaths, options)
 
     member __.TryGetCachedOptionsByProjectId(projectId) =
         match cache.TryGetValue(projectId) with
@@ -340,7 +356,7 @@ type internal FSharpProjectOptionsManager
     /// This handles commandline change notifications from the Dotnet Project-system
     /// Prior to VS 15.7 path contained path to project file, post 15.7 contains target binpath
     /// binpath is more accurate because a project file can have multiple in memory projects based on configuration
-    member __.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
+    member __.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, _references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
         use _logBlock = Logger.LogBlock(LogEditorFunctionId.LanguageService_HandleCommandLineArgs)
 
         let projectId =
@@ -353,8 +369,7 @@ type internal FSharpProjectOptionsManager
             if Path.IsPathRooted(p) || path = null then p
             else Path.Combine(Path.GetDirectoryName(path), p)
         let sourcePaths = sources |> Seq.map(fun s -> fullPath s.Path) |> Seq.toArray
-        let referencePaths = references |> Seq.map(fun r -> fullPath r.Reference) |> Seq.toArray
 
-        reactor.SetCpsCommandLineOptions(projectId, DateTime.UtcNow, sourcePaths, referencePaths, options.ToArray())
+        reactor.SetCpsCommandLineOptions(projectId, DateTime.UtcNow, sourcePaths, options.ToArray())
 
     member __.Checker = checkerProvider.Checker
