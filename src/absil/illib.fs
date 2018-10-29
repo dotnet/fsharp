@@ -432,8 +432,14 @@ module List =
     let existsSquared f xss = xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
     let mapiFoldSquared f z xss =  mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i,j,x)))
 
-module ValueOption =
+/// Because FSharp.Compiler.Service is a library that will target FSharp.Core 4.5.2 for the forseeable future,
+/// we need to stick these functions in this module rather than using the module functions for ValueOption
+/// that come after FSharp.Core 4.5.2.
+module ValueOptionInternal =
     let inline ofOption x = match x with Some x -> ValueSome x | None -> ValueNone
+    let inline bind f x = match x with ValueSome x -> f x | ValueNone -> ValueNone
+    let inline isSome x = match x with ValueSome _ -> true | ValueNone -> false
+    let inline isNone x = match x with ValueSome _ -> false | ValueNone -> true
 
 type String with
     member inline x.StartsWithOrdinal(value) =
