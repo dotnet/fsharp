@@ -8,7 +8,12 @@ type Position = int * int
 type Range = Position * Position
 
 /// Represents encoded information for the end-of-line continuation of lexing
-type FSharpTokenizerLexState = int64
+[<Struct; CustomEquality; NoComparison>]
+type FSharpTokenizerLexState = 
+    { PosBits: int64
+      OtherBits: int64 }
+    static member Initial : FSharpTokenizerLexState
+    member Equals : FSharpTokenizerLexState -> bool
 
 /// Represents stable information for the state of the laxing engine at the end of a line
 type FSharpTokenizerColorState =
@@ -27,7 +32,6 @@ type FSharpTokenizerColorState =
     | TripleQuoteStringInComment = 14
     | InitialState = 0 
     
-
 /// Gives an indicattion of the color class to assign to the token an IDE
 type FSharpTokenColorKind =
     | Default = 0
@@ -193,21 +197,28 @@ module FSharpTokenTag =
 type FSharpTokenInfo = 
     { /// Left column of the token.
       LeftColumn:int
+
       /// Right column of the token.
       RightColumn:int
+
       ColorClass:FSharpTokenColorKind
+
       /// Gives an indication of the class to assign to the token an IDE
       CharClass:FSharpTokenCharKind
+
       /// Actions taken when the token is typed
       FSharpTokenTriggerClass:FSharpTokenTriggerClass
+
       /// The tag is an integer identifier for the token
       Tag:int
+
       /// Provides additional information about the token
       TokenName:string;
+
       /// The full length consumed by this match, including delayed tokens (which can be ignored in naive lexers)
       FullMatchedLength: int }
 
-/// Object to tokenize a line of F# source code, starting with the given lexState.  The lexState should be 0 for
+/// Object to tokenize a line of F# source code, starting with the given lexState.  The lexState should be FSharpTokenizerLexState.Initial for
 /// the first line of text. Returns an array of ranges of the text and two enumerations categorizing the
 /// tokens and characters covered by that range, i.e. FSharpTokenColorKind and FSharpTokenCharKind.  The enumerations
 /// are somewhat adhoc but useful enough to give good colorization options to the user in an IDE.
@@ -221,7 +232,6 @@ type FSharpLineTokenizer =
     static member ColorStateOfLexState : FSharpTokenizerLexState -> FSharpTokenizerColorState
     static member LexStateOfColorState : FSharpTokenizerColorState -> FSharpTokenizerLexState
     
-
 /// Tokenizer for a source file. Holds some expensive-to-compute resources at the scope of the file.
 [<Sealed>]
 type FSharpSourceTokenizer =
@@ -229,7 +239,6 @@ type FSharpSourceTokenizer =
     member CreateLineTokenizer : lineText:string -> FSharpLineTokenizer
     member CreateBufferTokenizer : bufferFiller:(char[] * int * int -> int) -> FSharpLineTokenizer
     
-
 module internal TestExpose =     
     val TokenInfo : Parser.token -> (FSharpTokenColorKind * FSharpTokenCharKind * FSharpTokenTriggerClass)
 

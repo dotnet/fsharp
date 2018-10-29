@@ -3288,23 +3288,23 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
     member internal __.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
-    member x.TokenizeLine (line: string, state: int64) : FSharpTokenInfo[] * int64 = 
+    member x.TokenizeLine (line: string, state: FSharpTokenizerLexState) = 
         let tokenizer = FSharpSourceTokenizer([], None)
         let lineTokenizer = tokenizer.CreateLineTokenizer line
-        let state = ref (None, state)
+        let mutable state = (None, state)
         let tokens = 
-            [| while (state := lineTokenizer.ScanToken (snd !state); (fst !state).IsSome) do
-                    yield (fst !state).Value |]
-        tokens, snd !state 
+            [| while (state <- lineTokenizer.ScanToken (snd state); (fst state).IsSome) do
+                    yield (fst state).Value |]
+        tokens, snd state 
 
     /// Tokenize an entire file, line by line
     member x.TokenizeFile (source: string) : FSharpTokenInfo[][] = 
         let lines = source.Split('\n')
         let tokens = 
-            [| let state = ref 0L
+            [| let mutable state = FSharpTokenizerLexState.Initial
                for line in lines do 
-                   let tokens, n = x.TokenizeLine(line, !state) 
-                   state := n 
+                   let tokens, n = x.TokenizeLine(line, state) 
+                   state <- n 
                    yield tokens |]
         tokens
 
