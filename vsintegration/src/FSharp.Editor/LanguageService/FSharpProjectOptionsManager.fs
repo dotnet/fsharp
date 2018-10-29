@@ -22,15 +22,18 @@ open System.Threading
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
 
+type private CpsStamp = DateTime
+
 [<AutoOpen>]
 module private FSharpProjectOptionsHelpers =
 
-    let mapCpsProjectToSite(workspace:VisualStudioWorkspaceImpl, project:Project, serviceProvider:System.IServiceProvider, cpsCommandLineOptions: IDictionary<ProjectId, DateTime * string[] * string[] * string[]>) =
+    let mapCpsProjectToSite(workspace:VisualStudioWorkspaceImpl, project:Project, serviceProvider:System.IServiceProvider, cpsCommandLineOptions: IDictionary<ProjectId, CpsStamp * string[] * string[] * string[]>) =
         let hier = workspace.GetHierarchy(project.Id)
-        let getCommandLineOptionsWithProjectId (projectId) =
-            match cpsCommandLineOptions.TryGetValue(projectId) with
-            | true, (_, sourcePaths, referencePaths, options) -> sourcePaths, referencePaths, options
-            | false, _ -> [||], [||], [||]
+        let cpsStampOpt, sourcePaths, referencePaths, options =
+            match cpsCommandLineOptions.TryGetValue(project.Id) with
+            | true, (cpsStamp, sourcePaths, referencePaths, options) -> Some(cpsStamp), sourcePaths, referencePaths, options
+            | false, _ -> None, [||], [||], [||]
+        cpsStampOpt,
         {
             new IProvideProjectSite with
                 member x.GetProjectSite() =
@@ -43,11 +46,10 @@ module private FSharpProjectOptionsHelpers =
                     {
                         new IProjectSite with
                             member __.Description = project.Name
-                            member __.CompilationSourceFiles = getCommandLineOptionsWithProjectId(project.Id) |> fst
+                            member __.CompilationSourceFiles = sourcePaths
                             member __.CompilationOptions =
-                                let _,references,options = getCommandLineOptionsWithProjectId(project.Id)
-                                Array.concat [options; references |> Array.map(fun r -> "-r:" + r)]
-                            member __.CompilationReferences = getCommandLineOptionsWithProjectId(project.Id) |> snd
+                                Array.concat [options; referencePaths |> Array.map(fun r -> "-r:" + r)]
+                            member __.CompilationReferences = referencePaths
                             member site.CompilationBinOutputPath = site.CompilationOptions |> Array.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
                             member __.ProjectFileName = project.FilePath
                             member __.AdviseProjectSiteChanges(_,_) = ()
@@ -94,7 +96,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
     // Hack to store command line options from HandleCommandLineChanges
     let cpsCommandLineOptions = new ConcurrentDictionary<ProjectId, DateTime * string[] * string[] * string[]>()
 
-    let cache = Dictionary<ProjectId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
+    let cache = Dictionary<ProjectId, CpsStamp option * VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
     
     let rec tryComputeOptions (project: Project) =
         let projectId = project.Id
@@ -131,14 +133,14 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
             else
 
             let hier = workspace.GetHierarchy(projectId)
-            let projectSite = 
+            let cpsStampOpt, projectSite = 
                 match hier with
                 // Legacy
-                | (:? IProvideProjectSite as provideSite) -> provideSite.GetProjectSite()
+                | (:? IProvideProjectSite as provideSite) -> None, provideSite.GetProjectSite()
                 // Cps
                 | _ -> 
-                    let provideSite = mapCpsProjectToSite(workspace, project, serviceProvider, cpsCommandLineOptions)
-                    provideSite.GetProjectSite()
+                    let cpsStampOpt, provideSite = mapCpsProjectToSite(workspace, project, serviceProvider, cpsCommandLineOptions)
+                    cpsStampOpt, provideSite.GetProjectSite()
 
             let projectOptions =
                 {
@@ -164,12 +166,16 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
 
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
-                cache.[projectId] <- (projectStamp, parsingOptions, projectOptions)
+                cache.[projectId] <- (cpsStampOpt, projectStamp, parsingOptions, projectOptions)
 
                 Some(parsingOptions, projectOptions)
   
-        | true, (projectStamp2, parsingOptions, projectOptions) ->
-            if projectStamp <> projectStamp2 then
+        | true, (cpsStampOpt, projectStamp2, parsingOptions, projectOptions) ->
+            let cpsStampOpt2 =
+                match cpsCommandLineOptions.TryGetValue(projectId) with
+                | true, (cpsStampOpt2, _, _, _) -> Some(cpsStampOpt2)
+                | _ -> None
+            if projectStamp <> projectStamp2 || cpsStampOpt <> cpsStampOpt2 then
                 cache.Remove(projectId) |> ignore
                 tryComputeOptions project
             else
@@ -280,7 +286,7 @@ type internal FSharpProjectOptionsManager
     member this.GetCompilationDefinesForEditingDocument(document:Document) = 
         let parsingOptions =
             match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
-            | Some (_, parsingOptions, _) -> parsingOptions
+            | Some (_, _, parsingOptions, _) -> parsingOptions
             | _ -> { FSharpParsingOptions.Default with IsInteractive = IsScript document.Name }
         CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions     
 
