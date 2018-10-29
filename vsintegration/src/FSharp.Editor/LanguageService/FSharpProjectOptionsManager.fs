@@ -25,12 +25,12 @@ open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
 [<AutoOpen>]
 module private FSharpProjectOptionsHelpers =
 
-    let mapProjectToSite(workspace:VisualStudioWorkspaceImpl, project:Project, serviceProvider:System.IServiceProvider, projectOptionsTable:FSharpProjectOptionsTable option) =
+    let mapCpsProjectToSite(workspace:VisualStudioWorkspaceImpl, project:Project, serviceProvider:System.IServiceProvider, cpsCommandLineOptions: IDictionary<ProjectId, DateTime * string[] * string[] * string[]>) =
         let hier = workspace.GetHierarchy(project.Id)
         let getCommandLineOptionsWithProjectId (projectId) =
-            match projectOptionsTable with
-            | Some (options) -> options.GetCommandLineOptionsWithProjectId(projectId) 
-            | None -> [||], [||], [||]
+            match cpsCommandLineOptions.TryGetValue(projectId) with
+            | true, (_, sourcePaths, referencePaths, options) -> sourcePaths, referencePaths, options
+            | false, _ -> [||], [||], [||]
         {
             new IProvideProjectSite with
                 member x.GetProjectSite() =
@@ -88,8 +88,11 @@ type private FSharpProjectOptionsMessage =
     | ClearOptions of ProjectId
 
 [<Sealed>]
-type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, settings: EditorOptions, optionsTable: FSharpProjectOptionsTable, serviceProvider, checkerProvider: FSharpCheckerProvider) =
+type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, settings: EditorOptions, serviceProvider, checkerProvider: FSharpCheckerProvider) =
     let cancellationTokenSource = new CancellationTokenSource()
+
+    // Hack to store command line options from HandleCommandLineChanges
+    let cpsCommandLineOptions = new ConcurrentDictionary<ProjectId, DateTime * string[] * string[] * string[]>()
 
     let cache = Dictionary<ProjectId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
     
@@ -130,9 +133,11 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
             let hier = workspace.GetHierarchy(projectId)
             let projectSite = 
                 match hier with
+                // Legacy
                 | (:? IProvideProjectSite as provideSite) -> provideSite.GetProjectSite()
+                // Cps
                 | _ -> 
-                    let provideSite = mapProjectToSite(workspace, project, serviceProvider, Some(optionsTable))
+                    let provideSite = mapCpsProjectToSite(workspace, project, serviceProvider, cpsCommandLineOptions)
                     provideSite.GetProjectSite()
 
             let projectOptions =
@@ -192,6 +197,14 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
     member __.ClearOptionsByProjectId(projectId) =
         agent.Post(FSharpProjectOptionsMessage.ClearOptions(projectId))
 
+    member __.SetCpsCommandLineOptions(projectId, stamp, sourcePaths, referencePaths, options) =
+        cpsCommandLineOptions.[projectId] <- (stamp, sourcePaths, referencePaths, options)
+
+    member __.TryGetCachedOptionsByProjectId(projectId) =
+        match cache.TryGetValue(projectId) with
+        | true, result -> Some(result)
+        | _ -> None
+
     interface IDisposable with
         member __.Dispose() = 
             cancellationTokenSource.Cancel()
@@ -213,18 +226,11 @@ type internal FSharpProjectOptionsManager
         settings: EditorOptions
     ) =
 
-    // A table of information about projects, excluding single-file projects.
-    let projectOptionsTable = FSharpProjectOptionsTable()
-
-    let reactor = new FSharpProjectOptionsReactor(workspace, settings, projectOptionsTable, serviceProvider, checkerProvider)
+    let reactor = new FSharpProjectOptionsReactor(workspace, settings, serviceProvider, checkerProvider)
 
     // A table of information about single-file projects.  Currently we only need the load time of each such file, plus
     // the original options for editing
     let singleFileProjectTable = ConcurrentDictionary<ProjectId, DateTime * FSharpParsingOptions * FSharpProjectOptions>()
-
-    let tryGetOrCreateProjectId (projectFileName:string) =
-        let projectDisplayName = projectDisplayNameOf projectFileName
-        Some (workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName))
 
     do
         // We need to listen to this event for lifecycle purposes.
@@ -234,12 +240,8 @@ type internal FSharpProjectOptionsManager
             | _ -> ()
         )
 
-    /// Retrieve the projectOptionsTable
-    member __.FSharpOptions = projectOptionsTable
-
     /// Clear a project from the project table
     member this.ClearInfoForProject(projectId:ProjectId) = 
-        projectOptionsTable.ClearInfoForProject(projectId)
         reactor.ClearOptionsByProjectId(projectId)
 
     /// Clear a project from the single file project table
@@ -262,40 +264,28 @@ type internal FSharpProjectOptionsManager
                 // compiled and #r will refer to files on disk
                 let referencedProjectFileNames = [| |] 
                 let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, options)
-                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, options.ExtraProjectInfo, solution, Some projectOptionsTable)
+                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, options.ExtraProjectInfo, solution, None)
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
                 return (deps, parsingOptions, projectOptions)
             else
                 let site = ProjectSitesAndFiles.ProjectSiteOfSingleFile(fileName)
-                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, extraProjectInfo, solution, Some projectOptionsTable)
+                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, extraProjectInfo, solution, None)
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
                 return (deps, parsingOptions, projectOptions)
         }
-
-    /// Update the info for a project in the project table
-    member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, site, userOpName, invalidateConfig, solution) =
-        Logger.Log LogEditorFunctionId.LanguageService_UpdateProjectInfo
-        projectOptionsTable.AddOrUpdateProject(projectId, (fun isRefresh ->
-            let extraProjectInfo = Some(box workspace)
-            let referencedProjects, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, site, serviceProvider, Some(projectId), site.ProjectFileName, extraProjectInfo, solution, Some projectOptionsTable)
-            if invalidateConfig then checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = not isRefresh, userOpName = userOpName + ".UpdateProjectInfo")
-            let referencedProjectIds = referencedProjects |> Array.choose tryGetOrCreateProjectId
-            let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
-            referencedProjectIds, parsingOptions, Some site, projectOptions))
 
     /// Get compilation defines relevant for syntax processing.  
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project 
     /// options for a script.
     member this.GetCompilationDefinesForEditingDocument(document:Document) = 
-        let projectOptionsOpt = this.TryGetOptionsForProject(document.Project.Id)  
-        let parsingOptions = 
-            match projectOptionsOpt with 
-            | Some (parsingOptions, _site, _projectOptions) -> parsingOptions
+        let parsingOptions =
+            match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
+            | Some (_, parsingOptions, _) -> parsingOptions
             | _ -> { FSharpParsingOptions.Default with IsInteractive = IsScript document.Name }
-        CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
+        CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions     
 
-    /// Try and get the Options for a project 
-    member this.TryGetOptionsForProject(projectId:ProjectId) = projectOptionsTable.TryGetOptionsForProject(projectId)
+    member this.TryGetOptionsByProject(project) =
+        reactor.TryGetOptionsByProjectAsync(project)
 
     /// Get the exact options for a document or project
     member this.TryGetOptionsForDocumentOrProject(document: Document) =
@@ -340,33 +330,11 @@ type internal FSharpProjectOptionsManager
                 return result |> Option.map(fun (parsingOptions, _, projectOptions) -> parsingOptions, projectOptions)
             }
 
-    /// get a siteprovider
-    member this.ProvideProjectSiteProvider(project:Project) = provideProjectSiteProvider(workspace, project, serviceProvider, Some projectOptionsTable)
-
-    /// Tell the checker to update the project info for the specified project id
-    member this.UpdateProjectInfoWithProjectId(projectId:ProjectId, userOpName, invalidateConfig, solution) =
-        let hier = workspace.GetHierarchy(projectId)
-        match hier with
-        | null -> ()
-        | h when (h.IsCapabilityMatch("CPS")) ->
-            let project = workspace.CurrentSolution.GetProject(projectId)
-            if not (isNull project) then
-                let siteProvider = this.ProvideProjectSiteProvider(project)
-                let projectSite = siteProvider.GetProjectSite()
-                if projectSite.CompilationSourceFiles.Length <> 0 then
-                    this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, projectSite, userOpName, invalidateConfig, solution)
-        | _ -> ()
-
-    /// Tell the checker to update the project info for the specified project id
-    member this.UpdateDocumentInfoWithProjectId(projectId:ProjectId, documentId:DocumentId, userOpName, invalidateConfig, solution) =
-        if workspace.IsDocumentOpen(documentId) then
-            this.UpdateProjectInfoWithProjectId(projectId, userOpName, invalidateConfig, solution)
-
     [<Export>]
     /// This handles commandline change notifications from the Dotnet Project-system
     /// Prior to VS 15.7 path contained path to project file, post 15.7 contains target binpath
     /// binpath is more accurate because a project file can have multiple in memory projects based on configuration
-    member this.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
+    member __.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
         use _logBlock = Logger.LogBlock(LogEditorFunctionId.LanguageService_HandleCommandLineArgs)
 
         let projectId =
@@ -381,6 +349,6 @@ type internal FSharpProjectOptionsManager
         let sourcePaths = sources |> Seq.map(fun s -> fullPath s.Path) |> Seq.toArray
         let referencePaths = references |> Seq.map(fun r -> fullPath r.Reference) |> Seq.toArray
 
-        projectOptionsTable.SetOptionsWithProjectId(projectId, sourcePaths, referencePaths, options.ToArray())
+        reactor.SetCpsCommandLineOptions(projectId, DateTime.UtcNow, sourcePaths, referencePaths, options.ToArray())
 
     member __.Checker = checkerProvider.Checker

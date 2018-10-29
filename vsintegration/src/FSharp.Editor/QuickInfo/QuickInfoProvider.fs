@@ -56,7 +56,7 @@ module private FSharpQuickInfo =
             let extLineText = (extSourceText.Lines.GetLineFromPosition extSpan.Start).ToString()
 
             // project options need to be retrieved because the signature file could be in another project
-            let! extParsingOptions, _extSite, extProjectOptions = projectInfoManager.TryGetOptionsForProject extDocId.ProjectId
+            let! extParsingOptions, extProjectOptions = projectInfoManager.TryGetOptionsByProject document.Project
             let extDefines = CompilerEnvironment.GetCompilationDefinesForEditing extParsingOptions
             let! extLexerSymbol = Tokenizer.getSymbolAtPosition(extDocId, extSourceText, extSpan.Start, declRange.FileName, extDefines, SymbolLookupKind.Greedy, true)
             let! _, _, extCheckFileResults = checker.ParseAndCheckDocument(extDocument, extProjectOptions, allowStaleResults=true, sourceText=extSourceText, userOpName = userOpName)
