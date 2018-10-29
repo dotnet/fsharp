@@ -117,7 +117,6 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
                     hierarchy,
                     Option.toObj site.CompilationBinOutputPath)
                 
-            // The real project ID that was actually added. See comments for fakeProjectId why this one is actually good.
             let realProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
             // Sync IProjectSite --> projectContext, and IProjectSite --> ProjectInfoManage
