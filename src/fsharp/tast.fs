@@ -3260,7 +3260,7 @@ and
             ValueSome tcr.binding
 
     /// Is the destination assembly available?
-    member tcr.CanDeref = ValueOption.isSome tcr.TryDeref
+    member tcr.CanDeref = ValueOptionInternal.isSome tcr.TryDeref
 
     /// Gets the data indicating the compiled representation of a type or module in terms of Abstract IL data structures.
     member x.CompiledRepresentation = x.Deref.CompiledRepresentation
@@ -3870,7 +3870,7 @@ and
         | None -> error(InternalError(sprintf "field %s not found in type %s" id tcref.LogicalName, tcref.Range))
 
     /// Try to dereference the reference 
-    member x.TryRecdField =  x.TyconRef.TryDeref |> ValueOption.bind (fun tcref -> tcref.GetFieldByName x.FieldName |> ValueOptionInternal.ofOption)
+    member x.TryRecdField =  x.TyconRef.TryDeref |> ValueOptionInternal.bind (fun tcref -> tcref.GetFieldByName x.FieldName |> ValueOptionInternal.ofOption)
 
     /// Get the attributes associated with the compiled property of the record field 
     member x.PropertyAttribs = x.RecdField.PropertyAttribs
