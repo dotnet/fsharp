@@ -615,6 +615,79 @@ module rec Ok15 =
 
     test "lkneecec09iew15" (not (typeof<A.Dummy>.FullName.Contains("AModule") )) 
 
+module rec Ok16 =
+
+    type A<'a> = A of 'a
+
+    module A =
+        type Dummy = A | B
+
+    test "lkneecec09iew16" (not (typeof<A.Dummy>.FullName.Contains("AModule") ))
+
+module rec Ok17 =
+
+    type A<'a> = A of 'a
+    type A = A of int
+
+    module A =
+        type Dummy = A | B
+
+    test "lkneecec09iew17" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
+module rec Ok18 =
+
+    type A<[<Measure>]'u> = A of int<'u>
+
+    module A =
+        type Dummy = A | B
+
+    test "lkneecec09iew18" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
+module rec Ok19 =
+
+    type A<[<Measure>]'u, 'a> = | A of int<'u> | B of 'a
+
+    module A =
+        type Dummy = A | B
+
+    test "lkneecec09iew19" (not (typeof<A.Dummy>.FullName.Contains("AModule") ))
+
+module rec Ok20 =
+
+    type A<'a, [<Measure>]'u> = A of int<'u> | B of 'a
+
+    module A =
+        type Dummy = A | B
+
+    test "lkneecec09iew20" (not (typeof<A.Dummy>.FullName.Contains("AModule") ))
+
+module rec Ok21 =
+
+    type A<'a, 'b> = A of 'a | B of 'b
+
+    module A =
+        type Dummy = A | B
+
+    test "lkneecec09iew21" (not (typeof<A.Dummy>.FullName.Contains("AModule") ))
+
+module rec Ok22 =
+
+    module A =
+        type Dummy = A | B
+
+    type A<'a> = A of 'a
+
+    test "lkneecec09iew22" (not (typeof<A.Dummy>.FullName.Contains("AModule") ))
+
+module rec Ok23 =
+
+    module A =
+        type Dummy = A | B
+
+    type A = A of int
+
+    test "lkneecec09iew23" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
 #if TESTS_AS_APP
 let RUN() = !failures
 #else
@@ -628,4 +701,3 @@ let aa =
       stdout.WriteLine "Test Failed"
       exit 1
 #endif
-

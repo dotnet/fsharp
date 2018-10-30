@@ -65,7 +65,7 @@ let rec tokenizeLine (tokenizer:FSharpLineTokenizer) state =
 The function returns the new state, which is needed if you need to tokenize multiple lines
 and an earlier line ends with a multi-line comment. As an initial state, we can use `0L`:
 *)
-tokenizeLine tokenizer 0L
+tokenizeLine tokenizer FSharpTokenizerLexState.Initial
 (**
 The result is a sequence of tokens with names LET, WHITESPACE, IDENT, EQUALS and INT32.
 There is a number of interesting properties on `FSharpTokenInfo` including:
