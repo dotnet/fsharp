@@ -20,8 +20,7 @@ open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell.Interop
 
 [<Sealed>]
-type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
-                                        solution: IVsSolution, 
+type internal LegacyProjectWorkspaceMap(solution: IVsSolution, 
                                         projectInfoManager: FSharpProjectOptionsManager,
                                         projectContextFactory: IWorkspaceProjectContextFactory) as this =
 
@@ -29,6 +28,7 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
     let optionsAssociation = ConditionalWeakTable<IWorkspaceProjectContext, string[]>()
     let isPathWellFormed (path: string) = not (String.IsNullOrWhiteSpace path) && path |> Seq.forall (fun c -> not (Set.contains c invalidPathChars))
    
+    let legacyProjectIdLookup = ConcurrentDictionary()
     let legacyProjectLookup = ConcurrentDictionary()
     let setupQueue = ConcurrentQueue()
 
@@ -37,9 +37,11 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
 
     /// Sync the Roslyn information for the project held in 'projectContext' to match the information given by 'site'.
     /// Also sync the info in ProjectInfoManager if necessary.
-    member this.SyncLegacyProject(projectId: ProjectId, projectContext: IWorkspaceProjectContext, site: IProjectSite) =
+    member this.SyncLegacyProject(projectContext: IWorkspaceProjectContext, site: IProjectSite) =
         let wellFormedFilePathSetIgnoreCase (paths: seq<string>) =
             HashSet(paths |> Seq.filter isPathWellFormed |> Seq.map (fun s -> try Path.GetFullPath(s) with _ -> s), StringComparer.OrdinalIgnoreCase)
+
+        let projectId = projectContext.Id
 
         // Sync the source files in projectContext.  Note that these source files are __not__ maintained in order in projectContext
         // as edits are made. It seems this is ok because the source file list is only used to drive roslyn per-file checking.
@@ -94,7 +96,7 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
         let info = (updatedFiles, updatedRefs)
         legacyProjectLookup.AddOrUpdate(projectId, info, fun _ _ -> info) |> ignore
 
-    member this.SetupLegacyProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl) =
+    member this.SetupLegacyProjectFile(siteProvider: IProvideProjectSite) =
         let rec setup (site: IProjectSite) =
             let projectGuid = Guid(site.ProjectGuid)
             let projectFileName = site.ProjectFileName
@@ -118,21 +120,21 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
                     projectGuid,
                     hierarchy,
                     Option.toObj site.CompilationBinOutputPath)
-                
-            let realProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
+
+            legacyProjectIdLookup.[projectGuid] <- projectContext.Id
 
             // Sync IProjectSite --> projectContext, and IProjectSite --> ProjectInfoManage
-            this.SyncLegacyProject(realProjectId, projectContext, site)
+            this.SyncLegacyProject(projectContext, site)
 
             site.BuildErrorReporter <- Some (projectContext :?> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
 
             // TODO: consider forceUpdate = false here.  forceUpdate=true may be causing repeated computation?
             site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                            AdviseProjectSiteChanges(fun () -> this.SyncLegacyProject(realProjectId, projectContext, site)))
+                                            AdviseProjectSiteChanges(fun () -> this.SyncLegacyProject(projectContext, site)))
 
             site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                             AdviseProjectSiteChanges(fun () -> 
-                                            projectInfoManager.ClearInfoForProject(realProjectId)
+                                            projectInfoManager.ClearInfoForProject(projectContext.Id)
                                             optionsAssociation.Remove(projectContext) |> ignore
                                             projectContext.Dispose()))
 
@@ -151,7 +153,7 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
         member __.OnAfterOpenProject(hier, _) = 
             match hier with
             | :? IProvideProjectSite as siteProvider ->
-                let setup = fun () -> this.SetupLegacyProjectFile(siteProvider, workspace)
+                let setup = fun () -> this.SetupLegacyProjectFile(siteProvider)
                 let _, o = solution.GetProperty(int __VSPROPID.VSPROPID_IsSolutionOpen)
                 if (match o with | :? bool as isOpen -> isOpen | _ -> false) then
                     setup ()
@@ -170,10 +172,12 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
             match hier with
             | :? IProvideProjectSite as siteProvider ->
                 let site = siteProvider.GetProjectSite()
-                let projectFileName = site.ProjectFileName
-                let projectDisplayName = projectDisplayNameOf projectFileName
-                let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
-                legacyProjectLookup.TryRemove(projectId) |> ignore
+                let projectGuid = Guid(site.ProjectGuid)
+                match legacyProjectIdLookup.TryGetValue(projectGuid) with
+                | true, projectId ->
+                    legacyProjectIdLookup.TryRemove(projectGuid) |> ignore
+                    legacyProjectLookup.TryRemove(projectId) |> ignore
+                | _ -> ()
             | _ -> ()
             VSConstants.S_OK
 
