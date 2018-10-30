@@ -952,7 +952,11 @@ namespace Microsoft.FSharp.Core
         val inline FastGenericComparer<'T>  : System.Collections.Generic.IComparer<'T> when 'T : comparison 
 
         /// <summary>Make an F# comparer object for the given type, where it can be null if System.Collections.Generic.Comparer&lt;'T&gt;.Default</summary>
+#if BUILDING_WITH_LKG
         val internal FastGenericComparerCanBeNull<'T>  : System.Collections.Generic.IComparer<'T> when 'T : comparison 
+#else
+        val internal FastGenericComparerCanBeNull<'T>  : System.Collections.Generic.IComparer<'T>? when 'T : comparison 
+#endif
 
         /// <summary>Make an F# hash/equality object for the given type</summary>
         val inline FastGenericEqualityComparer<'T> : System.Collections.Generic.IEqualityComparer<'T> when 'T : equality
@@ -2239,20 +2243,23 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("IsNull")>]
-        val inline isNull : value:'T -> bool when 'T : null
+        val inline isNull : value: 'T -> bool when 'T : not struct and 'T : null
         
+#if !BUILDING_WITH_LKG
         /// <summary>Determines whether the given value is null.</summary>
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("IsNullV")>]
         val inline isNullV : value:Nullable<'T> -> bool
-        
+#endif
+
         /// <summary>Determines whether the given value is not null.</summary>
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is not null, false otherwise.</returns>
         [<CompiledName("IsNotNull")>]
         val inline internal isNotNull : value:'T -> bool when 'T : null
 
+#if !BUILDING_WITH_LKG
         /// <summary>Get the null value for a value type.</summary>
         /// <returns>The null value for a value type.</returns>
         [<CompiledName("NullV")>]
@@ -2262,7 +2269,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("NotNull")>]
-        val inline notNull : value:'T -> 'T when 'T : not struct and 'T : null
+        val inline notNull : value: (('T)?) -> 'T when 'T : not struct
 
         /// <summary>Asserts that the value is non-null.</summary>
         /// <param name="value">The value to check.</param>
@@ -2274,13 +2281,14 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("WithNull")>]
-        val inline withNull : value:'T -> 'T when 'T : not struct and 'T : null
+        val inline withNull : value:'T -> (('T)?) when 'T : not struct and 'T : null
 
         /// <summary>Asserts that the value is non-null.</summary>
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("WithNullV")>]
         val inline withNullV : value:'T -> Nullable<'T> 
+#endif
 
         /// <summary>Throw a <c>System.Exception</c> exception.</summary>
         /// <param name="message">The exception message.</param>

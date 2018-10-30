@@ -160,10 +160,35 @@ let mkTyparInst (typars: Typars) tyargs =
 let generalizeTypar tp = mkTyparTy tp
 let generalizeTypars tps = List.map generalizeTypar tps
 
+let tryAddNullToTy (ty:TType) = 
+    let ty = stripTyparEqns ty
+    match ty with
+    | TType_var (tp, _nullness) -> Some (TType_var (tp, KnownNull))
+    | TType_app (tcr, tinst, _nullness) -> Some (TType_app (tcr, tinst, KnownNull))
+    | TType_ucase _ -> None
+    | TType_tuple _ -> None
+    | TType_fun (d, r, _nullness) -> Some (TType_fun (d, r, KnownNull))
+    | TType_forall _ -> None
+    | TType_measure _ -> None
+
+// TODO NULLNESS: Assess for completeness
+let applyNullness nullness (ty:TType) =
+  match nullness with 
+  | NullnessInfo.WithoutNull 
+  | NullnessInfo.Oblivious -> ty
+  | NullnessInfo.WithNull -> 
+      match tryAddNullToTy ty with 
+      | None -> ty
+      | Some ty -> ty
+
 let rec remapTypeAux (tyenv : Remap) (ty:TType) =
   let ty = stripTyparEqns ty
   match ty with
-  | TType_var tp as ty       -> instTyparRef tyenv.tpinst ty tp
+  | TType_var (tp, nullnessInfo) as ty -> 
+      let nullness = nullnessInfo.Evaluate()  // TODO - nullness inference variables are never attached to type variables
+      let res = instTyparRef tyenv.tpinst ty tp
+      applyNullness nullness res
+
   | TType_app (tcr, tinst, nullness) as ty -> 
       match tyenv.tyconRefRemap.TryFind tcr with 
       | Some tcr' ->  TType_app (tcr', remapTypesAux tyenv tinst, nullness)
@@ -600,12 +625,12 @@ let mkByrefTyWithInference (g:TcGlobals) ty1 ty2 =
     else 
         TType_app (g.byref_tcr, [ty1], KnownNonNull) 
 
-let mkArrayTy (g:TcGlobals) rank ty m =
+let mkArrayTy (g:TcGlobals) rank nullness ty m =
     if rank < 1 || rank > 32 then
         errorR(Error(FSComp.SR.tastopsMaxArrayThirtyTwo(rank), m))
-        TType_app (g.il_arr_tcr_map.[3], [ty], KnownNonNull)
+        TType_app (g.il_arr_tcr_map.[3], [ty], nullness)
     else
-        TType_app (g.il_arr_tcr_map.[rank - 1], [ty], KnownNonNull)
+        TType_app (g.il_arr_tcr_map.[rank - 1], [ty], nullness)
 
 //--------------------------------------------------------------------------
 // Tuple compilation (types)
@@ -703,27 +728,6 @@ let reduceTyconMeasureableOrProvided (g:TcGlobals) (tycon:Tycon) tyargs =
 let reduceTyconRefMeasureableOrProvided (g:TcGlobals) (tcref:TyconRef) tyargs = 
     reduceTyconMeasureableOrProvided g tcref.Deref tyargs
 
-let tryAddNullToTy (ty:TType) = 
-    let ty = stripTyparEqns ty
-    match ty with
-    | TType_var _ -> None
-    | TType_app (tcr, tinst, _nullness) -> Some (TType_app (tcr, tinst, KnownNull))
-    | TType_ucase _ -> None
-    | TType_tuple _ -> None
-    | TType_fun (d, r, _nullness) -> Some (TType_fun (d, r, KnownNull))
-    | TType_forall _ -> None
-    | TType_measure _ -> None
-
-// TODO NULLNESS: Assess for completeness
-let applyNullness nullness (ty:TType) =
-  match nullness with 
-  | NullnessInfo.WithoutNull 
-  | NullnessInfo.Oblivious -> ty
-  | NullnessInfo.WithNull -> 
-      match tryAddNullToTy ty with 
-      | None -> ty
-      | Some ty -> ty
-
 let rec stripTyEqnsA g canShortcut ty = 
     let ty = stripTyparEqnsAux canShortcut ty 
     match ty with 
@@ -802,8 +806,8 @@ let destFunTy      g ty = ty |> stripTyEqns g |> (function TType_fun (tyv, tau, 
 let destAnyTupleTy    g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, l) -> tupInfo, l | _ -> failwith "destAnyTupleTy: not a tuple type")
 let destRefTupleTy    g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, l) when not (evalTupInfoIsStruct tupInfo) -> l | _ -> failwith "destRefTupleTy: not a reference tuple type")
 let destStructTupleTy    g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, l) when evalTupInfoIsStruct tupInfo -> l | _ -> failwith "destStructTupleTy: not a struct tuple type")
-let destTyparTy    g ty = ty |> stripTyEqns g |> (function TType_var v -> v | _ -> failwith "destTyparTy: not a typar type")
-let destAnyParTy   g ty = ty |> stripTyEqns g |> (function TType_var v -> v | TType_measure unt -> destUnitParMeasure g unt | _ -> failwith "destAnyParTy: not a typar or unpar type")
+let destTyparTy    g ty = ty |> stripTyEqns g |> (function TType_var (v, _nullness) -> v | _ -> failwith "destTyparTy: not a typar type")
+let destAnyParTy   g ty = ty |> stripTyEqns g |> (function TType_var (v, _nullness) -> v | TType_measure unt -> destUnitParMeasure g unt | _ -> failwith "destAnyParTy: not a typar or unpar type")
 let destMeasureTy  g ty = ty |> stripTyEqns g |> (function TType_measure m -> m | _ -> failwith "destMeasureTy: not a unit-of-measure type")
 let isFunTy        g ty = ty |> stripTyEqns g |> (function TType_fun _ -> true | _ -> false)
 let isForallTy     g ty = ty |> stripTyEqns g |> (function TType_forall _ -> true | _ -> false)
@@ -829,14 +833,14 @@ let isAppTy   g ty = ty |> stripTyEqns g |> (function TType_app _ -> true | _ ->
 let tryAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst, _) -> ValueSome (tcref, tinst) | _ -> ValueNone) 
 let destAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst, _) -> tcref, tinst | _ -> failwith "destAppTy")
 let tcrefOfAppTy  g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref | _ -> failwith "tcrefOfAppTy") 
-let nullnessOfTy  g ty = ty |> stripTyEqns g |> (function TType_app(_, _, nullness) | TType_fun (_, _, nullness) -> nullness | _ -> failwith "nullnessOfTy") 
+let nullnessOfTy  g ty = ty |> stripTyEqns g |> (function TType_app(_, _, nullness) | TType_fun (_, _, nullness) | TType_var (_, nullness) -> nullness | _ -> KnownNonNull) 
 let argsOfAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(_, tinst, _) -> tinst | _ -> [])
-let tryDestTyparTy g ty = ty |> stripTyEqns g |> (function TType_var v -> ValueSome v | _ -> ValueNone)
+let tryDestTyparTy g ty = ty |> stripTyEqns g |> (function TType_var (v, _nullness) -> ValueSome v | _ -> ValueNone)
 let tryDestFunTy   g ty = ty |> stripTyEqns g |> (function TType_fun (tyv, tau, _nullness) -> ValueSome(tyv, tau) | _ -> ValueNone)
 let tryDestAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> ValueSome tcref | _ -> ValueNone)
 
-let tryAnyParTy    g ty = ty |> stripTyEqns g |> (function TType_var v -> ValueSome v | TType_measure unt when isUnitParMeasure g unt -> ValueSome(destUnitParMeasure g unt) | _ -> ValueNone)
-let tryAnyParTyOption  g ty = ty |> stripTyEqns g |> (function TType_var v -> Some v | TType_measure unt when isUnitParMeasure g unt -> Some(destUnitParMeasure g unt) | _ -> None)
+let tryAnyParTy    g ty = ty |> stripTyEqns g |> (function TType_var (v, _nullness) -> ValueSome v | TType_measure unt when isUnitParMeasure g unt -> ValueSome(destUnitParMeasure g unt) | _ -> ValueNone)
+let tryAnyParTyOption  g ty = ty |> stripTyEqns g |> (function TType_var (v, _nullness) -> Some v | TType_measure unt when isUnitParMeasure g unt -> Some(destUnitParMeasure g unt) | _ -> None)
 let (|AppTy|_|) g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst, _) -> Some (tcref, tinst) | _ -> None) 
 let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tupInfo, tys) when not (evalTupInfoIsStruct tupInfo) -> Some tys | _ -> None)
 let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(dty, rty, _nullness) -> Some (dty, rty) | _ -> None)
@@ -979,13 +983,13 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
     match ty1, ty2 with
     | TType_forall(tps1, rty1), TType_forall(tps2, rty2) -> 
         typarsAEquivAux erasureFlag g aenv tps1 tps2 && typeAEquivAux erasureFlag g (aenv.BindEquivTypars tps1 tps2) rty1 rty2
-    | TType_var tp1, TType_var tp2 when typarEq tp1 tp2 -> 
+    | TType_var (tp1, _nullness1), TType_var (tp2, _nullness2) when typarEq tp1 tp2 -> // NOTE: nullness annotations are ignored for type equivalence
         true
-    | TType_var tp1, _ ->
+    | TType_var (tp1, _nullness1), _ ->
         match aenv.EquivTypars.TryFind tp1 with
         | Some v -> typeEquivAux erasureFlag g v ty2
         | None -> false
-    | TType_app (tc1, b1, _nullness1)  , TType_app (tc2, b2, _nullness2) -> 
+    | TType_app (tc1, b1, _nullness1)  , TType_app (tc2, b2, _nullness2) -> // NOTE: nullness annotations are ignored for type equivalence
         tcrefAEquiv g aenv tc1 tc2 &&
         typesAEquivAux erasureFlag g aenv b1 b2
     | TType_ucase (UCRef(tc1, n1), b1)  , TType_ucase (UCRef(tc2, n2), b2) -> 
@@ -994,7 +998,7 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         typesAEquivAux erasureFlag g aenv b1 b2
     | TType_tuple (s1, l1), TType_tuple (s2, l2) -> 
         structnessAEquiv s1 s2 && typesAEquivAux erasureFlag g aenv l1 l2
-    | TType_fun (dtys1, rty1, _nullness1), TType_fun (dtys2, rty2, _nullness2) -> 
+    | TType_fun (dtys1, rty1, _nullness1), TType_fun (dtys2, rty2, _nullness2) -> // NOTE: nullness annotations are ignored for type equivalence
         typeAEquivAux erasureFlag g aenv dtys1 dtys2 && typeAEquivAux erasureFlag g aenv rty1 rty2
     | TType_measure m1, TType_measure m2 -> 
         match erasureFlag with 
@@ -1046,8 +1050,10 @@ let rec getErasedTypes g ty =
     match ty with
     | TType_forall(_, rty) -> 
         getErasedTypes g rty
-    | TType_var tp -> 
-        if tp.IsErased then [ty] else []
+    | TType_var (tp, nullness) -> 
+        match nullness.Evaluate() with
+        | NullnessInfo.WithNull -> [ty] // with-null annotations can't be tested at runtime (TODO: for value types Nullable<_> they can be)
+        | _ -> if tp.IsErased then [ty] else []
     | TType_app (_, b, nullness) ->
         match nullness.Evaluate() with
         | NullnessInfo.WithNull -> [ty]
@@ -2088,7 +2094,7 @@ and accFreeInType opts ty acc  =
     | TType_fun (d, r, _nullness) -> 
        // note, nullness variables are _not_ part of the type system proper
        accFreeInType opts d (accFreeInType opts r acc)
-    | TType_var r -> accFreeTyparRef opts r acc
+    | TType_var (r, _nullness) -> accFreeTyparRef opts r acc
     | TType_forall (tps, r) -> unionFreeTyvars (boundTypars opts tps (freeInType opts r)) acc
     | TType_measure unt -> accFreeInMeasure opts unt acc
 
@@ -2175,7 +2181,7 @@ and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty  =
     | TType_app (_, tinst, _nullness) -> accFreeInTypesLeftToRight g cxFlag thruFlag acc tinst 
     | TType_ucase (_, tinst) -> accFreeInTypesLeftToRight g cxFlag thruFlag acc tinst 
     | TType_fun (d, r, _nullness) -> accFreeInTypeLeftToRight g cxFlag thruFlag (accFreeInTypeLeftToRight g cxFlag thruFlag acc d ) r
-    | TType_var r -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc r 
+    | TType_var (r, _nullness) -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc r 
     | TType_forall (tps, r) -> unionFreeTyparsLeftToRight (boundTyparsLeftToRight g cxFlag thruFlag tps (accFreeInTypeLeftToRight g cxFlag thruFlag emptyFreeTyparsLeftToRight r)) acc
     | TType_measure unt -> List.foldBack (fun (tp, _) acc -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc tp) (ListMeasureVarOccsWithNonZeroExponents unt) acc
 
@@ -2574,7 +2580,7 @@ module SimplifyTypes =
 
     let accTyparCounts z ty =
         // Walk type to determine typars and their counts (for pprinting decisions) 
-        foldTypeButNotConstraints (fun z ty -> match ty with | TType_var tp when tp.Rigidity = TyparRigidity.Rigid  -> incM tp z | _ -> z) z ty
+        foldTypeButNotConstraints (fun z ty -> match ty with | TType_var (tp, _nullness) when tp.Rigidity = TyparRigidity.Rigid  -> incM tp z | _ -> z) z ty
 
     let emptyTyparCounts = Zmap.empty typarOrder
 
@@ -3236,24 +3242,34 @@ module DebugPrint = begin
          else  
              tupleL tinstL ^^ tcL
             
+    and auxAddNullness coreL (nullness: Nullness) = 
+        match nullness.Evaluate() with
+        | NullnessInfo.WithNull -> coreL ^^ wordL (tagText "?")
+        | NullnessInfo.WithoutNull -> coreL
+        | NullnessInfo.Oblivious -> coreL ^^ wordL (tagText "%")
+
     and auxTypeWrapL env isAtomic ty = 
         let wrap x = bracketIfL isAtomic x in // wrap iff require atomic expr 
         match stripTyparEqns ty with
         | TType_forall (typars, rty) -> 
            (leftL (tagText "!") ^^ layoutTyparDecls typars --- auxTypeL env rty) |> wrap
-        | TType_ucase (UCRef(tcref, _), tinst)  
-        | TType_app (tcref, tinst, _)   -> 
+        | TType_ucase (UCRef(tcref, _), tinst) ->
            let prefix = tcref.IsPrefixDisplay
            let tcL = layoutTyconRef tcref
            auxTyparsL env tcL prefix tinst
-        | TType_tuple (_tupInfo, tys) -> sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
+        | TType_app (tcref, tinst, nullness)   -> 
+           let prefix = tcref.IsPrefixDisplay
+           let tcL = layoutTyconRef tcref
+           let coreL = auxTyparsL env tcL prefix tinst
+           auxAddNullness coreL nullness
+        | TType_tuple (_tupInfo, tys) -> 
+            sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
         | TType_fun (f, x, nullness) -> 
-           let core = ((auxTypeAtomL env f ^^ wordL (tagText "->")) --- auxTypeL env x)  |> wrap
-           match nullness.Evaluate() with
-           | NullnessInfo.WithNull -> core ^^ wordL (tagText "| null")
-           | NullnessInfo.WithoutNull -> core
-           | NullnessInfo.Oblivious -> core ^^ wordL (tagText "| lol")
-        | TType_var typar           -> auxTyparWrapL env isAtomic typar 
+           let coreL = ((auxTypeAtomL env f ^^ wordL (tagText "->")) --- auxTypeL env x)  |> wrap
+           auxAddNullness coreL nullness
+        | TType_var (typar, nullness) ->
+           let coreL = auxTyparWrapL env isAtomic typar 
+           auxAddNullness coreL nullness
         | TType_measure unt -> 
 #if DEBUG
           leftL (tagText "{") ^^
@@ -7382,7 +7398,7 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
             sprintf "System.Tuple%s"(tyargsEnc g (gtpsType, gtpsMethod) tys)
     | TType_fun (f, x, _nullness)           -> 
         "Microsoft.FSharp.Core.FSharpFunc" + tyargsEnc g (gtpsType, gtpsMethod) [f;x]
-    | TType_var typar           -> 
+    | TType_var (typar, _nullness) -> 
         typarEnc g (gtpsType, gtpsMethod) typar
     | TType_measure _ -> "?"
 

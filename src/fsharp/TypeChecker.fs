@@ -4606,7 +4606,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
 
     | SynType.Array (n, elemTy, m) -> 
         let elemTy, tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv elemTy
-        mkArrayTy cenv.g n elemTy m, tpenv
+        mkArrayTy cenv.g n KnownNonNull elemTy m, tpenv
 
     | SynType.Var (tp, _) -> 
         let tp', tpenv = TcTyparOrMeasurePar optKind cenv env newOk tpenv tp
@@ -4650,17 +4650,21 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
 
     | SynType.WithNull(innerTy, m) -> 
         let innerTyC, tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv innerTy
-        if TypeNullNever cenv.g innerTyC then
-            let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC
-            errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString, tyString), m)) 
-        match tryAddNullToTy innerTyC with 
-        | None -> 
-            let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC
-            errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString, tyString), m)) 
+        if cenv.g.langFeatureNullness() then 
+            if TypeNullNever cenv.g innerTyC then
+                let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC
+                errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString), m)) 
+            match tryAddNullToTy innerTyC with 
+            | None -> 
+                let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC
+                errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString), m)) 
+                innerTyC, tpenv
+            | Some innerTyCWithNull ->
+                AddCxTypeMustSupportNull env.DisplayEnv cenv.css m NoTrace innerTyCWithNull
+                innerTyCWithNull, tpenv
+        else
+            warning(Error(FSComp.SR.tcNullnessCheckingNotEnabled(), m)) 
             innerTyC, tpenv
-        | Some innerTyNull ->
-            AddCxTypeMustSupportNull env.DisplayEnv cenv.css m NoTrace innerTyNull
-            innerTyNull, tpenv
 
     | SynType.MeasurePower(ty, exponent, m) ->
         match optKind with

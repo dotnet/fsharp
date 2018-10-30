@@ -9,6 +9,8 @@
 #nowarn "69" // Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.
 #nowarn "77" // Member constraints with the name 'Exp' are given special status by the F# compiler as certain .NET types are implicitly augmented with this member. This may result in compilation failures if you attempt to invoke the member constraint from your own code.
 #nowarn "3218" // mismatch of parameter name for 'fst' and 'snd'
+#nowarn "3244" // no nullness checking
+#nowarn "3245" // no nullness checking
 
 namespace Microsoft.FSharp.Core
 
@@ -821,7 +823,7 @@ namespace Microsoft.FSharp.Core
                     
             /// Implements generic comparison between two objects. This corresponds to the pseudo-code in the F#
             /// specification.  The treatment of NaNs is governed by "comp".
-            let rec GenericCompare (comp:GenericComparer) (xobj:obj,yobj:obj) = 
+            let rec GenericCompare (comp:GenericComparer) (xobj:obj, yobj:obj) = 
                 (*if objEq xobj yobj then 0 else *)
                   match xobj,yobj with 
                    | null,null -> 0
@@ -3326,7 +3328,7 @@ namespace Microsoft.FSharp.Core
             | _ -> None
 
         [<CompiledName("IsNull")>]
-        let inline isNull (value : 'T) = 
+        let inline isNull (value : 'T when 'T : not struct and 'T : null) = 
             match value with 
             | null -> true 
             | _ -> false

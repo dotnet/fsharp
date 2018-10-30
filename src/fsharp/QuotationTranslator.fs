@@ -807,8 +807,8 @@ and ConvType cenv env m ty =
 
     | TType_fun(a,b,_nullness) -> QP.mkFunTy(ConvType cenv env m a,ConvType cenv env m b)
     | TType_tuple(tupInfo,l)  -> ConvType cenv env m (mkCompiledTupleTy cenv.g (evalTupInfoIsStruct tupInfo) l)
-    | TType_var(tp)           -> QP.mkVarTy(ConvTyparRef cenv env m tp)
-    | TType_forall(_spec,_ty)   -> wfail(Error(FSComp.SR.crefNoInnerGenericsInQuotations(),m))
+    | TType_var(tp, _nullness) -> QP.mkVarTy(ConvTyparRef cenv env m tp)
+    | TType_forall(_spec,_ty) -> wfail(Error(FSComp.SR.crefNoInnerGenericsInQuotations(),m))
     | _ -> wfail(Error (FSComp.SR.crefQuotationsCantContainThisType(),m))
 
 and ConvTypes cenv env m tys =

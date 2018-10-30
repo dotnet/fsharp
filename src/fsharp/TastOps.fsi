@@ -1083,7 +1083,7 @@ val isArray1DTy       : TcGlobals -> TType -> bool
 val destArrayTy     : TcGlobals -> TType -> TType
 val destListTy      : TcGlobals -> TType -> TType
 
-val mkArrayTy         : TcGlobals -> int -> TType -> range -> TType
+val mkArrayTy         : TcGlobals -> int -> Nullness -> TType -> range -> TType
 val isArrayTyconRef      : TcGlobals -> TyconRef -> bool
 val rankOfArrayTyconRef : TcGlobals -> TyconRef -> int
 

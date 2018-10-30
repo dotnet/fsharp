@@ -4378,9 +4378,10 @@ appType:
   | appType QMARK
     { SynType.WithNull($1,lhs parseState) }
 
-  | appType OR NULL
+/*
+| appType OR NULL
     { SynType.WithNull($1,lhs parseState) }
-
+*/
   | appType arrayTypeSuffix 
       {  SynType.Array($2,$1,lhs parseState) }
 

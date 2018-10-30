@@ -27,9 +27,9 @@ namespace {0}
 open System.Reflection
 
 module internal {1} =
-    type private C (_dummy:System.Object) = class end
+    type private C (_dummy:System.Int32) = class end
     let mutable Culture = System.Globalization.CultureInfo.CurrentUICulture
-    let ResourceManager = new System.Resources.ResourceManager(""{2}"", C(null).GetType().GetTypeInfo().Assembly)
+    let ResourceManager = new System.Resources.ResourceManager(""{2}"", C(0).GetType().GetTypeInfo().Assembly)
     let GetString(name:System.String) : System.String = ResourceManager.GetString(name, Culture)"
 
     let boilerplateGetObject = "    let GetObject(name:System.String) : System.Object = ResourceManager.GetObject(name, Culture)"

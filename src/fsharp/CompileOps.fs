@@ -194,6 +194,7 @@ let GetRangeOfDiagnostic(err:PhasedDiagnostic) =
       | ConstraintSolverTupleDiffLengths(_, _, _, m, _) 
       | ConstraintSolverInfiniteTypes(_, _, _, _, m, _) 
       | ConstraintSolverMissingConstraint(_, _, _, m, _)
+      | ConstraintSolverNullnessWarningEquivWithTypes(_, _, _, _, _, m, _)
       | ConstraintSolverNullnessWarningWithTypes(_, _, _, _, _, m, _)
       | ConstraintSolverNullnessWarningWithType(_, _, _, m, _)
       | ConstraintSolverTypesNotInEqualityRelation(_, _, _, m, _, _)
@@ -373,6 +374,7 @@ let GetDiagnosticNumber(err:PhasedDiagnostic) =
       | :? TypeProviderError as e -> e.Number
 #endif
       | ErrorsFromAddingSubsumptionConstraint (_, _, _, _, _, ContextInfo.DowncastUsedInsteadOfUpcast _, _) -> fst (FSComp.SR.considerUpcast("", ""))
+      | ConstraintSolverNullnessWarningEquivWithTypes _ -> 3244
       | ConstraintSolverNullnessWarningWithTypes _ -> 3244
       | ConstraintSolverNullnessWarningWithType _ -> 3245
       | _ -> 193
@@ -446,7 +448,8 @@ let ConstraintSolverTupleDiffLengthsE() = DeclareResourceString("ConstraintSolve
 let ConstraintSolverInfiniteTypesE() = DeclareResourceString("ConstraintSolverInfiniteTypes", "%s%s")
 let ConstraintSolverMissingConstraintE() = DeclareResourceString("ConstraintSolverMissingConstraint", "%s")
 let ConstraintSolverTypesNotInEqualityRelation1E() = DeclareResourceString("ConstraintSolverTypesNotInEqualityRelation1", "%s%s")
-let ConstraintSolverNullnessWarningWithTypesE() = DeclareResourceString("ConstraintSolverNullnessWarningWithTypes", "%s%s")
+let ConstraintSolverNullnessWarningEquivWithTypesE() = DeclareResourceString("ConstraintSolverNullnessWarningEquivWithTypes", "%s%s%s%s")
+let ConstraintSolverNullnessWarningWithTypesE() = DeclareResourceString("ConstraintSolverNullnessWarningWithTypes", "%s%s%s%s")
 let ConstraintSolverNullnessWarningWithTypeE() = DeclareResourceString("ConstraintSolverNullnessWarningWithType", "%s")
 let ConstraintSolverTypesNotInEqualityRelation2E() = DeclareResourceString("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
 let ConstraintSolverTypesNotInSubsumptionRelationE() = DeclareResourceString("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
@@ -637,11 +640,20 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           if m.StartLine <> m2.StartLine then 
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
 
-      | ConstraintSolverNullnessWarningWithTypes(denv, ty1, ty2, _nullness, _nullness2, m, m2) ->
+      | ConstraintSolverNullnessWarningEquivWithTypes(denv, ty1, ty2, nullness1, nullness2, m, m2) ->
           
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
-          os.Append(ConstraintSolverNullnessWarningWithTypesE().Format t1 t2) |> ignore
+          os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1 t2 (nullness1.ToString()) (nullness2.ToString())) |> ignore
+
+          if m.StartLine <> m2.StartLine then
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+
+      | ConstraintSolverNullnessWarningWithTypes(denv, ty1, ty2, nullness1, nullness2, m, m2) ->
+          
+          let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+
+          os.Append(ConstraintSolverNullnessWarningWithTypesE().Format t1 t2 (nullness1.ToString()) (nullness2.ToString())) |> ignore
 
           if m.StartLine <> m2.StartLine then
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
@@ -658,7 +670,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           
-          os.Append(ConstraintSolverTypesNotInEqualityRelation1E().Format t1 t2 )  |> ignore
+          os.Append(ConstraintSolverTypesNotInEqualityRelation1E().Format t1 t2)  |> ignore
           
           if m.StartLine <> m2.StartLine then
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
@@ -2251,6 +2263,8 @@ type TcConfigBuilder =
       mutable errorSeverityOptions: FSharpErrorSeverityOptions
       mutable mlCompatibility: bool
       mutable assumeNullOnImport: bool
+      mutable checkNullness: bool
+      mutable langVersion: double
       mutable checkOverflow: bool
       mutable showReferenceResolutions:bool
       mutable outputFile : string option
@@ -2412,6 +2426,8 @@ type TcConfigBuilder =
           useHighEntropyVA = false
           mlCompatibility = false
           assumeNullOnImport = false
+          checkNullness = false
+          langVersion = 5.0
           checkOverflow = false
           showReferenceResolutions = false
           outputFile = None
@@ -2885,6 +2901,8 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     member x.errorSeverityOptions = data.errorSeverityOptions
     member x.mlCompatibility = data.mlCompatibility
     member x.assumeNullOnImport = data.assumeNullOnImport
+    member x.checkNullness = data.checkNullness
+    member x.langVersion = data.langVersion
     member x.checkOverflow = data.checkOverflow
     member x.showReferenceResolutions = data.showReferenceResolutions
     member x.outputFile  = data.outputFile
@@ -4797,7 +4815,8 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
         let tcGlobals = TcGlobals(tcConfig.compilingFslib, ilGlobals, fslibCcu, 
                                     tcConfig.implicitIncludeDir, tcConfig.mlCompatibility, 
-                                    tcConfig.isInteractive, tcConfig.assumeNullOnImport, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations, tcConfig.noDebugData )
+                                    tcConfig.isInteractive, tcConfig.assumeNullOnImport, tcConfig.checkNullness, tcConfig.langVersion, 
+                                    tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations, tcConfig.noDebugData )
 
 #if DEBUG
         // the global_g reference cell is used only for debug printing

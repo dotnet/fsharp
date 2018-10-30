@@ -129,8 +129,11 @@
   <data name="ConstraintSolverMissingConstraint" xml:space="preserve">
     <value>A type parameter is missing a constraint '{0}'</value>
   </data>
+  <data name="ConstraintSolverNullnessWarningEquivWithTypes" xml:space="preserve">
+    <value>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability '{2}' and '{3}'.</value>
+  </data>
   <data name="ConstraintSolverNullnessWarningWithTypes" xml:space="preserve">
-    <value>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</value>
+    <value>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability '{2}' and '{3}'.</value>
   </data>
   <data name="ConstraintSolverNullnessWarningWithType" xml:space="preserve">
     <value>Nullness warning: The type '{0}' does not support nullness.</value>

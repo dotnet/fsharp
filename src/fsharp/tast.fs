@@ -2258,7 +2258,7 @@ and
         let ty = x.typar_astype
         match box ty with 
         | null -> 
-            let ty2 = TType_var x
+            let ty2 = TType_var (x, Nullness.Known NullnessInfo.WithoutNull) // TODO pass in a nullness thing here?
             x.typar_astype <- ty2
             ty2
         | _ -> ty
@@ -3906,7 +3906,7 @@ and Nullness =
        | Known info -> info
        | Variable v -> v.Evaluate()
 
-   override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.Oblivious -> " lol"
+   override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.Oblivious -> "%"
 
 and NullnessVar = 
     { mutable solution: Nullness option }
@@ -3973,7 +3973,7 @@ and
     | TType_ucase of  UnionCaseRef * TypeInst
 
     /// Indicates the type is a variable type, whether declared, generalized or an inference type parameter  
-    | TType_var of Typar 
+    | TType_var of Typar * Nullness
 
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of Measure
@@ -3985,10 +3985,10 @@ and
         match x with
         | TType_forall (_tps, ty)        -> ty.GetAssemblyName()
         | TType_app (tcref, _tinst, _)   -> tcref.CompilationPath.ILScopeRef.QualifiedName
-        | TType_tuple (_tupInfo, _tinst) -> ""
+        | TType_tuple _                  -> ""
         | TType_fun _                    -> ""
         | TType_measure _ms              -> ""
-        | TType_var tp                   -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
+        | TType_var (tp, _nullness)      -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
         | TType_ucase (_uc,_tinst)       ->
             let (TILObjectReprData(scope,_nesting,_definition)) = _uc.Tycon.ILTyconInfo
             scope.QualifiedName
@@ -4007,7 +4007,7 @@ and
              + String.concat "," (List.map string tinst) + ")"
         | TType_fun (d,r,nullness) -> "(" + string d + " -> " + string r + ")" + nullness.ToString()
         | TType_ucase (uc,tinst) -> "ucase " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
-        | TType_var tp -> 
+        | TType_var (tp, _nullness) -> 
             match tp.Solution with 
             | None -> tp.DisplayName
             | Some _ -> tp.DisplayName + " (solved)"
@@ -5330,7 +5330,7 @@ let rec stripUnitEqnsAux canShortcut unt =
 
 let rec stripTyparEqnsAux canShortcut ty = 
     match ty with 
-    | TType_var r -> 
+    | TType_var (r, _nullness) -> 
         match r.Solution with
         | Some soln -> 
             if canShortcut then 
@@ -5339,7 +5339,7 @@ let rec stripTyparEqnsAux canShortcut ty =
                 // This is only because IterType likes to walk _all_ the constraints _everywhere_ in a type, including
                 // those attached to _solved_ type variables. In an ideal world this would never be needed - see the notes
                 // on IterType.
-                | TType_var r2 when r2.Constraints.IsEmpty -> 
+                | TType_var (r2, _) when r2.Constraints.IsEmpty -> 
                    match r2.Solution with
                    | None -> ()
                    | Some _ as soln2 -> 

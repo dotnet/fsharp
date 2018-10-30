@@ -1377,7 +1377,7 @@ let ItemsAreEffectivelyEqual g orig other =
         nm1 = nm2 && 
         (typeEquiv g (mkTyparTy tp1) (mkTyparTy tp2) || 
          match stripTyparEqns (mkTyparTy tp1), stripTyparEqns (mkTyparTy tp2) with 
-         | TType_var tp1, TType_var tp2 -> 
+         | TType_var (tp1, _), TType_var (tp2, _) -> 
             not tp1.IsCompilerGenerated && not tp1.IsFromError && 
             not tp2.IsCompilerGenerated && not tp2.IsFromError && 
             tp1.Range = tp2.Range

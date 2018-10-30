@@ -919,7 +919,9 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
                     //      f<x -> x>x
                     //      f<x # x>x
                     //      f<x ' x>x
+                    //      f<x?>x
                     | DEFAULT | COLON | COLON_GREATER | STRUCT | NULL | DELEGATE | AND | WHEN 
+                    | QMARK | HACKNULL
                     | DOT_DOT
                     | INFIX_AT_HAT_OP "^" 
                     | INFIX_AT_HAT_OP "^-" 

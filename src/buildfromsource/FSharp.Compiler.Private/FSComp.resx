@@ -2676,6 +2676,12 @@
   <data name="optsWarnOn" xml:space="preserve">
     <value>Enable specific warnings that may be off by default</value>
   </data>
+  <data name="optsCheckNulls" xml:space="preserve">
+    <value>Enable nullness declarations and checks</value>
+  </data>
+  <data name="optsLangVersion" xml:space="preserve">
+    <value>Specify the language version</value>
+  </data>
   <data name="optsChecked" xml:space="preserve">
     <value>Generate overflow checks</value>
   </data>
@@ -4370,6 +4376,9 @@
     <value>This type does not inherit Attribute, it will not work correctly with other .NET languages.</value>
   </data>
   <data name="tcTypeDoesNotHaveAnyNull" xml:space="preserve">
-    <value>The type '{0}' never has 'null' as a value. To specify a nullable value type use Nullable&lt;{1}&gt;</value>
+    <value>The type '{0}' does not support a nullness qualitification.</value>
+  </data>
+  <data name="tcNullnessCheckingNotEnabled" xml:space="preserve">
+    <value>The /checknulls language feature is not enabled</value>
   </data>
 </root>

@@ -7068,8 +7068,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
-        <source>The type '{0}' never has 'null' as a value. To specify a nullable value type use Nullable&lt;{1}&gt;</source>
-        <target state="new">The type '{0}' never has 'null' as a value. To specify a nullable value type use Nullable&lt;{1}&gt;</target>
+        <source>The type '{0}' does not support a nullness qualitification.</source>
+        <target state="new">The type '{0}' does not support a nullness qualitification.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExceptionConstructorDoesNotHaveFieldWithGivenName">
@@ -7085,6 +7085,21 @@
       <trans-unit id="tcConstructorDoesNotHaveFieldWithGivenName">
         <source>The constructor does not have a field named '{0}'.</source>
         <target state="new">The constructor does not have a field named '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsCheckNulls">
+        <source>Enable nullness declarations and checks</source>
+        <target state="new">Enable nullness declarations and checks</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNullnessCheckingNotEnabled">
+        <source>The /checknulls language feature is not enabled</source>
+        <target state="new">The /checknulls language feature is not enabled</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersion">
+        <source>Specify the language version</source>
+        <target state="new">Specify the language version</target>
         <note />
       </trans-unit>
     </body>

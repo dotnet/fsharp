@@ -862,6 +862,8 @@ optsWarnaserror,"Report specific warnings as errors"
 optsWarn,"Set a warning level (0-5)"
 optsNowarn,"Disable specific warning messages"
 optsWarnOn,"Enable specific warnings that may be off by default"
+optsCheckNulls,"Enable nullness declarations and checks"
+optsLangVersion,"Specify the language version"
 optsChecked,"Generate overflow checks"
 optsDefine,"Define conditional compilation symbols (Short form: -d)"
 optsMlcompatibility,"Ignore ML compatibility warnings"
@@ -1444,6 +1446,7 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3236,chkNoSpanLikeValueFromExpression,"A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope."
 3237,tastCantTakeAddressOfExpression,"Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address."
 3242,tcTypeDoesNotInheritAttribute,"This type does not inherit Attribute, it will not work correctly with other .NET languages."
-3243,tcTypeDoesNotHaveAnyNull,"The type '%s' never has 'null' as a value. To specify a nullable value type use Nullable<%s>"
+3243,tcTypeDoesNotHaveAnyNull,"The type '%s' does not support a nullness qualitification."
 #3244 reserved for ConstraintSolverNullnessWarningWithTypes
 #3245 reserved for ConstraintSolverNullnessWarningWithType
+3246,tcNullnessCheckingNotEnabled,"The /checknulls language feature is not enabled"

@@ -2032,6 +2032,7 @@ and FSharpType(cenv, ty:TType) =
     member __.HasNullAnnotation = 
        protect <| fun () -> 
         match stripTyparEqns ty with 
+        | TType_var (_, nullness) 
         | TType_app (_, _, nullness) 
         | TType_fun(_, _, nullness) -> match nullness.Evaluate() with NullnessInfo.WithNull -> true | _ -> false
         | TType_tuple (_, _) -> false
@@ -2089,7 +2090,8 @@ and FSharpType(cenv, ty:TType) =
     member __.GenericParameter = 
        protect <| fun () -> 
         match stripTyparEqns ty with 
-        | TType_var tp 
+        | TType_var (tp, _nullness) ->
+            FSharpGenericParameter (cenv, tp)
         | TType_measure (Measure.Var tp) -> 
             FSharpGenericParameter (cenv, tp)
         | _ -> invalidOp "not a generic parameter type"
@@ -2127,7 +2129,7 @@ and FSharpType(cenv, ty:TType) =
             let ty = stripTyEqnsWrtErasure EraseNone cenv.g ty
             match ty with
             | TType_forall _ ->  10000
-            | TType_var tp  -> 10100 + int32 tp.Stamp
+            | TType_var (tp, _nullness)  -> 10100 + int32 tp.Stamp
             | TType_app (tc1, b1, _)  -> 10200 + int32 tc1.Stamp + List.sumBy hashType b1
             | TType_ucase _   -> 10300  // shouldn't occur in symbols
             | TType_tuple (_, l1) -> 10400 + List.sumBy hashType l1

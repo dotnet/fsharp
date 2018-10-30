@@ -910,7 +910,7 @@ module private PrintTypes =
         match nullness.Evaluate() with
         | NullnessInfo.WithNull -> part2 ^^ rightL (tagText "?")
         | NullnessInfo.WithoutNull -> part2
-        | NullnessInfo.Oblivious -> part2 ^^ wordL (tagText "obliv")
+        | NullnessInfo.Oblivious -> part2 ^^ wordL (tagText "%")
 
     /// Layout a type, taking precedence into account to insert brackets where needed
     and layoutTypeWithInfoAndPrec denv env prec ty =
@@ -972,8 +972,10 @@ module private PrintTypes =
             bracketIfL (prec <= 4) (loop emptyL ty)
 
         // Layout a type variable . 
-        | TType_var r ->
-            layoutTyparRefWithInfo denv env r
+        | TType_var (r, nullness) ->
+            let part1 = layoutTyparRefWithInfo denv env r
+            let part2 = layoutNullness part1 nullness
+            part2
 
         | TType_measure unt -> layoutMeasure denv unt
 
@@ -2065,7 +2067,7 @@ let minimalStringsOfTwoTypes denv t1 t2=
         let denv = { denv with includeStaticParametersInTypeNames=true }
         let makeName t =
             let assemblyName = PrintTypes.layoutAssemblyName denv t |> function | null | "" -> "" | name -> sprintf " (%s)" name
-            sprintf "%s%s" (stringOfTy denv t1) assemblyName
+            sprintf "%s%s" (stringOfTy denv t) assemblyName
 
         (makeName t1,makeName t2,stringOfTyparConstraints denv tpcs)
     

@@ -448,7 +448,7 @@ and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         if tps.IsEmpty then GenTypeAux amap m tyenv VoidNotOK ptrsOK tau
         else EraseClosures.mkILTyFuncTy g.ilxPubCloEnv 
 
-    | TType_var tp -> mkILTyvarTy tyenv.[tp,m]
+    | TType_var (tp, _nullness) -> mkILTyvarTy tyenv.[tp,m]
 
     | TType_measure _ -> g.ilg.typ_Int32 
 
@@ -5471,7 +5471,7 @@ and GenBindingRhs cenv cgbuf eenv sp (vspec:Val) e =
                 (match StorageForVal vspec.Range vspec eenv with Local _ -> true | _ -> false) && 
                 (isLocalTypeFunc || 
                     (match ttype with 
-                     TType_var(typar) -> match typar.Solution with Some(TType_app(t,_,_))-> t.IsStructOrEnumTycon | _ -> false
+                     TType_var(typar, _) -> match typar.Solution with Some(TType_app(t,_,_))-> t.IsStructOrEnumTycon | _ -> false
                      | _ -> false))
             ) ->
             // type lambda with erased type arguments that is stored as local variable (not method or property)- inline body
