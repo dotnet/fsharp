@@ -89,6 +89,8 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
             if ok then optionsAssociation.Remove(projectContext) |> ignore
             optionsAssociation.Add(projectContext, updatedOptions)
 
+            projectContext.BinOutputPath <- Option.toObj site.CompilationBinOutputPath
+
         let info = (updatedFiles, updatedRefs)
         legacyProjectLookup.AddOrUpdate(projectId, info, fun _ _ -> info) |> ignore
 
