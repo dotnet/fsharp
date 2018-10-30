@@ -206,7 +206,7 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
         let projectDisplayName = projectDisplayNameOf projectFileName
         Some (workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName))
 
-    let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(package.ComponentModel.GetService<VisualStudioWorkspaceImpl>(), solution, projectInfoManager, package.ComponentModel.GetService<IWorkspaceProjectContextFactory>())
+    let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, projectInfoManager, package.ComponentModel.GetService<IWorkspaceProjectContextFactory>())
 
     override this.Initialize() = 
         base.Initialize()
