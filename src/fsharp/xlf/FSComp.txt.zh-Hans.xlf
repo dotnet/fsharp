@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="needs-review-translation">模式匹配表达式的所有分支必须返回相同类型的值。第一个分支返回“{0}”类型的值，但此分支返回“{1}”类型的值。</target>
+        <target state="needs-review-translation">模式匹配表达式的所有分支必须返回相同类型的值。第一个分支返回类型为“{0}”的值，但此分支返回类型为“{1}”的值。</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -344,7 +344,7 @@
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
         <source>Unrecognized option: '{0}'</source>
-        <target state="translated">无法识别的选项: '{0}'</target>
+        <target state="translated">无法识别的选项:“{0}”</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">
@@ -814,7 +814,7 @@
       </trans-unit>
       <trans-unit id="typrelInvalidValue">
         <source>Invalid value</source>
-        <target state="translated">值无效</target>
+        <target state="translated">无效值</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelSigImplNotCompatibleParamCountsDiffer">
@@ -7059,7 +7059,7 @@
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
         <source>Byref types are not allowed to have optional type extensions.</source>
-        <target state="new">Byref types are not allowed to have optional type extensions.</target>
+        <target state="translated">不允许 byref 类型具有可选类型扩展名。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoReturnOfLimitedSpan">
@@ -7069,22 +7069,22 @@
       </trans-unit>
       <trans-unit id="chkInvalidFunctionParameterType">
         <source>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</source>
-        <target state="new">The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</target>
+        <target state="translated">参数 "{0}" 的类型 "{1}" 无效。通用 IL 的规则不允许使用此类型。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInvalidFunctionReturnType">
         <source>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</source>
-        <target state="new">The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</target>
+        <target state="translated">函数或方法的返回类型 "{0}" 无效。通用 IL 的规则不允许使用此类型。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
         <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="new">Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</target>
+        <target state="translated">无法调用 byref 扩展方法 "{0}"。第一个参数要求该值是可变的或非只读的 byref 类型。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotPartiallyApplyExtensionMethodForByref">
         <source>Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</source>
-        <target state="new">Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</target>
+        <target state="translated">无法部分应用扩展方法 "{0}", 因为第一个参数是 byref 类型。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMemberInrefToByref">
