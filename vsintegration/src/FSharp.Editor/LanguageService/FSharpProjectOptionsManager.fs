@@ -302,6 +302,10 @@ type internal FSharpProjectOptionsManager
         settings: EditorOptions
     ) =
 
+    let projectDisplayNameOf projectFileName =
+        if String.IsNullOrWhiteSpace projectFileName then projectFileName
+        else Path.GetFileNameWithoutExtension projectFileName
+
     let reactor = new FSharpProjectOptionsReactor(workspace, settings, serviceProvider, checkerProvider)
 
     do

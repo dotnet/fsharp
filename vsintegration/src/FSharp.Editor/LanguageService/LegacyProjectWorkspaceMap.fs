@@ -27,6 +27,10 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
     let invalidPathChars = set (Path.GetInvalidPathChars())
     let optionsAssociation = ConditionalWeakTable<IWorkspaceProjectContext, string[]>()
     let isPathWellFormed (path: string) = not (String.IsNullOrWhiteSpace path) && path |> Seq.forall (fun c -> not (Set.contains c invalidPathChars))
+
+    let projectDisplayNameOf projectFileName =
+        if String.IsNullOrWhiteSpace projectFileName then projectFileName
+        else Path.GetFileNameWithoutExtension projectFileName
    
     let legacyProjectIdLookup = ConcurrentDictionary()
     let legacyProjectLookup = ConcurrentDictionary()
