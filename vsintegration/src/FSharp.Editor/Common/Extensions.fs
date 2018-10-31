@@ -5,6 +5,7 @@ module internal Microsoft.VisualStudio.FSharp.Editor.Extensions
 
 open System
 open System.IO
+open System.Linq
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Host
 open Microsoft.FSharp.Compiler.Ast

@@ -30,12 +30,18 @@ module private FSharpProjectOptionsHelpers =
         let sourcePaths, referencePaths, options =
             match cpsCommandLineOptions.TryGetValue(project.Id) with
             | true, (sourcePaths, options) -> sourcePaths, [||], options
-            | false, _ -> [||], [||], [||]
+            | false, _ -> 
+                if project.Documents.Count() = 1 then // Handle misc files / standalone files / script files
+                    let document = project.Documents.ElementAt(0)
+                    if project.FilePath = document.FilePath then
+                        [|document.FilePath|], [||], [||]
+                    else
+                        [||], [||], [||]
+                else 
+                    [||], [||], [||]
         {
             new IProvideProjectSite with
                 member x.GetProjectSite() =
-                    let fst (a, _, _) = a
-                    let snd (_, b, _) = b
                     let mutable errorReporter = 
                         let reporter = ProjectExternalErrorReporter(project.Id, "FS", serviceProvider)
                         Some(reporter:> IVsLanguageServiceBuildErrorReporter2)
@@ -83,8 +89,10 @@ module private FSharpProjectOptionsHelpers =
 
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
-    | TryGetOptions of Project * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option>
+    | TryGetOptionsByDocument of Document * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option>
+    | TryGetOptionsByProject of Project * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option>
     | ClearOptions of ProjectId
+    | ClearSingleFileOptionsCache of DocumentId
 
 [<Sealed>]
 type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, settings: EditorOptions, serviceProvider, checkerProvider: FSharpCheckerProvider) =
@@ -94,6 +102,42 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
     let cpsCommandLineOptions = new ConcurrentDictionary<ProjectId, string[] * string[]>()
 
     let cache = Dictionary<ProjectId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
+    let singleFileCache = Dictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
+
+    let rec tryComputeOptionsByFile (document: Document) =
+        let _, fileStamp = document.TryGetTextVersion()
+        match singleFileCache.TryGetValue(document.Id) with
+        | false, _ ->
+            let projectOptions =
+                {
+                    ProjectFileName = document.FilePath
+                    ProjectId = None
+                    SourceFiles = [|document.FilePath|]
+                    OtherOptions = [||]
+                    ReferencedProjects = [||]
+                    IsIncompleteTypeCheckEnvironment = false
+                    UseScriptResolutionRules = SourceFile.MustBeSingleFileProject (Path.GetFileName(document.FilePath))
+                    LoadTime = System.DateTime.Now
+                    UnresolvedReferences = None
+                    OriginalLoadReferences = []
+                    ExtraProjectInfo= None
+                    Stamp = Some(int64 (fileStamp.GetHashCode()))
+                }
+
+            checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = true, userOpName = "computeOptions")
+
+            let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
+
+            singleFileCache.[document.Id] <- (fileStamp, parsingOptions, projectOptions)
+
+            Some(parsingOptions, projectOptions)
+
+        | true, (fileStamp2, parsingOptions, projectOptions) ->
+            if fileStamp <> fileStamp2 then
+                singleFileCache.Remove(document.Id) |> ignore
+                tryComputeOptionsByFile document
+            else
+                Some(parsingOptions, projectOptions)
     
     let rec tryComputeOptions (project: Project) =
         let projectId = project.Id
@@ -194,7 +238,16 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
         async {
             while true do
                 match! agent.Receive() with
-                | FSharpProjectOptionsMessage.TryGetOptions(project, reply) ->
+                | FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply) ->
+                    try
+                        if document.Project.Name = FSharpConstants.FSharpMiscellaneousFiles then
+                            reply.Reply(tryComputeOptionsByFile document)
+                        else
+                            reply.Reply(tryComputeOptions document.Project)
+                    with
+                    | _ ->
+                        reply.Reply(None)
+                | FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply) ->
                     try
                         reply.Reply(tryComputeOptions project)
                     with
@@ -202,15 +255,23 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                         reply.Reply(None)
                 | FSharpProjectOptionsMessage.ClearOptions(projectId) ->
                     cache.Remove(projectId) |> ignore
+                | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
+                    singleFileCache.Remove(documentId) |> ignore
         }
 
     let agent = MailboxProcessor.Start((fun agent -> loop agent), cancellationToken = cancellationTokenSource.Token)
 
     member __.TryGetOptionsByProjectAsync(project) =
-        agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptions(project, reply))
+        agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply))
+
+    member __.TryGetOptionsByDocumentAsync(project) =
+        agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByDocument(project, reply))
 
     member __.ClearOptionsByProjectId(projectId) =
         agent.Post(FSharpProjectOptionsMessage.ClearOptions(projectId))
+
+    member __.ClearSingleFileOptionsCache(documentId) =
+        agent.Post(FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId))
 
     member __.SetCpsCommandLineOptions(projectId, sourcePaths, options) =
         cpsCommandLineOptions.[projectId] <- (sourcePaths, options)
@@ -259,9 +320,8 @@ type internal FSharpProjectOptionsManager
     member this.ClearInfoForProject(projectId:ProjectId) = 
         reactor.ClearOptionsByProjectId(projectId)
 
-    /// Clear a project from the single file project table
-    member this.ClearInfoForSingleFileProject(projectId) =
-        singleFileProjectTable.TryRemove(projectId) |> ignore
+    member this.ClearSingleFileOptionsCache(documentId) =
+        reactor.ClearSingleFileOptionsCache(documentId)
 
     /// Update a project in the single file project table
     member this.AddOrUpdateSingleFileProject(projectId, data) = singleFileProjectTable.[projectId] <- data
@@ -326,7 +386,7 @@ type internal FSharpProjectOptionsManager
                     Assert.Exception(ex)
                     return None
             | _ ->
-                match! reactor.TryGetOptionsByProjectAsync(document.Project) with
+                match! reactor.TryGetOptionsByDocumentAsync(document) with
                 | Some(parsingOptions, projectOptions) ->
                     return Some(parsingOptions, None, projectOptions)
                 | _ ->

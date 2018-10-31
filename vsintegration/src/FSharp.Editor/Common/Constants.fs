@@ -43,6 +43,9 @@ module internal FSharpConstants =
     /// "FSharp"
     let FSharpLanguageLongName = "FSharp"
 
+    [<Literal>]
+    let FSharpMiscellaneousFiles = "F# Miscellaneous Files"
+
 [<RequireQualifiedAccess>]
 module internal FSharpProviderConstants =
 
