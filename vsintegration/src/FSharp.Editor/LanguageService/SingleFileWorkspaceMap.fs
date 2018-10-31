@@ -32,11 +32,15 @@ type internal SingleFileWorkspaceMap(workspace: Workspace,
     let projectContext = projectContextFactory.CreateProjectContext(FSharpConstants.FSharpLanguageName, FSharpConstants.FSharpMiscellaneousFiles, null, Guid.NewGuid(), null, null)
 
     do
-        miscFilesWorkspace.DocumentOpened.Add(fun args ->
-            let document = args.Document
-            if document.Project.Language = FSharpConstants.FSharpLanguageName && workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath).Length = 0 then
-                projectContext.AddSourceFile(document.FilePath)
-                files.[document.FilePath] <- ()
+        miscFilesWorkspace.WorkspaceChanged.Add(fun args ->
+            match args.Kind with
+            | WorkspaceChangeKind.ProjectAdded ->
+                let documentId = miscFilesWorkspace.CurrentSolution.GetProject(args.ProjectId).DocumentIds.[0]
+                let document = miscFilesWorkspace.CurrentSolution.GetDocument(documentId)
+                if document.Project.Language = FSharpConstants.FSharpLanguageName && workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath).Length = 0 then
+                    projectContext.AddSourceFile(document.FilePath)
+                    files.[document.FilePath] <- ()
+            | _ -> ()
         )
 
         workspace.DocumentClosed.Add(fun args ->

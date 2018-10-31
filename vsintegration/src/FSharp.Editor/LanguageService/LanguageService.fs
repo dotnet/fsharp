@@ -144,7 +144,8 @@ type internal FSharpPackage() as this =
         vfsiToolWindow :> Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI
 
     // FSI-LINKAGE-POINT: unsited init
-    do Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
+    do 
+        Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
     override this.InitializeAsync(cancellationToken: CancellationToken, progress: IProgress<ServiceProgressData>) : Tasks.Task =
         // `base.` methods can't be called in the `async` builder, so we have to cache it
@@ -161,12 +162,22 @@ type internal FSharpPackage() as this =
 
                     // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
                     let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
+                    let projectInfoManager = this.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
+                    let solution = this.GetServiceAsync(typeof<SVsSolution>).Result
+                    let solution = solution :?> IVsSolution
+
+                    let projectContextFactory = this.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
+                    let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
+                    let miscFilesWorkspace = this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
+                    let _singleFileWorkspaceMap = new SingleFileWorkspaceMap(workspace, miscFilesWorkspace, projectInfoManager, projectContextFactory)
+                    let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, projectInfoManager, projectContextFactory)
                     ()
                 let awaiter = this.JoinableTaskFactory.SwitchToMainThreadAsync().GetAwaiter()
                 if awaiter.IsCompleted then
                     packageInit() // already on the UI thread
                 else
                     awaiter.OnCompleted(fun () -> packageInit())
+
             } |> Async.StartAsTask
         upcast task // convert Task<unit> to Task
 
@@ -190,14 +201,6 @@ type internal FSharpPackage() as this =
 [<Guid(FSharpConstants.languageServiceGuidString)>]
 type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSolution) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
-
-    let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
-
-    let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
-    let workspace = package.ComponentModel.GetService<VisualStudioWorkspace>()
-    let miscFilesWorkspace = package.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
-    let _singleFileWorkspaceMap = new SingleFileWorkspaceMap(workspace, miscFilesWorkspace, projectInfoManager, projectContextFactory)
-    let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, projectInfoManager, projectContextFactory)
 
     override this.Initialize() = 
         base.Initialize()
