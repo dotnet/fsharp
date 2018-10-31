@@ -3,7 +3,7 @@
 let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx")
 
 let tokenizeLines (lines:string[]) =
-  [ let state = ref 0L
+  [ let state = ref FSharpTokenizerLexState.Initial
     for n, line in lines |> Seq.zip [ 0 .. lines.Length ] do
       let tokenizer = sourceTok.CreateLineTokenizer(line)
       let rec parseLine() = seq {
