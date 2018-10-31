@@ -70,8 +70,10 @@
         <ReferenceCopyLocalPathsUpdate Include = "@(ReferenceCopyLocalPaths)" Condition = " '%(ReferenceCopyLocalPaths.FileName)' == 'System.ValueTuple'" />
 
         <ReferenceCopyLocalPaths Remove = "@(ReferenceCopyLocalPathsUpdate)" />
+
         <ReferenceCopyLocalPaths Include = "@(ReferenceCopyLocalPathsUpdate)">
-            <DestinationSubDirectory>dependencies\</DestinationSubDirectory>
+            <DestinationSubDirectory Condition = " '%ReferenceCopyLocalPathsUpdate.DestinationSubDirectory' == '' " >dependencies\</DestinationSubDirectory>
+            <DestinationSubDirectory Condition = " '%ReferenceCopyLocalPathsUpdate.DestinationSubDirectory' != '' " >%ReferenceCopyLocalPathsUpdate.DestinationSubDirectory;dependencies\</DestinationSubDirectory>
         </ReferenceCopyLocalPaths>
 
     </ItemGroup>
