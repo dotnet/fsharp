@@ -14,7 +14,6 @@ open System.Runtime.CompilerServices
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.FSharp.Editor.SiteProvider
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell.Interop

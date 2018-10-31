@@ -48,7 +48,6 @@
     <Compile Include="LanguageService\Symbols.fs" />
     <Compile Include="LanguageService\FSharpCheckerExtensions.fs" />
     <Compile Include="LanguageService\IProjectSite.fs" />
-    <Compile Include="LanguageService\ProjectSitesAndFiles.fs" />
     <Compile Include="LanguageService\ProvideFSharpVersionRegistrationAttribute.fs" />
     <Compile Include="LanguageService\FSharpCheckerProvider.fs" />
     <Compile Include="LanguageService\FSharpProjectOptionsManager.fs" />
