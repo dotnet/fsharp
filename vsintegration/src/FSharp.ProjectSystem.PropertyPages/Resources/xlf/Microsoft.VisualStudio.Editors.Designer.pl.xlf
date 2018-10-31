@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pl" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="PPG_BuildTitle">
         <source>Build</source>
-        <target state="translated">Kompilacja</target>
+        <target state="translated">Kompiluj</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_BuildEventsTitle">
@@ -74,7 +74,7 @@
       </trans-unit>
       <trans-unit id="PPG_PreBuildCommandLineTitle">
         <source>Pre-build Event Command Line</source>
-        <target state="translated">Wiersz polecenia zdarzenia sprzed kompilacji</target>
+        <target state="translated">Wiersz polecenia zdarzenia przed kompilowaniem</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_PostBuildCommandLineTitle">
@@ -355,7 +355,7 @@ Wybierz prawidłową ścieżkę folderu.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_None">
         <source>None</source>
-        <target state="translated">Brak</target>
+        <target state="translated">brak</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Warning">
@@ -1077,7 +1077,7 @@ Błąd:</target>
       </trans-unit>
       <trans-unit id="PPG_Property_StartupObject">
         <source>Startup Object</source>
-        <target state="translated">Obiekt uruchomieniowy</target>
+        <target state="translated">Obiekt startowy</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Property_ApplicationIcon">
@@ -1542,7 +1542,7 @@ Błąd:</target>
       </trans-unit>
       <trans-unit id="AttrEditor_CAT_Default">
         <source>Default</source>
-        <target state="translated">Domyślne</target>
+        <target state="translated">Domyślny</target>
         <note />
       </trans-unit>
       <trans-unit id="AttrEditor_CAT_Action">
@@ -1582,7 +1582,7 @@ Błąd:</target>
       </trans-unit>
       <trans-unit id="AttrEditor_CAT_Key">
         <source>Key</source>
-        <target state="translated">Klawisz</target>
+        <target state="translated">Klucz</target>
         <note />
       </trans-unit>
       <trans-unit id="AttrEditor_CAT_Layout">
@@ -1607,7 +1607,7 @@ Błąd:</target>
       </trans-unit>
       <trans-unit id="PermissionSet_Requires">
         <source>Requires:</source>
-        <target state="translated">Wymaga:</target>
+        <target state="translated">Wymagania:</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_ResourceNameColumn">
@@ -1830,7 +1830,6 @@ CONSIDER: get this from CodeDom</note>
         <source>{0} x {1}</source>
         <target state="translated">{0} x {1}</target>
         <note>Format string for showing a graphic's size
-
 #  {0} = width (as an integer)
 #  {1} = height (as an integer)
 #Example, for a bitmap of width=123, height = 456, the English version of this string would be "123x456"</note>
@@ -2810,7 +2809,7 @@ Czy chcesz zaktualizować wartość w pliku settings?</target>
       </trans-unit>
       <trans-unit id="PPG_Services_HelpLabelLink">
         <source>Learn more about client application services...</source>
-        <target state="translated">Dowiedz się więcej o usługach aplikacji klienta...</target>
+        <target state="translated">Dowiedz się więcej o usługach aplikacji klienckich…</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_ServicesAdvancedPage_Title">
@@ -2830,22 +2829,22 @@ Czy chcesz zaktualizować wartość w pliku settings?</target>
       </trans-unit>
       <trans-unit id="PPG_Services_Seconds">
         <source>seconds</source>
-        <target state="translated">sekundy</target>
+        <target state="translated">Sekundy</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Minutes">
         <source>minutes</source>
-        <target state="translated">minuty</target>
+        <target state="translated">Minuty</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Hours">
         <source>hours</source>
-        <target state="translated">godziny</target>
+        <target state="translated">Godziny</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Days">
         <source>days</source>
-        <target state="translated">dni</target>
+        <target state="translated">Dni</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">

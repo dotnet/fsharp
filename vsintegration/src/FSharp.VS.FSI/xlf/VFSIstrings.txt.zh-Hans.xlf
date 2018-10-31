@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="cannotCreateToolWindow">
         <source>Cannot create window F# Interactive ToolWindow</source>
-        <target state="translated">无法创建窗口 F# 交互 ToolWindow</target>
+        <target state="translated">无法创建“F# 交互窗口”工具窗口</target>
         <note />
       </trans-unit>
       <trans-unit id="exceptionRaisedWhenCreatingRemotingClient">
@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="couldNotFindFsiExe">
         <source>Could not find fsi.exe, the F# Interactive executable.\nThis file does not exist:\n\n{0}\n</source>
-        <target state="translated">未能找到 F# 交互可执行文件 fsi.exe。\n此文件不存在:\n\n{0}\n</target>
+        <target state="translated">未能找到 F# 交互窗口可执行文件 fsi.exe。\n此文件不存在:\n\n{0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="killingProcessRaisedException">

@@ -1,10 +1,10 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="de" original="../Properties.resx">
     <body>
       <trans-unit id="FSharpInteractive64Bit">
         <source>64-bit F# Interactive</source>
-        <target state="translated">64-Bit-F# Interactive</target>
+        <target state="translated">64-Bit-Version von F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractive64BitDescr">
@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">
         <source>Misc</source>
-        <target state="translated">Sonstiges</target>
+        <target state="translated">Verschiedenes</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopy">

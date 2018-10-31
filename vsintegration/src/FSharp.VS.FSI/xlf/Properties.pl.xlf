@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pl" original="../Properties.resx">
     <body>
@@ -19,12 +19,12 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptionsDescr">
         <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
-        <target state="translated">Argumenty wiersza polecenia przekazywane do pliku wykonywalnego programu F# Interactive przez program Visual Studio. (Flagi optymalizacji i debugowania są ignorowane, jeśli włączone jest debugowanie skryptów).</target>
+        <target state="translated">Argumenty wiersza polecenia przekazywane do pliku wykonywalnego narzędzia F# Interactive przez program Visual Studio. (Flagi optymalizacji i debugowania są ignorowane, jeśli włączone jest debugowanie skryptów).</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">
         <source>Misc</source>
-        <target state="translated">Różne</target>
+        <target state="translated">Misc</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopy">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugModeDescr">
         <source>Enable debugging of F# scripts (may impact script performance, requires reset of F# Interactive)</source>
-        <target state="translated">Włącz debugowanie skryptów w języku F# (może to mieć wpływ na wydajność skryptów, wymaga zresetowania programu F# Interactive)</target>
+        <target state="translated">Włącz debugowanie skryptów w języku F# (może to mieć wpływ na wydajność skryptów, wymaga zresetowania narzędzia F# Interactive)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugging">

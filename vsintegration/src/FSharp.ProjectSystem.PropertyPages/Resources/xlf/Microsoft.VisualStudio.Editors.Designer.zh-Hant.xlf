@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -1617,7 +1617,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="RSE_TypeColumn">
         <source>Type</source>
-        <target state="translated">類型</target>
+        <target state="translated">型別</target>
         <note>Column names for the string table</note>
       </trans-unit>
       <trans-unit id="RSE_ResourceColumn">
@@ -1808,7 +1808,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_ImageType">
         <source>Type</source>
-        <target state="translated">類型</target>
+        <target state="translated">型別</target>
         <note>Columns for the "Details" view of the resource editor</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_Size">
@@ -1830,7 +1830,6 @@ CONSIDER: get this from CodeDom</note>
         <source>{0} x {1}</source>
         <target state="translated">{0} x {1}</target>
         <note>Format string for showing a graphic's size
-
 #  {0} = width (as an integer)
 #  {1} = height (as an integer)
 #Example, for a bitmap of width=123, height = 456, the English version of this string would be "123x456"</note>
@@ -2366,7 +2365,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="SD_GridViewTypeColumnHeaderText">
         <source>Type</source>
-        <target state="translated">類型</target>
+        <target state="translated">型別</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewScopeColumnHeaderText">
@@ -2845,7 +2844,7 @@ app.config 檔的新值是 '{1}'
       </trans-unit>
       <trans-unit id="PPG_Services_Days">
         <source>days</source>
-        <target state="translated">天數</target>
+        <target state="translated">日</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">

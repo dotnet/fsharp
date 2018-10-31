@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="fr" original="../Properties.resx">
     <body>
@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopyDescr">
         <source>Prevents referenced assemblies from being locked by the F# Interactive process.</source>
-        <target state="translated">Empêche le blocage des assemblys référencés par le processus interactif F#.</target>
+        <target state="translated">Empêche le blocage des assemblys référencés par le processus de F# Interactive.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugMode">

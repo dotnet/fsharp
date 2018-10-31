@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="cannotCreateToolWindow">
         <source>Cannot create window F# Interactive ToolWindow</source>
-        <target state="translated">無法建立視窗 F# Interactive 工具視窗</target>
+        <target state="translated">無法建立視窗 F# 互動工具視窗</target>
         <note />
       </trans-unit>
       <trans-unit id="exceptionRaisedWhenCreatingRemotingClient">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="sessionIsNotDebugFriendly">
         <source>The current F# Interactive session is not configured for debugging. For the best experience, enable debugging in F# Interactive settings, then reset the session.\n\nAttempt debugging with current settings?</source>
-        <target state="translated">目前的 F# Interactive 工作階段並未設定偵錯功能。最佳做法是啟用 F# Interactive 設定中的偵錯設定，然後重設此工作階段。\n\n要嘗試使用目前的設定進行偵錯嗎?</target>
+        <target state="translated">目前的 F# 互動工作階段並未設定偵錯功能。最佳做法是啟用 F# 互動設定中的偵錯設定，然後重設此工作階段。\n\n要嘗試使用目前的設定進行偵錯嗎?</target>
         <note />
       </trans-unit>
       <trans-unit id="doNotShowWarningInFuture">

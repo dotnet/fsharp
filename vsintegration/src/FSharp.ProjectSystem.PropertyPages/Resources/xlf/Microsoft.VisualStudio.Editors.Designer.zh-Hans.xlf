@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hans" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -355,7 +355,7 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_None">
         <source>None</source>
-        <target state="translated">无</target>
+        <target state="translated">没有</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Warning">
@@ -714,7 +714,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_Signing_IssuedBy">
         <source>Issued By</source>
-        <target state="translated">颁发者</target>
+        <target state="translated">发布者</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_Purpose">
@@ -1607,7 +1607,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PermissionSet_Requires">
         <source>Requires:</source>
-        <target state="translated">要求: </target>
+        <target state="translated">要求:</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_ResourceNameColumn">
@@ -1830,7 +1830,6 @@ CONSIDER: get this from CodeDom</note>
         <source>{0} x {1}</source>
         <target state="translated">{0} x {1}</target>
         <note>Format string for showing a graphic's size
-
 #  {0} = width (as an integer)
 #  {1} = height (as an integer)
 #Example, for a bitmap of width=123, height = 456, the English version of this string would be "123x456"</note>
