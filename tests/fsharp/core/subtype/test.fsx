@@ -1795,10 +1795,10 @@ module MethodOverloadingForTraitConstraintsWhereSomeMethodsComeFromObjectTypeIsN
     type Test() =
          member __.Equals (_: Test) = true
 
-    let inline Equals(a: obj) (b: ^t) =
-        match a with
-        | :? ^t as x -> (^t: (member Equals: ^t -> bool) (b, x))
-        | _-> false
+    //let inline Equals(a: obj) (b: ^t) =
+    //    match a with
+    //    | :? ^t as x -> (^t: (member Equals: ^t -> bool) (b, x))
+    //    | _-> false
 
     let a  = Test()
     let b  = Test()
