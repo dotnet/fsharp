@@ -4099,7 +4099,7 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
            nenv.eFieldLabels
            |> Seq.collect (fun (KeyValue(_, v)) -> v)
            |> Seq.map (fun fref -> 
-                let typeInsts = fref.TyconRef.TyparsNoRange |> List.map (fun tyar -> tyar.AsType)
+                let typeInsts = fref.TyconRef.TyparsNoRange |> List.map mkTyparTy
                 Item.RecdField(RecdFieldInfo(typeInsts, fref)))
            |> List.ofSeq
 

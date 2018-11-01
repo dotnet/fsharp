@@ -1651,7 +1651,7 @@ let _ = fill_u_ty (fun st ->
     | 1 -> u_simpletyp st 
     | 2 -> let tc = u_tcref st in let tinst = u_tys st    in TType_app (tc, tinst, ObliviousToNull)
     | 3 -> let d = u_ty st    in let r = u_ty st         in TType_fun (d,r, ObliviousToNull)
-    | 4 -> let r = u_tpref st                              in r.AsType
+    | 4 -> let r = u_tpref st                              in r.AsType ObliviousToNull
     | 5 -> let tps = u_tyar_specs st in let r = u_ty st  in TType_forall (tps,r)
     | 6 -> let unt = u_measure_expr st                     in TType_measure unt
     | 7 -> let uc = u_ucref st in let tinst = u_tys st    in TType_ucase (uc,tinst)
@@ -1703,7 +1703,7 @@ let _ = fill_u_ty (fun st ->
         TType_var (r, KnownNull)
     | 19 -> 
         let r = u_tpref st
-        r.AsType
+        TType_var (r, KnownNonNull)
     | 20 -> 
         let r = u_tpref st
         TType_var (r, ObliviousToNull)

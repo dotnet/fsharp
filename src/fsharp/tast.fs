@@ -2254,14 +2254,18 @@ and
         | None -> ()
 
     /// Links a previously unlinked type variable to the given data. Only used during unpickling of F# metadata.
-    member x.AsType = 
-        let ty = x.typar_astype
-        match box ty with 
-        | null -> 
-            let ty2 = TType_var (x, Nullness.Known NullnessInfo.WithoutNull) // TODO pass in a nullness thing here?
-            x.typar_astype <- ty2
-            ty2
-        | _ -> ty
+    member x.AsType nullness = 
+        match nullness with 
+        | Nullness.Known NullnessInfo.Oblivious -> 
+            let ty = x.typar_astype
+            match box ty with 
+            | null -> 
+                let ty2 = TType_var (x, Nullness.Known NullnessInfo.Oblivious)
+                x.typar_astype <- ty2
+                ty2
+            | _ -> ty
+        | _ -> 
+            TType_var (x, nullness)
 
     /// Indicates if a type variable has been linked. Only used during unpickling of F# metadata.
     member x.IsLinked = x.typar_stamp <> -1L
@@ -3908,27 +3912,27 @@ and Nullness =
 
    override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.Oblivious -> "%"
 
-and NullnessVar = 
-    { mutable solution: Nullness option }
+and NullnessVar() = 
+    let mutable solution: Nullness option = None
 
     member nv.Evaluate() = 
-       match nv.solution with 
+       match solution with 
        | None -> NullnessInfo.WithoutNull
        | Some soln -> soln.Evaluate()
 
-    member nv.IsSolved = nv.solution.IsSome
+    member nv.IsSolved = solution.IsSome
 
     member nv.Set(nullness) = 
        assert (not nv.IsSolved) 
-       nv.solution <- Some nullness
+       solution <- Some nullness
 
     member nv.Unset() = 
        assert nv.IsSolved
-       nv.solution <- None
+       solution <- None
 
     member nv.Solution = 
        assert nv.IsSolved
-       nv.solution.Value
+       solution.Value
 
 and 
     [<RequireQualifiedAccess>]
@@ -5286,9 +5290,17 @@ let ccuOfTyconRef eref =
 // Type parameters and inference unknowns
 //-------------------------------------------------------------------------
 
+
+let NewNullnessVar() = Nullness.Variable (NullnessVar()) // we don't known (and if we never find out then it's non-null)
+
+let ObliviousToNull = Nullness.Known NullnessInfo.Oblivious
+let KnownNull = Nullness.Known NullnessInfo.WithNull
+let KnownNonNull = Nullness.Known NullnessInfo.WithoutNull
+let AssumeNonNull = KnownNonNull
+
 let mkTyparTy (tp:Typar) = 
     match tp.Kind with 
-    | TyparKind.Type -> tp.AsType 
+    | TyparKind.Type -> tp.AsType AssumeNonNull // this is by no means always right!?
     | TyparKind.Measure -> TType_measure (Measure.Var tp)
 
 let copyTypar (tp: Typar) = 
@@ -5818,10 +5830,3 @@ let FSharpSignatureDataResourceName = "FSharpSignatureData."
 let FSharpOptimizationDataResourceName2 = "FSharpOptimizationInfo." 
 let FSharpSignatureDataResourceName2 = "FSharpSignatureInfo."
 
-
-let NewNullnessVar() = Nullness.Variable { solution = None } // we don't known (and if we never find out then it's non-null)
-
-let ObliviousToNull = Nullness.Known NullnessInfo.Oblivious
-let KnownNull = Nullness.Known NullnessInfo.WithNull
-let KnownNonNull = Nullness.Known NullnessInfo.WithoutNull
-let AssumeNonNull = KnownNonNull

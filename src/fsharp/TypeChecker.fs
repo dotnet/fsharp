@@ -4631,7 +4631,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
         let tp = TcAnonTypeOrMeasure (Some TyparKind.Type) cenv TyparRigidity.WarnIfNotRigid TyparDynamicReq.Yes newOk m
         let ty', tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv ty
         AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace  ty' (mkTyparTy tp) 
-        tp.AsType, tpenv
+        tp.AsType AssumeNonNull, tpenv
 
     | SynType.StaticConstant (c, m) ->
         match c, optKind with

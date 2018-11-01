@@ -342,8 +342,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_system_Reflection_MethodInfo_ty = mkSysNonGenericTy ["System";"Reflection"] "MethodInfo"
   let v_nullable_tcr = findSysTyconRef sys "Nullable`1"
 
-  let NewNullnessVar() = Nullness.Variable { solution = None } // we don't known (and if we never find out then it's non-null)
-
   (* local helpers to build value infos *)
   let mkNullableTy ty = TType_app(v_nullable_tcr, [ty], KnownNonNull) 
   let mkByrefTy ty = TType_app(v_byref_tcr, [ty], KnownNonNull) 
