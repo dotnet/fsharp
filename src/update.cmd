@@ -57,14 +57,12 @@ if /i "%1" == "debug" set NGEN_FLAGS=/Debug
 rem NGen fsc, fsi, fsiAnyCpu, and FSharp.Build.dll
 if /i not "%2"=="-ngen" goto :donengen
 
-"%NGEN32%" install "%BINDIR%\fsc.exe" %NGEN_FLAGS% /queue:1 /nologo 
-"%NGEN32%" install "%BINDIR%\fsi.exe" %NGEN_FLAGS% /queue:1 /nologo 
-"%NGEN32%" install "%BINDIR%\FSharp.Build.dll" %NGEN_FLAGS% /queue:1 /nologo 
+"%NGEN32%" install "%BINDIR%\fsc.exe" %NGEN_FLAGS% /queue:1 /nologo /ExeConfig:"%BINDIR%\fsc.exe.config"
+"%NGEN32%" install "%BINDIR%\fsi.exe" %NGEN_FLAGS% /queue:1 /nologo /ExeConfig:"%BINDIR%\fsi.exe.config"
 "%NGEN32%" executeQueuedItems 1 /nologo 
 
 if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
-    "%NGEN64%" install "%BINDIR%\fsiAnyCpu.exe" %NGEN_FLAGS% /queue:1 /nologo 
-    "%NGEN64%" install "%BINDIR%\FSharp.Build.dll" %NGEN_FLAGS% /queue:1 /nologo 
+    "%NGEN64%" install "%BINDIR%\fsiAnyCpu.exe" %NGEN_FLAGS% /queue:1 /nologo /ExeConfig:"%BINDIR%\fsiAnyCpu.exe.config"
     "%NGEN64%" executeQueuedItems 1 /nologo 
 )
 

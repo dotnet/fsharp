@@ -183,6 +183,11 @@ let config configurationName envVars =
     let FSIANYCPU = requireFile (FSCBinPath ++ "fsiAnyCpu.exe")
     let FSC = requireFile (FSCBinPath ++ "fsc.exe")
     let FSCOREDLLPATH = requireFile (FSCBinPath ++ "FSharp.Core.dll") 
+
+    // Ensure that System.ValueTuple.dll is alongside the compiler // Ouch this hurts.
+    if not (File.Exists(FSCBinPath ++ "System.ValueTuple.dll")) then
+        let systemValueDll = requireFile (FSCBinPath ++ "dependencies\System.ValueTuple.dll") 
+        File.Copy(systemValueDll, Path.GetDirectoryName(FSC) ++ "System.ValueTuple.dll", overwrite=true)
 #else
     let FSI = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsi.exe"
     let FSIANYCPU = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsiAnyCpu.exe"

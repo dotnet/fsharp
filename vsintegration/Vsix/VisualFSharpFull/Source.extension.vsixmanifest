@@ -34,7 +34,6 @@
   </Dependencies>
   <Assets>
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="RegisterFsharpPackage.pkgdef" />
-
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.ProjectSystem.FSharp.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.ProjectSystem.Base.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.VS.FSI.pkgdef" />

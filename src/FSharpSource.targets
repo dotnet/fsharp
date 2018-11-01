@@ -380,4 +380,32 @@
     </Task>
   </UsingTask>
 
+  <!--
+    ============================================================
+    MoveVSDependencies
+    
+    Remove these assemblies from the ngen probing path.
+    ============================================================
+    -->
+  <Target Name="MoveVSDependencies" BeforeTargets = "_CopyFilesMarkedCopyLocal" DependsOnTargets = "ResolveAssemblyReferences" Condition = "'@(ReferenceCopyLocalPaths)' != '' and '$(Configuration)' != 'Proto' ">
+    <ItemGroup>
+        <ReferenceCopyLocalPathsUpdate Remove = "@(ReferenceCopyLocalPathsUpdate)" />
+
+        <ReferenceCopyLocalPathsUpdate Include = "@(ReferenceCopyLocalPaths)" Condition = " '%(ReferenceCopyLocalPaths.FileName)' == 'Microsoft.Build'" />
+        <ReferenceCopyLocalPathsUpdate Include = "@(ReferenceCopyLocalPaths)" Condition = " '%(ReferenceCopyLocalPaths.FileName)' == 'Microsoft.Build.Framework'" />
+        <ReferenceCopyLocalPathsUpdate Include = "@(ReferenceCopyLocalPaths)" Condition = " '%(ReferenceCopyLocalPaths.FileName)' == 'Microsoft.Build.Utilities.Core'" />
+        <ReferenceCopyLocalPathsUpdate Include = "@(ReferenceCopyLocalPaths)" Condition = " '%(ReferenceCopyLocalPaths.FileName)' == 'Microsoft.Build.Tasks.Core'" />
+        <ReferenceCopyLocalPathsUpdate Include = "@(ReferenceCopyLocalPaths)" Condition = " '%(ReferenceCopyLocalPaths.FileName)' == 'System.Reflection.Metadata'" />
+        <ReferenceCopyLocalPathsUpdate Include = "@(ReferenceCopyLocalPaths)" Condition = " '%(ReferenceCopyLocalPaths.FileName)' == 'System.Collections.Immutable'" />
+        <ReferenceCopyLocalPathsUpdate Include = "@(ReferenceCopyLocalPaths)" Condition = " '%(ReferenceCopyLocalPaths.FileName)' == 'System.ValueTuple'" />
+
+        <ReferenceCopyLocalPaths Remove = "@(ReferenceCopyLocalPathsUpdate)" />
+        <ReferenceCopyLocalPaths Include = "@(ReferenceCopyLocalPathsUpdate)">
+          <DestinationSubDirectory>dependencies\</DestinationSubDirectory>
+        </ReferenceCopyLocalPaths>
+
+    </ItemGroup>
+    <MakeDir Directories="$(OutputPath)dependencies" />
+  </Target>
+
   </Project>

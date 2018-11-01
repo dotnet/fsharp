@@ -45,18 +45,23 @@
   <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
     <Reference Include="Microsoft.Build.Framework">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Framework.$(MicrosoftBuildFrameworkPackageVersion)\lib\net46\Microsoft.Build.Framework.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="Microsoft.Build">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.$(MicrosoftBuildPackageVersion)\lib\net46\Microsoft.Build.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="Microsoft.Build.Utilities.Core">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Utilities.Core.$(MicrosoftBuildUtilitiesCorePackageVersion)\lib\net46\Microsoft.Build.Utilities.Core.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="Microsoft.Build.Tasks.Core">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.$(MicrosoftBuildTasksCorePackageVersion)\lib\net46\Microsoft.Build.Tasks.Core.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="Microsoft.Build.Tasks.Core">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.$(MicrosoftBuildTasksCorePackageVersion)\lib\net46\Microsoft.Build.Tasks.Core.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="System.IO.Compression">
       <HintPath>$(FSharpSourcesRoot)\..\packages\System.IO.Compression.$(SystemIoCompressionPackageVersion)\lib\net46\System.IO.Compression.dll</HintPath>
@@ -83,7 +88,9 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj">
       <Project>{702A7979-BCF9-4C41-853E-3ADFC9897890}</Project>
       <Name>FSharp.Build</Name>
+      <Private>false</Private>
     </ProjectReference>
+
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
@@ -95,6 +102,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <Compile Include="WriteCodeFragmentTests.fs" />
     <Compile Include="Program.fs" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
   </ItemGroup>
