@@ -423,8 +423,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             PFX = 50,
             [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "SNK")]
             SNK = 51,
+            NuGetPackage = 52,
 
-            ImageLast = 51
+            ImageLast = 52
         }
 
         /// <summary>
@@ -2994,6 +2995,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return (String.Compare(itemType, ProjectFileConstants.Reference, StringComparison.OrdinalIgnoreCase) == 0
                     || String.Compare(itemType, ProjectFileConstants.ProjectReference, StringComparison.OrdinalIgnoreCase) == 0
+                    || String.Compare(itemType, ProjectFileConstants.PackageReference, StringComparison.OrdinalIgnoreCase) == 0
                     || String.Compare(itemType, ProjectFileConstants.COMReference, StringComparison.OrdinalIgnoreCase) == 0
                     || String.Compare(itemType, ProjectFileConstants.Folder, StringComparison.OrdinalIgnoreCase) == 0
                     || String.Compare(itemType, ProjectFileConstants.WebReference, StringComparison.OrdinalIgnoreCase) == 0

@@ -42,7 +42,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private static string[] supportedReferenceTypes = new string[] {
             ProjectFileConstants.ProjectReference,
             ProjectFileConstants.Reference,
-            ProjectFileConstants.COMReference
+            ProjectFileConstants.COMReference,
+            ProjectFileConstants.PackageReference
         };
         public virtual string[] SupportedReferenceTypes
         {
@@ -493,6 +494,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 node = this.CreateProjectReferenceNode(element);
                 EnableCachingForProjectReferencesInBatchUpdate(node);
             }
+            else if (referenceType == ProjectFileConstants.PackageReference)
+            {
+                node = this.CreatePackageReferenceNode(element);
+            }
 
             return node;
         }
@@ -533,6 +538,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public virtual ProjectReferenceNode CreateProjectReferenceNode(VSCOMPONENTSELECTORDATA selectorData)
         {
             return new ProjectReferenceNode(this.ProjectMgr, selectorData.bstrTitle, selectorData.bstrFile, selectorData.bstrProjRef);
+        }
+
+        internal virtual PackageReferenceNode CreatePackageReferenceNode(ProjectElement element)
+        {
+            return new PackageReferenceNode(this.ProjectMgr, element);
         }
 
         /// <summary>

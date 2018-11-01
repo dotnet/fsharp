@@ -146,6 +146,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public const string DefaultNamespace = "DefaultNamespace";
         public const string TargetFSharpCoreVersion = "TargetFSharpCoreVersion";
         public const string TargetFSharpCoreVersionProperty = "$(TargetFSharpCoreVersion)";
+        public const string PackageReference = "PackageReference";
+        public const string Version = "Version";
     }
 
     internal static class ProjectFileAttributeValue

@@ -1444,4 +1444,42 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
     }
+
+    [ComVisible(true)]
+    public class PackageReferencesProperties : NodeProperties
+    {
+        [SRCategoryAttribute(SR.Misc)]
+        [LocDisplayName(SR.RefName)]
+        [SRDescriptionAttribute(SR.RefNameDescription)]
+        [Browsable(true)]
+        [AutomationBrowsable(true)]
+        public override string Name
+        {
+            get
+            {
+                return this.Node.Caption;
+            }
+        }
+
+        [SRCategoryAttribute(SR.Misc)]
+        [LocDisplayName(SR.Version)]
+        [SRDescriptionAttribute(SR.VersionDescription)]
+        public virtual string Version
+        {
+            get
+            {
+                return ((PackageReferenceNode)this.Node).Version;
+            }
+        }
+
+        internal PackageReferencesProperties(HierarchyNode node)
+            : base(node)
+        {
+        }
+
+        public override string GetClassName()
+        {
+            return SR.GetString(SR.ReferenceProperties, CultureInfo.CurrentUICulture);
+        }
+    }
 }

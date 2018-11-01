@@ -1512,6 +1512,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         inputs.Add(Utilities.CanonicalizeFileNameNoThrow(groupedRef));
                     }
                 }
+                else if (reference is PackageReferenceNode)
+                {
+                    // TODO: How to implement it here?
+                    //inputs.Add(Utilities.CanonicalizeFileNameNoThrow((reference as PackageReferenceNode).InstalledFilePath));
+                }
                 else
                 {
                     // some reference type we don't know about
