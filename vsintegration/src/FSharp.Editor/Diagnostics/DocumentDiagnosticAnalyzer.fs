@@ -127,9 +127,12 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
             let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document) 
             let! sourceText = document.GetTextAsync(cancellationToken)
             let! textVersion = document.GetTextVersionAsync(cancellationToken)
-            return! 
-                FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), parsingOptions, projectOptions, DiagnosticsType.Semantic)
-                |> liftAsync
+            if document.Project.Name <> FSharpConstants.FSharpMiscellaneousFilesName || isScriptFile document.FilePath then
+                return! 
+                    FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), parsingOptions, projectOptions, DiagnosticsType.Semantic)
+                    |> liftAsync
+            else
+                return ImmutableArray<Diagnostic>.Empty
         }
         |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
         |> RoslynHelpers.StartAsyncAsTask cancellationToken

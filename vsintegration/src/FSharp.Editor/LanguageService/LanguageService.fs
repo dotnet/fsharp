@@ -165,11 +165,13 @@ type internal FSharpPackage() as this =
                     let projectInfoManager = this.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
                     let solution = this.GetServiceAsync(typeof<SVsSolution>).Result
                     let solution = solution :?> IVsSolution
+                    let rdt = this.GetServiceAsync(typeof<SVsRunningDocumentTable>).Result
+                    let rdt = rdt :?> IVsRunningDocumentTable
 
                     let projectContextFactory = this.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
                     let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
                     let miscFilesWorkspace = this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
-                    let _singleFileWorkspaceMap = new SingleFileWorkspaceMap(workspace, miscFilesWorkspace, projectInfoManager, projectContextFactory)
+                    let _singleFileWorkspaceMap = new SingleFileWorkspaceMap(workspace, miscFilesWorkspace, projectInfoManager, projectContextFactory, rdt)
                     let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, projectInfoManager, projectContextFactory)
                     ()
                 let awaiter = this.JoinableTaskFactory.SwitchToMainThreadAsync().GetAwaiter()

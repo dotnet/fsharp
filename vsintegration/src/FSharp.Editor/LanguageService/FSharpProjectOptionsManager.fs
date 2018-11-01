@@ -104,39 +104,46 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
     let singleFileCache = Dictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
 
     let rec tryComputeOptionsByFile (document: Document) =
-        let _, fileStamp = document.TryGetTextVersion()
-        match singleFileCache.TryGetValue(document.Id) with
-        | false, _ ->
-            let projectOptions =
-                {
-                    ProjectFileName = document.FilePath
-                    ProjectId = None
-                    SourceFiles = [|document.FilePath|]
-                    OtherOptions = [||]
-                    ReferencedProjects = [||]
-                    IsIncompleteTypeCheckEnvironment = false
-                    UseScriptResolutionRules = SourceFile.MustBeSingleFileProject (Path.GetFileName(document.FilePath))
-                    LoadTime = System.DateTime.Now
-                    UnresolvedReferences = None
-                    OriginalLoadReferences = []
-                    ExtraProjectInfo= None
-                    Stamp = Some(int64 (fileStamp.GetHashCode()))
-                }
+        async {
+            let! text = document.GetTextAsync() |> Async.AwaitTask
+            let! fileStamp = document.GetTextVersionAsync() |> Async.AwaitTask
+            let! scriptProjectOptions, _ = checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, text.ToString(), DateTime.Now)
+            match singleFileCache.TryGetValue(document.Id) with
+            | false, _ ->
+                let projectOptions =
+                    if isScriptFile document.FilePath then
+                        scriptProjectOptions
+                    else
+                        {
+                            ProjectFileName = document.FilePath
+                            ProjectId = None
+                            SourceFiles = [|document.FilePath|]
+                            OtherOptions = [||]
+                            ReferencedProjects = [||]
+                            IsIncompleteTypeCheckEnvironment = false
+                            UseScriptResolutionRules = SourceFile.MustBeSingleFileProject (Path.GetFileName(document.FilePath))
+                            LoadTime = DateTime.Now
+                            UnresolvedReferences = None
+                            OriginalLoadReferences = []
+                            ExtraProjectInfo= None
+                            Stamp = Some(int64 (fileStamp.GetHashCode()))
+                        }
 
-            checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = true, userOpName = "computeOptions")
+                checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = true, userOpName = "computeOptions")
 
-            let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
+                let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
-            singleFileCache.[document.Id] <- (fileStamp, parsingOptions, projectOptions)
+                singleFileCache.[document.Id] <- (fileStamp, parsingOptions, projectOptions)
 
-            Some(parsingOptions, projectOptions)
+                return Some(parsingOptions, projectOptions)
 
-        | true, (fileStamp2, parsingOptions, projectOptions) ->
-            if fileStamp <> fileStamp2 then
-                singleFileCache.Remove(document.Id) |> ignore
-                tryComputeOptionsByFile document
-            else
-                Some(parsingOptions, projectOptions)
+            | true, (fileStamp2, parsingOptions, projectOptions) ->
+                if fileStamp <> fileStamp2 then
+                    singleFileCache.Remove(document.Id) |> ignore
+                    return! tryComputeOptionsByFile document
+                else
+                    return Some(parsingOptions, projectOptions)
+        }
     
     let rec tryComputeOptions (project: Project) =
         let projectId = project.Id
@@ -239,8 +246,12 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                 match! agent.Receive() with
                 | FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply) ->
                     try
-                        if document.Project.Name = FSharpConstants.FSharpMiscellaneousFiles then
-                            reply.Reply(tryComputeOptionsByFile document)
+                        // For now, disallow miscellaneous workspace since we are using the hacky F# miscellaneous files project.
+                        if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
+                            reply.Reply(None)
+                        elif document.Project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
+                            let! options = tryComputeOptionsByFile document
+                            reply.Reply(options)
                         else
                             reply.Reply(tryComputeOptions document.Project)
                     with
@@ -248,7 +259,10 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                         reply.Reply(None)
                 | FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply) ->
                     try
-                        reply.Reply(tryComputeOptions project)
+                        if project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles || project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
+                            reply.Reply(None)
+                        else
+                            reply.Reply(tryComputeOptions project)
                     with
                     | _ ->
                         reply.Reply(None)
