@@ -4654,7 +4654,9 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
             if TypeNullNever cenv.g innerTyC then
                 let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC
                 errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString), m)) 
-            match tryAddNullToTy innerTyC with 
+            // TODO - doesn't feel right - it will add KnownNotNull + KnownNull --> KnownNull, e.g.
+            //    let f (x: string) = (x = null)
+            match tryAddNullnessToTy KnownNull innerTyC with 
             | None -> 
                 let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC
                 errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString), m)) 

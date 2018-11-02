@@ -80,7 +80,8 @@ val valsOfBinds : Bindings -> Vals
 val (|ExprValWithPossibleTypeInst|_|) : Expr -> (ValRef * ValUseFlag * TType list * range) option
 
 /// Ensure that a type admits nullness
-val tryAddNullToTy: TType -> TType option
+val tryAddNullnessToTy: Nullness -> TType -> TType option
+val addNullnessToTy: Nullness -> TType -> TType
 
 //-------------------------------------------------------------------------
 // Build decision trees imperatively

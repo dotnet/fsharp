@@ -160,34 +160,45 @@ let mkTyparInst (typars: Typars) tyargs =
 let generalizeTypar tp = mkTyparTy tp
 let generalizeTypars tps = List.map generalizeTypar tps
 
-let tryAddNullToTy (ty:TType) = 
+let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) = 
+    match nullnessOrig.Evaluate() with
+    | NullnessInfo.WithoutNull -> nullnessNew
+    | NullnessInfo.Oblivious -> nullnessOrig
+    | NullnessInfo.WithNull -> 
+        match nullnessNew.Evaluate() with
+        | NullnessInfo.WithoutNull -> nullnessOrig // TODO - ?
+        | NullnessInfo.Oblivious -> nullnessNew
+        | NullnessInfo.WithNull -> nullnessNew
+
+
+let tryAddNullnessToTy nullnessNew (ty:TType) = 
     let ty = stripTyparEqns ty
     match ty with
-    | TType_var (tp, _nullness) -> Some (TType_var (tp, KnownNull))
-    | TType_app (tcr, tinst, _nullness) -> Some (TType_app (tcr, tinst, KnownNull))
-    | TType_ucase _ -> None
-    | TType_tuple _ -> None
-    | TType_fun (d, r, _nullness) -> Some (TType_fun (d, r, KnownNull))
+    | TType_var (tp, nullnessOrig) -> 
+        // TODO: make this avoid allocation if no change
+        Some (TType_var (tp, combineNullness nullnessOrig nullnessNew))
+    | TType_app (tcr, tinst, nullnessOrig) -> 
+        // TODO: make this avoid allocation if no change
+        Some (TType_app (tcr, tinst, combineNullness nullnessOrig nullnessNew))
+    | TType_ucase _ -> None // TODO
+    | TType_tuple _ -> None // TODO
+    | TType_fun (d, r, nullnessOrig) ->
+        // TODO: make this avoid allocation if no change
+        Some (TType_fun (d, r, combineNullness nullnessOrig nullnessNew))
     | TType_forall _ -> None
     | TType_measure _ -> None
 
-// TODO NULLNESS: Assess for completeness
-let applyNullness nullness (ty:TType) =
-  match nullness with 
-  | NullnessInfo.WithoutNull 
-  | NullnessInfo.Oblivious -> ty
-  | NullnessInfo.WithNull -> 
-      match tryAddNullToTy ty with 
-      | None -> ty
-      | Some ty -> ty
+let addNullnessToTy nullness (ty:TType) =
+    match tryAddNullnessToTy nullness ty with 
+    | None -> ty
+    | Some ty -> ty
 
 let rec remapTypeAux (tyenv : Remap) (ty:TType) =
   let ty = stripTyparEqns ty
   match ty with
-  | TType_var (tp, nullnessInfo) as ty -> 
-      let nullness = nullnessInfo.Evaluate()  // TODO - nullness inference variables are never attached to type variables
+  | TType_var (tp, nullness) as ty -> 
       let res = instTyparRef tyenv.tpinst ty tp
-      applyNullness nullness res
+      addNullnessToTy nullness res
 
   | TType_app (tcr, tinst, nullness) as ty -> 
       match tyenv.tyconRefRemap.TryFind tcr with 
@@ -736,7 +747,7 @@ let rec stripTyEqnsA g canShortcut ty =
         match tycon.TypeAbbrev with 
         | Some abbrevTy -> 
             let reducedTy = applyTyconAbbrev abbrevTy tycon tinst
-            let reducedTy2 = applyNullness (nullness.Evaluate()) reducedTy
+            let reducedTy2 = addNullnessToTy nullness reducedTy
             stripTyEqnsA g canShortcut reducedTy2
         | None -> 
             // This is the point where we get to add additional coditional normalizing equations 
@@ -750,7 +761,7 @@ let rec stripTyEqnsA g canShortcut ty =
             // Add the equation double<1> = double for units of measure.
             elif tycon.IsMeasureableReprTycon && List.forall (isDimensionless g) tinst then
                 let reducedTy = reduceTyconMeasureableOrProvided g tycon tinst
-                let reducedTy2 = applyNullness (nullness.Evaluate()) reducedTy
+                let reducedTy2 = addNullnessToTy nullness reducedTy
                 stripTyEqnsA g canShortcut reducedTy2
             else 
                 ty
@@ -773,7 +784,7 @@ let rec stripTyEqnsAndErase eraseFuncAndTuple (g:TcGlobals) ty =
         let tycon = tcref.Deref
         if tycon.IsErased  then
             let reducedTy = reduceTyconMeasureableOrProvided g tycon args
-            let reducedTy2 = applyNullness (nullness.Evaluate()) reducedTy
+            let reducedTy2 = addNullnessToTy nullness reducedTy
             stripTyEqnsAndErase eraseFuncAndTuple g reducedTy2
         elif tyconRefEq g tcref g.nativeptr_tcr && eraseFuncAndTuple then 
             stripTyEqnsAndErase eraseFuncAndTuple g g.nativeint_ty

@@ -57,25 +57,29 @@ let GetSuperTypeOfType g amap m ty =
     let ty = stripTyEqnsAndMeasureEqns g ty 
 #endif
 
-    match metadataOfTy g ty with 
+    let resBeforeNull = 
+      match metadataOfTy g ty with 
 #if !NO_EXTENSIONTYPING
-    | ProvidedTypeMetadata info -> 
+      | ProvidedTypeMetadata info -> 
         let st = info.ProvidedType
         let superOpt = st.PApplyOption((fun st -> match st.BaseType with null -> None | t -> Some t),m)
         match superOpt with 
         | None -> None
         | Some super -> Some(Import.ImportProvidedType amap m super)
 #endif
-    | ILTypeMetadata (TILObjectReprData(scoref,_,tdef)) -> 
+      | ILTypeMetadata (TILObjectReprData(scoref,_,tdef)) -> 
         let tinst = argsOfAppTy g ty
         match tdef.Extends with 
         | None -> None
-        | Some ilty -> Some (ImportILType scoref amap m tinst ilty)
+        | Some ilty -> 
+            let superTy = ImportILType scoref amap m tinst ilty
+            Some superTy
 
-    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
+      | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
         if isFSharpObjModelTy g ty || isExnDeclTy g ty then 
             let tcref = tcrefOfAppTy g ty
-            Some (instType (mkInstForAppTy g ty) (superOfTycon g tcref.Deref))
+            let superTy = instType (mkInstForAppTy g ty) (superOfTycon g tcref.Deref)
+            Some superTy
         elif isArrayTy g ty then
             Some g.system_Array_ty
         elif isRefTy g ty && not (isObjTy g ty) then 
@@ -84,21 +88,28 @@ let GetSuperTypeOfType g amap m ty =
             Some g.obj_ty
         elif isFSharpStructOrEnumTy g ty then
             if isFSharpEnumTy g ty then
-                Some(g.system_Enum_ty)
+                Some g.system_Enum_ty
             else
-                Some (g.system_Value_ty)
+                Some g.system_Value_ty
         elif isRecdTy g ty || isUnionTy g ty then
             Some g.obj_ty
         else 
             None
+    match resBeforeNull with 
+    | Some superTy ->
+        let nullness = nullnessOfTy g ty
+        let superTyWithNull = addNullnessToTy nullness superTy
+        Some superTyWithNull
+    | None -> 
+        None
 
 /// Make a type for System.Collections.Generic.IList<ty>
-let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty = TType_app(g.tcref_System_Collections_Generic_IList,[ty],AssumeNonNull)
+let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty =
+    TType_app(g.tcref_System_Collections_Generic_IList,[ty],AssumeNonNull)
 
 [<RequireQualifiedAccess>]
 /// Indicates whether we can skip interface types that lie outside the reference set
 type SkipUnrefInterfaces = Yes | No
-
 
 /// Collect the set of immediate declared interface types for an F# type, but do not
 /// traverse the type hierarchy to collect further interfaces.

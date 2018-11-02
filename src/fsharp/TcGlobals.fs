@@ -83,7 +83,8 @@ module FSharpLib =
 // Access the initial environment: helpers to build references
 //-------------------------------------------------------------------------
 
-let private mkNonGenericTy tcref = TType_app(tcref, [], AssumeNonNull)
+let private mkNonGenericTy tcref = TType_app(tcref, [], AssumeNonNull) // TODO - does this deault for all these types cause problems?
+let private mkNonGenericTyWithNullness tcref nullness = TType_app(tcref, [], nullness)
 
 let mkNonLocalTyconRef2 ccu path n = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) n 
 
@@ -518,15 +519,18 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       | _ -> TType_tuple (tupInfo, l)  |> Some
       
 
-  let decodeTupleTy tupInfo l = 
-      match tryDecodeTupleTy tupInfo l with 
+  let decodeTupleTyAndNullness tupInfo tinst _nullness = // TODO nullness
+      match tryDecodeTupleTy tupInfo tinst with 
       | Some ty -> ty
       | None -> failwith "couldn't decode tuple ty"
 
-  let decodeTupleTyIfPossible tcref tupInfo l = 
-      match tryDecodeTupleTy tupInfo l with 
+  let decodeTupleTyAndNullnessIfPossible tcref tupInfo tinst nullness = // TODO nullness
+      match tryDecodeTupleTy tupInfo tinst with 
       | Some ty -> ty
-      | None -> TType_app(tcref, l, KnownNonNull)
+      | None -> TType_app(tcref, tinst, nullness)
+
+  let decodeTupleTy tupInfo tinst = 
+      decodeTupleTyAndNullness tupInfo tinst KnownNonNull
 
   let mk_MFCore_attrib nm : BuiltinAttribInfo = 
       AttribInfo(mkILTyRef(IlxSettings.ilxFsharpCoreLibScopeRef (), FSharpLib.Core + "." + nm), mk_MFCore_tcref fslibCcu nm) 
@@ -794,25 +798,29 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
         "Single"   , v_float32_tcr |] 
             |> Array.map (fun (nm, tcr) -> 
                 let ty = mkNonGenericTy tcr 
-                nm, findSysTyconRef sys nm, (fun _ -> ty)) 
+                nm, findSysTyconRef sys nm, (fun _ nullness ->
+                    match nullness with 
+                    | Nullness.Known NullnessInfo.WithoutNull -> ty
+                    | _ -> mkNonGenericTyWithNullness tcr nullness)) 
 
   let decompileTyconEntries =
         [| 
-            "FSharpFunc`2" ,       v_fastFunc_tcr      , (fun tinst -> mkFunTy (List.item 0 tinst) (List.item 1 tinst))
-            "Tuple`2"      ,       v_ref_tuple2_tcr    , decodeTupleTy tupInfoRef
-            "Tuple`3"      ,       v_ref_tuple3_tcr    , decodeTupleTy tupInfoRef
-            "Tuple`4"      ,       v_ref_tuple4_tcr    , decodeTupleTy tupInfoRef
-            "Tuple`5"      ,       v_ref_tuple5_tcr    , decodeTupleTy tupInfoRef
-            "Tuple`6"      ,       v_ref_tuple6_tcr    , decodeTupleTy tupInfoRef
-            "Tuple`7"      ,       v_ref_tuple7_tcr    , decodeTupleTy tupInfoRef
-            "Tuple`8"      ,       v_ref_tuple8_tcr    , decodeTupleTyIfPossible v_ref_tuple8_tcr tupInfoRef
-            "ValueTuple`2" ,       v_struct_tuple2_tcr , decodeTupleTy tupInfoStruct
-            "ValueTuple`3" ,       v_struct_tuple3_tcr , decodeTupleTy tupInfoStruct
-            "ValueTuple`4" ,       v_struct_tuple4_tcr , decodeTupleTy tupInfoStruct
-            "ValueTuple`5" ,       v_struct_tuple5_tcr , decodeTupleTy tupInfoStruct
-            "ValueTuple`6" ,       v_struct_tuple6_tcr , decodeTupleTy tupInfoStruct
-            "ValueTuple`7" ,       v_struct_tuple7_tcr , decodeTupleTy tupInfoStruct
-            "ValueTuple`8" ,       v_struct_tuple8_tcr , decodeTupleTyIfPossible v_struct_tuple8_tcr tupInfoStruct |] 
+             // TODO: nullness here
+            "FSharpFunc`2" ,       v_fastFunc_tcr      , (fun tinst _nullness -> mkFunTy (List.item 0 tinst) (List.item 1 tinst))
+            "Tuple`2"      ,       v_ref_tuple2_tcr    , decodeTupleTyAndNullness tupInfoRef
+            "Tuple`3"      ,       v_ref_tuple3_tcr    , decodeTupleTyAndNullness tupInfoRef
+            "Tuple`4"      ,       v_ref_tuple4_tcr    , decodeTupleTyAndNullness tupInfoRef
+            "Tuple`5"      ,       v_ref_tuple5_tcr    , decodeTupleTyAndNullness tupInfoRef
+            "Tuple`6"      ,       v_ref_tuple6_tcr    , decodeTupleTyAndNullness tupInfoRef
+            "Tuple`7"      ,       v_ref_tuple7_tcr    , decodeTupleTyAndNullness tupInfoRef
+            "Tuple`8"      ,       v_ref_tuple8_tcr    , decodeTupleTyAndNullnessIfPossible v_ref_tuple8_tcr tupInfoRef
+            "ValueTuple`2" ,       v_struct_tuple2_tcr , decodeTupleTyAndNullness tupInfoStruct
+            "ValueTuple`3" ,       v_struct_tuple3_tcr , decodeTupleTyAndNullness tupInfoStruct
+            "ValueTuple`4" ,       v_struct_tuple4_tcr , decodeTupleTyAndNullness tupInfoStruct
+            "ValueTuple`5" ,       v_struct_tuple5_tcr , decodeTupleTyAndNullness tupInfoStruct
+            "ValueTuple`6" ,       v_struct_tuple6_tcr , decodeTupleTyAndNullness tupInfoStruct
+            "ValueTuple`7" ,       v_struct_tuple7_tcr , decodeTupleTyAndNullness tupInfoStruct
+            "ValueTuple`8" ,       v_struct_tuple8_tcr , decodeTupleTyAndNullnessIfPossible v_struct_tuple8_tcr tupInfoStruct |] 
 
   let betterEntries = Array.append betterTyconEntries decompileTyconEntries
 
@@ -842,7 +850,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
           let entries = betterEntries
           let t = Dictionary.newWithSize entries.Length
           for nm, tcref, builder in entries do
-              t.Add(nm, fun tcref2 tinst2 nullness -> if tyconRefEq tcref tcref2 then builder tinst2 else TType_app (tcref2, tinst2, nullness))
+              t.Add(nm, 
+                     (fun tcref2 tinst2 nullness -> 
+                         if tyconRefEq tcref tcref2 then 
+                             builder tinst2 nullness 
+                         else 
+                             TType_app (tcref2, tinst2, nullness)))
           betterTypeDict1 <- t
           t
       | t -> t
@@ -871,8 +884,10 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       else
           let dict = getDecompileTypeDict()
           let mutable builder = Unchecked.defaultof<_>
-          if dict.TryGetValue(tcref.Stamp, &builder) then builder tinst
-          else TType_app (tcref, tinst, nullness)
+          if dict.TryGetValue(tcref.Stamp, &builder) then 
+              builder tinst nullness
+          else
+              TType_app (tcref, tinst, nullness)
 
   /// For cosmetic purposes "improve" some .NET types, e.g. Int32 --> int32. 
   /// Doing this normalization is a fairly performance critical piece of code as it is frequently invoked
@@ -881,13 +896,17 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
         if compilingFslib then 
             let dict = getBetterTypeDict1()
             let mutable builder = Unchecked.defaultof<_>
-            if dict.TryGetValue(tcref.LogicalName, &builder) then builder tcref tinst nullness
-            else TType_app (tcref, tinst, nullness)
+            if dict.TryGetValue(tcref.LogicalName, &builder) then
+                builder tcref tinst nullness
+            else
+                TType_app (tcref, tinst, nullness)
         else
             let dict = getBetterTypeDict2()
             let mutable builder = Unchecked.defaultof<_>
-            if dict.TryGetValue(tcref.Stamp, &builder) then builder tinst
-            else TType_app (tcref, tinst, nullness)
+            if dict.TryGetValue(tcref.Stamp, &builder) then
+                builder tinst nullness
+            else
+                TType_app (tcref, tinst, nullness)
 
 
   override x.ToString() = "<TcGlobals>"

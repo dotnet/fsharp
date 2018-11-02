@@ -784,6 +784,8 @@ and solveTypMeetsTyparConstraints (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
           SolveMemberConstraint csenv false false ndeep m2 trace traitInfo |> OperationResult.ignore
   }
 
+// nullness1: actual
+// nullness2: expected
 and SolveNullnessEquiv (csenv:ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
     match nullness1, nullness2 with
     | Nullness.Variable nv1, Nullness.Variable nv2 when nv1 === nv2 -> 
@@ -804,12 +806,17 @@ and SolveNullnessEquiv (csenv:ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1
         | _, NullnessInfo.Oblivious -> CompleteD
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
-        | _, _ -> 
+        // Allow expected of WithNull and actual of WithoutNull
+        // TODO:  this is not sound in contravariant cases etc.
+        | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
+        | _ -> 
             if csenv.g.checkNullness then 
                 WarnD(ConstraintSolverNullnessWarningEquivWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
             else
                 CompleteD
         
+// nullness1: target
+// nullness2: source
 and SolveNullnessSubsumesNullness (csenv:ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
     match nullness1, nullness2 with
     | Nullness.Variable nv1, Nullness.Variable nv2 when nv1 === nv2 -> 
@@ -830,6 +837,7 @@ and SolveNullnessSubsumesNullness (csenv:ConstraintSolverEnv) m2 (trace: Optiona
         | _, NullnessInfo.Oblivious -> CompleteD
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
+        // Allow target of WithNull and actual of WithoutNull
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
             if csenv.g.checkNullness then 
@@ -839,6 +847,8 @@ and SolveNullnessSubsumesNullness (csenv:ConstraintSolverEnv) m2 (trace: Optiona
         
 /// Add the constraint "ty1 = ty2" to the constraint problem. 
 /// Propagate all effects of adding this constraint, e.g. to solve type variables 
+// ty1: actual
+// ty2: expected
 and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) (cxsln:(TraitConstraintInfo * TraitConstraintSln) option) ty1 ty2 = 
     let ndeep = ndeep + 1
     let aenv = csenv.EquivEnv
@@ -920,7 +930,8 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
     | _  -> localAbortD
 
 
-and SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1 ty2 = SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace None ty1 ty2
+and SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1 ty2 = 
+    SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace None ty1 ty2
 
 and private SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ty1 ty2 = 
    // Back out of expansions of type abbreviations to give improved error messages. 
@@ -944,6 +955,7 @@ and SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln origl1 origl2 =
        loop origl1 origl2
 
 and SolveFunTypeEqn csenv ndeep m2 trace cxsln d1 d2 r1 r2 = trackErrors {
+    // TODO: consider flipping the actual and expected in argument position
     do! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln d1 d2
     return! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln r1 r2
   }
@@ -1075,6 +1087,7 @@ and SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m2 trace cxsln ty1 ty2 =
 //------------------------------------------------------------------------- 
 
       
+// 'T :> ty
 and SolveTyparSubtypeOfType (csenv:ConstraintSolverEnv) ndeep m2 trace tp ty1 = 
     let g = csenv.g
     if isObjTy g ty1 then CompleteD
