@@ -54,12 +54,12 @@
 
   <!--
     ============================================================
-                                        MoveVSDependencies
-
-    Copy references that are marked as "CopyLocal" and their dependencies, including .pdbs, .xmls and satellites.
+    MoveVSDependencies
+    
+    Remove these assemblies from the ngen probing path.
     ============================================================
     -->
-  <Target Name="MoveVSDependencies" BeforeTargets = "_CopyFilesMarkedCopyLocal" Condition="'@(ReferenceCopyLocalPaths)' != ''">
+  <Target Name="MoveVSDependencies" BeforeTargets = "_CopyFilesMarkedCopyLocal" DependsOnTargets = "ResolveAssemblyReferences" Condition = "'@(ReferenceCopyLocalPaths)' != '' and '$(Configuration)' != 'Proto' ">
     <ItemGroup>
         <ReferenceCopyLocalPathsUpdate Remove = "@(ReferenceCopyLocalPathsUpdate)" />
 
@@ -70,16 +70,15 @@
         <ReferenceCopyLocalPathsUpdate Include = "@(ReferenceCopyLocalPaths)" Condition = " '%(ReferenceCopyLocalPaths.FileName)' == 'System.Reflection.Metadata'" />
         <ReferenceCopyLocalPathsUpdate Include = "@(ReferenceCopyLocalPaths)" Condition = " '%(ReferenceCopyLocalPaths.FileName)' == 'System.Collections.Immutable'" />
         <ReferenceCopyLocalPathsUpdate Include = "@(ReferenceCopyLocalPaths)" Condition = " '%(ReferenceCopyLocalPaths.FileName)' == 'System.ValueTuple'" />
-        <ReferenceCopyLocalPaths Remove = "@(ReferenceCopyLocalPathsUpdate)" />
 
+        <ReferenceCopyLocalPaths Remove = "@(ReferenceCopyLocalPathsUpdate)" />
         <ReferenceCopyLocalPaths Include = "@(ReferenceCopyLocalPathsUpdate)">
-            <DestinationSubDirectory>\dependencies\</DestinationSubDirectory>
+          <DestinationSubDirectory>dependencies\</DestinationSubDirectory>
         </ReferenceCopyLocalPaths>
 
     </ItemGroup>
-    <MakeDir Directories="$(FinalOutputPath)\dependencies" />
+    <MakeDir Directories="$(OutputPath)dependencies" />
   </Target>
-
 
   <Import Project="build\targets\AssemblyVersions.props" />
   <Import Project="build\targets\ConvertPortablePdbs.targets" />

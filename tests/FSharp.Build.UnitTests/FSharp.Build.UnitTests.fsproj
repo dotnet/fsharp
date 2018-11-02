@@ -102,6 +102,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <Compile Include="WriteCodeFragmentTests.fs" />
     <Compile Include="Program.fs" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
   </ItemGroup>

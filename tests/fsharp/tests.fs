@@ -27,7 +27,13 @@ let FSI_BASIC = FSI_FILE
 #endif
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 
-module CoreTests = 
+module CoreTests =
+
+    let copyValueTuple cfg =
+        if not (File.Exists(cfg.FSCBinPath ++ "System.ValueTuple.dll")) then
+            let systemValueDll = requireFile (cfg.FSCBinPath ++ "dependencies\System.ValueTuple.dll") 
+            File.Copy(systemValueDll, Path.GetDirectoryName(cfg.FSCBinPath) ++ "System.ValueTuple.dll", overwrite=false)
+
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
     let ``access-FSC_BASIC``() = singleTestBuildAndRun "core/access" FSC_BASIC
@@ -390,7 +396,7 @@ module CoreTests =
     //
     //        // if NOT EXIST test2.ok goto SetError
     //        testOkFile.CheckExists()
-    //    
+    //
 
 
     [<Test>]
@@ -445,14 +451,13 @@ module CoreTests =
         exec cfg ("." ++ "test.exe") ""
 
         exec cfg ("." ++ "test--optimize.exe") ""
-                
+
     [<Test>]
-    let fsfromfsviacs () = 
+    let fsfromfsviacs () =
         let cfg = testConfig "core/fsfromfsviacs"
+        copyValueTuple cfg
 
         fsc cfg "%s -a -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
-
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
         peverify cfg "lib.dll"
 
@@ -757,12 +762,11 @@ module CoreTests =
     [<Test>]
     let quotes () = 
         let cfg = testConfig "core/quotes"
+        copyValueTuple cfg
 
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
         fsc cfg "%s -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
-
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
         peverify cfg "test.exe"
 
@@ -1604,18 +1608,7 @@ module CoreTests =
     [<Test>]
     let verify () = 
         let cfg = testConfig "core/verify"
-
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "FSharp.Build.dll")
-
-       // peverifyWithArgs cfg "/nologo /MD" (cfg.FSCBinPath ++ "FSharp.Compiler.dll")
-
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "fsi.exe")
-
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "FSharp.Compiler.Interactive.Settings.dll")
-
         fsc cfg "%s -o:xmlverify.exe -g" cfg.fsc_flags ["xmlverify.fs"]
-
-        peverifyWithArgs cfg "/nologo" "xmlverify.exe"
 #endif
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
@@ -1872,6 +1865,8 @@ module OptimizationTests =
 #endif
 
 module TypecheckTests = 
+    open CoreTests
+
     [<Test>]
     let ``full-rank-arrays`` () = 
         let cfg = testConfig "typecheck/full-rank-arrays"
@@ -1898,10 +1893,11 @@ module TypecheckTests =
         peverify cfg "pos25.exe"
 
     [<Test>]
-    let ``sigs pos27`` () = 
+    let ``sigs pos27`` () =
         let cfg = testConfig "typecheck/sigs"
+        copyValueTuple cfg
+
         fsc cfg "%s --target:exe -o:pos27.exe" cfg.fsc_flags ["pos27.fs"]
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
         peverify cfg "pos27.exe"
 
     [<Test>]

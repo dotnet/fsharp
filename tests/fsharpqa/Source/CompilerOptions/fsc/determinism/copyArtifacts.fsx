@@ -5,4 +5,4 @@ System.IO.Directory.EnumerateFiles(__SOURCE_DIRECTORY__, "dummy.*")
 
 // pause a second at the end to deal with the potential race condiction of
 // too quick compiles back to back ending up in same exe, even when non-deterministic
-System.Threading.Thread.Sleep(1000)
+System.Threading.Thread.Sleep(1500)
