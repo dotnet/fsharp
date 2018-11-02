@@ -60,14 +60,14 @@
     "e_sqlite3.dll",
     "FSharp.Core.4.5.2.nupkg",
     "FSharp.Data.TypeProviders.dll",
-    "Microsoft.Build.dll",
-    "Microsoft.Build.Framework.dll",
-    "Microsoft.Build.Tasks.Core.dll",
-    "Microsoft.Build.Utilities.Core.dll",
+    "dependencies\Microsoft.Build.dll",
+    "dependencies\Microsoft.Build.Framework.dll",
+    "dependencies\Microsoft.Build.Tasks.Core.dll",
+    "dependencies\Microsoft.Build.Utilities.Core.dll",
     "Newtonsoft.Json.dll",
-    "System.Collections.Immutable.dll",
-    "System.Reflection.Metadata.dll",
+    "dependencies\System.Collections.Immutable.dll",
+    "dependencies\System.Reflection.Metadata.dll",
     "System.ValueTuple.4.4.0.nupkg",
-    "System.ValueTuple.dll"
+    "dependencies\System.ValueTuple.dll"
   ]
 }
