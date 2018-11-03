@@ -811,6 +811,9 @@ echo ---------------- Done with build, starting assembly version checks --------
 set asmvercheckpath=%~dp0tests\fsharpqa\testenv\src\AssemblyVersionCheck
 
 if "%BUILD_NET40%" == "1" (
+
+  dir "%~dp0%BUILD_CONFIG%\net40\bin\*.*" /s /b
+
   echo "%~dp0%BUILD_CONFIG%\net40\bin\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0%BUILD_CONFIG%"
        "%~dp0%BUILD_CONFIG%\net40\bin\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0%BUILD_CONFIG%"
   if ERRORLEVEL 1 echo Error verifying assembly versions and commit hashes. && goto :failure
