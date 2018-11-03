@@ -26,12 +26,12 @@
     "fsi.exe",
     "fsiAnyCpu.exe",
     "FSharp.Data.TypeProviders.dll",
-    "dependencies\Microsoft.Build.dll",
-    "dependencies\Microsoft.Build.Framework.dll",
-    "dependencies\Microsoft.Build.Tasks.Core.dll",
-    "dependencies\Microsoft.Build.Utilities.Core.dll",
-    "dependencies\System.Collections.Immutable.dll",
-    "dependencies\System.Reflection.Metadata.dll",
-    "dependencies\System.ValueTuple.dll"
+    "dependencies\\Microsoft.Build.dll",
+    "dependencies\\Microsoft.Build.Framework.dll",
+    "dependencies\\Microsoft.Build.Tasks.Core.dll",
+    "dependencies\\Microsoft.Build.Utilities.Core.dll",
+    "dependencies\\System.Collections.Immutable.dll",
+    "dependencies\\System.Reflection.Metadata.dll",
+    "dependencies\\System.ValueTuple.dll"
   ]
 }
