@@ -43,13 +43,10 @@ type internal ByteBuffer =
 
 [<Sealed>]
 type internal ByteStream =
+    member IsEOF : bool
     member ReadByte : unit -> byte
     member ReadBytes : int -> byte[]
     member ReadUtf8String : int -> string
     member Position : int 
     static member FromBytes : byte[] * start:int * length:int -> ByteStream
     
-#if LAZY_UNPICKLE
-    member CloneAndSeek : int -> ByteStream
-    member Skip : int -> unit
-#endif

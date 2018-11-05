@@ -18,7 +18,7 @@
     <ProjectGuid>{9D7C9060-9263-40EB-8FE3-1E4E3C6D941C}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
-    <OtherFlags>$(OtherFlags) --stackReserveSize:4096000</OtherFlags>
+    <OtherFlags>$(OtherFlags) --stackReserveSize:4096000 --optimize-</OtherFlags>
   </PropertyGroup>
   <ItemGroup>
     <FsSrGen Include="..\FSComp.txt">

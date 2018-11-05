@@ -929,7 +929,7 @@ and ConvDecisionTree cenv env tgs typR x =
 // Check if this is an provider-generated assembly that will be statically linked
 and IsILTypeRefStaticLinkLocal cenv m (tr:ILTypeRef) =
         let g = cenv.g
-        ignore cenv; ignore m
+        ignore m
         match tr.Scope with 
 #if !NO_EXTENSIONTYPING
         | ILScopeRef.Assembly aref 

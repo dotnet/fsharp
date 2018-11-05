@@ -111,6 +111,7 @@ type NodeOutTable<'Data,'Node> =
 [<NoEquality; NoComparison>]
 type WriterState = 
   { os: ByteBuffer 
+    osB: ByteBuffer 
     oscope: CcuThunk
     occus: Table<CcuReference> 
     otycons: NodeOutTable<EntityData,Entity> 
@@ -142,6 +143,8 @@ type NodeInTable<'Data,'Node> =
 [<NoEquality; NoComparison>]
 type ReaderState = 
   { is: ByteStream 
+    // secondary stream of information for F# 5.0
+    isB: ByteStream
     iilscope: ILScopeRef
     iccus: InputTable<CcuThunk> 
     itycons: NodeInTable<EntityData,Tycon>  
@@ -164,6 +167,7 @@ let ufailwith st str = ffailwith st.ifile str
 type 'T pickler = 'T -> WriterState -> unit
 
 let p_byte b st = st.os.EmitIntAsByte b
+let p_byteB b st = st.osB.EmitIntAsByte b
 let p_bool b st = p_byte (if b then 1 else 0) st
 let prim_p_int32 i st = 
     p_byte (b0 i) st
@@ -235,20 +239,16 @@ let inline  p_tup8 p1 p2 p3 p4 p5 p6 p7 p8 (a,b,c,d,e,f,x7,x8) (st:WriterState) 
 let inline  p_tup9 p1 p2 p3 p4 p5 p6 p7 p8 p9 (a,b,c,d,e,f,x7,x8,x9) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit)
 let inline  p_tup10 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 (a,b,c,d,e,f,x7,x8,x9,x10) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit)
 let inline  p_tup11 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 (a,b,c,d,e,f,x7,x8,x9,x10,x11) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit)
-let inline  p_tup12 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit); (p12 x12 st : unit)
-let inline  p_tup13 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit); (p12 x12 st : unit); (p13 x13 st : unit)
-let inline  p_tup14 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13,x14) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit); (p12 x12 st : unit); (p13 x13 st : unit) ; (p14 x14 st : unit)
-let inline  p_tup15 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13,x14,x15) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit); (p12 x12 st : unit); (p13 x13 st : unit) ; (p14 x14 st : unit); (p15 x15 st : unit)
-let inline  p_tup16 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit); (p12 x12 st : unit); (p13 x13 st : unit) ; (p14 x14 st : unit); (p15 x15 st : unit); (p16 x16 st : unit)
-let inline  p_tup17 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16,x17) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit); (p12 x12 st : unit); (p13 x13 st : unit) ; (p14 x14 st : unit); (p15 x15 st : unit); (p16 x16 st : unit); (p17 x17 st : unit)
 
 let u_byte st = int (st.is.ReadByte())
+
+/// The extra B stream of bytes is implicitly 0 if not present
+let u_byteB st = 
+    if st.isB.IsEOF then 0 else int (st.isB.ReadByte())
 
 type unpickler<'T> = ReaderState -> 'T
 
 let u_bool st = let b = u_byte st in (b = 1) 
-
-
 
 let prim_u_int32 st = 
     let b0 =  (u_byte st)
@@ -344,35 +344,11 @@ let inline u_tup11 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 (st:ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
   let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
   let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in (a,b,c,d,e,f,x7,x8,x9,x10,x11)
-let inline u_tup12 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 (st:ReaderState) =
-  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
-  let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
-  let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in
-  (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12)
 let inline u_tup13 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 (st:ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
   let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
   let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in let x13 = p13 st in
   (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13)
-let inline u_tup14 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 (st:ReaderState) =
-  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
-  let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
-  let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in let x13 = p13 st in
-  let x14 = p14 st in
-  (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13,x14)
-let inline u_tup15 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 (st:ReaderState) =
-  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
-  let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
-  let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in let x13 = p13 st in
-  let x14 = p14 st in let x15 = p15 st in
-  (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13,x14,x15)
-
-let inline u_tup16 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 (st:ReaderState) =
-  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
-  let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
-  let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in let x13 = p13 st in
-  let x14 = p14 st in let x15 = p15 st in let x16 = p16 st in
-  (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16)
 
 let inline u_tup17 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 (st:ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
@@ -570,12 +546,6 @@ let u_option f st =
     | 1 -> Some (f st)
     | n -> ufailwith st ("u_option: found number " + string n)
 
-// Boobytrap an OSGN node with a force of a lazy load of a bunch of pickled data
-#if LAZY_UNPICKLE
-let wire (x:osgn<_>) (res:Lazy<_>) = 
-    x.osgnTripWire <- Some(fun () -> res.Force() |> ignore)
-#endif
-
 let u_lazy u st = 
 
     // Read the number of bytes in the record
@@ -588,25 +558,8 @@ let u_lazy u st =
     let ovalsIdx1   = prim_u_int32 st // fixupPos6
     let ovalsIdx2   = prim_u_int32 st // fixupPos7
 
-#if LAZY_UNPICKLE
-    // Record the position in the bytestream to use when forcing the read of the data
-    let idx1 = st.is.Position
-    // Skip the length of data
-    st.is.Skip len
-    // This is the lazy computation that wil force the unpickling of the term.
-    // This term must contain OSGN definitions of the given nodes.
-    let res = 
-        lazy (let st = { st with is = st.is.CloneAndSeek idx1 }
-              u st)
-    /// Force the reading of the data as a "tripwire" for each of the OSGN thunks 
-    for i = otyconsIdx1 to otyconsIdx2-1 do wire (st.itycons.Get(i)) res done
-    for i = ovalsIdx1   to ovalsIdx2-1   do wire (st.ivals.Get(i))   res done
-    for i = otyparsIdx1 to otyparsIdx2-1 do wire (st.itypars.Get(i)) res done
-    res
-#else
     ignore (len, otyconsIdx1, otyconsIdx2, otyparsIdx1, otyparsIdx2, ovalsIdx1, ovalsIdx2)
     Lazy.CreateFromValue(u st)
-#endif    
 
 
 let u_hole () = 
@@ -699,9 +652,10 @@ let p_simpletyp x st = p_int (encode_simpletyp st.occus st.ostrings st.onlerefs 
 
 type sizes = int * int * int 
 let pickleObjWithDanglingCcus inMem file (g: TcGlobals) scope p x =
-  let ccuNameTab,(sizes: sizes),stringTab,pubpathTab,nlerefTab,simpleTyTab,phase1bytes =
+  let ccuNameTab,(sizes: sizes),stringTab,pubpathTab,nlerefTab,simpleTyTab,phase1bytes,phase1bytesB =
     let st1 = 
       { os = ByteBuffer.Create 100000 
+        osB = ByteBuffer.Create 100000 
         oscope=scope
         occus= Table<_>.Create "occus" 
         otycons=NodeOutTable<_,_>.Create((fun (tc:Tycon) -> tc.Stamp),(fun tc -> tc.LogicalName),(fun tc -> tc.Range),(fun osgn -> osgn),"otycons") 
@@ -719,11 +673,12 @@ let pickleObjWithDanglingCcus inMem file (g: TcGlobals) scope p x =
       st1.otycons.Size,
       st1.otypars.Size,
       st1.ovals.Size 
-    st1.occus, sizes, st1.ostrings, st1.opubpaths,st1.onlerefs, st1.osimpletys, st1.os.Close()
+    st1.occus, sizes, st1.ostrings, st1.opubpaths,st1.onlerefs, st1.osimpletys, st1.os.Close(), st1.osB.Close()
   let phase2data = (ccuNameTab.AsArray,sizes,stringTab.AsArray,pubpathTab.AsArray,nlerefTab.AsArray,simpleTyTab.AsArray,phase1bytes)
-  let phase2bytes = 
+  let phase2bytes, phase2bytesB = 
     let st2 = 
      { os = ByteBuffer.Create 100000 
+       osB = ByteBuffer.Create 100000 
        oscope=scope
        occus= Table<_>.Create "occus (fake)" 
        otycons=NodeOutTable<_,_>.Create((fun (tc:Tycon) -> tc.Stamp),(fun tc -> tc.LogicalName),(fun tc -> tc.Range),(fun osgn -> osgn),"otycons") 
@@ -745,8 +700,13 @@ let pickleObjWithDanglingCcus inMem file (g: TcGlobals) scope p x =
       (p_array p_encoded_simpletyp) 
       p_bytes 
       phase2data st2
-    st2.os.Close()
-  phase2bytes
+    st2.os.Close(), st2.osB.Close()
+
+  if phase2bytesB.Length <> 0 then failwith "expected phase2bytesB.Length = 0"
+  printfn "(pickle) phase1bytesB = %A" phase1bytesB
+  ignore phase1bytesB
+
+  phase2bytes, ([| |] : byte array)
   
 let check (ilscope:ILScopeRef) (inMap : NodeInTable<_,_>) =
     for i = 0 to inMap.Count - 1 do
@@ -755,9 +715,11 @@ let check (ilscope:ILScopeRef) (inMap : NodeInTable<_,_>) =
         warning(Error(FSComp.SR.pickleMissingDefinition (i, inMap.Name, ilscope.QualifiedName), range0))
         // Note for compiler developers: to get information about which item this index relates to, enable the conditional in Pickle.p_osgn_ref to refer to the given index number and recompile an identical copy of the source for the DLL containing the data being unpickled.  A message will then be printed indicating the name of the item.\n" 
 
-let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef option) u (phase2bytes:byte[]) =
+let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef option) u (phase2bytes:byte[]) (phase1bytesB:byte[]) =
+    printfn "(unpickle) phase1bytesB = %A" phase1bytesB
     let st2 = 
        { is = ByteStream.FromBytes (phase2bytes,0,phase2bytes.Length) 
+         isB = ByteStream.FromBytes ([| |],0,0) 
          iilscope= ilscope
          iccus= new_itbl "iccus (fake)" [| |] 
          itycons= NodeInTable<_,_>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"itycons",0) 
@@ -788,6 +750,7 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef option) u (p
     let data = 
         let st1 = 
            { is = ByteStream.FromBytes (phase1bytes,0,phase1bytes.Length) 
+             isB = ByteStream.FromBytes (phase1bytesB,0,phase1bytesB.Length) 
              iccus=  ccuTab 
              iilscope= ilscope
              itycons= NodeInTable<_,_>.Create(Tycon.NewUnlinked,(fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"itycons",ntycons) 
@@ -800,19 +763,16 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef option) u (p
              ifile=file 
              iILModule = iILModule }
         let res = u st1
-#if LAZY_UNPICKLE
-#else
         check ilscope st1.itycons
         check ilscope st1.ivals
         check ilscope st1.itypars
-#endif
         res
 
     {RawData=data; FixupThunks=Array.toList ccuTab.itbl_rows }
     
 
 //=========================================================================
-// PART II *)
+// PART II
 //=========================================================================
 
 //---------------------------------------------------------------------------
@@ -1575,64 +1535,38 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
     | TType_app(ERefNonLocal nleref,[], nullness) ->
         if st.oglobals.langFeatureNullness then 
             match nullness.Evaluate() with 
-            | NullnessInfo.WithNull -> 
-                p_byte 9 st; p_simpletyp nleref st  // TODO: compatible emitting nullness in F# metadata
-            | NullnessInfo.WithoutNull -> 
-                p_byte 10 st; p_simpletyp nleref st  // TODO: compatible emitting nullness in F# metadata
-            | NullnessInfo.ObliviousToNull -> 
-                p_byte 11 st; p_simpletyp nleref st
-        else
-            p_byte 1 st; p_simpletyp nleref st
+            | NullnessInfo.WithNull -> p_byteB 9 st
+            | NullnessInfo.WithoutNull -> p_byteB 10 st
+            | NullnessInfo.ObliviousToNull -> p_byteB 11 st
+        p_byte 1 st; p_simpletyp nleref st
 
     | TType_app (tc,tinst, nullness) ->
         if st.oglobals.langFeatureNullness then 
             match nullness.Evaluate() with 
-            | NullnessInfo.WithNull -> 
-                p_byte 12 st; p_tcref "typ" tc st; p_tys tinst st // TODO: compatible emitting nullness in F# metadata
-            | NullnessInfo.WithoutNull -> 
-                p_byte 13 st; p_tcref "typ" tc st; p_tys tinst st // TODO: compatible emitting nullness in F# metadata
-            | NullnessInfo.ObliviousToNull -> 
-                p_byte 14 st; p_tcref "typ" tc st; p_tys tinst st
-        else
-            p_byte 2 st; p_tcref "typ" tc st; p_tys tinst st
+            | NullnessInfo.WithNull -> p_byteB 12 st
+            | NullnessInfo.WithoutNull -> p_byteB 13 st
+            | NullnessInfo.ObliviousToNull -> p_byteB 14 st
+        p_byte 2 st; p_tcref "typ" tc st; p_tys tinst st
         
-    | TType_fun (d,r,nullness) ->  // TODO: not emitting nullness in F# metadata
+    | TType_fun (d,r,nullness) ->
         if st.oglobals.langFeatureNullness then 
             match nullness.Evaluate() with 
-            | NullnessInfo.WithNull -> 
-                p_byte 15 st
-                p_ty2 isStructThisArgPos d st
-                p_ty r st
-            | NullnessInfo.WithoutNull -> 
-                p_byte 16 st
-                p_ty2 isStructThisArgPos d st
-                p_ty r st
-            | NullnessInfo.ObliviousToNull -> 
-                p_byte 17 st
-                // Note, the "this" argument may be found in the domain position of a function type, so propagate the isStructThisArgPos value
-                p_ty2 isStructThisArgPos d st
-                p_ty r st
-        else
-            p_byte 3 st
-            // Note, the "this" argument may be found in the domain position of a function type, so propagate the isStructThisArgPos value
-            p_ty2 isStructThisArgPos d st
-            p_ty r st
+            | NullnessInfo.WithNull -> p_byteB 15 st
+            | NullnessInfo.WithoutNull -> p_byteB 16 st
+            | NullnessInfo.ObliviousToNull -> p_byteB 17 st
+        p_byte 3 st
+        // Note, the "this" argument may be found in the domain position of a function type, so propagate the isStructThisArgPos value
+        p_ty2 isStructThisArgPos d st
+        p_ty r st
 
     | TType_var (r, nullness) -> 
         if st.oglobals.langFeatureNullness then 
             match nullness.Evaluate() with 
-            | NullnessInfo.WithNull -> 
-                p_byte 18 st
-                p_tpref r st
-            | NullnessInfo.WithoutNull -> 
-                p_byte 19 st
-                p_tpref r st
-            | NullnessInfo.ObliviousToNull -> 
-                p_byte 20 st
-                p_tpref r st
-        else
-            p_byte 4 st
-            p_tpref r st
+            | NullnessInfo.WithNull -> p_byteB 18 st
+            | NullnessInfo.WithoutNull -> p_byteB 19 st
+            | NullnessInfo.ObliviousToNull -> p_byteB 20 st
+        p_byte 4 st
+        p_tpref r st
 
     | TType_forall (tps,r) -> 
         p_byte 5 st
@@ -1647,66 +1581,61 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
 let _ = fill_u_ty (fun st ->
     let tag = u_byte st
     match tag with
-    | 0 -> let l = u_tys st                               in TType_tuple (tupInfoRef, l)
-    | 1 -> u_simpletyp st 
-    | 2 -> let tc = u_tcref st in let tinst = u_tys st    in TType_app (tc, tinst, KnownObliviousToNull)
-    | 3 -> let d = u_ty st    in let r = u_ty st         in TType_fun (d,r, KnownObliviousToNull)
-    | 4 -> let r = u_tpref st                              in r.AsType KnownObliviousToNull
+    | 0 -> 
+        let l = u_tys st
+        TType_tuple (tupInfoRef, l)
+    | 1 -> 
+        let sty = u_simpletyp st 
+        let tagB = u_byteB st
+        match tagB with 
+        | 9 -> 
+            match sty with 
+            | TType_app(tcref, _, _) -> TType_app(tcref, [], KnownWithNull)
+            | _ -> ufailwith st "u_ty 9a"
+        | 10 -> 
+            match sty with 
+            | TType_app(tcref, _, _) -> TType_app(tcref, [], KnownWithoutNull)
+            | _ -> ufailwith st "u_ty 9b"
+        | 11 -> 
+            match sty with 
+            | TType_app(tcref, _, _) -> TType_app(tcref, [], KnownObliviousToNull)
+            | _ -> ufailwith st "u_ty 9c"
+        | 0 ->
+            sty
+        | b -> ufailwith st (sprintf "u_ty - 1/B, byte = %A" b)
+    | 2 -> 
+        let tcref = u_tcref st
+        let tinst = u_tys st
+        let tagB = u_byteB st
+        match tagB with 
+        | 12 -> TType_app (tcref, tinst, KnownWithNull)
+        | 13 -> TType_app (tcref, tinst, KnownWithoutNull)
+        | 14 -> TType_app (tcref, tinst, KnownObliviousToNull)
+        | 0 -> TType_app (tcref, tinst, KnownObliviousToNull)
+        | _ -> ufailwith st "u_ty - 2/B"
+    | 3 -> 
+        let d = u_ty st
+        let r = u_ty st
+        let tagB = u_byteB st
+        match tagB with 
+        | 15 -> TType_fun (d, r, KnownWithNull)
+        | 16 -> TType_fun (d, r, KnownWithoutNull)
+        | 17 -> TType_fun (d, r, KnownObliviousToNull)
+        | 0 -> TType_fun (d, r, KnownObliviousToNull)
+        | _ -> ufailwith st "u_ty - 3/B"
+    | 4 ->
+        let r = u_tpref st
+        let tagB = u_byteB st
+        match tagB with 
+        | 18 -> r.AsType KnownWithNull
+        | 19 -> r.AsType KnownWithoutNull
+        | 20 -> r.AsType KnownObliviousToNull
+        | 0 -> r.AsType KnownObliviousToNull
+        | _ -> ufailwith st "u_ty - 4/B"
     | 5 -> let tps = u_tyar_specs st in let r = u_ty st  in TType_forall (tps,r)
     | 6 -> let unt = u_measure_expr st                     in TType_measure unt
     | 7 -> let uc = u_ucref st in let tinst = u_tys st    in TType_ucase (uc,tinst)
     | 8 -> let l = u_tys st                               in TType_tuple (tupInfoStruct, l)
-    | 9 -> 
-        let sty = u_simpletyp st
-        match sty with 
-        | TType_app(_tcref, [], Nullness.Known NullnessInfo.WithNull) -> sty // keep the unique
-        | TType_app(tcref, [], _nullness) -> TType_app(tcref, [], KnownWithNull)
-        | _ -> ufailwith st "u_ty - 9" 
-    | 10 -> 
-        let sty = u_simpletyp st
-        match sty with 
-        | TType_app(_tcref, [], Nullness.Known NullnessInfo.WithoutNull) -> sty // keep the unique
-        | TType_app(tcref, [], _nullness) -> TType_app(tcref, [], KnownWithoutNull)
-        | _ -> ufailwith st "u_ty - 9" 
-    | 11 -> 
-        let sty = u_simpletyp st
-        match sty with 
-        | TType_app(_tcref, [], Nullness.Known NullnessInfo.ObliviousToNull) -> sty // keep the unique
-        | TType_app(tcref, [], _nullness) -> TType_app(tcref, [], KnownObliviousToNull)
-        | _ -> ufailwith st "u_ty - 9" 
-    | 12 -> 
-        let tc = u_tcref st 
-        let tinst = u_tys st
-        TType_app (tc, tinst, KnownWithNull)
-    | 13 -> 
-        let tc = u_tcref st 
-        let tinst = u_tys st
-        TType_app (tc, tinst, KnownWithoutNull)
-    | 14 -> 
-        let tc = u_tcref st 
-        let tinst = u_tys st
-        TType_app (tc, tinst, KnownObliviousToNull)
-    | 15 -> 
-        let d = u_ty st
-        let r = u_ty st
-        TType_fun (d,r, KnownWithNull)
-    | 16 -> 
-        let d = u_ty st
-        let r = u_ty st
-        TType_fun (d,r, KnownWithoutNull)
-    | 17 -> 
-        let d = u_ty st
-        let r = u_ty st
-        TType_fun (d,r, KnownObliviousToNull)
-    | 18 -> 
-        let r = u_tpref st
-        TType_var (r, KnownWithNull)
-    | 19 -> 
-        let r = u_tpref st
-        TType_var (r, KnownWithoutNull)
-    | 20 -> 
-        let r = u_tpref st
-        TType_var (r, KnownObliviousToNull)
     | _ -> ufailwith st "u_ty")
   
 
