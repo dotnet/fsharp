@@ -81,7 +81,8 @@ let private IsILMemberAccessible g amap m (tcrefOfViewedItem : TyconRef) ad acce
                 match tcrefViewedFromOption with 
                 | None -> false
                 | Some tcrefViewedFrom ->
-                    ExistsHeadTypeInEntireHierarchy  g amap m (generalizedTyconRef tcrefViewedFrom) tcrefOfViewedItem)     
+                    let tcrefViewedFromTy = generalizedTyOfTyconRef g tcrefViewedFrom
+                    ExistsHeadTypeInEntireHierarchy  g amap m tcrefViewedFromTy tcrefOfViewedItem)     
 
             let accessibleByInternalsVisibleTo = 
                 (access = ILMemberAccess.Assembly || access = ILMemberAccess.FamilyOrAssembly) && 
@@ -93,7 +94,8 @@ let private IsILMemberAccessible g amap m (tcrefOfViewedItem : TyconRef) ad acce
                 match tcrefViewedFromOption with 
                 | None -> false
                 | Some tcrefViewedFrom ->
-                    ExistsHeadTypeInEntireHierarchy  g amap m (generalizedTyconRef tcrefViewedFrom) tcrefOfViewedItem    
+                    let tcrefViewedFromTy = generalizedTyOfTyconRef g tcrefViewedFrom
+                    ExistsHeadTypeInEntireHierarchy  g amap m tcrefViewedFromTy tcrefOfViewedItem    
 
             (access = ILMemberAccess.Public) || accessibleByFamily || accessibleByInternalsVisibleTo || accessibleByFamilyAndAssembly
 

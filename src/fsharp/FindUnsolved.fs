@@ -65,7 +65,7 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
     // REVIEW: fold the next two cases together 
     | Expr.Lambda(_,_ctorThisValOpt,_baseValOpt,argvs,_body,m,rty) -> 
         let topValInfo = ValReprInfo ([],[argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)],ValReprInfo.unnamedRetVal) 
-        let ty = mkMultiLambdaTy m argvs rty 
+        let ty = mkMultiLambdaTy cenv.g m argvs rty 
         accLambdas cenv env topValInfo expr ty
     | Expr.TyLambda(_,tps,_body,_m,rty)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps,[],ValReprInfo.unnamedRetVal) 

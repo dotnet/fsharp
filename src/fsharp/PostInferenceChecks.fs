@@ -996,7 +996,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
 
     | Expr.Lambda(_,_ctorThisValOpt,_baseValOpt,argvs,_,m,rty) -> 
         let topValInfo = ValReprInfo ([],[argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)],ValReprInfo.unnamedRetVal) 
-        let ty = mkMultiLambdaTy m argvs rty in 
+        let ty = mkMultiLambdaTy cenv.g m argvs rty
         CheckLambdas false None cenv env false topValInfo false expr m ty PermitByRefExpr.Yes
 
     | Expr.TyLambda(_,tps,_,m,rty)  -> 
@@ -1772,8 +1772,8 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
             if v.IsExtensionMember then 
                 tcref.ModuleOrNamespaceType.AllValsAndMembersByLogicalNameUncached.[v.LogicalName] |> List.iter (fun v2 -> 
                     if v2.IsExtensionMember && not (valEq v v2) && v.CompiledName = v2.CompiledName then
-                        let minfo1 =  FSMeth(g, generalizedTyconRef tcref, mkLocalValRef v, Some 0UL)
-                        let minfo2 =  FSMeth(g, generalizedTyconRef tcref, mkLocalValRef v2, Some 0UL)
+                        let minfo1 =  FSMeth(g, generalizedTyOfTyconRef g tcref, mkLocalValRef v, Some 0UL)
+                        let minfo2 =  FSMeth(g, generalizedTyOfTyconRef g tcref, mkLocalValRef v2, Some 0UL)
                         if tyconRefEq g v.MemberApparentEntity v2.MemberApparentEntity && 
                            MethInfosEquivByNameAndSig EraseAll true g cenv.amap v.Range minfo1 minfo2 then 
                             errorR(Duplicate(kind,v.DisplayName,v.Range)))
@@ -1835,7 +1835,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
     let g = cenv.g
     let m = tycon.Range 
     let tcref = mkLocalTyconRef tycon
-    let ty = generalizedTyconRef tcref
+    let ty = generalizedTyOfTyconRef g tcref
 
     let env = { env with reflect = env.reflect || HasFSharpAttribute g g.attrib_ReflectedDefinitionAttribute tycon.Attribs }
     let env = BindTypars g env (tycon.Typars(m))

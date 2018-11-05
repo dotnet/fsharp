@@ -47,10 +47,7 @@ val stripTyEqnsWrtErasure: Erasure -> TcGlobals -> TType -> TType
 //------------------------------------------------------------------------- 
 
 /// Build a function type
-val mkFunTy : TType -> TType -> TType
-
-/// Build a function type
-val ( --> ) : TType -> TType -> TType
+val mkFunTy : TcGlobals -> TType -> TType -> TType
 
 /// Build a type-forall anonymous generic type if necessary
 val mkForallTyIfNeeded : Typars -> TType -> TType
@@ -58,16 +55,16 @@ val mkForallTyIfNeeded : Typars -> TType -> TType
 val ( +-> ) : Typars -> TType -> TType
 
 /// Build a curried function type
-val mkIteratedFunTy : TTypes -> TType -> TType
+val mkIteratedFunTy : TcGlobals -> TTypes -> TType -> TType
 
 /// Get the natural type of a single argument amongst a set of curried arguments
 val typeOfLambdaArg : range -> Val list -> TType
 
-/// Get the curried type corresponding to a lambda 
-val mkMultiLambdaTy : range -> Val list -> TType -> TType
+/// Get the type corresponding to a lambda 
+val mkLambdaTy : TcGlobals -> Typars -> TTypes -> TType -> TType
 
 /// Get the curried type corresponding to a lambda 
-val mkLambdaTy : Typars -> TTypes -> TType -> TType
+val mkMultiLambdaTy : TcGlobals -> range -> Val list -> TType -> TType
 
 /// Module publication, used while compiling fslib.
 val ensureCcuHasModuleOrNamespaceAtPath : CcuThunk -> Ident list -> CompilationPath -> XmlDoc -> unit 
@@ -128,10 +125,10 @@ val mkLambda : range -> Val -> Expr * TType -> Expr
 val mkTypeLambda : range -> Typars -> Expr * TType -> Expr
 val mkObjExpr : TType * Val option * Expr * ObjExprMethod list * (TType * ObjExprMethod list) list * Range.range -> Expr
 val mkTypeChoose : range -> Typars -> Expr -> Expr
-val mkLambdas : range -> Typars -> Val list -> Expr * TType -> Expr
-val mkMultiLambdasCore : range -> Val list list -> Expr * TType -> Expr * TType
-val mkMultiLambdas : range -> Typars -> Val list list -> Expr * TType -> Expr
-val mkMemberLambdas : range -> Typars -> Val option -> Val option -> Val list list -> Expr * TType -> Expr
+val mkLambdas : TcGlobals -> range -> Typars -> Val list -> Expr * TType -> Expr
+val mkMultiLambdasCore : TcGlobals -> range -> Val list list -> Expr * TType -> Expr * TType
+val mkMultiLambdas : TcGlobals -> range -> Typars -> Val list list -> Expr * TType -> Expr
+val mkMemberLambdas : TcGlobals -> range -> Typars -> Val option -> Val option -> Val list list -> Expr * TType -> Expr
 
 val mkWhile      : TcGlobals -> SequencePointInfoForWhileLoop * SpecialWhileLoopMarker * Expr * Expr * range                          -> Expr
 val mkFor        : TcGlobals -> SequencePointInfoForForLoop * Val * Expr * ForLoopStyle * Expr * Expr * range -> Expr
@@ -149,7 +146,7 @@ val mkLetBind : range -> Binding -> Expr -> Expr
 val mkLetsBind : range -> Binding list -> Expr -> Expr
 val mkLetsFromBindings : range -> Bindings -> Expr -> Expr
 val mkLet : SequencePointInfoForBinding -> range -> Val -> Expr -> Expr -> Expr
-val mkMultiLambdaBind : Val -> SequencePointInfoForBinding -> range -> Typars -> Val list list -> Expr * TType -> Binding
+val mkMultiLambdaBind : TcGlobals -> Val -> SequencePointInfoForBinding -> range -> Typars -> Val list list -> Expr * TType -> Binding
 
 // Compiler generated bindings may involve a user variable.
 // Compiler generated bindings may give rise to a sequence point if they are part of
@@ -430,9 +427,10 @@ val instTrait              : TyparInst -> TraitConstraintInfo -> TraitConstraint
 // From typars to types 
 //------------------------------------------------------------------------- 
 
+val generalTyconRefInst : TyconRef -> TypeInst
 val generalizeTypars : Typars -> TypeInst
-val generalizeTyconRef : TyconRef -> TTypes * TType
-val generalizedTyconRef : TyconRef -> TType
+val generalizeTyconRef : TcGlobals -> TyconRef -> TTypes * TType
+val generalizedTyOfTyconRef : TcGlobals -> TyconRef -> TType
 val mkTyparToTyparRenaming : Typars -> Typars -> TyparInst * TTypes
 
 //-------------------------------------------------------------------------

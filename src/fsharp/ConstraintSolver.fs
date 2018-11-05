@@ -74,23 +74,28 @@ let NewNamedInferenceMeasureVar (_m, rigid, var, id) =
 
 let NewInferenceMeasurePar () = NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, false)
 
-let NewErrorTypar () = NewCompGenTypar (TyparKind.Type, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, true)
-let NewErrorMeasureVar () = NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, true)
-let NewInferenceType () = 
+let NewErrorTypar () = 
+    NewCompGenTypar (TyparKind.Type, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, true)
+
+let NewErrorMeasureVar () = 
+    NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, true)
+
+let NewInferenceType (g: TcGlobals) = 
     let tp = NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false)
-    let nullness = NewNullnessVar()
+    let nullness = if g.langFeatureNullness then NewNullnessVar() else KnownObliviousToNull
     TType_var (tp, nullness)
     
 let NewErrorType () = mkTyparTy (NewErrorTypar ())
+
 let NewErrorMeasure () = Measure.Var (NewErrorMeasureVar ())
 
 let NewByRefKindInferenceType (g: TcGlobals) m = 
     let tp = NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, HeadTypeStaticReq, true), false, TyparDynamicReq.No, [], false, false)
     if g.byrefkind_InOut_tcr.CanDeref then
-        tp.SetConstraints [TyparConstraint.DefaultsTo(10, TType_app(g.byrefkind_InOut_tcr, [], KnownNonNull), m)]
+        tp.SetConstraints [TyparConstraint.DefaultsTo(10, TType_app(g.byrefkind_InOut_tcr, [], g.knownWithoutNull), m)]
     mkTyparTy tp
 
-let NewInferenceTypes l = l |> List.map (fun _ -> NewInferenceType ()) 
+let NewInferenceTypes g l = l |> List.map (fun _ -> NewInferenceType g) 
 
 // QUERY: should 'rigid' ever really be 'true'? We set this when we know 
 // we are going to have to generalize a typar, e.g. when implementing a 
@@ -103,8 +108,11 @@ let FreshenAndFixupTypars m rigid fctps tinst tpsorig =
     let renaming, tinst = FixupNewTypars m fctps tinst tpsorig tps
     tps, renaming, tinst
 
-let FreshenTypeInst m tpsorig = FreshenAndFixupTypars m TyparRigidity.Flexible [] [] tpsorig 
-let FreshMethInst m fctps tinst tpsorig = FreshenAndFixupTypars m TyparRigidity.Flexible fctps tinst tpsorig 
+let FreshenTypeInst m tpsorig =
+    FreshenAndFixupTypars m TyparRigidity.Flexible [] [] tpsorig 
+
+let FreshMethInst m fctps tinst tpsorig =
+    FreshenAndFixupTypars m TyparRigidity.Flexible fctps tinst tpsorig 
 
 let FreshenTypars m tpsorig = 
     match tpsorig with 
@@ -802,8 +810,8 @@ and SolveNullnessEquiv (csenv:ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1
         CompleteD
     | Nullness.Known n1, Nullness.Known n2 -> 
         match n1, n2 with 
-        | NullnessInfo.Oblivious, _ -> CompleteD
-        | _, NullnessInfo.Oblivious -> CompleteD
+        | NullnessInfo.ObliviousToNull, _ -> CompleteD
+        | _, NullnessInfo.ObliviousToNull -> CompleteD
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
         // Allow expected of WithNull and actual of WithoutNull
@@ -833,8 +841,8 @@ and SolveNullnessSubsumesNullness (csenv:ConstraintSolverEnv) m2 (trace: Optiona
         CompleteD
     | Nullness.Known n1, Nullness.Known n2 -> 
         match n1, n2 with 
-        | NullnessInfo.Oblivious, _ -> CompleteD
-        | _, NullnessInfo.Oblivious -> CompleteD
+        | NullnessInfo.ObliviousToNull, _ -> CompleteD
+        | _, NullnessInfo.ObliviousToNull -> CompleteD
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
         // Allow target of WithNull and actual of WithoutNull
@@ -1525,7 +1533,7 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
         let allArgVars, allArgs = minfo.GetParamTypes(amap, m, minst) |> List.concat |> List.mapi (fun i ty -> mkLocal m ("arg"+string i) ty) |> List.unzip
         let objArgVars, objArgs = (if minfo.IsInstance then [mkLocal m "this" minfo.ApparentEnclosingType] else []) |> List.unzip
         let callMethInfoOpt, callExpr, callExprTy = ProvidedMethodCalls.BuildInvokerExpressionForProvidedMethodCall css.TcVal (g, amap, mi, objArgs, NeverMutates, false, ValUseFlag.NormalValUse, allArgs, m) 
-        let closedExprSln = ClosedExprSln (mkLambdas m [] (objArgVars@allArgVars) (callExpr, callExprTy) )
+        let closedExprSln = ClosedExprSln (mkLambdas g m [] (objArgVars@allArgVars) (callExpr, callExprTy) )
         // If the call is a simple call to an IL method with all the arguments in the natural order, then revert to use ILMethSln.
         // This is important for calls to operators on generated provided types. There is an (unchecked) condition
         // that generative providers do not re=order arguments or insert any more information into operator calls.
@@ -1824,11 +1832,11 @@ and SolveNullnessSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 (trace: Optio
         if nv.IsSolved then
             SolveNullnessSupportsNull csenv ndeep m2 trace ty nv.Solution
         else
-            trace.Exec (fun () ->  printfn "NV %d --> KnownNull" (nv.GetHashCode()); nv.Set KnownNull) (fun () -> nv.Unset())
+            trace.Exec (fun () ->  printfn "NV %d --> KnownWithNull" (nv.GetHashCode()); nv.Set KnownWithNull) (fun () -> nv.Unset())
             CompleteD
     | Nullness.Known n1 -> 
         match n1 with 
-        | NullnessInfo.Oblivious -> CompleteD
+        | NullnessInfo.ObliviousToNull -> CompleteD
         | NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull -> 
             if csenv.g.checkNullness then 

@@ -910,7 +910,7 @@ module private PrintTypes =
         match nullness.Evaluate() with
         | NullnessInfo.WithNull -> part2 ^^ rightL (tagText "?")
         | NullnessInfo.WithoutNull -> part2
-        | NullnessInfo.Oblivious -> part2 ^^ wordL (tagText "%")
+        | NullnessInfo.ObliviousToNull -> part2 ^^ wordL (tagText "%")
 
     /// Layout a type, taking precedence into account to insert brackets where needed
     and layoutTypeWithInfoAndPrec denv env prec ty =
@@ -1400,7 +1400,7 @@ module InfoMemberPrinting =
 
     let prettyLayoutOfPropInfoFreeStyle  g amap m denv (pinfo: PropInfo) =
         let rty = pinfo.GetPropertyType(amap,m) 
-        let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else  rty 
+        let rty = if pinfo.IsIndexer then mkFunTy g (mkRefTupledTy g (pinfo.GetParamTypes(amap, m))) rty else  rty 
         let rty, _ = PrettyTypes.PrettifyType g rty
         let tagProp =
             match pinfo.ArbitraryValRef with
@@ -1649,7 +1649,7 @@ module private TastDefinitionPrinting =
 
     let layoutTycon (denv:DisplayEnv) (infoReader:InfoReader) ad m simplified typewordL (tycon:Tycon) =
       let g = denv.g
-      let _,ty = generalizeTyconRef (mkLocalTyconRef tycon) 
+      let ty = generalizedTyOfTyconRef g (mkLocalTyconRef tycon) 
       let start, name = 
           let n = tycon.DisplayName
           if isStructTy g ty then Some "struct", tagStruct n

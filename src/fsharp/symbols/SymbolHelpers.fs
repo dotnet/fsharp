@@ -474,7 +474,7 @@ module internal SymbolHelpers =
             // Generalize to get a formal signature 
             let formalTypars = tcref.Typars(m)
             let formalTypeInst = generalizeTypars formalTypars
-            let ty = TType_app(tcref, formalTypeInst, ObliviousToNull)
+            let ty = TType_app(tcref, formalTypeInst, KnownObliviousToNull)
             if isILAppTy g ty then
                 let formalTypeInfo = ILTypeInfo.FromType g ty
                 Some(nlref.Ccu.FileName, formalTypars, formalTypeInfo)
@@ -835,7 +835,7 @@ module internal SymbolHelpers =
              isAppTy g ty &&
              g.suppressed_types 
              |> List.exists (fun supp -> 
-                let generalizedSupp = generalizedTyconRef supp
+                let generalizedSupp = generalizedTyOfTyconRef g supp
                 // check the display name is precisely the one we're suppressing
                 isAppTy g generalizedSupp && it = supp.DisplayName &&
                 // check if they are the same logical type (after removing all abbreviations)
@@ -975,7 +975,7 @@ module internal SymbolHelpers =
             match item with
             | Item.Types(_, ((TType_app(tcref, _, _)):: _))
             | Item.UnqualifiedType(tcref :: _) ->
-                let ty = generalizedTyconRef tcref
+                let ty = generalizedTyOfTyconRef g tcref
                 Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
             | _ -> false
         with _ -> false
@@ -1000,7 +1000,7 @@ module internal SymbolHelpers =
         // Union tags (constructors)
         | Item.UnionCase(ucinfo, _) -> 
             let uc = ucinfo.UnionCase 
-            let rty = generalizedTyconRef ucinfo.TyconRef
+            let rty = generalizedTyOfTyconRef g ucinfo.TyconRef
             let recd = uc.RecdFields 
             let layout = 
                 wordL (tagText (FSComp.SR.typeInfoUnionCase())) ^^
@@ -1338,7 +1338,7 @@ module internal SymbolHelpers =
         | Item.UnqualifiedType (tcref::_)
         | Item.ExnCase tcref -> 
             // strip off any abbreviation
-            match generalizedTyconRef tcref with 
+            match generalizedTyOfTyconRef g tcref with 
             | AppTy g (tcref, _)  -> Some (ticksAndArgCountTextOfTyconRef tcref)
             | _ -> None
 

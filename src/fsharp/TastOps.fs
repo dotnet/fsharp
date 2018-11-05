@@ -163,11 +163,11 @@ let generalizeTypars tps = List.map generalizeTypar tps
 let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) = 
     match nullnessOrig.Evaluate() with
     | NullnessInfo.WithoutNull -> nullnessNew
-    | NullnessInfo.Oblivious -> nullnessOrig
+    | NullnessInfo.ObliviousToNull -> nullnessOrig
     | NullnessInfo.WithNull -> 
         match nullnessNew.Evaluate() with
         | NullnessInfo.WithoutNull -> nullnessOrig // TODO - ?
-        | NullnessInfo.Oblivious -> nullnessNew
+        | NullnessInfo.ObliviousToNull -> nullnessNew
         | NullnessInfo.WithNull -> nullnessNew
 
 
@@ -598,21 +598,21 @@ let tryNormalizeMeasureInType g ty =
 
 let mkNativePtrTy (g:TcGlobals) ty = 
     assert g.nativeptr_tcr.CanDeref // this should always be available, but check anyway
-    TType_app (g.nativeptr_tcr, [ty], KnownNonNull)
+    TType_app (g.nativeptr_tcr, [ty], g.knownWithoutNull)
 
 let mkByrefTy (g:TcGlobals) ty = 
     assert g.byref_tcr.CanDeref // this should always be available, but check anyway
-    TType_app (g.byref_tcr, [ty], KnownNonNull)
+    TType_app (g.byref_tcr, [ty], g.knownWithoutNull)
 
 let mkInByrefTy (g:TcGlobals) ty = 
     if g.inref_tcr.CanDeref then // If not using sufficient FSharp.Core, then inref<T> = byref<T>, see RFC FS-1053.md
-        TType_app (g.inref_tcr, [ty], KnownNonNull)
+        TType_app (g.inref_tcr, [ty], g.knownWithoutNull)
     else
         mkByrefTy g ty
 
 let mkOutByrefTy (g:TcGlobals) ty = 
     if g.outref_tcr.CanDeref then // If not using sufficient FSharp.Core, then outref<T> = byref<T>, see RFC FS-1053.md
-        TType_app (g.outref_tcr, [ty], KnownNonNull)
+        TType_app (g.outref_tcr, [ty], g.knownWithoutNull)
     else
         mkByrefTy g ty
 
@@ -624,17 +624,17 @@ let mkByrefTyWithFlag g readonly ty =
 
 let mkByref2Ty (g:TcGlobals) ty1 ty2 = 
     assert g.byref2_tcr.CanDeref // check we are using sufficient FSharp.Core, caller should check this
-    TType_app (g.byref2_tcr, [ty1; ty2], KnownNonNull)
+    TType_app (g.byref2_tcr, [ty1; ty2], g.knownWithoutNull)
 
 let mkVoidPtrTy (g:TcGlobals) = 
     assert g.voidptr_tcr.CanDeref // check we are using sufficient FSharp.Core , caller should check this
-    TType_app (g.voidptr_tcr, [], KnownNonNull)
+    TType_app (g.voidptr_tcr, [], g.knownWithoutNull)
 
 let mkByrefTyWithInference (g:TcGlobals) ty1 ty2 = 
     if g.byref2_tcr.CanDeref then // If not using sufficient FSharp.Core, then inref<T> = byref<T>, see RFC FS-1053.md
-        TType_app (g.byref2_tcr, [ty1; ty2], KnownNonNull) 
+        TType_app (g.byref2_tcr, [ty1; ty2], g.knownWithoutNull) 
     else 
-        TType_app (g.byref_tcr, [ty1], KnownNonNull) 
+        TType_app (g.byref_tcr, [ty1], g.knownWithoutNull) 
 
 let mkArrayTy (g:TcGlobals) rank nullness ty m =
     if rank < 1 || rank > 32 then
@@ -683,16 +683,16 @@ let mkCompiledTupleTyconRef (g:TcGlobals) isStruct n =
 let rec mkCompiledTupleTy g isStruct tupElemTys = 
     let n = List.length tupElemTys 
     if n < maxTuple then
-        TType_app (mkCompiledTupleTyconRef g isStruct n, tupElemTys, KnownNonNull)
+        TType_app (mkCompiledTupleTyconRef g isStruct n, tupElemTys, g.knownWithoutNull)
     else 
         let tysA, tysB = List.splitAfter goodTupleFields tupElemTys
-        TType_app ((if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr), tysA@[mkCompiledTupleTy g isStruct tysB], KnownNonNull)
+        TType_app ((if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr), tysA@[mkCompiledTupleTy g isStruct tysB], g.knownWithoutNull)
 
 /// Convert from F# tuple types to .NET tuple types, but only the outermost level
 let mkOuterCompiledTupleTy g isStruct tupElemTys = 
     let n = List.length tupElemTys 
     if n < maxTuple then 
-        TType_app (mkCompiledTupleTyconRef g isStruct n, tupElemTys, KnownNonNull)
+        TType_app (mkCompiledTupleTyconRef g isStruct n, tupElemTys, g.knownWithoutNull)
     else 
         let tysA, tysB = List.splitAfter goodTupleFields tupElemTys
         let tcref = (if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr)
@@ -700,10 +700,10 @@ let mkOuterCompiledTupleTy g isStruct tupElemTys =
         // as a regular F# tuple type.
         match tysB with 
         | [ tyB ] -> 
-            let marker = TType_app (mkCompiledTupleTyconRef g isStruct 1, [tyB], KnownNonNull)
-            TType_app (tcref, tysA@[marker], KnownNonNull)
+            let marker = TType_app (mkCompiledTupleTyconRef g isStruct 1, [tyB], g.knownWithoutNull)
+            TType_app (tcref, tysA@[marker], g.knownWithoutNull)
         | _ ->
-            TType_app (tcref, tysA@[TType_tuple (TupInfo.Const isStruct, tysB)], KnownNonNull)
+            TType_app (tcref, tysA@[TType_tuple (TupInfo.Const isStruct, tysB)], g.knownWithoutNull)
 
 //---------------------------------------------------------------------------
 // Remove inference equations and abbreviations from types 
@@ -756,7 +756,7 @@ let rec stripTyEqnsA g canShortcut ty =
             // Add the equation byref<'T> = byref<'T, ByRefKinds.InOut> for when using sufficient FSharp.Core
             // See RFC FS-1053.md
             if tyconRefEq g tcref g.byref_tcr && g.byref2_tcr.CanDeref  && g.byrefkind_InOut_tcr.CanDeref then 
-                mkByref2Ty g tinst.[0]  (TType_app(g.byrefkind_InOut_tcr, [], KnownNonNull))
+                mkByref2Ty g tinst.[0]  (TType_app(g.byrefkind_InOut_tcr, [], g.knownWithoutNull))
 
             // Add the equation double<1> = double for units of measure.
             elif tycon.IsMeasureableReprTycon && List.forall (isDimensionless g) tinst then
@@ -838,13 +838,13 @@ let isMeasureTy    g ty = ty |> stripTyEqns g |> (function TType_measure _ -> tr
 
 let isProvenUnionCaseTy ty = match ty with TType_ucase _ -> true | _ -> false
 
-let mkAppTy tcref tyargs = TType_app(tcref, tyargs, KnownNonNull) // TODO
+let mkAppTy tcref tyargs = TType_app(tcref, tyargs, KnownWithoutNull) // TODO
 let mkProvenUnionCaseTy ucref tyargs = TType_ucase(ucref, tyargs)
 let isAppTy   g ty = ty |> stripTyEqns g |> (function TType_app _ -> true | _ -> false) 
 let tryAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst, _) -> ValueSome (tcref, tinst) | _ -> ValueNone) 
 let destAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst, _) -> tcref, tinst | _ -> failwith "destAppTy")
 let tcrefOfAppTy  g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref | _ -> failwith "tcrefOfAppTy") 
-let nullnessOfTy  g ty = ty |> stripTyEqns g |> (function TType_app(_, _, nullness) | TType_fun (_, _, nullness) | TType_var (_, nullness) -> nullness | _ -> KnownNonNull) 
+let nullnessOfTy  g ty = ty |> stripTyEqns g |> (function TType_app(_, _, nullness) | TType_fun (_, _, nullness) | TType_var (_, nullness) -> nullness | _ -> g.knownWithoutNull) 
 let argsOfAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(_, tinst, _) -> tinst | _ -> [])
 let tryDestTyparTy g ty = ty |> stripTyEqns g |> (function TType_var (v, _nullness) -> ValueSome v | _ -> ValueNone)
 let tryDestFunTy   g ty = ty |> stripTyEqns g |> (function TType_fun (tyv, tau, _nullness) -> ValueSome(tyv, tau) | _ -> ValueNone)
@@ -1103,12 +1103,12 @@ let unionCaseRefOrder =
 // Make some common types
 //---------------------------------------------------------------------------
 
-let mkFunTy d r = TType_fun (d, r, NewNullnessVar())
-let (-->) d r = mkFunTy d r
+let mkFunTy (g: TcGlobals) d r = TType_fun (d, r, g.knownWithoutNull)
 let mkForallTy d r = TType_forall (d, r)
 let mkForallTyIfNeeded d r = if isNil d then r else mkForallTy d r
 let (+->) d r = mkForallTyIfNeeded d r
-let mkIteratedFunTy dl r = List.foldBack (-->) dl r
+let mkIteratedFunTy g dl r = List.foldBack (mkFunTy g) dl r
+let mkLambdaTy g tps tys rty = mkForallTyIfNeeded tps (mkIteratedFunTy g tys rty)
 
 let mkLambdaArgTy m tys = 
     match tys with 
@@ -1117,8 +1117,8 @@ let mkLambdaArgTy m tys =
     | _ -> mkRawRefTupleTy tys
 
 let typeOfLambdaArg m vs = mkLambdaArgTy m (typesOfVals vs)
-let mkMultiLambdaTy m vs rty = mkFunTy (typeOfLambdaArg m vs) rty 
-let mkLambdaTy tps tys rty = mkForallTyIfNeeded tps (mkIteratedFunTy tys rty)
+
+let mkMultiLambdaTy g m vs rty = mkFunTy g (typeOfLambdaArg m vs) rty 
 
 /// When compiling FSharp.Core.dll we have to deal with the non-local references into
 /// the library arising from env.fs. Part of this means that we have to be able to resolve these
@@ -1228,29 +1228,29 @@ let mkTypeChoose m vs b = match vs with [] -> b | _ -> Expr.TyChoose (vs, b, m)
 let mkObjExpr (ty, basev, basecall, overrides, iimpls, m) = 
     Expr.Obj (newUnique(), ty, basev, basecall, overrides, iimpls, m) 
 
-let mkLambdas m tps (vs:Val list) (b, rty) = 
-    mkTypeLambda m tps (List.foldBack (fun v (e, ty) -> mkLambda m v (e, ty), v.Type --> ty) vs (b, rty))
+let mkLambdas g m tps (vs:Val list) (b, rty) = 
+    mkTypeLambda m tps (List.foldBack (fun v (e, ty) -> mkLambda m v (e, ty), mkFunTy g v.Type ty) vs (b, rty))
 
-let mkMultiLambdasCore m vsl (b, rty) = 
-    List.foldBack (fun v (e, ty) -> mkMultiLambda m v (e, ty), typeOfLambdaArg m v --> ty) vsl (b, rty)
+let mkMultiLambdasCore g m vsl (b, rty) = 
+    List.foldBack (fun v (e, ty) -> mkMultiLambda m v (e, ty), mkFunTy g (typeOfLambdaArg m v) ty) vsl (b, rty)
 
-let mkMultiLambdas m tps vsl (b, rty) = 
-    mkTypeLambda m tps (mkMultiLambdasCore m vsl (b, rty) )
+let mkMultiLambdas g m tps vsl (b, rty) = 
+    mkTypeLambda m tps (mkMultiLambdasCore g m vsl (b, rty) )
 
-let mkMemberLambdas m tps ctorThisValOpt baseValOpt vsl (b, rty) = 
+let mkMemberLambdas g m tps ctorThisValOpt baseValOpt vsl (b, rty) = 
     let expr = 
         match ctorThisValOpt, baseValOpt with
-        | None, None -> mkMultiLambdasCore m vsl (b, rty)
+        | None, None -> mkMultiLambdasCore g m vsl (b, rty)
         | _ -> 
             match vsl with 
             | [] -> error(InternalError("mk_basev_multi_lambdas_core: can't attach a basev to a non-lambda expression", m))
             | h::t -> 
-                let b, rty = mkMultiLambdasCore m t (b, rty)
-                (rebuildLambda m ctorThisValOpt baseValOpt h (b, rty), (typeOfLambdaArg m h --> rty))
+                let b, rty = mkMultiLambdasCore g m t (b, rty)
+                (rebuildLambda m ctorThisValOpt baseValOpt h (b, rty), (mkFunTy g (typeOfLambdaArg m h) rty))
     mkTypeLambda m tps expr
 
-let mkMultiLambdaBind v letSeqPtOpt m  tps vsl (b, rty) = 
-    TBind(v, mkMultiLambdas m tps vsl (b, rty), letSeqPtOpt)
+let mkMultiLambdaBind g v letSeqPtOpt m  tps vsl (b, rty) = 
+    TBind(v, mkMultiLambdas g m tps vsl (b, rty), letSeqPtOpt)
 
 let mkBind seqPtOpt v e = TBind(v, e, seqPtOpt)
 
@@ -2184,7 +2184,6 @@ and accFreeTyparRefLeftToRight g cxFlag thruFlag acc (tp:Typar) =
             acc
 
 and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty  = 
-    if verbose then dprintf "--> accFreeInTypeLeftToRight \n"
     match (if thruFlag then stripTyEqns g ty else stripTyparEqns ty) with 
     | TType_tuple (tupInfo, l) -> 
         let acc = accFreeInTupInfoLeftToRight g cxFlag thruFlag acc tupInfo 
@@ -2375,16 +2374,26 @@ let ArgInfosOfPropertyVal g (v:Val) =
 // Generalize type constructors to types
 //---------------------------------------------------------------------------
 
-let generalTyconRefInst (tc:TyconRef) =  generalizeTypars tc.TyparsNoRange
+let generalTyconRefInst (tcref:TyconRef) = 
+    generalizeTypars tcref.TyparsNoRange
 
-let generalizeTyconRef tc = 
-    let tinst = generalTyconRefInst tc
-    tinst, TType_app(tc, tinst, KnownNonNull) // TODO: check me
+let generalizeTyconRef (g:TcGlobals) tcref = 
+    let tinst = generalTyconRefInst tcref
+    tinst, TType_app(tcref, tinst, g.knownWithoutNull)
 
-let generalizedTyconRef tc = TType_app(tc, generalTyconRefInst tc, KnownNonNull)
+let generalizedTyOfTyconRef (g:TcGlobals) tcref = 
+    let tinst = generalTyconRefInst tcref
+    TType_app(tcref, tinst, g.knownWithoutNull) // TODO: check me
 
-let isTTyparSupportsStaticMethod = function TyparConstraint.MayResolveMember _ -> true | _ -> false
-let isTTyparCoercesToType = function TyparConstraint.CoercesTo _ -> true | _ -> false
+let isTTyparSupportsStaticMethod tpc = 
+    match tpc with 
+    | TyparConstraint.MayResolveMember _ -> true
+    | _ -> false
+
+let isTTyparCoercesToType tpc = 
+    match tpc with 
+    | TyparConstraint.CoercesTo _  -> true
+    | _ -> false
 
 //--------------------------------------------------------------------------
 // Print Signatures/Types - prelude
@@ -2762,7 +2771,7 @@ let tagEntityRefName (xref: EntityRef) name =
     elif xref.IsRecordTycon then tagRecord name
     else tagClass name
 
-let fullDisplayTextOfTyconRef  r = fullNameOfEntityRef (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+let fullDisplayTextOfTyconRef  r = fullNameOfEntityRef (fun (tcref:TyconRef) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) r
 
 let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
     let navigableText = 
@@ -2795,9 +2804,9 @@ let fullNameOfParentOfValRefAsLayout vref =
 let fullDisplayTextOfParentOfModRef r = fullNameOfParentOfEntityRef r 
 
 let fullDisplayTextOfModRef r = fullNameOfEntityRef (fun (x:EntityRef) -> x.DemangledModuleOrNamespaceName)  r
-let fullDisplayTextOfTyconRefAsLayout  r = fullNameOfEntityRefAsLayout (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
-let fullDisplayTextOfExnRef  r = fullNameOfEntityRef (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
-let fullDisplayTextOfExnRefAsLayout  r = fullNameOfEntityRefAsLayout (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+let fullDisplayTextOfTyconRefAsLayout  r = fullNameOfEntityRefAsLayout (fun (tcref:TyconRef) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+let fullDisplayTextOfExnRef  r = fullNameOfEntityRef (fun (tcref:TyconRef) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+let fullDisplayTextOfExnRefAsLayout  r = fullNameOfEntityRefAsLayout (fun (tcref:TyconRef) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) r
 
 let fullDisplayTextOfUnionCaseRef (ucref:UnionCaseRef) = fullDisplayTextOfTyconRef ucref.TyconRef +.+ ucref.CaseName
 let fullDisplayTextOfRecdFieldRef (rfref:RecdFieldRef) = fullDisplayTextOfTyconRef rfref.TyconRef +.+ rfref.FieldName
@@ -3061,15 +3070,15 @@ let StripSelfRefCell(g:TcGlobals, baseOrThisInfo:ValBaseOrThisInfo, tau: TType) 
         then destRefCellTy g tau 
         else tau
 
-let mkRefCellTy (g:TcGlobals) ty = TType_app(g.refcell_tcr_nice, [ty], KnownNonNull)
+let mkRefCellTy (g:TcGlobals) ty = TType_app(g.refcell_tcr_nice, [ty], g.knownWithoutNull)
 
-let mkLazyTy (g:TcGlobals) ty = TType_app(g.lazy_tcr_nice, [ty], KnownNonNull)
+let mkLazyTy (g:TcGlobals) ty = TType_app(g.lazy_tcr_nice, [ty], g.knownWithoutNull)
 
-let mkPrintfFormatTy (g:TcGlobals) aty bty cty dty ety = TType_app(g.format_tcr, [aty;bty;cty;dty; ety], KnownNonNull)
+let mkPrintfFormatTy (g:TcGlobals) aty bty cty dty ety = TType_app(g.format_tcr, [aty;bty;cty;dty; ety], g.knownWithoutNull)
 
-let mkOptionTy (g:TcGlobals) ty = TType_app (g.option_tcr_nice, [ty], KnownNonNull)
+let mkOptionTy (g:TcGlobals) ty = TType_app (g.option_tcr_nice, [ty], g.knownWithoutNull)
 
-let mkListTy (g:TcGlobals) ty = TType_app (g.list_tcr_nice, [ty], KnownNonNull)
+let mkListTy (g:TcGlobals) ty = TType_app (g.list_tcr_nice, [ty], g.knownWithoutNull)
 
 let isOptionTy (g:TcGlobals) ty = 
     match tryDestAppTy g ty with 
@@ -3232,7 +3241,7 @@ module DebugPrint = begin
     let stampL _n w = 
         w
 
-    let layoutTyconRef (tc:TyconRef) = wordL (tagText tc.DisplayNameWithStaticParameters) |> stampL tc.Stamp
+    let layoutTyconRef (tcref:TyconRef) = wordL (tagText tcref.DisplayNameWithStaticParameters) |> stampL tcref.Stamp
 
 
     let rec auxTypeL env ty = auxTypeWrapL env false ty
@@ -3257,7 +3266,7 @@ module DebugPrint = begin
         match nullness.Evaluate() with
         | NullnessInfo.WithNull -> coreL ^^ wordL (tagText "?")
         | NullnessInfo.WithoutNull -> coreL
-        | NullnessInfo.Oblivious -> coreL ^^ wordL (tagText "%")
+        | NullnessInfo.ObliviousToNull -> coreL ^^ wordL (tagText "%")
 
     and auxTypeWrapL env isAtomic ty = 
         let wrap x = bracketIfL isAtomic x in // wrap iff require atomic expr 
@@ -3292,7 +3301,7 @@ module DebugPrint = begin
              let negvs, posvs = ListMeasureVarOccsWithNonZeroExponents         unt |> sortVars |> List.partition (fun (_, e) -> SignRational e < 0)
              let negcs, poscs = ListMeasureConOccsWithNonZeroExponents g false unt |> sortCons |> List.partition (fun (_, e) -> SignRational e < 0)
              let unparL (uv:Typar) = wordL (tagText ("'" + uv.DisplayName))
-             let unconL tc = layoutTyconRef tc
+             let unconL tcref = layoutTyconRef tcref
              let rationalL e = wordL (tagText(RationalToString e))
              let measureToPowerL x e = if e = OneRational then x else x -- wordL (tagText "^") -- rationalL e
              let prefix = spaceListL  (List.map (fun (v, e) -> measureToPowerL (unparL v) e) posvs @
@@ -3689,8 +3698,8 @@ module DebugPrint = begin
                 wordL (tagText ecref.LogicalName) ^^ bracketL (commaListL (List.map atomL args))
             | Expr.Op (TOp.Tuple _, _, xs, _) -> 
                 tupleL (List.map exprL xs)
-            | Expr.Op (TOp.Recd (ctor, tc), _, xs, _)               -> 
-                let fields = tc.TrueInstanceFieldsAsList
+            | Expr.Op (TOp.Recd (ctor, tcref), _, xs, _)               -> 
+                let fields = tcref.TrueInstanceFieldsAsList
                 let lay fs x = (wordL (tagText fs.rfield_id.idText) ^^ sepL(tagText "=")) --- (exprL x)
                 let ctorL = 
                     match ctor with
@@ -5447,8 +5456,8 @@ let ComputeFieldName tycon f =
 let isQuotedExprTy g ty = match tryAppTy g ty with ValueSome (tcref, _) -> tyconRefEq g tcref g.expr_tcr | _ -> false
 let destQuotedExprTy g ty =  match tryAppTy g ty with ValueSome (_, [ty]) -> ty | _ -> failwith "destQuotedExprTy"
 
-let mkQuotedExprTy (g:TcGlobals) ty =  TType_app(g.expr_tcr, [ty], KnownNonNull)
-let mkRawQuotedExprTy (g:TcGlobals) =  TType_app(g.raw_expr_tcr, [], KnownNonNull)
+let mkQuotedExprTy (g:TcGlobals) ty =  TType_app(g.expr_tcr, [ty], g.knownWithoutNull)
+let mkRawQuotedExprTy (g:TcGlobals) =  TType_app(g.raw_expr_tcr, [], g.knownWithoutNull)
 
 let mkAnyTupledTy (g:TcGlobals) tupInfo tys = 
     match tys with 
@@ -5457,10 +5466,13 @@ let mkAnyTupledTy (g:TcGlobals) tupInfo tys =
     | _ -> TType_tuple(tupInfo, tys)
 
 let mkRefTupledTy g tys = mkAnyTupledTy g tupInfoRef tys
+
 let mkRefTupledVarsTy g vs = mkRefTupledTy g (typesOfVals vs)
 
-let mkMethodTy g argtys rty = mkIteratedFunTy (List.map (mkRefTupledTy g) argtys) rty 
-let mkArrayType (g:TcGlobals) ty = TType_app (g.array_tcr_nice, [ty], KnownNonNull)
+let mkMethodTy g argtys rty = mkIteratedFunTy g (List.map (mkRefTupledTy g) argtys) rty 
+
+let mkArrayType (g:TcGlobals) ty = TType_app (g.array_tcr_nice, [ty], g.knownWithoutNull)
+
 let mkByteArrayTy (g:TcGlobals) = mkArrayType g g.byte_ty
 
 
@@ -5477,7 +5489,7 @@ let rec tyOfExpr g e =
     | Expr.Const(_, _, ty)              -> (ty)
     | Expr.Val(vref, _, _)  -> vref.Type
     | Expr.Sequential(a, b, k, _, _) -> tyOfExpr g (match k with NormalSeq  -> b | ThenDoSeq -> a)
-    | Expr.Lambda(_, _, _, vs, _, _, rty) -> (mkRefTupledVarsTy g vs --> rty)
+    | Expr.Lambda(_, _, _, vs, _, _, rty) -> (mkFunTy g (mkRefTupledVarsTy g vs) rty)
     | Expr.TyLambda(_, tyvs, _, _, rty) -> (tyvs +-> rty)
     | Expr.Let(_, e, _, _) 
     | Expr.TyChoose(_, e, _)
@@ -6249,9 +6261,9 @@ let destIDelegateEventType g ty   =
         | [ty1] -> ty1
         | _ -> failwith "destIDelegateEventType: internal error"
     else failwith "destIDelegateEventType: not an IDelegateEvent type"
-let mkIEventType (g:TcGlobals) ty1 ty2 = TType_app (g.fslib_IEvent2_tcr, [ty1;ty2], KnownNonNull)
-let mkIObservableType (g:TcGlobals) ty1 = TType_app (g.tcref_IObservable, [ty1], KnownNonNull)
-let mkIObserverType (g:TcGlobals) ty1 = TType_app (g.tcref_IObserver, [ty1], KnownNonNull)
+let mkIEventType (g:TcGlobals) ty1 ty2 = TType_app (g.fslib_IEvent2_tcr, [ty1;ty2], g.knownWithoutNull)
+let mkIObservableType (g:TcGlobals) ty1 = TType_app (g.tcref_IObservable, [ty1], g.knownWithoutNull)
+let mkIObserverType (g:TcGlobals) ty1 = TType_app (g.tcref_IObserver, [ty1], g.knownWithoutNull)
 
 let mkRefCellContentsRef (g:TcGlobals) = mkRecdFieldRef g.refcell_tcr_canon "contents"
 
@@ -6925,7 +6937,7 @@ let AdjustValForExpectedArity g m (vref:ValRef) flags topValInfo =
     let call = MakeApplicationAndBetaReduce g (Expr.Val(vref, flags, m), vref.Type, [tyargs'], (List.map (mkRefTupledVars g m) vsl), m)
     let tauexpr, tauty = 
         List.foldBack 
-            (fun vs (e, ty) -> mkMultiLambda m vs (e, ty), (mkRefTupledVarsTy g vs --> ty))
+            (fun vs (e, ty) -> mkMultiLambda m vs (e, ty), (mkFunTy g (mkRefTupledVarsTy g vs) ty))
             vsl
             (call, rty')
     // Build a type-lambda expression for the toplevel value if needed... 
@@ -7159,8 +7171,8 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                         
                         let inpsAsVars, inpsAsExprs = inpArgTys |> List.mapi (fun j ty -> mkCompGenLocal appm ("arg"^string i^string j) ty)  |> List.unzip
                         let inpsAsActualArg = CoerceDetupled inpArgTys inpsAsExprs actualArgTys
-                        let inpCloVarType = (mkFunTy (mkRefTupledTy g actualArgTys) cloVar.Type)
-                        let newResTy = mkFunTy inpArgTy resTy
+                        let inpCloVarType = mkFunTy g (mkRefTupledTy g actualArgTys) cloVar.Type
+                        let newResTy = mkFunTy g inpArgTy resTy
                         let inpCloVar, inpCloVarAsExpr = mkCompGenLocal appm ("clo"^string i) inpCloVarType
                         let newRes = 
                             // For the final arg we can skip introducing the dummy variable
@@ -7365,7 +7377,6 @@ let typarEnc _g (gtpsType, gtpsMethod) typar =
                       "``0" // REVIEW: this should be ERROR not WARNING?
 
 let rec typeEnc g (gtpsType, gtpsMethod) ty = 
-    if verbose then dprintf "--> typeEnc"
     let stripped = stripTyEqnsAndMeasureEqns g ty
     match stripped with 
     | TType_forall _ -> 
@@ -7811,7 +7822,7 @@ type PrettyNaming.ActivePatternInfo with
         if apinfo.IsTotal then choicety else mkOptionTy g choicety
     
     member apinfo.OverallType g m dty rtys = 
-        mkFunTy dty (apinfo.ResultType g m rtys)
+        mkFunTy g dty (apinfo.ResultType g m rtys)
 
 //---------------------------------------------------------------------------
 // Active pattern validation
@@ -8364,12 +8375,12 @@ let rec mkCompiledTuple g isStruct (argtys, args, m) =
                 |  TType_app(tn, _, _)  when (isCompiledTupleTyconRef g tn) ->
                     ty8, arg8
                 | _ ->
-                    let ty8enc = TType_app((if isStruct then g.struct_tuple1_tcr else g.ref_tuple1_tcr), [ty8], KnownNonNull)
+                    let ty8enc = TType_app((if isStruct then g.struct_tuple1_tcr else g.ref_tuple1_tcr), [ty8], g.knownWithoutNull)
                     let v8enc = Expr.Op (TOp.Tuple (TupInfo.Const isStruct), [ty8], [arg8], m) 
                     ty8enc, v8enc
             | _ -> 
                 let a, b, c, d = mkCompiledTuple g isStruct (argtysB, argsB, m)
-                let ty8plus = TType_app(a, b, KnownNonNull)
+                let ty8plus = TType_app(a, b, g.knownWithoutNull)
                 let v8plus = Expr.Op (TOp.Tuple(TupInfo.Const isStruct), b, c, d)
                 ty8plus, v8plus
         let argtysAB = argtysA @ [ty8] 

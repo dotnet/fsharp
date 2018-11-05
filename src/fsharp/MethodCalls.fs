@@ -1098,7 +1098,7 @@ module ProvidedMethodCalls =
                 let vsT = List.map addVar vs
                 let delegateBodyExprT = exprToExpr delegateBodyExpr
                 List.iter removeVar vs
-                let lambdaExpr = mkLambdas m [] vsT (delegateBodyExprT, tyOfExpr g delegateBodyExprT)
+                let lambdaExpr = mkLambdas g m [] vsT (delegateBodyExprT, tyOfExpr g delegateBodyExprT)
                 let lambdaExprTy = tyOfExpr g lambdaExpr
                 let infoReader = InfoReader(g, amap)
                 let exprT = CoerceFromFSharpFuncToDelegate g amap infoReader AccessorDomain.AccessibleFromSomewhere lambdaExprTy m lambdaExpr delegateTyT
@@ -1290,7 +1290,7 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo:MethInfo)  =
         match objArgs, ad with 
         | [objArg], AccessibleFrom(paths, Some tcref) -> 
             let objArgTy = tyOfExpr g objArg 
-            let ty = generalizedTyconRef tcref
+            let ty = generalizedTyOfTyconRef g tcref
             // We get to keep our rights if the type we're in subsumes the object argument type
             if TypeFeasiblySubsumesType 0 g amap m ty CanCoerce objArgTy then
                 ad

@@ -189,7 +189,7 @@ let IsIndexerType g amap ty =
     isListTy g ty ||
     match tryDestAppTy g ty with
     | ValueSome tcref ->
-        let _, entityTy = generalizeTyconRef tcref
+        let entityTy = generalizedTyOfTyconRef g tcref
         let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g amap range0 entityTy
         props |> List.exists (fun x -> x.PropertyName = "Item")
     | ValueNone -> false
@@ -720,7 +720,7 @@ let GetSigOfFunctionForDelegate (infoReader:InfoReader) delty m ad =
         | _ -> compiledViewOfDelArgTys
     let delRetTy = invokeMethInfo.GetFSharpReturnTy(amap, m, minst)
     CheckMethInfoAttributes g m None invokeMethInfo |> CommitOperationResult
-    let fty = mkIteratedFunTy fsharpViewOfDelArgTys delRetTy
+    let fty = mkIteratedFunTy g fsharpViewOfDelArgTys delRetTy
     SigOfFunctionForDelegate(invokeMethInfo,compiledViewOfDelArgTys,delRetTy,fty)
 
 /// Try and interpret a delegate type as a "standard" .NET delegate type associated with an event, with a "sender" parameter.

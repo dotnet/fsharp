@@ -105,7 +105,8 @@ let GetSuperTypeOfType g amap m ty =
 
 /// Make a type for System.Collections.Generic.IList<ty>
 let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty =
-    TType_app(g.tcref_System_Collections_Generic_IList,[ty],AssumeNonNull)
+    TType_app(g.tcref_System_Collections_Generic_IList, [ty], g.knownWithoutNull)
+        
 
 [<RequireQualifiedAccess>]
 /// Indicates whether we can skip interface types that lie outside the reference set
@@ -1513,7 +1514,7 @@ type MethInfo =
             let formalRetTy, formalParams = 
                 match x with
                 | ILMeth(_,ilminfo,_) -> 
-                    let ftinfo = ILTypeInfo.FromType g (TType_app(tcref,formalEnclosingTyparTys,AssumeNonNull)) // TODO NULLNESS - is this the right assumption?
+                    let ftinfo = ILTypeInfo.FromType g (TType_app(tcref, formalEnclosingTyparTys, g.knownWithoutNull))
                     let formalRetTy = ImportReturnTypeFromMetaData amap m ilminfo.RawMetadata.Return.Type ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys
                     let formalParams = 
                         [ [ for p in ilminfo.RawMetadata.Parameters do 
@@ -1765,7 +1766,8 @@ type RecdFieldInfo =
     member x.FieldType = actualTyOfRecdFieldRef x.RecdFieldRef x.TypeInst
 
     /// Get the enclosing (declaring) type of the field in an F#-declared record, class or struct type 
-    member x.DeclaringType = TType_app (x.RecdFieldRef.TyconRef,x.TypeInst, AssumeNonNull) // TODO NULLNESS - is this the right assumption?
+    member x.DeclaringType = TType_app (x.RecdFieldRef.TyconRef,x.TypeInst, KnownWithoutNull) // TODO NULLNESS - qualify this 
+
     override x.ToString() = x.TyconRef.ToString() + "::" + x.Name
     
 

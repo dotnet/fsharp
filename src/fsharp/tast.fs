@@ -2256,11 +2256,11 @@ and
     /// Links a previously unlinked type variable to the given data. Only used during unpickling of F# metadata.
     member x.AsType nullness = 
         match nullness with 
-        | Nullness.Known NullnessInfo.Oblivious -> 
+        | Nullness.Known NullnessInfo.ObliviousToNull -> 
             let ty = x.typar_astype
             match box ty with 
             | null -> 
-                let ty2 = TType_var (x, Nullness.Known NullnessInfo.Oblivious)
+                let ty2 = TType_var (x, Nullness.Known NullnessInfo.ObliviousToNull)
                 x.typar_astype <- ty2
                 ty2
             | _ -> ty
@@ -3910,8 +3910,9 @@ and Nullness =
        | Known info -> info
        | Variable v -> v.Evaluate()
 
-   override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.Oblivious -> "%"
+   override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.ObliviousToNull -> "%"
 
+// Note, nullness variables are only created if the nullness checking feature is on
 and NullnessVar() = 
     let mutable solution: Nullness option = None
 
@@ -3942,7 +3943,7 @@ and
     /// we know that there is no extra null value in the type
     | WithoutNull
     /// we know we don't care
-    | Oblivious
+    | ObliviousToNull
 
 and 
   /// The algebra of types
@@ -5293,14 +5294,13 @@ let ccuOfTyconRef eref =
 
 let NewNullnessVar() = Nullness.Variable (NullnessVar()) // we don't known (and if we never find out then it's non-null)
 
-let ObliviousToNull = Nullness.Known NullnessInfo.Oblivious
-let KnownNull = Nullness.Known NullnessInfo.WithNull
-let KnownNonNull = Nullness.Known NullnessInfo.WithoutNull
-let AssumeNonNull = KnownNonNull
+let KnownObliviousToNull = Nullness.Known NullnessInfo.ObliviousToNull
+let KnownWithNull = Nullness.Known NullnessInfo.WithNull
+let KnownWithoutNull = Nullness.Known NullnessInfo.WithoutNull
 
 let mkTyparTy (tp:Typar) = 
     match tp.Kind with 
-    | TyparKind.Type -> tp.AsType AssumeNonNull // this is by no means always right!?
+    | TyparKind.Type -> tp.AsType KnownWithoutNull // TODO: this is by no means always right!?
     | TyparKind.Measure -> TType_measure (Measure.Var tp)
 
 let copyTypar (tp: Typar) = 

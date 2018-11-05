@@ -689,7 +689,7 @@ let p_nleref x st = p_int (encode_nleref st.occus st.ostrings st.onlerefs st.osc
 
 // Simple types are types like "int", represented as TType(Ref_nonlocal(...,"int"),[]). 
 // A huge number of these occur in pickled F# data, so make them unique. 
-let decode_simpletyp st _ccuTab _stringTab nlerefTab a = TType_app(ERefNonLocal (lookup_nleref st nlerefTab a), [], ObliviousToNull) // TODO should simpletyps hold obvlious or non-null etc.? 
+let decode_simpletyp st _ccuTab _stringTab nlerefTab a = TType_app(ERefNonLocal (lookup_nleref st nlerefTab a), [], KnownObliviousToNull) // TODO should simpletyps hold obvlious or non-null etc.? 
 let lookup_simpletyp st simpleTyTab x = lookup_uniq st simpleTyTab x
 let u_encoded_simpletyp st = u_int  st
 let u_simpletyp st = lookup_uniq st st.isimpletys (u_int st)
@@ -1573,31 +1573,31 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
               p_byte 0 st; p_tys l st
 
     | TType_app(ERefNonLocal nleref,[], nullness) ->
-        if st.oglobals.langFeatureNullness() then 
+        if st.oglobals.langFeatureNullness then 
             match nullness.Evaluate() with 
             | NullnessInfo.WithNull -> 
                 p_byte 9 st; p_simpletyp nleref st  // TODO: compatible emitting nullness in F# metadata
             | NullnessInfo.WithoutNull -> 
                 p_byte 10 st; p_simpletyp nleref st  // TODO: compatible emitting nullness in F# metadata
-            | NullnessInfo.Oblivious -> 
+            | NullnessInfo.ObliviousToNull -> 
                 p_byte 11 st; p_simpletyp nleref st
         else
             p_byte 1 st; p_simpletyp nleref st
 
     | TType_app (tc,tinst, nullness) ->
-        if st.oglobals.langFeatureNullness() then 
+        if st.oglobals.langFeatureNullness then 
             match nullness.Evaluate() with 
             | NullnessInfo.WithNull -> 
                 p_byte 12 st; p_tcref "typ" tc st; p_tys tinst st // TODO: compatible emitting nullness in F# metadata
             | NullnessInfo.WithoutNull -> 
                 p_byte 13 st; p_tcref "typ" tc st; p_tys tinst st // TODO: compatible emitting nullness in F# metadata
-            | NullnessInfo.Oblivious -> 
+            | NullnessInfo.ObliviousToNull -> 
                 p_byte 14 st; p_tcref "typ" tc st; p_tys tinst st
         else
             p_byte 2 st; p_tcref "typ" tc st; p_tys tinst st
         
     | TType_fun (d,r,nullness) ->  // TODO: not emitting nullness in F# metadata
-        if st.oglobals.langFeatureNullness() then 
+        if st.oglobals.langFeatureNullness then 
             match nullness.Evaluate() with 
             | NullnessInfo.WithNull -> 
                 p_byte 15 st
@@ -1607,7 +1607,7 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
                 p_byte 16 st
                 p_ty2 isStructThisArgPos d st
                 p_ty r st
-            | NullnessInfo.Oblivious -> 
+            | NullnessInfo.ObliviousToNull -> 
                 p_byte 17 st
                 // Note, the "this" argument may be found in the domain position of a function type, so propagate the isStructThisArgPos value
                 p_ty2 isStructThisArgPos d st
@@ -1619,7 +1619,7 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
             p_ty r st
 
     | TType_var (r, nullness) -> 
-        if st.oglobals.langFeatureNullness() then 
+        if st.oglobals.langFeatureNullness then 
             match nullness.Evaluate() with 
             | NullnessInfo.WithNull -> 
                 p_byte 18 st
@@ -1627,7 +1627,7 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
             | NullnessInfo.WithoutNull -> 
                 p_byte 19 st
                 p_tpref r st
-            | NullnessInfo.Oblivious -> 
+            | NullnessInfo.ObliviousToNull -> 
                 p_byte 20 st
                 p_tpref r st
         else
@@ -1649,9 +1649,9 @@ let _ = fill_u_ty (fun st ->
     match tag with
     | 0 -> let l = u_tys st                               in TType_tuple (tupInfoRef, l)
     | 1 -> u_simpletyp st 
-    | 2 -> let tc = u_tcref st in let tinst = u_tys st    in TType_app (tc, tinst, ObliviousToNull)
-    | 3 -> let d = u_ty st    in let r = u_ty st         in TType_fun (d,r, ObliviousToNull)
-    | 4 -> let r = u_tpref st                              in r.AsType ObliviousToNull
+    | 2 -> let tc = u_tcref st in let tinst = u_tys st    in TType_app (tc, tinst, KnownObliviousToNull)
+    | 3 -> let d = u_ty st    in let r = u_ty st         in TType_fun (d,r, KnownObliviousToNull)
+    | 4 -> let r = u_tpref st                              in r.AsType KnownObliviousToNull
     | 5 -> let tps = u_tyar_specs st in let r = u_ty st  in TType_forall (tps,r)
     | 6 -> let unt = u_measure_expr st                     in TType_measure unt
     | 7 -> let uc = u_ucref st in let tinst = u_tys st    in TType_ucase (uc,tinst)
@@ -1660,53 +1660,53 @@ let _ = fill_u_ty (fun st ->
         let sty = u_simpletyp st
         match sty with 
         | TType_app(_tcref, [], Nullness.Known NullnessInfo.WithNull) -> sty // keep the unique
-        | TType_app(tcref, [], _nullness) -> TType_app(tcref, [], KnownNull)
+        | TType_app(tcref, [], _nullness) -> TType_app(tcref, [], KnownWithNull)
         | _ -> ufailwith st "u_ty - 9" 
     | 10 -> 
         let sty = u_simpletyp st
         match sty with 
         | TType_app(_tcref, [], Nullness.Known NullnessInfo.WithoutNull) -> sty // keep the unique
-        | TType_app(tcref, [], _nullness) -> TType_app(tcref, [], KnownNonNull)
+        | TType_app(tcref, [], _nullness) -> TType_app(tcref, [], KnownWithoutNull)
         | _ -> ufailwith st "u_ty - 9" 
     | 11 -> 
         let sty = u_simpletyp st
         match sty with 
-        | TType_app(_tcref, [], Nullness.Known NullnessInfo.Oblivious) -> sty // keep the unique
-        | TType_app(tcref, [], _nullness) -> TType_app(tcref, [], ObliviousToNull)
+        | TType_app(_tcref, [], Nullness.Known NullnessInfo.ObliviousToNull) -> sty // keep the unique
+        | TType_app(tcref, [], _nullness) -> TType_app(tcref, [], KnownObliviousToNull)
         | _ -> ufailwith st "u_ty - 9" 
     | 12 -> 
         let tc = u_tcref st 
         let tinst = u_tys st
-        TType_app (tc, tinst, KnownNull)
+        TType_app (tc, tinst, KnownWithNull)
     | 13 -> 
         let tc = u_tcref st 
         let tinst = u_tys st
-        TType_app (tc, tinst, KnownNonNull)
+        TType_app (tc, tinst, KnownWithoutNull)
     | 14 -> 
         let tc = u_tcref st 
         let tinst = u_tys st
-        TType_app (tc, tinst, ObliviousToNull)
+        TType_app (tc, tinst, KnownObliviousToNull)
     | 15 -> 
         let d = u_ty st
         let r = u_ty st
-        TType_fun (d,r, KnownNull)
+        TType_fun (d,r, KnownWithNull)
     | 16 -> 
         let d = u_ty st
         let r = u_ty st
-        TType_fun (d,r, KnownNonNull)
+        TType_fun (d,r, KnownWithoutNull)
     | 17 -> 
         let d = u_ty st
         let r = u_ty st
-        TType_fun (d,r, ObliviousToNull)
+        TType_fun (d,r, KnownObliviousToNull)
     | 18 -> 
         let r = u_tpref st
-        TType_var (r, KnownNull)
+        TType_var (r, KnownWithNull)
     | 19 -> 
         let r = u_tpref st
-        TType_var (r, KnownNonNull)
+        TType_var (r, KnownWithoutNull)
     | 20 -> 
         let r = u_tpref st
-        TType_var (r, ObliviousToNull)
+        TType_var (r, KnownObliviousToNull)
     | _ -> ufailwith st "u_ty")
   
 

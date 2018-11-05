@@ -83,20 +83,6 @@ module FSharpLib =
 // Access the initial environment: helpers to build references
 //-------------------------------------------------------------------------
 
-let private mkNonGenericTy tcref = TType_app(tcref, [], AssumeNonNull) // TODO - does this deault for all these types cause problems?
-let private mkNonGenericTyWithNullness tcref nullness = TType_app(tcref, [], nullness)
-
-let mkNonLocalTyconRef2 ccu path n = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) n 
-
-let mk_MFCore_tcref             ccu n = mkNonLocalTyconRef2 ccu FSharpLib.CorePathArray n 
-let mk_MFQuotations_tcref       ccu n = mkNonLocalTyconRef2 ccu FSharpLib.QuotationsPath n 
-let mk_MFLinq_tcref             ccu n = mkNonLocalTyconRef2 ccu LinqPathArray n 
-let mk_MFCollections_tcref      ccu n = mkNonLocalTyconRef2 ccu FSharpLib.CollectionsPathArray n 
-let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu FSharpLib.CompilerServicesPath n 
-let mk_MFRuntimeHelpers_tcref   ccu n = mkNonLocalTyconRef2 ccu FSharpLib.RuntimeHelpersPath n 
-let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu FSharpLib.ControlPathArray n 
-
-
 type 
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     BuiltinAttribInfo =
@@ -182,6 +168,24 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                       tryFindSysTypeCcu, 
                       emitDebugInfoInQuotations: bool, noDebugData: bool) =
       
+  let v_langFeatureNullness = (langVersion >= 5.0)
+
+  let v_knownWithoutNull =
+      if v_langFeatureNullness then KnownWithoutNull else KnownObliviousToNull
+
+  let mkNonGenericTy tcref = TType_app(tcref, [], v_knownWithoutNull)
+
+  let mkNonGenericTyWithNullness tcref nullness = TType_app(tcref, [], nullness)
+
+  let mkNonLocalTyconRef2 ccu path n = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) n 
+
+  let mk_MFCore_tcref             ccu n = mkNonLocalTyconRef2 ccu FSharpLib.CorePathArray n 
+  let mk_MFQuotations_tcref       ccu n = mkNonLocalTyconRef2 ccu FSharpLib.QuotationsPath n 
+  let mk_MFLinq_tcref             ccu n = mkNonLocalTyconRef2 ccu LinqPathArray n 
+  let mk_MFCollections_tcref      ccu n = mkNonLocalTyconRef2 ccu FSharpLib.CollectionsPathArray n 
+  let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu FSharpLib.CompilerServicesPath n 
+  let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu FSharpLib.ControlPathArray n 
+
   let vara = NewRigidTypar "a" envRange
   let varb = NewRigidTypar "b" envRange
   let varc = NewRigidTypar "c" envRange
@@ -232,6 +236,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_fastFunc_tcr   = mk_MFCore_tcref fslibCcu "FSharpFunc`2"
   let v_refcell_tcr_canon = mk_MFCore_tcref fslibCcu "Ref`1"
   let v_refcell_tcr_nice  = mk_MFCore_tcref fslibCcu "ref`1"
+  let v_mfe_tcr = mk_MFCore_tcref fslibCcu "MatchFailureException"
 
   let dummyAssemblyNameCarryingUsefulErrorInformation path typeName = 
       FSComp.SR.tcGlobalsSystemTypeNotFound (String.concat "." path + "." + typeName)
@@ -344,10 +349,10 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_nullable_tcr = findSysTyconRef sys "Nullable`1"
 
   (* local helpers to build value infos *)
-  let mkNullableTy ty = TType_app(v_nullable_tcr, [ty], KnownNonNull) 
-  let mkByrefTy ty = TType_app(v_byref_tcr, [ty], KnownNonNull) 
-  let mkNativePtrTy ty = TType_app(v_nativeptr_tcr, [ty], KnownNonNull) 
-  let mkFunTy d r = TType_fun (d, r, NewNullnessVar()) 
+  let mkNullableTy ty = TType_app(v_nullable_tcr, [ty], v_knownWithoutNull) 
+  let mkByrefTy ty = TType_app(v_byref_tcr, [ty], v_knownWithoutNull) 
+  let mkNativePtrTy ty = TType_app(v_nativeptr_tcr, [ty], v_knownWithoutNull) 
+  let mkFunTy d r = TType_fun (d, r, v_knownWithoutNull) 
   let (-->) d r = mkFunTy d r
   let mkIteratedFunTy dl r = List.foldBack mkFunTy dl r
   let mkSmallRefTupledTy l = match l with [] -> v_unit_ty | [h] -> h | tys -> mkRawRefTupleTy tys
@@ -383,22 +388,22 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mk_compare_withc_sig  ty = [[v_IComparer_ty];[ty]; [ty]], v_int_ty
   let mk_equality_withc_sig ty = [[v_IEqualityComparer_ty];[ty];[ty]], v_bool_ty
   let mk_hash_withc_sig     ty = [[v_IEqualityComparer_ty]; [ty]], v_int_ty
-  let mkListTy ty         = TType_app(v_list_tcr_nice, [ty], KnownNonNull)
-  let mkSeqTy ty1         = TType_app(v_seq_tcr, [ty1], KnownNonNull)
-  let mkRefCellTy ty      = TType_app(v_refcell_tcr_canon, [ty], KnownNonNull)
-  let mkQuerySourceTy ty1 ty2         = TType_app(v_querySource_tcr, [ty1; ty2], KnownNonNull)
+  let mkListTy ty         = TType_app(v_list_tcr_nice, [ty], v_knownWithoutNull)
+  let mkSeqTy ty1         = TType_app(v_seq_tcr, [ty1], v_knownWithoutNull)
+  let mkRefCellTy ty      = TType_app(v_refcell_tcr_canon, [ty], v_knownWithoutNull)
+  let mkQuerySourceTy ty1 ty2         = TType_app(v_querySource_tcr, [ty1; ty2], v_knownWithoutNull)
   let v_tcref_System_Collections_IEnumerable         = findSysTyconRef sysCollections "IEnumerable";
   let mkArrayType rank (ty : TType) : TType =
       assert (rank >= 1 && rank <= 32)
-      TType_app(v_il_arr_tcr_map.[rank - 1], [ty], KnownNonNull)
-  let mkLazyTy ty         = TType_app(lazy_tcr, [ty], KnownNonNull)
+      TType_app(v_il_arr_tcr_map.[rank - 1], [ty], v_knownWithoutNull)
+  let mkLazyTy ty         = TType_app(lazy_tcr, [ty], v_knownWithoutNull)
   
-  let mkPrintfFormatTy aty bty cty dty ety = TType_app(v_format_tcr, [aty;bty;cty;dty; ety], KnownNonNull) 
-  let mk_format4_ty aty bty cty dty = TType_app(v_format4_tcr, [aty;bty;cty;dty], KnownNonNull) 
-  let mkQuotedExprTy aty = TType_app(v_expr_tcr, [aty], KnownNonNull) 
-  let mkRawQuotedExprTy = TType_app(v_raw_expr_tcr, [], KnownNonNull) 
-  let mkQueryBuilderTy = TType_app(v_query_builder_tcref, [], KnownNonNull) 
-  let mkLinqExpressionTy aty = TType_app(v_linqExpression_tcr, [aty], KnownNonNull) 
+  let mkPrintfFormatTy aty bty cty dty ety = TType_app(v_format_tcr, [aty;bty;cty;dty; ety], v_knownWithoutNull) 
+  let mk_format4_ty aty bty cty dty = TType_app(v_format4_tcr, [aty;bty;cty;dty], v_knownWithoutNull) 
+  let mkQuotedExprTy aty = TType_app(v_expr_tcr, [aty], v_knownWithoutNull) 
+  let mkRawQuotedExprTy = TType_app(v_raw_expr_tcr, [], v_knownWithoutNull) 
+  let mkQueryBuilderTy = TType_app(v_query_builder_tcref, [], v_knownWithoutNull) 
+  let mkLinqExpressionTy aty = TType_app(v_linqExpression_tcr, [aty], v_knownWithoutNull) 
   let v_cons_ucref = mkUnionCaseRef v_list_tcr_canon "op_ColonColon" 
   let v_nil_ucref  = mkUnionCaseRef v_list_tcr_canon "op_Nil" 
 
@@ -530,7 +535,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       | None -> TType_app(tcref, tinst, nullness)
 
   let decodeTupleTy tupInfo tinst = 
-      decodeTupleTyAndNullness tupInfo tinst KnownNonNull
+      decodeTupleTyAndNullness tupInfo tinst v_knownWithoutNull
 
   let mk_MFCore_attrib nm : BuiltinAttribInfo = 
       AttribInfo(mkILTyRef(IlxSettings.ilxFsharpCoreLibScopeRef (), FSharpLib.Core + "." + nm), mk_MFCore_tcref fslibCcu nm) 
@@ -692,7 +697,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_seq_generated_info         = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateWhile"                       , None                 , None          , [varb],     ([[v_unit_ty --> v_bool_ty]; [mkSeqTy varbTy]], mkSeqTy varbTy))
   let v_seq_finally_info           = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateThenFinally"                 , None                 , None          , [varb],     ([[mkSeqTy varbTy]; [v_unit_ty --> v_unit_ty]], mkSeqTy varbTy))
   let v_seq_of_functions_info      = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateFromFunctions"               , None                 , None          , [vara;varb], ([[v_unit_ty --> varaTy]; [varaTy --> v_bool_ty]; [varaTy --> varbTy]], mkSeqTy varbTy))  
-  let v_create_event_info          = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "CreateEvent"                          , None                 , None          , [vara;varb], ([[varaTy --> v_unit_ty]; [varaTy --> v_unit_ty]; [(v_obj_ty --> (varbTy --> v_unit_ty)) --> varaTy]], TType_app (v_fslib_IEvent2_tcr, [varaTy;varbTy], KnownNonNull)))
+  let v_create_event_info          = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "CreateEvent"                          , None                 , None          , [vara;varb], ([[varaTy --> v_unit_ty]; [varaTy --> v_unit_ty]; [(v_obj_ty --> (varbTy --> v_unit_ty)) --> varaTy]], TType_app (v_fslib_IEvent2_tcr, [varaTy;varbTy], v_knownWithoutNull)))
   let v_seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              , None                 , Some "ToArray", [varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))  
   let v_seq_to_list_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toList"                               , None                 , Some "ToList" , [varb],     ([[mkSeqTy varbTy]], mkListTy varbTy))
   let v_seq_map_info               = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "map"                                  , None                 , Some "Map"    , [vara;varb], ([[varaTy --> varbTy]; [mkSeqTy varaTy]], mkSeqTy varbTy))
@@ -911,11 +916,18 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   override x.ToString() = "<TcGlobals>"
   member __.ilg=ilg
-      // A table of all intrinsics that the compiler cares about
+
+  /// A table of all intrinsics that the compiler cares about
   member __.knownIntrinsics                = v_knownIntrinsics
+
   member __.assumeNullOnImport = assumeNullOnImport
+
   member __.checkNullness = checkNullness
-  member __.langFeatureNullness() = langVersion >= 5.0
+
+  member __.langFeatureNullness = v_langFeatureNullness
+
+  member g.knownWithoutNull = v_knownWithoutNull
+
   member __.langVersion = langVersion
       // A table of known modules in FSharp.Core. Not all modules are necessarily listed, but the more we list the
       // better the job we do of mapping from provided expressions back to FSharp.Core F# functions and values.
@@ -976,6 +988,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.voidptr_tcr  = v_voidptr_tcr
   member __.ilsigptr_tcr   = v_ilsigptr_tcr
   member __.fastFunc_tcr = v_fastFunc_tcr
+  member __.MatchFailureException_tcr = v_mfe_tcr
   member __.tcref_IQueryable = v_tcref_IQueryable
   member __.tcref_IObservable      = v_tcref_IObservable
   member __.tcref_IObserver      = v_tcref_IObserver
