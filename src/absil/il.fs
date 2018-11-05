@@ -2016,6 +2016,17 @@ type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout
     new (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, securityDecls, customAttrs) =  
        ILTypeDef (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, storeILSecurityDecls securityDecls, storeILCustomAttrs customAttrs, NoMetadataIdx)
 
+    member val CachedCustomAttributes = None with get, set
+
+    member x.CustomAttributesStored =
+        match customAttrsStored with 
+        | ILAttributesStored.Reader f ->
+            let res = ILAttributes(f x.MetadataIndex)
+            customAttrsStored <- ILAttributesStored.Given res
+            res 
+        | ILAttributesStored.Given res -> 
+            res   
+
     member __.Name = name
     member __.Attributes = attributes
     member __.GenericParams = genericParams
@@ -2029,7 +2040,6 @@ type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout
     member __.MethodImpls = methodImpls
     member __.Events = events
     member __.Properties = properties
-    member __.CustomAttrsStored = customAttrsStored
     member __.MetadataIndex = metadataIndex
 
     member x.With(?name, ?attributes, ?layout, ?implements, ?genericParams, ?extends, ?methods, ?nestedTypes, ?fields, ?methodImpls, ?events, ?properties, ?customAttrs, ?securityDecls) = 
@@ -2046,16 +2056,7 @@ type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout
                   methodImpls = defaultArg methodImpls x.MethodImpls,
                   events = defaultArg events x.Events,
                   properties = defaultArg properties x.Properties,
-                  customAttrs = defaultArg customAttrs x.CustomAttrs)
-
-    member x.CustomAttrs = 
-        match customAttrsStored with 
-        | ILAttributesStored.Reader f ->
-            let res = ILAttributes(f x.MetadataIndex)
-            customAttrsStored <- ILAttributesStored.Given res
-            res 
-        | ILAttributesStored.Given res -> 
-            res
+                  customAttrs = defaultArg customAttrs x.CustomAttributesStored)     
 
     member x.SecurityDecls = x.SecurityDeclsStored.GetSecurityDecls x.MetadataIndex
 
@@ -3899,8 +3900,41 @@ let decodeILAttribData (ilg: ILGlobals) (ca: ILAttribute) =
       let v, sigptr = parseVal ty sigptr
       parseNamed ((nm, ty, isProp, v) :: acc) (n-1) sigptr
     let named = parseNamed [] (int nnamed) sigptr
-    fixedArgs, named     
+    fixedArgs, named
+    
+[<Literal>]
+let ByRefLikeMarker = "Types with embedded references are not supported in this version of your compiler."
 
+type ILTypeDef with
+
+    member x.GetCustomAttributes(ilg: ILGlobals) = 
+        match x.CachedCustomAttributes with
+        | None ->
+            let attrs = x.CustomAttributesStored
+            let attrs =
+                if attrs.AsArray |> Array.exists (fun x -> x.Method.DeclaringType.TypeRef.FullName = "System.Runtime.CompilerServices.IsByRefLikeAttribute") then
+                    attrs.AsArray
+                    |> Array.filter (fun attr -> 
+                        if attr.Method.DeclaringType.TypeRef.FullName = "System.ObsoleteAttribute" then
+                            let elems, _ = decodeILAttribData ilg attr
+                            match elems with
+                            | ILAttribElem.String(strOpt) :: []
+                            | ILAttribElem.String(strOpt) :: ILAttribElem.Bool(_) :: [] ->
+                                match strOpt with
+                                | Some(str) when str = ByRefLikeMarker -> false
+                                | _ -> true
+                            | _ -> true
+                        else
+                            true
+                    )
+                    |> ILAttributes
+                else
+                    attrs
+
+            x.CachedCustomAttributes <- Some(attrs)
+            attrs
+        | Some(attrs) ->
+            attrs
 
 // -------------------------------------------------------------------- 
 // Functions to collect up all the references in a full module or
@@ -4083,7 +4117,7 @@ and refs_of_tdef s (td : ILTypeDef)  =
     refs_of_method_impls s td.MethodImpls.AsList
     refs_of_events       s td.Events
     refs_of_tdef_kind    s td
-    refs_of_custom_attrs s td.CustomAttrs
+    refs_of_custom_attrs s td.CustomAttributesStored
     refs_of_properties   s td.Properties
 
 and refs_of_string _s _ = ()

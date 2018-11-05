@@ -125,7 +125,7 @@ let AttribInfosOfIL g amap scoref m (attribs: ILAttributes) =
 let AttribInfosOfFS g attribs = 
     attribs |> List.map (fun a -> FSAttribInfo (g, a))
 
-let GetAttribInfosOfEntity g amap m (tcref:TyconRef) = 
+let GetAttribInfosOfEntity (g: TcGlobals) amap m (tcref:TyconRef) = 
     match metadataOfTycon tcref.Deref with 
 #if !NO_EXTENSIONTYPING
     // TODO: provided attributes
@@ -136,7 +136,7 @@ let GetAttribInfosOfEntity g amap m (tcref:TyconRef) =
         //| None -> None
 #endif
     | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) -> 
-        tdef.CustomAttrs |> AttribInfosOfIL g amap scoref m
+        tdef.GetCustomAttributes(g.ilg) |> AttribInfosOfIL g amap scoref m
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
         tcref.Attribs |> List.map (fun a -> FSAttribInfo (g, a))
 
@@ -188,7 +188,7 @@ let TryBindTyconRefAttribute g m (AttribInfo (atref, _) as args) (tcref:TyconRef
         | None -> None
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, tdef)) -> 
-        match TryDecodeILAttribute g atref tdef.CustomAttrs with 
+        match TryDecodeILAttribute g atref (tdef.GetCustomAttributes(g.ilg)) with 
         | Some attr -> f1 attr
         | _ -> None
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
@@ -449,8 +449,8 @@ let MethInfoIsUnseen g m ty minfo =
         // We are only interested in filtering out the method on System.Object, so it is sufficient
         // just to look at the attributes on IL methods.
         if tcref.IsILTycon then 
-                tcref.ILTyconRawMetadata.CustomAttrs.AsList 
-                |> List.exists (fun attr -> attr.Method.DeclaringType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
+                tcref.ILTyconRawMetadata.GetCustomAttributes(g.ilg).AsArray 
+                |> Array.exists (fun attr -> attr.Method.DeclaringType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
         else 
             false
 #else
@@ -481,7 +481,7 @@ let PropInfoIsUnseen m pinfo =
 /// Check the attributes on an entity, returning errors and warnings as data.
 let CheckEntityAttributes g (x:TyconRef) m = 
     if x.IsILTycon then 
-        CheckILAttributes g x.ILTyconRawMetadata.CustomAttrs m
+        CheckILAttributes g (x.ILTyconRawMetadata.GetCustomAttributes(g.ilg)) m
     else 
         CheckFSharpAttributes g x.Attribs m
 

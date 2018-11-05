@@ -277,7 +277,7 @@ let rec tdef_ty2ty_ilmbody2ilmbody_mdefs2mdefs ilg enc fs (td: ILTypeDef) =
            methodImpls = mimpls_ty2ty ftye' td.MethodImpls,
            events = edefs_ty2ty ilg ftye' td.Events,
            properties = pdefs_ty2ty ilg ftye' td.Properties,
-           customAttrs = cattrs_ty2ty ilg ftye' td.CustomAttrs)
+           customAttrs = cattrs_ty2ty ilg ftye' (td.GetCustomAttributes(ilg)))
 
 and tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs ilg enc fs tdefs = 
   morphILTypeDefs (tdef_ty2ty_ilmbody2ilmbody_mdefs2mdefs ilg enc fs) tdefs

@@ -2927,7 +2927,7 @@ let TryBindTyconRefAttribute g (m:range) (AttribInfo (atref, _) as args) (tcref:
         | None -> None
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, tdef)) -> 
-        match TryDecodeILAttribute g atref tdef.CustomAttrs with 
+        match TryDecodeILAttribute g atref (tdef.GetCustomAttributes(g.ilg)) with 
         | Some attr -> f1 attr
         | _ -> None
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 

@@ -928,7 +928,7 @@ let rec goutput_tdef enc env contents os (cd: ILTypeDef) =
       output_string os "\n{\n ";
       if contents then 
         let tref = (mkILNestedTyRef (ILScopeRef.Local,enc,cd.Name)) 
-        goutput_custom_attrs env os cd.CustomAttrs;
+        goutput_custom_attrs env os (cd.GetCustomAttributes(env.ilGlobals));
         goutput_security_decls env os cd.SecurityDecls;
         pp_layout_decls os ();
         goutput_fdefs tref env os cd.Fields;

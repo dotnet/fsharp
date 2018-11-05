@@ -1193,7 +1193,7 @@ module StaticLinker =
                              let meths = td.Methods.AsList
                                             |> List.map (fun md ->
                                                 md.With(customAttrs = 
-                                                              mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
+                                                              mkILCustomAttrs (td.GetCustomAttributes(ilGlobals).AsList |> List.filter (fun ilattr ->
                                                                 ilattr.Method.DeclaringType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")))) 
                                             |> mkILMethods
                              let td = td.With(methods=meths)

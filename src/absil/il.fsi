@@ -1271,7 +1271,6 @@ and [<NoComparison; NoEquality>]
     member MethodImpls: ILMethodImplDefs
     member Events: ILEventDefs
     member Properties: ILPropertyDefs
-    member CustomAttrs: ILAttributes
     member IsClass: bool
     member IsStruct: bool
     member IsInterface: bool
@@ -1603,6 +1602,10 @@ val decodeILAttribData:
     ILAttribute -> 
       ILAttribElem list *  (* fixed args *)
       ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
+
+type ILTypeDef with
+    
+    member GetCustomAttributes : ILGlobals -> ILAttributes
 
 /// Generate simple references to assemblies and modules.
 val mkSimpleAssRef: string -> ILAssemblyRef
@@ -1998,3 +2001,5 @@ type ILReferences =
 val computeILRefs: ILModuleDef -> ILReferences
 val emptyILRefs: ILReferences
 
+[<Literal>]
+val ByRefLikeMarker : string = "Types with embedded references are not supported in this version of your compiler."

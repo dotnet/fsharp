@@ -2739,7 +2739,7 @@ let rec GenTypeDefPass3 enc cenv (td:ILTypeDef) =
                        SimpleIndex (TableNames.TypeDef, tidx) |]) |> ignore
                        
       td.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_TypeDef, tidx)
-      td.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_TypeDef, tidx)
+      td.GetCustomAttributes(cenv.ilg) |> GenCustomAttrsPass3Or4 cenv (hca_TypeDef, tidx)
       td.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_TypeDef, tidx) gp)  
       td.NestedTypes.AsList |> GenTypeDefsPass3 (enc@[td.Name]) cenv
    with e ->
