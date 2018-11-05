@@ -248,21 +248,21 @@ let MethInfoHasAttribute g m attribSpec minfo  =
 
 
 /// Check IL attributes for 'ObsoleteAttribute', returning errors and warnings as data
-let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m = 
+let private CheckILAttributes (g: TcGlobals) cattrs m = 
     let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
     match TryDecodeILAttribute g tref cattrs with 
-    | Some ([ILAttribElem.String (Some msg) ], _) when not isByrefLikeTyconRef -> 
+    | Some ([ILAttribElem.String (Some msg) ], _) -> 
             WarnD(ObsoleteWarning(msg, m))
-    | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) when not isByrefLikeTyconRef  -> 
+    | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) -> 
         if isError then 
             ErrorD (ObsoleteError(msg, m))
         else 
             WarnD (ObsoleteWarning(msg, m))
-    | Some ([ILAttribElem.String None ], _) when not isByrefLikeTyconRef -> 
+    | Some ([ILAttribElem.String None ], _) -> 
         WarnD(ObsoleteWarning("", m))
-    | Some _ when not isByrefLikeTyconRef -> 
+    | Some _ -> 
         WarnD(ObsoleteWarning("", m))
-    | _ -> 
+    | None -> 
         CompleteD
 
 /// Check F# attributes for 'ObsoleteAttribute', 'CompilerMessageAttribute' and 'ExperimentalAttribute',
@@ -374,7 +374,7 @@ let CheckProvidedAttributesForUnseen (provAttribs: Tainted<IProvidedCustomAttrib
 /// Check the attributes associated with a property, returning warnings and errors as data.
 let CheckPropInfoAttributes pinfo m = 
     match pinfo with
-    | ILProp(ILPropInfo(_, pdef)) -> CheckILAttributes pinfo.TcGlobals false pdef.CustomAttrs m
+    | ILProp(ILPropInfo(_, pdef)) -> CheckILAttributes pinfo.TcGlobals pdef.CustomAttrs m
     | FSProp(g, _, Some vref, _) 
     | FSProp(g, _, _, Some vref) -> CheckFSharpAttributes g vref.Attribs m
     | FSProp _ -> failwith "CheckPropInfoAttributes: unreachable"
@@ -389,7 +389,7 @@ let CheckPropInfoAttributes pinfo m =
 let CheckILFieldAttributes g (finfo:ILFieldInfo) m = 
     match finfo with 
     | ILFieldInfo(_, pd) -> 
-        CheckILAttributes g false pd.CustomAttrs m |> CommitOperationResult
+        CheckILAttributes g pd.CustomAttrs m |> CommitOperationResult
 #if !NO_EXTENSIONTYPING
     | ProvidedField (amap, fi, m) -> 
         CheckProvidedAttributes amap.g m (fi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) |> CommitOperationResult
@@ -399,7 +399,7 @@ let CheckILFieldAttributes g (finfo:ILFieldInfo) m =
 let CheckMethInfoAttributes g m tyargsOpt minfo = 
     let search = 
         BindMethInfoAttributes m minfo 
-            (fun ilAttribs -> Some(CheckILAttributes g false ilAttribs m)) 
+            (fun ilAttribs -> Some(CheckILAttributes g ilAttribs m)) 
             (fun fsAttribs -> 
                 let res = 
                     CheckFSharpAttributes g fsAttribs m ++ (fun () -> 
@@ -481,7 +481,7 @@ let PropInfoIsUnseen m pinfo =
 /// Check the attributes on an entity, returning errors and warnings as data.
 let CheckEntityAttributes g (x:TyconRef) m = 
     if x.IsILTycon then 
-        CheckILAttributes g (isByrefLikeTyconRef g m x) x.ILTyconRawMetadata.CustomAttrs m
+        CheckILAttributes g x.ILTyconRawMetadata.CustomAttrs m
     else 
         CheckFSharpAttributes g x.Attribs m
 
