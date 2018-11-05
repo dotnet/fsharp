@@ -387,6 +387,20 @@ let GenReadOnlyModReqIfNecessary (g: TcGlobals) ty ilTy =
     else
         ilTy
 
+let GenObsoleteAttributeByRefLikeMarkerIfNecessary (g: TcGlobals) (tycon: Tycon) (ilCustomAttrs: ILAttribute list) =
+    if tycon.IsFSharpStructOrEnumTycon && ilCustomAttrs |> List.exists (fun x -> x.Method.DeclaringType.TypeSpec.FullName = "System.Runtime.CompilerServices.IsByRefLikeAttribute") then
+        let attr = 
+            mkILCustomAttribute g.ilg 
+                (
+                    g.attrib_SystemObsolete.TypeRef, 
+                    [ g.ilg.typ_String; g.ilg.typ_Bool ], 
+                    [ ILAttribElem.String(Some(ByRefLikeMarker)); ILAttribElem.Bool(true) ], 
+                    []
+                )
+        Some(attr)
+    else
+        None
+
 let rec GenTypeArgAux amap m tyenv tyarg =  
     GenTypeAux amap m tyenv VoidNotOK PtrTypesNotOK tyarg
 
@@ -6500,12 +6514,17 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                   yield cenv.g.mkDebuggerDisplayAttribute ("{" + debugDisplayMethodName + "(),nq}")  ]
 
 
-        let ilCustomAttrs = 
+        let ilCustomAttrsDefault = 
           [ yield! defaultMemberAttrs 
             yield! normalAttrs 
                       |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_StructLayoutAttribute >> not) 
                       |> GenAttrs cenv eenv
             yield! ilDebugDisplayAttributes  ]
+
+        let ilCustomAttrs =
+            match GenObsoleteAttributeByRefLikeMarkerIfNecessary cenv.g tycon ilCustomAttrsDefault with
+            | Some(ilCustomAttr) -> ilCustomAttr :: ilCustomAttrsDefault
+            | _ -> ilCustomAttrsDefault
 
         let reprAccess = ComputeMemberAccess hiddenRepr
 
