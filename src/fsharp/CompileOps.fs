@@ -960,12 +960,12 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
               | Parser.TOKEN_RPAREN | Parser.TOKEN_RPAREN_COMING_SOON | Parser.TOKEN_RPAREN_IS_HERE -> getErrorString("Parser.TOKEN.RPAREN")
               | Parser.TOKEN_LQUOTE  -> getErrorString("Parser.TOKEN.LQUOTE")
               | Parser.TOKEN_LBRACK  -> getErrorString("Parser.TOKEN.LBRACK")
+              | Parser.TOKEN_LBRACE_BAR   -> getErrorString("Parser.TOKEN.LBRACE.BAR")
               | Parser.TOKEN_LBRACK_BAR  -> getErrorString("Parser.TOKEN.LBRACK.BAR")
               | Parser.TOKEN_LBRACK_LESS  -> getErrorString("Parser.TOKEN.LBRACK.LESS")
               | Parser.TOKEN_LBRACE   -> getErrorString("Parser.TOKEN.LBRACE")
-              | Parser.TOKEN_LBRACE_LESS-> getErrorString("Parser.TOKEN.LBRACE.LESS")
               | Parser.TOKEN_BAR_RBRACK   -> getErrorString("Parser.TOKEN.BAR.RBRACK")
-              | Parser.TOKEN_GREATER_RBRACE   -> getErrorString("Parser.TOKEN.GREATER.RBRACE")
+              | Parser.TOKEN_BAR_RBRACE   -> getErrorString("Parser.TOKEN.BAR.RBRACE")
               | Parser.TOKEN_GREATER_RBRACK  -> getErrorString("Parser.TOKEN.GREATER.RBRACK")
               | Parser.TOKEN_RQUOTE_DOT _ 
               | Parser.TOKEN_RQUOTE  -> getErrorString("Parser.TOKEN.RQUOTE")
@@ -1096,7 +1096,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
                   (* Merge a bunch of expression non terminals *)
                   let (|NONTERM_Category_Expr|_|) = function
                         | Parser.NONTERM_argExpr|Parser.NONTERM_minusExpr|Parser.NONTERM_parenExpr|Parser.NONTERM_atomicExpr
-                        | Parser.NONTERM_appExpr|Parser.NONTERM_tupleExpr|Parser.NONTERM_declExpr|Parser.NONTERM_braceExpr
+                        | Parser.NONTERM_appExpr|Parser.NONTERM_tupleExpr|Parser.NONTERM_declExpr|Parser.NONTERM_braceExpr|Parser.NONTERM_braceBarExpr
                         | Parser.NONTERM_typedSeqExprBlock
                         | Parser.NONTERM_interactiveExpr -> Some()
                         | _ -> None

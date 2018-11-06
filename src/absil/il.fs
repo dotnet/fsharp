@@ -309,8 +309,12 @@ module SHA1 =
         let (_h0, _h1, _h2, h3, h4) = sha1Hash { stream = s; pos = 0; eof = false }   // the result of the SHA algorithm is stored in registers 3 and 4
         Array.map byte [|  b0 h4; b1 h4; b2 h4; b3 h4; b0 h3; b1 h3; b2 h3; b3 h3; |]
 
+    let sha1HashInt64 s = 
+        let (_h0,_h1,_h2,h3,h4) = sha1Hash { stream = s; pos = 0; eof = false }   // the result of the SHA algorithm is stored in registers 3 and 4
+        (int64 h3 <<< 32) |||  int64 h4
 
 let sha1HashBytes s = SHA1.sha1HashBytes s
+let sha1HashInt64 s = SHA1.sha1HashInt64 s
 
 // --------------------------------------------------------------------
 // 
