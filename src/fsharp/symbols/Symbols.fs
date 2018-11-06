@@ -1265,6 +1265,11 @@ and FSharpGenericParameterConstraint(cenv, cx: TyparConstraint) =
         | TyparConstraint.SupportsComparison _ -> true 
         | _ -> false
 
+    member __.IsNotSupportsNullConstraint = 
+        match cx with 
+        | TyparConstraint.NotSupportsNull _ -> true 
+        | _ -> false
+
     member __.IsEqualityConstraint = 
         match cx with 
         | TyparConstraint.SupportsEquality _ -> true 

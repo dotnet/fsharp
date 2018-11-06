@@ -76,10 +76,9 @@ val stripExpr : Expr -> Expr
 val valsOfBinds : Bindings -> Vals 
 val (|ExprValWithPossibleTypeInst|_|) : Expr -> (ValRef * ValUseFlag * TType list * range) option
 
-val combineNullness: Nullness -> Nullness -> Nullness
-/// Ensure that a type admits nullness
-val tryAddNullnessToTy: Nullness -> TType -> TType option
-val addNullnessToTy: Nullness -> TType -> TType
+//val combineNullness: Nullness -> Nullness -> Nullness
+//val tryAddNullnessToTy: Nullness -> TType -> TType option
+//val addNullnessToTy: Nullness -> TType -> TType
 
 //-------------------------------------------------------------------------
 // Build decision trees imperatively
@@ -1135,6 +1134,7 @@ val ModuleNameIsMangled : TcGlobals -> Attribs -> bool
 
 val CompileAsEvent : TcGlobals -> Attribs -> bool
 
+val TypeNullIsTrueValue : TcGlobals -> TType -> bool
 val TypeNullIsExtraValueNew : TcGlobals -> range -> TType -> bool
 val TypeNullIsExtraValueOld : TcGlobals -> range -> TType -> bool
 val TyconRefNullIsExtraValueOld :  TcGlobals -> range -> TyconRef -> bool
@@ -1287,7 +1287,6 @@ val mkCallArray4DSet         : TcGlobals -> range -> TType -> Expr -> Expr -> Ex
 val mkCallHash               : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallBox                : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallIsNull             : TcGlobals -> range -> TType -> Expr -> Expr
-val mkCallIsNotNull          : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallRaise              : TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallGenericComparisonWithComparerOuter : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr

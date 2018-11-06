@@ -2256,8 +2256,8 @@ namespace Microsoft.FSharp.Core
         /// <summary>Determines whether the given value is not null.</summary>
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is not null, false otherwise.</returns>
-        [<CompiledName("IsNotNull")>]
-        val inline internal isNotNull : value:'T -> bool when 'T : null
+        [<CompiledName("IsNonNull")>]
+        val inline internal isNonNull : value:'T -> bool when 'T : null
 
 #if !BUILDING_WITH_LKG
         /// <summary>Get the null value for a value type.</summary>
@@ -2268,20 +2268,20 @@ namespace Microsoft.FSharp.Core
         /// <summary>Asserts that the value is non-null.</summary>
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
-        [<CompiledName("NotNull")>]
-        val inline notNull : value: (('T)?) -> 'T when 'T : not struct
+        [<CompiledName("NonNull")>]
+        val inline nonNull : value: (('T)?) -> 'T when 'T : not struct
 
         /// <summary>Asserts that the value is non-null.</summary>
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
-        [<CompiledName("NotNullV")>]
-        val inline notNullV : value:Nullable<'T> -> 'T 
+        [<CompiledName("NonNullV")>]
+        val inline nonNullV : value:Nullable<'T> -> 'T 
 
         /// <summary>Asserts that the value is non-null.</summary>
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("WithNull")>]
-        val inline withNull : value:'T -> (('T)?) when 'T : not struct and 'T : null
+        val inline withNull : value:'T -> (('T)?) when 'T : not struct
 
         /// <summary>Asserts that the value is non-null.</summary>
         /// <param name="value">The value to check.</param>

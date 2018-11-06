@@ -2188,6 +2188,10 @@ typeConstraint:
   | typar COLON NULL 
       { WhereTyparSupportsNull($1,lhs parseState) }
 
+  | typar COLON IDENT NULL
+      { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3))  
+        WhereTyparNotSupportsNull($1,lhs parseState) }
+
   | typar COLON LPAREN classMemberSpfn rparen 
       { let tp = $1
         WhereTyparSupportsMember([ SynType.Var(tp, tp.Range) ],$4,lhs parseState) }

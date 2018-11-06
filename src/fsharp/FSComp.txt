@@ -310,6 +310,8 @@ csMethodFoundButIsStatic,"The type '%s' has a method '%s' (full name '%s'), but 
 csMethodFoundButIsNotStatic,"The type '%s' has a method '%s' (full name '%s'), but the method is not static"
 472,csStructConstraintInconsistent,"The constraints 'struct' and 'not struct' are inconsistent"
 csTypeDoesNotHaveNull,"The type '%s' does not have 'null' as a proper value"
+csTypeHasNullAsTrueValue,"The type '%s' has 'null' as a true representation value but a constraint does not permit this"
+csTypeHasNullAsExtraValue,"The type '%s' has 'null' as an extra value but a constraint does not permit this"
 csNullableTypeDoesNotHaveNull,"The type '%s' does not have 'null' as a proper value. To create a null value for a Nullable type use 'System.Nullable()'."
 csTypeDoesNotSupportComparison1,"The type '%s' does not support the 'comparison' constraint because it has the 'NoComparison' attribute"
 csTypeDoesNotSupportComparison2,"The type '%s' does not support the 'comparison' constraint. For example, it does not support the 'System.IComparable' interface"
@@ -1449,4 +1451,5 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3243,tcTypeDoesNotHaveAnyNull,"The type '%s' does not support a nullness qualitification."
 #3244 reserved for ConstraintSolverNullnessWarningWithTypes
 #3245 reserved for ConstraintSolverNullnessWarningWithType
-3246,tcNullnessCheckingNotEnabled,"The /checknulls language feature is not enabled"
+#3246 reserved for ConstraintSolverNonNullnessWarningWithType
+3247,tcNullnessCheckingNotEnabled,"The /checknulls language feature is not enabled"

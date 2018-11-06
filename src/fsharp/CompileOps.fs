@@ -197,6 +197,7 @@ let GetRangeOfDiagnostic(err:PhasedDiagnostic) =
       | ConstraintSolverNullnessWarningEquivWithTypes(_, _, _, _, _, m, _)
       | ConstraintSolverNullnessWarningWithTypes(_, _, _, _, _, m, _)
       | ConstraintSolverNullnessWarningWithType(_, _, _, m, _)
+      | ConstraintSolverNonNullnessWarningWithType(_, _, _, m, _)
       | ConstraintSolverTypesNotInEqualityRelation(_, _, _, m, _, _)
       | ConstraintSolverError(_, m, _) 
       | ConstraintSolverTypesNotInSubsumptionRelation(_, _, _, m, _) 
@@ -377,6 +378,7 @@ let GetDiagnosticNumber(err:PhasedDiagnostic) =
       | ConstraintSolverNullnessWarningEquivWithTypes _ -> 3244
       | ConstraintSolverNullnessWarningWithTypes _ -> 3244
       | ConstraintSolverNullnessWarningWithType _ -> 3245
+      | ConstraintSolverNonNullnessWarningWithType _ -> 3246
       | _ -> 193
    GetFromException err.Exception
    
@@ -451,6 +453,7 @@ let ConstraintSolverTypesNotInEqualityRelation1E() = DeclareResourceString("Cons
 let ConstraintSolverNullnessWarningEquivWithTypesE() = DeclareResourceString("ConstraintSolverNullnessWarningEquivWithTypes", "%s%s%s%s")
 let ConstraintSolverNullnessWarningWithTypesE() = DeclareResourceString("ConstraintSolverNullnessWarningWithTypes", "%s%s%s%s")
 let ConstraintSolverNullnessWarningWithTypeE() = DeclareResourceString("ConstraintSolverNullnessWarningWithType", "%s")
+let ConstraintSolverNonNullnessWarningWithTypeE() = DeclareResourceString("ConstraintSolverNonNullnessWarningWithType", "%s")
 let ConstraintSolverTypesNotInEqualityRelation2E() = DeclareResourceString("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
 let ConstraintSolverTypesNotInSubsumptionRelationE() = DeclareResourceString("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
 let ErrorFromAddingTypeEquation1E() = DeclareResourceString("ErrorFromAddingTypeEquation1", "%s%s%s")
@@ -662,6 +665,14 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           
           let t = NicePrint.minimalStringOfType denv ty
           os.Append(ConstraintSolverNullnessWarningWithTypeE().Format (t)) |> ignore
+
+          if m.StartLine <> m2.StartLine then
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+
+      | ConstraintSolverNonNullnessWarningWithType(denv, ty, _nullness, m, m2) ->
+          
+          let t = NicePrint.minimalStringOfType denv ty
+          os.Append(ConstraintSolverNonNullnessWarningWithTypeE().Format (t)) |> ignore
 
           if m.StartLine <> m2.StartLine then
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore

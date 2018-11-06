@@ -3336,27 +3336,27 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("IsNullV")>]
         let inline isNullV (value : Nullable<'T>) = not value.HasValue
 
-        [<CompiledName("IsNotNull")>]
-        let inline internal isNotNull (value : 'T) = 
+        [<CompiledName("IsNonNull")>]
+        let inline internal isNonNull (value : 'T) = 
             match value with 
             | null -> false 
             | _ -> true
 
-        [<CompiledName("NotNull")>]
-        let inline notNull (value : 'T when 'T : not struct and 'T : null) = 
-            match value with 
+        [<CompiledName("NonNull")>]
+        let inline nonNull (value : 'T when 'T : not struct) = 
+            match box value with 
             | null -> raise (System.NullReferenceException())
             | _ -> value
 
-        [<CompiledName("NotNullV")>]
-        let inline notNullV (value : Nullable<'T>) = 
+        [<CompiledName("NonNullV")>]
+        let inline nonNullV (value : Nullable<'T>) = 
             if value.HasValue then 
                 value.Value 
             else 
                 raise (System.NullReferenceException())
 
         [<CompiledName("WithNull")>]
-        let inline withNull (value : 'T when 'T : not struct and 'T : null) = value
+        let inline withNull (value : 'T when 'T : not struct) = value
 
         [<CompiledName("WithNullV")>]
         let inline withNullV (value : 'T) : Nullable<'T> = Nullable<'T>(value)

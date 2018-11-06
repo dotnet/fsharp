@@ -211,6 +211,7 @@ let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref
                           | TyparConstraint.IsEnum _
                           | TyparConstraint.IsDelegate _
                           | TyparConstraint.SupportsNull _
+                          | TyparConstraint.NotSupportsNull _
                           | TyparConstraint.IsNonNullableStruct _ 
                           | TyparConstraint.IsUnmanaged _ 
                           | TyparConstraint.IsReferenceType _ 
@@ -326,6 +327,8 @@ let CopyTyparConstraints m tprefInst (tporig:Typar) =
                TyparConstraint.IsEnum (instType tprefInst uty,m)
            | TyparConstraint.SupportsComparison _ -> 
                TyparConstraint.SupportsComparison m
+           | TyparConstraint.NotSupportsNull _ -> 
+               TyparConstraint.NotSupportsNull m
            | TyparConstraint.SupportsEquality _ -> 
                TyparConstraint.SupportsEquality m
            | TyparConstraint.IsDelegate(aty, bty,_) -> 

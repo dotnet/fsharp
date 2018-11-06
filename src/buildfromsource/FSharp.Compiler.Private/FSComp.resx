@@ -1041,6 +1041,12 @@
   <data name="csTypeDoesNotHaveNull" xml:space="preserve">
     <value>The type '{0}' does not have 'null' as a proper value</value>
   </data>
+  <data name="csTypeHasNullAsTrueValue" xml:space="preserve">
+    <value>The type '{0}' has 'null' as a true representation value but a constraint does not permit this</value>
+  </data>
+  <data name="csTypeHasNullAsExtraValue" xml:space="preserve">
+    <value>The type '{0}' has 'null' as an extra value but a constraint does not permit this</value>
+  </data>
   <data name="csNullableTypeDoesNotHaveNull" xml:space="preserve">
     <value>The type '{0}' does not have 'null' as a proper value. To create a null value for a Nullable type use 'System.Nullable()'.</value>
   </data>

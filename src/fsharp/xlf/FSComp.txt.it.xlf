@@ -7102,6 +7102,16 @@
         <target state="new">Specify the language version</target>
         <note />
       </trans-unit>
+      <trans-unit id="csTypeHasNullAsExtraValue">
+        <source>The type '{0}' has 'null' as an extra value but a constraint does not permit this</source>
+        <target state="new">The type '{0}' has 'null' as an extra value but a constraint does not permit this</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csTypeHasNullAsTrueValue">
+        <source>The type '{0}' has 'null' as a true representation value but a constraint does not permit this</source>
+        <target state="new">The type '{0}' has 'null' as a true representation value but a constraint does not permit this</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

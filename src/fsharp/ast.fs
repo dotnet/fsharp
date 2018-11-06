@@ -394,6 +394,8 @@ and
     | WhereTyparIsUnmanaged of genericName:SynTypar * range:range
     /// F# syntax is 'typar : null
     | WhereTyparSupportsNull of genericName:SynTypar * range:range
+    /// F# syntax is 'typar : null
+    | WhereTyparNotSupportsNull of genericName:SynTypar * range:range
     /// F# syntax is 'typar : comparison
     | WhereTyparIsComparable of genericName:SynTypar * range:range
     /// F# syntax is 'typar : equality

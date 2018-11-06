@@ -2314,6 +2314,9 @@ and
     /// Indicates a constraint that a type has a 'null' value 
     | SupportsNull               of range 
     
+    /// Indicates a constraint that a type doesn't support nullness
+    | NotSupportsNull            of range 
+    
     /// Indicates a constraint that a type has a member with the given signature 
     | MayResolveMember of TraitConstraintInfo * range 
     
@@ -3910,6 +3913,11 @@ and Nullness =
        | Known info -> info
        | Variable v -> v.Evaluate()
 
+   //member n.TryEvaluate() = 
+   //    match n with 
+   //    | Known info -> Some info
+   //    | Variable v -> v.TryEvaluate()
+
    override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.ObliviousToNull -> "%"
 
 // Note, nullness variables are only created if the nullness checking feature is on
@@ -3920,6 +3928,11 @@ and NullnessVar() =
        match solution with 
        | None -> NullnessInfo.WithoutNull
        | Some soln -> soln.Evaluate()
+
+    //member nv.TryEvaluate() = 
+    //   match solution with 
+    //   | None -> None
+    //   | Some soln -> soln.TryEvaluate()
 
     member nv.IsSolved = solution.IsSome
 
@@ -3938,10 +3951,13 @@ and NullnessVar() =
 and 
     [<RequireQualifiedAccess>]
     NullnessInfo = 
+
     /// we know that there is an extra null value in the type
     | WithNull
+
     /// we know that there is no extra null value in the type
     | WithoutNull
+
     /// we know we don't care
     | ObliviousToNull
 
@@ -5340,9 +5356,45 @@ let rec stripUnitEqnsAux canShortcut unt =
     | Measure.Var r when r.IsSolved -> stripUnitEqnsAux canShortcut (tryShortcutSolvedUnitPar canShortcut r)
     | _ -> unt
 
-let rec stripTyparEqnsAux canShortcut ty = 
+let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) = 
+    match nullnessOrig.Evaluate() with
+    | NullnessInfo.WithoutNull -> nullnessNew
+    | NullnessInfo.ObliviousToNull -> nullnessOrig
+    | NullnessInfo.WithNull -> 
+        match nullnessNew.Evaluate() with
+        | NullnessInfo.WithoutNull -> nullnessOrig
+        | NullnessInfo.ObliviousToNull -> nullnessNew
+        | NullnessInfo.WithNull -> nullnessOrig
+
+let tryAddNullnessToTy nullnessNew (ty:TType) = 
+    match ty with
+    | TType_var (tp, nullnessOrig) -> 
+        // TODO: make this avoid allocation if no change
+        Some (TType_var (tp, combineNullness nullnessOrig nullnessNew))
+    | TType_app (tcr, tinst, nullnessOrig) -> 
+        // TODO: make this avoid allocation if no change
+        Some (TType_app (tcr, tinst, combineNullness nullnessOrig nullnessNew))
+    | TType_ucase _ -> None // TODO
+    | TType_tuple _ -> None // TODO
+    | TType_fun (d, r, nullnessOrig) ->
+        // TODO: make this avoid allocation if no change
+        Some (TType_fun (d, r, combineNullness nullnessOrig nullnessNew))
+    | TType_forall _ -> None
+    | TType_measure _ -> None
+
+let addNullnessToTy (nullness: Nullness) (ty:TType) =
+    match nullness.Evaluate() with
+    | NullnessInfo.WithoutNull -> ty
+    | _ -> 
+    match ty with
+    | TType_var (tp, nullnessOrig) -> TType_var (tp, combineNullness nullnessOrig nullness)
+    | TType_app (tcr, tinst, nullnessOrig) -> TType_app (tcr, tinst, combineNullness nullnessOrig nullness)
+    | TType_fun (d, r, nullnessOrig) -> TType_fun (d, r, combineNullness nullnessOrig nullness)
+    | _ -> ty
+
+let rec stripTyparEqnsAux nullness0 canShortcut ty = 
     match ty with 
-    | TType_var (r, _nullness) -> 
+    | TType_var (r, nullness) -> 
         match r.Solution with
         | Some soln -> 
             if canShortcut then 
@@ -5351,20 +5403,23 @@ let rec stripTyparEqnsAux canShortcut ty =
                 // This is only because IterType likes to walk _all_ the constraints _everywhere_ in a type, including
                 // those attached to _solved_ type variables. In an ideal world this would never be needed - see the notes
                 // on IterType.
-                | TType_var (r2, _) when r2.Constraints.IsEmpty -> 
-                   match r2.Solution with
-                   | None -> ()
-                   | Some _ as soln2 -> 
-                      r.typar_solution <- soln2
+                | TType_var (r2, nullness2) when r2.Constraints.IsEmpty -> 
+                   match nullness2.Evaluate() with 
+                   | NullnessInfo.WithoutNull -> 
+                       match r2.Solution with
+                       | None -> ()
+                       | Some _ as soln2 -> 
+                          r.typar_solution <- soln2
+                   | _ -> ()
                 | _ -> () 
-            stripTyparEqnsAux canShortcut soln
+            stripTyparEqnsAux (combineNullness nullness0 nullness) canShortcut soln
         | None -> 
-            ty
+            addNullnessToTy nullness0 ty
     | TType_measure unt -> 
         TType_measure (stripUnitEqnsAux canShortcut unt)
     | _ -> ty
 
-let stripTyparEqns ty = stripTyparEqnsAux false ty
+let stripTyparEqns ty = stripTyparEqnsAux KnownWithoutNull false ty
 let stripUnitEqns unt = stripUnitEqnsAux false unt
 
 //---------------------------------------------------------------------------

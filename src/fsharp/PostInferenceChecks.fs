@@ -363,6 +363,7 @@ and CheckTypeConstraintDeep f g env x =
      | TyparConstraint.SupportsComparison _ 
      | TyparConstraint.SupportsEquality _ 
      | TyparConstraint.SupportsNull _ 
+     | TyparConstraint.NotSupportsNull _ 
      | TyparConstraint.IsNonNullableStruct _ 
      | TyparConstraint.IsUnmanaged _
      | TyparConstraint.IsReferenceType _ 

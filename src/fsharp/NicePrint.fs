@@ -830,6 +830,8 @@ module private PrintTypes =
                 [layoutTypeAppWithInfoAndPrec denv env (WordL.keywordDelegate) 2 true [aty;bty] |> longConstraintPrefix]
         | TyparConstraint.SupportsNull _ ->
             [wordL (tagKeyword "null") |> longConstraintPrefix]
+        | TyparConstraint.NotSupportsNull _ ->
+                [(wordL (tagKeyword "not") ^^ wordL(tagKeyword "null")) |> longConstraintPrefix]
         | TyparConstraint.IsNonNullableStruct _ ->
             if denv.shortConstraints then 
                 [wordL (tagText "value type")]

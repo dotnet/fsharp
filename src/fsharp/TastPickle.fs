@@ -1453,6 +1453,7 @@ let p_tyar_constraint x st =
     | TyparConstraint.SupportsComparison _          -> p_byte 10 st
     | TyparConstraint.SupportsEquality _            -> p_byte 11 st
     | TyparConstraint.IsUnmanaged _                 -> p_byte 12 st
+    | TyparConstraint.NotSupportsNull _             -> p_byte 13 st
 let p_tyar_constraints = (p_list p_tyar_constraint)
 
 let u_tyar_constraint st = 
@@ -1471,6 +1472,7 @@ let u_tyar_constraint st =
     | 10 ->                         (fun       _ -> TyparConstraint.SupportsComparison range0)
     | 11 ->                         (fun       _ -> TyparConstraint.SupportsEquality range0)
     | 12 ->                         (fun       _ -> TyparConstraint.IsUnmanaged range0)
+    | 13 ->                         (fun       _ -> TyparConstraint.NotSupportsNull range0)
     | _ -> ufailwith st "u_tyar_constraint" 
 
 

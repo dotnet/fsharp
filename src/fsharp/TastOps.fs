@@ -160,38 +160,6 @@ let mkTyparInst (typars: Typars) tyargs =
 let generalizeTypar tp = mkTyparTy tp
 let generalizeTypars tps = List.map generalizeTypar tps
 
-let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) = 
-    match nullnessOrig.Evaluate() with
-    | NullnessInfo.WithoutNull -> nullnessNew
-    | NullnessInfo.ObliviousToNull -> nullnessOrig
-    | NullnessInfo.WithNull -> 
-        match nullnessNew.Evaluate() with
-        | NullnessInfo.WithoutNull -> nullnessOrig // TODO - ?
-        | NullnessInfo.ObliviousToNull -> nullnessNew
-        | NullnessInfo.WithNull -> nullnessNew
-
-let tryAddNullnessToTy nullnessNew (ty:TType) = 
-    let ty = stripTyparEqns ty
-    match ty with
-    | TType_var (tp, nullnessOrig) -> 
-        // TODO: make this avoid allocation if no change
-        Some (TType_var (tp, combineNullness nullnessOrig nullnessNew))
-    | TType_app (tcr, tinst, nullnessOrig) -> 
-        // TODO: make this avoid allocation if no change
-        Some (TType_app (tcr, tinst, combineNullness nullnessOrig nullnessNew))
-    | TType_ucase _ -> None // TODO
-    | TType_tuple _ -> None // TODO
-    | TType_fun (d, r, nullnessOrig) ->
-        // TODO: make this avoid allocation if no change
-        Some (TType_fun (d, r, combineNullness nullnessOrig nullnessNew))
-    | TType_forall _ -> None
-    | TType_measure _ -> None
-
-let addNullnessToTy nullness (ty:TType) =
-    match tryAddNullnessToTy nullness ty with 
-    | None -> ty
-    | Some ty -> ty
-
 let rec remapTypeAux (tyenv : Remap) (ty:TType) =
   let ty = stripTyparEqns ty
   match ty with
@@ -279,6 +247,7 @@ and remapTyparConstraintsAux tyenv cs =
          | TyparConstraint.SupportsComparison  _ 
          | TyparConstraint.SupportsEquality  _ 
          | TyparConstraint.SupportsNull _ 
+         | TyparConstraint.NotSupportsNull _ 
          | TyparConstraint.IsUnmanaged _ 
          | TyparConstraint.IsNonNullableStruct _ 
          | TyparConstraint.IsReferenceType _ 
@@ -739,7 +708,7 @@ let reduceTyconRefMeasureableOrProvided (g:TcGlobals) (tcref:TyconRef) tyargs =
     reduceTyconMeasureableOrProvided g tcref.Deref tyargs
 
 let rec stripTyEqnsA g canShortcut ty = 
-    let ty = stripTyparEqnsAux canShortcut ty 
+    let ty = stripTyparEqnsAux KnownWithoutNull canShortcut ty 
     match ty with 
     | TType_app (tcref, tinst, nullness) ->
         let tycon = tcref.Deref
@@ -856,14 +825,14 @@ let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tupInfo
 let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(dty, rty, _nullness) -> Some (dty, rty) | _ -> None)
 
 let tryNiceEntityRefOfTy  ty = 
-    let ty = stripTyparEqnsAux false ty 
+    let ty = stripTyparEqnsAux KnownWithoutNull false ty 
     match ty with
     | TType_app (tcref, _, _) -> ValueSome tcref
     | TType_measure (Measure.Con tcref) -> ValueSome tcref
     | _ -> ValueNone
 
 let tryNiceEntityRefOfTyOption  ty = 
-    let ty = stripTyparEqnsAux false ty 
+    let ty = stripTyparEqnsAux KnownWithoutNull false ty 
     match ty with
     | TType_app (tcref, _, _) -> Some tcref
     | TType_measure (Measure.Con tcref) -> Some tcref
@@ -968,6 +937,7 @@ and typarConstraintsAEquivAux erasureFlag g aenv tpc1 tpc2 =
     | TyparConstraint.SupportsComparison _        , TyparConstraint.SupportsComparison _ 
     | TyparConstraint.SupportsEquality _          , TyparConstraint.SupportsEquality _ 
     | TyparConstraint.SupportsNull _              , TyparConstraint.SupportsNull _ 
+    | TyparConstraint.NotSupportsNull _           , TyparConstraint.NotSupportsNull _ 
     | TyparConstraint.IsNonNullableStruct _    , TyparConstraint.IsNonNullableStruct _
     | TyparConstraint.IsReferenceType _           , TyparConstraint.IsReferenceType _ 
     | TyparConstraint.IsUnmanaged _               , TyparConstraint.IsUnmanaged _
@@ -2048,6 +2018,7 @@ and accFreeInTyparConstraint opts tpc acc =
     | TyparConstraint.SupportsComparison _
     | TyparConstraint.SupportsEquality _
     | TyparConstraint.SupportsNull _ 
+    | TyparConstraint.NotSupportsNull _ 
     | TyparConstraint.IsNonNullableStruct _ 
     | TyparConstraint.IsReferenceType _ 
     | TyparConstraint.IsUnmanaged _
@@ -2161,6 +2132,7 @@ and accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc tpc =
     | TyparConstraint.SupportsComparison _ 
     | TyparConstraint.SupportsEquality _ 
     | TyparConstraint.SupportsNull _ 
+    | TyparConstraint.NotSupportsNull _ 
     | TyparConstraint.IsNonNullableStruct _ 
     | TyparConstraint.IsUnmanaged _
     | TyparConstraint.IsReferenceType _ 
@@ -3384,6 +3356,8 @@ module DebugPrint = begin
             wordL (tagText  "struct") |> constraintPrefix
         | TyparConstraint.IsReferenceType _ ->
             wordL (tagText "not struct") |> constraintPrefix
+        | TyparConstraint.NotSupportsNull _ ->
+            wordL (tagText "not null") |> constraintPrefix
         | TyparConstraint.IsUnmanaged _ ->
             wordL (tagText "unmanaged") |> constraintPrefix
         | TyparConstraint.SimpleChoice(tys, _) ->
@@ -6506,7 +6480,6 @@ let mkCallArray4DSet (g:TcGlobals) m ty e1 idx1 idx2 idx3 idx4 v = mkApps g (typ
 let mkCallHash       (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.hash_info,      [[ty]], [ e1 ], m)
 let mkCallBox        (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.box_info,       [[ty]], [ e1 ], m)
 let mkCallIsNull     (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.isnull_info,    [[ty]], [ e1 ], m)
-let mkCallIsNotNull  (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.isnotnull_info, [[ty]], [ e1 ], m)
 let mkCallRaise      (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.raise_info,     [[ty]], [ e1 ], m)
 
 let mkCallNewDecimal (g:TcGlobals) m (e1, e2, e3, e4, e5)          = mkApps g (typedExprForIntrinsic g m g.new_decimal_info, [], [ e1;e2;e3;e4;e5 ], m)

@@ -4233,7 +4233,9 @@ let rec TcTyparConstraint ridx cenv newOk checkCxs occ (env: TcEnv) tpenv c =
         AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty' (mkTyparTy tp') 
         tpenv
 
-    | WhereTyparSupportsNull(tp, m) -> checkSimpleConstraint tp m AddCxTypeMustSupportNull
+    | WhereTyparSupportsNull(tp, m) -> checkSimpleConstraint tp m AddCxTypeDefnSupportsNull
+
+    | WhereTyparNotSupportsNull(tp, m) -> checkSimpleConstraint tp m AddCxTypeDefnNotSupportsNull
 
     | WhereTyparIsComparable(tp, m) -> checkSimpleConstraint tp m AddCxTypeMustSupportComparison
 
@@ -4660,16 +4662,22 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
             if TypeNullNever g innerTyC then
                 let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC
                 errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString), m)) 
+
             // TODO - doesn't feel right - it will add KnownNotNull + KnownWithNull --> KnownWithNull, e.g.
             //    let f (x: string) = (x = null)
             match tryAddNullnessToTy KnownWithNull innerTyC with 
+
             | None -> 
                 let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC
                 errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString), m)) 
                 innerTyC, tpenv
+
             | Some innerTyCWithNull ->
-                AddCxTypeMustSupportNull env.DisplayEnv cenv.css m NoTrace innerTyCWithNull
+                // The inner type is not allowed to support null or use null as a representation value
+                AddCxTypeDefnNotSupportsNull env.DisplayEnv cenv.css m NoTrace innerTyC
+
                 innerTyCWithNull, tpenv
+
         else
             warning(Error(FSComp.SR.tcNullnessCheckingNotEnabled(), m)) 
             innerTyC, tpenv
@@ -5486,12 +5494,13 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         (fun _ -> TPat_range(c1, c2, m)), (tpenv, names, takenNames)
 
     | SynPat.Null m -> 
-        AddCxTypeMustSupportNull env.DisplayEnv cenv.css m NoTrace ty
+        AddCxTypeDefnSupportsNull env.DisplayEnv cenv.css m NoTrace ty
         (fun _ -> TPat_null m), (tpenv, names, takenNames)
 
     | SynPat.InstanceMember (_, _, _, _, m) -> 
         errorR(Error(FSComp.SR.tcIllegalPattern(), pat.Range))
         (fun _ -> TPat_wild m), (tpenv, names, takenNames)
+
     | SynPat.FromParseError (pat, _) ->
         suppressErrorReporting (fun () -> TcPatAndRecover warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) (NewErrorType()) pat)
 
@@ -5811,7 +5820,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         expr, tpenv
 
     | SynExpr.Null m ->
-        AddCxTypeMustSupportNull env.DisplayEnv cenv.css m NoTrace overallTy
+        AddCxTypeDefnSupportsNull env.DisplayEnv cenv.css m NoTrace overallTy
         mkNull m overallTy, tpenv
 
     | SynExpr.Lazy (synInnerExpr, m) ->

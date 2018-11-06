@@ -85,6 +85,7 @@ exception ConstraintSolverMissingConstraint             of DisplayEnv * Typar * 
 exception ConstraintSolverNullnessWarningEquivWithTypes of DisplayEnv * TType * TType * NullnessInfo * NullnessInfo * range  * range 
 exception ConstraintSolverNullnessWarningWithTypes      of DisplayEnv * TType * TType * NullnessInfo * NullnessInfo * range  * range 
 exception ConstraintSolverNullnessWarningWithType       of DisplayEnv * TType * NullnessInfo * range  * range 
+exception ConstraintSolverNonNullnessWarningWithType    of DisplayEnv * TType * NullnessInfo * range  * range 
 exception ConstraintSolverError                         of string * range * range
 exception ConstraintSolverRelatedInformation            of string option * range * exn
 exception ErrorFromApplyingDefault                      of TcGlobals * DisplayEnv * Typar * TType * exn * range
@@ -134,7 +135,9 @@ val AddCxTypeMustSubsumeType                  : ContextInfo -> DisplayEnv -> Con
 val AddCxTypeMustSubsumeTypeUndoIfFailed      : DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 val AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed : DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 val AddCxMethodConstraint                     : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TraitConstraintInfo -> unit
-val AddCxTypeMustSupportNull                  : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeDefnNotSupportsNull               : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeDefnSupportsNull               : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeUseSupportsNull               : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 val AddCxTypeMustSupportComparison            : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 val AddCxTypeMustSupportEquality              : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 val AddCxTypeMustSupportDefaultCtor           : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
