@@ -928,10 +928,12 @@ and ConvDecisionTree cenv env tgs typR x =
 
 // Check if this is an provider-generated assembly that will be statically linked
 and IsILTypeRefStaticLinkLocal cenv m (tr:ILTypeRef) =
+#if NO_EXTENSIONTYPING
+        ignore m; ignore cenv; ignore tr
+        false
+#else
         let g = cenv.g
-        ignore m
         match tr.Scope with 
-#if !NO_EXTENSIONTYPING
         | ILScopeRef.Assembly aref 
             when not g.isInteractive &&
                  aref.Name <> g.ilg.primaryAssemblyName && // optimization to avoid this check in the common case
@@ -944,8 +946,8 @@ and IsILTypeRefStaticLinkLocal cenv m (tr:ILTypeRef) =
                   | ResolvedCcu ccu -> ccu.IsProviderGenerated
                   | UnresolvedCcu _ -> false) 
             -> true
-#endif
         | _ -> false
+#endif
 
 // Adjust for static linking information, then convert
 and ConvILTypeRefUnadjusted cenv m (tr:ILTypeRef) = 

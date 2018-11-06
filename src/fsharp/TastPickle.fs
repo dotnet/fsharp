@@ -703,10 +703,8 @@ let pickleObjWithDanglingCcus inMem file (g: TcGlobals) scope p x =
     st2.os.Close(), st2.osB.Close()
 
   if phase2bytesB.Length <> 0 then failwith "expected phase2bytesB.Length = 0"
-  printfn "(pickle) phase1bytesB = %A" phase1bytesB
-  ignore phase1bytesB
 
-  phase2bytes, ([| |] : byte array)
+  phase2bytes, phase1bytesB
   
 let check (ilscope:ILScopeRef) (inMap : NodeInTable<_,_>) =
     for i = 0 to inMap.Count - 1 do
@@ -716,7 +714,6 @@ let check (ilscope:ILScopeRef) (inMap : NodeInTable<_,_>) =
         // Note for compiler developers: to get information about which item this index relates to, enable the conditional in Pickle.p_osgn_ref to refer to the given index number and recompile an identical copy of the source for the DLL containing the data being unpickled.  A message will then be printed indicating the name of the item.\n" 
 
 let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef option) u (phase2bytes:byte[]) (phase1bytesB:byte[]) =
-    printfn "(unpickle) phase1bytesB = %A" phase1bytesB
     let st2 = 
        { is = ByteStream.FromBytes (phase2bytes,0,phase2bytes.Length) 
          isB = ByteStream.FromBytes ([| |],0,0) 
@@ -1580,14 +1577,17 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
 
 let _ = fill_u_ty (fun st ->
     let tag = u_byte st
+
     match tag with
     | 0 -> 
         let l = u_tys st
         TType_tuple (tupInfoRef, l)
     | 1 -> 
-        let sty = u_simpletyp st 
         let tagB = u_byteB st
+        let sty = u_simpletyp st 
         match tagB with 
+        | 0 ->
+            sty
         | 9 -> 
             match sty with 
             | TType_app(tcref, _, _) -> TType_app(tcref, [], KnownWithNull)
@@ -1600,37 +1600,35 @@ let _ = fill_u_ty (fun st ->
             match sty with 
             | TType_app(tcref, _, _) -> TType_app(tcref, [], KnownObliviousToNull)
             | _ -> ufailwith st "u_ty 9c"
-        | 0 ->
-            sty
         | b -> ufailwith st (sprintf "u_ty - 1/B, byte = %A" b)
     | 2 -> 
+        let tagB = u_byteB st
         let tcref = u_tcref st
         let tinst = u_tys st
-        let tagB = u_byteB st
         match tagB with 
+        | 0 -> TType_app (tcref, tinst, KnownObliviousToNull)
         | 12 -> TType_app (tcref, tinst, KnownWithNull)
         | 13 -> TType_app (tcref, tinst, KnownWithoutNull)
         | 14 -> TType_app (tcref, tinst, KnownObliviousToNull)
-        | 0 -> TType_app (tcref, tinst, KnownObliviousToNull)
         | _ -> ufailwith st "u_ty - 2/B"
     | 3 -> 
+        let tagB = u_byteB st
         let d = u_ty st
         let r = u_ty st
-        let tagB = u_byteB st
         match tagB with 
+        | 0 -> TType_fun (d, r, KnownObliviousToNull)
         | 15 -> TType_fun (d, r, KnownWithNull)
         | 16 -> TType_fun (d, r, KnownWithoutNull)
         | 17 -> TType_fun (d, r, KnownObliviousToNull)
-        | 0 -> TType_fun (d, r, KnownObliviousToNull)
         | _ -> ufailwith st "u_ty - 3/B"
     | 4 ->
-        let r = u_tpref st
         let tagB = u_byteB st
+        let r = u_tpref st
         match tagB with 
+        | 0 -> r.AsType KnownObliviousToNull
         | 18 -> r.AsType KnownWithNull
         | 19 -> r.AsType KnownWithoutNull
         | 20 -> r.AsType KnownObliviousToNull
-        | 0 -> r.AsType KnownObliviousToNull
         | _ -> ufailwith st "u_ty - 4/B"
     | 5 -> let tps = u_tyar_specs st in let r = u_ty st  in TType_forall (tps,r)
     | 6 -> let unt = u_measure_expr st                     in TType_measure unt
