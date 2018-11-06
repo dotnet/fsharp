@@ -48,12 +48,12 @@ type SettingsStore(serviceProvider: IServiceProvider) =
         settingsManager.SetValueAsync(settings.GetType() |> storageKey, JsonConvert.SerializeObject settings, false)
         |> Async.AwaitTask |> Async.StartImmediate   
 
-    member __.Register defaultSettings =                       
+    member __.Register (defaultSettings : 'options) =                       
         defaultSettings |> updateFromStore |> write
         let subset = defaultSettings.GetType() |> storageKey |> settingsManager.GetSubset
 
         PropertyChangedAsyncEventHandler ( fun _ _ ->
-            read() |> updateFromStore |> write
+            (read() :'options) |> updateFromStore |> write
             System.Threading.Tasks.Task.CompletedTask )
         |> subset.add_SettingChangedAsync
          
