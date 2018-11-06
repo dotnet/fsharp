@@ -229,7 +229,7 @@ and remapTupInfoAux _tyenv unt =
 
 and remapTypesAux tyenv types = List.mapq (remapTypeAux tyenv) types
 and remapTyparConstraintsAux tyenv cs =
-   cs |>  List.choose (fun x -> 
+   cs |> List.choose (fun x -> 
          match x with 
          | TyparConstraint.CoercesTo(ty, m) -> 
              Some(TyparConstraint.CoercesTo (remapTypeAux tyenv ty, m))
@@ -799,38 +799,47 @@ let isProvenUnionCaseTy ty = match ty with TType_ucase _ -> true | _ -> false
 let mkAppTy tcref tyargs = TType_app(tcref, tyargs)
 let mkProvenUnionCaseTy ucref tyargs = TType_ucase(ucref, tyargs)
 let isAppTy   g ty = ty |> stripTyEqns g |> (function TType_app _ -> true | _ -> false) 
+let tryAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst) -> ValueSome (tcref, tinst) | _ -> ValueNone) 
 let destAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst) -> tcref, tinst | _ -> failwith "destAppTy")
 let tcrefOfAppTy  g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref | _ -> failwith "tcrefOfAppTy") 
 let argsOfAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(_, tinst) -> tinst | _ -> [])
-let tryDestTyparTy g ty = ty |> stripTyEqns g |> (function TType_var v -> Some v | _ -> None)
-let tryDestFunTy   g ty = ty |> stripTyEqns g |> (function TType_fun (tyv, tau) -> Some(tyv, tau) | _ -> None)
-let tryDestAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> Some tcref | _ -> None)
-let tryAnyParTy    g ty = ty |> stripTyEqns g |> (function TType_var v -> Some v | TType_measure unt when isUnitParMeasure g unt -> Some(destUnitParMeasure g unt) | _ -> None)
+let tryDestTyparTy g ty = ty |> stripTyEqns g |> (function TType_var v -> ValueSome v | _ -> ValueNone)
+let tryDestFunTy   g ty = ty |> stripTyEqns g |> (function TType_fun (tyv, tau) -> ValueSome(tyv, tau) | _ -> ValueNone)
+let tryDestAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> ValueSome tcref | _ -> ValueNone)
+
+let tryAnyParTy    g ty = ty |> stripTyEqns g |> (function TType_var v -> ValueSome v | TType_measure unt when isUnitParMeasure g unt -> ValueSome(destUnitParMeasure g unt) | _ -> ValueNone)
+let tryAnyParTyOption  g ty = ty |> stripTyEqns g |> (function TType_var v -> Some v | TType_measure unt when isUnitParMeasure g unt -> Some(destUnitParMeasure g unt) | _ -> None)
 let (|AppTy|_|) g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst) -> Some (tcref, tinst) | _ -> None) 
 let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tupInfo, tys) when not (evalTupInfoIsStruct tupInfo) -> Some tys | _ -> None)
 let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(dty, rty) -> Some (dty, rty) | _ -> None)
 
 let tryNiceEntityRefOfTy  ty = 
     let ty = stripTyparEqnsAux false ty 
-    match ty with 
+    match ty with
+    | TType_app (tcref, _) -> ValueSome tcref
+    | TType_measure (Measure.Con tcref) -> ValueSome tcref
+    | _ -> ValueNone
+
+let tryNiceEntityRefOfTyOption  ty = 
+    let ty = stripTyparEqnsAux false ty 
+    match ty with
     | TType_app (tcref, _) -> Some tcref
     | TType_measure (Measure.Con tcref) -> Some tcref
     | _ -> None
 
-
-let (|NullableTy|_|) g ty = 
-    match ty with 
-    | AppTy g (tcr, [tyarg]) when tyconRefEq g tcr g.system_Nullable_tcref -> Some tyarg
+let (|NullableTy|_|) g ty =
+    match tryAppTy g ty with 
+    | ValueSome (tcr, [tyarg]) when tyconRefEq g tcr g.system_Nullable_tcref -> Some tyarg
     | _ -> None
 
 let (|StripNullableTy|) g ty = 
-    match ty with 
-    | AppTy g (tcr, [tyarg]) when tyconRefEq g tcr g.system_Nullable_tcref -> tyarg
+    match tryAppTy g ty with 
+    | ValueSome (tcr, [tyarg]) when tyconRefEq g tcr g.system_Nullable_tcref -> tyarg
     | _ -> ty
     
 let mkInstForAppTy g ty = 
-    match ty with
-    | AppTy g (tcref, tinst) -> mkTyconRefInst tcref tinst
+    match tryAppTy g ty with
+    | ValueSome (tcref, tinst) -> mkTyconRefInst tcref tinst
     | _ -> []
 
 let domainOfFunTy g ty = fst (destFunTy g ty)
@@ -1227,8 +1236,8 @@ let NormalizeDeclaredTyparsForEquiRecursiveInference g tps =
         tps |> List.map (fun tp ->
           let ty = mkTyparTy tp
           match tryAnyParTy g ty with
-          | Some anyParTy -> anyParTy 
-          | None -> tp)
+          | ValueSome anyParTy -> anyParTy 
+          | ValueNone -> tp)
  
 type TypeScheme = TypeScheme of Typars * TType    
   
@@ -1391,14 +1400,13 @@ type TyconRefMultiMap<'T>(contents: TyconRefMap<'T list>) =
 //--------------------------------------------------------------------------
 
 /// Try to create a EntityRef suitable for accessing the given Entity from another assembly 
-let tryRescopeEntity viewedCcu (entity:Entity) : EntityRef option = 
+let tryRescopeEntity viewedCcu (entity:Entity) : ValueOption<EntityRef> = 
     match entity.PublicPath with 
-    | Some pubpath -> Some (ERefNonLocal (rescopePubPath viewedCcu pubpath))
-    | None -> None
-
+    | Some pubpath -> ValueSome (ERefNonLocal (rescopePubPath viewedCcu pubpath))
+    | None -> ValueNone
 
 /// Try to create a ValRef suitable for accessing the given Val from another assembly 
-let tryRescopeVal viewedCcu (entityRemap:Remap) (vspec:Val) : ValRef option = 
+let tryRescopeVal viewedCcu (entityRemap:Remap) (vspec:Val) : ValueOption<ValRef> = 
     match vspec.PublicPath with 
     | Some (ValPubPath(p, fullLinkageKey)) -> 
         // The type information in the val linkage doesn't need to keep any information to trait solutions.
@@ -1413,9 +1421,8 @@ let tryRescopeVal viewedCcu (entityRemap:Remap) (vspec:Val) : ValRef option =
                 mkNonLocalValRef (rescopePubPathToParent viewedCcu p) fullLinkageKey
             else 
                 mkNonLocalValRef (rescopePubPath viewedCcu p) fullLinkageKey
-        Some vref
-    | None -> None
-
+        ValueSome vref
+    | _ -> ValueNone
     
 //---------------------------------------------------------------------------
 // Type information about records, constructors etc.
@@ -1569,13 +1576,13 @@ let rankOfArrayTyconRef (g:TcGlobals) tcr =
 //------------------------------------------------------------------------- 
 
 let destArrayTy (g:TcGlobals) ty =
-    match ty with
-    | AppTy g (tcref, [ty]) when isArrayTyconRef g tcref -> ty
+    match tryAppTy g ty with
+    | ValueSome (tcref, [ty]) when isArrayTyconRef g tcref -> ty
     | _ -> failwith "destArrayTy"
 
 let destListTy (g:TcGlobals) ty =
-    match ty with
-    | AppTy g (tcref, [ty]) when tyconRefEq g tcref g.list_tcr_canon -> ty
+    match tryAppTy g ty with
+    | ValueSome (tcref, [ty]) when tyconRefEq g tcref g.list_tcr_canon -> ty
     | _ -> failwith "destListTy"
 
 let tyconRefEqOpt g tcOpt tc = 
@@ -1667,24 +1674,24 @@ let rankOfArrayTy g ty = rankOfArrayTyconRef g (tcrefOfAppTy g ty)
 
 let isFSharpObjModelRefTy g ty = 
     isFSharpObjModelTy g ty && 
-    let tcr, _ = destAppTy g ty
+    let tcr = tcrefOfAppTy g ty
     match tcr.FSharpObjectModelTypeInfo.fsobjmodel_kind with 
     | TTyconClass | TTyconInterface   | TTyconDelegate _ -> true
     | TTyconStruct | TTyconEnum -> false
 
 let isFSharpClassTy g ty =
     match tryDestAppTy g ty with
-    | Some tcref -> tcref.Deref.IsFSharpClassTycon
+    | ValueSome tcref -> tcref.Deref.IsFSharpClassTycon
     | _ -> false
 
 let isFSharpStructTy g ty =
     match tryDestAppTy g ty with
-    | Some tcref -> tcref.Deref.IsFSharpStructOrEnumTycon
+    | ValueSome tcref -> tcref.Deref.IsFSharpStructOrEnumTycon
     | _ -> false
 
 let isFSharpInterfaceTy g ty = 
     match tryDestAppTy g ty with
-    | Some tcref -> tcref.Deref.IsFSharpInterfaceTycon
+    | ValueSome tcref -> tcref.Deref.IsFSharpInterfaceTycon
     | _ -> false
 
 let isDelegateTy g ty = 
@@ -1695,7 +1702,7 @@ let isDelegateTy g ty =
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsDelegate
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
         match tryDestAppTy g ty with
-        | Some tcref -> tcref.Deref.IsFSharpDelegateTycon
+        | ValueSome tcref -> tcref.Deref.IsFSharpDelegateTycon
         | _ -> false
 
 let isInterfaceTy g ty = 
@@ -1716,20 +1723,20 @@ let isClassTy g ty =
 
 let isStructOrEnumTyconTy g ty = 
     match tryDestAppTy g ty with
-    | Some tcref -> tcref.Deref.IsStructOrEnumTycon
+    | ValueSome tcref -> tcref.Deref.IsStructOrEnumTycon
     | _ -> false
 
 let isStructRecordOrUnionTyconTy g ty = 
     match tryDestAppTy g ty with
-    | Some tcref -> tcref.Deref.IsStructRecordOrUnionTycon
+    | ValueSome tcref -> tcref.Deref.IsStructRecordOrUnionTycon
     | _ -> false
 
 let isStructTy g ty =
     match tryDestAppTy g ty with
-    | Some tcref -> 
+    | ValueSome tcref -> 
         let tycon = tcref.Deref
         tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon
-    | _ -> false
+    | _ -> isStructTupleTy g ty
 
 let isRefTy g ty = 
     not (isStructOrEnumTyconTy g ty) &&
@@ -1756,7 +1763,7 @@ let isRefTy g ty =
 let rec isUnmanagedTy g ty =
     let ty = stripTyEqnsAndMeasureEqns g ty
     match tryDestAppTy g ty with
-    | Some tcref ->
+    | ValueSome tcref ->
         let isEq tcref2  = tyconRefEq g tcref tcref2 
         if          isEq g.nativeptr_tcr || isEq g.nativeint_tcr ||
                     isEq g.sbyte_tcr || isEq g.byte_tcr || 
@@ -1778,7 +1785,7 @@ let rec isUnmanagedTy g ty =
                 | [] -> tycon.AllInstanceFieldsAsList |> List.forall (fun r -> isUnmanagedTy g r.rfield_type) 
                 | _ -> false // generic structs are never 
             else false
-    | None ->
+    | ValueNone ->
         false
 
 let isInterfaceTycon x = 
@@ -1788,8 +1795,8 @@ let isInterfaceTyconRef (tcref: TyconRef) = isInterfaceTycon tcref.Deref
 
 let isEnumTy g ty = 
     match tryDestAppTy g ty with 
-    | None -> false
-    | Some tcref -> tcref.IsEnumTycon
+    | ValueNone -> false
+    | ValueSome tcref -> tcref.IsEnumTycon
 
 let actualReturnTyOfSlotSig parentTyInst methTyInst (TSlotSig(_, _, parentFormalTypars, methFormalTypars, _, formalRetTy)) = 
     let methTyInst = mkTyparInst methFormalTypars methTyInst
@@ -2453,7 +2460,7 @@ module PrettyTypes =
 
     // Badly formed code may instantiate rigid declared typars to types.
     // Hence we double check here that the thing is really a type variable
-    let safeDestAnyParTy orig g ty = match tryAnyParTy g ty with None -> orig | Some x -> x
+    let safeDestAnyParTy orig g ty = match tryAnyParTy g ty with ValueNone -> orig | ValueSome x -> x
     let tee f x = f x x
 
     let foldUnurriedArgInfos f z (x: UncurriedArgInfos) = List.fold (fold1Of2 f) z x
@@ -2650,30 +2657,30 @@ let layoutOfPath p =
 
 let fullNameOfParentOfPubPath pp = 
     match pp with 
-    | PubPath([| _ |]) -> None 
-    | pp -> Some(textOfPath pp.EnclosingPath)
+    | PubPath([| _ |]) -> ValueNone 
+    | pp -> ValueSome(textOfPath pp.EnclosingPath)
 
 let fullNameOfParentOfPubPathAsLayout pp = 
     match pp with 
-    | PubPath([| _ |]) -> None 
-    | pp -> Some(layoutOfPath (Array.toList pp.EnclosingPath))
+    | PubPath([| _ |]) -> ValueNone 
+    | pp -> ValueSome(layoutOfPath (Array.toList pp.EnclosingPath))
 
 let fullNameOfPubPath (PubPath(p)) = textOfPath p
 let fullNameOfPubPathAsLayout (PubPath(p)) = layoutOfPath (Array.toList p)
 
 let fullNameOfParentOfNonLocalEntityRef (nlr: NonLocalEntityRef) = 
-    if nlr.Path.Length < 2 then None
-    else Some (textOfPath nlr.EnclosingMangledPath)  // <--- BAD BAD BAD: this is a mangled path. This is wrong for nested modules
+    if nlr.Path.Length < 2 then ValueNone
+    else ValueSome (textOfPath nlr.EnclosingMangledPath)  // <--- BAD BAD BAD: this is a mangled path. This is wrong for nested modules
 
 let fullNameOfParentOfNonLocalEntityRefAsLayout (nlr: NonLocalEntityRef) = 
-    if nlr.Path.Length < 2 then None
-    else Some (layoutOfPath (List.ofArray nlr.EnclosingMangledPath))  // <--- BAD BAD BAD: this is a mangled path. This is wrong for nested modules
+    if nlr.Path.Length < 2 then ValueNone
+    else ValueSome (layoutOfPath (List.ofArray nlr.EnclosingMangledPath))  // <--- BAD BAD BAD: this is a mangled path. This is wrong for nested modules
 
 let fullNameOfParentOfEntityRef eref = 
     match eref with 
     | ERefLocal x ->
          match x.PublicPath with 
-         | None -> None
+         | None -> ValueNone
          | Some ppath -> fullNameOfParentOfPubPath ppath
     | ERefNonLocal nlr -> fullNameOfParentOfNonLocalEntityRef nlr
 
@@ -2681,14 +2688,14 @@ let fullNameOfParentOfEntityRefAsLayout eref =
     match eref with 
     | ERefLocal x ->
          match x.PublicPath with 
-         | None -> None
+         | None -> ValueNone
          | Some ppath -> fullNameOfParentOfPubPathAsLayout ppath
     | ERefNonLocal nlr -> fullNameOfParentOfNonLocalEntityRefAsLayout nlr
 
 let fullNameOfEntityRef nmF xref = 
-    match fullNameOfParentOfEntityRef xref  with 
-    | None -> nmF xref 
-    | Some pathText -> pathText +.+ nmF xref
+    match fullNameOfParentOfEntityRef xref with 
+    | ValueNone -> nmF xref 
+    | ValueSome pathText -> pathText +.+ nmF xref
 
 let tagEntityRefName (xref: EntityRef) name =
     if xref.IsNamespace then tagNamespace name
@@ -2710,26 +2717,26 @@ let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
         |> mkNav xref.DefinitionRange
         |> wordL
     match fullNameOfParentOfEntityRefAsLayout xref  with 
-    | None -> navigableText
-    | Some pathText -> pathText ^^ SepL.dot ^^ navigableText
+    | ValueNone -> navigableText
+    | ValueSome pathText -> pathText ^^ SepL.dot ^^ navigableText
 
 let fullNameOfParentOfValRef vref = 
     match vref with 
     | VRefLocal x -> 
          match x.PublicPath with 
-         | None -> None
-         | Some (ValPubPath(pp, _)) -> Some(fullNameOfPubPath pp)
+         | None -> ValueNone
+         | Some (ValPubPath(pp, _)) -> ValueSome(fullNameOfPubPath pp)
     | VRefNonLocal nlr -> 
-        Some (fullNameOfEntityRef (fun (x:EntityRef) -> x.DemangledModuleOrNamespaceName) nlr.EnclosingEntity)
+        ValueSome (fullNameOfEntityRef (fun (x:EntityRef) -> x.DemangledModuleOrNamespaceName) nlr.EnclosingEntity)
 
 let fullNameOfParentOfValRefAsLayout vref = 
     match vref with 
     | VRefLocal x -> 
          match x.PublicPath with 
-         | None -> None
-         | Some (ValPubPath(pp, _)) -> Some(fullNameOfPubPathAsLayout pp)
+         | None -> ValueNone
+         | Some (ValPubPath(pp, _)) -> ValueSome(fullNameOfPubPathAsLayout pp)
     | VRefNonLocal nlr -> 
-        Some (fullNameOfEntityRefAsLayout (fun (x:EntityRef) -> x.DemangledModuleOrNamespaceName) nlr.EnclosingEntity)
+        ValueSome (fullNameOfEntityRefAsLayout (fun (x:EntityRef) -> x.DemangledModuleOrNamespaceName) nlr.EnclosingEntity)
 
 
 let fullDisplayTextOfParentOfModRef r = fullNameOfParentOfEntityRef r 
@@ -2742,12 +2749,12 @@ let fullDisplayTextOfExnRefAsLayout  r = fullNameOfEntityRefAsLayout (fun (tc:Ty
 let fullDisplayTextOfUnionCaseRef (ucref:UnionCaseRef) = fullDisplayTextOfTyconRef ucref.TyconRef +.+ ucref.CaseName
 let fullDisplayTextOfRecdFieldRef (rfref:RecdFieldRef) = fullDisplayTextOfTyconRef rfref.TyconRef +.+ rfref.FieldName
 
-let fullDisplayTextOfValRef   (vref:ValRef) = 
+let fullDisplayTextOfValRef (vref:ValRef) = 
     match fullNameOfParentOfValRef   vref  with 
-    | None -> vref.DisplayName 
-    | Some pathText -> pathText +.+ vref.DisplayName
+    | ValueNone -> vref.DisplayName 
+    | ValueSome pathText -> pathText +.+ vref.DisplayName
 
-let fullDisplayTextOfValRefAsLayout   (vref:ValRef) = 
+let fullDisplayTextOfValRefAsLayout (vref:ValRef) = 
     let n =
         match vref.MemberInfo with
         | None -> 
@@ -2762,8 +2769,8 @@ let fullDisplayTextOfValRefAsLayout   (vref:ValRef) =
             | MemberKind.Constructor -> tagMethod vref.DisplayName
             | MemberKind.Member -> tagMember vref.DisplayName
     match fullNameOfParentOfValRefAsLayout vref  with 
-    | None -> wordL n 
-    | Some pathText -> 
+    | ValueNone -> wordL n 
+    | ValueSome pathText -> 
         pathText ^^ SepL.dot ^^ wordL n
         //pathText +.+ vref.DisplayName
 
@@ -2988,8 +2995,8 @@ let destNativePtrTy g ty =
 
 let isRefCellTy g ty   = 
     match tryDestAppTy g ty with 
-    | None -> false
-    | Some tcref -> tyconRefEq g g.refcell_tcr_canon tcref
+    | ValueNone -> false
+    | ValueSome tcref -> tyconRefEq g g.refcell_tcr_canon tcref
 
 let destRefCellTy g ty = 
     match ty |> stripTyEqns g with
@@ -3013,23 +3020,23 @@ let mkListTy (g:TcGlobals) ty = TType_app (g.list_tcr_nice, [ty])
 
 let isOptionTy (g:TcGlobals) ty = 
     match tryDestAppTy g ty with 
-    | None -> false
-    | Some tcref -> tyconRefEq g g.option_tcr_canon tcref
+    | ValueNone -> false
+    | ValueSome tcref -> tyconRefEq g g.option_tcr_canon tcref
 
 let tryDestOptionTy g ty = 
     match argsOfAppTy g ty with 
-    | [ty1]  when isOptionTy g ty  -> Some ty1
-    | _ -> None
+    | [ty1] when isOptionTy g ty -> ValueSome ty1
+    | _ -> ValueNone
 
 let destOptionTy g ty = 
     match tryDestOptionTy g ty with 
-    | Some ty -> ty
-    | None -> failwith "destOptionTy: not an option type"
+    | ValueSome ty -> ty
+    | ValueNone -> failwith "destOptionTy: not an option type"
 
 let isLinqExpressionTy g ty = 
     match tryDestAppTy g ty with 
-    | None -> false
-    | Some tcref -> tyconRefEq g g.system_LinqExpression_tcref tcref
+    | ValueNone -> false
+    | ValueSome tcref -> tyconRefEq g g.system_LinqExpression_tcref tcref
 
 let tryDestLinqExpressionTy g ty = 
     match argsOfAppTy g ty with 
@@ -4659,8 +4666,8 @@ let decideStaticOptimizationConstraint g c =
     | TTyconIsStruct a -> 
        let a = normalizeEnumTy g (stripTyEqnsAndMeasureEqns g a)
        match tryDestAppTy g a with 
-       | Some tcref1 -> if tcref1.IsStructOrEnumTycon then StaticOptimizationAnswer.Yes else StaticOptimizationAnswer.No
-       | None -> StaticOptimizationAnswer.Unknown
+       | ValueSome tcref1 -> if tcref1.IsStructOrEnumTycon then StaticOptimizationAnswer.Yes else StaticOptimizationAnswer.No
+       | ValueNone -> StaticOptimizationAnswer.Unknown
             
 let rec DecideStaticOptimizations g cs = 
     match cs with 
@@ -5369,8 +5376,8 @@ let ComputeFieldName tycon f =
 // Helpers for building code contained in the initial environment
 //------------------------------------------------------------------------- 
 
-let isQuotedExprTy g ty =  match ty with AppTy g (tcref, _) -> tyconRefEq g tcref g.expr_tcr | _ -> false
-let destQuotedExprTy g ty =  match ty with AppTy g (_, [ty]) -> ty | _ -> failwith "destQuotedExprTy"
+let isQuotedExprTy g ty = match tryAppTy g ty with ValueSome (tcref, _) -> tyconRefEq g tcref g.expr_tcr | _ -> false
+let destQuotedExprTy g ty =  match tryAppTy g ty with ValueSome (_, [ty]) -> ty | _ -> failwith "destQuotedExprTy"
 
 let mkQuotedExprTy (g:TcGlobals) ty =  TType_app(g.expr_tcr, [ty])
 let mkRawQuotedExprTy (g:TcGlobals) =  TType_app(g.raw_expr_tcr, [])
@@ -5680,8 +5687,8 @@ let isRecdOrStructTyconRefReadOnly (g: TcGlobals) m (tcref: TyconRef) =
 
 let isRecdOrStructTyReadOnly (g: TcGlobals) m ty =
     match tryDestAppTy g ty with 
-    | None -> false
-    | Some tcref -> isRecdOrStructTyconRefReadOnly g m tcref
+    | ValueNone -> false
+    | ValueSome tcref -> isRecdOrStructTyconRefReadOnly g m tcref
 
 
 let CanTakeAddressOf g m ty mut =
@@ -6167,7 +6174,7 @@ let mkMinusOne g  m =  mkInt g m (-1)
 
 let destInt32 = function Expr.Const(Const.Int32 n, _, _) -> Some n | _ -> None
 
-let isIDelegateEventType g ty     = isAppTy g ty && tyconRefEq g g.fslib_IDelegateEvent_tcr (tcrefOfAppTy g ty)
+let isIDelegateEventType g ty     = match tryDestAppTy g ty with ValueSome tcref -> tyconRefEq g g.fslib_IDelegateEvent_tcr tcref | _ -> false
 let destIDelegateEventType g ty   = 
     if isIDelegateEventType g ty then 
         match argsOfAppTy g ty with 
@@ -7487,16 +7494,16 @@ let TypeNullNever g ty =
 let TypeNullIsExtraValue g m ty = 
     if isILReferenceTy g ty || isDelegateTy g ty then
         // Putting AllowNullLiteralAttribute(false) on an IL or provided type means 'null' can't be used with that type
-        not (isAppTy g ty && TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute (tcrefOfAppTy g ty) = Some(false))
+        not (match tryDestAppTy g ty with ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some false | _ -> false)
     elif TypeNullNever g ty then 
         false
     else 
         // Putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
-        isAppTy g ty && TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute (tcrefOfAppTy g ty) = Some(true)
+        match tryDestAppTy g ty with ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true | _ -> false
 
 let TypeNullIsTrueValue g ty =
     (match tryDestAppTy g ty with
-     | Some tcref -> IsUnionTypeWithNullAsTrueValue g tcref.Deref
+     | ValueSome tcref -> IsUnionTypeWithNullAsTrueValue g tcref.Deref
      | _ -> false) || (isUnitTy g ty)
 
 let TypeNullNotLiked g m ty = 
@@ -7536,8 +7543,8 @@ let (|SpecialComparableHeadType|_|) g ty =
         let _tupInfo, elemTys = destAnyTupleTy g ty
         Some elemTys 
     else
-        match ty with
-        | AppTy g (tcref, tinst) ->
+        match tryAppTy g ty with
+        | ValueSome (tcref, tinst) ->
             if isArrayTyconRef g tcref ||
                tyconRefEq g tcref g.system_UIntPtr_tcref ||
                tyconRefEq g tcref g.system_IntPtr_tcref then
@@ -7646,17 +7653,16 @@ let isSealedTy g ty =
     | ProvidedTypeMetadata st -> st.IsSealed
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsSealed
-    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-
+    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
        if (isFSharpInterfaceTy g ty || isFSharpClassTy g ty) then 
-          let tcref, _ = destAppTy g ty
-          (TryFindFSharpBoolAttribute g g.attrib_SealedAttribute tcref.Attribs = Some(true))
+          let tcref = tcrefOfAppTy g ty
+          TryFindFSharpBoolAttribute g g.attrib_SealedAttribute tcref.Attribs = Some true
        else 
           // All other F# types, array, byref, tuple types are sealed
           true
    
 let isComInteropTy g ty =
-    let tcr, _ = destAppTy g ty
+    let tcr = tcrefOfAppTy g ty
     match g.attrib_ComImportAttribute with
     | None -> false
     | Some attr -> TryFindFSharpBoolAttribute g attr tcr.Attribs = Some(true)
@@ -7962,9 +7968,9 @@ let MakeExportRemapping viewedCcu (mspec:ModuleOrNamespace) =
 
     let accEntityRemap (entity:Entity) acc = 
         match tryRescopeEntity viewedCcu entity with 
-        | Some eref -> 
+        | ValueSome eref -> 
             addTyconRefRemap (mkLocalTyconRef entity) eref acc
-        | None -> 
+        | _ -> 
             if entity.IsNamespace then 
                 acc
             else
@@ -7973,9 +7979,9 @@ let MakeExportRemapping viewedCcu (mspec:ModuleOrNamespace) =
     let accValRemap (vspec:Val) acc = 
         // The acc contains the entity remappings
         match tryRescopeVal viewedCcu acc vspec with 
-        | Some vref -> 
+        | ValueSome vref -> 
             {acc with valRemap=acc.valRemap.Add vspec vref }
-        | None -> 
+        | _ -> 
             error(InternalError("Unexpected value without a pubpath when remapping assembly data", vspec.Range))
 
     let mty = mspec.ModuleOrNamespaceType

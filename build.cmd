@@ -1,5 +1,5 @@
 rem Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-@if "%_echo%"=="" echo off 
+@if "%_echo%"=="" echo off
 
 setlocal enableDelayedExpansion
 
@@ -588,6 +588,10 @@ if "%RestorePackages%"=="" (
 
 :: Check prerequisites
 if not "%VisualStudioVersion%" == "" goto vsversionset
+if exist "%VS160COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=16.0
+if not "%VisualStudioVersion%" == "" goto vsversionset
+
+if not "%VisualStudioVersion%" == "" goto vsversionset
 if exist "%VS150COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=15.0
 if not "%VisualStudioVersion%" == "" goto vsversionset
 
@@ -607,6 +611,10 @@ if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" se
 :vsversionset
 if "%VisualStudioVersion%" == "" echo Error: Could not find an installation of Visual Studio && goto :failure
 
+if exist "%VS160COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
+    set _msbuildexe="%VS160COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe"
+    goto :havemsbuild
+)
 if exist "%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
     set _msbuildexe="%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe"
     goto :havemsbuild
@@ -625,8 +633,7 @@ goto :eof
 :havemsbuild
 set _nrswitch=/nr:false
 
-set msbuildflags=%_nrswitch% /nologo
-REM set msbuildflags=%_nrswitch% /nologo
+set msbuildflags=%_nrswitch% /nologo /clp:Summary /v:minimal
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 

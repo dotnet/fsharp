@@ -3193,10 +3193,10 @@
     <value>This operation accesses a mutable top-level value defined in another assembly in an unsupported way. The value cannot be accessed through its address. Consider copying the expression to a mutable local, e.g. 'let mutable x = ...', and if necessary assigning the value back after the completion of the operation</value>
   </data>
   <data name="parsNonAdjacentTypars" xml:space="preserve">
-    <value>Type parameters must be placed directly adjacent to the type name, e.g. \"type C&lt;'T&gt;\", not     type \"C   &lt;'T&gt;\"</value>
+    <value>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</value>
   </data>
   <data name="parsNonAdjacentTyargs" xml:space="preserve">
-    <value>Type arguments must be placed directly adjacent to the type name, e.g. \"C&lt;'T&gt;\", not \"C  &lt;'T&gt;\"</value>
+    <value>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</value>
   </data>
   <data name="parsNonAtomicType" xml:space="preserve">
     <value>The use of the type syntax 'int C' and 'C  &lt;int&gt;' is not permitted here. Consider adjusting this type to be written in the form 'C&lt;int&gt;'</value>
@@ -3916,7 +3916,16 @@
     <value>Array method '{0}' is supplied by the runtime and cannot be directly used in code. For operations with array elements consider using family of GetArray/SetArray functions from LanguagePrimitives.IntrinsicFunctions module.</value>
   </data>
   <data name="tcUnionCaseConstructorDoesNotHaveFieldWithGivenName" xml:space="preserve">
-    <value>Union case/exception '{0}' does not have field named '{1}'.</value>
+    <value>The union case '{0}' does not have a field named '{1}'.</value>
+  </data>
+  <data name="tcExceptionConstructorDoesNotHaveFieldWithGivenName" xml:space="preserve">
+    <value>The exception '{0}' does not have a field named '{1}'.</value>
+  </data>
+  <data name="tcActivePatternsDoNotHaveFields" xml:space="preserve">
+    <value>Active patterns do not have fields. This syntax is invalid.</value>
+  </data>
+  <data name="tcConstructorDoesNotHaveFieldWithGivenName" xml:space="preserve">
+    <value>The constructor does not have a field named '{0}'.</value>
   </data>
   <data name="tcUnionCaseFieldCannotBeUsedMoreThanOnce" xml:space="preserve">
     <value>Union case/exception field '{0}' cannot be used more than once.</value>
@@ -4147,7 +4156,7 @@
     <value>Used to associate, or bind, a name to a value or function.</value>
   </data>
   <data name="keywordDescriptionLetBang" xml:space="preserve">
-    <value>Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.</value>
+    <value>Used in computation expressions to bind a name to the result of another computation expression.</value>
   </data>
   <data name="keywordDescriptionMatch" xml:space="preserve">
     <value>Used to branch by comparing a value to a pattern.</value>
@@ -4198,10 +4207,10 @@
     <value>Used to indicate that a function is recursive.</value>
   </data>
   <data name="keywordDescriptionReturn" xml:space="preserve">
-    <value>Used to indicate a value to provide as the result of a computation expression.</value>
+    <value>Used to provide a value for the result of the containing computation expression.</value>
   </data>
   <data name="keywordDescriptionReturnBang" xml:space="preserve">
-    <value>Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.</value>
+    <value>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</value>
   </data>
   <data name="keywordDescriptionSelect" xml:space="preserve">
     <value>Used in query expressions to specify what fields or columns to extract. Note that this is a contextual keyword, which means that it is not actually a reserved word and it only acts like a keyword in appropriate context.</value>
@@ -4228,10 +4237,10 @@
     <value>Used to convert to a type that is higher in the inheritance chain.</value>
   </data>
   <data name="keywordDescriptionUse" xml:space="preserve">
-    <value>Used instead of let for values that require Dispose to be called to free resources.</value>
+    <value>Used instead of let for values that implement IDisposable"</value>
   </data>
   <data name="keywordDescriptionUseBang" xml:space="preserve">
-    <value>Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.</value>
+    <value>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</value>
   </data>
   <data name="keywordDescriptionVal" xml:space="preserve">
     <value>Used in a signature to indicate a value, or in a type to declare a member, in limited situations.</value>
@@ -4356,5 +4365,8 @@
   </data>
   <data name="tastCantTakeAddressOfExpression" xml:space="preserve">
     <value>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</value>
+  </data>
+  <data name="tcTypeDoesNotInheritAttribute" xml:space="preserve">
+    <value>This type does not inherit Attribute, it will not work correctly with other .NET languages.</value>
   </data>
 </root>

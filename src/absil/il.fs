@@ -154,12 +154,11 @@ let unsplitTypeName (ns, n) =
     | [] -> String.concat "." ns + "." + n 
     | _ -> n 
 
-let splitTypeNameRightAux nm = 
-    if String.contains nm '.' then 
-      let idx = String.rindex nm '.'
-      let s1, s2 = splitNameAt nm idx
-      Some s1, s2 
-    else None, nm
+let splitTypeNameRightAux (nm:string) = 
+    let idx = nm.LastIndexOf '.'
+    if idx = -1 then None, nm else
+    let s1, s2 = splitNameAt nm idx
+    Some s1, s2
 
 let splitTypeNameRight nm =
     memoizeNamespaceRightTable.GetOrAdd(nm, splitTypeNameRightAux)
@@ -947,11 +946,25 @@ type ILAttribElem =
 
 type ILAttributeNamedArg =  (string * ILType * bool * ILAttribElem)
 
-[<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
-type ILAttribute = 
-    { Method: ILMethodSpec
-      Data: byte[] 
-      Elements: ILAttribElem list }
+[<RequireQualifiedAccess; StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
+type ILAttribute =
+    | Encoded of method: ILMethodSpec * data: byte[] * elements: ILAttribElem list
+    | Decoded of method: ILMethodSpec * fixedArgs: ILAttribElem list * namedArgs: ILAttributeNamedArg list
+
+    member x.Method =
+        match x with
+        | Encoded (method, _, _)
+        | Decoded (method, _, _) -> method
+
+    member x.Elements =
+        match x with
+        | Encoded (_, _, elements) -> elements
+        | Decoded (_, fixedArgs, namedArgs) -> fixedArgs @ (namedArgs |> List.map (fun (_, _, _, e) -> e))
+
+    member x.WithMethod(method: ILMethodSpec) =
+        match x with
+        | Encoded (_, data, elements) -> Encoded (method, data, elements)
+        | Decoded (_, fixedArgs, namedArgs) -> Decoded (method, fixedArgs, namedArgs)
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -3572,21 +3585,30 @@ let encodeCustomAttrNamedArg ilg (nm, ty, prop, elem) =
       yield! encodeCustomAttrString nm
       yield! encodeCustomAttrValue ilg ty elem |]
 
-let mkILCustomAttribMethRef (ilg: ILGlobals) (mspec:ILMethodSpec, fixedArgs: list<_>, namedArgs: list<_>) = 
+let encodeCustomAttrArgs (ilg: ILGlobals) (mspec:ILMethodSpec) (fixedArgs: list<_>) (namedArgs: list<_>) =
     let argtys = mspec.MethodRef.ArgTypes
-    let args = 
-      [| yield! [| 0x01uy; 0x00uy; |]
-         for (argty, fixedArg) in Seq.zip argtys fixedArgs do
-            yield! encodeCustomAttrValue ilg argty fixedArg
-         yield! u16AsBytes (uint16 namedArgs.Length) 
-         for namedArg in namedArgs do 
-             yield! encodeCustomAttrNamedArg ilg namedArg |]
-    { Method = mspec
-      Data = args
-      Elements = fixedArgs @ (namedArgs |> List.map(fun (_, _, _, e) -> e)) }
+    [| yield! [| 0x01uy; 0x00uy; |]
+       for (argty, fixedArg) in Seq.zip argtys fixedArgs do
+          yield! encodeCustomAttrValue ilg argty fixedArg
+       yield! u16AsBytes (uint16 namedArgs.Length)
+       for namedArg in namedArgs do
+           yield! encodeCustomAttrNamedArg ilg namedArg |]
 
-let mkILCustomAttribute ilg (tref, argtys, argvs, propvs) = 
-    mkILCustomAttribMethRef ilg (mkILNonGenericCtorMethSpec (tref, argtys), argvs, propvs)
+let encodeCustomAttr (ilg: ILGlobals) (mspec:ILMethodSpec, fixedArgs: list<_>, namedArgs: list<_>) =
+    let args = encodeCustomAttrArgs ilg mspec fixedArgs namedArgs
+    ILAttribute.Encoded (mspec, args, fixedArgs @ (namedArgs |> List.map (fun (_, _, _, e) -> e)))
+
+let mkILCustomAttribMethRef (ilg: ILGlobals) (mspec:ILMethodSpec, fixedArgs: list<_>, namedArgs: list<_>) =
+    encodeCustomAttr ilg (mspec, fixedArgs, namedArgs)
+
+let mkILCustomAttribute ilg (tref, argtys, argvs, propvs) =
+    encodeCustomAttr ilg (mkILNonGenericCtorMethSpec (tref, argtys), argvs, propvs)
+
+let getCustomAttrData (ilg: ILGlobals) cattr =
+    match cattr with
+    | ILAttribute.Encoded (_, data, _) -> data
+    | ILAttribute.Decoded (mspec, fixedArgs, namedArgs) ->
+        encodeCustomAttrArgs ilg mspec fixedArgs namedArgs
 
 let MscorlibScopeRef = ILScopeRef.Assembly (ILAssemblyRef.Create("mscorlib", None, Some ecmaPublicKey, true, None, None))
 let EcmaMscorlibILGlobals = mkILGlobals MscorlibScopeRef
@@ -3755,7 +3777,10 @@ type ILTypeSigParser(tstring : string) =
         ILAttribElem.Type(Some(ilty))
 
 let decodeILAttribData (ilg: ILGlobals) (ca: ILAttribute) = 
-    let bytes = ca.Data
+    match ca with
+    | ILAttribute.Decoded (_, fixedArgs, namedArgs) -> fixedArgs, namedArgs
+    | ILAttribute.Encoded (_, bytes, _) ->
+
     let sigptr = 0
     let bb0, sigptr = sigptr_get_byte bytes sigptr
     let bb1, sigptr = sigptr_get_byte bytes sigptr
@@ -3944,7 +3969,7 @@ and refs_of_token s x =
     | ILToken.ILMethod mr -> refs_of_mspec s mr
     | ILToken.ILField fr -> refs_of_fspec s fr
 
-and refs_of_custom_attr s x = refs_of_mspec s x.Method
+and refs_of_custom_attr s (cattr: ILAttribute) = refs_of_mspec s cattr.Method
     
 and refs_of_custom_attrs s (cas : ILAttributes) = List.iter (refs_of_custom_attr s) cas.AsList
 and refs_of_varargs s tyso = Option.iter (refs_of_tys s) tyso 
@@ -4188,23 +4213,6 @@ let resolveILMethodRef td mref = resolveILMethodRefWithRescope id td mref
 
 let mkRefToILModule m =
   ILModuleRef.Create(m.Name, true, None)
-
-
-let ungenericizeTypeName n = 
-  let sym = '`'
-  if 
-    String.contains n sym && 
-      (* check what comes after the symbol is a number *)
-    (let m = String.rindex n sym
-     let res = ref (m < n.Length - 1)
-     for i = m + 1 to n.Length - 1 do
-       res := !res && n.[i] >= '0' && n.[i] <= '9'
-     !res)
-  then 
-      let pos = String.rindex n sym
-      String.sub n 0 pos
-  else n
-
 
 type ILEventRef =
     { erA: ILTypeRef; erB: string }

@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly Mutation05
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Mutation05
 {
-  // Offset: 0x00000000 Length: 0x000004C8
+  // Offset: 0x00000000 Length: 0x000004CE
 }
 .mresource public FSharpOptimizationData.Mutation05
 {
-  // Offset: 0x000004D0 Length: 0x00000127
+  // Offset: 0x000004D8 Length: 0x00000127
 }
 .module Mutation05.exe
-// MVID: {59B19213-8C6A-2E22-A745-03831392B159}
+// MVID: {5B9A632A-8C6A-2E22-A745-03832A639A5B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01290000
+// Image base: 0x008E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -115,7 +115,7 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field static assembly int32 x
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.VolatileFieldAttribute::.ctor() = ( 01 00 00 00 ) 
-    .field static assembly int32 'init@9-2'
+    .field static assembly int32 init@9
     .method public specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -137,7 +137,7 @@
       .maxstack  8
       .line 100001,100001 : 0,0 ''
       IL_0000:  volatile.
-      IL_0002:  ldsfld     int32 Mutation05/StaticC::'init@9-2'
+      IL_0002:  ldsfld     int32 Mutation05/StaticC::init@9
       IL_0007:  ldc.i4.1
       IL_0008:  bge.s      IL_000c
 
@@ -167,7 +167,7 @@
       .maxstack  8
       .line 100001,100001 : 0,0 ''
       IL_0000:  volatile.
-      IL_0002:  ldsfld     int32 Mutation05/StaticC::'init@9-2'
+      IL_0002:  ldsfld     int32 Mutation05/StaticC::init@9
       IL_0007:  ldc.i4.1
       IL_0008:  bge.s      IL_000c
 
@@ -231,7 +231,7 @@
     IL_0003:  stsfld     int32 Mutation05/StaticC::x
     IL_0008:  ldc.i4.1
     IL_0009:  volatile.
-    IL_000b:  stsfld     int32 Mutation05/StaticC::'init@9-2'
+    IL_000b:  stsfld     int32 Mutation05/StaticC::init@9
     .line 9,9 : 6,13 ''
     IL_0010:  ret
   } // end of method $Mutation05::main@

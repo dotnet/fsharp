@@ -2442,16 +2442,25 @@ module TypecheckTests =
     let ``type check neg102`` () = singleNegTest (testConfig "typecheck/sigs") "neg102"
 
     [<Test>]
+    let ``type check neg103`` () = singleNegTest (testConfig "typecheck/sigs") "neg103"
+
+    [<Test>]
+    let ``type check neg104`` () = singleNegTest (testConfig "typecheck/sigs") "neg104"
+
+    [<Test>]
     let ``type check neg106`` () = singleNegTest (testConfig "typecheck/sigs") "neg106"
 
     [<Test>]
     let ``type check neg107`` () = singleNegTest (testConfig "typecheck/sigs") "neg107"
 
     [<Test>]
-    let ``type check neg103`` () = singleNegTest (testConfig "typecheck/sigs") "neg103"
+    let ``type check neg108`` () = singleNegTest (testConfig "typecheck/sigs") "neg108"
 
     [<Test>]
-    let ``type check neg104`` () = singleNegTest (testConfig "typecheck/sigs") "neg104"
+    let ``type check neg109`` () = singleNegTest (testConfig "typecheck/sigs") "neg109"
+
+    [<Test>] 
+    let ``type check neg110`` () = singleNegTest (testConfig "typecheck/sigs") "neg110"
 
     [<Test>] 
     let ``type check neg_issue_3752`` () = singleNegTest (testConfig "typecheck/sigs") "neg_issue_3752"

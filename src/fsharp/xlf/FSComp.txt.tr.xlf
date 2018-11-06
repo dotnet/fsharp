@@ -5123,13 +5123,13 @@
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
-        <source>Type parameters must be placed directly adjacent to the type name, e.g. \"type C&lt;'T&gt;\", not     type \"C   &lt;'T&gt;\"</source>
-        <target state="translated">Tür parametreleri doğrudan tür adının bitişiğine yerleştirilmelidir, örn. type \"C   &lt;'T&gt;\" değil \"type C&lt;'T&gt;\"</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="needs-review-translation">Tür parametreleri doğrudan tür adının bitişiğine yerleştirilmelidir, örn. type \"C   &lt;'T&gt;\" değil \"type C&lt;'T&gt;\"</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
-        <source>Type arguments must be placed directly adjacent to the type name, e.g. \"C&lt;'T&gt;\", not \"C  &lt;'T&gt;\"</source>
-        <target state="translated">Tür bağımsız değişkenleri doğrudan tür adının bitişiğine yerleştirilmelidir, örn. \"C  &lt;'T&gt;\" değil \"C&lt;'T&gt;\"</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="needs-review-translation">Tür bağımsız değişkenleri doğrudan tür adının bitişiğine yerleştirilmelidir, örn. \"C  &lt;'T&gt;\" değil \"C&lt;'T&gt;\"</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
@@ -6328,8 +6328,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseConstructorDoesNotHaveFieldWithGivenName">
-        <source>Union case/exception '{0}' does not have field named '{1}'.</source>
-        <target state="translated">{0}' birleşim durumu/özel durumunda '{1}' adlı alan yok.</target>
+        <source>The union case '{0}' does not have a field named '{1}'.</source>
+        <target state="needs-review-translation">{0}' birleşim durumu/özel durumunda '{1}' adlı alan yok.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseFieldCannotBeUsedMoreThanOnce">
@@ -6708,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
-        <source>Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.</source>
-        <target state="translated">Zaman uyumsuz iş akışlarında adı zaman uyumsuz hesaplamanın sonucuna bağlamak için veya diğer hesaplama ifadelerinde adı hesaplama türünden bir sonuca bağlamak için kullanılır.</target>
+        <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
+        <target state="review-required-translation">Zaman uyumsuz iş akışlarında adı zaman uyumsuz hesaplamanın sonucuna bağlamak için veya diğer hesaplama ifadelerinde adı hesaplama türünden bir sonuca bağlamak için kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6788,13 +6788,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
-        <source>Used to indicate a value to provide as the result of a computation expression.</source>
-        <target state="translated">Bir hesaplama ifadesinin sonucu olarak sağlanacak değeri belirtmek için kullanılır.</target>
+        <source>Used to provide a value for the result of the containing computation expression.</source>
+        <target state="review-required-translation">Bir hesaplama ifadesinin sonucu olarak sağlanacak değeri belirtmek için kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
-        <source>Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.</source>
-        <target state="translated">Değerlendirildiğinde, içerdiği hesaplama ifadesinin sonucu veren bir hesaplama ifadesini belirtmek için kullanılır.</target>
+        <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
+        <target state="review-required-translation">Değerlendirildiğinde, içerdiği hesaplama ifadesinin sonucu veren bir hesaplama ifadesini belirtmek için kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6838,13 +6838,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Dispose'un boş kaynaklara çağrılmasını gerektiren değerler için let yerine kullanılır.</target>
+        <source>Used instead of let for values that implement IDisposable"</source>
+        <target state="needs-review-translation">Dispose'un boş kaynaklara çağrılmasını gerektiren değerler için let yerine kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
-        <source>Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Zaman uyumsuz iş akışlarında ve diğer hesaplama ifadelerinde Dispose'un boş kaynaklara çağrılmasını gerektiren değerler için let! yerine kullanılır.</target>
+        <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
+        <target state="review-required-translation">Zaman uyumsuz iş akışlarında ve diğer hesaplama ifadelerinde Dispose'un boş kaynaklara çağrılmasını gerektiren değerler için let! yerine kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">
@@ -7060,6 +7060,26 @@
       <trans-unit id="chkNoReturnOfLimitedSpan">
         <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
         <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDoesNotInheritAttribute">
+        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
+        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcExceptionConstructorDoesNotHaveFieldWithGivenName">
+        <source>The exception '{0}' does not have a field named '{1}'.</source>
+        <target state="new">The exception '{0}' does not have a field named '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcConstructorDoesNotHaveFieldWithGivenName">
+        <source>The constructor does not have a field named '{0}'.</source>
+        <target state="new">The constructor does not have a field named '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcActivePatternsDoNotHaveFields">
+        <source>Active patterns do not have fields. This syntax is invalid.</source>
+        <target state="new">Active patterns do not have fields. This syntax is invalid.</target>
         <note />
       </trans-unit>
     </body>

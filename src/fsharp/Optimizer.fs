@@ -455,8 +455,8 @@ let BindExternalLocalVal cenv (v:Val) vval env =
             // Passing an empty remap is sufficient for FSharp.Core.dll because it turns out the remapped type signature can
             // still be resolved.
             match tryRescopeVal cenv.g.fslibCcu Remap.Empty v with 
-            | Some vref -> BindValueForFslib vref.nlr v vval env 
-            | None -> env
+            | ValueSome vref -> BindValueForFslib vref.nlr v vval env 
+            | _ -> env
         else env
     env
 
@@ -1186,9 +1186,9 @@ let IsTyFuncValRefExpr = function
     | _ -> false
 
 /// Type applications of existing functions are always simple constants, with the exception of F# 'type functions' 
-/// REVIEW: we could also include any under-applied application here. 
 let rec IsSmallConstExpr x =
     match x with
+    | Expr.Op (TOp.LValueOp (LAddrOf _, _), [], [], _) -> true // &x is always a constant
     | Expr.Val (v, _, _m) -> not v.IsMutable
     | Expr.App(fe, _, _tyargs, args, _) -> isNil args && not (IsTyFuncValRefExpr fe) && IsSmallConstExpr fe
     | _ -> false
@@ -1202,11 +1202,29 @@ let ValueOfExpr expr =
 // Dead binding elimination 
 //------------------------------------------------------------------------- 
  
+// Allow discard of "let v = *byref" if "v" is unused anywhere. The read effect
+// can be discarded because it is always assumed that reading byref pointers (without using 
+// the value of the read) doesn't raise exceptions or cause other "interesting" side effects.
+//
+// This allows discarding the implicit deref when matching on struct unions, e.g.
+//    
+//    [<Struct; NoComparison; NoEquality>]
+//    type SingleRec =  
+//        | SingleUnion of int
+//        member x.Next = let (SingleUnion i) = x in SingleUnion (i+1)
+//
+// See https://github.com/Microsoft/visualfsharp/issues/5136
+let IsDiscardableEffectExpr expr = 
+    match expr with 
+    | Expr.Op (TOp.LValueOp (LByrefGet _, _), [], [], _) -> true 
+    | _ -> false
+
+/// Checks is a value binding is non-discardable
 let ValueIsUsedOrHasEffect cenv fvs (b:Binding, binfo) =
     let v = b.Var
     not (cenv.settings.EliminateUnusedBindings()) ||
     Option.isSome v.MemberInfo ||
-    binfo.HasEffect || 
+    (binfo.HasEffect && not (IsDiscardableEffectExpr b.Expr)) ||
     v.IsFixed ||
     Zset.contains v (fvs())
 
@@ -1276,7 +1294,7 @@ and OpHasEffect g m op =
     | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable || (TryFindTyconRefBoolAttribute g Range.range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = Some true)
     | TOp.ValFieldGetAddr (rfref, _readonly)  -> rfref.RecdField.IsMutable
     | TOp.UnionCaseFieldGetAddr _ -> false // union case fields are immutable
-    | TOp.LValueOp (LAddrOf _, lv) -> lv.IsMutable
+    | TOp.LValueOp (LAddrOf _, _) -> false // addresses of values are always constants
     | TOp.UnionCaseFieldSet _
     | TOp.ExnFieldSet _
     | TOp.Coerce
@@ -1381,6 +1399,84 @@ let rec (|KnownValApp|_|) expr =
     | Expr.Val(vref, _, _) -> Some(vref, [], [])
     | Expr.App(KnownValApp(vref, typeArgs1, otherArgs1), _, typeArgs2, otherArgs2, _) -> Some(vref, typeArgs1@typeArgs2, otherArgs1@otherArgs2)
     | _ -> None
+
+/// Matches boolean decision tree:
+/// check single case with bool const.
+let (|TDBoolSwitch|_|) dtree =
+    match dtree with
+    | TDSwitch( expr, [TCase (DecisionTreeTest.Const(Const.Bool testBool), caseTree )], Some defaultTree, range) ->
+        Some (expr, testBool, caseTree, defaultTree, range)
+    | _ -> 
+        None
+
+/// Check target that have a constant bool value
+let (|ConstantBoolTarget|_|)  target =
+    match target with
+    | TTarget([], Expr.Const (Const.Bool b,_,_),_) -> Some b
+    | _ -> None
+
+/// Is this a tree, where each decision is a two-way switch (to prevent later duplication of trees), and each branch returns or true/false,
+/// apart from one branch which defers to another expression
+let rec CountBoolLogicTree ((targets: DecisionTreeTarget[], costOuterCaseTree, costOuterDefaultTree, testBool) as data) tree =
+    match  tree with 
+    | TDSwitch (_expr, [case], Some defaultTree, _range) -> 
+        let tc1,ec1 = CountBoolLogicTree data case.CaseTree 
+        let tc2, ec2 = CountBoolLogicTree data defaultTree 
+        tc1 + tc2, ec1 + ec2
+    | TDSuccess([], idx)  -> 
+        match targets.[idx] with
+        | ConstantBoolTarget result -> (if result = testBool then costOuterCaseTree else costOuterDefaultTree), 0
+        | TTarget([], _exp, _) -> costOuterCaseTree + costOuterDefaultTree, 10
+        | _ -> 100, 100 
+    | _ -> 100, 100
+
+/// Rewrite a decision tree for which CountBoolLogicTree returned a low number (see below).  Produce a new decision
+/// tree where at each ConstantBoolSuccessTree tip we replace with either outerCaseTree or outerDefaultTree
+/// depending on whether the target result was true/false
+let rec RewriteBoolLogicTree ((targets: DecisionTreeTarget[], outerCaseTree, outerDefaultTree, testBool) as data) tree =
+    match  tree with 
+    | TDSwitch (expr, cases, defaultTree, range) -> 
+        let cases2 = cases |> List.map (RewriteBoolLogicCase data)
+        let defaultTree2 = defaultTree |> Option.map (RewriteBoolLogicTree data)
+        TDSwitch  (expr, cases2, defaultTree2, range)
+    | TDSuccess([], idx)  -> 
+        match targets.[idx] with 
+        | ConstantBoolTarget result -> if result = testBool then outerCaseTree else outerDefaultTree
+        | TTarget([], exp, _) -> mkBoolSwitch exp.Range exp (if testBool then outerCaseTree else outerDefaultTree) (if testBool then outerDefaultTree else outerCaseTree)
+        | _ -> failwith "CountBoolLogicTree should exclude this case"
+    | _ ->  failwith "CountBoolLogicTree should exclude this case"
+
+and RewriteBoolLogicCase data (TCase(test, tree)) =
+    TCase(test, RewriteBoolLogicTree data tree)
+
+/// Repeatedly combine switch-over-match decision trees, see https://github.com/Microsoft/visualfsharp/issues/635.
+/// The outer decision tree is doing a swithc over a boolean result, the inner match is producing only
+/// constant boolean results in its targets.  
+let rec CombineBoolLogic expr = 
+
+    // try to find nested boolean switch
+    match expr with
+    | Expr.Match(outerSP, outerMatchRange, 
+                 TDBoolSwitch(Expr.Match(_innerSP, _innerMatchRange, innerTree, innerTargets, _innerDefaultRange, _innerMatchTy),
+                              outerTestBool, outerCaseTree, outerDefaultTree, _outerSwitchRange ), 
+                 outerTargets, outerDefaultRange, outerMatchTy)  ->
+       
+        let costOuterCaseTree =  match outerCaseTree with TDSuccess _ -> 0 | _ -> 1
+        let costOuterDefaultTree = match outerDefaultTree with TDSuccess _ -> 0 | _ -> 1
+        let tc, ec = CountBoolLogicTree (innerTargets, costOuterCaseTree, costOuterDefaultTree, outerTestBool) innerTree
+        // At most one expression, no overall duplication of TSwitch nodes
+        if tc <= costOuterCaseTree + costOuterDefaultTree && ec <= 10 then 
+            let newExpr = 
+                Expr.Match(outerSP, outerMatchRange, 
+                           RewriteBoolLogicTree (innerTargets, outerCaseTree, outerDefaultTree, outerTestBool) innerTree,
+                           outerTargets, outerDefaultRange, outerMatchTy)
+
+            CombineBoolLogic newExpr
+        else
+            expr
+    | _ -> 
+        expr
+
 
 //-------------------------------------------------------------------------
 // ExpandStructuralBinding
@@ -1830,7 +1926,7 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
 
 and OptimizeExprOp cenv env (op, tyargs, args, m) =
 
-    (* Special cases *)
+    // Special cases 
     match op, tyargs, args with 
     | TOp.Coerce, [toty;fromty], [e] -> 
         let e', einfo = OptimizeExpr cenv env e
@@ -1842,26 +1938,38 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
             HasEffect = true  
             MightMakeCriticalTailcall=false
             Info=UnknownValue }
-    (* Handle addresses *)
+
+    // Handle address-of 
     | TOp.LValueOp ((LAddrOf _ as lop), lv), _, _ ->
-        let e, _ = OptimizeExpr cenv env (exprForValRef m lv)
-        let op' =
-            match e with
+        let newVal, _ = OptimizeExpr cenv env (exprForValRef m lv)
+        let newOp =
+            match newVal with
             // Do not optimize if it's a top level static binding.
             | Expr.Val (v, _, _) when not v.IsCompiledAsTopLevel -> TOp.LValueOp (lop, v)
             | _ -> op
-        Expr.Op (op', tyargs, args, m), 
+        let newExpr = Expr.Op (newOp, tyargs, args, m)
+        newExpr,
         { TotalSize = 1
           FunctionSize = 1
-          HasEffect = OpHasEffect cenv.g m op'
+          HasEffect = OpHasEffect cenv.g m newOp
           MightMakeCriticalTailcall = false
-          Info = UnknownValue }
-    (* Handle these as special cases since mutables are allowed inside their bodies *)
-    | TOp.While (spWhile, marker), _, [Expr.Lambda(_, _, _, [_], e1, _, _);Expr.Lambda(_, _, _, [_], e2, _, _)]  -> OptimizeWhileLoop cenv { env with inLoop=true } (spWhile, marker, e1, e2, m) 
-    | TOp.For(spStart, dir), _, [Expr.Lambda(_, _, _, [_], e1, _, _);Expr.Lambda(_, _, _, [_], e2, _, _);Expr.Lambda(_, _, _, [v], e3, _, _)]  -> OptimizeFastIntegerForLoop cenv { env with inLoop=true } (spStart, v, e1, dir, e2, e3, m) 
-    | TOp.TryFinally(spTry, spFinally), [resty], [Expr.Lambda(_, _, _, [_], e1, _, _); Expr.Lambda(_, _, _, [_], e2, _, _)] -> OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, resty)
-    | TOp.TryCatch(spTry, spWith), [resty], [Expr.Lambda(_, _, _, [_], e1, _, _); Expr.Lambda(_, _, _, [vf], ef, _, _); Expr.Lambda(_, _, _, [vh], eh, _, _)] -> OptimizeTryCatch cenv env (e1, vf, ef, vh, eh, m, resty, spTry, spWith)
-    | TOp.TraitCall(traitInfo), [], args -> OptimizeTraitCall cenv env (traitInfo, args, m) 
+          Info = ValueOfExpr newExpr }
+
+    // Handle these as special cases since mutables are allowed inside their bodies 
+    | TOp.While (spWhile, marker), _, [Expr.Lambda(_, _, _, [_], e1, _, _);Expr.Lambda(_, _, _, [_], e2, _, _)]  ->
+        OptimizeWhileLoop cenv { env with inLoop=true } (spWhile, marker, e1, e2, m) 
+
+    | TOp.For(spStart, dir), _, [Expr.Lambda(_, _, _, [_], e1, _, _);Expr.Lambda(_, _, _, [_], e2, _, _);Expr.Lambda(_, _, _, [v], e3, _, _)]  -> 
+        OptimizeFastIntegerForLoop cenv { env with inLoop=true } (spStart, v, e1, dir, e2, e3, m) 
+
+    | TOp.TryFinally(spTry, spFinally), [resty], [Expr.Lambda(_, _, _, [_], e1, _, _); Expr.Lambda(_, _, _, [_], e2, _, _)] -> 
+        OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, resty)
+
+    | TOp.TryCatch(spTry, spWith), [resty], [Expr.Lambda(_, _, _, [_], e1, _, _); Expr.Lambda(_, _, _, [vf], ef, _, _); Expr.Lambda(_, _, _, [vh], eh, _, _)] ->
+        OptimizeTryCatch cenv env (e1, vf, ef, vh, eh, m, resty, spTry, spWith)
+
+    | TOp.TraitCall(traitInfo), [], args ->
+        OptimizeTraitCall cenv env (traitInfo, args, m) 
 
    // This code hooks arr.Length. The idea is to ensure loops end up in the "same shape"as the forms of loops that the .NET JIT
    // guarantees to optimize.
@@ -1886,7 +1994,7 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
         MakeOptimizedSystemStringConcatCall cenv env m args
 
     | _ -> 
-        (* Reductions *)
+        // Reductions
         OptimizeExprOpReductions cenv env (op, tyargs, args, m)
 
 and OptimizeExprOpReductions cenv env (op, tyargs, args, m) =
@@ -2270,8 +2378,11 @@ and TryOptimizeValInfo cenv env m vinfo =
 //------------------------------------------------------------------------- 
   
 and AddValEqualityInfo g m (v:ValRef) info =
-    if v.IsMutable then 
-        /// the env assumes known-values do not change 
+    // ValValue is information that v = v2, where v2 does not change 
+    // So we can't record this information for mutable values. An exception can be made
+    // for "outArg" values arising from method calls since they are only temporarily mutable
+    // when their address is passed to the method call.
+    if v.IsMutable && not (v.IsCompilerGenerated && v.DisplayName.StartsWith(PrettyNaming.outArgCompilerGeneratedName)) then 
         info 
     else 
         {info with Info= MakeValueInfoForValue g m v info.Info}
@@ -2313,11 +2424,13 @@ and OptimizeVal cenv env expr (v:ValRef, m) =
 //------------------------------------------------------------------------- 
 
 and StripToNominalTyconRef cenv ty = 
-    if isAppTy cenv.g ty then destAppTy cenv.g ty 
-    elif isRefTupleTy cenv.g ty then 
-        let tyargs = destRefTupleTy cenv.g ty
-        mkCompiledTupleTyconRef cenv.g false (List.length tyargs), tyargs 
-    else failwith "StripToNominalTyconRef: unreachable" 
+    match tryAppTy cenv.g ty with
+    | ValueSome x -> x
+    | _ ->
+        if isRefTupleTy cenv.g ty then
+            let tyargs = destRefTupleTy cenv.g ty
+            mkCompiledTupleTyconRef cenv.g false (List.length tyargs), tyargs 
+        else failwith "StripToNominalTyconRef: unreachable" 
 
 and CanDevirtualizeApplication cenv v vref ty args  = 
      valRefEq cenv.g v vref
@@ -2871,7 +2984,9 @@ and OptimizeMatch cenv env (spMatch, exprm, dtree, targets, m, ty) =
     // REVIEW: consider collecting, merging and using information flowing through each line of the decision tree to each target 
     let dtree', dinfo = OptimizeDecisionTree cenv env m dtree 
     let targets', tinfos = OptimizeDecisionTreeTargets cenv env m targets 
-    RebuildOptimizedMatch (spMatch, exprm, m, ty, dtree', targets', dinfo, tinfos)
+    let newExpr, newInfo = RebuildOptimizedMatch (spMatch, exprm, m, ty, dtree', targets', dinfo, tinfos)
+    let newExpr2 = if not (cenv.settings.localOpt()) then newExpr else CombineBoolLogic newExpr
+    newExpr2, newInfo
 
 and CombineMatchInfos dinfo tinfo = 
     { TotalSize = dinfo.TotalSize + tinfo.TotalSize
@@ -3037,7 +3152,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     | None -> false
                     | Some mbrTyconRef ->
                     // Check we can deref system_MarshalByRefObject_tcref. When compiling against the Silverlight mscorlib we can't
-                    if mbrTyconRef.TryDeref.IsSome then
+                    if ValueOption.isSome mbrTyconRef.TryDeref then
                         // Check if this is a subtype of MarshalByRefObject
                         assert (cenv.g.system_MarshalByRefObject_ty.IsSome)
                         ExistsSameHeadTypeInHierarchy cenv.g cenv.amap vref.Range (generalizedTyconRef tcref) cenv.g.system_MarshalByRefObject_ty.Value

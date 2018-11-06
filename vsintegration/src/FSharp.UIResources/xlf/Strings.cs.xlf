@@ -162,6 +162,31 @@
         <target state="translated">Projektová data jsou uložená v mezipaměti pro funkce IDE. Vyšší hodnoty znamenají využití více paměti, protože je uloženo více projektů. Vyladění této hodnoty by nemělo mít vliv na malá a středně velká řešení.</target>
         <note />
       </trans-unit>
+      <trans-unit id="Enter_key_always">
+        <source>Always add new line on enter</source>
+        <target state="new">Always add new line on enter</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_never">
+        <source>Never add new line on enter</source>
+        <target state="new">Never add new line on enter</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_only">
+        <source>Only add new line on enter after end of fully typed word</source>
+        <target state="new">Only add new line on enter after end of fully typed word</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_Key_Rule">
+        <source>Enter key behavior</source>
+        <target state="new">Enter key behavior</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Format_on_paste">
+        <source>Re-format indentation on paste</source>
+        <target state="new">Re-format indentation on paste</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

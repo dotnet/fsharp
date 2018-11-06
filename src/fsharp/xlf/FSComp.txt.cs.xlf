@@ -5123,13 +5123,13 @@
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
-        <source>Type parameters must be placed directly adjacent to the type name, e.g. \"type C&lt;'T&gt;\", not     type \"C   &lt;'T&gt;\"</source>
-        <target state="translated">Parametry typu je potřeba zadat bezprostředně za název typu, třeba \"type C&lt;'T&gt;\", ne     type \"C   &lt;'T&gt;\".</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="needs-review-translation">Parametry typu je potřeba zadat bezprostředně za název typu, třeba \"type C&lt;'T&gt;\", ne     type \"C   &lt;'T&gt;\".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
-        <source>Type arguments must be placed directly adjacent to the type name, e.g. \"C&lt;'T&gt;\", not \"C  &lt;'T&gt;\"</source>
-        <target state="translated">Argumenty typu je potřeba zadat bezprostředně za název typu, třeba \"C&lt;'T&gt;\", ne \"C  &lt;'T&gt;\".</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="needs-review-translation">Argumenty typu je potřeba zadat bezprostředně za název typu, třeba \"C&lt;'T&gt;\", ne \"C  &lt;'T&gt;\".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
@@ -6328,8 +6328,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseConstructorDoesNotHaveFieldWithGivenName">
-        <source>Union case/exception '{0}' does not have field named '{1}'.</source>
-        <target state="translated">Výjimka nebo případ typu union {0} nemá pole s názvem {1}.</target>
+        <source>The union case '{0}' does not have a field named '{1}'.</source>
+        <target state="needs-review-translation">Výjimka nebo případ typu union {0} nemá pole s názvem {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseFieldCannotBeUsedMoreThanOnce">
@@ -6708,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
-        <source>Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.</source>
-        <target state="translated">Slouží v asynchronních pracovních postupech k vytvoření vazby názvu s výsledkem asynchronního výpočtu. V jiných výrazech výpočtu se používá k vytvoření vazby názvu s výsledkem, který je výpočetního typu.</target>
+        <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
+        <target state="review-required-translation">Slouží v asynchronních pracovních postupech k vytvoření vazby názvu s výsledkem asynchronního výpočtu. V jiných výrazech výpočtu se používá k vytvoření vazby názvu s výsledkem, který je výpočetního typu.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6788,13 +6788,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
-        <source>Used to indicate a value to provide as the result of a computation expression.</source>
-        <target state="translated">Slouží k označení hodnoty, která vznikne jako výsledek výrazu výpočtu.</target>
+        <source>Used to provide a value for the result of the containing computation expression.</source>
+        <target state="review-required-translation">Slouží k označení hodnoty, která vznikne jako výsledek výrazu výpočtu.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
-        <source>Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.</source>
-        <target state="translated">Slouží k označení výrazu výpočtu, který po vyhodnocení poskytne výsledek obsahujícího výrazu výpočtu.</target>
+        <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
+        <target state="review-required-translation">Slouží k označení výrazu výpočtu, který po vyhodnocení poskytne výsledek obsahujícího výrazu výpočtu.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6838,13 +6838,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Používá se místo výrazu let u hodnot, které k uvolnění prostředků vyžadují volání funkce Dispose.</target>
+        <source>Used instead of let for values that implement IDisposable"</source>
+        <target state="needs-review-translation">Používá se místo výrazu let u hodnot, které k uvolnění prostředků vyžadují volání funkce Dispose.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
-        <source>Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Používá se místo výrazu let! v asynchronních pracovních postupech a jiných výrazech výpočtu pro hodnoty, které k uvolnění prostředků vyžadují volání funkce Dispose.</target>
+        <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
+        <target state="review-required-translation">Používá se místo výrazu let! v asynchronních pracovních postupech a jiných výrazech výpočtu pro hodnoty, které k uvolnění prostředků vyžadují volání funkce Dispose.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">
@@ -7060,6 +7060,26 @@
       <trans-unit id="chkNoReturnOfLimitedSpan">
         <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
         <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDoesNotInheritAttribute">
+        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
+        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcExceptionConstructorDoesNotHaveFieldWithGivenName">
+        <source>The exception '{0}' does not have a field named '{1}'.</source>
+        <target state="new">The exception '{0}' does not have a field named '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcConstructorDoesNotHaveFieldWithGivenName">
+        <source>The constructor does not have a field named '{0}'.</source>
+        <target state="new">The constructor does not have a field named '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcActivePatternsDoNotHaveFields">
+        <source>Active patterns do not have fields. This syntax is invalid.</source>
+        <target state="new">Active patterns do not have fields. This syntax is invalid.</target>
         <note />
       </trans-unit>
     </body>

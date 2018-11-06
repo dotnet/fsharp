@@ -1,15 +1,11 @@
 ﻿namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Windows
 open System.Windows.Data
-open System.Windows.Markup
 open System.Windows.Controls
 
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.ComponentModelHost
-
-open SettingsPersistence
 
 module internal OptionsUIHelpers =
 
@@ -19,36 +15,31 @@ module internal OptionsUIHelpers =
 
         let view = lazy this.CreateView()
         
-        let store =
+        let optionService =
+            // lazy, so GetService is called from UI thread
             lazy
                 let scm = this.Site.GetService(typeof<SComponentModel>) :?> IComponentModel
-                // make sure settings are initialized to default values
-                scm.GetService<ISettings>() |> ignore
-                scm.GetService<SettingsStore>()
+                scm.GetService<IPersistSettings>()
 
         abstract CreateView : unit -> FrameworkElement
 
-        member this.View = view.Value
-
-        member this.Store = store.Value  
-
-        override this.Child = upcast this.View
+        override this.Child = upcast view.Value
 
         override this.SaveSettingsToStorage() = 
-            this.GetResult() |> this.Store.SaveSettings |> Async.StartImmediate
+            this.GetResult() |> optionService.Value.Write
 
         override this.LoadSettingsFromStorage() = 
-            this.Store.LoadSettings() |> this.SetViewModel
+            optionService.Value.Read() |> this.SetViewModel
 
         //Override this method when using immutable settings type
-        member this.SetViewModel(settings: 't) =
-            // this is needed in case when settings are a CLIMutable record
-            this.View.DataContext <- null
-            this.View.DataContext <- settings
+        member __.SetViewModel(settings: 't) =
+            // in case settings are a CLIMutable record
+            view.Value.DataContext <- null
+            view.Value.DataContext <- settings
 
         //Override this method when using immutable settings type
-        member this.GetResult() : 't =
-            downcast this.View.DataContext
+        member __.GetResult() : 't =
+            downcast view.Value.DataContext
 
     //data binding helpers
     let radioButtonCoverter =
@@ -64,35 +55,3 @@ module internal OptionsUIHelpers =
 
     let bindCheckBox (checkBox: CheckBox) (path: string) =
         checkBox.SetBinding(CheckBox.IsCheckedProperty, path) |> ignore
-
-    // some helpers to create option views in code instead of XAML
-    let ( *** ) (control : #IAddChild) (children: UIElement list) =
-        children |> List.iter control.AddChild
-        control
-
-    let ( +++ ) (control : #IAddChild) content = 
-        control.AddChild content
-        control
-
-    let withDefaultStyles (element: FrameworkElement) =
-        let groupBoxStyle = System.Windows.Style(typeof<GroupBox>)
-        groupBoxStyle.Setters.Add(Setter(GroupBox.PaddingProperty, Thickness(Left = 7.0, Right = 7.0, Top = 7.0 )))
-        groupBoxStyle.Setters.Add(Setter(GroupBox.MarginProperty, Thickness(Bottom = 3.0)))
-        groupBoxStyle.Setters.Add(Setter(GroupBox.ForegroundProperty, DynamicResourceExtension(SystemColors.WindowTextBrushKey)))
-        element.Resources.Add(typeof<GroupBox>, groupBoxStyle)
- 
-        let checkBoxStyle = new System.Windows.Style(typeof<CheckBox>)
-        checkBoxStyle.Setters.Add(new Setter(CheckBox.MarginProperty, new Thickness(Bottom = 7.0 )))
-        checkBoxStyle.Setters.Add(new Setter(CheckBox.ForegroundProperty, new DynamicResourceExtension(SystemColors.WindowTextBrushKey)))
-        element.Resources.Add(typeof<CheckBox>, checkBoxStyle)
- 
-        let textBoxStyle = new System.Windows.Style(typeof<TextBox>)
-        textBoxStyle.Setters.Add(new Setter(TextBox.MarginProperty, new Thickness(Left = 7.0, Right = 7.0 )))
-        textBoxStyle.Setters.Add(new Setter(TextBox.ForegroundProperty, new DynamicResourceExtension(SystemColors.WindowTextBrushKey)))
-        element.Resources.Add(typeof<TextBox>, textBoxStyle);
- 
-        let radioButtonStyle = new System.Windows.Style(typeof<RadioButton>)
-        radioButtonStyle.Setters.Add(new Setter(RadioButton.MarginProperty, new Thickness(Bottom = 7.0 )))
-        radioButtonStyle.Setters.Add(new Setter(RadioButton.ForegroundProperty, new DynamicResourceExtension(SystemColors.WindowTextBrushKey)))
-        element.Resources.Add(typeof<RadioButton>, radioButtonStyle)
-        element

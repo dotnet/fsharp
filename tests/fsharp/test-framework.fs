@@ -70,6 +70,8 @@ module Commands =
 
 #if FSC_IN_PROCESS
         // This is not yet complete
+        printfn "Hosted Compiler:"
+        printfn "workdir: %A\nargs: %A"workdir args
         let fscCompiler = FSharp.Compiler.Hosted.FscCompiler()
         let exitCode, _stdin, _stdout = FSharp.Compiler.Hosted.CompilerHelpers.fscCompile workDir (FSharp.Compiler.Hosted.CompilerHelpers.parseCommandLine args)
 
@@ -82,6 +84,8 @@ module Commands =
         ignore workDir 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
         ignore dotNetExe
+        printfn "fscExe: %A" fscExe
+        printfn "args: %A" args
         exec fscExe args
 #else
         exec dotNetExe (fscExe + " " + args)

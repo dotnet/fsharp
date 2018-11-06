@@ -568,7 +568,7 @@ type TypeCheckInfo
             p <- p - 1
         if p >= 0 then Some p else None
     
-    let CompletionItem (ty: TyconRef option) (assemblySymbol: AssemblySymbol option) (item: ItemWithInst) =
+    let CompletionItem (ty: ValueOption<TyconRef>) (assemblySymbol: ValueOption<AssemblySymbol>) (item: ItemWithInst) =
         let kind = 
             match item.Item with
             | Item.MethodGroup (_, minfo :: _, _) -> CompletionItemKind.Method minfo.IsExtensionMember
@@ -584,10 +584,10 @@ type TypeCheckInfo
           MinorPriority = 0
           Kind = kind
           IsOwnMember = false
-          Type = ty 
-          Unresolved = assemblySymbol |> Option.map (fun x -> x.UnresolvedSymbol) }
+          Type = match ty with ValueSome x -> Some x | _ -> None
+          Unresolved = match assemblySymbol with ValueSome x -> Some x.UnresolvedSymbol | _ -> None }
 
-    let DefaultCompletionItem item = CompletionItem None None item
+    let DefaultCompletionItem item = CompletionItem ValueNone ValueNone item
     
     let getItem (x: ItemWithInst) = x.Item
     let GetDeclaredItems (parseResultsOpt: FSharpParseFileResults option, lineStr: string, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, 
@@ -635,29 +635,27 @@ type TypeCheckInfo
             let pos = mkPos line loc
             let (nenv, ad), m = GetBestEnvForPos pos
 
-            let getType() = 
-                let tref =
-                    match NameResolution.TryToResolveLongIdentAsType ncenv nenv m plid with
-                    | Some x -> Some x
-                    | None ->
-                        match lastDotPos |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1)) with
-                        | Some p when lineStr.[p] = '.' ->
-                            match FindFirstNonWhitespacePosition lineStr (p - 1) with
-                            | Some colAtEndOfNames ->                 
-                                let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
-                                let tyconRef = TryGetTypeFromNameResolution(line, colAtEndOfNames, residueOpt, resolveOverloads)
-                                tyconRef
-                            | None -> None
-                        | _ -> None
-                     
-                tref |> Option.bind (tryDestAppTy g)
+            let getType() =
+                match NameResolution.TryToResolveLongIdentAsType ncenv nenv m plid with
+                | Some x -> tryDestAppTy g x
+                | None ->
+                    match lastDotPos |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1)) with
+                    | Some p when lineStr.[p] = '.' ->
+                        match FindFirstNonWhitespacePosition lineStr (p - 1) with
+                        | Some colAtEndOfNames ->                 
+                            let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
+                            match TryGetTypeFromNameResolution(line, colAtEndOfNames, residueOpt, resolveOverloads) with
+                            | Some x -> tryDestAppTy g x
+                            | _ -> ValueNone
+                        | None -> ValueNone
+                    | _ -> ValueNone
 
             match nameResItems with            
             | NameResResult.TypecheckStaleAndTextChanged -> None // second-chance intellisense will try again
             | NameResResult.Cancel(denv,m) -> Some([], denv, m)
             | NameResResult.Members(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m)) -> 
                 // lookup based on name resolution results successful
-                Some (items |> List.map (CompletionItem (getType()) None), denv, m)
+                Some (items |> List.map (CompletionItem (getType()) ValueNone), denv, m)
             | _ ->
                 match origLongIdentOpt with
                 | None -> None
@@ -690,9 +688,9 @@ type TypeCheckInfo
                             // These come through as an empty plid and residue "". Otherwise we try an environment lookup
                             // and then return to the qualItems. This is because the expression typings are a little inaccurate, primarily because
                             // it appears we're getting some typings recorded for non-atomic expressions like "f x"
-                            when (match plid with [] -> true | _ -> false)  -> 
+                            when isNil plid ->
                         // lookup based on expression typings successful
-                        Some (items |> List.map (CompletionItem (tryDestAppTy g ty) None), denv, m)
+                        Some (items |> List.map (CompletionItem (tryDestAppTy g ty) ValueNone), denv, m)
                     | GetPreciseCompletionListFromExprTypingsResult.NoneBecauseThereWereTypeErrors, _ ->
                         // There was an error, e.g. we have "<expr>." and there is an error determining the type of <expr>  
                         // In this case, we don't want any of the fallback logic, rather, we want to produce zero results.
@@ -700,7 +698,7 @@ type TypeCheckInfo
                     | GetPreciseCompletionListFromExprTypingsResult.NoneBecauseTypecheckIsStaleAndTextChanged, _ ->         
                         // we want to report no result and let second-chance intellisense kick in
                         None
-                    | _, true when (match plid with [] -> true | _ -> false)  -> 
+                    | _, true when isNil plid ->
                         // If the user just pressed '.' after an _expression_ (not a plid), it is never right to show environment-lookup top-level completions.
                         // The user might by typing quickly, and the LS didn't have an expression type right before the dot yet.
                         // Second-chance intellisense will bring up the correct list in a moment.
@@ -715,19 +713,19 @@ type TypeCheckInfo
                            // First, use unfiltered name resolution items, if they're not empty
                            | NameResResult.Members(items, denv, m), _, _ when not (isNil items) -> 
                                // lookup based on name resolution results successful
-                               Some(items |> List.map (CompletionItem (getType()) None), denv, m)                
+                               ValueSome(items |> List.map (CompletionItem (getType()) ValueNone), denv, m)                
                            
                            // If we have nonempty items from environment that were resolved from a type, then use them... 
                            // (that's better than the next case - here we'd return 'int' as a type)
                            | _, FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), _ when not (isNil items) ->
                                // lookup based on name and environment successful
-                               Some(items |> List.map (CompletionItem (getType()) None), denv, m)
+                               ValueSome(items |> List.map (CompletionItem (getType()) ValueNone), denv, m)
                            
                            // Try again with the qualItems
                            | _, _, GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), ty) ->
-                               Some(items |> List.map (CompletionItem (tryDestAppTy g ty) None), denv, m)
+                               ValueSome(items |> List.map (CompletionItem (tryDestAppTy g ty) ValueNone), denv, m)
                            
-                           | _ -> None
+                           | _ -> ValueNone
 
                        let globalResult =
                            match origLongIdentOpt with
@@ -745,16 +743,16 @@ type TypeCheckInfo
                                match globalItems, denv, m with
                                | FilterRelevantItems getItem exactMatchResidueOpt (globalItemsFiltered, denv, m) when not (isNil globalItemsFiltered) ->
                                    globalItemsFiltered 
-                                   |> List.map(fun globalItem -> CompletionItem (getType()) (Some globalItem) (ItemWithNoInst globalItem.Symbol.Item))
-                                   |> fun r -> Some(r, denv, m)
-                               | _ -> None
-                           | _ -> None // do not return unresolved items after dot
+                                   |> List.map(fun globalItem -> CompletionItem (getType()) (ValueSome globalItem) (ItemWithNoInst globalItem.Symbol.Item))
+                                   |> fun r -> ValueSome(r, denv, m)
+                               | _ -> ValueNone
+                           | _ -> ValueNone // do not return unresolved items after dot
 
                        match envResult, globalResult with
-                       | Some (items, denv, m), Some (gItems,_,_) -> Some (items @ gItems, denv, m)
-                       | Some x, None -> Some x
-                       | None, Some y -> Some y
-                       | None, None -> None
+                       | ValueSome (items, denv, m), ValueSome (gItems,_,_) -> Some (items @ gItems, denv, m)
+                       | ValueSome x, ValueNone -> Some x
+                       | ValueNone, ValueSome y -> Some y
+                       | ValueNone, ValueNone -> None
 
 
     let toCompletionItems (items: ItemWithInst list, denv: DisplayEnv, m: range ) =
@@ -1324,13 +1322,23 @@ type TypeCheckInfo
             let underlyingTy = stripTyEqnsAndMeasureEqns g ty
             isStructTy g underlyingTy
 
+        let isValRefMutable (vref: ValRef) =
+            // Mutable values, ref cells, and non-inref byrefs are mutable.
+            vref.IsMutable
+            || Tastops.isRefCellTy g vref.Type
+            || (Tastops.isByrefTy g vref.Type && not (Tastops.isInByrefTy g vref.Type))
+
+        let isRecdFieldMutable (rfinfo: RecdFieldInfo) =
+            (rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone)
+            || Tastops.isRefCellTy g rfinfo.RecdField.FormalType
+
         resolutions
         |> Seq.choose (fun cnr ->
             match cnr with
             // 'seq' in 'seq { ... }' gets colored as keywords
             | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref ->
                 Some (m, SemanticClassificationType.ComputationExpression)
-            | CNR(_, (Item.Value vref), _, _, _, _, m) when vref.IsMutable || Tastops.isRefCellTy g vref.Type ->
+            | CNR(_, (Item.Value vref), _, _, _, _, m) when isValRefMutable vref ->
                 Some (m, SemanticClassificationType.MutableVar)
             | CNR(_, Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m) ->
                 Some (m, SemanticClassificationType.IntrinsicFunction)
@@ -1343,7 +1351,7 @@ type TypeCheckInfo
                     Some (m, SemanticClassificationType.Operator)
                 else
                     Some (m, SemanticClassificationType.Function)
-            | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone -> 
+            | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when isRecdFieldMutable rfinfo ->
                 Some (m, SemanticClassificationType.MutableVar)
             | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when isFunction g rfinfo.FieldType ->
                Some (m, SemanticClassificationType.Function)
@@ -3280,23 +3288,23 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
     member internal __.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
-    member x.TokenizeLine (line: string, state: int64) : FSharpTokenInfo[] * int64 = 
+    member x.TokenizeLine (line: string, state: FSharpTokenizerLexState) = 
         let tokenizer = FSharpSourceTokenizer([], None)
         let lineTokenizer = tokenizer.CreateLineTokenizer line
-        let state = ref (None, state)
+        let mutable state = (None, state)
         let tokens = 
-            [| while (state := lineTokenizer.ScanToken (snd !state); (fst !state).IsSome) do
-                    yield (fst !state).Value |]
-        tokens, snd !state 
+            [| while (state <- lineTokenizer.ScanToken (snd state); (fst state).IsSome) do
+                    yield (fst state).Value |]
+        tokens, snd state 
 
     /// Tokenize an entire file, line by line
     member x.TokenizeFile (source: string) : FSharpTokenInfo[][] = 
         let lines = source.Split('\n')
         let tokens = 
-            [| let state = ref 0L
+            [| let mutable state = FSharpTokenizerLexState.Initial
                for line in lines do 
-                   let tokens, n = x.TokenizeLine(line, !state) 
-                   state := n 
+                   let tokens, n = x.TokenizeLine(line, state) 
+                   state <- n 
                    yield tokens |]
         tokens
 

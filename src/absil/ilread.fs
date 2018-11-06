@@ -2567,12 +2567,13 @@ and seekReadCustomAttr ctxt (TaggedIndex(cat, idx), b) =
 
 and seekReadCustomAttrUncached ctxtH (CustomAttrIdx (cat, idx, valIdx)) = 
     let ctxt = getHole ctxtH
-    { Method=seekReadCustomAttrType ctxt (TaggedIndex(cat, idx))
-      Data=
+    let method = seekReadCustomAttrType ctxt (TaggedIndex(cat, idx))
+    let data =
         match readBlobHeapOption ctxt valIdx with
         | Some bytes -> bytes
-        | None -> Bytes.ofInt32Array [| |] 
-      Elements = [] }
+        | None -> Bytes.ofInt32Array [| |]
+    let elements = []
+    ILAttribute.Encoded (method, data, elements)
 
 and securityDeclsReader ctxtH tag = 
     mkILSecurityDeclsReader

@@ -763,7 +763,9 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref:ILMethodRef) =
             res
        
         match List.tryFind select methInfos with
-        | None          -> failwith "convMethodRef: could not bind to method"
+        | None          -> 
+            let methNames = methInfos |> List.map (fun m -> m.Name) |> List.distinct
+            failwithf "convMethodRef: could not bind to method '%A' of type '%s'" (System.String.Join(", ", methNames)) parentT.AssemblyQualifiedName
         | Some methInfo -> methInfo (* return MethodInfo for (generic) type's (generic) method *)
           
 let queryableTypeGetMethod cenv emEnv parentT (mref:ILMethodRef) =
@@ -1412,12 +1414,12 @@ let emitMethodBody cenv modB emEnv ilG _name (mbody: ILLazyMethodBody) =
     | MethodBody.Native           -> failwith "emitMethodBody: native"               
     | MethodBody.NotAvailable     -> failwith "emitMethodBody: metadata only"
 
-let convCustomAttr cenv emEnv cattr =
+let convCustomAttr cenv emEnv (cattr: ILAttribute) =
     let methInfo = 
        match convConstructorSpec cenv emEnv cattr.Method with 
        | null -> failwithf "convCustomAttr: %+A" cattr.Method
        | res -> res
-    let data = cattr.Data 
+    let data = getCustomAttrData cenv.ilg cattr
     (methInfo, data)
 
 let emitCustomAttr cenv emEnv add cattr  = add (convCustomAttr cenv emEnv cattr)

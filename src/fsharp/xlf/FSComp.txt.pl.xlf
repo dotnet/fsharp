@@ -5123,13 +5123,13 @@
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
-        <source>Type parameters must be placed directly adjacent to the type name, e.g. \"type C&lt;'T&gt;\", not     type \"C   &lt;'T&gt;\"</source>
-        <target state="translated">Parametry typu muszą być umieszczone w bezpośrednim sąsiedztwie nazwy typu (np. \"type C&lt;'T&gt;\", a nie     type \"C   &lt;'T&gt;\")</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="needs-review-translation">Parametry typu muszą być umieszczone w bezpośrednim sąsiedztwie nazwy typu (np. \"type C&lt;'T&gt;\", a nie     type \"C   &lt;'T&gt;\")</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
-        <source>Type arguments must be placed directly adjacent to the type name, e.g. \"C&lt;'T&gt;\", not \"C  &lt;'T&gt;\"</source>
-        <target state="translated">Argumenty typu muszą być umieszczone w bezpośrednim sąsiedztwie nazwy typu (np. \"C&lt;'T&gt;\", a nie \"C  &lt;'T&gt;\")</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="needs-review-translation">Argumenty typu muszą być umieszczone w bezpośrednim sąsiedztwie nazwy typu (np. \"C&lt;'T&gt;\", a nie \"C  &lt;'T&gt;\")</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
@@ -6328,8 +6328,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseConstructorDoesNotHaveFieldWithGivenName">
-        <source>Union case/exception '{0}' does not have field named '{1}'.</source>
-        <target state="translated">Przypadek unii/wyjątek „{0}” nie ma pola o nazwie „{1}”.</target>
+        <source>The union case '{0}' does not have a field named '{1}'.</source>
+        <target state="needs-review-translation">Przypadek unii/wyjątek „{0}” nie ma pola o nazwie „{1}”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseFieldCannotBeUsedMoreThanOnce">
@@ -6708,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
-        <source>Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.</source>
-        <target state="translated">Używane w asynchronicznych przepływach pracy do powiązywania nazwy z wynikiem obliczenia asynchronicznego lub w innych wyrażeniach obliczenia do powiązywania nazwy z wynikiem, którego typ to obliczenie.</target>
+        <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
+        <target state="review-required-translation">Używane w asynchronicznych przepływach pracy do powiązywania nazwy z wynikiem obliczenia asynchronicznego lub w innych wyrażeniach obliczenia do powiązywania nazwy z wynikiem, którego typ to obliczenie.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6788,13 +6788,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
-        <source>Used to indicate a value to provide as the result of a computation expression.</source>
-        <target state="translated">Używane do wskazywania wartości do podania jako wyniku wyrażenia obliczenia.</target>
+        <source>Used to provide a value for the result of the containing computation expression.</source>
+        <target state="review-required-translation">Używane do wskazywania wartości do podania jako wyniku wyrażenia obliczenia.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
-        <source>Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.</source>
-        <target state="translated">Używane do wskazywania wyrażenia obliczenia, które po obliczeniu udostępnia wynik zawartego wyrażenia obliczenia.</target>
+        <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
+        <target state="review-required-translation">Używane do wskazywania wyrażenia obliczenia, które po obliczeniu udostępnia wynik zawartego wyrażenia obliczenia.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6838,13 +6838,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Używane zamiast instrukcji let na potrzeby wartości, które wymagają wywołania operacji Dispose w celu zwolnienia zasobów.</target>
+        <source>Used instead of let for values that implement IDisposable"</source>
+        <target state="needs-review-translation">Używane zamiast instrukcji let na potrzeby wartości, które wymagają wywołania operacji Dispose w celu zwolnienia zasobów.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
-        <source>Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Używane zamiast instrukcji let! w asynchronicznych przepływach pracy i innych wyrażeniach obliczenia na potrzeby wartości, które wymagają wywołania operacji Dispose w celu zwolnienia zasobów.</target>
+        <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
+        <target state="review-required-translation">Używane zamiast instrukcji let! w asynchronicznych przepływach pracy i innych wyrażeniach obliczenia na potrzeby wartości, które wymagają wywołania operacji Dispose w celu zwolnienia zasobów.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">
@@ -7060,6 +7060,26 @@
       <trans-unit id="chkNoReturnOfLimitedSpan">
         <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
         <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDoesNotInheritAttribute">
+        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
+        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcExceptionConstructorDoesNotHaveFieldWithGivenName">
+        <source>The exception '{0}' does not have a field named '{1}'.</source>
+        <target state="new">The exception '{0}' does not have a field named '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcConstructorDoesNotHaveFieldWithGivenName">
+        <source>The constructor does not have a field named '{0}'.</source>
+        <target state="new">The constructor does not have a field named '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcActivePatternsDoNotHaveFields">
+        <source>Active patterns do not have fields. This syntax is invalid.</source>
+        <target state="new">Active patterns do not have fields. This syntax is invalid.</target>
         <note />
       </trans-unit>
     </body>
