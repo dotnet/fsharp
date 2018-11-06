@@ -2016,9 +2016,9 @@ type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout
     new (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, securityDecls, customAttrs) =  
        ILTypeDef (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, storeILSecurityDecls securityDecls, storeILCustomAttrs customAttrs, NoMetadataIdx)
 
-    member val CachedCustomAttributes = None with get, set
+    member val CachedFilteredCustomAttributes = None with get, set
 
-    member x.CustomAttributesStored =
+    member x.CustomAttributes =
         match customAttrsStored with 
         | ILAttributesStored.Reader f ->
             let res = ILAttributes(f x.MetadataIndex)
@@ -2056,7 +2056,7 @@ type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout
                   methodImpls = defaultArg methodImpls x.MethodImpls,
                   events = defaultArg events x.Events,
                   properties = defaultArg properties x.Properties,
-                  customAttrs = defaultArg customAttrs x.CustomAttributesStored)     
+                  customAttrs = defaultArg customAttrs x.CustomAttributes)     
 
     member x.SecurityDecls = x.SecurityDeclsStored.GetSecurityDecls x.MetadataIndex
 
@@ -3907,12 +3907,12 @@ let ByRefLikeMarker = "Types with embedded references are not supported in this 
 
 type ILTypeDef with
 
-    member x.GetCustomAttributes(ilg: ILGlobals) = 
-        match x.CachedCustomAttributes with
+    member x.GetFilteredCustomAttributes(ilg: ILGlobals) = 
+        match x.CachedFilteredCustomAttributes with
         | None ->
-            let attrs = x.CustomAttributesStored
+            let attrs = x.CustomAttributes
             let attrs =
-                if attrs.AsArray |> Array.exists (fun x -> x.Method.DeclaringType.TypeRef.FullName = "System.Runtime.CompilerServices.IsByRefLikeAttribute") then
+                if x.IsStruct && attrs.AsArray |> Array.exists (fun x -> x.Method.DeclaringType.TypeRef.FullName = "System.Runtime.CompilerServices.IsByRefLikeAttribute") then
                     attrs.AsArray
                     |> Array.filter (fun attr -> 
                         if attr.Method.DeclaringType.TypeRef.FullName = "System.ObsoleteAttribute" then
@@ -3931,7 +3931,7 @@ type ILTypeDef with
                 else
                     attrs
 
-            x.CachedCustomAttributes <- Some(attrs)
+            x.CachedFilteredCustomAttributes <- Some(attrs)
             attrs
         | Some(attrs) ->
             attrs
@@ -4117,7 +4117,7 @@ and refs_of_tdef s (td : ILTypeDef)  =
     refs_of_method_impls s td.MethodImpls.AsList
     refs_of_events       s td.Events
     refs_of_tdef_kind    s td
-    refs_of_custom_attrs s td.CustomAttributesStored
+    refs_of_custom_attrs s td.CustomAttributes
     refs_of_properties   s td.Properties
 
 and refs_of_string _s _ = ()

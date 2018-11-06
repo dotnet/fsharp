@@ -1848,7 +1848,7 @@ let rec buildTypeDefPass3 cenv nesting modB emEnv (tdef : ILTypeDef) =
     tdef.Events.AsList |> List.iter (buildEventPass3 cenv typB emEnv);
     tdef.Fields.AsList |> List.iter (buildFieldPass3 cenv tref typB emEnv);
     let emEnv = List.fold (buildMethodImplsPass3 cenv tref typB) emEnv tdef.MethodImpls.AsList
-    tdef.GetCustomAttributes(cenv.ilg) |> emitCustomAttrs cenv emEnv typB.SetCustomAttributeAndLog ;
+    tdef.CustomAttributes |> emitCustomAttrs cenv emEnv typB.SetCustomAttributeAndLog ;
     // custom attributes
     let emEnv = envPopTyvars emEnv
     // nested types

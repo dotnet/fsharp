@@ -136,7 +136,7 @@ let GetAttribInfosOfEntity (g: TcGlobals) amap m (tcref:TyconRef) =
         //| None -> None
 #endif
     | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) -> 
-        tdef.GetCustomAttributes(g.ilg) |> AttribInfosOfIL g amap scoref m
+        tdef.GetFilteredCustomAttributes(g.ilg) |> AttribInfosOfIL g amap scoref m
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
         tcref.Attribs |> List.map (fun a -> FSAttribInfo (g, a))
 
@@ -188,7 +188,7 @@ let TryBindTyconRefAttribute g m (AttribInfo (atref, _) as args) (tcref:TyconRef
         | None -> None
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, tdef)) -> 
-        match TryDecodeILAttribute g atref (tdef.GetCustomAttributes(g.ilg)) with 
+        match TryDecodeILAttribute g atref (tdef.GetFilteredCustomAttributes(g.ilg)) with 
         | Some attr -> f1 attr
         | _ -> None
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
@@ -449,7 +449,7 @@ let MethInfoIsUnseen g m ty minfo =
         // We are only interested in filtering out the method on System.Object, so it is sufficient
         // just to look at the attributes on IL methods.
         if tcref.IsILTycon then 
-                tcref.ILTyconRawMetadata.GetCustomAttributes(g.ilg).AsArray 
+                tcref.ILTyconRawMetadata.GetFilteredCustomAttributes(g.ilg).AsArray 
                 |> Array.exists (fun attr -> attr.Method.DeclaringType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
         else 
             false
@@ -481,7 +481,7 @@ let PropInfoIsUnseen m pinfo =
 /// Check the attributes on an entity, returning errors and warnings as data.
 let CheckEntityAttributes g (x:TyconRef) m = 
     if x.IsILTycon then 
-        CheckILAttributes g (x.ILTyconRawMetadata.GetCustomAttributes(g.ilg)) m
+        CheckILAttributes g (x.ILTyconRawMetadata.GetFilteredCustomAttributes(g.ilg)) m
     else 
         CheckFSharpAttributes g x.Attribs m
 

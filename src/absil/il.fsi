@@ -1258,6 +1258,8 @@ and [<NoComparison; NoEquality>]
           extends: ILType option * methods: ILMethodDefs * nestedTypes: ILTypeDefs * fields: ILFieldDefs * methodImpls: ILMethodImplDefs * 
           events: ILEventDefs * properties: ILPropertyDefs * securityDecls: ILSecurityDecls * customAttrs: ILAttributes -> ILTypeDef
 
+    member CustomAttributes : ILAttributes
+
     member Name: string  
     member Attributes: TypeAttributes
     member GenericParams: ILGenericParameterDefs
@@ -1605,7 +1607,11 @@ val decodeILAttribData:
 
 type ILTypeDef with
     
-    member GetCustomAttributes : ILGlobals -> ILAttributes
+    /// Gets a collection of custom attributes,
+    ///     then filters out particular attributes that we do not want to include in the list.
+    /// For example, ObsoleteAttribute with a ByRefLikeMarker string should not be included if we also have a IsByRefLikeAttribute on a struct.
+    /// The results will be cached.
+    member GetFilteredCustomAttributes : ILGlobals -> ILAttributes
 
 /// Generate simple references to assemblies and modules.
 val mkSimpleAssRef: string -> ILAssemblyRef

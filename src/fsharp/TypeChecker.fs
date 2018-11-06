@@ -10841,7 +10841,7 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
                 let tdef = tcref.ILTyconRawMetadata
                 let tref = cenv.g.attrib_AttributeUsageAttribute.TypeRef
                 
-                match TryDecodeILAttribute cenv.g tref (tdef.GetCustomAttributes(cenv.g.ilg)) with 
+                match TryDecodeILAttribute cenv.g tref (tdef.GetFilteredCustomAttributes(cenv.g.ilg)) with 
                 | Some ([ILAttribElem.Int32 validOn ], named) -> 
                     let inherited = 
                         match List.tryPick (function ("Inherited", _, _, ILAttribElem.Bool res) -> Some res | _ -> None) named with 
