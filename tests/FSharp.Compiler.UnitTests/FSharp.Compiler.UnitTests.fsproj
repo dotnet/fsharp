@@ -55,7 +55,7 @@
     <Compile Include="ProductVersion.fs" />
     <Compile Include="EditDistance.fs" />
     <Compile Include="ILHelpers.fs" />
-    <Compile Include="Language\Optimize\StringConcat.fs" />
+    <Compile Include="Language\StringConcat.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj">
