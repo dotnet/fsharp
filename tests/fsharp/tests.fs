@@ -1847,58 +1847,6 @@ module OptimizationTests =
             |> Seq.length
 
         log "Ran ok - optimizations removed %d textual occurrences of optimizable identifiers from target IL" numElim
-     
-    let stringconcatTest functionName =
-        let cfg = testConfig "optimize/stringconcat"
-
-        fsc cfg "%s -g --optimize+" cfg.fsc_flags ["test.fs"]
-
-        let outFile = getfullpath cfg ("test." + functionName + ".il")
-        let expectedFile = getfullpath cfg ("test." + functionName + ".il.bsl")
-
-        ildasm_out_no_comments cfg ("/item=Test.Test::" + functionName + " /noca") outFile "test.exe"
-
-        let diff = fsdiff cfg outFile expectedFile
-
-        match diff with
-        | "" -> ()
-        | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff)  
-
-    [<Test>]
-    let ``stringconcat test1`` () = 
-        stringconcatTest "test1"
-
-    [<Test>]
-    let ``stringconcat test2`` () = 
-        stringconcatTest "test2"
-
-    [<Test>]
-    let ``stringconcat test3`` () = 
-        stringconcatTest "test3"
-
-    [<Test>]
-    let ``stringconcat test4`` () = 
-        stringconcatTest "test4"
-
-    [<Test>]
-    let ``stringconcat test5`` () = 
-        stringconcatTest "test5"
-
-    [<Test>]
-    let ``stringconcat test6`` () = 
-        stringconcatTest "test6"
-
-    [<Test>]
-    let ``stringconcat execution`` () =
-        let cfg = testConfig "optimize/stringconcat"
-
-        use testOkFile = fileguard cfg "test.ok"
-
-        fsc cfg "%s -g --optimize+" cfg.fsc_flags ["test.fs"]
-
-        exec cfg ("." ++ "test.exe") ""
-
-        testOkFile.CheckExists()
 
     [<Test>]
     let stats () = 
