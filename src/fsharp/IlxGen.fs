@@ -390,7 +390,8 @@ let GenReadOnlyModReqIfNecessary (g: TcGlobals) ty ilTy =
 let GenObsoleteAttributeByRefLikeMarkerIfNecessary (g: TcGlobals) (tycon: Tycon) (ilCustomAttrs: ILAttribute list) =
     if tycon.IsFSharpStructOrEnumTycon && 
        not (tycon.IsEnumTycon) && 
-       ilCustomAttrs |> List.exists (fun x -> x.Method.DeclaringType.TypeSpec.FullName = "System.Runtime.CompilerServices.IsByRefLikeAttribute") then
+       ilCustomAttrs |> List.exists (fun x -> x.Method.DeclaringType.TypeSpec.FullName = "System.Runtime.CompilerServices.IsByRefLikeAttribute") &&
+       not (ilCustomAttrs |> List.exists (fun x -> x.Method.DeclaringType.TypeSpec.FullName = "System.ObsoleteAttribute")) then
         let attr = 
             mkILCustomAttribute g.ilg 
                 (
