@@ -76,6 +76,7 @@ val stripExpr : Expr -> Expr
 val valsOfBinds : Bindings -> Vals 
 val (|ExprValWithPossibleTypeInst|_|) : Expr -> (ValRef * ValUseFlag * TType list * range) option
 
+val combineNullness: Nullness -> Nullness -> Nullness
 /// Ensure that a type admits nullness
 val tryAddNullnessToTy: Nullness -> TType -> TType option
 val addNullnessToTy: Nullness -> TType -> TType

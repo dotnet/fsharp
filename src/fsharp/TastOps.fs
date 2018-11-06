@@ -170,7 +170,6 @@ let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) =
         | NullnessInfo.ObliviousToNull -> nullnessNew
         | NullnessInfo.WithNull -> nullnessNew
 
-
 let tryAddNullnessToTy nullnessNew (ty:TType) = 
     let ty = stripTyparEqns ty
     match ty with

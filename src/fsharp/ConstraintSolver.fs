@@ -881,20 +881,24 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
 
     | TType_var (tp1, nullness1), TType_var (tp2, nullness2) when PreferUnifyTypar tp1 tp2 -> 
         SolveTyparEqualsType csenv ndeep m2 trace sty1 ty2 ++ (fun () -> 
-           SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 nullness2
+           let nullnessAfterSolution1 = combineNullness (nullnessOfTy g sty1) nullness1
+           SolveNullnessEquiv csenv m2 trace ty1 ty2 nullnessAfterSolution1 nullness2
         )
     | TType_var (tp1, nullness1), TType_var (tp2, nullness2) when not csenv.MatchingOnly && PreferUnifyTypar tp2 tp1 ->
         SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1 ++ (fun () -> 
-           SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 nullness2
+           let nullnessAfterSolution2 = combineNullness (nullnessOfTy g sty2) nullness2
+           SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 nullnessAfterSolution2
         )
 
     | TType_var (tp1, nullness1), _ when (tp1.Rigidity <> TyparRigidity.Rigid) -> 
         SolveTyparEqualsType csenv ndeep m2 trace sty1 ty2 ++ (fun () -> 
-           SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 (nullnessOfTy g sty2)
+           let nullnessAfterSolution1 = combineNullness (nullnessOfTy g sty1) nullness1
+           SolveNullnessEquiv csenv m2 trace ty1 ty2 nullnessAfterSolution1 (nullnessOfTy g sty2)
         )
     | _, TType_var (tp2, nullness2) when (tp2.Rigidity <> TyparRigidity.Rigid) && not csenv.MatchingOnly ->
         SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1 ++ (fun () -> 
-           SolveNullnessEquiv csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) nullness2
+           let nullnessAfterSolution2 = combineNullness (nullnessOfTy g sty2) nullness2
+           SolveNullnessEquiv csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) nullnessAfterSolution2
         )
 
     // Catch float<_>=float<1>, float32<_>=float32<1> and decimal<_>=decimal<1> 
@@ -924,7 +928,8 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
            SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 nullness2
         )
 
-    | TType_measure ms1   , TType_measure ms2   -> UnifyMeasures csenv trace ms1 ms2
+    | TType_measure ms1   , TType_measure ms2   -> 
+        UnifyMeasures csenv trace ms1 ms2
 
     | TType_forall(tps1, rty1), TType_forall(tps2, rty2) -> 
         if tps1.Length <> tps2.Length then localAbortD else
@@ -933,7 +938,8 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
         if not (typarsAEquiv g aenv tps1 tps2) then localAbortD else
         SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty1 rty2 
 
-    | TType_ucase (uc1, l1)  , TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2  -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
+    | TType_ucase (uc1, l1)  , TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2  -> 
+        SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
 
     | _  -> localAbortD
 
@@ -995,13 +1001,15 @@ and SolveTypeSubsumesType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalT
            SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 nullness2
         | TType_var (r2, nullness2)  when not csenv.MatchingOnly -> 
            SolveTyparSubtypeOfType csenv ndeep m2 trace r2 ty1 ++ (fun () ->
-               SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 nullness1 nullness2
+               let nullnessAfterSolution2 = combineNullness (nullnessOfTy g sty2) nullness2
+               SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 nullness1 nullnessAfterSolution2
            )
         | _ ->  SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ty1 ty2
 
     | _, TType_var (r2, nullness2) when not csenv.MatchingOnly ->
         SolveTyparSubtypeOfType csenv ndeep m2 trace r2 ty1 ++ (fun () ->
-            SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) nullness2
+            let nullnessAfterSolution2 = combineNullness (nullnessOfTy g sty2) nullness2
+            SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) nullnessAfterSolution2
         )
 
     | TType_tuple (tupInfo1, l1)      , TType_tuple (tupInfo2, l2)      -> 
