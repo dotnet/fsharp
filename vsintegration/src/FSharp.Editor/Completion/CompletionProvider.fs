@@ -84,23 +84,24 @@ type internal FSharpCompletionProvider
     static let mruItems = Dictionary<(* Item.FullName *) string, (* hints *) int>()
     
     static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list), intelliSenseOptions: IntelliSenseOptions) =
-        let triggerPosition = caretPosition - 1
-        let triggerChar = sourceText.[triggerPosition]
-
         if caretPosition = 0 then
             false
-        elif trigger = CompletionTriggerKind.Deletion && intelliSenseOptions.ShowAfterCharIsDeleted then
-            Char.IsLetterOrDigit(sourceText.[triggerPosition]) || triggerChar = '.'
-        elif not (trigger = CompletionTriggerKind.Insertion) then
-            false
         else
-            // Do not trigger completion if it's not single dot, i.e. range expression
-            if not intelliSenseOptions.ShowAfterCharIsTyped && triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
+            let triggerPosition = caretPosition - 1
+            let triggerChar = sourceText.[triggerPosition]
+
+            if trigger = CompletionTriggerKind.Deletion && intelliSenseOptions.ShowAfterCharIsDeleted then
+                Char.IsLetterOrDigit(sourceText.[triggerPosition]) || triggerChar = '.'
+            elif not (trigger = CompletionTriggerKind.Insertion) then
                 false
             else
-                let documentId, filePath, defines = getInfo()
-                CompletionUtils.shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
-                (triggerChar = '.' || (intelliSenseOptions.ShowAfterCharIsTyped && CompletionUtils.isStartingNewWord(sourceText, triggerPosition)))
+                // Do not trigger completion if it's not single dot, i.e. range expression
+                if not intelliSenseOptions.ShowAfterCharIsTyped && triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
+                    false
+                else
+                    let documentId, filePath, defines = getInfo()
+                    CompletionUtils.shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
+                    (triggerChar = '.' || (intelliSenseOptions.ShowAfterCharIsTyped && CompletionUtils.isStartingNewWord(sourceText, triggerPosition)))
                 
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, 
