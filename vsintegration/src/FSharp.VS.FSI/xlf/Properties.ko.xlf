@@ -1,30 +1,30 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../Properties.resx">
     <body>
       <trans-unit id="FSharpInteractive64Bit">
         <source>64-bit F# Interactive</source>
-        <target state="translated">64-bit F# Interactive</target>
+        <target state="translated">64비트 F# 대화형</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractive64BitDescr">
         <source>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</source>
-        <target state="translated">true로 설정하는 경우 현재 컴퓨터가 64비트이면 F# Interactive를 64비트 프로세스로 실행하고, 그렇지 않으면 F# Interactive가 32비트 프로세스로 실행됩니다.</target>
+        <target state="translated">true로 설정하는 경우 현재 컴퓨터가 64비트이면 F# 대화형을 64비트 프로세스로 실행하고, 그렇지 않으면 F# 대화형이 32비트 프로세스로 실행됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
         <source>F# Interactive options</source>
-        <target state="translated">F# Interactive 옵션</target>
+        <target state="translated">F# 대화형 옵션</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptionsDescr">
         <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
-        <target state="translated">Visual Studio에서 F# Interactive 실행 파일로 전달되는 추가 명령줄 인수입니다. 스크립트 디버깅을 사용하도록 설정한 경우 최적화 및 디버그 플래그는 무시됩니다.</target>
+        <target state="translated">Visual Studio에서 F# 대화형 실행 파일로 전달되는 추가 명령줄 인수입니다. 스크립트 디버깅을 사용하도록 설정한 경우 최적화 및 디버그 플래그는 무시됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">
         <source>Misc</source>
-        <target state="translated">기타</target>
+        <target state="translated">Misc</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopy">
@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopyDescr">
         <source>Prevents referenced assemblies from being locked by the F# Interactive process.</source>
-        <target state="translated">참조된 어셈블리가 F# Interactive 프로세스에 의해 잠기지 않도록 합니다.</target>
+        <target state="translated">참조된 어셈블리가 F# 대화형 프로세스에 의해 잠기지 않도록 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugMode">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugModeDescr">
         <source>Enable debugging of F# scripts (may impact script performance, requires reset of F# Interactive)</source>
-        <target state="translated">F# 스크립트 디버깅 사용(스크립트 성능에 영향을 주고, F# Interactive를 다시 설정해야 할 수 있음)</target>
+        <target state="translated">F# 스크립트 디버깅 사용(스크립트 성능에 영향을 주고, F# 대화형을 다시 설정해야 할 수 있음)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugging">

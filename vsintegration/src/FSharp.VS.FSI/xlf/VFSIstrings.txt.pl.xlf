@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pl" original="../VFSIstrings.resx">
     <body>
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="sessionIsNotDebugFriendly">
         <source>The current F# Interactive session is not configured for debugging. For the best experience, enable debugging in F# Interactive settings, then reset the session.\n\nAttempt debugging with current settings?</source>
-        <target state="translated">Bieżąca sesja programu F# Interactive nie jest skonfigurowana do debugowania. Aby uzyskać najlepszy efekt, włącz debugowanie w ustawieniach programu F# Interactive, a następnie zresetuj sesję.\n\nPodjąć próbę debugowania z bieżącymi ustawieniami?</target>
+        <target state="translated">Bieżąca sesja narzędzia F# Interactive nie jest skonfigurowana do debugowania. Aby uzyskać najlepszy efekt, włącz debugowanie w ustawieniach narzędzia F# Interactive, a następnie zresetuj sesję.\n\nPodjąć próbę debugowania z bieżącymi ustawieniami?</target>
         <note />
       </trans-unit>
       <trans-unit id="doNotShowWarningInFuture">

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="es" original="../Tutorial.fsx">
     <body>
@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="Instructions-Line1">
         <source>To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click</source>
-        <target state="translated">Para ejecutar el código en F# interactivo, resalte una sección de código y presione Alt-Entrar, o haga clic con el botón secundario</target>
+        <target state="translated">Para ejecutar el código en F# interactivo, resalte una sección de código y presione Alt+Entrar, o bien haga clic con el botón secundario</target>
         <note />
       </trans-unit>
       <trans-unit id="Instructions-Line2">
         <source>and select "Execute in Interactive".  You can open the F# Interactive Window from the "View" menu.</source>
-        <target state="translated">y seleccione "Ejecutar en modo interactivo".  Puede abrir la ventana de F# interactivo desde el menú "Ver".</target>
+        <target state="translated">y seleccione "Ejecutar en modo interactivo". Puede abrir la ventana de F# interactivo desde el menú "Ver".</target>
         <note />
       </trans-unit>
       <trans-unit id="MoreAbout">
@@ -284,7 +284,7 @@
       </trans-unit>
       <trans-unit id="Booleans-Line3">
         <source>and</source>
-        <target state="translated">y</target>
+        <target state="translated">Y</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanValues">

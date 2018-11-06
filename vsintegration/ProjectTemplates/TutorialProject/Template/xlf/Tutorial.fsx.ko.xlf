@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../Tutorial.fsx">
     <body>
@@ -9,17 +9,17 @@
       </trans-unit>
       <trans-unit id="Instructions-Line1">
         <source>To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click</source>
-        <target state="translated">F# Interactive에서 코드를 실행하려면 코드 섹션을 강조 표시하고 Alt-Enter를 누르거나 마우스 오른쪽 단추를 클릭한 다음</target>
+        <target state="translated">F# 대화형에서 코드를 실행하려면 코드 섹션을 강조 표시하고 &lt;Alt+Enter&gt;를 누르거나 마우스 오른쪽 단추를 클릭한 다음</target>
         <note />
       </trans-unit>
       <trans-unit id="Instructions-Line2">
         <source>and select "Execute in Interactive".  You can open the F# Interactive Window from the "View" menu.</source>
-        <target state="translated">"대화형으로 실행"을 선택하세요.  "보기" 메뉴에서 F# Interactive 창을 열 수 있습니다.</target>
+        <target state="translated">"대화형으로 실행"을 선택하세요.  "보기" 메뉴에서 F# 대화형 창을 열 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="MoreAbout">
         <source>For more about F#, see:</source>
-        <target state="translated">F#에 대한 자세한 내용은 다음을 참조하십시오:</target>
+        <target state="translated">F#에 대한 자세한 내용은 다음을 참조하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeDocumentaton">
@@ -284,7 +284,7 @@
       </trans-unit>
       <trans-unit id="Booleans-Line3">
         <source>and</source>
-        <target state="translated">및</target>
+        <target state="translated">그리고</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanValues">

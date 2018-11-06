@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../VSPackage.resx">
     <body>
@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="Operator">
         <source>Operator</source>
-        <target state="translated">연산자</target>
+        <target state="translated">운영자</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpFile">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="Comment">
         <source>Comment</source>
-        <target state="translated">설명</target>
+        <target state="translated">주석</target>
         <note />
       </trans-unit>
       <trans-unit id="Identifier">
@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="Number">
         <source>Number</source>
-        <target state="translated">숫자</target>
+        <target state="translated">번호</target>
         <note />
       </trans-unit>
       <trans-unit id="String">

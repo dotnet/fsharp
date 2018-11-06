@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ja" original="../Tutorial.fsx">
     <body>
@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="Instructions-Line1">
         <source>To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click</source>
-        <target state="translated">F# Interactive でコードを実行するには、コードの一部を強調表示して、Alt キーを押しながら Enter キーを押すか、右マウス ボタンをクリックし</target>
+        <target state="translated">F# インタラクティブでコードを実行するには、コードの一部を強調表示して、Alt キーを押しながら Enter キーを押すか、右マウス ボタンをクリックし</target>
         <note />
       </trans-unit>
       <trans-unit id="Instructions-Line2">
         <source>and select "Execute in Interactive".  You can open the F# Interactive Window from the "View" menu.</source>
-        <target state="translated">[対話形式で実行]5D; を選択します。[表示]5D; メニューから F# Interactive ウィンドウを開くことができます。</target>
+        <target state="translated">[対話形式で実行]5D; を選択します。[表示]5D; メニューから F# インタラクティブ ウィンドウを開くことができます。</target>
         <note />
       </trans-unit>
       <trans-unit id="MoreAbout">
@@ -284,7 +284,7 @@
       </trans-unit>
       <trans-unit id="Booleans-Line3">
         <source>and</source>
-        <target state="translated">」および「</target>
+        <target state="translated">AND</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanValues">
@@ -949,7 +949,7 @@
       </trans-unit>
       <trans-unit id="ProcessRecord-Line1">
         <source>This example shows how to write a function that processes a record value.</source>
-        <target state="translated">この例では、レコード値を処理する関数を記述する方法を示します。</target>
+        <target state="translated">この例では、レコード値を処理する関数を書き込む方法を示します。</target>
         <note />
       </trans-unit>
       <trans-unit id="ProcessRecord-Line2">
@@ -994,7 +994,7 @@
       </trans-unit>
       <trans-unit id="DiscriminatedUnions-Line2">
         <source>Data stored in DUs can be one of several distinct values.</source>
-        <target state="translated">DU に格納されるデータは、複数の個別の値のいずれかになります。</target>
+        <target state="translated">DU の格納データは、複数の個別の値のいずれかになります。</target>
         <note />
       </trans-unit>
       <trans-unit id="DiscriminatedUnions-Line3">
