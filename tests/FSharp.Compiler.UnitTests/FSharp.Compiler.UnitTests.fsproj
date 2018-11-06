@@ -43,9 +43,6 @@
     <Reference Include="System" />
     <Reference Include="System.Numerics" Condition="'$(TargetDotnetProfile)' == 'net40'" />
     <Reference Include="System.Core" />
-    <Reference Include="System.ValueTuple">
-        <HintPath>..\..\..\packages\System.ValueTuple.$(SystemValueTuplePackageVersion)\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="NunitHelpers.fs" />

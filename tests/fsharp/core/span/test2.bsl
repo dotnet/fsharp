@@ -1,5 +1,9 @@
 
+test2.fsx(79,17,79,18): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
 test2.fsx(79,21,79,35): typecheck error FS0406: The byref-typed variable 'test' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
+
+test2.fsx(79,21,79,35): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
 test2.fsx(79,21,79,35): typecheck error FS0406: The byref-typed variable 'test' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
 
@@ -55,11 +59,17 @@ test2.fsx(199,13,199,19): typecheck error FS3230: This value can't be assigned b
 
 test2.fsx(204,26,204,27): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
+test2.fsx(204,26,204,27): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
 test2.fsx(204,26,204,27): typecheck error FS0406: The byref-typed variable 'inputSequence' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
 
 test2.fsx(204,26,204,27): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
 test2.fsx(204,26,204,27): typecheck error FS0425: The type of a first-class function cannot contain byrefs
+
+test2.fsx(204,26,204,27): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+test2.fsx(204,26,204,27): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
 test2.fsx(204,26,204,27): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
