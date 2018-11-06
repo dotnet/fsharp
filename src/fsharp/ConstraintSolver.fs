@@ -1731,6 +1731,13 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
 
         | TyparConstraint.SupportsComparison _, TyparConstraint.IsDelegate _  
         | TyparConstraint.IsDelegate _ , TyparConstraint.SupportsComparison _
+        
+        | TyparConstraint.NotSupportsNull _, TyparConstraint.SupportsNull _     
+        | TyparConstraint.SupportsNull _, TyparConstraint.NotSupportsNull _     
+        
+        | TyparConstraint.SupportsNull _, TyparConstraint.IsNonNullableStruct _     
+        | TyparConstraint.IsNonNullableStruct _, TyparConstraint.SupportsNull _   
+        
         | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsReferenceType _     
         | TyparConstraint.IsReferenceType _, TyparConstraint.IsNonNullableStruct _   ->
             ErrorD (Error(FSComp.SR.csStructConstraintInconsistent(), m))
