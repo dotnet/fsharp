@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="it" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -173,7 +173,7 @@ Fare clic su OK per ignorare e continuare. Fare clic su ANNULLA per selezionare 
       </trans-unit>
       <trans-unit id="PPG_SelectOutputPathTitle">
         <source>Select Output Path</source>
-        <target state="translated">Seleziona percorso di output</target>
+        <target state="translated">Seleziona percorso output</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SelectReferencePath">
@@ -230,7 +230,7 @@ Selezionare un percorso della cartella valido.</target>
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_InvalidVersion">
         <source>Invalid version format, expected "[Major]", "[Major].[Minor]", "[Major].[Minor].[Build]" or "[Major].[Minor].[Build].[Revision]"</source>
-        <target state="translated">Formato di versione non valido: previsto [Principale]", "[Principale].[Secondaria]", "[Principale].[Secondaria].[Build]" o "[Principale].[Secondaria].[Build].[Revisione]</target>
+        <target state="translated">Formato di versione non valido. Previsto "[Major]", "[Major].[Minor]", "[Major].[Minor].[Build]" o "[Major].[Minor].[Build].[Revision]"</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_BadWildcard">
@@ -240,7 +240,7 @@ Selezionare un percorso della cartella valido.</target>
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_VersionOutOfRange_2Args">
         <source>Each part of the version number for '{0}' must be an integer between 0 and {1}.</source>
-        <target state="translated">Ogni parte del numero di versione per '{0}' deve essere un numero intero compreso tra 0 e {1}.</target>
+        <target state="translated">Ogni parte del numero di versione per '{0}' deve essere un intero compreso tra 0 e {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_DefaultIconText">
@@ -370,7 +370,7 @@ Selezionare un percorso della cartella valido.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_OptionStrict_Custom">
         <source>(custom)</source>
-        <target state="translated">(personalizzata)</target>
+        <target state="translated">(personalizzato)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_42016">
@@ -380,7 +380,7 @@ Selezionare un percorso della cartella valido.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_42017_42018_42019">
         <source>Late binding; call could fail at run time</source>
-        <target state="translated">Binding tardivo. La chiamata potrebbe non riuscire in fase di esecuzione</target>
+        <target state="translated">Associazione tardiva. La chiamata potrebbe non riuscire in fase di esecuzione</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_42020">
@@ -1697,7 +1697,7 @@ Errore:</target>
       </trans-unit>
       <trans-unit id="RSE_Err_BadIdentifier_2Arg">
         <source>The name of the resource '{0}' cannot be used as a valid identifier, because it contains one or more invalid characters: '{1}'.  Please remove or replace those characters and try again.</source>
-        <target state="translated">Il nome della risorsa '{0}' non può essere usato come identificatore valido perché contiene uno o più caratteri non validi: \'{1\}'. Rimuovere o sostituire tali caratteri e riprovare.</target>
+        <target state="translated">Il nome della risorsa '{0}' non può essere usato come identificatore valido perché contiene uno o più caratteri non validi: '{1}'. Rimuovere o sostituire tali caratteri e riprovare.</target>
         <note>{0} = Resource name</note>
       </trans-unit>
       <trans-unit id="RSE_Err_MaxFilesLimitation">
@@ -1828,7 +1828,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_GraphicSizeFormat">
         <source>{0} x {1}</source>
-        <target state="translated">{0} x {1}</target>
+        <target state="needs-review-translation">{0} x {1}</target>
         <note>Format string for showing a graphic's size
 
 #  {0} = width (as an integer)
@@ -2344,19 +2344,9 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">Applicazione</target>
         <note />
       </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebApplicationScope">
-        <source>Application (Web)</source>
-        <target state="translated">Applicazione (Web)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="SD_ComboBoxItem_UserScope">
         <source>User</source>
         <target state="translated">Utente</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebUserScope">
-        <source>User (Web)</source>
-        <target state="translated">Utente (Web)</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewNameColumnHeaderText">
@@ -2830,22 +2820,22 @@ Aggiornare il valore nel file .settings?</target>
       </trans-unit>
       <trans-unit id="PPG_Services_Seconds">
         <source>seconds</source>
-        <target state="translated">secondi</target>
+        <target state="translated">Secondi</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Minutes">
         <source>minutes</source>
-        <target state="translated">minuti</target>
+        <target state="translated">Minuti</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Hours">
         <source>hours</source>
-        <target state="translated">ore</target>
+        <target state="translated">Ore</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Days">
         <source>days</source>
-        <target state="translated">giorni</target>
+        <target state="translated">Giorni</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">
