@@ -53,8 +53,7 @@ let test9 () =
     x.ToString() + x.ToString() + x.ToString() + x.ToString() + x.ToString()
 """
 
-        let expectedILCode = """
-  .method public static string  test1() cil managed
+        let test1IL = """.method public static string  test1() cil managed
   {
     
     .maxstack  7
@@ -102,9 +101,9 @@ let test9 () =
                                                                 string,
                                                                 string)
     IL_0080:  ret
-  } 
+  }"""
 
-  .method public static string  test2() cil managed
+        let test2IL = """.method public static string  test2() cil managed
   {
     
     .maxstack  8
@@ -166,9 +165,9 @@ let test9 () =
                                                                 string,
                                                                 string)
     IL_00a9:  ret
-  } 
+  }"""
 
-  .method public static string  test3() cil managed
+        let test3IL = """.method public static string  test3() cil managed
   {
     
     .maxstack  8
@@ -257,9 +256,9 @@ let test9 () =
     IL_00f1:  stelem     [mscorlib]System.String
     IL_00f6:  call       string [mscorlib]System.String::Concat(string[])
     IL_00fb:  ret
-  } 
-
-  .method public static string  test4() cil managed
+  }"""
+  
+        let test4IL = """.method public static string  test4() cil managed
   {
     
     .maxstack  8
@@ -452,9 +451,9 @@ let test9 () =
     IL_023c:  stelem     [mscorlib]System.String
     IL_0241:  call       string [mscorlib]System.String::Concat(string[])
     IL_0246:  ret
-  } 
-
-  .method public static string  test5() cil managed
+  }"""
+  
+        let test5IL = """.method public static string  test5() cil managed
   {
     
     .maxstack  9
@@ -651,23 +650,9 @@ let test9 () =
     IL_0241:  stelem     [mscorlib]System.String
     IL_0246:  call       string [mscorlib]System.String::Concat(string[])
     IL_024b:  ret
-  } 
+  }"""
 
-  .method public static !!c  inlineStringConcat<a,b,c>(!!a str1,
-                                                       !!b str2) cil managed
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldarg.1
-    IL_0002:  tail.
-    IL_0004:  call       !!2 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::AdditionDynamic<!!0,!!1,!!2>(!!0,
-                                                                                                                 !!1)
-    IL_0009:  ret
-  } 
-
-  .method public static string  test6() cil managed
+        let test6IL = """.method public static string  test6() cil managed
   {
     
     .maxstack  8
@@ -729,9 +714,9 @@ let test9 () =
                                                                 string,
                                                                 string)
     IL_00a9:  ret
-  } 
+  }"""
 
-  .method public static string  test7() cil managed
+        let test7IL = """.method public static string  test7() cil managed
   {
     
     .maxstack  5
@@ -751,9 +736,9 @@ let test9 () =
                                                                 string,
                                                                 string)
     IL_002e:  ret
-  } 
+  }"""
 
-  .method public static string  test8() cil managed
+        let test8IL = """.method public static string  test8() cil managed
   {
     
     .maxstack  6
@@ -777,9 +762,9 @@ let test9 () =
                                                                 string,
                                                                 string)
     IL_003b:  ret
-  } 
+  }"""
 
-  .method public static string  test9() cil managed
+        let test9IL = """.method public static string  test9() cil managed
   {
     
     .maxstack  6
@@ -822,4 +807,14 @@ let test9 () =
     IL_0071:  ret
   }"""
 
-        ILChecker.checkContains sourceCode [ expectedILCode ]
+        ILChecker.check sourceCode
+            [
+                test1IL
+                test2IL
+                test3IL
+                test4IL
+                test5IL
+                test6IL
+                test7IL
+                test8IL
+            ]

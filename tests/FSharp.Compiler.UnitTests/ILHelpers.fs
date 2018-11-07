@@ -11,6 +11,7 @@ open NUnit.Framework
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 module ILChecker =
+    open System
 
     let checker = FSharpChecker.Create()
 
@@ -36,7 +37,7 @@ module ILChecker =
         p.WaitForExit()
         p.StandardError.ReadToEnd(), p.ExitCode
 
-    let checkContains sourceCode expectedILCode =
+    let check sourceCode expectedILCode =
         let SCRIPT_ROOT = __SOURCE_DIRECTORY__
         let packagesDir = SCRIPT_ROOT ++ ".." ++ ".." ++ "packages"
 #if DEBUG
@@ -85,9 +86,22 @@ module ILChecker =
                                 me.Value), System.Text.RegularExpressions.RegexOptions.Singleline)
                 
                 expectedILCode
-                |> List.iter (fun ilCode ->
-                    if String.IsNullOrWhiteSpace(ilCode) || not (textNoComments.Contains(ilCode)) then
+                |> List.iter (fun (ilCode: string) ->
+                    let expectedLines = ilCode.Split('\n')
+                    let startIndex = textNoComments.IndexOf(expectedLines.[0])
+                    if startIndex = -1 || textNoComments.Length < startIndex + ilCode.Length then
                         errorMsgOpt <- Some("==EXPECTED CONTAINS==\n" + ilCode + "\n")
+                    else
+                        let errors = ResizeArray()
+                        let actualLines = textNoComments.Substring(startIndex, ilCode.Length).Split('\n')
+                        for i = 0 to expectedLines.Length - 1 do
+                            let expected = expectedLines.[i]
+                            let actual = actualLines.[i]
+                            if expected <> actual then
+                                errors.Add(sprintf "\n==\nName: %s\n\nExpected:\t %s\nActual:\t\t %s\n==" actualLines.[0] expected actual)
+
+                        if errors.Count > 0 then
+                            errorMsgOpt <- Some(String.concat "\n" errors)
                 )
 
                 match errorMsgOpt with
