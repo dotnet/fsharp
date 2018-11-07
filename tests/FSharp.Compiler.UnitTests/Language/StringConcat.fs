@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler.UnitTests
 
+open System
 open NUnit.Framework
 
 [<TestFixture>]
@@ -9,7 +10,7 @@ module StringConcat =
 
     [<Test>]
     let Optimizations () =
-        let sourceCode = """
+        let baseSource = """
 module Test
 
 open System
@@ -19,40 +20,12 @@ let arr = ResizeArray()
 let inline ss (x: int) =
     arr.Add(x)
     "_" + x.ToString() + "_"
-
-let test1 () =
-    ss 1 + ss 2 + ss 3
-
-let test2 () =
-    ss 1 + ss 2 + ss 3 + ss 4
-
-let test3 () =
-    ss 1 + ss 2 + ss 3 + ss 4 + ss 5
-
-let test4 () =
-    ss 5 + ss 6 + ss 7 + String.Concat(ss 8, ss 9) + ss 10 + "_50_" + "_60_" + String.Concat(ss 100, String.Concat(ss 101, ss 102), ss 103) + String.Concat([|"_104_";"_105_"|]) + ss 106
-
-let test5 () =
-    ss 5 + ss 6 + ss 7 + String.Concat(ss 8, ss 9) + ss 10 + "_50_" + "_60_" + String.Concat(ss 100, (let x = String.Concat(ss 101, ss 102) in Console.WriteLine(x);x), ss 103) + String.Concat([|"_104_";"_105_"|]) + ss 106
-
-let inline inlineStringConcat str1 str2 = str1 + str2
-
-let test6 () =
-    inlineStringConcat (inlineStringConcat (ss 1) (ss 2)) (ss 3) + ss 4
-
-let test7 () =
-    let x = 1
-    x.ToString() + x.ToString() + x.ToString()
-
-let test8 () =
-    let x = 1
-    x.ToString() + x.ToString() + x.ToString() + x.ToString()
-
-let test9 () =
-    let x = 1
-    x.ToString() + x.ToString() + x.ToString() + x.ToString() + x.ToString()
 """
 
+        let test1Source = """
+let test1 () =
+    ss 1 + ss 2 + ss 3
+"""
         let test1IL = """.method public static string  test1() cil managed
   {
     
@@ -103,6 +76,10 @@ let test9 () =
     IL_0080:  ret
   }"""
 
+        let test2Source = """
+let test2 () =
+    ss 1 + ss 2 + ss 3 + ss 4
+"""
         let test2IL = """.method public static string  test2() cil managed
   {
     
@@ -167,6 +144,10 @@ let test9 () =
     IL_00a9:  ret
   }"""
 
+        let test3Source = """
+let test3 () =
+    ss 1 + ss 2 + ss 3 + ss 4 + ss 5
+"""
         let test3IL = """.method public static string  test3() cil managed
   {
     
@@ -258,6 +239,10 @@ let test9 () =
     IL_00fb:  ret
   }"""
   
+        let test4Source = """
+let test4 () =
+    ss 5 + ss 6 + ss 7 + String.Concat(ss 8, ss 9) + ss 10 + "_50_" + "_60_" + String.Concat(ss 100, String.Concat(ss 101, ss 102), ss 103) + String.Concat([|"_104_";"_105_"|]) + ss 106
+"""
         let test4IL = """.method public static string  test4() cil managed
   {
     
@@ -453,6 +438,10 @@ let test9 () =
     IL_0246:  ret
   }"""
   
+        let test5Source = """
+let test5 () =
+    ss 5 + ss 6 + ss 7 + String.Concat(ss 8, ss 9) + ss 10 + "_50_" + "_60_" + String.Concat(ss 100, (let x = String.Concat(ss 101, ss 102) in Console.WriteLine(x);x), ss 103) + String.Concat([|"_104_";"_105_"|]) + ss 106
+"""
         let test5IL = """.method public static string  test5() cil managed
   {
     
@@ -652,6 +641,12 @@ let test9 () =
     IL_024b:  ret
   }"""
 
+        let test6Source = """
+let inline inlineStringConcat str1 str2 = str1 + str2
+
+let test6 () =
+    inlineStringConcat (inlineStringConcat (ss 1) (ss 2)) (ss 3) + ss 4
+"""
         let test6IL = """.method public static string  test6() cil managed
   {
     
@@ -716,6 +711,11 @@ let test9 () =
     IL_00a9:  ret
   }"""
 
+        let test7Source = """
+let test7 () =
+    let x = 1
+    x.ToString() + x.ToString() + x.ToString()
+"""
         let test7IL = """.method public static string  test7() cil managed
   {
     
@@ -738,6 +738,11 @@ let test9 () =
     IL_002e:  ret
   }"""
 
+        let test8Source = """
+let test8 () =
+    let x = 1
+    x.ToString() + x.ToString() + x.ToString() + x.ToString()
+"""
         let test8IL = """.method public static string  test8() cil managed
   {
     
@@ -764,12 +769,17 @@ let test9 () =
     IL_003b:  ret
   }"""
 
+        let test9Source = """
+let test9 () =
+    let x = 1
+    x.ToString() + x.ToString() + x.ToString() + x.ToString() + x.ToString()
+"""
         let test9IL = """.method public static string  test9() cil managed
   {
     
     .maxstack  6
     .locals init (int32 V_0)
-    IL_0000:  ldc.i4.1
+    IL_0000:  ldc.i4.
     IL_0001:  stloc.0
     IL_0002:  ldc.i4.5
     IL_0003:  newarr     [mscorlib]System.String
@@ -807,7 +817,21 @@ let test9 () =
     IL_0071:  ret
   }"""
 
-        ILChecker.check sourceCode
+        let sources = 
+            [
+                baseSource
+                test1Source
+                test2Source
+                test3Source
+                test4Source
+                test5Source
+                test6Source
+                test7Source
+                test8Source
+                test9Source
+            ]
+        let source = String.Join("", sources)
+        ILChecker.check source
             [
                 test1IL
                 test2IL
@@ -817,4 +841,5 @@ let test9 () =
                 test6IL
                 test7IL
                 test8IL
+                test9IL
             ]

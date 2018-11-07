@@ -5,14 +5,12 @@ namespace FSharp.Compiler.UnitTests
 open System
 open System.IO
 open System.Diagnostics
-open System.Text.RegularExpressions
 
 open NUnit.Framework
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 module ILChecker =
-    open System
 
     let checker = FSharpChecker.Create()
 
@@ -30,7 +28,7 @@ module ILChecker =
     let private requireFile nm = 
         if fileExists __SOURCE_DIRECTORY__ nm |> Option.isSome then nm else failwith (sprintf "couldn't find %s. Running 'build test' once might solve this issue" nm)
 
-    let exec exe args =
+    let private exec exe args =
         let startInfo = ProcessStartInfo(exe, String.concat " " args)
         startInfo.RedirectStandardError <- true
         startInfo.UseShellExecute <- false
@@ -38,16 +36,11 @@ module ILChecker =
         p.WaitForExit()
         p.StandardError.ReadToEnd(), p.ExitCode
 
-    let check sourceCode expectedILCode =
+    /// Compile the source and check to see if the expected IL exists.
+    /// The first line of each expected IL string is found first.
+    let check source expectedIL =
         let SCRIPT_ROOT = __SOURCE_DIRECTORY__
         let packagesDir = SCRIPT_ROOT ++ ".." ++ ".." ++ "packages"
-#if DEBUG
-        let configurationName = "debug"
-#else
-        let configurationName = "release"
-#endif
-        let fscBin = SCRIPT_ROOT ++ ".." ++ ".." ++ configurationName ++ "net40" ++ "bin"
-        let _fscExe = Path.Combine(fscBin, "fsc.exe")
         let Is64BitOperatingSystem = sizeof<nativeint> = 8
         let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
         let ildasmExe = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm.2.0.3") ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
@@ -63,7 +56,7 @@ module ILChecker =
             // ildasm requires coreclr.dll to run which has already been restored to the packages directory
             File.Copy(coreclrDll, Path.GetDirectoryName(ildasmExe) ++ "coreclr.dll", overwrite=true)
 
-            File.WriteAllText(tmpFs, sourceCode)
+            File.WriteAllText(tmpFs, source)
 
             let errors, exitCode = checker.Compile([| "fsc.exe"; "--optimize+"; "-o"; tmpDll; "-a"; tmpFs |]) |> Async.RunSynchronously
             let errors =
@@ -86,7 +79,7 @@ module ILChecker =
                             else
                                 me.Value), System.Text.RegularExpressions.RegexOptions.Singleline)
                 
-                expectedILCode
+                expectedIL
                 |> List.iter (fun (ilCode: string) ->
                     let expectedLines = ilCode.Split('\n')
                     let startIndex = textNoComments.IndexOf(expectedLines.[0])
@@ -102,13 +95,8 @@ module ILChecker =
                                 errors.Add(sprintf "\n==\nName: %s\n\nExpected:\t %s\nActual:\t\t %s\n==" actualLines.[0] expected actual)
 
                         if errors.Count > 0 then
-                            errorMsgOpt <- Some(String.concat "\n" errors)
-                            match errorMsgOpt with
-                            | Some(msg) -> errorMsgOpt <- Some(msg + "\n\n\n==EXPECTED==\n" + ilCode + "\n")
-                            | _ -> ()
-                            match errorMsgOpt with
-                            | Some(msg) -> errorMsgOpt <- Some(msg + "\n\n\n==ACTUAL==\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
-                            | _ -> ()
+                            let msg = String.concat "\n" errors + "\n\n\n==EXPECTED==\n" + ilCode + "\n"
+                            errorMsgOpt <- Some(msg + "\n\n\n==ACTUAL==\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
                 )
 
                 match errorMsgOpt with
