@@ -5,6 +5,7 @@ namespace FSharp.Compiler.UnitTests
 open System
 open System.IO
 open System.Diagnostics
+open System.Text.RegularExpressions
 
 open NUnit.Framework
 
@@ -93,19 +94,25 @@ module ILChecker =
                         errorMsgOpt <- Some("==EXPECTED CONTAINS==\n" + ilCode + "\n")
                     else
                         let errors = ResizeArray()
-                        let actualLines = textNoComments.Substring(startIndex, ilCode.Length).Split('\n')
+                        let actualLines = textNoComments.Substring(startIndex, textNoComments.Length - startIndex).Split('\n')
                         for i = 0 to expectedLines.Length - 1 do
-                            let expected = expectedLines.[i]
-                            let actual = actualLines.[i]
+                            let expected = expectedLines.[i].Trim()
+                            let actual = actualLines.[i].Trim()
                             if expected <> actual then
                                 errors.Add(sprintf "\n==\nName: %s\n\nExpected:\t %s\nActual:\t\t %s\n==" actualLines.[0] expected actual)
 
                         if errors.Count > 0 then
                             errorMsgOpt <- Some(String.concat "\n" errors)
+                            match errorMsgOpt with
+                            | Some(msg) -> errorMsgOpt <- Some(msg + "\n\n\n==EXPECTED==\n" + ilCode + "\n")
+                            | _ -> ()
+                            match errorMsgOpt with
+                            | Some(msg) -> errorMsgOpt <- Some(msg + "\n\n\n==ACTUAL==\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
+                            | _ -> ()
                 )
 
                 match errorMsgOpt with
-                | Some(msg) -> errorMsgOpt <- Some(msg + "\n\n\n==ACTUAL==\n" + textNoComments)
+                | Some(msg) -> errorMsgOpt <- Some(msg + "\n\n\n==ENTIRE ACTUAL==\n" + textNoComments)
                 | _ -> ()
             else
                 errorMsgOpt <- Some(errors)
