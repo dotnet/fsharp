@@ -44,7 +44,7 @@
     <Reference Include="System.Numerics" Condition="'$(TargetDotnetProfile)' == 'net40'" />
     <Reference Include="System.Core" />
     <Reference Include="System.ValueTuple">
-        <HintPath>..\..\..\packages\System.ValueTuple.$(SystemValueTuplePackageVersion)\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+      <HintPath>..\..\..\packages\System.ValueTuple.$(SystemValueTuplePackageVersion)\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -54,6 +54,8 @@
     <Compile Include="HashIfExpression.fs" />
     <Compile Include="ProductVersion.fs" />
     <Compile Include="EditDistance.fs" />
+    <Compile Include="ILHelpers.fs" />
+    <Compile Include="Language\StringConcat.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj">

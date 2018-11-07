@@ -6366,6 +6366,18 @@ let mkIsInst ty e m = mkAsmExpr ([ isinst ], [ty], [e], [ ty ], m)
 let mspec_Type_GetTypeFromHandle (g: TcGlobals) = IL.mkILNonGenericStaticMethSpecInTy(g.ilg.typ_Type, "GetTypeFromHandle", [g.iltyp_RuntimeTypeHandle], g.ilg.typ_Type)
 let mspec_String_Length (g: TcGlobals) = mkILNonGenericInstanceMethSpecInTy (g.ilg.typ_String, "get_Length", [], g.ilg.typ_Int32)
 
+let mspec_String_Concat2 (g: TcGlobals) = 
+    mkILNonGenericStaticMethSpecInTy (g.ilg.typ_String, "Concat", [ g.ilg.typ_String; g.ilg.typ_String ], g.ilg.typ_String)
+
+let mspec_String_Concat3 (g: TcGlobals) = 
+    mkILNonGenericStaticMethSpecInTy (g.ilg.typ_String, "Concat", [ g.ilg.typ_String; g.ilg.typ_String; g.ilg.typ_String ], g.ilg.typ_String)
+
+let mspec_String_Concat4 (g: TcGlobals) = 
+    mkILNonGenericStaticMethSpecInTy (g.ilg.typ_String, "Concat", [ g.ilg.typ_String; g.ilg.typ_String; g.ilg.typ_String; g.ilg.typ_String ], g.ilg.typ_String)
+
+let mspec_String_Concat_Array (g: TcGlobals) = 
+    mkILNonGenericStaticMethSpecInTy (g.ilg.typ_String, "Concat", [ mkILArr1DTy g.ilg.typ_String ], g.ilg.typ_String)
+
 let fspec_Missing_Value (g: TcGlobals) = IL.mkILFieldSpecInTy(g.iltyp_Missing, "Value", g.iltyp_Missing)
 
 let mkInitializeArrayMethSpec (g: TcGlobals) = 
@@ -6587,6 +6599,21 @@ let mkGetStringLength g m e =
     /// ILCall(useCallvirt, isProtected, valu, newobj, valUseFlags, isProp, noTailCall, mref, actualTypeInst, actualMethInst, retTy)
     Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, true, false, mspec.MethodRef, [], [], [g.int32_ty]), [], [e], m)
 
+let mkStaticCall_String_Concat2 g m arg1 arg2 =
+    let mspec = mspec_String_Concat2 g
+    Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [], [], [g.string_ty]), [], [arg1; arg2], m)
+
+let mkStaticCall_String_Concat3 g m arg1 arg2 arg3 =
+    let mspec = mspec_String_Concat3 g
+    Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [], [], [g.string_ty]), [], [arg1; arg2; arg3], m)
+
+let mkStaticCall_String_Concat4 g m arg1 arg2 arg3 arg4 =
+    let mspec = mspec_String_Concat4 g
+    Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [], [], [g.string_ty]), [], [arg1; arg2; arg3; arg4], m)
+
+let mkStaticCall_String_Concat_Array g m arg =
+    let mspec = mspec_String_Concat_Array g
+    Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [], [], [g.string_ty]), [], [arg], m)
 
 // Quotations can't contain any IL.
 // As a result, we aim to get rid of all IL generation in the typechecker and pattern match
