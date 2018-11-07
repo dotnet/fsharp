@@ -8,7 +8,11 @@ open System.Diagnostics
 
 open NUnit.Framework
 
+open Microsoft.FSharp.Compiler.SourceCodeServices
+
 module ILChecker =
+
+    let checker = FSharpChecker.Create()
 
     let private (++) a b = Path.Combine(a,b)
 
@@ -41,7 +45,7 @@ module ILChecker =
         let configurationName = "release"
 #endif
         let fscBin = SCRIPT_ROOT ++ ".." ++ ".." ++ configurationName ++ "net40" ++ "bin"
-        let fscExe = Path.Combine(fscBin, "fsc.exe")
+        let _fscExe = Path.Combine(fscBin, "fsc.exe")
         let Is64BitOperatingSystem = sizeof<nativeint> = 8
         let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
         let ildasmExe = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm.2.0.3") ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
@@ -59,7 +63,9 @@ module ILChecker =
 
             File.WriteAllText(tmpFs, sourceCode)
 
-            let errors, exitCode = exec fscExe [ "--optimize+"; "-o"; tmpDll; "-a"; tmpFs ]
+            let errors, exitCode = checker.Compile([| "fsc.exe"; "--optimize+"; "-o"; tmpDll; "-a"; tmpFs |]) |> Async.RunSynchronously
+            let errors =
+                String.concat "\n" (errors |> Array.map (fun x -> x.Message))
 
             if exitCode = 0 then
                 exec ildasmExe [ sprintf "%s /out=%s" tmpDll tmpIL ] |> ignore
