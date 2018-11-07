@@ -24,8 +24,8 @@
   </WizardExtension>
   <WizardData>
     <packages repository="extension" repositoryId="VisualFSharpTemplates">
-      <package id="System.ValueTuple" version="4.4.0" targetFramework="net40" skipAssemblyReferences="true" />
-      <package id="FSharp.Core" version="4.5.2" targetFramework="net40" skipAssemblyReferences="true" />
+      <package id="System.ValueTuple" version="4.4.0" />
+      <package id="FSharp.Core" version="4.5.2" />
      </packages>
   </WizardData>
 </VSTemplate>

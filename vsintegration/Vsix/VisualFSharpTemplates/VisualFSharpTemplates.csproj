@@ -6,7 +6,7 @@
     <AssemblyName>VisualFSharpTemplate</AssemblyName>
     <OutputType>Library</OutputType>
     <ExtensionInstallationFolder>Microsoft\FSharpTemplates</ExtensionInstallationFolder>
-    <DeployExtension>false</DeployExtension>
+    <DeployExtension>true</DeployExtension>
   </PropertyGroup>
 
   <ItemGroup>
