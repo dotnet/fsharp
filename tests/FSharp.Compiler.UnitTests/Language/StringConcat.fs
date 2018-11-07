@@ -779,7 +779,7 @@ let test9 () =
     
     .maxstack  6
     .locals init (int32 V_0)
-    IL_0000:  ldc.i4.
+    IL_0000:  ldc.i4.1
     IL_0001:  stloc.0
     IL_0002:  ldc.i4.5
     IL_0003:  newarr     [mscorlib]System.String
