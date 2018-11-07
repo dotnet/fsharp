@@ -39,6 +39,18 @@ let inline inlineStringConcat str1 str2 = str1 + str2
 
 let test6 () =
     inlineStringConcat (inlineStringConcat (ss 1) (ss 2)) (ss 3) + ss 4
+
+let test7 () =
+    let x = 1
+    x.ToString() + x.ToString() + x.ToString()
+
+let test8 () =
+    let x = 1
+    x.ToString() + x.ToString() + x.ToString() + x.ToString()
+
+let test9 () =
+    let x = 1
+    x.ToString() + x.ToString() + x.ToString() + x.ToString() + x.ToString()
 """
 
         let expectedILCode = """
@@ -717,6 +729,97 @@ let test6 () =
                                                                 string,
                                                                 string)
     IL_00a9:  ret
+  } 
+
+  .method public static string  test7() cil managed
+  {
+    
+    .maxstack  5
+    .locals init (int32 V_0)
+    IL_0000:  ldc.i4.1
+    IL_0001:  stloc.0
+    IL_0002:  ldloca.s   V_0
+    IL_0004:  constrained. [mscorlib]System.Int32
+    IL_000a:  callvirt   instance string [mscorlib]System.Object::ToString()
+    IL_000f:  ldloca.s   V_0
+    IL_0011:  constrained. [mscorlib]System.Int32
+    IL_0017:  callvirt   instance string [mscorlib]System.Object::ToString()
+    IL_001c:  ldloca.s   V_0
+    IL_001e:  constrained. [mscorlib]System.Int32
+    IL_0024:  callvirt   instance string [mscorlib]System.Object::ToString()
+    IL_0029:  call       string [mscorlib]System.String::Concat(string,
+                                                                string,
+                                                                string)
+    IL_002e:  ret
+  } 
+
+  .method public static string  test8() cil managed
+  {
+    
+    .maxstack  6
+    .locals init (int32 V_0)
+    IL_0000:  ldc.i4.1
+    IL_0001:  stloc.0
+    IL_0002:  ldloca.s   V_0
+    IL_0004:  constrained. [mscorlib]System.Int32
+    IL_000a:  callvirt   instance string [mscorlib]System.Object::ToString()
+    IL_000f:  ldloca.s   V_0
+    IL_0011:  constrained. [mscorlib]System.Int32
+    IL_0017:  callvirt   instance string [mscorlib]System.Object::ToString()
+    IL_001c:  ldloca.s   V_0
+    IL_001e:  constrained. [mscorlib]System.Int32
+    IL_0024:  callvirt   instance string [mscorlib]System.Object::ToString()
+    IL_0029:  ldloca.s   V_0
+    IL_002b:  constrained. [mscorlib]System.Int32
+    IL_0031:  callvirt   instance string [mscorlib]System.Object::ToString()
+    IL_0036:  call       string [mscorlib]System.String::Concat(string,
+                                                                string,
+                                                                string,
+                                                                string)
+    IL_003b:  ret
+  } 
+
+  .method public static string  test9() cil managed
+  {
+    
+    .maxstack  6
+    .locals init (int32 V_0)
+    IL_0000:  ldc.i4.1
+    IL_0001:  stloc.0
+    IL_0002:  ldc.i4.5
+    IL_0003:  newarr     [mscorlib]System.String
+    IL_0008:  dup
+    IL_0009:  ldc.i4.0
+    IL_000a:  ldloca.s   V_0
+    IL_000c:  constrained. [mscorlib]System.Int32
+    IL_0012:  callvirt   instance string [mscorlib]System.Object::ToString()
+    IL_0017:  stelem     [mscorlib]System.String
+    IL_001c:  dup
+    IL_001d:  ldc.i4.1
+    IL_001e:  ldloca.s   V_0
+    IL_0020:  constrained. [mscorlib]System.Int32
+    IL_0026:  callvirt   instance string [mscorlib]System.Object::ToString()
+    IL_002b:  stelem     [mscorlib]System.String
+    IL_0030:  dup
+    IL_0031:  ldc.i4.2
+    IL_0032:  ldloca.s   V_0
+    IL_0034:  constrained. [mscorlib]System.Int32
+    IL_003a:  callvirt   instance string [mscorlib]System.Object::ToString()
+    IL_003f:  stelem     [mscorlib]System.String
+    IL_0044:  dup
+    IL_0045:  ldc.i4.3
+    IL_0046:  ldloca.s   V_0
+    IL_0048:  constrained. [mscorlib]System.Int32
+    IL_004e:  callvirt   instance string [mscorlib]System.Object::ToString()
+    IL_0053:  stelem     [mscorlib]System.String
+    IL_0058:  dup
+    IL_0059:  ldc.i4.4
+    IL_005a:  ldloca.s   V_0
+    IL_005c:  constrained. [mscorlib]System.Int32
+    IL_0062:  callvirt   instance string [mscorlib]System.Object::ToString()
+    IL_0067:  stelem     [mscorlib]System.String
+    IL_006c:  call       string [mscorlib]System.String::Concat(string[])
+    IL_0071:  ret
   }"""
 
         ILChecker.checkContains sourceCode [ expectedILCode ]
