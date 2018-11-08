@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pl" original="../VSPackage.resx">
     <body>
@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="Operator">
         <source>Operator</source>
-        <target state="translated">Operator</target>
+        <target state="translated">operator</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpFile">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="Identifier">
         <source>Identifier</source>
-        <target state="translated">Identyfikator</target>
+        <target state="translated">identyfikator</target>
         <note />
       </trans-unit>
       <trans-unit id="Keyword">

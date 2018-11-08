@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ru" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -74,12 +74,12 @@
       </trans-unit>
       <trans-unit id="PPG_PreBuildCommandLineTitle">
         <source>Pre-build Event Command Line</source>
-        <target state="translated">Командная строка событий перед сборкой</target>
+        <target state="translated">Командная строка события перед сборкой</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_PostBuildCommandLineTitle">
         <source>Post-build Event Command Line</source>
-        <target state="translated">Командная строка событий после сборки</target>
+        <target state="translated">Командная строка события после сборки</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_OutputPathNotSecure">
@@ -173,12 +173,12 @@ Click OK to ignore and continue. Click CANCEL to choose a different output path.
       </trans-unit>
       <trans-unit id="PPG_SelectOutputPathTitle">
         <source>Select Output Path</source>
-        <target state="translated">Выбор выходного пути</target>
+        <target state="translated">Выбор пути для вывода</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SelectReferencePath">
         <source>Select Reference Path</source>
-        <target state="translated">Выбор пути для ссылок</target>
+        <target state="translated">Выберите путь для ссылки</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_AddWin32ResourceFilter">
@@ -235,7 +235,7 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_BadWildcard">
         <source>A wildcard ("*") is not allowed in this field.</source>
-        <target state="translated">Знак подстановки ("*") не допускается в этом поле.</target>
+        <target state="translated">Подстановочный символ ("*") недопустим в этом поле.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_VersionOutOfRange_2Args">
@@ -355,7 +355,7 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_None">
         <source>None</source>
-        <target state="translated">Нет</target>
+        <target state="translated">NONE</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Warning">
@@ -390,7 +390,7 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_Compile_42104">
         <source>Use of variable prior to assignment</source>
-        <target state="translated">Использование переменной до присваивания</target>
+        <target state="translated">Использование переменной до инициализации</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_420XX">
@@ -709,12 +709,12 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_Signing_IssuedTo">
         <source>Issued To</source>
-        <target state="translated">Получатель сертификата</target>
+        <target state="translated">Выдан (кому)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_IssuedBy">
         <source>Issued By</source>
-        <target state="translated">Кем выдан</target>
+        <target state="translated">Выдан (кем)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_Purpose">
@@ -779,7 +779,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_Signing_OpenExistingKeyPasswordTitle">
         <source>Enter password to open file</source>
-        <target state="translated">Введите пароль, чтобы открыть файл</target>
+        <target state="translated">Введите пароль для открытия файла</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_OpenExistingKeyPasswordPrompt">
@@ -875,7 +875,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_UrlBehavior_Static">
         <source>Static</source>
-        <target state="translated">Статическая</target>
+        <target state="translated">Static</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_UrlBehavior_Dynamic">
@@ -960,7 +960,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PropPage_UnusedReferenceRemoveButton">
         <source>&amp;Remove</source>
-        <target state="translated">Уда&amp;лить</target>
+        <target state="translated">&amp;Удалить</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_UnusedReferenceNoUnusedReferences">
@@ -1217,7 +1217,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="DFX_Error_Default_Caption">
         <source>Microsoft Visual Studio</source>
-        <target state="translated">Microsoft Visual Studio</target>
+        <target state="translated">Службы Microsoft Visual Studio</target>
         <note>Error reporting</note>
       </trans-unit>
       <trans-unit id="OptionPage_Editor_InvalidTabSize">
@@ -1813,7 +1813,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_Size">
         <source>Size</source>
-        <target state="translated">Размер</target>
+        <target state="translated">Size</target>
         <note>Columns for the "Details" view of the resource editor</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_Comment">
@@ -1828,7 +1828,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_GraphicSizeFormat">
         <source>{0} x {1}</source>
-        <target state="translated">{0} x {1}</target>
+        <target state="needs-review-translation">{0} x {1}</target>
         <note>Format string for showing a graphic's size
 
 #  {0} = width (as an integer)
@@ -1879,12 +1879,12 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add">
         <source>&amp;Add</source>
-        <target state="translated">Д&amp;обавить</target>
+        <target state="translated">&amp; Добавить</target>
         <note>Add, Delete and Views button text in the main ToolStrip</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Remove">
         <source>&amp;Remove</source>
-        <target state="translated">Уда&amp;лить</target>
+        <target state="translated">&amp;Удалить</target>
         <note>Add, Delete and Views button text in the main ToolStrip</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Views">
@@ -2344,19 +2344,9 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">Приложение</target>
         <note />
       </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebApplicationScope">
-        <source>Application (Web)</source>
-        <target state="translated">Приложение (веб)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="SD_ComboBoxItem_UserScope">
         <source>User</source>
         <target state="translated">Пользователь</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebUserScope">
-        <source>User (Web)</source>
-        <target state="translated">Пользователь (веб)</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewNameColumnHeaderText">
@@ -2830,22 +2820,22 @@ Do you want to update the value in the .settings file?</source>
       </trans-unit>
       <trans-unit id="PPG_Services_Seconds">
         <source>seconds</source>
-        <target state="translated">с</target>
+        <target state="translated">Секунды</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Minutes">
         <source>minutes</source>
-        <target state="translated">мин</target>
+        <target state="translated">Минуты</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Hours">
         <source>hours</source>
-        <target state="translated">ч</target>
+        <target state="translated">Часы</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Days">
         <source>days</source>
-        <target state="translated">дн.</target>
+        <target state="translated">Дни</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">

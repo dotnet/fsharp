@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="es" original="../DebugPropPage.resx">
     <body>
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="CommandLineArgsLabel.Text">
         <source>Comma&amp;nd line arguments:</source>
-        <target state="translated">&amp;Argumentos de la línea de comandos:</target>
+        <target state="translated">Argume&amp;ntos de la línea de comandos:</target>
         <note />
       </trans-unit>
       <trans-unit id="WorkingDirLabel.Text">
@@ -74,7 +74,7 @@
       </trans-unit>
       <trans-unit id="EnableSQLServerDebugging.Text">
         <source>Enable SQ&amp;L Server debugging</source>
-        <target state="translated">&amp;Habilitar depuración de SQL Server</target>
+        <target state="translated">Habilitar depuración de SQ&amp;L Server</target>
         <note />
       </trans-unit>
       <trans-unit id="UseVSHostingProcess.Text">
