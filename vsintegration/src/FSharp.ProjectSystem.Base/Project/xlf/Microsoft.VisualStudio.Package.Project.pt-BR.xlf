@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pt-BR" original="../Microsoft.VisualStudio.Package.Project.resx">
     <body>
@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="BuildAction">
         <source>Build Action</source>
-        <target state="translated">Ação de Compilação</target>
+        <target state="translated">Ação de compilação</target>
         <note>Project Build Property Name</note>
       </trans-unit>
       <trans-unit id="BuildActionDescription">
@@ -89,7 +89,7 @@
       </trans-unit>
       <trans-unit id="CopyToLocalDescription">
         <source>Indicates whether the reference will be copied to the output directory.</source>
-        <target state="translated">Indica se a referência será copiada no diretório de saída.</target>
+        <target state="translated">Indica se a referência será copiada para o diretório de saída.</target>
         <note />
       </trans-unit>
       <trans-unit id="Detailed">
@@ -119,7 +119,7 @@
       </trans-unit>
       <trans-unit id="Error">
         <source>error</source>
-        <target state="translated">erro</target>
+        <target state="translated">Erro</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidFileName">
@@ -222,7 +222,7 @@
       </trans-unit>
       <trans-unit id="FolderNameDescription">
         <source>Name of this folder</source>
-        <target state="translated">Nome desta pasta</target>
+        <target state="translated">O nome desta pasta</target>
         <note />
       </trans-unit>
       <trans-unit id="FullPath">
@@ -252,7 +252,7 @@
       </trans-unit>
       <trans-unit id="Minimal">
         <source>Minimal</source>
-        <target state="translated">Mínimo</target>
+        <target state="translated">mínimo</target>
         <note />
       </trans-unit>
       <trans-unit id="Misc">
@@ -262,12 +262,12 @@
       </trans-unit>
       <trans-unit id="None">
         <source>None</source>
-        <target state="translated">Nenhum</target>
+        <target state="translated">NENHUM</target>
         <note />
       </trans-unit>
       <trans-unit id="Normal">
         <source>Normal</source>
-        <target state="translated">Normal</target>
+        <target state="translated">NORMAL</target>
         <note />
       </trans-unit>
       <trans-unit id="PasteFailed">
@@ -287,7 +287,7 @@
       </trans-unit>
       <trans-unit id="ProjectContainsCircularReferences">
         <source>A reference to library '{0}' cannot be added. Adding this project as a reference would cause a circular dependency. </source>
-        <target state="translated">Não é possível adicionar uma referência à biblioteca '{0}'. A adição deste projeto como uma referência causaria uma dependência circular. </target>
+        <target state="translated">Uma referência à biblioteca '{0}' não pode ser adicionada. A inserção deste projeto como uma referência pode causar uma dependência circular. </target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectFile">
@@ -387,7 +387,7 @@
       </trans-unit>
       <trans-unit id="Warning">
         <source>warning</source>
-        <target state="translated">aviso</target>
+        <target state="translated">Aviso</target>
         <note />
       </trans-unit>
       <trans-unit id="WinExe">
@@ -482,7 +482,7 @@
       </trans-unit>
       <trans-unit id="CustomTool">
         <source>Custom Tool</source>
-        <target state="translated">Ferramenta Personalizada</target>
+        <target state="translated">Ferramenta personalizada</target>
         <note />
       </trans-unit>
       <trans-unit id="CustomToolDescription">
@@ -587,7 +587,7 @@
       </trans-unit>
       <trans-unit id="ErrorReferenceCouldNotBeAdded">
         <source>A reference to {0} could not be added. Please make sure that the file is accessible, and that it is a valid assembly or COM component.</source>
-        <target state="translated">Não foi possível adicionar uma referência ao {0}. Certifique-se de que o arquivo está acessível e se ele é um assembly ou um componente COM válido.</target>
+        <target state="translated">Não foi possível adicionar uma referência a {0}. Verifique se esse arquivo está acessível e se é um assembly ou componente COM válido.</target>
         <note />
       </trans-unit>
       <trans-unit id="DetailsImport">
@@ -792,7 +792,7 @@
       </trans-unit>
       <trans-unit id="Path">
         <source>Path</source>
-        <target state="translated">Caminho</target>
+        <target state="translated">PATH</target>
         <note />
       </trans-unit>
       <trans-unit id="PathDescription">

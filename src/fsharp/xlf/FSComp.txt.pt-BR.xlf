@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pt-BR" original="../FSComp.resx">
     <body>
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="needs-review-translation">Todos os branches de uma expressão correspondente ao padrão precisam retornar valores do mesmo tipo. O primeiro branch retornou um valor do tipo '{0}', mas este branch retornou um valor do tipo '{1}'.</target>
+        <target state="needs-review-translation">Todos as ramificações de uma expressão de correspondência de padrão devem retornar valores do mesmo tipo. A primeira ramificação retornou um valor de tipo '{0}', mas este ramo retornou um valor de tipo '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -1949,7 +1949,7 @@
       </trans-unit>
       <trans-unit id="parsSyntaxError">
         <source>Syntax error</source>
-        <target state="translated">Erro de sintaxe</target>
+        <target state="translated">erro de sintaxe</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAugmentationsIllegalOnDelegateType">
@@ -4069,7 +4069,7 @@
       </trans-unit>
       <trans-unit id="optsCopyright">
         <source>Copyright (c) Microsoft Corporation. All Rights Reserved.</source>
-        <target state="translated">Copyright (c) Microsoft Corporation. Todos direitos reservados.</target>
+        <target state="translated">Copyright (C) Microsoft Corporation. Todos os direitos reservados.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsCopyrightCommunity">
@@ -4519,7 +4519,7 @@
       </trans-unit>
       <trans-unit id="typeInfoField">
         <source>field</source>
-        <target state="translated">campo</target>
+        <target state="translated">Campo</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoEvent">
@@ -4529,12 +4529,12 @@
       </trans-unit>
       <trans-unit id="typeInfoProperty">
         <source>property</source>
-        <target state="translated">propriedade</target>
+        <target state="translated">Propriedade.</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoExtension">
         <source>extension</source>
-        <target state="translated">extensão</target>
+        <target state="translated">Extensão</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoCustomOperation">
@@ -4544,7 +4544,7 @@
       </trans-unit>
       <trans-unit id="typeInfoArgument">
         <source>argument</source>
-        <target state="translated">argumento</target>
+        <target state="translated">Argumento</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoPatternVariable">
@@ -6504,7 +6504,7 @@
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
-        <target state="translated">O CallerMemberNameAttribute aplicado ao parâmetro '{0}' não terá nenhum efeito. Ele será substituído pelo CallerFilePathAttribute.</target>
+        <target state="translated">O CallerMemberNameAttribute aplicado ao parâmetro "{0}" não terá efeito. Ele é substituído pelo CallerFilePathAttribute.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
@@ -7057,9 +7057,39 @@
         <target state="translated">Não é possível obter o endereço do valor retornado da expressão. Atribua o valor retornado a um valor associado a let antes de obter o endereço.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
+        <source>Byref types are not allowed to have optional type extensions.</source>
+        <target state="translated">Tipos de ByRef não podem ter extensões de tipo opcionais.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkNoReturnOfLimitedSpan">
         <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
         <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInvalidFunctionParameterType">
+        <source>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</source>
+        <target state="translated">O parâmetro '{0}' tem um tipo inválido '{1}'. Isso não é permitido pelas regras do IL comum.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInvalidFunctionReturnType">
+        <source>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</source>
+        <target state="translated">A função ou método tem um tipo de retorno inválido '{0}'. Isso não é permitido pelas regras do IL Comum.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
+        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
+        <target state="translated">Não é possível chamar o método de extensão de byref '{0}. O primeiro parâmetro requer que o valor seja mutável ou não seja byref somente leitura.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotPartiallyApplyExtensionMethodForByref">
+        <source>Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</source>
+        <target state="translated">Não é possível aplicar parcialmente o método de extensão '{0}' porque o primeiro parâmetro é um tipo de byref.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotCallExtensionMemberInrefToByref">
+        <source>Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</source>
+        <target state="new">Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotInheritAttribute">

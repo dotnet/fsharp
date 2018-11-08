@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="tr" original="../FSComp.resx">
     <body>
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="needs-review-translation">Bir desen eşleştirme ifadesinin tüm dalları aynı türdeki değerleri döndürmelidir. Birinci dal '{0}' türünde bir değer döndürdü ancak bu dal '{1}' türünde bir değer döndürdü.</target>
+        <target state="needs-review-translation">Desen eşleştirme ifadesinin tüm dalları aynı türde değerler döndürmelidir. İlk dal '{0}' türünde değer döndürdü ancak bu dal '{1}' türünde değer döndürdü.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -1949,7 +1949,7 @@
       </trans-unit>
       <trans-unit id="parsSyntaxError">
         <source>Syntax error</source>
-        <target state="translated">Sözdizimi hatası</target>
+        <target state="translated">sözdizimi hatası</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAugmentationsIllegalOnDelegateType">
@@ -4069,7 +4069,7 @@
       </trans-unit>
       <trans-unit id="optsCopyright">
         <source>Copyright (c) Microsoft Corporation. All Rights Reserved.</source>
-        <target state="translated">Telif hakkı (c) Microsoft Corporation. Tüm hakları saklıdır.</target>
+        <target state="translated">Telif hakkı (C) Microsoft Corporation. Tüm hakları saklıdır.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsCopyrightCommunity">
@@ -4544,7 +4544,7 @@
       </trans-unit>
       <trans-unit id="typeInfoArgument">
         <source>argument</source>
-        <target state="translated">bağımsız değişken</target>
+        <target state="translated">Bağımsız değişken</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoPatternVariable">
@@ -4569,7 +4569,7 @@
       </trans-unit>
       <trans-unit id="typeInfoFromFirst">
         <source>from {0}</source>
-        <target state="translated">{0} dalından</target>
+        <target state="translated">Şuradan: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoFromNext">
@@ -6504,7 +6504,7 @@
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
-        <target state="translated">'{0}' parametresine uygulanan CallerMemberNameAttribute etkisiz olacak. Bu işlem CallerFilePathAttribute tarafından geçersiz kılınmış.</target>
+        <target state="translated">{0}' parametresi için geçerli olan CallerMemberNameAttribute öğesinin hiçbir etkisi olmaz. CallerFilePathAttribute tarafından geçersiz kılındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
@@ -6924,7 +6924,7 @@
       </trans-unit>
       <trans-unit id="descriptionWordIs">
         <source>is</source>
-        <target state="translated">:</target>
+        <target state="translated">olan</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunction">
@@ -7057,9 +7057,39 @@
         <target state="translated">İfadeden döndürülen değerin adresi alınamaz. Adresi almadan önce, döndürülen değeri let ile bağlanmış bir değere atayın.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
+        <source>Byref types are not allowed to have optional type extensions.</source>
+        <target state="translated">Byref türlerinin isteğe bağlı tür genişletmelerine sahip olmasına izin verilmez.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkNoReturnOfLimitedSpan">
         <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
         <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInvalidFunctionParameterType">
+        <source>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</source>
+        <target state="translated">'{0}' parametresi geçersiz '{1}' türünde. Ortak IL kuralları uyarınca buna izin verilmez.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInvalidFunctionReturnType">
+        <source>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</source>
+        <target state="translated">İşlev veya metot geçersiz '{0}' dönüş türüne sahip. Ortak IL kuralları uyarınca buna izin verilmez.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
+        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
+        <target state="translated">'{0}' byref genişletme metodu çağrılamıyor. İlk parametre, değerin değişebilir olmasını veya salt okunur olmayan bir byref türünde olmasını gerektiriyor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotPartiallyApplyExtensionMethodForByref">
+        <source>Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</source>
+        <target state="translated">İlk parametre bir byref türü olduğundan '{0}' genişletme metodunu kısmi olarak uygulayamazsınız.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotCallExtensionMemberInrefToByref">
+        <source>Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</source>
+        <target state="new">Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotInheritAttribute">

@@ -192,29 +192,27 @@ module CoreTests =
         end
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
-            fsi cfg "" ["test.fsx"]
-
-            testOkFile.CheckExists()
-        end
-
-        begin
-
-            use testOkFile = fileguard cfg "test.ok"
-
-            fsiAnyCpu cfg "" ["test.fsx"]
-
-            testOkFile.CheckExists()
-        end
-
-        begin
             use testOkFile = fileguard cfg "test2.ok"
 
             fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
 
-            singleNegTest cfg "test2"
+            singleNegTest { cfg with fsc_flags = sprintf "%s --warnaserror-" cfg.fsc_flags } "test2"
 
             exec cfg ("." ++ "test2.exe") ""
+
+            testOkFile.CheckExists()
+        end
+
+        begin
+            csc cfg """/langversion:7.2 /nologo /target:library /out:cslib3.dll""" ["cslib3.cs"]
+
+            use testOkFile = fileguard cfg "test3.ok"
+
+            fsc cfg "%s -r:cslib3.dll -o:test3.exe -g" cfg.fsc_flags ["test3.fsx"]
+
+            singleNegTest { cfg with fsc_flags = sprintf "%s -r:cslib3.dll" cfg.fsc_flags } "test3"
+
+            exec cfg ("." ++ "test3.exe") ""
 
             testOkFile.CheckExists()
         end
@@ -483,8 +481,6 @@ module CoreTests =
         let cfg = testConfig "core/fsfromfsviacs"
 
         fsc cfg "%s -a -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
-
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
         peverify cfg "lib.dll"
 
@@ -793,8 +789,6 @@ module CoreTests =
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
         fsc cfg "%s -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
-
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
         peverify cfg "test.exe"
 
@@ -1933,7 +1927,6 @@ module TypecheckTests =
     let ``sigs pos27`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos27.exe" cfg.fsc_flags ["pos27.fs"]
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
         peverify cfg "pos27.exe"
 
     [<Test>]
@@ -2439,8 +2432,11 @@ module TypecheckTests =
     [<Test>]
     let ``type check neg109`` () = singleNegTest (testConfig "typecheck/sigs") "neg109"
 
-    [<Test>] 
+    [<Test>]
     let ``type check neg110`` () = singleNegTest (testConfig "typecheck/sigs") "neg110"
+
+    [<Test>]
+    let ``type check neg111`` () = singleNegTest (testConfig "typecheck/sigs") "neg111"
 
     [<Test>] 
     let ``type check neg113`` () = singleNegTest (testConfig "typecheck/sigs") "neg113"

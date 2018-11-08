@@ -1,10 +1,10 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="tr" original="../BuildPropPage.resx">
     <body>
       <trans-unit id="lblConditionalCompilationSymbols.Text">
         <source>Conditional compilation s&amp;ymbols:</source>
-        <target state="translated">&amp;Koşullu derleme simgeleri:</target>
+        <target state="translated">Koşullu derleme s&amp;embolleri:</target>
         <note />
       </trans-unit>
       <trans-unit id="chkPrefer32Bit.Text">
@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="chkXMLDocumentationFile.Text">
         <source>&amp;XML documentation file:</source>
-        <target state="translated">&amp;XML belgesi dosyası:</target>
+        <target state="translated">&amp;XML belge dosyası:</target>
         <note />
       </trans-unit>
       <trans-unit id="btnOutputPathBrowse.Text">
@@ -104,7 +104,7 @@
       </trans-unit>
       <trans-unit id="chkOptimizeCode.Text">
         <source>Optimi&amp;ze code</source>
-        <target state="translated">&amp;Kodu iyileştir</target>
+        <target state="translated">Kodu iyileş&amp;tir</target>
         <note />
       </trans-unit>
       <trans-unit id="chkTailcalls.Text">
@@ -129,7 +129,7 @@
       </trans-unit>
       <trans-unit id="chkDefineDebug.Text">
         <source>Define DEB&amp;UG constant</source>
-        <target state="translated">HATA &amp;AYIKLAMA sabiti tanımla</target>
+        <target state="translated">DEB&amp;UG sabitini tanımla</target>
         <note />
       </trans-unit>
     </body>

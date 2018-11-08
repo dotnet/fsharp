@@ -69,7 +69,7 @@
       </trans-unit>
       <trans-unit id="Show_completion_list_after_a_character_is_deleted">
         <source>Show completion list after a character is _deleted</source>
-        <target state="translated">删除字符后显示完成列表</target>
+        <target state="translated">删除字符后显示完成列表(_D)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_completion_list_after_a_character_is_typed">

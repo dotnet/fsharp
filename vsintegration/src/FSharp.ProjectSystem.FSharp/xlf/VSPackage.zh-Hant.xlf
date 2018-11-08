@@ -299,7 +299,7 @@
       </trans-unit>
       <trans-unit id="5033">
         <source>A blank XML file</source>
-        <target state="translated">空白 XML 檔</target>
+        <target state="translated">空的 XML 檔</target>
         <note />
       </trans-unit>
       <trans-unit id="5034">
@@ -409,7 +409,7 @@
       </trans-unit>
       <trans-unit id="6001">
         <source>F# Interactive</source>
-        <target state="translated">F# 互動</target>
+        <target state="translated">F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="6002">
@@ -433,13 +433,13 @@
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Microsoft Visual F# Tools 10.2 for F# 4.5</target>
+        <source>Microsoft Visual F# Tools 10.3 for F# 4.5</source>
+        <target state="translated">Microsoft Visual F# Tools 10.3 for F# 4.5</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Microsoft Visual F# Tools 10.2 for F# 4.5</target>
+        <source>Microsoft Visual F# Tools 10.3 for F# 4.5</source>
+        <target state="translated">Microsoft Visual F# Tools 10.3 for F# 4.5</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,13 +453,13 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Visual F# Tools 10.2 for F# 4.5</target>
+        <source>Visual F# Tools 10.3 for F# 4.5</source>
+        <target state="needs-review-translation">Visual F# Tools 10.2 for F# 4.5</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">
         <source>F# Interactive</source>
-        <target state="translated">F# 互動</target>
+        <target state="translated">F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductRegistryName">
@@ -509,7 +509,7 @@
       </trans-unit>
       <trans-unit id="6005">
         <source>Change path and command line arguments passed to the F# Interactive</source>
-        <target state="translated">變更傳遞到 F# 互動的路徑和命令列引數</target>
+        <target state="translated">變更傳遞到 F# Interactive 的路徑和命令列引數</target>
         <note />
       </trans-unit>
       <trans-unit id="6006">

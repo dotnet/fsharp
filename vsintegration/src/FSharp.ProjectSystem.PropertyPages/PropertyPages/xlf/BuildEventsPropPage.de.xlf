@@ -1,10 +1,10 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="de" original="../BuildEventsPropPage.resx">
     <body>
       <trans-unit id="lblPreBuildEventCommandLine.Text">
         <source>P&amp;re-build event command line:</source>
-        <target state="translated">Befehlszeile für P&amp;räbuildereignis</target>
+        <target state="translated">Befehlszeile für P&amp;räbuildereignis:</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPreBuildEventCommandLine.AccessibleName">
@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items2">
         <source>When the build updates the project output</source>
-        <target state="translated">Bei der Aktualisierung der Projektausgabe während der Erstellung</target>
+        <target state="translated">Wenn der Build die Projektausgabe aktualisiert</target>
         <note />
       </trans-unit>
     </body>
