@@ -148,6 +148,8 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             val rightBracket : TaggedText
             val leftBrace: TaggedText
             val rightBrace : TaggedText
+            val leftBraceBar: TaggedText
+            val rightBraceBar : TaggedText
             val equals : TaggedText
             val arrow : TaggedText
             val questionMark : TaggedText

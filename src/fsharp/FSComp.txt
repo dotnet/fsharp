@@ -442,6 +442,7 @@ parsParenFormIsForML,"In F# code you may use 'expr.[expr]'. A type annotation ma
 602,parsUnmatched,"Unmatched '%s'"
 603,parsUnmatchedBracketBar,"Unmatched '[|'"
 604,parsUnmatchedBrace,"Unmatched '{{'"
+605,parsUnmatchedBraceBar,"Unmatched '{{|'"
 609,parsFieldBinding,"Field bindings must have the form 'id = expr;'"
 610,parsMemberIllegalInObjectImplementation,"This member is not permitted in an object implementation"
 611,parsMissingFunctionBody,"Missing function body"
@@ -926,6 +927,7 @@ typeInfoProperty,"property"
 typeInfoExtension,"extension"
 typeInfoCustomOperation,"custom operation"
 typeInfoArgument,"argument"
+typeInfoAnonRecdField,"anonymous record field"
 typeInfoPatternVariable,"patvar"
 typeInfoNamespace,"namespace"
 typeInfoModule,"module"
@@ -1345,6 +1347,8 @@ tcGlobalsSystemTypeNotFound,"The system type '%s' was required but no referenced
 3213,typrelMemberHasMultiplePossibleDispatchSlots,"The member '%s' matches multiple overloads of the same method.\nPlease restrict it to one of the following:%s."
 3214,methodIsNotStatic,"Method or object constructor '%s' is not static"
 3215,parsUnexpectedSymbolEqualsInsteadOfIn,"Unexpected symbol '=' in expression. Did you intend to use 'for x in y .. z do' instead?"
+tcAnonRecdCcuMismatch,"Two anonymous record types are from different assemblies '%s' and '%s'"
+tcAnonRecdFieldNameMismatch,"Two anonymous record types have mismatched sets of field names '%s' and '%s'"
 keywordDescriptionAbstract,"Indicates a method that either has no implementation in the type in which it is declared or that is virtual and has a default implementation."
 keyworkDescriptionAnd,"Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters."
 keywordDescriptionAs,"Used to give the current class object an object name. Also used to give a name to a whole pattern within a pattern match."
@@ -1448,8 +1452,13 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3236,chkNoSpanLikeValueFromExpression,"A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope."
 3237,tastCantTakeAddressOfExpression,"Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address."
 3242,tcTypeDoesNotInheritAttribute,"This type does not inherit Attribute, it will not work correctly with other .NET languages."
-3243,tcTypeDoesNotHaveAnyNull,"The type '%s' does not support a nullness qualitification."
-#3244 reserved for ConstraintSolverNullnessWarningWithTypes
-#3245 reserved for ConstraintSolverNullnessWarningWithType
-#3246 reserved for ConstraintSolverNonNullnessWarningWithType
 3247,tcNullnessCheckingNotEnabled,"The /checknulls language feature is not enabled"
+3243,parsInvalidAnonRecdExpr,"Invalid anonymous record expression"
+3244,parsInvalidAnonRecdType,"Invalid anonymous record type"
+3245,tcCopyAndUpdateNeedsRecordType,"The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record"
+3260,tcTypeDoesNotHaveAnyNull,"The type '%s' does not support a nullness qualitification."
+#3261 reserved for ConstraintSolverNullnessWarningEquivWithTypes
+#3262 reserved for ConstraintSolverNullnessWarningWithTypes
+#3263 reserved for ConstraintSolverNullnessWarningWithType
+#3264 reserved for ConstraintSolverNonNullnessWarningWithType
+3265,tcLangFeatureNotEnabled50,"This language feature is not enabled, use /langversion:5.0 or greater to enable it"

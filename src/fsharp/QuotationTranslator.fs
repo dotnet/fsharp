@@ -425,6 +425,20 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let argsR = ConvExprs cenv env args
             QP.mkRecdMk(rgtypR,tyargsR,argsR)
 
+        | TOp.AnonRecd anonInfo, _, _  ->  
+            let tref = anonInfo.ILTypeRef
+            let rgtypR = ConvILTypeRef cenv tref
+            let tyargsR = ConvTypes cenv env m tyargs
+            let argsR = ConvExprs cenv env args
+            QP.mkRecdMk(rgtypR,tyargsR,argsR)
+
+        | TOp.AnonRecdGet (anonInfo, n), _, _  ->  
+            let tref = anonInfo.ILTypeRef
+            let rgtypR = ConvILTypeRef cenv tref
+            let tyargsR = ConvTypes cenv env m tyargs
+            let argsR = ConvExprs cenv env args
+            QP.mkRecdGet((rgtypR,anonInfo.SortedNames.[n]),tyargsR,argsR)
+
         | TOp.UnionCaseFieldGet (ucref,n),tyargs,[e] -> 
             ConvUnionFieldGet cenv env m ucref n tyargs e
 
@@ -811,10 +825,16 @@ and ConvType cenv env m ty =
 #endif
         QP.mkILNamedTy(ConvTyconRef cenv tcref m, ConvTypes cenv env m tyargs)
 
-    | TType_fun(a,b,_nullness) -> QP.mkFunTy(ConvType cenv env m a,ConvType cenv env m b)
-    | TType_tuple(tupInfo,l)  -> ConvType cenv env m (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) l)
+    | TType_fun(a,b, _nullness) -> 
+        QP.mkFunTy(ConvType cenv env m a,ConvType cenv env m b)
+    | TType_tuple(tupInfo, l)  -> 
+        ConvType cenv env m (mkCompiledTupleTy cenv.g (evalTupInfoIsStruct tupInfo) l)
+    | TType_anon(anonInfo,tinst) -> 
+        let tref = anonInfo.ILTypeRef
+        let tinstR = ConvTypes cenv env m tinst
+        QP.mkILNamedTy(ConvILTypeRefUnadjusted cenv m tref, tinstR)
     | TType_var(tp, _nullness) -> QP.mkVarTy(ConvTyparRef cenv env m tp)
-    | TType_forall(_spec,_ty) -> wfail(Error(FSComp.SR.crefNoInnerGenericsInQuotations(),m))
+    | TType_forall(_spec,_ty)   -> wfail(Error(FSComp.SR.crefNoInnerGenericsInQuotations(),m))
     | _ -> wfail(Error (FSComp.SR.crefQuotationsCantContainThisType(),m))
 
 and ConvTypes cenv env m tys =

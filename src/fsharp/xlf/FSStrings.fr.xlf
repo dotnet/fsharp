@@ -1617,6 +1617,21 @@
         <target state="translated">erreur interne : {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACE.BAR">
+        <source>symbol '{|'</source>
+        <target state="new">symbol '{|'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR.RBRACE">
+        <source>symbol '|}'</source>
+        <target state="new">symbol '|}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningEquivWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability '{2}' and '{3}'.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability '{2}' and '{3}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConstraintSolverNullnessWarningWithTypes">
         <source>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability '{2}' and '{3}'.</source>
         <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability '{2}' and '{3}'.</target>
@@ -1625,11 +1640,6 @@
       <trans-unit id="ConstraintSolverNullnessWarningWithType">
         <source>Nullness warning: The type '{0}' does not support nullness.</source>
         <target state="new">Nullness warning: The type '{0}' does not support nullness.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ConstraintSolverNullnessWarningEquivWithTypes">
-        <source>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability '{2}' and '{3}'.</source>
-        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability '{2}' and '{3}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="ConstraintSolverNonNullnessWarningWithType">

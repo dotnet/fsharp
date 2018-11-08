@@ -169,6 +169,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                       emitDebugInfoInQuotations: bool, noDebugData: bool) =
       
   let v_langFeatureNullness = (langVersion >= 5.0)
+  let v_langFeatureAnonRecds = (langVersion >= 5.0)
 
   let v_knownWithoutNull =
       if v_langFeatureNullness then KnownWithoutNull else KnownObliviousToNull
@@ -924,6 +925,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.checkNullness = checkNullness
 
   member __.langFeatureNullness = v_langFeatureNullness
+
+  member __.langFeatureAnonRecds = v_langFeatureAnonRecds
 
   member g.knownWithoutNull = v_knownWithoutNull
 

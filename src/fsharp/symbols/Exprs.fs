@@ -1225,7 +1225,7 @@ and FSharpImplementationFileDeclaration =
     | InitAction of FSharpExpr
 
 and FSharpImplementationFileContents(cenv, mimpl) = 
-    let (TImplFile(qname, _pragmas, ModuleOrNamespaceExprWithSig(_, mdef, _), hasExplicitEntryPoint, isScript)) = mimpl 
+    let (TImplFile(qname, _pragmas, ModuleOrNamespaceExprWithSig(_, mdef, _), hasExplicitEntryPoint, isScript, _anonRecdTypes)) = mimpl 
     let rec getDecls2 (ModuleOrNamespaceExprWithSig(_mty, def, _m)) = getDecls def
     and getBind (bind: Binding) = 
         let v = bind.Var
