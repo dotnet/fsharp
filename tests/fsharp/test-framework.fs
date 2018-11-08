@@ -125,6 +125,11 @@ module Commands =
         printfn "Executing git."
         exec gitExe args
 
+    let nunit exec nunitExe workdir args =
+        let args = (sprintf "%s --work:\"%s\"" (args |> Seq.ofList |> String.concat " ") workdir)
+        printfn "Running external nunit tests."
+        exec nunitExe args
+
 type TestConfig = 
     { EnvironmentVariables : Map<string, string>
       CSC : string
@@ -143,7 +148,8 @@ type TestConfig =
       Directory: string 
       DotNetExe: string
       DefaultPlatform: string
-      GitExe: string }
+      GitExe: string 
+      NunitConsoleRunner: string }
 
 
 module WindowsPlatform = 
@@ -203,6 +209,9 @@ let config configurationName envVars =
     let gitExe =
         let gitPath = envVars.["GIT"]
         Path.Combine(gitPath, "git.exe")
+    let nunitExe =
+        packagesDir ++ "NUnit.Console.3.0.0" ++ "tools" ++ "nunit3-console.exe"
+
     let defaultPlatform = 
         match Is64BitOperatingSystem with 
 //        | PlatformID.MacOSX, true -> "osx.10.10-x64"
@@ -227,7 +236,8 @@ let config configurationName envVars =
       Directory="" 
       DotNetExe = dotNetExe
       DefaultPlatform = defaultPlatform
-      GitExe = gitExe }
+      GitExe = gitExe
+      NunitConsoleRunner = nunitExe }
 
 let logConfig (cfg: TestConfig) =
     log "---------------------------------------------------------------"
@@ -466,6 +476,7 @@ let mkdir cfg = Commands.mkdir_p cfg.Directory
 let copy_y cfg f = Commands.copy_y cfg.Directory f >> checkResult
 let dotnet cfg flag args = Commands.dotnet cfg.Directory (exec cfg) cfg.DotNetExe flag args
 let git cfg x = Commands.git (exec cfg) (cfg.GitExe) x
+let nunit cfg x = Commands.nunit (exec cfg) (cfg.NunitConsoleRunner) (cfg.Directory) x
 
 let diff normalize path1 path2 =
     let result = System.Text.StringBuilder()

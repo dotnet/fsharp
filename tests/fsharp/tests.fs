@@ -48,12 +48,57 @@ module CoreTests =
 
         let cfg3 = testConfig "repos/FSharpPlus/src/FSharpPlus"
 
-        dotnet cfg3 "msbuild" 
-            [ "FSharpPlus.fsproj" 
-              "/p:CompilerTest=true"
-              sprintf "/p:FSC_ToolPathCompilerBuild=%s" fullPath
-              sprintf "/p:FSC_ExePathCompilerBuild=%s" (fullPath ++ "fsc.exe")
-            ]
+        // Debug build isn't working
+        //dotnet cfg3 "msbuild" [
+        //    "FSharpPlus.fsproj"
+        //    "/p:Configuration=Debug" 
+        //    "/p:CompilerTest=true"
+        //    sprintf "/p:FSC_ToolPathCompilerBuild=%s" fullPath
+        //    sprintf "/p:FSC_ExePathCompilerBuild=%s" (fullPath ++ "fsc.exe")
+        //]
+        
+        dotnet cfg3 "msbuild" [
+            "FSharpPlus.fsproj"
+            "/p:Configuration=Release"
+            "/p:CompilerTest=true"
+            sprintf "/p:FSC_ToolPathCompilerBuild=%s" fullPath
+            sprintf "/p:FSC_ExePathCompilerBuild=%s" (fullPath ++ "fsc.exe")
+        ]
+
+    [<Test>]
+    let testFSharpPlusTests () =
+        let cfg = testConfig "repos/FSharpPlus/tests/FSharpPlus.Tests"
+
+        // Reference the freshly built compiler
+        let fullPath = cfg.FSCBinPath |> getFullPath
+        
+        // Debug build isn't working
+        //dotnet cfg "msbuild" [
+        //    "FSharpPlus.Tests.fsproj"
+        //    "/p:Configuration=Debug" 
+        //    "/p:CompilerTest=true"
+        //    sprintf "/p:FSC_ToolPathCompilerBuild=%s" fullPath
+        //    sprintf "/p:FSC_ExePathCompilerBuild=%s" (fullPath ++ "fsc.exe")
+        //]
+        
+        dotnet cfg "msbuild" [
+            "FSharpPlus.Tests.fsproj"
+            "/p:Configuration=Release"
+            "/p:CompilerTest=true"
+            sprintf "/p:FSC_ToolPathCompilerBuild=%s" fullPath
+            sprintf "/p:FSC_ExePathCompilerBuild=%s" (fullPath ++ "fsc.exe")
+        ]
+        
+        // Debug build isn't working so no testing of it
+        //nunit cfg [
+        //    "--verbose"
+        //    "./bin/Debug/FSharpPlus.Tests.dll"
+        //]
+
+        nunit cfg [
+            "--verbose"
+            "./bin/Debug/FSharpPlus.Tests.dll"
+        ]
 
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
