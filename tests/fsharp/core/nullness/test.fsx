@@ -53,7 +53,9 @@ module Basics2 =
 
     let f5 () : 'T when 'T : not struct and 'T : null = null
 
-    let f6 () : 'T? when 'T : not struct and 'T : null = null
+#if NEGATIVE
+    let f6 () : 'T? when 'T : not struct and 'T : null = null // Expected to give an error about inconistent constraints
+#endif
 
     // Note yet allowed 
     //let f7 () : 'T? when 'T : struct = null
