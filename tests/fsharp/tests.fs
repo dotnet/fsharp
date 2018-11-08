@@ -28,6 +28,33 @@ let FSI_BASIC = FSI_FILE
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 
 module CoreTests = 
+    open TestFramework
+    
+    [<Test>]
+    let testFSharpPlusBuild () =
+        let cfg = testConfig ""
+        mkdir cfg "repos"
+        
+        if Commands.directoryExists cfg.Directory "repos/FSharpPlus" |> Option.isNone then
+            let cfg = testConfig "repos"
+            git cfg ["clone"; "http://github.com/fsprojects/FSharpPlus"; "FSharpPlus"]
+
+        let cfg2 = testConfig "repos/FSharpPlus"
+
+        // git cfg2 ["reset"; "--hard"; "fcb507bc8734362f4f6d40c08a4bc011e50e5d56"]
+
+        // Reference the freshly built compiler
+        let fullPath = cfg2.FSCBinPath |> getFullPath
+
+        let cfg3 = testConfig "repos/FSharpPlus/src/FSharpPlus"
+
+        dotnet cfg3 "msbuild" 
+            [ "FSharpPlus.fsproj" 
+              "/p:CompilerTest=true"
+              sprintf "/p:FSC_ToolPathCompilerBuild=%s" fullPath
+              sprintf "/p:FSC_ExePathCompilerBuild=%s" (fullPath ++ "fsc.exe")
+            ]
+
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
     let ``access-FSC_BASIC``() = singleTestBuildAndRun "core/access" FSC_BASIC

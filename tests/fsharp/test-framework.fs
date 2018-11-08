@@ -114,6 +114,16 @@ module Commands =
         Directory.CreateDirectory path |> ignore
         path
 
+    let dotnet workDir exec (_: FilePath) flag srcFiles =
+        let args = (sprintf "%s %s" flag (srcFiles |> Seq.ofList |> String.concat " "))
+
+        ignore workDir 
+        exec "C:\Program Files\dotnet\dotnet.exe" args
+
+    let git exec gitExe args =
+        let args = (sprintf "%s" (args |> Seq.ofList |> String.concat " "))
+        printfn "Executing git."
+        exec gitExe args
 
 type TestConfig = 
     { EnvironmentVariables : Map<string, string>
@@ -132,7 +142,8 @@ type TestConfig =
       PEVERIFY : string
       Directory: string 
       DotNetExe: string
-      DefaultPlatform: string}
+      DefaultPlatform: string
+      GitExe: string }
 
 
 module WindowsPlatform = 
@@ -189,7 +200,9 @@ let config configurationName envVars =
     let FSC = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsc.exe"
     let FSCOREDLLPATH = "" 
 #endif
-
+    let gitExe =
+        let gitPath = envVars.["GIT"]
+        Path.Combine(gitPath, "git.exe")
     let defaultPlatform = 
         match Is64BitOperatingSystem with 
 //        | PlatformID.MacOSX, true -> "osx.10.10-x64"
@@ -213,7 +226,8 @@ let config configurationName envVars =
       fsi_flags = fsi_flags 
       Directory="" 
       DotNetExe = dotNetExe
-      DefaultPlatform = defaultPlatform }
+      DefaultPlatform = defaultPlatform
+      GitExe = gitExe }
 
 let logConfig (cfg: TestConfig) =
     log "---------------------------------------------------------------"
@@ -450,6 +464,8 @@ let rm cfg x = Commands.rm cfg.Directory x
 let rmdir cfg x = Commands.rmdir cfg.Directory x
 let mkdir cfg = Commands.mkdir_p cfg.Directory
 let copy_y cfg f = Commands.copy_y cfg.Directory f >> checkResult
+let dotnet cfg flag args = Commands.dotnet cfg.Directory (exec cfg) cfg.DotNetExe flag args
+let git cfg x = Commands.git (exec cfg) (cfg.GitExe) x
 
 let diff normalize path1 path2 =
     let result = System.Text.StringBuilder()
