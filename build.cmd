@@ -597,6 +597,11 @@ if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" se
 :vsversionset
 if "%VisualStudioVersion%" == "" echo Error: Could not find an installation of Visual Studio && goto :failure
 
+if /i "%BUILD_CORECLR%" == "1" (
+    set _msbuildexe=dotnet build
+    dotnet build-server shutdown --msbuild
+    goto :havemsbuild
+)
 if exist "%VS160COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
     set _msbuildexe="%VS160COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe"
     goto :havemsbuild
@@ -658,11 +663,16 @@ if "%RestorePackages%" == "true" (
 )
 
 echo ---------------- Done with package restore, verify buildfrom source ---------------
+
 if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
   pushd src
   call buildfromsource.cmd
   @if ERRORLEVEL 1 echo Error: buildfromsource.cmd failed  && goto :failure
   popd
+
+  if /i "%BUILD_CORECLR%" == "1" (
+      dotnet build-server shutdown --msbuild
+  )
 )
 
 echo ---------------- Done with package restore, starting proto ------------------------
@@ -680,6 +690,10 @@ if "%BUILD_PROTO%" == "1" (
     echo %_msbuildexe% proto.proj /t:Build /bl:%~dp0Proto\proto.proj.build.binlog
          %_msbuildexe% proto.proj /t:Build /bl:%~dp0Proto\proto.proj.build.binlog
     @if ERRORLEVEL 1 echo Error building proto failed && goto :failure
+
+    if /i "%BUILD_CORECLR%" == "1" (
+        dotnet build-server shutdown --msbuild
+    )
 )
 
 echo ---------------- Done with SDK restore, starting build ------------------------
@@ -693,6 +707,10 @@ if "%BUILD_PHASE%" == "1" (
          %_msbuildexe% fsharp.proj /t:Build /p:Configuration=%BUILD_CONFIG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN% /bl:%~dp0%BUILD_CONFIG%\fsharp.proj.build.binlog
 
    @if ERRORLEVEL 1 echo Error build failed && goto :failure
+
+    if /i "%BUILD_CORECLR%" == "1" (
+        dotnet build-server shutdown --msbuild
+    )
 )
 
 echo ---------------- Done with build, starting assembly version checks ---------------
@@ -719,8 +737,14 @@ if not "%SIGN_TYPE%" == "" (
 
 echo ---------------- Done with assembly signing, start package creation ---------------
 
-echo %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG% /t:Pack /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
-     %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG% /t:Pack /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
+if "%BUILD_CORECLR%" == "1" (
+    echo dotnet pack %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG% /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
+        dotnet pack %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG% /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
+
+) else (
+    echo %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG% /t:Pack /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
+        %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG% /t:Pack /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
+)
 if ERRORLEVEL 1 echo Error building NuGet packages && goto :failure
 
 if not "%SIGN_TYPE%" == "" (
