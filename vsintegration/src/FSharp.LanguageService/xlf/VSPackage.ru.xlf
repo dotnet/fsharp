@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ru" original="../VSPackage.resx">
     <body>
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="Identifier">
         <source>Identifier</source>
-        <target state="translated">Идентификатор</target>
+        <target state="translated">идентификатор</target>
         <note />
       </trans-unit>
       <trans-unit id="Keyword">
@@ -64,7 +64,7 @@
       </trans-unit>
       <trans-unit id="String">
         <source>String</source>
-        <target state="translated">Строка</target>
+        <target state="translated">String</target>
         <note />
       </trans-unit>
     </body>

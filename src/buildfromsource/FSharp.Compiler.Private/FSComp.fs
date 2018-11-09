@@ -4375,18 +4375,36 @@ type internal SR private() =
     /// Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
     /// (Originally from ..\FSComp.txt:1449)
     static member tastCantTakeAddressOfExpression() = (3237, GetStringFunc("tastCantTakeAddressOfExpression",",,,") )
-    /// This type does not inherit Attribute, it will not work correctly with other .NET languages.
+    /// Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.
     /// (Originally from ..\FSComp.txt:1450)
+    static member tcCannotCallExtensionMemberInrefToByref() = (3238, GetStringFunc("tcCannotCallExtensionMemberInrefToByref",",,,") )
+    /// Byref types are not allowed to have optional type extensions.
+    /// (Originally from ..\FSComp.txt:1451)
+    static member tcByrefsMayNotHaveTypeExtensions() = (3239, GetStringFunc("tcByrefsMayNotHaveTypeExtensions",",,,") )
+    /// Cannot call the byref extension method '%s. The first parameter requires the value to be mutable or a non-readonly byref type.
+    /// (Originally from ..\FSComp.txt:1452)
+    static member tcCannotCallExtensionMethodInrefToByref(a0 : System.String) = (3240, GetStringFunc("tcCannotCallExtensionMethodInrefToByref",",,,%s,,,") a0)
+    /// Cannot partially apply the extension method '%s' because the first parameter is a byref type.
+    /// (Originally from ..\FSComp.txt:1453)
+    static member tcCannotPartiallyApplyExtensionMethodForByref(a0 : System.String) = (3241, GetStringFunc("tcCannotPartiallyApplyExtensionMethodForByref",",,,%s,,,") a0)
+    /// This type does not inherit Attribute, it will not work correctly with other .NET languages.
+    /// (Originally from ..\FSComp.txt:1454)
     static member tcTypeDoesNotInheritAttribute() = (3242, GetStringFunc("tcTypeDoesNotInheritAttribute",",,,") )
     /// Invalid anonymous record expression
-    /// (Originally from ..\FSComp.txt:1451)
+    /// (Originally from ..\FSComp.txt:1455)
     static member parsInvalidAnonRecdExpr() = (3243, GetStringFunc("parsInvalidAnonRecdExpr",",,,") )
     /// Invalid anonymous record type
-    /// (Originally from ..\FSComp.txt:1452)
+    /// (Originally from ..\FSComp.txt:1456)
     static member parsInvalidAnonRecdType() = (3244, GetStringFunc("parsInvalidAnonRecdType",",,,") )
     /// The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record
-    /// (Originally from ..\FSComp.txt:1453)
+    /// (Originally from ..\FSComp.txt:1457)
     static member tcCopyAndUpdateNeedsRecordType() = (3245, GetStringFunc("tcCopyAndUpdateNeedsRecordType",",,,") )
+    /// The parameter '%s' has an invalid type '%s'. This is not permitted by the rules of Common IL.
+    /// (Originally from ..\FSComp.txt:1458)
+    static member chkInvalidFunctionParameterType(a0 : System.String, a1 : System.String) = (3300, GetStringFunc("chkInvalidFunctionParameterType",",,,%s,,,%s,,,") a0 a1)
+    /// The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL.
+    /// (Originally from ..\FSComp.txt:1459)
+    static member chkInvalidFunctionReturnType(a0 : System.String) = (3301, GetStringFunc("chkInvalidFunctionReturnType",",,,%s,,,") a0)
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5810,8 +5828,14 @@ type internal SR private() =
         ignore(GetString("chkNoSpanLikeVariable"))
         ignore(GetString("chkNoSpanLikeValueFromExpression"))
         ignore(GetString("tastCantTakeAddressOfExpression"))
+        ignore(GetString("tcCannotCallExtensionMemberInrefToByref"))
+        ignore(GetString("tcByrefsMayNotHaveTypeExtensions"))
+        ignore(GetString("tcCannotCallExtensionMethodInrefToByref"))
+        ignore(GetString("tcCannotPartiallyApplyExtensionMethodForByref"))
         ignore(GetString("tcTypeDoesNotInheritAttribute"))
         ignore(GetString("parsInvalidAnonRecdExpr"))
         ignore(GetString("parsInvalidAnonRecdType"))
         ignore(GetString("tcCopyAndUpdateNeedsRecordType"))
+        ignore(GetString("chkInvalidFunctionParameterType"))
+        ignore(GetString("chkInvalidFunctionReturnType"))
         ()

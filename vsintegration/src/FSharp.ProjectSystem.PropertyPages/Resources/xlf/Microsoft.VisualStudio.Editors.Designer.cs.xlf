@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="PPG_VersionTitle">
         <source>Version</source>
-        <target state="translated">Verze</target>
+        <target state="translated">VERSION</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SigningTitle">
@@ -355,7 +355,7 @@ Vyberte prosím platnou cestu ke složce.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_None">
         <source>None</source>
-        <target state="translated">Žádné</target>
+        <target state="translated">žádné</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Warning">
@@ -390,7 +390,7 @@ Vyberte prosím platnou cestu ke složce.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_42104">
         <source>Use of variable prior to assignment</source>
-        <target state="translated">Použití proměnné před přiřazením</target>
+        <target state="translated">Použití proměnné závisí na předchozím přiřazení</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_420XX">
@@ -819,7 +819,7 @@ Chyba:</target>
       </trans-unit>
       <trans-unit id="PPG_WindowsApp">
         <source>Windows Application</source>
-        <target state="translated">Aplikace pro systém Windows</target>
+        <target state="translated">Aplikace systému Windows</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WindowsService">
@@ -960,7 +960,7 @@ Chyba:</target>
       </trans-unit>
       <trans-unit id="PropPage_UnusedReferenceRemoveButton">
         <source>&amp;Remove</source>
-        <target state="translated">Odeb&amp;rat</target>
+        <target state="translated">O&amp;debrat</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_UnusedReferenceNoUnusedReferences">
@@ -1257,7 +1257,7 @@ Chyba:</target>
       </trans-unit>
       <trans-unit id="OptionPage_Project_IllegalDefaultProjectDirectory">
         <source>The location specified is on an invalid or read-only disk, or contains a device name reserved for the system.</source>
-        <target state="translated">Zadané umístění je buď neplatné, nachází se na disku určeném jen pro čtení, nebo obsahuje název zařízení rezervovaný systémem.</target>
+        <target state="translated">Zadané umístění je buď neplatné, nachází se na disku určeném pouze pro čtení, nebo obsahuje název zařízení rezervovaný systémem.</target>
         <note />
       </trans-unit>
       <trans-unit id="AttrEditor_CategoryCOM">
@@ -1602,7 +1602,7 @@ Chyba:</target>
       </trans-unit>
       <trans-unit id="AttrEditor_DE_None">
         <source>(None)</source>
-        <target state="translated">(Žádný)</target>
+        <target state="translated">(žádné)</target>
         <note>Default Event</note>
       </trans-unit>
       <trans-unit id="PermissionSet_Requires">
@@ -1828,7 +1828,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_GraphicSizeFormat">
         <source>{0} x {1}</source>
-        <target state="translated">{0} x {1}</target>
+        <target state="needs-review-translation">{0} x {1}</target>
         <note>Format string for showing a graphic's size
 
 #  {0} = width (as an integer)
@@ -1884,7 +1884,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Remove">
         <source>&amp;Remove</source>
-        <target state="translated">Odeb&amp;rat</target>
+        <target state="translated">O&amp;debrat</target>
         <note>Add, Delete and Views button text in the main ToolStrip</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Views">
@@ -2344,19 +2344,9 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">Aplikace</target>
         <note />
       </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebApplicationScope">
-        <source>Application (Web)</source>
-        <target state="translated">Aplikace (web)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="SD_ComboBoxItem_UserScope">
         <source>User</source>
         <target state="translated">Uživatel</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebUserScope">
-        <source>User (Web)</source>
-        <target state="translated">Uživatel (web)</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewNameColumnHeaderText">
@@ -2830,22 +2820,22 @@ Chcete aktualizovat hodnotu v souboru .settings?</target>
       </trans-unit>
       <trans-unit id="PPG_Services_Seconds">
         <source>seconds</source>
-        <target state="translated">sekundy</target>
+        <target state="translated">Sekundy</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Minutes">
         <source>minutes</source>
-        <target state="translated">minuty</target>
+        <target state="translated">Minuty</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Hours">
         <source>hours</source>
-        <target state="translated">hodiny</target>
+        <target state="translated">Hodiny</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Days">
         <source>days</source>
-        <target state="translated">dny</target>
+        <target state="translated">Dny</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">

@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="rbStartProgram.Text">
         <source>Start e&amp;xternal program:</source>
-        <target state="translated">起始外部程式(&amp;X):</target>
+        <target state="translated">啟動外部程式(&amp;X):</target>
         <note />
       </trans-unit>
       <trans-unit id="StartProgram.AccessibleName">
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="CommandLineArgsLabel.Text">
         <source>Comma&amp;nd line arguments:</source>
-        <target state="translated">命令列的引數(&amp;N):</target>
+        <target state="translated">命令列引數(&amp;N):</target>
         <note />
       </trans-unit>
       <trans-unit id="WorkingDirLabel.Text">

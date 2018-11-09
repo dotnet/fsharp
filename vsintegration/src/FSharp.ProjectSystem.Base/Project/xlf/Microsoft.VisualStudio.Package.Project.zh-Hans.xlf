@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hans" original="../Microsoft.VisualStudio.Package.Project.resx">
     <body>
@@ -24,12 +24,12 @@
       </trans-unit>
       <trans-unit id="ReferenceWithAssemblyNameAlreadyExists">
         <source>A reference to '{0}' (with assembly name '{1}') could not be added. A reference to the component '{2}' with the same assembly name already exists in the project.</source>
-        <target state="translated">未能添加对“{0}”的引用(使用程序集名称“{1}”)。该项目中已存在一个对具有相同程序集名称的组件“{2}”的引用。</target>
+        <target state="translated">无法添加对“{0}”(程序集名称为“{1}”)的引用。项目中已存在对具有相同程序集名称的组件“{2}”的引用。</target>
         <note>ReferenceAlreadyExists error message</note>
       </trans-unit>
       <trans-unit id="AttributeLoad">
         <source>Could not load attribute '{0}' from project file '{1}'.</source>
-        <target state="translated">无法从项目文件“{1}”中加载属性“{0}”。</target>
+        <target state="translated">无法从项目文件“{1}”加载属性“{0}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="BuildAction">
@@ -242,7 +242,7 @@
       </trans-unit>
       <trans-unit id="LinkedItemsAreNotSupported">
         <source>Cannot save '{0}' outside the project directory. Linked items are not supported.</source>
-        <target state="translated">无法在项目目录外保存“{0}”。不支持链接的项。</target>
+        <target state="translated">不能在项目目录外保存“{0}”。不支持链接的项。</target>
         <note />
       </trans-unit>
       <trans-unit id="Library">
@@ -252,7 +252,7 @@
       </trans-unit>
       <trans-unit id="Minimal">
         <source>Minimal</source>
-        <target state="translated">最小</target>
+        <target state="translated">最少</target>
         <note />
       </trans-unit>
       <trans-unit id="Misc">
@@ -262,12 +262,12 @@
       </trans-unit>
       <trans-unit id="None">
         <source>None</source>
-        <target state="translated">无</target>
+        <target state="translated">没有</target>
         <note />
       </trans-unit>
       <trans-unit id="Normal">
         <source>Normal</source>
-        <target state="translated">常规</target>
+        <target state="translated">一般</target>
         <note />
       </trans-unit>
       <trans-unit id="PasteFailed">
@@ -282,12 +282,12 @@
       </trans-unit>
       <trans-unit id="Project">
         <source>Project</source>
-        <target state="translated">项目</target>
+        <target state="translated">PROJECT</target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectContainsCircularReferences">
         <source>A reference to library '{0}' cannot be added. Adding this project as a reference would cause a circular dependency. </source>
-        <target state="translated">无法添加对库“{0}”的引用。将此项目添加为引用将导致循环依赖。</target>
+        <target state="translated">无法添加对库“{0}”的引用。将此项目添加为引用将导致循环依赖关系。 </target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectFile">
@@ -352,7 +352,7 @@
       </trans-unit>
       <trans-unit id="SaveOfProjectFileOutsideCurrentDirectory">
         <source>The project file can only be saved into the project location '{0}'.</source>
-        <target state="translated">此项目文件只能保存在项目位置“{0}”。</target>
+        <target state="translated">项目文件只能保存到项目位置“{0}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="StandardEditorViewError">
@@ -577,7 +577,7 @@
       </trans-unit>
       <trans-unit id="NestedProjectFailedToReload">
         <source>The nested project has failed to reload.</source>
-        <target state="translated">未能重新加载此嵌套项目。</target>
+        <target state="translated">嵌套的项目重新加载失败。</target>
         <note />
       </trans-unit>
       <trans-unit id="FileOrFolderCannotBeFound">
@@ -792,7 +792,7 @@
       </trans-unit>
       <trans-unit id="Path">
         <source>Path</source>
-        <target state="translated">路径</target>
+        <target state="translated">PATH</target>
         <note />
       </trans-unit>
       <trans-unit id="PathDescription">

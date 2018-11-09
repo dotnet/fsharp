@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="fr" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="PPG_DebugTitle">
         <source>Debug</source>
-        <target state="translated">Déboguer</target>
+        <target state="translated">déboguer</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_DeployTitle">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="PPG_VdtGeneralTitle">
         <source>Database</source>
-        <target state="translated">Base de données</target>
+        <target state="translated">Base de données </target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Security">
@@ -69,7 +69,7 @@
       </trans-unit>
       <trans-unit id="PPG_ReferencePathsTitle">
         <source>Reference Paths</source>
-        <target state="translated">Chemins des références</target>
+        <target state="translated">Chemins d'accès des références</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_PreBuildCommandLineTitle">
@@ -215,7 +215,7 @@ Sélectionnez un chemin de dossier valide.</target>
       </trans-unit>
       <trans-unit id="PPG_ReferencePaths_Title">
         <source>Reference Paths</source>
-        <target state="translated">Chemins des références</target>
+        <target state="translated">Chemins d'accès des références</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_CompatibleSettings_Title">
@@ -225,7 +225,7 @@ Sélectionnez un chemin de dossier valide.</target>
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_Title">
         <source>Assembly Information</source>
-        <target state="translated">Informations de l'assembly</target>
+        <target state="translated">Informations sur l'assembly</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_InvalidVersion">
@@ -355,7 +355,7 @@ Sélectionnez un chemin de dossier valide.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_None">
         <source>None</source>
-        <target state="translated">Aucun</target>
+        <target state="translated">Aucun(e)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Warning">
@@ -724,7 +724,7 @@ Erreur :</target>
       </trans-unit>
       <trans-unit id="PPG_Signing_ExpirationDate">
         <source>Expiration Date</source>
-        <target state="translated">Date d'expiration</target>
+        <target state="translated">Date d’expiration</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_InvalidPassword">
@@ -1497,7 +1497,7 @@ Erreur :</target>
       </trans-unit>
       <trans-unit id="AttrEditor_WebServiceNameName">
         <source>Name</source>
-        <target state="translated">Nom</target>
+        <target state="translated">Nom </target>
         <note />
       </trans-unit>
       <trans-unit id="AttrEditor_WebServiceNameDescription">
@@ -1507,7 +1507,7 @@ Erreur :</target>
       </trans-unit>
       <trans-unit id="AttrEditor_WebServiceNameDisplayName">
         <source>Name</source>
-        <target state="translated">Nom</target>
+        <target state="translated">Nom </target>
         <note />
       </trans-unit>
       <trans-unit id="AttrEditor_WebServiceDescName">
@@ -1607,12 +1607,12 @@ Erreur :</target>
       </trans-unit>
       <trans-unit id="PermissionSet_Requires">
         <source>Requires:</source>
-        <target state="translated">Requiert :</target>
+        <target state="translated">Nécessite :</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_ResourceNameColumn">
         <source>Name</source>
-        <target state="translated">Nom</target>
+        <target state="translated">Nom </target>
         <note>Column names for the string table</note>
       </trans-unit>
       <trans-unit id="RSE_TypeColumn">
@@ -1798,7 +1798,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_Name">
         <source>Name</source>
-        <target state="translated">Nom</target>
+        <target state="translated">Nom </target>
         <note>Columns for the "Details" view of the resource editor</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_Filename">
@@ -1828,7 +1828,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_GraphicSizeFormat">
         <source>{0} x {1}</source>
-        <target state="translated">{0} x {1}</target>
+        <target state="needs-review-translation">{0} x {1}</target>
         <note>Format string for showing a graphic's size
 
 #  {0} = width (as an integer)
@@ -2036,7 +2036,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Filter_Text">
         <source>Text Files</source>
-        <target state="translated">Fichiers texte</target>
+        <target state="translated">Fichiers textes</target>
         <note># File dialog filters
 #
 # E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
@@ -2336,7 +2336,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="SD_ComboBoxItem_BrowseType">
         <source>Browse...</source>
-        <target state="translated">Parcourir...</target>
+        <target state="translated">Parcourir</target>
         <note>Added as the last item in the list of available types to let the user browse for a new type</note>
       </trans-unit>
       <trans-unit id="SD_ComboBoxItem_ApplicationScope">
@@ -2344,24 +2344,14 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">Application</target>
         <note />
       </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebApplicationScope">
-        <source>Application (Web)</source>
-        <target state="translated">Application (web)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="SD_ComboBoxItem_UserScope">
         <source>User</source>
         <target state="translated">Utilisateur</target>
         <note />
       </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebUserScope">
-        <source>User (Web)</source>
-        <target state="translated">Utilisateur (web)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="SD_GridViewNameColumnHeaderText">
         <source>Name</source>
-        <target state="translated">Nom</target>
+        <target state="translated">Nom </target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewTypeColumnHeaderText">
@@ -2830,22 +2820,22 @@ Voulez-vous mettre à jour la valeur dans le fichier .settings ?</target>
       </trans-unit>
       <trans-unit id="PPG_Services_Seconds">
         <source>seconds</source>
-        <target state="translated">secondes</target>
+        <target state="translated">Secondes</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Minutes">
         <source>minutes</source>
-        <target state="translated">minutes</target>
+        <target state="translated">Minutes</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Hours">
         <source>hours</source>
-        <target state="translated">heures</target>
+        <target state="translated">Heures</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Days">
         <source>days</source>
-        <target state="translated">jours</target>
+        <target state="translated">Jours</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">

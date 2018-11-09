@@ -147,16 +147,29 @@ type internal FSharpPackage() as this =
     // FSI-LINKAGE-POINT: unsited init
     do Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
-    override this.Initialize() =
-        base.Initialize()
+    override this.InitializeAsync(cancellationToken: CancellationToken, progress: IProgress<ServiceProgressData>) : Tasks.Task =
+        // `base.` methods can't be called in the `async` builder, so we have to cache it
+        let baseInitializeAsync = base.InitializeAsync(cancellationToken, progress)
+        let task =
+            async {
+                do! baseInitializeAsync |> Async.AwaitTask
 
-        // FSI-LINKAGE-POINT: sited init
-        let commandService = this.GetService(typeof<IMenuCommandService>) :?> OleMenuCommandService // FSI-LINKAGE-POINT
-        Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
-        // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
-        let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
+                let! commandService = this.GetServiceAsync(typeof<IMenuCommandService>) |> Async.AwaitTask // FSI-LINKAGE-POINT
+                let commandService = commandService :?> OleMenuCommandService
+                let packageInit () =
+                    // FSI-LINKAGE-POINT: sited init
+                    Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
 
-        ()
+                    // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
+                    let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
+                    ()
+                let awaiter = this.JoinableTaskFactory.SwitchToMainThreadAsync().GetAwaiter()
+                if awaiter.IsCompleted then
+                    packageInit() // already on the UI thread
+                else
+                    awaiter.OnCompleted(fun () -> packageInit())
+            } |> Async.StartAsTask
+        upcast task // convert Task<unit> to Task
 
     override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()

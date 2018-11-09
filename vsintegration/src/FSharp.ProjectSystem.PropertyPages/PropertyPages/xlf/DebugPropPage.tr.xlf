@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="tr" original="../DebugPropPage.resx">
     <body>
@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="StartProgram.AccessibleName">
         <source>Program to start</source>
-        <target state="translated">Başlatılacak Program</target>
+        <target state="translated">Başlatılacak program</target>
         <note />
       </trans-unit>
       <trans-unit id="StartProgramBrowse.AccessibleName">
@@ -74,7 +74,7 @@
       </trans-unit>
       <trans-unit id="EnableSQLServerDebugging.Text">
         <source>Enable SQ&amp;L Server debugging</source>
-        <target state="translated">SQ&amp;L Server üzerinde hata ayıklamayı etkinleştir</target>
+        <target state="translated">SQ&amp;L Server hata ayıklamasını etkinleştir</target>
         <note />
       </trans-unit>
       <trans-unit id="UseVSHostingProcess.Text">
