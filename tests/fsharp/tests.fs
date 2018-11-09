@@ -99,7 +99,7 @@ module CoreTests =
 
         nunit cfg [
             "--verbose"
-            "./bin/Release/FSharpPlus.Tests.dll"
+            (cfg.Directory ++ "./bin/Release/net45/FSharpPlus.Tests.dll" |> getFullPath)
         ]
 
     // These tests are enabled for .NET Framework and .NET Core
