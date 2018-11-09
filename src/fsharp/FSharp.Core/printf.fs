@@ -4,6 +4,8 @@ namespace Microsoft.FSharp.Core
 
 type PrintfFormat<'Printer,'State,'Residue,'Result>(value:string) =
         member x.Value = value
+
+        override __.ToString() = value
     
 type PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple>(value:string) = 
     inherit PrintfFormat<'Printer,'State,'Residue,'Result>(value)

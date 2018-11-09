@@ -378,8 +378,7 @@ module Structure =
                 // subtract columns so the @@> or @> is not collapsed
                 rcheck Scope.Quote Collapse.Same r (Range.modBoth (if isRaw then 3 else 2) (if isRaw then 3 else 2) r)
                 parseExpr e
-            | SynExpr.Tuple (es,_,r)
-            | SynExpr.StructTuple(es,_,r) ->
+            | SynExpr.Tuple (_, es, _, r) ->
                 rcheck Scope.Tuple Collapse.Same r r
                 List.iter parseExpr es
             | SynExpr.Paren (e,_,_,_) ->

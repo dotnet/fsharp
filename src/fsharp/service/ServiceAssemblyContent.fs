@@ -555,7 +555,7 @@ module ParsedInput =
             | SynTypeConstraint.WhereTyparSupportsMember (ts, sign, _) -> List.iter walkType ts; walkMemberSig sign
     
         and walkPat = function
-            | SynPat.Tuple (pats, _)
+            | SynPat.Tuple (_,pats, _)
             | SynPat.ArrayOrList (_, pats, _)
             | SynPat.Ands (pats, _) -> List.iter walkPat pats
             | SynPat.Named (pat, ident, _, _, _) ->
@@ -603,7 +603,7 @@ module ParsedInput =
             | SynType.LongIdent ident -> addLongIdentWithDots ident
             | SynType.App (ty, _, types, _, _, _, _) -> walkType ty; List.iter walkType types
             | SynType.LongIdentApp (_, _, _, types, _, _, _) -> List.iter walkType types
-            | SynType.Tuple (ts, _) -> ts |> List.iter (fun (_, t) -> walkType t)
+            | SynType.Tuple (_, ts, _) -> ts |> List.iter (fun (_, t) -> walkType t)
             | SynType.WithGlobalConstraints (t, typeConstraints, _) ->
                 walkType t; List.iter walkTypeConstraint typeConstraints
             | _ -> ()
@@ -641,7 +641,7 @@ module ParsedInput =
             | SynExpr.TypeTest (e, t, _)
             | SynExpr.Upcast (e, t, _)
             | SynExpr.Downcast (e, t, _) -> walkExpr e; walkType t
-            | SynExpr.Tuple (es, _, _)
+            | SynExpr.Tuple (_, es, _, _)
             | Sequentials es
             | SynExpr.ArrayOrList (_, es, _) -> List.iter walkExpr es
             | SynExpr.App (_, _, e1, e2, _)
