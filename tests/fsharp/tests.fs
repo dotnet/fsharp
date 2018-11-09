@@ -329,7 +329,6 @@ module CoreTests =
 
         fsc cfg "%s -a -o:lib.dll" cfg.fsc_flags ["lib.fs"]
 
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
         peverify cfg "lib.dll"
 
         fsc cfg "%s -r:lib.dll" cfg.fsc_flags ["test.fsx"]
