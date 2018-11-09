@@ -1871,7 +1871,7 @@ module OptimizationTests =
             |> Seq.filter (fun line -> line.Contains(".locals init"))
             |> Seq.length
 
-        log "Ran ok - optimizations removed %d textual occurrences of optimizable identifiers from target IL" numElim 
+        log "Ran ok - optimizations removed %d textual occurrences of optimizable identifiers from target IL" numElim
 
     [<Test>]
     let stats () = 
