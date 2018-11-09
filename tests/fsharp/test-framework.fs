@@ -114,11 +114,10 @@ module Commands =
         Directory.CreateDirectory path |> ignore
         path
 
-    let dotnet workDir exec (_: FilePath) flag srcFiles =
+    let dotnet workDir exec dotnetExe flag srcFiles =
         let args = (sprintf "%s %s" flag (srcFiles |> Seq.ofList |> String.concat " "))
-
         ignore workDir 
-        exec "C:\Program Files\dotnet\dotnet.exe" args
+        exec dotnetExe args
 
     let git exec gitExe args =
         let args = (sprintf "%s" (args |> Seq.ofList |> String.concat " "))
@@ -190,8 +189,14 @@ let config configurationName envVars =
             | [||] -> failwithf "Could not find any 'FSharp.Compiler.Tools' inside '%s'" packagesDir
             | [| dir |] -> Path.Combine(dir, "tools", "fsi.exe")
             | _ -> failwithf "Found more than one 'FSharp.Compiler.Tools' inside '%s', please clean up." packagesDir
-    let toolsDir = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools"
-    let dotNetExe = toolsDir ++ "dotnetcli" ++ "dotnet.exe"
+    // let toolsDir = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools"
+    let dotNetExe =
+        let dotnetPath =
+            envVars.["Path"].Split(';')
+            |> Array.filter(fun path -> path.Contains("dotnet"))
+            |> Array.find(fun path -> File.Exists(path ++ "dotnet.exe"))
+        dotnetPath ++ "dotnet.exe"
+        // toolsDir ++ "dotnetcli" ++ "dotnet.exe"
     // ildasm requires coreclr.dll to run which has already been restored to the packages directory
     File.Copy(coreclrdll, Path.GetDirectoryName(ILDASM) ++ "coreclr.dll", overwrite=true)
 
@@ -209,9 +214,9 @@ let config configurationName envVars =
     let gitExe =
         let gitPath =
             envVars.["Path"].Split(';')
-            |> Array.filter(fun s -> s.Contains("Git"))
-            |> Array.find(fun s -> System.IO.File.Exists(System.IO.Path.Combine(s, "git.exe")))
-        Path.Combine(gitPath, "git.exe")
+            |> Array.filter(fun path -> path.Contains("Git"))
+            |> Array.find(fun path -> File.Exists(path ++ "git.exe"))
+        gitPath ++ "git.exe"
     let nunitExe =
         packagesDir ++ "NUnit.Console.3.0.0" ++ "tools" ++ "nunit3-console.exe"
 
