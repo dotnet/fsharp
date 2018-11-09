@@ -192,9 +192,17 @@ let config configurationName envVars =
     // let toolsDir = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools"
     let dotNetExe =
         let dotnetPath =
-            envVars.["Path"].Split(';')
-            |> Array.filter(fun path -> path.Contains("dotnet"))
-            |> Array.find(fun path -> File.Exists(path ++ "dotnet.exe"))
+            let path = envVars.["Path"].Split(';')
+            let res =
+                path
+                |> Array.filter(fun path -> path.Contains("dotnetcli"))
+                |> Array.tryFind(fun path -> File.Exists(path ++ "dotnet.exe"))
+            match res with
+            | Some dotnetpath -> dotnetpath
+            | None -> 
+                path
+                |> Array.filter(fun path -> path.Contains("dotnet"))
+                |> Array.find(fun path -> File.Exists(path ++ "dotnet.exe"))
         dotnetPath ++ "dotnet.exe"
         // toolsDir ++ "dotnetcli" ++ "dotnet.exe"
     // ildasm requires coreclr.dll to run which has already been restored to the packages directory
