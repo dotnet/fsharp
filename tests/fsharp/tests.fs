@@ -41,7 +41,9 @@ module CoreTests =
 
         let cfg2 = testConfig "repos/FSharpPlus"
 
-        // git cfg2 ["reset"; "--hard"; "fcb507bc8734362f4f6d40c08a4bc011e50e5d56"]
+        git cfg2 ["reset"; "--hard"; "aba256430a86a4022941800f06421dda16aa4cb0"]
+
+        exec cfg2 "build.cmd" "restore"
 
         // Reference the freshly built compiler
         let fullPath = cfg2.FSCBinPath |> getFullPath
@@ -97,7 +99,7 @@ module CoreTests =
 
         nunit cfg [
             "--verbose"
-            "./bin/Debug/FSharpPlus.Tests.dll"
+            "./bin/Release/FSharpPlus.Tests.dll"
         ]
 
     // These tests are enabled for .NET Framework and .NET Core
