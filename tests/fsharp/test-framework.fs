@@ -207,7 +207,10 @@ let config configurationName envVars =
     let FSCOREDLLPATH = "" 
 #endif
     let gitExe =
-        let gitPath = envVars.["GIT"]
+        let gitPath =
+            envVars.["Path"].Split(';')
+            |> Array.filter(fun s -> s.Contains("Git"))
+            |> Array.find(fun s -> System.IO.File.Exists(System.IO.Path.Combine(s, "git.exe")))
         Path.Combine(gitPath, "git.exe")
     let nunitExe =
         packagesDir ++ "NUnit.Console.3.0.0" ++ "tools" ++ "nunit3-console.exe"
