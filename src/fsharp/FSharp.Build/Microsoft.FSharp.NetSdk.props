@@ -55,14 +55,10 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <Tailcalls Condition="'$(Tailcalls)' == '' ">true</Tailcalls>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(OS)' != 'Unix' and Exists('$(MSBuildThisFileDirectory)\RunFsc.cmd')" >
-    <FscToolPath Condition=" '$(FscToolPath)' == '' ">$(MSBuildThisFileDirectory)</FscToolPath>
-    <FscToolExe Condition=" '$(FscToolExe)' == ''">RunFsc.cmd</FscToolExe>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(OS)' == 'Unix' and Exists('$(MSBuildThisFileDirectory)\RunFsc.sh')" >
-    <FscToolPath Condition=" '$(FscToolPath)' == '' ">$(MSBuildThisFileDirectory)</FscToolPath>
-    <FscToolExe Condition="'$(OS)' == 'Unix' and '$(FscToolExe)' == ''">RunFsc.sh</FscToolExe>
+  <PropertyGroup Condition="'$(DOTNET_HOST_PATH)' != ''">
+    <FscToolPath Condition="'$(FscToolPath)' == ''">$([System.IO.Path]::GetDirectoryName($(DOTNET_HOST_PATH)))</FscToolPath>
+    <FscToolExe Condition="'$(FscToolExe)' == ''">$([System.IO.Path]::GetFileName($(DOTNET_HOST_PATH)))</FscToolExe>
+    <DotnetFscCompilerPath>"$(MSBuildThisFileDirectory)fsc.exe"</DotnetFscCompilerPath>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(DisableImplicitSystemValueTupleReference)' != 'true'
