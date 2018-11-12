@@ -671,6 +671,12 @@ namespace Microsoft.FSharp.Collections
             | []  -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString            
             | _   -> invalidArg "source" (SR.GetString(SR.inputSequenceTooLong))
 
+        [<CompiledName("TryExactlyOne")>]
+        let tryExactlyOne (list : list<_>) =
+            match list with
+            | [x] -> Some x
+            | _   -> None
+
         [<CompiledName("Transpose")>]
         let transpose (lists : seq<'T list>) =
             checkNonNull "lists" lists
