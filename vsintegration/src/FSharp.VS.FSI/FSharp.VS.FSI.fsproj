@@ -37,7 +37,6 @@
     <Compile Include="fsiTextBufferStream.fs" />
     <Compile Include="fsiSessionToolWindow.fs" />
     <Compile Include="fsiPackageHooks.fs" />
-    <Compile Include="fsiPackage.fs" />
     <EmbeddedResource Include="Properties.resx">
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.Interactive.SRProperties</GeneratedModuleName>

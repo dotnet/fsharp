@@ -6328,8 +6328,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseConstructorDoesNotHaveFieldWithGivenName">
-        <source>Union case/exception '{0}' does not have field named '{1}'.</source>
-        <target state="translated">La excepción o el caso de unión '{0}' no tiene un campo denominado '{1}'.</target>
+        <source>The union case '{0}' does not have a field named '{1}'.</source>
+        <target state="needs-review-translation">La excepción o el caso de unión '{0}' no tiene un campo denominado '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseFieldCannotBeUsedMoreThanOnce">
@@ -7065,6 +7065,56 @@
       <trans-unit id="tcTypeDoesNotInheritAttribute">
         <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
         <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcExceptionConstructorDoesNotHaveFieldWithGivenName">
+        <source>The exception '{0}' does not have a field named '{1}'.</source>
+        <target state="new">The exception '{0}' does not have a field named '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcConstructorDoesNotHaveFieldWithGivenName">
+        <source>The constructor does not have a field named '{0}'.</source>
+        <target state="new">The constructor does not have a field named '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcActivePatternsDoNotHaveFields">
+        <source>Active patterns do not have fields. This syntax is invalid.</source>
+        <target state="new">Active patterns do not have fields. This syntax is invalid.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnmatchedBraceBar">
+        <source>Unmatched '{{|'</source>
+        <target state="new">Unmatched '{{|'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typeInfoAnonRecdField">
+        <source>anonymous record field</source>
+        <target state="new">anonymous record field</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdCcuMismatch">
+        <source>Two anonymous record types are from different assemblies '{0}' and '{1}'</source>
+        <target state="new">Two anonymous record types are from different assemblies '{0}' and '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameMismatch">
+        <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
+        <target state="new">Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsInvalidAnonRecdExpr">
+        <source>Invalid anonymous record expression</source>
+        <target state="new">Invalid anonymous record expression</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsInvalidAnonRecdType">
+        <source>Invalid anonymous record type</source>
+        <target state="new">Invalid anonymous record type</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCopyAndUpdateNeedsRecordType">
+        <source>The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</source>
+        <target state="new">The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</target>
         <note />
       </trans-unit>
     </body>

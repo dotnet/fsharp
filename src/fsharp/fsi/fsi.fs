@@ -1060,7 +1060,7 @@ type internal FsiDynamicCompiler
 #if DEBUG
         if fsiOptions.ShowILCode then 
             fsiConsoleOutput.uprintnfn "--------------------";
-            ILAsciiWriter.output_module outWriter mainmod3;
+            ILAsciiWriter.output_module outWriter ilGlobals mainmod3;
             fsiConsoleOutput.uprintnfn "--------------------"
 #else
         ignore(fsiOptions)
@@ -1116,7 +1116,7 @@ type internal FsiDynamicCompiler
             // 'Open' the path for the fragment we just compiled for any future printing.
             let denv = denv.AddOpenPath (pathOfLid prefixPath) 
 
-            for (TImplFile(_qname,_,mexpr,_,_)) in declaredImpls do
+            for (TImplFile(_qname,_,mexpr,_,_,_)) in declaredImpls do
                 let responseL = NicePrint.layoutInferredSigOfModuleExpr false denv infoReader AccessibleFromSomewhere rangeStdin mexpr 
                 if not (Layout.isEmptyL responseL) then
                     let opts = valuePrinter.GetFsiPrintOptions()

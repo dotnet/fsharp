@@ -2396,6 +2396,9 @@ and
     ///    isSetProp -- indicates if this is a set of a record field
     | FSRecdFieldSln of TypeInst * RecdFieldRef * bool
 
+    /// Indicates a trait is solved by an F# anonymous record field.
+    | FSAnonRecdFieldSln of AnonRecdTypeInfo * TypeInst * int
+
     /// ILMethSln(ty, extOpt, ilMethodRef, minst)
     ///
     /// Indicates a trait is solved by a .NET method.
@@ -3912,6 +3915,11 @@ and
     /// Indicates the type is built from a named type and a number of type arguments
     | TType_app of TyconRef * TypeInst
 
+    /// TType_anon
+    ///
+    /// Indicates the type is an anonymous record type whose compiled representation is located in the given assembly
+    | TType_anon of AnonRecdTypeInfo * TType list
+
     /// TType_tuple(elementTypes).
     ///
     /// Indicates the type is a tuple type. elementTypes must be of length 2 or greater.
@@ -3942,6 +3950,7 @@ and
         | TType_forall (_tps, ty)        -> ty.GetAssemblyName()
         | TType_app (tcref, _tinst)      -> tcref.CompilationPath.ILScopeRef.QualifiedName
         | TType_tuple (_tupInfo, _tinst) -> ""
+        | TType_anon (anonInfo, _tinst) -> defaultArg anonInfo.Assembly.QualifiedName ""
         | TType_fun (_d,_r)              -> ""
         | TType_measure _ms              -> ""
         | TType_var tp                   -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
@@ -3960,7 +3969,12 @@ and
             (match tupInfo with 
              | TupInfo.Const false -> ""
              | TupInfo.Const true -> "struct ")
-             + String.concat "," (List.map string tinst) + ")"
+             + String.concat "," (List.map string tinst) 
+        | TType_anon (anonInfo, tinst) -> 
+            (match anonInfo.TupInfo with 
+             | TupInfo.Const false -> ""
+             | TupInfo.Const true -> "struct ")
+             + "{|" + String.concat "," (Seq.map2 (fun nm ty -> nm + " " + string ty + ";") anonInfo.SortedNames tinst) + ")" + "|}"
         | TType_fun (d,r) -> "(" + string d + " -> " + string r + ")"
         | TType_ucase (uc,tinst) -> "ucase " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
         | TType_var tp -> 
@@ -3972,7 +3986,50 @@ and
 and TypeInst = TType list 
 
 and TTypes = TType list 
+and [<RequireQualifiedAccess>] AnonRecdTypeInfo = 
+    // Mutability for pickling/unpickling only
+    { mutable Assembly: CcuThunk 
+      mutable TupInfo: TupInfo
+      mutable SortedIds:  Ident[]
+      mutable Stamp: Stamp
+      mutable SortedNames: string[] }
 
+    /// Create an AnonRecdTypeInfo from the basic data
+    static member Create(ccu: CcuThunk, tupInfo, ids: Ident[]) = 
+        let sortedIds = ids |> Array.sortBy (fun id -> id.idText)
+        // Hash all the data to form a unique stamp
+        let stamp  = 
+            sha1HashInt64 
+                [| for c in ccu.AssemblyName do yield byte c; yield byte (int32 c >>> 8); 
+                   match tupInfo with 
+                   | TupInfo.Const b -> yield  (if b then 0uy else 1uy)
+                   for id in sortedIds do 
+                       for c in id.idText do yield byte c; yield byte (int32 c >>> 8) |]
+        let sortedNames = Array.map textOfId sortedIds
+        { Assembly = ccu; TupInfo = tupInfo; SortedIds = sortedIds; Stamp = stamp; SortedNames = sortedNames }
+
+    /// Get the ILTypeRef for the generated type implied by the anonymous type
+    member x.ILTypeRef = 
+        let ilTypeName   = sprintf "<>f__AnonymousType%s%u`%d'" (match x.TupInfo with TupInfo.Const b -> if b then "1000" else "") (uint32 x.Stamp) x.SortedIds.Length
+        mkILTyRef(x.Assembly.ILScopeRef,ilTypeName)
+
+    static member NewUnlinked() : AnonRecdTypeInfo = 
+        { Assembly = Unchecked.defaultof<_>
+          TupInfo = Unchecked.defaultof<_>
+          SortedIds = Unchecked.defaultof<_>
+          Stamp = Unchecked.defaultof<_> 
+          SortedNames  = Unchecked.defaultof<_> }
+
+    member x.Link d = 
+        let sortedNames = Array.map textOfId d.SortedIds
+        x.Assembly <- d.Assembly
+        x.TupInfo <- d.TupInfo
+        x.SortedIds <- d.SortedIds
+        x.Stamp <- d.Stamp
+        x.SortedNames <- sortedNames
+
+    member x.IsLinked = (match x.SortedIds with null -> true | _ -> false)
+    
 and [<RequireQualifiedAccess>] TupInfo = 
     /// Some constant, e.g. true or false for tupInfo
     | Const of bool
@@ -4651,6 +4708,12 @@ and
     /// An operation representing the creation of a tuple value
     | Tuple of TupInfo 
 
+    /// An operation representing the creation of an anonymous record
+    | AnonRecd of AnonRecdTypeInfo
+
+    /// An operation representing the get of a property from an anonymous record
+    | AnonRecdGet of AnonRecdTypeInfo * int
+
     /// An operation representing the creation of an array value
     | Array
 
@@ -4962,7 +5025,7 @@ and
 and 
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     TypedImplFile = 
-    | TImplFile of QualifiedNameOfFile * ScopedPragma list * ModuleOrNamespaceExprWithSig * bool * bool
+    | TImplFile of QualifiedNameOfFile * ScopedPragma list * ModuleOrNamespaceExprWithSig * bool * bool * StampMap<AnonRecdTypeInfo>
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText  =  x.ToString()
@@ -5136,6 +5199,7 @@ let arityOfVal (v:Val) = (match v.ValReprInfo with None -> ValReprInfo.emptyValD
 
 let tupInfoRef = TupInfo.Const false
 let tupInfoStruct = TupInfo.Const true
+let mkTupInfo b = if b then tupInfoStruct else tupInfoRef
 let structnessDefault = false
 let mkRawRefTupleTy tys = TType_tuple (tupInfoRef, tys)
 let mkRawStructTupleTy tys = TType_tuple (tupInfoStruct, tys)
@@ -5145,9 +5209,9 @@ let mkRawStructTupleTy tys = TType_tuple (tupInfoStruct, tys)
 // make up the entire compilation unit
 //---------------------------------------------------------------------------
 
-let mapTImplFile   f   (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)) = TImplFile(fragName, pragmas,f moduleExpr,hasExplicitEntryPoint,isScript)
-let mapAccImplFile f z (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)) = let moduleExpr,z = f z moduleExpr in TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript), z
-let foldTImplFile  f z (TImplFile(_,_,moduleExpr,_,_)) = f z moduleExpr
+let mapTImplFile   f   (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript,anonRecdTypes)) = TImplFile(fragName, pragmas,f moduleExpr,hasExplicitEntryPoint,isScript,anonRecdTypes)
+let mapAccImplFile f z (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript,anonRecdTypes)) = let moduleExpr,z = f z moduleExpr in TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript,anonRecdTypes), z
+let foldTImplFile  f z (TImplFile(_,_,moduleExpr,_,_,_)) = f z moduleExpr
 
 //---------------------------------------------------------------------------
 // Equality relations on locally defined things 
@@ -5773,5 +5837,6 @@ let FSharpSignatureDataResourceName = "FSharpSignatureData."
 // or 'FSharpSignatureData'
 let FSharpOptimizationDataResourceName2 = "FSharpOptimizationInfo." 
 let FSharpSignatureDataResourceName2 = "FSharpSignatureInfo."
+
 
 

@@ -64,6 +64,9 @@ type Item =
     /// Represents the resolution of a name to an F# record field.
     | RecdField of RecdFieldInfo
 
+    /// Represents the resolution of a name to a field of an anonymous record type.
+    | AnonRecdField of AnonRecdTypeInfo * TTypes * int * range
+
     // The following are never in the items table but are valid results of binding 
     // an identifier in different circumstances. 
 
@@ -165,6 +168,9 @@ type FullyQualifiedFlag =
 
 [<RequireQualifiedAccess>]
 type BulkAdd = Yes | No
+
+/// Find a field in anonymous record type
+val internal TryFindAnonRecdFieldOfType : TcGlobals -> TType -> string -> Item option
 
 /// Add extra items to the environment for Visual Studio, e.g. static members 
 val internal AddFakeNamedValRefToNameEnv : string -> NameResolutionEnv -> ValRef -> NameResolutionEnv
