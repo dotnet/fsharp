@@ -4706,7 +4706,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
         errorR(Error(FSComp.SR.parsInvalidLiteralInType(), m)) 
         NewErrorType (), tpenv
 
-    | SynType.WithNull(innerTy, m) -> 
+    | SynType.WithNull(innerTy, ambivalent, m) -> 
         let innerTyC, tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv innerTy
         if g.langFeatureNullness then 
             if TypeNullNever g innerTyC then
@@ -4715,7 +4715,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
 
             // TODO - doesn't feel right - it will add KnownNotNull + KnownWithNull --> KnownWithNull, e.g.
             //    let f (x: string) = (x = null)
-            match tryAddNullnessToTy KnownWithNull innerTyC with 
+            match tryAddNullnessToTy (if ambivalent then KnownAmbivalentToNull else KnownWithNull) innerTyC with 
 
             | None -> 
                 let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC

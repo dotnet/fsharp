@@ -19,6 +19,7 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <OtherFlags>$(OtherFlags) --stackReserveSize:4096000</OtherFlags>
+    <DefineConstants Condition=" '$(Configuration)' == 'Proto'">BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <FsSrGen Include="..\FSComp.txt">

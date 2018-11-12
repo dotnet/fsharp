@@ -172,7 +172,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_langFeatureAnonRecds = (langVersion >= 5.0)
 
   let v_knownWithoutNull =
-      if v_langFeatureNullness then KnownWithoutNull else KnownObliviousToNull
+      if v_langFeatureNullness then KnownWithoutNull else KnownAmbivalentToNull
 
   let mkNonGenericTy tcref = TType_app(tcref, [], v_knownWithoutNull)
 

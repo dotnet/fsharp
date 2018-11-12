@@ -1038,6 +1038,15 @@
   <data name="csStructConstraintInconsistent" xml:space="preserve">
     <value>The constraints 'struct' and 'not struct' are inconsistent</value>
   </data>
+  <data name="csNullNotNullConstraintInconsistent" xml:space="preserve">
+    <value>The constraints 'null' and 'not null' are inconsistent</value>
+  </data>
+  <data name="csStructNullConstraintInconsistent" xml:space="preserve">
+    <value>The constraints 'struct' and 'null' are inconsistent</value>
+  </data>
+  <data name="csDelegateComparisonConstraintInconsistent" xml:space="preserve">
+    <value>The constraints 'delegate' and 'comparison' are inconsistent</value>
+  </data>
   <data name="csTypeDoesNotHaveNull" xml:space="preserve">
     <value>The type '{0}' does not have 'null' as a proper value</value>
   </data>

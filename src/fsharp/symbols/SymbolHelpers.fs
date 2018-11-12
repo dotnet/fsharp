@@ -476,7 +476,7 @@ module internal SymbolHelpers =
             // Generalize to get a formal signature 
             let formalTypars = tcref.Typars(m)
             let formalTypeInst = generalizeTypars formalTypars
-            let ty = TType_app(tcref, formalTypeInst, KnownObliviousToNull)
+            let ty = TType_app(tcref, formalTypeInst, KnownAmbivalentToNull)
             if isILAppTy g ty then
                 let formalTypeInfo = ILTypeInfo.FromType g ty
                 Some(nlref.Ccu.FileName, formalTypars, formalTypeInfo)

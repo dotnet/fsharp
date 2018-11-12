@@ -2256,11 +2256,11 @@ and
     /// Links a previously unlinked type variable to the given data. Only used during unpickling of F# metadata.
     member x.AsType nullness = 
         match nullness with 
-        | Nullness.Known NullnessInfo.ObliviousToNull -> 
+        | Nullness.Known NullnessInfo.AmbivalentToNull -> 
             let ty = x.typar_astype
             match box ty with 
             | null -> 
-                let ty2 = TType_var (x, Nullness.Known NullnessInfo.ObliviousToNull)
+                let ty2 = TType_var (x, Nullness.Known NullnessInfo.AmbivalentToNull)
                 x.typar_astype <- ty2
                 ty2
             | _ -> ty
@@ -3921,7 +3921,7 @@ and Nullness =
    //    | Known info -> Some info
    //    | Variable v -> v.TryEvaluate()
 
-   override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.ObliviousToNull -> "%"
+   override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.AmbivalentToNull -> "%"
 
 // Note, nullness variables are only created if the nullness checking feature is on
 and NullnessVar() = 
@@ -3962,7 +3962,7 @@ and
     | WithoutNull
 
     /// we know we don't care
-    | ObliviousToNull
+    | AmbivalentToNull
 
 and 
   /// The algebra of types
@@ -5196,7 +5196,7 @@ and
 /// non-generic types.
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
-    CompiledTypeRepr = 
+    CompiledTypeRepr =  
 
     /// An AbstractIL type representation that is just the name of a type.
     ///
@@ -5374,7 +5374,7 @@ let ccuOfTyconRef eref =
 
 let NewNullnessVar() = Nullness.Variable (NullnessVar()) // we don't known (and if we never find out then it's non-null)
 
-let KnownObliviousToNull = Nullness.Known NullnessInfo.ObliviousToNull
+let KnownAmbivalentToNull = Nullness.Known NullnessInfo.AmbivalentToNull
 let KnownWithNull = Nullness.Known NullnessInfo.WithNull
 let KnownWithoutNull = Nullness.Known NullnessInfo.WithoutNull
 
@@ -5423,11 +5423,11 @@ let rec stripUnitEqnsAux canShortcut unt =
 let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) = 
     match nullnessOrig.Evaluate() with
     | NullnessInfo.WithoutNull -> nullnessNew
-    | NullnessInfo.ObliviousToNull -> nullnessOrig
+    | NullnessInfo.AmbivalentToNull -> nullnessOrig
     | NullnessInfo.WithNull -> 
         match nullnessNew.Evaluate() with
         | NullnessInfo.WithoutNull -> nullnessOrig
-        | NullnessInfo.ObliviousToNull -> nullnessNew
+        | NullnessInfo.AmbivalentToNull -> nullnessNew
         | NullnessInfo.WithNull -> nullnessOrig
 
 let tryAddNullnessToTy nullnessNew (ty:TType) = 

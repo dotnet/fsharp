@@ -654,7 +654,7 @@ let p_nleref x st = p_int (encode_nleref st.occus st.ostrings st.onlerefs st.osc
 
 // Simple types are types like "int", represented as TType(Ref_nonlocal(...,"int"),[]). 
 // A huge number of these occur in pickled F# data, so make them unique. 
-let decode_simpletyp st _ccuTab _stringTab nlerefTab a = TType_app(ERefNonLocal (lookup_nleref st nlerefTab a), [], KnownObliviousToNull) // TODO should simpletyps hold obvlious or non-null etc.? 
+let decode_simpletyp st _ccuTab _stringTab nlerefTab a = TType_app(ERefNonLocal (lookup_nleref st nlerefTab a), [], KnownAmbivalentToNull) // TODO should simpletyps hold obvlious or non-null etc.? 
 let lookup_simpletyp st simpleTyTab x = lookup_uniq st simpleTyTab x
 let u_encoded_simpletyp st = u_int  st
 let u_encoded_anoninfo st = u_int  st
@@ -1593,7 +1593,7 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
             match nullness.Evaluate() with 
             | NullnessInfo.WithNull -> p_byteB 9 st
             | NullnessInfo.WithoutNull -> p_byteB 10 st
-            | NullnessInfo.ObliviousToNull -> p_byteB 11 st
+            | NullnessInfo.AmbivalentToNull -> p_byteB 11 st
         p_byte 1 st; p_simpletyp nleref st
 
     | TType_app (tc,tinst, nullness) ->
@@ -1601,7 +1601,7 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
             match nullness.Evaluate() with 
             | NullnessInfo.WithNull -> p_byteB 12 st
             | NullnessInfo.WithoutNull -> p_byteB 13 st
-            | NullnessInfo.ObliviousToNull -> p_byteB 14 st
+            | NullnessInfo.AmbivalentToNull -> p_byteB 14 st
         p_byte 2 st; p_tcref "typ" tc st; p_tys tinst st
         
     | TType_fun (d,r,nullness) ->
@@ -1609,7 +1609,7 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
             match nullness.Evaluate() with 
             | NullnessInfo.WithNull -> p_byteB 15 st
             | NullnessInfo.WithoutNull -> p_byteB 16 st
-            | NullnessInfo.ObliviousToNull -> p_byteB 17 st
+            | NullnessInfo.AmbivalentToNull -> p_byteB 17 st
         p_byte 3 st
         // Note, the "this" argument may be found in the domain position of a function type, so propagate the isStructThisArgPos value
         p_ty2 isStructThisArgPos d st
@@ -1620,7 +1620,7 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
             match nullness.Evaluate() with 
             | NullnessInfo.WithNull -> p_byteB 18 st
             | NullnessInfo.WithoutNull -> p_byteB 19 st
-            | NullnessInfo.ObliviousToNull -> p_byteB 20 st
+            | NullnessInfo.AmbivalentToNull -> p_byteB 20 st
         p_byte 4 st
         p_tpref r st
 
@@ -1664,7 +1664,7 @@ let _ = fill_u_ty (fun st ->
             | _ -> ufailwith st "u_ty 9b"
         | 11 -> 
             match sty with 
-            | TType_app(tcref, _, _) -> TType_app(tcref, [], KnownObliviousToNull)
+            | TType_app(tcref, _, _) -> TType_app(tcref, [], KnownAmbivalentToNull)
             | _ -> ufailwith st "u_ty 9c"
         | b -> ufailwith st (sprintf "u_ty - 1/B, byte = %A" b)
     | 2 -> 
@@ -1672,29 +1672,29 @@ let _ = fill_u_ty (fun st ->
         let tcref = u_tcref st
         let tinst = u_tys st
         match tagB with 
-        | 0 -> TType_app (tcref, tinst, KnownObliviousToNull)
+        | 0 -> TType_app (tcref, tinst, KnownAmbivalentToNull)
         | 12 -> TType_app (tcref, tinst, KnownWithNull)
         | 13 -> TType_app (tcref, tinst, KnownWithoutNull)
-        | 14 -> TType_app (tcref, tinst, KnownObliviousToNull)
+        | 14 -> TType_app (tcref, tinst, KnownAmbivalentToNull)
         | _ -> ufailwith st "u_ty - 2/B"
     | 3 -> 
         let tagB = u_byteB st
         let d = u_ty st
         let r = u_ty st
         match tagB with 
-        | 0 -> TType_fun (d, r, KnownObliviousToNull)
+        | 0 -> TType_fun (d, r, KnownAmbivalentToNull)
         | 15 -> TType_fun (d, r, KnownWithNull)
         | 16 -> TType_fun (d, r, KnownWithoutNull)
-        | 17 -> TType_fun (d, r, KnownObliviousToNull)
+        | 17 -> TType_fun (d, r, KnownAmbivalentToNull)
         | _ -> ufailwith st "u_ty - 3/B"
     | 4 ->
         let tagB = u_byteB st
         let r = u_tpref st
         match tagB with 
-        | 0 -> r.AsType KnownObliviousToNull
+        | 0 -> r.AsType KnownAmbivalentToNull
         | 18 -> r.AsType KnownWithNull
         | 19 -> r.AsType KnownWithoutNull
-        | 20 -> r.AsType KnownObliviousToNull
+        | 20 -> r.AsType KnownAmbivalentToNull
         | _ -> ufailwith st "u_ty - 4/B"
     | 5 -> let tps = u_tyar_specs st in let r = u_ty st  in TType_forall (tps,r)
     | 6 -> let unt = u_measure_expr st                     in TType_measure unt

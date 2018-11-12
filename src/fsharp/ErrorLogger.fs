@@ -231,7 +231,6 @@ type PhasedDiagnostic =
         | BuildPhaseSubcategory.Parameter 
         | BuildPhaseSubcategory.Parse 
         | BuildPhaseSubcategory.TypeCheck -> true
-        | null 
         | BuildPhaseSubcategory.DefaultPhase 
         | BuildPhaseSubcategory.CodeGen 
         | BuildPhaseSubcategory.Optimize 

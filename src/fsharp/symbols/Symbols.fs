@@ -2093,11 +2093,11 @@ and FSharpType(cenv, ty:TType) =
         | TType_tuple (_, _) -> false
         | _ -> false
 
-    member __.IsNullOblivious = 
+    member __.IsNullAmbivalent = 
        protect <| fun () -> 
         match stripTyparEqns ty with 
         | TType_app (_, _, nullness)
-        | TType_fun(_, _, nullness) -> match nullness.Evaluate() with NullnessInfo.ObliviousToNull -> true | _ -> false
+        | TType_fun(_, _, nullness) -> match nullness.Evaluate() with NullnessInfo.AmbivalentToNull -> true | _ -> false
         | TType_tuple (_, _) -> false
         | _ -> false
 

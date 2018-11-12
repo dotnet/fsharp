@@ -105,8 +105,11 @@ module internal FSharpEnvironment =
                         let mutable uType = REG_SZ;
                         let mutable cbData = maxDataLength;
 
-                        let res = RegQueryValueExW(hkey, null, 0u, &uType, pathResult, &cbData);
-
+#if BUILDING_WITH_LKG
+                        let res = RegQueryValueExW(hkey, null, 0u, &uType, pathResult, &cbData); // TODO use of nonNull should not be required
+#else
+                        let res = RegQueryValueExW(hkey, nonNull<string> null, 0u, &uType, pathResult, &cbData); // TODO use of nonNull should not be required
+#endif
                         if (res = 0u && cbData > 0 && cbData <= maxDataLength) then
                             Marshal.PtrToStringUni(pathResult, (cbData - 2)/2);
                         else 

@@ -82,7 +82,7 @@ let NewErrorMeasureVar () =
 
 let NewInferenceType (g: TcGlobals) = 
     let tp = NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false)
-    let nullness = if g.langFeatureNullness then NewNullnessVar() else KnownObliviousToNull
+    let nullness = if g.langFeatureNullness then NewNullnessVar() else KnownAmbivalentToNull
     TType_var (tp, nullness)
     
 let NewErrorType () = mkTyparTy (NewErrorTypar ())
@@ -816,8 +816,8 @@ and SolveNullnessEquiv (csenv:ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1
         CompleteD
     | Nullness.Known n1, Nullness.Known n2 -> 
         match n1, n2 with 
-        | NullnessInfo.ObliviousToNull, _ -> CompleteD
-        | _, NullnessInfo.ObliviousToNull -> CompleteD
+        | NullnessInfo.AmbivalentToNull, _ -> CompleteD
+        | _, NullnessInfo.AmbivalentToNull -> CompleteD
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
         // Allow expected of WithNull and actual of WithoutNull
@@ -847,8 +847,8 @@ and SolveNullnessSubsumesNullness (csenv:ConstraintSolverEnv) m2 (trace: Optiona
         CompleteD
     | Nullness.Known n1, Nullness.Known n2 -> 
         match n1, n2 with 
-        | NullnessInfo.ObliviousToNull, _ -> CompleteD
-        | _, NullnessInfo.ObliviousToNull -> CompleteD
+        | NullnessInfo.AmbivalentToNull, _ -> CompleteD
+        | _, NullnessInfo.AmbivalentToNull -> CompleteD
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
         // Allow target of WithNull and actual of WithoutNull
@@ -1824,6 +1824,7 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
         // comparison implies equality
         | TyparConstraint.SupportsComparison _, TyparConstraint.SupportsEquality _
         | TyparConstraint.SupportsNull _, TyparConstraint.SupportsNull _
+        | TyparConstraint.NotSupportsNull _, TyparConstraint.NotSupportsNull _
         | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsNonNullableStruct _
         | TyparConstraint.IsUnmanaged _, TyparConstraint.IsUnmanaged _
         | TyparConstraint.IsReferenceType _, TyparConstraint.IsReferenceType _
@@ -1899,7 +1900,7 @@ and SolveNullnessSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 (trace: Optio
             CompleteD
     | Nullness.Known n1 -> 
         match n1 with 
-        | NullnessInfo.ObliviousToNull -> CompleteD
+        | NullnessInfo.AmbivalentToNull -> CompleteD
         | NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull -> 
             if csenv.g.checkNullness then 
@@ -1919,7 +1920,7 @@ and SolveNullnessNotSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 (trace: Op
             CompleteD
     | Nullness.Known n1 -> 
         match n1 with 
-        | NullnessInfo.ObliviousToNull -> CompleteD
+        | NullnessInfo.AmbivalentToNull -> CompleteD
         | NullnessInfo.WithoutNull -> CompleteD
         | NullnessInfo.WithNull -> 
             if csenv.g.checkNullness then 
@@ -1994,7 +1995,7 @@ and SolveTypeDefnNotSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     //// If you set a type variable constrained with a T: not null to U then you don't induce an inference constraint
     //// of U: not null.
     //// TODO: what about Obsolete?
-    //| TType_var(_, nullness) when nullness.TryEvaluate() = Some NullnessInfo.WithoutNull || nullness.TryEvaluate() = Some NullnessInfo.ObliviousToNull -> CompleteD
+    //| TType_var(_, nullness) when nullness.TryEvaluate() = Some NullnessInfo.WithoutNull || nullness.TryEvaluate() = Some NullnessInfo.AmbivalentToNull -> CompleteD
     //| _ ->
     match tryDestTyparTy g ty with
     | ValueSome tp ->

@@ -53,19 +53,19 @@ type internal History() =
         if current >= 0 && current < list.Count then list.[current] else String.Empty
 
     member x.Clear() = list.Clear(); current <- -1
-    member x.Add line = 
+
+    member x.Add (line: string?) = // TODO: explicit type annotation shouldn't be needed
         match line with 
         | null | "" -> ()
-        | _ -> list.Add(line)
+        | _ ->
+            list.Add(nonNull<string> line)  // TODO: explicit instantiation shouldn't be needed
 
-    member x.AddLast line = 
+    member x.AddLast (line: string?) =  // TODO: explicit type annotation shouldn't be needed
         match line with 
         | null | "" -> ()
-        | _ -> list.Add(line); current <- list.Count
-
-    // Dead code   
-    // member x.First() = current <- 0; x.Current
-    // member x.Last() = current <- list.Count - 1; x.Current;
+        | _ ->
+            list.Add(nonNull<string> line) // TODO: explicit instantiation shouldn't be needed
+            current <- list.Count
 
     member x.Previous() = 
         if (list.Count > 0)  then

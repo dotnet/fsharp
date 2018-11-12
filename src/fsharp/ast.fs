@@ -477,7 +477,7 @@ and
     | StaticConstantNamed of expr:SynType * SynType * range:range
 
     /// F# syntax : type | null
-    | WithNull of SynType * range:range
+    | WithNull of SynType * ambivalent: bool * range:range
 
     /// Get the syntactic range of source code covered by this construct.
     member x.Range =

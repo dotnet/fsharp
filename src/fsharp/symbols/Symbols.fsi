@@ -945,7 +945,7 @@ and [<Class>] public FSharpType =
     member HasNullAnnotation: bool
     
     /// Indicates this type is assumed to support the null value
-    member IsNullOblivious: bool
+    member IsNullAmbivalent: bool
     
     /// Get the generic arguments for a tuple type, a function type or a type constructed using a named entity
     member GenericArguments : IList<FSharpType>

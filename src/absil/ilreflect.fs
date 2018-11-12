@@ -391,7 +391,11 @@ let emEnv0 =
       emEntryPts = []
       delayedFieldInits = [] }
 
-let envBindTypeRef emEnv (tref:ILTypeRef) (typT, typB, typeDef)= 
+#if BUILDING_WITH_LKG
+let envBindTypeRef emEnv (tref:ILTypeRef) (typT: System.Type, typB, typeDef)= 
+#else
+let envBindTypeRef emEnv (tref:ILTypeRef) (typT: System.Type?, typB, typeDef)= 
+#endif
     match typT with 
     | null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name;
     | _ -> {emEnv with emTypMap = Zmap.add tref (typT, typB, typeDef, None) emEnv.emTypMap}
@@ -426,8 +430,8 @@ let convTypeRef cenv emEnv preferCreated (tref:ILTypeRef) =
     let res = 
         match Zmap.tryFind tref emEnv.emTypMap with
         | Some (_typT, _typB, _typeDef, Some createdTy) when preferCreated -> createdTy 
-        | Some (typT, _typB, _typeDef, _)                                  -> typT       
-        | None                                                        -> convTypeRefAux cenv tref 
+        | Some (typT, _typB, _typeDef, _) -> typT       
+        | None -> convTypeRefAux cenv tref 
     match res with 
     | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tref.QualifiedName, tref.Scope.QualifiedName), range0))
     | _ -> res
@@ -844,7 +848,11 @@ let convMethodSpec cenv emEnv (mspec:ILMethodSpec) =
 // - QueryableTypeGetConstructors: get a constructor on a non-TypeBuilder type
 //----------------------------------------------------------------------------
 
-let queryableTypeGetConstructor cenv emEnv (parentT:Type) (mref:ILMethodRef)  =
+#if BUILDING_WITH_LKG
+let queryableTypeGetConstructor cenv emEnv (parentT:Type) (mref:ILMethodRef) : ConstructorInfo =
+#else
+let queryableTypeGetConstructor cenv emEnv (parentT:Type) (mref:ILMethodRef) : ConstructorInfo? =
+#endif
     let tyargTs  = getGenericArgumentsOfType parentT
     let reqArgTs  = 
         let emEnv = envPushTyvars emEnv tyargTs
@@ -855,7 +863,11 @@ let queryableTypeGetConstructor cenv emEnv (parentT:Type) (mref:ILMethodRef)  =
     | _ -> res
 
 
+#if BUILDING_WITH_LKG
 let nonQueryableTypeGetConstructor (parentTI:Type) (consInfo : ConstructorInfo) : ConstructorInfo = 
+#else
+let nonQueryableTypeGetConstructor (parentTI:Type) (consInfo : ConstructorInfo) : ConstructorInfo? = 
+#endif
     if parentTI.IsGenericType then TypeBuilder.GetConstructor(parentTI, consInfo) else consInfo
 
 //----------------------------------------------------------------------------
@@ -960,16 +972,16 @@ let getGenericMethodDefinition q (ty:Type) =
 
 let getArrayMethInfo n ty = 
     match n with 
-    | 2 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.GetArray2D<int> null 0 0 @@> ty
-    | 3 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.GetArray3D<int> null 0 0 0 @@> ty
-    | 4 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.GetArray4D<int> null 0 0 0 0 @@> ty
+    | 2 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.GetArray2D<int> Unchecked.defaultof<_> 0 0 @@> ty
+    | 3 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.GetArray3D<int> Unchecked.defaultof<_> 0 0 0 @@> ty
+    | 4 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.GetArray4D<int> Unchecked.defaultof<_> 0 0 0 0 @@> ty
     | _ -> invalidArg "n" "not expecting array dimension > 4"
     
 let setArrayMethInfo n ty = 
     match n with 
-    | 2 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray2D<int> null 0 0 0 @@> ty
-    | 3 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray3D<int> null 0 0 0 0 @@> ty
-    | 4 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray4D<int> null 0 0 0 0 0 @@> ty
+    | 2 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray2D<int> Unchecked.defaultof<_> 0 0 0 @@> ty
+    | 3 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray3D<int> Unchecked.defaultof<_> 0 0 0 0 @@> ty
+    | 4 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray4D<int> Unchecked.defaultof<_> 0 0 0 0 0 @@> ty
     | _ -> invalidArg "n"  "not expecting array dimension > 4"
 
 
@@ -1276,7 +1288,11 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
                     setArrayMethInfo shape.Rank ety
                 else
 #endif
+#if BUILDING_WITH_LKG
                     modB.GetArrayMethodAndLog(aty, "Set", System.Reflection.CallingConventions.HasThis, (null:Type), Array.append (Array.create shape.Rank (typeof<int>)) (Array.ofList [ ety ])) 
+#else
+                    modB.GetArrayMethodAndLog(aty, "Set", System.Reflection.CallingConventions.HasThis, (null:Type?), Array.append (Array.create shape.Rank (typeof<int>)) (Array.ofList [ ety ])) 
+#endif
             ilG.EmitAndLog(OpCodes.Call, meth)
 
     | I_newarr (shape, ty)         -> 
@@ -1284,7 +1300,11 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
         then ilG.EmitAndLog(OpCodes.Newarr, convType cenv emEnv  ty)
         else 
             let aty = convType cenv emEnv  (ILType.Array(shape, ty)) 
+#if BUILDING_WITH_LKG
             let meth = modB.GetArrayMethodAndLog(aty, ".ctor", System.Reflection.CallingConventions.HasThis, (null:Type), Array.create shape.Rank (typeof<int>))
+#else
+            let meth = modB.GetArrayMethodAndLog(aty, ".ctor", System.Reflection.CallingConventions.HasThis, (null:Type?), Array.create shape.Rank (typeof<int>))
+#endif
             ilG.EmitAndLog(OpCodes.Newobj, meth)
 
     | I_ldlen                      -> ilG.EmitAndLog(OpCodes.Ldlen)

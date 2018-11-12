@@ -3333,19 +3333,20 @@ namespace Microsoft.FSharp.Core
             | null -> true 
             | _ -> false
 
-        [<CompiledName("IsNullV")>]
-        let inline isNullV (value : Nullable<'T>) = not value.HasValue
-
         [<CompiledName("IsNonNull")>]
         let inline internal isNonNull (value : 'T) = 
             match value with 
             | null -> false 
             | _ -> true
 
+#if !BUILDING_WITH_LKG
+        [<CompiledName("IsNullV")>]
+        let inline isNullV (value : Nullable<'T>) = not value.HasValue
+
         [<CompiledName("NonNull")>]
-        let inline nonNull (value : 'T when 'T : not struct) = 
+        let inline nonNull (value : ('T)? when 'T : not struct) = 
             match box value with 
-            | null -> raise (System.NullReferenceException())
+            | null -> raise (System.NullReferenceException()) // TODO: decide if this raises an exception or ploughs on 
             | _ -> value
 
         [<CompiledName("NonNullV")>]
@@ -3356,13 +3357,14 @@ namespace Microsoft.FSharp.Core
                 raise (System.NullReferenceException())
 
         [<CompiledName("WithNull")>]
-        let inline withNull (value : 'T when 'T : not struct) = value
+        let inline withNull (value : 'T when 'T : not struct) = (# "" value : 'T? #)
 
         [<CompiledName("WithNullV")>]
         let inline withNullV (value : 'T) : Nullable<'T> = Nullable<'T>(value)
 
         [<CompiledName("NullV")>]
         let inline nullV<'T when 'T : struct and 'T : (new : unit -> 'T) and 'T :> ValueType>  = Nullable<'T>()
+#endif
 
         [<CompiledName("Raise")>]
         let inline raise (exn: exn) = (# "throw" exn : 'T #)

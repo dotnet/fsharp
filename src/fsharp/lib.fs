@@ -21,7 +21,11 @@ let condition s =
 
 let GetEnvInteger e dflt = match System.Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 
+#if BUILDING_WITH_LKG
 let dispose (x:System.IDisposable) = match x with null -> () | x -> x.Dispose()
+#else
+let dispose (x:System.IDisposable?) = match x with null -> () | x -> x.Dispose()
+#endif
 
 type SaveAndRestoreConsoleEncoding () =
     let savedOut = System.Console.Out
@@ -114,10 +118,9 @@ module Check =
 
     /// Throw <c>System.ArgumentNullException()</c> if argument is <c>null</c>.
     let ArgumentNotNull arg argname = 
-        match box(arg) with 
+        match box arg with 
         | null -> raise (new System.ArgumentNullException(argname))
         | _ -> ()
-       
         
     /// Throw <c>System.ArgumentNullException()</c> if array argument is <c>null</c>.
     /// Throw <c>System.ArgumentOutOfRangeException()</c> is array argument is empty.
@@ -369,22 +372,23 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
 // with care.
 //----------------------------------------------------------------------------
 
-// The following DEBUG code does not currently compile.
-//#if DEBUG
-//type 'T NonNullSlot = 'T option 
-//let nullableSlotEmpty() = None 
-//let nullableSlotFull(x) = Some x
+//#if BUILDING_WITH_LKG
+type NonNullSlot<'T when 'T : not struct> = 'T
 //#else
-type NonNullSlot<'T> = 'T
-let nullableSlotEmpty() = Unchecked.defaultof<'T>
-let nullableSlotFull x = x
-//#endif    
+//type NonNullSlot<'T when (* 'T : not null and *)  'T : not struct> = 'T?
+//#endif
+let nullableSlotEmpty() : NonNullSlot<'T> = Unchecked.defaultof<_>
+let nullableSlotFull (x: 'T) : NonNullSlot<'T> = x
 
 //---------------------------------------------------------------------------
 // Caches, mainly for free variables
 //---------------------------------------------------------------------------
 
-type cache<'T> = { mutable cacheVal: 'T NonNullSlot }
+//#if BUILDING_WITH_LKG
+type cache<'T when 'T : not struct> = { mutable cacheVal: NonNullSlot<'T> }
+//#else
+//type cache<'T when 'T : (* not null and *) 'T : not struct> = { mutable cacheVal: NonNullSlot<'T> }
+//#endif
 let newCache() = { cacheVal = nullableSlotEmpty() }
 
 let inline cached cache resf = 

@@ -18,12 +18,14 @@ open Microsoft.FSharp.Collections
 type UnionCaseInfo =
     /// <summary>The name of the case.</summary>
     member Name : string
+
     /// <summary>The type in which the case occurs.</summary>
     member DeclaringType: Type
     
     /// <summary>Returns the custom attributes associated with the case.</summary>
     /// <returns>An array of custom attributes.</returns>
     member GetCustomAttributes: unit -> obj[]
+
     /// <summary>Returns the custom attributes associated with the case matching the given attribute type.</summary>
     /// <param name="attributeType">The type of attributes to return.</param>
     /// <returns>An array of custom attributes.</returns>
@@ -56,8 +58,12 @@ type FSharpValue =
     /// <param name="info">The PropertyInfo describing the field to read.</param>
     /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>The field from the record.</returns>
+#if BUILDING_WITH_LKG
     static member GetRecordField:  record:obj * info:PropertyInfo -> obj
-    
+#else
+    static member GetRecordField:  record:obj? * info:PropertyInfo -> obj?
+#endif
+
     /// <summary>Precompute a function for reading a particular field from a record.
     /// Assumes the given type is a RecordType with a field of the given name. 
     /// If not, ArgumentException is raised during pre-computation.</summary>
@@ -68,7 +74,11 @@ type FSharpValue =
     /// <param name="info">The PropertyInfo of the field to read.</param>
     /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>A function to read the specified field from the record.</returns>
+#if BUILDING_WITH_LKG
     static member PreComputeRecordFieldReader : info:PropertyInfo -> (obj -> obj)
+#else
+    static member PreComputeRecordFieldReader : info:PropertyInfo -> (obj? -> obj?)
+#endif
 
     /// <summary>Creates an instance of a record type.</summary>
     ///
@@ -78,7 +88,11 @@ type FSharpValue =
     /// <param name="bindingFlags">Optional binding flags for the record.</param>
     /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>The created record.</returns>
+#if BUILDING_WITH_LKG
     static member MakeRecord: recordType:Type * values:obj [] * ?bindingFlags:BindingFlags  -> obj
+#else
+    static member MakeRecord: recordType:Type * values:obj? [] * ?bindingFlags:BindingFlags  -> obj
+#endif
 
     /// <summary>Reads all the fields from a record value.</summary>
     ///
@@ -87,7 +101,11 @@ type FSharpValue =
     /// <param name="bindingFlags">Optional binding flags for the record.</param>
     /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>The array of fields from the record.</returns>
+#if BUILDING_WITH_LKG
     static member GetRecordFields:  record:obj * ?bindingFlags:BindingFlags  -> obj[]
+#else
+    static member GetRecordFields:  record:obj? * ?bindingFlags:BindingFlags  -> obj?[]
+#endif
 
     /// <summary>Precompute a function for reading all the fields from a record. The fields are returned in the
     /// same order as the fields reported by a call to Microsoft.FSharp.Reflection.Type.GetInfo for
@@ -103,7 +121,12 @@ type FSharpValue =
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>An optimized reader for the given record type.</returns>
+#if BUILDING_WITH_LKG
     static member PreComputeRecordReader : recordType:Type  * ?bindingFlags:BindingFlags -> (obj -> obj[])
+#else
+    static member PreComputeRecordReader : recordType:Type  * ?bindingFlags:BindingFlags -> (obj? -> obj?[])
+#endif
+
     /// <summary>Precompute a function for constructing a record value. </summary>
     ///
     /// <remarks>Assumes the given type is a RecordType.
@@ -112,7 +135,11 @@ type FSharpValue =
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>A function to construct records of the given type.</returns>
+#if BUILDING_WITH_LKG
     static member PreComputeRecordConstructor : recordType:Type  * ?bindingFlags:BindingFlags -> (obj[] -> obj)
+#else
+    static member PreComputeRecordConstructor : recordType:Type  * ?bindingFlags:BindingFlags -> (obj?[] -> obj)
+#endif
 
     /// <summary>Get a ConstructorInfo for a record type</summary>
     /// <param name="recordType">The record type.</param>
@@ -125,7 +152,11 @@ type FSharpValue =
     /// <param name="args">The array of arguments to construct the given case.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <returns>The constructed union case.</returns>
+#if BUILDING_WITH_LKG
     static member MakeUnion: unionCase:UnionCaseInfo * args:obj [] * ?bindingFlags:BindingFlags -> obj
+#else
+    static member MakeUnion: unionCase:UnionCaseInfo * args:obj? [] * ?bindingFlags:BindingFlags -> obj
+#endif
 
     /// <summary>Identify the union case and its fields for an object</summary>
     ///
@@ -139,8 +170,12 @@ type FSharpValue =
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <exception cref="System.ArgumentException">Thrown when the input type is not a union case value.</exception>
     /// <returns>The description of the union case and its fields.</returns>
+#if BUILDING_WITH_LKG
     static member GetUnionFields:  value:obj * unionType:Type * ?bindingFlags:BindingFlags -> UnionCaseInfo * obj []
-    
+#else
+    static member GetUnionFields:  value:obj? * unionType:Type * ?bindingFlags:BindingFlags -> UnionCaseInfo * obj? []
+#endif
+
     /// <summary>Assumes the given type is a union type. 
     /// If not, ArgumentException is raised during pre-computation.</summary>
     ///
@@ -150,7 +185,11 @@ type FSharpValue =
     /// <param name="unionType">The type of union to optimize reading.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <returns>An optimized function to read the tags of the given union type.</returns>
+#if BUILDING_WITH_LKG
     static member PreComputeUnionTagReader          : unionType:Type  * ?bindingFlags:BindingFlags -> (obj -> int)
+#else
+    static member PreComputeUnionTagReader          : unionType:Type  * ?bindingFlags:BindingFlags -> (obj? -> int)
+#endif
 
     /// <summary>Precompute a property or static method for reading an integer representing the case tag of a union type.</summary>
     /// <param name="unionType">The type of union to read.</param>
@@ -164,13 +203,21 @@ type FSharpValue =
     /// <param name="unionCase">The description of the union case to read.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <returns>A function to for reading the fields of the given union case.</returns>
+#if BUILDING_WITH_LKG
     static member PreComputeUnionReader       : unionCase:UnionCaseInfo  * ?bindingFlags:BindingFlags -> (obj -> obj[])
+#else
+    static member PreComputeUnionReader       : unionCase:UnionCaseInfo  * ?bindingFlags:BindingFlags -> (obj? -> obj?[])
+#endif
 
     /// <summary>Precompute a function for constructing a discriminated union value for a particular union case. </summary>
     /// <param name="unionCase">The description of the union case.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <returns>A function for constructing values of the given union case.</returns>
+#if BUILDING_WITH_LKG
     static member PreComputeUnionConstructor : unionCase:UnionCaseInfo  * ?bindingFlags:BindingFlags -> (obj[] -> obj)
+#else
+    static member PreComputeUnionConstructor : unionCase:UnionCaseInfo  * ?bindingFlags:BindingFlags -> (obj?[] -> obj)
+#endif
 
     /// <summary>A method that constructs objects of the given case</summary>
     /// <param name="unionCase">The description of the union case.</param>
@@ -185,7 +232,11 @@ type FSharpValue =
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <exception cref="System.ArgumentException">Thrown when the input type is not an F# exception.</exception>
     /// <returns>The fields from the given exception.</returns>
+#if BUILDING_WITH_LKG
     static member GetExceptionFields:  exn:obj * ?bindingFlags:BindingFlags  -> obj[]
+#else
+    static member GetExceptionFields:  exn:obj? * ?bindingFlags:BindingFlags  -> obj?[]
+#endif
 
     /// <summary>Creates an instance of a tuple type</summary>
     ///
@@ -194,7 +245,11 @@ type FSharpValue =
     /// <param name="tupleType">The tuple type to create.</param>
     /// <exception cref="System.ArgumentException">Thrown if no elements are given.</exception>
     /// <returns>An instance of the tuple type with the given elements.</returns>
+#if BUILDING_WITH_LKG
     static member MakeTuple: tupleElements:obj[] * tupleType:Type -> obj
+#else
+    static member MakeTuple: tupleElements:obj?[] * tupleType:Type -> obj
+#endif
 
     /// <summary>Reads a field from a tuple value.</summary>
     ///
@@ -202,7 +257,11 @@ type FSharpValue =
     /// <param name="tuple">The input tuple.</param>
     /// <param name="index">The index of the field to read.</param>
     /// <returns>The value of the field.</returns>
+#if BUILDING_WITH_LKG
     static member GetTupleField: tuple:obj * index:int -> obj
+#else
+    static member GetTupleField: tuple:obj * index:int -> obj?
+#endif
 
     /// <summary>Reads all fields from a tuple.</summary>
     ///
@@ -210,8 +269,12 @@ type FSharpValue =
     /// <param name="tuple">The input tuple.</param>
     /// <exception cref="System.ArgumentException">Thrown when the input is not a tuple value.</exception>
     /// <returns>An array of the fields from the given tuple.</returns>
-    static member GetTupleFields: tuple:obj -> obj []
-    
+#if BUILDING_WITH_LKG
+    static member GetTupleFields: tuple:obj -> obj[]
+#else
+    static member GetTupleFields: tuple:obj -> obj? []
+#endif
+
     /// <summary>Precompute a function for reading the values of a particular tuple type</summary>
     ///
     /// <remarks>Assumes the given type is a TupleType.
@@ -219,8 +282,12 @@ type FSharpValue =
     /// <param name="tupleType">The tuple type to read.</param>
     /// <exception cref="System.ArgumentException">Thrown when the given type is not a tuple type.</exception>
     /// <returns>A function to read values of the given tuple type.</returns>
+#if BUILDING_WITH_LKG
     static member PreComputeTupleReader           : tupleType:Type -> (obj -> obj[])
-    
+#else
+    static member PreComputeTupleReader           : tupleType:Type -> (obj? -> obj?[])
+#endif
+
     /// <summary>Gets information that indicates how to read a field of a tuple</summary>
     /// <param name="tupleType">The input tuple type.</param>
     /// <param name="index">The index of the tuple element to describe.</param>
@@ -234,7 +301,11 @@ type FSharpValue =
     /// <param name="tupleType">The type of tuple to read.</param>
     /// <exception cref="System.ArgumentException">Thrown when the given type is not a tuple type.</exception>
     /// <returns>A function to read a particular tuple type.</returns>
+#if BUILDING_WITH_LKG
     static member PreComputeTupleConstructor      : tupleType:Type -> (obj[] -> obj)
+#else
+    static member PreComputeTupleConstructor      : tupleType:Type -> (obj?[] -> obj)
+#endif
 
     /// <summary>Gets a method that constructs objects of the given tuple type. 
     /// For small tuples, no additional type will be returned.</summary>
@@ -254,7 +325,11 @@ type FSharpValue =
     /// <param name="functionType">The function type of the implementation.</param>
     /// <param name="implementation">The untyped lambda of the function implementation.</param>
     /// <returns>A typed function from the given dynamic implementation.</returns>
+#if BUILDING_WITH_LKG
     static member MakeFunction           : functionType:Type * implementation:(obj -> obj) -> obj
+#else
+    static member MakeFunction           : functionType:Type * implementation:(obj? -> obj?) -> obj
+#endif
 
 [<AbstractClass; Sealed>]
 /// <summary>Contains operations associated with constructing and analyzing F# types such as records, unions and tuples</summary>
@@ -363,7 +438,12 @@ module FSharpReflectionExtensions =
         /// <param name="allowAccessToPrivateRepresentation">Optional flags that denotes accessibility of the private representation.</param>
         /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
         /// <returns>The created record.</returns>
-        static member MakeRecord: recordType:Type * values:obj [] * ?allowAccessToPrivateRepresentation : bool -> obj
+#if BUILDING_WITH_LKG
+        static member MakeRecord: recordType:Type * values:obj[] * ?allowAccessToPrivateRepresentation : bool -> obj
+#else
+        static member MakeRecord: recordType:Type * values:obj? [] * ?allowAccessToPrivateRepresentation : bool -> obj
+#endif
+
         /// <summary>Reads all the fields from a record value.</summary>
         ///
         /// <remarks>Assumes the given input is a record value. If not, ArgumentException is raised.</remarks>
@@ -371,7 +451,11 @@ module FSharpReflectionExtensions =
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>
         /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
         /// <returns>The array of fields from the record.</returns>
+#if BUILDING_WITH_LKG
         static member GetRecordFields:  record:obj * ?allowAccessToPrivateRepresentation : bool  -> obj[]
+#else
+        static member GetRecordFields:  record:obj? * ?allowAccessToPrivateRepresentation : bool  -> obj?[]
+#endif
 
         /// <summary>Precompute a function for reading all the fields from a record. The fields are returned in the
         /// same order as the fields reported by a call to Microsoft.FSharp.Reflection.Type.GetInfo for
@@ -387,7 +471,12 @@ module FSharpReflectionExtensions =
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
         /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
         /// <returns>An optimized reader for the given record type.</returns>
+#if BUILDING_WITH_LKG
         static member PreComputeRecordReader : recordType:Type * ?allowAccessToPrivateRepresentation : bool -> (obj -> obj[])
+#else
+        static member PreComputeRecordReader : recordType:Type * ?allowAccessToPrivateRepresentation : bool -> (obj? -> obj?[])
+#endif
+
         /// <summary>Precompute a function for constructing a record value. </summary>
         ///
         /// <remarks>Assumes the given type is a RecordType.
@@ -396,20 +485,28 @@ module FSharpReflectionExtensions =
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
         /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
         /// <returns>A function to construct records of the given type.</returns>
+#if BUILDING_WITH_LKG
         static member PreComputeRecordConstructor : recordType:Type * ?allowAccessToPrivateRepresentation : bool -> (obj[] -> obj)
+#else
+        static member PreComputeRecordConstructor : recordType:Type * ?allowAccessToPrivateRepresentation : bool -> (obj?[] -> obj?)
+#endif
 
         /// <summary>Get a ConstructorInfo for a record type</summary>
         /// <param name="recordType">The record type.</param>
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
         /// <returns>A ConstructorInfo for the given record type.</returns>
         static member PreComputeRecordConstructorInfo: recordType:Type * ?allowAccessToPrivateRepresentation : bool-> ConstructorInfo
-    
+
         /// <summary>Create a union case value.</summary>
         /// <param name="unionCase">The description of the union case to create.</param>
         /// <param name="args">The array of arguments to construct the given case.</param>
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
         /// <returns>The constructed union case.</returns>
-        static member MakeUnion: unionCase:UnionCaseInfo * args:obj [] * ?allowAccessToPrivateRepresentation : bool-> obj
+#if BUILDING_WITH_LKG
+        static member MakeUnion: unionCase:UnionCaseInfo * args:obj[] * ?allowAccessToPrivateRepresentation : bool-> obj
+#else
+        static member MakeUnion: unionCase:UnionCaseInfo * args:obj? [] * ?allowAccessToPrivateRepresentation : bool-> obj
+#endif
 
         /// <summary>Identify the union case and its fields for an object</summary>
         ///
@@ -423,8 +520,12 @@ module FSharpReflectionExtensions =
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
         /// <exception cref="System.ArgumentException">Thrown when the input type is not a union case value.</exception>
         /// <returns>The description of the union case and its fields.</returns>
-        static member GetUnionFields:  value:obj * unionType:Type * ?allowAccessToPrivateRepresentation : bool -> UnionCaseInfo * obj []
-    
+#if BUILDING_WITH_LKG
+        static member GetUnionFields:  value:obj * unionType:Type * ?allowAccessToPrivateRepresentation : bool -> UnionCaseInfo * obj[]
+#else
+        static member GetUnionFields:  value:obj? * unionType:Type * ?allowAccessToPrivateRepresentation : bool -> UnionCaseInfo * obj? []
+#endif
+
         /// <summary>Assumes the given type is a union type. 
         /// If not, ArgumentException is raised during pre-computation.</summary>
         ///
@@ -434,7 +535,11 @@ module FSharpReflectionExtensions =
         /// <param name="unionType">The type of union to optimize reading.</param>
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>
         /// <returns>An optimized function to read the tags of the given union type.</returns>
+#if BUILDING_WITH_LKG
         static member PreComputeUnionTagReader          : unionType:Type * ?allowAccessToPrivateRepresentation : bool -> (obj -> int)
+#else
+        static member PreComputeUnionTagReader          : unionType:Type * ?allowAccessToPrivateRepresentation : bool -> (obj? -> int)
+#endif
 
         /// <summary>Precompute a property or static method for reading an integer representing the case tag of a union type.</summary>
         /// <param name="unionType">The type of union to read.</param>
@@ -448,13 +553,21 @@ module FSharpReflectionExtensions =
         /// <param name="unionCase">The description of the union case to read.</param>
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
         /// <returns>A function to for reading the fields of the given union case.</returns>
+#if BUILDING_WITH_LKG
         static member PreComputeUnionReader       : unionCase:UnionCaseInfo * ?allowAccessToPrivateRepresentation : bool -> (obj -> obj[])
+#else
+        static member PreComputeUnionReader       : unionCase:UnionCaseInfo * ?allowAccessToPrivateRepresentation : bool -> (obj? -> obj?[])
+#endif
 
         /// <summary>Precompute a function for constructing a discriminated union value for a particular union case. </summary>
         /// <param name="unionCase">The description of the union case.</param>
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
         /// <returns>A function for constructing values of the given union case.</returns>
+#if BUILDING_WITH_LKG
         static member PreComputeUnionConstructor : unionCase:UnionCaseInfo * ?allowAccessToPrivateRepresentation : bool -> (obj[] -> obj)
+#else
+        static member PreComputeUnionConstructor : unionCase:UnionCaseInfo * ?allowAccessToPrivateRepresentation : bool -> (obj?[] -> obj?)
+#endif
 
         /// <summary>A method that constructs objects of the given case</summary>
         /// <param name="unionCase">The description of the union case.</param>
@@ -469,7 +582,11 @@ module FSharpReflectionExtensions =
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
         /// <exception cref="System.ArgumentException">Thrown when the input type is not an F# exception.</exception>
         /// <returns>The fields from the given exception.</returns>
+#if BUILDING_WITH_LKG
         static member GetExceptionFields:  exn:obj * ?allowAccessToPrivateRepresentation : bool -> obj[]
+#else
+        static member GetExceptionFields:  exn:obj * ?allowAccessToPrivateRepresentation : bool -> obj?[]
+#endif
 
     type FSharpType with
         /// <summary>Reads all the fields from a record value, in declaration order</summary>

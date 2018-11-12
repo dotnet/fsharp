@@ -13,8 +13,13 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
 type FSharpEmbedResXSource() =
+#if BUILDING_WITH_LKG
     let mutable _buildEngine : IBuildEngine = null
     let mutable _hostObject : ITaskHost = null
+#else
+    let mutable _buildEngine : IBuildEngine? = null
+    let mutable _hostObject : ITaskHost? = null
+#endif
     let mutable _embeddedText : ITaskItem[] = [||]
     let mutable _generatedSource : ITaskItem[] = [||]
     let mutable _outputPath : string = ""

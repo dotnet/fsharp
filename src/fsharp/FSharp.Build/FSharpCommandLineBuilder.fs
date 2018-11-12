@@ -42,7 +42,11 @@ type FSharpCommandLineBuilder () =
             if s <> String.Empty then
                 srcs <- tmp.ToString() :: srcs
 
+#if BUILDING_WITH_LKG
     member x.AppendSwitchIfNotNull(switch:string, values:string array, sep:string) =
+#else
+    member x.AppendSwitchIfNotNull(switch:string, values:string? array, sep:string) =
+#endif
         builder.AppendSwitchIfNotNull(switch, values, sep)
         let tmp = new CommandLineBuilder()
         tmp.AppendSwitchUnquotedIfNotNull(switch, values, sep)
@@ -50,7 +54,11 @@ type FSharpCommandLineBuilder () =
         if s <> String.Empty then
             args <- s :: args
 
+#if BUILDING_WITH_LKG
     member x.AppendSwitchIfNotNull(switch:string, value:string, ?metadataNames:string array) =
+#else
+    member x.AppendSwitchIfNotNull(switch:string, value:string?, ?metadataNames:string array) =
+#endif
         let metadataNames = defaultArg metadataNames [||]
         builder.AppendSwitchIfNotNull(switch, value)
         let tmp = new CommandLineBuilder()
@@ -65,7 +73,11 @@ type FSharpCommandLineBuilder () =
         if s <> String.Empty then
             args <- s :: args
 
+#if BUILDING_WITH_LKG
     member x.AppendSwitchUnquotedIfNotNull(switch:string, value:string) =
+#else
+    member x.AppendSwitchUnquotedIfNotNull(switch:string, value:string?) =
+#endif
         assert(switch = "")  // we only call this method for "OtherFlags"
         // Unfortunately we still need to mimic what cmd.exe does, but only for "OtherFlags".
         let ParseCommandLineArgs(commandLine:string) = // returns list in reverse order

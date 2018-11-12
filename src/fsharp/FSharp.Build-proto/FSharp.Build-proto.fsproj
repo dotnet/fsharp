@@ -15,6 +15,7 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <BuildWith>LKG</BuildWith>
     <ProjectGuid>{D8BC791F-C1A9-49DC-9432-0F3090537555}</ProjectGuid>
+    <DefineConstants Condition=" '$(Configuration)' == 'Proto'">BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
       <FsSrGen Include="..\FSharp.Build\FSBuild.txt">

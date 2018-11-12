@@ -64,13 +64,17 @@ let reportTime =
 type InlineDelayInit<'T when 'T : not struct> = 
     new (f: unit -> 'T) = {store = Unchecked.defaultof<'T>; func = Func<_>(f) } 
     val mutable store : 'T
+#if BUILDING_WITH_LKG
     val mutable func : Func<'T>
+#else
+    val mutable func : Func<'T> ?
+#endif
     member x.Value = 
         match x.func with 
         | null -> x.store 
         | _ -> 
         let res = LazyInitializer.EnsureInitialized(&x.store, x.func) 
-        x.func <- Unchecked.defaultof<_>
+        x.func <- null
         res
 
 //-------------------------------------------------------------------------
@@ -194,9 +198,7 @@ module Array =
     /// ~0.8x slower for ints
     let inline areEqual (xs: 'T []) (ys: 'T []) =
         match xs, ys with
-        | null, null -> true
         | [||], [||] -> true
-        | null, _ | _, null -> false
         | _ when xs.Length <> ys.Length -> false
         | _ ->
             let mutable break' = false
@@ -220,8 +222,7 @@ module Array =
     /// check if subArray is found in the wholeArray starting 
     /// at the provided index
     let inline isSubArray (subArray: 'T []) (wholeArray:'T []) index = 
-        if isNull subArray || isNull wholeArray then false
-        elif subArray.Length = 0 then true
+        if subArray.Length = 0 then true
         elif subArray.Length > wholeArray.Length then false
         elif subArray.Length = wholeArray.Length then areEqual subArray wholeArray else
         let rec loop subidx idx =
@@ -491,9 +492,6 @@ module String =
             String (strArr)
 
     let extractTrailingIndex (str: string) =
-        match str with
-        | null -> null, None
-        | _ ->
             let charr = str.ToCharArray() 
             Array.revInPlace charr
             let digits = Array.takeWhile Char.IsDigit charr
@@ -503,13 +501,9 @@ module String =
                | "" -> str, None
                | index -> str.Substring (0, str.Length - index.Length), Some (int index)
 
-    /// Remove all trailing and leading whitespace from the string
-    /// return null if the string is null
-    let trim (value: string) = if isNull value then null else value.Trim()
-    
     /// Splits a string into substrings based on the strings in the array separators
     let split options (separator: string []) (value: string) = 
-        if isNull value  then null else value.Split(separator, options)
+        value.Split(separator, options)
 
     let (|StartsWith|_|) pattern value =
         if String.IsNullOrWhiteSpace value then
@@ -947,13 +941,19 @@ type LazyWithContext<'T,'ctxt> =
       mutable value : 'T
       /// This field holds either the function to run or a LazyWithContextFailure object recording the exception raised 
       /// from running the function. It is null if the thunk has been evaluated successfully.
-      mutable funcOrException: obj;
+#if BUILDING_WITH_LKG
+      mutable funcOrException: obj
+#else
+      mutable funcOrException: obj?
+#endif
       /// A helper to ensure we rethrow the "original" exception
       findOriginalException : exn -> exn }
+
     static member Create(f: ('ctxt->'T), findOriginalException) : LazyWithContext<'T,'ctxt> = 
         { value = Unchecked.defaultof<'T>;
-          funcOrException = box f;
+          funcOrException = box f
           findOriginalException = findOriginalException }
+
     static member NotLazy(x:'T) : LazyWithContext<'T,'ctxt> = 
         { value = x
           funcOrException = null
@@ -1238,13 +1238,25 @@ module Shim =
             member __.IsPathRootedShim (path: string) = Path.IsPathRooted path
 
             member __.IsInvalidPathShim(path: string) = 
+#if BUILDING_WITH_LKG
                 let isInvalidPath(p:string) = 
+#else
+                let isInvalidPath(p:string?) = 
+#endif
                     String.IsNullOrEmpty(p) || p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
+#if BUILDING_WITH_LKG
                 let isInvalidFilename(p:string) = 
+#else
+                let isInvalidFilename(p:string?) = 
+#endif
                     String.IsNullOrEmpty(p) || p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 
+#if BUILDING_WITH_LKG
                 let isInvalidDirectory(d:string) = 
+#else
+                let isInvalidDirectory(d:string?) = 
+#endif
                     d=null || d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
                 isInvalidPath (path) || 

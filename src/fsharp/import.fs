@@ -161,13 +161,13 @@ let rec ImportILType (env:ImportMap) m tinst ty =
     | ILType.Array(bounds,ty) -> 
         let n = bounds.Rank
         let elementType = ImportILType env m tinst ty
-        let nullness = if env.g.langFeatureNullness && env.g.assumeNullOnImport then KnownWithNull else KnownObliviousToNull
+        let nullness = if env.g.langFeatureNullness && env.g.assumeNullOnImport then KnownWithNull else KnownAmbivalentToNull
         mkArrayTy env.g n nullness elementType m
 
     | ILType.Boxed  tspec | ILType.Value tspec ->
         let tcref = ImportILTypeRef env m tspec.TypeRef 
         let inst = tspec.GenericArgs |> List.map (ImportILType env m tinst) 
-        let nullness = if env.g.langFeatureNullness && env.g.assumeNullOnImport && TyconRefNullIsExtraValueOld env.g m tcref then KnownWithNull else KnownObliviousToNull
+        let nullness = if env.g.langFeatureNullness && env.g.assumeNullOnImport && TyconRefNullIsExtraValueOld env.g m tcref then KnownWithNull else KnownAmbivalentToNull
         ImportTyconRefApp env tcref inst nullness
 
     | ILType.Modified(_,tref,ILType.Byref ty) when tref.Name = "System.Runtime.InteropServices.InAttribute" -> mkInByrefTy env.g (ImportILType env m tinst ty)
@@ -258,7 +258,7 @@ let rec ImportProvidedType (env:ImportMap) (m:range) (* (tinst:TypeInst) *) (st:
     let g = env.g
     if st.PUntaint((fun st -> st.IsArray),m) then 
         let elemTy = (ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()),m)))
-        let nullness = if env.g.langFeatureNullness && env.g.assumeNullOnImport then KnownWithNull else KnownObliviousToNull
+        let nullness = if env.g.langFeatureNullness && env.g.assumeNullOnImport then KnownWithNull else KnownAmbivalentToNull
         mkArrayTy g (st.PUntaint((fun st -> st.GetArrayRank()),m)) nullness elemTy m
     elif st.PUntaint((fun st -> st.IsByRef),m) then 
         let elemTy = (ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()),m)))
@@ -316,7 +316,7 @@ let rec ImportProvidedType (env:ImportMap) (m:range) (* (tinst:TypeInst) *) (st:
                 else
                     genericArg)
 
-        let nullness = if env.g.langFeatureNullness && env.g.assumeNullOnImport && TyconRefNullIsExtraValueOld env.g m tcref then KnownWithNull else KnownObliviousToNull
+        let nullness = if env.g.langFeatureNullness && env.g.assumeNullOnImport && TyconRefNullIsExtraValueOld env.g m tcref then KnownWithNull else KnownAmbivalentToNull
 
         ImportTyconRefApp env tcref genericArgs nullness
 

@@ -392,6 +392,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
         [<NoEquality; NoComparison>]
         type ValueInfo =
+#if BUILDING_WITH_LKG
           | TupleValue of (obj * Type) list
           | FunctionClosureValue of System.Type 
           | RecordValue of (string * obj * Type) list
@@ -399,12 +400,25 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
           | ExceptionValue of System.Type * (string * (obj * Type)) list
           | UnitValue
           | ObjectValue of obj
+#else
+          | TupleValue of (obj? * Type) list
+          | FunctionClosureValue of System.Type 
+          | RecordValue of (string * obj? * Type) list
+          | ConstructorValue of string * (string * (obj? * Type)) list
+          | ExceptionValue of System.Type * (string * (obj? * Type)) list
+          | UnitValue
+          | ObjectValue of obj?
+#endif
 
         module Value = 
 
             // Analyze an object to see if it the representation
             // of an F# value.
+#if BUILDING_WITH_LKG
             let GetValueInfoOfObject (bindingFlags:BindingFlags) (obj : obj) = 
+#else
+            let GetValueInfoOfObject (bindingFlags:BindingFlags) (obj : obj?) = 
+#endif
 #if FX_RESHAPED_REFLECTION
               let showNonPublic = isNonPublicFlag bindingFlags
 #endif
@@ -466,7 +480,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             // analysis of null values. 
 
             let GetValueInfo bindingFlags (x : 'a, ty : Type)  (* x could be null *) = 
-                let obj = (box x)
+                let obj = box x
                 match obj with 
                 | null ->
                    let isNullaryUnion =
@@ -742,7 +756,11 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             | [(_,h);(_,t)] -> (h,t)
             | _             -> failwith "unpackCons"
 
+#if BUILDING_WITH_LKG
         let getListValueInfo bindingFlags (x:obj, ty:Type) =
+#else
+        let getListValueInfo bindingFlags (x:obj?, ty:Type) =
+#endif
             match x with 
             | null -> None 
             | _ -> 
@@ -887,10 +905,19 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             let stopShort _ = exceededPrintSize() // for unfoldL
 
             // Recursive descent
+#if BUILDING_WITH_LKG
             let rec objL depthLim prec (x:obj, ty:Type) = polyL bindingFlags objWithReprL ShowAll  depthLim prec (x, ty) // showMode for inner expr 
             and sameObjL depthLim prec (x:obj, ty:Type) = polyL bindingFlags objWithReprL showMode depthLim prec (x, ty) // showMode preserved 
+#else
+            let rec objL depthLim prec (x:obj?, ty:Type) = polyL bindingFlags objWithReprL ShowAll  depthLim prec (x, ty) // showMode for inner expr 
+            and sameObjL depthLim prec (x:obj?, ty:Type) = polyL bindingFlags objWithReprL showMode depthLim prec (x, ty) // showMode preserved 
+#endif
 
+#if BUILDING_WITH_LKG
             and objWithReprL showMode depthLim prec (info:ValueInfo) (x:obj) (* x could be null *) =
+#else
+            and objWithReprL showMode depthLim prec (info:ValueInfo) (x:obj?) (* x could be null *) =
+#endif
                 try
                   if depthLim<=0 || exceededPrintSize() then wordL (tagPunctuation "...") else
                   match x with 
@@ -913,7 +940,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                             | res -> 
                                let attr = (res.[0] :?> StructuredFormatDisplayAttribute) 
                                let txt = attr.Value
-                               if isNull txt || txt.Length <= 1 then  
+                               if isNull (box txt) || txt.Length <= 1 then  
                                    None
                                else
                                   let messageRegexPattern = @"^(?<pre>.*?)(?<!\\){(?<prop>.*?)(?<!\\)}(?<post>.*)$"
@@ -1222,7 +1249,11 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         // pprinter: leafFormatter
         // --------------------------------------------------------------------
 
+#if BUILDING_WITH_LKG
         let leafFormatter (opts:FormatOptions) (obj :obj) =
+#else
+        let leafFormatter (opts:FormatOptions) (obj :obj?) =
+#endif
             match obj with 
             | null -> tagKeyword "null"
             | :? double as d -> 
