@@ -5380,7 +5380,7 @@ let KnownWithoutNull = Nullness.Known NullnessInfo.WithoutNull
 
 let mkTyparTy (tp:Typar) = 
     match tp.Kind with 
-    | TyparKind.Type -> tp.AsType KnownWithoutNull // TODO: this is by no means always right!?
+    | TyparKind.Type -> tp.AsType KnownWithoutNull // TODO NULLNESS: check various callers
     | TyparKind.Measure -> TType_measure (Measure.Var tp)
 
 let copyTypar (tp: Typar) = 
@@ -5433,16 +5433,16 @@ let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) =
 let tryAddNullnessToTy nullnessNew (ty:TType) = 
     match ty with
     | TType_var (tp, nullnessOrig) -> 
-        // TODO: make this avoid allocation if no change
+        // TODO NULLNESS: make this avoid allocation if no change
         Some (TType_var (tp, combineNullness nullnessOrig nullnessNew))
     | TType_app (tcr, tinst, nullnessOrig) -> 
-        // TODO: make this avoid allocation if no change
+        // TODO NULLNESS: make this avoid allocation if no change
         Some (TType_app (tcr, tinst, combineNullness nullnessOrig nullnessNew))
-    | TType_ucase _ -> None // TODO
-    | TType_tuple _ -> None // TODO
-    | TType_anon _ -> None // TODO
+    | TType_ucase _ -> None // TODO NULLNESS
+    | TType_tuple _ -> None // TODO NULLNESS
+    | TType_anon _ -> None // TODO NULLNESS
     | TType_fun (d, r, nullnessOrig) ->
-        // TODO: make this avoid allocation if no change
+        // TODO NULLNESS: make this avoid allocation if no change
         Some (TType_fun (d, r, combineNullness nullnessOrig nullnessNew))
     | TType_forall _ -> None
     | TType_measure _ -> None
@@ -5455,9 +5455,9 @@ let addNullnessToTy (nullness: Nullness) (ty:TType) =
     | TType_var (tp, nullnessOrig) -> TType_var (tp, combineNullness nullnessOrig nullness)
     | TType_app (tcr, tinst, nullnessOrig) -> TType_app (tcr, tinst, combineNullness nullnessOrig nullness)
     | TType_fun (d, r, nullnessOrig) -> TType_fun (d, r, combineNullness nullnessOrig nullness)
-    //| TType_ucase _ -> None // TODO
-    //| TType_tuple _ -> None // TODO
-    //| TType_anon _ -> None // TODO
+    //| TType_ucase _ -> None // TODO NULLNESS
+    //| TType_tuple _ -> None // TODOTODO NULLNESS
+    //| TType_anon _ -> None // TODO NULLNESS
     | _ -> ty
 
 let rec stripTyparEqnsAux nullness0 canShortcut ty = 

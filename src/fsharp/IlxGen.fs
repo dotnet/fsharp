@@ -2653,8 +2653,7 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
             GenBinding cenv cgbuf eenvinner bind;
             let tys = destRefTupleTy cenv.g ty
             assert (tys.Length = numRequiredExprs)
-            // TODO - tupInfoRef
-            argInfos |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (tupInfoRef (* TODO *),loce,tys,i,m) Continue);
+            argInfos |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (tupInfoRef,loce,tys,i,m) Continue);
             GenSequel cenv eenv.cloc cgbuf sequel
         )
 

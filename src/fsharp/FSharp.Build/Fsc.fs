@@ -227,7 +227,7 @@ type public Fsc () as this =
         let warningsAsErrorsArray =
             match warningsAsErrors with
             | null -> [|"76"|]
-            // TODO: nonNull should not be needed
+            // TODO NULLNESS: nonNull should not be needed
 #if BUILDING_WITH_LKG
             | _ -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 #else

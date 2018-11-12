@@ -2254,7 +2254,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("IsNull")>]
-        val inline isNull : value: 'T -> bool when 'T : not struct and 'T : null // TODO addition of 'T : not struct is compat?
+        val inline isNull : value: 'T -> bool when 'T : not struct and 'T : null // TODO NULLNESS addition of 'T : not struct is compat?
         
 #if !BUILDING_WITH_LKG
         /// <summary>Determines whether the given value is null.</summary>

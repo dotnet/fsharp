@@ -821,7 +821,7 @@ and SolveNullnessEquiv (csenv:ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
         // Allow expected of WithNull and actual of WithoutNull
-        // TODO:  this is not sound in contravariant cases etc.
+        // TODO NULLNESS:  this is not sound in contravariant cases etc.
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
         | _ -> 
             if csenv.g.checkNullness then 
@@ -987,7 +987,7 @@ and SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln origl1 origl2 =
        loop origl1 origl2
 
 and SolveFunTypeEqn csenv ndeep m2 trace cxsln d1 d2 r1 r2 = trackErrors {
-    // TODO: consider flipping the actual and expected in argument position
+    // TODO NULLNESS: consider flipping the actual and expected in argument position
     do! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln d1 d2
     return! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln r1 r2
   }

@@ -417,7 +417,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.Tuple tupInfo,tyargs,_ -> 
             let tyR = ConvType cenv env m (mkAnyTupledTy g tupInfo tyargs)
             let argsR = ConvExprs cenv env args
-            QP.mkTuple(tyR,argsR) // TODO: propagate to quotations
+            QP.mkTuple(tyR,argsR)
 
         | TOp.Recd (_,tcref),_,_  -> 
             let rgtypR = ConvTyconRef cenv tcref m

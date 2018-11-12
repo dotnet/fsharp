@@ -654,7 +654,12 @@ let p_nleref x st = p_int (encode_nleref st.occus st.ostrings st.onlerefs st.osc
 
 // Simple types are types like "int", represented as TType(Ref_nonlocal(...,"int"),[]). 
 // A huge number of these occur in pickled F# data, so make them unique. 
-let decode_simpletyp st _ccuTab _stringTab nlerefTab a = TType_app(ERefNonLocal (lookup_nleref st nlerefTab a), [], KnownAmbivalentToNull) // TODO should simpletyps hold obvlious or non-null etc.? 
+//
+// TODO NULLNESS - the simpletyp table now holds KnownAmbivalentToNull by default, is this the right default?
+// For old assemblies it is, if we give those assemblies the ambivalent interpretation.
+// For new asemblies compiled with null-checking on it isn't, if the default is to give
+// those the KnownWithoutNull interpretation by default.
+let decode_simpletyp st _ccuTab _stringTab nlerefTab a = TType_app(ERefNonLocal (lookup_nleref st nlerefTab a), [], KnownAmbivalentToNull)
 let lookup_simpletyp st simpleTyTab x = lookup_uniq st simpleTyTab x
 let u_encoded_simpletyp st = u_int  st
 let u_encoded_anoninfo st = u_int  st

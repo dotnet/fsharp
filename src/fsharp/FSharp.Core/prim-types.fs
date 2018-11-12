@@ -3346,7 +3346,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("NonNull")>]
         let inline nonNull (value : ('T)? when 'T : not struct) = 
             match box value with 
-            | null -> raise (System.NullReferenceException()) // TODO: decide if this raises an exception or ploughs on 
+            | null -> raise (System.NullReferenceException()) // TODO NULLNESS: decide if this raises an exception or ploughs on 
             | _ -> value
 
         [<CompiledName("NonNullV")>]

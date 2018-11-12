@@ -759,7 +759,7 @@ let evalAnonInfoIsStruct (anonInfo: AnonRecdTypeInfo) =
 let rec stripTyEqnsAndErase eraseFuncAndTuple (g:TcGlobals) ty =
     let ty = stripTyEqns g ty
     match ty with
-    | TType_app (tcref, args, nullness) ->  // TODO: what happens to this nullness?  Currently it is lost.  Noted in RFC
+    | TType_app (tcref, args, nullness) ->
         let tycon = tcref.Deref
         if tycon.IsErased  then
             let reducedTy = reduceTyconMeasureableOrProvided g tycon args
@@ -819,7 +819,7 @@ let isMeasureTy    g ty = ty |> stripTyEqns g |> (function TType_measure _ -> tr
 
 let isProvenUnionCaseTy ty = match ty with TType_ucase _ -> true | _ -> false
 
-let mkAppTy tcref tyargs = TType_app(tcref, tyargs, KnownWithoutNull) // TODO
+let mkAppTy tcref tyargs = TType_app(tcref, tyargs, KnownWithoutNull) // TODO NULLNESS - check various callers
 let mkProvenUnionCaseTy ucref tyargs = TType_ucase(ucref, tyargs)
 let isAppTy   g ty = ty |> stripTyEqns g |> (function TType_app _ -> true | _ -> false) 
 let tryAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst, _) -> ValueSome (tcref, tinst) | _ -> ValueNone) 
@@ -1055,7 +1055,7 @@ let rec getErasedTypes g ty =
         getErasedTypes g rty
     | TType_var (tp, nullness) -> 
         match nullness.Evaluate() with
-        | NullnessInfo.WithNull -> [ty] // with-null annotations can't be tested at runtime (TODO: for value types Nullable<_> they can be)
+        | NullnessInfo.WithNull -> [ty] // with-null annotations can't be tested at runtime (TODO NULLNESS: for value types Nullable<_> they can be)
         | _ -> if tp.IsErased then [ty] else []
     | TType_app (_, b, nullness) ->
         match nullness.Evaluate() with
@@ -2385,7 +2385,7 @@ let generalizeTyconRef (g:TcGlobals) tcref =
 
 let generalizedTyOfTyconRef (g:TcGlobals) tcref = 
     let tinst = generalTyconRefInst tcref
-    TType_app(tcref, tinst, g.knownWithoutNull) // TODO: check me
+    TType_app(tcref, tinst, g.knownWithoutNull)
 
 let isTTyparSupportsStaticMethod tpc = 
     match tpc with 
