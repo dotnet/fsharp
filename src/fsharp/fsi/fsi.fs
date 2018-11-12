@@ -1116,7 +1116,7 @@ type internal FsiDynamicCompiler
             // 'Open' the path for the fragment we just compiled for any future printing.
             let denv = denv.AddOpenPath (pathOfLid prefixPath) 
 
-            for (TImplFile(_qname,_,mexpr,_,_)) in declaredImpls do
+            for (TImplFile(_qname,_,mexpr,_,_,_)) in declaredImpls do
                 let responseL = NicePrint.layoutInferredSigOfModuleExpr false denv infoReader AccessibleFromSomewhere rangeStdin mexpr 
                 if not (Layout.isEmptyL responseL) then
                     let opts = valuePrinter.GetFsiPrintOptions()

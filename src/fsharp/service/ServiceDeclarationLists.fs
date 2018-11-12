@@ -283,6 +283,10 @@ module internal DescriptionListsImpl =
             let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] rfinfo.FieldType
             [], prettyRetTyL
 
+        | Item.AnonRecdField(_anonInfo,tys,i, _) ->
+            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] tys.[i]
+            [], prettyRetTyL
+
         | Item.ILField finfo ->
             let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] (finfo.FieldType(amap,m))
             [], prettyRetTyL
@@ -403,6 +407,7 @@ module internal DescriptionListsImpl =
             | Item.UnionCase _
             | Item.ActivePatternCase _ -> FSharpGlyph.EnumMember   
             | Item.ExnCase _ -> FSharpGlyph.Exception   
+            | Item.AnonRecdField _ -> FSharpGlyph.Field
             | Item.RecdField _ -> FSharpGlyph.Field
             | Item.ILField _ -> FSharpGlyph.Field
             | Item.Event _ -> FSharpGlyph.Event   

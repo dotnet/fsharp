@@ -31,6 +31,7 @@
   <ItemGroup>
     <Reference Include="System.Runtime" />
     <Reference Include="System.IO" />
+    <PackageReference Include="FSharp.Core" Version="4.5.2" />
     <PackageReference Include="FSharp.Core" Version="4.1.19" />
     <PackageReference Include="FSharp.Core" Version="4.1.18" />
     <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
