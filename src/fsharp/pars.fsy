@@ -2543,6 +2543,9 @@ cType:
      { let m = lhs parseState 
        SynType.App(SynType.LongIdent(LongIdentWithDots([ident("nativeptr",m)],[])),None,[$1],[],None,true,m) } 
 
+  | cType QMARK
+    { SynType.WithNull($1, false, lhs parseState) }
+
   | cType AMP  
      { let m = lhs parseState 
        SynType.App(SynType.LongIdent(LongIdentWithDots([ident("byref",m)],[])),None,[$1],[],None,true,m) } 

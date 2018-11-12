@@ -222,10 +222,7 @@ let getRowCounts tableRowCounts =
 let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sourceLink:string) showTimes (info:PdbData) isDeterministic =
     sortMethods showTimes info
     let externalRowCounts = getRowCounts info.TableRowCounts
-    let docs = 
-        match info.Documents with
-        | null -> Array.empty
-        | _ -> info.Documents
+    let docs = info.Documents
 
     let metadata = MetadataBuilder()
     let serializeDocumentName (name:string) =
@@ -323,12 +320,9 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
     info.Methods |> Array.iter (fun minfo ->
         let docHandle, sequencePointBlob =
             let sps =
-                match minfo.SequencePoints with
-                | null -> Array.empty
-                | _ ->
-                    match minfo.Range with
-                    | None -> Array.empty
-                    | Some (_,_) -> minfo.SequencePoints
+                match minfo.Range with
+                | None -> Array.empty
+                | Some (_,_) -> minfo.SequencePoints
 
             let builder = new BlobBuilder()
             builder.WriteCompressedInteger(minfo.LocalSignatureToken)

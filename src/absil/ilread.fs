@@ -212,7 +212,11 @@ module MemoryMapping =
                                      int _flProtect, 
                                      int _dwMaximumSizeLow, 
                                      int _dwMaximumSizeHigh, 
+#if BUILDING_WITH_LKG
                                      string _lpName) 
+#else
+                                     string? _lpName) 
+#endif
 
     [<DllImport("kernel32", SetLastError=true)>]
     extern ADDR MapViewOfFile (HANDLE _hFileMappingObject, 
@@ -891,14 +895,14 @@ type GenericParamsIdx = GenericParamsIdx of int * TypeOrMethodDefTag * int
 
 let mkCacheInt32 lowMem _inbase _nm _sz  =
     if lowMem then (fun f x -> f x) else
-    let cache = ref null 
+    let cache = ref Unchecked.defaultof<_> 
     let count = ref 0
 #if STATISTICS
     addReport (fun oc -> if !count <> 0 then oc.WriteLine ((_inbase + string !count + " "+ _nm + " cache hits")  : string))
 #endif
     fun f (idx:int32) ->
         let cache = 
-            match !cache with
+            match box !cache with
             | null -> cache :=  new Dictionary<int32, _>(11)
             | _ -> ()
             !cache
@@ -914,14 +918,14 @@ let mkCacheInt32 lowMem _inbase _nm _sz  =
 
 let mkCacheGeneric lowMem _inbase _nm _sz  =
     if lowMem then (fun f x -> f x) else
-    let cache = ref null 
+    let cache = ref Unchecked.defaultof<_>
     let count = ref 0
 #if STATISTICS
     addReport (fun oc -> if !count <> 0 then oc.WriteLine ((_inbase + string !count + " " + _nm + " cache hits") : string))
 #endif
     fun f (idx :'T) ->
         let cache = 
-            match !cache with
+            match box !cache with
             | null -> cache := new Dictionary<_, _>(11 (* sz:int *) ) 
             | _ -> ()
             !cache

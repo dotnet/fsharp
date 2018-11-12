@@ -824,7 +824,8 @@ and SolveNullnessEquiv (csenv:ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1
         // TODO NULLNESS:  this is not sound in contravariant cases etc.
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
         | _ -> 
-            if csenv.g.checkNullness then 
+            // NOTE: we never give nullness warnings for the 'obj' type
+            if csenv.g.checkNullness && not (isObjTy csenv.g ty1) && not (isObjTy csenv.g ty2) then 
                 WarnD(ConstraintSolverNullnessWarningEquivWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
             else
                 CompleteD
@@ -854,7 +855,7 @@ and SolveNullnessSubsumesNullness (csenv:ConstraintSolverEnv) m2 (trace: Optiona
         // Allow target of WithNull and actual of WithoutNull
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
-            if csenv.g.checkNullness then 
+            if csenv.g.checkNullness && not (isObjTy csenv.g ty1) && not (isObjTy csenv.g ty2) then 
                 WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
             else
                 CompleteD
@@ -1903,7 +1904,7 @@ and SolveNullnessSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 (trace: Optio
         | NullnessInfo.AmbivalentToNull -> CompleteD
         | NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull -> 
-            if csenv.g.checkNullness then 
+            if csenv.g.checkNullness && not (isObjTy csenv.g ty) then 
                 WarnD(ConstraintSolverNullnessWarningWithType(denv, ty, n1, m, m2)) 
             else
                 CompleteD
@@ -1923,7 +1924,7 @@ and SolveNullnessNotSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 (trace: Op
         | NullnessInfo.AmbivalentToNull -> CompleteD
         | NullnessInfo.WithoutNull -> CompleteD
         | NullnessInfo.WithNull -> 
-            if csenv.g.checkNullness then 
+            if csenv.g.checkNullness && not (isObjTy csenv.g ty) then 
                 WarnD(ConstraintSolverNonNullnessWarningWithType(denv, ty, n1, m, m2)) 
             else
                 CompleteD

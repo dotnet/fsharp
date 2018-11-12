@@ -462,7 +462,11 @@ module internal AsyncUtil =
                         // Continuations that Async.FromContinuations provide do QUWI/SynchContext.Post,
                         // so the order is not overly relevant but still.                        
                         List.rev savedConts)
+#if BUILDING_WITH_LKG
             let postOrQueue (sc:SynchronizationContext,cont) =
+#else
+            let postOrQueue (sc:SynchronizationContext?,cont) =
+#endif
                 match sc with
                 |   null -> ThreadPool.QueueUserWorkItem(fun _ -> cont res) |> ignore
                 |   sc -> sc.Post((fun _ -> cont res), state=null)
