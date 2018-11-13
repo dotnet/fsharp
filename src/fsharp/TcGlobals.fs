@@ -829,13 +829,13 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   let betterEntries = Array.append betterTyconEntries decompileTyconEntries
 
-  let mutable decompileTypeDict = null
-  let mutable betterTypeDict1 = null
-  let mutable betterTypeDict2 = null
+  let mutable decompileTypeDict = Unchecked.defaultof<_>
+  let mutable betterTypeDict1 = Unchecked.defaultof<_>
+  let mutable betterTypeDict2 = Unchecked.defaultof<_>
 
   /// This map is indexed by stamps and lazy to avoid dereferencing while setting up the base imports. 
   let getDecompileTypeDict () = 
-      match decompileTypeDict with 
+      match box decompileTypeDict with 
       | null -> 
           let entries = decompileTyconEntries
           let t = Dictionary.newWithSize entries.Length
@@ -844,13 +844,13 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                   t.Add(tcref.Stamp, builder)
           decompileTypeDict <- t
           t
-      | t -> t
+      | _ -> decompileTypeDict
 
   /// This map is for use when building FSharp.Core.dll. The backing Tycon's may not yet exist for
   /// the TyconRef's we have in our hands, hence we can't dereference them to find their stamps.
   /// So this dictionary is indexed by names. Make it lazy to avoid dereferencing while setting up the base imports. 
   let getBetterTypeDict1 () = 
-      match betterTypeDict1 with 
+      match box betterTypeDict1 with 
       | null -> 
           let entries = betterEntries
           let t = Dictionary.newWithSize entries.Length
@@ -863,12 +863,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                              TType_app (tcref2, tinst2, nullness)))
           betterTypeDict1 <- t
           t
-      | t -> t
+      | _ -> betterTypeDict1
 
   /// This map is for use in normal times (not building FSharp.Core.dll). It is indexed by stamps
   /// and lazy to avoid dereferencing while setting up the base imports. 
   let getBetterTypeDict2 () = 
-      match betterTypeDict2 with 
+      match box betterTypeDict2 with 
       | null -> 
           let entries = betterEntries
           let t = Dictionary.newWithSize entries.Length
@@ -877,7 +877,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                   t.Add(tcref.Stamp, builder)
           betterTypeDict2 <- t
           t
-      | t -> t
+      | _ -> betterTypeDict2
 
   /// For logical purposes equate some F# types with .NET types, e.g. TType_tuple == System.Tuple/ValueTuple.
   /// Doing this normalization is a fairly performance critical piece of code as it is frequently invoked

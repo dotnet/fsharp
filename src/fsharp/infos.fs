@@ -62,7 +62,7 @@ let GetSuperTypeOfType g amap m ty =
 #if !NO_EXTENSIONTYPING
       | ProvidedTypeMetadata info -> 
         let st = info.ProvidedType
-        let superOpt = st.PApplyOption((fun st -> match st.BaseType with null -> None | t -> Some t),m)
+        let superOpt = st.PApplyOption((fun st -> match st.BaseType with null -> None | t -> Some (nonNull t)),m)
         match superOpt with 
         | None -> None
         | Some super -> Some(Import.ImportProvidedType amap m super)
@@ -416,7 +416,7 @@ type ValRef with
 let GetCompiledReturnTyOfProvidedMethodInfo amap m (mi:Tainted<ProvidedMethodBase>) =
     let returnType = 
         if mi.PUntaint((fun mi -> mi.IsConstructor),m) then  
-            mi.PApply((fun mi -> mi.DeclaringType),m)
+            mi.PApply((fun mi -> nonNull<ProvidedType> mi.DeclaringType),m)
         else mi.Coerce<ProvidedMethodInfo>(m).PApply((fun mi -> mi.ReturnType),m)
     let ty = Import.ImportProvidedType amap m returnType
     if isVoidTy amap.g ty then None else Some ty
@@ -650,10 +650,10 @@ let OptionalArgInfoOfProvidedParameter (amap:Import.ImportMap) m (provParam : Ta
         NotOptional
 
 /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
-let GetAndSanityCheckProviderMethod m (mi: Tainted<'T :> ProvidedMemberInfo>) (get : 'T -> ProvidedMethodInfo) err = 
-    match mi.PApply((fun mi -> (get mi :> ProvidedMethodBase)),m) with 
+let GetAndSanityCheckProviderMethod m (mi: Tainted<'T :> ProvidedMemberInfo>) (get : 'T -> ProvidedMethodInfo?) err = 
+    match mi.PApply((fun mi -> (get mi :> ProvidedMethodBase?)),m) with 
     | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> mi.DeclaringType.Name),m)),m))   
-    | meth -> meth
+    | Tainted.NonNull meth -> meth
 
 /// Try to get an arbitrary ProvidedMethodInfo associated with a property.
 let ArbitraryMethodInfoOfPropertyInfo (pi:Tainted<ProvidedPropertyInfo>) m =
@@ -909,7 +909,7 @@ type MethInfo =
         | DefaultStructCtor(_,ty) -> ty
 #if !NO_EXTENSIONTYPING
         | ProvidedMeth(amap,mi,_,m) -> 
-              Import.ImportProvidedType amap m (mi.PApply((fun mi -> mi.DeclaringType),m))
+              Import.ImportProvidedType amap m (mi.PApply((fun mi -> nonNull<ProvidedType> mi.DeclaringType),m))
 #endif
 
     /// Get the enclosing type of the method info, using a nominal type for tuple types
@@ -1358,7 +1358,7 @@ type MethInfo =
         | DefaultStructCtor _ -> []
 #if !NO_EXTENSIONTYPING
         | ProvidedMeth(amap,mi,_,m) -> 
-            if x.IsInstance then [ Import.ImportProvidedType amap m (mi.PApply((fun mi -> mi.DeclaringType),m)) ] // find the type of the 'this' argument
+            if x.IsInstance then [ Import.ImportProvidedType amap m (mi.PApply((fun mi -> nonNull<ProvidedType> mi.DeclaringType),m)) ] // find the type of the 'this' argument
             else []
 #endif
 
@@ -1535,7 +1535,7 @@ type MethInfo =
                     // For non-generic type providers there is no difference
                     let formalParams = 
                         [ [ for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do 
-                                let paramName = p.PUntaint((fun p -> match p.Name with null -> None | s -> Some s),m)
+                                let paramName = p.PUntaint((fun p -> match p.Name with "" -> None | s -> Some s),m)
                                 let paramType = Import.ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType),m))
                                 let isIn, isOut,isOptional = p.PUntaint((fun p -> p.IsIn, p.IsOut, p.IsOptional),m)
                                 yield TSlotParam(paramName, paramType, isIn, isOut, isOptional, []) ] ]
@@ -1563,12 +1563,12 @@ type MethInfo =
                 [ [for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do 
                         let pname = 
                             match p.PUntaint((fun p -> p.Name), m) with
-                            | null -> None
+                            | "" -> None
                             | name -> Some (mkSynId m name)
                         let pty =
                             match p.PApply((fun p -> p.ParameterType), m) with
                             | Tainted.Null ->  amap.g.unit_ty
-                            | parameterType -> Import.ImportProvidedType amap m parameterType
+                            | Tainted.NonNull parameterType -> Import.ImportProvidedType amap m parameterType
                         yield ParamNameAndType(pname,pty) ] ]
 
 #endif
@@ -1617,7 +1617,7 @@ type ILFieldInfo =
         match x with 
         | ILFieldInfo(tinfo,_) -> tinfo.ToType
 #if !NO_EXTENSIONTYPING
-        | ProvidedField(amap,fi,m) -> (Import.ImportProvidedType amap m (fi.PApply((fun fi -> fi.DeclaringType),m)))
+        | ProvidedField(amap,fi,m) -> (Import.ImportProvidedType amap m (fi.PApply((fun fi -> nonNull<ProvidedType> fi.DeclaringType),m)))
 #endif
 
     member x.ApparentEnclosingAppType = x.ApparentEnclosingType
@@ -1638,7 +1638,7 @@ type ILFieldInfo =
         match x with 
         | ILFieldInfo(tinfo,_) -> tinfo.ILTypeRef
 #if !NO_EXTENSIONTYPING
-        | ProvidedField(amap,fi,m) -> (Import.ImportProvidedTypeAsILType amap m (fi.PApply((fun fi -> fi.DeclaringType),m))).TypeRef
+        | ProvidedField(amap,fi,m) -> (Import.ImportProvidedTypeAsILType amap m (fi.PApply((fun fi -> nonNull<ProvidedType> fi.DeclaringType),m))).TypeRef
 #endif
     
      /// Get the scope used to interpret IL metadata
@@ -1907,7 +1907,7 @@ type PropInfo =
         | FSProp(_,ty,_,_) -> ty
 #if !NO_EXTENSIONTYPING
         | ProvidedProp(amap,pi,m) -> 
-            Import.ImportProvidedType amap m (pi.PApply((fun pi -> pi.DeclaringType),m)) 
+            Import.ImportProvidedType amap m (pi.PApply((fun pi -> nonNull<ProvidedType> pi.DeclaringType),m)) 
 #endif
 
     /// Get the enclosing type of the method info, using a nominal type for tuple types
@@ -2155,7 +2155,7 @@ type PropInfo =
 #if !NO_EXTENSIONTYPING
         | ProvidedProp (_,pi,m) -> 
             [ for p in pi.PApplyArray((fun pi -> pi.GetIndexParameters()), "GetIndexParameters", m) do
-                let paramName = p.PUntaint((fun p -> match p.Name with null -> None | s -> Some (mkSynId m s)), m)
+                let paramName = p.PUntaint((fun p -> match p.Name with "" -> None | s -> Some (mkSynId m s)), m)
                 let paramType = Import.ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m))
                 yield ParamNameAndType(paramName, paramType) ]
 #endif
@@ -2322,7 +2322,7 @@ type EventInfo =
         | ILEvent ileinfo -> ileinfo.ApparentEnclosingType 
         | FSEvent (_,p,_,_) -> p.ApparentEnclosingType
 #if !NO_EXTENSIONTYPING
-        | ProvidedEvent (amap,ei,m) -> Import.ImportProvidedType amap m (ei.PApply((fun ei -> ei.DeclaringType),m)) 
+        | ProvidedEvent (amap,ei,m) -> Import.ImportProvidedType amap m (ei.PApply((fun ei -> nonNull<ProvidedType> ei.DeclaringType),m)) 
 #endif
     /// Get the enclosing type of the method info, using a nominal type for tuple types
     member x.ApparentEnclosingAppType = 

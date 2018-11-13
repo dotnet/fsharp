@@ -4701,6 +4701,8 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
         | _ -> 
             errorR(Error(FSComp.SR.parsInvalidLiteralInType(), m)) 
             NewErrorType (), tpenv
+
+    | SynType.StaticConstantNull m
     | SynType.StaticConstantNamed (_, _, m)
     | SynType.StaticConstantExpr (_, m) ->
         errorR(Error(FSComp.SR.parsInvalidLiteralInType(), m)) 
@@ -4855,10 +4857,11 @@ and TcStaticConstantParameter cenv (env:TcEnv) tpenv kind (v:SynType) idOpt cont
             | SynConst.Single n     when typeEquiv g g.float32_ty kind -> record(g.float32_ty); box (n:single)
             | SynConst.Double n     when typeEquiv g g.float_ty kind   -> record(g.float_ty); box (n:double)
             | SynConst.Char n       when typeEquiv g g.char_ty kind    -> record(g.char_ty); box (n:char)
-            | SynConst.String (s, _) when s <> null && typeEquiv g g.string_ty kind  -> record(g.string_ty); box (s:string)
+            | SynConst.String (s, _) when typeEquiv g g.string_ty kind  -> record(g.string_ty); box s
             | SynConst.Bool b       when typeEquiv g g.bool_ty kind    -> record(g.bool_ty); box (b:bool)
             | _ -> fail()
         v, tpenv
+    | SynType.StaticConstantNull(_) -> fail()
     | SynType.StaticConstantExpr(e, _ ) ->
 
         // If an error occurs, don't try to recover, since the constant expression will be nothing like what we need
@@ -4883,7 +4886,6 @@ and TcStaticConstantParameter cenv (env:TcEnv) tpenv kind (v:SynType) idOpt cont
                 | Const.Single n   -> record(g.float32_ty); box (n:single)
                 | Const.Double n   -> record(g.float_ty); box (n:double)
                 | Const.Char n     -> record(g.char_ty); box (n:char)
-                | Const.String null   -> fail() 
                 | Const.String s   -> record(g.string_ty); box (s:string)
                 | Const.Bool b     -> record(g.bool_ty); box (b:bool)
                 | _ ->  fail()
@@ -6873,7 +6875,7 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, 
 //------------------------------------------------------------------------- 
 
 /// Check a constant string expression. It might be a 'printf' format string 
-and TcConstStringExpr cenv overallTy env m tpenv s  =
+and TcConstStringExpr cenv overallTy env m tpenv (s: string)  =
 
     if (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy cenv.g.string_ty) then 
       mkString cenv.g m s, tpenv
@@ -10583,7 +10585,7 @@ and TcAndBuildFixedExpr cenv env (overallPatTy, fixedExpr, overallExprTy, mBindi
 
         // let ptr : nativeptr<elem> = 
         //   let tmpArray : elem[] = arr
-        //   if nonNull tmpArray then
+        //   if notNull tmpArray then
         //      if tmpArray.Length <> 0 then
         //         let pinned tmpArrayByref : byref<elem> = &arr.[0]
         //         (nativeint) tmpArrayByref

@@ -510,6 +510,7 @@ let ComputeDefinitionLocationOfProvidedItem (p : Tainted<#IProvidedCustomAttribu
     match attrs with
     | None | Some (null, _, _) -> None
     | Some (filePath, line, column) -> 
+        let filePath = nonNull filePath   // TODO NULLNESS: this use of nonNull should not be needed
         // Coordinates from type provider are 1-based for lines and columns
         // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns
         let pos = Range.mkPos line (max 0 (column - 1)) 
@@ -1965,7 +1966,7 @@ and Construct =
         let lazyBaseTy = 
             LazyWithContext.Create 
                 ((fun (m,objTy) -> 
-                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some ty), m)
+                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some (nonNull ty)), m)
                       match baseSystemTy with 
                       | None -> objTy 
                       | Some t -> importProvidedType t), 
@@ -3080,7 +3081,7 @@ and
             let rec tryResolveNestedTypeOf(parentEntity:Entity,resolutionEnvironment,st:Tainted<ProvidedType>,i) = 
                 match st.PApply((fun st -> st.GetNestedType path.[i]),m) with
                 | Tainted.Null -> ValueNone
-                | st -> 
+                | Tainted.NonNull st -> 
                     let newEntity = Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)
                     parentEntity.ModuleOrNamespaceType.AddProvidedTypeEntity(newEntity)
                     if i = path.Length-1 then ValueSome(newEntity)
@@ -3111,12 +3112,15 @@ and
                 assert (j <= path.Length - 1)
                 let matched = 
                     [ for resolver in resolvers  do
-                        let moduleOrNamespace = if j = 0 then null else path.[0..j-1]
+                        let moduleOrNamespace = if j = 0 then [| |] else path.[0..j-1]
                         let typename = path.[j]
                         let resolution = ExtensionTyping.TryLinkProvidedType(resolver,moduleOrNamespace,typename,m)
                         match resolution with
-                        | None | Some (Tainted.Null) -> ()
-                        | Some st -> yield (resolver,st) ]
+                        | None -> ()
+                        | Some st -> 
+                            match st with
+                            | Tainted.Null -> ()
+                            | Tainted.NonNull st -> yield (resolver,st) ]
                 match matched with
                 | [(_,st)] ->
                     // 'entity' is at position i in the dereference chain. We resolved to position 'j'.
@@ -3916,10 +3920,10 @@ and Nullness =
        | Known info -> info
        | Variable v -> v.Evaluate()
 
-   //member n.TryEvaluate() = 
-   //    match n with 
-   //    | Known info -> Some info
-   //    | Variable v -> v.TryEvaluate()
+   member n.TryEvaluate() = 
+       match n with 
+       | Known info -> ValueSome info
+       | Variable v -> v.TryEvaluate()
 
    override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.AmbivalentToNull -> "%"
 
@@ -3932,10 +3936,10 @@ and NullnessVar() =
        | None -> NullnessInfo.WithoutNull
        | Some soln -> soln.Evaluate()
 
-    //member nv.TryEvaluate() = 
-    //   match solution with 
-    //   | None -> None
-    //   | Some soln -> soln.TryEvaluate()
+    member nv.TryEvaluate() = 
+       match solution with 
+       | None -> ValueNone
+       | Some soln -> soln.TryEvaluate()
 
     member nv.IsSolved = solution.IsSome
 
@@ -4093,7 +4097,7 @@ and [<RequireQualifiedAccess>] AnonRecdTypeInfo =
         x.Stamp <- d.Stamp
         x.SortedNames <- sortedNames
 
-    member x.IsLinked = (match x.SortedIds with null -> true | _ -> false)
+    member x.IsLinked = (match box x.SortedIds with null -> true | _ -> false)
     
 and [<RequireQualifiedAccess>] TupInfo = 
     /// Some constant, e.g. true or false for tupInfo
@@ -4209,8 +4213,12 @@ and CcuReference =  string // ILAssemblyRef
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
     CcuThunk = 
-    { mutable target: CcuData
-
+    { 
+#if BUILDING_WITH_LKG
+      mutable target: CcuData
+#else
+      mutable target: CcuData?
+#endif
       /// ccu.orphanfixup is true when a reference is missing in the transitive closure of static references that
       /// may potentially be required for the metadata of referenced DLLs. It is set to true if the "loader"
       /// used in the F# metadata-deserializer or the .NET metadata reader returns a failing value (e.g. None).
@@ -4220,12 +4228,22 @@ and
 
       name: CcuReference  }
 
+#if BUILDING_WITH_LKG
     member ccu.Deref = 
-        if isNull (ccu.target :> obj) || ccu.orphanfixup then 
+        if isNull (box ccu.target) || ccu.orphanfixup then 
             raise(UnresolvedReferenceNoRange ccu.name)
         ccu.target
+
+    member ccu.IsUnresolvedReference = isNull (box ccu.target) || ccu.orphanfixup
+#else
+    member ccu.Deref = 
+        if isNull ccu.target || ccu.orphanfixup then 
+            raise(UnresolvedReferenceNoRange ccu.name)
+        nonNull ccu.target
+
+    member ccu.IsUnresolvedReference = isNull ccu.target || ccu.orphanfixup
+#endif
    
-    member ccu.IsUnresolvedReference = isNull (ccu.target :> obj) || ccu.orphanfixup
 
     /// Ensure the ccu is derefable in advance. Supply a path to attach to any resulting error message.
     member ccu.EnsureDerefable(requiringPath:string[]) = 
@@ -5455,6 +5473,16 @@ let addNullnessToTy (nullness: Nullness) (ty:TType) =
     | TType_var (tp, nullnessOrig) -> TType_var (tp, combineNullness nullnessOrig nullness)
     | TType_app (tcr, tinst, nullnessOrig) -> TType_app (tcr, tinst, combineNullness nullnessOrig nullness)
     | TType_fun (d, r, nullnessOrig) -> TType_fun (d, r, combineNullness nullnessOrig nullness)
+    //| TType_ucase _ -> None // TODO NULLNESS
+    //| TType_tuple _ -> None // TODOTODO NULLNESS
+    //| TType_anon _ -> None // TODO NULLNESS
+    | _ -> ty
+
+let replaceNullnessOfTy nullness (ty:TType) =
+    match ty with
+    | TType_var (tp, _nullnessOrig) -> TType_var (tp, nullness)
+    | TType_app (tcr, tinst, _nullnessOrig) -> TType_app (tcr, tinst, nullness)
+    | TType_fun (d, r, _nullnessOrig) -> TType_fun (d, r, nullness)
     //| TType_ucase _ -> None // TODO NULLNESS
     //| TType_tuple _ -> None // TODOTODO NULLNESS
     //| TType_anon _ -> None // TODO NULLNESS

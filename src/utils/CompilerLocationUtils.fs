@@ -106,7 +106,7 @@ module internal FSharpEnvironment =
                         let mutable cbData = maxDataLength;
 
 #if BUILDING_WITH_LKG
-                        let res = RegQueryValueExW(hkey, null, 0u, &uType, pathResult, &cbData); // TODO use of nonNull should not be required
+                        let res = RegQueryValueExW(hkey, null, 0u, &uType, pathResult, &cbData);
 #else
                         let res = RegQueryValueExW(hkey, nonNull<string> null, 0u, &uType, pathResult, &cbData); // TODO use of nonNull should not be required
 #endif

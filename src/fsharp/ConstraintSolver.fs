@@ -53,6 +53,10 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.TypeRelations
 
+#if !NO_EXTENSIONTYPING
+open Microsoft.FSharp.Compiler.ExtensionTyping
+#endif
+
 //-------------------------------------------------------------------------
 // Generate type variables and record them in within the scope of the
 // compilation environment, which currently corresponds to the scope
@@ -895,26 +899,62 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
            SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 nullness2
 
     | TType_var (tp1, nullness1), TType_var (tp2, nullness2) when PreferUnifyTypar tp1 tp2 -> 
+        match nullness1.TryEvaluate(), nullness2.TryEvaluate() with
+        // Unifying 'T1? and 'T2? 
+        | ValueSome NullnessInfo.WithNull, ValueSome NullnessInfo.WithNull ->
+            SolveTyparEqualsType csenv ndeep m2 trace sty1 (TType_var (tp2, g.knownWithoutNull)) 
+        //// Unifying 'T1 % and 'T2 % 
+        //| ValueSome NullnessInfo.AmbivalentToNull, ValueSome NullnessInfo.AmbivalentToNull ->
+        //    SolveTyparEqualsType csenv ndeep m2 trace sty1 (TType_var (tp2, g.knownWithoutNull)) 
+        | _ -> 
         SolveTyparEqualsType csenv ndeep m2 trace sty1 ty2 ++ (fun () -> 
            let nullnessAfterSolution1 = combineNullness (nullnessOfTy g sty1) nullness1
            SolveNullnessEquiv csenv m2 trace ty1 ty2 nullnessAfterSolution1 nullness2
         )
+
     | TType_var (tp1, nullness1), TType_var (tp2, nullness2) when not csenv.MatchingOnly && PreferUnifyTypar tp2 tp1 ->
-        SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1 ++ (fun () -> 
-           let nullnessAfterSolution2 = combineNullness (nullnessOfTy g sty2) nullness2
-           SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 nullnessAfterSolution2
-        )
+        match nullness1.TryEvaluate(), nullness2.TryEvaluate() with
+        // Unifying 'T1? and 'T2? 
+        | ValueSome NullnessInfo.WithNull, ValueSome NullnessInfo.WithNull ->
+            SolveTyparEqualsType csenv ndeep m2 trace sty2 (TType_var (tp1, g.knownWithoutNull)) 
+        //// Unifying 'T1 % and 'T2 % 
+        //| ValueSome NullnessInfo.AmbivalentToNull, ValueSome NullnessInfo.AmbivalentToNull ->
+        //    SolveTyparEqualsType csenv ndeep m2 trace sty2 (TType_var (tp1, g.knownWithoutNull)) 
+        | _ -> 
+            // Unifying 'T1 ? and 'T2 % 
+            // Unifying 'T1 % and 'T2 ?
+            SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1 ++ (fun () -> 
+               let nullnessAfterSolution2 = combineNullness (nullnessOfTy g sty2) nullness2
+               SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 nullnessAfterSolution2
+            )
 
     | TType_var (tp1, nullness1), _ when (tp1.Rigidity <> TyparRigidity.Rigid) -> 
+        match nullness1.TryEvaluate(), (nullnessOfTy g sty2).TryEvaluate() with
+        // Unifying 'T1? and 'T2? 
+        | ValueSome NullnessInfo.WithNull, ValueSome NullnessInfo.WithNull ->
+            SolveTyparEqualsType csenv ndeep m2 trace sty1 (replaceNullnessOfTy g.knownWithoutNull sty2) 
+        //// Unifying 'T1 % and 'T2 % 
+        //| ValueSome NullnessInfo.AmbivalentToNull, ValueSome NullnessInfo.AmbivalentToNull ->
+        //    SolveTyparEqualsType csenv ndeep m2 trace sty1 (replaceNullnessOfTy g.knownWithoutNull sty2) 
+        | _ -> 
         SolveTyparEqualsType csenv ndeep m2 trace sty1 ty2 ++ (fun () -> 
            let nullnessAfterSolution1 = combineNullness (nullnessOfTy g sty1) nullness1
            SolveNullnessEquiv csenv m2 trace ty1 ty2 nullnessAfterSolution1 (nullnessOfTy g sty2)
         )
+
     | _, TType_var (tp2, nullness2) when (tp2.Rigidity <> TyparRigidity.Rigid) && not csenv.MatchingOnly ->
-        SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1 ++ (fun () -> 
-           let nullnessAfterSolution2 = combineNullness (nullnessOfTy g sty2) nullness2
-           SolveNullnessEquiv csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) nullnessAfterSolution2
-        )
+        match (nullnessOfTy g sty1).TryEvaluate(), nullness2.TryEvaluate() with
+        // Unifying 'T1? and 'T2? 
+        | ValueSome NullnessInfo.WithNull, ValueSome NullnessInfo.WithNull ->
+            SolveTyparEqualsType csenv ndeep m2 trace sty2 (replaceNullnessOfTy g.knownWithoutNull sty1)
+        //// Unifying 'T1 % and 'T2 % 
+        //| ValueSome NullnessInfo.AmbivalentToNull, ValueSome NullnessInfo.AmbivalentToNull ->
+        //    SolveTyparEqualsType csenv ndeep m2 trace sty2 (replaceNullnessOfTy g.knownWithoutNull sty1)
+        | _ -> 
+            SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1 ++ (fun () -> 
+               let nullnessAfterSolution2 = combineNullness (nullnessOfTy g sty2) nullness2
+               SolveNullnessEquiv csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) nullnessAfterSolution2
+            )
 
     // Catch float<_>=float<1>, float32<_>=float32<1> and decimal<_>=decimal<1> 
     | (_, TType_app (tc2, [ms2], nullness2)) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms2])) ->
@@ -1598,7 +1638,7 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
         match callMethInfoOpt, callExpr with 
         | Some methInfo, Expr.Op(TOp.ILCall(_useCallVirt, _isProtected, _, _isNewObj, NormalValUse, _isProp, _noTailCall, ilMethRef, _actualTypeInst, actualMethInst, _ilReturnTys), [], args, m)
              when (args, (objArgVars@allArgVars)) ||> List.lengthsEqAndForall2 (fun a b -> match a with Expr.Val(v, _, _) -> valEq v.Deref b | _ -> false) ->
-                let declaringType = Import.ImportProvidedType amap m (methInfo.PApply((fun x -> x.DeclaringType), m))
+                let declaringType = Import.ImportProvidedType amap m (methInfo.PApply((fun x -> nonNull<ProvidedType> x.DeclaringType), m))
                 if isILAppTy g declaringType then 
                     let extOpt = None  // EXTENSION METHODS FROM TYPE PROVIDERS: for extension methods coming from the type providers we would have something here.
                     ILMethSln(declaringType, extOpt, ilMethRef, actualMethInst)

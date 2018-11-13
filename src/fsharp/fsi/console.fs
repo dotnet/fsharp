@@ -58,13 +58,13 @@ type internal History() =
         match line with 
         | null | "" -> ()
         | _ ->
-            list.Add(nonNull<string> line)  // TODO NULLNESS: explicit instantiation shouldn't be needed
+            list.Add(nonNull line)  // TODO NULLNESS: explicit instantiation shouldn't be needed
 
     member x.AddLast (line: string?) =  // TODO NULLNESS: explicit type annotation shouldn't be needed
         match line with 
         | null | "" -> ()
         | _ ->
-            list.Add(nonNull<string> line) // TODO NULLNESS: explicit instantiation shouldn't be needed
+            list.Add(nonNull line) // TODO NULLNESS: explicit instantiation shouldn't be needed
             current <- list.Count
 
     member x.Previous() = 

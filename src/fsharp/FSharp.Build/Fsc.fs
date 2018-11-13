@@ -231,7 +231,7 @@ type public Fsc () as this =
 #if BUILDING_WITH_LKG
             | _ -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 #else
-            | _ -> (nonNull<string> warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
+            | _ -> (nonNull warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 #endif
 
         builder.AppendSwitchIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
@@ -589,7 +589,7 @@ type public Fsc () as this =
 #if BUILDING_WITH_LKG
             builder.AppendSwitch(dotnetFscCompilerPath)
 #else
-            builder.AppendSwitch(nonNull<string> dotnetFscCompilerPath)
+            builder.AppendSwitch(nonNull<string> dotnetFscCompilerPath) // TODO NULLNESS: why is this explicit instantiation needed?
 #endif
         builder.ToString()
 

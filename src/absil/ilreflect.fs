@@ -398,7 +398,11 @@ let envBindTypeRef emEnv (tref:ILTypeRef) (typT: System.Type?, typB, typeDef)=
 #endif
     match typT with 
     | null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name;
-    | _ -> {emEnv with emTypMap = Zmap.add tref (typT, typB, typeDef, None) emEnv.emTypMap}
+    | _ ->
+#if !BUILDING_WITH_LKG
+        let typT = nonNull typT // TODO NULLNESS
+#endif
+        {emEnv with emTypMap = Zmap.add tref (typT, typB, typeDef, None) emEnv.emTypMap}
 
 let envUpdateCreatedTypeRef emEnv (tref:ILTypeRef) =
     // The tref's TypeBuilder has been created, so we have a Type proper.
@@ -427,14 +431,10 @@ let envUpdateCreatedTypeRef emEnv (tref:ILTypeRef) =
         emEnv
 
 let convTypeRef cenv emEnv preferCreated (tref:ILTypeRef) = 
-    let res = 
-        match Zmap.tryFind tref emEnv.emTypMap with
-        | Some (_typT, _typB, _typeDef, Some createdTy) when preferCreated -> createdTy 
-        | Some (typT, _typB, _typeDef, _) -> typT       
-        | None -> convTypeRefAux cenv tref 
-    match res with 
-    | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tref.QualifiedName, tref.Scope.QualifiedName), range0))
-    | _ -> res
+    match Zmap.tryFind tref emEnv.emTypMap with
+    | Some (_typT, _typB, _typeDef, Some createdTy) when preferCreated -> createdTy 
+    | Some (typT, _typB, _typeDef, _) -> typT       
+    | None -> convTypeRefAux cenv tref 
   
 let envBindConsRef emEnv (mref:ILMethodRef) consB = 
     {emEnv with emConsMap = Zmap.add mref consB emEnv.emConsMap}
@@ -772,7 +772,7 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref:ILMethodRef) =
             failwithf "convMethodRef: could not bind to method '%A' of type '%s'" (System.String.Join(", ", methNames)) parentT.AssemblyQualifiedName
         | Some methInfo -> methInfo (* return MethodInfo for (generic) type's (generic) method *)
           
-let queryableTypeGetMethod cenv emEnv parentT (mref:ILMethodRef) =
+let queryableTypeGetMethod cenv emEnv parentT (mref:ILMethodRef) : MethodInfo =
     assert(not (typeIsNotQueryable(parentT)))
     if mref.GenericArity = 0 then 
         let tyargTs = getGenericArgumentsOfType parentT      
@@ -802,13 +802,17 @@ let queryableTypeGetMethod cenv emEnv parentT (mref:ILMethodRef) =
     else 
         queryableTypeGetMethodBySearch cenv emEnv parentT mref
 
+#if BUILDING_WITH_LKG
 let nonQueryableTypeGetMethod (parentTI:Type) (methInfo : MethodInfo) : MethodInfo = 
+#else
+let nonQueryableTypeGetMethod (parentTI:Type) (methInfo : MethodInfo) : MethodInfo? = 
+#endif
     if (parentTI.IsGenericType &&
         not (equalTypes parentTI (getTypeConstructor parentTI))) 
     then TypeBuilder.GetMethod(parentTI, methInfo )
     else methInfo 
 
-let convMethodRef cenv emEnv (parentTI:Type) (mref:ILMethodRef) =
+let convMethodRef cenv emEnv (parentTI:Type) (mref:ILMethodRef) : MethodInfo =
     let parent = mref.DeclaringTypeRef
     let res = 
         if isEmittedTypeRef emEnv parent then
@@ -826,7 +830,11 @@ let convMethodRef cenv emEnv (parentTI:Type) (mref:ILMethodRef) =
                 queryableTypeGetMethod cenv emEnv parentTI mref 
     match res with 
     | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("method", mref.Name, parentTI.FullName, parentTI.Assembly.FullName), range0))
-    | _ -> res
+#if BUILDING_WITH_LKG
+    | _ -> res 
+#else
+    | NullChecked res -> res 
+#endif
 
 //----------------------------------------------------------------------------
 // convMethodSpec
@@ -848,11 +856,7 @@ let convMethodSpec cenv emEnv (mspec:ILMethodSpec) =
 // - QueryableTypeGetConstructors: get a constructor on a non-TypeBuilder type
 //----------------------------------------------------------------------------
 
-#if BUILDING_WITH_LKG
 let queryableTypeGetConstructor cenv emEnv (parentT:Type) (mref:ILMethodRef) : ConstructorInfo =
-#else
-let queryableTypeGetConstructor cenv emEnv (parentT:Type) (mref:ILMethodRef) : ConstructorInfo? =
-#endif
     let tyargTs  = getGenericArgumentsOfType parentT
     let reqArgTs  = 
         let emEnv = envPushTyvars emEnv tyargTs
@@ -891,7 +895,11 @@ let convConstructorSpec cenv emEnv (mspec:ILMethodSpec) =
                 queryableTypeGetConstructor cenv emEnv parentTI mref 
     match res with 
     | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", "", parentTI.FullName, parentTI.Assembly.FullName), range0))
+#if BUILDING_WITH_LKG
     | _ -> res
+#else
+    | _ -> nonNull res // TODO NULLNESS
+#endif
 
 //----------------------------------------------------------------------------
 // emitLabelMark
@@ -1435,10 +1443,7 @@ let emitMethodBody cenv modB emEnv ilG _name (mbody: ILLazyMethodBody) =
     | MethodBody.NotAvailable     -> failwith "emitMethodBody: metadata only"
 
 let convCustomAttr cenv emEnv (cattr: ILAttribute) =
-    let methInfo = 
-       match convConstructorSpec cenv emEnv cattr.Method with 
-       | null -> failwithf "convCustomAttr: %+A" cattr.Method
-       | res -> res
+    let methInfo = convConstructorSpec cenv emEnv cattr.Method
     let data = getCustomAttrData cenv.ilg cattr
     (methInfo, data)
 

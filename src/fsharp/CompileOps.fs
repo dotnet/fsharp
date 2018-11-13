@@ -2340,7 +2340,7 @@ type TcConfigBuilder =
       mutable win32manifest : string
       mutable includewin32manifest : bool
       mutable linkResources : string list
-      mutable legacyReferenceResolver: ReferenceResolver.Resolver 
+      mutable legacyReferenceResolver: ReferenceResolver.Resolver
 
       mutable showFullPaths : bool
       mutable errorStyle : ErrorStyle
@@ -2410,7 +2410,7 @@ type TcConfigBuilder =
       mutable internalTestSpanStackReferring : bool
       }
 
-    static member Initial =
+    static member Initial(legacyReferenceResolver) =
         {
 #if COMPILER_SERVICE_ASSUMES_DOTNETCORE_COMPILATION
           primaryAssembly = PrimaryAssembly.System_Runtime // defaut value, can be overridden using the command line switch
@@ -2506,7 +2506,7 @@ type TcConfigBuilder =
           win32manifest = ""
           includewin32manifest = true
           linkResources = []
-          legacyReferenceResolver = null
+          legacyReferenceResolver = legacyReferenceResolver
           showFullPaths = false
           errorStyle = ErrorStyle.DefaultErrors
 
@@ -2558,7 +2558,7 @@ type TcConfigBuilder =
         if (String.IsNullOrEmpty(defaultFSharpBinariesDir)) then
             failwith "Expected a valid defaultFSharpBinariesDir"
 
-        { TcConfigBuilder.Initial with 
+        { TcConfigBuilder.Initial(legacyReferenceResolver) with 
             implicitIncludeDir = implicitIncludeDir
             defaultFSharpBinariesDir = defaultFSharpBinariesDir
             reduceMemoryUsage = reduceMemoryUsage
@@ -4150,7 +4150,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
 
 #if !NO_EXTENSIONTYPING
-    member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly>) = 
+    member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted< ProvidedAssembly? >) = 
         let anameOpt = assembly.PUntaint((fun assembly -> match assembly with null -> None | a -> Some (a.GetName())), m)
         match anameOpt with 
         | None -> false, None
@@ -4389,7 +4389,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
     member tcImports.ImportTypeProviderExtensions 
                (ctok, tcConfig:TcConfig, 
-                fileNameOfRuntimeAssembly, 
+                fileNameOfRuntimeAssembly:string, 
                 ilScopeRefOfRuntimeAssembly, 
                 runtimeAssemblyAttributes:ILAttribute list, 
                 entityToInjectInto, invalidateCcu:Event<_>, m) = 
@@ -4402,7 +4402,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             runtimeAssemblyAttributes 
             |> List.choose (TryDecodeTypeProviderAssemblyAttr (defaultArg ilGlobalsOpt EcmaMscorlibILGlobals))
             // If no design-time assembly is specified, use the runtime assembly
-            |> List.map (function null -> fileNameOfRuntimeAssembly | s -> s)
+            |> List.map (function null -> fileNameOfRuntimeAssembly | NullChecked s -> s)
             // For each simple name of a design-time assembly, we take the first matching one in the order they are 
             // specified in the attributes
             |> List.distinctBy (fun s -> try Path.GetFileNameWithoutExtension(s) with _ -> s)

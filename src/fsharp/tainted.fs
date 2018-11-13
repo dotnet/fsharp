@@ -126,12 +126,13 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
         let u = this.Protect (fun x -> f (x,context.TypeProvider)) range
         Tainted(context, u)
 
-    member this.PApplyArray(f,methodName,range:range) =        
-        let a = this.Protect f range
+    member this.PApplyArray(f, methodName, range:range) =        
+        let a : 'U[]? = this.Protect f range
         match a with 
-        |   null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
-        |   _ -> a |> Array.map (fun u -> Tainted(context,u))
-
+        | null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
+        | _ -> 
+            let a = nonNull a
+            a |> Array.map (fun u -> Tainted(context,u))  // TODO NULLNESS: this use of nonNull should not be needed
 
     member this.PApplyOption(f,range:range) =        
         let a = this.Protect f range
@@ -140,7 +141,9 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
         | Some x -> Some (Tainted(context,x))
 
     member this.PUntaint(f,range:range) = this.Protect f range
+
     member this.PUntaintNoFailure f = this.PUntaint(f, range0)
+
     /// Access the target object directly. Use with extreme caution.
     member this.AccessObjectDirectly = value
 
@@ -157,8 +160,9 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
         Tainted(context, this.Protect(fun value -> box value :?> 'U) range)
 
 module internal Tainted =
-    let (|Null|_|) (p:Tainted<'T>) =
-        if p.PUntaintNoFailure(fun p -> match p with null -> true | _ -> false) then Some() else None
+
+    let (|Null|NonNull|) (p:Tainted< 'T? >) : Choice<unit,Tainted<'T>> when 'T : not null =
+        if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure nonNull)
 
     let Eq (p:Tainted<'T>) (v:'T) = p.PUntaintNoFailure((fun pv -> pv = v))
 

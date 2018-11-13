@@ -92,18 +92,18 @@ module internal ExtensionTyping =
     type CustomAttributeTypedArgument = Microsoft.FSharp.Core.CompilerServices.IProvidedCustomAttributeTypedArgument
 #endif
 
-    type [<AllowNullLiteral; Sealed; Class>] 
+    type [<Sealed; Class>] 
         ProvidedType =
         inherit ProvidedMemberInfo
         member IsSuppressRelocate : bool
         member IsErased : bool
         member IsGenericType : bool
-        member Namespace : string
+        member Namespace : string?
         member FullName : string
         member IsArray : bool
         member GetInterfaces : unit -> ProvidedType[]
         member Assembly : ProvidedAssembly
-        member BaseType : ProvidedType
+        member BaseType : ProvidedType?
         member GetNestedType : string -> ProvidedType
         member GetNestedTypes : unit -> ProvidedType[]
         member GetAllNestedTypes : unit -> ProvidedType[]
@@ -143,27 +143,26 @@ module internal ExtensionTyping =
         interface IProvidedCustomAttributeProvider
         static member TaintedEquals : Tainted<ProvidedType> * Tainted<ProvidedType> -> bool 
 
-    and [<AllowNullLiteral>] 
-        IProvidedCustomAttributeProvider =
+    and IProvidedCustomAttributeProvider =
         abstract GetHasTypeProviderEditorHideMethodsAttribute : provider:ITypeProvider -> bool
-        abstract GetDefinitionLocationAttribute : provider:ITypeProvider -> (string * int * int) option 
+        abstract GetDefinitionLocationAttribute : provider:ITypeProvider -> (string? * int * int) option 
         abstract GetXmlDocAttributes : provider:ITypeProvider -> string[]
         abstract GetAttributeConstructorArgs: provider:ITypeProvider * attribName:string -> (obj option list * (string * obj option) list) option
         
-    and [<AllowNullLiteral; Sealed; Class>] 
+    and [<Sealed; Class>] 
         ProvidedAssembly = 
         member GetName : unit -> System.Reflection.AssemblyName
         member FullName : string
         member GetManifestModuleContents : ITypeProvider -> byte[]
         member Handle : System.Reflection.Assembly
 
-    and [<AllowNullLiteral;AbstractClass>] 
+    and [<AbstractClass>] 
         ProvidedMemberInfo = 
         member Name :string
-        member DeclaringType : ProvidedType
+        member DeclaringType : ProvidedType?
         interface IProvidedCustomAttributeProvider 
 
-    and [<AllowNullLiteral;AbstractClass>] 
+    and [<AbstractClass>] 
         ProvidedMethodBase = 
         inherit ProvidedMemberInfo
         member IsGenericMethod : bool
@@ -183,7 +182,7 @@ module internal ExtensionTyping =
         static member TaintedGetHashCode : Tainted<ProvidedMethodBase> -> int
         static member TaintedEquals : Tainted<ProvidedMethodBase> * Tainted<ProvidedMethodBase> -> bool 
 
-    and [<AllowNullLiteral; Sealed; Class>] 
+    and [<Sealed; Class>] 
         ProvidedMethodInfo = 
         inherit ProvidedMethodBase
         member ReturnType : ProvidedType
@@ -191,9 +190,9 @@ module internal ExtensionTyping =
         member MetadataToken : int
 #endif
 
-    and [<AllowNullLiteral; Sealed; Class>] 
+    and [<Sealed; Class>] 
         ProvidedParameterInfo = 
-        member Name :string
+        member Name : string
         member ParameterType : ProvidedType
         member IsIn : bool
         member IsOut : bool
@@ -202,7 +201,7 @@ module internal ExtensionTyping =
         member HasDefaultValue : bool
         interface IProvidedCustomAttributeProvider 
 
-    and [<AllowNullLiteral; Class; Sealed>] 
+    and [<Class; Sealed>] 
         ProvidedFieldInfo = 
         inherit ProvidedMemberInfo
         member IsInitOnly : bool
@@ -218,19 +217,27 @@ module internal ExtensionTyping =
         member IsPrivate : bool
         static member TaintedEquals : Tainted<ProvidedFieldInfo> * Tainted<ProvidedFieldInfo> -> bool 
 
-    and [<AllowNullLiteral; Class; Sealed>] 
+    and [<Class; Sealed>] 
         ProvidedPropertyInfo = 
         inherit ProvidedMemberInfo
-        member GetGetMethod : unit -> ProvidedMethodInfo
-        member GetSetMethod : unit -> ProvidedMethodInfo
+
+        member GetGetMethod : unit -> ProvidedMethodInfo?
+
+        member GetSetMethod : unit -> ProvidedMethodInfo?
+
         member GetIndexParameters : unit -> ProvidedParameterInfo[]
+
         member CanRead : bool
+
         member CanWrite : bool
+
         member PropertyType : ProvidedType
+
         static member TaintedGetHashCode : Tainted<ProvidedPropertyInfo> -> int
+
         static member TaintedEquals : Tainted<ProvidedPropertyInfo> * Tainted<ProvidedPropertyInfo> -> bool 
 
-    and [<AllowNullLiteral; Class; Sealed>] 
+    and [<Class; Sealed>] 
         ProvidedEventInfo = 
         inherit ProvidedMemberInfo
         member GetAddMethod : unit -> ProvidedMethodInfo
@@ -239,17 +246,17 @@ module internal ExtensionTyping =
         static member TaintedGetHashCode : Tainted<ProvidedEventInfo> -> int
         static member TaintedEquals : Tainted<ProvidedEventInfo> * Tainted<ProvidedEventInfo> -> bool 
 
-    and [<AllowNullLiteral; Class; Sealed>] 
+    and [<Class; Sealed>] 
         ProvidedConstructorInfo = 
         inherit ProvidedMethodBase
         
-    [<RequireQualifiedAccess; Class; Sealed; AllowNullLiteral>]
+    [<Class; Sealed>]
     type ProvidedExpr =
         member Type : ProvidedType
         /// Convert the expression to a string for diagnostics
         member UnderlyingExpressionString : string
 
-    [<RequireQualifiedAccess; Class; Sealed; AllowNullLiteral>]
+    [<Class; Sealed>]
     type ProvidedVar =
         member Type : ProvidedType
         member Name : string

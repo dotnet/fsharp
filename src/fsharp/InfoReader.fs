@@ -20,6 +20,10 @@ open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 
+#if !NO_EXTENSIONTYPING
+open Microsoft.FSharp.Compiler.ExtensionTyping
+#endif
+
 /// Use the given function to select some of the member values from the members of an F# type
 let private SelectImmediateMemberVals g optFilter f (tcref:TyconRef) = 
     let chooser (vref:ValRef) = 
@@ -146,8 +150,8 @@ let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter,ad) g amap m origTy m
                 match optFilter with
                 |   Some name ->
                         match st.PApply((fun st -> st.GetProperty name), m) with
-                        |   Tainted.Null -> [||]
-                        |   pi -> [|pi|]
+                        | Tainted.Null -> [||]
+                        | Tainted.NonNull pi -> [|pi|]
                 |   None ->
                         st.PApplyArray((fun st -> st.GetProperties()), "GetProperties", m)
             matchingProps
@@ -221,8 +225,8 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
                         [ for fi in st.PApplyArray((fun st -> st.GetFields()), "GetFields" , m) -> ProvidedField(amap,fi,m) ]
                 |   Some name ->
                         match st.PApply ((fun st -> st.GetField name), m) with
-                        |   Tainted.Null -> []
-                        |   fi -> [  ProvidedField(amap,fi,m) ]
+                        | Tainted.Null -> []
+                        | Tainted.NonNull fi -> [  ProvidedField(amap,fi,m) ]
 #endif
             | ILTypeMetadata _ -> 
                 let tinfo = ILTypeInfo.FromType g ty
@@ -246,8 +250,8 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
                         [   for ei in st.PApplyArray((fun st -> st.GetEvents()), "GetEvents" , m) -> ProvidedEvent(amap,ei,m) ]
                 |   Some name ->
                         match st.PApply ((fun st -> st.GetEvent name), m) with
-                        |   Tainted.Null -> []
-                        |   ei -> [  ProvidedEvent(amap,ei,m) ]
+                        | Tainted.Null -> []
+                        | Tainted.NonNull ei -> [  ProvidedEvent(amap,ei,m) ]
 #endif
             | ILTypeMetadata _ -> 
                 let tinfo = ILTypeInfo.FromType g ty

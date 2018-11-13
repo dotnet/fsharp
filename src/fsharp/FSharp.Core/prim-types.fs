@@ -2371,9 +2371,7 @@ namespace Microsoft.FSharp.Core
             parse p 0UL
 
         let inline removeUnderscores (s:string) =
-            match s with
-            | null -> null
-            | s -> s.Replace("_", "")
+            s.Replace("_", "")
 
         let ParseUInt32 (s:string) = 
             if System.Object.ReferenceEquals(s,null) then
@@ -3340,14 +3338,15 @@ namespace Microsoft.FSharp.Core
             | _ -> true
 
 #if !BUILDING_WITH_LKG
+
         [<CompiledName("IsNullV")>]
         let inline isNullV (value : Nullable<'T>) = not value.HasValue
 
         [<CompiledName("NonNull")>]
-        let inline nonNull (value : ('T)? when 'T : not struct) = 
+        let inline nonNull (value : 'T? when 'T : not struct) = 
             match box value with 
             | null -> raise (System.NullReferenceException()) // TODO NULLNESS: decide if this raises an exception or ploughs on 
-            | _ -> value
+            | _ -> (# "" value : 'T #)
 
         [<CompiledName("NonNullV")>]
         let inline nonNullV (value : Nullable<'T>) = 
@@ -3355,6 +3354,18 @@ namespace Microsoft.FSharp.Core
                 value.Value 
             else 
                 raise (System.NullReferenceException())
+
+        [<CompiledName("NullMatchPattern")>]
+        let inline (|Null|NonNull|) (value : 'T?) = 
+            match value with 
+            | null -> Choice1Of2 () 
+            | _ -> Choice2Of2 (# "" value : 'T #)
+
+        [<CompiledName("NullCheckedPattern")>]
+        let inline (|NullChecked|) (value : 'T?) =
+            match box value with 
+            | null -> raise (System.NullReferenceException()) // TODO NULLNESS: decide if this raises an exception or ploughs on 
+            | _ -> (# "" value : 'T #)
 
         [<CompiledName("WithNull")>]
         let inline withNull (value : 'T when 'T : not struct) = (# "" value : 'T? #)

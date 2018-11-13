@@ -1667,9 +1667,11 @@ module internal Parser =
                     // If there was a loadClosure, replay the errors and warnings from resolution, excluding parsing
                     loadClosure.LoadClosureRootFileDiagnostics |> List.iter diagnosticSink
             
-                    let fileOfBackgroundError err = (match GetRangeOfDiagnostic (fst err) with Some m-> m.FileName | None -> null)
+                    let fileOfBackgroundError err = match GetRangeOfDiagnostic (fst err) with Some m-> Some m.FileName | None -> None
                     let sameFile file hashLoadInFile = 
-                        (0 = String.Compare(hashLoadInFile, file, StringComparison.OrdinalIgnoreCase))
+                        match file with 
+                        | None -> false
+                        | Some file -> (0 = String.Compare(hashLoadInFile, file, StringComparison.OrdinalIgnoreCase))
             
                     //  walk the list of #loads and keep the ones for this file.
                     let hashLoadsInFile = 
@@ -3239,7 +3241,7 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
     member ic.GetParsingOptionsFromCommandLineArgs(initialSourceFiles, argv, ?isInteractive) =
         let isInteractive = defaultArg isInteractive false
         use errorScope = new ErrorScope()
-        let tcConfigBuilder = TcConfigBuilder.Initial
+        let tcConfigBuilder = TcConfigBuilder.Initial(legacyReferenceResolver)
 
         // Apply command-line arguments and collect more source files if they are in the arguments
         let sourceFilesNew = ApplyCommandLineArgs(tcConfigBuilder, initialSourceFiles, argv)

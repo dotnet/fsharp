@@ -237,24 +237,32 @@ type
     | Double of double
     /// F# syntax: 'a'
     | Char of char
+
     /// F# syntax: 23.4M
     | Decimal of System.Decimal
+
     /// UserNum(value, suffix)
     ///
     /// F# syntax: 1Q, 1Z, 1R, 1N, 1G
     | UserNum of value:string * suffix:string
+
     /// F# syntax: verbatim or regular string, e.g. "abc"
+    /// May be null coming from parser in type provider instantiation but is always treated as an error.
     | String of text:string * range:range
+
     /// F# syntax: verbatim or regular byte string, e.g. "abc"B.
     ///
     /// Also used internally in the typechecker once an array of unit16 constants
     /// is detected, to allow more efficient processing of large arrays of uint16 constants.
     | Bytes of bytes:byte[] * range:range
+
     /// Used internally in the typechecker once an array of unit16 constants
     /// is detected, to allow more efficient processing of large arrays of uint16 constants.
     | UInt16s of uint16[]
+
     /// Old comment: "we never iterate, so the const here is not another SynConst.Measure"
     | Measure of constant:SynConst * SynMeasure
+
     member c.Range dflt =
         match c with
         | SynConst.String (_,m0) | SynConst.Bytes (_,m0) -> m0
@@ -470,6 +478,9 @@ and
     /// For the dimensionless units i.e. 1 , and static parameters to provided types
     | StaticConstant of constant:SynConst * range:range
 
+    /// F# syntax : nul used in parameters to type providers
+    | StaticConstantNull of range:range
+
     /// F# syntax : const expr, used in static parameters to type providers
     | StaticConstantExpr of expr:SynExpr * range:range
 
@@ -492,6 +503,7 @@ and
         | SynType.Anon (range=m)
         | SynType.WithGlobalConstraints (range=m)
         | SynType.StaticConstant (range=m)
+        | SynType.StaticConstantNull (range=m)
         | SynType.StaticConstantExpr (range=m)
         | SynType.StaticConstantNamed (range=m)
         | SynType.HashConstraint (range=m)

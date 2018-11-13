@@ -4579,7 +4579,7 @@ atomType:
 
   | NULL
      { let m = rhs parseState 1
-       SynType.StaticConstant(SynConst.String (null, m), m) }
+       SynType.StaticConstantNull(m) }
 
   | CONST atomicExpr
      {  let e,_ = $2

@@ -6758,12 +6758,12 @@ let mkCompilationMappingAttrForQuotationResource (g:TcGlobals) (nm, tys: ILTypeR
 let isTypeProviderAssemblyAttr (cattr:ILAttribute) = 
     cattr.Method.DeclaringType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
 
-let TryDecodeTypeProviderAssemblyAttr ilg (cattr:ILAttribute) = 
+let TryDecodeTypeProviderAssemblyAttr ilg (cattr:ILAttribute) : string? option = 
     if isTypeProviderAssemblyAttr cattr then 
         let parms, _args = decodeILAttribData ilg cattr 
         match parms with // The first parameter to the attribute is the name of the assembly with the compiler extensions.
-        | (ILAttribElem.String (Some assemblyName))::_ -> Some assemblyName
         | (ILAttribElem.String None)::_ -> Some null
+        | (ILAttribElem.String (Some assemblyName))::_ -> Some assemblyName
         | [] -> Some null
         | _ -> None
     else
@@ -8604,7 +8604,7 @@ let DetectAndOptimizeForExpression g option expr =
                 mkLet spBind mEnumExpr currentVar enumerableExpr
                     // let mutable next = current.TailOrNull
                     (mkCompGenLet mForLoop nextVar tailOrNullExpr 
-                        // while nonNull next dp
+                        // while notNull next dp
                        (mkWhile g (spWhileLoop, WhileLoopForCompiledForEachExprMarker, guardExpr, bodyExpr, mBody)))
 
             expr

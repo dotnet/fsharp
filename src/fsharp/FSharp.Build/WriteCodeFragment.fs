@@ -133,7 +133,7 @@ type WriteCodeFragment() =
 #if BUILDING_WITH_LKG
                 let fileName = _outputFile.ItemSpec
 #else
-                let fileName = (nonNull<ITaskItem> _outputFile).ItemSpec
+                let fileName = (nonNull _outputFile).ItemSpec
 #endif
 
                 let outputFileItem =
@@ -141,13 +141,13 @@ type WriteCodeFragment() =
 #if BUILDING_WITH_LKG
                         TaskItem(Path.Combine(_outputDirectory.ItemSpec, fileName)) :> ITaskItem
 #else
-                        TaskItem(Path.Combine((nonNull<ITaskItem> _outputDirectory).ItemSpec, fileName)) :> ITaskItem
+                        TaskItem(Path.Combine((nonNull _outputDirectory).ItemSpec, fileName)) :> ITaskItem
 #endif
                     else
 #if BUILDING_WITH_LKG
                         _outputFile
 #else
-                        nonNull<ITaskItem> _outputFile
+                        nonNull<ITaskItem> _outputFile // TODO NULLNESS: why is this explicit instantiation needed
 #endif
 
                 let codeText = code.ToString()

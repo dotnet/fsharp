@@ -382,7 +382,7 @@ type TcConfigBuilder =
       mutable internalTestSpanStackReferring : bool
     }
 
-    static member Initial: TcConfigBuilder
+    static member Initial: ReferenceResolver.Resolver -> TcConfigBuilder
 
     static member CreateNew: 
         legacyReferenceResolver: ReferenceResolver.Resolver *

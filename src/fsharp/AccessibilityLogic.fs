@@ -329,10 +329,11 @@ let IsPropInfoAccessible g amap m ad = function
     | ProvidedProp (amap, tppi, m) as pp-> 
         let access = 
             let a = tppi.PUntaint((fun ppi -> 
-                let tryGetILAccessForProvidedMethodBase (mi : ProvidedMethodBase) = 
+                let tryGetILAccessForProvidedMethodBase (mi : ProvidedMethodInfo?) = 
                     match mi with
                     | null -> None
-                    | mi -> Some(ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly)
+                    | NullChecked mi -> Some(ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly)
+
                 match tryGetILAccessForProvidedMethodBase(ppi.GetGetMethod()) with
                 | None -> tryGetILAccessForProvidedMethodBase(ppi.GetSetMethod())
                 | x -> x), m)

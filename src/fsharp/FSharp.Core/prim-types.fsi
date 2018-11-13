@@ -2259,6 +2259,18 @@ namespace Microsoft.FSharp.Core
 #if !BUILDING_WITH_LKG
         /// <summary>Determines whether the given value is null.</summary>
         /// <param name="value">The value to check.</param>
+        /// <returns>A choice indicating whether the value is null or not-null.</returns>
+        [<CompiledName("NullMatchPattern")>]
+        val inline (|Null|NonNull|) : value: 'T? -> Choice<unit, 'T> 
+        
+        /// <summary>When used in a pattern checks the given value is not null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>A choice indicating whether the value is null or not-null.</returns>
+        [<CompiledName("NullCheckedPattern")>]
+        val inline (|NullChecked|) : value: 'T? -> 'T 
+        
+        /// <summary>Determines whether the given value is null.</summary>
+        /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("IsNullV")>]
         val inline isNullV : value:Nullable<'T> -> bool

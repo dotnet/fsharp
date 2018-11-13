@@ -2077,7 +2077,7 @@ let minimalStringsOfTwoTypes denv t1 t2=
         let denv = denv.SetOpenPaths []
         let denv = { denv with includeStaticParametersInTypeNames=true }
         let makeName t =
-            let assemblyName = PrintTypes.layoutAssemblyName denv t |> function | null | "" -> "" | name -> sprintf " (%s)" name
+            let assemblyName = PrintTypes.layoutAssemblyName denv t |> function "" -> "" | name -> sprintf " (%s)" name
             sprintf "%s%s" (stringOfTy denv t) assemblyName
 
         (makeName t1,makeName t2,stringOfTyparConstraints denv tpcs)

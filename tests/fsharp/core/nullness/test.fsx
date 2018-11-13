@@ -6,14 +6,15 @@ open System.Runtime.CompilerServices
 //let f<'T when 'T : not struct> (x: 'T?) = 1
 
 module Basics = 
-    let x1 : string = null // Expected to give a nullability warning
+    let x1 : string = null // ** Expected to give a nullability warning
     let x2 : string? = null // Should not give a nullability warning
     let x3 : string? = "a" // Should not give a nullability warning
     let x4 : string = "" // Should not give a nullability warning
 
     let x5 = nonNull<string> "" // Should not give a nullability warning
-    let x6 = nonNull< string? > "" // QUESTION: should this give a nullability warning due to (T?)?  Should there be a non-null constraint?
+    let x6 = nonNull< string? > "" // **Expected to give a nullability warning
     let x7 = nonNull ""
+    let _x7 : string = x7
     let x8 = nonNull<string[]> Array.empty
     let x9 = nonNull [| "" |]
     let x10 = nonNullV (Nullable(3))
@@ -22,13 +23,17 @@ module Basics =
     let x13 = nullV<int64>
     let x14 = withNullV 6L
     let x15 : string? = withNull x4
+    let x15a : string? = withNull ""
+    let x15b : string? = withNull<string> x4
+    let x15c : string? = withNull< string? > x4 // **Expected to give a nullability warning
     let x16 : Nullable<int> = withNullV 3
     
-    let y0 = isNull null // QUESTION: gives a nullability warning due to 'obj' being the default. This seems ok
+    let y0 = isNull null // Should not give a nullability warning (obj)
     let y1 = isNull (null: obj?) // Should not give a nullability warning
-    let y2 = isNull "" // Should not give a nullability warning
-    let y9 = isNull<string> "" // Should not give a nullability warning
-    let y10 = isNull< string? > "" // QUESTION: should this give a nullability warning due to (T?)?  Should there be a non-null constraint?
+    let y1b = isNull (null: string?) // Should not give a nullability warning
+    let y2 = isNull "" // **Expected to give a nullability warning - type instantiation of a nullable type is non-nullable string
+    let y9 = isNull<string> "" // **Expected to give a nullability warning - type instantiation of a nullable type is non-nullable string
+    let y10 = isNull< string? > "" // Should not give a nullability warning.
 
 module NotNullConstraint =
     let f3 (x: 'T when 'T : not null) = 1

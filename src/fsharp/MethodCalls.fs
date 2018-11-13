@@ -706,7 +706,7 @@ let MakeMethInfoCall amap m minfo minst args =
 // This imports a provided method, and checks if it is a known compiler intrinsic like "1 + 2"
 let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap:Import.ImportMap, m:range, mbase: Tainted<ProvidedMethodBase>) = 
     let methodName = mbase.PUntaint((fun x -> x.Name), m)
-    let declaringType = Import.ImportProvidedType amap m (mbase.PApply((fun x -> x.DeclaringType), m))
+    let declaringType = Import.ImportProvidedType amap m (mbase.PApply((fun x -> nonNull<ProvidedType> x.DeclaringType), m))
     if isAppTy amap.g declaringType then 
         let declaringEntity = tcrefOfAppTy amap.g declaringType
         if not declaringEntity.IsLocalRef && ccuEq declaringEntity.nlr.Ccu amap.g.fslibCcu then
@@ -936,7 +936,7 @@ module ProvidedMethodCalls =
                         st.PApply((fun st -> 
                             match st.BaseType with 
                             | null -> ProvidedType.CreateNoContext(typeof<obj>)  // it might be an interface
-                            | st -> st), m)
+                            | NullChecked st -> st), m)
                     loop baseType
                 else
                     if isGeneric then 
@@ -975,7 +975,7 @@ module ProvidedMethodCalls =
             let fail() = error(Error(FSComp.SR.etUnsupportedProvidedExpression(ea.PUntaint((fun etree -> etree.UnderlyingExpressionString), m)), m))
             match ea with
             | Tainted.Null -> error(Error(FSComp.SR.etNullProvidedExpression(ea.TypeProviderDesignation), m))
-            |  _ ->
+            | Tainted.NonNull ea ->
             match ea.PApplyOption((function ProvidedTypeAsExpr x -> Some x | _ -> None), m) with
             | Some info -> 
                 let (expr, targetTy) = info.PApply2(id, m)
@@ -1239,7 +1239,7 @@ module ProvidedMethodCalls =
         let thisArg, paramVars = 
             match objArgs with
             | [objArg] -> 
-                let erasedThisTy = eraseSystemType (amap, m, mi.PApply((fun mi -> mi.DeclaringType), m))
+                let erasedThisTy = eraseSystemType (amap, m, mi.PApply((fun mi -> nonNull<ProvidedType> mi.DeclaringType), m))
                 let thisVar = erasedThisTy.PApply((fun ty -> ProvidedVar.Fresh("this", ty)), m)
                 Some objArg , Array.append [| thisVar |] paramVars
             | [] -> None , paramVars
