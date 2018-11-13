@@ -1176,6 +1176,24 @@ namespace Microsoft.FSharp.Control
                                                      econt = (fun edi -> ctxt.cont (Choice2Of2 (edi.GetAssociatedSourceException()))))
                 computation.Invoke newCtxt)
 
+        static member WithCancellation(computation : Async<'T>, cancellationToken : CancellationToken) : Async<'T> = 
+            async {
+                let! ct2 = Async.CancellationToken
+                use cts = CancellationTokenSource.CreateLinkedTokenSource (cancellationToken, ct2)
+                let tcs = new TaskCompletionSource<'T>()
+                use _reg = cts.Token.Register (fun () -> tcs.TrySetCanceled() |> ignore)
+                let inner = 
+                    async {
+                        try
+                          let! a = computation
+                          tcs.TrySetResult a |> ignore
+                        with ex ->
+                          tcs.TrySetException ex |> ignore 
+                    }
+                Async.Start (inner, cts.Token)
+                return! Async.AwaitTask tcs.Task 
+            }
+
         static member RunSynchronously (computation: Async<'T>,?timeout,?cancellationToken:CancellationToken) =
             let timeout, cancellationToken =
                 match cancellationToken with
