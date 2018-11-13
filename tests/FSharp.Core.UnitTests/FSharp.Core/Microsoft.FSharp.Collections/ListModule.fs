@@ -809,6 +809,20 @@ type ListModule() =
         CheckThrowsArgumentException(fun () -> List.exactlyOne ["1"; "2"] |> ignore)
 
     [<Test>]
+    member this.``tryExactlyOne should return the element from singleton lists``() =
+        Assert.AreEqual(Some 1, List.tryExactlyOne [1])
+        Assert.AreEqual(Some "2", List.tryExactlyOne ["2"])
+        ()
+
+    [<Test>]
+    member this.``tryExactlyOne should return None for empty list``() =
+        Assert.AreEqual(None, List.tryExactlyOne [])
+
+    [<Test>]
+    member this.``tryExactlyOne should return None for lists with more than one element``() =
+        Assert.AreEqual(None, List.tryExactlyOne ["1"; "2"])
+
+    [<Test>]
     member this.TryHead() =
         // integer List
         let resultInt = List.tryHead  [2..2..20]        

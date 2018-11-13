@@ -3054,12 +3054,29 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<Struct>]
     [<CompiledName("FSharpValueOption`1")>]
+    [<DebuggerDisplay("ValueSome({Value})")>]
     type ValueOption<'T> =
         | ValueNone : 'T voption
         | ValueSome : 'T -> 'T voption
 
         member x.Value = match x with ValueSome x -> x | ValueNone -> raise (new System.InvalidOperationException("ValueOption.Value"))
 
+        [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+        static member None : 'T voption = ValueNone
+
+        static member Some (value) : 'T voption = ValueSome(value)
+
+        [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+        member x.IsNone = match x with ValueNone -> true | _ -> false
+
+        [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+        member x.IsSome = match x with ValueSome _ -> true | _ -> false
+
+        static member op_Implicit (value) : 'T option = Some(value)
+
+        override x.ToString() = 
+           // x is non-null, hence ValueSome
+           "ValueSome("^anyToStringShowingNull x.Value^")"
 
     and 'T voption = ValueOption<'T>
 
