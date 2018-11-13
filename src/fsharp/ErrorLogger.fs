@@ -596,14 +596,26 @@ let rec Iterate2D f xs ys =
     | h1 :: t1, h2::t2 -> f h1 h2 ++ (fun () -> Iterate2D f t1 t2) 
     | _ -> failwith "Iterate2D"
 
+/// Keep the warnings, propagate the error to the exception continuation.
 let TryD f g = 
     match f() with
-    | ErrorResult(warns, err) ->  (OkResult(warns, ())) ++ (fun () -> g err)
+    | ErrorResult(warns, err) ->
+        trackErrors {
+            do! OkResult(warns, ())
+            return! g err
+        }
     | res -> res
 
 let rec RepeatWhileD ndeep body = body ndeep ++ (fun x -> if x then RepeatWhileD (ndeep+1) body else CompleteD) 
 let AtLeastOneD f l = MapD f l ++ (fun res -> ResultD (List.exists id res))
 
+
+[<RequireQualifiedAccess>]
+module OperationResult =
+    let inline ignore (res: OperationResult<'a>) =
+        match res with
+        | OkResult(warnings, _) -> OkResult(warnings, ())
+        | ErrorResult(warnings, err) -> ErrorResult(warnings, err)
 
 // Code below is for --flaterrors flag that is only used by the IDE
 

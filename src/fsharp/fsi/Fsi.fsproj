@@ -26,7 +26,6 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <Win32Resource>fsi.res</Win32Resource>
-    <TargetFrameworkVersion Condition="'$(TargetDotnetProfile)' != 'coreclr'">v4.6</TargetFrameworkVersion>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="console.fs">

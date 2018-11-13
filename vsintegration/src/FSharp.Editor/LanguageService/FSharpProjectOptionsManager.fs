@@ -277,8 +277,8 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
     member __.TryGetOptionsByProjectAsync(project) =
         agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply))
 
-    member __.TryGetOptionsByDocumentAsync(project) =
-        agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByDocument(project, reply))
+    member __.TryGetOptionsByDocumentAsync(document) =
+        agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply))
 
     member __.ClearOptionsByProjectId(projectId) =
         agent.Post(FSharpProjectOptionsMessage.ClearOptions(projectId))

@@ -1,10 +1,10 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hans" original="../BuildPropPage.resx">
     <body>
       <trans-unit id="lblConditionalCompilationSymbols.Text">
         <source>Conditional compilation s&amp;ymbols:</source>
-        <target state="translated">条件编译符号(&amp;Y): </target>
+        <target state="translated">条件编译符号(&amp;Y):</target>
         <note />
       </trans-unit>
       <trans-unit id="chkPrefer32Bit.Text">
@@ -49,12 +49,12 @@
       </trans-unit>
       <trans-unit id="rbWarningAll.Text">
         <source>A&amp;ll</source>
-        <target state="translated">全部(&amp;L)</target>
+        <target state="translated">所有(&amp;L)</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningSpecific.Text">
         <source>Specif&amp;ic warnings:</source>
-        <target state="translated">特定警告(&amp;I): </target>
+        <target state="translated">特定警告(&amp;I):</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningNone.Text">

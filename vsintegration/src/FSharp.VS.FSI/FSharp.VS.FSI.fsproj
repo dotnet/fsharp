@@ -3,7 +3,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
     <OutputType>Library</OutputType>
     <ImportVsSDK>true</ImportVsSDK>
     <CreateVsixContainer>false</CreateVsixContainer>
@@ -37,7 +36,6 @@
     <Compile Include="fsiTextBufferStream.fs" />
     <Compile Include="fsiSessionToolWindow.fs" />
     <Compile Include="fsiPackageHooks.fs" />
-    <Compile Include="fsiPackage.fs" />
     <EmbeddedResource Include="Properties.resx">
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.Interactive.SRProperties</GeneratedModuleName>

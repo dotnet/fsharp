@@ -204,6 +204,9 @@ type internal FSharpPackage() as this =
 type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSolution) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
+    let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
+    let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, projectInfoManager, package.ComponentModel.GetService<IWorkspaceProjectContextFactory>())
+
     override this.Initialize() = 
         base.Initialize()
 

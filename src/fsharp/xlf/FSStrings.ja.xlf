@@ -1174,7 +1174,7 @@
       </trans-unit>
       <trans-unit id="FixKeyword">
         <source>keyword </source>
-        <target state="translated">キーワード </target>
+        <target state="translated">キーワード</target>
         <note />
       </trans-unit>
       <trans-unit id="FixSymbol">
@@ -1615,6 +1615,16 @@
       <trans-unit id="TargetInvocationExceptionWrapper">
         <source>internal error: {0}</source>
         <target state="translated">内部エラー: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACE.BAR">
+        <source>symbol '{|'</source>
+        <target state="new">symbol '{|'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR.RBRACE">
+        <source>symbol '|}'</source>
+        <target state="new">symbol '|}'</target>
         <note />
       </trans-unit>
     </body>

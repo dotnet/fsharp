@@ -31,6 +31,8 @@ module CoreTests =
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
     let ``access-FSC_BASIC``() = singleTestBuildAndRun "core/access" FSC_BASIC
+
+
 // All tests below here are known to pass for .NET Core but not yet enabled due to CI problems
     [<Test>]
     let ``access-FSI_BASIC``() = singleTestBuildAndRun "core/access" FSI_BASIC
@@ -320,6 +322,35 @@ module CoreTests =
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 
+    // These tests are enabled for .NET Framework and .NET Core
+    [<Test>]
+    let ``anon-FSC_BASIC``() = 
+        let cfg = testConfig "core/anon"
+
+        fsc cfg "%s -a -o:lib.dll" cfg.fsc_flags ["lib.fs"]
+
+        peverify cfg "lib.dll"
+
+        fsc cfg "%s -r:lib.dll" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "test.exe"
+
+        begin 
+            use testOkFile = fileguard cfg "test.ok"
+
+            exec cfg ("." ++ "test.exe") ""
+
+            testOkFile.CheckExists()
+        end
+
+        begin 
+            use testOkFile = fileguard cfg "test.ok"
+
+            fsi cfg "-r:lib.dll" ["test.fsx"]
+
+            testOkFile.CheckExists()
+        end
+
     [<Test>]
     let events () = 
         let cfg = testConfig "core/events"
@@ -449,8 +480,6 @@ module CoreTests =
         let cfg = testConfig "core/fsfromfsviacs"
 
         fsc cfg "%s -a -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
-
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
         peverify cfg "lib.dll"
 
@@ -759,8 +788,6 @@ module CoreTests =
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
         fsc cfg "%s -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
-
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
         peverify cfg "test.exe"
 
@@ -1844,7 +1871,7 @@ module OptimizationTests =
             |> Seq.filter (fun line -> line.Contains(".locals init"))
             |> Seq.length
 
-        log "Ran ok - optimizations removed %d textual occurrences of optimizable identifiers from target IL" numElim 
+        log "Ran ok - optimizations removed %d textual occurrences of optimizable identifiers from target IL" numElim
 
     [<Test>]
     let stats () = 
@@ -1899,7 +1926,6 @@ module TypecheckTests =
     let ``sigs pos27`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos27.exe" cfg.fsc_flags ["pos27.fs"]
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
         peverify cfg "pos27.exe"
 
     [<Test>]
@@ -2407,6 +2433,21 @@ module TypecheckTests =
 
     [<Test>]
     let ``type check neg110`` () = singleNegTest (testConfig "typecheck/sigs") "neg110"
+
+    [<Test>]
+    let ``type check neg111`` () = singleNegTest (testConfig "typecheck/sigs") "neg111"
+
+    [<Test>] 
+    let ``type check neg113`` () = singleNegTest (testConfig "typecheck/sigs") "neg113"
+
+    [<Test>] 
+    let ``type check neg114`` () = singleNegTest (testConfig "typecheck/sigs") "neg114"
+
+    [<Test>] 
+    let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"
+
+    [<Test>] 
+    let ``type check neg_anon_2`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_2"
 
     [<Test>] 
     let ``type check neg_issue_3752`` () = singleNegTest (testConfig "typecheck/sigs") "neg_issue_3752"

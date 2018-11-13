@@ -20,10 +20,10 @@ type pos =
     member Line : int
     member Column : int
 
-    member Encoding : int32
-    static member Decode : int32 -> pos
+    member Encoding : int64
+    static member Decode : int64 -> pos
     /// The maximum number of bits needed to store an encoded position 
-    static member EncodingSize : int32 
+    static member EncodingSize : int
   
 /// Create a position for the given line and column
 val mkPos : line:int -> column:int -> pos
