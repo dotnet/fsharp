@@ -86,7 +86,7 @@ module Impl =
     let entityIsUnresolved(entity:EntityRef) = 
         match entity with
         | ERefNonLocal(NonLocalEntityRef(ccu, _)) -> 
-            ccu.IsUnresolvedReference && ValueOption.isNone entity.TryDeref
+            ccu.IsUnresolvedReference && ValueOptionInternal.isNone entity.TryDeref
         | _ -> false
 
     let checkEntityIsResolved(entity:EntityRef) = 
@@ -758,11 +758,12 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
                                )
 
 
-    let isUnresolved() = 
-        entityIsUnresolved v.TyconRef || ValueOption.isNone v.TryUnionCase
+    let isUnresolved() =
+        entityIsUnresolved v.TyconRef || ValueOptionInternal.isNone v.TryUnionCase 
+        
     let checkIsResolved() = 
         checkEntityIsResolved v.TyconRef
-        if ValueOption.isNone v.TryUnionCase then 
+        if ValueOptionInternal.isNone v.TryUnionCase then 
             invalidOp (sprintf "The union case '%s' could not be found in the target type" v.CaseName)
 
     member __.IsUnresolved = 
@@ -875,10 +876,10 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
 
     let isUnresolved() = 
         d.TryDeclaringTyconRef |> Option.exists entityIsUnresolved ||
-        match d with 
+        match d with
         | AnonField _ -> false
-        | RecdOrClass v ->  ValueOption.isNone v.TryRecdField
-        | Union (v, _) -> ValueOption.isNone v.TryUnionCase
+        | RecdOrClass v -> ValueOptionInternal.isNone v.TryRecdField 
+        | Union (v, _) -> ValueOptionInternal.isNone v.TryUnionCase 
         | ILField _ -> false
 
     let checkIsResolved() = 
@@ -886,10 +887,10 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
         match d with 
         | AnonField _ -> ()
         | RecdOrClass v -> 
-            if ValueOption.isNone v.TryRecdField then 
+            if ValueOptionInternal.isNone v.TryRecdField then 
                 invalidOp (sprintf "The record field '%s' could not be found in the target type" v.FieldName)
         | Union (v, _) -> 
-            if ValueOption.isNone v.TryUnionCase then 
+            if ValueOptionInternal.isNone v.TryUnionCase then 
                 invalidOp (sprintf "The union case '%s' could not be found in the target type" v.CaseName)
         | ILField _ -> ()
 
@@ -1386,7 +1387,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     let isUnresolved() = 
         match fsharpInfo() with 
         | None -> false
-        | Some v -> ValueOption.isNone v.TryDeref
+        | Some v -> ValueOptionInternal.isNone v.TryDeref
 
     let checkIsResolved() = 
         if isUnresolved() then 
