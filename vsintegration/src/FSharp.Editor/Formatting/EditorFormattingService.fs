@@ -151,7 +151,7 @@ type internal FSharpEditorFormattingService
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
             let indentStyle = options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
-            let projectOptionsOpt = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
+            let! projectOptionsOpt = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
             let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, checkerProvider.Checker, indentStyle, projectOptionsOpt, position)
             return textChange |> Option.toList |> toIList
         }
@@ -162,7 +162,7 @@ type internal FSharpEditorFormattingService
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
             let tabSize = options.GetOption<int>(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
             
-            match projectInfoManager.TryGetOptionsForEditingDocumentOrProject document with
+            match! projectInfoManager.TryGetOptionsForEditingDocumentOrProject document with
             | Some (parsingOptions, _) ->
                 let! textChanges = FSharpEditorFormattingService.GetPasteChanges(document.Id, sourceText, document.FilePath, settings.Formatting, tabSize, parsingOptions, currentClipboard, span)
                 return textChanges |> Option.defaultValue Seq.empty |> toIList

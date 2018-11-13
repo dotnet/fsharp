@@ -206,7 +206,7 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
         let projectDisplayName = projectDisplayNameOf projectFileName
         Some (workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName))
 
-    let mutable legacyProjectWorkspaceMap = Unchecked.defaultof<LegacyProjectWorkspaceMap>
+    let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, projectInfoManager, package.ComponentModel.GetService<IWorkspaceProjectContextFactory>())
 
     override this.Initialize() = 
         base.Initialize()
@@ -215,9 +215,6 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
 
         this.Workspace.DocumentClosed.Add <| fun args -> tryRemoveSingleFileProject args.Document.Project.Id
-
-        legacyProjectWorkspaceMap <- LegacyProjectWorkspaceMap(this.Workspace, solution, projectInfoManager, package.ComponentModel.GetService<IWorkspaceProjectContextFactory>(), this.SystemServiceProvider)
-        legacyProjectWorkspaceMap.Initialize()
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
@@ -240,7 +237,7 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
             
             singleFileProjects.[projectId] <- projectContext
 
-        let _referencedProjectFileNames, parsingOptions, projectOptions = projectInfoManager.ComputeSingleFileOptions (tryGetOrCreateProjectId workspace, fileName, loadTime, fileContents) |> Async.RunSynchronously
+        let _referencedProjectFileNames, parsingOptions, projectOptions = projectInfoManager.ComputeSingleFileOptions (tryGetOrCreateProjectId workspace, fileName, loadTime, fileContents, workspace.CurrentSolution) |> Async.RunSynchronously
         projectInfoManager.AddOrUpdateSingleFileProject(projectId, (loadTime, parsingOptions, projectOptions))
 
     override this.ContentTypeName = FSharpConstants.FSharpContentTypeName
