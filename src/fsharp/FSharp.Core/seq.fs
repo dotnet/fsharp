@@ -1421,6 +1421,19 @@ namespace Microsoft.FSharp.Collections
             else
                 invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
+        [<CompiledName("TryExactlyOne")>]
+        let tryExactlyOne (source : seq<_>) =
+            checkNonNull "source" source
+            use e = source.GetEnumerator()
+            if e.MoveNext() then
+                let v = e.Current
+                if e.MoveNext() then
+                    None
+                else
+                    Some v
+            else
+                None
+
         [<CompiledName("Reverse")>]
         let rev source =
             checkNonNull "source" source
