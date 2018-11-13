@@ -7,6 +7,8 @@ We deliver F# and F# tools for Visual Studio and .NET Core releases. These can i
 
 ## Visual Studio 15.9
 
+You can find all tracked VS 15.9 items in the [15.9 milestone](https://github.com/Microsoft/visualfsharp/milestone/24).
+
 ### F# Compiler
 
 * Fix (#4637) - Can't debug FCS when compiled with portable pdb debug symbols
