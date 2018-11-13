@@ -3197,10 +3197,10 @@ type internal SR private() =
     /// (Originally from ..\FSComp.txt:1044)
     static member tastInvalidAddressOfMutableAcrossAssemblyBoundary() = (1188, GetStringFunc("tastInvalidAddressOfMutableAcrossAssemblyBoundary",",,,") )
     /// Remove spaces between the type name and type parameter, e.g. \"type C<'T>\", not type \"C   <'T>\". Type parameters must be placed directly adjacent to the type name.
-    /// (Originally from ..\FSComp.txt:1045)
+    /// (Originally from ..\FSComp.txt:1043)
     static member parsNonAdjacentTypars() = (1189, GetStringFunc("parsNonAdjacentTypars",",,,") )
     /// Remove spaces between the type name and type parameter, e.g. \"C<'T>\", not \"C <'T>\". Type parameters must be placed directly adjacent to the type name.
-    /// (Originally from ..\FSComp.txt:1046)
+    /// (Originally from ..\FSComp.txt:1044)
     static member parsNonAdjacentTyargs() = (1190, GetStringFunc("parsNonAdjacentTyargs",",,,") )
     /// The use of the type syntax 'int C' and 'C  <int>' is not permitted here. Consider adjusting this type to be written in the form 'C<int>'
     /// (Originally from ..\FSComp.txt:1047)
