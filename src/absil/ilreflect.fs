@@ -1297,9 +1297,9 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
                 else
 #endif
 #if BUILDING_WITH_LKG
-                    modB.GetArrayMethodAndLog(aty, "Set", System.Reflection.CallingConventions.HasThis, (null:Type), Array.append (Array.create shape.Rank (typeof<int>)) (Array.ofList [ ety ])) 
+                    modB.GetArrayMethodAndLog(aty, "Set", System.Reflection.CallingConventions.HasThis, null, Array.append (Array.create shape.Rank (typeof<int>)) (Array.ofList [ ety ])) 
 #else
-                    modB.GetArrayMethodAndLog(aty, "Set", System.Reflection.CallingConventions.HasThis, (null:Type?), Array.append (Array.create shape.Rank (typeof<int>)) (Array.ofList [ ety ])) 
+                    modB.GetArrayMethodAndLog(aty, "Set", System.Reflection.CallingConventions.HasThis, null, Array.append (Array.create shape.Rank (typeof<int>)) (Array.ofList [ ety ])) 
 #endif
             ilG.EmitAndLog(OpCodes.Call, meth)
 
@@ -1309,9 +1309,9 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
         else 
             let aty = convType cenv emEnv  (ILType.Array(shape, ty)) 
 #if BUILDING_WITH_LKG
-            let meth = modB.GetArrayMethodAndLog(aty, ".ctor", System.Reflection.CallingConventions.HasThis, (null:Type), Array.create shape.Rank (typeof<int>))
+            let meth = modB.GetArrayMethodAndLog(aty, ".ctor", System.Reflection.CallingConventions.HasThis, null, Array.create shape.Rank (typeof<int>))
 #else
-            let meth = modB.GetArrayMethodAndLog(aty, ".ctor", System.Reflection.CallingConventions.HasThis, (null:Type?), Array.create shape.Rank (typeof<int>))
+            let meth = modB.GetArrayMethodAndLog(aty, ".ctor", System.Reflection.CallingConventions.HasThis, null, Array.create shape.Rank (typeof<int>))
 #endif
             ilG.EmitAndLog(OpCodes.Newobj, meth)
 

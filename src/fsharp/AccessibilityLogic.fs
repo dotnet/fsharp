@@ -81,8 +81,7 @@ let private IsILMemberAccessible g amap m (tcrefOfViewedItem : TyconRef) ad acce
                 match tcrefViewedFromOption with 
                 | None -> false
                 | Some tcrefViewedFrom ->
-                    let tcrefViewedFromTy = generalizedTyOfTyconRef g tcrefViewedFrom
-                    ExistsHeadTypeInEntireHierarchy  g amap m tcrefViewedFromTy tcrefOfViewedItem)     
+                    ExistsHeadTypeInEntireHierarchy  g amap m (generalizedTyOfTyconRef g tcrefViewedFrom) tcrefOfViewedItem)     
 
             let accessibleByInternalsVisibleTo = 
                 (access = ILMemberAccess.Assembly || access = ILMemberAccess.FamilyOrAssembly) && 
@@ -94,8 +93,7 @@ let private IsILMemberAccessible g amap m (tcrefOfViewedItem : TyconRef) ad acce
                 match tcrefViewedFromOption with 
                 | None -> false
                 | Some tcrefViewedFrom ->
-                    let tcrefViewedFromTy = generalizedTyOfTyconRef g tcrefViewedFrom
-                    ExistsHeadTypeInEntireHierarchy  g amap m tcrefViewedFromTy tcrefOfViewedItem    
+                    ExistsHeadTypeInEntireHierarchy  g amap m (generalizedTyOfTyconRef g tcrefViewedFrom) tcrefOfViewedItem    
 
             (access = ILMemberAccess.Public) || accessibleByFamily || accessibleByInternalsVisibleTo || accessibleByFamilyAndAssembly
 
@@ -329,7 +327,7 @@ let IsPropInfoAccessible g amap m ad = function
     | ProvidedProp (amap, tppi, m) as pp-> 
         let access = 
             let a = tppi.PUntaint((fun ppi -> 
-                let tryGetILAccessForProvidedMethodBase (mi : ProvidedMethodInfo?) = 
+                let tryGetILAccessForProvidedMethodBase (mi : ProvidedMethodInfo?) = // TODO NULLNESS: using ProvidedMethodBase? gives a nullness warning
                     match mi with
                     | null -> None
                     | NullChecked mi -> Some(ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly)
