@@ -11,7 +11,7 @@ You can find all tracked VS 15.9 items in the [15.9 milestone](https://github.co
 
 ### F# Compiler
 
-* Fix (#4637) - Can't debug FCS when compiled with portable pdb debug symbols
+* Fix (#4637) - Can't debug FCS when compiled with portable pdb debug symbols, by [Jason Imison](https://github.com/nosami).
 * Fix (#5355) - We fixed a bug where extension methods that take `byref` values could mutate an immutable value.
 * Fix (#5446) - We improved the compile error information for overloads on `byref`/`inref`/`outref`, rather than displaying the previously obscure error.
 * Fix (#5354) - Optional Type Extensions on `byref`s are now disallowed entirely. They could be declared previously, but were unusable, resulting in a confusing user experience.
