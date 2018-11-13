@@ -6,7 +6,7 @@
         <title>FSharp.Core for F# 4.5</title>
         <summary>FSharp.Core for F# 4.5</summary>
         <description>
-            FSharp.Core redistributables from Visual F# Tools version 10.3 For F# 4.5
+            FSharp.Core redistributables from Visual F# Tools version 10.4 For F# 4.6
                 Supported Platforms:
                     .NET Framework 4.5+ (net45)
                     netstandard1.6      (netstandard1.6)
