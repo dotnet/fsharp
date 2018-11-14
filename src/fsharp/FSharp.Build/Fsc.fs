@@ -130,7 +130,7 @@ type public Fsc () as this =
 #if BUILDING_WITH_LKG
             | debugType ->
 #else
-            | NullChecked debugType -> 
+            | NonNull debugType -> 
 #endif             
                 match debugType.ToUpperInvariant() with
                 | "NONE"     -> null
@@ -174,7 +174,7 @@ type public Fsc () as this =
 #if BUILDING_WITH_LKG
             let ToUpperInvariant (s:string) = if s = null then null else s.ToUpperInvariant()
 #else
-            let ToUpperInvariant (s:string?) = match s with null -> null | NullChecked s -> s.ToUpperInvariant()
+            let ToUpperInvariant (s:string?) = match s with null -> null | NonNull s -> s.ToUpperInvariant()
 #endif
             match ToUpperInvariant(platform), prefer32bit, ToUpperInvariant(targetType) with
                 | "ANYCPU", true, "EXE"
@@ -204,7 +204,7 @@ type public Fsc () as this =
 #if BUILDING_WITH_LKG
             | referencePath ->
 #else
-            | NullChecked referencePath ->
+            | NonNull referencePath ->
 #endif
                  referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
@@ -217,7 +217,7 @@ type public Fsc () as this =
 #if BUILDING_WITH_LKG
             | targetType -> 
 #else
-            | NullChecked targetType -> 
+            | NonNull targetType -> 
 #endif            
                 match targetType.ToUpperInvariant() with
                 | "LIBRARY" -> "library"
@@ -232,7 +232,7 @@ type public Fsc () as this =
 #if BUILDING_WITH_LKG
         | disabledWarnings ->
 #else
-        | NullChecked disabledWarnings ->
+        | NonNull disabledWarnings ->
 #endif
             builder.AppendSwitchIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
         
@@ -264,7 +264,7 @@ type public Fsc () as this =
 #if BUILDING_WITH_LKG
         | warningsNotAsErrors ->
 #else
-        | NullChecked warningsNotAsErrors ->
+        | NonNull warningsNotAsErrors ->
 #endif
             builder.AppendSwitchIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
 

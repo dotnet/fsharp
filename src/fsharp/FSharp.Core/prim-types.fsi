@@ -2275,13 +2275,25 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>A choice indicating whether the value is null or not-null.</returns>
         [<CompiledName("NullMatchPattern")>]
-        val inline (|Null|NonNull|) : value: 'T? -> Choice<unit, 'T> 
+        val inline (|Null|NotNull|) : value: 'T? -> Choice<unit, 'T> 
+        
+        /// <summary>Determines whether the given value is null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>A choice indicating whether the value is null or not-null.</returns>
+        [<CompiledName("NullValueMatchPattern")>]
+        val inline (|NullV|NotNullV|) : value: Nullable<'T> -> Choice<unit, 'T> 
         
         /// <summary>When used in a pattern checks the given value is not null.</summary>
         /// <param name="value">The value to check.</param>
-        /// <returns>A choice indicating whether the value is null or not-null.</returns>
-        [<CompiledName("NullCheckedPattern")>]
-        val inline (|NullChecked|) : value: 'T? -> 'T 
+        /// <returns>The non-null value.</returns>
+        [<CompiledName("NonNullPattern")>]
+        val inline (|NonNull|) : value: 'T? -> 'T 
+        
+        /// <summary>When used in a pattern checks the given value is not null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>The non-null value.</returns>
+        [<CompiledName("NonNullValuePattern")>]
+        val inline (|NonNullV|) : value: Nullable<'T> -> 'T 
         
         /// <summary>Determines whether the given value is null.</summary>
         /// <param name="value">The value to check.</param>
@@ -2318,7 +2330,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("WithNull")>]
-        val inline withNull : value:'T -> (('T)?) when 'T : not struct
+        val inline withNull : value:'T -> 'T? when 'T : not struct
 
         /// <summary>Asserts that the value is non-null.</summary>
         /// <param name="value">The value to check.</param>

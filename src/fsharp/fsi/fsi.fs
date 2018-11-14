@@ -1739,12 +1739,12 @@ type internal FsiStdinLexerProvider
           (fun (buf: char[], start, len) -> 
             //fprintf fsiConsoleOutput.Out "Calling ReadLine\n"
             let inputOption = try Some(readf()) with :? EndOfStreamException -> None
-            inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add ((match t with null -> "" | NullChecked s -> s) + "\n"))
+            inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add ((match t with null -> "" | NonNull s -> s) + "\n"))
             match inputOption with 
             |  Some(null) | None -> 
                  if !progress then fprintfn fsiConsoleOutput.Out "End of file from TextReader.ReadLine"
                  0
-            | Some (NullChecked input) ->
+            | Some (NonNull input) ->
                 let input  = input + "\n" 
                 let ninput = input.Length 
                 if ninput > len then fprintf fsiConsoleOutput.Error  "%s" (FSIstrings.SR.fsiLineTooLong())
@@ -1765,7 +1765,7 @@ type internal FsiStdinLexerProvider
 #endif
         match str with 
         | null -> str
-        | NullChecked str -> 
+        | NonNull str -> 
             if str.Contains("\000") then
               System.String(str |> Seq.filter (fun c -> c<>'\000') |> Seq.toArray)
             else

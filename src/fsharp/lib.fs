@@ -24,7 +24,7 @@ let GetEnvInteger e dflt = match System.Environment.GetEnvironmentVariable(e) wi
 #if BUILDING_WITH_LKG
 let dispose (x:System.IDisposable) = match x with null -> () | x -> x.Dispose()
 #else
-let dispose (x:System.IDisposable?) = match x with null -> () | NullChecked x -> x.Dispose()
+let dispose (x:System.IDisposable?) = match x with null -> () | NonNull x -> x.Dispose()
 #endif
 
 type SaveAndRestoreConsoleEncoding () =
@@ -472,7 +472,7 @@ module internal AsyncUtil =
 #if BUILDING_WITH_LKG
                 | sc ->
 #else
-                | NullChecked sc ->
+                | NonNull sc ->
 #endif
                     sc.Post((fun _ -> cont res), state=null)
 

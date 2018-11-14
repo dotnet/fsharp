@@ -278,7 +278,7 @@ module internal ExtensionTyping =
     let ValidateNamespaceName(name, typeProvider:Tainted<ITypeProvider>, m, nsp:string?) =
         match nsp with 
         | null -> ()
-        | NullChecked nsp -> 
+        | NonNull nsp -> 
             if String.IsNullOrWhiteSpace nsp then
                 // Empty namespace is not allowed
                 errorR(Error(FSComp.SR.etEmptyNamespaceOfTypeNotAllowed(name, typeProvider.PUntaint((fun tp -> tp.GetType().Name), m)), m))
@@ -448,7 +448,7 @@ module internal ExtensionTyping =
         static member Create ctxt x : ProvidedType? = 
             match x with 
             | null -> null 
-            | NullChecked t -> ProvidedType (t, ctxt)
+            | NonNull t -> ProvidedType (t, ctxt)
 
         static member CreateNonNull ctxt x = ProvidedType (x, ctxt)
 
@@ -567,7 +567,7 @@ module internal ExtensionTyping =
         static member Create ctxt (x: ParameterInfo?) : ProvidedParameterInfo? = 
             match x with 
             | null -> null 
-            | NullChecked x -> ProvidedParameterInfo (x, ctxt)
+            | NonNull x -> ProvidedParameterInfo (x, ctxt)
 
         static member CreateNonNull ctxt x = ProvidedParameterInfo (x, ctxt)
         
@@ -676,7 +676,7 @@ module internal ExtensionTyping =
         static member Create ctxt x : ProvidedFieldInfo? = 
             match x with 
             | null -> null 
-            | NullChecked x -> ProvidedFieldInfo (x, ctxt)
+            | NonNull x -> ProvidedFieldInfo (x, ctxt)
 
         static member CreateArray ctxt xs : ProvidedFieldInfo[] = 
             match box xs with 
@@ -715,7 +715,7 @@ module internal ExtensionTyping =
         static member Create ctxt (x: MethodInfo?) : ProvidedMethodInfo? = 
             match x with 
             | null -> null
-            | NullChecked x -> ProvidedMethodInfo (x, ctxt)
+            | NonNull x -> ProvidedMethodInfo (x, ctxt)
 
         static member CreateArray ctxt (xs: MethodInfo[]?) : ProvidedMethodInfo[] = 
             match box xs with 
@@ -745,7 +745,7 @@ module internal ExtensionTyping =
         static member Create ctxt x : ProvidedPropertyInfo? = 
             match x with 
             | null -> null 
-            | NullChecked x -> ProvidedPropertyInfo (x, ctxt)
+            | NonNull x -> ProvidedPropertyInfo (x, ctxt)
 
         static member CreateArray ctxt xs : ProvidedPropertyInfo[] = 
             match box xs with
@@ -779,7 +779,7 @@ module internal ExtensionTyping =
         static member Create ctxt x : ProvidedEventInfo? = 
             match x with 
             | null -> null 
-            | NullChecked x -> ProvidedEventInfo (x, ctxt)
+            | NonNull x -> ProvidedEventInfo (x, ctxt)
         
         static member CreateArray ctxt xs : ProvidedEventInfo[] = 
             match box xs with 
@@ -809,7 +809,7 @@ module internal ExtensionTyping =
         static member Create ctxt (x: ConstructorInfo?) : ProvidedConstructorInfo? = 
             match x with 
             | null -> null 
-            | NullChecked x -> ProvidedConstructorInfo (x, ctxt)
+            | NonNull x -> ProvidedConstructorInfo (x, ctxt)
 
         static member CreateArray ctxt xs : ProvidedConstructorInfo[] = 
             match box xs with 
@@ -1037,7 +1037,7 @@ module internal ExtensionTyping =
         if name <> expectedName then
             raise (TypeProviderError(FSComp.SR.etProvidedTypeHasUnexpectedName(expectedName, name), st.TypeProviderDesignation, m))
 
-        let namespaceName = TryTypeMember<_, (string?)>(st, name, "Namespace", m, withNull "", fun st -> st.Namespace) |> unmarshal // TODO NULLNESS: why is this explicit instantiation needed?
+        let namespaceName = TryTypeMember<_, (string?)>(st, name, "Namespace", m, "", fun st -> st.Namespace) |> unmarshal // TODO NULLNESS: why is this explicit instantiation needed?
 
         let rec declaringTypes (st:Tainted<ProvidedType>) accu =
             match TryTypeMember(st, name, "DeclaringType", m, null, fun st -> st.DeclaringType) with
@@ -1047,7 +1047,7 @@ module internal ExtensionTyping =
         let path = 
             [|  match namespaceName with 
                 | null -> ()
-                | NullChecked namespaceName -> yield! namespaceName.Split([|'.'|])
+                | NonNull namespaceName -> yield! namespaceName.Split([|'.'|])
                 yield! declaringTypes st [] |]
         
         if path <> expectedPath then
@@ -1229,7 +1229,7 @@ module internal ExtensionTyping =
             | Tainted.Null -> 
                match st.PUntaint((fun st -> st.Namespace), m) with 
                | null -> typeName
-               | NullChecked ns -> ns + "." + typeName
+               | NonNull ns -> ns + "." + typeName
             | _ -> typeName
 
         let rec encContrib (st:Tainted<ProvidedType>) = 
@@ -1367,7 +1367,7 @@ module internal ExtensionTyping =
     let GetPartsOfNamespaceRecover(namespaceName:string?) = 
         match namespaceName with 
         | null -> [] 
-        | NullChecked namespaceName -> 
+        | NonNull namespaceName -> 
             if namespaceName.Length = 0 then ["<NonExistentNamespace>"]
             else splitNamespace (nonNull namespaceName)
 
@@ -1375,7 +1375,7 @@ module internal ExtensionTyping =
     let GetProvidedNamespaceAsPath (m, resolver:Tainted<ITypeProvider>, namespaceName:string?) = 
         match namespaceName with 
         | null -> [] 
-        | NullChecked namespaceName -> 
+        | NonNull namespaceName -> 
             if namespaceName.Length = 0 then
                 errorR(Error(FSComp.SR.etEmptyNamespaceNotAllowed(DisplayNameOfTypeProvider(resolver.TypeProvider, m)), m))  
             GetPartsOfNamespaceRecover namespaceName

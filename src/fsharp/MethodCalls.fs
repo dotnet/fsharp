@@ -936,7 +936,7 @@ module ProvidedMethodCalls =
                         st.PApply((fun st -> 
                             match st.BaseType with 
                             | null -> ProvidedType.CreateNoContext(typeof<obj>)  // it might be an interface
-                            | NullChecked st -> st), m)
+                            | NonNull st -> st), m)
                     loop baseType
                 else
                     if isGeneric then 

@@ -833,7 +833,7 @@ let convMethodRef cenv emEnv (parentTI:Type) (mref:ILMethodRef) : MethodInfo =
 #if BUILDING_WITH_LKG
     | _ -> res 
 #else
-    | NullChecked res -> res 
+    | NonNull res -> res 
 #endif
 
 //----------------------------------------------------------------------------

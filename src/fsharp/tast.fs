@@ -1981,7 +1981,7 @@ and Construct =
                                    let baseType = st.BaseType 
                                    match baseType with 
                                    | null -> false
-                                   | NullChecked x -> 
+                                   | NonNull x -> 
                                    match x with 
                                    | x when x.IsGenericType -> false
                                    | x when x.DeclaringType <> null -> false

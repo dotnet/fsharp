@@ -3362,27 +3362,37 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("NonNull")>]
         let inline nonNull (value : 'T? when 'T : not struct) = 
             match box value with 
-            | null -> raise (System.NullReferenceException()) // TODO NULLNESS: decide if this raises an exception or ploughs on 
+            | null -> raise (System.NullReferenceException()) 
             | _ -> (# "" value : 'T #)
 
         [<CompiledName("NonNullV")>]
         let inline nonNullV (value : Nullable<'T>) = 
             if value.HasValue then 
-                value.Value 
+                value.Value
             else 
                 raise (System.NullReferenceException())
 
         [<CompiledName("NullMatchPattern")>]
-        let inline (|Null|NonNull|) (value : 'T?) = 
+        let inline (|Null|NotNull|) (value : 'T?) = 
             match value with 
-            | null -> Choice1Of2 () 
-            | _ -> Choice2Of2 (# "" value : 'T #)
+            | null -> Null () 
+            | _ -> NotNull (# "" value : 'T #)
 
-        [<CompiledName("NullCheckedPattern")>]
-        let inline (|NullChecked|) (value : 'T?) =
+        [<CompiledName("NullValueMatchPattern")>]
+        let inline (|NullV|NotNullV|) (value : Nullable<'T>) = 
+            if value.HasValue then NonNullV value.Value
+            else NullV ()
+
+        [<CompiledName("NonNullPattern")>]
+        let inline (|NonNull|) (value : 'T?) =
             match box value with 
-            | null -> raise (System.NullReferenceException()) // TODO NULLNESS: decide if this raises an exception or ploughs on 
+            | null -> raise (System.NullReferenceException()) 
             | _ -> (# "" value : 'T #)
+
+        [<CompiledName("NonNullValuePattern")>]
+        let inline (|NonNullV|) (value : Nullable<'T>) =
+            if value.HasValue then value.Value
+            else raise (System.NullReferenceException()) 
 
         [<CompiledName("WithNull")>]
         let inline withNull (value : 'T when 'T : not struct) = (# "" value : 'T? #)

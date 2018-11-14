@@ -330,7 +330,7 @@ let IsPropInfoAccessible g amap m ad = function
                 let tryGetILAccessForProvidedMethodBase (mi : ProvidedMethodInfo?) = // TODO NULLNESS: using ProvidedMethodBase? gives a nullness warning
                     match mi with
                     | null -> None
-                    | NullChecked mi -> Some(ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly)
+                    | NonNull mi -> Some(ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly)
 
                 match tryGetILAccessForProvidedMethodBase(ppi.GetGetMethod()) with
                 | None -> tryGetILAccessForProvidedMethodBase(ppi.GetSetMethod())

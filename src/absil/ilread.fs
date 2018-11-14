@@ -914,7 +914,7 @@ let mkCacheInt32 lowMem _inbase _nm _sz  =
 #if BUILDING_WITH_LKG
             | c -> c 
 #else
-            | NullChecked c -> c 
+            | NonNull c -> c 
 #endif
         let mutable res = Unchecked.defaultof<_>
         let ok = cache.TryGetValue(idx, &res)
@@ -947,7 +947,7 @@ let mkCacheGeneric lowMem _inbase _nm _sz  =
 #if BUILDING_WITH_LKG
             | c -> c
 #else
-            | NullChecked c -> c
+            | NonNull c -> c
 #endif
 
         match cache.TryGetValue(idx) with

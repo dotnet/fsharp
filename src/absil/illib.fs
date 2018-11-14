@@ -1246,7 +1246,7 @@ module Shim =
                 let isInvalidPath(p:string?) = 
                     match p with 
                     | null | "" -> true
-                    | NullChecked p -> p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+                    | NonNull p -> p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 #endif
 
 #if BUILDING_WITH_LKG
@@ -1256,7 +1256,7 @@ module Shim =
                 let isInvalidFilename(p:string?) = 
                     match p with 
                     | null | "" -> true
-                    | NullChecked p -> p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
+                    | NonNull p -> p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 #endif
 
 #if BUILDING_WITH_LKG
@@ -1266,7 +1266,7 @@ module Shim =
                 let isInvalidDirectory(d:string?) = 
                     match d with 
                     | null -> true
-                    | NullChecked d -> d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+                    | NonNull d -> d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 #endif
 
                 isInvalidPath (path) || 
