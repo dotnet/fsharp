@@ -1241,24 +1241,33 @@ module Shim =
             member __.IsInvalidPathShim(path: string) = 
 #if BUILDING_WITH_LKG
                 let isInvalidPath(p:string) = 
+                    String.IsNullOrEmpty(p) || p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 #else
                 let isInvalidPath(p:string?) = 
+                    match p with 
+                    | null | "" -> true
+                    | NullChecked p -> p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 #endif
-                    String.IsNullOrEmpty(p) || p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
 #if BUILDING_WITH_LKG
                 let isInvalidFilename(p:string) = 
+                    String.IsNullOrEmpty(p) || p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 #else
                 let isInvalidFilename(p:string?) = 
+                    match p with 
+                    | null | "" -> true
+                    | NullChecked p -> p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 #endif
-                    String.IsNullOrEmpty(p) || p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 
 #if BUILDING_WITH_LKG
                 let isInvalidDirectory(d:string) = 
+                    d=null || d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 #else
                 let isInvalidDirectory(d:string?) = 
+                    match d with 
+                    | null -> true
+                    | NullChecked d -> d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 #endif
-                    d=null || d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
                 isInvalidPath (path) || 
                 let directory = Path.GetDirectoryName(path)

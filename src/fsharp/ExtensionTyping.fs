@@ -614,8 +614,12 @@ module internal ExtensionTyping =
         member __.GetParameters() = x.GetParameters() |> ProvidedParameterInfo.CreateArray ctxt 
         member __.GetGenericArguments() = x.GetGenericArguments() |> ProvidedType.CreateArray ctxt
         member __.Handle = x
+
         static member TaintedGetHashCode (x:Tainted<ProvidedMethodBase>) =            
-           Tainted.GetHashCodeTainted (x.PApplyNoFailure(fun st -> (st.Name, st.DeclaringType.Assembly.FullName, st.DeclaringType.FullName))) 
+           Tainted.GetHashCodeTainted 
+               (x.PApplyNoFailure(fun st -> (st.Name, (nonNull<ProvidedAssembly> (nonNull<ProvidedType> st.DeclaringType).Assembly).FullName, 
+                                                      (nonNull<ProvidedType> st.DeclaringType).FullName))) 
+
         static member TaintedEquals (pt1:Tainted<ProvidedMethodBase>, pt2:Tainted<ProvidedMethodBase>) = 
            Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
@@ -749,10 +753,16 @@ module internal ExtensionTyping =
             | _ -> xs |> Array.map (ProvidedPropertyInfo.CreateNonNull ctxt)
 
         member __.Handle = x
+
         override __.Equals y = assert false; match y with :? ProvidedPropertyInfo as y -> x.Equals y.Handle | _ -> false
+
         override __.GetHashCode() = assert false; x.GetHashCode()
+
         static member TaintedGetHashCode (x:Tainted<ProvidedPropertyInfo>) = 
-           Tainted.GetHashCodeTainted (x.PApplyNoFailure(fun st -> (st.Name, st.DeclaringType.Assembly.FullName, st.DeclaringType.FullName))) 
+           Tainted.GetHashCodeTainted
+               (x.PApplyNoFailure(fun st -> (st.Name, (nonNull<ProvidedAssembly> (nonNull<ProvidedType> st.DeclaringType).Assembly).FullName, 
+                                                      (nonNull<ProvidedType> st.DeclaringType).FullName))) 
+
         static member TaintedEquals (pt1:Tainted<ProvidedPropertyInfo>, pt2:Tainted<ProvidedPropertyInfo>) = 
            Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
@@ -777,10 +787,16 @@ module internal ExtensionTyping =
             | _ -> xs |> Array.map (ProvidedEventInfo.CreateNonNull ctxt)
         
         member __.Handle = x
+
         override __.Equals y = assert false; match y with :? ProvidedEventInfo as y -> x.Equals y.Handle | _ -> false
+
         override __.GetHashCode() = assert false; x.GetHashCode()
+
         static member TaintedGetHashCode (x:Tainted<ProvidedEventInfo>) = 
-           Tainted.GetHashCodeTainted (x.PApplyNoFailure(fun st -> (st.Name, st.DeclaringType.Assembly.FullName, st.DeclaringType.FullName))) 
+           Tainted.GetHashCodeTainted 
+               (x.PApplyNoFailure(fun st -> (st.Name, (nonNull<ProvidedAssembly> (nonNull<ProvidedType> st.DeclaringType).Assembly).FullName, 
+                                                      (nonNull<ProvidedType> st.DeclaringType).FullName))) 
+
         static member TaintedEquals (pt1:Tainted<ProvidedEventInfo>, pt2:Tainted<ProvidedEventInfo>) = 
            Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 

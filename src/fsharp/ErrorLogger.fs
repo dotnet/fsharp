@@ -627,10 +627,12 @@ let NewlineifyErrorString (message:string) = message.Replace(stringThatIsAProxyF
 /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
 #if BUILDING_WITH_LKG
 let NormalizeErrorString (text : string) =
+    if isNull text then nullArg "text"
 #else
 let NormalizeErrorString (text : string?) =
+    let text = nullArgCheck "text" text
 #endif
-    if isNull text then nullArg "text"
+
     let text = text.Trim()
 
     let buf = System.Text.StringBuilder()

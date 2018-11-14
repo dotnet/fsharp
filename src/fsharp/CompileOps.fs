@@ -4151,10 +4151,10 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
 #if !NO_EXTENSIONTYPING
     member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted< ProvidedAssembly? >) = 
-        let anameOpt = assembly.PUntaint((fun assembly -> match assembly with null -> None | a -> Some (a.GetName())), m)
-        match anameOpt with 
-        | None -> false, None
-        | Some aname -> 
+        match assembly with 
+        | Tainted.Null -> false,None
+        | Tainted.NonNull assembly -> 
+        let aname = assembly.PUntaint((fun a -> a.GetName()), m)
         let ilShortAssemName = aname.Name
         match tcImports.FindCcu (ctok, m, ilShortAssemName, lookupOnly=true) with 
         | ResolvedCcu ccu -> 

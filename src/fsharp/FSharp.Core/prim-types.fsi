@@ -2306,7 +2306,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("NonNull")>]
-        val inline nonNull : value: (('T)?) -> 'T when 'T : not struct
+        val inline nonNull : value: 'T? -> 'T when 'T : not struct
 
         /// <summary>Asserts that the value is non-null.</summary>
         /// <param name="value">The value to check.</param>
@@ -2329,7 +2329,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Throw a <c>System.Exception</c> exception.</summary>
         /// <param name="message">The exception message.</param>
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         [<CompiledName("FailWith")>]
         val inline failwith : message:string -> 'T 
 
@@ -2337,15 +2337,23 @@ namespace Microsoft.FSharp.Core
         /// the given argument name and message.</summary>
         /// <param name="argumentName">The argument name.</param>
         /// <param name="message">The exception message.</param>
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         [<CompiledName("InvalidArg")>]
         val inline invalidArg : argumentName:string -> message:string -> 'T 
 
         /// <summary>Throw a <c>System.ArgumentNullException</c> exception</summary>
         /// <param name="argumentName">The argument name.</param>
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         [<CompiledName("NullArg")>]
         val inline nullArg : argumentName:string -> 'T 
+
+#if !BUILDING_WITH_LKG
+        /// <summary>Throw a <c>System.ArgumentNullException if the given value is null</c> exception</summary>
+        /// <param name="argumentName">The argument name.</param>
+        /// <returns>The result value.</returns>
+        [<CompiledName("NullArgCheck")>]
+        val inline nullArgCheck : argumentName:string -> 'T? -> 'T when 'T : not struct
+#endif
 
         /// <summary>Throw a <c>System.InvalidOperationException</c> exception</summary>
         /// <param name="message">The exception message.</param>

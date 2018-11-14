@@ -45,6 +45,16 @@ module NotNullConstraint =
     f3 (Some 1) // Expect to give an error
 #endif
 
+module MemberBasics = 
+    type C() = 
+        member x.P = 1
+        member x.M() = 1
+
+    let c : C? = C()
+    let v1 = c.P  // Expected to give a warning
+    let v2 = c.M()  // Expected to give a warning
+    let f1 = c.M  // Expected to give a warning
+
 module Basics2 = 
     let f1 () = null
     // val f : unit -> 'a when 'a : null

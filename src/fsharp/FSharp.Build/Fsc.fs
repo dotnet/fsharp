@@ -125,7 +125,13 @@ type public Fsc () as this =
             builder.AppendSwitch("-g")
         // DebugType
         builder.AppendSwitchIfNotNull("--debug:",
-            if debugType = null then null else
+            match debugType with 
+            | null -> null
+#if BUILDING_WITH_LKG
+            | debugType ->
+#else
+            | NullChecked debugType -> 
+#endif             
                 match debugType.ToUpperInvariant() with
                 | "NONE"     -> null
                 | "PORTABLE" -> "portable"
@@ -168,7 +174,7 @@ type public Fsc () as this =
 #if BUILDING_WITH_LKG
             let ToUpperInvariant (s:string) = if s = null then null else s.ToUpperInvariant()
 #else
-            let ToUpperInvariant (s:string?) = if s = null then null else s.ToUpperInvariant()
+            let ToUpperInvariant (s:string?) = match s with null -> null | NullChecked s -> s.ToUpperInvariant()
 #endif
             match ToUpperInvariant(platform), prefer32bit, ToUpperInvariant(targetType) with
                 | "ANYCPU", true, "EXE"
@@ -195,13 +201,24 @@ type public Fsc () as this =
         let referencePathArray = // create a array of strings
             match referencePath with
             | null -> null
-            | _ -> referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
+#if BUILDING_WITH_LKG
+            | referencePath ->
+#else
+            | NullChecked referencePath ->
+#endif
+                 referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
         builder.AppendSwitchIfNotNull("--lib:", referencePathArray, ",")   
 
         // TargetType
         builder.AppendSwitchIfNotNull("--target:", 
-            if targetType = null then null else
+            match targetType with 
+            | null -> null
+#if BUILDING_WITH_LKG
+            | targetType -> 
+#else
+            | NullChecked targetType -> 
+#endif            
                 match targetType.ToUpperInvariant() with
                 | "LIBRARY" -> "library"
                 | "EXE" -> "exe"
@@ -212,7 +229,12 @@ type public Fsc () as this =
         // NoWarn
         match disabledWarnings with
         | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
+#if BUILDING_WITH_LKG
+        | disabledWarnings ->
+#else
+        | NullChecked disabledWarnings ->
+#endif
+            builder.AppendSwitchIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
         
         // WarningLevel
         builder.AppendSwitchIfNotNull("--warn:", warningLevel)
@@ -239,7 +261,12 @@ type public Fsc () as this =
         // WarningsNotAsErrors
         match warningsNotAsErrors with
         | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
+#if BUILDING_WITH_LKG
+        | warningsNotAsErrors ->
+#else
+        | NullChecked warningsNotAsErrors ->
+#endif
+            builder.AppendSwitchIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
 
         // Win32ResourceFile
         builder.AppendSwitchIfNotNull("--win32res:", win32res)

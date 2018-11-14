@@ -24,7 +24,7 @@ let GetEnvInteger e dflt = match System.Environment.GetEnvironmentVariable(e) wi
 #if BUILDING_WITH_LKG
 let dispose (x:System.IDisposable) = match x with null -> () | x -> x.Dispose()
 #else
-let dispose (x:System.IDisposable?) = match x with null -> () | x -> x.Dispose()
+let dispose (x:System.IDisposable?) = match x with null -> () | NullChecked x -> x.Dispose()
 #endif
 
 type SaveAndRestoreConsoleEncoding () =
@@ -468,8 +468,13 @@ module internal AsyncUtil =
             let postOrQueue (sc:SynchronizationContext?,cont) =
 #endif
                 match sc with
-                |   null -> ThreadPool.QueueUserWorkItem(fun _ -> cont res) |> ignore
-                |   sc -> sc.Post((fun _ -> cont res), state=null)
+                | null -> ThreadPool.QueueUserWorkItem(fun _ -> cont res) |> ignore
+#if BUILDING_WITH_LKG
+                | sc ->
+#else
+                | NullChecked sc ->
+#endif
+                    sc.Post((fun _ -> cont res), state=null)
 
             // Run continuations outside the lock
             match grabbedConts with

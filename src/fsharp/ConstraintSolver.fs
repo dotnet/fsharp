@@ -2288,12 +2288,16 @@ and CanMemberSigsMatchUpToCheck
                         else
                             return! ErrorD(Error (FSComp.SR.csMemberIsNotInstance(minfo.LogicalName), m))
                     else
-                        do! Iterate2D subsumeTypes calledObjArgTys callerObjArgTys
+                        // The object types must be non-null
+                        let nonNullCalledObjArgTys = calledObjArgTys |> List.map (replaceNullnessOfTy g.knownWithoutNull)
+                        do! Iterate2D subsumeTypes nonNullCalledObjArgTys callerObjArgTys
+
                 for argSet in calledMeth.ArgSets do
                     if argSet.UnnamedCalledArgs.Length <> argSet.UnnamedCallerArgs.Length then 
                         return! ErrorD(Error(FSComp.SR.csArgumentLengthMismatch(), m))
                     else
                         do! Iterate2D subsumeArg argSet.UnnamedCalledArgs argSet.UnnamedCallerArgs
+
                 match calledMeth.ParamArrayCalledArgOpt with
                 | Some calledArg ->
                     if isArray1DTy g calledArg.CalledArgumentType then 

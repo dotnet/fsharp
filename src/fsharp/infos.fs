@@ -652,7 +652,7 @@ let OptionalArgInfoOfProvidedParameter (amap:Import.ImportMap) m (provParam : Ta
 /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
 let GetAndSanityCheckProviderMethod m (mi: Tainted<'T :> ProvidedMemberInfo>) (get : 'T -> ProvidedMethodInfo?) err = 
     match mi.PApply((fun mi -> (get mi :> ProvidedMethodBase?)),m) with 
-    | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> mi.DeclaringType.Name),m)),m))   
+    | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name),m)),m))   
     | Tainted.NonNull meth -> meth
 
 /// Try to get an arbitrary ProvidedMethodInfo associated with a property.
@@ -662,7 +662,7 @@ let ArbitraryMethodInfoOfPropertyInfo (pi:Tainted<ProvidedPropertyInfo>) m =
     elif pi.PUntaint((fun pi -> pi.CanWrite), m) then 
         GetAndSanityCheckProviderMethod m pi (fun pi -> pi.GetSetMethod()) FSComp.SR.etPropertyCanWriteButHasNoSetter
     else 
-        error(Error(FSComp.SR.etPropertyNeedsCanWriteOrCanRead(pi.PUntaint((fun mi -> mi.Name),m),pi.PUntaint((fun mi -> mi.DeclaringType.Name),m)),m))   
+        error(Error(FSComp.SR.etPropertyNeedsCanWriteOrCanRead(pi.PUntaint((fun mi -> mi.Name),m),pi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name),m)),m))   
 
 #endif
 

@@ -3435,6 +3435,14 @@ namespace Microsoft.FSharp.Core
         let inline nullArg (argumentName:string) = 
             raise (new System.ArgumentNullException(argumentName))        
 
+#if !BUILDING_WITH_LKG
+        [<CompiledName("NullArgCheck")>]
+        let inline nullArgCheck (argumentName:string) (value: 'T? when 'T : not struct) = 
+            match value with 
+            | null -> raise (new System.ArgumentNullException(argumentName))        
+            | _ ->  (# "" value : 'T #)
+#endif
+
         [<CompiledName("InvalidOp")>]
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         let inline invalidOp message = raise (System.InvalidOperationException(message))

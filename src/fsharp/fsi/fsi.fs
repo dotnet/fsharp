@@ -1763,10 +1763,13 @@ type internal FsiStdinLexerProvider
 #else
     let removeZeroCharsFromString (str:string?) : string? = (* bug://4466 *)
 #endif
-        if str<>null && str.Contains("\000") then
-          System.String(str |> Seq.filter (fun c -> c<>'\000') |> Seq.toArray)
-        else
-          str
+        match str with 
+        | null -> str
+        | NullChecked str -> 
+            if str.Contains("\000") then
+              System.String(str |> Seq.filter (fun c -> c<>'\000') |> Seq.toArray)
+            else
+              str
 
     let CreateLexerForLexBuffer (sourceFileName, lexbuf, errorLogger) =
 

@@ -1981,6 +1981,8 @@ and Construct =
                                    let baseType = st.BaseType 
                                    match baseType with 
                                    | null -> false
+                                   | NullChecked x -> 
+                                   match x with 
                                    | x when x.IsGenericType -> false
                                    | x when x.DeclaringType <> null -> false
                                    | x -> x.FullName = "System.Delegate" || x.FullName = "System.MulticastDelegate"), m))
@@ -5478,16 +5480,6 @@ let addNullnessToTy (nullness: Nullness) (ty:TType) =
     //| TType_anon _ -> None // TODO NULLNESS
     | _ -> ty
 
-let replaceNullnessOfTy nullness (ty:TType) =
-    match ty with
-    | TType_var (tp, _nullnessOrig) -> TType_var (tp, nullness)
-    | TType_app (tcr, tinst, _nullnessOrig) -> TType_app (tcr, tinst, nullness)
-    | TType_fun (d, r, _nullnessOrig) -> TType_fun (d, r, nullness)
-    //| TType_ucase _ -> None // TODO NULLNESS
-    //| TType_tuple _ -> None // TODOTODO NULLNESS
-    //| TType_anon _ -> None // TODO NULLNESS
-    | _ -> ty
-
 let rec stripTyparEqnsAux nullness0 canShortcut ty = 
     match ty with 
     | TType_var (r, nullness) -> 
@@ -5517,6 +5509,17 @@ let rec stripTyparEqnsAux nullness0 canShortcut ty =
 
 let stripTyparEqns ty = stripTyparEqnsAux KnownWithoutNull false ty
 let stripUnitEqns unt = stripUnitEqnsAux false unt
+
+let replaceNullnessOfTy nullness (ty:TType) =
+    match stripTyparEqns ty with
+    | TType_var (tp, _nullnessOrig) -> TType_var (tp, nullness)
+    | TType_app (tcr, tinst, _nullnessOrig) -> TType_app (tcr, tinst, nullness)
+    | TType_fun (d, r, _nullnessOrig) -> TType_fun (d, r, nullness)
+    //| TType_ucase _ -> None // TODO NULLNESS
+    //| TType_tuple _ -> None // TODOTODO NULLNESS
+    //| TType_anon _ -> None // TODO NULLNESS
+    | sty -> sty
+
 
 //---------------------------------------------------------------------------
 // These make local/non-local references to values according to whether
