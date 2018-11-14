@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="es" original="../Microsoft.VisualStudio.Package.Project.resx">
     <body>
@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="Advanced">
         <source>Advanced</source>
-        <target state="translated">Avanzadas</target>
+        <target state="translated">Opciones avanzadas</target>
         <note>Project Property Page Caption</note>
       </trans-unit>
       <trans-unit id="ReferenceCouldNotBeAdded">
@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="ReferenceWithAssemblyNameAlreadyExists">
         <source>A reference to '{0}' (with assembly name '{1}') could not be added. A reference to the component '{2}' with the same assembly name already exists in the project.</source>
-        <target state="translated">No se pudo agregar una referencia a '{0}' (con el nombre de ensamblado '{1}'). Ya existe una referencia al componente '{2}' con el mismo nombre de ensamblado en el proyecto.</target>
+        <target state="translated">No se puede agregar una referencia a '{0}' (con el nombre de ensamblado '{1}'). Ya existe en el proyecto una referencia al componente '{2}' con el mismo nombre del ensamblado.</target>
         <note>ReferenceAlreadyExists error message</note>
       </trans-unit>
       <trans-unit id="AttributeLoad">
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="BuildActionDescription">
         <source>How the file relates to the build and deployment process</source>
-        <target state="translated">Relación del archivo con el proceso de compilación e implementación.</target>
+        <target state="translated">Relación del archivo con el proceso de compilación e implementación</target>
         <note>Project Build Property Description</note>
       </trans-unit>
       <trans-unit id="BuildVerbosity">
@@ -54,7 +54,7 @@
       </trans-unit>
       <trans-unit id="cli1">
         <source>ECMA-335 CLI compatible framework (location must be provided)</source>
-        <target state="translated">Marco de trabajo compatible con ECMA-335 CLI (se debe proporcionar la ubicación)</target>
+        <target state="translated">Versión de .NET Framework compatible con ECMA-335 CLI (se debe proporcionar la ubicación)</target>
         <note>Target platform drop down option</note>
       </trans-unit>
       <trans-unit id="Compile">
@@ -119,7 +119,7 @@
       </trans-unit>
       <trans-unit id="Error">
         <source>error</source>
-        <target state="translated">error</target>
+        <target state="translated">Fehler</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidFileName">
@@ -147,7 +147,7 @@
       </trans-unit>
       <trans-unit id="ErrorSaving">
         <source>Error Saving File</source>
-        <target state="translated">Error al guardar el archivo.</target>
+        <target state="translated">Error al guardar el archivo</target>
         <note />
       </trans-unit>
       <trans-unit id="Exe">
@@ -197,7 +197,7 @@
       </trans-unit>
       <trans-unit id="FileCopyError">
         <source>Error Copying File</source>
-        <target state="translated">Error al copiar el archivo.</target>
+        <target state="translated">Error al copiar el archivo</target>
         <note />
       </trans-unit>
       <trans-unit id="FileName">
@@ -217,7 +217,7 @@
       </trans-unit>
       <trans-unit id="FolderName">
         <source>Folder Name</source>
-        <target state="translated">Nombre de la carpeta</target>
+        <target state="translated">Nombre de carpeta</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderNameDescription">
@@ -252,7 +252,7 @@
       </trans-unit>
       <trans-unit id="Minimal">
         <source>Minimal</source>
-        <target state="translated">Mínimo</target>
+        <target state="translated">mínimo</target>
         <note />
       </trans-unit>
       <trans-unit id="Misc">
@@ -262,12 +262,12 @@
       </trans-unit>
       <trans-unit id="None">
         <source>None</source>
-        <target state="translated">Ninguno</target>
+        <target state="translated">NONE</target>
         <note />
       </trans-unit>
       <trans-unit id="Normal">
         <source>Normal</source>
-        <target state="translated">Normal</target>
+        <target state="translated">NORMAL</target>
         <note />
       </trans-unit>
       <trans-unit id="PasteFailed">
@@ -302,7 +302,7 @@
       </trans-unit>
       <trans-unit id="ProjectFolder">
         <source>Project Folder</source>
-        <target state="translated">Carpeta de proyecto</target>
+        <target state="translated">Carpeta del proyecto</target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectFolderDescription">
@@ -342,7 +342,7 @@
       </trans-unit>
       <trans-unit id="SaveCaption">
         <source>Save?</source>
-        <target state="translated">¿Guardar?</target>
+        <target state="translated">¿Desea guardar?</target>
         <note />
       </trans-unit>
       <trans-unit id="SaveModifiedDocuments">
@@ -387,7 +387,7 @@
       </trans-unit>
       <trans-unit id="Warning">
         <source>warning</source>
-        <target state="translated">advertencia</target>
+        <target state="translated">Advertencia</target>
         <note />
       </trans-unit>
       <trans-unit id="WinExe">
@@ -472,7 +472,7 @@
       </trans-unit>
       <trans-unit id="OutputPathDescription">
         <source>The path to the primary output</source>
-        <target state="translated">Ruta de acceso al resultado principal</target>
+        <target state="translated">Ruta de acceso de la salida principal</target>
         <note />
       </trans-unit>
       <trans-unit id="PathTooLong">
@@ -487,7 +487,7 @@
       </trans-unit>
       <trans-unit id="CustomToolDescription">
         <source>Specifies the tool that transforms a file at design time and places the output of that transformation into another file. For example, a dataset (.xsd) file comes with a default custom tool.</source>
-        <target state="translated">Especifica la herramienta que transforma un archivo en tiempo de diseño y pone la salida de esa transformación en otro archivo. Por ejemplo, un archivo de conjunto de datos (.xsd) viene con una herramienta personalizada predeterminada.</target>
+        <target state="translated">Especifica la herramienta que transforma el archivo en tiempo de diseño y coloca la salida de la transformación en otro archivo. Por ejemplo, un archivo de conjunto de datos (.xsd) viene con una herramienta personalizada predeterminada.</target>
         <note />
       </trans-unit>
       <trans-unit id="CustomToolNamespace">
@@ -587,7 +587,7 @@
       </trans-unit>
       <trans-unit id="ErrorReferenceCouldNotBeAdded">
         <source>A reference to {0} could not be added. Please make sure that the file is accessible, and that it is a valid assembly or COM component.</source>
-        <target state="translated">No se pudo agregar una referencia a {0}. Asegúrese de que el archivo está accesible y de que es un ensamblado o un componente COM válido.</target>
+        <target state="translated">No se pudo agregar una referencia a {0}. Asegúrese de que el archivo es accesible y de que se trata de un ensamblado o componente COM válido.</target>
         <note />
       </trans-unit>
       <trans-unit id="DetailsImport">
@@ -792,7 +792,7 @@
       </trans-unit>
       <trans-unit id="Path">
         <source>Path</source>
-        <target state="translated">Ruta de acceso</target>
+        <target state="translated">PATH</target>
         <note />
       </trans-unit>
       <trans-unit id="PathDescription">

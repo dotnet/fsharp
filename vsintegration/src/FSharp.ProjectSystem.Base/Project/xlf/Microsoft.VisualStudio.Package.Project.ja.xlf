@@ -212,7 +212,7 @@
       </trans-unit>
       <trans-unit id="FileNameDescription">
         <source>The name of the file or folder</source>
-        <target state="translated">ファイルまたはフォルダーの名前</target>
+        <target state="translated">ファイルまたはフォルダーの名前です</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderName">
@@ -267,7 +267,7 @@
       </trans-unit>
       <trans-unit id="Normal">
         <source>Normal</source>
-        <target state="translated">標準</target>
+        <target state="translated">NORMAL</target>
         <note />
       </trans-unit>
       <trans-unit id="PasteFailed">
@@ -792,7 +792,7 @@
       </trans-unit>
       <trans-unit id="Path">
         <source>Path</source>
-        <target state="translated">パス</target>
+        <target state="translated">PATH</target>
         <note />
       </trans-unit>
       <trans-unit id="PathDescription">

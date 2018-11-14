@@ -1033,7 +1033,7 @@ module FSharpExprConvert =
                 // is not sufficient to resolve to a symbol unambiguously in these cases.
                 let argtys = [ ilMethRef.ArgTypes |> List.map (ImportILTypeFromMetadata cenv.amap m scoref tinst1 tinst2) ]
                 let rty = 
-                    match ImportReturnTypeFromMetaData cenv.amap m ilMethRef.ReturnType scoref tinst1 tinst2 with 
+                    match ImportReturnTypeFromMetadata cenv.amap m ilMethRef.ReturnType emptyILCustomAttrs scoref tinst1 tinst2 with 
                     | None -> if isCtor then  enclosingType else cenv.g.unit_ty
                     | Some ty -> ty
 

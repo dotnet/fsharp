@@ -3197,10 +3197,10 @@ type internal SR private() =
     /// (Originally from ..\FSComp.txt:1044)
     static member tastInvalidAddressOfMutableAcrossAssemblyBoundary() = (1188, GetStringFunc("tastInvalidAddressOfMutableAcrossAssemblyBoundary",",,,") )
     /// Remove spaces between the type name and type parameter, e.g. \"type C<'T>\", not type \"C   <'T>\". Type parameters must be placed directly adjacent to the type name.
-    /// (Originally from ..\FSComp.txt:1043)
+    /// (Originally from ..\FSComp.txt:1045)
     static member parsNonAdjacentTypars() = (1189, GetStringFunc("parsNonAdjacentTypars",",,,") )
     /// Remove spaces between the type name and type parameter, e.g. \"C<'T>\", not \"C <'T>\". Type parameters must be placed directly adjacent to the type name.
-    /// (Originally from ..\FSComp.txt:1044)
+    /// (Originally from ..\FSComp.txt:1046)
     static member parsNonAdjacentTyargs() = (1190, GetStringFunc("parsNonAdjacentTyargs",",,,") )
     /// The use of the type syntax 'int C' and 'C  <int>' is not permitted here. Consider adjusting this type to be written in the form 'C<int>'
     /// (Originally from ..\FSComp.txt:1047)
@@ -4348,45 +4348,57 @@ type internal SR private() =
     /// The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
     /// (Originally from ..\FSComp.txt:1440)
     static member chkNoByrefAddressOfValueFromExpression() = (3228, GetStringFunc("chkNoByrefAddressOfValueFromExpression",",,,") )
-    /// The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.
-    /// (Originally from ..\FSComp.txt:1441)
-    static member chkNoReturnOfLimitedSpan() = (3229, GetStringFunc("chkNoReturnOfLimitedSpan",",,,") )
     /// This value can't be assigned because the target '%s' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.
-    /// (Originally from ..\FSComp.txt:1442)
-    static member chkNoWriteToLimitedSpan(a0 : System.String) = (3230, GetStringFunc("chkNoWriteToLimitedSpan",",,,%s,,,") a0)
+    /// (Originally from ..\FSComp.txt:1441)
+    static member chkNoWriteToLimitedSpan(a0 : System.String) = (3229, GetStringFunc("chkNoWriteToLimitedSpan",",,,%s,,,") a0)
     /// A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'
-    /// (Originally from ..\FSComp.txt:1443)
-    static member tastValueMustBeLocal() = (3231, GetStringFunc("tastValueMustBeLocal",",,,") )
+    /// (Originally from ..\FSComp.txt:1442)
+    static member tastValueMustBeLocal() = (3230, GetStringFunc("tastValueMustBeLocal",",,,") )
     /// A type annotated with IsReadOnly must also be a struct. Consider adding the [<Struct>] attribute to the type.
-    /// (Originally from ..\FSComp.txt:1444)
-    static member tcIsReadOnlyNotStruct() = (3232, GetStringFunc("tcIsReadOnlyNotStruct",",,,") )
+    /// (Originally from ..\FSComp.txt:1443)
+    static member tcIsReadOnlyNotStruct() = (3231, GetStringFunc("tcIsReadOnlyNotStruct",",,,") )
     /// Struct members cannot return the address of fields of the struct by reference
-    /// (Originally from ..\FSComp.txt:1445)
-    static member chkStructsMayNotReturnAddressesOfContents() = (3233, GetStringFunc("chkStructsMayNotReturnAddressesOfContents",",,,") )
+    /// (Originally from ..\FSComp.txt:1444)
+    static member chkStructsMayNotReturnAddressesOfContents() = (3232, GetStringFunc("chkStructsMayNotReturnAddressesOfContents",",,,") )
     /// The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.
-    /// (Originally from ..\FSComp.txt:1446)
-    static member chkNoByrefLikeFunctionCall() = (3234, GetStringFunc("chkNoByrefLikeFunctionCall",",,,") )
+    /// (Originally from ..\FSComp.txt:1445)
+    static member chkNoByrefLikeFunctionCall() = (3233, GetStringFunc("chkNoByrefLikeFunctionCall",",,,") )
     /// The Span or IsByRefLike variable '%s' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
-    /// (Originally from ..\FSComp.txt:1447)
-    static member chkNoSpanLikeVariable(a0 : System.String) = (3235, GetStringFunc("chkNoSpanLikeVariable",",,,%s,,,") a0)
+    /// (Originally from ..\FSComp.txt:1446)
+    static member chkNoSpanLikeVariable(a0 : System.String) = (3234, GetStringFunc("chkNoSpanLikeVariable",",,,%s,,,") a0)
     /// A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.
-    /// (Originally from ..\FSComp.txt:1448)
-    static member chkNoSpanLikeValueFromExpression() = (3236, GetStringFunc("chkNoSpanLikeValueFromExpression",",,,") )
+    /// (Originally from ..\FSComp.txt:1447)
+    static member chkNoSpanLikeValueFromExpression() = (3235, GetStringFunc("chkNoSpanLikeValueFromExpression",",,,") )
     /// Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
+    /// (Originally from ..\FSComp.txt:1448)
+    static member tastCantTakeAddressOfExpression() = (3236, GetStringFunc("tastCantTakeAddressOfExpression",",,,") )
+    /// Cannot call the byref extension method '%s. The first parameter requires the value to be mutable or a non-readonly byref type.
     /// (Originally from ..\FSComp.txt:1449)
-    static member tastCantTakeAddressOfExpression() = (3237, GetStringFunc("tastCantTakeAddressOfExpression",",,,") )
-    /// This type does not inherit Attribute, it will not work correctly with other .NET languages.
+    static member tcCannotCallExtensionMethodInrefToByref(a0 : System.String) = (3237, GetStringFunc("tcCannotCallExtensionMethodInrefToByref",",,,%s,,,") a0)
+    /// Byref types are not allowed to have optional type extensions.
     /// (Originally from ..\FSComp.txt:1450)
+    static member tcByrefsMayNotHaveTypeExtensions() = (3238, GetStringFunc("tcByrefsMayNotHaveTypeExtensions",",,,") )
+    /// Cannot partially apply the extension method '%s' because the first parameter is a byref type.
+    /// (Originally from ..\FSComp.txt:1451)
+    static member tcCannotPartiallyApplyExtensionMethodForByref(a0 : System.String) = (3239, GetStringFunc("tcCannotPartiallyApplyExtensionMethodForByref",",,,%s,,,") a0)
+    /// This type does not inherit Attribute, it will not work correctly with other .NET languages.
+    /// (Originally from ..\FSComp.txt:1452)
     static member tcTypeDoesNotInheritAttribute() = (3242, GetStringFunc("tcTypeDoesNotInheritAttribute",",,,") )
     /// Invalid anonymous record expression
-    /// (Originally from ..\FSComp.txt:1451)
+    /// (Originally from ..\FSComp.txt:1453)
     static member parsInvalidAnonRecdExpr() = (3243, GetStringFunc("parsInvalidAnonRecdExpr",",,,") )
     /// Invalid anonymous record type
-    /// (Originally from ..\FSComp.txt:1452)
+    /// (Originally from ..\FSComp.txt:1454)
     static member parsInvalidAnonRecdType() = (3244, GetStringFunc("parsInvalidAnonRecdType",",,,") )
     /// The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record
-    /// (Originally from ..\FSComp.txt:1453)
+    /// (Originally from ..\FSComp.txt:1455)
     static member tcCopyAndUpdateNeedsRecordType() = (3245, GetStringFunc("tcCopyAndUpdateNeedsRecordType",",,,") )
+    /// The parameter '%s' has an invalid type '%s'. This is not permitted by the rules of Common IL.
+    /// (Originally from ..\FSComp.txt:1456)
+    static member chkInvalidFunctionParameterType(a0 : System.String, a1 : System.String) = (3300, GetStringFunc("chkInvalidFunctionParameterType",",,,%s,,,%s,,,") a0 a1)
+    /// The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL.
+    /// (Originally from ..\FSComp.txt:1457)
+    static member chkInvalidFunctionReturnType(a0 : System.String) = (3301, GetStringFunc("chkInvalidFunctionReturnType",",,,%s,,,") a0)
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5801,7 +5813,6 @@ type internal SR private() =
         ignore(GetString("tcByrefReturnImplicitlyDereferenced"))
         ignore(GetString("tcByRefLikeNotStruct"))
         ignore(GetString("chkNoByrefAddressOfValueFromExpression"))
-        ignore(GetString("chkNoReturnOfLimitedSpan"))
         ignore(GetString("chkNoWriteToLimitedSpan"))
         ignore(GetString("tastValueMustBeLocal"))
         ignore(GetString("tcIsReadOnlyNotStruct"))
@@ -5810,8 +5821,13 @@ type internal SR private() =
         ignore(GetString("chkNoSpanLikeVariable"))
         ignore(GetString("chkNoSpanLikeValueFromExpression"))
         ignore(GetString("tastCantTakeAddressOfExpression"))
+        ignore(GetString("tcCannotCallExtensionMethodInrefToByref"))
+        ignore(GetString("tcByrefsMayNotHaveTypeExtensions"))
+        ignore(GetString("tcCannotPartiallyApplyExtensionMethodForByref"))
         ignore(GetString("tcTypeDoesNotInheritAttribute"))
         ignore(GetString("parsInvalidAnonRecdExpr"))
         ignore(GetString("parsInvalidAnonRecdType"))
         ignore(GetString("tcCopyAndUpdateNeedsRecordType"))
+        ignore(GetString("chkInvalidFunctionParameterType"))
+        ignore(GetString("chkInvalidFunctionReturnType"))
         ()
