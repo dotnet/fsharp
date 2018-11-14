@@ -108,8 +108,14 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
             let referencedProjects =
                 if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
                     project.ProjectReferences
-                    |> Seq.choose (fun projectReference ->
+                    |> Seq.choose (fun projectReference -> 
                         let referenceProject = project.Solution.GetProject(projectReference.ProjectId)
+                        if referenceProject.Language = FSharpConstants.FSharpLanguageName then
+                            Some(referenceProject)
+                        else
+                            None
+                    )
+                    |> Seq.choose (fun referenceProject ->
                         let result =
                             tryComputeOptions referenceProject
                             |> Option.map (fun (_, projectOptions) ->
