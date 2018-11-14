@@ -597,8 +597,8 @@ if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" se
 :vsversionset
 if "%VisualStudioVersion%" == "" echo Error: Could not find an installation of Visual Studio && goto :failure
 
-if exist "%VS160COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
-    set _msbuildexe="%VS160COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe"
+if exist "%VS160COMNTOOLS%\..\..\MSBuild\Current\Bin\MSBuild.exe" (
+    set _msbuildexe="%VS160COMNTOOLS%\..\..\MSBuild\Current\Bin\MSBuild.exe"
     goto :havemsbuild
 )
 if exist "%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
@@ -1022,8 +1022,8 @@ if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
     )
 
     set LOGFILE=%~dp0tests\TestResults\VisualFSharp.UnitTests.net40.trx
-    echo "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!" -o "%BUILD_CONFIG%\net40\bin"
-         "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!" -o "%BUILD_CONFIG%\net40\bin"
+    echo "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!" -o "%~dp0%BUILD_CONFIG%\net40\bin"
+         "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!" -o "%~dp0%BUILD_CONFIG%\net40\bin"
     if errorlevel 1 (
         echo ------------------------------------------------------------
         echo Error: Running tests vs-ideunit failed, see file `!LOGFILE!`

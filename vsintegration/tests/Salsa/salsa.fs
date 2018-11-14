@@ -633,9 +633,11 @@ module internal Salsa =
             Append "        <OutputPath>bin\Debug\</OutputPath>"
             if versionFile<>null then Append (sprintf "        <VersionFile>%s</VersionFile>" versionFile)
             if otherFlags<>null then Append (sprintf "        <OtherFlags>%s --resolutions</OtherFlags>" otherFlags)
-            if targetFrameworkVersion<>null then
-                Append(sprintf "       <AllowCrossTargeting>true</AllowCrossTargeting>")
-                Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" targetFrameworkVersion)
+//            if targetFrameworkVersion<>null then
+//                Append(sprintf "       <AllowCrossTargeting>true</AllowCrossTargeting>")
+//                Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" targetFrameworkVersion)
+//            else
+            Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" "4.6.1")
             Append "        <NoWarn>"
             for disabledWarning in disabledWarnings do
                 Append (sprintf "            %s;" disabledWarning)                            
@@ -870,13 +872,13 @@ module internal Salsa =
                             List.iter(function
                                       DeleteFile f -> 
                                         try
-                                            File.Delete(f)
+                                            ()//File.Delete(f)
                                         with e->
                                             printf "Failed to Delete file '%s'" f
                                             raise e
                                     | RemoveFolder f -> 
                                         try 
-                                            if Directory.Exists(f) then Directory.Delete(f,true)
+                                            ()//if Directory.Exists(f) then Directory.Delete(f,true)
                                         with 
                                             | :? System.IO.IOException -> printf "Failed to Remove folder '%s'" f
                                             | e->

@@ -365,7 +365,7 @@ a.
     [<Test>]
     [<Category("TypeProvider")>]
     member this.``TypeProvider.VisibilityChecksForGeneratedTypes``() = 
-        let extraRefs = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
+        let extraRefs = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")]
         let check = DoWithAutoCompleteUsingExtraRefs extraRefs true SourceFileKind.FS Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason.MemberSelect
 
         let code = 
@@ -2200,7 +2200,7 @@ let x = new MyClass2(0)
                                 t.I"""],
             marker = "t.I",
             expected = "IM1",    
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -2213,7 +2213,7 @@ let x = new MyClass2(0)
                                 t.Eve"""],
             marker = "t.Eve", 
             expected = "Event1",          
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
      
     [<Test>]
     [<Category("TypeProvider")>]
@@ -2225,7 +2225,7 @@ let x = new MyClass2(0)
                                 type boo = N1.T<in"""],
             marker = "T<in",  
             expected = "int",  
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
         
     // In this bug, pressing dot after this was producing an invalid member list.       
@@ -5448,7 +5448,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 t(*Marker*)""",
             marker = "(*Marker*)",
             list = ["Equals";"GetHashCode"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5461,7 +5461,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 t(*Marker*)""",
             marker = "(*Marker*)",
             list = ["Event1"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5474,7 +5474,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 t(*Marker*)""",
             marker = "(*Marker*)",
             list = ["IM1"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5486,7 +5486,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 type XXX = N1.T1(*Marker*)""",
             marker = "(*Marker*)",
             list = ["SomeNestedType"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
         // should _not_ have it here
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """ 
@@ -5494,7 +5494,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 t(*Marker*)""",
             marker = "(*Marker*)",
             list = ["SomeNestedType"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5507,7 +5507,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 t.Event1(*Marker*)""",
             marker = "(*Marker*)",
             list = ["AddHandler";"RemoveHandler"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5519,7 +5519,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             fileContents = """ 
                                 let t = N.T.M(*Marker*)()""",
             marker = "(*Marker*)",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5533,7 +5533,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 let t = N.T.StaticProp(*Marker*)""",
             marker = "(*Marker*)",
             list = ["GetType"; "Equals"],   // just a couple of System.Object methods: we expect them to be there!
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
                                           
     [<Test>]
     member this.CompListInDiffFileTypes() =
