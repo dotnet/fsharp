@@ -192,29 +192,27 @@ module CoreTests =
         end
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
-            fsi cfg "" ["test.fsx"]
-
-            testOkFile.CheckExists()
-        end
-
-        begin
-
-            use testOkFile = fileguard cfg "test.ok"
-
-            fsiAnyCpu cfg "" ["test.fsx"]
-
-            testOkFile.CheckExists()
-        end
-
-        begin
             use testOkFile = fileguard cfg "test2.ok"
 
             fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
 
-            singleNegTest cfg "test2"
+            singleNegTest { cfg with fsc_flags = sprintf "%s --warnaserror-" cfg.fsc_flags } "test2"
 
             exec cfg ("." ++ "test2.exe") ""
+
+            testOkFile.CheckExists()
+        end
+
+        begin
+            csc cfg """/langversion:7.2 /nologo /target:library /out:cslib3.dll""" ["cslib3.cs"]
+
+            use testOkFile = fileguard cfg "test3.ok"
+
+            fsc cfg "%s -r:cslib3.dll -o:test3.exe -g" cfg.fsc_flags ["test3.fsx"]
+
+            singleNegTest { cfg with fsc_flags = sprintf "%s -r:cslib3.dll" cfg.fsc_flags } "test3"
+
+            exec cfg ("." ++ "test3.exe") ""
 
             testOkFile.CheckExists()
         end

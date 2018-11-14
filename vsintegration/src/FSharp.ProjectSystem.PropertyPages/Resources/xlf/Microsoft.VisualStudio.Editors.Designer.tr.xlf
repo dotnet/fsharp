@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="tr" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="PPG_VersionTitle">
         <source>Version</source>
-        <target state="translated">Sürüm</target>
+        <target state="translated">SÜRÜM</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SigningTitle">
@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="PPG_CompileTitle">
         <source>Compile</source>
-        <target state="translated">Derleme</target>
+        <target state="translated">Derle</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_DebugTitle">
@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="PPG_BuildTitle">
         <source>Build</source>
-        <target state="translated">Derleme</target>
+        <target state="translated">Oluştur</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_BuildEventsTitle">
@@ -74,12 +74,12 @@
       </trans-unit>
       <trans-unit id="PPG_PreBuildCommandLineTitle">
         <source>Pre-build Event Command Line</source>
-        <target state="translated">Derleme Öncesi Olay Komut Satırı</target>
+        <target state="translated">Oluşturma öncesi olay komut satırı</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_PostBuildCommandLineTitle">
         <source>Post-build Event Command Line</source>
-        <target state="translated">Derleme Sonrası Olay Komut Satırı</target>
+        <target state="translated">Oluşturma sonrası olay komut satırı</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_OutputPathNotSecure">
@@ -98,7 +98,7 @@ Yoksayıp devam etmek için Tamam'a tıklayın. Farklı bir çıkış yolu seçm
       </trans-unit>
       <trans-unit id="PPG_StartupObjectNone">
         <source>(None)</source>
-        <target state="translated">(Hiçbiri)</target>
+        <target state="translated">(Yok)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_KeyFileNewText">
@@ -113,7 +113,7 @@ Yoksayıp devam etmek için Tamam'a tıklayın. Farklı bir çıkış yolu seçm
       </trans-unit>
       <trans-unit id="PPG_ComboBoxSelect_None">
         <source>(None)</source>
-        <target state="translated">(Hiçbiri)</target>
+        <target state="translated">(Yok)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_ActiveConfigOrPlatformFormatString_1Arg">
@@ -143,7 +143,7 @@ Yoksayıp devam etmek için Tamam'a tıklayın. Farklı bir çıkış yolu seçm
       </trans-unit>
       <trans-unit id="PPG_NeutralLanguage_None">
         <source>(None)</source>
-        <target state="translated">(Hiçbiri)</target>
+        <target state="translated">(Yok)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SelectFileTitle">
@@ -355,7 +355,7 @@ Lütfen geçerli bir klasör yolu seçin.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_None">
         <source>None</source>
-        <target state="translated">Hiçbiri</target>
+        <target state="translated">yok</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Warning">
@@ -649,7 +649,7 @@ Hata:</target>
       </trans-unit>
       <trans-unit id="PPG_NonePermissionSet">
         <source>(None)</source>
-        <target state="translated">(Hiçbiri)</target>
+        <target state="translated">(Yok)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_KeyFileBrowse_Title">
@@ -1092,7 +1092,7 @@ Hata:</target>
       </trans-unit>
       <trans-unit id="PPG_Property_AssemblyFileVersion">
         <source>Assembly File Version</source>
-        <target state="translated">Bütünleştirilmiş Kod Dosya Sürümü</target>
+        <target state="translated">Bütünleştirilmiş Kod Dosyası Sürümü</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Property_AssemblyGuid">
@@ -1828,7 +1828,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_GraphicSizeFormat">
         <source>{0} x {1}</source>
-        <target state="translated">{0} x {1}</target>
+        <target state="needs-review-translation">{0} x {1}</target>
         <note>Format string for showing a graphic's size
 
 #  {0} = width (as an integer)
@@ -2344,19 +2344,9 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">Uygulama</target>
         <note />
       </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebApplicationScope">
-        <source>Application (Web)</source>
-        <target state="translated">Uygulama (Web)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="SD_ComboBoxItem_UserScope">
         <source>User</source>
         <target state="translated">Kullanıcı</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebUserScope">
-        <source>User (Web)</source>
-        <target state="translated">Kullanıcı (Web)</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewNameColumnHeaderText">
@@ -2830,22 +2820,22 @@ app.config dosyasındaki yeni değer: '{1}'
       </trans-unit>
       <trans-unit id="PPG_Services_Seconds">
         <source>seconds</source>
-        <target state="translated">saniye</target>
+        <target state="translated">Saniye</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Minutes">
         <source>minutes</source>
-        <target state="translated">dakika</target>
+        <target state="translated">Dakika</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Hours">
         <source>hours</source>
-        <target state="translated">saat</target>
+        <target state="translated">Saat</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Days">
         <source>days</source>
-        <target state="translated">gün</target>
+        <target state="translated">Gün</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">
@@ -2940,7 +2930,7 @@ app.config dosyasındaki yeni değer: '{1}'
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_XBAPOutOfTrustZoneToolTip">
         <source>The application will fail to run in the selected zone because of this requested elevated permission. Click the help link above for more info.</source>
-        <target state="translated">İstenen bu yükseltilmiş izin nedeniyle, uygulama seçili bölgede çalışamayacak. Daha fazla bilgi için yukarıdaki yardım bağlantısına tıklayın.</target>
+        <target state="translated">İstenen bu yükseltilmiş izin nedeniyle uygulama, seçili bölgede çalıştırılamayacak. Daha fazla bilgi için yukarıdaki yardım bağlantısına tıklayın.</target>
         <note />
       </trans-unit>
     </body>

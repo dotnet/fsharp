@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="fr" original="../BuildPropPage.resx">
     <body>
@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="chkPrefer32Bit.Text">
         <source>&amp;Prefer 32-bit</source>
-        <target state="translated">Préférer &amp;32 bits</target>
+        <target state="translated">&amp;Préférer 32 bits</target>
         <note />
       </trans-unit>
       <trans-unit id="outputLabel.Text">
@@ -39,12 +39,12 @@
       </trans-unit>
       <trans-unit id="btnOutputPathBrowse.Text">
         <source>B&amp;rowse...</source>
-        <target state="translated">Pa&amp;rcourir...</target>
+        <target state="translated">P&amp;arcourir...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblOutputPath.Text">
         <source>&amp;Output path:</source>
-        <target state="translated">C&amp;hemin de sortie :</target>
+        <target state="translated">Chemin de s&amp;ortie :</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningAll.Text">
@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="rbWarningNone.Text">
         <source>&amp;None</source>
-        <target state="translated">Aucu&amp;n</target>
+        <target state="translated">&amp;Aucune</target>
         <note />
       </trans-unit>
       <trans-unit id="lblSupressWarnings.Text">
@@ -104,7 +104,7 @@
       </trans-unit>
       <trans-unit id="chkOptimizeCode.Text">
         <source>Optimi&amp;ze code</source>
-        <target state="translated">Op&amp;timiser le code</target>
+        <target state="translated">Optimi&amp;ser le code</target>
         <note />
       </trans-unit>
       <trans-unit id="chkTailcalls.Text">
