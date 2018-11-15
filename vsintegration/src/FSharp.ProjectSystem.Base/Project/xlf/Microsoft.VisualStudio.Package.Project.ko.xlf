@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../Microsoft.VisualStudio.Package.Project.resx">
     <body>
@@ -64,7 +64,7 @@
       </trans-unit>
       <trans-unit id="ConfirmExtensionChange">
         <source>If you change a file name extension, the file may become unusable. Are you sure you want to change it?</source>
-        <target state="translated">파일 확장명을 바꾸면 파일을 사용할 수 없게 될 수도 있습니다. 확장명을 바꾸시겠습니까?</target>
+        <target state="translated">확장명을 바꾸면 파일을 사용할 수 없게 될 수도 있습니다. 확장명을 바꾸시겠습니까?</target>
         <note />
       </trans-unit>
       <trans-unit id="CannotAddFileThatIsOpenInEditor">
@@ -89,7 +89,7 @@
       </trans-unit>
       <trans-unit id="CopyToLocalDescription">
         <source>Indicates whether the reference will be copied to the output directory.</source>
-        <target state="translated">참조를 출력 디렉터리로 복사할지 여부를 나타냅니다.</target>
+        <target state="translated">참조를 출력 디렉터리에 복사할지 여부를 나타냅니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="Detailed">
@@ -252,22 +252,22 @@
       </trans-unit>
       <trans-unit id="Minimal">
         <source>Minimal</source>
-        <target state="translated">최소</target>
+        <target state="translated">minimal</target>
         <note />
       </trans-unit>
       <trans-unit id="Misc">
         <source>Misc</source>
-        <target state="translated">기타</target>
+        <target state="translated">Misc</target>
         <note />
       </trans-unit>
       <trans-unit id="None">
         <source>None</source>
-        <target state="translated">없음</target>
+        <target state="translated">None</target>
         <note />
       </trans-unit>
       <trans-unit id="Normal">
         <source>Normal</source>
-        <target state="translated">보통</target>
+        <target state="translated">NORMAL</target>
         <note />
       </trans-unit>
       <trans-unit id="PasteFailed">
@@ -532,7 +532,7 @@
       </trans-unit>
       <trans-unit id="OutputXmlSerializer">
         <source>XML Serialization Assemblies</source>
-        <target state="translated">XML Serialization 어셈블리</target>
+        <target state="translated">XML 직렬화 어셈블리</target>
         <note />
       </trans-unit>
       <trans-unit id="OutputBuiltDescription">
@@ -587,7 +587,7 @@
       </trans-unit>
       <trans-unit id="ErrorReferenceCouldNotBeAdded">
         <source>A reference to {0} could not be added. Please make sure that the file is accessible, and that it is a valid assembly or COM component.</source>
-        <target state="translated">{0}에 대한 참조를 추가할 수 없습니다. 파일에 액세스할 수 있는지, 올바른 어셈블리 또는 COM 구성 요소인지 확인하세요.</target>
+        <target state="translated">{0}에 대한 참조를 추가할 수 없습니다. 파일이 액세스 가능한지, 올바른 어셈블리 또는 COM 구성 요소인지 확인하십시오.</target>
         <note />
       </trans-unit>
       <trans-unit id="DetailsImport">
@@ -642,7 +642,7 @@
       </trans-unit>
       <trans-unit id="CopyToOutputDirectory">
         <source>Copy to Output Directory</source>
-        <target state="translated">출력 디렉터리에 복사</target>
+        <target state="translated">출력 디렉터리로 복사</target>
         <note />
       </trans-unit>
       <trans-unit id="CopyToOutputDirectoryDescription">
@@ -792,7 +792,7 @@
       </trans-unit>
       <trans-unit id="Path">
         <source>Path</source>
-        <target state="translated">경로</target>
+        <target state="translated">PATH</target>
         <note />
       </trans-unit>
       <trans-unit id="PathDescription">

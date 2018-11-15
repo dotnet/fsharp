@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -240,7 +240,7 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_VersionOutOfRange_2Args">
         <source>Each part of the version number for '{0}' must be an integer between 0 and {1}.</source>
-        <target state="translated">'{0}' 버전 번호의 각 부분은 0에서 {1} 사이의 정수여야 합니다.</target>
+        <target state="translated">'{0}'의 각 버전 번호 부분은 0에서 {1} 사이의 정수여야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_DefaultIconText">
@@ -355,7 +355,7 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_None">
         <source>None</source>
-        <target state="translated">없음</target>
+        <target state="translated">None</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Warning">
@@ -537,7 +537,7 @@ Changing this setting will reset the settings in all configurations.</source>
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_HeaderPermission">
         <source>Permission</source>
-        <target state="translated">권한</target>
+        <target state="translated">사용 권한</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_HeaderSetting">
@@ -679,7 +679,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_Signing_NewPassEmpty">
         <source>Enter a new password.</source>
-        <target state="translated">새 암호를 입력하세요.</target>
+        <target state="translated">새 암호를 입력하십시오.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_NewPassMismatch">
@@ -1377,7 +1377,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="AttrEditor_DefaultValueAttrName">
         <source>Default Value</source>
-        <target state="translated">기본값</target>
+        <target state="translated">Default Value</target>
         <note />
       </trans-unit>
       <trans-unit id="AttrEditor_DefaultValueAttrDescription">
@@ -1387,7 +1387,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="AttrEditor_DefaultValueAttrDisplayName">
         <source>Default Value</source>
-        <target state="translated">기본값</target>
+        <target state="translated">Default Value</target>
         <note />
       </trans-unit>
       <trans-unit id="AttrEditor_NonSerializedAttrName">
@@ -1407,7 +1407,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="AttrEditor_SerializableAttrName">
         <source>Serializable</source>
-        <target state="translated">Serialize 가능</target>
+        <target state="translated">직렬화 가능</target>
         <note />
       </trans-unit>
       <trans-unit id="AttrEditor_SerializableAttrDescription">
@@ -1417,7 +1417,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="AttrEditor_SerializableAttrDisplayName">
         <source>Serializable</source>
-        <target state="translated">Serialize 가능</target>
+        <target state="translated">직렬화 가능</target>
         <note />
       </trans-unit>
       <trans-unit id="AttrEditor_WebMethodAttrName">
@@ -1617,7 +1617,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="RSE_TypeColumn">
         <source>Type</source>
-        <target state="translated">형식</target>
+        <target state="translated">Type</target>
         <note>Column names for the string table</note>
       </trans-unit>
       <trans-unit id="RSE_ResourceColumn">
@@ -1627,7 +1627,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="RSE_CommentColumn">
         <source>Comment</source>
-        <target state="translated">설명</target>
+        <target state="translated">주석</target>
         <note>Column names for the string table</note>
       </trans-unit>
       <trans-unit id="SingleFileGenerator_FailedToGenerateFile_1Arg">
@@ -1808,7 +1808,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_ImageType">
         <source>Type</source>
-        <target state="translated">형식</target>
+        <target state="translated">Type</target>
         <note>Columns for the "Details" view of the resource editor</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_Size">
@@ -1818,7 +1818,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_Comment">
         <source>Comment</source>
-        <target state="translated">설명</target>
+        <target state="translated">주석</target>
         <note>Columns for the "Details" view of the resource editor</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_Encoding">
@@ -1828,7 +1828,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_GraphicSizeFormat">
         <source>{0} x {1}</source>
-        <target state="translated">{0} x {1}</target>
+        <target state="needs-review-translation">{0} x {1}</target>
         <note>Format string for showing a graphic's size
 
 #  {0} = width (as an integer)
@@ -2344,19 +2344,9 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">응용 프로그램</target>
         <note />
       </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebApplicationScope">
-        <source>Application (Web)</source>
-        <target state="translated">응용 프로그램(웹)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="SD_ComboBoxItem_UserScope">
         <source>User</source>
         <target state="translated">사용자</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebUserScope">
-        <source>User (Web)</source>
-        <target state="translated">사용자(웹)</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewNameColumnHeaderText">
@@ -2366,7 +2356,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="SD_GridViewTypeColumnHeaderText">
         <source>Type</source>
-        <target state="translated">형식</target>
+        <target state="translated">Type</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewScopeColumnHeaderText">
@@ -2381,7 +2371,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="SD_UnknownType">
         <source>Type '{0}' is not defined.</source>
-        <target state="translated">'{0}' 형식이 정의되어 있지 않습니다.</target>
+        <target state="translated">{0}' 형식이 정의되지 않았습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_UndoTran_NameChanged">
@@ -2855,7 +2845,7 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="PPG_Services_InvalidAppConfigXml">
         <source>An error occurred while reading the Application configuration file.  The file might be corrupted or contain invalid XML.</source>
-        <target state="translated">응용 프로그램 구성 파일을 읽는 동안 오류가 발생했습니다.  파일이 손상되었거나 잘못된 XML이 포함되어 있습니다.</target>
+        <target state="translated">지정한 응용 프로그램 구성 파일을 읽는 동안 오류가 발생했습니다.  파일이 손상되었거나 잘못된 XML이 포함되어 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_InvalidUrl">
