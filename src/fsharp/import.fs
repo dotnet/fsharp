@@ -182,8 +182,6 @@ let rec ImportILType (env:ImportMap) m tinst ty =
         let nullness = ImportNullnessForTyconRef env.g m tcref
         ImportTyconRefApp env tcref inst nullness
 
-    | ILType.Modified(_,tref,ILType.Byref ty) when tref.Name = "System.Runtime.InteropServices.InAttribute" -> mkInByrefTy env.g (ImportILType env m tinst ty)
-
     | ILType.Byref ty -> mkByrefTy env.g (ImportILType env m tinst ty)
 
     | ILType.Ptr ILType.Void  when env.g.voidptr_tcr.CanDeref -> mkVoidPtrTy env.g

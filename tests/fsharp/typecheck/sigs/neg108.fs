@@ -1,8 +1,7 @@
 module Neg108
-// check that a decent error is given when a type that does not inherit from System.Attribute is used as attribute
-type NotAttribute() = class end
 
-[<NotAttribute>]
-type T() = class end
+type Test = Test of Unit
+let test : Test = Test
 
-// note this test shouldn't contain any other code
+
+

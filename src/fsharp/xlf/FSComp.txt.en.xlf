@@ -7057,14 +7057,14 @@
         <target state="new">Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+      <trans-unit id="parsUnmatchedBraceBar">
+        <source>Unmatched '{{|'</source>
+        <target state="new">Unmatched '{{|'</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcTypeDoesNotInheritAttribute">
-        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
-        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
+      <trans-unit id="typeInfoAnonRecdField">
+        <source>anonymous record field</source>
+        <target state="new">anonymous record field</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
@@ -7112,16 +7112,6 @@
         <target state="new">The type '{0}' has 'null' as a true representation value but a constraint does not permit this</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsUnmatchedBraceBar">
-        <source>Unmatched '{{|'</source>
-        <target state="new">Unmatched '{{|'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="typeInfoAnonRecdField">
-        <source>anonymous record field</source>
-        <target state="new">anonymous record field</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcAnonRecdCcuMismatch">
         <source>Two anonymous record types are from different assemblies '{0}' and '{1}'</source>
         <target state="new">Two anonymous record types are from different assemblies '{0}' and '{1}'</target>
@@ -7130,6 +7120,26 @@
       <trans-unit id="tcAnonRecdFieldNameMismatch">
         <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
         <target state="new">Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
+        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
+        <target state="new">Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
+        <source>Byref types are not allowed to have optional type extensions.</source>
+        <target state="new">Byref types are not allowed to have optional type extensions.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotPartiallyApplyExtensionMethodForByref">
+        <source>Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</source>
+        <target state="new">Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDoesNotInheritAttribute">
+        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
+        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInvalidAnonRecdExpr">
@@ -7175,6 +7185,16 @@
       <trans-unit id="chkValueWithDefaultValueMustHaveDefaultValueNulls">
         <source>Nullability warning. The 'DefaultValue' attribute is used but the type (or one of its fields if a struct) is non-nullable.</source>
         <target state="new">Nullability warning. The 'DefaultValue' attribute is used but the type (or one of its fields if a struct) is non-nullable.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInvalidFunctionParameterType">
+        <source>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</source>
+        <target state="new">The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInvalidFunctionReturnType">
+        <source>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</source>
+        <target state="new">The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</target>
         <note />
       </trans-unit>
     </body>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pt-BR" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="PPG_DebugTitle">
         <source>Debug</source>
-        <target state="translated">Depurar</target>
+        <target state="translated">depurar</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_DeployTitle">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="PPG_VdtGeneralTitle">
         <source>Database</source>
-        <target state="translated">Banco de Dados</target>
+        <target state="translated">Banco de dados</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Security">
@@ -59,12 +59,12 @@
       </trans-unit>
       <trans-unit id="PPG_BuildTitle">
         <source>Build</source>
-        <target state="translated">Build</target>
+        <target state="translated">Compilar</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_BuildEventsTitle">
         <source>Build Events</source>
-        <target state="translated">Eventos de Build</target>
+        <target state="translated">Eventos de Compilação</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_ReferencePathsTitle">
@@ -74,12 +74,12 @@
       </trans-unit>
       <trans-unit id="PPG_PreBuildCommandLineTitle">
         <source>Pre-build Event Command Line</source>
-        <target state="translated">Linha de Comando de Eventos Pré-build</target>
+        <target state="translated">Linha de comando do evento de pré-compilação</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_PostBuildCommandLineTitle">
         <source>Post-build Event Command Line</source>
-        <target state="translated">Linha de Comando de Eventos Pós-build</target>
+        <target state="translated">Linha de comando do evento de pós-compilação</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_OutputPathNotSecure">
@@ -240,7 +240,7 @@ Selecione um caminho da pasta válido.</target>
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_VersionOutOfRange_2Args">
         <source>Each part of the version number for '{0}' must be an integer between 0 and {1}.</source>
-        <target state="translated">Cada parte do número de versão de '{0}' deve ser um inteiro entre 0 e {1}.</target>
+        <target state="translated">Cada parte do número de versão para '{0}' deve ser um inteiro entre 0 e {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_DefaultIconText">
@@ -350,12 +350,12 @@ Selecione um caminho da pasta válido.</target>
       </trans-unit>
       <trans-unit id="PPG_AdvancedBuildSettings_InvalidBaseAddress">
         <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, 0x11000000.</source>
-        <target state="translated">O endereço base deve ser um número hexadecimal com 8 ou menos dígitos, por exemplo, 0x11000000.</target>
+        <target state="translated">O endereço base deve ser um número hexadecimal com até 8 dígitos, por exemplo, 0x11000000.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_None">
         <source>None</source>
-        <target state="translated">Nenhum</target>
+        <target state="translated">NENHUM</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Warning">
@@ -385,7 +385,7 @@ Selecione um caminho da pasta válido.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_42020">
         <source>Implicit type; object assumed</source>
-        <target state="translated">Tipo implícito, objeto presumido</target>
+        <target state="translated">Tipo implícito; objeto assumido</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_42104">
@@ -405,7 +405,7 @@ Selecione um caminho da pasta válido.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_42025">
         <source>Instance variable accesses shared member</source>
-        <target state="translated">A variável de instância acessa o membro compartilhado</target>
+        <target state="translated">Variável de instância acessa membro compartilhado</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_42004">
@@ -724,7 +724,7 @@ Erro:</target>
       </trans-unit>
       <trans-unit id="PPG_Signing_ExpirationDate">
         <source>Expiration Date</source>
-        <target state="translated">Data de Vencimento</target>
+        <target state="translated">Data de Validade</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_InvalidPassword">
@@ -1803,7 +1803,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_Filename">
         <source>Filename</source>
-        <target state="translated">Nome do arquivo</target>
+        <target state="translated">Nome do Arquivo</target>
         <note>Columns for the "Details" view of the resource editor</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_ImageType">
@@ -1828,7 +1828,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_GraphicSizeFormat">
         <source>{0} x {1}</source>
-        <target state="translated">{0} x {1}</target>
+        <target state="needs-review-translation">{0} x {1}</target>
         <note>Format string for showing a graphic's size
 
 #  {0} = width (as an integer)
@@ -2344,19 +2344,9 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">Aplicativo</target>
         <note />
       </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebApplicationScope">
-        <source>Application (Web)</source>
-        <target state="translated">Aplicativo (Web)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="SD_ComboBoxItem_UserScope">
         <source>User</source>
         <target state="translated">Usuário</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebUserScope">
-        <source>User (Web)</source>
-        <target state="translated">Usuário (Web)</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewNameColumnHeaderText">
@@ -2830,22 +2820,22 @@ Deseja atualizar o valor no arquivo .settings?</target>
       </trans-unit>
       <trans-unit id="PPG_Services_Seconds">
         <source>seconds</source>
-        <target state="translated">segundos</target>
+        <target state="translated">Segundos</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Minutes">
         <source>minutes</source>
-        <target state="translated">minutos</target>
+        <target state="translated">Minutos</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Hours">
         <source>hours</source>
-        <target state="translated">horas</target>
+        <target state="translated">Horas</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Days">
         <source>days</source>
-        <target state="translated">dias</target>
+        <target state="translated">Dias</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">

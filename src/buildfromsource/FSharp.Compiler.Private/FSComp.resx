@@ -1038,23 +1038,8 @@
   <data name="csStructConstraintInconsistent" xml:space="preserve">
     <value>The constraints 'struct' and 'not struct' are inconsistent</value>
   </data>
-  <data name="csNullNotNullConstraintInconsistent" xml:space="preserve">
-    <value>The constraints 'null' and 'not null' are inconsistent</value>
-  </data>
-  <data name="csStructNullConstraintInconsistent" xml:space="preserve">
-    <value>The constraints 'struct' and 'null' are inconsistent</value>
-  </data>
-  <data name="csDelegateComparisonConstraintInconsistent" xml:space="preserve">
-    <value>The constraints 'delegate' and 'comparison' are inconsistent</value>
-  </data>
   <data name="csTypeDoesNotHaveNull" xml:space="preserve">
     <value>The type '{0}' does not have 'null' as a proper value</value>
-  </data>
-  <data name="csTypeHasNullAsTrueValue" xml:space="preserve">
-    <value>The type '{0}' has 'null' as a true representation value but a constraint does not permit this</value>
-  </data>
-  <data name="csTypeHasNullAsExtraValue" xml:space="preserve">
-    <value>The type '{0}' has 'null' as an extra value but a constraint does not permit this</value>
   </data>
   <data name="csNullableTypeDoesNotHaveNull" xml:space="preserve">
     <value>The type '{0}' does not have 'null' as a proper value. To create a null value for a Nullable type use 'System.Nullable()'.</value>
@@ -2693,12 +2678,6 @@
   </data>
   <data name="optsWarnOn" xml:space="preserve">
     <value>Enable specific warnings that may be off by default</value>
-  </data>
-  <data name="optsCheckNulls" xml:space="preserve">
-    <value>Enable nullness declarations and checks</value>
-  </data>
-  <data name="optsLangVersion" xml:space="preserve">
-    <value>Specify the language version</value>
   </data>
   <data name="optsChecked" xml:space="preserve">
     <value>Generate overflow checks</value>
@@ -4372,9 +4351,6 @@
   <data name="chkNoByrefAddressOfValueFromExpression" xml:space="preserve">
     <value>The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</value>
   </data>
-  <data name="chkNoReturnOfLimitedSpan" xml:space="preserve">
-    <value>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</value>
-  </data>
   <data name="chkNoWriteToLimitedSpan" xml:space="preserve">
     <value>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</value>
   </data>
@@ -4399,11 +4375,17 @@
   <data name="tastCantTakeAddressOfExpression" xml:space="preserve">
     <value>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</value>
   </data>
+  <data name="tcCannotCallExtensionMethodInrefToByref" xml:space="preserve">
+    <value>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</value>
+  </data>
+  <data name="tcByrefsMayNotHaveTypeExtensions" xml:space="preserve">
+    <value>Byref types are not allowed to have optional type extensions.</value>
+  </data>
+  <data name="tcCannotPartiallyApplyExtensionMethodForByref" xml:space="preserve">
+    <value>Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</value>
+  </data>
   <data name="tcTypeDoesNotInheritAttribute" xml:space="preserve">
     <value>This type does not inherit Attribute, it will not work correctly with other .NET languages.</value>
-  </data>
-  <data name="tcNullnessCheckingNotEnabled" xml:space="preserve">
-    <value>The /checknulls language feature is not enabled</value>
   </data>
   <data name="parsInvalidAnonRecdExpr" xml:space="preserve">
     <value>Invalid anonymous record expression</value>
@@ -4425,5 +4407,35 @@
   </data>
   <data name="chkValueWithDefaultValueMustHaveDefaultValueNulls" xml:space="preserve">
     <value>Nullability warning. The 'DefaultValue' attribute is used but the type (or one of its fields if a struct) is non-nullable.</value>
+  </data>
+  <data name="csNullNotNullConstraintInconsistent" xml:space="preserve">
+    <value>The constraints 'null' and 'not null' are inconsistent</value>
+  </data>
+  <data name="csStructNullConstraintInconsistent" xml:space="preserve">
+    <value>The constraints 'struct' and 'null' are inconsistent</value>
+  </data>
+  <data name="csDelegateComparisonConstraintInconsistent" xml:space="preserve">
+    <value>The constraints 'delegate' and 'comparison' are inconsistent</value>
+  </data>
+  <data name="tcNullnessCheckingNotEnabled" xml:space="preserve">
+    <value>The /checknulls language feature is not enabled</value>
+  </data>
+  <data name="csTypeHasNullAsTrueValue" xml:space="preserve">
+    <value>The type '{0}' has 'null' as a true representation value but a constraint does not permit this</value>
+  </data>
+  <data name="csTypeHasNullAsExtraValue" xml:space="preserve">
+    <value>The type '{0}' has 'null' as an extra value but a constraint does not permit this</value>
+  </data>
+  <data name="chkInvalidFunctionParameterType" xml:space="preserve">
+    <value>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</value>
+  </data>
+  <data name="chkInvalidFunctionReturnType" xml:space="preserve">
+    <value>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</value>
+  </data>
+  <data name="optsCheckNulls" xml:space="preserve">
+    <value>Enable nullness declarations and checks</value>
+  </data>
+  <data name="optsLangVersion" xml:space="preserve">
+    <value>Specify the language version</value>
   </data>
 </root>

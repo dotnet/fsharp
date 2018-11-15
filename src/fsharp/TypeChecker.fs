@@ -8609,7 +8609,7 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicF
     match delayed with 
     | []  
     | DelayedDot :: _ -> 
-        UnifyTypesAndRecover cenv env mExpr overallTy exprty
+        UnifyTypes cenv env mExpr overallTy exprty
         expr.Expr, tpenv
     // expr.M(args) where x.M is a .NET method or index property 
     // expr.M<tyargs>(args) where x.M is a .NET method or index property 
@@ -9987,10 +9987,11 @@ and TcMethodApplication
     let objArgPreBinder, objArgs = 
         match objArgs, lambdaVars with 
         | [objArg], Some _   -> 
+            if  finalCalledMethInfo.IsExtensionMember && finalCalledMethInfo.ObjArgNeedsAddress(cenv.amap, mMethExpr) then
+                error(Error(FSComp.SR.tcCannotPartiallyApplyExtensionMethodForByref(finalCalledMethInfo.DisplayName), mMethExpr))
             let objArgTy = tyOfExpr cenv.g objArg
             let v, ve = mkCompGenLocal mMethExpr "objectArg" objArgTy
             (fun body -> mkCompGenLet mMethExpr v objArg body), [ve]
-
         | _ -> 
             emptyPreBinder, objArgs
 
@@ -16522,9 +16523,14 @@ module TcDeclarations =
                 let tyDeclRange = synTyconInfo.Range
                 let (ComponentInfo(_, typars, cs, longPath, _, _, _, _)) = synTyconInfo
                 let declKind, tcref, declaredTyconTypars = ComputeTyconDeclKind cenv tyconOpt isAtOriginalTyconDefn envForDecls false tyDeclRange typars cs longPath
-                let newslotsOK = (if isAtOriginalTyconDefn && tcref.IsFSharpObjectModelTycon then NewSlotsOK else NoNewSlots) 
+                let newslotsOK = (if isAtOriginalTyconDefn && tcref.IsFSharpObjectModelTycon then NewSlotsOK else NoNewSlots)
+
+                if (declKind = ExtrinsicExtensionBinding) && isByrefTyconRef cenv.g tcref then 
+                    error(Error(FSComp.SR.tcByrefsMayNotHaveTypeExtensions(), tyDeclRange))
+
                 if not (isNil members) && tcref.IsTypeAbbrev then 
                     errorR(Error(FSComp.SR.tcTypeAbbreviationsCannotHaveAugmentations(), tyDeclRange))
+
                 MutRecDefnsPhase2DataForTycon(tyconOpt, innerParent, declKind, tcref, baseValOpt, safeInitInfo, declaredTyconTypars, members, tyDeclRange, newslotsOK, fixupFinalAttrs))
 
         // By now we've established the full contents of type definitions apart from their

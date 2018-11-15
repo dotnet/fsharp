@@ -5965,16 +5965,23 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             let ty = tyOfExpr g expr
             if isStructTy g ty then 
                 match mut with 
-                | NeverMutates -> ()
-                | AddressOfOp -> 
-                    // we get an inref
-                    errorR(Error(FSComp.SR.tastCantTakeAddressOfExpression(), m))
+                | NeverMutates
+                | AddressOfOp -> ()
                 | DefinitelyMutates -> 
                     // Give a nice error message for mutating something we can't take the address of
                     errorR(Error(FSComp.SR.tastInvalidMutationOfConstant(), m))
                 | PossiblyMutates -> 
                     // Warn on defensive copy of something we can't take the address of
                     warning(DefensiveCopyWarning(FSComp.SR.tastValueHasBeenCopied(), m))
+
+            match mut with
+            | NeverMutates
+            | DefinitelyMutates
+            | PossiblyMutates -> ()
+            | AddressOfOp -> 
+                // we get an inref
+                errorR(Error(FSComp.SR.tastCantTakeAddressOfExpression(), m))
+
             // Take a defensive copy
             let tmp, _ = 
                 match mut with 

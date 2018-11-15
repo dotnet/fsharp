@@ -85,6 +85,39 @@ module ByrefNegativeTests =
         let v =  C.M(w) // not allowed
         check "cweweoiwe51btw" v w
              
+    type byref<'T> with
+
+        member this.Test() = 1
+
+    type inref<'T> with
+
+        member this.Test() = 1
+
+    type outref<'T> with
+
+        member this.Test() = 1
+
+    module CantTakeAddressOfExpressionReturningReferenceType =
+        open System.Collections.Concurrent
+        open System.Collections.Generic
+
+        let test1 () =
+            let aggregator = 
+                new ConcurrentDictionary<
+                        string, ConcurrentDictionary<string,array<float>>
+                        >()
+
+            for kvp in aggregator do
+            for kvpInner in kvp.Value do
+                kvp.Value.TryRemove(
+                    kvpInner.Key,
+                    &kvpInner.Value)
+                |> ignore
+
+        let test2 () =
+            let x = KeyValuePair(1, [||])
+            let y = &x.Value
+            ()
 #endif
 
 // Test a simple ref  argument
@@ -1158,119 +1191,119 @@ module ByrefReturnMemberTests =
             member __.P = f (0, &x)
 
     // check recursive functions
-    module BeefModuleGeneric =
+    module TestNameModuleGeneric =
 
-        let rec beef (unused: 'T) id (data: byref<byte>) : unit =
+        let rec testValue (unused: 'T) id (data: byref<byte>) : unit =
             if id = 10 then 
                 data <- 3uy 
             else
-                 beef unused (id + 1) &data
+                 testValue unused (id + 1) &data
         let Test() = 
             let mutable x = 0uy
-            beef "unused" 0 &x
+            testValue "unused" 0 &x
             check "vruoer" x 3uy
         Test()
 
-    module BeefModuleNonGeneric =
+    module TestNameModuleNonGeneric =
 
-        let rec beef id (data: byref<byte>) : unit =
+        let rec testValue id (data: byref<byte>) : unit =
             if id = 10 then 
                 data <- 3uy 
             else 
-                beef (id + 1) &data
+                testValue (id + 1) &data
 
         let Test() = 
             let mutable x = 0uy
-            beef  0 &x
+            testValue  0 &x
             check "vruoer3r" x 3uy
         Test()
 
-    module BeefModuleNonGenericSubsume =
+    module TestNameModuleNonGenericSubsume =
 
-        let rec beef id (data: byref<byte>) (y: System.IComparable) : unit =
+        let rec testValue id (data: byref<byte>) (y: System.IComparable) : unit =
             if id = 10 then 
                 data <- 3uy 
             else 
-                beef (id + 1) &data y
+                testValue (id + 1) &data y
 
         let Test() = 
             let mutable x = 0uy
-            beef  0 &x Unchecked.defaultof<System.IComparable>
+            testValue  0 &x Unchecked.defaultof<System.IComparable>
             check "vruoer3r" x 3uy 
 
         Test()
 
-    type GenericBeefRecursive() =
+    type GenericTestNameRecursive() =
 
-        let rec beef unused id (data: byref<byte>) : unit =
-            if id = 10 then data <- 3uy else beef unused (id + 1) &data
+        let rec testValue unused id (data: byref<byte>) : unit =
+            if id = 10 then data <- 3uy else testValue unused (id + 1) &data
 
-        static do GenericBeefRecursive().Test()
+        static do GenericTestNameRecursive().Test()
 
         member __.Test() = 
             let mutable x = 0uy
-            beef "unused" 0 &x
+            testValue "unused" 0 &x
             check "vruoer3rv" x 3uy
             let mutable z = 0uy
-            beef 6L 0 &z
+            testValue 6L 0 &z
             check "vruoer3rvwqf" z 3uy
 
-    type NonGenericBeefRecursiveInClass() =
+    type NonGenericTestNameRecursiveInClass() =
 
-        let rec beef id (data: byref<byte>) : unit =
+        let rec testValue id (data: byref<byte>) : unit =
             if id = 10 then 
                 data <- 3uy 
             else 
-                beef (id + 1) &data
+                testValue (id + 1) &data
 
-        static do NonGenericBeefRecursiveInClass().Test()
+        static do NonGenericTestNameRecursiveInClass().Test()
 
         member __.Test() = 
             let mutable x = 0uy
-            beef  0 &x
+            testValue  0 &x
             check "vruoer3rvvremtys" x 3uy
 
 
-    type NonGenericBeefRecursiveInClassSubsume() =
+    type NonGenericTestNameRecursiveInClassSubsume() =
 
-        let rec beef id (data: byref<byte>) (y:System.IComparable) : unit =
+        let rec testValue id (data: byref<byte>) (y:System.IComparable) : unit =
             if id = 10 then 
                 data <- 3uy 
             else 
-                beef (id + 1) &data y
+                testValue (id + 1) &data y
 
-        static do NonGenericBeefRecursiveInClassSubsume().Test()
+        static do NonGenericTestNameRecursiveInClassSubsume().Test()
 
         member __.Test() = 
             let mutable x = 0uy
-            beef  0 &x Unchecked.defaultof<System.IComparable>
+            testValue  0 &x Unchecked.defaultof<System.IComparable>
             check "vruoer3rvvremtys" x 3uy
 
-    type StaticGenericBeefRecursiveInClass() =
+    type StaticGenericTestNameRecursiveInClass() =
 
-        static let rec beef unused id (data: byref<byte>) : unit =
-            if id = 10 then data <- 3uy else beef unused (id + 1) &data
+        static let rec testValue unused id (data: byref<byte>) : unit =
+            if id = 10 then data <- 3uy else testValue unused (id + 1) &data
 
-        static do StaticGenericBeefRecursiveInClass.Test()
+        static do StaticGenericTestNameRecursiveInClass.Test()
 
         static member Test() = 
             let mutable x = 0uy
-            beef "unused" 0 &x
+            testValue "unused" 0 &x
             check "vruoer3rv" x 3uy
             let mutable z = 0uy
-            beef 6L 0 &z
+            testValue 6L 0 &z
             check "vruoer3rvwqfgw" z 3uy
 
-    type StaticNonGenericBeefRecursiveInClass() =
+    type StaticNonGenericTestNameRecursiveInClass() =
 
-        static let rec beef id (data: byref<byte>) : unit =
-            if id = 10 then data <- 3uy else beef (id + 1) &data
+        static let rec testValue id (data: byref<byte>) : unit =
+            if id = 10 then data <- 3uy else testValue (id + 1) &data
 
-        static do StaticNonGenericBeefRecursiveInClass.Test()
+        static do StaticNonGenericTestNameRecursiveInClass.Test()
 
         static member Test() = 
             let mutable x = 0uy
-            beef  0 &x
+            testValue  0 &x
             check "vruoer3rvvrebae" x 3uy
 
     module TestInRefMutation = 

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ru" original="../Microsoft.VisualStudio.Package.LanguageService.resx">
     <body>
@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="ComboMembersTip">
         <source>Members</source>
-        <target state="translated">Члены</target>
+        <target state="translated">Элементы</target>
         <note>Tooltip for the drop down combo at top of document window showing list of known members.</note>
       </trans-unit>
       <trans-unit id="ComboTypesTip">
