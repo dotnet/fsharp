@@ -940,13 +940,11 @@ type LazyWithContextFailure(exn:exn) =
 type LazyWithContext<'T,'ctxt> = 
     { /// This field holds the result of a successful computation. It's initial value is Unchecked.defaultof
       mutable value : 'T
+
       /// This field holds either the function to run or a LazyWithContextFailure object recording the exception raised 
       /// from running the function. It is null if the thunk has been evaluated successfully.
-#if BUILDING_WITH_LKG
-      mutable funcOrException: obj
-#else
-      mutable funcOrException: obj?
-#endif
+      mutable funcOrException: obj 
+
       /// A helper to ensure we rethrow the "original" exception
       findOriginalException : exn -> exn }
 
@@ -959,8 +957,11 @@ type LazyWithContext<'T,'ctxt> =
         { value = x
           funcOrException = null
           findOriginalException = id }
+
     member x.IsDelayed = (match x.funcOrException with null -> false | :? LazyWithContextFailure -> false | _ -> true)
+
     member x.IsForced = (match x.funcOrException with null -> true | _ -> false)
+
     member x.Force(ctxt:'ctxt) =  
         match x.funcOrException with 
         | null -> x.value 
@@ -975,19 +976,22 @@ type LazyWithContext<'T,'ctxt> =
     member x.UnsynchronizedForce(ctxt) = 
         match x.funcOrException with 
         | null -> x.value 
+
         | :? LazyWithContextFailure as res -> 
               // Re-raise the original exception 
               raise (x.findOriginalException res.Exception)
+
         | :? ('ctxt -> 'T) as f -> 
               x.funcOrException <- box(LazyWithContextFailure.Undefined)
               try 
                   let res = f ctxt 
-                  x.value <- res; 
-                  x.funcOrException <- null; 
+                  x.value <- res
+                  x.funcOrException <- null
                   res
               with e -> 
-                  x.funcOrException <- box(new LazyWithContextFailure(e)); 
+                  x.funcOrException <- box(new LazyWithContextFailure(e))
                   reraise()
+
         | _ -> 
             failwith "unreachable"
 

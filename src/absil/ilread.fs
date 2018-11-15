@@ -898,7 +898,7 @@ let mkCacheInt32 lowMem _inbase _nm _sz  =
 #if BUILDING_WITH_LKG
     let cache = ref null 
 #else
-    let cache : Dictionary<_,_>? ref = ref null 
+    let cache : Dictionary<_,_>? ref = ref null // TODO NULLNESS: this explicit annotation should not be needed 
 #endif
     let count = ref 0
 #if STATISTICS
@@ -931,7 +931,7 @@ let mkCacheGeneric lowMem _inbase _nm _sz  =
 #if BUILDING_WITH_LKG
     let cache = ref null 
 #else
-    let cache : Dictionary<_,_>? ref = ref null 
+    let cache : Dictionary<_,_>? ref = ref null // TODO NULLNESS: this explicit annotation should not be needed
 #endif
     let count = ref 0
 #if STATISTICS

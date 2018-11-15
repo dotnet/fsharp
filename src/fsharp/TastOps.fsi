@@ -1148,7 +1148,8 @@ val TyconRefNullIsExtraValueOld :  TcGlobals -> range -> TyconRef -> bool
 val TyconRefNullIsExtraValueNew :  TcGlobals -> range -> TyconRef -> bool
 val TypeNullNever : TcGlobals -> TType -> bool
 
-val TypeHasDefaultValue : TcGlobals -> range -> TType -> bool
+val TypeHasDefaultValueNew: TcGlobals -> range -> TType -> bool
+val TypeHasDefaultValueOld: TcGlobals -> range -> TType -> bool
 
 val isAbstractTycon : Tycon -> bool
 

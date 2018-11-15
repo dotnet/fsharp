@@ -208,7 +208,7 @@ type public Fsc () as this =
 #endif
                  referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
-        builder.AppendSwitchIfNotNull("--lib:", referencePathArray, ",")   
+        builder.AppendSwitchesIfNotNull("--lib:", referencePathArray, ",")   
 
         // TargetType
         builder.AppendSwitchIfNotNull("--target:", 
@@ -234,7 +234,7 @@ type public Fsc () as this =
 #else
         | NonNull disabledWarnings ->
 #endif
-            builder.AppendSwitchIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
+            builder.AppendSwitchesIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
         
         // WarningLevel
         builder.AppendSwitchIfNotNull("--warn:", warningLevel)
@@ -251,12 +251,12 @@ type public Fsc () as this =
             | null -> [|"76"|]
             // TODO NULLNESS: nonNull should not be needed
 #if BUILDING_WITH_LKG
-            | _ -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
+            | warningsAsErrors -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 #else
-            | _ -> (nonNull warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
+            | NonNull warningsAsErrors -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 #endif
 
-        builder.AppendSwitchIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
+        builder.AppendSwitchesIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
 
         // WarningsNotAsErrors
         match warningsNotAsErrors with
@@ -266,7 +266,7 @@ type public Fsc () as this =
 #else
         | NonNull warningsNotAsErrors ->
 #endif
-            builder.AppendSwitchIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
+            builder.AppendSwitchesIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
 
         // Win32ResourceFile
         builder.AppendSwitchIfNotNull("--win32res:", win32res)
@@ -612,11 +612,14 @@ type public Fsc () as this =
 
     override fsc.GenerateCommandLineCommands() =
         let builder = new FSharpCommandLineBuilder()
-        if not (String.IsNullOrEmpty(dotnetFscCompilerPath)) then 
 #if BUILDING_WITH_LKG
+        if not (String.IsNullOrEmpty(dotnetFscCompilerPath)) then 
             builder.AppendSwitch(dotnetFscCompilerPath)
 #else
-            builder.AppendSwitch(nonNull<string> dotnetFscCompilerPath) // TODO NULLNESS: why is this explicit instantiation needed?
+        match dotnetFscCompilerPath with
+        | null | "" -> ()
+        | NonNull dotnetFscCompilerPath ->
+            builder.AppendSwitch(dotnetFscCompilerPath) // TODO NULLNESS: why is this explicit instantiation needed?
 #endif
         builder.ToString()
 

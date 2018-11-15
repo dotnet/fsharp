@@ -207,3 +207,106 @@ let f5 x = (x: int)
 
 //let f3 x = (x: (string | null))
 
+module NullConstraintTests =
+    type C<'T when 'T : null>() = class end
+
+#if NEGATIVE
+    let f1 (y : C< (int * int) >) = y // This gave an error in F# 4.5 and we expect it to continue to give an error
+
+#endif
+
+     // This gave an error in F# 4.5.  It now only gives a warning when /checknulls is on which is sort of ok
+     // since we are treating .NET and F# types more symmetrically.
+     //
+     // TODO: However it gives no error or warning at all with /checknulls off in F# 5.0...  That seems bad.
+    let f2 (y : C<int list>) = y
+
+    let f3 (y : C<string >) = y // Expect a nullability warning
+
+    let f4 (y : C<string? >) = y // No warning expected 
+
+    let f5 (y : C<int list? >) = y // No warning expected
+
+module DefaultValueTests =
+
+
+    module StructExamples = 
+        [<Struct>]
+        type C1 =
+            [<DefaultValue>]
+            val mutable Whoops : string // expect a warning
+
+        [<Struct>]
+        type C2 =
+            [<DefaultValue(false)>]
+            val mutable Whoops : string // expect no warning
+
+        [<Struct>]
+        type C3 =
+            [<DefaultValue>]
+            val mutable Whoops : string? // expect no warning
+
+#if NEGATIVE
+        [<Struct>]
+        type C4a =
+            [<DefaultValue>]
+            val mutable Whoops : int list // expect a hard error like in F# 4.5
+#endif
+
+        [<Struct>]
+        type C4b =
+            [<DefaultValue>]
+            val mutable Whoops : int list? // expect no warning
+
+#if NEGATIVE
+        [<Struct>]
+        type C5 =
+            [<DefaultValue>]
+            val mutable Whoops : int * int // expect an error like F# 4.5
+
+        [<Struct>]
+        type C6 =
+            [<DefaultValue>]
+            val mutable Whoops : int -> int // expect an error like F# 4.5
+#endif
+
+        [<Struct>]
+        type C7 =
+            [<DefaultValue>]
+            val mutable Whoops : (int -> int)? // expect no warning
+
+    module ClassExamples = 
+        type C1 =
+            [<DefaultValue>]
+            val mutable Whoops : string // expect a warning
+
+        type C2 =
+            [<DefaultValue(false)>]
+            val mutable Whoops : string // expect no warning
+
+        type C3 =
+            [<DefaultValue>]
+            val mutable Whoops : string? // expect no warning
+
+        type C4a =
+            [<DefaultValue>]
+            val mutable Whoops : int list // ** expect a warning
+
+        type C4b =
+            [<DefaultValue>]
+            val mutable Whoops : int list? // expect no warning
+
+    #if NEGATIVE
+        type C5 =
+            [<DefaultValue>]
+            val mutable Whoops : int * int // expect an error like F# 4.5
+
+        type C6 =
+            [<DefaultValue>]
+            val mutable Whoops : int -> int // expect an error like F# 4.5
+    #endif
+
+        type C7 =
+            [<DefaultValue>]
+            val mutable Whoops : (int -> int)? // expect no warning
+                    

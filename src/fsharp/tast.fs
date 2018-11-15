@@ -4239,9 +4239,10 @@ and
     member ccu.IsUnresolvedReference = isNull (box ccu.target) || ccu.orphanfixup
 #else
     member ccu.Deref = 
-        if isNull ccu.target || ccu.orphanfixup then 
-            raise(UnresolvedReferenceNoRange ccu.name)
-        nonNull ccu.target
+        match ccu.target with 
+        | null -> raise(UnresolvedReferenceNoRange ccu.name)
+        | _ when ccu.orphanfixup -> raise(UnresolvedReferenceNoRange ccu.name)
+        | NonNull tg -> tg
 
     member ccu.IsUnresolvedReference = isNull ccu.target || ccu.orphanfixup
 #endif

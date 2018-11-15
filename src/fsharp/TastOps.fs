@@ -7593,37 +7593,42 @@ let TypeNullNever g ty =
     (isStructTy g underlyingTy) ||
     (isByrefTy g underlyingTy)
 
-let TyconRefNullIsExtraValueOld g m (tcref: TyconRef) = 
+let TyconRefNullIsExtraValue isNew g m (tcref: TyconRef) = 
     not tcref.IsStructOrEnumTycon &&
     not (isByrefLikeTyconRef g m tcref) && 
     (if tcref.IsILTycon then 
         // Putting AllowNullLiteralAttribute(false) on an IL or provided type means 'null' can't be used with that type
-        (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref <> Some false)
+        (not isNew && TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref <> Some false)
      else 
+// Putting AllowNullLiteralAttribute(true) on an F# type means it always admits null even in the new model
         (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true))
 
-let TyconRefNullIsExtraValueNew g m (tcref: TyconRef) = 
-    not tcref.IsStructOrEnumTycon &&
-    not (isByrefLikeTyconRef g m tcref) && 
-    (if tcref.IsILTycon then 
-        false
-     else 
-        // Putting AllowNullLiteralAttribute(true) on an F# type means it always admits null even in the new model
-        (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true))
-
-/// Indicates if the type admits the use of 'null' as a value
-let TypeNullIsExtraValueNew g m ty = 
-    match tryDestAppTy g ty with ValueSome tcref -> TyconRefNullIsExtraValueNew g m tcref | _ -> true
+let TyconRefNullIsExtraValueOld g m tcref = TyconRefNullIsExtraValue false g m tcref
+let TyconRefNullIsExtraValueNew g m tcref = TyconRefNullIsExtraValue true g m tcref
 
 /// Indicates if the type admits the use of 'null' as a value
 let TypeNullIsExtraValueOld g m ty = 
-    match tryDestAppTy g ty with ValueSome tcref -> TyconRefNullIsExtraValueOld g m tcref | _ -> true
+    match tryDestAppTy g ty with 
+    | ValueSome tcref -> TyconRefNullIsExtraValueOld g m tcref 
+    | _ -> false
 
-// TODO NULLNESS: Consider whether we need to adjust this predicate, and the compatibility issues with doing this
+/// Indicates if the type admits the use of 'null' as a value
+let TypeNullIsExtraValueNew g m ty = 
+    let sty = stripTyparEqns ty
+    (match tryDestAppTy g sty with 
+     | ValueSome tcref -> TyconRefNullIsExtraValueNew g m tcref 
+     | _ -> false) 
+    ||
+    (match (nullnessOfTy g sty).Evaluate() with 
+     | NullnessInfo.AmbivalentToNull -> false
+     | NullnessInfo.WithoutNull -> false
+     | NullnessInfo.WithNull -> true)
+
 let TypeNullIsTrueValue g ty =
     (match tryDestAppTy g ty with
      | ValueSome tcref -> IsUnionTypeWithNullAsTrueValue g tcref.Deref
-     | _ -> false) || (isUnitTy g ty)
+     | _ -> false) 
+   || (isUnitTy g ty)
 
 /// Indicates if unbox<T>(null) is actively rejected at runtime.   See nullability RFC.  This applies to types that don't have null
 /// as a valid runtime representation under old compatiblity rules.
@@ -7634,9 +7639,9 @@ let TypeNullNotLiked g m ty =
     && not (TypeNullIsTrueValue g ty) 
     && not (TypeNullNever g ty) 
 
-let rec TypeHasDefaultValue g m ty = 
+let rec TypeHasDefaultValue isNew g m ty = 
     let ty = stripTyEqnsAndMeasureEqns g ty
-    TypeNullIsExtraValueOld g m ty   // consider, should this be TypeNullIsExtraValueNew
+    (if isNew then TypeNullIsExtraValueNew g m ty else TypeNullIsExtraValueOld g m ty)
     || (isStructTy g ty &&
         // Is it an F# struct type?
         (if isFSharpStructTy g ty then 
@@ -7647,18 +7652,21 @@ let rec TypeHasDefaultValue g m ty =
                   // We can ignore fields with the DefaultValue(false) attribute 
                   |> List.filter (fun fld -> not (TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute fld.FieldAttribs = Some(false)))
 
-            flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValue g m)
+            flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValue isNew g m)
          elif isStructTupleTy g ty then 
-            destStructTupleTy g ty |> List.forall (TypeHasDefaultValue g m)
+            destStructTupleTy g ty |> List.forall (TypeHasDefaultValue isNew g m)
          elif isStructAnonRecdTy g ty then 
             match tryDestAnonRecdTy g ty with
             | ValueNone -> true
-            | ValueSome (_, ptys) -> ptys |> List.forall (TypeHasDefaultValue g m)
+            | ValueSome (_, ptys) -> ptys |> List.forall (TypeHasDefaultValue isNew g m)
          else
             // All struct types defined in other .NET languages have a DefaultValue regardless of their
             // instantiation
             true))
 
+let TypeHasDefaultValueOld g m ty = TypeHasDefaultValue false g m ty  
+
+let TypeHasDefaultValueNew g m ty = TypeHasDefaultValue true g m ty  
 
 /// Determines types that are potentially known to satisfy the 'comparable' constraint and returns
 /// a set of residual types that must also satisfy the constraint

@@ -32,7 +32,7 @@ type FSharpCommandLineBuilder () =
     /// Return a full command line (with quoting for the cmd.exe shell)
     override x.ToString() = builder.ToString()
 
-    member x.AppendFileNamesIfNotNull(filenames:ITaskItem array, sep:string) =
+    member x.AppendFileNamesIfNotNull(filenames:ITaskItem[], sep:string) =
         builder.AppendFileNamesIfNotNull(filenames, sep)
         // do not update "args", not used
         for item in filenames do
@@ -42,11 +42,7 @@ type FSharpCommandLineBuilder () =
             if s <> String.Empty then
                 srcs <- tmp.ToString() :: srcs
 
-#if BUILDING_WITH_LKG
-    member x.AppendSwitchIfNotNull(switch:string, values:string array, sep:string) =
-#else
-    member x.AppendSwitchIfNotNull(switch:string, values:string? array, sep:string) =
-#endif
+    member x.AppendSwitchesIfNotNull(switch:string, values:string[], sep:string) =
         builder.AppendSwitchIfNotNull(switch, values, sep)
         let tmp = new CommandLineBuilder()
         tmp.AppendSwitchUnquotedIfNotNull(switch, values, sep)
@@ -55,9 +51,9 @@ type FSharpCommandLineBuilder () =
             args <- s :: args
 
 #if BUILDING_WITH_LKG
-    member x.AppendSwitchIfNotNull(switch:string, value:string, ?metadataNames:string array) =
+    member x.AppendSwitchIfNotNull(switch:string, value:string, ?metadataNames:string[]) =
 #else
-    member x.AppendSwitchIfNotNull(switch:string, value:string?, ?metadataNames:string array) =
+    member x.AppendSwitchIfNotNull(switch:string, value:string?, ?metadataNames:string[]) =
 #endif
         let metadataNames = defaultArg metadataNames [||]
         builder.AppendSwitchIfNotNull(switch, value)

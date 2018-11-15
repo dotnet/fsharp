@@ -3380,7 +3380,7 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("NullValueMatchPattern")>]
         let inline (|NullV|NotNullV|) (value : Nullable<'T>) = 
-            if value.HasValue then NonNullV value.Value
+            if value.HasValue then NotNullV value.Value
             else NullV ()
 
         [<CompiledName("NonNullPattern")>]

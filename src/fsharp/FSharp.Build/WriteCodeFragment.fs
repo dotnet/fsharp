@@ -116,8 +116,13 @@ type WriteCodeFragment() =
 
         member this.Execute() =
             try
-                if isNull _outputFile && isNull _outputDirectory then 
-                    failwith "Output location must be specified"
+#if BUILDING_WITH_LKG
+                if isNull _outputFile then failwith "Output location must be specified"
+#else
+                match _outputFile with 
+                | null -> failwith "Output location must be specified"
+                | NonNull outputFile -> 
+#endif
 
                 let boilerplate =
                     match _language.ToLowerInvariant() with
@@ -130,24 +135,26 @@ type WriteCodeFragment() =
                 let code = Array.fold (fun (sb:StringBuilder) (item:ITaskItem) -> sb.AppendLine(WriteCodeFragment.GenerateAttribute (item, _language.ToLowerInvariant()))) sb _assemblyAttributes
 
                 if _language.ToLowerInvariant() = "f#" then code.AppendLine("do()") |> ignore
+
 #if BUILDING_WITH_LKG
                 let fileName = _outputFile.ItemSpec
-#else
-                let fileName = (nonNull _outputFile).ItemSpec
-#endif
 
                 let outputFileItem =
                     if not (isNull _outputFile) && not (isNull _outputDirectory) && not (Path.IsPathRooted(fileName)) then
-#if BUILDING_WITH_LKG
                         TaskItem(Path.Combine(_outputDirectory.ItemSpec, fileName)) :> ITaskItem
-#else
-                        TaskItem(Path.Combine((nonNull _outputDirectory).ItemSpec, fileName)) :> ITaskItem
-#endif
                     else
-#if BUILDING_WITH_LKG
                         _outputFile
 #else
-                        nonNull<ITaskItem> _outputFile // TODO NULLNESS: why is this explicit instantiation needed
+                let fileName = outputFile.ItemSpec
+
+                let outputFileItem =
+                    match _outputDirectory with 
+                    | null -> outputFile
+                    | NonNull outputDirectory -> 
+                        if Path.IsPathRooted(fileName) then 
+                            outputFile
+                        else
+                            TaskItem(Path.Combine(outputDirectory.ItemSpec, fileName)) :> ITaskItem
 #endif
 
                 let codeText = code.ToString()

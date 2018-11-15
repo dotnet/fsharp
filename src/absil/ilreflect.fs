@@ -398,9 +398,10 @@ let envBindTypeRef emEnv (tref:ILTypeRef) (typT: System.Type?, typB, typeDef)=
 #endif
     match typT with 
     | null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name;
-    | _ ->
-#if !BUILDING_WITH_LKG
-        let typT = nonNull typT // TODO NULLNESS
+#if BUILDING_WITH_LKG
+    | typT ->
+#else
+    | NonNull typT ->
 #endif
         {emEnv with emTypMap = Zmap.add tref (typT, typB, typeDef, None) emEnv.emTypMap}
 
@@ -898,7 +899,7 @@ let convConstructorSpec cenv emEnv (mspec:ILMethodSpec) =
 #if BUILDING_WITH_LKG
     | _ -> res
 #else
-    | _ -> nonNull res // TODO NULLNESS
+    | NonNull res -> res
 #endif
 
 //----------------------------------------------------------------------------
@@ -1296,11 +1297,7 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
                     setArrayMethInfo shape.Rank ety
                 else
 #endif
-#if BUILDING_WITH_LKG
                     modB.GetArrayMethodAndLog(aty, "Set", System.Reflection.CallingConventions.HasThis, null, Array.append (Array.create shape.Rank (typeof<int>)) (Array.ofList [ ety ])) 
-#else
-                    modB.GetArrayMethodAndLog(aty, "Set", System.Reflection.CallingConventions.HasThis, null, Array.append (Array.create shape.Rank (typeof<int>)) (Array.ofList [ ety ])) 
-#endif
             ilG.EmitAndLog(OpCodes.Call, meth)
 
     | I_newarr (shape, ty)         -> 
@@ -1308,11 +1305,7 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
         then ilG.EmitAndLog(OpCodes.Newarr, convType cenv emEnv  ty)
         else 
             let aty = convType cenv emEnv  (ILType.Array(shape, ty)) 
-#if BUILDING_WITH_LKG
             let meth = modB.GetArrayMethodAndLog(aty, ".ctor", System.Reflection.CallingConventions.HasThis, null, Array.create shape.Rank (typeof<int>))
-#else
-            let meth = modB.GetArrayMethodAndLog(aty, ".ctor", System.Reflection.CallingConventions.HasThis, null, Array.create shape.Rank (typeof<int>))
-#endif
             ilG.EmitAndLog(OpCodes.Newobj, meth)
 
     | I_ldlen                      -> ilG.EmitAndLog(OpCodes.Ldlen)

@@ -1949,6 +1949,26 @@ and SolveNullnessSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 (trace: Optio
             else
                 CompleteD
 
+and SolveTypeSupportsNullCore (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
+    let g = csenv.g
+    let m = csenv.m
+    let denv = csenv.DisplayEnv
+    if TypeNullIsExtraValueNew g m ty then 
+        CompleteD
+    else
+        match ty with 
+        | NullableTy g _ ->
+            ErrorD (ConstraintSolverError(FSComp.SR.csNullableTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
+        | _ -> 
+            if g.langFeatureNullness then 
+                let nullness = nullnessOfTy g ty
+                SolveNullnessSupportsNull csenv ndeep m2 trace ty nullness
+            else
+                if TypeNullIsExtraValueOld g m ty then
+                    CompleteD
+                else
+                    ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
+
 and SolveNullnessNotSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty nullness =
     let m = csenv.m
     let denv = csenv.DisplayEnv
@@ -1969,23 +1989,6 @@ and SolveNullnessNotSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 (trace: Op
             else
                 CompleteD
 
-and SolveTypeSupportsNullCore (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
-    let g = csenv.g
-    let m = csenv.m
-    let denv = csenv.DisplayEnv
-    if TypeNullIsExtraValueNew g m ty then CompleteD else
-    let sty = stripTyparEqns ty
-    match sty with 
-    | TType_fun (_, _, nullness) -> SolveNullnessSupportsNull csenv ndeep m2 trace ty nullness
-    | TType_app (_, _, nullness) -> SolveNullnessSupportsNull csenv ndeep m2 trace ty nullness
-    | _ -> 
-    if TypeNullIsExtraValueOld g m ty then CompleteD else
-    match sty with 
-    | NullableTy g _ ->
-        ErrorD (ConstraintSolverError(FSComp.SR.csNullableTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
-    | _ -> 
-        ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
-
 and SolveTypeNotSupportsNullCore (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     let g = csenv.g
     let m = csenv.m
@@ -1993,13 +1996,15 @@ and SolveTypeNotSupportsNullCore (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     if TypeNullIsTrueValue g ty then 
         ErrorD (ConstraintSolverError(FSComp.SR.csTypeHasNullAsTrueValue(NicePrint.minimalStringOfType denv ty), m, m2))
     elif TypeNullIsExtraValueNew g m ty then 
-        ErrorD (ConstraintSolverError(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
+        if g.checkNullness then 
+            WarnD (ConstraintSolverError(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
+        else
+            CompleteD
     else
-        let sty = stripTyparEqns ty
-        match sty with 
-        | TType_fun (_, _, nullness)
-        | TType_app (_, _, nullness) -> SolveNullnessNotSupportsNull csenv ndeep m2 trace ty nullness
-        | _ -> 
+        if g.checkNullness then 
+            let nullness = nullnessOfTy g ty
+            SolveNullnessNotSupportsNull csenv ndeep m2 trace ty nullness
+        else
             CompleteD
 
 // This version prefers to constrain a type parameter definiton
@@ -2225,7 +2230,7 @@ and SolveTypeRequiresDefaultConstructor (csenv:ConstraintSolverEnv) ndeep m2 tra
     | ValueSome destTypar ->
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.RequiresDefaultConstructor m)
     | _ ->
-        if isStructTy g ty && TypeHasDefaultValue g m ty then 
+        if isStructTy g ty && TypeHasDefaultValueOld g m ty then 
             CompleteD
         else
             if GetIntrinsicConstructorInfosOfType csenv.InfoReader m ty 

@@ -2239,30 +2239,19 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The boxed value.</param>
         /// <returns>The unboxed result.</returns>
         [<CompiledName("Unbox")>]
-#if BUILDING_WITH_LKG
         val inline unbox : value:obj -> 'T
-#else
-        val inline unbox : value:obj? -> 'T
-#endif
 
         /// <summary>Boxes a strongly typed value.</summary>
         /// <param name="value">The value to box.</param>
         /// <returns>The boxed object.</returns>
         [<CompiledName("Box")>]
-#if BUILDING_WITH_LKG
         val inline box : value:'T -> obj
-#else
-        val inline box : value:'T -> obj __ambivalent
-#endif
+
         /// <summary>Try to unbox a strongly typed value.</summary>
         /// <param name="value">The boxed value.</param>
         /// <returns>The unboxed result as an option.</returns>
         [<CompiledName("TryUnbox")>]
-#if BUILDING_WITH_LKG
         val inline tryUnbox : value:obj -> 'T option
-#else
-        val inline tryUnbox : value:obj? -> 'T option
-#endif
 
         /// <summary>Determines whether the given value is null.</summary>
         /// <param name="value">The value to check.</param>

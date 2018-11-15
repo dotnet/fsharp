@@ -4417,6 +4417,12 @@ type internal SR private() =
     /// This language feature is not enabled, use /langversion:5.0 or greater to enable it
     /// (Originally from ..\FSComp.txt:1467)
     static member tcLangFeatureNotEnabled50() = (3265, GetStringFunc("tcLangFeatureNotEnabled50",",,,") )
+    /// Nullability warning. The default constructor of a struct type is required but one of the fields of struct type is non-nullable.
+    /// (Originally from ..\FSComp.txt:1468)
+    static member tcDefaultStructConstructorCallNulls() = (3266, GetStringFunc("tcDefaultStructConstructorCallNulls",",,,") )
+    /// Nullability warning. The 'DefaultValue' attribute is used but the type (or one of its fields if a struct) is non-nullable.
+    /// (Originally from ..\FSComp.txt:1469)
+    static member chkValueWithDefaultValueMustHaveDefaultValueNulls() = (3267, GetStringFunc("chkValueWithDefaultValueMustHaveDefaultValueNulls",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5854,4 +5860,6 @@ type internal SR private() =
         ignore(GetString("tcCopyAndUpdateNeedsRecordType"))
         ignore(GetString("tcTypeDoesNotHaveAnyNull"))
         ignore(GetString("tcLangFeatureNotEnabled50"))
+        ignore(GetString("tcDefaultStructConstructorCallNulls"))
+        ignore(GetString("chkValueWithDefaultValueMustHaveDefaultValueNulls"))
         ()
