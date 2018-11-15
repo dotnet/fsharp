@@ -141,7 +141,7 @@ module internal RoslynHelpers =
         // Normalize the error message into the same format that we will receive it from the compiler.
         // This ensures that IntelliSense and Compiler errors in the 'Error List' are de-duplicated.
         // (i.e the same error does not appear twice, where the only difference is the line endings.)
-        let normalizedMessage = error.Message |> ErrorLogger.NormalizeErrorString |> ErrorLogger.NewlineifyErrorString
+        let normalizedMessage = error.Message |> withNull<string> |> ErrorLogger.NormalizeErrorString |> ErrorLogger.NewlineifyErrorString
 
         let id = "FS" + error.ErrorNumber.ToString("0000")
         let emptyString = LocalizableString.op_Implicit("")

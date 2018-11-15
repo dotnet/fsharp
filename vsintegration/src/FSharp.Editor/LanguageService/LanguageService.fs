@@ -52,11 +52,11 @@ type internal FSharpCheckerWorkspaceService =
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
     
-    member __.GetKeyNameForLanguage(languageName: string) =
+    member __.GetKeyNameForLanguage(languageName: string?) =
         let unsubstitutedKeyName = keyName
         match languageName with
         | null -> unsubstitutedKeyName
-        | _ ->
+        | NonNull languageName ->
             let substituteLanguageName = if languageName = FSharpConstants.FSharpLanguageName then "FSharp" else languageName
             unsubstitutedKeyName.Replace("%LANGUAGE%", substituteLanguageName)
  
@@ -271,23 +271,23 @@ type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSoluti
 
                     // This is the path for .fs/.fsi files in legacy projects
                     ()
-                | h when not (isNull h) && not (IsScript(filename)) ->
+                | NotNull hier when not (IsScript(filename)) ->
                     let docId = this.Workspace.CurrentSolution.GetDocumentIdsWithFilePath(filename).FirstOrDefault()
                     match docId with
                     | null ->
-                        if not (h.IsCapabilityMatch("CPS")) then
+                        if not (hier.IsCapabilityMatch("CPS")) then
 
                             // This is the path when opening out-of-project .fs/.fsi files in CPS projects
 
                             let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                             this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
                     | _ -> ()
-                | _ ->
+                | NotNull hier ->
 
                     // This is the path for both in-project and out-of-project .fsx files
 
                     let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                     this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
-
+                | _ -> ()
             | _ -> ()
         | _ -> ()

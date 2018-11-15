@@ -190,13 +190,13 @@ module Option =
     /// <param name="value">The input value.</param>
     /// <returns>The result option.</returns>
     [<CompiledName("OfObj")>]
-    val ofObj: value: 'T -> 'T option  when 'T : null
+    val ofObj: value: 'T? -> 'T option  when 'T : not struct and 'T : not null
 
     /// <summary>Convert an option to a potentially null value.</summary>
     /// <param name="value">The input value.</param>
     /// <returns>The result value, which is null if the input was None.</returns>
     [<CompiledName("ToObj")>]
-    val toObj: value: 'T option -> 'T when 'T : null
+    val toObj: value: 'T option -> 'T? when 'T : not struct and 'T : not null
 
 /// <summary>Basic operations on value options.</summary>
 module ValueOption =
@@ -379,10 +379,18 @@ module ValueOption =
     /// <param name="value">The input value.</param>
     /// <returns>The result value option.</returns>
     [<CompiledName("OfObj")>]
+#if BUILDING_WITH_LKG // TODO NULLNESS: assess this - is it a breaking change?
     val ofObj: value: 'T -> 'T voption  when 'T : null
+#else
+    val ofObj: value: 'T? -> 'T voption  when 'T : not struct and 'T : not null
+#endif
 
     /// <summary>Convert an option to a potentially null value.</summary>
     /// <param name="value">The input value.</param>
     /// <returns>The result value, which is null if the input was ValueNone.</returns>
     [<CompiledName("ToObj")>]
+#if BUILDING_WITH_LKG // TODO NULLNESS: assess this change - is it a breaking change?
     val toObj: value: 'T voption -> 'T when 'T : null
+#else
+    val toObj: value: 'T voption -> 'T? when 'T : not struct and 'T : not null
+#endif

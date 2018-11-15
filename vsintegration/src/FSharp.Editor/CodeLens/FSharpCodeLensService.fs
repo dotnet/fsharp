@@ -35,7 +35,7 @@ type internal CodeLens(taggedText, computed, fullTypeSignature, uiElement) =
     member val TaggedText: Async<(ResizeArray<Layout.TaggedText> * QuickInfoNavigation) option> = taggedText
     member val Computed: bool = computed with get, set
     member val FullTypeSignature: string = fullTypeSignature 
-    member val UiElement: UIElement = uiElement with get, set
+    member val UiElement: UIElement? = uiElement with get, set
 
 type internal FSharpCodeLensService
     (
@@ -306,7 +306,9 @@ type internal FSharpCodeLensService
                         if res then
                             do! Async.SwitchToContext uiContext
                             logInfof "Adding ui element for %A" (codeLens.TaggedText)
-                            let uiElement = codeLens.UiElement
+                            match codeLens.UiElement with 
+                            | null -> ()
+                            | NonNull uiElement ->
                             let animation = 
                                 DoubleAnimation(
                                     To = Nullable 0.8,
@@ -331,9 +333,11 @@ type internal FSharpCodeLensService
                 lineLens.RemoveCodeLens trackingSpan |> ignore
                 let Grid = lineLens.AddCodeLens newTrackingSpan
                 // logInfof "Trackingspan %A is being added." trackingSpan 
-                if codeLens.Computed && (isNull codeLens.UiElement |> not) then
-                    let uiElement = codeLens.UiElement
-                    lineLens.AddUiElementToCodeLensOnce (newTrackingSpan, uiElement)
+                if codeLens.Computed then 
+                    match codeLens.UiElement with 
+                    | null -> ()
+                    | NonNull uiElement ->
+                        lineLens.AddUiElementToCodeLensOnce (newTrackingSpan, uiElement)
                 else
                     Grid.IsVisibleChanged
                     |> Event.filter (fun eventArgs -> eventArgs.NewValue :?> bool)

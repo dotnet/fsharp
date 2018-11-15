@@ -189,10 +189,10 @@ type internal FSharpAsyncQuickInfoSource
 
         // This method can be called from the background thread.
         // Do not call IServiceProvider.GetService here.
-        override __.GetQuickInfoItemAsync(session:IAsyncQuickInfoSession, cancellationToken:CancellationToken) : Task<QuickInfoItem> =
+        override __.GetQuickInfoItemAsync(session:IAsyncQuickInfoSession, cancellationToken:CancellationToken) : Task< QuickInfoItem? > =
             let triggerPoint = session.GetTriggerPoint(textBuffer.CurrentSnapshot)
             match triggerPoint.HasValue with
-            | false -> Task.FromResult<QuickInfoItem>(null)
+            | false -> Task.FromResult< QuickInfoItem? >(null)
             | true ->
                 let triggerPoint = triggerPoint.GetValueOrDefault()
                 let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService)
@@ -218,7 +218,7 @@ type internal FSharpAsyncQuickInfoSource
                         let docs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
                         let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)
                         let span = getTrackingSpan quickInfo.Span
-                        return QuickInfoItem(span, content)
+                        return (QuickInfoItem(span, content) : QuickInfoItem?)
 
                     | Some sigQuickInfo, Some targetQuickInfo ->
                         let mainDescription, targetDocumentation, sigDocumentation, typeParameterMap, exceptions, usage = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
@@ -249,7 +249,7 @@ type internal FSharpAsyncQuickInfoSource
                         let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)
                         let span = getTrackingSpan targetQuickInfo.Span
                         return QuickInfoItem(span, content)
-                }   |> Async.map Option.toObj
+                }   |> Async.map Option.toObj<QuickInfoItem> // TODO NULLNESS - why is this annotation needed?
                     |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
 [<Export(typeof<IAsyncQuickInfoSourceProvider>)>]
