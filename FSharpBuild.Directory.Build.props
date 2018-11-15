@@ -68,6 +68,7 @@
     <FscToolPath>$(ProtoOutputPath)</FscToolPath>
     <FscToolExe Condition="'$(OS)' != 'Unix'">fsc.exe</FscToolExe>
     <FscToolExe Condition="'$(OS)' == 'Unix'">RunFsc.sh</FscToolExe>
+    <DotnetFscCompilerPath></DotnetFscCompilerPath>
     <FSharpTargetsPath>$(ProtoOutputPath)\Microsoft.FSharp.Targets</FSharpTargetsPath>
     <FSharpPropsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
     <FSharpTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>

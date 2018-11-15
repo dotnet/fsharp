@@ -2118,15 +2118,13 @@ query."
     member public this.``GenericDotNetMethodShowsComment``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
-              ["System.Linq.ParallelEnumerable."
-               ] ,
+             ["System.Linq.ParallelEnumerable."] ,
              (* marker *)
              "ParallelEnumerable.",
              (* completed item *)             
              "ElementAt", 
              (* expect to see in order... *)
              [
-              "System.Core";
               "Signature:M:System.Linq.ParallelEnumerable.ElementAt``1(System.Linq.ParallelQuery{``0},System.Int32"
              ]
             )
