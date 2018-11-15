@@ -488,13 +488,13 @@ type EditorBraceCompletionSessionFactory() =
 
     member __.CreateEditorSession(_document, _openingPosition, openingBrace, _cancellationToken) : IEditorBraceCompletionSession? =
         match openingBrace with
-        | Parenthesis.OpenCharacter -> ParenthesisCompletionSession() :> IEditorBraceCompletionSession?
-        | CurlyBrackets.OpenCharacter -> ParenthesisCompletionSession() :> IEditorBraceCompletionSession?
-        | SquareBrackets.OpenCharacter -> ParenthesisCompletionSession() :> IEditorBraceCompletionSession?
-        | VerticalBar.OpenCharacter -> VerticalBarCompletionSession() :> IEditorBraceCompletionSession?
-        | AngleBrackets.OpenCharacter -> AngleBracketCompletionSession() :> IEditorBraceCompletionSession?
-        | DoubleQuote.OpenCharacter -> DoubleQuoteCompletionSession() :> IEditorBraceCompletionSession?
-        | Asterisk.OpenCharacter -> AsteriskCompletionSession() :> IEditorBraceCompletionSession?
+        | Parenthesis.OpenCharacter -> ParenthesisCompletionSession() :> _
+        | CurlyBrackets.OpenCharacter -> ParenthesisCompletionSession() :> _
+        | SquareBrackets.OpenCharacter -> ParenthesisCompletionSession() :> _
+        | VerticalBar.OpenCharacter -> VerticalBarCompletionSession() :> _
+        | AngleBrackets.OpenCharacter -> AngleBracketCompletionSession() :> _
+        | DoubleQuote.OpenCharacter -> DoubleQuoteCompletionSession() :> _
+        | Asterisk.OpenCharacter -> AsteriskCompletionSession() :> _
         | _ -> null
 
     interface IEditorBraceCompletionSessionFactory with

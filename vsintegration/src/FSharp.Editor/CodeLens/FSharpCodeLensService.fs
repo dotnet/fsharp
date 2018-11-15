@@ -306,6 +306,7 @@ type internal FSharpCodeLensService
                         if res then
                             do! Async.SwitchToContext uiContext
                             logInfof "Adding ui element for %A" (codeLens.TaggedText)
+                            // TODO NULLNESS - check that doing nothing when codeLens.UiElement is null is ok
                             match codeLens.UiElement with 
                             | null -> ()
                             | NonNull uiElement ->
@@ -334,6 +335,7 @@ type internal FSharpCodeLensService
                 let Grid = lineLens.AddCodeLens newTrackingSpan
                 // logInfof "Trackingspan %A is being added." trackingSpan 
                 if codeLens.Computed then 
+                    // TODO NULLNESS: this slightly changes control flow in the case where codeLens.UIElement is noll
                     match codeLens.UiElement with 
                     | null -> ()
                     | NonNull uiElement ->
