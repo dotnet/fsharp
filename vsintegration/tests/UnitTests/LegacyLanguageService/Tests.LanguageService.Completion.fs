@@ -2464,7 +2464,7 @@ let x = new MyClass2(0)
                 else
                     unexpectedSuccesses.Add(lineName,suffixName,builderName,check)
             with e ->
-                printfn "@@@@@@ Exception thrown: (\"%s\", \"%s\", \"%s\", %A) " lineName suffixName builderName check
+                printfn "Exception thrown: (\"%s\", \"%s\", \"%s\", %A) " lineName suffixName builderName check
                 if not expectedToFail then
                     printfn " FAILURE on systematic test: (\"%s\", \"%s\", \"%s\", %A) " lineName suffixName builderName check
                     printfn "\n\nfileContents = <<<%s>>>" fileContents
