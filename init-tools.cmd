@@ -38,8 +38,6 @@ if exist "%BUILD_TOOLS_SEMAPHORE%" (
   goto :DONE
 )
 
-if exist "%TOOLRUNTIME_DIR%" rmdir /S /Q "%TOOLRUNTIME_DIR%"
-
 :: Download Nuget.exe
 if NOT exist "%PACKAGES_DIR%NuGet.exe" (
   if NOT exist "%PACKAGES_DIR%" mkdir "%PACKAGES_DIR%"
@@ -63,6 +61,7 @@ if errorlevel 1 (
    set TOOLS_INIT_RETURN_CODE=1
    goto :DONE
 )
+echo "%DOTNET_TOOLS_VERSION% >> "%DOTNET_TOOLS_PATH%\sdk\%DOTNET_TOOLS_VERSION%"
 :afterdotnettoolsrestore
 
 set /p DOTNET_VERSION=< "%~dp0DotnetCLIVersion.txt"
