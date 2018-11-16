@@ -181,12 +181,12 @@ module CoreTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``subtype-langversion-50-checknulls`` () =
+    let ``subtype-langversion-50-no-checknulls`` () =
         let cfg = testConfig "core/subtype"
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test-no-checknulls.exe -g --langversion:5.0" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test-no-checknulls.exe -g --langversion:5.0 --checknulls-" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test-no-checknulls.exe") ""
 
