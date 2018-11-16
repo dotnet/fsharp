@@ -1040,7 +1040,7 @@ module CoreTests =
 
         testOkFile.CheckExists()
 
-   [<Test>]
+    [<Test>]
     let ``letrec (mutrec variations part two) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI_BASIC
 
     [<Test>]
