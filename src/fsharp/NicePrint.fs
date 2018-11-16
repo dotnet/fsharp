@@ -913,7 +913,7 @@ module private PrintTypes =
         match nullness.Evaluate() with
         | NullnessInfo.WithNull -> part2 ^^ rightL (tagText "?")
         | NullnessInfo.WithoutNull -> part2
-        | NullnessInfo.AmbivalentToNull -> part2 ^^ wordL (tagText "%")
+        | NullnessInfo.AmbivalentToNull -> part2 // TODO NULLNESS: emit this optionally ^^ wordL (tagText "%")
 
     /// Layout a type, taking precedence into account to insert brackets where needed
     and layoutTypeWithInfoAndPrec denv env prec ty =
