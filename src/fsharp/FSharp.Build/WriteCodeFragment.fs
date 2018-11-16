@@ -12,8 +12,14 @@ open System.Text
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+[<AutoOpen>]
+module UtilsWriteCodeFragment = 
+    let inline (|NonNull|) x = match x with null -> raise (NullReferenceException()) | v -> v
+#endif
+
 type WriteCodeFragment() =
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     let mutable _buildEngine : IBuildEngine = null
     let mutable _hostObject : ITaskHost = null
     let mutable _outputDirectory : ITaskItem = null
@@ -116,13 +122,9 @@ type WriteCodeFragment() =
 
         member this.Execute() =
             try
-#if BUILDING_WITH_LKG
-                if isNull _outputFile then failwith "Output location must be specified"
-#else
                 match _outputFile with 
                 | null -> failwith "Output location must be specified"
                 | NonNull outputFile -> 
-#endif
 
                 let boilerplate =
                     match _language.ToLowerInvariant() with
@@ -136,7 +138,7 @@ type WriteCodeFragment() =
 
                 if _language.ToLowerInvariant() = "f#" then code.AppendLine("do()") |> ignore
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
                 let fileName = _outputFile.ItemSpec
 
                 let outputFileItem =

@@ -442,7 +442,7 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
         | None -> MetadataTokens.MethodDefinitionHandle(0)
         | Some x -> MetadataTokens.MethodDefinitionHandle(x)
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     let deterministicIdProvider isDeterministic  : System.Func<IEnumerable<Blob>, BlobContentId> = 
 #else
     let deterministicIdProvider isDeterministic  : System.Func<IEnumerable<Blob>, BlobContentId> ? = 

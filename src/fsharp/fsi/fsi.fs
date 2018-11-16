@@ -1734,17 +1734,25 @@ type internal FsiStdinLexerProvider
         let initialLightSyntaxStatus = tcConfigB.light <> Some false
         LightSyntaxStatus (initialLightSyntaxStatus, false (* no warnings *))
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readf: unit -> string) = 
+#else
     let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readf: unit -> string?) = 
+#endif
         UnicodeLexing.FunctionAsLexbuf 
           (fun (buf: char[], start, len) -> 
             //fprintf fsiConsoleOutput.Out "Calling ReadLine\n"
             let inputOption = try Some(readf()) with :? EndOfStreamException -> None
-            inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add ((match t with null -> "" | NonNull s -> s) + "\n"))
+            inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add ((match t with null -> "" | NonNull t -> t) + "\n"))
             match inputOption with 
             |  Some(null) | None -> 
                  if !progress then fprintfn fsiConsoleOutput.Out "End of file from TextReader.ReadLine"
                  0
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+            | Some input ->
+#else
             | Some (NonNull input) ->
+#endif
                 let input  = input + "\n" 
                 let ninput = input.Length 
                 if ninput > len then fprintf fsiConsoleOutput.Error  "%s" (FSIstrings.SR.fsiLineTooLong())
@@ -1758,7 +1766,7 @@ type internal FsiStdinLexerProvider
     // Reading stdin as a lex stream
     //----------------------------------------------------------------------------
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     let removeZeroCharsFromString (str:string) = (* bug://4466 *)
 #else
     let removeZeroCharsFromString (str:string?) : string? = (* bug://4466 *)

@@ -35,7 +35,7 @@ module Basics =
 
     let x5 = nonNull<string> "" // Should not give a Nullness warning
     check "ekjnceoiwe5" x5 ""
-    let x6 = nonNull< string? > "" // **Expected to give a Nullness warning
+    let x6 = nonNull<string?> "" // **Expected to give a Nullness warning
     check "ekjnceoiwe6" x6 ""
     let x7 = nonNull ""
     check "ekjnceoiwe7" x7 ""
@@ -60,7 +60,7 @@ module Basics =
     check "ekjnceoiwe15a" x15a ""
     let x15b : string? = withNull<string> x4
     check "ekjnceoiwe15b" x15b ""
-    let x15c : string? = withNull< string? > x4 // **Expected to give a Nullness warning
+    let x15c : string? = withNull<string?> x4 // **Expected to give a Nullness warning
     check "ekjnceoiwe15c" x15c ""
     let x16 : Nullable<int> = withNullV 3
     check "ekjnceoiwe16" x16 (Nullable(3))
@@ -75,7 +75,7 @@ module Basics =
     check "ekjnceoiwey2" y2 false
     let y9 = isNull<string> "" // **Expected to give a Nullness warning - type instantiation of a nullable type is non-nullable string
     check "ekjnceoiwey9" y9 false
-    let y10 = isNull< string? > "" // Should not give a Nullness warning.
+    let y10 = isNull<string?> "" // Should not give a Nullness warning.
     check "ekjnceoiwey10" y10 false
 
 module NotNullConstraint =
@@ -299,11 +299,16 @@ module NullConstraintTests =
      // TODO: However it gives no error or warning at all with /checknulls off in F# 5.0...  That seems bad.
     let f2 (y : C<int list>) = y
 
-    let f3 (y : C<string >) = y // Expect a Nullness warning
+    let f3 (y : C<string>) = y // Expect a Nullness warning
 
-    let f4 (y : C<string? >) = y // No warning expected 
+    let f4 (y : C<string?>) = y // No warning expected 
 
-    let f5 (y : C<int list? >) = y // No warning expected
+    let f5 (y : C<int list?>) = y // No warning expected
+
+    let f6 (y : C<list<string>?>) = y // No warning expected, lexing/parsing should succeed 
+
+    let f7 (y : C<list<string>>?) = y // No warning expected, lexing/parsing should succeed
+
 
 module DefaultValueTests =
 

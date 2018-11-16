@@ -43,7 +43,13 @@ module internal ReflectionAdapters =
 
     let publicFlags = BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static
 
-    let commit (results : _[]) = 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    let inline (|NonNull|) x = match x with null -> raise (NullReferenceException()) | v -> v
+
+    let commit<'T when 'T : null> (results : 'T[]) : 'T = 
+#else
+    let commit<'T when 'T : not null> (results : 'T[]) : 'T? = 
+#endif
         match results with
         | [||] -> null
         | [| m |] -> m
@@ -53,11 +59,22 @@ module internal ReflectionAdapters =
         (not (isNull (box accessor))) && (accessor.IsPublic || nonPublic)
 
     type System.Type with
+
         member this.GetTypeInfo() = IntrospectionExtensions.GetTypeInfo(this)
+
         member this.GetRuntimeProperties() = RuntimeReflectionExtensions.GetRuntimeProperties(this)
+
         member this.GetRuntimeEvents() = RuntimeReflectionExtensions.GetRuntimeEvents(this)
+
         member this.Attributes = this.GetTypeInfo().Attributes
-        member this.GetCustomAttributes(attrTy, inherits) : obj[] = downcast box(CustomAttributeExtensions.GetCustomAttributes(this.GetTypeInfo(), attrTy, inherits) |> Seq.toArray)
+
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        member this.GetCustomAttributes(attrTy, inherits) : obj[] = 
+#else
+        member this.GetCustomAttributes(attrTy, inherits) : obj[]? = 
+#endif
+            unbox(box(CustomAttributeExtensions.GetCustomAttributes(this.GetTypeInfo(), attrTy, inherits) |> Seq.toArray))
+
         member this.GetNestedType (name, bindingFlags) = 
             // MSDN: http://msdn.microsoft.com/en-us/library/0dcb3ad5.aspx
             // The following BindingFlags filter flags can be used to define which nested types to include in the search:
@@ -76,8 +93,13 @@ module internal ReflectionAdapters =
                     )
                 |> Option.map (fun ti -> ti.AsType())
             defaultArg nestedTyOpt null
+
         // use different sources based on Declared flag
-        member this.GetMethods(bindingFlags) =
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        member this.GetMethods(bindingFlags) : MethodInfo[] =
+#else
+        member this.GetMethods(bindingFlags) : MethodInfo[]? =
+#endif
             (if isDeclaredFlag bindingFlags then this.GetTypeInfo().DeclaredMethods else this.GetRuntimeMethods())
             |> Seq.filter (fun m -> isAcceptable bindingFlags m.IsStatic m.IsPublic)
             |> Seq.toArray
@@ -113,33 +135,45 @@ module internal ReflectionAdapters =
             let bindingFlags = defaultArg bindingFlags publicFlags
             this.GetEvents(bindingFlags)
             |> Array.filter (fun ei -> ei.Name = name)
-            |> commit
+            |> commit<EventInfo>
 
         member this.GetConstructor(bindingFlags, _binder, argsT:Type[], _parameterModifiers) =
             this.GetConstructor(bindingFlags,argsT)
 
-        member this.GetMethod(name, ?bindingFlags) =
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        member this.GetMethod(name, ?bindingFlags) : MethodInfo =
+#else
+        member this.GetMethod(name, ?bindingFlags) : MethodInfo? =
+#endif
             let bindingFlags = defaultArg bindingFlags publicFlags
             this.GetMethods(bindingFlags)
             |> Array.filter(fun m -> m.Name = name)
-            |> commit
+            |> commit<MethodInfo>
 
         member this.GetMethod(name, _bindingFlags, _binder, argsT:Type[], _parameterModifiers) =
             this.GetMethod(name, argsT)
 
         // use different sources based on Declared flag
-        member this.GetProperty(name, bindingFlags) = 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        member this.GetProperty(name, bindingFlags) : PropertyInfo = 
+#else
+        member this.GetProperty(name, bindingFlags) : PropertyInfo? = 
+#endif
             this.GetProperties(bindingFlags)
             |> Array.filter (fun pi -> pi.Name = name)
-            |> commit
+            |> commit<PropertyInfo>
 
-        member this.GetMethod(methodName, args:Type[], ?bindingFlags) =
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        member this.GetMethod(methodName, args:Type[], ?bindingFlags) : MethodInfo =
+#else
+        member this.GetMethod(methodName, args:Type[], ?bindingFlags) : MethodInfo? =
+#endif
             let bindingFlags = defaultArg bindingFlags publicFlags
             let compareSequences parms args = 
                 Seq.compareWith (fun parm arg -> if parm <> arg then 1 else 0) parms args
             this.GetMethods(bindingFlags)
             |> Array.filter(fun m -> m.Name = methodName && (compareSequences (m.GetParameters() |> Seq.map(fun x -> x.ParameterType)) args) = 0)
-            |> commit
+            |> commit<MethodInfo>
 
         member this.GetNestedTypes(?bindingFlags) =
             let bindingFlags = defaultArg bindingFlags publicFlags
@@ -193,7 +227,7 @@ module internal ReflectionAdapters =
                 )
             )
             |> Seq.toArray
-            |> commit
+            |> commit<ConstructorInfo>
 
         member this.GetConstructor(parameterTypes : Type[]) = 
             this.GetConstructor(BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance, parameterTypes)
@@ -219,7 +253,7 @@ module internal ReflectionAdapters =
         member this.GetField(name, bindingFlags) = 
             this.GetFields(bindingFlags)
             |> Array.filter (fun fi -> fi.Name = name)
-            |> commit
+            |> commit<FieldInfo>
 
         member this.GetField(name) = RuntimeReflectionExtensions.GetRuntimeField(this, name)
 
@@ -234,7 +268,7 @@ module internal ReflectionAdapters =
                     (parameterTypes, parameters) ||> Array.forall2 (fun ty pi -> pi.ParameterType.Equals ty)
                 )
             )
-            |> commit
+            |> commit<PropertyInfo>
 
         static member GetTypeCode(ty : Type) = 
             if   typeof<System.Int32>.Equals ty  then TypeCode.Int32
@@ -351,10 +385,14 @@ module internal ReflectionAdapters =
 
     type System.Object with
         member this.GetPropertyValue(propName) =
-            this.GetType().GetProperty(propName, BindingFlags.Public).GetValue(this, null)
+            match this.GetType().GetProperty(propName, BindingFlags.Public) with 
+            | null -> failwith "GetPropertyValue"
+            | NonNull p -> p.GetValue(this, null)
 
         member this.SetPropertyValue(propName, propValue) =
-            this.GetType().GetProperty(propName, BindingFlags.Public).SetValue(this, propValue, null)
+            match this.GetType().GetProperty(propName, BindingFlags.Public) with 
+            | null -> failwith "SetPropertyValue"
+            | NonNull p -> p.SetValue(this, propValue, null)
 
         member this.GetMethod(methodName, argTypes) =
             this.GetType().GetMethod(methodName, argTypes, BindingFlags.Public)

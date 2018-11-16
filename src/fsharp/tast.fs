@@ -509,8 +509,7 @@ let ComputeDefinitionLocationOfProvidedItem (p : Tainted<#IProvidedCustomAttribu
     let attrs = p.PUntaintNoFailure(fun x -> x.GetDefinitionLocationAttribute(p.TypeProvider.PUntaintNoFailure(id)))
     match attrs with
     | None | Some (null, _, _) -> None
-    | Some (filePath, line, column) -> 
-        let filePath = nonNull filePath   // TODO NULLNESS: this use of nonNull should not be needed
+    | Some (NonNull filePath, line, column) -> 
         // Coordinates from type provider are 1-based for lines and columns
         // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns
         let pos = Range.mkPos line (max 0 (column - 1)) 
@@ -4216,7 +4215,7 @@ and
     [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
     CcuThunk = 
     { 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
       mutable target: CcuData
 #else
       mutable target: CcuData?
@@ -4230,7 +4229,7 @@ and
 
       name: CcuReference  }
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     member ccu.Deref = 
         if isNull (box ccu.target) || ccu.orphanfixup then 
             raise(UnresolvedReferenceNoRange ccu.name)
@@ -5477,7 +5476,7 @@ let addNullnessToTy (nullness: Nullness) (ty:TType) =
     | TType_app (tcr, tinst, nullnessOrig) -> TType_app (tcr, tinst, combineNullness nullnessOrig nullness)
     | TType_fun (d, r, nullnessOrig) -> TType_fun (d, r, combineNullness nullnessOrig nullness)
     //| TType_ucase _ -> None // TODO NULLNESS
-    //| TType_tuple _ -> None // TODOTODO NULLNESS
+    //| TType_tuple _ -> None // TODO NULLNESS
     //| TType_anon _ -> None // TODO NULLNESS
     | _ -> ty
 

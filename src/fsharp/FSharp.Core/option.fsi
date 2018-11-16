@@ -190,7 +190,8 @@ module Option =
     /// <param name="value">The input value.</param>
     /// <returns>The result option.</returns>
     [<CompiledName("OfObj")>]
-#if BUILDING_WITH_LKG // TODO NULLNESS: assess this change - is it a breaking change?
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    // TODO NULLNESS: assess this change - is it a breaking change?
     val ofObj: value: 'T -> 'T option  when 'T : null
 #else
     val ofObj: value: 'T? -> 'T option  when 'T : not struct and 'T : not null
@@ -200,7 +201,8 @@ module Option =
     /// <param name="value">The input value.</param>
     /// <returns>The result value, which is null if the input was None.</returns>
     [<CompiledName("ToObj")>]
-#if BUILDING_WITH_LKG // TODO NULLNESS: assess this change - is it a breaking change?
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    // TODO NULLNESS: assess this change - is it a breaking change?
     val toObj: value: 'T option -> 'T when 'T : null
 #else
     val toObj: value: 'T option -> 'T? when 'T : not struct and 'T : not null
@@ -387,7 +389,8 @@ module ValueOption =
     /// <param name="value">The input value.</param>
     /// <returns>The result value option.</returns>
     [<CompiledName("OfObj")>]
-#if BUILDING_WITH_LKG // TODO NULLNESS: assess this - is it a breaking change?
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    // TODO NULLNESS: assess this change - is it a breaking change?
     val ofObj: value: 'T -> 'T voption  when 'T : null
 #else
     val ofObj: value: 'T? -> 'T voption  when 'T : not struct and 'T : not null
@@ -397,7 +400,8 @@ module ValueOption =
     /// <param name="value">The input value.</param>
     /// <returns>The result value, which is null if the input was ValueNone.</returns>
     [<CompiledName("ToObj")>]
-#if BUILDING_WITH_LKG // TODO NULLNESS: assess this change - is it a breaking change?
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    // TODO NULLNESS: assess this change - is it a breaking change?
     val toObj: value: 'T voption -> 'T when 'T : null
 #else
     val toObj: value: 'T voption -> 'T? when 'T : not struct and 'T : not null

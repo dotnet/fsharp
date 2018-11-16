@@ -83,7 +83,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 
     /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework.
     /// This is only used to specify the "last resort" path for assembly resolution.
-    let GetPathToDotNetFrameworkImlpementationAssemblies(v) =
+    let GetPathToDotNetFrameworkImlpementationAssemblies(v) : string list =
         let v =
             match v with
             | Net11 ->  Some TargetDotNetFrameworkVersion.Version11
@@ -103,7 +103,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
         | Some v -> 
             match ToolLocationHelper.GetPathToDotNetFramework v with
             | null -> []
-            | x -> [x]
+            | NonNull x -> [x]
         | _ -> []
 
 

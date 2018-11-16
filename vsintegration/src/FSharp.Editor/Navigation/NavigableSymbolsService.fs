@@ -34,7 +34,7 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
     let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
 
     interface INavigableSymbolSource with
-        member __.GetNavigableSymbolAsync(triggerSpan: SnapshotSpan, cancellationToken: CancellationToken) : Task< INavigableSymbol? > =
+        member __.GetNavigableSymbolAsync(triggerSpan: SnapshotSpan, cancellationToken: CancellationToken) : Task<INavigableSymbol?> =
             // Yes, this is a code smell. But this is how the editor API accepts what we would treat as None.
             if disposed then null
             else

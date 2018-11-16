@@ -21,11 +21,12 @@ let condition s =
 
 let GetEnvInteger e dflt = match System.Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 
-#if BUILDING_WITH_LKG
-let dispose (x:System.IDisposable) = match x with null -> () | x -> x.Dispose()
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+let dispose (x:System.IDisposable) =
 #else
-let dispose (x:System.IDisposable?) = match x with null -> () | NonNull x -> x.Dispose()
+let dispose (x:System.IDisposable?) = 
 #endif
+    match x with null -> () | NonNull x -> x.Dispose()
 
 type SaveAndRestoreConsoleEncoding () =
     let savedOut = System.Console.Out
@@ -462,18 +463,14 @@ module internal AsyncUtil =
                         // Continuations that Async.FromContinuations provide do QUWI/SynchContext.Post,
                         // so the order is not overly relevant but still.                        
                         List.rev savedConts)
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
             let postOrQueue (sc:SynchronizationContext,cont) =
 #else
             let postOrQueue (sc:SynchronizationContext?,cont) =
 #endif
                 match sc with
                 | null -> ThreadPool.QueueUserWorkItem(fun _ -> cont res) |> ignore
-#if BUILDING_WITH_LKG
-                | sc ->
-#else
                 | NonNull sc ->
-#endif
                     sc.Post((fun _ -> cont res), state=null)
 
             // Run continuations outside the lock

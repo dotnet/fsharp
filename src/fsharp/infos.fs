@@ -663,10 +663,17 @@ let OptionalArgInfoOfProvidedParameter (amap:Import.ImportMap) m (provParam : Ta
         NotOptional
 
 /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+let GetAndSanityCheckProviderMethod m (mi: Tainted<'T :> ProvidedMemberInfo>) (get : 'T -> ProvidedMethodInfo) err = 
+    match mi.PApply((fun mi -> (get mi :> ProvidedMethodBase)),m) with 
+    | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> mi.DeclaringType.Name),m)),m))   
+    | Tainted.NonNull meth -> meth
+#else
 let GetAndSanityCheckProviderMethod m (mi: Tainted<'T :> ProvidedMemberInfo>) (get : 'T -> ProvidedMethodInfo?) err = 
     match mi.PApply((fun mi -> (get mi :> ProvidedMethodBase?)),m) with 
-    | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name),m)),m))   
+    | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name),m)),m))   // TODO NULLNESS: type isntantiation should not be needed
     | Tainted.NonNull meth -> meth
+#endif
 
 /// Try to get an arbitrary ProvidedMethodInfo associated with a property.
 let ArbitraryMethodInfoOfPropertyInfo (pi:Tainted<ProvidedPropertyInfo>) m =

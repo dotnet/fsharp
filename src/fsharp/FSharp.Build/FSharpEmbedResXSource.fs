@@ -13,7 +13,7 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
 type FSharpEmbedResXSource() =
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     let mutable _buildEngine : IBuildEngine = null
     let mutable _hostObject : ITaskHost = null
 #else

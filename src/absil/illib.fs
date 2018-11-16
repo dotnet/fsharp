@@ -24,6 +24,11 @@ let notlazy v = Lazy<_>.CreateFromValue v
 
 let inline isNil l = List.isEmpty l
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+let inline (|NonNull|) x = match x with null -> raise (NullReferenceException()) | v -> v
+let inline nonNull<'T> (x: 'T) = x
+#endif
+
 /// Returns true if the list has less than 2 elements. Otherwise false.
 let inline isNilOrSingleton l =
     match l with
@@ -63,7 +68,7 @@ let reportTime =
 type InlineDelayInit<'T when 'T : not struct> = 
     new (f: unit -> 'T) = {store = Unchecked.defaultof<'T>; func = Func<_>(f) } 
     val mutable store : 'T
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     val mutable func : Func<'T>
 #else
     val mutable func : Func<'T> ?
@@ -1243,35 +1248,32 @@ module Shim =
             member __.IsPathRootedShim (path: string) = Path.IsPathRooted path
 
             member __.IsInvalidPathShim(path: string) = 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
                 let isInvalidPath(p:string) = 
-                    String.IsNullOrEmpty(p) || p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 #else
                 let isInvalidPath(p:string?) = 
+#endif
                     match p with 
                     | null | "" -> true
                     | NonNull p -> p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
-#endif
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
                 let isInvalidFilename(p:string) = 
-                    String.IsNullOrEmpty(p) || p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 #else
                 let isInvalidFilename(p:string?) = 
+#endif
                     match p with 
                     | null | "" -> true
                     | NonNull p -> p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
-#endif
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
                 let isInvalidDirectory(d:string) = 
-                    d=null || d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 #else
                 let isInvalidDirectory(d:string?) = 
+#endif
                     match d with 
                     | null -> true
                     | NonNull d -> d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
-#endif
 
                 isInvalidPath (path) || 
                 let directory = Path.GetDirectoryName(path)

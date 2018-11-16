@@ -1440,7 +1440,7 @@ val TryFindAttributeUsageAttribute : TcGlobals -> range -> TyconRef -> bool opti
 
 #if !NO_EXTENSIONTYPING
 /// returns Some(assemblyName) for success
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
 val TryDecodeTypeProviderAssemblyAttr : ILGlobals -> ILAttribute -> string option
 #else
 val TryDecodeTypeProviderAssemblyAttr : ILGlobals -> ILAttribute -> string? option

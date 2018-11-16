@@ -391,18 +391,14 @@ let emEnv0 =
       emEntryPts = []
       delayedFieldInits = [] }
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
 let envBindTypeRef emEnv (tref:ILTypeRef) (typT: System.Type, typB, typeDef)= 
 #else
 let envBindTypeRef emEnv (tref:ILTypeRef) (typT: System.Type?, typB, typeDef)= 
 #endif
     match typT with 
     | null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name;
-#if BUILDING_WITH_LKG
-    | typT ->
-#else
     | NonNull typT ->
-#endif
         {emEnv with emTypMap = Zmap.add tref (typT, typB, typeDef, None) emEnv.emTypMap}
 
 let envUpdateCreatedTypeRef emEnv (tref:ILTypeRef) =
@@ -528,7 +524,7 @@ let rec convTypeSpec cenv emEnv preferCreated (tspec:ILTypeSpec) =
         | _   , false -> null
     match res with 
     | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tspec.TypeRef.QualifiedName, tspec.Scope.QualifiedName), range0))
-    | _ -> res
+    | NonNull res -> res
       
 and convTypeAux cenv emEnv preferCreated ty =
     match ty with
@@ -670,7 +666,7 @@ let queryableTypeGetField _emEnv (parentT:Type) (fref: ILFieldRef)  =
     let res = parentT.GetField(fref.Name, BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.Static )  
     match res with 
     | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fref.Name, fref.DeclaringTypeRef.FullName, fref.DeclaringTypeRef.Scope.QualifiedName), range0))
-    | _ -> res
+    | NonNull res -> res
     
 let nonQueryableTypeGetField (parentTI:Type) (fieldInfo : FieldInfo) : FieldInfo = 
     let res = 
@@ -678,10 +674,10 @@ let nonQueryableTypeGetField (parentTI:Type) (fieldInfo : FieldInfo) : FieldInfo
         else fieldInfo
     match res with 
     | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fieldInfo.Name, parentTI.AssemblyQualifiedName, parentTI.Assembly.FullName), range0))
-    | _ -> res
+    | NonNull res -> res
 
 
-let convFieldSpec cenv emEnv fspec =
+let convFieldSpec cenv emEnv fspec : FieldInfo =
     let fref = fspec.FieldRef
     let tref = fref.DeclaringTypeRef 
     let parentTI = convType cenv emEnv fspec.DeclaringType
@@ -789,12 +785,20 @@ let queryableTypeGetMethod cenv emEnv parentT (mref:ILMethodRef) : MethodInfo =
               parentT.GetMethod(mref.Name, cconv ||| BindingFlags.Public ||| BindingFlags.NonPublic, 
                                 null, 
                                 argTs, 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
 #if FX_RESHAPED_REFLECTION
                                 (null:obj[]))
 #else
                                 (null:ParameterModifier[]))
 #endif
-            // This can fail if there is an ambiguity w.r.t. return type 
+#else
+#if FX_RESHAPED_REFLECTION
+                                (null:obj[]?))
+#else
+                                (null:ParameterModifier[]?))
+#endif
+#endif
+               // This can fail if there is an ambiguity w.r.t. return type 
             with _ -> null
         if (isNonNull methInfo && equalTypes resT methInfo.ReturnType) then 
              methInfo
@@ -803,7 +807,7 @@ let queryableTypeGetMethod cenv emEnv parentT (mref:ILMethodRef) : MethodInfo =
     else 
         queryableTypeGetMethodBySearch cenv emEnv parentT mref
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
 let nonQueryableTypeGetMethod (parentTI:Type) (methInfo : MethodInfo) : MethodInfo = 
 #else
 let nonQueryableTypeGetMethod (parentTI:Type) (methInfo : MethodInfo) : MethodInfo? = 
@@ -831,11 +835,7 @@ let convMethodRef cenv emEnv (parentTI:Type) (mref:ILMethodRef) : MethodInfo =
                 queryableTypeGetMethod cenv emEnv parentTI mref 
     match res with 
     | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("method", mref.Name, parentTI.FullName, parentTI.Assembly.FullName), range0))
-#if BUILDING_WITH_LKG
-    | _ -> res 
-#else
     | NonNull res -> res 
-#endif
 
 //----------------------------------------------------------------------------
 // convMethodSpec
@@ -865,10 +865,10 @@ let queryableTypeGetConstructor cenv emEnv (parentT:Type) (mref:ILMethodRef) : C
     let res = parentT.GetConstructor(BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance, null, reqArgTs, null)  
     match res with 
     | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", mref.Name, parentT.FullName, parentT.Assembly.FullName), range0))
-    | _ -> res
+    | NonNull res -> res
 
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
 let nonQueryableTypeGetConstructor (parentTI:Type) (consInfo : ConstructorInfo) : ConstructorInfo = 
 #else
 let nonQueryableTypeGetConstructor (parentTI:Type) (consInfo : ConstructorInfo) : ConstructorInfo? = 
@@ -896,11 +896,7 @@ let convConstructorSpec cenv emEnv (mspec:ILMethodSpec) =
                 queryableTypeGetConstructor cenv emEnv parentTI mref 
     match res with 
     | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", "", parentTI.FullName, parentTI.Assembly.FullName), range0))
-#if BUILDING_WITH_LKG
-    | _ -> res
-#else
     | NonNull res -> res
-#endif
 
 //----------------------------------------------------------------------------
 // emitLabelMark

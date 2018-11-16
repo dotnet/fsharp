@@ -50,7 +50,7 @@ type FSharpCommandLineBuilder () =
         if s <> String.Empty then
             args <- s :: args
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     member x.AppendSwitchIfNotNull(switch:string, value:string, ?metadataNames:string[]) =
 #else
     member x.AppendSwitchIfNotNull(switch:string, value:string?, ?metadataNames:string[]) =
@@ -69,7 +69,7 @@ type FSharpCommandLineBuilder () =
         if s <> String.Empty then
             args <- s :: args
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     member x.AppendSwitchUnquotedIfNotNull(switch:string, value:string) =
 #else
     member x.AppendSwitchUnquotedIfNotNull(switch:string, value:string?) =

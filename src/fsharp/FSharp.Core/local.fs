@@ -1096,7 +1096,7 @@ module internal Array =
         if len < 2 then () 
         else Array.Sort<_>(array, fastComparerForArraySort())
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     let stableSortWithKeysAndComparer (cFast:IComparer<'Key>) (c:IComparer<'Key>) (array:array<'T>) (keys:array<'Key>)  =
 #else
     let stableSortWithKeysAndComparer (cFast:IComparer<'Key>?) (c:IComparer<'Key>) (array:array<'T>) (keys:array<'Key>)  =

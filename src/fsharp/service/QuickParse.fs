@@ -68,7 +68,11 @@ module QuickParse =
       | true, _, true when name.Length > 2 -> isValidStrippedName (name.Substring(1, name.Length - 2)) 0
       | _ -> false
     
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    let GetCompleteIdentifierIslandImpl (lineStr: string) (index: int) : (string * int * bool) option =
+#else
     let GetCompleteIdentifierIslandImpl (lineStr: string?) (index: int) : (string * int * bool) option =
+#endif
         match lineStr with 
         | null -> None
         | NonNull lineStr -> 
@@ -179,7 +183,11 @@ module QuickParse =
     let private defaultName = [], ""
 
     /// Get the partial long name of the identifier to the left of index.
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    let GetPartialLongName(lineStr: string, index: int) =
+#else
     let GetPartialLongName(lineStr: string?, index: int) =
+#endif
         match lineStr with
         | null -> defaultName
         | NonNull lineStr ->
@@ -220,7 +228,11 @@ module QuickParse =
 
     /// Get the partial long name of the identifier to the left of index.
     /// For example, for `System.DateTime.Now` it returns PartialLongName ([|"System"; "DateTime"|], "Now", Some 32), where "32" pos of the last dot.
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    let GetPartialLongNameEx(lineStr: string, index: int) : PartialLongName =
+#else
     let GetPartialLongNameEx(lineStr: string?, index: int) : PartialLongName =
+#endif
         match lineStr with
         | null -> PartialLongName.Empty(index)
         | NonNull lineStr ->

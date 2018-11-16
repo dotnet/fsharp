@@ -127,12 +127,14 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
         Tainted(context, u)
 
     member this.PApplyArray(f, methodName, range:range) =        
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        let a : 'U[] = this.Protect f range
+#else
         let a : 'U[]? = this.Protect f range
+#endif
         match a with 
         | null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
-        | _ -> 
-            let a = nonNull a
-            a |> Array.map (fun u -> Tainted(context,u))  // TODO NULLNESS: this use of nonNull should not be needed
+        | NonNull a -> a |> Array.map (fun u -> Tainted(context,u))
 
     member this.PApplyOption(f,range:range) =        
         let a = this.Protect f range
@@ -161,8 +163,13 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
 
 module internal Tainted =
 
-    let (|Null|NonNull|) (p:Tainted< 'T? >) : Choice<unit,Tainted<'T>> when 'T : not null =
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    let (|Null|NonNull|) (p:Tainted<'T>) : Choice<unit,Tainted<'T>> when 'T : null =
+        if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure id)
+#else
+    let (|Null|NonNull|) (p:Tainted<'T?>) : Choice<unit,Tainted<'T>> when 'T : not null =
         if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure nonNull)
+#endif
 
     let Eq (p:Tainted<'T>) (v:'T) = p.PUntaintNoFailure((fun pv -> pv = v))
 

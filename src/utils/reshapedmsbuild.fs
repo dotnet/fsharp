@@ -354,8 +354,11 @@ module internal ToolLocationHelper =
 //            }
 
         // Doesn't need to be virtual @@@@@
-        abstract member GetPathToDotNetFramework: DotNetFrameworkArchitecture -> string
-        default this.GetPathToDotNetFramework arch =
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        member this.GetPathToDotNetFramework (arch: DotNetFrameworkArchitecture) : string =
+#else
+        member this.GetPathToDotNetFramework (arch: DotNetFrameworkArchitecture) : string? =
+#endif
             match this.pathsToDotNetFramework.TryGetValue(arch) with
             | true, x -> x
             | _ ->

@@ -27,12 +27,15 @@ if [%1]==[force] (
 )
 
 set /p DOTNET_TOOLS_VERSION=< "%~dp0DotnetCLIToolsVersion.txt"
+echo Checking for "%DOTNET_TOOLS_PATH%\sdk\%DOTNET_TOOLS_VERSION%"
 if not exist "%DOTNET_TOOLS_PATH%\sdk\%DOTNET_TOOLS_VERSION%" (
   :: dotnet cli doesn't yet exist, delete the semaphore
+  echo del "%BUILD_TOOLS_SEMAPHORE%"
   del "%BUILD_TOOLS_SEMAPHORE%" >NUL 2>&1
 )
 
 :: If sempahore exists do nothing
+echo Checking for "%BUILD_TOOLS_SEMAPHORE%"
 if exist "%BUILD_TOOLS_SEMAPHORE%" (
   echo Tools are already initialized.
   goto :DONE

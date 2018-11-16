@@ -189,10 +189,10 @@ type internal FSharpAsyncQuickInfoSource
 
         // This method can be called from the background thread.
         // Do not call IServiceProvider.GetService here.
-        override __.GetQuickInfoItemAsync(session:IAsyncQuickInfoSession, cancellationToken:CancellationToken) : Task< QuickInfoItem? > =
+        override __.GetQuickInfoItemAsync(session:IAsyncQuickInfoSession, cancellationToken:CancellationToken) : Task<QuickInfoItem?> =
             let triggerPoint = session.GetTriggerPoint(textBuffer.CurrentSnapshot)
             match triggerPoint.HasValue with
-            | false -> Task.FromResult< QuickInfoItem? >(null)
+            | false -> Task.FromResult<QuickInfoItem?>(null)
             | true ->
                 let triggerPoint = triggerPoint.GetValueOrDefault()
                 let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService)

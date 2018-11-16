@@ -10,6 +10,7 @@ open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 #if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
@@ -327,10 +328,15 @@ let IsPropInfoAccessible g amap m ad = function
     | ProvidedProp (amap, tppi, m) as pp-> 
         let access = 
             let a = tppi.PUntaint((fun ppi -> 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+                let tryGetILAccessForProvidedMethodBase (mi : ProvidedMethodInfo) =
+#else
                 let tryGetILAccessForProvidedMethodBase (mi : ProvidedMethodInfo?) = // TODO NULLNESS: using ProvidedMethodBase? gives a nullness warning
+#endif
                     match mi with
                     | null -> None
-                    | NonNull mi -> Some(ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly)
+                    | NonNull mi -> 
+                        Some(ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly)
 
                 match tryGetILAccessForProvidedMethodBase(ppi.GetGetMethod()) with
                 | None -> tryGetILAccessForProvidedMethodBase(ppi.GetSetMethod())

@@ -4150,10 +4150,18 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
 
 #if !NO_EXTENSIONTYPING
-    member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted< ProvidedAssembly? >) = 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly>) = 
+#else
+    member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly?>) = 
+#endif
         match assembly with 
         | Tainted.Null -> false,None
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        | assembly -> 
+#else
         | Tainted.NonNull assembly -> 
+#endif
         let aname = assembly.PUntaint((fun a -> a.GetName()), m)
         let ilShortAssemName = aname.Name
         match tcImports.FindCcu (ctok, m, ilShortAssemName, lookupOnly=true) with 

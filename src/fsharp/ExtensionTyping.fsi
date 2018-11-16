@@ -93,17 +93,28 @@ module internal ExtensionTyping =
 #endif
 
     type [<Sealed; Class>] 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        [<AllowNullLiteral>]
+#endif
         ProvidedType =
         inherit ProvidedMemberInfo
         member IsSuppressRelocate : bool
         member IsErased : bool
         member IsGenericType : bool
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        member Namespace : string
+#else
         member Namespace : string?
+#endif
         member FullName : string
         member IsArray : bool
         member GetInterfaces : unit -> ProvidedType[]
         member Assembly : ProvidedAssembly
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        member BaseType : ProvidedType
+#else
         member BaseType : ProvidedType?
+#endif
         member GetNestedType : string -> ProvidedType
         member GetNestedTypes : unit -> ProvidedType[]
         member GetAllNestedTypes : unit -> ProvidedType[]
@@ -143,13 +154,24 @@ module internal ExtensionTyping =
         interface IProvidedCustomAttributeProvider
         static member TaintedEquals : Tainted<ProvidedType> * Tainted<ProvidedType> -> bool 
 
-    and IProvidedCustomAttributeProvider =
+    and 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        [<AllowNullLiteral>]
+#endif
+        IProvidedCustomAttributeProvider =
         abstract GetHasTypeProviderEditorHideMethodsAttribute : provider:ITypeProvider -> bool
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        abstract GetDefinitionLocationAttribute : provider:ITypeProvider -> (string * int * int) option 
+#else
         abstract GetDefinitionLocationAttribute : provider:ITypeProvider -> (string? * int * int) option 
+#endif
         abstract GetXmlDocAttributes : provider:ITypeProvider -> string[]
         abstract GetAttributeConstructorArgs: provider:ITypeProvider * attribName:string -> (obj option list * (string * obj option) list) option
         
     and [<Sealed; Class>] 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        [<AllowNullLiteral>]
+#endif
         ProvidedAssembly = 
         member GetName : unit -> System.Reflection.AssemblyName
         member FullName : string
@@ -157,12 +179,22 @@ module internal ExtensionTyping =
         member Handle : System.Reflection.Assembly
 
     and [<AbstractClass>] 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        [<AllowNullLiteral>]
+#endif
         ProvidedMemberInfo = 
         member Name :string
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        member DeclaringType : ProvidedType
+#else
         member DeclaringType : ProvidedType?
+#endif
         interface IProvidedCustomAttributeProvider 
 
     and [<AbstractClass>] 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        [<AllowNullLiteral>]
+#endif
         ProvidedMethodBase = 
         inherit ProvidedMemberInfo
         member IsGenericMethod : bool
@@ -183,6 +215,9 @@ module internal ExtensionTyping =
         static member TaintedEquals : Tainted<ProvidedMethodBase> * Tainted<ProvidedMethodBase> -> bool 
 
     and [<Sealed; Class>] 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        [<AllowNullLiteral>]
+#endif
         ProvidedMethodInfo = 
         inherit ProvidedMethodBase
         member ReturnType : ProvidedType
@@ -191,6 +226,9 @@ module internal ExtensionTyping =
 #endif
 
     and [<Sealed; Class>] 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        [<AllowNullLiteral>]
+#endif
         ProvidedParameterInfo = 
         member Name : string
         member ParameterType : ProvidedType
@@ -202,6 +240,9 @@ module internal ExtensionTyping =
         interface IProvidedCustomAttributeProvider 
 
     and [<Class; Sealed>] 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        [<AllowNullLiteral>]
+#endif
         ProvidedFieldInfo = 
         inherit ProvidedMemberInfo
         member IsInitOnly : bool
@@ -218,12 +259,21 @@ module internal ExtensionTyping =
         static member TaintedEquals : Tainted<ProvidedFieldInfo> * Tainted<ProvidedFieldInfo> -> bool 
 
     and [<Class; Sealed>] 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        [<AllowNullLiteral>]
+#endif
         ProvidedPropertyInfo = 
         inherit ProvidedMemberInfo
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        member GetGetMethod : unit -> ProvidedMethodInfo
+
+        member GetSetMethod : unit -> ProvidedMethodInfo
+#else
         member GetGetMethod : unit -> ProvidedMethodInfo?
 
         member GetSetMethod : unit -> ProvidedMethodInfo?
+#endif
 
         member GetIndexParameters : unit -> ProvidedParameterInfo[]
 
@@ -238,6 +288,9 @@ module internal ExtensionTyping =
         static member TaintedEquals : Tainted<ProvidedPropertyInfo> * Tainted<ProvidedPropertyInfo> -> bool 
 
     and [<Class; Sealed>] 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        [<AllowNullLiteral>]
+#endif
         ProvidedEventInfo = 
         inherit ProvidedMemberInfo
         member GetAddMethod : unit -> ProvidedMethodInfo
@@ -247,16 +300,25 @@ module internal ExtensionTyping =
         static member TaintedEquals : Tainted<ProvidedEventInfo> * Tainted<ProvidedEventInfo> -> bool 
 
     and [<Class; Sealed>] 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        [<AllowNullLiteral>]
+#endif
         ProvidedConstructorInfo = 
         inherit ProvidedMethodBase
         
     [<Class; Sealed>]
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    [<AllowNullLiteral>]
+#endif
     type ProvidedExpr =
         member Type : ProvidedType
         /// Convert the expression to a string for diagnostics
         member UnderlyingExpressionString : string
 
     [<Class; Sealed>]
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    [<AllowNullLiteral>]
+#endif
     type ProvidedVar =
         member Type : ProvidedType
         member Name : string

@@ -3354,7 +3354,7 @@ namespace Microsoft.FSharp.Core
             | null -> false 
             | _ -> true
 
-#if !BUILDING_WITH_LKG
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 
         [<CompiledName("IsNullV")>]
         let inline isNullV (value : Nullable<'T>) = not value.HasValue
@@ -3445,7 +3445,7 @@ namespace Microsoft.FSharp.Core
         let inline nullArg (argumentName:string) = 
             raise (new System.ArgumentNullException(argumentName))        
 
-#if !BUILDING_WITH_LKG
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
         [<CompiledName("NullArgCheck")>]
         let inline nullArgCheck (argumentName:string) (value: 'T? when 'T : not struct) = 
             match value with 
@@ -3503,10 +3503,26 @@ namespace Microsoft.FSharp.Core
         let (^) (s1: string) (s2: string) = System.String.Concat(s1, s2)
 
         [<CompiledName("DefaultArg")>]
-        let defaultArg arg defaultValue = match arg with None -> defaultValue | Some v -> v
+        let inline defaultArg arg defaultValue = 
+            match arg with None -> defaultValue | Some v -> v
         
         [<CompiledName("DefaultValueArg")>]
-        let defaultValueArg arg defaultValue = match arg with ValueNone -> defaultValue | ValueSome v -> v
+        let inline defaultValueArg arg defaultValue = 
+            match arg with ValueNone -> defaultValue | ValueSome v -> v
+
+        [<CompiledName("DefaultIfNone")>]
+        let inline defaultIfNone defaultValue arg = 
+            match arg with None -> defaultValue | Some v -> v
+        
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+        [<CompiledName("DefaultIfNull")>]
+        let inline defaultIfNull defaultValue (arg: 'T? when 'T : not struct and 'T : not null) = 
+            match arg with null -> defaultValue | _ -> (# "" arg : 'T #)
+        
+        [<CompiledName("DefaultIfNullV")>]
+        let inline defaultIfNullV defaultValue (arg: Nullable<'T>) = 
+            if arg.HasValue then arg.Value else defaultValue
+#endif
 
         [<NoDynamicInvocation>]
         let inline (~-) (n: ^T) : ^T = 

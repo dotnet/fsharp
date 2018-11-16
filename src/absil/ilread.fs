@@ -212,7 +212,7 @@ module MemoryMapping =
                                      int _flProtect, 
                                      int _dwMaximumSizeLow, 
                                      int _dwMaximumSizeHigh, 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
                                      string _lpName) 
 #else
                                      string? _lpName) 
@@ -895,7 +895,7 @@ type GenericParamsIdx = GenericParamsIdx of int * TypeOrMethodDefTag * int
 
 let mkCacheInt32 lowMem _inbase _nm _sz  =
     if lowMem then (fun f x -> f x) else
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     let cache = ref null 
 #else
     let cache : Dictionary<_,_>? ref = ref null // TODO NULLNESS: this explicit annotation should not be needed 
@@ -911,11 +911,7 @@ let mkCacheInt32 lowMem _inbase _nm _sz  =
                 let c = new Dictionary<int32, _>(11)
                 cache :=  c
                 c
-#if BUILDING_WITH_LKG
-            | c -> c 
-#else
             | NonNull c -> c 
-#endif
         let mutable res = Unchecked.defaultof<_>
         let ok = cache.TryGetValue(idx, &res)
         if ok then 
@@ -928,7 +924,7 @@ let mkCacheInt32 lowMem _inbase _nm _sz  =
 
 let mkCacheGeneric lowMem _inbase _nm _sz  =
     if lowMem then (fun f x -> f x) else
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     let cache = ref null 
 #else
     let cache : Dictionary<_,_>? ref = ref null // TODO NULLNESS: this explicit annotation should not be needed
@@ -944,11 +940,7 @@ let mkCacheGeneric lowMem _inbase _nm _sz  =
                 let c = new Dictionary<_, _>(11) 
                 cache := c
                 c
-#if BUILDING_WITH_LKG
-            | c -> c
-#else
             | NonNull c -> c
-#endif
 
         match cache.TryGetValue(idx) with
         | true, v ->

@@ -15,6 +15,12 @@ open Internal.Utilities
 open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+[<AutoOpen>]
+module Utils = 
+    let inline (|NonNull|) x = match x with null -> raise (NullReferenceException()) | v -> v
+#endif
+
 //There are a lot of flags on fsc.exe.
 //For now, not all of them are represented in the "Fsc class" object model.
 //The goal is to have the most common/important flags available via the Fsc class, and the
@@ -50,7 +56,7 @@ type public Fsc () as this =
     let mutable vserrors : bool = false
     let mutable utf8output : bool = false
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     let mutable baseAddress : string = null
     let mutable codePage : string = null
     let mutable debugType : string = null
@@ -127,11 +133,7 @@ type public Fsc () as this =
         builder.AppendSwitchIfNotNull("--debug:",
             match debugType with 
             | null -> null
-#if BUILDING_WITH_LKG
-            | debugType ->
-#else
             | NonNull debugType -> 
-#endif             
                 match debugType.ToUpperInvariant() with
                 | "NONE"     -> null
                 | "PORTABLE" -> "portable"
@@ -171,11 +173,12 @@ type public Fsc () as this =
         builder.AppendSwitchIfNotNull("--pdb:", pdbFile)
         // Platform
         builder.AppendSwitchIfNotNull("--platform:",
-#if BUILDING_WITH_LKG
-            let ToUpperInvariant (s:string) = if s = null then null else s.ToUpperInvariant()
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+            let ToUpperInvariant (s:string) =
 #else
-            let ToUpperInvariant (s:string?) = match s with null -> null | NonNull s -> s.ToUpperInvariant()
+            let ToUpperInvariant (s:string?) =
 #endif
+                match s with null -> null | NonNull s -> s.ToUpperInvariant()
             match ToUpperInvariant(platform), prefer32bit, ToUpperInvariant(targetType) with
                 | "ANYCPU", true, "EXE"
                 | "ANYCPU", true, "WINEXE" -> "anycpu32bitpreferred"
@@ -201,11 +204,7 @@ type public Fsc () as this =
         let referencePathArray = // create a array of strings
             match referencePath with
             | null -> null
-#if BUILDING_WITH_LKG
-            | referencePath ->
-#else
             | NonNull referencePath ->
-#endif
                  referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
         builder.AppendSwitchesIfNotNull("--lib:", referencePathArray, ",")   
@@ -214,11 +213,7 @@ type public Fsc () as this =
         builder.AppendSwitchIfNotNull("--target:", 
             match targetType with 
             | null -> null
-#if BUILDING_WITH_LKG
-            | targetType -> 
-#else
             | NonNull targetType -> 
-#endif            
                 match targetType.ToUpperInvariant() with
                 | "LIBRARY" -> "library"
                 | "EXE" -> "exe"
@@ -229,11 +224,7 @@ type public Fsc () as this =
         // NoWarn
         match disabledWarnings with
         | null -> ()
-#if BUILDING_WITH_LKG
-        | disabledWarnings ->
-#else
         | NonNull disabledWarnings ->
-#endif
             builder.AppendSwitchesIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
         
         // WarningLevel
@@ -249,23 +240,14 @@ type public Fsc () as this =
         let warningsAsErrorsArray =
             match warningsAsErrors with
             | null -> [|"76"|]
-            // TODO NULLNESS: nonNull should not be needed
-#if BUILDING_WITH_LKG
-            | warningsAsErrors -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
-#else
             | NonNull warningsAsErrors -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
-#endif
 
         builder.AppendSwitchesIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
 
         // WarningsNotAsErrors
         match warningsNotAsErrors with
         | null -> ()
-#if BUILDING_WITH_LKG
-        | warningsNotAsErrors ->
-#else
         | NonNull warningsNotAsErrors ->
-#endif
             builder.AppendSwitchesIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
 
         // Win32ResourceFile
@@ -612,15 +594,10 @@ type public Fsc () as this =
 
     override fsc.GenerateCommandLineCommands() =
         let builder = new FSharpCommandLineBuilder()
-#if BUILDING_WITH_LKG
-        if not (String.IsNullOrEmpty(dotnetFscCompilerPath)) then 
-            builder.AppendSwitch(dotnetFscCompilerPath)
-#else
         match dotnetFscCompilerPath with
         | null | "" -> ()
         | NonNull dotnetFscCompilerPath ->
             builder.AppendSwitch(dotnetFscCompilerPath) // TODO NULLNESS: why is this explicit instantiation needed?
-#endif
         builder.ToString()
 
     override fsc.GenerateResponseFileCommands() =

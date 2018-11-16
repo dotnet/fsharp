@@ -17,7 +17,7 @@ open Microsoft.VisualStudio.FSharp.Interactive
 
 type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
 
-    let loadPackage (guidString: string) : Lazy< Package? > =
+    let loadPackage (guidString: string) : Lazy<Package?> =
       lazy(
         let shell = serviceProvider.GetService(typeof<SVsShell>) :?> IVsShell
         let packageToBeLoadedGuid = ref (Guid(guidString))       
