@@ -7613,17 +7613,33 @@ let TyconRefNullIsExtraValue isNew g m (tcref: TyconRef) =
 let TyconRefNullIsExtraValueOld g m tcref = TyconRefNullIsExtraValue false g m tcref
 let TyconRefNullIsExtraValueNew g m tcref = TyconRefNullIsExtraValue true g m tcref
 
-/// Indicates if the type admits the use of 'null' as a value
+/// The F# 4.5 logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueOld g m ty = 
-    match tryDestAppTy g ty with 
-    | ValueSome tcref -> TyconRefNullIsExtraValueOld g m tcref 
-    | _ -> false
+    if isILReferenceTy g ty || isDelegateTy g ty then
+        match tryDestAppTy g ty with 
+        | ValueSome tcref -> 
+            // In F# 4.x, putting AllowNullLiteralAttribute(false) on an IL or provided 
+            // type means 'null' can't be used with that type, otherwise it can
+            TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref <> Some false 
+        | _ -> 
+            // In F# 4.5, other IL reference types (e.g. arrays) always support null
+            true
+    elif TypeNullNever g ty then 
+        false
+    else 
+        // In F# 4.x, putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
+        match tryDestAppTy g ty with 
+        | ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true 
+        | _ -> false
 
-/// Indicates if the type admits the use of 'null' as a value
+/// The F# 5.0 logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueNew g m ty = 
     let sty = stripTyparEqns ty
     (match tryDestAppTy g sty with 
-     | ValueSome tcref -> TyconRefNullIsExtraValueNew g m tcref 
+     | ValueSome tcref -> 
+        not tcref.IsStructOrEnumTycon &&
+        not (isByrefLikeTyconRef g m tcref) && 
+        (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true)
      | _ -> false) 
     ||
     (match (nullnessOfTy g sty).Evaluate() with 
@@ -7631,6 +7647,7 @@ let TypeNullIsExtraValueNew g m ty =
      | NullnessInfo.WithoutNull -> false
      | NullnessInfo.WithNull -> true)
 
+/// The F# 4.5 and 5.0 logic about whether a type uses 'null' as a true representation value
 let TypeNullIsTrueValue g ty =
     (match tryDestAppTy g ty with
      | ValueSome tcref -> IsUnionTypeWithNullAsTrueValue g tcref.Deref
@@ -7639,8 +7656,6 @@ let TypeNullIsTrueValue g ty =
 
 /// Indicates if unbox<T>(null) is actively rejected at runtime.   See nullability RFC.  This applies to types that don't have null
 /// as a valid runtime representation under old compatiblity rules.
-//
-// TODO NULLNESS: Consider whether we need to adjust this predicate, and the compatibility issues with doing this
 let TypeNullNotLiked g m ty = 
        not (TypeNullIsExtraValueOld g m ty) 
     && not (TypeNullIsTrueValue g ty) 

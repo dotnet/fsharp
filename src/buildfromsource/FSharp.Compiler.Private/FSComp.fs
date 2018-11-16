@@ -4399,10 +4399,10 @@ type internal SR private() =
     /// This language feature is not enabled, use /langversion:5.0 or greater to enable it
     /// (Originally from ..\FSComp.txt:1461)
     static member tcLangFeatureNotEnabled50() = (3265, GetStringFunc("tcLangFeatureNotEnabled50",",,,") )
-    /// Nullability warning. The default constructor of a struct type is required but one of the fields of struct type is non-nullable.
+    /// Nullness warning. The default constructor of a struct type is required but one of the fields of struct type is non-nullable.
     /// (Originally from ..\FSComp.txt:1462)
     static member tcDefaultStructConstructorCallNulls() = (3266, GetStringFunc("tcDefaultStructConstructorCallNulls",",,,") )
-    /// Nullability warning. The 'DefaultValue' attribute is used but the type (or one of its fields if a struct) is non-nullable.
+    /// Nullness warning. The 'DefaultValue' attribute is used but the type (or one of its fields if a struct) is non-nullable.
     /// (Originally from ..\FSComp.txt:1463)
     static member chkValueWithDefaultValueMustHaveDefaultValueNulls() = (3267, GetStringFunc("chkValueWithDefaultValueMustHaveDefaultValueNulls",",,,") )
     /// The constraints 'null' and 'not null' are inconsistent

@@ -164,7 +164,58 @@ module CoreTests =
     [<Test>]
     let ``test int32`` () = singleTestBuildAndRun "core/int32" FSC_BASIC
 
+    [<Test>]
+    let nullness () = singleTestBuildAndRun "core/nullness" FSC_BASIC
+
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    [<Test>]
+    let ``subtype-langversion-50-checknulls`` () =
+        let cfg = testConfig "core/subtype"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-checknulls.exe -g --langversion:5.0 --checknulls" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-checknulls.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``subtype-langversion-50-checknulls`` () =
+        let cfg = testConfig "core/subtype"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-no-checknulls.exe -g --langversion:5.0" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-no-checknulls.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``subtype-langversion-45`` () =
+        let cfg = testConfig "core/subtype"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-langversion-45.exe -g --langversion:4.5" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-langversion-45.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let nullness_checknulls () =
+        let cfg = testConfig "core/nullness"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-checknulls.exe -g --checknulls" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-checknulls.exe") ""
+
+        testOkFile.CheckExists()
+
     [<Test>]
     let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC
 
@@ -965,6 +1016,31 @@ module CoreTests =
     let ``libtest-FSI_BASIC`` () = singleTestBuildAndRun "core/libtest" FSI_BASIC
 
     [<Test>]
+    let ``libtest-langversion-50-checknulls`` () =
+        let cfg = testConfig "core/libtest"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-checknulls.exe -g --langversion:5.0 --checknulls" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-checknulls.exe") ""
+
+        testOkFile.CheckExists()
+
+ 
+    [<Test>]
+    let ``libtest-langversion-45`` () =
+        let cfg = testConfig "core/libtest"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-langversion-45.exe -g --langversion:4.5" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-langversion-45.exe") ""
+
+        testOkFile.CheckExists()
+
+   [<Test>]
     let ``letrec (mutrec variations part two) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI_BASIC
 
     [<Test>]
