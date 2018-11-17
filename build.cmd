@@ -955,9 +955,11 @@ if "%TEST_NET40_FSHARP_SUITE%" == "1" (
         set ERRORARG=--err:"!ERRORFILE!" 
     )
 
-    echo "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\FSharp.Tests.FSharpSuite.dll" --framework:V4.0 --work:"!FSCBINPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!
-         "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\FSharp.Tests.FSharpSuite.dll" --framework:V4.0 --work:"!FSCBINPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!
+    echo "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\FSharp.Tests.FSharpSuite.dll" --framework:V4.0 --work:"!FSCBINPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" --test=FSharp-Tests-Core+CoreTests.testFSharpPlusBuild !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\FSharp.Tests.FSharpSuite.dll" --framework:V4.0 --work:"!FSCBINPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" --test=FSharp-Tests-Core+CoreTests.testFSharpPlusBuild !WHERE_ARG_NUNIT!
 
+    echo "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\FSharp.Tests.FSharpSuite.dll" --framework:V4.0 --work:"!FSCBINPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" --test=FSharp-Tests-Core+CoreTests.testFSharpPlusTests !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\FSharp.Tests.FSharpSuite.dll" --framework:V4.0 --work:"!FSCBINPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" --test=FSharp-Tests-Core+CoreTests.testFSharpPlusTests !WHERE_ARG_NUNIT!
     if errorlevel 1 (
         type "!ERRORFILE!"
         echo -----------------------------------------------------------------
