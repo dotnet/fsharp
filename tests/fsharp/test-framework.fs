@@ -189,22 +189,17 @@ let config configurationName envVars =
             | [||] -> failwithf "Could not find any 'FSharp.Compiler.Tools' inside '%s'" packagesDir
             | [| dir |] -> Path.Combine(dir, "tools", "fsi.exe")
             | _ -> failwithf "Found more than one 'FSharp.Compiler.Tools' inside '%s', please clean up." packagesDir
-    // let toolsDir = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools"
+    let toolsDir = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools"
     let dotNetExe =
-        let dotnetPath =
+        if File.Exists(toolsDir ++ "dotnetcli" ++ "dotnet.exe") then
+            toolsDir ++ "dotnetcli" ++ "dotnet.exe"
+        else
             let path = envVars.["Path"].Split(';')
-            let res =
-                path
-                |> Array.filter(fun path -> path.Contains("dotnetcli"))
-                |> Array.tryFind(fun path -> File.Exists(path ++ "dotnet.exe"))
-            match res with
-            | Some dotnetpath -> dotnetpath
-            | None -> 
+            let dotnetPath =
                 path
                 |> Array.filter(fun path -> path.Contains("dotnet"))
                 |> Array.find(fun path -> File.Exists(path ++ "dotnet.exe"))
-        dotnetPath ++ "dotnet.exe"
-        // toolsDir ++ "dotnetcli" ++ "dotnet.exe"
+            dotnetPath ++ "dotnet.exe"
     // ildasm requires coreclr.dll to run which has already been restored to the packages directory
     File.Copy(coreclrdll, Path.GetDirectoryName(ILDASM) ++ "coreclr.dll", overwrite=true)
 
