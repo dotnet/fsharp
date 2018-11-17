@@ -1734,7 +1734,7 @@ module RegressionTests =
         let outFile = "compilation.output.test.txt"
         let expectedFile = "compilation.output.test.bsl"
         
-        fscBothToOut cfg outFile "%s --nologo" cfg.fsc_flags ["test.fs"]
+        fscBothToOut cfg outFile "%s --nologo -O" cfg.fsc_flags ["test.fs"]
 
         let diff = fsdiff cfg outFile expectedFile
 
