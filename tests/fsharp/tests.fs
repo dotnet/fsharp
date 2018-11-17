@@ -63,6 +63,7 @@ module CoreTests =
             "FSharpPlus.fsproj"
             "/p:Configuration=Release"
             "/p:CompilerTest=true"
+            "/p:TargetFramework=net45"
             sprintf "/p:FSC_ToolPathCompilerBuild=%s" fullPath
             sprintf "/p:FSC_ExePathCompilerBuild=%s" (fullPath ++ "fsc.exe")
         ]
@@ -87,6 +88,7 @@ module CoreTests =
             "FSharpPlus.Tests.fsproj"
             "/p:Configuration=Release"
             "/p:CompilerTest=true"
+            "/p:TargetFramework=net45"
             sprintf "/p:FSC_ToolPathCompilerBuild=%s" fullPath
             sprintf "/p:FSC_ExePathCompilerBuild=%s" (fullPath ++ "fsc.exe")
         ]
