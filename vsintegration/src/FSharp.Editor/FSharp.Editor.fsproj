@@ -117,6 +117,8 @@
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+    <ProjectReference Include="..\FSharp.Compiler.Server.Runner\FSharp.Compiler.Server.Runner.fsproj" />
+    <ProjectReference Include="..\FSharp.Compiler.Server\FSharp.Compiler.Server.fsproj" />
     <ProjectReference Include="..\FSharp.PatternMatcher\FSharp.PatternMatcher.csproj" />
     <ProjectReference Include="..\FSharp.UIResources\FSharp.UIResources.csproj" />
     <ProjectReference Include="..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />

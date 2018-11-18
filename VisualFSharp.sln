@@ -136,6 +136,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Legacy", "Legacy", "{CCAB6E
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "GetTypesVSUnitTests", "vsintegration\tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj", "{6D93CEBD-4540-4D96-A153-B440A661FD09}"
 EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Server", "vsintegration\src\FSharp.Compiler.Server\FSharp.Compiler.Server.fsproj", "{776957DE-589E-4C70-9A5E-8CBB373F78A5}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Server.Runner", "vsintegration\src\FSharp.Compiler.Server.Runner\FSharp.Compiler.Server.Runner.fsproj", "{8BDD431A-0B46-4695-BAA9-FC3825AC1EC8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -568,6 +572,22 @@ Global
 		{6D93CEBD-4540-4D96-A153-B440A661FD09}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6D93CEBD-4540-4D96-A153-B440A661FD09}.Release|x86.ActiveCfg = Release|Any CPU
 		{6D93CEBD-4540-4D96-A153-B440A661FD09}.Release|x86.Build.0 = Release|Any CPU
+		{776957DE-589E-4C70-9A5E-8CBB373F78A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{776957DE-589E-4C70-9A5E-8CBB373F78A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{776957DE-589E-4C70-9A5E-8CBB373F78A5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{776957DE-589E-4C70-9A5E-8CBB373F78A5}.Debug|x86.Build.0 = Debug|Any CPU
+		{776957DE-589E-4C70-9A5E-8CBB373F78A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{776957DE-589E-4C70-9A5E-8CBB373F78A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{776957DE-589E-4C70-9A5E-8CBB373F78A5}.Release|x86.ActiveCfg = Release|Any CPU
+		{776957DE-589E-4C70-9A5E-8CBB373F78A5}.Release|x86.Build.0 = Release|Any CPU
+		{8BDD431A-0B46-4695-BAA9-FC3825AC1EC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8BDD431A-0B46-4695-BAA9-FC3825AC1EC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8BDD431A-0B46-4695-BAA9-FC3825AC1EC8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8BDD431A-0B46-4695-BAA9-FC3825AC1EC8}.Debug|x86.Build.0 = Debug|Any CPU
+		{8BDD431A-0B46-4695-BAA9-FC3825AC1EC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8BDD431A-0B46-4695-BAA9-FC3825AC1EC8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8BDD431A-0B46-4695-BAA9-FC3825AC1EC8}.Release|x86.ActiveCfg = Release|Any CPU
+		{8BDD431A-0B46-4695-BAA9-FC3825AC1EC8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -633,6 +653,8 @@ Global
 		{18227628-DF90-4C47-AF3D-CC72D2EDD986} = {4C7B48D7-19AF-4AE7-9D1D-3BB289D5480D}
 		{CCAB6E50-34C6-42AF-A6B0-567C29FCD91B} = {4C7B48D7-19AF-4AE7-9D1D-3BB289D5480D}
 		{6D93CEBD-4540-4D96-A153-B440A661FD09} = {F7876C9B-FB6A-4EFB-B058-D6967DB75FB2}
+		{776957DE-589E-4C70-9A5E-8CBB373F78A5} = {4C7B48D7-19AF-4AE7-9D1D-3BB289D5480D}
+		{8BDD431A-0B46-4695-BAA9-FC3825AC1EC8} = {4C7B48D7-19AF-4AE7-9D1D-3BB289D5480D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {48EDBBBE-C8EE-4E3C-8B19-97184A487B37}
