@@ -96,6 +96,8 @@ type internal SingleFileWorkspaceMap(workspace: VisualStudioWorkspace,
                             optionsManager.ClearSingleFileOptionsCache(document.Id)
                             projectContext.Dispose()
                             files.[pszMkDocumentNew] <- createProjectContext pszMkDocumentNew
+                    else
+                        projectContext.Dispose() // fallback, shouldn't happen, but in case it does let's dispose of the project context so we don't leak
                 | _ -> ()
             VSConstants.S_OK
 
