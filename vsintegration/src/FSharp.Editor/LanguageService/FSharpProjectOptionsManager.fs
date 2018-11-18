@@ -29,15 +29,7 @@ module private FSharpProjectOptionsHelpers =
         let sourcePaths, referencePaths, options =
             match cpsCommandLineOptions.TryGetValue(project.Id) with
             | true, (sourcePaths, options) -> sourcePaths, [||], options
-            | false, _ -> 
-                if project.Documents.Count() = 1 then // Handle misc files / standalone files / script files
-                    let document = project.Documents.ElementAt(0)
-                    if project.FilePath = document.FilePath then
-                        [|document.FilePath|], [||], [||]
-                    else
-                        [||], [||], [||]
-                else 
-                    [||], [||], [||]
+            | false, _ -> [||], [||], [||]
         {
             new IProvideProjectSite with
                 member x.GetProjectSite() =
