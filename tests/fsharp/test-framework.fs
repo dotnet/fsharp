@@ -191,8 +191,8 @@ let config configurationName envVars =
             | _ -> failwithf "Found more than one 'FSharp.Compiler.Tools' inside '%s', please clean up." packagesDir
     let toolsDir = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools"
     let dotNetExe =
-        if File.Exists(toolsDir ++ "dotnetcli" ++ "dotnet.exe") then
-            toolsDir ++ "dotnetcli" ++ "dotnet.exe"
+        if File.Exists(toolsDir ++ "dotnet20" ++ "dotnet.exe") then
+            toolsDir ++ "dotnet20" ++ "dotnet.exe"
         else
             let path = envVars.["Path"].Split(';')
             let dotnetPath =
