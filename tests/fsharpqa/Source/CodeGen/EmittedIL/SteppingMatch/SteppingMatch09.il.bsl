@@ -44,13 +44,13 @@
   // Offset: 0x00000428 Length: 0x00000000
 }
 .module SteppingMatch09.dll
-// MVID: {5BF2D3CD-4935-D6AC-A745-0383CDD3F25B}
+// MVID: {5BF32B72-4935-D6AC-A745-0383722BF35B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00CC0000
+// Image base: 0x007A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -59,7 +59,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'GenericInner@15-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit GenericInner@15
          extends [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc
   {
     .method assembly specialname rtspecialname 
@@ -74,7 +74,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc::.ctor()
       IL_0006:  ret
-    } // end of method 'GenericInner@15-3'::.ctor
+    } // end of method GenericInner@15::.ctor
 
     .method public strict virtual instance object 
             Specialize<T>() cil managed
@@ -84,22 +84,22 @@
       // Code size       12 (0xc)
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  newobj     instance void class SteppingMatch09/'GenericInner@15-3T'<!!T>::.ctor(class SteppingMatch09/'GenericInner@15-3')
+      IL_0001:  newobj     instance void class SteppingMatch09/GenericInner@15T<!!T>::.ctor(class SteppingMatch09/GenericInner@15)
       IL_0006:  box        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!T>,int32>
       IL_000b:  ret
-    } // end of method 'GenericInner@15-3'::Specialize
+    } // end of method GenericInner@15::Specialize
 
-  } // end of class 'GenericInner@15-3'
+  } // end of class GenericInner@15
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'GenericInner@15-3T'<T>
+  .class auto ansi serializable sealed nested assembly beforefieldinit GenericInner@15T<T>
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!T>,int32>
   {
-    .field public class SteppingMatch09/'GenericInner@15-3' self0@
+    .field public class SteppingMatch09/GenericInner@15 self0@
     .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
-            instance void  .ctor(class SteppingMatch09/'GenericInner@15-3' self0@) cil managed
+            instance void  .ctor(class SteppingMatch09/GenericInner@15 self0@) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -109,20 +109,20 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!T>,int32>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class SteppingMatch09/'GenericInner@15-3' class SteppingMatch09/'GenericInner@15-3T'<!T>::self0@
+      IL_0008:  stfld      class SteppingMatch09/GenericInner@15 class SteppingMatch09/GenericInner@15T<!T>::self0@
       IL_000d:  ret
-    } // end of method 'GenericInner@15-3T'::.ctor
+    } // end of method GenericInner@15T::.ctor
 
     .method public strict virtual instance int32 
             Invoke(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!T> list) cil managed
     {
       // Code size       23 (0x17)
       .maxstack  6
-      .locals init ([0] class SteppingMatch09/'GenericInner@15-3' V_0)
+      .locals init ([0] class SteppingMatch09/GenericInner@15 V_0)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
       .line 16,16 : 6,21 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SteppingMatch\\SteppingMatch09.fs'
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      class SteppingMatch09/'GenericInner@15-3' class SteppingMatch09/'GenericInner@15-3T'<!T>::self0@
+      IL_0001:  ldfld      class SteppingMatch09/GenericInner@15 class SteppingMatch09/GenericInner@15T<!T>::self0@
       IL_0006:  stloc.0
       IL_0007:  ldarg.1
       IL_0008:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!T>::get_TailOrNull()
@@ -139,11 +139,11 @@
       .line 18,18 : 13,14 ''
       IL_0015:  ldc.i4.2
       IL_0016:  ret
-    } // end of method 'GenericInner@15-3T'::Invoke
+    } // end of method GenericInner@15T::Invoke
 
-  } // end of class 'GenericInner@15-3T'
+  } // end of class GenericInner@15T
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'NonGenericInner@25-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit NonGenericInner@25
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,int32>
   {
     .method assembly specialname rtspecialname 
@@ -156,7 +156,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,int32>::.ctor()
       IL_0006:  ret
-    } // end of method 'NonGenericInner@25-3'::.ctor
+    } // end of method NonGenericInner@25::.ctor
 
     .method public strict virtual instance int32 
             Invoke(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> list) cil managed
@@ -179,11 +179,11 @@
       .line 27,27 : 13,14 ''
       IL_000e:  ldc.i4.2
       IL_000f:  ret
-    } // end of method 'NonGenericInner@25-3'::Invoke
+    } // end of method NonGenericInner@25::Invoke
 
-  } // end of class 'NonGenericInner@25-3'
+  } // end of class NonGenericInner@25
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'NonGenericInnerWithCapture@34-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit NonGenericInnerWithCapture@34
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,int32>
   {
     .field public int32 x
@@ -198,9 +198,9 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,int32>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      int32 SteppingMatch09/'NonGenericInnerWithCapture@34-3'::x
+      IL_0008:  stfld      int32 SteppingMatch09/NonGenericInnerWithCapture@34::x
       IL_000d:  ret
-    } // end of method 'NonGenericInnerWithCapture@34-3'::.ctor
+    } // end of method NonGenericInnerWithCapture@34::.ctor
 
     .method public strict virtual instance int32 
             Invoke(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> list) cil managed
@@ -222,11 +222,11 @@
 
       .line 36,36 : 13,14 ''
       IL_000e:  ldarg.0
-      IL_000f:  ldfld      int32 SteppingMatch09/'NonGenericInnerWithCapture@34-3'::x
+      IL_000f:  ldfld      int32 SteppingMatch09/NonGenericInnerWithCapture@34::x
       IL_0014:  ret
-    } // end of method 'NonGenericInnerWithCapture@34-3'::Invoke
+    } // end of method NonGenericInnerWithCapture@34::Invoke
 
-  } // end of class 'NonGenericInnerWithCapture@34-3'
+  } // end of class NonGenericInnerWithCapture@34
 
   .method public static class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<int32> 
           funcA(int32 n) cil managed
@@ -268,7 +268,7 @@
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc GenericInner,
              [1] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a> V_1)
     .line 100001,100001 : 0,0 ''
-    IL_0000:  newobj     instance void SteppingMatch09/'GenericInner@15-3'::.ctor()
+    IL_0000:  newobj     instance void SteppingMatch09/GenericInner@15::.ctor()
     IL_0005:  stloc.0
     .line 20,20 : 3,20 ''
     IL_0006:  ldloc.0
@@ -288,7 +288,7 @@
     .maxstack  4
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,int32> NonGenericInner)
     .line 100001,100001 : 0,0 ''
-    IL_0000:  newobj     instance void SteppingMatch09/'NonGenericInner@25-3'::.ctor()
+    IL_0000:  newobj     instance void SteppingMatch09/NonGenericInner@25::.ctor()
     IL_0005:  stloc.0
     .line 29,29 : 3,23 ''
     IL_0006:  ldloc.0
@@ -307,7 +307,7 @@
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,int32> NonGenericInnerWithCapture)
     .line 100001,100001 : 0,0 ''
     IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void SteppingMatch09/'NonGenericInnerWithCapture@34-3'::.ctor(int32)
+    IL_0001:  newobj     instance void SteppingMatch09/NonGenericInnerWithCapture@34::.ctor(int32)
     IL_0006:  stloc.0
     .line 38,38 : 3,34 ''
     IL_0007:  ldloc.0

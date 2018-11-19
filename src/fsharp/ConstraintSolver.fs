@@ -829,8 +829,11 @@ and SolveNullnessEquiv (csenv:ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
         | _ -> 
             // NOTE: we never give nullness warnings for the 'obj' type
-            if csenv.g.checkNullness && not (isObjTy csenv.g ty1) && not (isObjTy csenv.g ty2) then 
-                WarnD(ConstraintSolverNullnessWarningEquivWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
+            if csenv.g.checkNullness then 
+                if not (isObjTy csenv.g ty1) && not (isObjTy csenv.g ty2) then 
+                    WarnD(ConstraintSolverNullnessWarningEquivWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
+                else
+                    CompleteD
             else
                 CompleteD
         
@@ -859,8 +862,11 @@ and SolveNullnessSubsumesNullness (csenv:ConstraintSolverEnv) m2 (trace: Optiona
         // Allow target of WithNull and actual of WithoutNull
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
-            if csenv.g.checkNullness && not (isObjTy csenv.g ty1) && not (isObjTy csenv.g ty2) then 
-                WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
+            if csenv.g.checkNullness then 
+                if not (isObjTy csenv.g ty1) && not (isObjTy csenv.g ty2) then 
+                    WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
+                else
+                    CompleteD
             else
                 CompleteD
         
@@ -1929,83 +1935,47 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
     }
 
 
-and SolveNullnessSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty nullness =
+and SolveNullnessSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty nullness = trackErrors {
+    let g = csenv.g
     let m = csenv.m
     let denv = csenv.DisplayEnv
     match nullness with
     | Nullness.Variable nv ->
         if nv.IsSolved then
-            SolveNullnessSupportsNull csenv ndeep m2 trace ty nv.Solution
+            do! SolveNullnessSupportsNull csenv ndeep m2 trace ty nv.Solution
         else
             trace.Exec (fun () -> nv.Set KnownWithNull) (fun () -> nv.Unset())
-            CompleteD
     | Nullness.Known n1 -> 
         match n1 with 
-        | NullnessInfo.AmbivalentToNull -> CompleteD
-        | NullnessInfo.WithNull -> CompleteD
+        | NullnessInfo.AmbivalentToNull -> ()
+        | NullnessInfo.WithNull -> ()
         | NullnessInfo.WithoutNull -> 
-            if csenv.g.checkNullness && not (isObjTy csenv.g ty) then 
-                WarnD(ConstraintSolverNullnessWarningWithType(denv, ty, n1, m, m2)) 
-            else
-                CompleteD
+            if g.checkNullness then 
+                if not (isObjTy g ty) then 
+                    return! WarnD(ConstraintSolverNullnessWarningWithType(denv, ty, n1, m, m2)) 
+  }
 
-and SolveTypeSupportsNullCore (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
+and SolveTypeSupportsNullCore (csenv:ConstraintSolverEnv) ndeep m2 trace ty = trackErrors {
     let g = csenv.g
     let m = csenv.m
     let denv = csenv.DisplayEnv
     if TypeNullIsExtraValueNew g m ty then 
-        CompleteD
+        ()
     else
         match ty with 
         | NullableTy g _ ->
-            ErrorD (ConstraintSolverError(FSComp.SR.csNullableTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
+            return! ErrorD (ConstraintSolverError(FSComp.SR.csNullableTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
         | _ -> 
+            // If langFeatureNullness is on then solve, maybe give warnings
             if g.langFeatureNullness then 
                 let nullness = nullnessOfTy g ty
-                SolveNullnessSupportsNull csenv ndeep m2 trace ty nullness
-            else
-                if TypeNullIsExtraValueOld g m ty then
-                    CompleteD
-                else
-                    ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
+                do! SolveNullnessSupportsNull csenv ndeep m2 trace ty nullness
 
-and SolveNullnessNotSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty nullness =
-    let m = csenv.m
-    let denv = csenv.DisplayEnv
-    match nullness with
-    | Nullness.Variable nv ->
-        if nv.IsSolved then
-            SolveNullnessNotSupportsNull csenv ndeep m2 trace ty nv.Solution
-        else
-            trace.Exec (fun () -> nv.Set KnownWithoutNull) (fun () -> nv.Unset())
-            CompleteD
-    | Nullness.Known n1 -> 
-        match n1 with 
-        | NullnessInfo.AmbivalentToNull -> CompleteD
-        | NullnessInfo.WithoutNull -> CompleteD
-        | NullnessInfo.WithNull -> 
-            if csenv.g.checkNullness && not (isObjTy csenv.g ty) then 
-                WarnD(ConstraintSolverNonNullnessWarningWithType(denv, ty, n1, m, m2)) 
-            else
-                CompleteD
-
-and SolveTypeNotSupportsNullCore (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
-    let g = csenv.g
-    let m = csenv.m
-    let denv = csenv.DisplayEnv
-    if TypeNullIsTrueValue g ty then 
-        ErrorD (ConstraintSolverError(FSComp.SR.csTypeHasNullAsTrueValue(NicePrint.minimalStringOfType denv ty), m, m2))
-    elif TypeNullIsExtraValueNew g m ty then 
-        if g.checkNullness then 
-            WarnD (ConstraintSolverError(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
-        else
-            CompleteD
-    else
-        if g.checkNullness then 
-            let nullness = nullnessOfTy g ty
-            SolveNullnessNotSupportsNull csenv ndeep m2 trace ty nullness
-        else
-            CompleteD
+            // If langFeatureNullness or checkNullness are off give the same errors as F# 4.5
+            if not g.langFeatureNullness || not g.checkNullness then 
+                if not (TypeNullIsExtraValueOld g m ty) then
+                    return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
+  }
 
 // This version prefers to constrain a type parameter definiton
 and SolveTypeDefnSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
@@ -2032,6 +2002,47 @@ and SolveTypeUseSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
         SolveNullnessSupportsNull csenv ndeep m2 trace ty nullness)
     | _ ->
         SolveTypeSupportsNullCore csenv ndeep m2 trace ty
+
+and SolveNullnessNotSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty nullness = trackErrors {
+    let g = csenv.g
+    let m = csenv.m
+    let denv = csenv.DisplayEnv
+    match nullness with
+    | Nullness.Variable nv ->
+        if nv.IsSolved then
+            do! SolveNullnessNotSupportsNull csenv ndeep m2 trace ty nv.Solution
+        else
+            trace.Exec (fun () -> nv.Set KnownWithoutNull) (fun () -> nv.Unset())
+    | Nullness.Known n1 -> 
+        match n1 with 
+        | NullnessInfo.AmbivalentToNull -> ()
+        | NullnessInfo.WithoutNull -> ()
+        | NullnessInfo.WithNull -> 
+            if g.checkNullness then 
+                if not (isObjTy g ty) then 
+                    return! WarnD(ConstraintSolverNonNullnessWarningWithType(denv, ty, n1, m, m2)) 
+            else
+                if TypeNullIsExtraValueOld g m ty then
+                    return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
+  }
+
+and SolveTypeNotSupportsNullCore (csenv:ConstraintSolverEnv) ndeep m2 trace ty = trackErrors {
+    let g = csenv.g
+    let m = csenv.m
+    let denv = csenv.DisplayEnv
+    if TypeNullIsTrueValue g ty then 
+        do! ErrorD (ConstraintSolverError(FSComp.SR.csTypeHasNullAsTrueValue(NicePrint.minimalStringOfType denv ty), m, m2))
+    elif TypeNullIsExtraValueNew g m ty then 
+        if g.checkNullness then 
+            do! WarnD (ConstraintSolverError(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
+        else
+            if TypeNullIsExtraValueOld g m ty then
+                do! ErrorD (ConstraintSolverError(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
+    else
+        if g.checkNullness then 
+            let nullness = nullnessOfTy g ty
+            do! SolveNullnessNotSupportsNull csenv ndeep m2 trace ty nullness
+  }
 
 // This version prefers to constrain a type parameter definiton
 and SolveTypeDefnNotSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
