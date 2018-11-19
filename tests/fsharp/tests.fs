@@ -43,7 +43,7 @@ module CoreTests =
 
         git cfg2 ["reset"; "--hard"; "aba256430a86a4022941800f06421dda16aa4cb0"]
 
-        dotnet cfg2 "\"restore\"" ["FSharpPlus.sln"]
+        exec cfg2 "build.cmd" "restore"
 
         // Reference the freshly built compiler
         let fullPath = cfg2.FSCBinPath |> getFullPath
