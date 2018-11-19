@@ -44,13 +44,13 @@
   // Offset: 0x00000A30 Length: 0x00000038
 }
 .module StructsAsArrayElements01.dll
-// MVID: {5BF2D41C-29F3-6E68-A745-03831CD4F25B}
+// MVID: {5BF2DEA8-29F3-6E68-A745-0383A8DEF25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00810000
+// Image base: 0x00CE0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

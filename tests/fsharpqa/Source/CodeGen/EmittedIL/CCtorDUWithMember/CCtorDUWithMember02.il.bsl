@@ -44,13 +44,13 @@
   // Offset: 0x00000408 Length: 0x00000000
 }
 .module CCtorDUWithMember02.exe
-// MVID: {5BF2D41B-D176-C99D-A745-03831BD4F25B}
+// MVID: {5BF2DEA9-D176-C99D-A745-0383A9DEF25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x019A0000
+// Image base: 0x016A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

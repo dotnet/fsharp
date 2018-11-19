@@ -50,7 +50,7 @@
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00C50000
+// Image base: 0x01630000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -59,7 +59,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname F@6
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'F@6-24'
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -71,7 +71,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ret
-    } // end of method F@6::.ctor
+    } // end of method 'F@6-24'::.ctor
 
     .method assembly hidebysig instance void 
             Invoke(object x,
@@ -86,9 +86,9 @@
       IL_0001:  stloc.0
       .line 6,6 : 80,82 ''
       IL_0002:  ret
-    } // end of method F@6::Invoke
+    } // end of method 'F@6-24'::Invoke
 
-  } // end of class F@6
+  } // end of class 'F@6-24'
 
   .method public static void  F<(class [FSharp.Core]Microsoft.FSharp.Control.IEvent`2<class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>,int32>) T>(!!T[][] x) cil managed
   {
@@ -101,9 +101,9 @@
     IL_0007:  ldc.i4.0
     IL_0008:  readonly.
     IL_000a:  ldelema    !!T
-    IL_000f:  newobj     instance void DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth/F@6::.ctor()
-    IL_0014:  ldftn      instance void DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth/F@6::Invoke(object,
-                                                                                                     int32)
+    IL_000f:  newobj     instance void DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth/'F@6-24'::.ctor()
+    IL_0014:  ldftn      instance void DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth/'F@6-24'::Invoke(object,
+                                                                                                          int32)
     IL_001a:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>::.ctor(object,
                                                                                                                  native int)
     IL_001f:  constrained. !!T

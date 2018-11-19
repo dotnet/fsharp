@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly ZeroToArrLength02
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.ZeroToArrLength02
 {
-  // Offset: 0x00000000 Length: 0x000001E0
+  // Offset: 0x00000000 Length: 0x000001E8
+}
+.mresource public FSharpSignatureDataB.ZeroToArrLength02
+{
+  // Offset: 0x000001F0 Length: 0x00000004
 }
 .mresource public FSharpOptimizationData.ZeroToArrLength02
 {
-  // Offset: 0x000001E8 Length: 0x0000007B
+  // Offset: 0x000001F8 Length: 0x0000007B
+}
+.mresource public FSharpOptimizationDataB.ZeroToArrLength02
+{
+  // Offset: 0x00000278 Length: 0x00000000
 }
 .module ZeroToArrLength02.dll
-// MVID: {59B18AEE-A36B-03A7-A745-0383EE8AB159}
+// MVID: {5BF2D394-A36B-03A7-A745-038394D3F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01550000
+// Image base: 0x010A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

@@ -1,7 +1,7 @@
-Microsoft (R) F# Interactive version 4.1
+Microsoft (R) F# Interactive version 10.2.3 for F# 4.5
 Copyright (c) Microsoft Corporation. All Rights Reserved.
 
-Usage: fsi.exe <options> [script.fsx [<arguments>]]
+Usage: fsiAnyCpu.exe <options> [script.fsx [<arguments>]]
 
 
 		- INPUT FILES -
@@ -36,6 +36,7 @@ Usage: fsi.exe <options> [script.fsx [<arguments>]]
 --warnon:<warn;...>                      Enable specific warnings that may be off by
                                          default
 --checknulls[+|-]                        Enable nullness declarations and checks
+--langversion:                           Specify the language version
 --consolecolors[+|-]                     Output warning and error messages in color
 
 

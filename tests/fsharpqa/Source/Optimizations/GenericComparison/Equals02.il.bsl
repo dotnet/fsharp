@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 4:5:0:0
 }
 .assembly Equals02
 {
@@ -31,18 +31,26 @@
 {
   // Offset: 0x00000000 Length: 0x0000023C
 }
+.mresource public FSharpSignatureDataB.Equals02
+{
+  // Offset: 0x00000240 Length: 0x00000003
+}
 .mresource public FSharpOptimizationData.Equals02
 {
-  // Offset: 0x00000240 Length: 0x000000B6
+  // Offset: 0x00000248 Length: 0x000000B6
+}
+.mresource public FSharpOptimizationDataB.Equals02
+{
+  // Offset: 0x00000308 Length: 0x00000000
 }
 .module Equals02.dll
-// MVID: {5B18753B-0759-B6D8-A745-03833B75185B}
+// MVID: {5BF2E04A-0759-B6D8-A745-03834AE0F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00F20000
+// Image base: 0x002E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -57,7 +65,7 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
     .method public static bool  f4_tuple4() cil managed
     {
-      // Code size       44 (0x2c)
+      // Code size       36 (0x24)
       .maxstack  4
       .locals init ([0] bool x,
                [1] int32 i)
@@ -69,6 +77,7 @@
       IL_0002:  ldc.i4.0
       IL_0003:  stloc.1
       IL_0004:  br.s       IL_001a
+
       .line 9,9 : 12,26 ''
       IL_0006:  ldstr      "five"
       IL_000b:  ldstr      "5"
@@ -83,16 +92,21 @@
       IL_001a:  ldloc.1
       IL_001b:  ldc.i4     0x989681
       IL_0020:  blt.s      IL_0006
+
       .line 10,10 : 8,9 ''
       IL_0022:  ldloc.0
       IL_0023:  ret
     } // end of method EqualsMicroPerfAndCodeGenerationTests::f4_tuple4
+
   } // end of class EqualsMicroPerfAndCodeGenerationTests
+
 } // end of class Equals02
+
 .class private abstract auto ansi sealed '<StartupCode$Equals02>'.$Equals02$fsx
        extends [mscorlib]System.Object
 {
 } // end of class '<StartupCode$Equals02>'.$Equals02$fsx
+
 
 // =============================================================
 

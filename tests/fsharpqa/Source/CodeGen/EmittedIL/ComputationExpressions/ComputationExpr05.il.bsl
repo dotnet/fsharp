@@ -54,7 +54,7 @@
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00C90000
+// Image base: 0x01430000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,7 +63,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'res5@9-1'
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'res5@9-10'
          extends [mscorlib]System.Object
          implements [mscorlib]System.IDisposable
   {
@@ -78,7 +78,7 @@
       IL_0006:  ldarg.0
       IL_0007:  pop
       IL_0008:  ret
-    } // end of method 'res5@9-1'::.ctor
+    } // end of method 'res5@9-10'::.ctor
 
     .method private hidebysig newslot virtual final 
             instance void  'System-IDisposable-Dispose'() cil managed
@@ -89,11 +89,11 @@
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
       .line 9,9 : 68,70 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr05.fs'
       IL_0000:  ret
-    } // end of method 'res5@9-1'::'System-IDisposable-Dispose'
+    } // end of method 'res5@9-10'::'System-IDisposable-Dispose'
 
-  } // end of class 'res5@9-1'
+  } // end of class 'res5@9-10'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'res5@10-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'res5@10-11'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.IDisposable,class [ComputationExprLibrary]Library.Eventually`1<int32>>
   {
     .field public class [ComputationExprLibrary]Library.EventuallyBuilder builder@
@@ -111,9 +111,9 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.IDisposable,class [ComputationExprLibrary]Library.Eventually`1<int32>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr05/'res5@10-2'::builder@
+      IL_0008:  stfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr05/'res5@10-11'::builder@
       IL_000d:  ret
-    } // end of method 'res5@10-2'::.ctor
+    } // end of method 'res5@10-11'::.ctor
 
     .method public strict virtual instance class [ComputationExprLibrary]Library.Eventually`1<int32> 
             Invoke(class [mscorlib]System.IDisposable _arg1) cil managed
@@ -138,16 +138,16 @@
       IL_001d:  stloc.1
       .line 11,11 : 9,17 ''
       IL_001e:  ldarg.0
-      IL_001f:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr05/'res5@10-2'::builder@
+      IL_001f:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr05/'res5@10-11'::builder@
       IL_0024:  ldc.i4.1
       IL_0025:  tail.
       IL_0027:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<!!0> [ComputationExprLibrary]Library.EventuallyBuilder::Return<int32>(!!0)
       IL_002c:  ret
-    } // end of method 'res5@10-2'::Invoke
+    } // end of method 'res5@10-11'::Invoke
 
-  } // end of class 'res5@10-2'
+  } // end of class 'res5@10-11'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit res5@8
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'res5@8-9'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [ComputationExprLibrary]Library.Eventually`1<int32>>
   {
     .field public class [ComputationExprLibrary]Library.EventuallyBuilder builder@
@@ -165,9 +165,9 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [ComputationExprLibrary]Library.Eventually`1<int32>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr05/res5@8::builder@
+      IL_0008:  stfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr05/'res5@8-9'::builder@
       IL_000d:  ret
-    } // end of method res5@8::.ctor
+    } // end of method 'res5@8-9'::.ctor
 
     .method public strict virtual instance class [ComputationExprLibrary]Library.Eventually`1<int32> 
             Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
@@ -186,25 +186,25 @@
       IL_001a:  stloc.0
       .line 9,9 : 17,72 ''
       IL_001b:  ldarg.0
-      IL_001c:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr05/res5@8::builder@
-      IL_0021:  newobj     instance void ComputationExpr05/'res5@9-1'::.ctor()
+      IL_001c:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr05/'res5@8-9'::builder@
+      IL_0021:  newobj     instance void ComputationExpr05/'res5@9-10'::.ctor()
       IL_0026:  ldarg.0
-      IL_0027:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr05/res5@8::builder@
-      IL_002c:  newobj     instance void ComputationExpr05/'res5@10-2'::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder)
+      IL_0027:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr05/'res5@8-9'::builder@
+      IL_002c:  newobj     instance void ComputationExpr05/'res5@10-11'::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder)
       IL_0031:  tail.
       IL_0033:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<!!0> [ComputationExprLibrary]Library.EventuallyBuilder::Using<int32>(class [mscorlib]System.IDisposable,
                                                                                                                                                             class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.IDisposable,class [ComputationExprLibrary]Library.Eventually`1<!!0>>)
       IL_0038:  ret
-    } // end of method res5@8::Invoke
+    } // end of method 'res5@8-9'::Invoke
 
-  } // end of class res5@8
+  } // end of class 'res5@8-9'
 
   .method public specialname static class [ComputationExprLibrary]Library.Eventually`1<int32> 
           get_res5() cil managed
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [ComputationExprLibrary]Library.Eventually`1<int32> '<StartupCode$ComputationExpr05>'.$ComputationExpr05::res5@6
+    IL_0000:  ldsfld     class [ComputationExprLibrary]Library.Eventually`1<int32> '<StartupCode$ComputationExpr05>'.$ComputationExpr05::'res5@6-6'
     IL_0005:  ret
   } // end of method ComputationExpr05::get_res5
 
@@ -219,7 +219,7 @@
 .class private abstract auto ansi sealed '<StartupCode$ComputationExpr05>'.$ComputationExpr05
        extends [mscorlib]System.Object
 {
-  .field static assembly class [ComputationExprLibrary]Library.Eventually`1<int32> res5@6
+  .field static assembly class [ComputationExprLibrary]Library.Eventually`1<int32> 'res5@6-6'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -237,10 +237,10 @@
     IL_0005:  stloc.1
     IL_0006:  ldloc.1
     IL_0007:  ldloc.1
-    IL_0008:  newobj     instance void ComputationExpr05/res5@8::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder)
+    IL_0008:  newobj     instance void ComputationExpr05/'res5@8-9'::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder)
     IL_000d:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<!!0> [ComputationExprLibrary]Library.EventuallyBuilder::Delay<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [ComputationExprLibrary]Library.Eventually`1<!!0>>)
     IL_0012:  dup
-    IL_0013:  stsfld     class [ComputationExprLibrary]Library.Eventually`1<int32> '<StartupCode$ComputationExpr05>'.$ComputationExpr05::res5@6
+    IL_0013:  stsfld     class [ComputationExprLibrary]Library.Eventually`1<int32> '<StartupCode$ComputationExpr05>'.$ComputationExpr05::'res5@6-6'
     IL_0018:  stloc.0
     .line 13,13 : 1,25 ''
     IL_0019:  call       class [ComputationExprLibrary]Library.Eventually`1<int32> ComputationExpr05::get_res5()

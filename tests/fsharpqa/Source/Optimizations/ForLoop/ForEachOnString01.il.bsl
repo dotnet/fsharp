@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly ForEachOnString01
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.ForEachOnString01
 {
-  // Offset: 0x00000000 Length: 0x00000354
+  // Offset: 0x00000000 Length: 0x0000035C
+}
+.mresource public FSharpSignatureDataB.ForEachOnString01
+{
+  // Offset: 0x00000360 Length: 0x0000001B
 }
 .mresource public FSharpOptimizationData.ForEachOnString01
 {
-  // Offset: 0x00000358 Length: 0x000000FF
+  // Offset: 0x00000380 Length: 0x000000FF
+}
+.mresource public FSharpOptimizationDataB.ForEachOnString01
+{
+  // Offset: 0x00000488 Length: 0x00000000
 }
 .module ForEachOnString01.dll
-// MVID: {59B18AEE-105C-852B-A745-0383EE8AB159}
+// MVID: {5BF2D394-105C-852B-A745-038394D3F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002D0000
+// Image base: 0x00480000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -51,7 +59,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable sealed nested assembly beforefieldinit test8@54
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'test8@54-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,char>
   {
     .method assembly specialname rtspecialname 
@@ -64,7 +72,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,char>::.ctor()
       IL_0006:  ret
-    } // end of method test8@54::.ctor
+    } // end of method 'test8@54-1'::.ctor
 
     .method public strict virtual instance char 
             Invoke(char x) cil managed
@@ -79,11 +87,11 @@
       IL_0003:  add
       IL_0004:  conv.u2
       IL_0005:  ret
-    } // end of method test8@54::Invoke
+    } // end of method 'test8@54-1'::Invoke
 
-  } // end of class test8@54
+  } // end of class 'test8@54-1'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit test9@63
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'test9@63-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,char>
   {
     .method assembly specialname rtspecialname 
@@ -96,7 +104,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,char>::.ctor()
       IL_0006:  ret
-    } // end of method test9@63::.ctor
+    } // end of method 'test9@63-1'::.ctor
 
     .method public strict virtual instance char 
             Invoke(char x) cil managed
@@ -110,9 +118,9 @@
       IL_0003:  add
       IL_0004:  conv.u2
       IL_0005:  ret
-    } // end of method test9@63::Invoke
+    } // end of method 'test9@63-1'::Invoke
 
-  } // end of class test9@63
+  } // end of class 'test9@63-1'
 
   .method public static void  test1(string str) cil managed
   {
@@ -455,7 +463,7 @@
              [3] char i,
              [4] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_4)
     .line 53,55 : 17,40 ''
-    IL_0000:  newobj     instance void ForEachOnString01/test8@54::.ctor()
+    IL_0000:  newobj     instance void ForEachOnString01/'test8@54-1'::.ctor()
     IL_0005:  ldstr      "1234"
     IL_000a:  call       string [FSharp.Core]Microsoft.FSharp.Core.StringModule::Map(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,char>,
                                                                                      string)
@@ -512,7 +520,7 @@
              [4] string tmp,
              [5] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_5)
     .line 62,64 : 17,40 ''
-    IL_0000:  newobj     instance void ForEachOnString01/test9@63::.ctor()
+    IL_0000:  newobj     instance void ForEachOnString01/'test9@63-1'::.ctor()
     IL_0005:  ldstr      "1234"
     IL_000a:  call       string [FSharp.Core]Microsoft.FSharp.Core.StringModule::Map(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,char>,
                                                                                      string)

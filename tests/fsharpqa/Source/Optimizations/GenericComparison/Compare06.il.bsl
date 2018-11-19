@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly Compare06
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.Compare06
 {
-  // Offset: 0x00000000 Length: 0x000006DF
+  // Offset: 0x00000000 Length: 0x000006D3
+}
+.mresource public FSharpSignatureDataB.Compare06
+{
+  // Offset: 0x000006D8 Length: 0x0000007B
 }
 .mresource public FSharpOptimizationData.Compare06
 {
-  // Offset: 0x000006E8 Length: 0x000003BC
+  // Offset: 0x00000758 Length: 0x000003BC
+}
+.mresource public FSharpOptimizationDataB.Compare06
+{
+  // Offset: 0x00000B18 Length: 0x00000057
 }
 .module Compare06.dll
-// MVID: {59B18AEE-04FD-F88E-A745-0383EE8AB159}
+// MVID: {5BF2E04A-04FD-F88E-A745-03834AE0F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02E80000
+// Image base: 0x00300000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

@@ -1,4 +1,4 @@
-Microsoft (R) F# Compiler version 3.0
+Microsoft (R) F# Compiler version 10.2.3 for F# 4.5
 Copyright (c) Microsoft Corporation. All Rights Reserved.
 
 
@@ -76,6 +76,7 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --warnon:<warn;...>                      Enable specific warnings that may be off by
                                          default
 --checknulls[+|-]                        Enable nullness declarations and checks
+--langversion:                           Specify the language version
 --consolecolors[+|-]                     Output warning and error messages in color
 
 

@@ -29,7 +29,7 @@
 }
 .mresource public FSharpSignatureData.StaticInit_Class01
 {
-  // Offset: 0x00000000 Length: 0x0000033D
+  // Offset: 0x00000000 Length: 0x0000033E
 }
 .mresource public FSharpSignatureDataB.StaticInit_Class01
 {
@@ -50,7 +50,7 @@
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01540000
+// Image base: 0x00C90000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -64,7 +64,7 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field static assembly int32 x
-    .field static assembly int32 'init@4-1'
+    .field static assembly int32 'init@4-17'
     .method public specialname rtspecialname 
             instance void  .ctor(valuetype [mscorlib]System.DateTime s) cil managed
     {
@@ -87,7 +87,7 @@
       .maxstack  8
       .line 7,7 : 23,37 ''
       IL_0000:  volatile.
-      IL_0002:  ldsfld     int32 StaticInit_ClassS01/C::'init@4-1'
+      IL_0002:  ldsfld     int32 StaticInit_ClassS01/C::'init@4-17'
       IL_0007:  ldc.i4.1
       IL_0008:  bge.s      IL_000c
 
@@ -146,7 +146,7 @@
     IL_000a:  stsfld     int32 StaticInit_ClassS01/C::x
     IL_000f:  ldc.i4.1
     IL_0010:  volatile.
-    IL_0012:  stsfld     int32 StaticInit_ClassS01/C::'init@4-1'
+    IL_0012:  stsfld     int32 StaticInit_ClassS01/C::'init@4-17'
     .line 4,4 : 6,7 ''
     IL_0017:  ret
   } // end of method $StaticInit_ClassS01::.cctor

@@ -44,7 +44,7 @@
   // Offset: 0x000002D8 Length: 0x00000000
 }
 .module ModuleWithExpression01.exe
-// MVID: {5BF2D41C-CD1E-A8B4-A745-03831CD4F25B}
+// MVID: {5BF2DEA8-CD1E-A8B4-A745-0383A8DEF25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
