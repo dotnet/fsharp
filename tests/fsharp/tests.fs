@@ -60,7 +60,6 @@ module CoreTests =
         //]
         
         dotnet cfg3 "msbuild" [
-            "FSharpPlus.fsproj"
             "/p:Configuration=Release"
             "/p:CompilerTest=true"
             "/p:TargetFramework=net45"
@@ -85,7 +84,6 @@ module CoreTests =
         //]
         
         dotnet cfg "msbuild" [
-            "FSharpPlus.Tests.fsproj"
             "/p:Configuration=Release"
             "/p:CompilerTest=true"
             "/p:TargetFramework=net45"
