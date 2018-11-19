@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly Property
 {
@@ -29,28 +29,28 @@
 }
 .mresource public FSharpSignatureData.Property
 {
-  // Offset: 0x00000000 Length: 0x000003FD
+  // Offset: 0x00000000 Length: 0x00000405
 }
 .mresource public FSharpSignatureDataB.Property
 {
-  // Offset: 0x00000000 Length: 0x000003FD
+  // Offset: 0x00000410 Length: 0x00000019
 }
 .mresource public FSharpOptimizationData.Property
 {
-  // Offset: 0x00000408 Length: 0x000000BB
+  // Offset: 0x00000430 Length: 0x000000BB
 }
 .mresource public FSharpOptimizationDataB.Property
 {
-  // Offset: 0x00000408 Length: 0x000000BB
+  // Offset: 0x000004F0 Length: 0x00000003
 }
 .module Property.dll
-// MVID: {59B19208-9B5C-7949-A745-03830892B159}
+// MVID: {5BF2D3CD-9B5C-7949-A745-0383CDD3F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02E80000
+// Image base: 0x01570000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

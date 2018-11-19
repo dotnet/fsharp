@@ -33,24 +33,24 @@
 }
 .mresource public FSharpSignatureDataB.ListExpressionSteppingTest6
 {
-  // Offset: 0x00000000 Length: 0x0000029D
+  // Offset: 0x000002A8 Length: 0x00000006
 }
 .mresource public FSharpOptimizationData.ListExpressionSteppingTest6
 {
-  // Offset: 0x000002A8 Length: 0x000000BC
+  // Offset: 0x000002B8 Length: 0x000000BC
 }
 .mresource public FSharpOptimizationDataB.ListExpressionSteppingTest6
 {
-  // Offset: 0x000002A8 Length: 0x000000BC
+  // Offset: 0x00000378 Length: 0x00000000
 }
 .module ListExpressionSteppingTest6.exe
-// MVID: {5B9A6329-98A2-AB14-A745-038329639A5B}
+// MVID: {5BF2D41C-98A2-AB14-A745-03831CD4F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x007B0000
+// Image base: 0x01170000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

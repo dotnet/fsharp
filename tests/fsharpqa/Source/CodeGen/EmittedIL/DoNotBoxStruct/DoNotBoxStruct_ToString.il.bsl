@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly DoNotBoxStruct_ToString
 {
@@ -29,28 +29,28 @@
 }
 .mresource public FSharpSignatureData.DoNotBoxStruct_ToString
 {
-  // Offset: 0x00000000 Length: 0x00000208
+  // Offset: 0x00000000 Length: 0x00000210
 }
 .mresource public FSharpSignatureDataB.DoNotBoxStruct_ToString
 {
-  // Offset: 0x00000000 Length: 0x00000208
+  // Offset: 0x00000218 Length: 0x00000003
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_ToString
 {
-  // Offset: 0x00000210 Length: 0x00000086
+  // Offset: 0x00000220 Length: 0x00000086
 }
 .mresource public FSharpOptimizationDataB.DoNotBoxStruct_ToString
 {
-  // Offset: 0x00000210 Length: 0x00000086
+  // Offset: 0x000002B0 Length: 0x00000000
 }
 .module DoNotBoxStruct_ToString.exe
-// MVID: {59B1920A-8D34-C606-A745-03830A92B159}
+// MVID: {5BF2D3C6-8D34-C606-A745-0383C6D3F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02CC0000
+// Image base: 0x00A80000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

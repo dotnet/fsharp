@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly SeqExpressionSteppingTest3
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.SeqExpressionSteppingTest3
 {
-  // Offset: 0x00000000 Length: 0x00000277
+  // Offset: 0x00000000 Length: 0x0000027F
+}
+.mresource public FSharpSignatureDataB.SeqExpressionSteppingTest3
+{
+  // Offset: 0x00000288 Length: 0x00000005
 }
 .mresource public FSharpOptimizationData.SeqExpressionSteppingTest3
 {
-  // Offset: 0x00000280 Length: 0x000000AD
+  // Offset: 0x00000298 Length: 0x000000AD
+}
+.mresource public FSharpOptimizationDataB.SeqExpressionSteppingTest3
+{
+  // Offset: 0x00000350 Length: 0x00000000
 }
 .module SeqExpressionSteppingTest3.exe
-// MVID: {59B19240-2432-943F-A745-03834092B159}
+// MVID: {5BF2D3C6-2432-943F-A745-0383C6D3F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02660000
+// Image base: 0x01900000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

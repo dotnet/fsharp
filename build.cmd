@@ -338,7 +338,7 @@ if /i "%ARG%" == "test-sign" (
 )
 
 if /i "%ARG%" == "test-update-bsl" (
-    set TEST_UPDATE_BSL=test
+    set TEST_UPDATE_BSL=1
 )
 
 if /i "%ARG%" == "real-sign" (

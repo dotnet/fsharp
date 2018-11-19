@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly StaticInit_Class01
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.StaticInit_Class01
 {
-  // Offset: 0x00000000 Length: 0x00000335
+  // Offset: 0x00000000 Length: 0x0000033D
+}
+.mresource public FSharpSignatureDataB.StaticInit_Class01
+{
+  // Offset: 0x00000348 Length: 0x00000011
 }
 .mresource public FSharpOptimizationData.StaticInit_Class01
 {
-  // Offset: 0x00000340 Length: 0x000000AD
+  // Offset: 0x00000360 Length: 0x000000AD
+}
+.mresource public FSharpOptimizationDataB.StaticInit_Class01
+{
+  // Offset: 0x00000418 Length: 0x00000003
 }
 .module StaticInit_Class01.dll
-// MVID: {59B19250-EC34-E66E-A745-03835092B159}
+// MVID: {5BF2D3CD-EC34-E66E-A745-0383CDD3F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00FE0000
+// Image base: 0x01540000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

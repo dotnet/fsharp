@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly DoNotBoxStruct_NoArray_FSInterface
 {
@@ -29,28 +29,28 @@
 }
 .mresource public FSharpSignatureData.DoNotBoxStruct_NoArray_FSInterface
 {
-  // Offset: 0x00000000 Length: 0x00000250
+  // Offset: 0x00000000 Length: 0x00000258
 }
 .mresource public FSharpSignatureDataB.DoNotBoxStruct_NoArray_FSInterface
 {
-  // Offset: 0x00000000 Length: 0x00000250
+  // Offset: 0x00000260 Length: 0x00000005
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_NoArray_FSInterface
 {
-  // Offset: 0x00000258 Length: 0x0000009C
+  // Offset: 0x00000270 Length: 0x0000009C
 }
 .mresource public FSharpOptimizationDataB.DoNotBoxStruct_NoArray_FSInterface
 {
-  // Offset: 0x00000258 Length: 0x0000009C
+  // Offset: 0x00000310 Length: 0x00000000
 }
 .module DoNotBoxStruct_NoArray_FSInterface.exe
-// MVID: {59B1920A-3F8A-B9D0-A745-03830A92B159}
+// MVID: {5BF2D3C6-3F8A-B9D0-A745-0383C6D3F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00680000
+// Image base: 0x007B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

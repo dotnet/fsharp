@@ -31,18 +31,26 @@
 {
   // Offset: 0x00000000 Length: 0x000001B5
 }
+.mresource public FSharpSignatureDataB.Mutation04
+{
+  // Offset: 0x000001C0 Length: 0x00000001
+}
 .mresource public FSharpOptimizationData.Mutation04
 {
-  // Offset: 0x000001C0 Length: 0x0000006C
+  // Offset: 0x000001C8 Length: 0x0000006C
+}
+.mresource public FSharpOptimizationDataB.Mutation04
+{
+  // Offset: 0x00000238 Length: 0x00000000
 }
 .module Mutation04.exe
-// MVID: {5B9A632A-8C6A-2E43-A745-03832A639A5B}
+// MVID: {5BF2D41C-8C6A-2E43-A745-03831CD4F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02A80000
+// Image base: 0x00FD0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

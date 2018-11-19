@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly MethodImplAttribute.AggressiveInlining
 {
@@ -29,28 +29,28 @@
 }
 .mresource public FSharpSignatureData.MethodImplAttribute.AggressiveInlining
 {
-  // Offset: 0x00000000 Length: 0x0000034C
+  // Offset: 0x00000000 Length: 0x00000354
 }
 .mresource public FSharpSignatureDataB.MethodImplAttribute.AggressiveInlining
 {
-  // Offset: 0x00000000 Length: 0x0000034C
+  // Offset: 0x00000358 Length: 0x00000007
 }
 .mresource public FSharpOptimizationData.MethodImplAttribute.AggressiveInlining
 {
-  // Offset: 0x00000350 Length: 0x00000085
+  // Offset: 0x00000368 Length: 0x00000085
 }
 .mresource public FSharpOptimizationDataB.MethodImplAttribute.AggressiveInlining
 {
-  // Offset: 0x00000350 Length: 0x00000085
+  // Offset: 0x000003F8 Length: 0x00000000
 }
 .module MethodImplAttribute.AggressiveInlining.dll
-// MVID: {59B1920C-66DC-14D3-A745-03830C92B159}
+// MVID: {5BF2D41C-66DC-14D3-A745-03831CD4F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02B20000
+// Image base: 0x03090000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

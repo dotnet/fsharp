@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly InequalityComparison02
 {
@@ -29,28 +29,28 @@
 }
 .mresource public FSharpSignatureData.InequalityComparison02
 {
-  // Offset: 0x00000000 Length: 0x0000020E
+  // Offset: 0x00000000 Length: 0x00000216
 }
 .mresource public FSharpSignatureDataB.InequalityComparison02
 {
-  // Offset: 0x00000000 Length: 0x0000020E
+  // Offset: 0x00000220 Length: 0x00000005
 }
 .mresource public FSharpOptimizationData.InequalityComparison02
 {
-  // Offset: 0x00000218 Length: 0x00000085
+  // Offset: 0x00000230 Length: 0x00000085
 }
 .mresource public FSharpOptimizationDataB.InequalityComparison02
 {
-  // Offset: 0x00000218 Length: 0x00000085
+  // Offset: 0x000002C0 Length: 0x00000000
 }
 .module InequalityComparison02.exe
-// MVID: {59B19213-263A-E72C-A745-03831392B159}
+// MVID: {5BF2D394-263A-E72C-A745-038394D3F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02D40000
+// Image base: 0x00400000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

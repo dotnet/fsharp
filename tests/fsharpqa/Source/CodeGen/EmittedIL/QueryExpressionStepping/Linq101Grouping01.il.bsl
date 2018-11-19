@@ -40,18 +40,26 @@
 {
   // Offset: 0x00000000 Length: 0x0000040F
 }
+.mresource public FSharpSignatureDataB.Linq101Grouping01
+{
+  // Offset: 0x00000418 Length: 0x0000001E
+}
 .mresource public FSharpOptimizationData.Linq101Grouping01
 {
-  // Offset: 0x00000418 Length: 0x00000129
+  // Offset: 0x00000440 Length: 0x00000129
+}
+.mresource public FSharpOptimizationDataB.Linq101Grouping01
+{
+  // Offset: 0x00000570 Length: 0x00000000
 }
 .module Linq101Grouping01.exe
-// MVID: {5B9A68C1-FB79-E5BF-A745-0383C1689A5B}
+// MVID: {5BF2D3C6-FB79-E5BF-A745-0383C6D3F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x025F0000
+// Image base: 0x001F0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

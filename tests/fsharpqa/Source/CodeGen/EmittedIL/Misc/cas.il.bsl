@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly extern cas
 {
@@ -36,20 +36,28 @@
 }
 .mresource public FSharpSignatureData.cas
 {
-  // Offset: 0x00000000 Length: 0x000005DF
+  // Offset: 0x00000000 Length: 0x00000625
+}
+.mresource public FSharpSignatureDataB.cas
+{
+  // Offset: 0x00000630 Length: 0x00000026
 }
 .mresource public FSharpOptimizationData.cas
 {
-  // Offset: 0x000005E8 Length: 0x000000F3
+  // Offset: 0x00000660 Length: 0x000000F3
+}
+.mresource public FSharpOptimizationDataB.cas
+{
+  // Offset: 0x00000758 Length: 0x00000008
 }
 .module cas.exe
-// MVID: {59B19213-35EA-18E3-A745-03831392B159}
+// MVID: {5BF2D41C-35EA-18E3-A745-03831CD4F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x006A0000
+// Image base: 0x018C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

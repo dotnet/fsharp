@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly TailCall04
 {
@@ -31,18 +31,26 @@
 {
   // Offset: 0x00000000 Length: 0x0000022F
 }
+.mresource public FSharpSignatureDataB.TailCall04
+{
+  // Offset: 0x00000238 Length: 0x00000008
+}
 .mresource public FSharpOptimizationData.TailCall04
 {
-  // Offset: 0x00000238 Length: 0x0000007C
+  // Offset: 0x00000248 Length: 0x0000007C
+}
+.mresource public FSharpOptimizationDataB.TailCall04
+{
+  // Offset: 0x000002C8 Length: 0x00000000
 }
 .module TailCall04.exe
-// MVID: {59B19213-7D8F-CFE3-A745-03831392B159}
+// MVID: {5BF2D41D-7D8F-CFE3-A745-03831DD4F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00B70000
+// Image base: 0x002F0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

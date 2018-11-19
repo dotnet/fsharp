@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly ForLoop02
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.ForLoop02
 {
-  // Offset: 0x00000000 Length: 0x0000013F
+  // Offset: 0x00000000 Length: 0x00000147
+}
+.mresource public FSharpSignatureDataB.ForLoop02
+{
+  // Offset: 0x00000150 Length: 0x00000000
 }
 .mresource public FSharpOptimizationData.ForLoop02
 {
-  // Offset: 0x00000148 Length: 0x00000050
+  // Offset: 0x00000158 Length: 0x00000050
+}
+.mresource public FSharpOptimizationDataB.ForLoop02
+{
+  // Offset: 0x000001B0 Length: 0x00000000
 }
 .module ForLoop02.exe
-// MVID: {59B19213-1736-791C-A745-03831392B159}
+// MVID: {5BF2D41C-1736-791C-A745-03831CD4F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x03030000
+// Image base: 0x013C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
