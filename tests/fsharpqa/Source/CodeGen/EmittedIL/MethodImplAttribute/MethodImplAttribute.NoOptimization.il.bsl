@@ -31,7 +31,15 @@
 {
   // Offset: 0x00000000 Length: 0x0000033D
 }
+.mresource public FSharpSignatureDataB.MethodImplAttribute.NoOptimization
+{
+  // Offset: 0x00000000 Length: 0x0000033D
+}
 .mresource public FSharpOptimizationData.MethodImplAttribute.NoOptimization
+{
+  // Offset: 0x00000348 Length: 0x00000081
+}
+.mresource public FSharpOptimizationDataB.MethodImplAttribute.NoOptimization
 {
   // Offset: 0x00000348 Length: 0x00000081
 }

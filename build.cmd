@@ -22,7 +22,7 @@ echo           ^<proto^|protofx^>
 echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|ci_part4^|microbuild^|nuget^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
-echo           ^<nobuild^|test^|no-test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^|end-2-end^>
+echo           ^<nobuild^|test^|no-test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^|test-update-bsl^|end-2-end^>
 echo           ^<include tag^>
 echo           ^<init^>
 echo.
@@ -45,6 +45,12 @@ echo.    build.cmd all test         (build and test everything)
 echo.    build.cmd nobuild test include Conformance (run only tests marked with Conformance category)
 echo.    build.cmd nobuild test include Expensive (run only tests marked with Expensive category)
 echo.
+echo.Test flags (not all are documented):
+echo.    test                  Run appropriate tests for selected build
+echo.    test-net40-ideunit    Run vsintegration\tests IDE unit tests (.NET Framework)
+echo.    test-net40-fsharp     Run tests\fsharp tests (.NET Framework)
+echo.    test-net40-fsharpqa   Run tests\fsharpqa tests (.NET Framework)
+echo.    test-update-bsl       Update baselines in fsharpqa tests
 goto :success
 
 :ARGUMENTS_OK
@@ -329,6 +335,10 @@ if /i "%ARG%" == "release" (
 
 if /i "%ARG%" == "test-sign" (
     set SIGN_TYPE=test
+)
+
+if /i "%ARG%" == "test-update-bsl" (
+    set TEST_UPDATE_BSL=test
 )
 
 if /i "%ARG%" == "real-sign" (

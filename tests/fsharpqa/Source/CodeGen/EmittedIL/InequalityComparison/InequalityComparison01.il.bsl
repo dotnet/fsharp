@@ -31,7 +31,15 @@
 {
   // Offset: 0x00000000 Length: 0x0000020E
 }
+.mresource public FSharpSignatureDataB.InequalityComparison01
+{
+  // Offset: 0x00000000 Length: 0x0000020E
+}
 .mresource public FSharpOptimizationData.InequalityComparison01
+{
+  // Offset: 0x00000218 Length: 0x00000085
+}
+.mresource public FSharpOptimizationDataB.InequalityComparison01
 {
   // Offset: 0x00000218 Length: 0x00000085
 }

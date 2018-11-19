@@ -31,7 +31,15 @@
 {
   // Offset: 0x00000000 Length: 0x000003F4
 }
+.mresource public FSharpSignatureDataB.Field
+{
+  // Offset: 0x00000000 Length: 0x000003F4
+}
 .mresource public FSharpOptimizationData.Field
+{
+  // Offset: 0x000003F8 Length: 0x000000B8
+}
+.mresource public FSharpOptimizationDataB.Field
 {
   // Offset: 0x000003F8 Length: 0x000000B8
 }

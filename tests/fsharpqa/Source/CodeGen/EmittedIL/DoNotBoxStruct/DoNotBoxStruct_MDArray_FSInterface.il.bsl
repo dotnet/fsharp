@@ -31,7 +31,15 @@
 {
   // Offset: 0x00000000 Length: 0x00000260
 }
+.mresource public FSharpSignatureDataB.DoNotBoxStruct_MDArray_FSInterface
+{
+  // Offset: 0x00000000 Length: 0x00000260
+}
 .mresource public FSharpOptimizationData.DoNotBoxStruct_MDArray_FSInterface
+{
+  // Offset: 0x00000268 Length: 0x0000009C
+}
+.mresource public FSharpOptimizationDataB.DoNotBoxStruct_MDArray_FSInterface
 {
   // Offset: 0x00000268 Length: 0x0000009C
 }

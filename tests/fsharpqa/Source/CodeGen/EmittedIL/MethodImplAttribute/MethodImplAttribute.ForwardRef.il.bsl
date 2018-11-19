@@ -31,7 +31,15 @@
 {
   // Offset: 0x00000000 Length: 0x00000331
 }
+.mresource public FSharpSignatureDataB.MethodImplAttribute.ForwardRef
+{
+  // Offset: 0x00000000 Length: 0x00000331
+}
 .mresource public FSharpOptimizationData.MethodImplAttribute.ForwardRef
+{
+  // Offset: 0x00000338 Length: 0x0000007D
+}
+.mresource public FSharpOptimizationDataB.MethodImplAttribute.ForwardRef
 {
   // Offset: 0x00000338 Length: 0x0000007D
 }

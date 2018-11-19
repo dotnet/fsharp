@@ -31,7 +31,15 @@
 {
   // Offset: 0x00000000 Length: 0x00000336
 }
+.mresource public FSharpSignatureDataB.MethodImplAttribute.PreserveSig
+{
+  // Offset: 0x00000000 Length: 0x00000336
+}
 .mresource public FSharpOptimizationData.MethodImplAttribute.PreserveSig
+{
+  // Offset: 0x00000340 Length: 0x0000007E
+}
+.mresource public FSharpOptimizationDataB.MethodImplAttribute.PreserveSig
 {
   // Offset: 0x00000340 Length: 0x0000007E
 }

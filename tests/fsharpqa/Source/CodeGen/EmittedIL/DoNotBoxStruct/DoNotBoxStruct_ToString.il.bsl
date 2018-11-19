@@ -31,7 +31,15 @@
 {
   // Offset: 0x00000000 Length: 0x00000208
 }
+.mresource public FSharpSignatureDataB.DoNotBoxStruct_ToString
+{
+  // Offset: 0x00000000 Length: 0x00000208
+}
 .mresource public FSharpOptimizationData.DoNotBoxStruct_ToString
+{
+  // Offset: 0x00000210 Length: 0x00000086
+}
+.mresource public FSharpOptimizationDataB.DoNotBoxStruct_ToString
 {
   // Offset: 0x00000210 Length: 0x00000086
 }

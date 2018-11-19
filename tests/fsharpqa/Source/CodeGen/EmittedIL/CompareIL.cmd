@@ -5,5 +5,11 @@ IF NOT ERRORLEVEL 0 exit 1
 
 echo ..\..\..\..\testenv\bin\ILComparer.exe "%~n1.il.bsl" "%~n1.il"
 ..\..\..\..\testenv\bin\ILComparer.exe "%~n1.il.bsl" "%~n1.il"
+
+if /i "%TEST_UPDATE_BSL%" == "1" (
+  echo copy /y "%~n1.il.bsl" "%~n1.il"
+  copy /y "%~n1.il.bsl" "%~n1.il"
+)
+
 exit /b %ERRORLEVEL%
 

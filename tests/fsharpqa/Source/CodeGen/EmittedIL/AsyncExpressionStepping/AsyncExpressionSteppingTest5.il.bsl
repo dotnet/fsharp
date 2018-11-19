@@ -31,6 +31,14 @@
 {
   // Offset: 0x00000000 Length: 0x000002B8
 }
+.mresource public FSharpSignatureDataB.AsyncExpressionSteppingTest5
+{
+  // Offset: 0x00000000 Length: 0x000002B8
+}
+.mresource public FSharpOptimizationDataB.AsyncExpressionSteppingTest5
+{
+  // Offset: 0x000002C0 Length: 0x000000BE
+}
 .mresource public FSharpOptimizationData.AsyncExpressionSteppingTest5
 {
   // Offset: 0x000002C0 Length: 0x000000BE

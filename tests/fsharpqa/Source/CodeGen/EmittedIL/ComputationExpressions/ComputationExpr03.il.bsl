@@ -35,7 +35,15 @@
 {
   // Offset: 0x00000000 Length: 0x00000222
 }
+.mresource public FSharpSignatureDataB.ComputationExpr03
+{
+  // Offset: 0x00000000 Length: 0x00000222
+}
 .mresource public FSharpOptimizationData.ComputationExpr03
+{
+  // Offset: 0x00000228 Length: 0x0000008C
+}
+.mresource public FSharpOptimizationDataB.ComputationExpr03
 {
   // Offset: 0x00000228 Length: 0x0000008C
 }

@@ -31,7 +31,15 @@
 {
   // Offset: 0x00000000 Length: 0x0000027D
 }
+.mresource public FSharpSignatureDataB.CompiledNameAttribute03
+{
+  // Offset: 0x00000000 Length: 0x0000027D
+}
 .mresource public FSharpOptimizationData.CompiledNameAttribute03
+{
+  // Offset: 0x00000288 Length: 0x00000086
+}
+.mresource public FSharpOptimizationDataB.CompiledNameAttribute03
 {
   // Offset: 0x00000288 Length: 0x00000086
 }

@@ -31,7 +31,15 @@
 {
   // Offset: 0x00000000 Length: 0x0000034C
 }
+.mresource public FSharpSignatureDataB.MethodImplAttribute.AggressiveInlining
+{
+  // Offset: 0x00000000 Length: 0x0000034C
+}
 .mresource public FSharpOptimizationData.MethodImplAttribute.AggressiveInlining
+{
+  // Offset: 0x00000350 Length: 0x00000085
+}
+.mresource public FSharpOptimizationDataB.MethodImplAttribute.AggressiveInlining
 {
   // Offset: 0x00000350 Length: 0x00000085
 }

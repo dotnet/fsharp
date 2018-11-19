@@ -31,7 +31,15 @@
 {
   // Offset: 0x00000000 Length: 0x0000030C
 }
+.mresource public FSharpSignatureDataB.CCtorDUWithMember02
+{
+  // Offset: 0x00000000 Length: 0x0000030C
+}
 .mresource public FSharpOptimizationData.CCtorDUWithMember02
+{
+  // Offset: 0x00000310 Length: 0x000000E4
+}
+.mresource public FSharpOptimizationDataB.CCtorDUWithMember02
 {
   // Offset: 0x00000310 Length: 0x000000E4
 }
