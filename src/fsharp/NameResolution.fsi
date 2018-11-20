@@ -346,8 +346,8 @@ type internal OpenDeclaration =
     
 /// Line-end normalized source text and an array of line end positions, used for format string parsing
 type FormatStringCheckContext =
-    { /// Line-end normalized source text
-      NormalizedSource: string
+    { /// Source text
+      Source: string
       /// Array of line end positions
       LineEndPositions: int[] }
 

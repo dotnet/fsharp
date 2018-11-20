@@ -1251,7 +1251,7 @@ type OpenDeclaration =
           IsOwnNamespace = isOwnNamespace }
 
 type FormatStringCheckContext =
-    { NormalizedSource: string
+    { Source: string
       LineEndPositions: int[] }
 
 /// An abstract type for reporting the results of name resolution and type checking.
@@ -1539,16 +1539,15 @@ type TcResultsSinkImpl(g, ?source: string) =
         lazy
             source |> Option.map (fun source ->
                 let positions =
-                    seq {
+                    [|
                         let mutable pos = 0
                         yield pos
                         for c in source do
                             if c = '\r' then ()
                             if c = '\n' then yield pos
                             else pos <- pos + 1
-                    }
-                    |> Seq.toArray
-                { NormalizedSource = source 
+                    |]
+                { Source = source 
                   LineEndPositions = positions })
 
     member this.GetResolutions() = 

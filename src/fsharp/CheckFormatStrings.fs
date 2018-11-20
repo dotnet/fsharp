@@ -54,15 +54,15 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringChe
     let (offset, fmt) = 
         match context with
         | Some context ->
-            let length = context.NormalizedSource.Length
+            let length = context.Source.Length
             if m.EndLine < context.LineEndPositions.Length then
                 let startIndex = context.LineEndPositions.[m.StartLine-1] + m.StartColumn
                 let endIndex = context.LineEndPositions.[m.EndLine-1] + m.EndColumn - 1
-                if startIndex < length-3 && context.NormalizedSource.[startIndex..startIndex+2] = "\"\"\"" then
-                    (3, context.NormalizedSource.[startIndex+3..endIndex-3])
-                elif startIndex < length-2 && context.NormalizedSource.[startIndex..startIndex+1] = "@\"" then
-                    (2, context.NormalizedSource.[startIndex+2..endIndex-1])
-                else (1, context.NormalizedSource.[startIndex+1..endIndex-1])
+                if startIndex < length-3 && context.Source.[startIndex..startIndex+2] = "\"\"\"" then
+                    (3, context.Source.[startIndex+3..endIndex-3])
+                elif startIndex < length-2 && context.Source.[startIndex..startIndex+1] = "@\"" then
+                    (2, context.Source.[startIndex+2..endIndex-1])
+                else (1, context.Source.[startIndex+1..endIndex-1])
             else (1, fmt)
         | None -> (1, fmt)
 
