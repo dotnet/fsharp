@@ -1538,11 +1538,15 @@ type TcResultsSinkImpl(g, ?source: string) =
     let formatStringCheckContext =
         lazy
             source |> Option.map (fun source ->
-                let source = source.Replace("\r\n", "\n").Replace("\r", "\n")
                 let positions =
-                    source.Split('\n')
-                    |> Seq.map (fun s -> String.length s + 1)
-                    |> Seq.scan (+) 0
+                    seq {
+                        let mutable pos = 0
+                        yield pos
+                        for c in source do
+                            if c = '\r' then ()
+                            if c = '\n' then yield pos
+                            else pos <- pos + 1
+                    }
                     |> Seq.toArray
                 { NormalizedSource = source 
                   LineEndPositions = positions })
