@@ -1545,11 +1545,6 @@ module internal Parser =
         let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
         tokenizer.Lexer
 
-    // Adding this new-line character at the end of the source seems odd but is required for some unit tests
-    // Todo: fix tests
-    let addNewLine (source: string) =
-        if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
-
     let matchBraces(source, fileName, options: FSharpParsingOptions, userOpName: string) =
         let delayedLogger = CapturingErrorLogger("matchBraces")
         use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
@@ -1563,7 +1558,7 @@ module internal Parser =
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         
         let matchingBraces = new ResizeArray<_>()
-        Lexhelp.usingLexbufForParsing(UnicodeLexing.StringAsLexbuf(addNewLine source), fileName) (fun lexbuf ->
+        Lexhelp.usingLexbufForParsing(UnicodeLexing.StringAsLexbuf(source), fileName) (fun lexbuf ->
             let errHandler = ErrorHandler(false, fileName, options.ErrorSeverityOptions, source)
             let lexfun = createLexerFunction fileName options lexbuf errHandler
             let parenTokensBalance t1 t2 =
@@ -1599,7 +1594,7 @@ module internal Parser =
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let parseResult =
-            Lexhelp.usingLexbufForParsing(UnicodeLexing.StringAsLexbuf(addNewLine source), fileName) (fun lexbuf ->
+            Lexhelp.usingLexbufForParsing(UnicodeLexing.StringAsLexbuf(source), fileName) (fun lexbuf ->
                 let lexfun = createLexerFunction fileName options lexbuf errHandler
                 let isLastCompiland =
                     fileName.Equals(options.LastFileName, StringComparison.CurrentCultureIgnoreCase) ||
