@@ -344,7 +344,7 @@ type internal OpenDeclaration =
     /// Create a new instance of OpenDeclaration.
     static member Create : longId: Ident list * modules: ModuleOrNamespaceRef list * appliedScope: range * isOwnNamespace: bool -> OpenDeclaration
     
-/// Line-end normalized source text and an array of line end positions, used for format string parsing
+/// Source text and an array of line end positions, used for format string parsing
 type FormatStringCheckContext =
     { /// Source text
       Source: string

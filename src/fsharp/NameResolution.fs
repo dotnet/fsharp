@@ -1542,10 +1542,13 @@ type TcResultsSinkImpl(g, ?source: string) =
                     [|
                         let mutable pos = 0
                         yield pos
-                        for c in source do
-                            if c = '\r' then ()
-                            if c = '\n' then yield pos
-                            else pos <- pos + 1
+                        for i in 0..source.Length-1 do
+                            let c = source.[i]
+                            if c = '\r' then yield pos
+                            if c = '\n' && i > 0 && source.[i-1] = '\r' then ()
+                            elif c = '\n' then yield pos
+                            pos <- pos + 1
+                        yield pos
                     |]
                 { Source = source 
                   LineEndPositions = positions })
