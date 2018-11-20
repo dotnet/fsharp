@@ -32,7 +32,7 @@ type IntelliSenseOptions =
     EnterKeySetting : EnterKeySetting }
     static member Default =
       { ShowAfterCharIsTyped = true
-        ShowAfterCharIsDeleted = true
+        ShowAfterCharIsDeleted = false
         IncludeSymbolsFromUnopenedNamespacesOrModules = false
         EnterKeySetting = EnterKeySetting.NeverNewline}
 
