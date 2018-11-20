@@ -1540,15 +1540,13 @@ type TcResultsSinkImpl(g, ?source: string) =
             source |> Option.map (fun source ->
                 let positions =
                     [|
-                        let mutable pos = 0
-                        yield pos
+                        yield 0
                         for i in 0..source.Length-1 do
                             let c = source.[i]
-                            if c = '\r' then yield pos
+                            if c = '\r' then yield i
                             if c = '\n' && i > 0 && source.[i-1] = '\r' then ()
-                            elif c = '\n' then yield pos
-                            pos <- pos + 1
-                        yield pos
+                            elif c = '\n' then yield i
+                        yield source.Length
                     |]
                 { Source = source 
                   LineEndPositions = positions })
