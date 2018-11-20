@@ -29,7 +29,8 @@ let FSI_BASIC = FSI_FILE
 
 module CoreTests = 
     open TestFramework
-    
+
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let testFSharpPlusBuild () =
         let cfg = testConfig ""
@@ -103,6 +104,7 @@ module CoreTests =
             "--verbose"
             (cfg.Directory ++ "./bin/Release/net45/FSharpPlus.Tests.dll" |> getFullPath)
         ]
+#endif
 
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
