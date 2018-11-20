@@ -348,8 +348,8 @@ type internal OpenDeclaration =
 type FormatStringCheckContext =
     { /// Source text
       Source: string
-      /// Array of line end positions
-      LineEndPositions: int[] }
+      /// Array of line start positions
+      LineStartPositions: int[] }
 
 /// An abstract type for reporting the results of name resolution and type checking
 type ITypecheckResultsSink =

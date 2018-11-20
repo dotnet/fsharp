@@ -1252,7 +1252,7 @@ type OpenDeclaration =
 
 type FormatStringCheckContext =
     { Source: string
-      LineEndPositions: int[] }
+      LineStartPositions: int[] }
 
 /// An abstract type for reporting the results of name resolution and type checking.
 type ITypecheckResultsSink =
@@ -1543,13 +1543,13 @@ type TcResultsSinkImpl(g, ?source: string) =
                         yield 0
                         for i in 0..source.Length-1 do
                             let c = source.[i]
-                            if c = '\r' then yield i
-                            if c = '\n' && i > 0 && source.[i-1] = '\r' then ()
-                            elif c = '\n' then yield i
+                            if c = '\r' && i + 1 < source.Length && source.[i+1] = '\n' then ()
+                            elif c = '\r' then yield i + 1
+                            if c = '\n' then yield i + 1
                         yield source.Length
                     |]
                 { Source = source 
-                  LineEndPositions = positions })
+                  LineStartPositions = positions })
 
     member this.GetResolutions() = 
         TcResolutions(capturedEnvs, capturedExprTypings, capturedNameResolutions, capturedMethodGroupResolutions)
