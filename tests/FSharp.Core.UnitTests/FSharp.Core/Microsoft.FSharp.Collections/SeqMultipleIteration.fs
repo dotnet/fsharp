@@ -31,19 +31,19 @@ module SeqMultipleIteration =
     [<Test>]
     let ``Seq.groupBy only evaluates the seq once`` () =
         let s, haveCalled = makeNewSeq ()
-        let distincts : seq<int * seq<int>> = Seq.groupBy id s
+        let groups : seq<int * seq<int>> = Seq.groupBy id s
         Assert.IsFalse !haveCalled
-        let distincts : list<int * seq<int>> = Seq.toList distincts
+        let groups : list<int * seq<int>> = Seq.toList groups
         Assert.IsFalse !haveCalled
-        let distincts : list<int * list<int>> = distincts |> List.map (fun (i, s) -> (i, Seq.toList s))
-        CollectionAssert.AreEqual (distincts |> Seq.toList, [3, [3]])
+        let groups : list<int * list<int>> = groups |> List.map (fun (i, s) -> (i, Seq.toList s))
+        CollectionAssert.AreEqual (groups |> Seq.toList, [3, [3]])
         Assert.IsTrue !haveCalled
 
     [<Test>]
     let ``Seq.countBy only evaluates the seq once`` () =
         let s, haveCalled = makeNewSeq ()
-        let distincts : seq<int * int> = Seq.countBy id s
+        let counts : seq<int * int> = Seq.countBy id s
         Assert.IsFalse !haveCalled
-        let distincts : list<int * int> = Seq.toList distincts
+        let counts : list<int * int> = Seq.toList counts
         Assert.IsTrue !haveCalled
-        CollectionAssert.AreEqual (distincts |> Seq.toList, [(1, 3)])
+        CollectionAssert.AreEqual (counts |> Seq.toList, [(3, 1)])
