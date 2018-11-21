@@ -1546,6 +1546,7 @@ type TcResultsSinkImpl(g, ?source: string) =
                             if c = '\r' && i < source.Length && source.[i] = '\n' then ()
                             elif c = '\r' then yield i
                             elif c = '\n' then yield i
+                        yield source.Length
                     |]
                 { Source = source 
                   LineStartPositions = positions })
