@@ -34,9 +34,7 @@ module SeqMultipleIteration =
         let groups : seq<int * seq<int>> = Seq.groupBy id s
         Assert.IsFalse !haveCalled
         let groups : list<int * seq<int>> = Seq.toList groups
-        Assert.IsFalse !haveCalled
-        let groups : list<int * list<int>> = groups |> List.map (fun (i, s) -> (i, Seq.toList s))
-        CollectionAssert.AreEqual (groups |> Seq.toList, [3, [3]])
+        // Seq.groupBy iterates the entire sequence as soon as it begins iteration.
         Assert.IsTrue !haveCalled
 
     [<Test>]
