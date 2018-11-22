@@ -872,7 +872,7 @@ module private PrintTypes =
                 | tys -> bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagKeyword "or")) tys)
             tysL ^^ wordL (tagPunctuation ":")  ---  
                 bracketL (stat ++ wordL (tagMember nm) ^^ wordL (tagPunctuation ":") ---
-                        ((layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "*")) argtys --- wordL (tagPunctuation "->")) --- (layoutTypeWithInfo denv env rty)))
+                        ((layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "*")) argtys --- wordL (tagPunctuation "->")) --- (layoutTypeWithInfoAndPrec denv env 4 rty)))
 
 
     /// Layout a unit expression 
