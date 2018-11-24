@@ -2998,7 +2998,7 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
     // background UI thread, not on the compiler thread.
     //
     // This cache is safe for concurrent access because there is no onDiscard action for the items in the cache.
-    let braceMatchCache = MruCache<AnyCallerThreadToken, _, _>(braceMatchCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing) 
+    let braceMatchCache = MruCache<AnyCallerThreadToken,_,_>(braceMatchCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing)
 
     let mutable maxMemoryReached = false
     let mutable maxMB = maxMBDefault
