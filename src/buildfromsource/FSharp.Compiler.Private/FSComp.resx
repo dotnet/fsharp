@@ -1431,6 +1431,9 @@
   <data name="parsUnmatchedBrace" xml:space="preserve">
     <value>Unmatched '{{'</value>
   </data>
+  <data name="parsUnmatchedBraceBar" xml:space="preserve">
+    <value>Unmatched '{{|'</value>
+  </data>
   <data name="parsFieldBinding" xml:space="preserve">
     <value>Field bindings must have the form 'id = expr;'</value>
   </data>
@@ -2847,6 +2850,9 @@
   <data name="typeInfoArgument" xml:space="preserve">
     <value>argument</value>
   </data>
+  <data name="typeInfoAnonRecdField" xml:space="preserve">
+    <value>anonymous record field</value>
+  </data>
   <data name="typeInfoPatternVariable" xml:space="preserve">
     <value>patvar</value>
   </data>
@@ -4059,6 +4065,12 @@
   <data name="parsUnexpectedSymbolEqualsInsteadOfIn" xml:space="preserve">
     <value>Unexpected symbol '=' in expression. Did you intend to use 'for x in y .. z do' instead?</value>
   </data>
+  <data name="tcAnonRecdCcuMismatch" xml:space="preserve">
+    <value>Two anonymous record types are from different assemblies '{0}' and '{1}'</value>
+  </data>
+  <data name="tcAnonRecdFieldNameMismatch" xml:space="preserve">
+    <value>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</value>
+  </data>
   <data name="keywordDescriptionAbstract" xml:space="preserve">
     <value>Indicates a method that either has no implementation in the type in which it is declared or that is virtual and has a default implementation.</value>
   </data>
@@ -4339,9 +4351,6 @@
   <data name="chkNoByrefAddressOfValueFromExpression" xml:space="preserve">
     <value>The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</value>
   </data>
-  <data name="chkNoReturnOfLimitedSpan" xml:space="preserve">
-    <value>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</value>
-  </data>
   <data name="chkNoWriteToLimitedSpan" xml:space="preserve">
     <value>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</value>
   </data>
@@ -4366,20 +4375,26 @@
   <data name="tastCantTakeAddressOfExpression" xml:space="preserve">
     <value>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</value>
   </data>
-  <data name="tcCannotCallExtensionMemberInrefToByref" xml:space="preserve">
-    <value>Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</value>
+  <data name="tcCannotCallExtensionMethodInrefToByref" xml:space="preserve">
+    <value>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</value>
   </data>
   <data name="tcByrefsMayNotHaveTypeExtensions" xml:space="preserve">
     <value>Byref types are not allowed to have optional type extensions.</value>
-  </data>
-  <data name="tcCannotCallExtensionMethodInrefToByref" xml:space="preserve">
-    <value>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</value>
   </data>
   <data name="tcCannotPartiallyApplyExtensionMethodForByref" xml:space="preserve">
     <value>Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</value>
   </data>
   <data name="tcTypeDoesNotInheritAttribute" xml:space="preserve">
     <value>This type does not inherit Attribute, it will not work correctly with other .NET languages.</value>
+  </data>
+  <data name="parsInvalidAnonRecdExpr" xml:space="preserve">
+    <value>Invalid anonymous record expression</value>
+  </data>
+  <data name="parsInvalidAnonRecdType" xml:space="preserve">
+    <value>Invalid anonymous record type</value>
+  </data>
+  <data name="tcCopyAndUpdateNeedsRecordType" xml:space="preserve">
+    <value>The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</value>
   </data>
   <data name="chkInvalidFunctionParameterType" xml:space="preserve">
     <value>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</value>

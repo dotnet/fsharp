@@ -14,6 +14,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Runtime.Remoting" />
+    <PackageReference Include="FSharp.Core" Version="4.5.2" />
     <PackageReference Include="FSharp.Core" Version="4.1.19" />
     <ProjectReference Include="..\..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>

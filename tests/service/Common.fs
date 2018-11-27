@@ -231,6 +231,9 @@ let attribsOfSymbol (s:FSharpSymbol) =
             if v.IsVolatile then yield "volatile"
             if v.IsStatic then yield "static"
             if v.IsLiteral then yield sprintf "%A" v.LiteralValue.Value
+            if v.IsAnonRecordField then 
+                let info, tys, i = v.AnonRecordFieldDetails
+                yield "anon(" + string i + ", [" + info.Assembly.QualifiedName + "/" + String.concat "+" info.EnclosingCompiledTypeNames + "/" + info.CompiledName + "]" + String.concat "," info.SortedFieldNames + ")"
 
 
         | :? FSharpEntity as v -> 

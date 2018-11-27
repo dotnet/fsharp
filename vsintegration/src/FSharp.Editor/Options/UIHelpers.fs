@@ -10,7 +10,7 @@ open Microsoft.VisualStudio.ComponentModelHost
 module internal OptionsUIHelpers =
 
     [<AbstractClass>]
-    type AbstractOptionPage<'t>() as this =
+    type AbstractOptionPage<'options>() as this =
         inherit UIElementDialogPage()
 
         let view = lazy this.CreateView()
@@ -26,20 +26,10 @@ module internal OptionsUIHelpers =
         override this.Child = upcast view.Value
 
         override this.SaveSettingsToStorage() = 
-            this.GetResult() |> optionService.Value.Write
+            downcast view.Value.DataContext |> optionService.Value.Write<'options>
 
         override this.LoadSettingsFromStorage() = 
-            optionService.Value.Read() |> this.SetViewModel
-
-        //Override this method when using immutable settings type
-        member __.SetViewModel(settings: 't) =
-            // in case settings are a CLIMutable record
-            view.Value.DataContext <- null
-            view.Value.DataContext <- settings
-
-        //Override this method when using immutable settings type
-        member __.GetResult() : 't =
-            downcast view.Value.DataContext
+            view.Value.DataContext <- optionService.Value.Read<'options>()
 
     //data binding helpers
     let radioButtonCoverter =

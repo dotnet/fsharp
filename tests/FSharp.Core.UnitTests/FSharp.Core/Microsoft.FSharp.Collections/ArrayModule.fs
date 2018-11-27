@@ -1187,6 +1187,24 @@ type ArrayModule() =
         CheckThrowsArgumentException(fun () -> Array.exactlyOne [|"1"; "2"|] |> ignore)
 
     [<Test>]
+    member this.``tryExactlyOne should return the element from singleton arrays``() =
+        Assert.AreEqual(Some 1, Array.tryExactlyOne [|1|])
+        Assert.AreEqual(Some "2", Array.tryExactlyOne [|"2"|])
+        ()
+
+    [<Test>]
+    member this.``tryExactlyOne should return None on empty array``() =
+        Assert.AreEqual(None, Array.tryExactlyOne [||])
+
+    [<Test>]
+    member this.``tryExactlyOne should return None for arrays with more than one element``() =
+        Assert.AreEqual(None, Array.tryExactlyOne [|"1"; "2"|])
+
+    [<Test>]
+    member this.``tryExactlyOne should fail on null array``() =
+        CheckThrowsArgumentNullException(fun () -> Array.tryExactlyOne null |> ignore)
+
+    [<Test>]
     member this.GroupBy() =
         let funcInt x = x%5
              

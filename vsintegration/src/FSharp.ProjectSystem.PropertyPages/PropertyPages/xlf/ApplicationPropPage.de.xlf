@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="de" original="../ApplicationPropPage.resx">
     <body>
@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="ResourcesLabel.Text">
         <source>Specify how application resources will be managed:</source>
-        <target state="translated">Verwaltung von Anwendungsressourcen:</target>
+        <target state="translated">Geben Sie an, wie die Anwendungsressourcen verwaltet werden sollen:</target>
         <note />
       </trans-unit>
       <trans-unit id="ResourceLabel.Text">

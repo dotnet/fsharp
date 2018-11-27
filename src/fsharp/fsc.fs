@@ -296,7 +296,7 @@ module InterfaceFileWriter =
             fprintfn os "#light" 
             fprintfn os "" 
 
-        for (TImplFile(_, _, mexpr, _, _)) in declaredImpls do
+        for (TImplFile(_, _, mexpr, _, _, _)) in declaredImpls do
             let denv = BuildInitialDisplayEnvForSigFileGeneration tcGlobals
             writeViaBufferWithEnvironmentNewLines os (fun os s -> Printf.bprintf os "%s\n\n" s)
               (NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr |> Layout.squashTo 80 |> Layout.showL)
@@ -1831,7 +1831,7 @@ let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
     // it as the updated global error logger and never remove it
     let oldLogger = errorLogger
     let errorLogger = 
-        let scopedPragmas = [ for (TImplFile(_, pragmas, _, _, _)) in typedImplFiles do yield! pragmas ]
+        let scopedPragmas = [ for (TImplFile(_, pragmas, _, _, _, _)) in typedImplFiles do yield! pragmas ]
         GetErrorLoggerFilteringByScopedPragmas(true, scopedPragmas, oldLogger)
 
     let _unwindEL_3 = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
@@ -1999,13 +1999,10 @@ let main2b (tcImportsCapture,dynamicAssemblyCreator) (Args (ctok, tcConfig: TcCo
     let ilxGenerator = CreateIlxAssemblyGenerator (tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), generatedCcu)
 
     let codegenResults = GenerateIlxCode ((if Option.isSome dynamicAssemblyCreator then IlReflectBackend else IlWriteBackend), Option.isSome dynamicAssemblyCreator, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator)
-    let casApplied = new Dictionary<Stamp, bool>()
-    let securityAttrs, topAssemblyAttrs = topAttrs.assemblyAttrs |> List.partition (fun a -> IsSecurityAttribute tcGlobals (tcImports.GetImportMap()) casApplied a rangeStartup)
-
-    // remove any security attributes from the top-level assembly attribute list
+    let topAssemblyAttrs = codegenResults.topAssemblyAttrs
     let topAttrs = {topAttrs with assemblyAttrs=topAssemblyAttrs}
-    let permissionSets = ilxGenerator.CreatePermissionSets securityAttrs
-    let secDecls = if List.isEmpty securityAttrs then emptyILSecurityDecls else mkILSecurityDecls permissionSets
+    let permissionSets = codegenResults.permissionSets
+    let secDecls = mkILSecurityDecls permissionSets 
 
     let ilxMainModule = MainModuleBuilder.CreateMainModule (ctok, tcConfig, tcGlobals, tcImports, pdbfile, assemblyName, outfile, topAttrs, idata, optDataResources, codegenResults, assemVerFromAttrib, metadataVersion, secDecls)
 

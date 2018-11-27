@@ -7057,44 +7057,14 @@
         <target state="translated">Nie można uzyskać adresu wartości zwróconej przez wyrażenie. Przypisz zwróconą wartość do wartości powiązanej za pomocą instrukcji let przed uzyskaniem adresu.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
-        <source>Byref types are not allowed to have optional type extensions.</source>
-        <target state="translated">Typy Byref nie mogą mieć opcjonalnych rozszerzeń typu.</target>
+      <trans-unit id="parsUnmatchedBraceBar">
+        <source>Unmatched '{{|'</source>
+        <target state="new">Unmatched '{{|'</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="chkInvalidFunctionParameterType">
-        <source>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</source>
-        <target state="translated">Parametr „{0}” ma nieprawidłowy typ „{1}”. Nie jest to dozwolone przez reguły języka Common IL.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="chkInvalidFunctionReturnType">
-        <source>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</source>
-        <target state="translated">Funkcja lub metoda ma nieprawidłowy zwracany typ „{0}”. Nie jest to dozwolone przez reguły języka Common IL.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
-        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="translated">Nie można wywołać metody rozszerzenia byref „{0}”. Pierwszy parametr wymaga, aby wartość była typem byref zmiennym lub innym niż tylko do odczytu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcCannotPartiallyApplyExtensionMethodForByref">
-        <source>Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</source>
-        <target state="translated">Nie można częściowo zastosować metody rozszerzenia „{0}”, ponieważ pierwszy parametr jest typu byref.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcCannotCallExtensionMemberInrefToByref">
-        <source>Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</source>
-        <target state="new">Cannot call the extension member as it requires the value to be mutable or a byref type due to the extending type being used as a byref.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcTypeDoesNotInheritAttribute">
-        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
-        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
+      <trans-unit id="typeInfoAnonRecdField">
+        <source>anonymous record field</source>
+        <target state="new">anonymous record field</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExceptionConstructorDoesNotHaveFieldWithGivenName">
@@ -7102,14 +7072,69 @@
         <target state="new">The exception '{0}' does not have a field named '{1}'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcActivePatternsDoNotHaveFields">
+        <source>Active patterns do not have fields. This syntax is invalid.</source>
+        <target state="new">Active patterns do not have fields. This syntax is invalid.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcConstructorDoesNotHaveFieldWithGivenName">
         <source>The constructor does not have a field named '{0}'.</source>
         <target state="new">The constructor does not have a field named '{0}'.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcActivePatternsDoNotHaveFields">
-        <source>Active patterns do not have fields. This syntax is invalid.</source>
-        <target state="new">Active patterns do not have fields. This syntax is invalid.</target>
+      <trans-unit id="tcAnonRecdCcuMismatch">
+        <source>Two anonymous record types are from different assemblies '{0}' and '{1}'</source>
+        <target state="new">Two anonymous record types are from different assemblies '{0}' and '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameMismatch">
+        <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
+        <target state="new">Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
+        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
+        <target state="new">Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
+        <source>Byref types are not allowed to have optional type extensions.</source>
+        <target state="new">Byref types are not allowed to have optional type extensions.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotPartiallyApplyExtensionMethodForByref">
+        <source>Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</source>
+        <target state="new">Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDoesNotInheritAttribute">
+        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
+        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsInvalidAnonRecdExpr">
+        <source>Invalid anonymous record expression</source>
+        <target state="new">Invalid anonymous record expression</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsInvalidAnonRecdType">
+        <source>Invalid anonymous record type</source>
+        <target state="new">Invalid anonymous record type</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCopyAndUpdateNeedsRecordType">
+        <source>The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</source>
+        <target state="new">The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInvalidFunctionParameterType">
+        <source>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</source>
+        <target state="new">The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInvalidFunctionReturnType">
+        <source>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</source>
+        <target state="new">The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</target>
         <note />
       </trans-unit>
     </body>
