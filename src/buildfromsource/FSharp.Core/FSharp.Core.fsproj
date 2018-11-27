@@ -25,7 +25,7 @@
     <CompileBefore Include="$(FsCoreDir)\prim-types-prelude.fs">
       <Link>Primitives/prim-types-prelude.fs</Link>
     </CompileBefore>
-    <Compile Include="$(FsCoreDir)\SR.fs">
+    <Compile Include="SR.fs">
       <Link>Primitives/SR.fs</Link>
     </Compile>
     <Compile Include="$(FsCoreDir)\prim-types.fsi">
