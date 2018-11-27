@@ -133,9 +133,10 @@ type WriteCodeFragment() =
                         _outputFile
 
                 let codeText = code.ToString()
-                let alreadyExists = (try File.Exists fileName && File.ReadAllText(fileName) = codeText with _ -> false)
-                if not alreadyExists then
-                    File.WriteAllText(fileName, codeText)
+                File.WriteAllText(fileName, codeText)
+                //let alreadyExists = (try File.Exists fileName && File.ReadAllText(fileName) = codeText with _ -> false)
+                //if not alreadyExists then
+                //    File.WriteAllText(fileName, codeText)
                 _outputFile <- outputFileItem
                 true
 
