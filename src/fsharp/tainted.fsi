@@ -101,7 +101,7 @@ module internal Tainted =
 
     /// Test whether the tainted value is null
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-    val (|Null|NonNull|) : Tainted<'T> -> Choice<unit, Tainted<'T>> when 'T : null and 'T : not struct
+    val (|Null|NonNull|) : Tainted<'T> -> Choice<unit, Tainted<'T>> when 'T : null
 #else
     val (|Null|NonNull|) : Tainted<'T?> -> Choice<unit, Tainted<'T>> when 'T : not null and 'T : not struct
 #endif

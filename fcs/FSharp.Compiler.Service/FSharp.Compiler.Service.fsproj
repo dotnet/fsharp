@@ -16,7 +16,7 @@
     <FsYaccOutputFolder Condition="'$(TargetFramework)' != ''">$(TargetFramework)\</FsYaccOutputFolder>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
     <OtherFlags>$(OtherFlags) --times</OtherFlags>
-    <NoWarn>$(NoWarn);44;62;69;65;54;61;75;62;9;2003;</NoWarn>
+    <NoWarn>$(NoWarn);44;62;69;65;54;61;75;62;9;2003;2015</NoWarn>
     <Tailcalls>true</Tailcalls>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

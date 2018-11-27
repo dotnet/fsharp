@@ -1613,8 +1613,11 @@ module internal MagicAssemblyResolution =
         { new System.IDisposable with 
              member x.Dispose() = () }
 #else
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName:string) : Assembly = 
+#else
         let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName:string) : Assembly? = 
-
+#endif
            try 
                // Grab the name of the assembly
                let tcConfig = TcConfig.Create(tcConfigB,validate=false)
