@@ -138,9 +138,9 @@ type OptionModule() =
         Assert.IsTrue( Option.ofObj "" = Some "")
         Assert.IsTrue( Option.ofObj [| "" |] = Some [| "" |])
         Assert.IsTrue( Option.ofObj (null : string array) = None)
-        Assert.IsTrue( Option.ofObj<string?> null = None)
-        Assert.IsTrue( Option.ofObj<string[]?> null = None)
-        Assert.IsTrue( Option.ofObj<int[]?> null = None)
+        Assert.IsTrue( Option.ofObj<string> null = None)
+        Assert.IsTrue( Option.ofObj<string[]> null = None)
+        Assert.IsTrue( Option.ofObj<int[]> null = None)
 
     [<Test>]
     member this.DefaultValue() =
@@ -367,9 +367,9 @@ type ValueOptionTests() =
         Assert.IsTrue(ValueOption.ofObj "" = ValueSome "")
         Assert.IsTrue(ValueOption.ofObj [| "" |] = ValueSome [| "" |])
         Assert.IsTrue(ValueOption.ofObj (null : string array) = ValueNone)
-        Assert.IsTrue(ValueOption.ofObj<string?> null = ValueNone)
-        Assert.IsTrue(ValueOption.ofObj<string[]?> null = ValueNone)
-        Assert.IsTrue(ValueOption.ofObj<int[]?> null = ValueNone)
+        Assert.IsTrue(ValueOption.ofObj<string> null = ValueNone)
+        Assert.IsTrue(ValueOption.ofObj<string[]> null = ValueNone)
+        Assert.IsTrue(ValueOption.ofObj<int[]> null = ValueNone)
 
     [<Test>]
     member this.DefaultValue() =
