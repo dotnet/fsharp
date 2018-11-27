@@ -164,7 +164,7 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
 module internal Tainted =
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-    let (|Null|NonNull|) (p:Tainted<'T>) : Choice<unit,Tainted<'T>> when 'T : null =
+    let (|Null|NonNull|) (p:Tainted<'T>) : Choice<unit,Tainted<'T>> when 'T : null and 'T : not struct =
         if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure id)
 #else
     let (|Null|NonNull|) (p:Tainted<'T?>) : Choice<unit,Tainted<'T>> when 'T : not null =
