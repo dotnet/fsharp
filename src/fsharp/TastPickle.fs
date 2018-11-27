@@ -171,11 +171,20 @@ type 'T pickler = 'T -> WriterState -> unit
 let p_byte b st = st.os.EmitIntAsByte b
 let p_byteB b st = st.osB.EmitIntAsByte b
 let p_bool b st = p_byte (if b then 1 else 0) st
+
+/// Write an uncompressed integer to the main stream.
 let prim_p_int32 i st = 
     p_byte (b0 i) st
     p_byte (b1 i) st
     p_byte (b2 i) st
     p_byte (b3 i) st
+
+/// Write an uncompressed integer to the B stream.
+let prim_p_int32B i st = 
+    p_byteB (b0 i) st
+    p_byteB (b1 i) st
+    p_byteB (b2 i) st
+    p_byteB (b3 i) st
 
 /// Compress integers according to the same scheme used by CLR metadata 
 /// This halves the size of pickled data 
@@ -188,6 +197,17 @@ let p_int32 n st =
     else 
         p_byte 0xFF st
         prim_p_int32 n st
+
+/// Write a compressed integer to the B stream.
+let p_int32B n st = 
+    if n >= 0 && n <= 0x7F then 
+        p_byteB (b0 n) st
+    else if n >= 0x80 && n <= 0x3FFF then  
+        p_byteB ( (0x80 ||| (n >>> 8))) st 
+        p_byteB ( (n &&& 0xFF)) st 
+    else 
+        p_byteB 0xFF st
+        prim_p_int32B n st
 
 let space = ()
 let p_space n () st = 
@@ -213,6 +233,7 @@ let p_prim_string (s:string) st =
     st.os.EmitBytes bytes
 
 let p_int c st = p_int32 c st
+let p_intB c st = p_int32B c st
 let p_int8 (i:sbyte) st = p_int32 (int32 i) st
 let p_uint8 (i:byte) st = p_byte (int i) st
 let p_int16 (i:int16) st = p_int32 (int32 i) st
@@ -244,6 +265,7 @@ let inline  p_tup11 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 (a,b,c,d,e,f,x7,x8,x9,x10
 
 let u_byte st = int (st.is.ReadByte())
 
+/// Unpickle an uncompressed integer from the B stream
 /// The extra B stream of bytes is implicitly 0 if not present
 let u_byteB st = 
     if st.isB.IsEOF then 0 else int (st.isB.ReadByte())
@@ -252,11 +274,20 @@ type unpickler<'T> = ReaderState -> 'T
 
 let u_bool st = let b = u_byte st in (b = 1) 
 
+/// Unpickle an uncompressed integer from the main stream
 let prim_u_int32 st = 
     let b0 =  (u_byte st)
     let b1 =  (u_byte st)
     let b2 =  (u_byte st)
     let b3 =  (u_byte st)
+    b0 ||| (b1 <<< 8) ||| (b2 <<< 16) ||| (b3 <<< 24)
+
+/// Unpickle an uncompressed integer from the B stream
+let prim_u_int32B st = 
+    let b0 = u_byteB st
+    let b1 = u_byteB st
+    let b2 = u_byteB st
+    let b3 = u_byteB st
     b0 ||| (b1 <<< 8) ||| (b2 <<< 16) ||| (b3 <<< 24)
 
 let u_int32 st = 
@@ -270,6 +301,19 @@ let u_int32 st =
         assert(b0 = 0xFF)
         prim_u_int32 st
 
+/// Unpickle a compressed integer from the B stream.
+/// The integer is 0 if the B stream is not present.
+let u_int32B st = 
+    let b0 = u_byteB st
+    if b0 <= 0x7F then b0 
+    else if b0 <= 0xbf then 
+        let b0 = b0 &&& 0x7F
+        let b1 = u_byteB st
+        (b0 <<< 8) ||| b1
+    else  
+        assert(b0 = 0xFF)
+        prim_u_int32B st
+
 let u_bytes st = 
     let n =  (u_int32 st)
     st.is.ReadBytes n
@@ -279,6 +323,7 @@ let u_prim_string st =
     st.is.ReadUtf8String len
 
 let u_int st = u_int32 st
+let u_intB st = u_int32B st
 let u_int8 st = sbyte (u_int32 st)
 let u_uint8 st = byte (u_byte st)
 let u_int16 st = int16 (u_int32 st)
@@ -424,6 +469,10 @@ let p_array f (x: 'T[]) st =
     p_int x.Length st
     p_array_core f x st
 
+let p_arrayB f (x: 'T[]) st =
+    p_intB x.Length st
+    p_array_core f x st
+
 // Optionally encode an extra item using a marker bit.
 // When extraf is None, the marker bit is not set, and this is identical to p_array.
 let p_array_ext extraf f (x: 'T[]) st =
@@ -437,6 +486,9 @@ let p_array_ext extraf f (x: 'T[]) st =
 
  
 let p_list f x st = p_array f (Array.ofList x) st
+
+let p_listB f x st = p_arrayB f (Array.ofList x) st
+
 let p_list_ext extraf f x st = p_array_ext extraf f (Array.ofList x) st
 
 let p_List f (x: 'T list) st = p_list f x st 
@@ -510,6 +562,11 @@ let u_array f st =
     let n = u_int st
     u_array_core f n st
 
+/// Unpickle an array from the B stream. The array is empty if the B stream is not present.
+let u_arrayB f st =
+    let n = u_intB st
+    u_array_core f n st
+
 // Optionally decode an extra item if a marker bit is present.
 // When the marker bit is not set this is identical to u_array, and extraf is not called
 let u_array_ext extraf f st =
@@ -523,6 +580,10 @@ let u_array_ext extraf f st =
     extraItem, arr
 
 let u_list f st = Array.toList (u_array f st)
+
+/// Unpickle a list from the B stream. The resulting list is empty if the B stream is not present.
+let u_listB f st = Array.toList (u_arrayB f st)
+
 let u_list_ext extra f st = let v, res = u_array_ext extra f st in v, Array.toList res
 
 #if FLAT_LIST_AS_LIST
@@ -1507,7 +1568,7 @@ let p_tyar_constraint x st =
     | TyparConstraint.MayResolveMember(traitInfo,_) -> p_byte 1 st; p_trait traitInfo st
     | TyparConstraint.DefaultsTo(_,rty,_)           -> p_byte 2 st; p_ty rty st
     | TyparConstraint.SupportsNull _                -> p_byte 3 st
-    | TyparConstraint.IsNonNullableStruct _         -> p_byte 4 st
+    | TyparConstraint.IsNonNullableStruct _         -> p_byte 4 st 
     | TyparConstraint.IsReferenceType _             -> p_byte 5 st
     | TyparConstraint.RequiresDefaultConstructor _  -> p_byte 6 st
     | TyparConstraint.SimpleChoice(tys,_)           -> p_byte 7 st; p_tys tys st
@@ -1516,8 +1577,20 @@ let p_tyar_constraint x st =
     | TyparConstraint.SupportsComparison _          -> p_byte 10 st
     | TyparConstraint.SupportsEquality _            -> p_byte 11 st
     | TyparConstraint.IsUnmanaged _                 -> p_byte 12 st
-    | TyparConstraint.NotSupportsNull _             -> p_byte 13 st
-let p_tyar_constraints = (p_list p_tyar_constraint)
+    | TyparConstraint.NotSupportsNull _             -> 
+        failwith "NotSupportsNull constraints should only be emitted to streamB"
+
+// Some extra F# 5.0 constraints are stored in stream B, these will be ignored by earlier F# compilers
+let p_tyar_constraintB x st = 
+    match x with 
+    | TyparConstraint.NotSupportsNull _             -> p_byteB 1 st
+    | _ -> failwith "only NotSupportsNull constraints should be emitted to streamB"
+
+let p_tyar_constraints cxs st = 
+    let cxs1, cxs2 = cxs |> List.partition (function TyparConstraint.NotSupportsNull _ -> false | _ -> true)
+    p_list p_tyar_constraint cxs1 st
+    // Some extra F# 5.0 constraints are stored in stream B, these will be ignored by earlier F# compilers
+    p_listB p_tyar_constraintB cxs2 st
 
 let u_tyar_constraint st = 
     let tag = u_byte st
@@ -1535,12 +1608,23 @@ let u_tyar_constraint st =
     | 10 ->                         (fun       _ -> TyparConstraint.SupportsComparison range0)
     | 11 ->                         (fun       _ -> TyparConstraint.SupportsEquality range0)
     | 12 ->                         (fun       _ -> TyparConstraint.IsUnmanaged range0)
-    | 13 ->                         (fun       _ -> TyparConstraint.NotSupportsNull range0)
     | _ -> ufailwith st "u_tyar_constraint" 
 
+// Some extra F# 5.0 constraints are stored in stream B, these will be ignored by earlier F# compilers
+let u_tyar_constraintB st = 
+    let tag = u_byteB st
+    match tag with
+    | 1 ->  TyparConstraint.NotSupportsNull range0
+    | _ -> ufailwith st "u_tyar_constraintB - unexpected constraint in streamB" 
 
-let u_tyar_constraints = (u_list_revi u_tyar_constraint)
-
+let u_tyar_constraints st =
+    let cxs1 = u_list_revi u_tyar_constraint st
+    // Some extra F# 5.0 constraints are stored in stream B, these will be ignored by earlier F# compilers
+    //
+    // If the B stream is not present (e.g. reading F# 4.5 components) then this list will be empty
+    // via the implementation of u_listB.
+    let cxs2 = u_listB u_tyar_constraintB st 
+    cxs1 @ cxs2
 
 let p_tyar_spec_data (x:Typar) st = 
     p_tup5

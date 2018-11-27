@@ -35,7 +35,7 @@ module Basics =
 
     let x5 = nonNull<string> "" // Should not give a Nullness warning
     check "ekjnceoiwe5" x5 ""
-    let x6 = nonNull<string?> "" // **Expected to give a Nullness warning
+    let x6 = nonNull<string?> "" // **Expected to give a Nullness warning, expected also to give a warning with nullness checking off
     check "ekjnceoiwe6" x6 ""
     let x7 = nonNull ""
     check "ekjnceoiwe7" x7 ""
@@ -293,6 +293,7 @@ module NullConstraintTests =
 
 #endif
 
+#if !NO_CHECKNULLS
      // This gave an error in F# 4.5.  It now only gives a warning when /checknulls is on which is sort of ok
      // since we are treating .NET and F# types more symmetrically.
      //
@@ -308,6 +309,7 @@ module NullConstraintTests =
     let f6 (y : C<list<string>?>) = y // No warning expected, lexing/parsing should succeed 
 
     let f7 (y : C<list<string>>?) = y // No warning expected, lexing/parsing should succeed
+#endif
 
 
 module DefaultValueTests =

@@ -50,6 +50,10 @@ type UsingMSBuild() as this =
         let ok = errors |> List.exists (fun err -> err.Message = text)
         Assert.IsTrue(ok, sprintf "Error list should contain '%s' message" text)
 
+    let assertContainsContains (errors : list<Error>) text = 
+        let ok = errors |> List.exists (fun err -> err.Message.Contains(text))
+        Assert.IsTrue(ok, sprintf "Error list should contain '%s' message" text)
+
 
     //verify the error list Count
     member private this.VerifyErrorListCountAtOpenProject(fileContents : string, num : int) =
@@ -267,7 +271,7 @@ let x =
         CheckErrorList content <|
             fun errors ->
                 Assert.AreEqual(1, List.length errors)
-                assertContains errors "A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point."
+                assertContainsContains errors "A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point."
 
     [<Test>]
     member public this.``InvalidMethodOverload2``() = 

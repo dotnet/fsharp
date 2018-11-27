@@ -2031,13 +2031,12 @@ and SolveTypeNotSupportsNullCore (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     let m = csenv.m
     let denv = csenv.DisplayEnv
     if TypeNullIsTrueValue g ty then 
-        do! ErrorD (ConstraintSolverError(FSComp.SR.csTypeHasNullAsTrueValue(NicePrint.minimalStringOfType denv ty), m, m2))
+        // We can only give warnings here as F# 5.0 introduces these constraints into existing
+        // code via Option.ofObj and Option.toObj
+        do! WarnD (ConstraintSolverError(FSComp.SR.csTypeHasNullAsTrueValue(NicePrint.minimalStringOfType denv ty), m, m2))
     elif TypeNullIsExtraValueNew g m ty then 
-        if g.checkNullness then 
+        if g.checkNullness || TypeNullIsExtraValueOld g m ty then 
             do! WarnD (ConstraintSolverError(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
-        else
-            if TypeNullIsExtraValueOld g m ty then
-                do! ErrorD (ConstraintSolverError(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
     else
         if g.checkNullness then 
             let nullness = nullnessOfTy g ty

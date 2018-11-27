@@ -164,8 +164,6 @@ module CoreTests =
     [<Test>]
     let ``test int32`` () = singleTestBuildAndRun "core/int32" FSC_BASIC
 
-    [<Test>]
-    let nullness () = singleTestBuildAndRun "core/nullness" FSC_BASIC
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
@@ -201,6 +199,18 @@ module CoreTests =
         fsc cfg "%s -o:test-langversion-45.exe -g --langversion:4.5" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test-langversion-45.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let nullness_no_checknulls () =
+        let cfg = testConfig "core/nullness"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-no-checknulls.exe -g --define:NO_CHECKNULLS" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-no-checknulls.exe") ""
 
         testOkFile.CheckExists()
 
