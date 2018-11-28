@@ -60,7 +60,7 @@ let (=>) (source: string) (expectedRanges: (Range * Range) list) =
         reraise()
 
 [<Test>]
-let ``empty file``() = "" => [ (1, 0, 2, 0), (1, 0, 2, 0) ]
+let ``empty file``() = "" => []
 
 [<Test>]
 let ``nested module``() =
