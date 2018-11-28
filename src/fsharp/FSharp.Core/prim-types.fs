@@ -3768,9 +3768,16 @@ namespace Microsoft.FSharp.Core
         let inline ParseUInt16 (s:string)     = (# "conv.ovf.u2" (ParseUInt32 s) : uint16 #)
         let inline ParseIntPtr (s:string)  = (# "conv.ovf.i"  (ParseInt64 s)  : nativeint #)
         let inline ParseUIntPtr (s:string) = (# "conv.ovf.u"  (ParseInt64 s)  : unativeint #)
-        let inline ParseDouble (s:string)   = Double.Parse(removeUnderscores s,NumberStyles.Float, CultureInfo.InvariantCulture)
-        let inline ParseSingle (s:string) = Single.Parse(removeUnderscores s,NumberStyles.Float, CultureInfo.InvariantCulture)
-            
+
+        let inline ParseDouble (s:string)   =
+            if System.Object.ReferenceEquals(s,null) then
+                raise( new System.ArgumentNullException("s") )
+            Double.Parse(removeUnderscores s,NumberStyles.Float, CultureInfo.InvariantCulture)
+
+        let inline ParseSingle (s:string) = 
+            if System.Object.ReferenceEquals(s,null) then
+                raise( new System.ArgumentNullException("s") )
+            Single.Parse(removeUnderscores s,NumberStyles.Float, CultureInfo.InvariantCulture)
 
         [<NoDynamicInvocation>]
         [<CompiledName("ToByte")>]
