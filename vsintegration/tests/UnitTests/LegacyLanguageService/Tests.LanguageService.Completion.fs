@@ -1531,8 +1531,11 @@ let x = new MyClass2(0)
     [<Test>]
     member public this.``AfterConstructor.5039_1``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
-          [ "let someCall(x) = null"
-            "let xe = someCall(System.IO.StringReader()." ]
+          [
+"""
+let someCall(x) = null
+let xe = someCall(System.IO.StringReader().
+"""       ]
           "StringReader()."
           [ "ReadBlock" ] // should contain (StringReader)
           [ "LastIndexOfAny" ] // should not contain (String)
@@ -1540,8 +1543,12 @@ let x = new MyClass2(0)
     [<Test>]
     member public this.``AfterConstructor.5039_1.CoffeeBreak``() =
         AssertAutoCompleteContains
-          [ "let someCall(x) = null"
-            "let xe = someCall(System.IO.StringReader()." ]
+          [
+"""
+let someCall(x) = null
+let xe = someCall(System.IO.StringReader().
+"""
+          ]
           "StringReader()."
           [ "ReadBlock" ] // should contain (StringReader)
           [ "LastIndexOfAny" ] // should not contain (String)
@@ -4913,8 +4920,12 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     [<Test>]
     member this.``BadCompletionAfterQuicklyTyping.Bug130733.NowWorks``() =        
-        let code = [ "let someCall(x) = null"
-                     "let xe = someCall(System.IO.StringReader()  "]
+        let code = [
+"""
+let someCall(x) = null
+let xe = someCall(System.IO.StringReader()
+"""
+        ]
         let (_, _, file) = this.CreateSingleFileProject(code)
         
         TakeCoffeeBreak(this.VS)

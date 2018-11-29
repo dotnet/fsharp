@@ -125,7 +125,9 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
              ("type foo5 = N1.T<Param1=1,ParamIgnored",Some ("[132..160)", 1, 2, Some "ParamIgnored"));
              ("type foo5 = N1.T<Param1=1,ParamIgnored=",Some ("[132..160)", 1, 2, Some "ParamIgnored"))])
 //Test case 5
-          ( """let _ = System.DateTime(""",
+          ( """
+let _ = System.DateTime(
+""",
             [("let _ = System.DateTime(",  Some ("[8..24)", 0, 0, None)) ])
           ]
 
