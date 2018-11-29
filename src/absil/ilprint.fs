@@ -477,7 +477,7 @@ let goutput_custom_attr env os (attr: ILAttribute) =
   output_custom_attr_data os data
 
 let goutput_custom_attrs env os (attrs : ILAttributes) =
-  List.iter (fun attr -> goutput_custom_attr env os attr;  output_string os "\n" ) attrs.AsList
+  Array.iter (fun attr -> goutput_custom_attr env os attr;  output_string os "\n" ) attrs.AsArray
 
 let goutput_fdef _tref env os (fd: ILFieldDef) =
   output_string os " .field "
@@ -890,7 +890,7 @@ let splitTypeLayout = function
 let goutput_fdefs tref env os (fdefs: ILFieldDefs) = 
   List.iter (fun f -> (goutput_fdef tref env) os f; output_string os "\n" ) fdefs.AsList
 let goutput_mdefs env os (mdefs: ILMethodDefs) = 
-  List.iter (fun f -> (goutput_mdef env) os f; output_string os "\n" ) mdefs.AsList
+  Array.iter (fun f -> (goutput_mdef env) os f; output_string os "\n" ) mdefs.AsArray
 let goutput_pdefs env os (pdefs: ILPropertyDefs) = 
   List.iter (fun f -> (goutput_pdef env) os f; output_string os "\n" ) pdefs.AsList
 

@@ -1163,7 +1163,7 @@ and TypeDefsBuilder() =
                  || not tdef.Fields.AsList.IsEmpty 
                  || not tdef.Events.AsList.IsEmpty 
                  || not tdef.Properties.AsList.IsEmpty 
-                 || not tdef.Methods.AsList.IsEmpty then 
+                 || not (Array.isEmpty tdef.Methods.AsArray) then 
                   yield tdef  ]
 
     member b.FindTypeDefBuilder(nm) = 
@@ -6527,7 +6527,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                 (match ilTypeDefKind with ILTypeDefKind.ValueType -> true | _ -> false) &&
                 // All structs are sequential by default 
                 // Structs with no instance fields get size 1, pack 0
-                tycon.AllFieldsAsList |> List.forall (fun f -> f.IsStatic)
+                tycon.AllFieldsArray |> Array.forall (fun f -> f.IsStatic)
 
             isEmptyStruct && cenv.opts.workAroundReflectionEmitBugs && not tycon.TyparsNoRange.IsEmpty
         
@@ -6535,7 +6535,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
         let isCLIMutable = (TryFindFSharpBoolAttribute  cenv.g cenv.g.attrib_CLIMutableAttribute tycon.Attribs = Some true) 
         let fieldSummaries = 
 
-             [ for fspec in tycon.AllFieldsAsList do
+             [ for fspec in tycon.AllFieldsArray do
 
                    let useGenuineField = useGenuineField tycon fspec
 
@@ -6852,7 +6852,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                         
                         // All structs are sequential by default 
                         // Structs with no instance fields get size 1, pack 0
-                        if tycon.AllFieldsAsList |> List.exists (fun f -> not f.IsStatic) ||
+                        if tycon.AllFieldsArray |> Array.exists (fun f -> not f.IsStatic) ||
                             // Reflection emit doesn't let us emit 'pack' and 'size' for generic structs.
                             // In that case we generate a dummy field instead
                            (cenv.opts.workAroundReflectionEmitBugs && not tycon.TyparsNoRange.IsEmpty) 
