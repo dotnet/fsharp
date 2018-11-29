@@ -98,6 +98,13 @@ let output_seq sep f os (a:seq<_>) =
           output_string os sep; 
           f os e.Current
 
+let output_array sep f os (a:_ []) =
+  if not (Array.isEmpty a) then
+      for i in 0..a.Length-2 do
+        f os a.[i]
+        output_string os sep
+      f os (a.[a.Length - 1])
+
 let output_parens f os a = output_string os "("; f os a; output_string os ")"
 let output_angled f os a = output_string os "<"; f os a; output_string os ">"
 let output_bracks f os a = output_string os "["; f os a; output_string os "]"
@@ -437,12 +444,12 @@ let output_option f os = function None -> () | Some x -> f os x
     
 let goutput_alternative_ref env os (alt: IlxUnionAlternative) = 
   output_id os alt.Name; 
-  alt.FieldDefs |> Array.toList |> output_parens (output_seq "," (fun os fdef -> goutput_typ env os fdef.Type)) os 
+  alt.FieldDefs |> output_parens (output_array "," (fun os fdef -> goutput_typ env os fdef.Type)) os 
 
 let goutput_curef env os (IlxUnionRef(_,tref,alts,_,_)) =
   output_string os " .classunion import ";
   goutput_tref env os tref;
-  output_parens (output_seq "," (goutput_alternative_ref env)) os (Array.toList alts)
+  output_parens (output_array "," (goutput_alternative_ref env)) os alts
     
 let goutput_cuspec env os (IlxUnionSpec(IlxUnionRef(_,tref,_,_,_),i)) =
   output_string os "class /* classunion */ ";
@@ -704,7 +711,7 @@ let rec goutput_instr env os inst =
         goutput_dlocref env os (mkILArrTy(typ,shape));
         output_string os ".ctor";
         let rank = shape.Rank 
-        output_parens (output_seq "," (goutput_typ env)) os (Array.toList (Array.create ( rank) EcmaMscorlibILGlobals.typ_Int32))
+        output_parens (output_array "," (goutput_typ env)) os (Array.create ( rank) EcmaMscorlibILGlobals.typ_Int32)
   | I_stelem_any (shape,dt)     -> 
       if shape = ILArrayShape.SingleDimensional then 
         output_string os "stelem.any "; goutput_typ env os dt 
@@ -713,7 +720,9 @@ let rec goutput_instr env os inst =
         goutput_dlocref env os (mkILArrTy(dt,shape));
         output_string os "Set";
         let rank = shape.Rank 
-        output_parens (output_seq "," (goutput_typ env)) os (Array.toList (Array.create ( rank) EcmaMscorlibILGlobals.typ_Int32) @ [dt])
+        let arr = Array.create (rank + 1) EcmaMscorlibILGlobals.typ_Int32
+        arr.[rank] <- dt
+        output_parens (output_array "," (goutput_typ env)) os arr
   | I_ldelem_any (shape,tok) -> 
       if shape = ILArrayShape.SingleDimensional then 
         output_string os "ldelem.any "; goutput_typ env os tok 
@@ -724,7 +733,7 @@ let rec goutput_instr env os inst =
         goutput_dlocref env os (mkILArrTy(tok,shape));
         output_string os "Get";
         let rank = shape.Rank 
-        output_parens (output_seq "," (goutput_typ env)) os (Array.toList (Array.create ( rank) EcmaMscorlibILGlobals.typ_Int32))
+        output_parens (output_array "," (goutput_typ env)) os (Array.create ( rank) EcmaMscorlibILGlobals.typ_Int32)
   | I_ldelema   (ro,_,shape,tok)  -> 
       if ro = ReadonlyAddress then output_string os "readonly. ";
       if shape = ILArrayShape.SingleDimensional then 
@@ -736,7 +745,7 @@ let rec goutput_instr env os inst =
         goutput_dlocref env os (mkILArrTy(tok,shape));
         output_string os "Address";
         let rank = shape.Rank 
-        output_parens (output_seq "," (goutput_typ env)) os (Array.toList (Array.create ( rank) EcmaMscorlibILGlobals.typ_Int32))
+        output_parens (output_array "," (goutput_typ env)) os (Array.create ( rank) EcmaMscorlibILGlobals.typ_Int32)
       
   | I_box       tok     -> output_string os "box "; goutput_typ env os tok
   | I_unbox     tok     -> output_string os "unbox "; goutput_typ env os tok
