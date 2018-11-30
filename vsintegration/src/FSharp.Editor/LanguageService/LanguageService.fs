@@ -185,11 +185,7 @@ type internal FSharpPackage() as this =
 
     override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
-    override this.CreateLanguageService() = 
-        FSharpLanguageService(
-            this, 
-            this.GetService(typeof<SVsSolution>) :?> IVsSolution
-        )
+    override this.CreateLanguageService() = FSharpLanguageService(this)
     override this.CreateEditorFactories() = seq { yield FSharpEditorFactory(this) :> IVsEditorFactory }
     override this.RegisterMiscellaneousFilesWorkspaceInformation(miscFilesWorkspace) =
         miscFilesWorkspace.RegisterLanguage(Guid(FSharpConstants.languageServiceGuidString), FSharpConstants.FSharpLanguageName, ".fsx")
@@ -201,11 +197,8 @@ type internal FSharpPackage() as this =
             GetToolWindowAsITestVFSI().GetMostRecentLines(n)
 
 [<Guid(FSharpConstants.languageServiceGuidString)>]
-type internal FSharpLanguageService(package : FSharpPackage, solution: IVsSolution) =
+type internal FSharpLanguageService(package : FSharpPackage) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
-
-    let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
-    let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, projectInfoManager, package.ComponentModel.GetService<IWorkspaceProjectContextFactory>())
 
     override this.Initialize() = 
         base.Initialize()

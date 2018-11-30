@@ -31,7 +31,7 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
         else Path.GetFileNameWithoutExtension projectFileName
    
-    let legacyProjectIdLookup = ConcurrentDictionary()
+    let legacyProjectContextLookup = ConcurrentDictionary()
     let legacyProjectLookup = ConcurrentDictionary()
     let setupQueue = ConcurrentQueue()
 
@@ -41,8 +41,15 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
     /// Sync the Roslyn information for the project held in 'projectContext' to match the information given by 'site'.
     /// Also sync the info in ProjectInfoManager if necessary.
     member this.SyncLegacyProject(projectContext: IWorkspaceProjectContext, site: IProjectSite) =
-        let wellFormedFilePathSetIgnoreCase (paths: seq<string>) =
-            HashSet(paths |> Seq.filter isPathWellFormed |> Seq.map (fun s -> try Path.GetFullPath(s) with _ -> s), StringComparer.OrdinalIgnoreCase)
+        let wellFormedFilePaths (paths: seq<string>) =
+            let paths = 
+                paths 
+                |> Seq.filter isPathWellFormed 
+                |> Seq.map (fun s -> try Path.GetFullPath(s) with _ -> s)
+            paths.Distinct(StringComparer.OrdinalIgnoreCase)
+
+        let wellFormedFilePathSetIgnoreCase paths =
+            HashSet(wellFormedFilePaths paths, StringComparer.OrdinalIgnoreCase)
 
         let projectId = projectContext.Id
 
@@ -82,24 +89,16 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
         let ok,originalOptions = optionsAssociation.TryGetValue(projectContext)
         let updatedOptions = site.CompilationOptions
         if not ok || originalOptions <> updatedOptions then 
-
-            // OK, project options have changed, try to fake out Roslyn to convince it to reparse things.
-            // Calling SetOptions fails because the CPS project system being used by the F# project system 
-            // imlpementation at the moment has no command line parser installed, so we remove/add all the files 
-            // instead.  A change of flags doesn't happen very often and the remove/add is fast in any case.
-            //projectContext.SetOptions(String.concat " " updatedOptions)
-            for file in updatedFiles do
-                projectContext.RemoveSourceFile(file)
-                projectContext.AddSourceFile(file)
-
             // Record the last seen options as an associated value
             if ok then optionsAssociation.Remove(projectContext) |> ignore
             optionsAssociation.Add(projectContext, updatedOptions)
 
-            projectContext.BinOutputPath <- Option.toObj site.CompilationBinOutputPath
+        let binOutputPath = Option.toObj site.CompilationBinOutputPath
+        if projectContext.BinOutputPath <> binOutputPath then
+            projectContext.BinOutputPath <- binOutputPath
 
-            projectContext.ReorderFiles(site.CompilationSourceFiles |> Seq.filter isPathWellFormed |> Seq.map (fun s -> try Path.GetFullPath(s) with _ -> s))
-            projectContext.EndBatch()
+        projectContext.ReorderSourceFiles(wellFormedFilePaths site.CompilationSourceFiles)
+        projectContext.EndBatch()
 
         let info = (updatedFiles, updatedRefs)
         legacyProjectLookup.AddOrUpdate(projectId, info, fun _ _ -> info) |> ignore
@@ -120,31 +119,28 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
             // an IVsHierarchy. This assertion is to ensure that the assumption holds true.
             Debug.Assert(not (isNull hierarchy), "About to CreateProjectContext with a non-hierarchy site")
 
-            let projectContext = 
-                projectContextFactory.CreateProjectContext(
-                    FSharpConstants.FSharpLanguageName,
-                    projectDisplayName,
-                    projectFileName,
-                    projectGuid,
-                    hierarchy,
-                    Option.toObj site.CompilationBinOutputPath)
+            let add projectGuid =
+                let projectContext = 
+                    projectContextFactory.CreateProjectContext(
+                        FSharpConstants.FSharpLanguageName,
+                        projectDisplayName,
+                        projectFileName,
+                        projectGuid,
+                        hierarchy,
+                        Option.toObj site.CompilationBinOutputPath)
 
-            legacyProjectIdLookup.[projectGuid] <- projectContext.Id
+                site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> this.SyncLegacyProject(projectContext, site)))                                      
 
-            // Sync IProjectSite --> projectContext, and IProjectSite --> ProjectInfoManage
-            this.SyncLegacyProject(projectContext, site)
+                this.SyncLegacyProject(projectContext, site)
 
-            site.BuildErrorReporter <- Some (projectContext :?> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
+                site.BuildErrorReporter <- Some (projectContext :?> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
 
-            // TODO: consider forceUpdate = false here.  forceUpdate=true may be causing repeated computation?
-            site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                            AdviseProjectSiteChanges(fun () -> this.SyncLegacyProject(projectContext, site)))
+                projectContext
 
-            site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                            AdviseProjectSiteChanges(fun () -> 
-                                            projectInfoManager.ClearInfoForProject(projectContext.Id)
-                                            optionsAssociation.Remove(projectContext) |> ignore
-                                            projectContext.Dispose()))
+            let addFunc = Func<Guid, IWorkspaceProjectContext>(fun projectGuid -> add projectGuid)
+            let updateFunc = Func<Guid, IWorkspaceProjectContext, IWorkspaceProjectContext>(fun _ x -> x)
+
+            legacyProjectContextLookup.AddOrUpdate(projectGuid, addValueFactory = addFunc, updateValueFactory = updateFunc) |> ignore
 
         setup (siteProvider.GetProjectSite()) 
 
@@ -181,10 +177,13 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
             | :? IProvideProjectSite as siteProvider ->
                 let site = siteProvider.GetProjectSite()
                 let projectGuid = Guid(site.ProjectGuid)
-                match legacyProjectIdLookup.TryGetValue(projectGuid) with
-                | true, projectId ->
-                    legacyProjectIdLookup.TryRemove(projectGuid) |> ignore
-                    legacyProjectLookup.TryRemove(projectId) |> ignore
+                match legacyProjectContextLookup.TryGetValue(projectGuid) with
+                | true, projectContext ->
+                    legacyProjectContextLookup.TryRemove(projectGuid) |> ignore
+                    legacyProjectLookup.TryRemove(projectContext.Id) |> ignore
+                    projectInfoManager.ClearInfoForProject(projectContext.Id)
+                    optionsAssociation.Remove(projectContext) |> ignore
+                    projectContext.Dispose()
                 | _ -> ()
             | _ -> ()
             VSConstants.S_OK

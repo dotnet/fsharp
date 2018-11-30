@@ -178,14 +178,14 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
             else
 
             let hier = workspace.GetHierarchy(projectId)
-            let projectSite = 
+            let isLegacy, projectSite = 
                 match hier with
                 // Legacy
-                | (:? IProvideProjectSite as provideSite) -> provideSite.GetProjectSite()
+                | (:? IProvideProjectSite as provideSite) -> (true, provideSite.GetProjectSite())
                 // Cps
                 | _ -> 
                     let provideSite = mapCpsProjectToSite(workspace, project, serviceProvider, cpsCommandLineOptions)
-                    provideSite.GetProjectSite()
+                    (false, provideSite.GetProjectSite())
 
             let otherOptions =
                 project.ProjectReferences
@@ -203,11 +203,19 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                             )
                     )
 
+            let sourceFiles = 
+                if isLegacy then
+                    project.Documents
+                    |> Seq.map (fun x -> x.FilePath)
+                    |> Array.ofSeq
+                else
+                    projectSite.CompilationSourceFiles
+
             let projectOptions =
                 {
                     ProjectFileName = projectSite.ProjectFileName
                     ProjectId = Some(projectId.ToFSharpProjectIdString())
-                    SourceFiles = projectSite.CompilationSourceFiles
+                    SourceFiles = sourceFiles
                     OtherOptions = otherOptions
                     ReferencedProjects = referencedProjects
                     IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
