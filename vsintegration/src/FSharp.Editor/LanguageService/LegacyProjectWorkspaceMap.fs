@@ -46,6 +46,8 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
 
         let projectId = projectContext.Id
 
+        projectContext.StartBatch()
+
         // Sync the source files in projectContext.  Note that these source files are __not__ maintained in order in projectContext
         // as edits are made. It seems this is ok because the source file list is only used to drive roslyn per-file checking.
         let updatedFiles = site.CompilationSourceFiles |> wellFormedFilePathSetIgnoreCase
@@ -95,6 +97,9 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
             optionsAssociation.Add(projectContext, updatedOptions)
 
             projectContext.BinOutputPath <- Option.toObj site.CompilationBinOutputPath
+
+            projectContext.ReorderFiles(site.CompilationSourceFiles |> Seq.filter isPathWellFormed |> Seq.map (fun s -> try Path.GetFullPath(s) with _ -> s))
+            projectContext.EndBatch()
 
         let info = (updatedFiles, updatedRefs)
         legacyProjectLookup.AddOrUpdate(projectId, info, fun _ _ -> info) |> ignore
