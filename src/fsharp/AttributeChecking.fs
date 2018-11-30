@@ -449,8 +449,8 @@ let MethInfoIsUnseen g m ty minfo =
         // We are only interested in filtering out the method on System.Object, so it is sufficient
         // just to look at the attributes on IL methods.
         if tcref.IsILTycon then 
-                tcref.ILTyconRawMetadata.CustomAttrs.AsList 
-                |> List.exists (fun attr -> attr.Method.DeclaringType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
+                tcref.ILTyconRawMetadata.CustomAttrs.AsArray 
+                |> Array.exists (fun attr -> attr.Method.DeclaringType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
         else 
             false
 #else
