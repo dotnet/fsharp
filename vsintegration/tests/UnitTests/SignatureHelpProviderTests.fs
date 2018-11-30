@@ -128,7 +128,7 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
           ( """
 let _ = System.DateTime(
 """,
-            [("let _ = System.DateTime(",  Some ("[8..24)", 0, 0, None)) ])
+            [("let _ = System.DateTime(",  Some ("[10..28)", 0, 0, None)) ])
           ]
 
     let sb = StringBuilder()

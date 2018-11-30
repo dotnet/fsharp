@@ -195,12 +195,13 @@ type UsingMSBuild()  =
 
     [<Test>]
     member public this.``Regression.StaticVsInstance.Bug3626.Case2``() =
-        let fileContent = """
-            type Foo() = 
-                member this.Bar(instanceReturnsString:int) = "hllo"
-                static member Bar(staticReturnsInt:int) = 13
-            let Hoo = new Foo()
-            let y = Hoo.Bar((*Mark*)"""
+        let fileContent ="""
+type Foo() = 
+    member this.Bar(instanceReturnsString:int) = "hllo"
+    static member Bar(staticReturnsInt:int) = 13
+let Hoo = new Foo()
+let y = Hoo.Bar((*Mark*)
+"""
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark*)",[["instanceReturnsString"]])
 
     [<Test>]
@@ -256,7 +257,8 @@ type UsingMSBuild()  =
     member public this.``Single.DotNet.StaticMethod``() =
         let code = 
                                     ["#light"
-                                     "System.Object.ReferenceEquals("
+                                     """System.Object.ReferenceEquals(
+                                     """
                                     ]
         let (_, _, file) = this.CreateSingleFileProject(code)
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
@@ -600,7 +602,9 @@ type UsingMSBuild()  =
     // Test PI does not pop up after non-parameterized properties and after values
     [<Test>]
     member public this.``Single.Locations.EndOfFile`` () = 
-        this.TestSystematicParameterInfo("System.Console.ReadLine(", [ [] ])
+        this.TestSystematicParameterInfo("""
+System.Console.ReadLine(
+""", [ [] ])
         
     // Test PI pop up on parameter list for attributes
     [<Test>]
@@ -639,37 +643,57 @@ type UsingMSBuild()  =
     [<Test>]
     member public this.``Single.Generics.MathAbs``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
-        this.TestGenericParameterInfo("Math.Abs(", sevenTimes ["value"])
+        this.TestGenericParameterInfo("""
+Math.Abs(
+""", sevenTimes ["value"])
     [<Test>]
     member public this.``Single.Generics.ExchangeInt``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
-        this.TestGenericParameterInfo("Interlocked.Exchange<int>(", sevenTimes ["location1"; "value"])
+        this.TestGenericParameterInfo("""
+Interlocked.Exchange<int>(
+""", sevenTimes ["location1"; "value"])
     [<Test>]
     member public this.``Single.Generics.Exchange``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
-        this.TestGenericParameterInfo("Interlocked.Exchange(", sevenTimes ["location1"; "value"])
+        this.TestGenericParameterInfo("""
+Interlocked.Exchange(
+""", sevenTimes ["location1"; "value"])
     [<Test>]
     member public this.``Single.Generics.ExchangeUnder``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
-        this.TestGenericParameterInfo("Interlocked.Exchange<_> (", sevenTimes ["location1"; "value"])
+        this.TestGenericParameterInfo("""
+Interlocked.Exchange<_> (
+""", sevenTimes ["location1"; "value"])
     [<Test>]
     member public this.``Single.Generics.Dictionary``() =
-        this.TestGenericParameterInfo("System.Collections.Generic.Dictionary<_, option<int>>(", [ []; ["capacity"]; ["comparer"]; ["capacity"; "comparer"]; ["dictionary"]; ["dictionary"; "comparer"] ])
+        this.TestGenericParameterInfo("""
+System.Collections.Generic.Dictionary<_, option<int>>(
+""", [ []; ["capacity"]; ["comparer"]; ["capacity"; "comparer"]; ["dictionary"]; ["dictionary"; "comparer"] ])
     [<Test>]
     member public this.``Single.Generics.List``() =
-        this.TestGenericParameterInfo("new System.Collections.Generic.List< _ > ( ", [ []; ["capacity"]; ["collection"] ])
+        this.TestGenericParameterInfo("""
+new System.Collections.Generic.List< _ > (
+""", [ []; ["capacity"]; ["collection"] ])
     [<Test>]
     member public this.``Single.Generics.ListInt``() =
-        this.TestGenericParameterInfo("System.Collections.Generic.List<int>(", [ []; ["capacity"]; ["collection"] ])
+        this.TestGenericParameterInfo("""
+System.Collections.Generic.List<int>(
+""", [ []; ["capacity"]; ["collection"] ])
     [<Test>]
     member public this.``Single.Generics.EventHandler``() =
-        this.TestGenericParameterInfo("new System.EventHandler( ", [ [""] ]) // function arg doesn't have a name
+        this.TestGenericParameterInfo("""
+new System.EventHandler(
+""", [ [""] ]) // function arg doesn't have a name
     [<Test>]
     member public this.``Single.Generics.EventHandlerEventArgs``() =
-        this.TestGenericParameterInfo("System.EventHandler<EventArgs>(", [ [""] ]) // function arg doesn't have a name
+        this.TestGenericParameterInfo("""
+System.EventHandler<EventArgs>(
+""", [ [""] ]) // function arg doesn't have a name
     [<Test>]
     member public this.``Single.Generics.EventHandlerEventArgsNew``() =
-        this.TestGenericParameterInfo("new System.EventHandler<EventArgs> ( ", [ [""] ]) // function arg doesn't have a name
+        this.TestGenericParameterInfo("""
+new System.EventHandler<EventArgs> (
+""", [ [""] ]) // function arg doesn't have a name
 
     // Split into multiple lines using "\n" and find the index of "$" (and remove it from the text)
     member private this.ExtractLineInfo (line:string) =
@@ -716,7 +740,9 @@ type UsingMSBuild()  =
 
     [<Test>]
     member public this.``Single.Locations.Simple``() =
-        this.TestParameterInfoLocation("let a = System.Math.Sin($", 8)
+        this.TestParameterInfoLocation("""
+let a = System.Math.Sin($
+""", 8)
         
     [<Test>]
     member public this.``Single.Locations.LineWithSpaces``() =
@@ -733,15 +759,21 @@ type UsingMSBuild()  =
         
     [<Test>]
     member public this.``Single.Locations.WithNamespace``() =
-        this.TestParameterInfoLocation("let a = System.Threading.Interlocked.Exchange($", 8)
+        this.TestParameterInfoLocation("""
+let a = System.Threading.Interlocked.Exchange($
+""", 8)
         
     [<Test>]
     member public this.``ParameterInfo.Locations.WithoutNamespace``() =
-        this.TestParameterInfoLocation("let a = Interlocked.Exchange($", 8)
+        this.TestParameterInfoLocation("""
+let a = Interlocked.Exchange($
+""", 8)
         
     [<Test>]
     member public this.``Single.Locations.WithGenericArgs``() =
-        this.TestParameterInfoLocation("Interlocked.Exchange<int>($", 0)
+        this.TestParameterInfoLocation("""
+Interlocked.Exchange<int>($
+""", 0)
         
     [<Test>]
     member public this.``Single.Locations.FunctionWithSpace``() =
@@ -772,7 +804,9 @@ type UsingMSBuild()  =
     [<Category("TypeProvider.StaticParameters")>]
     //This test verifies that ParamInfo location on a provided type without the namespace that exposes static parameter that takes >1 argument works normally.
     member public this.``TypeProvider.Type.ParameterInfoLocation.WithOutNamespace`` () =
-        this.TestParameterInfoLocation("open N1 \n"+"type boo = T<$",
+        this.TestParameterInfoLocation("""
+open N1 \n"+"type boo = T<$
+""",
             expectedPos = 11,
             addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
  
@@ -883,11 +917,14 @@ type UsingMSBuild()  =
         let info = info.Value
         AssertEqual("f1", info.GetName(0))
         // note about (5,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
-        AssertEqual([|(2,10);(2,12);(2,13);(3,0)|], info.GetNoteworthyParamInfoLocations())
+        AssertEqual([|(2,10);(2,12);(2,13);(2,0)|], info.GetNoteworthyParamInfoLocations())
 
     [<Test>]
     member this.``LocationOfParams.AfterQuicklyTyping.CallConstructor``() =        
-        let code = [ "type Foo() = class end" ]
+        let code = [
+"""
+type Foo() = class end
+"""     ]
         let (_, _, file) = this.CreateSingleFileProject(code)
         
         TakeCoffeeBreak(this.VS)
@@ -1052,7 +1089,10 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     [<Test>]
     member public this.``Regression.LocationOfParams.Bug91479``() =        
-        this.TestParameterInfoLocationOfParams("""let z = fun x -> x + ^System.Int16.Parse^(^$ """, markAtEOF=true)
+        this.TestParameterInfoLocationOfParams(
+"""
+let z = fun x -> x + ^System.Int16.Parse^(^$
+""", markAtEOF=true)
 
     [<Test>]
     member public this.``LocationOfParams.Attributes.Bug230393``() =        
@@ -1179,12 +1219,14 @@ We really need to rewrite some code paths here to use the real parse tree rather
     member public this.``LocationOfParams.BY_DESIGN.WayThatMismatchedParensFailOver.Case1``() =        
         // when only one 'statement' after the mismatched parens after a comma, the comma swallows it and it becomes a badly-indented
         // continuation of the expression from the previous line
-        this.TestParameterInfoLocationOfParams("""
-            type CC() =
-                member this.M(a,b,c,d) = a+b+c+d
-            let c = new CC()
-            ^c.M^(^1,^2,^3,^ $
-            c.M(1,2,3,4)""", markAtEOF=true)
+        this.TestParameterInfoLocationOfParams(
+"""
+type CC() =
+    member this.M(a,b,c,d) = a+b+c+d
+let c = new CC()
+^c.M^(^1,^2,^3,^ $
+c.M(1,2,3,4)
+""", markAtEOF=true)
 
     [<Test>]
     member public this.``LocationOfParams.BY_DESIGN.WayThatMismatchedParensFailOver.Case2``() =        
@@ -1200,14 +1242,16 @@ We really need to rewrite some code paths here to use the real parse tree rather
         //                 c.M(1,2,3,4)
         //                 c.M(1,2,3,4)
         //         in r)
-        this.TestParameterInfoLocationOfParams("""
-            type CC() =
-                member this.M(a,b,c,d) = a+b+c+d
-            let c = new CC()
-            ^c.M^(^1,2,3, $
-            c.M(1,2,3,4)
-            c.M(1,2,3,4)
-            c.M(1,2,3,4)""", markAtEOF=true)
+        this.TestParameterInfoLocationOfParams(
+"""
+type CC() =
+    member this.M(a,b,c,d) = a+b+c+d
+let c = new CC()
+^c.M^(^1,2,3, $
+c.M(1,2,3,4)
+c.M(1,2,3,4)
+c.M(1,2,3,4)
+""", markAtEOF=true)
 
     [<Test>]
     member public this.``LocationOfParams.Tuples.Bug91360.Case1``() =        
@@ -1221,13 +1265,15 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     [<Test>]
     member public this.``LocationOfParams.Tuples.Bug123219``() =
-        this.TestParameterInfoLocationOfParams("""
-            type Expr = | Num of int
-            type T<'a>() = 
-                member this.M1(a:int*string, b:'a -> unit) = ()
-            let x = new T<Expr>()
+        this.TestParameterInfoLocationOfParams(
+"""
+type Expr = | Num of int
+type T<'a>() = 
+    member this.M1(a:int*string, b:'a -> unit) = ()
+let x = new T<Expr>()
  
-            ^x.M1^(^(1,$ """, markAtEOF=true)
+^x.M1^(^(1,$
+""", markAtEOF=true)
 
     [<Test>]
     member public this.``LocationOfParams.UnmatchedParens.Bug91609.OtherCases.Open``() =        
@@ -1535,43 +1581,55 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix0``() =        
-        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
-            type U = ^N1.T^<^ $ """, // missing all params, just have <
+        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(
+"""
+type U = ^N1.T^<^ $
+""", // missing all params, just have <
             markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix1``() =        
-        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
-            type U = ^N1.T^<^ "fo$o",^ 42 """, // missing >
+        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(
+"""
+type U = ^N1.T^<^ "fo$o",^ 42
+""", // missing >
             markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix1Named``() =        
-        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
-            type U = ^N1.T^<^ "fo$o",^ ParamIgnored=42 """, // missing >
+        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(
+"""
+type U = ^N1.T^<^ "fo$o",^ ParamIgnored=42
+""", // missing >
             markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix2``() =        
-        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
-            type U = ^N1.T^<^ "fo$o",^ """, // missing last param
+        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(
+"""
+type U = ^N1.T^<^ "fo$o",^
+""", // missing last param
             markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix2Named1``() =        
-        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
-            type U = ^N1.T^<^ "fo$o",^ ParamIgnored= """, // missing last param after name with equals
+        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(
+"""
+type U = ^N1.T^<^ "fo$o",^ ParamIgnored=
+""", // missing last param after name with equals
             markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix2Named2``() =        
-        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
-            type U = ^N1.T^<^ "fo$o",^ ParamIgnored """, // missing last param after name sans equals
+        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(
+"""
+type U = ^N1.T^<^ "fo$o",^ ParamIgnored
+""", // missing last param after name sans equals
             markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
@@ -1771,7 +1829,9 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     [<Test>]
     member public this.``Multi.DotNet.StaticMethod.WithinLambda``() =
-        let fileContents = """let z = fun x -> x + System.Int16.Parse("",(*Mark*)"""
+        let fileContents = """
+let z = fun x -> x + System.Int16.Parse("",(*Mark*)
+"""
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string";"System.Globalization.NumberStyles"])
 
     [<Test>]
@@ -1789,7 +1849,9 @@ We really need to rewrite some code paths here to use the real parse tree rather
     (* Common functions for multi-parameterinfo tests -------------------------------------------------- *)
     [<Test>]
     member public this.``Multi.DotNet.Constructor``() = 
-        let fileContents = "let _ = new System.DateTime(2010,12,(*Mark*)"
+        let fileContents = """
+let _ = new System.DateTime(2010,12,(*Mark*)
+"""
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["int";"int";"int"])
 
     [<Test>]
@@ -1885,8 +1947,9 @@ We really need to rewrite some code paths here to use the real parse tree rather
     [<Test>]
     member public this.``Multi.Function.WithOptionType``() = 
         let fileContents = """
-            let foo( a : int option, b : string ref) = 0
-            let _ = foo(Some(12),(*Mark*)"""
+let foo( a : int option, b : string ref) = 0
+let _ = foo(Some(12),(*Mark*)
+"""
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int option";"string ref"]])
 
     [<Test>]
@@ -1901,8 +1964,9 @@ We really need to rewrite some code paths here to use the real parse tree rather
     [<Test>]
     member public this.``Multi.Function.WithRefType``() = 
         let fileContents = """
-            let foo( a : int ref, b : string ref) = 0
-            let _ = foo(ref 12,(*Mark*)"""
+let foo( a : int ref, b : string ref) = 0
+let _ = foo(ref 12,(*Mark*)
+"""
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int ref";"string ref"]])
 
     (* Overload list/Adjust method's param for multi-parameterinfo tests ------------------------------ *)
@@ -2057,17 +2121,18 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     [<Test>]
     member public this.``Regression.OptionalArguuments.Bug4042``() = 
-        let fileContents = """
-            module ParameterInfo
-            type TT(x : int, ?y : int) = 
-                let z = y
-                do printfn "%A" z
-                member this.Foo(?z : int) = z
+        let fileContents ="""
+module ParameterInfo
+type TT(x : int, ?y : int) = 
+    let z = y
+    do printfn "%A" z
+    member this.Foo(?z : int) = z
     
-            type TT2(x : int, y : int option) = 
-                let z  = y
-                do printfn "%A" z
-            let tt = TT((*Mark*)"""
+type TT2(x : int, y : int option) = 
+    let z  = y
+    do printfn "%A" z
+let tt = TT((*Mark*)
+"""
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int";"int"]])
 
     [<Test>]
