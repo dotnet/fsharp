@@ -4923,9 +4923,10 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let code = [
 """
 let someCall(x) = null
-let xe = someCall(System.IO.StringReader().
+let xe = someCall(System.IO.StringReader().\n
 """
         ]
+
         let (_, _, file) = this.CreateSingleFileProject(code)
         
         TakeCoffeeBreak(this.VS)
