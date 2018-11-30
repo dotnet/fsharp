@@ -925,10 +925,7 @@ let z = f(f1(\n
 
     [<Test>]
     member this.``LocationOfParams.AfterQuicklyTyping.CallConstructor``() =        
-        let code = [
-"""
-type Foo() = class end\n
-"""     ]
+        let code = ["""type Foo() = class end"""]
         let (_, _, file) = this.CreateSingleFileProject(code)
         
         TakeCoffeeBreak(this.VS)
@@ -1095,10 +1092,8 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     [<Test>]
     member public this.``Regression.LocationOfParams.Bug91479``() =
-        let code ="""
-let z = fun x -> x + ^System.Int16.Parse^(^$\n
-"""
-        this.TestParameterInfoLocationOfParams(code)
+        let code ="""let z = fun x -> x + ^System.Int16.Parse^(^$"""
+        this.TestParameterInfoLocationOfParams(code, markAtEOF=true)
 
     [<Test>]
     member public this.``LocationOfParams.Attributes.Bug230393``() =        
@@ -1225,14 +1220,14 @@ let z = fun x -> x + ^System.Int16.Parse^(^$\n
     member public this.``LocationOfParams.BY_DESIGN.WayThatMismatchedParensFailOver.Case1``() =        
         // when only one 'statement' after the mismatched parens after a comma, the comma swallows it and it becomes a badly-indented
         // continuation of the expression from the previous line
-        this.TestParameterInfoLocationOfParams(
-"""
+        let code = """
 type CC() =
     member this.M(a,b,c,d) = a+b+c+d
 let c = new CC()
 ^c.M^(^1,^2,^3,^ $
-c.M(1,2,3,4)\n
-""" )
+c.M(1,2,3,4)
+"""
+        this.TestParameterInfoLocationOfParams(code, markAtEOF=true)
 
     [<Test>]
     member public this.``LocationOfParams.BY_DESIGN.WayThatMismatchedParensFailOver.Case2``() =        
@@ -1248,16 +1243,16 @@ c.M(1,2,3,4)\n
         //                 c.M(1,2,3,4)
         //                 c.M(1,2,3,4)
         //         in r)
-        this.TestParameterInfoLocationOfParams(
-"""
+        let code = """
 type CC() =
     member this.M(a,b,c,d) = a+b+c+d
 let c = new CC()
 ^c.M^(^1,2,3, $
 c.M(1,2,3,4)
 c.M(1,2,3,4)
-c.M(1,2,3,4)\n
-""" )
+c.M(1,2,3,4)
+"""
+        this.TestParameterInfoLocationOfParams(code, markAtEOF=true)
 
     [<Test>]
     member public this.``LocationOfParams.Tuples.Bug91360.Case1``() =        
@@ -1271,15 +1266,15 @@ c.M(1,2,3,4)\n
 
     [<Test>]
     member public this.``LocationOfParams.Tuples.Bug123219``() =
-        this.TestParameterInfoLocationOfParams(
-"""
+        let code = """
 type Expr = | Num of int
 type T<'a>() = 
     member this.M1(a:int*string, b:'a -> unit) = ()
 let x = new T<Expr>()
  
-^x.M1^(^(1,$\n
-""" )
+^x.M1^(^(1,$
+"""
+        this.TestParameterInfoLocationOfParams(code, markAtEOF=true)
 
     [<Test>]
     member public this.``LocationOfParams.UnmatchedParens.Bug91609.OtherCases.Open``() =        
@@ -1586,51 +1581,44 @@ let x = new T<Expr>()
 
 
     [<Test>]
-    member public this.``LocationOfParams.TypeProviders.Prefix0``() =        
-        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(
-"""
-type U = ^N1.T^<^ $\n
-""", // missing all params, just have <
+    member public this.``LocationOfParams.TypeProviders.Prefix0``() =
+         // missing all params, just have <
+        let code = """type U = ^N1.T^<^ $"""
+        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(code, markAtEnd=true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
-    member public this.``LocationOfParams.TypeProviders.Prefix1``() =        
-        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(
-"""
-type U = ^N1.T^<^ "fo$o",^ 42\n
-""", // missing >
+    member public this.``LocationOfParams.TypeProviders.Prefix1``() =
+         // missing >
+        let code = """type U = ^N1.T^<^ "fo$o",^ 42"""
+        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(code, markAtEnd=true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
-    member public this.``LocationOfParams.TypeProviders.Prefix1Named``() =        
-        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(
-"""
-type U = ^N1.T^<^ "fo$o",^ ParamIgnored=42\n
-""", // missing >
+    member public this.``LocationOfParams.TypeProviders.Prefix1Named``() =
+        // missing >
+        let code = """type U = ^N1.T^<^ "fo$o",^ ParamIgnored=42"""
+        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(code, markAtEnd=true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix2``() =        
-        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(
-"""
-type U = ^N1.T^<^ "fo$o",^\n
-""", // missing last param
+        let code = """type U = ^N1.T^<^ "fo$o",^"""
+        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(code, markAtEnd=true, // missing last param
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
-    member public this.``LocationOfParams.TypeProviders.Prefix2Named1``() =        
-        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(
-"""
-type U = ^N1.T^<^ "fo$o",^ ParamIgnored=\n
-""", // missing last param after name with equals
+    member public this.``LocationOfParams.TypeProviders.Prefix2Named1``() =
+        // missing last param after name with equals
+        let code = """type U = ^N1.T^<^ "fo$o",^ ParamIgnored="""
+        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(code, markAtEnd=true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix2Named2``() =        
-        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(
-"""
-type U = ^N1.T^<^ "fo$o",^ ParamIgnored\n
-""", // missing last param after name sans equals
+        // missing last param after name sans equals
+        let code = """type U = ^N1.T^<^ "fo$o",^ ParamIgnored"""
+        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts(code, markAtEnd=true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
