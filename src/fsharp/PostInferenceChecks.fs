@@ -2140,9 +2140,9 @@ let CheckEntityDefn cenv env (tycon:Entity) =
     superOfTycon g tycon |> CheckTypeNoByrefs cenv env m                             
 
     if tycon.IsUnionTycon then                             
-        tycon.UnionCasesAsList |> List.iter (fun uc ->
+        tycon.UnionCasesArray |> Array.iter (fun uc ->
             CheckAttribs cenv env uc.Attribs 
-            uc.RecdFields |> List.iter (CheckRecdField true cenv env tycon))
+            uc.RecdFieldsArray |> Array.iter (CheckRecdField true cenv env tycon))
 
     // Access checks
     let access =  AdjustAccess (IsHiddenTycon env.sigToImplRemapInfo tycon) (fun () -> tycon.CompilationPath) tycon.Accessibility

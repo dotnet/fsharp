@@ -3975,7 +3975,7 @@ and refs_of_token s x =
 
 and refs_of_custom_attr s (cattr: ILAttribute) = refs_of_mspec s cattr.Method
     
-and refs_of_custom_attrs s (cas : ILAttributes) = List.iter (refs_of_custom_attr s) cas.AsList
+and refs_of_custom_attrs s (cas : ILAttributes) = Array.iter (refs_of_custom_attr s) cas.AsArray
 and refs_of_varargs s tyso = Option.iter (refs_of_tys s) tyso 
 and refs_of_instr s x = 
     match x with
