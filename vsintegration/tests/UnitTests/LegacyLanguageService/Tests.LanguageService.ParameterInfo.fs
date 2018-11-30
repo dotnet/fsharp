@@ -603,7 +603,7 @@ let y = Hoo.Bar((*Mark*)
     [<Test>]
     member public this.``Single.Locations.EndOfFile`` () = 
         this.TestSystematicParameterInfo("""
-System.Console.ReadLine(
+System.Console.ReadLine( 
 """, [ [] ])
         
     // Test PI pop up on parameter list for attributes
@@ -644,55 +644,55 @@ System.Console.ReadLine(
     member public this.``Single.Generics.MathAbs``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("""
-Math.Abs(
+Math.Abs( 
 """, sevenTimes ["value"])
     [<Test>]
     member public this.``Single.Generics.ExchangeInt``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("""
-Interlocked.Exchange<int>(
+Interlocked.Exchange<int>( 
 """, sevenTimes ["location1"; "value"])
     [<Test>]
     member public this.``Single.Generics.Exchange``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("""
-Interlocked.Exchange(
+Interlocked.Exchange( 
 """, sevenTimes ["location1"; "value"])
     [<Test>]
     member public this.``Single.Generics.ExchangeUnder``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("""
-Interlocked.Exchange<_> (
+Interlocked.Exchange<_> ( 
 """, sevenTimes ["location1"; "value"])
     [<Test>]
     member public this.``Single.Generics.Dictionary``() =
         this.TestGenericParameterInfo("""
-System.Collections.Generic.Dictionary<_, option<int>>(
+System.Collections.Generic.Dictionary<_, option<int>>( 
 """, [ []; ["capacity"]; ["comparer"]; ["capacity"; "comparer"]; ["dictionary"]; ["dictionary"; "comparer"] ])
     [<Test>]
     member public this.``Single.Generics.List``() =
         this.TestGenericParameterInfo("""
-new System.Collections.Generic.List< _ > (
+new System.Collections.Generic.List< _ > ( 
 """, [ []; ["capacity"]; ["collection"] ])
     [<Test>]
     member public this.``Single.Generics.ListInt``() =
         this.TestGenericParameterInfo("""
-System.Collections.Generic.List<int>(
+System.Collections.Generic.List<int>( 
 """, [ []; ["capacity"]; ["collection"] ])
     [<Test>]
     member public this.``Single.Generics.EventHandler``() =
         this.TestGenericParameterInfo("""
-new System.EventHandler(
+new System.EventHandler( 
 """, [ [""] ]) // function arg doesn't have a name
     [<Test>]
     member public this.``Single.Generics.EventHandlerEventArgs``() =
         this.TestGenericParameterInfo("""
-System.EventHandler<EventArgs>(
+System.EventHandler<EventArgs>( 
 """, [ [""] ]) // function arg doesn't have a name
     [<Test>]
     member public this.``Single.Generics.EventHandlerEventArgsNew``() =
         this.TestGenericParameterInfo("""
-new System.EventHandler<EventArgs> (
+new System.EventHandler<EventArgs> ( 
 """, [ [""] ]) // function arg doesn't have a name
 
     // Split into multiple lines using "\n" and find the index of "$" (and remove it from the text)
@@ -741,7 +741,7 @@ new System.EventHandler<EventArgs> (
     [<Test>]
     member public this.``Single.Locations.Simple``() =
         this.TestParameterInfoLocation("""
-let a = System.Math.Sin($
+let a = System.Math.Sin($ 
 """, 8)
         
     [<Test>]
@@ -760,19 +760,19 @@ let a = System.Math.Sin($
     [<Test>]
     member public this.``Single.Locations.WithNamespace``() =
         this.TestParameterInfoLocation("""
-let a = System.Threading.Interlocked.Exchange($
+let a = System.Threading.Interlocked.Exchange($ 
 """, 8)
         
     [<Test>]
     member public this.``ParameterInfo.Locations.WithoutNamespace``() =
         this.TestParameterInfoLocation("""
-let a = Interlocked.Exchange($
+let a = Interlocked.Exchange($ 
 """, 8)
         
     [<Test>]
     member public this.``Single.Locations.WithGenericArgs``() =
         this.TestParameterInfoLocation("""
-Interlocked.Exchange<int>($
+Interlocked.Exchange<int>($ 
 """, 0)
         
     [<Test>]
@@ -897,26 +897,30 @@ open N1 \n"+"type boo = T<$
   
     [<Test>]
     member this.``Regression.LocationOfParams.AfterQuicklyTyping.Bug91373``() =        
-        let code = [ "let f x = x   "
-                     "let f1 y = y  "
-                     "let z = f(    " ]
+        let code = [ """
+let f x = x
+let f1 y = y
+let z = f( 
+"""     ]
         let (_, _, file) = this.CreateSingleFileProject(code)
         
         TakeCoffeeBreak(this.VS)
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
 
+        let code' = [ """
+let f x = x
+let f1 y = y
+let z = f(f1( 
+"""     ]
+
         // In this case, we quickly type "f1(" and then see what parameter info would pop up.
         // This simulates the case when the user quickly types after the file has been TCed before.
-        ReplaceFileInMemoryWithoutCoffeeBreak file (
-                   [ "let f x = x   "
-                     "let f1 y = y  "
-                     "let z = f(f1( " ] )
+        ReplaceFileInMemoryWithoutCoffeeBreak file code'
         MoveCursorToEndOfMarker(file, "f1(")
         let info = GetParameterInfoAtCursor file // this will fall back to using the name environment, which is stale, but sufficient to look up the call to 'f1'
         Assert.IsTrue(info.IsSome, "expected parameter info")
         let info = info.Value
         AssertEqual("f1", info.GetName(0))
-        // note about (5,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
         AssertEqual([|(2,10);(2,12);(2,13);(2,0)|], info.GetNoteworthyParamInfoLocations())
 
     [<Test>]
@@ -932,17 +936,19 @@ type Foo() = class end
 
         // In this case, we quickly type "new Foo(" and then see what parameter info would pop up.
         // This simulates the case when the user quickly types after the file has been TCed before.
-        ReplaceFileInMemoryWithoutCoffeeBreak file (
-                   [ "type Foo() = class end"
-                     "let foo = new Foo(    " ] )
+        let code' = [
+"""
+type Foo() = class end
+let foo = new Foo(    
+"""     ]
+        ReplaceFileInMemoryWithoutCoffeeBreak file code'
         MoveCursorToEndOfMarker(file, "new Foo(")
         // Note: no TakeCoffeeBreak(this.VS)
         let info = GetParameterInfoAtCursor file // this will fall back to using the name environment, which is stale, but sufficient to look up the call to 'f1'
         Assert.IsTrue(info.IsSome, "expected parameter info")
         let info = info.Value
         AssertEqual("Foo", info.GetName(0))
-        // note about (4,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
-        AssertEqual([|(1,14);(1,17);(1,18);(2,0)|], info.GetNoteworthyParamInfoLocations())
+        AssertEqual([|(1,14);(1,17);(1,18);(1,0)|], info.GetNoteworthyParamInfoLocations())
 
 
 (*
@@ -1092,7 +1098,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.TestParameterInfoLocationOfParams(
 """
 let z = fun x -> x + ^System.Int16.Parse^(^$
-""", markAtEOF=true)
+""", )
 
     [<Test>]
     member public this.``LocationOfParams.Attributes.Bug230393``() =        
@@ -1226,7 +1232,7 @@ type CC() =
 let c = new CC()
 ^c.M^(^1,^2,^3,^ $
 c.M(1,2,3,4)
-""", markAtEOF=true)
+""" )
 
     [<Test>]
     member public this.``LocationOfParams.BY_DESIGN.WayThatMismatchedParensFailOver.Case2``() =        
@@ -1251,7 +1257,7 @@ let c = new CC()
 c.M(1,2,3,4)
 c.M(1,2,3,4)
 c.M(1,2,3,4)
-""", markAtEOF=true)
+""" )
 
     [<Test>]
     member public this.``LocationOfParams.Tuples.Bug91360.Case1``() =        
@@ -1273,7 +1279,7 @@ type T<'a>() =
 let x = new T<Expr>()
  
 ^x.M1^(^(1,$
-""", markAtEOF=true)
+""" )
 
     [<Test>]
     member public this.``LocationOfParams.UnmatchedParens.Bug91609.OtherCases.Open``() =        
@@ -1585,7 +1591,6 @@ let x = new T<Expr>()
 """
 type U = ^N1.T^<^ $
 """, // missing all params, just have <
-            markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
@@ -1594,7 +1599,6 @@ type U = ^N1.T^<^ $
 """
 type U = ^N1.T^<^ "fo$o",^ 42
 """, // missing >
-            markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
@@ -1603,7 +1607,6 @@ type U = ^N1.T^<^ "fo$o",^ 42
 """
 type U = ^N1.T^<^ "fo$o",^ ParamIgnored=42
 """, // missing >
-            markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
@@ -1612,7 +1615,6 @@ type U = ^N1.T^<^ "fo$o",^ ParamIgnored=42
 """
 type U = ^N1.T^<^ "fo$o",^
 """, // missing last param
-            markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
@@ -1621,7 +1623,6 @@ type U = ^N1.T^<^ "fo$o",^
 """
 type U = ^N1.T^<^ "fo$o",^ ParamIgnored=
 """, // missing last param after name with equals
-            markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
@@ -1630,7 +1631,6 @@ type U = ^N1.T^<^ "fo$o",^ ParamIgnored=
 """
 type U = ^N1.T^<^ "fo$o",^ ParamIgnored
 """, // missing last param after name sans equals
-            markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]

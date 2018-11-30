@@ -4932,8 +4932,7 @@ let xe = someCall(System.IO.StringReader().
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         // In this case, we quickly type "." and then get dot-completions
         // This simulates the case when the user quickly types "dot" after the file has been TCed before.
-        ReplaceFileInMemoryWithoutCoffeeBreak file [ "let someCall(x) = null"
-                                                     "let xe = someCall(System.IO.StringReader(). "]
+        ReplaceFileInMemoryWithoutCoffeeBreak file code
         MoveCursorToEndOfMarker(file, "().")
         // Note: no TakeCoffeeBreak(this.VS)
         let completions = AutoCompleteAtCursor file
