@@ -1322,13 +1322,13 @@ module Patterns =
                   // typeof<int>.MakeArrayType(1) returns "Int[*]" but we need "Int[]"
         | _ -> invalidArg "tys" (SR.GetString(SR.QexpectedOneType))
         
-    let mkNamedTycon (tcName,ass:Assembly) =
-        match ass.GetType(tcName) with 
+    let mkNamedTycon (tcName,assembly:Assembly) =
+        match assembly.GetType(tcName) with 
         | null  -> 
             // For some reason we can get 'null' returned here even when a type with the right name exists... Hence search the slow way...
-            match (ass.GetTypes() |> Array.tryFind (fun a -> a.FullName = tcName)) with 
+            match (assembly.GetTypes() |> Array.tryFind (fun a -> a.FullName = tcName)) with 
             | Some ty -> ty
-            | None -> invalidArg "tcName" (String.Format(SR.GetString(SR.QfailedToBindTypeInAssembly), tcName, ass.FullName)) // "Available types are:\n%A" tcName ass (ass.GetTypes() |> Array.map (fun a -> a.FullName))
+            | None -> invalidArg "tcName" (String.Format(SR.GetString(SR.QfailedToBindTypeInAssembly), tcName, assembly.FullName)) // "Available types are:\n%A" tcName ass (assembly.GetTypes() |> Array.map (fun a -> a.FullName))
         | ty -> ty
 
     let decodeNamedTy tc tsR = mkNamedType(tc,tsR)
