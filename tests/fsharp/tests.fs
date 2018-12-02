@@ -1744,7 +1744,7 @@ module RegressionTests =
         let outFile = "test.out.bsl"
         let expectedFile = "test.bsl"
 
-        fscBothToOut cfg outFile "%s --nologo --target:library" cfg.fsc_flags ["test.fs"]
+        fscAppendErrExpectFail cfg outFile "%s --nologo --target:library" cfg.fsc_flags ["test.fs"]
         
         let diff = fsdiff cfg outFile expectedFile
 
