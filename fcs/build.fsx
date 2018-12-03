@@ -75,15 +75,8 @@ Target "Clean" (fun _ ->
 
 Target "Restore" (fun _ ->
     // We assume a paket restore has already been run
+    runDotnet __SOURCE_DIRECTORY__ "restore ../src/buildtools/buildtools.proj -v n"
     runDotnet __SOURCE_DIRECTORY__ "restore FSharp.Compiler.Service.sln -v n"
-    for p in [ "../packages.config" ] do
-        let rec executeProcess count =
-            let result = ExecProcess (fun info ->
-                info.FileName <- FullName @"./../.nuget/NuGet.exe"
-                info.WorkingDirectory <- FullName @"./.."
-                info.Arguments <- sprintf "restore %s -PackagesDirectory \"%s\" -ConfigFile \"%s\""   (FullName p) (FullName "./../packages") (FullName "./../NuGet.Config")) TimeSpan.MaxValue
-            if result <> 0 && count > 1 then  executeProcess (count - 1) else result
-        (executeProcess 5) |> assertExitCodeZero
 )
 
 Target "BuildVersion" (fun _ ->
@@ -91,7 +84,8 @@ Target "BuildVersion" (fun _ ->
 )
 
 Target "Build" (fun _ ->
-    runDotnet __SOURCE_DIRECTORY__ "build FSharp.Compiler.Service.sln -v n -c Release"
+    runDotnet __SOURCE_DIRECTORY__ "build ../src/buildtools/buildtools.proj -v n -c Proto"
+    runDotnet __SOURCE_DIRECTORY__ "build FSharp.Compiler.Service.sln -v n -c release"
 )
 
 Target "Test" (fun _ ->
@@ -100,11 +94,11 @@ Target "Test" (fun _ ->
     runDotnet __SOURCE_DIRECTORY__ "build ../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -v n"
 
     // Now run the tests
-    runDotnet __SOURCE_DIRECTORY__ "test FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -v n -c Release"
+    runDotnet __SOURCE_DIRECTORY__ "test FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -v n -c release"
 )
 
 Target "NuGet" (fun _ ->
-    runDotnet __SOURCE_DIRECTORY__ "pack FSharp.Compiler.Service.sln -v n -c Release"
+    runDotnet __SOURCE_DIRECTORY__ "pack FSharp.Compiler.Service.sln -v n -c release"
 )
 
 Target "GenerateDocsEn" (fun _ ->

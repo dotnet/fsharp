@@ -22,10 +22,11 @@
     <SystemValueTuplePackageVersion>4.4.0</SystemValueTuplePackageVersion>
 
     <!-- other packages -->
-    <MicrosoftBuildPackageVersion>15.1.548</MicrosoftBuildPackageVersion>
-    <MicrosoftBuildFrameworkPackageVersion>15.1.548</MicrosoftBuildFrameworkPackageVersion>
-    <MicrosoftBuildTasksCorePackageVersion>15.1.548</MicrosoftBuildTasksCorePackageVersion>
-    <MicrosoftBuildUtilitiesCorePackageVersion>15.1.548</MicrosoftBuildUtilitiesCorePackageVersion>
+    <MicrosoftBuildOverallPackagesVersion>15.8.166</MicrosoftBuildOverallPackagesVersion>
+    <MicrosoftBuildPackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildPackageVersion>
+    <MicrosoftBuildFrameworkPackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkPackageVersion>
+    <MicrosoftBuildTasksCorePackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCorePackageVersion>
+    <MicrosoftBuildUtilitiesCorePackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildUtilitiesCorePackageVersion>
     <MicrosoftWin32RegistryPackageVersion>4.3.0</MicrosoftWin32RegistryPackageVersion>
 
   </PropertyGroup>

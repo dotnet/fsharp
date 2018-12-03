@@ -4,7 +4,7 @@ module Core_quotes
 #endif
 #light
 
-#if !TESTS_AS_APP && !NETCOREAPP1_0
+#if !TESTS_AS_APP && !NETSTANDARD
 #r "cslib.dll"
 #endif
 
@@ -352,7 +352,7 @@ module TypedTest = begin
     test "check  PropertyGet (static)" ((<@ System.DateTime.Now @> |> (function PropertyGet(None,_,[]) -> true | _ -> false))) 
     test "check  PropertyGet (instance)" ((<@ ("1").Length @> |> (function PropertyGet(Some(String("1")),_,[]) -> true | _ -> false))) 
 
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
     test "check  PropertySet (static)" ((<@ System.Environment.ExitCode <- 1 @> |> (function PropertySet(None,_,[],Int32(1)) -> true | _ -> false))) 
 #endif
     test "check  PropertySet (instance)" ((<@ ("1").Length @> |> (function PropertyGet(Some(String("1")),_,[]) -> true | _ -> false))) 
@@ -543,7 +543,7 @@ module TypedTest = begin
             |   _ -> false
         end
 
-#if !FSHARP_CORE_31 && !TESTS_AS_APP && !NETCOREAPP1_0
+#if !FSHARP_CORE_31 && !TESTS_AS_APP && !NETSTANDARD
     test "check accesses to readonly fields in ReflectedDefinitions" 
         begin
             let c1 = Class1("a")
@@ -1681,7 +1681,7 @@ module QuotationConstructionTests =
     check "vcknwwe066" (try let _ = Expr.PropertyGet(getof <@@ System.DateTime.Now @@>,[ <@@ 1 @@> ]) in false with :? ArgumentException -> true) true
     check "vcknwwe077" (Expr.PropertyGet(<@@ "3" @@>, getof <@@ "1".Length @@>)) <@@ "3".Length @@>
     check "vcknwwe088" (Expr.PropertyGet(<@@ "3" @@>, getof <@@ "1".Length @@>,[  ])) <@@ "3".Length @@>
-#if !TESTS_AS_APP && !NETCOREAPP1_0
+#if !TESTS_AS_APP && !NETSTANDARD
     check "vcknwwe099" (Expr.PropertySet(<@@ (new System.Windows.Forms.Form()) @@>, setof <@@ (new System.Windows.Forms.Form()).Text <- "2" @@>, <@@ "3" @@> )) <@@ (new System.Windows.Forms.Form()).Text <- "3" @@>
 #endif
     check "vcknwwe099" (Expr.PropertySet(<@@ (new Foo()) @@>, setof <@@ (new Foo()).[3] <- 1 @@>, <@@ 2 @@> , [ <@@ 3 @@> ] )) <@@ (new Foo()).[3] <- 2 @@>
@@ -2303,7 +2303,7 @@ module ReflectedDefinitionOnTypesWithImplicitCodeGen =
    module M = 
       // This type has an implicit IComparable implementation, it is not accessible as a reflected definition
       type R = { x:int; y:string; z:System.DateTime }
-#if NETCOREAPP1_0
+#if NETSTANDARD
       for m in typeof<R>.GetMethods() do 
 #else
       for m in typeof<R>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
@@ -2337,7 +2337,7 @@ module ReflectedDefinitionOnTypesWithImplicitCodeGen =
 #endif
           check "celnwer35" (Quotations.Expr.TryGetReflectedDefinition(m).IsNone) true
 
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 module BasicUsingTEsts = 
     let q1() = 
       let a = ResizeArray<_>()

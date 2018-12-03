@@ -7,11 +7,11 @@ module Core_attributes
 #endif
 #light
 
-#if !TESTS_AS_APP && !NETCOREAPP1_0
+#if !TESTS_AS_APP && !NETSTANDARD
 #load "testlib.fsi" "testlib.fs" // a warning is expected here
 #endif
 
-#if !TESTS_AS_APP && !NETCOREAPP1_0
+#if !TESTS_AS_APP && !NETSTANDARD
 #r "cslib.dll"
 #endif
 
@@ -38,7 +38,7 @@ open System.Diagnostics
 
 (* ATTRIBUTES *)
 
-#if !TESTS_AS_APP && !NETCOREAPP1_0
+#if !TESTS_AS_APP && !NETSTANDARD
 [<LoaderOptimization(LoaderOptimization.MultiDomainHost)>] 
 #endif
 
@@ -58,7 +58,7 @@ let fx3 (x:x2) = fx2 x
 (* attribute on a method *)
 let [<Obsolete("DEBUG")>] myLoggingMethod x = stderr.WriteLine(x:string)
 
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 let [<STAThread>] myLoggingMethod2 x = stderr.WriteLine(x:string)
 #endif
 
@@ -228,7 +228,7 @@ let ca4 = typeof<y4>.GetCustomAttributes(typeof<System.ObsoleteAttribute>,false)
 do if Array.length ca4 <> 1 then failwith "could not find CA on type"
 
 
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 open System.Runtime.InteropServices
 
 [<DllImport("KERNEL32.DLL", EntryPoint="MoveFileW",  SetLastError=true,CharSet=CharSet.Unicode, ExactSpelling=true,CallingConvention=CallingConvention.StdCall)>]
@@ -325,7 +325,7 @@ let ca7d =
     ty.Assembly.GetCustomAttributes(typeof<DontPressThisButton3Attribute>,false)
 do if Array.length ca7d <> 1 then report_failure (sprintf "could not get parameterized CA on assembly, num CAs = %d" (Array.length ca7d))
 
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 #if COMPILED
 [<``module``: DontPressThisButton3(1, "", -2)>]
 do()
@@ -376,7 +376,7 @@ module CheckGenericParameterAttibutesAndNames =
     if typeof<Cases>.GetMethod("M2").GetGenericArguments().[1].Name <> "V" then report_failure "wrong name on generic parameter (C)" 
     if typeof<Cases>.GetMethod("M3").GetGenericArguments().[0].Name <> "a" then report_failure "unexpected inferred name on generic parameter (D)" 
 
-#if !TESTS_AS_APP && !NETCOREAPP1_0
+#if !TESTS_AS_APP && !NETSTANDARD
 module CheckAttributesOnElementsWithSignatures = 
 
     let checkOneAttribute msg (cas: _ []) = 
@@ -432,7 +432,7 @@ end
 // 
 
 
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 
 #r "System.Security.dll";;
 #r "System.Configuration.dll";;
@@ -511,7 +511,7 @@ module ThreadStaticTest = begin
         static val mutable private results : int list
         static member Results with get() = C.results and set v = C.results <- v
 
-#if !MONO && !NETCOREAPP1_0
+#if !MONO && !NETSTANDARD
     let N = 1000
     let main() = 
         let t1 = 
@@ -561,7 +561,7 @@ end
 (*-------------------------------------------------------------------------
 !* System.Runtime.InteropServices.In/OUT attributes
  *------------------------------------------------------------------------- *)
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 open System
 let g   ( [<System.Runtime.InteropServices.Out>] x : int byref) = 0
 let g2 (( [<System.Runtime.InteropServices.In>]  x : int byref), ([<System.Runtime.InteropServices.Out >] y : int byref)) = 0
@@ -611,7 +611,7 @@ type C =
 
     end
 
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 let test2179 = 
     let ty = typeof<C> in
 
@@ -884,7 +884,7 @@ module Bug6161_PS_FSharp1_0_MoreAttributesWithArrayArguments = begin
         check "ce99pj32cweqT" (ca.[0].GetType()) (typeof<AnyAttribute>)
         check "ce99pj32cweqY" (ca.[0] :?> AnyAttribute).Value (box [| 42 |])
 
-#if !TESTS_AS_APP && !NETCOREAPP1_0
+#if !TESTS_AS_APP && !NETSTANDARD
     let _ = 
         let ty = typeof<CSharpLibrary.TestClass>
         let ca = ty.GetCustomAttributes(typeof<CSharpLibrary.IntArrayPropAttribute>,false)
@@ -1090,7 +1090,7 @@ module NullsInAttributes =
     test "TestProperty5"  (null, null, null, Some null, Some null, Some null)
     test "TestProperty6"  (box "1", "2", typeof<int16>, Some (box "3"), Some  "4", Some typeof<string>)
     
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 module Bug5762 =
       open System
       open System.IO
@@ -1333,7 +1333,7 @@ module BugWithOverloadedAttributes =
     [<FooAttribute(value = 42)>]
     type Bar = class end
 
-#if !TESTS_AS_APP && !NETCOREAPP1_0
+#if !TESTS_AS_APP && !NETSTANDARD
 module Bug719b = 
 
     open TestLibModule.Bug719

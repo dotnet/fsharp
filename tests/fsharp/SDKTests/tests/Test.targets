@@ -27,7 +27,6 @@
     <Error Condition="'$(ExpectsValueTuple)' != 'true' and @(FoundValueTuplePackages->Count()) &gt; 0" Text="Expected no System.ValueTuple to be present, but found version %(FoundValueTuplePackages.Version)." />
     <Error Condition="@(FoundValueTuplePackages->Count()) &gt; 1" Text="Found more than one version of ValueTuple; this should never happen: version=%(FoundValueTuplePackages.Version)." />
 
-
     <!-- validate the version of the listed FSharp.Core -->
     <Error Condition="'$(ExpectsFSharpCore)' == 'true' and '%(FoundFSharpCorePackages.Version)' != '$(ExpectedFSharpCorePackageVersion)'" Text="Expected FSharp.Core version $(ExpectedFSharpCorePackageVersion) but found %(FoundFSharpCorePackages.Version)." />
 

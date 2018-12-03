@@ -565,7 +565,7 @@ module LeafExpressionEvaluationTests =
         checkEval "vrewoinrv09c" (<@ ceil 2.0 @>) (ceil 2.0)
         checkEval "vrewoinrv09v" (<@ sqrt 2.0 @>) (sqrt 2.0)
         checkEval "vrewoinrv09b" (<@ sign 2.0 @>) (sign 2.0)
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
         checkEval "vrewoinrv09n" (<@ truncate 2.3 @>) (truncate 2.3)
 #endif
         checkEval "vrewoinrv09m" (<@ floor 2.3 @>) (floor 2.3)
@@ -585,7 +585,7 @@ module LeafExpressionEvaluationTests =
         checkEval "vrewoinrv09D" (<@ ceil 2.0f @>) (ceil 2.0f)
         checkEval "vrewoinrv09F" (<@ sqrt 2.0f @>) (sqrt 2.0f)
         checkEval "vrewoinrv09G" (<@ sign 2.0f @>) (sign 2.0f)
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
         checkEval "vrewoinrv09H" (<@ truncate 2.3f @>) (truncate 2.3f)
 #endif
         checkEval "vrewoinrv09J" (<@ floor 2.3f @>) (floor 2.3f)
@@ -597,7 +597,7 @@ module LeafExpressionEvaluationTests =
 
         checkEval "vrewoinrv09V" (<@ ceil 2.0M @>) (ceil 2.0M)
         checkEval "vrewoinrv09B" (<@ sign 2.0M @>) (sign 2.0M)
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
         checkEval "vrewoinrv09N" (<@ truncate 2.3M @>) (truncate 2.3M)
 #endif
         checkEval "vrewoinrv09M" (<@ floor 2.3M @>) (floor 2.3M)
@@ -617,7 +617,7 @@ module LeafExpressionEvaluationTests =
         checkEval "vrewoinrv09SS" (<@ [ 0UL .. 10UL ] @>) [ 0UL .. 10UL ]
         
         //Comment this testcase under portable due to bug 500323:[FSharp] portable library can't run "round" function
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
         // Round dynamic dispatch on Decimal
         checkEval "vrewoinrv09FF" (<@ round 2.3M @>) (round 2.3M)
 #endif

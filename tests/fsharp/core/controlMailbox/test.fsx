@@ -6,7 +6,7 @@ module Core_controlMailBox
 
 #nowarn "40" // recursive references
 
-#if NETCOREAPP1_0
+#if NETSTANDARD
 open System.Threading.Tasks
 #endif
 
@@ -31,7 +31,7 @@ let report_failure s =
      log (sprintf "FAILURE: %s failed" s)
   )
 
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 System.AppDomain.CurrentDomain.UnhandledException.AddHandler(
        fun _ (args:System.UnhandledExceptionEventArgs) ->
           lock syncObj (fun () ->
@@ -210,7 +210,7 @@ module MailboxProcessorBasicTests =
                  while !received < n do
                      if !received % 100 = 0 then 
                          printfn "received = %d" !received
-#if NETCOREAPP1_0
+#if NETSTANDARD
                      Task.Delay(1).Wait()
 #else
                      System.Threading.Thread.Sleep(1)
@@ -233,7 +233,7 @@ module MailboxProcessorBasicTests =
                                 | Some _ -> do incr received })
                  mb1.Start();
                  for i in 0 .. n-1 do
-#if NETCOREAPP1_0
+#if NETSTANDARD
                      Task.Delay(1).Wait();
 #else
                      System.Threading.Thread.Sleep(1)
@@ -242,7 +242,7 @@ module MailboxProcessorBasicTests =
                  while !received < n do
                      if !received % 100 = 0 then 
                          printfn "main thread: received = %d" !received
-#if NETCOREAPP1_0
+#if NETSTANDARD
                      Task.Delay(1).Wait();
 #else
                      System.Threading.Thread.Sleep(1)
@@ -275,7 +275,7 @@ module MailboxProcessorBasicTests =
                         w.Start()
                         while w.ElapsedMilliseconds < 1000L && (!timedOut).IsNone do
                             mb.Post(-1)
-#if NETCOREAPP1_0
+#if NETSTANDARD
                             Task.Delay(1).Wait();
 #else
                             System.Threading.Thread.Sleep(1)
@@ -298,7 +298,7 @@ module MailboxProcessorBasicTests =
             w.Start()
             while w.ElapsedMilliseconds < 100L do
                 mb.Post(false)
-#if NETCOREAPP1_0
+#if NETSTANDARD
                 Task.Delay(0).Wait();
 #else
                 System.Threading.Thread.Sleep(0)
@@ -318,7 +318,7 @@ module MailboxProcessorErrorEventTests =
              let res = ref 100
              mb1.Error.Add(fun _ -> res := 0)
              mb1.Start();
-#if NETCOREAPP1_0
+#if NETSTANDARD
              Task.Delay(200).Wait();
 #else
              System.Threading.Thread.Sleep(200)
@@ -333,7 +333,7 @@ module MailboxProcessorErrorEventTests =
              let res = ref 0
              mb1.Error.Add(fun _ -> res := 100)
              mb1.Start();
-#if NETCOREAPP1_0
+#if NETSTANDARD
              Task.Delay(200).Wait();
 #else
              System.Threading.Thread.Sleep(200)
@@ -351,7 +351,7 @@ module MailboxProcessorErrorEventTests =
              mb1.Error.Add(function Err n -> res := n | _ -> check "rwe90r - unexpected error" 0 1)
              mb1.Start();
              mb1.Post 100
-#if NETCOREAPP1_0
+#if NETSTANDARD
              Task.Delay(200).Wait();
 #else
              System.Threading.Thread.Sleep(200)
@@ -473,7 +473,7 @@ let test7() =
 
 let timeoutboxes str = new MailboxProcessor<'b>(fun inbox ->
     async { for i in 1 .. 10 do
-#if NETCOREAPP1_0
+#if NETSTANDARD
                 Task.Delay(200).Wait()
 #else
                 do System.Threading.Thread.Sleep 200
@@ -586,7 +586,7 @@ module LotsOfMessages =
             check "celrv09ervkn" (queueLength >= logger.CurrentQueueLength) true
             queueLength <- logger.CurrentQueueLength 
     
-#if NETCOREAPP1_0
+#if NETSTANDARD
             Task.Delay(10).Wait()
 #else
             System.Threading.Thread.Sleep(10)
