@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <FSharpTargetsPath>$(CompilerTestPath)\Microsoft.FSharp.Targets</FSharpTargetsPath>
+    <FSharpPropsShim>$(CompilerTestPath)\Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
+    <FSharpTargetsShim>$(CompilerTestPath)\Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
+    <FSharpOverridesTargetsShim>$(CompilerTestPath)\Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
+  </PropertyGroup>
+</Project>

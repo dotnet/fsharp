@@ -1,26 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
-    <ProjectLanguage>FSharp</ProjectLanguage>
-    <UseFSharpProductVersion>true</UseFSharpProductVersion>
-  </PropertyGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
+    <TargetFrameworks>net472;netstandard1.6</TargetFrameworks>
     <AssemblyName>FSharp.Compiler.Private</AssemblyName>
-    <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
-    <NoWarn>$(NoWarn);62;9</NoWarn>
-    <ProjectGuid>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</ProjectGuid>
+    <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <BaseAddress>0x06800000</BaseAddress>
-    <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
+    <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
+    <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
+    <UseFSharpProductVersion>true</UseFSharpProductVersion>
+    <UseAssetTargetFallback>true</UseAssetTargetFallback>
   </PropertyGroup>
-  <!-- References -->
-  <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net472' AND '$(OS)' == 'Windows_NT'">
+    <!-- portable PDBs can't be properly generated for this assembly -->
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+
   <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
     <ItemGroup>
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Framework.dll" />
@@ -32,9 +30,7 @@
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\System.ValueTuple.dll" Condition="'$(MonoPackaging)' == 'true'" />
     </ItemGroup>
   </Target>
-  <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Import Project="$(FsLexToolPath)\FsLexYacc.targets" />
+
   <ItemGroup>
     <InternalsVisibleTo Include="fsc" />
     <InternalsVisibleTo Include="FSharp.Build" />
@@ -55,6 +51,7 @@
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
   </ItemGroup>
+
   <ItemGroup>
     <EmbeddedText Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
@@ -223,7 +220,7 @@
     <Compile Include="..\..\absil\ilmorph.fs">
       <Link>AbsIL\ilmorph.fs</Link>
     </Compile>
-    <Compile Include="..\..\absil\ilsign.fs" Condition=" '$(TargetDotnetProfile)'=='coreclr'">
+    <Compile Include="..\..\absil\ilsign.fs" Condition="'$(TargetFramework)' == 'netstandard1.6'">
       <Link>AbsIL\ilsign.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilsupp.fsi">
@@ -660,51 +657,41 @@
       <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
   </ItemGroup>
+
   <ItemGroup>
-    <PackageNuspec Include="FSharp.Compiler.Private.netcore.nuspec" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
-    <None Include="project.json" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetDotnetProfile)' != 'coreclr'">
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="System.Reflection.Metadata">
-      <HintPath Condition="'$(MonoPackaging)' != 'true'">..\..\..\packages\System.Reflection.Metadata.$(SystemReflectionMetadataPackageVersion)\lib\netstandard2.0\System.Reflection.Metadata.dll</HintPath>
-      <HintPath Condition="'$(MonoPackaging)' == 'true'">..\..\..\packages\System.Reflection.Metadata.$(SystemReflectionMetadataPackageVersion)\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Collections.Immutable">
-      <HintPath Condition="'$(MonoPackaging)' != 'true'">..\..\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutablePackageVersion)\lib\netstandard2.0\System.Collections.Immutable.dll</HintPath>
-      <HintPath Condition="'$(MonoPackaging)' == 'true'">..\..\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutablePackageVersion)\lib\netstandard1.0\System.Collections.Immutable.dll</HintPath>
-    </Reference>
-    <Reference Include="System.IO.Compression">
-      <HintPath>..\..\..\packages\System.IO.Compression.$(SystemIoCompressionPackageVersion)\lib\net46\System.IO.Compression.dll</HintPath>
-    </Reference>
-    <Reference Include="System.ValueTuple" Condition="'$(MonoPackaging)' == 'true'">
-      <HintPath>..\..\..\packages\System.ValueTuple.$(SystemValueTuplePackageVersion)\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-    </Reference>
+    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildPackageVersion)" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildPackageVersion)" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildPackageVersion)" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildPackageVersion)" />
+    <PackageReference Include="System.IO.Compression" Version="$(SystemIoCompressionPackageVersion)" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
-    <Reference Include="Microsoft.Build.Framework">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Framework.$(MicrosoftBuildFrameworkPackageVersion)\lib\net46\Microsoft.Build.Framework.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Build">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.$(MicrosoftBuildPackageVersion)\lib\net46\Microsoft.Build.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Build.Utilities.Core">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Utilities.Core.$(MicrosoftBuildUtilitiesCorePackageVersion)\lib\net46\Microsoft.Build.Utilities.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Build.Tasks.Core">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.$(MicrosoftBuildTasksCorePackageVersion)\lib\net46\Microsoft.Build.Tasks.Core.dll</HintPath>
-    </Reference>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderPackageVersion)" />
   </ItemGroup>
+
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
-      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
-      <Name>FSharp.Core</Name>
-    </ProjectReference>
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutablePackageVersion)" />
+    <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessPackageVersion)" />
+    <PackageReference Include="System.Diagnostics.TraceSource" Version="$(SystemDiagnosticsTraceSourcePackageVersion)" />
+    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsPackageVersion)" />
+    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqExpressionsPackageVersion)" />
+    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsPackageVersion)" />
+    <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitPackageVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsPackageVersion)" />
+    <PackageReference Include="System.Runtime" Version="$(SystemRuntimePackageVersion)" />
+    <PackageReference Include="System.Runtime.InteropServices" Version="$(SystemRuntimeInteropServicesPackageVersion)" />
+    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="$(SystemSecurityCryptographyAlgorithmsPackageVersion)" />
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelPackageVersion)" />
+    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadPackageVersion)" />
+    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolPackageVersion)" />
+    <PackageReference Include="System.ValueTuple" Version="$(SystemValueTuplePackageVersion)" Condition="'$(TargetFramework)' == 'netstandard1.6'" />
   </ItemGroup>
+
 </Project>

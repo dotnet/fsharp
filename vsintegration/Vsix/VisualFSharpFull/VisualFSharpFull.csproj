@@ -22,7 +22,7 @@
       <Link>License.txt</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <Content Include="$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Type.Providers.Redist\$(MicrosoftVisualFSharpTypeProvidersRedistPackageVersion)\content\4.3.0.0\FSharp.Data.TypeProviders.dll">
+    <Content Include="$(NuGetPackageRoot)\Microsoft.VisualFSharp.Type.Providers.Redist\$(MicrosoftVisualFSharpTypeProvidersRedistPackageVersion)\content\4.3.0.0\FSharp.Data.TypeProviders.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>FSharp.Data.TypeProviders.dll</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
@@ -39,6 +39,7 @@
       <NgenArchitecture>All</NgenArchitecture>
       <NgenPriority>2</NgenPriority>
       <Private>True</Private>
+      <AdditionalProperties>TargetFramework=net472</AdditionalProperties>
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj">
       <Project>{649FA588-F02E-457C-9FCF-87E46407481E}</Project>
@@ -49,6 +50,7 @@
       <NgenArchitecture>All</NgenArchitecture>
       <NgenPriority>2</NgenPriority>
       <Private>True</Private>
+      <AdditionalProperties>TargetFramework=net472</AdditionalProperties>
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj">
       <Project>{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}</Project>
@@ -59,6 +61,7 @@
       <NgenArchitecture>All</NgenArchitecture>
       <NgenPriority>2</NgenPriority>
       <Private>True</Private>
+      <AdditionalProperties>TargetFramework=net472</AdditionalProperties>
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj">
       <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
@@ -69,6 +72,7 @@
       <NgenArchitecture>All</NgenArchitecture>
       <NgenPriority>2</NgenPriority>
       <Private>True</Private>
+      <AdditionalProperties>TargetFramework=net472</AdditionalProperties>
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
@@ -79,6 +83,7 @@
       <NgenArchitecture>All</NgenArchitecture>
       <NgenPriority>2</NgenPriority>
       <Private>True</Private>
+      <AdditionalProperties>TargetFramework=net45</AdditionalProperties>
     </ProjectReference>
     <ProjectReference Include="..\..\..\src\fsharp\fsiAnyCpu\FsiAnyCPU.fsproj">
       <Project>{8B3E283D-B5FE-4055-9D80-7E3A32F3967B}</Project>
@@ -90,6 +95,7 @@
       <NgenArchitecture>X64</NgenArchitecture>
       <NgenPriority>2</NgenPriority>
       <Private>True</Private>
+      <AdditionalProperties>TargetFramework=net472</AdditionalProperties>
     </ProjectReference>
     <ProjectReference Include="..\..\..\src\fsharp\fsi\Fsi.fsproj">
       <Project>{D0E98C0D-490B-4C61-9329-0862F6E87645}</Project>
@@ -101,6 +107,7 @@
       <NgenArchitecture>X86</NgenArchitecture>
       <NgenPriority>2</NgenPriority>
       <Private>True</Private>
+      <AdditionalProperties>TargetFramework=net472</AdditionalProperties>
     </ProjectReference>
     <ProjectReference Include="..\..\..\src\fsharp\Fsc\Fsc.fsproj">
       <Project>{C94C257C-3C0A-4858-B5D8-D746498D1F08}</Project>
@@ -112,6 +119,7 @@
       <NgenArchitecture>All</NgenArchitecture>
       <NgenPriority>2</NgenPriority>
       <Private>True</Private>
+      <AdditionalProperties>TargetFramework=net472</AdditionalProperties>
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.Editor\FSharp.Editor.fsproj">
       <Project>{65e0e82a-eace-4787-8994-888674c2fe87}</Project>

@@ -11,7 +11,7 @@ open NUnit.Framework
 [<RequireQualifiedAccess>]
 module Commands =
 
-    let getfullpath workDir path =
+    let getfullpath workDir (path:string) =
         let rooted =
             if Path.IsPathRooted(path) then path
             else Path.Combine(workDir, path)
@@ -122,16 +122,19 @@ type TestConfig =
       BUILD_CONFIG : string
       FSC : string
       fsc_flags : string
-      FSCBinPath : string
+      BinPath : string
       FSCOREDLLPATH : string
       FSI : string
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
       FSIANYCPU : string
+#endif
       FSI_FOR_SCRIPTS : string
       fsi_flags : string
       ILDASM : string
       PEVERIFY : string
       Directory: string 
       DotNetExe: string
+      DotNet20Exe: string
       DefaultPlatform: string}
 
 
@@ -152,43 +155,35 @@ let requireFile nm =
 let config configurationName envVars =
 
     let SCRIPT_ROOT = __SOURCE_DIRECTORY__
-    let packagesDir = SCRIPT_ROOT ++ ".." ++ ".." ++ "packages"
-    let FSCBinPath = SCRIPT_ROOT ++ ".." ++ ".." ++ configurationName ++ "net40" ++ "bin"
+    let packagesDir = Environment.GetEnvironmentVariable("USERPROFILE") ++ ".nuget" ++ "packages"
+#if NET472
+    let architecture = "net40"
+#else
+    let architecture = "coreclr"
+#endif
+    let BINPATH = SCRIPT_ROOT ++ ".." ++ ".." ++ configurationName ++ architecture ++ "bin"
     let csc_flags = "/nologo" 
     let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED"
     let fsi_flags = "-r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror"
     let Is64BitOperatingSystem = WindowsPlatform.Is64BitOperatingSystem envVars
     let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
-    let CSC = requireFile (packagesDir ++ "Microsoft.Net.Compilers.2.7.0" ++ "tools" ++ "csc.exe")
-    let ILDASM = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm.2.0.3") ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
-    let coreclrdll = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR.2.0.3") ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "coreclr.dll")
+    let CSC = requireFile (packagesDir ++ "Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "csc.exe")
+    let ILDASM = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
+    let coreclrdll = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "coreclr.dll")
     let PEVERIFY = requireFile (SCRIPT_ROOT ++ ".." ++ "fsharpqa" ++ "testenv" ++ "src" ++ "PEVerify" ++ "bin" ++ configurationName ++ "net472" ++ "PEVerify.exe")
-    let FSI_FOR_SCRIPTS =
-        match envVars |> Map.tryFind "_fsiexe" with
-        | Some fsiexe when (not (String.IsNullOrWhiteSpace fsiexe)) -> requireFile (SCRIPT_ROOT ++ ".." ++ ".." ++ (fsiexe.Trim([| '\"' |])))
-        | _ ->
-            // build.cmd sets that var, if it is not set, we are probably called directly from visual studio or the nunit console runner.
-            let fsharpCompilerTools = Directory.GetDirectories(packagesDir, "FSharp.Compiler.Tools.*")
-            match fsharpCompilerTools with
-            | [||] -> failwithf "Could not find any 'FSharp.Compiler.Tools' inside '%s'" packagesDir
-            | [| dir |] -> Path.Combine(dir, "tools", "fsi.exe")
-            | _ -> failwithf "Found more than one 'FSharp.Compiler.Tools' inside '%s', please clean up." packagesDir
+    let FSI_FOR_SCRIPTS = BINPATH ++ "fsi.exe"
     let toolsDir = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools"
     let dotNetExe = toolsDir ++ "dotnetcli" ++ "dotnet.exe"
+    let dotNet20Exe = toolsDir ++ "dotnet20" ++ "dotnet.exe"
     // ildasm requires coreclr.dll to run which has already been restored to the packages directory
     File.Copy(coreclrdll, Path.GetDirectoryName(ILDASM) ++ "coreclr.dll", overwrite=true)
 
+    let FSI = requireFile (BINPATH ++ "fsi.exe")
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
-    let FSI = requireFile (FSCBinPath ++ "fsi.exe")
-    let FSIANYCPU = requireFile (FSCBinPath ++ "fsiAnyCpu.exe")
-    let FSC = requireFile (FSCBinPath ++ "fsc.exe")
-    let FSCOREDLLPATH = requireFile (FSCBinPath ++ "FSharp.Core.dll") 
-#else
-    let FSI = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsi.exe"
-    let FSIANYCPU = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsiAnyCpu.exe"
-    let FSC = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsc.exe"
-    let FSCOREDLLPATH = "" 
+    let FSIANYCPU = requireFile (BINPATH ++ "fsiAnyCpu.exe")
 #endif
+    let FSC = requireFile (BINPATH ++ "fsc.exe")
+    let FSCOREDLLPATH = requireFile (BINPATH ++ "FSharp.Core.dll")
 
     let defaultPlatform = 
         match Is64BitOperatingSystem with 
@@ -198,7 +193,7 @@ let config configurationName envVars =
         | false -> "win7-x86"
 
     { EnvironmentVariables = envVars
-      FSCBinPath = FSCBinPath |> Commands.pathAddBackslash
+      BinPath = BINPATH |> Commands.pathAddBackslash
       FSCOREDLLPATH = FSCOREDLLPATH
       ILDASM = ILDASM
       PEVERIFY = PEVERIFY
@@ -206,13 +201,16 @@ let config configurationName envVars =
       BUILD_CONFIG = configurationName
       FSC = FSC
       FSI = FSI
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
       FSIANYCPU = FSIANYCPU
+#endif
       FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
       csc_flags = csc_flags
       fsc_flags = fsc_flags 
       fsi_flags = fsi_flags 
       Directory="" 
       DotNetExe = dotNetExe
+      DotNet20Exe = dotNet20Exe
       DefaultPlatform = defaultPlatform }
 
 let logConfig (cfg: TestConfig) =
@@ -224,10 +222,12 @@ let logConfig (cfg: TestConfig) =
     log "csc_flags           =%s" cfg.csc_flags
     log "FSC                 =%s" cfg.FSC
     log "fsc_flags           =%s" cfg.fsc_flags
-    log "FSCBINPATH          =%s" cfg.FSCBinPath
+    log "BINPATH             =%s" cfg.BinPath
     log "FSCOREDLLPATH       =%s" cfg.FSCOREDLLPATH
     log "FSI                 =%s" cfg.FSI
-    log "FSIANYCPU                 =%s" cfg.FSIANYCPU
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    log "FSIANYCPU           =%s" cfg.FSIANYCPU
+#endif
     log "fsi_flags           =%s" cfg.fsi_flags
     log "ILDASM              =%s" cfg.ILDASM
     log "PEVERIFY            =%s" cfg.PEVERIFY
@@ -437,7 +437,9 @@ let ildasm cfg arg = Printf.ksprintf (Commands.ildasm (exec cfg) cfg.ILDASM) arg
 let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
 let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 let fsiAnyCpu cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSIANYCPU)
+#endif
 let fsi_script cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI_FOR_SCRIPTS)
 let fsiExpectFail cfg = Printf.ksprintf (Commands.fsi (execExpectFail cfg) cfg.FSI)
 let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)

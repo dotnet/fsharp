@@ -4,6 +4,7 @@
   </PropertyGroup>
   <Import Project="..\fcs.props" />
   <Import Project="..\netfx.props" />
+  <Import Project="..\..\src\buildtools\buildtools.targets" />
   <PropertyGroup>
     <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -16,7 +17,7 @@
     <FsYaccOutputFolder Condition="'$(TargetFramework)' != ''">$(TargetFramework)\</FsYaccOutputFolder>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
     <OtherFlags>$(OtherFlags) --times</OtherFlags>
-    <NoWarn>$(NoWarn);44;62;69;65;54;61;75;62;9;2003;</NoWarn>
+    <NoWarn>$(NoWarn);44;62;69;65;54;61;75;62;9;2003;NU5125</NoWarn>
     <Tailcalls>true</Tailcalls>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -46,12 +47,12 @@
     <Compile Include="..\FSharp.Compiler.Service\AssemblyInfo.fs">
       <Link>AssemblyInfo/AssemblyInfo.fs</Link>
     </Compile>
-    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\FSComp.txt">
+    <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\FSComp.txt">
       <Link>FSComp.txt</Link>
-    </FsSrGen>
-    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\fsi\FSIstrings.txt">
+    </EmbeddedText>
+    <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
-    </FsSrGen>
+    </EmbeddedText>
     <EmbeddedResource Include="$(FSharpSourcesRoot)/fsharp/FSStrings.resx">
       <Link>FSStrings.resx</Link>
       <LogicalName>FSStrings.resources</LogicalName>
@@ -655,7 +656,5 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\scripts\fssrgen.targets" Condition="'$(TargetFramework)' != ''" />
-  <Import Project="$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.6\build\FsLexYacc.targets" Condition="'$(TargetFramework)' != '' AND Exists('$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.6\build\FsLexYacc.targets')" />
-	<Target Name="GenerateCode" AfterTargets="Restore" BeforeTargets="BeforeBuild" DependsOnTargets="CallFsLex;CallFsYacc;ProcessFsSrGen" Condition="'$(TargetFramework)' != ''"></Target>
+  <Target Name="GenerateCode" AfterTargets="Restore" BeforeTargets="BeforeBuild" DependsOnTargets="CallFsLex;CallFsYacc" Condition="'$(TargetFramework)' != ''"></Target>
 </Project>

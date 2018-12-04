@@ -1,18 +1,40 @@
 <Project>
 
+  <Import Project="FSharp.Profiles.props" />
+
   <PropertyGroup>
     <XlfLanguages>en;$(XlfLanguages)</XlfLanguages>
-    <TargetDotnetProfile Condition="$(TargetFramework.StartsWith('netstandard')) or $(TargetFramework.StartsWith('netcoreapp'))">coreclr</TargetDotnetProfile>
-    <TargetDotnetProfile Condition="$(TargetFramework.StartsWith('net4'))">net40</TargetDotnetProfile>
-    <ActualOutputPath Condition="'$(Language)' != 'VB'">$(MSBuildProjectDirectory)\$(OutputPath)</ActualOutputPath>
-    <ActualOutputPath Condition="'$(Language)' == 'VB'">$(OutputPath)</ActualOutputPath>
-    <FinalOutputPath>$(RepoRoot)$(Configuration)\$(TargetDotnetProfile)\bin</FinalOutputPath>
-    <FinalIntermediateOutputPath>$(RepoRoot)$(Configuration)\$(TargetDotnetProfile)\obj</FinalIntermediateOutputPath>
   </PropertyGroup>
 
-  <Target Name="HACK_CopyOutputsToTheProperLocation"
-          AfterTargets="AfterBuild"
-          Condition="'$(DisableOutputPathCopying)' != 'true'">
+  <PropertyGroup Condition="'$(UseAssetTargetFallback)' == 'true'">
+    <!--
+    HACK: Necessary because the `netstandard1.6` version of FSharp.Compiler.Private requires a package that isn't
+    necessary for `net46`, but the package has a requirement on `net462`.  The reference is excluded from the build
+    during `net46`, but for purposes of restore needs to be present.
+    -->
+    <AssetTargetFallback>$(AssetTargetFallback);net462</AssetTargetFallback>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <CompileDependsOn>$(CompileDependsOn);CopyAndSubstituteTextFiles</CompileDependsOn>
+  </PropertyGroup>
+
+  <Target Name="CopyAndSubstituteTextFiles"
+          Inputs="@(CopyAndSubstituteText)"
+          Outputs="@(CopyAndSubstituteText->'$(OutDir)%(TargetFilename)')">
+    <PropertyGroup>
+      <_ReplacementText>$([System.IO.File]::ReadAllText('%(CopyAndSubstituteText.FullPath)'))</_ReplacementText>
+      <_ReplacementText Condition="'%(CopyAndSubstituteText.Pattern1)' != ''">$(_ReplacementText.Replace('%(CopyAndSubstituteText.Pattern1)', '%(CopyAndSubstituteText.Replacement1)'))</_ReplacementText>
+      <_ReplacementText Condition="'%(CopyAndSubstituteText.Pattern2)' != ''">$(_ReplacementText.Replace('%(CopyAndSubstituteText.Pattern2)', '%(CopyAndSubstituteText.Replacement2)'))</_ReplacementText>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(OutDir)%(CopyAndSubstituteText.TargetFilename)" Lines="$(_ReplacementText)" Overwrite="true" />
+    <!-- Make sure it will get cleaned  -->
+    <CreateItem Include="$(OutDir)%(CopyAndSubstituteText.TargetFilename)">
+      <Output TaskParameter="Include" ItemName="FileWrites" />
+    </CreateItem>
+  </Target>
+
+  <Target Name="ComputeFinalOutputPaths">
     <!--
     Ideally we'd set <OutputPath> to `$(Configuration)\[net40|coreclr]\bin`, but the calculation of `[net40|coreclr]`
     depends on the `$(TargetFramework)` variable which is set by the individual project files, but by the time we have
@@ -21,6 +43,21 @@
 
     The fix is to not set `$(Outputpath)` and simply copy stuff there after the fact.
     -->
+
+    <PropertyGroup>
+      <TargetDotnetProfile Condition="$(TargetFramework.StartsWith('netstandard')) or $(TargetFramework.StartsWith('netcoreapp'))">coreclr</TargetDotnetProfile>
+      <TargetDotnetProfile Condition="$(TargetFramework.StartsWith('net4'))">net40</TargetDotnetProfile>
+      <ActualOutputPath Condition="'$(Language)' != 'VB'">$(MSBuildProjectDirectory)\$(OutputPath)</ActualOutputPath>
+      <ActualOutputPath Condition="'$(Language)' == 'VB'">$(OutputPath)</ActualOutputPath>
+      <FinalOutputPath>$(RepoRoot)$(Configuration)\$(TargetDotnetProfile)\bin</FinalOutputPath>
+      <FinalIntermediateOutputPath>$(RepoRoot)$(Configuration)\$(TargetDotnetProfile)\obj</FinalIntermediateOutputPath>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="HACK_CopyOutputsToTheProperLocation"
+          AfterTargets="AfterBuild"
+          DependsOnTargets="ComputeFinalOutputPaths"
+          Condition="'$(DisableOutputPathCopying)' != 'true'">
 
     <ItemGroup>
       <OutputFilesToCopy Include="$(ActualOutputPath)**" />
@@ -33,7 +70,6 @@
     <Copy SourceFiles="@(IntermediateFilesToCopy)" DestinationFolder="$(FinalIntermediateOutputPath)\%(RecursiveDir)" />
   </Target>
 
-  <Import Project="build\targets\AssemblyVersions.props" />
   <Import Project="build\targets\ConvertPortablePdbs.targets" />
   <Import Project="build\targets\GenerateAssemblyAttributes.targets" />
   <Import Project="build\targets\GenerateInternalsVisibleTo.targets" />

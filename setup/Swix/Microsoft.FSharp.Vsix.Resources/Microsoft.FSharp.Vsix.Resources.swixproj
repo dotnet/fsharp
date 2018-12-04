@@ -1,20 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
-<Project InitialTargets="CheckPropertiesArePassed" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project InitialTargets="CheckPropertiesArePassed">
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
   <PropertyGroup>
-    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
-    <OutputArchitecture>neutral</OutputArchitecture>
-    <OutputLocalized>false</OutputLocalized>
-    <IsPackage>true</IsPackage>
-    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
-    <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
-    <OutputPath>$(BinariesFolder)\insertion</OutputPath>
     <OutputName>Microsoft.FSharp.VSIX.Full.Resources.$(LocaleCode)</OutputName>
-    <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj</IntermediateOutputPath>
-    <OutputType>vsix</OutputType>
   </PropertyGroup>
-  
-  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
 
   <PropertyGroup>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
@@ -26,15 +18,16 @@
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleSpecificCulture=$(LocaleSpecificCulture)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);IsLangPack=$(IsLangPack)</PackagePreprocessorDefinitions>
   </PropertyGroup>
-  
+
   <ItemGroup Condition="'$(IsLangPack)' != 'true'">
     <Package Include="Empty.swr" />
   </ItemGroup>
-  
+
   <ItemGroup Condition="'$(IsLangPack)' == 'true'">
     <Package Include="Files.swr" />
     <Package Include="Templates.swr" />
   </ItemGroup>
+
   <Target Name="CheckPropertiesArePassed">
     <Error Condition="'$(LocaleCode)' == ''" Text="A 'LocaleCode' property must be passed to the project." />
     <Error Condition="'$(LocaleId)' == ''" Text="A 'LocaleId' property must be passed to the project." />
@@ -45,7 +38,6 @@
     <Error Condition="'$(FSharpPackageVersion)' == ''" Text="A 'FSharpPackageVersion' property must be passed to the project." />
   </Target>
 
-  <Target Name="SignFiles">
-    <!-- Signing is handled by the RoslynSignTool -->
-  </Target>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
+
 </Project>

@@ -55,7 +55,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <Tailcalls Condition="'$(Tailcalls)' == '' ">true</Tailcalls>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(DOTNET_HOST_PATH)' != ''">
+  <PropertyGroup Condition="'$(DisableAutoSetFscCompilerPath)' != 'true' and '$(DOTNET_HOST_PATH)' != ''">
     <FscToolPath Condition="'$(FscToolPath)' == ''">$([System.IO.Path]::GetDirectoryName($(DOTNET_HOST_PATH)))</FscToolPath>
     <FscToolExe Condition="'$(FscToolExe)' == ''">$([System.IO.Path]::GetFileName($(DOTNET_HOST_PATH)))</FscToolExe>
     <DotnetFscCompilerPath Condition="'$(DotnetFscCompilerPath)' == ''">"$(MSBuildThisFileDirectory)fsc.exe"</DotnetFscCompilerPath>

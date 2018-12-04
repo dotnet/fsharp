@@ -1,0 +1,139 @@
+<Project DefaultTargets="Build">
+
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <CustomProps>AssemblySearchPaths={HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}</CustomProps>
+  </PropertyGroup>
+
+  <!-- default values -->
+  <PropertyGroup>
+    <BuildCompiler Condition="'$(BuildCompiler)' == ''">true</BuildCompiler>
+    <BuildVS Condition="'$(BuildVS)' == ''">false</BuildVS>
+    <BuildFCS Condition="'$(BuildFCS)' == ''">false</BuildFCS>
+    <BuildSetup Condition="'$(BuildSetup)' == ''">false</BuildSetup>
+
+    <TestCompiler Condition="'$(TestCompiler)' == ''">false</TestCompiler>
+    <TestFSharpSuite Condition="'$(TestFSharpSuite)' == ''">false</TestFSharpSuite>
+    <TestFSharpQASuite Condition="'$(TestFSharpQASuite)' == ''">false</TestFSharpQASuite>
+    <TestFCS Condition="'$(TestFCS)' == ''">false</TestFCS>
+    <TestIDE Condition="'$(TestIDE)' == ''">false</TestIDE>
+  </PropertyGroup>
+
+  <!-- legacy environment variable control -->
+  <PropertyGroup>
+    <BuildCompiler Condition="'$(BUILD_NET40)' == '1'">true</BuildCompiler>
+    <BuildCompiler Condition="'$(BUILD_CORECLR)' == '1'">true</BuildCompiler>
+    <BuildVS Condition="'$(BUILD_VS)' == '1'">true</BuildVS>
+    <BuildFCS Condition="'$(BUILD_FCS)' == '1'">true</BuildFCS>
+    <BuildSetup Condition="'$(BUILD_SETUP)' == '1'">true</BuildSetup>
+
+    <TestCompiler Condition="'$(TEST_NET40_COMPILERUNIT_SUITE)' == '1'">true</TestCompiler>
+    <TestCompiler Condition="'$(TEST_CORECLR_COREUNIT_SUITE)' == '1'">true</TestCompiler>
+    <TestFSharpSuite Condition="'$(TEST_NET40_FSHARP_SUITE)' == '1'">true</TestFSharpSuite>
+    <TestFSharpSuite Condition="'$(TEST_CORECLR_FSHARP_SUITE)' == '1'">true</TestFSharpSuite>
+    <TestFSharpQASuite Condition="'$(TEST_NET40_FSHARPQA_SUITE)' == '1'">true</TestFSharpQASuite>
+    <TestFCS Condition="'$(TEST_FCS)' == '1'">true</TestFCS>
+    <TestIDE Condition="'$(TEST_VS_IDEUNIT_SUITE)' == '1'">true</TestIDE>
+  </PropertyGroup>
+
+  <Target Name="CollectProjects">
+
+    <!-- product binaries -->
+
+    <ItemGroup Condition="'$(BuildCompiler)' == 'true' OR '$(_RunningRestore)' == 'true'">
+      <Projects Include="src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+      <Projects Include="src\fsharp\FSharp.Build\FSharp.Build.fsproj" />
+      <Projects Include="src\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+      <Projects Include="src\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />
+      <Projects Include="src\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
+      <Projects Include="src\fsharp\Fsc\Fsc.fsproj" />
+      <Projects Include="src\fsharp\fsi\Fsi.fsproj" />
+      <Projects Include="src\fsharp\fsiAnyCpu\FsiAnyCPU.fsproj" />
+
+      <NugetProjects Include="src\fsharp\FSharp.Compiler.nuget\Microsoft.FSharp.Compiler.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(BuildVS)' == 'true' OR '$(_RunningRestore)' == 'true'">
+      <Projects Include="vsintegration\fsharp-vsintegration-src-build.proj" />
+      <Projects Include="vsintegration\fsharp-vsintegration-unittests-build.proj" />
+      <Projects Include="vsintegration\Utils\LanguageServiceProfiling\LanguageServiceProfiling.fsproj" />
+      <Projects Include="vsintegration\fsharp-vsintegration-item-templates-build.proj" />
+      <Projects Include="vsintegration\fsharp-vsintegration-project-templates-build.proj" />
+      <Projects Include="vsintegration\fsharp-vsintegration-vsix-build.proj" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(BuildFCS)' == 'true' OR '$(_RunningRestore)' == 'true'">
+      <Projects Include="$(MSBuildThisFileDirectory)fcs\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
+      <Projects Include="$(MSBuildThisFileDirectory)fcs\FSharp.Compiler.Service.MSBuild.v12\FSharp.Compiler.Service.MSBuild.v12.fsproj" />
+      <Projects Include="$(MSBuildThisFileDirectory)fcs\FSharp.Compiler.Service.ProjectCracker\FSharp.Compiler.Service.ProjectCracker.fsproj" />
+      <Projects Include="$(MSBuildThisFileDirectory)fcs\FSharp.Compiler.Service.ProjectCrackerTool\FSharp.Compiler.Service.ProjectCrackerTool.fsproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(BuildSetup)' == 'true' OR '$(_RunningRestore)' == 'true'">
+      <Projects Include="setup\fsharp-setup-build.csproj" />
+    </ItemGroup>
+
+    <!-- test binaries -->
+
+    <ItemGroup Condition="'$(TestCompiler)' == 'true' OR '$(_RunningRestore)' == 'true'">
+      <Projects Include="tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" />
+      <Projects Include="tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" />
+      <Projects Include="tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TestFSharpSuite)' == 'true' OR '$(_RunningRestore)' == 'true'">
+      <Projects Include="tests\fsharp\FSharp.Tests.FSharpSuite.fsproj" />
+      <Projects Include="tests\fsharp\SDKTests\AllSdkTargetsTests.proj" />
+      <Projects Include="tests\fsharpqa\testenv\src\PEVerify\PEVerify.csproj" />
+      <Projects Include="src\fsharp\FSharp.Compiler.nuget\Testing.FSharp.Compiler.csproj" />
+
+      <NugetProjects Include="src\fsharp\FSharp.Compiler.nuget\Testing.FSharp.Compiler.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TestFSharpQASuite)' == 'true' OR '$(_RunningRestore)' == 'true'">
+      <Projects Include="tests\fsharpqa\testenv\src\ILComparer\ILComparer.fsproj" />
+      <Projects Include="tests\fsharpqa\testenv\src\HostedCompilerServer\HostedCompilerServer.fsproj" />
+      <Projects Include="tests\fsharpqa\testenv\src\PEVerify\PEVerify.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TestFCS)' == 'true' OR '$(_RunningRestore)' == 'true'">
+      <Projects Include="fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" />
+      <Projects Include="tests\projects\Sample_NETCoreSDK_FSharp_Library_netstandard2_0\Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj" />
+      <Projects Include="tests\projects\Sample_NETCoreSDK_FSharp_Library_netstandard2_0\Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj" />
+      <Projects Include="fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TestIDE)' == 'true' OR '$(_RunningRestore)' == 'true'">
+      <Projects Include="vsintegration\fsharp-vsintegration-unittests-build.proj" />
+    </ItemGroup>
+
+  </Target>
+
+  <Target Name="_BeforeRestore">
+    <PropertyGroup>
+      <_RunningRestore>true</_RunningRestore>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="Build" DependsOnTargets="CollectProjects">
+    <ItemGroup>
+      <Projects Include="@(NugetProjects)" />
+    </ItemGroup>
+
+    <MSBuild Projects="@(Projects)" Targets="Build" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(NugetProjects)" Targets="Pack" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+  </Target>
+
+  <Target Name="Rebuild" DependsOnTargets="CollectProjects">
+    <MSBuild Projects="@(Projects)" Targets="Rebuild" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+  </Target>
+
+  <Target Name="Clean" DependsOnTargets="CollectProjects">
+    <MSBuild Projects="@(Projects)" Targets="Clean" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+  </Target>
+
+  <Target Name="Restore" DependsOnTargets="_BeforeRestore;CollectProjects">
+    <MSBuild Projects="@(Projects)" Targets="Restore" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+  </Target>
+
+</Project>
