@@ -49,7 +49,8 @@
       <Projects Include="src\fsharp\Fsc\Fsc.fsproj" />
       <Projects Include="src\fsharp\fsi\Fsi.fsproj" />
       <Projects Include="src\fsharp\fsiAnyCpu\FsiAnyCPU.fsproj" />
-      <Projects Include="src\fsharp\FSharp.Compiler.nuget\Microsoft.FSharp.Compiler.csproj" />
+
+      <NugetProjects Include="src\fsharp\FSharp.Compiler.nuget\Microsoft.FSharp.Compiler.csproj" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(BuildVS)' == 'true' OR '$(_RunningRestore)' == 'true'">
@@ -115,6 +116,10 @@
   </Target>
 
   <Target Name="Build" DependsOnTargets="CollectProjects">
+    <ItemGroup>
+      <Projects Include="@(NugetProjects)" />
+    </ItemGroup>
+
     <MSBuild Projects="@(Projects)" Targets="Build" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
     <MSBuild Projects="@(NugetProjects)" Targets="Pack" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
