@@ -27,7 +27,7 @@ let report_failure s =
      log (sprintf "FAILURE: %s failed" s)
   )
 
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 System.AppDomain.CurrentDomain.UnhandledException.AddHandler(
        fun _ (args:System.UnhandledExceptionEventArgs) ->
           lock syncObj (fun () ->

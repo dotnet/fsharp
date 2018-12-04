@@ -112,7 +112,7 @@ let v12 =
 
 let v13 = Microsoft.FSharp.Core.Some(1)
 
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 (* check lid setting bug *)
 
 open System.Diagnostics

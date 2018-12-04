@@ -15,11 +15,14 @@ open UnitTests.TestLib.Utils
 open Microsoft.FSharp.Compiler
 open System.Text.RegularExpressions 
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.VisualStudio.FSharp
+
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 
 [<AutoOpen>]
-module internal Globals = 
+module internal Globals =
     let checker = FSharpChecker.Create(legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
+
 
 //open Internal.Utilities
 type internal TextSpan       = Microsoft.VisualStudio.TextManager.Interop.TextSpan
@@ -242,6 +245,8 @@ type internal GlobalParseAndTypeCheckCounter private(initialParseCount:int, init
 /// These are the driver tests. They're parameterized on
 /// various functions that abstract actions over vs.
 type LanguageServiceBaseTests() =  
+
+    let _resolver = AssemblyResolver.addResolver ()
 
     let mutable defaultSolution : OpenSolution = Unchecked.defaultof<_>
     let cache = System.Collections.Generic.Dictionary()

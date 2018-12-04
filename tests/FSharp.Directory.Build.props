@@ -1,0 +1,9 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <DisableOutputPathCopying></DisableOutputPathCopying>
+  </PropertyGroup>
+
+</Project>

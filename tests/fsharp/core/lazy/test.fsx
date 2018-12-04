@@ -43,7 +43,7 @@ do test "fedeoin" (let x = 3 in Lazy.force (Lazy.force (lazy (lazy (x+x)))) = 6)
 do test "fedeoin" (let x = ref 3 in let y = lazy (x := !x + 1; 6) in ignore (Lazy.force y); ignore (Lazy.force y); !x = 4)
 do test "fedeoin" (let x = ref 3 in let y = lazy (x := !x + 1; "abc") in ignore (Lazy.force y); ignore (Lazy.force y); !x = 4)
 
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 module Bug5770 =
     open System.Threading
     do

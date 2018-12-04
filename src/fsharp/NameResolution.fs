@@ -1541,11 +1541,11 @@ type TcResultsSinkImpl(g, ?source: string) =
                 let positions =
                     [|
                         yield 0
-                        for i in 0..source.Length-1 do
-                            let c = source.[i]
-                            if c = '\r' && i + 1 < source.Length && source.[i+1] = '\n' then ()
-                            elif c = '\r' then yield i + 1
-                            if c = '\n' then yield i + 1
+                        for i in 1..source.Length do
+                            let c = source.[i-1]
+                            if c = '\r' && i < source.Length && source.[i] = '\n' then ()
+                            elif c = '\r' then yield i
+                            elif c = '\n' then yield i
                         yield source.Length
                     |]
                 { Source = source 

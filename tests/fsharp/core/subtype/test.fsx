@@ -31,7 +31,7 @@ open System.Collections.Generic
 let f1 (x: 'a[]) = (x :> ICollection<'a>) 
 do let x = f1 [| 3;4; |] in test "test239809" (x.Contains(3))
 
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 (* 'a[] :> IReadOnlyCollection<'a> *)
 let f1ReadOnly (x: 'a[]) = (x :> IReadOnlyCollection<'a>) 
 do let x = f1ReadOnly [| 3;4; |] in test "test239809ReadOnly" (x.Count = 2)
@@ -41,7 +41,7 @@ do let x = f1ReadOnly [| 3;4; |] in test "test239809ReadOnly" (x.Count = 2)
 let f2 (x: 'a[]) = (x :> IList<'a>) 
 do let x = f2 [| 3;4; |] in test "test239810" (x.Item(1) = 4)
 
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 (* 'a[] :> IReadOnlyList<'a> *)
 let f2ReadOnly (x: 'a[]) = (x :> IReadOnlyList<'a>) 
 do let x = f2ReadOnly [| 3;4; |] in test "test239810ReadOnly" (x.Item(1) = 4)
@@ -55,7 +55,7 @@ do let x = f3 [| 3;4; |] in for x in x do (Printf.printf "val %d\n" x) done
 let f4 (x: 'a[]) = (x :> IList<'a>) 
 do let x = f4 [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x) done
 
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 (* Call 'foreachG' using an IReadOnlyList<int> (solved to IEnumerable<int>) *)
 let f4ReadOnly (x: 'a[]) = (x :> IReadOnlyList<'a>) 
 do let x = f4ReadOnly [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x) done
@@ -65,7 +65,7 @@ do let x = f4ReadOnly [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x)
 let f5 (x: 'a[]) = (x :> ICollection<'a>) 
 do let x = f5 [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x) done
 
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 (* Call 'foreachG' using an IReadOnlyCollection<int> (solved to IEnumerable<int>) *)
 let f5ReadOnly (x: 'a[]) = (x :> IReadOnlyCollection<'a>) 
 do let x = f5ReadOnly [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x) done
@@ -106,7 +106,7 @@ let testUpcastToEnum1 (x: System.AttributeTargets) = (x :> System.Enum)
 let testUpcastToEnum6 (x: System.Enum) = (x :> System.Enum) 
 
 // these delegates don't exist in portable
-#if !UNIX && !NETCOREAPP1_0
+#if !UNIX && !NETSTANDARD
 let testUpcastToDelegate1 (x: System.Threading.ThreadStart) = (x :> System.Delegate) 
 
 let testUpcastToMulticastDelegate1 (x: System.Threading.ThreadStart) = (x :> System.MulticastDelegate) 
@@ -244,7 +244,7 @@ module SomeRandomOperatorConstraints = begin
 
     let sum64 seq : int64 = Seq.reduce (+) seq
     let sum32 seq : int64 = Seq.reduce (+) seq
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
     let sumBigInt seq : BigInteger = Seq.reduce (+) seq
 #endif
     let sumDateTime (dt : DateTime) (seq : #seq<TimeSpan>) : DateTime = Seq.fold (+) dt seq
@@ -1904,7 +1904,7 @@ module TestInheritFunc3 =
 
     check "cnwcki4" ((Foo() |> box |> unbox<int -> int -> int -> int> ) 5 6 7) 19
 
-#if !NETCOREAPP1_0
+#if !NETCOREAPP
 
 module TestConverter =
     open System

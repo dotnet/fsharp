@@ -1,0 +1,2 @@
+# this file has to be dynamically written at build time
+assemblies.fsx

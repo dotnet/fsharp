@@ -123,7 +123,7 @@ module FLOAT =
  let x23p = sinh (4.4<_>)
  let x23r = tan (4.4<_>)
  let x23s = tanh (4.4<_>)
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
  let x23t = truncate (4.5<_>)
 #endif
  // check the types and values!
@@ -313,7 +313,7 @@ module DECIMAL =
  let x1d : decimal = ceil 4.4M 
  let x1h : decimal = floor 4.4M 
  let x1l : decimal = pown 4.4M 3
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
  let x1m : decimal = round 4.4M 
 #endif
  let x1n : int = sign 4.4M 
@@ -516,7 +516,7 @@ module MembersTest =
     let f1 = (f :> System.IFormattable)
     let f2 = (f :> System.IComparable)
     let f3 = (f :> System.IEquatable<float<kg>>)
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
     let f4 = (f :> System.IConvertible)
 #endif
   
@@ -549,7 +549,7 @@ module WrappedFloatTypeTest =
         static member Sin (c1:C<1>) = C<1>(sin c1.V)
         static member Sinh (c1:C<1>) = C<1>(sinh c1.V)
         static member Tanh (c1:C<1>) = C<1>(tan c1.V)
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
         static member Truncate (c1:C<1>) = C<1>(truncate c1.V)
 #endif
         static member Pow (c1:C<1>,c2:C<1>) = C<1>( c1.V ** c2.V)
@@ -597,7 +597,7 @@ module WrappedFloatTypeTest =
     let c26 = sin (C<1>(0.5))
     let c27 = sinh (C<1>(0.5))
     let c28 = tanh (C<1>(0.5))
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
     let c29 = truncate (C<1>(0.5))
 #endif
     let c30 =  C<1>(0.5) ** C<1>(2.0)

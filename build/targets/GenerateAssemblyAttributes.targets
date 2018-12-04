@@ -1,10 +1,16 @@
 <Project>
 
-  <Import Project="GitHash.props" />
+  <PropertyGroup>
+    <!-- we generate our own custom assembly info -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
 
   <Target Name="PrepareGenerateAssemblyLevelAttributes">
     <PropertyGroup>
       <GeneratedFSharpAssemblyLevelAttributesFile>$(IntermediateOutputPath)$(MSBuildProjectName).AssemblyLevelAttributes$(DefaultLanguageSourceExtension)</GeneratedFSharpAssemblyLevelAttributesFile>
+
+      <!-- The compiler that currently ships with the SDK doesn't like the Git hash being embedded into the AssemblyInformationalVersionAttribute. -->
+      <NoWarn Condition="'$(Language)' == 'F#' AND '$(Configuration)' == 'Proto'">$(NoWarn);2003</NoWarn>
     </PropertyGroup>
   </Target>
 
@@ -26,8 +32,16 @@
   </Target>
 
   <Target Name="PrepareGenerateAssemblyFileVersion"
-          Condition="'$(Configuration)' != 'Proto'">
+          Condition="'$(Language)' != '' AND '$(GenerateAssemblyVersionAttribute)' != 'false'">
     <PropertyGroup>
+      <MicroBuildAssemblyVersion Condition="'$(MicroBuildAssemblyVersion)' == ''">$(FSCoreVersion)</MicroBuildAssemblyVersion>
+
+      <!-- certain delivered F# VS assemblies use a specific MicroBuildAssemblyVersion, otherwise use FSCoreVersion -->
+      <MicroBuildAssemblyVersion Condition="'$(UseFSharpProductVersion)' == 'true'">$(FSProductVersion)</MicroBuildAssemblyVersion>
+
+      <!-- certain delivered F# VS assemblies use a specific MicroBuildAssemblyVersion, otherwise use FSCoreVersion -->
+      <MicroBuildAssemblyVersion Condition="'$(UseVsMicroBuildAssemblyVersion)' == 'true'">$(VSAssemblyVersion)</MicroBuildAssemblyVersion>
+
       <GeneratedFSharpAssemblyVersionFile>$(IntermediateOutputPath)$(MSBuildProjectName).AssemblyVersion$(DefaultLanguageSourceExtension)</GeneratedFSharpAssemblyVersionFile>
     </PropertyGroup>
     <PropertyGroup>

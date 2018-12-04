@@ -248,7 +248,7 @@ let negative64s =
          (-4611686018427387905L , -4611686018427387904L , -4611686018427387903L);
          (999L                  , -9223372036854775808L , -9223372036854775807L); (* MinValue is -2^63 *)
          (999L                  , 999L                  , 999L)]
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 // Regression 3481: ToInt32
 let triple k n project =
   let x = k * BigInteger.Pow(2I,n) in project (x - 1I),project x,project (x + 1I)

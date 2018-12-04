@@ -1,44 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" DefaultTargets="Build" InitialTargets="IncludeFSharpManifests" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project InitialTargets="IncludeFSharpManifests">
 
-    <Import Project="..\FSharp.Setup.props" />
+  <Import Project="Directory.Build.props" />
 
-    <PropertyGroup>
-        <FSharpSourcesRoot>..\..\src</FSharpSourcesRoot>
-        <FinalizeManifest>true</FinalizeManifest>
-        <FinalizeSkipLayout>true</FinalizeSkipLayout>
-        <IsPackage>true</IsPackage>
-        <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\insertion</OutputPath>
-        <InsertionDir>$(OutputPath)</InsertionDir>
-        <ManifestBuildVersion>$(FSharpPackageVersion)</ManifestBuildVersion>
-    </PropertyGroup>
+  <PropertyGroup>
+    <FinalizeManifest>true</FinalizeManifest>
+    <FinalizeSkipLayout>true</FinalizeSkipLayout>
+    <InsertionDir>$(OutputPath)</InsertionDir>
+    <ManifestBuildVersion>$(FSharpPackageVersion)</ManifestBuildVersion>
+  </PropertyGroup>
 
+  <ItemGroup>
+    <InsertionItems Include="$(VsixBuildLocation)\VisualFSharpFull.vsix" />
+    <InsertionItems Include="$(VsixBuildLocation)\VisualFSharpTemplate.vsix" />
+    <InsertionItems Include="$(VsixBuildLocation)\Microsoft.FSharp.VSIX.Full.Core.json" />
+    <InsertionItems Include="$(VsixBuildLocation)\Microsoft.FSharp.VSIX.Templates.json" />
+  </ItemGroup>
+
+  <Target Name="CopyInsertionItems">
+    <Copy SourceFiles="@(InsertionItems)" DestinationFolder="$(InsertionDir)" />
+  </Target>
+
+  <Target Name="IncludeFSharpManifests" DependsOnTargets="CopyInsertionItems">
     <ItemGroup>
-        <InsertionItems Include="$(VsixBuildLocation)\VisualFSharpFull.vsix" />
-        <InsertionItems Include="$(VsixBuildLocation)\VisualFSharpTemplate.vsix" />
-        <InsertionItems Include="$(VsixBuildLocation)\Microsoft.FSharp.VSIX.Full.Core.json" />
-        <InsertionItems Include="$(VsixBuildLocation)\Microsoft.FSharp.VSIX.Templates.json" />
+      <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Compiler.json" />
+      <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Compiler.Resources.%(SetupLanguages.LocaleCode).json" />
+
+      <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.SDK.json" />
+
+      <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.Core.json" />
+      <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.Resources.%(SetupLanguages.LocaleCode).json" />
+
+      <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.VSIX.Templates.json" />
+      <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Dependencies.json" />
+      <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.IDE.json" />
     </ItemGroup>
+  </Target>
 
-    <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+  <Import Project="Directory.Build.targets" />
 
-    <Target Name="CopyInsertionItems">
-        <Copy SourceFiles="@(InsertionItems)" DestinationFolder="$(InsertionDir)" />
-    </Target>
-
-    <Target Name="IncludeFSharpManifests" DependsOnTargets="CopyInsertionItems">
-        <ItemGroup>
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Compiler.json" />
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Compiler.Resources.%(SetupLanguages.LocaleCode).json" />
-
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.SDK.json" />
-
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.Core.json" />
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.Resources.%(SetupLanguages.LocaleCode).json" />
-
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.VSIX.Templates.json" />
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Dependencies.json" />
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.IDE.json" />
-        </ItemGroup>
-    </Target>
 </Project>

@@ -32,43 +32,42 @@ module CoreTests =
     [<Test>]
     let ``access-FSC_BASIC``() = singleTestBuildAndRun "core/access" FSC_BASIC
 
-
 // All tests below here are known to pass for .NET Core but not yet enabled due to CI problems
-    [<Test>]
-    let ``access-FSI_BASIC``() = singleTestBuildAndRun "core/access" FSI_BASIC
-
+////    [<Test>]
+////    let ``access-FSI_BASIC``() = singleTestBuildAndRun "core/access" FSI_BASIC
+////
     [<Test>]
     let ``apporder-FSC_BASIC`` () = singleTestBuildAndRun "core/apporder" FSC_BASIC
 
-    [<Test>]
-    let ``apporder-FSI_BASIC`` () = singleTestBuildAndRun "core/apporder" FSI_BASIC
+////    [<Test>]
+////    let ``apporder-FSI_BASIC`` () = singleTestBuildAndRun "core/apporder" FSI_BASIC
 
     [<Test>]
     let ``array-FSC_BASIC`` () = singleTestBuildAndRun "core/array" FSC_BASIC
 
-    [<Test>]
-    let ``array-FSI_BASIC`` () = singleTestBuildAndRun "core/array" FSI_BASIC
+////    [<Test>]
+////    let ``array-FSI_BASIC`` () = singleTestBuildAndRun "core/array" FSI_BASIC
 
     [<Test>]
     let ``comprehensions-FSC_BASIC`` () = singleTestBuildAndRun "core/comprehensions" FSC_BASIC
 
-    [<Test>]
-    let ``comprehensions-FSI_BASIC`` () = singleTestBuildAndRun "core/comprehensions" FSI_BASIC
+////    [<Test>]
+////    let ``comprehensions-FSI_BASIC`` () = singleTestBuildAndRun "core/comprehensions" FSI_BASIC
 
     [<Test>]
     let ``comprehensionshw-FSC_BASIC`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_BASIC
 
-    [<Test>]
-    let ``comprehensionshw-FSI_BASIC`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI_BASIC
+////    [<Test>]
+////    let ``comprehensionshw-FSI_BASIC`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI_BASIC
 
-    [<Test>]
-    let ``genericmeasures-FSI_BASIC`` () = singleTestBuildAndRun "core/genericmeasures" FSI_BASIC
+////    [<Test>]
+////    let ``genericmeasures-FSI_BASIC`` () = singleTestBuildAndRun "core/genericmeasures" FSI_BASIC
 
     [<Test>]
     let ``genericmeasures-FSC_BASIC`` () = singleTestBuildAndRun "core/genericmeasures" FSC_BASIC
 
-    [<Test>]
-    let ``innerpoly-FSI_BASIC`` () = singleTestBuildAndRun "core/innerpoly" FSI_BASIC
+////    [<Test>]
+////    let ``innerpoly-FSI_BASIC`` () = singleTestBuildAndRun "core/innerpoly" FSI_BASIC
 
     [<Test>]
     let ``innerpoly-FSC_BASIC`` () = singleTestBuildAndRun "core/innerpoly" FSC_BASIC
@@ -79,26 +78,26 @@ module CoreTests =
     [<Test>]
     let unicode2 () = singleTestBuildAndRun "core/unicode" FSC_BASIC
 
-    [<Test>]
-    let ``unicode2-FSI_BASIC`` () = singleTestBuildAndRun "core/unicode" FSI_BASIC
+////    [<Test>]
+////    let ``unicode2-FSI_BASIC`` () = singleTestBuildAndRun "core/unicode" FSI_BASIC
 
     [<Test>]
     let ``lazy test-FSC_BASIC`` () = singleTestBuildAndRun "core/lazy" FSC_BASIC
 
-    [<Test>]
-    let ``lazy test-FSI_BASIC`` () = singleTestBuildAndRun "core/lazy" FSI_BASIC
+////    [<Test>]
+////    let ``lazy test-FSI_BASIC`` () = singleTestBuildAndRun "core/lazy" FSI_BASIC
 
     [<Test>]
     let ``letrec-FSC_BASIC`` () = singleTestBuildAndRun "core/letrec" FSC_BASIC
 
-    [<Test>]
-    let ``letrec-FSI_BASIC`` () = singleTestBuildAndRun "core/letrec" FSI_BASIC
+////    [<Test>]
+////    let ``letrec-FSI_BASIC`` () = singleTestBuildAndRun "core/letrec" FSI_BASIC
 
     [<Test>]
     let ``letrec (mutrec variations part one) FSC_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec" FSC_BASIC
 
-    [<Test>]
-    let ``letrec (mutrec variations part one) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec" FSI_BASIC
+////    [<Test>]
+////    let ``letrec (mutrec variations part one) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec" FSI_BASIC
 
     [<Test>]
     let ``libtest-FSC_BASIC`` () = singleTestBuildAndRun "core/libtest" FSC_BASIC
@@ -109,8 +108,8 @@ module CoreTests =
     [<Test>]
     let map () = singleTestBuildAndRun "core/map" FSC_BASIC
 
-    [<Test>]
-    let ``measures-FSI_BASIC`` () = singleTestBuildAndRun "core/measures" FSI_BASIC
+////    [<Test>]
+////    let ``measures-FSI_BASIC`` () = singleTestBuildAndRun "core/measures" FSI_BASIC
 
     [<Test>]
     let ``measures-FSC_BASIC`` () = singleTestBuildAndRun "core/measures" FSC_BASIC
@@ -227,9 +226,9 @@ module CoreTests =
         begin
             use testOkFile = fileguard cfg "test.ok"
 
-            fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
-
             singleNegTest cfg "test"
+
+            fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
             // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
             //exec cfg ("." ++ "test.exe") ""
@@ -240,9 +239,9 @@ module CoreTests =
         begin
             use testOkFile = fileguard cfg "test2.ok"
 
-            fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
-
             singleNegTest cfg "test2"
+
+            fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
 
             // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
             //exec cfg ("." ++ "test.exe") ""
@@ -253,9 +252,9 @@ module CoreTests =
         begin
             use testOkFile = fileguard cfg "test3.ok"
 
-            fsc cfg "%s -o:test3.exe -g" cfg.fsc_flags ["test3.fsx"]
-
             singleNegTest cfg "test3"
+
+            fsc cfg "%s -o:test3.exe -g" cfg.fsc_flags ["test3.fsx"]
 
             // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
             //exec cfg ("." ++ "test.exe") ""
@@ -316,9 +315,8 @@ module CoreTests =
     [<Test>]
     let fscenum () = singleTestBuildAndRun "core/enum" FSC_BASIC
 
-    [<Test>]
-    let fsienum () = singleTestBuildAndRun "core/enum" FSI_BASIC
-
+//    [<Test>]
+//    let fsienum () = singleTestBuildAndRun "core/enum" FSI_BASIC
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 
@@ -329,7 +327,7 @@ module CoreTests =
 
         fsc cfg "%s -a -o:lib.dll" cfg.fsc_flags ["lib.fs"]
 
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        copy_y cfg  (cfg.BinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
         peverify cfg "lib.dll"
 
         fsc cfg "%s -r:lib.dll" cfg.fsc_flags ["test.fsx"]
@@ -482,7 +480,7 @@ module CoreTests =
 
         fsc cfg "%s -a -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
 
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        copy_y cfg  (cfg.BinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
         peverify cfg "lib.dll"
 
@@ -792,7 +790,7 @@ module CoreTests =
 
         fsc cfg "%s -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
 
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        copy_y cfg  (cfg.BinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
         peverify cfg "test.exe"
 
@@ -1635,13 +1633,13 @@ module CoreTests =
     let verify () = 
         let cfg = testConfig "core/verify"
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "FSharp.Build.dll")
+        peverifyWithArgs cfg "/nologo" (cfg.BinPath ++ "FSharp.Build.dll")
 
-       // peverifyWithArgs cfg "/nologo /MD" (cfg.FSCBinPath ++ "FSharp.Compiler.dll")
+       // peverifyWithArgs cfg "/nologo /MD" (cfg.BinPath ++ "FSharp.Compiler.dll")
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "fsi.exe")
+        peverifyWithArgs cfg "/nologo" (cfg.BinPath ++ "fsi.exe")
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "FSharp.Compiler.Interactive.Settings.dll")
+        peverifyWithArgs cfg "/nologo" (cfg.BinPath ++ "FSharp.Compiler.Interactive.Settings.dll")
 
         fsc cfg "%s -o:xmlverify.exe -g" cfg.fsc_flags ["xmlverify.fs"]
 
@@ -1678,20 +1676,19 @@ module ToolsTests =
     let eval () = singleTestBuildAndRun "tools/eval" FSC_BASIC
 #endif
 
-
 module RegressionTests = 
 
     [<Test>]
     let ``literal-value-bug-2-FSC_BASIC`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSC_BASIC
 
-    [<Test>]
-    let ``literal-value-bug-2-FSI_BASIC`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI_BASIC
+////    [<Test>]
+////    let ``literal-value-bug-2-FSI_BASIC`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI_BASIC
 
     [<Test>]
     let ``OverloadResolution-bug-FSC_BASIC`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSC_BASIC
 
-    [<Test>]
-    let ``OverloadResolution-bug-FSI_BASIC`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSI_BASIC
+////    [<Test>]
+////    let ``OverloadResolution-bug-FSI_BASIC`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSI_BASIC
 
     [<Test>]
     let ``struct-tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_BASIC
@@ -1739,7 +1736,7 @@ module RegressionTests =
     // Requires WinForms
     [<Test>]
     let ``83`` () = singleTestBuildAndRun "regression/83" FSC_BASIC
-#endif
+
     [<Test >]
     let ``84`` () = singleTestBuildAndRun "regression/84" FSC_BASIC
 
@@ -1750,12 +1747,13 @@ module RegressionTests =
         fsc cfg "%s -r:Category.dll -a -o:petshop.dll" cfg.fsc_flags ["Category.ml"]
 
         peverify cfg "petshop.dll"
+#endif
 
     [<Test >]
     let ``86`` () = singleTestBuildAndRun "regression/86" FSC_BASIC
 
-    [<Test >]
-    let ``struct-tuple-bug-1-FSI_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_BASIC
+////    [<Test >]
+////    let ``struct-tuple-bug-1-FSI_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_BASIC
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
@@ -1931,7 +1929,7 @@ module TypecheckTests =
     let ``sigs pos27`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos27.exe" cfg.fsc_flags ["pos27.fs"]
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        copy_y cfg  (cfg.BinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
         peverify cfg "pos27.exe"
 
     [<Test>]
@@ -2590,7 +2588,7 @@ open System.Runtime.InteropServices
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
 #endif
 
-#if !NETSTANDARD1_6
+#if NET46
 module ProductVersionTest =
 
     let informationalVersionAttrName = typeof<System.Reflection.AssemblyInformationalVersionAttribute>.FullName
