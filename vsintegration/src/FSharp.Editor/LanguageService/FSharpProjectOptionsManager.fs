@@ -78,6 +78,18 @@ module private FSharpProjectOptionsHelpers =
                 member __.Unused4() = hier.Unused4()
         }
 
+    let isProjectInvalidated (oldProject: Project) (newProject: Project) =
+        let hasStampChanged = oldProject.Version <> newProject.Version
+        let hasProjectReferencesChanged =
+            oldProject.ProjectReferences.Count() <> newProject.ProjectReferences.Count() ||
+            (oldProject.ProjectReferences, newProject.ProjectReferences)
+            ||> Seq.exists2 (fun p1 p2 ->
+                let projectReference1 = oldProject.Solution.GetProject(p1.ProjectId)
+                let projectReference2 = newProject.Solution.GetProject(p2.ProjectId)
+                projectReference1.Version <> projectReference2.Version
+            )
+        hasStampChanged || hasProjectReferencesChanged
+
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
     | TryGetOptionsByDocument of Document * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option>
@@ -92,7 +104,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
     // Hack to store command line options from HandleCommandLineChanges
     let cpsCommandLineOptions = new ConcurrentDictionary<ProjectId, string[] * string[]>()
 
-    let cache = Dictionary<ProjectId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
+    let cache = Dictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
     let singleFileCache = Dictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
 
     let rec tryComputeOptionsByFile (document: Document) =
@@ -139,7 +151,6 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
     
     let rec tryComputeOptions (project: Project) =
         let projectId = project.Id
-        let projectStamp = project.Version
         match cache.TryGetValue(projectId) with
         | false, _ ->
 
@@ -216,7 +227,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     UnresolvedReferences = None
                     OriginalLoadReferences = []
                     ExtraProjectInfo= None
-                    Stamp = Some(int64 (projectStamp.GetHashCode()))
+                    Stamp = Some(int64 (project.Version.GetHashCode()))
                 }
 
             // This can happen if we didn't receive the callback from HandleCommandLineChanges yet.
@@ -227,12 +238,12 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
 
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
-                cache.[projectId] <- (projectStamp, parsingOptions, projectOptions)
+                cache.[projectId] <- (project, parsingOptions, projectOptions)
 
                 Some(parsingOptions, projectOptions)
   
-        | true, (projectStamp2, parsingOptions, projectOptions) ->
-            if projectStamp <> projectStamp2 then
+        | true, (project2, parsingOptions, projectOptions) ->
+            if isProjectInvalidated project2 project then
                 cache.Remove(projectId) |> ignore
                 tryComputeOptions project
             else
