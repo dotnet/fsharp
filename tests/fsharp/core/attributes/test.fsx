@@ -206,12 +206,12 @@ end
 do ()
 
 type dummy = Dummy
-let ass = typeof<dummy>.Assembly 
+let assembly = typeof<dummy>.Assembly 
 
 // Assembly attributes are currently ignored by F# Interactive, so this test
 // fails.  We ignore the failure.
 #if COMPILED
-let ca = ass.GetCustomAttributes(typeof<System.Reflection.AssemblyTitleAttribute>,false)
+let ca = assembly.GetCustomAttributes(typeof<System.Reflection.AssemblyTitleAttribute>,false)
 do if Array.length ca <> 1 then failwith "could not find CA on assembly"
 #endif
 
@@ -809,12 +809,12 @@ module Bug1437_PS_FSharp1_0_AttributesWithArrayArguments = begin
     [<assembly:AttributeWithArrayArg ([|0;1;2|])>]
     do ()
 
-    let ass = typeof<AttributeWithArrayArgAttribute>.Assembly 
+    let assembly = typeof<AttributeWithArrayArgAttribute>.Assembly 
 
     // Assembly attributes are currently ignored by F# Interactive, so this test
     // fails.  We ignore the failure.
     #if COMPILED
-    let ca = ass.GetCustomAttributes(typeof<AttributeWithArrayArgAttribute>,false)
+    let ca = assembly.GetCustomAttributes(typeof<AttributeWithArrayArgAttribute>,false)
     let _ = check "ce99pj32cweq" (Array.length ca) 1 
     #endif
 end

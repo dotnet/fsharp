@@ -978,12 +978,12 @@ and ConvILTypeRef cenv (tr:ILTypeRef) =
         QP.Idx idx
  
     | QuotationSerializationFormat.FSharp_20_Plus ->
-        let assref = 
+        let assemblyRef = 
             match tr.Scope with 
             | ILScopeRef.Local -> "."
             | _ -> tr.Scope.QualifiedName 
 
-        QP.Named(tr.BasicQualifiedName, assref)
+        QP.Named(tr.BasicQualifiedName, assemblyRef)
   
 and ConvVoidType cenv m = QP.mkILNamedTy(ConvTyconRef cenv cenv.g.system_Void_tcref m, [])
 
