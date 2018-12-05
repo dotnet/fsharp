@@ -1756,6 +1756,36 @@ module RegressionTests =
 ////    let ``struct-tuple-bug-1-FSI_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_BASIC
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    [<Test>]
+    let ``SRTP doesn't handle calling member hiding hinherited members`` () =
+        let cfg = testConfig "regression/5531"
+
+        let outFile = "compilation.output.test.txt"
+        let expectedFile = "compilation.output.test.bsl"
+        
+        fscBothToOut cfg outFile "%s --nologo -O" cfg.fsc_flags ["test.fs"]
+
+        let diff = fsdiff cfg outFile expectedFile
+
+        match diff with
+        | "" -> ()
+        | _ ->
+            Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff)
+            
+        let outFile2 = "output.test.txt"
+        let expectedFile2 = "output.test.bsl"
+
+        execBothToOut cfg (cfg.Directory) outFile2 (cfg.Directory ++ "test.exe") ""
+
+        let diff2 = fsdiff cfg outFile2 expectedFile2
+
+        match diff2 with
+        | "" -> ()
+        | _ ->
+            Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile2) (getfullpath cfg expectedFile2) diff2)
+#endif
+
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test>]
     let ``struct-measure-bug-1`` () = 
