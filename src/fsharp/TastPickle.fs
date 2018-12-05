@@ -36,16 +36,16 @@ type PickledDataWithReferences<'rawData> =
     { /// The data that uses a collection of CcuThunks internally
       RawData: 'rawData
       /// The assumptions that need to be fixed up
-      FixupThunks: list<CcuThunk> } 
+      FixupThunks: CcuThunk [] } 
 
     member x.Fixup loader =
-        x.FixupThunks |> List.iter (fun reqd -> reqd.Fixup(loader reqd.AssemblyName))
+        x.FixupThunks |> Array.iter (fun reqd -> reqd.Fixup(loader reqd.AssemblyName))
         x.RawData
 
     /// Like Fixup but loader may return None, in which case there is no fixup.
     member x.OptionalFixup loader =
         x.FixupThunks 
-        |> List.iter(fun reqd->
+        |> Array.iter(fun reqd->
             match loader reqd.AssemblyName with 
             | Some(loaded) -> reqd.Fixup(loaded)
             | None -> reqd.FixupOrphaned() )
@@ -484,12 +484,26 @@ let p_array_ext extraf f (x: 'T[]) st =
     | Some f -> f st
     p_array_core f x st
 
- 
-let p_list f x st = p_array f (Array.ofList x) st
+let p_list_core f (xs: 'T list) st =
+    for x in xs do
+        f x st
 
-let p_listB f x st = p_arrayB f (Array.ofList x) st
+let p_list f x st = 
+    p_int (List.length x) st
+    p_list_core f x st
 
-let p_list_ext extraf f x st = p_array_ext extraf f (Array.ofList x) st
+let p_listB f x st = 
+    p_intB (List.length x) st
+    p_list_core f x st
+
+let p_list_ext extraf f x st = 
+    let n = List.length x
+    let n = if Option.isSome extraf then n ||| 0x80000000 else n
+    p_int n st
+    match extraf with 
+    | None -> ()
+    | Some f -> f st
+    p_list_core f x st
 
 let p_List f (x: 'T list) st = p_list f x st 
 
@@ -607,7 +621,10 @@ let u_array_revi f st =
     res
 
 // Mark up default constraints with a priority in reverse order: last gets 0 etc. See comment on TyparConstraint.DefaultsTo 
-let u_list_revi f st = Array.toList (u_array_revi f st)
+let u_list_revi f st =
+    let n = u_int st
+    [ for i = 0 to n-1 do
+         yield f st (n-1-i) ]
  
  
 let u_wrap (f: 'U -> 'T) (u : 'U unpickler) : 'T unpickler = (fun st -> f (u st))
@@ -863,7 +880,7 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef option) u (p
         check ilscope st1.itypars
         res
 
-    {RawData=data; FixupThunks=Array.toList ccuTab.itbl_rows }
+    {RawData=data; FixupThunks=ccuTab.itbl_rows }
     
 
 //=========================================================================
@@ -1866,7 +1883,7 @@ and p_tycon_repr x st =
     // The leading "p_byte 1" and "p_byte 0" come from the F# 2.0 format, which used an option value at this point.
     match x with 
     | TRecdRepr fs         -> p_byte 1 st; p_byte 0 st; p_rfield_table fs st; false
-    | TUnionRepr x         -> p_byte 1 st; p_byte 1 st; p_list p_unioncase_spec (Array.toList x.CasesTable.CasesByIndex) st; false
+    | TUnionRepr x         -> p_byte 1 st; p_byte 1 st; p_array p_unioncase_spec (x.CasesTable.CasesByIndex) st; false
     | TAsmRepr ilty        -> p_byte 1 st; p_byte 2 st; p_ILType ilty st; false
     | TFSharpObjectRepr r  -> p_byte 1 st; p_byte 3 st; p_tycon_objmodel_data r st; false
     | TMeasureableRepr ty  -> p_byte 1 st; p_byte 4 st; p_ty ty st; false
@@ -1926,7 +1943,7 @@ and p_recdfield_spec x st =
     p_access x.rfield_access st
 
 and p_rfield_table x st = 
-    p_list p_recdfield_spec (Array.toList x.FieldsByIndex) st
+    p_array p_recdfield_spec (x.FieldsByIndex) st
 
 and p_entity_spec_data (x:Entity) st = 
     p_tyar_specs (x.entity_typars.Force(x.entity_range)) st 
