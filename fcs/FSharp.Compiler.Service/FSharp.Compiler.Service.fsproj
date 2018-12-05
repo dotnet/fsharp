@@ -7,8 +7,8 @@
   <PropertyGroup>
     <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <DefineConstants>$(DefineConstants);COMPILER_SERVICE_AS_DLL</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
+    <DefineConstants>$(DefineConstants);BUILD_FROM_SOURCE</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_STRONG_NAMES</DefineConstants>
     <OutputPath>..\..\$(Configuration.ToLower())\fcs</OutputPath>
@@ -16,7 +16,7 @@
     <FsYaccOutputFolder Condition="'$(TargetFramework)' != ''">$(TargetFramework)\</FsYaccOutputFolder>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
     <OtherFlags>$(OtherFlags) --times</OtherFlags>
-    <NoWarn>$(NoWarn);44;62;69;65;54;61;75;62;9;2003;</NoWarn>
+    <NoWarn>$(NoWarn);44;62;69;65;54;61;75;62;9;2003;2015</NoWarn>
     <Tailcalls>true</Tailcalls>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

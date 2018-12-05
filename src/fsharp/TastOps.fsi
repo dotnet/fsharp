@@ -47,10 +47,7 @@ val stripTyEqnsWrtErasure: Erasure -> TcGlobals -> TType -> TType
 //------------------------------------------------------------------------- 
 
 /// Build a function type
-val mkFunTy : TType -> TType -> TType
-
-/// Build a function type
-val ( --> ) : TType -> TType -> TType
+val mkFunTy : TcGlobals -> TType -> TType -> TType
 
 /// Build a type-forall anonymous generic type if necessary
 val mkForallTyIfNeeded : Typars -> TType -> TType
@@ -58,16 +55,16 @@ val mkForallTyIfNeeded : Typars -> TType -> TType
 val ( +-> ) : Typars -> TType -> TType
 
 /// Build a curried function type
-val mkIteratedFunTy : TTypes -> TType -> TType
+val mkIteratedFunTy : TcGlobals -> TTypes -> TType -> TType
 
 /// Get the natural type of a single argument amongst a set of curried arguments
 val typeOfLambdaArg : range -> Val list -> TType
 
-/// Get the curried type corresponding to a lambda 
-val mkMultiLambdaTy : range -> Val list -> TType -> TType
+/// Get the type corresponding to a lambda 
+val mkLambdaTy : TcGlobals -> Typars -> TTypes -> TType -> TType
 
 /// Get the curried type corresponding to a lambda 
-val mkLambdaTy : Typars -> TTypes -> TType -> TType
+val mkMultiLambdaTy : TcGlobals -> range -> Val list -> TType -> TType
 
 /// Module publication, used while compiling fslib.
 val ensureCcuHasModuleOrNamespaceAtPath : CcuThunk -> Ident list -> CompilationPath -> XmlDoc -> unit 
@@ -78,6 +75,10 @@ val stripExpr : Expr -> Expr
 /// Get the values for a set of bindings
 val valsOfBinds : Bindings -> Vals 
 val (|ExprValWithPossibleTypeInst|_|) : Expr -> (ValRef * ValUseFlag * TType list * range) option
+
+//val combineNullness: Nullness -> Nullness -> Nullness
+//val tryAddNullnessToTy: Nullness -> TType -> TType option
+//val addNullnessToTy: Nullness -> TType -> TType
 
 //-------------------------------------------------------------------------
 // Build decision trees imperatively
@@ -124,10 +125,10 @@ val mkLambda : range -> Val -> Expr * TType -> Expr
 val mkTypeLambda : range -> Typars -> Expr * TType -> Expr
 val mkObjExpr : TType * Val option * Expr * ObjExprMethod list * (TType * ObjExprMethod list) list * Range.range -> Expr
 val mkTypeChoose : range -> Typars -> Expr -> Expr
-val mkLambdas : range -> Typars -> Val list -> Expr * TType -> Expr
-val mkMultiLambdasCore : range -> Val list list -> Expr * TType -> Expr * TType
-val mkMultiLambdas : range -> Typars -> Val list list -> Expr * TType -> Expr
-val mkMemberLambdas : range -> Typars -> Val option -> Val option -> Val list list -> Expr * TType -> Expr
+val mkLambdas : TcGlobals -> range -> Typars -> Val list -> Expr * TType -> Expr
+val mkMultiLambdasCore : TcGlobals -> range -> Val list list -> Expr * TType -> Expr * TType
+val mkMultiLambdas : TcGlobals -> range -> Typars -> Val list list -> Expr * TType -> Expr
+val mkMemberLambdas : TcGlobals -> range -> Typars -> Val option -> Val option -> Val list list -> Expr * TType -> Expr
 
 val mkWhile      : TcGlobals -> SequencePointInfoForWhileLoop * SpecialWhileLoopMarker * Expr * Expr * range                          -> Expr
 val mkFor        : TcGlobals -> SequencePointInfoForForLoop * Val * Expr * ForLoopStyle * Expr * Expr * range -> Expr
@@ -145,7 +146,7 @@ val mkLetBind : range -> Binding -> Expr -> Expr
 val mkLetsBind : range -> Binding list -> Expr -> Expr
 val mkLetsFromBindings : range -> Bindings -> Expr -> Expr
 val mkLet : SequencePointInfoForBinding -> range -> Val -> Expr -> Expr -> Expr
-val mkMultiLambdaBind : Val -> SequencePointInfoForBinding -> range -> Typars -> Val list list -> Expr * TType -> Binding
+val mkMultiLambdaBind : TcGlobals -> Val -> SequencePointInfoForBinding -> range -> Typars -> Val list list -> Expr * TType -> Binding
 
 // Compiler generated bindings may involve a user variable.
 // Compiler generated bindings may give rise to a sequence point if they are part of
@@ -429,9 +430,10 @@ val instTrait              : TyparInst -> TraitConstraintInfo -> TraitConstraint
 // From typars to types 
 //------------------------------------------------------------------------- 
 
+val generalTyconRefInst : TyconRef -> TypeInst
 val generalizeTypars : Typars -> TypeInst
-val generalizeTyconRef : TyconRef -> TTypes * TType
-val generalizedTyconRef : TyconRef -> TType
+val generalizeTyconRef : TcGlobals -> TyconRef -> TTypes * TType
+val generalizedTyOfTyconRef : TcGlobals -> TyconRef -> TType
 val mkTyparToTyparRenaming : Typars -> Typars -> TyparInst * TTypes
 
 //-------------------------------------------------------------------------
@@ -472,6 +474,7 @@ val destTyparTy       : TcGlobals -> TType -> Typar
 val destAnyParTy      : TcGlobals -> TType -> Typar
 val destMeasureTy     : TcGlobals -> TType -> Measure
 val tryDestForallTy   : TcGlobals -> TType -> Typars * TType
+val nullnessOfTy      : TcGlobals -> TType -> Nullness
 
 val isFunTy            : TcGlobals -> TType -> bool
 val isForallTy         : TcGlobals -> TType -> bool
@@ -1086,7 +1089,7 @@ val isArray1DTy       : TcGlobals -> TType -> bool
 val destArrayTy     : TcGlobals -> TType -> TType
 val destListTy      : TcGlobals -> TType -> TType
 
-val mkArrayTy         : TcGlobals -> int -> TType -> range -> TType
+val mkArrayTy         : TcGlobals -> int -> Nullness -> TType -> range -> TType
 val isArrayTyconRef      : TcGlobals -> TyconRef -> bool
 val rankOfArrayTyconRef : TcGlobals -> TyconRef -> int
 
@@ -1138,13 +1141,15 @@ val ModuleNameIsMangled : TcGlobals -> Attribs -> bool
 
 val CompileAsEvent : TcGlobals -> Attribs -> bool
 
-val TypeNullIsExtraValue : TcGlobals -> range -> TType -> bool
 val TypeNullIsTrueValue : TcGlobals -> TType -> bool
-val TypeNullNotLiked : TcGlobals -> range -> TType -> bool
+val TypeNullIsExtraValueNew : TcGlobals -> range -> TType -> bool
+val TypeNullIsExtraValueOld : TcGlobals -> range -> TType -> bool
+val TyconRefNullIsExtraValueOld :  TcGlobals -> range -> TyconRef -> bool
+val TyconRefNullIsExtraValueNew :  TcGlobals -> range -> TyconRef -> bool
 val TypeNullNever : TcGlobals -> TType -> bool
 
-val TypeSatisfiesNullConstraint : TcGlobals -> range -> TType -> bool
-val TypeHasDefaultValue : TcGlobals -> range -> TType -> bool
+val TypeHasDefaultValueNew: TcGlobals -> range -> TType -> bool
+val TypeHasDefaultValueOld: TcGlobals -> range -> TType -> bool
 
 val isAbstractTycon : Tycon -> bool
 
@@ -1290,7 +1295,6 @@ val mkCallArray4DSet         : TcGlobals -> range -> TType -> Expr -> Expr -> Ex
 val mkCallHash               : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallBox                : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallIsNull             : TcGlobals -> range -> TType -> Expr -> Expr
-val mkCallIsNotNull          : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallRaise              : TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallGenericComparisonWithComparerOuter : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
@@ -1436,7 +1440,11 @@ val TryFindAttributeUsageAttribute : TcGlobals -> range -> TyconRef -> bool opti
 
 #if !NO_EXTENSIONTYPING
 /// returns Some(assemblyName) for success
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
 val TryDecodeTypeProviderAssemblyAttr : ILGlobals -> ILAttribute -> string option
+#else
+val TryDecodeTypeProviderAssemblyAttr : ILGlobals -> ILAttribute -> string? option
+#endif
 #endif
 val IsSignatureDataVersionAttr  : ILAttribute -> bool
 val TryFindAutoOpenAttr           : IL.ILGlobals -> ILAttribute -> string option 

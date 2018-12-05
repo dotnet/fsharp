@@ -13,6 +13,7 @@ namespace Microsoft.FSharp.Collections
 #if FX_RESHAPED_REFLECTION
     open System.Reflection
 #endif
+    #nowarn "3245" // nullness on box-match-null TODO NULLNESS: don't give a warning on this?
 
     /// Basic operations on arrays
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -571,12 +572,16 @@ namespace Microsoft.FSharp.Collections
                     maskArray.[maskIdx] <- mask
                 count 
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
             let private createMask<'a> (f:'a->bool) (src:array<'a>) (maskArrayOut:byref<array<uint32>>) (leftoverMaskOut:byref<uint32>) =
+#else
+            let private createMask<'a> (f:'a->bool) (src:array<'a>) (maskArrayOut:byref<array<uint32>?>) (leftoverMaskOut:byref<uint32>) =
+#endif
                 let maskArrayLength = src.Length / 0x20
 
                 // null when there are less than 32 items in src array.
                 let maskArray =
-                    if maskArrayLength = 0 then Unchecked.defaultof<_>
+                    if maskArrayLength = 0 then null
                     else Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked<uint32> maskArrayLength
 
                 let mutable count =
@@ -657,7 +662,11 @@ namespace Microsoft.FSharp.Collections
 
                 dstIdx
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
             let private filterViaMask (maskArray:array<uint32>) (leftoverMask:uint32) (count:int) (src:array<_>) =
+#else
+            let private filterViaMask (maskArray:array<uint32>?) (leftoverMask:uint32) (count:int) (src:array<_>) =
+#endif
                 let dst = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
                 let mutable dstIdx = 0
@@ -676,8 +685,8 @@ namespace Microsoft.FSharp.Collections
                 dst
 
             let filter f (src:array<_>) =
-                let mutable maskArray    = Unchecked.defaultof<_>
-                let mutable leftOverMask = Unchecked.defaultof<_>
+                let mutable maskArray = null
+                let mutable leftOverMask = 0u
                 match createMask f src &maskArray &leftOverMask with
                 | 0     -> empty
                 | count -> filterViaMask maskArray leftOverMask count src

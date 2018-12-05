@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly Tuple05
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.Tuple05
 {
-  // Offset: 0x00000000 Length: 0x0000013F
+  // Offset: 0x00000000 Length: 0x00000147
+}
+.mresource public FSharpSignatureDataB.Tuple05
+{
+  // Offset: 0x00000150 Length: 0x00000000
 }
 .mresource public FSharpOptimizationData.Tuple05
 {
-  // Offset: 0x00000148 Length: 0x0000004E
+  // Offset: 0x00000158 Length: 0x0000004E
+}
+.mresource public FSharpOptimizationDataB.Tuple05
+{
+  // Offset: 0x000001B0 Length: 0x00000000
 }
 .module Tuple05.exe
-// MVID: {59B19208-349F-319F-A745-03830892B159}
+// MVID: {5BF2DEAA-349F-319F-A745-0383AADEF25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00730000
+// Image base: 0x00970000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

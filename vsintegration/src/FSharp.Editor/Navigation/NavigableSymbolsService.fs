@@ -34,7 +34,7 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
     let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
 
     interface INavigableSymbolSource with
-        member __.GetNavigableSymbolAsync(triggerSpan: SnapshotSpan, cancellationToken: CancellationToken) =
+        member __.GetNavigableSymbolAsync(triggerSpan: SnapshotSpan, cancellationToken: CancellationToken) : Task<INavigableSymbol?> =
             // Yes, this is a code smell. But this is how the editor API accepts what we would treat as None.
             if disposed then null
             else
@@ -68,7 +68,7 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
                             let declarationSpan = Span(declarationTextSpan.Start, declarationTextSpan.Length)
                             let symbolSpan = SnapshotSpan(snapshot, declarationSpan)
 
-                            return FSharpNavigableSymbol(navigableItem, symbolSpan, gtd, statusBar) :> INavigableSymbol
+                            return FSharpNavigableSymbol(navigableItem, symbolSpan, gtd, statusBar) :> INavigableSymbol?
                         else 
                             statusBar.TempMessage (SR.CannotDetermineSymbol())
 
@@ -80,7 +80,7 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
                         // The NavigableSymbols API accepts 'null' when there's nothing to navigate to.
                         return null
                 }
-                |> Async.map Option.toObj
+                |> Async.map Option.toObj<INavigableSymbol> // TODO NULLNESS - why is this annotation needed?
                 |> RoslynHelpers.StartAsyncAsTask cancellationToken
         
         member __.Dispose() =

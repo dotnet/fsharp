@@ -14,6 +14,7 @@
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
     <TargetFrameworkVersion Condition="'$(TargetDotnetProfile)' != 'coreclr'">v4.6</TargetFrameworkVersion>
+    <OtherFlags>$(OtherFlags) --checknulls</OtherFlags>
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="fsi" />

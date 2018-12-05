@@ -6,6 +6,7 @@ open System
 open System.Text
 open System.Collections.Generic
 open Internal.Utilities
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 /// System.Console.ReadKey appears to return an ANSI character (not the expected the unicode character).
 /// When this fix flag is true, this byte is converted to a char using the System.Console.InputEncoding.
@@ -22,8 +23,7 @@ module internal ConsoleOptions =
 
   let fixNonUnicodeSystemConsoleReadKey = ref fixupRequired
   let readKeyFixup (c:char) =
-#if FX_NO_SERVERCODEPAGES
-#else
+#if !FX_NO_SERVERCODEPAGES
     if !fixNonUnicodeSystemConsoleReadKey then
       // Assumes the c:char is actually a byte in the System.Console.InputEncoding.
       // Convert it to a Unicode char through the encoding.
@@ -53,19 +53,26 @@ type internal History() =
         if current >= 0 && current < list.Count then list.[current] else String.Empty
 
     member x.Clear() = list.Clear(); current <- -1
-    member x.Add line = 
+
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    member x.Add (line: string) = // TODO NULLNESS: explicit type annotation shouldn't be needed
+#else
+    member x.Add (line: string?) = // TODO NULLNESS: explicit type annotation shouldn't be needed
+#endif
         match line with 
         | null | "" -> ()
-        | _ -> list.Add(line)
+        | NonNull line -> list.Add(line)
 
-    member x.AddLast line = 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    member x.AddLast (line: string) =  // TODO NULLNESS: explicit type annotation shouldn't be needed
+#else
+    member x.AddLast (line: string?) =  // TODO NULLNESS: explicit type annotation shouldn't be needed
+#endif
         match line with 
         | null | "" -> ()
-        | _ -> list.Add(line); current <- list.Count
-
-    // Dead code   
-    // member x.First() = current <- 0; x.Current
-    // member x.Last() = current <- list.Count - 1; x.Current;
+        | NonNull line ->
+            list.Add(line) // TODO NULLNESS: explicit instantiation shouldn't be needed
+            current <- list.Count
 
     member x.Previous() = 
         if (list.Count > 0)  then

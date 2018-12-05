@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly NoBoxingOnDispose01
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.NoBoxingOnDispose01
 {
-  // Offset: 0x00000000 Length: 0x0000021A
+  // Offset: 0x00000000 Length: 0x00000222
+}
+.mresource public FSharpSignatureDataB.NoBoxingOnDispose01
+{
+  // Offset: 0x00000228 Length: 0x00000004
 }
 .mresource public FSharpOptimizationData.NoBoxingOnDispose01
 {
-  // Offset: 0x00000220 Length: 0x0000007F
+  // Offset: 0x00000230 Length: 0x0000007F
+}
+.mresource public FSharpOptimizationDataB.NoBoxingOnDispose01
+{
+  // Offset: 0x000002B8 Length: 0x00000000
 }
 .module NoBoxingOnDispose01.exe
-// MVID: {59B19213-4EA9-C934-A745-03831392B159}
+// MVID: {5BF2DEA8-4EA9-C934-A745-0383A8DEF25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00590000
+// Image base: 0x00C50000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

@@ -31,18 +31,26 @@
 {
   // Offset: 0x00000000 Length: 0x0000026F
 }
+.mresource public FSharpSignatureDataB.SeqExpressionSteppingTest4
+{
+  // Offset: 0x00000278 Length: 0x00000004
+}
 .mresource public FSharpOptimizationData.SeqExpressionSteppingTest4
 {
-  // Offset: 0x00000278 Length: 0x000000AD
+  // Offset: 0x00000280 Length: 0x000000AD
+}
+.mresource public FSharpOptimizationDataB.SeqExpressionSteppingTest4
+{
+  // Offset: 0x00000338 Length: 0x00000000
 }
 .module SeqExpressionSteppingTest4.exe
-// MVID: {5B9A68C1-2432-93E0-A745-0383C1689A5B}
+// MVID: {5BF2D3C6-2432-93E0-A745-0383C6D3F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00760000
+// Image base: 0x00210000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -55,7 +63,7 @@
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto autochar serializable sealed nested assembly beforefieldinit specialname f3@5
+    .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'f3@5-3'
            extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -79,20 +87,20 @@
         .maxstack  8
         IL_0000:  ldarg.0
         IL_0001:  ldarg.1
-        IL_0002:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::x
+        IL_0002:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::x
         IL_0007:  ldarg.0
         IL_0008:  ldarg.2
-        IL_0009:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::y
+        IL_0009:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::y
         IL_000e:  ldarg.0
         IL_000f:  ldarg.3
-        IL_0010:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::pc
+        IL_0010:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::pc
         IL_0015:  ldarg.0
         IL_0016:  ldarg.s    current
-        IL_0018:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::current
+        IL_0018:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::current
         IL_001d:  ldarg.0
         IL_001e:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
         IL_0023:  ret
-      } // end of method f3@5::.ctor
+      } // end of method 'f3@5-3'::.ctor
 
       .method public strict virtual instance int32 
               GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
@@ -103,7 +111,7 @@
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
         .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SeqExpressionStepping\\SeqExpressionSteppingTest4.fs'
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::pc
+        IL_0001:  ldfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::pc
         IL_0006:  ldc.i4.1
         IL_0007:  sub
         IL_0008:  switch     ( 
@@ -136,69 +144,69 @@
         IL_002e:  ldarg.0
         IL_002f:  ldc.i4.0
         IL_0030:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
-        IL_0035:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::x
+        IL_0035:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::x
         .line 6,6 : 15,21 ''
         IL_003a:  ldarg.0
-        IL_003b:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::x
+        IL_003b:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::x
         IL_0040:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
         IL_0045:  nop
         .line 7,7 : 15,28 ''
         IL_0046:  ldarg.0
         IL_0047:  ldc.i4.0
         IL_0048:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
-        IL_004d:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::y
+        IL_004d:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::y
         .line 8,8 : 15,21 ''
         IL_0052:  ldarg.0
-        IL_0053:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::y
+        IL_0053:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::y
         IL_0058:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
         IL_005d:  nop
         IL_005e:  ldarg.0
         IL_005f:  ldc.i4.1
-        IL_0060:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::pc
+        IL_0060:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::pc
         .line 9,9 : 15,23 ''
         IL_0065:  ldarg.0
         IL_0066:  ldarg.0
-        IL_0067:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::x
+        IL_0067:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::x
         IL_006c:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
-        IL_0071:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::current
+        IL_0071:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::current
         IL_0076:  ldc.i4.1
         IL_0077:  ret
 
         .line 10,10 : 15,30 ''
         IL_0078:  ldarg.0
-        IL_0079:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::x
+        IL_0079:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::x
         IL_007e:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
         IL_0083:  ldarg.0
-        IL_0084:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::y
+        IL_0084:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::y
         IL_0089:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
         IL_008e:  add
         IL_008f:  stloc.0
         IL_0090:  ldarg.0
         IL_0091:  ldc.i4.2
-        IL_0092:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::pc
+        IL_0092:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::pc
         .line 11,11 : 15,22 ''
         IL_0097:  ldarg.0
         IL_0098:  ldloc.0
-        IL_0099:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::current
+        IL_0099:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::current
         IL_009e:  ldc.i4.1
         IL_009f:  ret
 
         .line 7,7 : 19,20 ''
         IL_00a0:  ldarg.0
         IL_00a1:  ldnull
-        IL_00a2:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::y
+        IL_00a2:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::y
         IL_00a7:  ldarg.0
         IL_00a8:  ldnull
-        IL_00a9:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::x
+        IL_00a9:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::x
         IL_00ae:  ldarg.0
         IL_00af:  ldc.i4.3
-        IL_00b0:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::pc
+        IL_00b0:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::pc
         IL_00b5:  ldarg.0
         IL_00b6:  ldc.i4.0
-        IL_00b7:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::current
+        IL_00b7:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::current
         IL_00bc:  ldc.i4.0
         IL_00bd:  ret
-      } // end of method f3@5::GenerateNext
+      } // end of method 'f3@5-3'::GenerateNext
 
       .method public strict virtual instance void 
               Close() cil managed
@@ -207,9 +215,9 @@
         .maxstack  8
         IL_0000:  ldarg.0
         IL_0001:  ldc.i4.3
-        IL_0002:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::pc
+        IL_0002:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::pc
         IL_0007:  ret
-      } // end of method f3@5::Close
+      } // end of method 'f3@5-3'::Close
 
       .method public strict virtual instance bool 
               get_CheckClose() cil managed
@@ -218,7 +226,7 @@
         .maxstack  8
         .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::pc
+        IL_0001:  ldfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::pc
         IL_0006:  switch     ( 
                               IL_001d,
                               IL_001f,
@@ -260,7 +268,7 @@
 
         IL_0036:  ldc.i4.0
         IL_0037:  ret
-      } // end of method f3@5::get_CheckClose
+      } // end of method 'f3@5-3'::get_CheckClose
 
       .method public strict virtual instance int32 
               get_LastGenerated() cil managed
@@ -270,9 +278,9 @@
         // Code size       7 (0x7)
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::current
+        IL_0001:  ldfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::current
         IL_0006:  ret
-      } // end of method f3@5::get_LastGenerated
+      } // end of method 'f3@5-3'::get_LastGenerated
 
       .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> 
               GetFreshEnumerator() cil managed
@@ -285,14 +293,14 @@
         IL_0001:  ldnull
         IL_0002:  ldc.i4.0
         IL_0003:  ldc.i4.0
-        IL_0004:  newobj     instance void SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>,
-                                                                                                             class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>,
-                                                                                                             int32,
-                                                                                                             int32)
+        IL_0004:  newobj     instance void SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>,
+                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>,
+                                                                                                                 int32,
+                                                                                                                 int32)
         IL_0009:  ret
-      } // end of method f3@5::GetFreshEnumerator
+      } // end of method 'f3@5-3'::GetFreshEnumerator
 
-    } // end of class f3@5
+    } // end of class 'f3@5-3'
 
     .method public static class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> 
             f3() cil managed
@@ -304,10 +312,10 @@
       IL_0001:  ldnull
       IL_0002:  ldc.i4.0
       IL_0003:  ldc.i4.0
-      IL_0004:  newobj     instance void SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>,
-                                                                                                           class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>,
-                                                                                                           int32,
-                                                                                                           int32)
+      IL_0004:  newobj     instance void SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/'f3@5-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>,
+                                                                                                               class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>,
+                                                                                                               int32,
+                                                                                                               int32)
       IL_0009:  ret
     } // end of method SeqExpressionSteppingTest4::f3
 

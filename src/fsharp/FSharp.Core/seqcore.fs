@@ -2,6 +2,7 @@
 
 namespace Microsoft.FSharp.Collections
     #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
+    #nowarn "3245" // nullness on box-match-null TODO NULLNESS: don't give a warning on this?
 
     open System
     open System.Diagnostics

@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 4:5:0:0
 }
 .assembly AsyncExpressionSteppingTest4
 {
@@ -31,18 +31,26 @@
 {
   // Offset: 0x00000000 Length: 0x00000277
 }
+.mresource public FSharpSignatureDataB.AsyncExpressionSteppingTest4
+{
+  // Offset: 0x00000280 Length: 0x00000004
+}
 .mresource public FSharpOptimizationData.AsyncExpressionSteppingTest4
 {
-  // Offset: 0x00000280 Length: 0x000000B1
+  // Offset: 0x00000288 Length: 0x000000B1
+}
+.mresource public FSharpOptimizationDataB.AsyncExpressionSteppingTest4
+{
+  // Offset: 0x00000340 Length: 0x00000000
 }
 .module AsyncExpressionSteppingTest4.dll
-// MVID: {5AF5DDAE-6394-6D4B-A745-0383AEDDF55A}
+// MVID: {5BF2D3CD-6394-6D4B-A745-0383CDD3F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x028F0000
+// Image base: 0x013C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -55,7 +63,7 @@
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto ansi serializable sealed nested assembly beforefieldinit 'f4@10-2'
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'f4@10-17'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
     {
       .field public int32 'value'
@@ -73,9 +81,9 @@
         IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
-        IL_0008:  stfld      int32 AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@10-2'::'value'
+        IL_0008:  stfld      int32 AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@10-17'::'value'
         IL_000d:  ret
-      } // end of method 'f4@10-2'::.ctor
+      } // end of method 'f4@10-17'::.ctor
 
       .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn 
               Invoke(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
@@ -86,14 +94,14 @@
         .line 10,10 : 21,29 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\AsyncExpressionStepping\\AsyncExpressionSteppingTest4.fs'
         IL_0000:  ldarga.s   ctxt
         IL_0002:  ldarg.0
-        IL_0003:  ldfld      int32 AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@10-2'::'value'
+        IL_0003:  ldfld      int32 AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@10-17'::'value'
         IL_0008:  call       instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::OnSuccess(!0)
         IL_000d:  ret
-      } // end of method 'f4@10-2'::Invoke
+      } // end of method 'f4@10-17'::Invoke
 
-    } // end of class 'f4@10-2'
+    } // end of class 'f4@10-17'
 
-    .class auto ansi serializable sealed nested assembly beforefieldinit 'f4@7-1'
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'f4@7-16'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@
@@ -113,12 +121,12 @@
         IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
-        IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@7-1'::builder@
+        IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@7-16'::builder@
         IL_000d:  ldarg.0
         IL_000e:  ldarg.2
-        IL_000f:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@7-1'::x
+        IL_000f:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@7-16'::x
         IL_0014:  ret
-      } // end of method 'f4@7-1'::.ctor
+      } // end of method 'f4@7-16'::.ctor
 
       .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> 
               Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
@@ -139,7 +147,7 @@
         IL_000d:  nop
         .line 9,9 : 21,36 ''
         IL_000e:  ldarg.0
-        IL_000f:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@7-1'::x
+        IL_000f:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@7-16'::x
         IL_0014:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
         IL_0019:  ldloc.0
         IL_001a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
@@ -147,20 +155,20 @@
         IL_0020:  stloc.1
         .line 10,10 : 21,29 ''
         IL_0021:  ldarg.0
-        IL_0022:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@7-1'::builder@
+        IL_0022:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@7-16'::builder@
         IL_0027:  stloc.2
         IL_0028:  ldloc.1
         IL_0029:  stloc.3
         IL_002a:  ldloc.3
-        IL_002b:  newobj     instance void AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@10-2'::.ctor(int32)
+        IL_002b:  newobj     instance void AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@10-17'::.ctor(int32)
         IL_0030:  tail.
         IL_0032:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
         IL_0037:  ret
-      } // end of method 'f4@7-1'::Invoke
+      } // end of method 'f4@7-16'::Invoke
 
-    } // end of class 'f4@7-1'
+    } // end of class 'f4@7-16'
 
-    .class auto ansi serializable sealed nested assembly beforefieldinit 'f4@12-3'
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'f4@12-18'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x
@@ -175,9 +183,9 @@
         IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
-        IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@12-3'::x
+        IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@12-18'::x
         IL_000d:  ret
-      } // end of method 'f4@12-3'::.ctor
+      } // end of method 'f4@12-18'::.ctor
 
       .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit 
               Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
@@ -186,7 +194,7 @@
         .maxstack  8
         .line 12,12 : 20,26 ''
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@12-3'::x
+        IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@12-18'::x
         IL_0006:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
         IL_000b:  nop
         .line 13,13 : 20,34 ''
@@ -195,11 +203,11 @@
         IL_0016:  tail.
         IL_0018:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
         IL_001d:  ret
-      } // end of method 'f4@12-3'::Invoke
+      } // end of method 'f4@12-18'::Invoke
 
-    } // end of class 'f4@12-3'
+    } // end of class 'f4@12-18'
 
-    .class auto ansi serializable sealed nested assembly beforefieldinit 'f4@6-4'
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'f4@6-19'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> computation
@@ -222,12 +230,12 @@
         IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
-        IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@6-4'::computation
+        IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@6-19'::computation
         IL_000d:  ldarg.0
         IL_000e:  ldarg.2
-        IL_000f:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@6-4'::compensation
+        IL_000f:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@6-19'::compensation
         IL_0014:  ret
-      } // end of method 'f4@6-4'::.ctor
+      } // end of method 'f4@6-19'::.ctor
 
       .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn 
               Invoke(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
@@ -237,19 +245,19 @@
         .line 6,6 : 17,20 ''
         IL_0000:  ldarg.1
         IL_0001:  ldarg.0
-        IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@6-4'::computation
+        IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@6-19'::computation
         IL_0007:  ldarg.0
-        IL_0008:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@6-4'::compensation
+        IL_0008:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@6-19'::compensation
         IL_000d:  tail.
         IL_000f:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::TryFinally<int32>(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,
                                                                                                                                                               class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>,
                                                                                                                                                               class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
         IL_0014:  ret
-      } // end of method 'f4@6-4'::Invoke
+      } // end of method 'f4@6-19'::Invoke
 
-    } // end of class 'f4@6-4'
+    } // end of class 'f4@6-19'
 
-    .class auto ansi serializable sealed nested assembly beforefieldinit f4@5
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'f4@5-15'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@
@@ -267,9 +275,9 @@
         IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
-        IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/f4@5::builder@
+        IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@5-15'::builder@
         IL_000d:  ret
-      } // end of method f4@5::.ctor
+      } // end of method 'f4@5-15'::.ctor
 
       .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> 
               Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
@@ -286,30 +294,30 @@
         IL_0006:  stloc.0
         .line 6,6 : 17,20 ''
         IL_0007:  ldarg.0
-        IL_0008:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/f4@5::builder@
+        IL_0008:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@5-15'::builder@
         IL_000d:  stloc.1
         IL_000e:  ldarg.0
-        IL_000f:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/f4@5::builder@
+        IL_000f:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@5-15'::builder@
         IL_0014:  ldarg.0
-        IL_0015:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/f4@5::builder@
+        IL_0015:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@5-15'::builder@
         IL_001a:  ldloc.0
-        IL_001b:  newobj     instance void AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@7-1'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder,
-                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
+        IL_001b:  newobj     instance void AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@7-16'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder,
+                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
         IL_0020:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder::Delay<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>>)
         IL_0025:  stloc.2
         IL_0026:  ldloc.0
-        IL_0027:  newobj     instance void AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@12-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
+        IL_0027:  newobj     instance void AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@12-18'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
         IL_002c:  stloc.3
         IL_002d:  ldloc.2
         IL_002e:  ldloc.3
-        IL_002f:  newobj     instance void AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@6-4'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>,
-                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+        IL_002f:  newobj     instance void AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@6-19'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>,
+                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
         IL_0034:  tail.
         IL_0036:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
         IL_003b:  ret
-      } // end of method f4@5::Invoke
+      } // end of method 'f4@5-15'::Invoke
 
-    } // end of class f4@5
+    } // end of class 'f4@5-15'
 
     .method public static class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> 
             f4() cil managed
@@ -322,7 +330,7 @@
       IL_0005:  stloc.0
       IL_0006:  ldloc.0
       IL_0007:  ldloc.0
-      IL_0008:  newobj     instance void AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/f4@5::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder)
+      IL_0008:  newobj     instance void AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@5-15'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder)
       IL_000d:  tail.
       IL_000f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder::Delay<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>>)
       IL_0014:  ret

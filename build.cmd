@@ -22,7 +22,7 @@ echo           ^<proto^|protofx^>
 echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|ci_part4^|microbuild^|nuget^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
-echo           ^<nobuild^|test^|no-test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^|end-2-end^>
+echo           ^<nobuild^|test^|no-test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^|test-update-bsl^|end-2-end^>
 echo           ^<include tag^>
 echo           ^<init^>
 echo.
@@ -45,6 +45,12 @@ echo.    build.cmd all test         (build and test everything)
 echo.    build.cmd nobuild test include Conformance (run only tests marked with Conformance category)
 echo.    build.cmd nobuild test include Expensive (run only tests marked with Expensive category)
 echo.
+echo.Test flags (not all are documented):
+echo.    test                  Run appropriate tests for selected build
+echo.    test-net40-ideunit    Run vsintegration\tests IDE unit tests (.NET Framework)
+echo.    test-net40-fsharp     Run tests\fsharp tests (.NET Framework)
+echo.    test-net40-fsharpqa   Run tests\fsharpqa tests (.NET Framework)
+echo.    test-update-bsl       Update baselines in fsharpqa tests
 goto :success
 
 :ARGUMENTS_OK
@@ -64,7 +70,7 @@ set BUILD_FROMSOURCE=0
 set BUILD_VS=0
 set BUILD_FCS=0
 set BUILD_CONFIG=release
-set BUILD_DIAG=
+set BUILD_DIAG=/v:minimal
 set BUILD_PUBLICSIGN=0
 
 set TEST_NET40_COMPILERUNIT_SUITE=0
@@ -329,6 +335,10 @@ if /i "%ARG%" == "release" (
 
 if /i "%ARG%" == "test-sign" (
     set SIGN_TYPE=test
+)
+
+if /i "%ARG%" == "test-update-bsl" (
+    set TEST_UPDATE_BSL=1
 )
 
 if /i "%ARG%" == "real-sign" (
@@ -633,7 +643,7 @@ goto :eof
 :havemsbuild
 set _nrswitch=/nr:false
 
-set msbuildflags=%_nrswitch% /nologo /clp:Summary /v:minimal
+set msbuildflags=%_nrswitch% /nologo /clp:Summary
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
@@ -777,8 +787,8 @@ if "%BUILD_PROTO%" == "1" (
     echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
          %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
 
-    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:%~dp0%BUILD_CONFIG%\logs\protobuild-net40.build.binlog
-         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:%~dp0%BUILD_CONFIG%\logs\protobuild-net40.build.binlog
+    echo %_msbuildexe% %msbuildflags% %BUILD_DIAG% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:%~dp0%BUILD_CONFIG%\logs\protobuild-net40.build.binlog
+         %_msbuildexe% %msbuildflags% %BUILD_DIAG% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true  /bl:%~dp0%BUILD_CONFIG%\logs\protobuild-net40.build.binlog
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
   )
 

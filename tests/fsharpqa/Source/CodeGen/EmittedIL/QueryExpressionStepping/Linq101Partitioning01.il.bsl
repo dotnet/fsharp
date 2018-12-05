@@ -35,18 +35,26 @@
 {
   // Offset: 0x00000000 Length: 0x000003DE
 }
+.mresource public FSharpSignatureDataB.Linq101Partitioning01
+{
+  // Offset: 0x000003E8 Length: 0x00000014
+}
 .mresource public FSharpOptimizationData.Linq101Partitioning01
 {
-  // Offset: 0x000003E8 Length: 0x00000138
+  // Offset: 0x00000400 Length: 0x00000138
+}
+.mresource public FSharpOptimizationDataB.Linq101Partitioning01
+{
+  // Offset: 0x00000540 Length: 0x00000000
 }
 .module Linq101Partitioning01.exe
-// MVID: {5B9A632A-B280-A6A2-A745-03832A639A5B}
+// MVID: {5BF2D3C6-B280-A6A2-A745-0383C6D3F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00AF0000
+// Image base: 0x01410000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -55,7 +63,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname first3Numbers@12
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'first3Numbers@12-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -80,17 +88,17 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/first3Numbers@12::'enum'
+      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'first3Numbers@12-3'::'enum'
       IL_0007:  ldarg.0
       IL_0008:  ldarg.2
-      IL_0009:  stfld      int32 Linq101Partitioning01/first3Numbers@12::pc
+      IL_0009:  stfld      int32 Linq101Partitioning01/'first3Numbers@12-3'::pc
       IL_000e:  ldarg.0
       IL_000f:  ldarg.3
-      IL_0010:  stfld      int32 Linq101Partitioning01/first3Numbers@12::current
+      IL_0010:  stfld      int32 Linq101Partitioning01/'first3Numbers@12-3'::current
       IL_0015:  ldarg.0
       IL_0016:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
       IL_001b:  ret
-    } // end of method first3Numbers@12::.ctor
+    } // end of method 'first3Numbers@12-3'::.ctor
 
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
@@ -102,7 +110,7 @@
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
       .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Partitioning01.fs'
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Partitioning01/first3Numbers@12::pc
+      IL_0001:  ldfld      int32 Linq101Partitioning01/'first3Numbers@12-3'::pc
       IL_0006:  ldc.i4.1
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -135,18 +143,18 @@
       IL_002b:  ldarg.0
       IL_002c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101Partitioning01::get_numbers()
       IL_0031:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-      IL_0036:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/first3Numbers@12::'enum'
+      IL_0036:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'first3Numbers@12-3'::'enum'
       IL_003b:  ldarg.0
       IL_003c:  ldc.i4.1
-      IL_003d:  stfld      int32 Linq101Partitioning01/first3Numbers@12::pc
+      IL_003d:  stfld      int32 Linq101Partitioning01/'first3Numbers@12-3'::pc
       .line 12,12 : 9,28 ''
       IL_0042:  ldarg.0
-      IL_0043:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/first3Numbers@12::'enum'
+      IL_0043:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'first3Numbers@12-3'::'enum'
       IL_0048:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
       IL_004d:  brfalse.s  IL_0070
 
       IL_004f:  ldarg.0
-      IL_0050:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/first3Numbers@12::'enum'
+      IL_0050:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'first3Numbers@12-3'::'enum'
       IL_0055:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
       IL_005a:  stloc.0
       .line 12,12 : 9,28 ''
@@ -154,11 +162,11 @@
       IL_005c:  stloc.1
       IL_005d:  ldarg.0
       IL_005e:  ldc.i4.2
-      IL_005f:  stfld      int32 Linq101Partitioning01/first3Numbers@12::pc
+      IL_005f:  stfld      int32 Linq101Partitioning01/'first3Numbers@12-3'::pc
       .line 13,13 : 9,15 ''
       IL_0064:  ldarg.0
       IL_0065:  ldloc.1
-      IL_0066:  stfld      int32 Linq101Partitioning01/first3Numbers@12::current
+      IL_0066:  stfld      int32 Linq101Partitioning01/'first3Numbers@12-3'::current
       IL_006b:  ldc.i4.1
       IL_006c:  ret
 
@@ -168,24 +176,24 @@
 
       IL_0070:  ldarg.0
       IL_0071:  ldc.i4.3
-      IL_0072:  stfld      int32 Linq101Partitioning01/first3Numbers@12::pc
+      IL_0072:  stfld      int32 Linq101Partitioning01/'first3Numbers@12-3'::pc
       .line 12,12 : 9,28 ''
       IL_0077:  ldarg.0
-      IL_0078:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/first3Numbers@12::'enum'
+      IL_0078:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'first3Numbers@12-3'::'enum'
       IL_007d:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
       IL_0082:  nop
       IL_0083:  ldarg.0
       IL_0084:  ldnull
-      IL_0085:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/first3Numbers@12::'enum'
+      IL_0085:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'first3Numbers@12-3'::'enum'
       IL_008a:  ldarg.0
       IL_008b:  ldc.i4.3
-      IL_008c:  stfld      int32 Linq101Partitioning01/first3Numbers@12::pc
+      IL_008c:  stfld      int32 Linq101Partitioning01/'first3Numbers@12-3'::pc
       IL_0091:  ldarg.0
       IL_0092:  ldc.i4.0
-      IL_0093:  stfld      int32 Linq101Partitioning01/first3Numbers@12::current
+      IL_0093:  stfld      int32 Linq101Partitioning01/'first3Numbers@12-3'::current
       IL_0098:  ldc.i4.0
       IL_0099:  ret
-    } // end of method first3Numbers@12::GenerateNext
+    } // end of method 'first3Numbers@12-3'::GenerateNext
 
     .method public strict virtual instance void 
             Close() cil managed
@@ -197,7 +205,7 @@
                [2] class [mscorlib]System.Exception e)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Partitioning01/first3Numbers@12::pc
+      IL_0001:  ldfld      int32 Linq101Partitioning01/'first3Numbers@12-3'::pc
       IL_0006:  ldc.i4.3
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -213,7 +221,7 @@
       .try
       {
         IL_001a:  ldarg.0
-        IL_001b:  ldfld      int32 Linq101Partitioning01/first3Numbers@12::pc
+        IL_001b:  ldfld      int32 Linq101Partitioning01/'first3Numbers@12-3'::pc
         IL_0020:  switch     ( 
                               IL_0037,
                               IL_0039,
@@ -251,19 +259,19 @@
         IL_004c:  nop
         IL_004d:  ldarg.0
         IL_004e:  ldc.i4.3
-        IL_004f:  stfld      int32 Linq101Partitioning01/first3Numbers@12::pc
+        IL_004f:  stfld      int32 Linq101Partitioning01/'first3Numbers@12-3'::pc
         IL_0054:  ldarg.0
-        IL_0055:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/first3Numbers@12::'enum'
+        IL_0055:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'first3Numbers@12-3'::'enum'
         IL_005a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
         IL_005f:  nop
         .line 100001,100001 : 0,0 ''
         IL_0060:  nop
         IL_0061:  ldarg.0
         IL_0062:  ldc.i4.3
-        IL_0063:  stfld      int32 Linq101Partitioning01/first3Numbers@12::pc
+        IL_0063:  stfld      int32 Linq101Partitioning01/'first3Numbers@12-3'::pc
         IL_0068:  ldarg.0
         IL_0069:  ldc.i4.0
-        IL_006a:  stfld      int32 Linq101Partitioning01/first3Numbers@12::current
+        IL_006a:  stfld      int32 Linq101Partitioning01/'first3Numbers@12-3'::current
         IL_006f:  ldnull
         IL_0070:  stloc.1
         IL_0071:  leave.s    IL_007f
@@ -303,7 +311,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0093:  ret
-    } // end of method first3Numbers@12::Close
+    } // end of method 'first3Numbers@12-3'::Close
 
     .method public strict virtual instance bool 
             get_CheckClose() cil managed
@@ -312,7 +320,7 @@
       .maxstack  8
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Partitioning01/first3Numbers@12::pc
+      IL_0001:  ldfld      int32 Linq101Partitioning01/'first3Numbers@12-3'::pc
       IL_0006:  switch     ( 
                             IL_001d,
                             IL_001f,
@@ -354,7 +362,7 @@
 
       IL_0036:  ldc.i4.0
       IL_0037:  ret
-    } // end of method first3Numbers@12::get_CheckClose
+    } // end of method 'first3Numbers@12-3'::get_CheckClose
 
     .method public strict virtual instance int32 
             get_LastGenerated() cil managed
@@ -364,9 +372,9 @@
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Partitioning01/first3Numbers@12::current
+      IL_0001:  ldfld      int32 Linq101Partitioning01/'first3Numbers@12-3'::current
       IL_0006:  ret
-    } // end of method first3Numbers@12::get_LastGenerated
+    } // end of method 'first3Numbers@12-3'::get_LastGenerated
 
     .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> 
             GetFreshEnumerator() cil managed
@@ -378,15 +386,15 @@
       IL_0000:  ldnull
       IL_0001:  ldc.i4.0
       IL_0002:  ldc.i4.0
-      IL_0003:  newobj     instance void Linq101Partitioning01/first3Numbers@12::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                                       int32,
-                                                                                       int32)
+      IL_0003:  newobj     instance void Linq101Partitioning01/'first3Numbers@12-3'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+                                                                                           int32,
+                                                                                           int32)
       IL_0008:  ret
-    } // end of method first3Numbers@12::GetFreshEnumerator
+    } // end of method 'first3Numbers@12-3'::GetFreshEnumerator
 
-  } // end of class first3Numbers@12
+  } // end of class 'first3Numbers@12-3'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders@21-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders@21-13'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Order,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -406,12 +414,12 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Order,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,object>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'WAOrders@21-1'::builder@
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'WAOrders@21-13'::builder@
       IL_000d:  ldarg.0
       IL_000e:  ldarg.2
-      IL_000f:  stfld      class [Utils]Utils/Customer Linq101Partitioning01/'WAOrders@21-1'::c
+      IL_000f:  stfld      class [Utils]Utils/Customer Linq101Partitioning01/'WAOrders@21-13'::c
       IL_0014:  ret
-    } // end of method 'WAOrders@21-1'::.ctor
+    } // end of method 'WAOrders@21-13'::.ctor
 
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,object> 
             Invoke(class [Utils]Utils/Order _arg2) cil managed
@@ -424,20 +432,20 @@
       IL_0001:  stloc.0
       .line 22,22 : 9,32 ''
       IL_0002:  ldarg.0
-      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'WAOrders@21-1'::builder@
+      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'WAOrders@21-13'::builder@
       IL_0008:  ldarg.0
-      IL_0009:  ldfld      class [Utils]Utils/Customer Linq101Partitioning01/'WAOrders@21-1'::c
+      IL_0009:  ldfld      class [Utils]Utils/Customer Linq101Partitioning01/'WAOrders@21-13'::c
       IL_000e:  ldloc.0
       IL_000f:  newobj     instance void class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>::.ctor(!0,
                                                                                                                                      !1)
       IL_0014:  tail.
       IL_0016:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,object>(!!0)
       IL_001b:  ret
-    } // end of method 'WAOrders@21-1'::Invoke
+    } // end of method 'WAOrders@21-13'::Invoke
 
-  } // end of class 'WAOrders@21-1'
+  } // end of class 'WAOrders@21-13'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit WAOrders@20
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders@20-12'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Customer,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -455,9 +463,9 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Customer,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/WAOrders@20::builder@
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'WAOrders@20-12'::builder@
       IL_000d:  ret
-    } // end of method WAOrders@20::.ctor
+    } // end of method 'WAOrders@20-12'::.ctor
 
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable> 
             Invoke(class [Utils]Utils/Customer _arg1) cil managed
@@ -470,26 +478,26 @@
       IL_0001:  stloc.0
       .line 21,21 : 9,29 ''
       IL_0002:  ldarg.0
-      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/WAOrders@20::builder@
+      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'WAOrders@20-12'::builder@
       IL_0008:  ldarg.0
-      IL_0009:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/WAOrders@20::builder@
+      IL_0009:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'WAOrders@20-12'::builder@
       IL_000e:  ldloc.0
       IL_000f:  callvirt   instance class [Utils]Utils/Order[] [Utils]Utils/Customer::get_Orders()
       IL_0014:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Order>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
       IL_0019:  ldarg.0
-      IL_001a:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/WAOrders@20::builder@
+      IL_001a:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'WAOrders@20-12'::builder@
       IL_001f:  ldloc.0
-      IL_0020:  newobj     instance void Linq101Partitioning01/'WAOrders@21-1'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder,
-                                                                                      class [Utils]Utils/Customer)
+      IL_0020:  newobj     instance void Linq101Partitioning01/'WAOrders@21-13'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder,
+                                                                                       class [Utils]Utils/Customer)
       IL_0025:  tail.
       IL_0027:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Order,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                               class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
       IL_002c:  ret
-    } // end of method WAOrders@20::Invoke
+    } // end of method 'WAOrders@20-12'::Invoke
 
-  } // end of class WAOrders@20
+  } // end of class 'WAOrders@20-12'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders@22-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders@22-14'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,bool>
   {
     .method assembly specialname rtspecialname 
@@ -502,7 +510,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,bool>::.ctor()
       IL_0006:  ret
-    } // end of method 'WAOrders@22-2'::.ctor
+    } // end of method 'WAOrders@22-14'::.ctor
 
     .method public strict virtual instance bool 
             Invoke(class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order> tupledArg) cil managed
@@ -525,11 +533,11 @@
       IL_0019:  call       bool [mscorlib]System.String::Equals(string,
                                                                 string)
       IL_001e:  ret
-    } // end of method 'WAOrders@22-2'::Invoke
+    } // end of method 'WAOrders@22-14'::Invoke
 
-  } // end of class 'WAOrders@22-2'
+  } // end of class 'WAOrders@22-14'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders@23-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders@23-15'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>
   {
     .method assembly specialname rtspecialname 
@@ -542,7 +550,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>::.ctor()
       IL_0006:  ret
-    } // end of method 'WAOrders@23-3'::.ctor
+    } // end of method 'WAOrders@23-15'::.ctor
 
     .method public strict virtual instance class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime> 
             Invoke(class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order> tupledArg) cil managed
@@ -569,11 +577,11 @@
                                                                                                                                  !1,
                                                                                                                                  !2)
       IL_0025:  ret
-    } // end of method 'WAOrders@23-3'::Invoke
+    } // end of method 'WAOrders@23-15'::Invoke
 
-  } // end of class 'WAOrders@23-3'
+  } // end of class 'WAOrders@23-15'
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname allButFirst4Numbers@29
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'allButFirst4Numbers@29-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -598,17 +606,17 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/allButFirst4Numbers@29::'enum'
+      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'allButFirst4Numbers@29-3'::'enum'
       IL_0007:  ldarg.0
       IL_0008:  ldarg.2
-      IL_0009:  stfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::pc
+      IL_0009:  stfld      int32 Linq101Partitioning01/'allButFirst4Numbers@29-3'::pc
       IL_000e:  ldarg.0
       IL_000f:  ldarg.3
-      IL_0010:  stfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::current
+      IL_0010:  stfld      int32 Linq101Partitioning01/'allButFirst4Numbers@29-3'::current
       IL_0015:  ldarg.0
       IL_0016:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
       IL_001b:  ret
-    } // end of method allButFirst4Numbers@29::.ctor
+    } // end of method 'allButFirst4Numbers@29-3'::.ctor
 
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
@@ -619,7 +627,7 @@
                [1] int32 n)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::pc
+      IL_0001:  ldfld      int32 Linq101Partitioning01/'allButFirst4Numbers@29-3'::pc
       IL_0006:  ldc.i4.1
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -652,18 +660,18 @@
       IL_002b:  ldarg.0
       IL_002c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101Partitioning01::get_numbers()
       IL_0031:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-      IL_0036:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/allButFirst4Numbers@29::'enum'
+      IL_0036:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'allButFirst4Numbers@29-3'::'enum'
       IL_003b:  ldarg.0
       IL_003c:  ldc.i4.1
-      IL_003d:  stfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::pc
+      IL_003d:  stfld      int32 Linq101Partitioning01/'allButFirst4Numbers@29-3'::pc
       .line 29,29 : 9,28 ''
       IL_0042:  ldarg.0
-      IL_0043:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/allButFirst4Numbers@29::'enum'
+      IL_0043:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'allButFirst4Numbers@29-3'::'enum'
       IL_0048:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
       IL_004d:  brfalse.s  IL_0070
 
       IL_004f:  ldarg.0
-      IL_0050:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/allButFirst4Numbers@29::'enum'
+      IL_0050:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'allButFirst4Numbers@29-3'::'enum'
       IL_0055:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
       IL_005a:  stloc.0
       .line 29,29 : 9,28 ''
@@ -671,11 +679,11 @@
       IL_005c:  stloc.1
       IL_005d:  ldarg.0
       IL_005e:  ldc.i4.2
-      IL_005f:  stfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::pc
+      IL_005f:  stfld      int32 Linq101Partitioning01/'allButFirst4Numbers@29-3'::pc
       .line 30,30 : 9,15 ''
       IL_0064:  ldarg.0
       IL_0065:  ldloc.1
-      IL_0066:  stfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::current
+      IL_0066:  stfld      int32 Linq101Partitioning01/'allButFirst4Numbers@29-3'::current
       IL_006b:  ldc.i4.1
       IL_006c:  ret
 
@@ -685,24 +693,24 @@
 
       IL_0070:  ldarg.0
       IL_0071:  ldc.i4.3
-      IL_0072:  stfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::pc
+      IL_0072:  stfld      int32 Linq101Partitioning01/'allButFirst4Numbers@29-3'::pc
       .line 29,29 : 9,28 ''
       IL_0077:  ldarg.0
-      IL_0078:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/allButFirst4Numbers@29::'enum'
+      IL_0078:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'allButFirst4Numbers@29-3'::'enum'
       IL_007d:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
       IL_0082:  nop
       IL_0083:  ldarg.0
       IL_0084:  ldnull
-      IL_0085:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/allButFirst4Numbers@29::'enum'
+      IL_0085:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'allButFirst4Numbers@29-3'::'enum'
       IL_008a:  ldarg.0
       IL_008b:  ldc.i4.3
-      IL_008c:  stfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::pc
+      IL_008c:  stfld      int32 Linq101Partitioning01/'allButFirst4Numbers@29-3'::pc
       IL_0091:  ldarg.0
       IL_0092:  ldc.i4.0
-      IL_0093:  stfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::current
+      IL_0093:  stfld      int32 Linq101Partitioning01/'allButFirst4Numbers@29-3'::current
       IL_0098:  ldc.i4.0
       IL_0099:  ret
-    } // end of method allButFirst4Numbers@29::GenerateNext
+    } // end of method 'allButFirst4Numbers@29-3'::GenerateNext
 
     .method public strict virtual instance void 
             Close() cil managed
@@ -714,7 +722,7 @@
                [2] class [mscorlib]System.Exception e)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::pc
+      IL_0001:  ldfld      int32 Linq101Partitioning01/'allButFirst4Numbers@29-3'::pc
       IL_0006:  ldc.i4.3
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -730,7 +738,7 @@
       .try
       {
         IL_001a:  ldarg.0
-        IL_001b:  ldfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::pc
+        IL_001b:  ldfld      int32 Linq101Partitioning01/'allButFirst4Numbers@29-3'::pc
         IL_0020:  switch     ( 
                               IL_0037,
                               IL_0039,
@@ -768,19 +776,19 @@
         IL_004c:  nop
         IL_004d:  ldarg.0
         IL_004e:  ldc.i4.3
-        IL_004f:  stfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::pc
+        IL_004f:  stfld      int32 Linq101Partitioning01/'allButFirst4Numbers@29-3'::pc
         IL_0054:  ldarg.0
-        IL_0055:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/allButFirst4Numbers@29::'enum'
+        IL_0055:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'allButFirst4Numbers@29-3'::'enum'
         IL_005a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
         IL_005f:  nop
         .line 100001,100001 : 0,0 ''
         IL_0060:  nop
         IL_0061:  ldarg.0
         IL_0062:  ldc.i4.3
-        IL_0063:  stfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::pc
+        IL_0063:  stfld      int32 Linq101Partitioning01/'allButFirst4Numbers@29-3'::pc
         IL_0068:  ldarg.0
         IL_0069:  ldc.i4.0
-        IL_006a:  stfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::current
+        IL_006a:  stfld      int32 Linq101Partitioning01/'allButFirst4Numbers@29-3'::current
         IL_006f:  ldnull
         IL_0070:  stloc.1
         IL_0071:  leave.s    IL_007f
@@ -820,7 +828,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0093:  ret
-    } // end of method allButFirst4Numbers@29::Close
+    } // end of method 'allButFirst4Numbers@29-3'::Close
 
     .method public strict virtual instance bool 
             get_CheckClose() cil managed
@@ -829,7 +837,7 @@
       .maxstack  8
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::pc
+      IL_0001:  ldfld      int32 Linq101Partitioning01/'allButFirst4Numbers@29-3'::pc
       IL_0006:  switch     ( 
                             IL_001d,
                             IL_001f,
@@ -871,7 +879,7 @@
 
       IL_0036:  ldc.i4.0
       IL_0037:  ret
-    } // end of method allButFirst4Numbers@29::get_CheckClose
+    } // end of method 'allButFirst4Numbers@29-3'::get_CheckClose
 
     .method public strict virtual instance int32 
             get_LastGenerated() cil managed
@@ -881,9 +889,9 @@
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Partitioning01/allButFirst4Numbers@29::current
+      IL_0001:  ldfld      int32 Linq101Partitioning01/'allButFirst4Numbers@29-3'::current
       IL_0006:  ret
-    } // end of method allButFirst4Numbers@29::get_LastGenerated
+    } // end of method 'allButFirst4Numbers@29-3'::get_LastGenerated
 
     .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> 
             GetFreshEnumerator() cil managed
@@ -895,15 +903,15 @@
       IL_0000:  ldnull
       IL_0001:  ldc.i4.0
       IL_0002:  ldc.i4.0
-      IL_0003:  newobj     instance void Linq101Partitioning01/allButFirst4Numbers@29::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                                             int32,
-                                                                                             int32)
+      IL_0003:  newobj     instance void Linq101Partitioning01/'allButFirst4Numbers@29-3'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+                                                                                                 int32,
+                                                                                                 int32)
       IL_0008:  ret
-    } // end of method allButFirst4Numbers@29::GetFreshEnumerator
+    } // end of method 'allButFirst4Numbers@29-3'::GetFreshEnumerator
 
-  } // end of class allButFirst4Numbers@29
+  } // end of class 'allButFirst4Numbers@29-3'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders2@37-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders2@37-13'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Order,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -923,12 +931,12 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Order,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,object>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'WAOrders2@37-1'::builder@
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'WAOrders2@37-13'::builder@
       IL_000d:  ldarg.0
       IL_000e:  ldarg.2
-      IL_000f:  stfld      class [Utils]Utils/Customer Linq101Partitioning01/'WAOrders2@37-1'::c
+      IL_000f:  stfld      class [Utils]Utils/Customer Linq101Partitioning01/'WAOrders2@37-13'::c
       IL_0014:  ret
-    } // end of method 'WAOrders2@37-1'::.ctor
+    } // end of method 'WAOrders2@37-13'::.ctor
 
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,object> 
             Invoke(class [Utils]Utils/Order _arg2) cil managed
@@ -941,20 +949,20 @@
       IL_0001:  stloc.0
       .line 38,38 : 9,32 ''
       IL_0002:  ldarg.0
-      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'WAOrders2@37-1'::builder@
+      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'WAOrders2@37-13'::builder@
       IL_0008:  ldarg.0
-      IL_0009:  ldfld      class [Utils]Utils/Customer Linq101Partitioning01/'WAOrders2@37-1'::c
+      IL_0009:  ldfld      class [Utils]Utils/Customer Linq101Partitioning01/'WAOrders2@37-13'::c
       IL_000e:  ldloc.0
       IL_000f:  newobj     instance void class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>::.ctor(!0,
                                                                                                                                      !1)
       IL_0014:  tail.
       IL_0016:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,object>(!!0)
       IL_001b:  ret
-    } // end of method 'WAOrders2@37-1'::Invoke
+    } // end of method 'WAOrders2@37-13'::Invoke
 
-  } // end of class 'WAOrders2@37-1'
+  } // end of class 'WAOrders2@37-13'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit WAOrders2@36
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders2@36-12'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Customer,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -972,9 +980,9 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Customer,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/WAOrders2@36::builder@
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'WAOrders2@36-12'::builder@
       IL_000d:  ret
-    } // end of method WAOrders2@36::.ctor
+    } // end of method 'WAOrders2@36-12'::.ctor
 
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable> 
             Invoke(class [Utils]Utils/Customer _arg1) cil managed
@@ -987,26 +995,26 @@
       IL_0001:  stloc.0
       .line 37,37 : 9,29 ''
       IL_0002:  ldarg.0
-      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/WAOrders2@36::builder@
+      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'WAOrders2@36-12'::builder@
       IL_0008:  ldarg.0
-      IL_0009:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/WAOrders2@36::builder@
+      IL_0009:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'WAOrders2@36-12'::builder@
       IL_000e:  ldloc.0
       IL_000f:  callvirt   instance class [Utils]Utils/Order[] [Utils]Utils/Customer::get_Orders()
       IL_0014:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Order>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
       IL_0019:  ldarg.0
-      IL_001a:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/WAOrders2@36::builder@
+      IL_001a:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'WAOrders2@36-12'::builder@
       IL_001f:  ldloc.0
-      IL_0020:  newobj     instance void Linq101Partitioning01/'WAOrders2@37-1'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder,
-                                                                                       class [Utils]Utils/Customer)
+      IL_0020:  newobj     instance void Linq101Partitioning01/'WAOrders2@37-13'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder,
+                                                                                        class [Utils]Utils/Customer)
       IL_0025:  tail.
       IL_0027:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Order,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                               class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
       IL_002c:  ret
-    } // end of method WAOrders2@36::Invoke
+    } // end of method 'WAOrders2@36-12'::Invoke
 
-  } // end of class WAOrders2@36
+  } // end of class 'WAOrders2@36-12'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders2@38-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders2@38-14'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,bool>
   {
     .method assembly specialname rtspecialname 
@@ -1019,7 +1027,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,bool>::.ctor()
       IL_0006:  ret
-    } // end of method 'WAOrders2@38-2'::.ctor
+    } // end of method 'WAOrders2@38-14'::.ctor
 
     .method public strict virtual instance bool 
             Invoke(class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order> tupledArg) cil managed
@@ -1042,11 +1050,11 @@
       IL_0019:  call       bool [mscorlib]System.String::Equals(string,
                                                                 string)
       IL_001e:  ret
-    } // end of method 'WAOrders2@38-2'::Invoke
+    } // end of method 'WAOrders2@38-14'::Invoke
 
-  } // end of class 'WAOrders2@38-2'
+  } // end of class 'WAOrders2@38-14'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders2@39-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders2@39-15'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>
   {
     .method assembly specialname rtspecialname 
@@ -1059,7 +1067,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>::.ctor()
       IL_0006:  ret
-    } // end of method 'WAOrders2@39-3'::.ctor
+    } // end of method 'WAOrders2@39-15'::.ctor
 
     .method public strict virtual instance class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime> 
             Invoke(class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order> tupledArg) cil managed
@@ -1086,11 +1094,11 @@
                                                                                                                                  !1,
                                                                                                                                  !2)
       IL_0025:  ret
-    } // end of method 'WAOrders2@39-3'::Invoke
+    } // end of method 'WAOrders2@39-15'::Invoke
 
-  } // end of class 'WAOrders2@39-3'
+  } // end of class 'WAOrders2@39-15'
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname firstNumbersLessThan6@45
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'firstNumbersLessThan6@45-6'
          extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -1115,17 +1123,17 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/firstNumbersLessThan6@45::'enum'
+      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'firstNumbersLessThan6@45-6'::'enum'
       IL_0007:  ldarg.0
       IL_0008:  ldarg.2
-      IL_0009:  stfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::pc
+      IL_0009:  stfld      int32 Linq101Partitioning01/'firstNumbersLessThan6@45-6'::pc
       IL_000e:  ldarg.0
       IL_000f:  ldarg.3
-      IL_0010:  stfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::current
+      IL_0010:  stfld      int32 Linq101Partitioning01/'firstNumbersLessThan6@45-6'::current
       IL_0015:  ldarg.0
       IL_0016:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
       IL_001b:  ret
-    } // end of method firstNumbersLessThan6@45::.ctor
+    } // end of method 'firstNumbersLessThan6@45-6'::.ctor
 
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
@@ -1136,7 +1144,7 @@
                [1] int32 n)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::pc
+      IL_0001:  ldfld      int32 Linq101Partitioning01/'firstNumbersLessThan6@45-6'::pc
       IL_0006:  ldc.i4.1
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -1169,18 +1177,18 @@
       IL_002b:  ldarg.0
       IL_002c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101Partitioning01::get_numbers()
       IL_0031:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-      IL_0036:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/firstNumbersLessThan6@45::'enum'
+      IL_0036:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'firstNumbersLessThan6@45-6'::'enum'
       IL_003b:  ldarg.0
       IL_003c:  ldc.i4.1
-      IL_003d:  stfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::pc
+      IL_003d:  stfld      int32 Linq101Partitioning01/'firstNumbersLessThan6@45-6'::pc
       .line 45,45 : 9,28 ''
       IL_0042:  ldarg.0
-      IL_0043:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/firstNumbersLessThan6@45::'enum'
+      IL_0043:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'firstNumbersLessThan6@45-6'::'enum'
       IL_0048:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
       IL_004d:  brfalse.s  IL_0070
 
       IL_004f:  ldarg.0
-      IL_0050:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/firstNumbersLessThan6@45::'enum'
+      IL_0050:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'firstNumbersLessThan6@45-6'::'enum'
       IL_0055:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
       IL_005a:  stloc.0
       .line 45,45 : 9,28 ''
@@ -1188,11 +1196,11 @@
       IL_005c:  stloc.1
       IL_005d:  ldarg.0
       IL_005e:  ldc.i4.2
-      IL_005f:  stfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::pc
+      IL_005f:  stfld      int32 Linq101Partitioning01/'firstNumbersLessThan6@45-6'::pc
       .line 46,46 : 9,26 ''
       IL_0064:  ldarg.0
       IL_0065:  ldloc.1
-      IL_0066:  stfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::current
+      IL_0066:  stfld      int32 Linq101Partitioning01/'firstNumbersLessThan6@45-6'::current
       IL_006b:  ldc.i4.1
       IL_006c:  ret
 
@@ -1202,24 +1210,24 @@
 
       IL_0070:  ldarg.0
       IL_0071:  ldc.i4.3
-      IL_0072:  stfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::pc
+      IL_0072:  stfld      int32 Linq101Partitioning01/'firstNumbersLessThan6@45-6'::pc
       .line 45,45 : 9,28 ''
       IL_0077:  ldarg.0
-      IL_0078:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/firstNumbersLessThan6@45::'enum'
+      IL_0078:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'firstNumbersLessThan6@45-6'::'enum'
       IL_007d:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
       IL_0082:  nop
       IL_0083:  ldarg.0
       IL_0084:  ldnull
-      IL_0085:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/firstNumbersLessThan6@45::'enum'
+      IL_0085:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'firstNumbersLessThan6@45-6'::'enum'
       IL_008a:  ldarg.0
       IL_008b:  ldc.i4.3
-      IL_008c:  stfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::pc
+      IL_008c:  stfld      int32 Linq101Partitioning01/'firstNumbersLessThan6@45-6'::pc
       IL_0091:  ldarg.0
       IL_0092:  ldc.i4.0
-      IL_0093:  stfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::current
+      IL_0093:  stfld      int32 Linq101Partitioning01/'firstNumbersLessThan6@45-6'::current
       IL_0098:  ldc.i4.0
       IL_0099:  ret
-    } // end of method firstNumbersLessThan6@45::GenerateNext
+    } // end of method 'firstNumbersLessThan6@45-6'::GenerateNext
 
     .method public strict virtual instance void 
             Close() cil managed
@@ -1231,7 +1239,7 @@
                [2] class [mscorlib]System.Exception e)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::pc
+      IL_0001:  ldfld      int32 Linq101Partitioning01/'firstNumbersLessThan6@45-6'::pc
       IL_0006:  ldc.i4.3
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -1247,7 +1255,7 @@
       .try
       {
         IL_001a:  ldarg.0
-        IL_001b:  ldfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::pc
+        IL_001b:  ldfld      int32 Linq101Partitioning01/'firstNumbersLessThan6@45-6'::pc
         IL_0020:  switch     ( 
                               IL_0037,
                               IL_0039,
@@ -1285,19 +1293,19 @@
         IL_004c:  nop
         IL_004d:  ldarg.0
         IL_004e:  ldc.i4.3
-        IL_004f:  stfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::pc
+        IL_004f:  stfld      int32 Linq101Partitioning01/'firstNumbersLessThan6@45-6'::pc
         IL_0054:  ldarg.0
-        IL_0055:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/firstNumbersLessThan6@45::'enum'
+        IL_0055:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'firstNumbersLessThan6@45-6'::'enum'
         IL_005a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
         IL_005f:  nop
         .line 100001,100001 : 0,0 ''
         IL_0060:  nop
         IL_0061:  ldarg.0
         IL_0062:  ldc.i4.3
-        IL_0063:  stfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::pc
+        IL_0063:  stfld      int32 Linq101Partitioning01/'firstNumbersLessThan6@45-6'::pc
         IL_0068:  ldarg.0
         IL_0069:  ldc.i4.0
-        IL_006a:  stfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::current
+        IL_006a:  stfld      int32 Linq101Partitioning01/'firstNumbersLessThan6@45-6'::current
         IL_006f:  ldnull
         IL_0070:  stloc.1
         IL_0071:  leave.s    IL_007f
@@ -1337,7 +1345,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0093:  ret
-    } // end of method firstNumbersLessThan6@45::Close
+    } // end of method 'firstNumbersLessThan6@45-6'::Close
 
     .method public strict virtual instance bool 
             get_CheckClose() cil managed
@@ -1346,7 +1354,7 @@
       .maxstack  8
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::pc
+      IL_0001:  ldfld      int32 Linq101Partitioning01/'firstNumbersLessThan6@45-6'::pc
       IL_0006:  switch     ( 
                             IL_001d,
                             IL_001f,
@@ -1388,7 +1396,7 @@
 
       IL_0036:  ldc.i4.0
       IL_0037:  ret
-    } // end of method firstNumbersLessThan6@45::get_CheckClose
+    } // end of method 'firstNumbersLessThan6@45-6'::get_CheckClose
 
     .method public strict virtual instance int32 
             get_LastGenerated() cil managed
@@ -1398,9 +1406,9 @@
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Partitioning01/firstNumbersLessThan6@45::current
+      IL_0001:  ldfld      int32 Linq101Partitioning01/'firstNumbersLessThan6@45-6'::current
       IL_0006:  ret
-    } // end of method firstNumbersLessThan6@45::get_LastGenerated
+    } // end of method 'firstNumbersLessThan6@45-6'::get_LastGenerated
 
     .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> 
             GetFreshEnumerator() cil managed
@@ -1412,15 +1420,15 @@
       IL_0000:  ldnull
       IL_0001:  ldc.i4.0
       IL_0002:  ldc.i4.0
-      IL_0003:  newobj     instance void Linq101Partitioning01/firstNumbersLessThan6@45::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                                               int32,
-                                                                                               int32)
+      IL_0003:  newobj     instance void Linq101Partitioning01/'firstNumbersLessThan6@45-6'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+                                                                                                   int32,
+                                                                                                   int32)
       IL_0008:  ret
-    } // end of method firstNumbersLessThan6@45::GetFreshEnumerator
+    } // end of method 'firstNumbersLessThan6@45-6'::GetFreshEnumerator
 
-  } // end of class firstNumbersLessThan6@45
+  } // end of class 'firstNumbersLessThan6@45-6'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'firstNumbersLessThan6@46-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'firstNumbersLessThan6@46-7'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
   {
     .method assembly specialname rtspecialname 
@@ -1433,7 +1441,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::.ctor()
       IL_0006:  ret
-    } // end of method 'firstNumbersLessThan6@46-1'::.ctor
+    } // end of method 'firstNumbersLessThan6@46-7'::.ctor
 
     .method public strict virtual instance bool 
             Invoke(int32 n) cil managed
@@ -1445,11 +1453,11 @@
       IL_0001:  ldc.i4.6
       IL_0002:  clt
       IL_0004:  ret
-    } // end of method 'firstNumbersLessThan6@46-1'::Invoke
+    } // end of method 'firstNumbersLessThan6@46-7'::Invoke
 
-  } // end of class 'firstNumbersLessThan6@46-1'
+  } // end of class 'firstNumbersLessThan6@46-7'
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname allButFirst3Numbers@52
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'allButFirst3Numbers@52-6'
          extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -1474,17 +1482,17 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/allButFirst3Numbers@52::'enum'
+      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'allButFirst3Numbers@52-6'::'enum'
       IL_0007:  ldarg.0
       IL_0008:  ldarg.2
-      IL_0009:  stfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::pc
+      IL_0009:  stfld      int32 Linq101Partitioning01/'allButFirst3Numbers@52-6'::pc
       IL_000e:  ldarg.0
       IL_000f:  ldarg.3
-      IL_0010:  stfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::current
+      IL_0010:  stfld      int32 Linq101Partitioning01/'allButFirst3Numbers@52-6'::current
       IL_0015:  ldarg.0
       IL_0016:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
       IL_001b:  ret
-    } // end of method allButFirst3Numbers@52::.ctor
+    } // end of method 'allButFirst3Numbers@52-6'::.ctor
 
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
@@ -1495,7 +1503,7 @@
                [1] int32 n)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::pc
+      IL_0001:  ldfld      int32 Linq101Partitioning01/'allButFirst3Numbers@52-6'::pc
       IL_0006:  ldc.i4.1
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -1528,18 +1536,18 @@
       IL_002b:  ldarg.0
       IL_002c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101Partitioning01::get_numbers()
       IL_0031:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-      IL_0036:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/allButFirst3Numbers@52::'enum'
+      IL_0036:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'allButFirst3Numbers@52-6'::'enum'
       IL_003b:  ldarg.0
       IL_003c:  ldc.i4.1
-      IL_003d:  stfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::pc
+      IL_003d:  stfld      int32 Linq101Partitioning01/'allButFirst3Numbers@52-6'::pc
       .line 52,52 : 9,28 ''
       IL_0042:  ldarg.0
-      IL_0043:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/allButFirst3Numbers@52::'enum'
+      IL_0043:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'allButFirst3Numbers@52-6'::'enum'
       IL_0048:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
       IL_004d:  brfalse.s  IL_0070
 
       IL_004f:  ldarg.0
-      IL_0050:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/allButFirst3Numbers@52::'enum'
+      IL_0050:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'allButFirst3Numbers@52-6'::'enum'
       IL_0055:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
       IL_005a:  stloc.0
       .line 52,52 : 9,28 ''
@@ -1547,11 +1555,11 @@
       IL_005c:  stloc.1
       IL_005d:  ldarg.0
       IL_005e:  ldc.i4.2
-      IL_005f:  stfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::pc
+      IL_005f:  stfld      int32 Linq101Partitioning01/'allButFirst3Numbers@52-6'::pc
       .line 53,53 : 9,31 ''
       IL_0064:  ldarg.0
       IL_0065:  ldloc.1
-      IL_0066:  stfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::current
+      IL_0066:  stfld      int32 Linq101Partitioning01/'allButFirst3Numbers@52-6'::current
       IL_006b:  ldc.i4.1
       IL_006c:  ret
 
@@ -1561,24 +1569,24 @@
 
       IL_0070:  ldarg.0
       IL_0071:  ldc.i4.3
-      IL_0072:  stfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::pc
+      IL_0072:  stfld      int32 Linq101Partitioning01/'allButFirst3Numbers@52-6'::pc
       .line 52,52 : 9,28 ''
       IL_0077:  ldarg.0
-      IL_0078:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/allButFirst3Numbers@52::'enum'
+      IL_0078:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'allButFirst3Numbers@52-6'::'enum'
       IL_007d:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
       IL_0082:  nop
       IL_0083:  ldarg.0
       IL_0084:  ldnull
-      IL_0085:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/allButFirst3Numbers@52::'enum'
+      IL_0085:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'allButFirst3Numbers@52-6'::'enum'
       IL_008a:  ldarg.0
       IL_008b:  ldc.i4.3
-      IL_008c:  stfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::pc
+      IL_008c:  stfld      int32 Linq101Partitioning01/'allButFirst3Numbers@52-6'::pc
       IL_0091:  ldarg.0
       IL_0092:  ldc.i4.0
-      IL_0093:  stfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::current
+      IL_0093:  stfld      int32 Linq101Partitioning01/'allButFirst3Numbers@52-6'::current
       IL_0098:  ldc.i4.0
       IL_0099:  ret
-    } // end of method allButFirst3Numbers@52::GenerateNext
+    } // end of method 'allButFirst3Numbers@52-6'::GenerateNext
 
     .method public strict virtual instance void 
             Close() cil managed
@@ -1590,7 +1598,7 @@
                [2] class [mscorlib]System.Exception e)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::pc
+      IL_0001:  ldfld      int32 Linq101Partitioning01/'allButFirst3Numbers@52-6'::pc
       IL_0006:  ldc.i4.3
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -1606,7 +1614,7 @@
       .try
       {
         IL_001a:  ldarg.0
-        IL_001b:  ldfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::pc
+        IL_001b:  ldfld      int32 Linq101Partitioning01/'allButFirst3Numbers@52-6'::pc
         IL_0020:  switch     ( 
                               IL_0037,
                               IL_0039,
@@ -1644,19 +1652,19 @@
         IL_004c:  nop
         IL_004d:  ldarg.0
         IL_004e:  ldc.i4.3
-        IL_004f:  stfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::pc
+        IL_004f:  stfld      int32 Linq101Partitioning01/'allButFirst3Numbers@52-6'::pc
         IL_0054:  ldarg.0
-        IL_0055:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/allButFirst3Numbers@52::'enum'
+        IL_0055:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'allButFirst3Numbers@52-6'::'enum'
         IL_005a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
         IL_005f:  nop
         .line 100001,100001 : 0,0 ''
         IL_0060:  nop
         IL_0061:  ldarg.0
         IL_0062:  ldc.i4.3
-        IL_0063:  stfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::pc
+        IL_0063:  stfld      int32 Linq101Partitioning01/'allButFirst3Numbers@52-6'::pc
         IL_0068:  ldarg.0
         IL_0069:  ldc.i4.0
-        IL_006a:  stfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::current
+        IL_006a:  stfld      int32 Linq101Partitioning01/'allButFirst3Numbers@52-6'::current
         IL_006f:  ldnull
         IL_0070:  stloc.1
         IL_0071:  leave.s    IL_007f
@@ -1696,7 +1704,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0093:  ret
-    } // end of method allButFirst3Numbers@52::Close
+    } // end of method 'allButFirst3Numbers@52-6'::Close
 
     .method public strict virtual instance bool 
             get_CheckClose() cil managed
@@ -1705,7 +1713,7 @@
       .maxstack  8
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::pc
+      IL_0001:  ldfld      int32 Linq101Partitioning01/'allButFirst3Numbers@52-6'::pc
       IL_0006:  switch     ( 
                             IL_001d,
                             IL_001f,
@@ -1747,7 +1755,7 @@
 
       IL_0036:  ldc.i4.0
       IL_0037:  ret
-    } // end of method allButFirst3Numbers@52::get_CheckClose
+    } // end of method 'allButFirst3Numbers@52-6'::get_CheckClose
 
     .method public strict virtual instance int32 
             get_LastGenerated() cil managed
@@ -1757,9 +1765,9 @@
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Partitioning01/allButFirst3Numbers@52::current
+      IL_0001:  ldfld      int32 Linq101Partitioning01/'allButFirst3Numbers@52-6'::current
       IL_0006:  ret
-    } // end of method allButFirst3Numbers@52::get_LastGenerated
+    } // end of method 'allButFirst3Numbers@52-6'::get_LastGenerated
 
     .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> 
             GetFreshEnumerator() cil managed
@@ -1771,15 +1779,15 @@
       IL_0000:  ldnull
       IL_0001:  ldc.i4.0
       IL_0002:  ldc.i4.0
-      IL_0003:  newobj     instance void Linq101Partitioning01/allButFirst3Numbers@52::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                                             int32,
-                                                                                             int32)
+      IL_0003:  newobj     instance void Linq101Partitioning01/'allButFirst3Numbers@52-6'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+                                                                                                 int32,
+                                                                                                 int32)
       IL_0008:  ret
-    } // end of method allButFirst3Numbers@52::GetFreshEnumerator
+    } // end of method 'allButFirst3Numbers@52-6'::GetFreshEnumerator
 
-  } // end of class allButFirst3Numbers@52
+  } // end of class 'allButFirst3Numbers@52-6'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'allButFirst3Numbers@53-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'allButFirst3Numbers@53-7'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
   {
     .method assembly specialname rtspecialname 
@@ -1792,7 +1800,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::.ctor()
       IL_0006:  ret
-    } // end of method 'allButFirst3Numbers@53-1'::.ctor
+    } // end of method 'allButFirst3Numbers@53-7'::.ctor
 
     .method public strict virtual instance bool 
             Invoke(int32 n) cil managed
@@ -1808,16 +1816,16 @@
       IL_0006:  ldc.i4.0
       IL_0007:  ceq
       IL_0009:  ret
-    } // end of method 'allButFirst3Numbers@53-1'::Invoke
+    } // end of method 'allButFirst3Numbers@53-7'::Invoke
 
-  } // end of class 'allButFirst3Numbers@53-1'
+  } // end of class 'allButFirst3Numbers@53-7'
 
   .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
           get_numbers() cil managed
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'numbers@7-5'
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'numbers@7-44'
     IL_0005:  ret
   } // end of method Linq101Partitioning01::get_numbers
 
@@ -1826,7 +1834,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::first3Numbers@10
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'first3Numbers@10-6'
     IL_0005:  ret
   } // end of method Linq101Partitioning01::get_first3Numbers
 
@@ -1835,7 +1843,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'customers@17-2'
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'customers@17-32'
     IL_0005:  ret
   } // end of method Linq101Partitioning01::get_customers
 
@@ -1844,7 +1852,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>[] '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::WAOrders@18
+    IL_0000:  ldsfld     class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>[] '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'WAOrders@18-6'
     IL_0005:  ret
   } // end of method Linq101Partitioning01::get_WAOrders
 
@@ -1853,7 +1861,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::allButFirst4Numbers@27
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'allButFirst4Numbers@27-6'
     IL_0005:  ret
   } // end of method Linq101Partitioning01::get_allButFirst4Numbers
 
@@ -1862,7 +1870,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::WAOrders2@34
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'WAOrders2@34-6'
     IL_0005:  ret
   } // end of method Linq101Partitioning01::get_WAOrders2
 
@@ -1871,7 +1879,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::firstNumbersLessThan6@43
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'firstNumbersLessThan6@43-6'
     IL_0005:  ret
   } // end of method Linq101Partitioning01::get_firstNumbersLessThan6
 
@@ -1880,7 +1888,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::allButFirst3Numbers@50
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'allButFirst3Numbers@50-6'
     IL_0005:  ret
   } // end of method Linq101Partitioning01::get_allButFirst3Numbers
 
@@ -1937,21 +1945,21 @@
 .class private abstract auto ansi sealed '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01
        extends [mscorlib]System.Object
 {
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'numbers@7-5'
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'numbers@7-44'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> first3Numbers@10
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'first3Numbers@10-6'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> 'customers@17-2'
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> 'customers@17-32'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>[] WAOrders@18
+  .field static assembly class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>[] 'WAOrders@18-6'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> allButFirst4Numbers@27
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'allButFirst4Numbers@27-6'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>> WAOrders2@34
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>> 'WAOrders2@34-6'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> firstNumbersLessThan6@43
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'firstNumbersLessThan6@43-6'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> allButFirst3Numbers@50
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'allButFirst3Numbers@50-6'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -2009,7 +2017,7 @@
     IL_003d:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_0042:  dup
-    IL_0043:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'numbers@7-5'
+    IL_0043:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'numbers@7-44'
     IL_0048:  stloc.0
     .line 10,14 : 1,20 ''
     IL_0049:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
@@ -2018,9 +2026,9 @@
     IL_0052:  ldnull
     IL_0053:  ldc.i4.0
     IL_0054:  ldc.i4.0
-    IL_0055:  newobj     instance void Linq101Partitioning01/first3Numbers@12::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                                     int32,
-                                                                                     int32)
+    IL_0055:  newobj     instance void Linq101Partitioning01/'first3Numbers@12-3'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+                                                                                         int32,
+                                                                                         int32)
     IL_005a:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
     IL_005f:  ldc.i4.3
     IL_0060:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Take<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
@@ -2028,12 +2036,12 @@
     IL_0065:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
     IL_006a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_006f:  dup
-    IL_0070:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::first3Numbers@10
+    IL_0070:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'first3Numbers@10-6'
     IL_0075:  stloc.1
     .line 17,17 : 1,34 ''
     IL_0076:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> [Utils]Utils::getCustomerList()
     IL_007b:  dup
-    IL_007c:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'customers@17-2'
+    IL_007c:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'customers@17-32'
     IL_0081:  stloc.2
     .line 18,24 : 1,21 ''
     IL_0082:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
@@ -2045,19 +2053,19 @@
     IL_0091:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> Linq101Partitioning01::get_customers()
     IL_0096:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Customer>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_009b:  ldloc.s    V_9
-    IL_009d:  newobj     instance void Linq101Partitioning01/WAOrders@20::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_009d:  newobj     instance void Linq101Partitioning01/'WAOrders@20-12'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
     IL_00a2:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Customer,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_00a7:  newobj     instance void Linq101Partitioning01/'WAOrders@22-2'::.ctor()
+    IL_00a7:  newobj     instance void Linq101Partitioning01/'WAOrders@22-14'::.ctor()
     IL_00ac:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                               class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
-    IL_00b1:  newobj     instance void Linq101Partitioning01/'WAOrders@23-3'::.ctor()
+    IL_00b1:  newobj     instance void Linq101Partitioning01/'WAOrders@23-15'::.ctor()
     IL_00b6:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_00bb:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
     IL_00c0:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_00c5:  dup
-    IL_00c6:  stsfld     class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>[] '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::WAOrders@18
+    IL_00c6:  stsfld     class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>[] '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'WAOrders@18-6'
     IL_00cb:  stloc.3
     .line 27,31 : 1,20 ''
     IL_00cc:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
@@ -2066,9 +2074,9 @@
     IL_00d5:  ldnull
     IL_00d6:  ldc.i4.0
     IL_00d7:  ldc.i4.0
-    IL_00d8:  newobj     instance void Linq101Partitioning01/allButFirst4Numbers@29::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                                           int32,
-                                                                                           int32)
+    IL_00d8:  newobj     instance void Linq101Partitioning01/'allButFirst4Numbers@29-3'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+                                                                                               int32,
+                                                                                               int32)
     IL_00dd:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
     IL_00e2:  ldc.i4.4
     IL_00e3:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Skip<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
@@ -2076,7 +2084,7 @@
     IL_00e8:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
     IL_00ed:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_00f2:  dup
-    IL_00f3:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::allButFirst4Numbers@27
+    IL_00f3:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'allButFirst4Numbers@27-6'
     IL_00f8:  stloc.s    allButFirst4Numbers
     .line 34,40 : 1,34 ''
     IL_00fa:  ldc.i4.2
@@ -2089,13 +2097,13 @@
     IL_010a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> Linq101Partitioning01::get_customers()
     IL_010f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Customer>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_0114:  ldloc.s    V_11
-    IL_0116:  newobj     instance void Linq101Partitioning01/WAOrders2@36::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_0116:  newobj     instance void Linq101Partitioning01/'WAOrders2@36-12'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
     IL_011b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Customer,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_0120:  newobj     instance void Linq101Partitioning01/'WAOrders2@38-2'::.ctor()
+    IL_0120:  newobj     instance void Linq101Partitioning01/'WAOrders2@38-14'::.ctor()
     IL_0125:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                               class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
-    IL_012a:  newobj     instance void Linq101Partitioning01/'WAOrders2@39-3'::.ctor()
+    IL_012a:  newobj     instance void Linq101Partitioning01/'WAOrders2@39-15'::.ctor()
     IL_012f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_0134:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
@@ -2103,7 +2111,7 @@
                                                                                                                                                                                                                                    class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_013e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_0143:  dup
-    IL_0144:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::WAOrders2@34
+    IL_0144:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'WAOrders2@34-6'
     IL_0149:  stloc.s    WAOrders2
     .line 43,47 : 1,20 ''
     IL_014b:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
@@ -2112,17 +2120,17 @@
     IL_0154:  ldnull
     IL_0155:  ldc.i4.0
     IL_0156:  ldc.i4.0
-    IL_0157:  newobj     instance void Linq101Partitioning01/firstNumbersLessThan6@45::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                                             int32,
-                                                                                             int32)
+    IL_0157:  newobj     instance void Linq101Partitioning01/'firstNumbersLessThan6@45-6'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+                                                                                                 int32,
+                                                                                                 int32)
     IL_015c:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_0161:  newobj     instance void Linq101Partitioning01/'firstNumbersLessThan6@46-1'::.ctor()
+    IL_0161:  newobj     instance void Linq101Partitioning01/'firstNumbersLessThan6@46-7'::.ctor()
     IL_0166:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::TakeWhile<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
     IL_016b:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
     IL_0170:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_0175:  dup
-    IL_0176:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::firstNumbersLessThan6@43
+    IL_0176:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'firstNumbersLessThan6@43-6'
     IL_017b:  stloc.s    firstNumbersLessThan6
     .line 50,54 : 1,20 ''
     IL_017d:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
@@ -2131,17 +2139,17 @@
     IL_0186:  ldnull
     IL_0187:  ldc.i4.0
     IL_0188:  ldc.i4.0
-    IL_0189:  newobj     instance void Linq101Partitioning01/allButFirst3Numbers@52::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                                           int32,
-                                                                                           int32)
+    IL_0189:  newobj     instance void Linq101Partitioning01/'allButFirst3Numbers@52-6'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+                                                                                               int32,
+                                                                                               int32)
     IL_018e:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_0193:  newobj     instance void Linq101Partitioning01/'allButFirst3Numbers@53-1'::.ctor()
+    IL_0193:  newobj     instance void Linq101Partitioning01/'allButFirst3Numbers@53-7'::.ctor()
     IL_0198:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SkipWhile<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
     IL_019d:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
     IL_01a2:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_01a7:  dup
-    IL_01a8:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::allButFirst3Numbers@50
+    IL_01a8:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'allButFirst3Numbers@50-6'
     IL_01ad:  stloc.s    allButFirst3Numbers
     IL_01af:  ret
   } // end of method $Linq101Partitioning01::main@

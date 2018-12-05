@@ -1,5 +1,5 @@
 
-Usage: fsi.exe <options> [script.fsx [<arguments>]]
+Usage: fsiAnyCpu.exe <options> [script.fsx [<arguments>]]
 
 
 		- INPUT FILES -
@@ -33,6 +33,8 @@ Usage: fsi.exe <options> [script.fsx [<arguments>]]
 --nowarn:<warn;...>                      Disable specific warning messages
 --warnon:<warn;...>                      Enable specific warnings that may be off by
                                          default
+--checknulls[+|-]                        Enable nullness declarations and checks
+--langversion:                           Specify the language version
 --consolecolors[+|-]                     Output warning and error messages in color
 
 
@@ -51,7 +53,7 @@ Usage: fsi.exe <options> [script.fsx [<arguments>]]
 		- ADVANCED -
 --codepage:<n>                           Specify the codepage used to read source files
 --utf8output                             Output messages in UTF-8 encoding
---preferreduilang:<string>               Specify the preferred output language culture 
+--preferreduilang:<string>               Specify the preferred output language culture
                                          name (e.g. es-ES, ja-JP)
 --fullpaths                              Output messages with fully qualified paths
 --lib:<dir;...>                          Specify a directory for the include path which
