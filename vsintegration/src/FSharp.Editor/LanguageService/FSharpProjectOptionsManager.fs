@@ -97,12 +97,6 @@ module private FSharpProjectOptionsHelpers =
         hasProjectVersionChanged oldProject newProject ||
         hasProjectReferencesVersionChanged oldProject newProject
 
-type ProjectCacheItem =
-    {
-        version: VersionStamp
-
-    }
-
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
     | TryGetOptionsByDocument of Document * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option>
