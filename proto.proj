@@ -8,7 +8,7 @@
   <ItemGroup>
     <Projects Include="src\buildtools\buildtools.proj" />
     <Projects Include="src\fsharp\FSharp.Build\FSharp.Build.fsproj" />
-    <Projects Include="src\fsharp\Fsc\Fsc.fsproj" />
+    <Projects Include="src\fsharp\fsc\fsc.fsproj" />
   </ItemGroup>
 
   <Target Name="Build">

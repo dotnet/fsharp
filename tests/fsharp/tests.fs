@@ -326,7 +326,7 @@ module CoreTests =
 
         fsc cfg "%s -a -o:lib.dll" cfg.fsc_flags ["lib.fs"]
 
-        copy_y cfg  (cfg.BinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        copySystemValueTuple cfg
         peverify cfg "lib.dll"
 
         fsc cfg "%s -r:lib.dll" cfg.fsc_flags ["test.fsx"]
@@ -479,7 +479,7 @@ module CoreTests =
 
         fsc cfg "%s -a -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
 
-        copy_y cfg  (cfg.BinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        copySystemValueTuple cfg
 
         peverify cfg "lib.dll"
 
@@ -789,7 +789,7 @@ module CoreTests =
 
         fsc cfg "%s -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
 
-        copy_y cfg  (cfg.BinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        copySystemValueTuple cfg
 
         peverify cfg "test.exe"
 
@@ -1072,7 +1072,7 @@ module CoreTests =
 
         echo "Test 6================================================="
 
-        fscAppend cfg stdoutPath stderrPath "--nologo -r FSharp.Compiler.Interactive.Settings" ["usesfsi.fsx"]
+        fscAppend cfg stdoutPath stderrPath "--nologo -r \"%s\"" cfg.FSharpCompilerInteractiveSettings ["usesfsi.fsx"]
 
         echo "Test 7================================================="
 
@@ -1632,13 +1632,13 @@ module CoreTests =
     let verify () = 
         let cfg = testConfig "core/verify"
 
-        peverifyWithArgs cfg "/nologo" (cfg.BinPath ++ "FSharp.Build.dll")
+        peverifyWithArgs cfg "/nologo" (cfg.FSharpBuild)
 
-       // peverifyWithArgs cfg "/nologo /MD" (cfg.BinPath ++ "FSharp.Compiler.dll")
+       // peverifyWithArgs cfg "/nologo /MD" (getDirectoryName(cfg.FSC) ++ "FSharp.Compiler.dll")
 
-        peverifyWithArgs cfg "/nologo" (cfg.BinPath ++ "fsi.exe")
+        peverifyWithArgs cfg "/nologo" (cfg.FSI)
 
-        peverifyWithArgs cfg "/nologo" (cfg.BinPath ++ "FSharp.Compiler.Interactive.Settings.dll")
+        peverifyWithArgs cfg "/nologo" (cfg.FSharpCompilerInteractiveSettings)
 
         fsc cfg "%s -o:xmlverify.exe -g" cfg.fsc_flags ["xmlverify.fs"]
 
@@ -1957,7 +1957,7 @@ module TypecheckTests =
     let ``sigs pos27`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos27.exe" cfg.fsc_flags ["pos27.fs"]
-        copy_y cfg  (cfg.BinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        copySystemValueTuple cfg
         peverify cfg "pos27.exe"
 
     [<Test>]

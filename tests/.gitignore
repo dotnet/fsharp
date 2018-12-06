@@ -1,6 +1,5 @@
 FSharp_*
 net40-fsharpqa-suite-*
 CoreUnit_*
-TestResults
 *.il
 dont.run.peverify
