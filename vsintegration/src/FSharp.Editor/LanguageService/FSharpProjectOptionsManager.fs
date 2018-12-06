@@ -254,7 +254,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                 Some(parsingOptions, projectOptions)
   
         | true, (oldProject, parsingOptions, projectOptions) ->
-            if isProjectInvalidated oldProject project then
+            if isProjectInvalidated oldProject project settings then
                 cache.Remove(projectId) |> ignore
                 tryComputeOptions project
             else
