@@ -155,7 +155,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     return Some(parsingOptions, projectOptions)
         }
     
-    let rec tryComputeOptions (project: Project) : Async<(FSharpParsingOptions * FSharpProjectOptions) option> = async {
+    let rec tryComputeOptions (project: Project) = async {
         let projectId = project.Id
         match cache.TryGetValue(projectId) with
         | false, _ ->
