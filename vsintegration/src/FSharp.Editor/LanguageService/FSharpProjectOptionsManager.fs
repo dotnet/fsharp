@@ -93,9 +93,13 @@ module private FSharpProjectOptionsHelpers =
                 true
         )
 
-    let isProjectInvalidated (oldProject: Project) (newProject: Project) =
+    let isProjectInvalidated (oldProject: Project) (newProject: Project) (settings: EditorOptions) =
         hasProjectVersionChanged oldProject newProject ||
-        hasProjectReferencesVersionChanged oldProject newProject
+        (
+            // If we have enabled cross project references, we need to check each project reference version to see if it has changed.
+            settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences &&
+            hasProjectReferencesVersionChanged oldProject newProject
+        )
 
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
