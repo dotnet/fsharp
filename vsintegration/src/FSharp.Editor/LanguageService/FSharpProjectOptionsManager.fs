@@ -78,17 +78,30 @@ module private FSharpProjectOptionsHelpers =
                 member __.Unused4() = hier.Unused4()
         }
 
-    let isProjectInvalidated (oldProject: Project) (newProject: Project) =
-        let hasStampChanged = oldProject.Version <> newProject.Version
-        let hasProjectReferencesChanged =
-            oldProject.ProjectReferences.Count() <> newProject.ProjectReferences.Count() ||
-            (oldProject.ProjectReferences, newProject.ProjectReferences)
-            ||> Seq.exists2 (fun p1 p2 ->
+    let hasProjectVersionChanged (oldProject: Project) (newProject: Project) =
+        oldProject.Version <> newProject.Version
+
+    let hasProjectReferencesVersionChanged (oldProject: Project) (newProject: Project) =
+        oldProject.ProjectReferences.Count() <> newProject.ProjectReferences.Count() ||
+        (oldProject.ProjectReferences, newProject.ProjectReferences)
+        ||> Seq.exists2 (fun p1 p2 ->
+            if p1.ProjectId = p2.ProjectId then
                 let projectReference1 = oldProject.Solution.GetProject(p1.ProjectId)
                 let projectReference2 = newProject.Solution.GetProject(p2.ProjectId)
                 projectReference1.Version <> projectReference2.Version
-            )
-        hasStampChanged || hasProjectReferencesChanged
+            else
+                true
+        )
+
+    let isProjectInvalidated (oldProject: Project) (newProject: Project) =
+        hasProjectVersionChanged oldProject newProject ||
+        hasProjectReferencesVersionChanged oldProject newProject
+
+type ProjectCacheItem =
+    {
+        version: VersionStamp
+
+    }
 
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
@@ -242,8 +255,8 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
 
                 Some(parsingOptions, projectOptions)
   
-        | true, (project2, parsingOptions, projectOptions) ->
-            if isProjectInvalidated project2 project then
+        | true, (oldProject, parsingOptions, projectOptions) ->
+            if isProjectInvalidated oldProject project then
                 cache.Remove(projectId) |> ignore
                 tryComputeOptions project
             else
