@@ -176,7 +176,6 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                         else
                             None
                     )
-                    |> Array.ofSeq
 
                 for (computeOptionsAsync, referenceProject) in computeOptionsAsyncArray do
                     match! computeOptionsAsync with
