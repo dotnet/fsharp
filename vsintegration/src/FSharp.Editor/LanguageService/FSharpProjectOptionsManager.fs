@@ -155,7 +155,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     return Some(parsingOptions, projectOptions)
         }
     
-    let rec tryComputeOptions (project: Project) = async {
+    let rec tryComputeOptions (project: Project) : Async<(FSharpParsingOptions * FSharpProjectOptions) option> = async {
         let projectId = project.Id
         match cache.TryGetValue(projectId) with
         | false, _ ->
@@ -163,33 +163,26 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
             // Because this code can be kicked off before the hack, HandleCommandLineChanges, occurs,
             //     the command line options will not be available and we should bail if one of the project references does not give us anything.
             let mutable canBail = false
+            
+            let referencedProjects = ResizeArray()
 
-            let referencedProjects =
-                if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
+            if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
+                let computeOptionsAsyncArray =
                     project.ProjectReferences
                     |> Seq.choose (fun projectReference -> 
                         let referenceProject = project.Solution.GetProject(projectReference.ProjectId)
                         if referenceProject.Language = FSharpConstants.FSharpLanguageName then
-                            Some(referenceProject)
+                            Some((async { return! tryComputeOptions referenceProject }, referenceProject))
                         else
                             None
                     )
-                    |> Seq.choose (fun referenceProject ->
-                        let result =
-                            tryComputeOptions referenceProject
-                            |> Async.RunSynchronously
-                            |> Option.map (fun (_, projectOptions) ->
-                                (referenceProject.OutputFilePath, projectOptions)
-                            )
+                    |> Array.ofSeq
 
-                        if result.IsNone then
-                            canBail <- true
-
-                        result
-                    )
-                    |> Seq.toArray
-                else
-                    [||]
+                for (computeOptionsAsync, referenceProject) in computeOptionsAsyncArray do
+                    match! computeOptionsAsync with
+                    | None -> canBail <- true
+                    | Some(_, projectOptions) ->
+                        referencedProjects.Add(referenceProject.OutputFilePath, projectOptions)
 
             if canBail then
                 return None
@@ -216,7 +209,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                         |> Array.append (
                                 // Clear any references from CompilationOptions. 
                                 // We get the references from Project.ProjectReferences/Project.MetadataReferences.
-                                projectSite.CompilationOptions 
+                                projectSite.CompilationOptions
                                 |> Array.filter (fun x -> not (x.Contains("-r:")))
                             )
                     )
@@ -227,7 +220,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     ProjectId = Some(projectId.ToFSharpProjectIdString())
                     SourceFiles = projectSite.CompilationSourceFiles
                     OtherOptions = otherOptions
-                    ReferencedProjects = referencedProjects
+                    ReferencedProjects = referencedProjects.ToArray()
                     IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
                     UseScriptResolutionRules = SourceFile.MustBeSingleFileProject (Path.GetFileName(project.FilePath))
                     LoadTime = projectSite.LoadTime
