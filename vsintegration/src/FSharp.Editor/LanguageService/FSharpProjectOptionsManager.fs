@@ -81,25 +81,20 @@ module private FSharpProjectOptionsHelpers =
     let hasProjectVersionChanged (oldProject: Project) (newProject: Project) =
         oldProject.Version <> newProject.Version
 
-    let hasProjectReferencesVersionChanged (oldProject: Project) (newProject: Project) =
-        oldProject.ProjectReferences.Count() <> newProject.ProjectReferences.Count() ||
-        (oldProject.ProjectReferences, newProject.ProjectReferences)
-        ||> Seq.exists2 (fun p1 p2 ->
-            if p1.ProjectId = p2.ProjectId then
-                let projectReference1 = oldProject.Solution.GetProject(p1.ProjectId)
-                let projectReference2 = newProject.Solution.GetProject(p2.ProjectId)
-                projectReference1.Version <> projectReference2.Version
-            else
-                true
-        )
+    let hasDependentVersionChanged (oldProject: Project) (newProject: Project) cancellationToken = async {
+        let! oldVersion = oldProject.GetDependentVersionAsync(cancellationToken) |> Async.AwaitTask
+        let! newVersion = newProject.GetDependentVersionAsync(cancellationToken) |> Async.AwaitTask
+        return oldVersion <> newVersion
+    }
 
-    let isProjectInvalidated (oldProject: Project) (newProject: Project) (settings: EditorOptions) =
-        hasProjectVersionChanged oldProject newProject ||
-        (
-            // If we have enabled cross project references, we need to check each project reference version to see if it has changed.
-            settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences &&
-            hasProjectReferencesVersionChanged oldProject newProject
-        )
+    let isProjectInvalidated (oldProject: Project) (newProject: Project) (settings: EditorOptions) cancellationToken = async {      
+        let hasProjectVersionChanged = hasProjectVersionChanged oldProject newProject
+        if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
+            let! hasDependentVersionChanged = hasDependentVersionChanged oldProject newProject cancellationToken
+            return hasProjectVersionChanged || hasDependentVersionChanged
+        else
+            return hasProjectVersionChanged
+    }
 
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
@@ -160,7 +155,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     return Some(parsingOptions, projectOptions)
         }
     
-    let rec tryComputeOptions (project: Project) =
+    let rec tryComputeOptions (project: Project) = async {
         let projectId = project.Id
         match cache.TryGetValue(projectId) with
         | false, _ ->
@@ -182,6 +177,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     |> Seq.choose (fun referenceProject ->
                         let result =
                             tryComputeOptions referenceProject
+                            |> Async.RunSynchronously
                             |> Option.map (fun (_, projectOptions) ->
                                 (referenceProject.OutputFilePath, projectOptions)
                             )
@@ -196,7 +192,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     [||]
 
             if canBail then
-                None
+                return None
             else
 
             let hier = workspace.GetHierarchy(projectId)
@@ -243,7 +239,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
 
             // This can happen if we didn't receive the callback from HandleCommandLineChanges yet.
             if Array.isEmpty projectOptions.SourceFiles then
-                None
+                return None
             else
                 checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = true, userOpName = "computeOptions")
 
@@ -251,14 +247,16 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
 
                 cache.[projectId] <- (project, parsingOptions, projectOptions)
 
-                Some(parsingOptions, projectOptions)
+                return Some(parsingOptions, projectOptions)
   
         | true, (oldProject, parsingOptions, projectOptions) ->
-            if isProjectInvalidated oldProject project settings then
+            let! isProjectInvalidated = isProjectInvalidated oldProject project settings cancellationTokenSource.Token
+            if isProjectInvalidated then
                 cache.Remove(projectId) |> ignore
-                tryComputeOptions project
+                return! tryComputeOptions project
             else
-                Some(parsingOptions, projectOptions)
+                return Some(parsingOptions, projectOptions)
+    }
 
     let loop (agent: MailboxProcessor<FSharpProjectOptionsMessage>) =
         async {
@@ -273,7 +271,8 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                             let! options = tryComputeOptionsByFile document
                             reply.Reply(options)
                         else
-                            reply.Reply(tryComputeOptions document.Project)
+                            let! options = tryComputeOptions document.Project
+                            reply.Reply(options)
                     with
                     | _ ->
                         reply.Reply(None)
@@ -282,7 +281,8 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                         if project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles || project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
                             reply.Reply(None)
                         else
-                            reply.Reply(tryComputeOptions project)
+                            let! options = tryComputeOptions project
+                            reply.Reply(options)
                     with
                     | _ ->
                         reply.Reply(None)
