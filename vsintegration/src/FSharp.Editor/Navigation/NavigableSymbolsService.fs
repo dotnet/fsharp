@@ -42,27 +42,21 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
                     let snapshot = triggerSpan.Snapshot
                     let position = triggerSpan.Start.Position
                     let document = snapshot.GetOpenDocumentInCurrentContextWithChanges()
-                    let! sourceText = document.GetTextAsync () |> liftTaskAsync
+                    let! sourceText = document.GetTextAsync() |> liftTaskAsync
                     
                     statusBar.Message(SR.LocatingSymbol())
                     use _ = statusBar.Animate()
 
                     let gtdTask = gtd.FindDefinitionTask(document, position, cancellationToken)
 
-                    // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled
+                    // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled.
                     // Task.Wait throws an exception if the task is cancelled, so be sure to catch it.
-                    let gtdCompletedOrError =
-                        try
-                            // This call to Wait() is fine because we want to be able to provide the error message in the status bar.
-                            gtdTask.Wait()
-                            Ok gtdTask
-                        with exc -> 
-                            Error(Exception.flattenMessage exc)
+                    try
+                        // This call to Wait() is fine because we want to be able to provide the error message in the status bar.
+                        gtdTask.Wait()
 
-                    match gtdCompletedOrError with
-                    | Ok task ->
-                        if task.Status = TaskStatus.RanToCompletion && task.Result.IsSome then
-                            let (navigableItem, range) = task.Result.Value
+                        if gtdTask.Status = TaskStatus.RanToCompletion && gtdTask.Result.IsSome then
+                            let navigableItem, range = gtdTask.Result.Value
 
                             let declarationTextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
                             let declarationSpan = Span(declarationTextSpan.Start, declarationTextSpan.Length)
@@ -70,12 +64,12 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
 
                             return FSharpNavigableSymbol(navigableItem, symbolSpan, gtd, statusBar) :> INavigableSymbol
                         else 
-                            statusBar.TempMessage (SR.CannotDetermineSymbol())
+                            statusBar.TempMessage(SR.CannotDetermineSymbol())
 
                             // The NavigableSymbols API accepts 'null' when there's nothing to navigate to.
                             return null
-                    | Error message ->
-                        statusBar.TempMessage (String.Format(SR.NavigateToFailed(), message))
+                    with exc ->
+                        statusBar.TempMessage(String.Format(SR.NavigateToFailed(), Exception.flattenMessage exc))
 
                         // The NavigableSymbols API accepts 'null' when there's nothing to navigate to.
                         return null
