@@ -105,7 +105,7 @@ type private FSharpProjectOptionsMessage =
 
 [<Sealed>]
 type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, settings: EditorOptions, serviceProvider, checkerProvider: FSharpCheckerProvider) =
-    let cancellationTokenSource = CancellationTokenSource()
+    let cancellationTokenSource = new CancellationTokenSource()
 
     // Hack to store command line options from HandleCommandLineChanges
     let cpsCommandLineOptions = new ConcurrentDictionary<ProjectId, string[] * string[]>()
