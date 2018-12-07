@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.ComponentModel.Composition
 open System.Runtime.InteropServices
+open System.Threading
 
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
@@ -66,7 +67,7 @@ type internal XmlDocCommandFilter
                                 // XmlDocable line #1 are 1-based, editor is 0-based
                                 let curLineNum = wpfTextView.Caret.Position.BufferPosition.GetContainingLine().LineNumber + 1
                                 let! document = document.Value
-                                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, CancellationToken.None)
                                 let sourceText = wpfTextView.TextBuffer.CurrentSnapshot.GetText()
                                 let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
                                 let xmlDocables = XmlDocParser.getXmlDocables (sourceText, Some parsedInput) 

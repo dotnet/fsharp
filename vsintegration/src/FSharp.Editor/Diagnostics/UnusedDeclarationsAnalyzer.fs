@@ -106,7 +106,7 @@ type internal UnusedDeclarationsAnalyzer() =
 
             do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
             do! Async.Sleep DefaultTuning.UnusedDeclarationsAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
-            match! getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document) with
+            match! getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document, cancellationToken) with
             | (_parsingOptions, projectOptions) ->
                 let! sourceText = document.GetTextAsync()
                 let checker = getChecker document

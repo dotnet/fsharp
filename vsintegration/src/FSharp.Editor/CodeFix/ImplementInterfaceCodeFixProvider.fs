@@ -138,7 +138,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
 
     override __.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject context.Document
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document, context.CancellationToken)
             let cancellationToken = context.CancellationToken
             let! sourceText = context.Document.GetTextAsync(cancellationToken)
             let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(context.Document, projectOptions, sourceText = sourceText, userOpName = userOpName)

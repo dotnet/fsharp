@@ -98,14 +98,14 @@ module private FSharpProjectOptionsHelpers =
 
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
-    | TryGetOptionsByDocument of Document * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option>
-    | TryGetOptionsByProject of Project * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option>
+    | TryGetOptionsByDocument of Document * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option> * CancellationToken
+    | TryGetOptionsByProject of Project * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option> * CancellationToken
     | ClearOptions of ProjectId
     | ClearSingleFileOptionsCache of DocumentId
 
 [<Sealed>]
 type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, settings: EditorOptions, serviceProvider, checkerProvider: FSharpCheckerProvider) =
-    let cancellationTokenSource = new CancellationTokenSource()
+    let cancellationTokenSource = CancellationTokenSource()
 
     // Hack to store command line options from HandleCommandLineChanges
     let cpsCommandLineOptions = new ConcurrentDictionary<ProjectId, string[] * string[]>()
@@ -113,10 +113,10 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
     let cache = Dictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
     let singleFileCache = Dictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
 
-    let rec tryComputeOptionsByFile (document: Document) =
+    let rec tryComputeOptionsByFile (document: Document) cancellationToken =
         async {
-            let! text = document.GetTextAsync() |> Async.AwaitTask
-            let! fileStamp = document.GetTextVersionAsync() |> Async.AwaitTask
+            let! text = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+            let! fileStamp = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
             let! scriptProjectOptions, _ = checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, text.ToString(), DateTime.Now)
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
@@ -139,6 +139,8 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                             Stamp = Some(int64 (fileStamp.GetHashCode()))
                         }
 
+                cancellationToken.ThrowIfCancellationRequested()
+
                 checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = true, userOpName = "computeOptions")
 
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
@@ -150,12 +152,12 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
             | true, (fileStamp2, parsingOptions, projectOptions) ->
                 if fileStamp <> fileStamp2 then
                     singleFileCache.Remove(document.Id) |> ignore
-                    return! tryComputeOptionsByFile document
+                    return! tryComputeOptionsByFile document cancellationToken
                 else
                     return Some(parsingOptions, projectOptions)
         }
     
-    let rec tryComputeOptions (project: Project) = async {
+    let rec tryComputeOptions (project: Project) (cancellationToken: CancellationToken) = async {
         let projectId = project.Id
         match cache.TryGetValue(projectId) with
         | false, _ ->
@@ -172,7 +174,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     |> Seq.choose (fun projectReference -> 
                         let referenceProject = project.Solution.GetProject(projectReference.ProjectId)
                         if referenceProject.Language = FSharpConstants.FSharpLanguageName then
-                            Some((async { return! tryComputeOptions referenceProject }, referenceProject))
+                            Some((async { return! tryComputeOptions referenceProject cancellationToken }, referenceProject))
                         else
                             None
                     )
@@ -229,6 +231,8 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     Stamp = Some(int64 (project.Version.GetHashCode()))
                 }
 
+            cancellationToken.ThrowIfCancellationRequested()
+
             // This can happen if we didn't receive the callback from HandleCommandLineChanges yet.
             if Array.isEmpty projectOptions.SourceFiles then
                 return None
@@ -242,10 +246,10 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                 return Some(parsingOptions, projectOptions)
   
         | true, (oldProject, parsingOptions, projectOptions) ->
-            let! isProjectInvalidated = isProjectInvalidated oldProject project settings cancellationTokenSource.Token
+            let! isProjectInvalidated = isProjectInvalidated oldProject project settings cancellationToken
             if isProjectInvalidated then
                 cache.Remove(projectId) |> ignore
-                return! tryComputeOptions project
+                return! tryComputeOptions project cancellationToken
             else
                 return Some(parsingOptions, projectOptions)
     }
@@ -254,26 +258,26 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
         async {
             while true do
                 match! agent.Receive() with
-                | FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply) ->
+                | FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, cancellationToken) ->
                     try
                         // For now, disallow miscellaneous workspace since we are using the hacky F# miscellaneous files project.
                         if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
                             reply.Reply(None)
                         elif document.Project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
-                            let! options = tryComputeOptionsByFile document
+                            let! options = tryComputeOptionsByFile document cancellationToken
                             reply.Reply(options)
                         else
-                            let! options = tryComputeOptions document.Project
+                            let! options = tryComputeOptions document.Project cancellationToken
                             reply.Reply(options)
                     with
                     | _ ->
                         reply.Reply(None)
-                | FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply) ->
+                | FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply, cancellationToken) ->
                     try
                         if project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles || project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
                             reply.Reply(None)
                         else
-                            let! options = tryComputeOptions project
+                            let! options = tryComputeOptions project cancellationToken
                             reply.Reply(options)
                     with
                     | _ ->
@@ -286,11 +290,11 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
 
     let agent = MailboxProcessor.Start((fun agent -> loop agent), cancellationToken = cancellationTokenSource.Token)
 
-    member __.TryGetOptionsByProjectAsync(project) =
-        agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply))
+    member __.TryGetOptionsByProjectAsync(project, cancellationToken) =
+        agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply, cancellationToken))
 
-    member __.TryGetOptionsByDocumentAsync(document) =
-        agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply))
+    member __.TryGetOptionsByDocumentAsync(document, cancellationToken) =
+        agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, cancellationToken))
 
     member __.ClearOptionsByProjectId(projectId) =
         agent.Post(FSharpProjectOptionsMessage.ClearOptions(projectId))
@@ -362,9 +366,9 @@ type internal FSharpProjectOptionsManager
         reactor.TryGetOptionsByProjectAsync(project)
 
     /// Get the exact options for a document or project
-    member this.TryGetOptionsForDocumentOrProject(document: Document) =
+    member this.TryGetOptionsForDocumentOrProject(document: Document, cancellationToken) =
         async { 
-            match! reactor.TryGetOptionsByDocumentAsync(document) with
+            match! reactor.TryGetOptionsByDocumentAsync(document, cancellationToken) with
             | Some(parsingOptions, projectOptions) ->
                 return Some(parsingOptions, None, projectOptions)
             | _ ->
@@ -373,9 +377,9 @@ type internal FSharpProjectOptionsManager
 
     /// Get the options for a document or project relevant for syntax processing.
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project options for a script.
-    member this.TryGetOptionsForEditingDocumentOrProject(document:Document) = 
+    member this.TryGetOptionsForEditingDocumentOrProject(document:Document, cancellationToken) = 
         async {
-            let! result = this.TryGetOptionsForDocumentOrProject(document) 
+            let! result = this.TryGetOptionsForDocumentOrProject(document, cancellationToken) 
             return result |> Option.map(fun (parsingOptions, _, projectOptions) -> parsingOptions, projectOptions)
         }
 
