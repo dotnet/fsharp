@@ -171,7 +171,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
     /// Helper function that is used to determine the navigation strategy to apply, can be tuned towards signatures or implementation files.
     member private __.FindSymbolHelper (originDocument: Document, originRange: range, sourceText: SourceText, preferSignature: bool) =
         asyncMaybe {
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject originDocument
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(originDocument, CancellationToken.None)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! originTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, originRange)
             let position = originTextSpan.Start
@@ -193,7 +193,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                 if not (File.Exists fsfilePath) then return! None else
                 let! implDoc = originDocument.Project.Solution.TryGetDocumentFromPath fsfilePath
                 let! implSourceText = implDoc.GetTextAsync ()
-                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject implDoc
+                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(implDoc, CancellationToken.None)
                 let! _, _, checkFileResults = checker.ParseAndCheckDocument (implDoc, projectOptions, sourceText=implSourceText, userOpName=userOpName)
                 let! symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol |> liftAsync
                 let! implSymbol  = symbolUses |> Array.tryHead 
@@ -223,7 +223,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
 
     member private this.FindDefinitionAtPosition(originDocument: Document, position: int) =
         asyncMaybe {
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject originDocument
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(originDocument, CancellationToken.None)
             let! sourceText = originDocument.GetTextAsync () |> liftTaskAsync
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let textLine = sourceText.Lines.GetLineFromPosition position
@@ -310,7 +310,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                         let! implDocument = originDocument.Project.Solution.TryGetDocumentFromPath implFilePath
                         let! implVersion = implDocument.GetTextVersionAsync () |> liftTaskAsync
                         let! implSourceText = implDocument.GetTextAsync () |> liftTaskAsync
-                        let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject implDocument
+                        let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(implDocument, CancellationToken.None)
                         
                         let! targetRange = this.FindSymbolDeclarationInFile(targetSymbolUse, implFilePath, implSourceText.ToString(), projectOptions, implVersion.GetHashCode())                               
                         
