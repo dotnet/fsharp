@@ -5,8 +5,7 @@
   <Import Project="..\fcs.props" />
   <Import Project="..\netfx.props" />
   <Import Project="..\..\src\buildtools\buildtools.targets" />
-  <Import Project="..\..\src\buildtools\buildtools.proj" />
-  <PropertyGroup>
+ <PropertyGroup>
     <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DefineConstants>$(DefineConstants);COMPILER_SERVICE_AS_DLL</DefineConstants>
@@ -642,6 +641,7 @@
     <PackageReference Include="System.Reflection.Metadata" Version="1.6.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Data.SqlClient" Version="4.3.0" />
     <PackageReference Include="System.Diagnostics.Process" Version="4.1.0" />
     <PackageReference Include="System.Diagnostics.TraceSource" Version="4.0.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
@@ -656,11 +656,6 @@
     <Reference Include="System.ValueTuple">
       <HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
-    <PackageReference Include="FsLexYacc" Version="7.0.6" PrivateAssets="all" />
   </ItemGroup>
-  <PropertyGroup>
-    <FsLexYaccTargets>$(NuGetPackageRoot)FsLexYacc\7.0.6\build\FsLexYacc.targets</FsLexYaccTargets>
-  </PropertyGroup>
-  <Import Project="$(FsLexYaccTargets)" Condition="Exists('$(FsLexYaccTargets)')" />
   <Target Name="GenerateCode" AfterTargets="Restore" BeforeTargets="BeforeBuild" DependsOnTargets="CallFsLex;CallFsYacc" Condition="'$(TargetFramework)' != ''"></Target>
 </Project>

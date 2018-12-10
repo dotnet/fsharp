@@ -677,17 +677,21 @@
 
   <ItemGroup>
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutablePackageVersion)" />
+    <PackageReference Include="System.Data.SqlClient" Version="$(SystemDataSqlClientPackageVersion)" />
     <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessPackageVersion)" />
     <PackageReference Include="System.Diagnostics.TraceSource" Version="$(SystemDiagnosticsTraceSourcePackageVersion)" />
     <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsPackageVersion)" />
     <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqExpressionsPackageVersion)" />
     <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsPackageVersion)" />
+    <PackageReference Include="System.Net.Security" Version="$(SystemNetSecurityPackageVersion)" />
     <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitPackageVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsPackageVersion)" />
     <PackageReference Include="System.Runtime" Version="$(SystemRuntimePackageVersion)" />
     <PackageReference Include="System.Runtime.InteropServices" Version="$(SystemRuntimeInteropServicesPackageVersion)" />
+    <PackageReference Include="System.Security.Claims" Version="$(SystemSecurityClaimsPackageVersion)" />
     <PackageReference Include="System.Security.Cryptography.Algorithms" Version="$(SystemSecurityCryptographyAlgorithmsPackageVersion)" />
+    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalPackageVersion)" />
     <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelPackageVersion)" />
     <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadPackageVersion)" />
     <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolPackageVersion)" />

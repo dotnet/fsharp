@@ -109,7 +109,7 @@ let mkProjectCommandLineArgsSilent (dllName, fileNames) =
         yield "--noframework" 
         yield "--debug:full" 
         yield "--define:DEBUG" 
-#if NETCOREAPP2_0
+#if NETCOREAPP1_6 || NETCOREAPP2_0
         yield "--targetprofile:netcore" 
 #endif
         yield "--optimize-" 

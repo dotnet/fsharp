@@ -19,7 +19,7 @@
     </PropertyGroup>
 
     <MakeDir Directories="$(ConvertedPdbsDirectory)" />
-    <!-- <Exec Command='"$(PdbConverterExe)" $(PdbConverterArgs)' /> -->
+    <Exec Command='"$(PdbConverterExe)" $(PdbConverterArgs)' />
   </Target>
 
 </Project>

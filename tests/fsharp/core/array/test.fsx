@@ -1407,7 +1407,7 @@ module bug872632 =
 
 module CheckUnionTypesAreSealed =
     open System
-#if NETSTANDARD
+#if NETCOREAPP
     open System.Reflection
     type System.Type with
         member this.IsSealed
@@ -1469,7 +1469,7 @@ module manyIndexes =
         0
 
 
-#if !NETSTANDARD
+#if !NETCOREAPP
 module bug6447 =
     let a = System.Array.CreateInstance(typeof<int>, [|1|], [|1|])
     let a1 = System.Array.CreateInstance(typeof<int>, [|1|], [|3|])
