@@ -685,7 +685,7 @@ module Combinator_Examples = begin
 
 end
 
-#if !NETSTANDARD
+#if !NETCOREAPP
 module XmlPattern_Examples = begin
 
 

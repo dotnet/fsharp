@@ -1825,6 +1825,7 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Data"
           yield "System.Drawing"
           yield "System.Core"
+
           // These are the Portable-profile and .NET Standard 1.6 dependencies of FSharp.Core.dll.  These are needed
           // when an F# sript references an F# profile 7, 78, 259 or .NET Standard 1.6 component which in turn refers 
           // to FSharp.Core for profile 7, 78, 259 or .NET Standard.
@@ -1850,17 +1851,24 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Windows.Forms"
           yield "System.Numerics" 
      else
-          yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location), "mscorlib.dll"); // mscorlib
-          yield typeof<System.Console>.Assembly.Location; // System.Console
-          yield typeof<System.ComponentModel.DefaultValueAttribute>.Assembly.Location; // System.Runtime
-          yield typeof<System.ComponentModel.PropertyChangedEventArgs>.Assembly.Location; // System.ObjectModel             
-          yield typeof<System.IO.BufferedStream>.Assembly.Location; // System.IO
-          yield typeof<System.Linq.Enumerable>.Assembly.Location; // System.Linq
-          //yield typeof<System.Xml.Linq.XDocument>.Assembly.Location; // System.Xml.Linq
-          yield typeof<System.Net.WebRequest>.Assembly.Location; // System.Net.Requests
-          yield typeof<System.Numerics.BigInteger>.Assembly.Location; // System.Runtime.Numerics
-          yield typeof<System.Threading.Tasks.TaskExtensions>.Assembly.Location; // System.Threading.Tasks
-          yield typeof<Microsoft.FSharp.Core.MeasureAttribute>.Assembly.Location; // FSharp.Core
+          yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location), "mscorlib.dll")    // mscorlib
+          yield typeof<System.Console>.Assembly.Location                                                        // System.Console
+          yield typeof<System.Collections.BitArray>.Assembly.Location                                           // System.Collections
+          yield typeof<System.Data.SqlClient.SqlCommand>.Assembly.Location                                      // System.Data.SqlClient
+          yield typeof<System.ComponentModel.PropertyChangedEventArgs>.Assembly.Location                        // System.ObjectModel             
+          yield typeof<System.IO.File>.Assembly.Location                                                        // System.IO.FileSystem
+          yield typeof<System.IO.TextWriter>.Assembly.Location                                                  // System.IO
+          yield typeof<System.Linq.Enumerable>.Assembly.Location                                                // System.Linq
+          yield typeof<System.Xml.XmlNodeType>.Assembly.Location                                                // System.Xml
+          yield typeof<System.Xml.Linq.XDocument>.Assembly.Location                                             // System.Xml.Linq
+          yield typeof<System.Net.WebRequest>.Assembly.Location                                                 // System.Net.Requests
+          yield typeof<System.Numerics.BigInteger>.Assembly.Location                                            // System.Runtime.Numerics
+          yield typeof<System.Net.Security.AuthenticatedStream>.Assembly.Location                               // System.Net.Security
+          yield typeof<System.Security.Principal.GenericIdentity>.Assembly.Location                             // System.Security.Claims
+          yield typeof<System.Text.RegularExpressions.Regex>.Assembly.Location                                  // System.Text.RegularExpressions.Regex
+          yield typeof<System.Threading.Tasks.TaskExtensions>.Assembly.Location                                 // System.Threading.Tasks
+          yield typeof<System.Threading.Thread>.Assembly.Location                                               // System.Threading
+          yield typeof<Microsoft.FSharp.Core.MeasureAttribute>.Assembly.Location                                // FSharp.Core
     ]
 
 
