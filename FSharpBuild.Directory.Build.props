@@ -66,14 +66,6 @@
 
   <!-- SDK targets override -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND Exists('$(ProtoOutputPath)')">
-    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
-    <FscToolPath>$(ProtoOutputPath)\</FscToolPath>
-    <FscToolExe>fsc.exe</FscToolExe>
-    <DotnetFscCompilerPath>--nologo</DotnetFscCompilerPath>
-    <FsiToolPath>$(ProtoOutputPath)\</FsiToolPath>
-    <FsiToolExe>fsi.exe</FsiToolExe>
-    <DotnetFsiCompilerPath>--nologo</DotnetFsiCompilerPath>
-
     <FSharpTargetsPath>$(ProtoOutputPath)\Microsoft.FSharp.Targets</FSharpTargetsPath>
     <FSharpPropsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
     <FSharpTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
