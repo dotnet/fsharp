@@ -13,8 +13,10 @@ module internal OptionsUIHelpers =
     type AbstractOptionPage<'options>() as this =
         inherit UIElementDialogPage()
 
+        let mutable needsLoadOnNextActivate = true
+
         let view = lazy this.CreateView()
-        
+
         let optionService =
             // lazy, so GetService is called from UI thread
             lazy
@@ -25,11 +27,17 @@ module internal OptionsUIHelpers =
 
         override this.Child = upcast view.Value
 
+        override this.OnActivate _ =
+            if needsLoadOnNextActivate then
+                view.Value.DataContext <- optionService.Value.Read<'options>()
+                needsLoadOnNextActivate <- false
+
         override this.SaveSettingsToStorage() = 
             downcast view.Value.DataContext |> optionService.Value.Write<'options>
+            needsLoadOnNextActivate <- true
 
         override this.LoadSettingsFromStorage() = 
-            view.Value.DataContext <- optionService.Value.Read<'options>()
+            needsLoadOnNextActivate <- true
 
     //data binding helpers
     let radioButtonCoverter =

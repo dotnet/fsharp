@@ -119,13 +119,13 @@ type EditorOptions
         store.Register CodeLensOptions.Default
         store.Register FormattingOptions.Default
 
-    member __.IntelliSense : IntelliSenseOptions = store.Read()
-    member __.QuickInfo : QuickInfoOptions = store.Read()
-    member __.CodeFixes : CodeFixesOptions = store.Read()
-    member __.LanguageServicePerformance : LanguageServicePerformanceOptions = store.Read()
-    member __.Advanced: AdvancedOptions = store.Read()
-    member __.CodeLens: CodeLensOptions = store.Read()
-    member __.Formatting : FormattingOptions = store.Read()
+    member __.IntelliSense : IntelliSenseOptions = store.Get()
+    member __.QuickInfo : QuickInfoOptions = store.Get()
+    member __.CodeFixes : CodeFixesOptions = store.Get()
+    member __.LanguageServicePerformance : LanguageServicePerformanceOptions = store.Get()
+    member __.Advanced: AdvancedOptions = store.Get()
+    member __.CodeLens: CodeLensOptions = store.Get()
+    member __.Formatting : FormattingOptions = store.Get()
 
     interface Microsoft.CodeAnalysis.Host.IWorkspaceService
 
