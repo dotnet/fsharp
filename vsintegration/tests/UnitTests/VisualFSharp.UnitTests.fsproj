@@ -107,6 +107,9 @@
     <Compile Include="UnusedOpensTests.fs">
       <Link>CompilerService\UnusedOpensTests.fs</Link>
     </Compile>
+    <Compile Include="..\..\..\tests\service\TreeVisitorTests.fs">
+      <Link>CompilerService\TreeVisitorTests.fs</Link>
+    </Compile>
     <Compile Include="SyntacticColorizationServiceTests.fs">
       <Link>Roslyn\SyntacticColorizationServiceTests.fs</Link>
     </Compile>
