@@ -57,13 +57,13 @@ type TempFile(ext, contents) =
 
 let getBackgroundParseResultsForScriptText (input) = 
     use file =  new TempFile("fsx", input)
-    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, input) |> Async.RunSynchronously
+    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, Microsoft.FSharp.Compiler.Text.SourceText.ofString input) |> Async.RunSynchronously
     checker.GetBackgroundParseResultsForFileInProject(file.Name, checkOptions)  |> Async.RunSynchronously
 
 
 let getBackgroundCheckResultsForScriptText (input) = 
     use file =  new TempFile("fsx", input)
-    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, input) |> Async.RunSynchronously
+    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, Microsoft.FSharp.Compiler.Text.SourceText.ofString input) |> Async.RunSynchronously
     checker.GetBackgroundCheckResultsForFileInProject(file.Name, checkOptions) |> Async.RunSynchronously
 
 
@@ -167,7 +167,7 @@ let mkTestFileAndOptions source additionalArgs =
     fileName, options
 
 let parseAndCheckFile fileName source options =
-    match checker.ParseAndCheckFileInProject(fileName, 0, source, options) |> Async.RunSynchronously with
+    match checker.ParseAndCheckFileInProject(fileName, 0, Microsoft.FSharp.Compiler.Text.SourceText.ofString source, options) |> Async.RunSynchronously with
     | parseResults, FSharpCheckFileAnswer.Succeeded(checkResults) -> parseResults, checkResults
     | _ -> failwithf "Parsing aborted unexpectedly..."
 
@@ -181,11 +181,11 @@ let parseAndCheckScript (file, input) =
     let projectOptions = checker.GetProjectOptionsFromCommandLineArgs (projName, args)
 
 #else    
-    let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
+    let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, Microsoft.FSharp.Compiler.Text.SourceText.ofString input) |> Async.RunSynchronously
     printfn "projectOptions = %A" projectOptions
 #endif
 
-    let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, input, projectOptions) |> Async.RunSynchronously
+    let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, Microsoft.FSharp.Compiler.Text.SourceText.ofString input, projectOptions) |> Async.RunSynchronously
     
     // if parseResult.Errors.Length > 0 then
     //     printfn "---> Parse Input = %A" input
@@ -204,7 +204,7 @@ let parseSourceCode (name: string, code: string) =
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
     let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
-    let parseResults = checker.ParseFile(filePath, code, options) |> Async.RunSynchronously
+    let parseResults = checker.ParseFile(filePath, Microsoft.FSharp.Compiler.Text.SourceText.ofString code, options) |> Async.RunSynchronously
     parseResults.ParseTree
 
 /// Extract range info 
