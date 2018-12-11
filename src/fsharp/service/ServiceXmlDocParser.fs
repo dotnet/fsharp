@@ -2,6 +2,7 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 
 /// Represent an Xml documentation block in source code
@@ -187,4 +188,13 @@ module XmlDocParser =
     /// Get the list of Xml documentation from current source code
     let getXmlDocables (sourceCodeOfTheFile, input) =
         let sourceCodeLinesOfTheFile = String.getLines sourceCodeOfTheFile
+        XmlDocParsing.getXmlDocablesImpl (sourceCodeLinesOfTheFile, input)
+
+    /// Get the list of Xml documentation from current source code
+    let getXmlDocablesFromSourceText (sourceText: ISourceText, input) =
+        let sourceCodeLinesOfTheFile =
+            [|
+                for i = 0 to sourceText.Lines.Count - 1 do
+                    yield sourceText.Lines.[i].ToString()
+            |]
         XmlDocParsing.getXmlDocablesImpl (sourceCodeLinesOfTheFile, input)

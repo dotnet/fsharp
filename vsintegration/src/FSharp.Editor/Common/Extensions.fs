@@ -6,7 +6,9 @@ module internal Microsoft.VisualStudio.FSharp.Editor.Extensions
 open System
 open System.IO
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -39,6 +41,44 @@ type Document with
             | languageServices ->
                 languageServices.GetService<'T>()
                 |> Some
+
+type TextLine with
+
+    member this.ToFSharpTextLine() =
+        { new ITextLine with
+
+            member __.Length = this.Span.Length
+
+            member __.TextString = this.ToString()
+        }
+
+type TextLineCollection with
+
+    member this.ToFSharpTextLineCollection() =
+        { new ITextLineCollection with
+
+            member __.Item with get index = this.[index].ToFSharpTextLine()
+
+            member __.Count = this.Count
+        }
+
+
+type SourceText with
+
+    member this.ToFSharpSourceText() =
+        { new ISourceText with
+            
+            member __.Item with get index = this.[index]
+
+            member __.Lines = this.Lines.ToFSharpTextLineCollection()
+
+            member __.ContentEquals(sourceText) =
+                match sourceText with
+                | :? SourceText as sourceText -> this.ContentEquals(sourceText)
+                | _ -> false
+
+            member __.Length = this.Length
+        }
 
 type FSharpNavigationDeclarationItem with
     member x.RoslynGlyph : Glyph =

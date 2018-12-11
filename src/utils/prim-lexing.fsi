@@ -3,6 +3,30 @@
 // LexBuffers are for use with automatically generated lexical analyzers,
 // in particular those produced by 'fslex'.
 
+namespace Microsoft.FSharp.Compiler 
+
+type ITextLine =
+
+    abstract Length : int
+
+    abstract TextString : string
+
+type ITextLineCollection =
+
+    abstract Item : int -> ITextLine with get
+
+    abstract Count : int
+
+type ISourceText =
+
+    abstract Item : int -> char with get
+
+    abstract Lines : ITextLineCollection
+
+    abstract Length : int
+
+    abstract ContentEquals : ISourceText -> bool
+
 namespace Internal.Utilities.Text.Lexing
 
 open System.Collections.Generic

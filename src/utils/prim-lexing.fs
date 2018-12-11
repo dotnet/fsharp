@@ -2,6 +2,29 @@
 
 #nowarn "47" // recursive initialization of LexBuffer
 
+namespace Microsoft.FSharp.Compiler
+
+type ITextLine =
+
+    abstract Length : int
+
+    abstract TextString : string
+
+type ITextLineCollection =
+
+    abstract Item : int -> ITextLine with get
+
+    abstract Count : int
+
+type ISourceText =
+
+    abstract Item : int -> char with get
+
+    abstract Lines : ITextLineCollection
+
+    abstract Length : int
+
+    abstract ContentEquals : ISourceText -> bool
 
 namespace Internal.Utilities.Text.Lexing
 

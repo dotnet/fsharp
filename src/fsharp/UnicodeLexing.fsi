@@ -9,3 +9,4 @@ type Lexbuf =  LexBuffer<char>
 val internal StringAsLexbuf : string -> Lexbuf
 val public FunctionAsLexbuf : (char [] * int * int -> int) -> Lexbuf
 val public UnicodeFileAsLexbuf :string * int option * (*retryLocked*) bool -> Lexbuf
+val public SourceTextAsLexbuf : ISourceText -> Lexbuf

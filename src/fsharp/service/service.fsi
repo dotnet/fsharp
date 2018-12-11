@@ -306,6 +306,11 @@ type public FSharpParsingOptions =
     }
     static member Default: FSharpParsingOptions
 
+[<RequireQualifiedAccess;CustomEquality;NoComparison>]
+type Source =
+    | SourceText of ISourceText
+    | String of string
+
 /// <summary>A set of information describing a project or script build configuration.</summary>
 type public FSharpProjectOptions = 
     { 
@@ -393,6 +398,17 @@ type public FSharpChecker =
     /// <param name="source">The full source for the file.</param>
     /// <param name="options">Parsing options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member MatchBraces: filename: string * source: Source * options: FSharpParsingOptions * ?userOpName: string -> Async<(range * range)[]>
+
+    /// <summary>
+    ///   Parse a source code file, returning information about brace matching in the file.
+    ///   Return an enumeration of the matching parenthetical tokens in the file.
+    /// </summary>
+    ///
+    /// <param name="filename">The filename for the file, used to help caching of results.</param>
+    /// <param name="source">The full source for the file.</param>
+    /// <param name="options">Parsing options for the project or script.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     [<Obsolete("Please pass FSharpParsingOptions to MatchBraces. If necessary generate FSharpParsingOptions from FSharpProjectOptions by calling checker.GetParsingOptionsFromProjectOptions(options)")>]
     member MatchBraces: filename: string * source: string * options: FSharpProjectOptions * ?userOpName: string -> Async<(range * range)[]>
 
@@ -406,6 +422,17 @@ type public FSharpChecker =
     /// <param name="options">Parsing options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member ParseFile: filename: string * source: string * options: FSharpParsingOptions * ?userOpName: string -> Async<FSharpParseFileResults>
+
+    /// <summary>
+    /// <para>Parse a source code file, returning a handle that can be used for obtaining navigation bar information
+    /// To get the full information, call 'CheckFileInProject' method on the result</para>
+    /// </summary>
+    ///
+    /// <param name="filename">The filename for the file.</param>
+    /// <param name="source">The full source for the file.</param>
+    /// <param name="options">Parsing options for the project or script.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member ParseFile: filename: string * source: Source * options: FSharpParsingOptions * ?userOpName: string -> Async<FSharpParseFileResults>
 
     /// <summary>
     /// <para>Parse a source code file, returning a handle that can be used for obtaining navigation bar information
@@ -472,6 +499,31 @@ type public FSharpChecker =
 
     /// <summary>
     /// <para>
+    ///   Check a source code file, returning a handle to the results
+    /// </para>
+    /// <para>
+    ///    Note: all files except the one being checked are read from the FileSystem API
+    /// </para>
+    /// <para>
+    ///   Return FSharpCheckFileAnswer.Aborted if a parse tree was not available.
+    /// </para>
+    /// </summary>
+    ///
+    /// <param name="parsed">The results of ParseFile for this file.</param>
+    /// <param name="filename">The name of the file in the project whose source is being checked.</param>
+    /// <param name="fileversion">An integer that can be used to indicate the version of the file. This will be returned by TryGetRecentCheckResultsForFile when looking up the file.</param>
+    /// <param name="source">The full source for the file.</param>
+    /// <param name="options">The options for the project or script.</param>
+    /// <param name="textSnapshotInfo">
+    ///     An item passed back to 'hasTextChangedSinceLastTypecheck' (from some calls made on 'FSharpCheckFileResults') to help determine if 
+    ///     an approximate intellisense resolution is inaccurate because a range of text has changed. This 
+    ///     can be used to marginally increase accuracy of intellisense results in some situations.
+    /// </param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member CheckFileInProject : parsed: FSharpParseFileResults * filename: string * fileversion: int * source: Source * options: FSharpProjectOptions * ?textSnapshotInfo: obj * ?userOpName: string -> Async<FSharpCheckFileAnswer>
+
+    /// <summary>
+    /// <para>
     ///   Parse and check a source code file, returning a handle to the results 
     /// </para>
     /// <para>
@@ -493,6 +545,30 @@ type public FSharpChecker =
     /// </param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member ParseAndCheckFileInProject : filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?textSnapshotInfo: obj * ?userOpName: string -> Async<FSharpParseFileResults * FSharpCheckFileAnswer>
+
+    /// <summary>
+    /// <para>
+    ///   Parse and check a source code file, returning a handle to the results 
+    /// </para>
+    /// <para>
+    ///    Note: all files except the one being checked are read from the FileSystem API
+    /// </para>
+    /// <para>
+    ///   Return FSharpCheckFileAnswer.Aborted if a parse tree was not available.
+    /// </para>
+    /// </summary>
+    ///
+    /// <param name="filename">The name of the file in the project whose source is being checked.</param>
+    /// <param name="fileversion">An integer that can be used to indicate the version of the file. This will be returned by TryGetRecentCheckResultsForFile when looking up the file.</param>
+    /// <param name="source">The full source for the file.</param>
+    /// <param name="options">The options for the project or script.</param>
+    /// <param name="textSnapshotInfo">
+    ///     An item passed back to 'hasTextChangedSinceLastTypecheck' (from some calls made on 'FSharpCheckFileResults') to help determine if 
+    ///     an approximate intellisense resolution is inaccurate because a range of text has changed. This 
+    ///     can be used to marginally increase accuracy of intellisense results in some situations.
+    /// </param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member ParseAndCheckFileInProject : filename: string * fileversion: int * source: Source * options: FSharpProjectOptions * ?textSnapshotInfo: obj * ?userOpName: string -> Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
     /// <summary>
     /// <para>Parse and typecheck all files in a project.</para>

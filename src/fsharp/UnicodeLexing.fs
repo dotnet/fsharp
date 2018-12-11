@@ -19,6 +19,15 @@ let StringAsLexbuf (s:string) : Lexbuf =
   
 let FunctionAsLexbuf (bufferFiller: char[] * int * int -> int) : Lexbuf =
     LexBuffer<_>.FromFunction bufferFiller 
+
+let SourceTextAsLexbuf (sourceText: ISourceText) =
+    LexBuffer<char>.FromFunction(fun (chars, start, length) ->
+        let mutable count = 0
+        for i = start to length - 1 do
+            chars.[count] <- sourceText.[i]
+            count <- count + 1
+        count
+    )
      
 // The choice of 60 retries times 50 ms is not arbitrary. The NTFS FILETIME structure 
 // uses 2 second resolution for LastWriteTime. We retry long enough to surpass this threshold 
