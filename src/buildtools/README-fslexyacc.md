@@ -41,8 +41,28 @@ of generics for `LexBuffer<'Char>` is also superfluous because `'Char` is always
 
 ## What if I want to eridicate our use of FsLex and FsYacc?
 
-The use of FsLex is generally considered fairly reasonable and unlikely to change.
+The use of FsLex and FsYacc in this repo is somewhat controversial since the C# compiler implementation uses hand-written lexers and parsers.
+
+In the balance the use of FsLex is generally considered fairly reasonable and unlikely to change.
 
 The use of a table-driven LALR parser is more controversial: there is a general feeling that it would be great to somehow move on from FsYacc and do parsing some other way. However, it is not at all easy to do that and remain fully compatible.  For this reason it is unlikely we will remove the use of FsYacc any time soon.
+
+## Why aren't FsLex and FsYacc just ingested into this repo if we depend on them (and even have an exact copy of them for build-from-source)?
+
+The copy of the `fslex` and `fsyacc` source code in `buildtools` is an exact copy and is not tested or documented
+apart from what's been done before in FsLexYacc repo. Hacking on it would be wrong, because there's no place to put documentation or tests.
+
+FsLex and FsYacc are non-trivial tools that require documentation and testing.  Also, for external users, they require packaging. Changes to their design should be
+considered carefully. While we are open to adding features to these tools specifically for use by the F# compiler, the tools are open source and available
+independently.  For these reasons it is generally best that these tools live in their own repository.
+
+Most of the desire to move FsLex and FsYacc into this repository is in the hope that by doing so we can somehow eventually code-fold them away until we no longer
+require them at all, and can instead move to hand-written parsers and lexers. That's an admirable goal.  However, moving the tools
+into this repo doesn't actually help with eliminating their use, and may make it harder. This is because these tools use table generation
+based on very specific lexer/grammar specifications. The tables are unreadable and unmaintainable.  You can't just
+somehow "specialize" the tools to a particular grammar and get a useful, maintainable lexer or parser.
+
+As a result, ingesting the tools into this repo (and modifying them here) would be counter-productive, as the tools would no longer be tested, documented or
+maintained properly, and overall engineering quality would decrease.  Further the bootstrap process for the repo then becomes very unwieldy.
 
 
