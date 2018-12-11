@@ -1537,11 +1537,6 @@ module internal Parser =
         let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
         tokenizer.Lexer
 
-    // Adding this new-line character at the end of the source seems odd but is required for some unit tests
-    // Todo: fix tests
-    let addNewLine (source: string) =
-        if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
-
     let createLexbuf (sourceText: ISourceText) =
         UnicodeLexing.SourceTextAsLexbuf(sourceText)
 

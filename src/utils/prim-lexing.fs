@@ -100,7 +100,12 @@ type StringSourceText(str: string) =
 
 module SourceText =
 
-    let ofString str = StringSourceText(str) :> ISourceText
+    // Adding this new-line character at the end of the source seems odd but is required for some unit tests
+    // Todo: fix tests
+    let private addNewLine (source: string) =
+        if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
+
+    let ofString str = StringSourceText(addNewLine str) :> ISourceText
 
 namespace Internal.Utilities.Text.Lexing
 
