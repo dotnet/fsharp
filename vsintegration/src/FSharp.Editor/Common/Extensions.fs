@@ -78,6 +78,9 @@ type SourceText with
                 | _ -> false
 
             member __.Length = this.Length
+
+            member __.CopyTo(sourceIndex, destinationChars, destinationIndex, count) =
+                this.CopyTo(sourceIndex, destinationChars, destinationIndex, count)
         }
 
 type FSharpNavigationDeclarationItem with

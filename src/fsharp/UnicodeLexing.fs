@@ -21,12 +21,19 @@ let FunctionAsLexbuf (bufferFiller: char[] * int * int -> int) : Lexbuf =
     LexBuffer<_>.FromFunction bufferFiller 
 
 let SourceTextAsLexbuf (sourceText: ISourceText) =
+    let mutable currentSourceIndex = 0
     LexBuffer<char>.FromFunction(fun (chars, start, length) ->
-        let mutable count = 0
-        for i = start to length - 1 do
-            chars.[count] <- sourceText.[i]
-            count <- count + 1
-        count
+        let lengthToCopy = 
+            if currentSourceIndex + length <= sourceText.Length then
+                length
+            else
+                sourceText.Length - currentSourceIndex
+                
+        if lengthToCopy = 0 then 0
+        else
+            sourceText.CopyTo(currentSourceIndex, chars, start, lengthToCopy)
+            currentSourceIndex <- currentSourceIndex + lengthToCopy
+            lengthToCopy
     )
      
 // The choice of 60 retries times 50 ms is not arbitrary. The NTFS FILETIME structure 

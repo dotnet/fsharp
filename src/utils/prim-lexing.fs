@@ -26,6 +26,8 @@ type ISourceText =
 
     abstract ContentEquals : ISourceText -> bool
 
+    abstract CopyTo : sourceIndex: int * destinationChars: char [] * destinationIndex: int * count: int -> unit
+
 namespace Internal.Utilities.Text.Lexing
 
     open Microsoft.FSharp.Core
