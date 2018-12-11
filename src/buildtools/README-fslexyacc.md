@@ -52,18 +52,21 @@ modifications to extract more information from the grammer may yield good result
 
 ## Why aren't FsLex and FsYacc just ingested into this repo if we depend on them (and even have an exact copy of them for build-from-source)?
 
-The copy of the `fslex` and `fsyacc` source code in `buildtools` is an exact copy and is not tested or documented
-apart from what's been done before in FsLexYacc repo. Hacking on it would be wrong, because there's no place to put documentation or tests.
-
 FsLex and FsYacc are non-trivial tools that require documentation and testing.  Also, for external users, they require packaging. Changes to their design should be
 considered carefully. While we are open to adding features to these tools specifically for use by the F# compiler, the tools are open source and available
 independently.  For these reasons it is generally best that these tools live in their own repository.
 
-Most of the desire to move FsLex and FsYacc into this repository is in the hope that by doing so we can somehow eventually code-fold them away until we no longer
-require them at all, and can instead move to hand-written parsers and lexers. That's an admirable goal.  However, moving the tools
-into this repo doesn't actually help with eliminating their use, and may make it harder. This is because these tools use table generation
+The copy of the `fslex` and `fsyacc` source code in `buildtools` is an exact copy and is not tested or documented
+apart from what's been done before in FsLexYacc repo. Adjusting these copies is not allowed and would be wrong from an engineering persepctive,
+because there's no place to put documentation or tests.
+
+Occasionally we discuss ingesting FsLex and FsYacc into this repository. This often comes up in the hope that by doing so
+we can somehow eventually code-fold them away until we no longer require them at all, instead moving to hand-written parsers
+and lexers. That's an admirable goal.  However, moving the tools into this repo doesn't actually help with eliminating their
+use, and may indeed make it harder. This is because these tools use table generation
 based on very specific lexer/grammar specifications. The tables are unreadable and unmaintainable.  You can't just
-somehow "specialize" the tools to a particular grammar and get a useful, maintainable lexer or parser.
+somehow "specialize" the tools to the F# grammar and then get rid of them as this doesn't give a useful, maintainable lexer or parser.
+To our knowledge there is no way to convert an LALR(1) parser specification to readable, maintainable recursive descent parsing code.
 
 As a result, ingesting the tools into this repo (and modifying them here) would be counter-productive, as the tools would no longer be tested, documented or
 maintained properly, and overall engineering quality would decrease.  Further the bootstrap process for the repo then becomes very unwieldy.
