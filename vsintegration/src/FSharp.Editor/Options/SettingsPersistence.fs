@@ -9,8 +9,8 @@ open Microsoft.VisualStudio.Settings
 open Newtonsoft.Json
 
 type IPersistSettings =
-    abstract member Read : unit -> 't
-    abstract member Write : 't -> unit
+    abstract member LoadSettings : unit -> 't
+    abstract member SaveSettings : 't -> unit
 
 [<Guid(Guids.svsSettingsPersistenceManagerIdString)>]
 type SVsSettingsPersistenceManager = class end
@@ -61,10 +61,11 @@ type SettingsStore(serviceProvider: IServiceProvider) =
     member __.Get() = getCached()
 
     // Used by the AbstractOptionPage to populate dialog controls.
-    // We clone the value because it may be altered by the UI if declared with [<CLIMutable>]
-    member __.Read() = getCached() |> clone
+    // We always have the latest value in the cache so we just return
+    // cloned value here because it may be altered by the UI if declared with [<CLIMutable>]
+    member __.LoadSettings() = getCached() |> clone
 
-    member __.Write settings =
+    member __.SaveSettings settings =
         // We replace default serialization with Newtonsoft.Json for easy schema evolution.
         // For example, if we add a new bool field to the record, representing another checkbox in Options dialog
         // deserialization will still work fine. When we pass default value to JsonConvert.PopulateObject it will
@@ -72,6 +73,7 @@ type SettingsStore(serviceProvider: IServiceProvider) =
         settingsManager.SetValueAsync(settings.GetType() |> storageKey, JsonConvert.SerializeObject settings, false)
         |> Async.AwaitTask |> Async.Start
 
+    // This is the point we retrieve the initial value and subscribe to watch for changes
     member __.Register (defaultSettings : 'options) =
         defaultSettings |> updateFromStore |> keepInCache
         let subset = defaultSettings.GetType() |> storageKey |> settingsManager.GetSubset

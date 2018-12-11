@@ -33,11 +33,11 @@ module internal OptionsUIHelpers =
             if needsLoadOnNextActivate then
                 // It looks like the bindings do not always pick up new source, unless we cycle the DataContext like this
                 view.Value.DataContext <- DependencyProperty.UnsetValue
-                view.Value.DataContext <- optionService.Value.Read<'options>()
+                view.Value.DataContext <- optionService.Value.LoadSettings<'options>()
                 needsLoadOnNextActivate <- false
 
         override this.SaveSettingsToStorage() = 
-            downcast view.Value.DataContext |> optionService.Value.Write<'options>
+            downcast view.Value.DataContext |> optionService.Value.SaveSettings<'options>
             // Make sure we load the next time the page is activated, in case if options changed
             // programmatically between now and the next time the page is activated
             needsLoadOnNextActivate <- true

@@ -130,8 +130,8 @@ type EditorOptions
     interface Microsoft.CodeAnalysis.Host.IWorkspaceService
 
     interface IPersistSettings with
-        member __.Read() = store.Read()
-        member __.Write(settings) = store.Write(settings)
+        member __.LoadSettings() = store.LoadSettings()
+        member __.SaveSettings(settings) = store.SaveSettings(settings)
 
 
 [<AutoOpen>]
