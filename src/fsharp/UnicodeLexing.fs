@@ -6,6 +6,7 @@ module internal Microsoft.FSharp.Compiler.UnicodeLexing
 // Functions for Unicode char-based lexing (new code).
 //
 
+open Microsoft.FSharp.Compiler.Text
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Internal.Utilities
 open System.IO 
@@ -20,21 +21,8 @@ let StringAsLexbuf (s:string) : Lexbuf =
 let FunctionAsLexbuf (bufferFiller: char[] * int * int -> int) : Lexbuf =
     LexBuffer<_>.FromFunction bufferFiller 
 
-let SourceTextAsLexbuf (sourceText: ISourceText) =
-    let mutable currentSourceIndex = 0
-    LexBuffer<char>.FromFunction(fun (chars, start, length) ->
-        let lengthToCopy = 
-            if currentSourceIndex + length <= sourceText.Length then
-                length
-            else
-                sourceText.Length - currentSourceIndex
-                
-        if lengthToCopy = 0 then 0
-        else
-            sourceText.CopyTo(currentSourceIndex, chars, start, lengthToCopy)
-            currentSourceIndex <- currentSourceIndex + lengthToCopy
-            lengthToCopy
-    )
+let SourceTextAsLexbuf (sourceText) =
+    LexBuffer<char>.FromSourceText(sourceText)
      
 // The choice of 60 retries times 50 ms is not arbitrary. The NTFS FILETIME structure 
 // uses 2 second resolution for LastWriteTime. We retry long enough to surpass this threshold 

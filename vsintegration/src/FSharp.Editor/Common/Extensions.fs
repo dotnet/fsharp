@@ -8,7 +8,7 @@ open System.IO
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host
-open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Text
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -44,20 +44,14 @@ type Document with
 
 type TextLine with
 
-    member this.ToFSharpTextLine() =
-        { new ITextLine with
-
-            member __.Length = this.Span.Length
-
-            member __.TextString = this.ToString()
-        }
+    member this.ToFSharpTextSpan() = TextSpan(this.Span.Start, this.Span.End)
 
 type TextLineCollection with
 
     member this.ToFSharpTextLineCollection() =
         { new ITextLineCollection with
 
-            member __.Item with get index = this.[index].ToFSharpTextLine()
+            member __.Item with get index = this.[index].ToFSharpTextSpan()
 
             member __.Count = this.Count
         }
@@ -79,8 +73,12 @@ type SourceText with
 
             member __.Length = this.Length
 
-            member __.CopyTo(sourceIndex, destinationChars, destinationIndex, count) =
-                this.CopyTo(sourceIndex, destinationChars, destinationIndex, count)
+            member __.CopyTo(sourceIndex, destination, destinationIndex, count) =
+                this.CopyTo(sourceIndex, destination, destinationIndex, count)
+
+            member __.GetTextString() = this.ToString()
+
+            member __.GetTextString(textSpan) = this.ToString(Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(textSpan.Start, textSpan.End))
         }
 
 type FSharpNavigationDeclarationItem with

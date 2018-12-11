@@ -12,7 +12,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 type FSharpChecker with
     member checker.ParseDocument(document: Document, parsingOptions: FSharpParsingOptions, sourceText: SourceText, userOpName: string) =
         asyncMaybe {
-            let! fileParseResults = checker.ParseFile(document.FilePath, Source.SourceText(sourceText.ToFSharpSourceText()), parsingOptions, userOpName=userOpName) |> liftAsync
+            let! fileParseResults = checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, userOpName=userOpName) |> liftAsync
             return! fileParseResults.ParseTree
         }
 
@@ -20,7 +20,7 @@ type FSharpChecker with
         async {
             let parseAndCheckFile =
                 async {
-                    let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, Source.SourceText(sourceText.ToFSharpSourceText()), options, userOpName=userOpName)
+                    let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToFSharpSourceText(), options, userOpName=userOpName)
                     return
                         match checkFileAnswer with
                         | FSharpCheckFileAnswer.Aborted -> 
@@ -84,7 +84,7 @@ type FSharpChecker with
 
 
     member checker.TryParseAndCheckFileInProject (projectOptions, fileName, sourceText: SourceText, userOpName) = async {
-        let! (parseResults, checkAnswer) = checker.ParseAndCheckFileInProject (fileName,0, Source.SourceText(sourceText.ToFSharpSourceText()),projectOptions, userOpName=userOpName)
+        let! (parseResults, checkAnswer) = checker.ParseAndCheckFileInProject (fileName,0,sourceText.ToFSharpSourceText(),projectOptions, userOpName=userOpName)
         match checkAnswer with
         | FSharpCheckFileAnswer.Aborted ->  return  None
         | FSharpCheckFileAnswer.Succeeded checkResults -> return Some (parseResults,checkResults)

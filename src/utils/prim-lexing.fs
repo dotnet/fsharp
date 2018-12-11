@@ -2,17 +2,33 @@
 
 #nowarn "47" // recursive initialization of LexBuffer
 
-namespace Microsoft.FSharp.Compiler
+namespace Microsoft.FSharp.Compiler.Text
 
-type ITextLine =
+open System
+open System.IO
 
-    abstract Length : int
+// This could just be a normal Span someday.
+[<Struct>]
+type TextSpan =
 
-    abstract TextString : string
+    val Start : int
+
+    val Length : int
+
+    member this.End = this.Start + this.Length
+
+    new (start, length) =
+        if start < 0 then
+            raise (ArgumentOutOfRangeException("start"))
+
+        if start + length < start then
+            raise (ArgumentOutOfRangeException("length"))
+
+        { Start = start; Length = length }
 
 type ITextLineCollection =
 
-    abstract Item : int -> ITextLine with get
+    abstract Item : int -> TextSpan with get
 
     abstract Count : int
 
@@ -26,11 +42,70 @@ type ISourceText =
 
     abstract ContentEquals : ISourceText -> bool
 
-    abstract CopyTo : sourceIndex: int * destinationChars: char [] * destinationIndex: int * count: int -> unit
+    abstract CopyTo : sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit
+
+    abstract GetTextString : unit -> string
+
+    abstract GetTextString : TextSpan -> string
+
+[<Sealed>]
+type StringTextLineCollection(str: string) =
+
+    let getLines (str: string) =
+        lazy
+            use reader = new StringReader(str)
+            [|
+                let line = ref (reader.ReadLine())
+                while not (isNull !line) do
+                    yield !line
+                    line := reader.ReadLine()
+                if str.EndsWith("\n", StringComparison.Ordinal) then
+                    // last trailing space not returned
+                    // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
+                    yield String.Empty
+            |]
+
+    interface ITextLineCollection with
+
+        member __.Item with get index = TextSpan(0, (getLines str).Value.[index].Length)
+
+        member __.Count = (getLines str).Value.Length
+
+[<Sealed>]
+type StringSourceText(str: string) =
+
+    let lines = StringTextLineCollection(str) :> ITextLineCollection
+
+    member __.String = str
+
+    interface ISourceText with
+    
+        member __.Item with get index = str.[index]
+
+        member __.Lines = lines
+
+        member __.Length = str.Length
+
+        member this.ContentEquals(sourceText) =
+            match sourceText with
+            | :? StringSourceText as sourceText when sourceText = this || sourceText.String = str -> true
+            | _ -> false
+
+        member __.CopyTo(sourceIndex, destination, destinationIndex, count) =
+            str.CopyTo(sourceIndex, destination, destinationIndex, count)
+
+        member __.GetTextString() = str
+
+        member __.GetTextString(textSpan) = str.Substring(textSpan.Start, textSpan.Length)
+
+module SourceText =
+
+    let ofString str = StringSourceText(str) :> ISourceText
 
 namespace Internal.Utilities.Text.Lexing
 
     open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Compiler.Text
     open Microsoft.FSharp.Collections
     open System.Collections.Generic
 
@@ -192,7 +267,23 @@ namespace Internal.Utilities.Text.Lexing
             LexBuffer<'Char>.FromArrayNoCopy buffer
 
         // Important: This method takes ownership of the array
-        static member FromChars (arr:char[]) = LexBuffer.FromArrayNoCopy arr 
+        static member FromChars (arr:char[]) = LexBuffer.FromArrayNoCopy arr
+       
+        static member FromSourceText (sourceText: ISourceText) =
+            let mutable currentSourceIndex = 0
+            LexBuffer<char>.FromFunction(fun (chars, start, length) ->
+                let lengthToCopy = 
+                    if currentSourceIndex + length <= sourceText.Length then
+                        length
+                    else
+                        sourceText.Length - currentSourceIndex
+                
+                if lengthToCopy <= 0 then 0
+                else
+                    sourceText.CopyTo(currentSourceIndex, chars, start, lengthToCopy)
+                    currentSourceIndex <- currentSourceIndex + lengthToCopy
+                    lengthToCopy
+            )
 
     module GenericImplFragments = 
         let startInterpret(lexBuffer:LexBuffer<char>)= 

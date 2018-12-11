@@ -20,7 +20,7 @@ type internal FSharpBraceMatchingService
 
     static member GetBraceMatchingResult(checker: FSharpChecker, sourceText: SourceText, fileName, parsingOptions: FSharpParsingOptions, position: int, userOpName: string, [<Optional; DefaultParameterValue(false)>] forFormatting: bool) = 
         async {
-            let! matchedBraces = checker.MatchBraces(fileName, Source.SourceText(sourceText.ToFSharpSourceText()), parsingOptions, userOpName)
+            let! matchedBraces = checker.MatchBraces(fileName, sourceText.ToFSharpSourceText(), parsingOptions, userOpName)
             let isPositionInRange range = 
                 match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                 | None -> false
