@@ -9,9 +9,9 @@ type ISourceText =
 
     abstract Item : int -> char with get
 
-    abstract GetLastCharacterPosition : unit -> int * int
-
     abstract GetLines : unit -> string []
+
+    abstract GetLastCharacterPosition : unit -> int * int
 
     abstract Length : int
 
