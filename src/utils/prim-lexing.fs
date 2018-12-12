@@ -7,103 +7,38 @@ namespace Microsoft.FSharp.Compiler.Text
 open System
 open System.IO
 
-// This could just be a normal Span someday.
-[<Struct>]
-type TextSpan =
-
-    val Start : int
-
-    val Length : int
-
-    member this.End = this.Start + this.Length
-
-    new (start, length) =
-        if start < 0 then
-            raise (ArgumentOutOfRangeException("start"))
-
-        if start + length < start then
-            raise (ArgumentOutOfRangeException("length"))
-
-        { Start = start; Length = length }
-
-type ITextLineCollection =
-
-    abstract Item : int -> TextSpan with get
-
-    abstract Count : int
-
 type ISourceText =
 
     abstract Item : int -> char with get
 
-    abstract Lines : ITextLineCollection
+    abstract GetLines : unit -> string []
+
+    abstract GetLastCharacterPosition : unit -> int * int
 
     abstract Length : int
 
     abstract ContentEquals : ISourceText -> bool
 
-    abstract CopyTo : sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit
-
-    abstract GetTextString : unit -> string
-
-    abstract GetTextString : TextSpan -> string
+    abstract CopyTo : sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit  
 
 [<Sealed>]
-type StringTextLineCollection(str: string) =
+type StringText(str: string) =
 
-    let isAnyLineBreakCharacter c =
-        c = '\n' || c = '\r' || c = '\u0085' || c = '\u2028' || c = '\u2029'
+    let getLines (str: string) =
+        use reader = new StringReader(str)
+        [|
+        let line = ref (reader.ReadLine())
+        while not (isNull !line) do
+            yield !line
+            line := reader.ReadLine()
+        if str.EndsWith("\n", StringComparison.Ordinal) then
+            // last trailing space not returned
+            // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
+            yield String.Empty
+        |]
 
-    let lineStarts =
-        lazy
-            if str.Length = 0 then ResizeArray()
-            else
-
-            let lineStarts = ResizeArray()
-            lineStarts.Add(0)
-
-            let mutable index = 0
-            while index < str.Length do
-                let c = str.[index]
-                index <- index + 1
-
-                // Common case - ASCII & not a line break
-                // if (c > '\r' && c <= 127)
-                // if (c >= ('\r'+1) && c <= 127)
-                let bias = uint32 '\r' + 1u
-                if uint32 c - bias <= (127u - bias) then ()
-                else
-                    
-                // Assumes that only 2-char line break sequence is CR+LF
-                if c = '\r' then
-                    if index < str.Length && str.[index] = '\n' then
-                        index <- index + 1
-                    lineStarts.Add(index)
-                elif isAnyLineBreakCharacter c then
-                    lineStarts.Add(index)                      
-
-            lineStarts
-
-    interface ITextLineCollection with
-
-        member __.Item 
-            with get index = 
-                let lineStarts = lineStarts.Value
-
-                let start = lineStarts.[index]
-                if index = lineStarts.Count - 1 then
-                    let length = str.Length - start
-                    TextSpan(start, length)
-                else
-                    let length = lineStarts.[index + 1] - start
-                    TextSpan(start, length)
-
-        member __.Count = lineStarts.Value.Count
-
-[<Sealed>]
-type StringSourceText(str: string) =
-
-    let lines = StringTextLineCollection(str) :> ITextLineCollection
+    let getLines =
+        lazy getLines str
 
     member __.String = str
 
@@ -111,21 +46,21 @@ type StringSourceText(str: string) =
     
         member __.Item with get index = str.[index]
 
-        member __.Lines = lines
+        member __.GetLastCharacterPosition() =
+            let lines = getLines.Value
+            (lines.Length, lines.[lines.Length - 1].Length)
+
+        member __.GetLines() = getLines.Value
 
         member __.Length = str.Length
 
         member this.ContentEquals(sourceText) =
             match sourceText with
-            | :? StringSourceText as sourceText when sourceText = this || sourceText.String = str -> true
+            | :? StringText as sourceText when sourceText = this || sourceText.String = str -> true
             | _ -> false
 
         member __.CopyTo(sourceIndex, destination, destinationIndex, count) =
             str.CopyTo(sourceIndex, destination, destinationIndex, count)
-
-        member __.GetTextString() = str
-
-        member __.GetTextString(textSpan) = str.Substring(textSpan.Start, textSpan.Length)
 
 module SourceText =
 
@@ -134,7 +69,7 @@ module SourceText =
     let private addNewLine (source: string) =
         if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
 
-    let ofString str = StringSourceText(addNewLine str) :> ISourceText
+    let ofString str = StringText(addNewLine str) :> ISourceText
 
 namespace Internal.Utilities.Text.Lexing
 

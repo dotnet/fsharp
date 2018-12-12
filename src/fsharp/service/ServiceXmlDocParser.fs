@@ -189,9 +189,4 @@ module XmlDocParser =
 
     /// Get the list of Xml documentation from current source code
     let getXmlDocables (sourceText: ISourceText, input) =
-        let sourceCodeLinesOfTheFile =
-            [|
-                for i = 0 to sourceText.Lines.Count - 1 do
-                    yield sourceText.GetTextString(sourceText.Lines.[i])
-            |]
-        XmlDocParsing.getXmlDocablesImpl (sourceCodeLinesOfTheFile, input)
+        XmlDocParsing.getXmlDocablesImpl (sourceText.GetLines(), input)

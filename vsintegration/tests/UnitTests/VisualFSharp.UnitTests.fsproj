@@ -122,6 +122,7 @@
 -->
     <Compile Include="EditorFormattingServiceTests.fs">
     </Compile>
+    <Compile Include="RoslynSourceTextTests.fs" />
     <Compile Include="IndentationServiceTests.fs">
       <Link>Roslyn\IndentationServiceTests.fs</Link>
     </Compile>

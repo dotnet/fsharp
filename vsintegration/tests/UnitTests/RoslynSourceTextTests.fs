@@ -1,19 +1,21 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests
+namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
 open System
 open NUnit.Framework
 
+open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.FSharp.Compiler.Text
+open Microsoft.CodeAnalysis.Text
 
 [<TestFixture>]
-module SourceTextTests =
+module RoslynSourceTextTests =
 
     [<Test>]
-    let StringText () =
+    let SourceText () =
         let text = "test\ntest2\r\ntest3\n\ntest4\ntest5\rtest6\n"
-        let sourceText = SourceText.ofString text
+        let sourceText = SourceText.From(text).ToFSharpSourceText()
         let lines = sourceText.GetLines()
 
         Assert.AreEqual("test",  lines.[0])

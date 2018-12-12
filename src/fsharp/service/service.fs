@@ -1477,7 +1477,7 @@ module internal Parser =
         let mutable errorCount = 0
 
         // We'll need number of lines for adjusting error messages at EOF
-        let fileInfo = (sourceText.Lines.Count, sourceText.Lines.[sourceText.Lines.Count - 1].Length)
+        let fileInfo = sourceText.GetLastCharacterPosition()
 
         // This function gets called whenever an error happens during parsing or checking
         let diagnosticSink sev (exn: PhasedDiagnostic) =

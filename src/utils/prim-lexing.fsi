@@ -5,38 +5,19 @@
 
 namespace Microsoft.FSharp.Compiler.Text
 
-[<Struct>]
-type TextSpan =
-
-    val Start : int
-
-    val Length : int
-
-    member End : int
-
-    new : start: int * length: int -> TextSpan
-
-type ITextLineCollection =
-
-    abstract Item : int -> TextSpan with get
-
-    abstract Count : int
-
 type ISourceText =
 
     abstract Item : int -> char with get
 
-    abstract Lines : ITextLineCollection
+    abstract GetLastCharacterPosition : unit -> int * int
+
+    abstract GetLines : unit -> string []
 
     abstract Length : int
 
     abstract ContentEquals : ISourceText -> bool
 
     abstract CopyTo : sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit
-
-    abstract GetTextString : unit -> string
-
-    abstract GetTextString : TextSpan -> string
 
 module SourceText =
 

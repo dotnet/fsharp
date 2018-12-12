@@ -42,43 +42,52 @@ type Document with
                 languageServices.GetService<'T>()
                 |> Some
 
-type TextLine with
+module private SourceText =
 
-    member this.ToFSharpTextSpan() = TextSpan(this.SpanIncludingLineBreak.Start, this.SpanIncludingLineBreak.Length)
+    open System.Runtime.CompilerServices
 
-type TextLineCollection with
-
-    member this.ToFSharpTextLineCollection() =
-        { new ITextLineCollection with
-
-            member __.Item with get index = this.[index].ToFSharpTextSpan()
-
-            member __.Count = this.Count
-        }
+    let weakTable = ConditionalWeakTable<SourceText, ISourceText>()
 
 type SourceText with
 
     member this.ToFSharpSourceText() =
-        { new ISourceText with
+        match SourceText.weakTable.TryGetValue(this) with
+        | true, sourceText -> sourceText
+        | _ ->
+            let getLines =
+                lazy
+                    [|
+                        for i = 0 to this.Lines.Count - 1 do
+                            yield this.Lines.[i].ToString()
+                    |]
+
+            let getLastCharacterPosition =
+                lazy
+                    (this.Lines.Count, this.Lines.[this.Lines.Count - 1].Span.Length)
+
+            let sourceText =
+                { new ISourceText with
             
-            member __.Item with get index = this.[index]
+                    member __.Item with get index = this.[index]
 
-            member __.Lines = this.Lines.ToFSharpTextLineCollection()
+                    member __.GetLines() = getLines.Value
 
-            member __.ContentEquals(sourceText) =
-                match sourceText with
-                | :? SourceText as sourceText -> this.ContentEquals(sourceText)
-                | _ -> false
+                    member __.GetLastCharacterPosition() = getLastCharacterPosition.Value
 
-            member __.Length = this.Length
+                    member __.ContentEquals(sourceText) =
+                        match sourceText with
+                        | :? SourceText as sourceText -> this.ContentEquals(sourceText)
+                        | _ -> false
 
-            member __.CopyTo(sourceIndex, destination, destinationIndex, count) =
-                this.CopyTo(sourceIndex, destination, destinationIndex, count)
+                    member __.Length = this.Length
 
-            member __.GetTextString() = this.ToString()
+                    member __.CopyTo(sourceIndex, destination, destinationIndex, count) =
+                        this.CopyTo(sourceIndex, destination, destinationIndex, count)
+                }
 
-            member __.GetTextString(textSpan) = this.ToString(Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(textSpan.Start, textSpan.End))
-        }
+            SourceText.weakTable.Add(this, sourceText)
+
+            sourceText
 
 type FSharpNavigationDeclarationItem with
     member x.RoslynGlyph : Glyph =
