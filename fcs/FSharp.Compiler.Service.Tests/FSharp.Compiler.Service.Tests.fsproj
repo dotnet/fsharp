@@ -66,11 +66,14 @@
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\TokenizerTests.fs">
       <Link>TokenizerTests.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Program.fs" Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
-      <Link>Program.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ServiceUntypedParseTests.fs">
+      <Link>ServiceUntypedParseTests.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\TreeVisitorTests.fs">
       <Link>TreeVisitorTests.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Program.fs" Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
+      <Link>Program.fs</Link>
     </Compile>
     <None Include="App.config" />
   </ItemGroup>
