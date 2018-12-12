@@ -118,11 +118,9 @@ let x = 123
         let fileName, options = mkTestFileAndOptions source [| |]
         let _, checkResults = parseAndCheckFile fileName source options    
 
-        let xSymbol =
-            checkResults.GetAllUsesOfAllSymbolsInFile()
-             |> Async.RunSynchronously
-             |> Array.tryFind (fun su -> su.Symbol.DisplayName = "x")
-             |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
-             |> Option.defaultWith (fun _ -> failwith "Could not get symbol")
-        
-        xSymbol.Attributes.Count |> shouldEqual 1
+        checkResults.GetAllUsesOfAllSymbolsInFile()
+         |> Async.RunSynchronously
+         |> Array.tryFind (fun su -> su.Symbol.DisplayName = "x")
+         |> Option.orElseWith (fun _ -> failwith "Could not get symbol")
+         |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
+         |> Option.iter (fun symbol -> symbol.Attributes.Count |> shouldEqual 1)
