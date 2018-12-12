@@ -10829,8 +10829,10 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
     let conditionalCallDefineOpt = TryFindTyconRefStringAttribute cenv.g mAttr cenv.g.attrib_ConditionalAttribute tcref 
 
     match conditionalCallDefineOpt with 
+#if !COMPILER_SERVICE_AS_DLL 
     | Some d when not (List.contains d cenv.conditionalDefines) -> 
         [], false
+#endif
     | _ ->
 
          // REVIEW: take notice of inherited? 
