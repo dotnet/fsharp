@@ -92,14 +92,12 @@ module private FSharpProjectOptionsHelpers =
             p1.Version <> p2.Version
         )
 
-    let isProjectInvalidated (oldProject: Project) (newProject: Project) (settings: EditorOptions) cancellationToken =
-        async {
-            let hasProjectVersionChanged = hasProjectVersionChanged oldProject newProject
-            if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
-                return hasProjectVersionChanged || hasDependentVersionChanged oldProject newProject
-            else
-                return hasProjectVersionChanged
-        }
+    let isProjectInvalidated (oldProject: Project) (newProject: Project) (settings: EditorOptions) =
+        let hasProjectVersionChanged = hasProjectVersionChanged oldProject newProject
+        if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
+            hasProjectVersionChanged || hasDependentVersionChanged oldProject newProject
+        else
+            hasProjectVersionChanged
 
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
@@ -243,8 +241,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     return Some(parsingOptions, projectOptions)
   
             | true, (oldProject, parsingOptions, projectOptions) ->
-                let! isProjectInvalidated = isProjectInvalidated oldProject project settings cancellationToken
-                if isProjectInvalidated then
+                if isProjectInvalidated oldProject project settings then
                     cache.Remove(projectId) |> ignore
                     return! tryComputeOptions project cancellationToken
                 else
