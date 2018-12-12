@@ -33,7 +33,7 @@ type SemanticClassificationServiceTests() =
     let getRanges (sourceText: string) : (Range.range * SemanticClassificationType) list =
         asyncMaybe {
 
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, 0,  Microsoft.FSharp.Compiler.Text.SourceText.ofString sourceText, projectOptions, perfOptions, "")
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, 0, SourceText.From(sourceText), projectOptions, perfOptions, "")
             return checkFileResults.GetSemanticClassification(None)
         } 
         |> Async.RunSynchronously
