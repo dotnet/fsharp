@@ -81,22 +81,24 @@ module private FSharpProjectOptionsHelpers =
     let hasProjectVersionChanged (oldProject: Project) (newProject: Project) =
         oldProject.Version <> newProject.Version
 
-    let hasDependentVersionChanged (oldProject: Project) (newProject: Project) cancellationToken =
-        async {
-            let! oldVersion = oldProject.GetDependentVersionAsync(cancellationToken) |> Async.AwaitTask
-            let! newVersion = newProject.GetDependentVersionAsync(cancellationToken) |> Async.AwaitTask
-            return oldVersion <> newVersion
-        }
+    let hasDependentVersionChanged (oldProject: Project) (newProject: Project) =
+        let oldProjectRefs = oldProject.ProjectReferences
+        let newProjectRefs = newProject.ProjectReferences
+        oldProjectRefs.Count() <> newProjectRefs.Count() ||
+        (oldProjectRefs, newProjectRefs)
+        ||> Seq.exists2 (fun p1 p2 ->
+            let doesProjectIdDiffer = p1.ProjectId <> p2.ProjectId
+            let p1 = oldProject.Solution.GetProject(p1.ProjectId)
+            let p2 = newProject.Solution.GetProject(p2.ProjectId)
+            doesProjectIdDiffer || p1.Version <> p2.Version
+        )
 
-    let isProjectInvalidated (oldProject: Project) (newProject: Project) (settings: EditorOptions) cancellationToken =
-        async {
-            let hasProjectVersionChanged = hasProjectVersionChanged oldProject newProject
-            if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
-                let! hasDependentVersionChanged = hasDependentVersionChanged oldProject newProject cancellationToken
-                return hasProjectVersionChanged || hasDependentVersionChanged
-            else
-                return hasProjectVersionChanged
-        }
+    let isProjectInvalidated (oldProject: Project) (newProject: Project) (settings: EditorOptions) =
+        let hasProjectVersionChanged = hasProjectVersionChanged oldProject newProject
+        if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
+            hasProjectVersionChanged || hasDependentVersionChanged oldProject newProject
+        else
+            hasProjectVersionChanged
 
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
@@ -240,8 +242,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     return Some(parsingOptions, projectOptions)
   
             | true, (oldProject, parsingOptions, projectOptions) ->
-                let! isProjectInvalidated = isProjectInvalidated oldProject project settings cancellationToken
-                if isProjectInvalidated then
+                if isProjectInvalidated oldProject project settings then
                     cache.Remove(projectId) |> ignore
                     return! tryComputeOptions project cancellationToken
                 else
