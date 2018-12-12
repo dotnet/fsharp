@@ -44,7 +44,7 @@ type Document with
 
 type TextLine with
 
-    member this.ToFSharpTextSpan() = TextSpan(this.Span.Start, this.Span.End)
+    member this.ToFSharpTextSpan() = TextSpan(this.SpanIncludingLineBreak.Start, this.SpanIncludingLineBreak.Length)
 
 type TextLineCollection with
 
@@ -55,7 +55,6 @@ type TextLineCollection with
 
             member __.Count = this.Count
         }
-
 
 type SourceText with
 
