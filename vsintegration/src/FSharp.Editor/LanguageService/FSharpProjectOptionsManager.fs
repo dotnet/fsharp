@@ -87,9 +87,10 @@ module private FSharpProjectOptionsHelpers =
         oldProjectRefs.Count() <> newProjectRefs.Count() ||
         (oldProjectRefs, newProjectRefs)
         ||> Seq.exists2 (fun p1 p2 ->
+            let doesProjectIdDiffer = p1.ProjectId <> p2.ProjectId
             let p1 = oldProject.Solution.GetProject(p1.ProjectId)
             let p2 = newProject.Solution.GetProject(p2.ProjectId)
-            p1.Version <> p2.Version
+            doesProjectIdDiffer || p1.Version <> p2.Version
         )
 
     let isProjectInvalidated (oldProject: Project) (newProject: Project) (settings: EditorOptions) =
