@@ -81,19 +81,22 @@ module private FSharpProjectOptionsHelpers =
     let hasProjectVersionChanged (oldProject: Project) (newProject: Project) =
         oldProject.Version <> newProject.Version
 
-    let hasDependentVersionChanged (oldProject: Project) (newProject: Project) cancellationToken =
-        async {
-            let! oldVersion = oldProject.GetDependentVersionAsync(cancellationToken) |> Async.AwaitTask
-            let! newVersion = newProject.GetDependentVersionAsync(cancellationToken) |> Async.AwaitTask
-            return oldVersion <> newVersion
-        }
+    let hasDependentVersionChanged (oldProject: Project) (newProject: Project) =
+        let oldProjectRefs = oldProject.ProjectReferences
+        let newProjectRefs = newProject.ProjectReferences
+        oldProjectRefs.Count() <> newProjectRefs.Count() ||
+        (oldProjectRefs, newProjectRefs)
+        ||> Seq.exists2 (fun p1 p2 ->
+            let p1 = oldProject.Solution.GetProject(p1.ProjectId)
+            let p2 = newProject.Solution.GetProject(p2.ProjectId)
+            p1.Version <> p2.Version
+        )
 
     let isProjectInvalidated (oldProject: Project) (newProject: Project) (settings: EditorOptions) cancellationToken =
         async {
             let hasProjectVersionChanged = hasProjectVersionChanged oldProject newProject
             if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
-                let! hasDependentVersionChanged = hasDependentVersionChanged oldProject newProject cancellationToken
-                return hasProjectVersionChanged || hasDependentVersionChanged
+                return hasProjectVersionChanged || hasDependentVersionChanged oldProject newProject
             else
                 return hasProjectVersionChanged
         }
