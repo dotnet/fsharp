@@ -6,7 +6,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices.AstTraversal
 open NUnit.Framework
 
 [<Test>]
-let ``Visit type`` () =
+let ``Visit type test`` () =
     let visitor =
         { new AstVisitorBase<_>() with
             member x.VisitExpr(_, _, defaultTraverse, expr) = defaultTraverse expr
@@ -19,4 +19,4 @@ let ``Visit type`` () =
     |> Option.defaultWith (fun _ -> failwith "Did not visit type")
 
     Traverse(mkPos 1 3, parseTree, visitor)
-    |> Option.map (fun _ -> failwith "Should not visit type") |> ignore
+    |> Option.iter (fun _ -> failwith "Should not visit type")
