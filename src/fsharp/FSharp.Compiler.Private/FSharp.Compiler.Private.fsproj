@@ -8,7 +8,7 @@
     <AssemblyName>FSharp.Compiler.Private</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
+    <DefineConstants>$(DefineConstants);COMPILER;MSBUILD_AT_LEAST_14</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
     <UseAssetTargetFallback>true</UseAssetTargetFallback>
