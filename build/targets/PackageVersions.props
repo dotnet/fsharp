@@ -2,16 +2,52 @@
 
   <PropertyGroup>
 
+    <!-- default package sources -->
+    <RestoreSources>
+      $(RestoreSources);
+      https://www.myget.org/F/fsharp-daily/api/v3/index.json;
+      https://dotnet.myget.org/F/roslyn-master-nightly/api/v3/index.json;
+      https://dotnet.myget.org/F/dotnet-core/api/v3/index.json;
+      https://dotnet.myget.org/F/dotnet-buildtools/api/v3/index.json;
+      https://dotnet.myget.org/F/roslyn-tools/api/v3/index.json;
+      https://api.nuget.org/v3/index.json;
+      https://dotnet.myget.org/F/roslyn/api/v3/index.json;
+      https://dotnet.myget.org/F/symreader-converter/api/v3/index.json;
+      https://myget.org/F/roslyn_concord/api/v3/index.json;
+      https://vside.myget.org/F/devcore/api/v3/index.json;
+    </RestoreSources>
+
+    <!-- synchronized build package sources -->
+    <RestoreSources Condition="'$(PB_RestoreSource)' != ''">$(PB_RestoreSource);$(RestoreSources)</RestoreSources>
+    <DotNetPackageVersionPropsPath>$(MSBuildThisFileDirectory)..\..\Tools\dependencyUptake\PackageVersions.props</DotNetPackageVersionPropsPath>
+
     <!-- version numbers from files -->
     <RoslynPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\..\RoslynPackageVersion.txt').Trim())</RoslynPackageVersion>
 
     <!-- System.* packages -->
     <SystemCollectionsImmutablePackageVersion>1.5.0</SystemCollectionsImmutablePackageVersion>
+    <SystemConsolePackageVersion>4.3.0</SystemConsolePackageVersion>
     <SystemDesignPackageVersion>4.0.0</SystemDesignPackageVersion>
+    <SystemDiagnosticsProcessPackageVersion>4.3.0</SystemDiagnosticsProcessPackageVersion>
+    <SystemDiagnosticsTraceSourcePackageVersion>4.3.0</SystemDiagnosticsTraceSourcePackageVersion>
     <SystemIoCompressionPackageVersion>4.3.0</SystemIoCompressionPackageVersion>
+    <SystemLinqExpressionsPackageVersion>4.3.0</SystemLinqExpressionsPackageVersion>
+    <SystemLinqQueryablePackageVersion>4.3.0</SystemLinqQueryablePackageVersion>
+    <SystemMemoryPackageVersion>4.5.0</SystemMemoryPackageVersion>
+    <SystemNetRequestsPackageVersion>4.3.0</SystemNetRequestsPackageVersion>
+    <SystemReflectionEmitPackageVersion>4.3.0</SystemReflectionEmitPackageVersion>
     <SystemReflectionMetadataPackageVersion>1.6.0</SystemReflectionMetadataPackageVersion>
+    <SystemReflectionTypeExtensionsPackageVersion>4.3.0</SystemReflectionTypeExtensionsPackageVersion>
     <SystemRuntimeCachingPackageVersion>1.5.0</SystemRuntimeCachingPackageVersion>
-    <SystemValueTuplePackageVersion>4.3.0</SystemValueTuplePackageVersion>
+    <SystemRuntimePackageVersion>4.3.0</SystemRuntimePackageVersion>
+    <SystemRuntimeInteropServicesPackageVersion>4.3.0</SystemRuntimeInteropServicesPackageVersion>
+    <SystemRuntimeLoaderPackageVersion>4.3.0</SystemRuntimeLoaderPackageVersion>
+    <SystemSecurityCryptographyAlgorithmsPackageVersion>4.3.0</SystemSecurityCryptographyAlgorithmsPackageVersion>
+    <SystemSecurityPrincipalPackageVersion>4.3.0</SystemSecurityPrincipalPackageVersion>
+    <SystemThreadingTasksParallelPackageVersion>4.3.0</SystemThreadingTasksParallelPackageVersion>
+    <SystemThreadingThreadPackageVersion>4.3.0</SystemThreadingThreadPackageVersion>
+    <SystemThreadingThreadPoolPackageVersion>4.3.0</SystemThreadingThreadPoolPackageVersion>
+    <SystemValueTuplePackageVersion>4.4.0</SystemValueTuplePackageVersion>
 
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
@@ -26,7 +62,6 @@
     <MicrosoftBuildFrameworkPackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkPackageVersion>
     <MicrosoftBuildTasksCorePackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCorePackageVersion>
     <MicrosoftBuildUtilitiesCorePackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildUtilitiesCorePackageVersion>
-    <MicrosoftVisualFSharpMSBuild150PackageVersion>1.0.1</MicrosoftVisualFSharpMSBuild150PackageVersion>
 
     <!-- Visual Studio packages -->
     <EnvDTE80PackageVersion>8.0.1</EnvDTE80PackageVersion>
@@ -76,13 +111,29 @@
     <VSSDKVSLangProj11PackageVersion>11.0.4</VSSDKVSLangProj11PackageVersion>
     <VSSDKVSHelpPackageVersion>7.0.4</VSSDKVSHelpPackageVersion>
 
+    <!-- setup packages -->
+    <MicroBuildCorePackageVersion>0.2.0</MicroBuildCorePackageVersion>
+    <MicroBuildCoreSentinelPackageVersion>1.0.0</MicroBuildCoreSentinelPackageVersion>
+    <MicroBuildPluginsSwixBuildPackageVersion>1.0.147</MicroBuildPluginsSwixBuildPackageVersion>
+    <MicrosoftPortableFSharpCorePackageVersion>10.1.0</MicrosoftPortableFSharpCorePackageVersion>
+    <MicrosoftVisualFSharpCoreRedistPackageVersion>1.0.0</MicrosoftVisualFSharpCoreRedistPackageVersion>
+
     <!-- other packages -->
+    <FsCheckPackageVersion>3.0.0-alpha3</FsCheckPackageVersion>
     <MicrosoftCompositionPackageVersion>1.0.30</MicrosoftCompositionPackageVersion>
-    <MicrosoftDiaSymReaderPdb2PdbPackageVersion>1.1.0-roslyn-62714-01</MicrosoftDiaSymReaderPdb2PdbPackageVersion>
+    <Pdb2PdbPackageVersion>1.1.0-beta1-63314-01</Pdb2PdbPackageVersion>
     <MicrosoftMSXMLPackageVersion>8.0.0-alpha</MicrosoftMSXMLPackageVersion>
+    <MicrosoftNetCompilersPackageVersion>2.7.0</MicrosoftNetCompilersPackageVersion>
+    <MicrosoftNETCoreILDAsmPackageVersion>2.0.3</MicrosoftNETCoreILDAsmPackageVersion>
+    <MicrosoftNETTestSdkPackageVersion>15.8.0</MicrosoftNETTestSdkPackageVersion>
     <MicrosoftVisualFSharpTypeProvidersRedistPackageVersion>1.0.0</MicrosoftVisualFSharpTypeProvidersRedistPackageVersion>
+    <MicrosoftWin32RegistryPackageVersion>4.3.0</MicrosoftWin32RegistryPackageVersion>
     <NewtonsoftJsonPackageVersion>9.0.1</NewtonsoftJsonPackageVersion>
-    <NUnitPackageVersion>3.5.0</NUnitPackageVersion>
+    <NUnitPackageVersion>3.10.1</NUnitPackageVersion>
+    <NUnit3TestAdapterPackageVersion>3.10.0</NUnit3TestAdapterPackageVersion>
+    <NUnitLitePackageVersion>3.10.1</NUnitLitePackageVersion>
+    <RoslynToolsSignToolPackageVersion>1.0.0-beta2-dev3</RoslynToolsSignToolPackageVersion>
+    <StrawberryPerl64PackageVersion>5.22.2.1</StrawberryPerl64PackageVersion>
     <XliffTasksPackageVersion>0.2.0-beta-000081</XliffTasksPackageVersion>
 
   </PropertyGroup>

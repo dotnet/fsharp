@@ -127,7 +127,7 @@ let WouldFailAtRuntimeTest2 () =
   and a3 = (fun x -> a2 + 2) 1 in 
   a2 + a3
 
-#if !TESTS_AS_APP && !NETCOREAPP1_0
+#if !TESTS_AS_APP && !NETSTANDARD
 open System
 open System.Windows.Forms
 
@@ -300,10 +300,9 @@ module RecursiveInterfaceObjectExpressions = begin
   do if CosOp.Name <> "cos" then report_failure "RecursiveInterfaceObjectExpressions: test 1"
   do if CosOp2.Name <> "abc" then report_failure "RecursiveInterfaceObjectExpressions: test 2"
 
-  
 end
 
-#if !TESTS_AS_APP && !NETCOREAPP1_0
+#if !TESTS_AS_APP && !NETSTANDARD
 module RecursiveInnerConstrainedGenerics = begin
 
     open System.Windows.Forms

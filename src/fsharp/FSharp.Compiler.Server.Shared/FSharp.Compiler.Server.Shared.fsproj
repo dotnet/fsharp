@@ -1,41 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
-    <ProjectLanguage>FSharp</ProjectLanguage>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
   </PropertyGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{d5870cf0-ed51-4cbc-b3d7-6f56da84ac06}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
-  </PropertyGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="fsi" />
     <InternalsVisibleTo Include="fsiAnyCpu" />
     <InternalsVisibleTo Include="FSharp.VS.FSI" />
   </ItemGroup>
+
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="FSharpInteractiveServer.fs" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
-      <None Include="project.json" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
-  <ItemGroup  Condition="'$(TargetDotnetProfile)' != 'coreclr'">
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
+
+  <ItemGroup>
     <Reference Include="System.Runtime.Remoting" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
-      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
-      <Name>FSharp.Core</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+
 </Project>

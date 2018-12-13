@@ -19,7 +19,7 @@ let test (s : string) b =
 (* TEST SUITE FOR UNICODE CHARS *)
 
 
-#if !TESTS_AS_APP && !NETCOREAPP1_0
+#if !TESTS_AS_APP && !NETSTANDARD
 let input_byte (x : System.IO.FileStream) = 
     let b = x.ReadByte() 
     if b = -1 then raise (System.IO.EndOfStreamException()) else b

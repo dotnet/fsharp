@@ -1,16 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project>
     <PropertyGroup>
-        <SchemaVersion>2.0</SchemaVersion>
-        <ProductVersion>3.10</ProductVersion>
-        <WiXToolset2015Version>3.10.0.1503</WiXToolset2015Version>
         <SetupRootFolder>$(MSBuildThisFileDirectory)</SetupRootFolder>
-        <WixInstallPath>$(SetupRootFolder)\..\packages\WiX.Toolset.2015.$(WiXToolset2015Version)\tools\wix</WixInstallPath>
-        <NugetPackagesDir>$(SetupRootFolder)\..\packages</NugetPackagesDir>
     </PropertyGroup>
-
-    <Import Project="$(MSBuildThisFileDirectory)..\build\targets\AssemblyVersions.props" />
 
     <PropertyGroup>
         <!-- FSharpPackageVersion should be {VS version}.{today's date}.{build number}. Example: 15.6.20160901.3 -->
@@ -18,14 +11,13 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <TargetDotnetProfile Condition=" '$(TargetDotnetProfile)' == '' ">net40</TargetDotnetProfile>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     </PropertyGroup>
 
     <PropertyGroup>
         <BinariesDir>$(SetupRootFolder)\..\$(Configuration)</BinariesDir>
-        <VsixBuildLocation>$(BinariesDir)\$(TargetDotnetProfile)\bin\</VsixBuildLocation>
+        <VsixBuildLocation>$(BinariesDir)\net40\bin\</VsixBuildLocation>
         <InsertionDir>$(BinariesDir)\insertion</InsertionDir>
         <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
         <OutputPath Condition="'$(Lang)' == ''">$(BinariesDir)\setup</OutputPath>

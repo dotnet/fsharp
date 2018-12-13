@@ -518,7 +518,7 @@ module MaxIntMinIntBOundaryCases = begin
 
 end
  
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 open System.IO
 open System.Xml
 
