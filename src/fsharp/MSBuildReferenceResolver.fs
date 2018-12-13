@@ -67,19 +67,28 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
     [<Literal>]    
     let private Net451 = "v4.5.1"
 
-    /// The list of supported .NET Framework version numbers, using the monikers of the Reference Assemblies folder.
-    let SupportedNetFrameworkVersions = set [ Net20; Net30; Net35; Net40; Net45; Net451; (*SL only*) "v5.0" ]
-    
-    //[<Literal>]    
-    //let private Net452 = "v4.5.2" // not available in Dev15 MSBuild version
+    [<Literal>]    
+    let private Net452 = "v4.5.2" // not available in Dev15 MSBuild version
 
-#if MSBUILD_AT_LEAST_14
     [<Literal>]    
     let private Net46 = "v4.6"
 
     [<Literal>]    
     let private Net461 = "v4.6.1"
-#endif
+
+    [<Literal>]    
+    let private Net462 = "v4.6.2"
+
+    [<Literal>]    
+    let private Net47 = "v4.7"
+
+    [<Literal>]    
+    let private Net471 = "v4.7.1"
+
+    [<Literal>]    
+    let private Net472 = "v4.7.2"
+
+    let SupportedNetFrameworkVersions = set [ Net20; Net30; Net35; Net40; Net45; Net451; Net452; Net46; Net461; Net462; Net47; Net471; Net472; ]
 
     /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework.
     /// This is only used to specify the "last resort" path for assembly resolution.
@@ -93,10 +102,14 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
             | Net40 ->  Some TargetDotNetFrameworkVersion.Version40
             | Net45 ->  Some TargetDotNetFrameworkVersion.Version45
             | Net451 -> Some TargetDotNetFrameworkVersion.Version451
-#if MSBUILD_AT_LEAST_14
-            //| Net452 -> Some TargetDotNetFrameworkVersion.Version452 // not available in Dev15 MSBuild version
+            | Net452 -> Some TargetDotNetFrameworkVersion.Version452
             | Net46 -> Some TargetDotNetFrameworkVersion.Version46
             | Net461 -> Some TargetDotNetFrameworkVersion.Version461
+#if MSBUILD_AT_LEAST_15
+            | Net462 -> Some TargetDotNetFrameworkVersion.Version462
+            | Net47 -> Some TargetDotNetFrameworkVersion.Version47
+            | Net471 -> Some TargetDotNetFrameworkVersion.Version471
+            | Net472 -> Some TargetDotNetFrameworkVersion.Version472
 #endif
             | _ -> assert false; None
         match v with
@@ -121,17 +134,21 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
     /// Use MSBuild to determine the version of the highest installed framework.
     let HighestInstalledNetFrameworkVersion() =
       try
-#if MSBUILD_AT_LEAST_14
-        if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461)) <> null then Net461
-        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version46)) <> null then Net46
-        // 4.5.2 enumeration is not available in Dev15 MSBuild version
-        //elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version452)) <> null then Net452 
-        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451)) <> null then Net451 
+// The Mono build still uses an ancient version of msbuild from around Dev 14
+#if MSBUILD_AT_LEAST_15
+        if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version472)) <> null then Net472
+        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version471)) <> null then Net471
+        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version47)) <> null then Net47
+        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version462)) <> null then Net462
+        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461)) <> null then Net461
 #else
-        if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451)) <> null then Net451 
+        if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461)) <> null then Net461
 #endif
-        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version45)) <> null then Net45 
-        else Net45 // version is 4.5 assumed since this code is running. 
+        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version46)) <> null then Net46
+        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version452)) <> null then Net452
+        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451)) <> null then Net451
+        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version45)) <> null then Net45
+        else Net45 // version is 4.5 assumed since this code is running.
       with _ -> Net45
 
     /// Derive the target framework directories.        
