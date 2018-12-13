@@ -49,7 +49,7 @@ let internal projectOptions = {
     Stamp = None
 }
 
-[<Test>]
+[<Test;Ignore("https://github.com/Microsoft/visualfsharp/issues/6008")>]
 let ShouldGiveSignatureHelpAtCorrectMarkers() =
     let manyTestCases = 
         [ ("""
