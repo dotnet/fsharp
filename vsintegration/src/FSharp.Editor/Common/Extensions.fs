@@ -74,6 +74,12 @@ type SourceText with
 
                     member __.GetLastCharacterPosition() = getLastCharacterPosition.Value
 
+                    member __.GetSubTextString(start, length) =
+                        this.GetSubText(TextSpan(start, length)).ToString()
+
+                    member __.SubTextEquals(target, startIndex) =
+                        this.GetSubText(TextSpan(startIndex, target.Length)).ContentEquals(SourceText.From(target))
+
                     member __.ContentEquals(sourceText) =
                         match sourceText with
                         | :? SourceText as sourceText -> this.ContentEquals(sourceText)

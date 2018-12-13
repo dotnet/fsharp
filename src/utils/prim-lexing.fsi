@@ -13,11 +13,15 @@ type ISourceText =
 
     abstract GetLastCharacterPosition : unit -> int * int
 
+    abstract GetSubTextString : start: int * length: int -> string
+
+    abstract SubTextEquals : target: string * startIndex: int -> bool
+
     abstract Length : int
 
     abstract ContentEquals : ISourceText -> bool
 
-    abstract CopyTo : sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit
+    abstract CopyTo : sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit  
 
 module SourceText =
 

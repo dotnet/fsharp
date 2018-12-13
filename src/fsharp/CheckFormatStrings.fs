@@ -54,15 +54,17 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringChe
     let (offset, fmt) = 
         match context with
         | Some context ->
-            let length = context.Source.Length
-            if m.EndLine < context.LineStartPositions.Length then
-                let startIndex = context.LineStartPositions.[m.StartLine-1] + m.StartColumn
-                let endIndex = context.LineStartPositions.[m.EndLine-1] + m.EndColumn - 1
-                if startIndex < length-3 && context.Source.[startIndex..startIndex+2] = "\"\"\"" then
-                    (3, context.Source.[startIndex+3..endIndex-3])
-                elif startIndex < length-2 && context.Source.[startIndex..startIndex+1] = "@\"" then
-                    (2, context.Source.[startIndex+2..endIndex-1])
-                else (1, context.Source.[startIndex+1..endIndex-1])
+            let sourceText = context.SourceText
+            let lineStartPositions = context.LineStartPositions
+            let length = sourceText.Length
+            if m.EndLine < lineStartPositions.Length then
+                let startIndex = lineStartPositions.[m.StartLine-1] + m.StartColumn
+                let endIndex = lineStartPositions.[m.EndLine-1] + m.EndColumn - 1
+                if startIndex < length-3 && sourceText.SubTextEquals("\"\"\"", startIndex) then
+                    (3, sourceText.GetSubTextString(startIndex + 3, endIndex - startIndex)) //context.SourceText.[startIndex+3..endIndex-3])
+                elif startIndex < length-2 && sourceText.SubTextEquals("@\"", startIndex) then
+                    (2, sourceText.GetSubTextString(startIndex + 2, endIndex + 1 - startIndex)) //context.SourceText.[startIndex+2..endIndex-1])
+                else (1, sourceText.GetSubTextString(startIndex + 1, endIndex - startIndex)) //context.SourceText.[startIndex+1..endIndex-1])
             else (1, fmt)
         | None -> (1, fmt)
 

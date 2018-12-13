@@ -1710,7 +1710,7 @@ module internal Parser =
                 tcState.NiceNameGenerator.Reset()
                 
                 // Typecheck the real input.  
-                let sink = TcResultsSinkImpl(tcGlobals)
+                let sink = TcResultsSinkImpl(tcGlobals, sourceText = sourceText)
 
                 let! ct = Async.CancellationToken
             

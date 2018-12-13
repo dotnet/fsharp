@@ -15,6 +15,10 @@ type ISourceText =
 
     abstract GetLastCharacterPosition : unit -> int * int
 
+    abstract GetSubTextString : start: int * length: int -> string
+
+    abstract SubTextEquals : target: string * startIndex: int -> bool
+
     abstract Length : int
 
     abstract ContentEquals : ISourceText -> bool
@@ -51,6 +55,19 @@ type StringText(str: string) =
             (lines.Length, lines.[lines.Length - 1].Length)
 
         member __.GetLines() = getLines.Value
+
+        member __.GetSubTextString(start, length) = 
+            str.Substring(start, length)
+
+        member __.SubTextEquals(target, startIndex) =
+            if startIndex < 0 then
+                raise (ArgumentOutOfRangeException("startIndex"))
+
+            if String.IsNullOrEmpty(target) then
+                raise (ArgumentException("Target is null or empty.", "target"))
+
+            if startIndex + target.Length > str.Length then false
+            else str.IndexOf(target, startIndex, target.Length) <> -1              
 
         member __.Length = str.Length
 
