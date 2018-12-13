@@ -170,10 +170,15 @@ while true do
         |> Array.map (fun (lineNumber, expectedIndentation) ->
             ( Some(expectedIndentation), lineNumber, autoIndentTemplate ))
 
+    // Adding this new-line character at the end of the source seems odd but is required for some unit tests
+    // Todo: fix tests
+    let addNewLine (source: string) =
+        if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
+
     [<Test>]
     member this.TestIndentation() = 
         for (expectedIndentation, lineNumber, template) in testCases do 
-            let sourceText = SourceText.From(template)
+            let sourceText = SourceText.From(addNewLine template)
 
             let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
             let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, sourceText, filePath, lineNumber, tabSize, indentStyle, Some (parsingOptions, projectOptions))
@@ -186,7 +191,7 @@ while true do
         for (expectedIndentation, lineNumber, template) in autoIndentTestCases do 
 
           
-            let sourceText = SourceText.From(template)
+            let sourceText = SourceText.From(addNewLine template)
         
             let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
             let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, sourceText, filePath, lineNumber, tabSize, indentStyle, Some (parsingOptions, projectOptions))

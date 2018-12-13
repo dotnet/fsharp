@@ -61,10 +61,10 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringChe
                 let startIndex = lineStartPositions.[m.StartLine-1] + m.StartColumn
                 let endIndex = lineStartPositions.[m.EndLine-1] + m.EndColumn - 1
                 if startIndex < length-3 && sourceText.SubTextEquals("\"\"\"", startIndex) then
-                    (3, sourceText.GetSubTextString(startIndex + 3, endIndex - startIndex)) //context.SourceText.[startIndex+3..endIndex-3])
+                    (3, sourceText.GetSubTextString(startIndex + 3, endIndex - startIndex))
                 elif startIndex < length-2 && sourceText.SubTextEquals("@\"", startIndex) then
-                    (2, sourceText.GetSubTextString(startIndex + 2, endIndex + 1 - startIndex)) //context.SourceText.[startIndex+2..endIndex-1])
-                else (1, sourceText.GetSubTextString(startIndex + 1, endIndex - startIndex)) //context.SourceText.[startIndex+1..endIndex-1])
+                    (2, sourceText.GetSubTextString(startIndex + 2, endIndex + 1 - startIndex))
+                else (1, sourceText.GetSubTextString(startIndex + 1, endIndex - startIndex))
             else (1, fmt)
         | None -> (1, fmt)
 

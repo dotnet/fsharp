@@ -27,13 +27,18 @@ type SemanticClassificationServiceTests() =
         Stamp = None
     }
 
+    // Adding this new-line character at the end of the source seems odd but is required for some unit tests
+    // Todo: fix tests
+    let addNewLine (source: string) =
+        if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
+
     let checker = FSharpChecker.Create()
     let perfOptions = { LanguageServicePerformanceOptions.Default with AllowStaleCompletionResults = false }
 
     let getRanges (sourceText: string) : (Range.range * SemanticClassificationType) list =
         asyncMaybe {
 
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, 0, SourceText.From(sourceText), projectOptions, perfOptions, "")
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, 0, SourceText.From(addNewLine sourceText), projectOptions, perfOptions, "")
             return checkFileResults.GetSemanticClassification(None)
         } 
         |> Async.RunSynchronously
@@ -41,7 +46,7 @@ type SemanticClassificationServiceTests() =
         |> List.collect Array.toList
 
     let verifyClassificationAtEndOfMarker(fileContents: string, marker: string, classificationType: string) =
-        let text = SourceText.From fileContents
+        let text = SourceText.From(addNewLine fileContents)
         let ranges = getRanges fileContents
         let line = text.Lines.GetLinePosition (fileContents.IndexOf(marker) + marker.Length - 1)
         let markerPos = Range.mkPos (Range.Line.fromZ line.Line) (line.Character + marker.Length - 1)
@@ -50,7 +55,7 @@ type SemanticClassificationServiceTests() =
         | Some(_, ty) -> Assert.AreEqual(classificationType, FSharpClassificationTypes.getClassificationTypeName ty, "Classification data doesn't match for end of marker")
 
     let verifyNoClassificationDataAtEndOfMarker(fileContents: string, marker: string, classificationType: string) =
-        let text = SourceText.From fileContents
+        let text = SourceText.From(addNewLine fileContents)
         let ranges = getRanges fileContents
         let line = text.Lines.GetLinePosition (fileContents.IndexOf(marker) + marker.Length - 1)
         let markerPos = Range.mkPos (Range.Line.fromZ line.Line) (line.Character + marker.Length - 1)

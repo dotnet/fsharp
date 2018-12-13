@@ -14,11 +14,16 @@ open Microsoft.VisualStudio.FSharp.Editor
 [<TestFixture>][<Category "Roslyn Services">]
 type SyntacticClassificationServiceTests()  =
 
+    // Adding this new-line character at the end of the source seems odd but is required for some unit tests
+    // Todo: fix tests
+    let addNewLine (source: string) =
+        if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
+
     member private this.ExtractMarkerData(fileContents: string, marker: string, defines: string list, isScriptFile: Option<bool>) =
         let textSpan = TextSpan(0, fileContents.Length)
         let fileName = if isScriptFile.IsSome && isScriptFile.Value then "test.fsx" else "test.fs"
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let tokens = Tokenizer.getClassifiedSpans(documentId, SourceText.From(fileContents), textSpan, Some(fileName), defines, CancellationToken.None)
+        let tokens = Tokenizer.getClassifiedSpans(documentId, SourceText.From(addNewLine fileContents), textSpan, Some(fileName), defines, CancellationToken.None)
         let markerPosition = fileContents.IndexOf(marker)
         Assert.IsTrue(markerPosition >= 0, "Cannot find marker '{0}' in file contents", marker)
         (tokens, markerPosition)

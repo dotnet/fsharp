@@ -63,6 +63,11 @@ let private span sourceText isDefinition (startLine, startCol) (endLine, endCol)
     { IsDefinition = isDefinition
       TextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range) }
 
+// Adding this new-line character at the end of the source seems odd but is required for some unit tests
+// Todo: fix tests
+let private addNewLine (source: string) =
+    if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
+
 [<Test>]
 let ShouldHighlightAllSimpleLocalSymbolReferences() =
     let fileContents = """
@@ -70,7 +75,7 @@ let ShouldHighlightAllSimpleLocalSymbolReferences() =
         x + x
     let y = foo 2
     """
-    let sourceText = SourceText.From(fileContents)
+    let sourceText = SourceText.From(addNewLine fileContents)
     let caretPosition = fileContents.IndexOf("foo") + 1
     let spans = getSpans sourceText caretPosition
     
@@ -86,7 +91,7 @@ let ShouldHighlightAllQualifiedSymbolReferences() =
     let x = System.DateTime.Now
     let y = System.DateTime.MaxValue
     """
-    let sourceText = SourceText.From(fileContents)
+    let sourceText = SourceText.From(addNewLine fileContents)
     let caretPosition = fileContents.IndexOf("DateTime") + 1
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     

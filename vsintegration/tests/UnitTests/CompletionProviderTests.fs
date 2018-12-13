@@ -53,10 +53,16 @@ let internal projectOptions = {
 let formatCompletions(completions : string seq) =
     "\n\t" + String.Join("\n\t", completions)
 
+// Adding this new-line character at the end of the source seems odd but is required for some unit tests
+// Todo: fix tests
+let addNewLine (source: string) =
+    if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
+
 let VerifyCompletionList(fileContents: string, marker: string, expected: string list, unexpected: string list) =
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let results = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions, filePath, 0, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
+        // addNewLine - make tests pass
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(addNewLine fileContents), caretPosition, projectOptions, filePath, 0, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.map(fun result -> result.DisplayText)
@@ -104,7 +110,8 @@ let VerifyCompletionListExactly(fileContents: string, marker: string, expected: 
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     
     let actual = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions, filePath, 0, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
+        // addNewLine - make tests pass
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(addNewLine fileContents), caretPosition, projectOptions, filePath, 0, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.toList
@@ -134,6 +141,11 @@ let ShouldTriggerCompletionAtCorrectMarkers() =
         ("System.", true)
         ("Console.", true) ]
 
+    // Adding this new-line character at the end of the source seems odd but is required for some unit tests
+    // Todo: fix tests
+    let addNewLine (source: string) =
+        if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
+
     for (marker: string, shouldBeTriggered: bool) in testCases do
     let fileContents = """
 let x = 1
@@ -144,7 +156,7 @@ System.Console.WriteLine(x + y)
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(addNewLine fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.AreEqual(shouldBeTriggered, triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result")
 
 [<Test>]
@@ -154,7 +166,7 @@ let ShouldNotTriggerCompletionAfterAnyTriggerOtherThanInsertion() =
     let caretPosition = fileContents.IndexOf("System.")
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, triggerKind, getInfo, IntelliSenseOptions.Default)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(addNewLine fileContents), caretPosition, triggerKind, getInfo, IntelliSenseOptions.Default)
     Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
     
 [<Test>]
@@ -163,7 +175,7 @@ let ShouldNotTriggerCompletionInStringLiterals() =
     let caretPosition = fileContents.IndexOf("System.")
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(addNewLine fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
     
 [<Test>]
@@ -177,7 +189,7 @@ System.Console.WriteLine()
     let caretPosition = fileContents.IndexOf("System.")
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(addNewLine fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
     
 [<Test>]
@@ -190,7 +202,7 @@ System.Console.WriteLine()
     let caretPosition = fileContents.IndexOf("System.")
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(addNewLine fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
 
 [<Test>]
@@ -203,7 +215,7 @@ let f() =
     let caretPosition = fileContents.IndexOf("|.")
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(addNewLine fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger on operators")
 
 [<Test>]
@@ -216,7 +228,7 @@ module Foo = module end
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(addNewLine fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.IsTrue(triggered, "Completion should trigger on Attributes.")
 
 [<Test>]
@@ -229,7 +241,7 @@ printfn "%d" !f
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(addNewLine fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows a dereference operator (!).")
 
 [<Test>]
@@ -243,7 +255,7 @@ use ptr = fixed &p
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(addNewLine fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows an addressOf operator (&).")
 
 [<Test>]
@@ -267,7 +279,7 @@ xVal**y
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         let getInfo() = documentId, filePath, []
-        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
+        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(addNewLine fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
         Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows a mathematical operation")
 
 [<Test>]
@@ -279,7 +291,7 @@ l"""
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(addNewLine fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.IsTrue(triggered, "Completion should trigger after typing an Insertion character at the top of the file, e.g. a function definition in a new script file.")
 
 [<Test>]

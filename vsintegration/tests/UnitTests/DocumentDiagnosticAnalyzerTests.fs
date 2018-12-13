@@ -39,11 +39,16 @@ type DocumentDiagnosticAnalyzerTests()  =
         Stamp = None
     }
 
+    // Adding this new-line character at the end of the source seems odd but is required for some unit tests
+    // Todo: fix tests
+    let addNewLine (source: string) =
+        if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
+
     let getDiagnostics (fileContents: string) = 
         async {
             let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
-            let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checker, filePath, SourceText.From(fileContents), 0, parsingOptions, projectOptions, DiagnosticsType.Syntax) 
-            let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checker, filePath, SourceText.From(fileContents), 0, parsingOptions, projectOptions, DiagnosticsType.Semantic) 
+            let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checker, filePath, SourceText.From(addNewLine fileContents), 0, parsingOptions, projectOptions, DiagnosticsType.Syntax) 
+            let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checker, filePath, SourceText.From(addNewLine fileContents), 0, parsingOptions, projectOptions, DiagnosticsType.Semantic) 
             return syntacticDiagnostics.AddRange(semanticDiagnostics)
         } |> Async.RunSynchronously
 

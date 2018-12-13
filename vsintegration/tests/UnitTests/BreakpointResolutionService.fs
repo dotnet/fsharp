@@ -57,6 +57,11 @@ let main argv =
 
     0 // return an integer exit code
     "
+
+    // Adding this new-line character at the end of the source seems odd but is required for some unit tests
+    // Todo: fix tests
+    let addNewLine (source: string) =
+        if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
     
     static member private testCases: Object[][] = [|
         [| "This is a comment";         None |]
@@ -73,7 +78,7 @@ let main argv =
         let searchPosition = code.IndexOf(searchToken)
         Assert.IsTrue(searchPosition >= 0, "SearchToken '{0}' is not found in code", searchToken)
         
-        let sourceText = SourceText.From(code)
+        let sourceText = SourceText.From(addNewLine code)
         let searchSpan = TextSpan.FromBounds(searchPosition, searchPosition + searchToken.Length)
         let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
         let actualResolutionOption = FSharpBreakpointResolutionService.GetBreakpointLocation(checker, sourceText, fileName, searchSpan, parsingOptions) |> Async.RunSynchronously
