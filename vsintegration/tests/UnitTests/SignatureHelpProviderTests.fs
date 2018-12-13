@@ -129,11 +129,6 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
             [("let _ = System.DateTime(",  Some ("[8..24)", 0, 0, None)) ])
           ]
 
-    // Adding this new-line character at the end of the source seems odd but is required for some unit tests
-    // Todo: fix tests
-    let addNewLine (source: string) =
-        if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
-
     let sb = StringBuilder()
     for (fileContents, testCases) in manyTestCases do
       printfn "Test case: fileContents = %s..." fileContents.[2..4]
@@ -151,7 +146,7 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
                 } 
 
             let triggerChar = if marker = "," then Some ',' elif marker = "(" then Some '(' elif marker = "<" then Some '<' else None
-            let triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checker, documentationProvider, SourceText.From(addNewLine fileContents), caretPosition, projectOptions, triggerChar, filePath, 0) |> Async.RunSynchronously
+            let triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checker, documentationProvider, SourceText.From(fileContents), caretPosition, projectOptions, triggerChar, filePath, 0) |> Async.RunSynchronously
             checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             let actual = 
                 match triggered with 
