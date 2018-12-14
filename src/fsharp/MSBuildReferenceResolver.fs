@@ -41,26 +41,8 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
     // ATTENTION!: the following code needs to be updated every time we are switching to the new MSBuild version because new .NET framework version was released
     // 1. List of frameworks
     // 2. DeriveTargetFrameworkDirectoriesFor45Plus
-    // 3. HighestInstalledNetFrameworkVersion
+    // 3. HighestInstalledRefAssembliesOrDotNETFramework
     // 4. GetPathToDotNetFrameworkImlpementationAssemblies
-    [<Literal>]    
-    let private Net10 = "v1.0"
-
-    [<Literal>]    
-    let private Net11 = "v1.1"
-
-    [<Literal>]    
-    let private Net20 = "v2.0"
-
-    [<Literal>]    
-    let private Net30 = "v3.0"
-
-    [<Literal>]    
-    let private Net35 = "v3.5"
-
-    [<Literal>]    
-    let private Net40 = "v4.0"
-
     [<Literal>]    
     let private Net45 = "v4.5"
 
@@ -88,24 +70,19 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
     [<Literal>]    
     let private Net472 = "v4.7.2"
 
-    let SupportedNetFrameworkVersions = set [ Net20; Net30; Net35; Net40; Net45; Net451; Net452; Net46; Net461; Net462; Net47; Net471; Net472; ]
+    let SupportedDesktopFrameworkVersions = [ Net472; Net471; Net47; Net462; Net461; Net46; Net452; Net451; Net45 ]
 
-    /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework.
+    /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework
     /// This is only used to specify the "last resort" path for assembly resolution.
     let GetPathToDotNetFrameworkImlpementationAssemblies(v) =
         let v =
             match v with
-            | Net11 ->  Some TargetDotNetFrameworkVersion.Version11
-            | Net20 ->  Some TargetDotNetFrameworkVersion.Version20
-            | Net30 ->  Some TargetDotNetFrameworkVersion.Version30
-            | Net35 ->  Some TargetDotNetFrameworkVersion.Version35
-            | Net40 ->  Some TargetDotNetFrameworkVersion.Version40
             | Net45 ->  Some TargetDotNetFrameworkVersion.Version45
             | Net451 -> Some TargetDotNetFrameworkVersion.Version451
+#if MSBUILD_AT_LEAST_15
             | Net452 -> Some TargetDotNetFrameworkVersion.Version452
             | Net46 -> Some TargetDotNetFrameworkVersion.Version46
             | Net461 -> Some TargetDotNetFrameworkVersion.Version461
-#if MSBUILD_AT_LEAST_15
             | Net462 -> Some TargetDotNetFrameworkVersion.Version462
             | Net47 -> Some TargetDotNetFrameworkVersion.Version47
             | Net471 -> Some TargetDotNetFrameworkVersion.Version471
@@ -119,7 +96,6 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
             | x -> [x]
         | _ -> []
 
-
     let GetPathToDotNetFrameworkReferenceAssemblies(version) = 
 #if NETSTANDARD1_6 || NETSTANDARD2_0
         ignore version
@@ -131,45 +107,59 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
         | x -> [x]
 #endif
 
-    /// Use MSBuild to determine the version of the highest installed framework.
-    let HighestInstalledNetFrameworkVersion() =
-      try
+    /// Use MSBuild to determine the version of the highest installed set of reference assemblies, failing that grab the highest installed framework version
+    let HighestInstalledRefAssembliesOrDotNETFramework () =
+        let getHighestInstalledDotNETFramework () =
+            try
 // The Mono build still uses an ancient version of msbuild from around Dev 14
 #if MSBUILD_AT_LEAST_15
-        if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version472)) <> null then Net472
-        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version471)) <> null then Net471
-        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version47)) <> null then Net47
-        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version462)) <> null then Net462
-        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461)) <> null then Net461
+                if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version472)) <> null then Net472
+                elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version471)) <> null then Net471
+                elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version47)) <> null then Net47
+                elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version462)) <> null then Net462
+                elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461)) <> null then Net461
+                elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461)) <> null then Net461
+                elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version46)) <> null then Net46
+                elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version452)) <> null then Net452
+                elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451)) <> null then Net451
 #else
-        if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461)) <> null then Net461
+                if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451)) <> null then Net451
 #endif
-        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version46)) <> null then Net46
-        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version452)) <> null then Net452
-        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451)) <> null then Net451
-        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version45)) <> null then Net45
-        else Net45 // version is 4.5 assumed since this code is running.
-      with _ -> Net45
+                elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version45)) <> null then Net45
+                else Net45 // version is 4.5 assumed since this code is running.
+            with _ -> Net45
 
-    /// Derive the target framework directories.        
+#if !FX_RESHAPED_REFLECTION
+        // 1.   First look to see if we can find the highest installed set of dotnet reference assemblies, if yes then select that framework
+        // 2.   Otherwise ask msbuild for the highestinstalled framework
+        let checkFrameworkForReferenceAssemblies (dotNetVersion:string) =
+            if not (String.IsNullOrEmpty(dotNetVersion)) then
+                try
+                    let v = if dotNetVersion.StartsWith("v") then dotNetVersion.Substring(1) else dotNetVersion
+                    let frameworkName = new System.Runtime.Versioning.FrameworkName(".NETFramework", new Version(v))
+                    match ToolLocationHelper.GetPathToReferenceAssemblies(frameworkName) |> Seq.tryHead with
+                    | Some p -> if Directory.Exists(p) then true else false
+                    | None -> false
+                with _ -> false
+            else false
+        match SupportedDesktopFrameworkVersions |> Seq.tryFind(fun v -> checkFrameworkForReferenceAssemblies v) with
+        | Some v -> v
+        | None -> getHighestInstalledDotNETFramework()
+#else
+        getHighestInstalledDotNETFramework()
+#endif
+
+    /// Derive the target framework directories.
     let DeriveTargetFrameworkDirectories (targetFrameworkVersion:string, logMessage) =
 
         let targetFrameworkVersion =
             if not(targetFrameworkVersion.StartsWith("v",StringComparison.Ordinal)) then "v"+targetFrameworkVersion
             else targetFrameworkVersion
 
-        let result =
-            if targetFrameworkVersion.StartsWith(Net10, StringComparison.Ordinal) then ReplaceVariablesForLegacyFxOnWindows([@"{WindowsFramework}\v1.0.3705"])
-            elif targetFrameworkVersion.StartsWith(Net11, StringComparison.Ordinal) then ReplaceVariablesForLegacyFxOnWindows([@"{WindowsFramework}\v1.1.4322"])
-            elif targetFrameworkVersion.StartsWith(Net20, StringComparison.Ordinal) then ReplaceVariablesForLegacyFxOnWindows([@"{WindowsFramework}\v2.0.50727"])
-            elif targetFrameworkVersion.StartsWith(Net30, StringComparison.Ordinal) then ReplaceVariablesForLegacyFxOnWindows([@"{ReferenceAssemblies}\v3.0"; @"{WindowsFramework}\v3.0"; @"{WindowsFramework}\v2.0.50727"])
-            elif targetFrameworkVersion.StartsWith(Net35, StringComparison.Ordinal) then ReplaceVariablesForLegacyFxOnWindows([@"{ReferenceAssemblies}\v3.5"; @"{WindowsFramework}\v3.5"; @"{ReferenceAssemblies}\v3.0"; @"{WindowsFramework}\v3.0"; @"{WindowsFramework}\v2.0.50727"])
-            else GetPathToDotNetFrameworkReferenceAssemblies(targetFrameworkVersion)
-
-        let result = result |> Array.ofList                
-        logMessage (sprintf "Derived target framework directories for version %s are: %s" targetFrameworkVersion (String.Join(",", result)))                
+        let result = GetPathToDotNetFrameworkReferenceAssemblies(targetFrameworkVersion) |> Array.ofList
+        logMessage (sprintf "Derived target framework directories for version %s are: %s" targetFrameworkVersion (String.Join(",", result)))
         result
- 
+
     /// Describes the location where the reference was found, used only for debug and tooltip output
     type ResolvedFrom =
         | AssemblyFolders
@@ -381,7 +371,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 
     let Resolver =
        { new ReferenceResolver.Resolver with 
-           member __.HighestInstalledNetFrameworkVersion() = HighestInstalledNetFrameworkVersion()
+           member __.HighestInstalledNetFrameworkVersion() = HighestInstalledRefAssembliesOrDotNETFramework()
            member __.DotNetFrameworkReferenceAssembliesRootDirectory =  DotNetFrameworkReferenceAssembliesRootDirectory
 
            /// Perform the resolution on rooted and unrooted paths, and then combine the results.
