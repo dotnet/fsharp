@@ -27,7 +27,6 @@ let FSIANYCPU_BASIC = FSI_CORECLR
 #else
 let FSC_BASIC = FSC_OPT_PLUS_DEBUG
 let FSI_BASIC = FSI_FILE
-let FSIANYCPU_BASIC = FSIANYCPU_FILE
 #endif
 
 (*
@@ -272,7 +271,9 @@ let splitAssembly subdir project =
 
     SingleTest.singleTestBuildAndRunAux cfg FSI_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     SingleTest.singleTestBuildAndRunAux cfg FSIANYCPU_BASIC
+#endif
 
     // Do the same thing with different load locations for the type provider design-time component
 

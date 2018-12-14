@@ -6,9 +6,9 @@ jobs:
   strategy:
     maxParallel: 2
     matrix:
-      release_default:
-        _command: ./mono/cibuild.sh
-        _args: release
+      dotnet_sdk:
+        _command: make
+        _args: Configuration=release
       # disabled until it can be properly fixed
       #release_fcs:
       #  _command: ./fcs/build.sh

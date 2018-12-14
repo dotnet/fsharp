@@ -1,4 +1,4 @@
-﻿// vvvvvvvvvvvvv To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test vvvvvvvvvvvvvvvv
+﻿// To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test vvvvvvvvvvvvvvvv
 #if INTERACTIVE
 #r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "../../src/scripts/scriptlib.fsx" 
@@ -32,8 +32,6 @@ module CoreTests =
     [<Test>]
     let ``access-FSC_BASIC``() = singleTestBuildAndRun "core/access" FSC_BASIC
 
-
-// All tests below here are known to pass for .NET Core but not yet enabled due to CI problems
     [<Test>]
     let ``access-FSI_BASIC``() = singleTestBuildAndRun "core/access" FSI_BASIC
 
@@ -227,9 +225,9 @@ module CoreTests =
         begin
             use testOkFile = fileguard cfg "test.ok"
 
-            fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
-
             singleNegTest cfg "test"
+
+            fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
             // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
             //exec cfg ("." ++ "test.exe") ""
@@ -240,9 +238,9 @@ module CoreTests =
         begin
             use testOkFile = fileguard cfg "test2.ok"
 
-            fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
-
             singleNegTest cfg "test2"
+
+            fsc cfg "%s -o:test2.exe -g" cfg.fsc_flags ["test2.fsx"]
 
             // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
             //exec cfg ("." ++ "test.exe") ""
@@ -253,9 +251,9 @@ module CoreTests =
         begin
             use testOkFile = fileguard cfg "test3.ok"
 
-            fsc cfg "%s -o:test3.exe -g" cfg.fsc_flags ["test3.fsx"]
-
             singleNegTest cfg "test3"
+
+            fsc cfg "%s -o:test3.exe -g" cfg.fsc_flags ["test3.fsx"]
 
             // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
             //exec cfg ("." ++ "test.exe") ""
@@ -316,9 +314,8 @@ module CoreTests =
     [<Test>]
     let fscenum () = singleTestBuildAndRun "core/enum" FSC_BASIC
 
-    [<Test>]
-    let fsienum () = singleTestBuildAndRun "core/enum" FSI_BASIC
-
+//    [<Test>]
+//    let fsienum () = singleTestBuildAndRun "core/enum" FSI_BASIC
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 
@@ -329,7 +326,7 @@ module CoreTests =
 
         fsc cfg "%s -a -o:lib.dll" cfg.fsc_flags ["lib.fs"]
 
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        copy_y cfg  (cfg.BinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
         peverify cfg "lib.dll"
 
         fsc cfg "%s -r:lib.dll" cfg.fsc_flags ["test.fsx"]
@@ -482,7 +479,7 @@ module CoreTests =
 
         fsc cfg "%s -a -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
 
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        copy_y cfg  (cfg.BinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
         peverify cfg "lib.dll"
 
@@ -792,7 +789,7 @@ module CoreTests =
 
         fsc cfg "%s -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
 
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        copy_y cfg  (cfg.BinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
         peverify cfg "test.exe"
 
@@ -968,7 +965,7 @@ module CoreTests =
     let ``letrec (mutrec variations part two) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI_BASIC
 
     [<Test>]
-    let recordResolution () = singleTestBuildAndRun "core/recordResolution" FSC_OPT_PLUS_DEBUG
+    let recordResolution () = singleTestBuildAndRun "core/recordResolution" FSC_BASIC
 
     [<Test>]
     let ``no-warn-2003-tests`` () =
@@ -1635,13 +1632,13 @@ module CoreTests =
     let verify () = 
         let cfg = testConfig "core/verify"
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "FSharp.Build.dll")
+        peverifyWithArgs cfg "/nologo" (cfg.BinPath ++ "FSharp.Build.dll")
 
-       // peverifyWithArgs cfg "/nologo /MD" (cfg.FSCBinPath ++ "FSharp.Compiler.dll")
+       // peverifyWithArgs cfg "/nologo /MD" (cfg.BinPath ++ "FSharp.Compiler.dll")
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "fsi.exe")
+        peverifyWithArgs cfg "/nologo" (cfg.BinPath ++ "fsi.exe")
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "FSharp.Compiler.Interactive.Settings.dll")
+        peverifyWithArgs cfg "/nologo" (cfg.BinPath ++ "FSharp.Compiler.Interactive.Settings.dll")
 
         fsc cfg "%s -o:xmlverify.exe -g" cfg.fsc_flags ["xmlverify.fs"]
 
@@ -1678,7 +1675,6 @@ module ToolsTests =
     let eval () = singleTestBuildAndRun "tools/eval" FSC_BASIC
 #endif
 
-
 module RegressionTests = 
 
     [<Test>]
@@ -1698,6 +1694,35 @@ module RegressionTests =
 
     [<Test >]
     let ``tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
+
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS 
+    [<Test>]
+    let ``SRTP doesn't handle calling member hiding hinherited members`` () =
+        let cfg = testConfig "regression/5531" 
+
+        let outFile = "compilation.output.test.txt" 
+        let expectedFile = "compilation.output.test.bsl" 
+
+        fscBothToOut cfg outFile "%s --nologo -O" cfg.fsc_flags ["test.fs"] 
+
+        let diff = fsdiff cfg outFile expectedFile 
+
+        match diff with 
+        | "" -> () 
+        | _ -> 
+            Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff) 
+
+        let outFile2 = "output.test.txt" 
+        let expectedFile2 = "output.test.bsl" 
+
+        execBothToOut cfg (cfg.Directory) outFile2 (cfg.Directory ++ "test.exe") "" 
+
+        let diff2 = fsdiff cfg outFile2 expectedFile2 
+        match diff2 with 
+        | "" -> () 
+        | _ -> 
+            Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile2) (getfullpath cfg expectedFile2) diff2) 
+#endif
 
     [<Test>]
     let ``26`` () = singleTestBuildAndRun "regression/26" FSC_BASIC
@@ -1739,7 +1764,7 @@ module RegressionTests =
     // Requires WinForms
     [<Test>]
     let ``83`` () = singleTestBuildAndRun "regression/83" FSC_BASIC
-#endif
+
     [<Test >]
     let ``84`` () = singleTestBuildAndRun "regression/84" FSC_BASIC
 
@@ -1750,6 +1775,7 @@ module RegressionTests =
         fsc cfg "%s -r:Category.dll -a -o:petshop.dll" cfg.fsc_flags ["Category.ml"]
 
         peverify cfg "petshop.dll"
+#endif
 
     [<Test >]
     let ``86`` () = singleTestBuildAndRun "regression/86" FSC_BASIC
@@ -1931,7 +1957,7 @@ module TypecheckTests =
     let ``sigs pos27`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos27.exe" cfg.fsc_flags ["pos27.fs"]
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        copy_y cfg  (cfg.BinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
         peverify cfg "pos27.exe"
 
     [<Test>]
@@ -2590,7 +2616,7 @@ open System.Runtime.InteropServices
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
 #endif
 
-#if !NETSTANDARD1_6
+#if NET46
 module ProductVersionTest =
 
     let informationalVersionAttrName = typeof<System.Reflection.AssemblyInformationalVersionAttribute>.FullName

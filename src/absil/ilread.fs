@@ -2101,7 +2101,7 @@ and sigptrGetTy (ctxt: ILMetadataReader)  numtypars bytes sigptr =
             let dim i =
               (if i <  numLoBounded then Some (List.item i lobounds) else None), 
               (if i <  numSized then Some (List.item i sizes) else None)
-            ILArrayShape (Array.toList (Array.init rank dim))
+            ILArrayShape (List.init rank dim)
         mkILArrTy (ty, shape), sigptr
         
     elif b0 = et_VOID then ILType.Void, sigptr

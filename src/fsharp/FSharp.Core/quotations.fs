@@ -1322,19 +1322,19 @@ module Patterns =
                   // typeof<int>.MakeArrayType(1) returns "Int[*]" but we need "Int[]"
         | _ -> invalidArg "tys" (SR.GetString(SR.QexpectedOneType))
         
-    let mkNamedTycon (tcName,ass:Assembly) =
-        match ass.GetType(tcName) with 
+    let mkNamedTycon (tcName,assembly:Assembly) =
+        match assembly.GetType(tcName) with 
         | null  -> 
             // For some reason we can get 'null' returned here even when a type with the right name exists... Hence search the slow way...
-            match (ass.GetTypes() |> Array.tryFind (fun a -> a.FullName = tcName)) with 
+            match (assembly.GetTypes() |> Array.tryFind (fun a -> a.FullName = tcName)) with 
             | Some ty -> ty
-            | None -> invalidArg "tcName" (String.Format(SR.GetString(SR.QfailedToBindTypeInAssembly), tcName, ass.FullName)) // "Available types are:\n%A" tcName ass (ass.GetTypes() |> Array.map (fun a -> a.FullName))
+            | None -> invalidArg "tcName" (String.Format(SR.GetString(SR.QfailedToBindTypeInAssembly), tcName, assembly.FullName)) // "Available types are:\n%A" tcName assembly (assembly.GetTypes() |> Array.map (fun a -> a.FullName))
         | ty -> ty
 
     let decodeNamedTy tc tsR = mkNamedType(tc,tsR)
 
     let mscorlib = typeof<System.Int32>.Assembly
-    let u_assref st = u_string st 
+    let u_assemblyRef st = u_string st 
     let decodeAssemblyRef st a =
         if a = "" then mscorlib
         elif a = "." then st.localAssembly 
@@ -1345,10 +1345,10 @@ module Patterns =
             match System.Reflection.Assembly.Load(a) with 
 #endif
             | null -> raise <| System.InvalidOperationException(String.Format(SR.GetString(SR.QfailedToBindAssembly), a.ToString()))
-            | ass -> ass
+            | assembly -> assembly
         
     let u_NamedType st = 
-        let a,b = u_tup2 u_string u_assref st 
+        let a,b = u_tup2 u_string u_assemblyRef st 
         let mutable idx = 0
         // From FSharp.Core for F# 4.0+ (4.4.0.0+), referenced type definitions can be integer indexes into a table of type definitions provided on quotation 
         // deserialization, avoiding the need for System.Reflection.Assembly.Load
@@ -1358,8 +1358,8 @@ module Patterns =
             // escape commas found in type name, which are not already escaped
             // '\' is not valid in a type name except as an escape character, so logic can be pretty simple
             let escapedTcName = System.Text.RegularExpressions.Regex.Replace(a, @"(?<!\\),", @"\,")
-            let assref = decodeAssemblyRef st b
-            mkNamedTycon (escapedTcName, assref)
+            let assemblyRef = decodeAssemblyRef st b
+            mkNamedTycon (escapedTcName, assemblyRef)
 
     let u_tyconstSpec st = 
       let tag = u_byte_as_int st 

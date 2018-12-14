@@ -225,7 +225,7 @@ type UsingMSBuild() as this  =
     member public this.TestCompletionNotShowingWhenFastUpdate (firstSrc : list<string>) secondSrc marker =     
         let (_, _, file) = this.CreateSingleFileProject(firstSrc)
         MoveCursorToEndOfMarker(file,marker)
-        
+
         // Now delete the property and leave only dot at the end 
         //  - user is typing fast so replac the content without background compilation
         ReplaceFileInMemoryWithoutCoffeeBreak file secondSrc      
@@ -243,21 +243,20 @@ type UsingMSBuild() as this  =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents)
         let completions = DotCompletionAtEndOfMarker file marker
         AssertCompListContainsAll(completions, list)
-    
+
         //DoesNotContainAny At Start Of Marker Helper Function 
     member private this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(fileContents : string, marker : string, list : string list, ?addtlRefAssy : list<string>) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
 
         let completions = DotCompletionAtStartOfMarker file marker
         AssertCompListDoesNotContainAny(completions, list)
-  
+
         //DotCompList Is Empty At Start Of Marker Helper Function
     member private this.VerifyDotCompListIsEmptyAtStartOfMarker(fileContents : string, marker : string, ?addtlRefAssy : list<string>) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
 
         let completions = DotCompletionAtStartOfMarker file marker
-        AssertCompListIsEmpty(completions)  
-               
+        AssertCompListIsEmpty(completions)
 
     [<Test>]
     member this.``AutoCompletion.ObjectMethods``() = 
@@ -365,7 +364,7 @@ a.
     [<Test>]
     [<Category("TypeProvider")>]
     member this.``TypeProvider.VisibilityChecksForGeneratedTypes``() = 
-        let extraRefs = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
+        let extraRefs = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")]
         let check = DoWithAutoCompleteUsingExtraRefs extraRefs true SourceFileKind.FS Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason.MemberSelect
 
         let code = 
@@ -2200,7 +2199,7 @@ let x = new MyClass2(0)
                                 t.I"""],
             marker = "t.I",
             expected = "IM1",    
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -2213,7 +2212,7 @@ let x = new MyClass2(0)
                                 t.Eve"""],
             marker = "t.Eve", 
             expected = "Event1",          
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
      
     [<Test>]
     [<Category("TypeProvider")>]
@@ -2225,7 +2224,7 @@ let x = new MyClass2(0)
                                 type boo = N1.T<in"""],
             marker = "T<in",  
             expected = "int",  
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
         
     // In this bug, pressing dot after this was producing an invalid member list.       
@@ -2441,30 +2440,31 @@ let x = new MyClass2(0)
                   for (lineName, line, checks) in lines builderName do 
                     for check in checks do
                       let expectedToFail = knownFailuresDict.Contains (lineName, suffixName, builderName, check)
-                      yield (lineName, suffixName, suffixText, builderName, line, check, expectedToFail) ]
+                      if not expectedToFail then yield (lineName, suffixName, suffixText, builderName, line, check, expectedToFail) ]
 
         let unexpectedSuccesses = ResizeArray<_>()
         let successes = ResizeArray<_>()
         let failures = ResizeArray<_>()
         printfn "Running %d systematic tests.... Failure will be printed if it occurs..."  tests.Length
         for (lineName, suffixName, suffixText, builderName, fileContents, check, expectedToFail) in tests do
-            if successes.Count % 50 = 0 then 
+            if successes.Count % 50 = 0 then
                 printfn "Making progress, run %d so far..." successes.Count
             let fileContents = prefix + fileContents + suffixText
-            try 
-                match check with 
-                | QuickInfoExpected(where,expected) -> 
+            try
+                match check with
+                | QuickInfoExpected(where,expected) ->
                       let where = where.[0..where.Length-2] // chop a character off to get in the middle of the text
                       this.AssertQuickInfoContainsAtEndOfMarker(fileContents,where,expected,addtlRefAssy=standard40AssemblyRefs )
-                | AutoCompleteExpected(where,expected) -> 
+                | AutoCompleteExpected(where,expected) ->
                       this.VerifyCtrlSpaceListContainAllAtStartOfMarker(fileContents,where,[expected],addtlRefAssy=standard40AssemblyRefs )
-                | DotCompleteExpected(where,expected) -> 
+                | DotCompleteExpected(where,expected) ->
                       this.VerifyDotCompListContainAllAtStartOfMarker(fileContents,where,[expected], addtlRefAssy=standard40AssemblyRefs)
                 if not expectedToFail then
                     successes.Add(lineName,suffixName,builderName,check)
                 else
                     unexpectedSuccesses.Add(lineName,suffixName,builderName,check)
-            with _ ->  
+            with e ->
+                printfn "Exception thrown: (\"%s\", \"%s\", \"%s\", %A) " lineName suffixName builderName check
                 if not expectedToFail then
                     printfn " FAILURE on systematic test: (\"%s\", \"%s\", \"%s\", %A) " lineName suffixName builderName check
                     printfn "\n\nfileContents = <<<%s>>>" fileContents
@@ -2491,8 +2491,6 @@ let x = new MyClass2(0)
         if failures.Count <> 0 || unexpectedSuccesses.Count <> 0 then 
             raise <| new Exception("there were unexpected results, see console output for details")
 
-
-
     [<Test>]
     [<Category("QueryExpressions")>]
     [<Category("Expensive")>]
@@ -2510,50 +2508,48 @@ let aaaaaa = [| "1" |]
             "NoClosingBrace,NextTypeDefinition",  " \ntype NextDefinition() = member x.P = 1\n" 
           ] 
         let lines b = 
-          [ "L1",  "let v = " + b +  " { "                                                              , []
-            "L2",  "let v = " + b +  " { for "                                                          , []
-            "L3",  "let v = " + b +  " { for bbbb "                                                     , [QI "for bbbb" "val bbbb"]
-            "L4",  "let v = " + b +  " { for bbbb in (*C*)"                                             , [QI "for bbbb" "val bbbb"; AC "(*C*)" "aaaaaa" ]
-            "L5",  "let v = " + b +  " { for bbbb in [ (*C*) "                                          , [QI "for bbbb" "val bbbb"; AC "(*C*)" "aaaaaa" ]
-            "L6",  "let v = " + b +  " { for bbbb in [ aaa(*C*) "                                       , [QI "for bbbb" "val bbbb"; AC "(*C*)" "aaaaaa" ]
-            "L7",  "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*)"                                    , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; DC "(*D1*)" "Length" ]
-            "L8",  "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*) ] "                                 , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; DC "(*D1*)" "Length" ]
-            "L9",  "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*) ] do (*C*)"                         , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; AC "(*C*)" (if b = "query" then "select" else "sin"); DC "(*D1*)" "Length" ]
-            "L10", "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*) ] do yield (*C*) "                  , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; AC "(*C*)" "aaaaaa"; AC "(*C*)" "bbbb" ; DC "(*D1*)" "Length" ] 
-            "L11", "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*) ] do yield bb(*C*) "                , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; AC "(*C*)" "bbbb" ; DC "(*D1*)" "Length" ]
-            "L12", "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*) ] do yield bbbb(*D2*) "             , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; QI "yield bbbb" "val bbbb"; DC "(*D1*)" "Length" ; DC "(*D2*)" "Length" ]
-            "L13", "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*) ] do yield bbbb(*D2*) + (*C*)"      , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; QI "yield bbbb" "val bbbb"; AC "(*C*)" "aaaaaa"; AC "(*C*)" "bbbb" ; DC "(*D1*)" "Length" ; DC "(*D2*)" "Length" ] 
-            "L14", "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*) ] do yield bbbb(*D2*) + bb(*C*)"    , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; QI "yield bbbb" "val bbbb"; AC "(*C*)" "bbbb" ; DC "(*D1*)" "Length" ; DC "(*D2*)" "Length" ]
-            "L15", "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*) ] do yield bbbb(*D2*) + bbbb(*D3*)" , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; QI "yield bbbb" "val bbbb"; QI "+ bbbb" "val bbbb"; DC "(*D3*)" "Length" ] ]
+          [ "AL1",  "let v = " + b +  " { "                                                              , []
+            "AL2",  "let v = " + b +  " { for "                                                          , []
+            "AL3",  "let v = " + b +  " { for bbbb "                                                     , [QI "for bbbb" "val bbbb"]
+            "AL4",  "let v = " + b +  " { for bbbb in (*C*)"                                             , [QI "for bbbb" "val bbbb"; AC "(*C*)" "aaaaaa" ]
+            "AL5",  "let v = " + b +  " { for bbbb in [ (*C*) "                                          , [QI "for bbbb" "val bbbb"; AC "(*C*)" "aaaaaa" ]
+            "AL6",  "let v = " + b +  " { for bbbb in [ aaa(*C*) "                                       , [QI "for bbbb" "val bbbb"; AC "(*C*)" "aaaaaa" ]
+            "AL7",  "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*)"                                    , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; DC "(*D1*)" "Length" ]
+            "AL8",  "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*) ] "                                 , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; DC "(*D1*)" "Length" ]
+            "AL9",  "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*) ] do (*C*)"                         , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; AC "(*C*)" (if b = "query" then "select" else "sin"); DC "(*D1*)" "Length" ]
+            "AL10", "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*) ] do yield (*C*) "                  , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; AC "(*C*)" "aaaaaa"; AC "(*C*)" "bbbb" ; DC "(*D1*)" "Length" ] 
+            "AL11", "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*) ] do yield bb(*C*) "                , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; AC "(*C*)" "bbbb" ; DC "(*D1*)" "Length" ]
+            "AL12", "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*) ] do yield bbbb(*D2*) "             , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; QI "yield bbbb" "val bbbb"; DC "(*D1*)" "Length" ; DC "(*D2*)" "Length" ]
+            "AL13", "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*) ] do yield bbbb(*D2*) + (*C*)"      , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; QI "yield bbbb" "val bbbb"; AC "(*C*)" "aaaaaa"; AC "(*C*)" "bbbb" ; DC "(*D1*)" "Length" ; DC "(*D2*)" "Length" ] 
+            "AL14", "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*) ] do yield bbbb(*D2*) + bb(*C*)"    , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; QI "yield bbbb" "val bbbb"; AC "(*C*)" "bbbb" ; DC "(*D1*)" "Length" ; DC "(*D2*)" "Length" ]
+            "AL15", "let v = " + b +  " { for bbbb in [ aaaaaa(*D1*) ] do yield bbbb(*D2*) + bbbb(*D3*)" , [QI "for bbbb" "val bbbb"; QI "aaaaaa" "val aaaaaa"; QI "yield bbbb" "val bbbb"; QI "+ bbbb" "val bbbb"; DC "(*D3*)" "Length" ] ]
 
 
         let knownFailures = 
-
             [
-                ("L10", "Empty", "seq", AutoCompleteExpected ("(*C*)","bbbb")) 
-                ("L10", "Empty", "query", AutoCompleteExpected ("(*C*)","bbbb")) 
-                ("L10", "ClosingBrace", "query", AutoCompleteExpected ("(*C*)","bbbb")) 
-                ("L10", "ClosingBrace,NextDefinition", "query", AutoCompleteExpected ("(*C*)","bbbb")) 
-                ("L3", "NoClosingBrace,NextDefinition", "seq", QuickInfoExpected ("for bbbb","val bbbb")) 
-                ("L6", "NoClosingBrace,NextDefinition", "seq", QuickInfoExpected ("for bbbb","val bbbb")) 
-                ("L6", "NoClosingBrace,NextDefinition", "seq", AutoCompleteExpected ("(*C*)","aaaaaa")) 
-                ("L7", "NoClosingBrace,NextDefinition", "seq", QuickInfoExpected ("for bbbb","val bbbb")) 
-                ("L7", "NoClosingBrace,NextDefinition", "seq", QuickInfoExpected ("aaaaaa","val aaaaaa")) 
-                ("L7", "NoClosingBrace,NextDefinition", "seq", DotCompleteExpected ("(*D1*)","Length")) 
-                ("L3", "NoClosingBrace,NextDefinition", "query", QuickInfoExpected ("for bbbb","val bbbb")) 
-                ("L6", "NoClosingBrace,NextDefinition", "query", QuickInfoExpected ("for bbbb","val bbbb")) 
-                ("L6", "NoClosingBrace,NextDefinition", "query", AutoCompleteExpected ("(*C*)","aaaaaa")) 
-                ("L7", "NoClosingBrace,NextDefinition", "query", QuickInfoExpected ("for bbbb","val bbbb")) 
-                ("L7", "NoClosingBrace,NextDefinition", "query", QuickInfoExpected ("aaaaaa","val aaaaaa")) 
-                ("L7", "NoClosingBrace,NextDefinition", "query", DotCompleteExpected ("(*D1*)","Length")) 
-                ("L10", "NoClosingBrace,NextDefinition", "seq", AutoCompleteExpected ("(*C*)","bbbb")) 
-                ("L10", "NoClosingBrace,NextTypeDefinition", "seq", AutoCompleteExpected ("(*C*)","bbbb")) 
-                ("L10", "NoClosingBrace,NextDefinition", "query", AutoCompleteExpected ("(*C*)","bbbb")) 
-                ("L10", "NoClosingBrace,NextTypeDefinition", "query", AutoCompleteExpected ("(*C*)","bbbb")) 
+                ("AL3", "NoClosingBrace,NextDefinition", "query", QuickInfoExpected ("for bbbb","val bbbb"))
+                ("AL3", "NoClosingBrace,NextDefinition", "seq", QuickInfoExpected ("for bbbb","val bbbb"))
+                ("AL6", "NoClosingBrace,NextDefinition", "query", AutoCompleteExpected ("(*C*)","aaaaaa"))
+                ("AL6", "NoClosingBrace,NextDefinition", "query", QuickInfoExpected ("for bbbb","val bbbb"))
+                ("AL6", "NoClosingBrace,NextDefinition", "seq", AutoCompleteExpected ("(*C*)","aaaaaa"))
+                ("AL6", "NoClosingBrace,NextDefinition", "seq", QuickInfoExpected ("for bbbb","val bbbb"))
+                ("AL7", "NoClosingBrace,NextDefinition", "query", DotCompleteExpected ("(*D1*)","Length"))
+                ("AL7", "NoClosingBrace,NextDefinition", "query", QuickInfoExpected ("aaaaaa","val aaaaaa"))
+                ("AL7", "NoClosingBrace,NextDefinition", "query", QuickInfoExpected ("for bbbb","val bbbb"))
+                ("AL7", "NoClosingBrace,NextDefinition", "seq", DotCompleteExpected ("(*D1*)","Length"))
+                ("AL7", "NoClosingBrace,NextDefinition", "seq", QuickInfoExpected ("aaaaaa","val aaaaaa"))
+                ("AL7", "NoClosingBrace,NextDefinition", "seq", QuickInfoExpected ("for bbbb","val bbbb"))
+                ("AL10", "ClosingBrace", "query", AutoCompleteExpected ("(*C*)","bbbb"))
+                ("AL10", "ClosingBrace,NextDefinition", "query", AutoCompleteExpected ("(*C*)","bbbb"))
+                ("AL10", "Empty", "query", AutoCompleteExpected ("(*C*)","bbbb"))
+                ("AL10", "Empty", "seq", AutoCompleteExpected ("(*C*)","bbbb"))
+                ("AL10", "NoClosingBrace,NextDefinition", "query", AutoCompleteExpected ("(*C*)","bbbb"))
+                ("AL10", "NoClosingBrace,NextDefinition", "seq", AutoCompleteExpected ("(*C*)","bbbb"))
+                ("AL10", "NoClosingBrace,NextTypeDefinition", "query", AutoCompleteExpected ("(*C*)","bbbb"))
+                ("AL10", "NoClosingBrace,NextTypeDefinition", "seq", AutoCompleteExpected ("(*C*)","bbbb"))
             ]
 
         this.WordByWordSystematicTestWithSpecificExpectations(prefix, suffixes, lines, ["seq";"query"], knownFailures) 
-             
 
     [<Test>]
     [<Category("QueryExpressions")>]
@@ -2574,20 +2570,20 @@ let aaaaaa = 0
             "NoClosingBrace,NextTypeDefinition",  " \ntype NextDefinition() = member x.P = 1\n" 
           ] 
         let lines b = 
-          [ "L1",  "let f()  = seq { while abb(*C*)"                                     , [AC "(*C*)" "abbbbc"]
-            "L2",  "let f()  = seq { while abbbbc(*D1*)"                                 , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"]
-            "L3",  "let f()  = seq { while abbbbc(*D1*) do (*C*)"                        , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; AC "(*C*)" "abbbbc"]
-            "L4",  "let f()  = seq { while abbbbc(*D1*) do abb(*C*)"                     , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; AC "(*C*)" "abbbbc"]
-            "L5",  "let f()  = seq { while abbbbc(*D1*) do abbbbc(*D2*)"                 , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; DC "(*D2*)" "Length"; ]
-            "L6",  "let f()  = seq { while abbbbc(*D1*) do abbbbc.[(*C*)"                , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; AC "(*C*)" "abbbbc"; AC "(*C*)" "aaaaaa"; ]
-            "L7",  "let f()  = seq { while abbbbc(*D1*) do abbbbc.[aaa(*C*)"             , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; AC "(*C*)" "aaaaaa"; ]
-            "L7a", "let f()  = seq { while abbbbc(*D1*) do abbbbc.[aaa(*C*)]"            , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; AC "(*C*)" "aaaaaa"; ]
-            "L7b", "let f()  = seq { while abbbbc(*D1*) do abbbbc.[aaa(*C*)] <- "        , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; AC "(*C*)" "aaaaaa"; ]
-            "L7c", "let f()  = seq { while abbbbc(*D1*) do abbbbc.[aaa(*C*)] <- 1"       , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; AC "(*C*)" "aaaaaa"; ]
-            "L7d", "let f()  = seq { while abbbbc(*D1*) do abbbbc.[ (*C*) ] <- 1"        , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; AC "(*C*)" "aaaaaa"; ]
-            "L8",  "let f()  = seq { while abbbbc(*D1*) do abbbbc.[aaaaaa]"              , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; ]
-            "L9",  "let f()  = seq { while abbbbc(*D1*) do abbbbc.[aaaaaa] <- (*C*)"     , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; AC "(*C*)" "abbbbc"; AC "(*C*)" "aaaaaa"; ]
-            "L10", "let f()  = seq { while abbbbc(*D1*) do abbbbc.[aaaaaa] <- aaa(*C*)"  , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; AC "(*C*)" "aaaaaa"; ] ]
+          [ "BL1",  "let f()  = seq { while abb(*C*)"                                     , [AC "(*C*)" "abbbbc"]
+            "BL2",  "let f()  = seq { while abbbbc(*D1*)"                                 , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"]
+            "BL3",  "let f()  = seq { while abbbbc(*D1*) do (*C*)"                        , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; AC "(*C*)" "abbbbc"]
+            "BL4",  "let f()  = seq { while abbbbc(*D1*) do abb(*C*)"                     , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; AC "(*C*)" "abbbbc"]
+            "BL5",  "let f()  = seq { while abbbbc(*D1*) do abbbbc(*D2*)"                 , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; DC "(*D2*)" "Length"; ]
+            "BL6",  "let f()  = seq { while abbbbc(*D1*) do abbbbc.[(*C*)"                , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; AC "(*C*)" "abbbbc"; AC "(*C*)" "aaaaaa"; ]
+            "BL7",  "let f()  = seq { while abbbbc(*D1*) do abbbbc.[aaa(*C*)"             , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; AC "(*C*)" "aaaaaa"; ]
+            "BL7a", "let f()  = seq { while abbbbc(*D1*) do abbbbc.[aaa(*C*)]"            , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; AC "(*C*)" "aaaaaa"; ]
+            "BL7b", "let f()  = seq { while abbbbc(*D1*) do abbbbc.[aaa(*C*)] <- "        , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; AC "(*C*)" "aaaaaa"; ]
+            "BL7c", "let f()  = seq { while abbbbc(*D1*) do abbbbc.[aaa(*C*)] <- 1"       , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; AC "(*C*)" "aaaaaa"; ]
+            "BL7d", "let f()  = seq { while abbbbc(*D1*) do abbbbc.[ (*C*) ] <- 1"        , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; AC "(*C*)" "aaaaaa"; ]
+            "BL8",  "let f()  = seq { while abbbbc(*D1*) do abbbbc.[aaaaaa]"              , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; ]
+            "BL9",  "let f()  = seq { while abbbbc(*D1*) do abbbbc.[aaaaaa] <- (*C*)"     , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; AC "(*C*)" "abbbbc"; AC "(*C*)" "aaaaaa"; ]
+            "BL10", "let f()  = seq { while abbbbc(*D1*) do abbbbc.[aaaaaa] <- aaa(*C*)"  , [QI "while abbbbc" "val abbbbc"; DC "(*D1*)" "Length"; QI "do abbbbc" "val abbbbc"; AC "(*C*)" "aaaaaa"; ] ]
             
         let knownFailures = 
             [
@@ -2615,44 +2611,39 @@ let aaaaaa = 0
             "NoClosingBrace,NextTypeDefinition",  " \ntype NextDefinition() = member x.P = 1\n" 
           ] 
         let lines b = 
-          [ "L1",  "let x = query { for bbbb in abbbbc(*D0*) do join "  ,                                     [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"]
-            "L2",  "let x = query { for bbbb in abbbbc(*D0*) do join cccc "  ,                           [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"]
-            "L2a", "let x = query { for bbbb in abbbbc(*D0*) do join cccc )"  ,                          [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"]
-            "L3",  "let x = query { for bbbb in abbbbc(*D0*) do join cccc in "  ,                        [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"]
-            "L3a", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in )"  ,                       [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"]
-            "L4",  "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbb(*C*)"  ,               [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length";QI "join" "join"; AC "(*C*)" "abbbbc"]
-            "L4a", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbb(*C*) )"  ,             [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length";QI "join" "join"; AC "(*C*)" "abbbbc"]
-            "L5",  "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*)"  ,            [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
-            "L5a", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) )"  ,          [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
-            "L6",  "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on "  ,        [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
-            "L6a", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on )"  ,       [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
-            "L6b", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bb(*C*)"  , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; AC "(*C*)" "bbbb"]
-            "L7",  "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb"  ,    [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
-            "L7a", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb )"  ,  [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
-            "L8",  "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb = "  , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
-            "L8a", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb = )"  , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
-            "L8b", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb = cc(*C*)"  ,                                              [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; AC "(*C*)" "cccc"]
-            "L9",  "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)"  ,                                   [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
-            "L10", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*))"  ,                                  [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
-            "L11", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); "  ,                                [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
-            "L12", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select"  ,                          [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
-            "L13", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bb(*C*)"  ,                 [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
-            "L14", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bbbb(*D2*)"  ,              [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D2*)" "CompareTo"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
-            "L15", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bbbb(*D2*), "  ,            [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D2*)" "CompareTo"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
-            "L16", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bbbb(*D2*), cc(*C*)"  ,     [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D2*)" "CompareTo"; AC "(*C*)" "cccc"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
-            "L17", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bbbb(*D2*), cccc(*D3*)"  ,  [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D2*)" "CompareTo"; DC "(*D3*)"  "CompareTo"; QI "(bbbb" "val bbbb"; QI ", cccc" "val cccc"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo" ]
-            "L18", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bbbb(*D2*), cccc(*D3*))"  , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D2*)" "CompareTo"; DC "(*D3*)" "CompareTo"; QI "(bbbb" "val bbbb"; QI ", cccc" "val cccc"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo" ] ]
+          [ "CL1",  "let x = query { for bbbb in abbbbc(*D0*) do join "  ,                                     [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"]
+            "CL2",  "let x = query { for bbbb in abbbbc(*D0*) do join cccc "  ,                           [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"]
+            "CL2a", "let x = query { for bbbb in abbbbc(*D0*) do join cccc )"  ,                          [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"]
+            "CL3",  "let x = query { for bbbb in abbbbc(*D0*) do join cccc in "  ,                        [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"]
+            "CL3a", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in )"  ,                       [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"]
+            "CL4",  "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbb(*C*)"  ,               [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length";QI "join" "join"; AC "(*C*)" "abbbbc"]
+            "CL4a", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbb(*C*) )"  ,             [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length";QI "join" "join"; AC "(*C*)" "abbbbc"]
+            "CL5",  "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*)"  ,            [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
+            "CL5a", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) )"  ,          [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
+            "CL6",  "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on "  ,        [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
+            "CL6a", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on )"  ,       [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
+            "CL6b", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bb(*C*)"  , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; AC "(*C*)" "bbbb"]
+            "CL7",  "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb"  ,    [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
+            "CL7a", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb )"  ,  [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
+            "CL8",  "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb = "  , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
+            "CL8a", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb = )"  , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
+            "CL8b", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb = cc(*C*)"  ,                                              [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; AC "(*C*)" "cccc"]
+            "CL9",  "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)"  ,                                   [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
+            "CL10", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*))"  ,                                  [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
+            "CL11", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); "  ,                                [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
+            "CL12", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select"  ,                          [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
+            "CL13", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bb(*C*)"  ,                 [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
+            "CL14", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bbbb(*D2*)"  ,              [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D2*)" "CompareTo"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
+            "CL15", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bbbb(*D2*), "  ,            [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D2*)" "CompareTo"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
+            "CL16", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bbbb(*D2*), cc(*C*)"  ,     [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D2*)" "CompareTo"; AC "(*C*)" "cccc"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
+            "CL17", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bbbb(*D2*), cccc(*D3*)"  ,  [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D2*)" "CompareTo"; DC "(*D3*)"  "CompareTo"; QI "(bbbb" "val bbbb"; QI ", cccc" "val cccc"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo" ]
+            "CL18", "let x = query { for bbbb in abbbbc(*D0*) do join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bbbb(*D2*), cccc(*D3*))"  , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D2*)" "CompareTo"; DC "(*D3*)" "CompareTo"; QI "(bbbb" "val bbbb"; QI ", cccc" "val cccc"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo" ] ]
             
         let knownFailures = 
              [
-               //("L2", "NoClosingBrace,NextDefinition", "", QuickInfoExpected ("for bbbb","val bbbb")) 
-               //("L2", "NoClosingBrace,NextDefinition", "", QuickInfoExpected ("in abbbbc","val abbbbc")) 
-               //("L2", "NoClosingBrace,NextDefinition", "", DotCompleteExpected ("(*D0*)","Length")) 
-               //("L2", "NoClosingBrace,NextDefinition", "", QuickInfoExpected ("join","join")) 
-            ]
+             ]
 
         this.WordByWordSystematicTestWithSpecificExpectations(prefix, suffixes, lines, [""], knownFailures) 
-             
 
     [<Test>]
     /// This is a sanity check that the multiple-line case is much the same as the single-line cae
@@ -2673,51 +2664,51 @@ let aaaaaa = 0
             "NoClosingBrace,NextTypeDefinition",  " \ntype NextDefinition() = member x.P = 1\n" 
           ] 
         let lines b = 
-          [ "L1",  """
+          [ "DL1",  """
 let x = query { for bbbb in abbbbc(*D0*) do 
 join 
 """                                                 ,  [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"]
-            "L2",  """
+            "DL2",  """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc 
 """                                                 , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"]
 
-            "L2a", """
+            "DL2a", """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc )
 """                                                 , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"]
 
-            "L3",  """
+            "DL3",  """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in 
 """                                                 , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"]
 
-            "L3a", """
+            "DL3a", """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in )
 """                                                 , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"]
 
-            "L4",  """
+            "DL4",  """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbb(*C*)
 """                                                 , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length";QI "join" "join"; AC "(*C*)" "abbbbc"]
 
-            "L4a", """
+            "DL4a", """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbb(*C*) )
 """                                                 , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length";QI "join" "join"; AC "(*C*)" "abbbbc"]
 
-            "L5",  """
+            "DL5",  """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*)
 """                                                 , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
 
-            "L5a", """
+            "DL5a", """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) )
 """                                                ,  [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
 
-            "L6",  """
+            "DL6",  """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) on 
 """                                                ,  [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
@@ -2730,63 +2721,63 @@ let x = query { for bbbb in abbbbc(*D0*) do
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) on (bb(*C*)
 """                                                , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; AC "(*C*)" "bbbb"]
-            "L7",  """
+            "DL7",  """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) on (bbbb
 """                                                ,    [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
-            "L7a", """
+            "DL7a", """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) on (bbbb )
 """                                                ,  [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
-            "L8",  """
+            "DL8",  """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) on (bbbb = 
 """                                                , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
-            "L8a", """
+            "DL8a", """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) on (bbbb = )
 """                                                , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"]
-            "L8b", """
+            "DL8b", """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) on (bbbb = cc(*C*)
 """                                                , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; AC "(*C*)" "cccc"]
-            "L9",  """
+            "DL9",  """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)
 """                                                , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
-            "L10", """
+            "DL10", """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*))
 """                                               ,  [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
-            "L11", """
+            "DL11", """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); 
 """                                               , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
-            "L12", """
+            "DL12", """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select
 """                                               ,  [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
-            "L13", """
+            "DL13", """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bb(*C*)
 """                                               ,  [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
-            "L14", """
+            "DL14", """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bbbb(*D2*)
 """                                              , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D2*)" "CompareTo"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
-            "L15", """
+            "DL15", """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bbbb(*D2*), 
 """                                               , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D2*)" "CompareTo"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
-            "L16", """
+            "DL16", """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bbbb(*D2*), cc(*C*)
 """                                               ,  [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D2*)" "CompareTo"; AC "(*C*)" "cccc"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo"]
-            "L17", """
+            "DL17", """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bbbb(*D2*), cccc(*D3*)
 """                                               ,  [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D2*)" "CompareTo"; DC "(*D3*)"  "CompareTo"; QI "(bbbb" "val bbbb"; QI ", cccc" "val cccc"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo" ]
-            "L18", """
+            "DL18", """
 let x = query { for bbbb in abbbbc(*D0*) do 
                 join cccc in abbbbc(*D1*) on (bbbb(*D11*) = cccc(*D12*)); select (bbbb(*D2*), cccc(*D3*))
 """                                              , [QI "for bbbb" "val bbbb"; QI "in abbbbc" "val abbbbc"; DC "(*D0*)" "Length"; QI "join" "join"; DC "(*D1*)" "Length"; DC "(*D2*)" "CompareTo"; DC "(*D3*)" "CompareTo"; QI "(bbbb" "val bbbb"; QI ", cccc" "val cccc"; DC "(*D11*)" "CompareTo"; DC "(*D12*)" "CompareTo" ] ]
@@ -2794,10 +2785,10 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let knownFailures = 
 
               [
-                 //("L2", "NoClosingBrace,NextDefinition", "", QuickInfoExpected ("for bbbb","val bbbb")) 
-                 //("L2", "NoClosingBrace,NextDefinition", "", QuickInfoExpected ("in abbbbc","val abbbbc")) 
-                 //("L2", "NoClosingBrace,NextDefinition", "", DotCompleteExpected ("(*D0*)","Length")) 
-                 //("L2", "NoClosingBrace,NextDefinition", "", QuickInfoExpected ("join","join")) 
+                 //("DL2", "NoClosingBrace,NextDefinition", "", QuickInfoExpected ("for bbbb","val bbbb")) 
+                 //("DL2", "NoClosingBrace,NextDefinition", "", QuickInfoExpected ("in abbbbc","val abbbbc")) 
+                 //("DL2", "NoClosingBrace,NextDefinition", "", DotCompleteExpected ("(*D0*)","Length")) 
+                 //("DL2", "NoClosingBrace,NextDefinition", "", QuickInfoExpected ("join","join")) 
               ]
 
 
@@ -4207,7 +4198,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         AssertEqualWithMessage(3, occurrences, "Found wrong number of overloads for 'File.Open'.")
 
     [<Test>]
-    member public this.``Duplicates.Bug2094``() =        
+    member public this.``Duplicates.Bug2094``() =
         let code = 
             [  
                 "open Microsoft.FSharp.Control"
@@ -4218,8 +4209,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
           
         // Get description for Expr.Var
         let (CompletionItem(_, _, _, descrFunc, _)) = completions |> Array.find (fun (CompletionItem(name, _, _, _, _)) -> name = "Start")
-        let occurrences = this.CountMethodOccurrences(descrFunc(), "Start")        
-        AssertEqualWithMessage(1, occurrences, "Found wrong number of overloads for 'MailboxProcessor.Start'.")
+        let occurrences = this.CountMethodOccurrences(descrFunc(), "Start")
+        AssertEqualWithMessage(1, occurrences, sprintf "Found wrong number of overloads for 'MailboxProcessor.Start'.  Found %A." completions)
        
     [<Test;Category("Repro")>]
     member public this.``WithinMatchClause.Bug1603``() =        
@@ -5448,7 +5439,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 t(*Marker*)""",
             marker = "(*Marker*)",
             list = ["Equals";"GetHashCode"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5461,7 +5452,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 t(*Marker*)""",
             marker = "(*Marker*)",
             list = ["Event1"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5474,7 +5465,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 t(*Marker*)""",
             marker = "(*Marker*)",
             list = ["IM1"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5486,7 +5477,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 type XXX = N1.T1(*Marker*)""",
             marker = "(*Marker*)",
             list = ["SomeNestedType"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
         // should _not_ have it here
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """ 
@@ -5494,7 +5485,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 t(*Marker*)""",
             marker = "(*Marker*)",
             list = ["SomeNestedType"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5507,7 +5498,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 t.Event1(*Marker*)""",
             marker = "(*Marker*)",
             list = ["AddHandler";"RemoveHandler"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5519,7 +5510,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             fileContents = """ 
                                 let t = N.T.M(*Marker*)()""",
             marker = "(*Marker*)",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5533,7 +5524,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 let t = N.T.StaticProp(*Marker*)""",
             marker = "(*Marker*)",
             list = ["GetType"; "Equals"],   // just a couple of System.Object methods: we expect them to be there!
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
                                           
     [<Test>]
     member this.CompListInDiffFileTypes() =

@@ -15916,7 +15916,7 @@ module EstablishTypeDefinitionCores =
                     let fspecs = 
                         if structTycon.IsUnionTycon then 
                             [ for uc in structTycon.UnionCasesArray do 
-                                 for c in uc.FieldTable.AllFieldsAsList  do
+                                 for c in uc.FieldTable.FieldsByIndex  do
                                     yield c]
                         else
                             structTycon.AllFieldsAsList 

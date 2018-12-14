@@ -1,39 +1,30 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
-  <PropertyGroup>
-    <TargetDotnetProfile Condition="'$(TargetDotnetProfile)'==''">net40</TargetDotnetProfile>
-  </PropertyGroup>
 
   <ItemGroup>
-    <ProjectFiles Include="tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj" />
-    <ProjectFiles Include="tests\Salsa\VisualFSharp.Salsa.fsproj" />
-    <ProjectFiles Include="tests\UnitTests\VisualFSharp.UnitTests.fsproj" />
-    <ProjectFiles Include="..\tests\service\data\TestTP\TestTP.fsproj" />
-    <ProjectFiles Include="..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
-    <ProjectFiles Include="tests\MockTypeProviders\DefinitionLocationAttribute\DefinitionLocationAttribute.csproj" />
-    <ProjectFiles Include="tests\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist\DefinitionLocationAttributeFileDoesnotExist.csproj" />
-    <ProjectFiles Include="tests\MockTypeProviders\DefinitionLocationAttributeLineDoesnotExist\DefinitionLocationAttributeLineDoesnotExist.csproj" />
-    <ProjectFiles Include="tests\MockTypeProviders\DefinitionLocationAttributeWithSpaceInTheType\DefinitionLocationAttributeWithSpaceInTheType.csproj" />
-    <ProjectFiles Include="tests\MockTypeProviders\DummyProviderForLanguageServiceTesting\DummyProviderForLanguageServiceTesting.fsproj" />
-    <ProjectFiles Include="tests\MockTypeProviders\EditorHideMethodsAttribute\EditorHideMethodsAttribute.csproj" />
-    <ProjectFiles Include="tests\MockTypeProviders\EmptyAssembly\EmptyAssembly.fsproj" />
-    <ProjectFiles Include="tests\MockTypeProviders\XmlDocAttributeWithAdequateComment\XmlDocAttributeWithAdequateComment.csproj" />
-    <ProjectFiles Include="tests\MockTypeProviders\XmlDocAttributeWithEmptyComment\XmlDocAttributeWithEmptyComment.csproj" />
-    <ProjectFiles Include="tests\MockTypeProviders\XmlDocAttributeWithLocalizedComment\XmlDocAttributeWithLocalizedComment.csproj" />
-    <ProjectFiles Include="tests\MockTypeProviders\XmlDocAttributeWithLongComment\XmlDocAttributeWithLongComment.csproj" />
-    <ProjectFiles Include="tests\MockTypeProviders\XmlDocAttributeWithNullComment\XmlDocAttributeWithNullComment.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <SdkProjects Include="tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj" />
-    <SdkProjects Include="tests\Salsa\VisualFSharp.Salsa.fsproj" />
-    <SdkProjects Include="tests\UnitTests\VisualFSharp.UnitTests.fsproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)tests\Salsa\VisualFSharp.Salsa.fsproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)tests\UnitTests\VisualFSharp.UnitTests.fsproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)..\tests\service\data\TestTP\TestTP.fsproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)tests\MockTypeProviders\DefinitionLocationAttribute\DefinitionLocationAttribute.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)tests\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist\DefinitionLocationAttributeFileDoesnotExist.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)tests\MockTypeProviders\DefinitionLocationAttributeLineDoesnotExist\DefinitionLocationAttributeLineDoesnotExist.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)tests\MockTypeProviders\DefinitionLocationAttributeWithSpaceInTheType\DefinitionLocationAttributeWithSpaceInTheType.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)tests\MockTypeProviders\DummyProviderForLanguageServiceTesting\DummyProviderForLanguageServiceTesting.fsproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)tests\MockTypeProviders\EditorHideMethodsAttribute\EditorHideMethodsAttribute.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)tests\MockTypeProviders\EmptyAssembly\EmptyAssembly.fsproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)tests\MockTypeProviders\XmlDocAttributeWithAdequateComment\XmlDocAttributeWithAdequateComment.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)tests\MockTypeProviders\XmlDocAttributeWithEmptyComment\XmlDocAttributeWithEmptyComment.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)tests\MockTypeProviders\XmlDocAttributeWithLocalizedComment\XmlDocAttributeWithLocalizedComment.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)tests\MockTypeProviders\XmlDocAttributeWithLongComment\XmlDocAttributeWithLongComment.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)tests\MockTypeProviders\XmlDocAttributeWithNullComment\XmlDocAttributeWithNullComment.csproj" />
   </ItemGroup>
 
   <Import Project="..\src\root.traversal.targets"/>
 
   <Target Name="Restore">
-    <MSBuild Projects="@(SdkProjects)" Targets="Restore" />
+    <MSBuild Projects="@(ProjectFiles)" Targets="Restore" />
   </Target>
 
 </Project>
