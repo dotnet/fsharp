@@ -394,26 +394,19 @@ let parenTokensBalance t1 t2 =
     | _ -> false
     
 /// Used to save some aspects of the lexbuffer state
-[<Struct>]
 type LexbufState(startPos: Position, 
                  endPos  : Position, 
                  pastEOF : bool) = 
     member x.StartPos = startPos
     member x.EndPos = endPos
     member x.PastEOF = pastEOF
-
-[<Struct>]
-type PositionTuple =
-    val X: Position
-    val Y: Position
-    new (x: Position, y: Position) = { X = x; Y = y }
-
+    
 /// Used to save the state related to a token
-[<Class>]
+[<Struct>]
 type TokenTup = 
     val Token : token
     val LexbufState : LexbufState
-    val LastTokenPos: PositionTuple
+    val LastTokenPos: Position
     new (token,state,lastTokenPos) = { Token=token; LexbufState=state;LastTokenPos=lastTokenPos }
     
     /// Returns starting position of the token
@@ -422,9 +415,7 @@ type TokenTup =
     member x.EndPos = x.LexbufState.EndPos
     
     /// Returns a token 'tok' with the same position as this token
-    member x.UseLocation(tok) = 
-        let tokState = x.LexbufState 
-        TokenTup(tok,LexbufState(tokState.StartPos, tokState.EndPos,false),x.LastTokenPos)
+    member x.UseLocation(tok) = TokenTup(tok,x.LexbufState,x.LastTokenPos)
         
     /// Returns a token 'tok' with the same position as this token, except that 
     /// it is shifted by specified number of characters from the left and from the right
@@ -526,11 +517,9 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
 
     // Make sure we don't report 'eof' when inserting a token, and set the positions to the 
     // last reported token position 
-    let lexbufStateForInsertedDummyTokens (lastTokenStartPos,lastTokenEndPos) =
-        new LexbufState(lastTokenStartPos,lastTokenEndPos,false) 
 
     let getLexbufState() = 
-        new LexbufState(lexbuf.StartPos, lexbuf.EndPos, lexbuf.IsPastEndOfStream)  
+        new LexbufState(lexbuf.StartPos, lexbuf.EndPos, lexbuf.IsPastEndOfStream) 
 
     let setLexbufState (p:LexbufState) =
         lexbuf.StartPos <- p.StartPos  
@@ -553,17 +542,21 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
     let mutable savedLexbufState = Unchecked.defaultof<LexbufState>
     let mutable haveLexbufState = false
     let runWrappedLexerInConsistentLexbufState() =
-        let state = if haveLexbufState then savedLexbufState else getLexbufState()
-        setLexbufState state
-        let lastTokenStart = state.StartPos
-        let lastTokenEnd = state.EndPos
+        
+        if haveLexbufState then 
+            setLexbufState savedLexbufState
+        else
+            savedLexbufState <- getLexbufState()
+         
+        let lastTokenEnd = savedLexbufState.EndPos
         let token = lexer lexbuf
+
         // Now we've got the token, remember the lexbuf state, associating it with the token 
         // and remembering it as the last observed lexbuf state for the wrapped lexer function. 
-        let tokenLexbufState = getLexbufState()
-        savedLexbufState <- tokenLexbufState
-        haveLexbufState <- true
-        TokenTup(token,tokenLexbufState,PositionTuple(lastTokenStart,lastTokenEnd))
+        savedLexbufState <- getLexbufState()
+        haveLexbufState <- true        
+        // state is not mutated so we can use same reference
+        TokenTup(token, savedLexbufState, lastTokenEnd)
 
     //----------------------------------------------------------------------------
     // Fetch a raw token, either from the old lexer or from our delayedStack
@@ -868,7 +861,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
                     let lookaheadTokenStartPos = startPosOfTokenTup lookaheadTokenTup
                     match lookaheadToken with 
                     | Parser.EOF _ | SEMICOLON_SEMICOLON -> false 
-                    | _ when indentation && lookaheadTokenStartPos < tokenEndPos -> false
+                    | _ when indentation && lookaheadTokenStartPos.AbsoluteOffset < tokenEndPos.AbsoluteOffset -> false
                     | (RPAREN | RBRACK) ->
                         let nParen = nParen - 1
                         if nParen > 0 then 
@@ -989,6 +982,13 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
         setLexbufState(tokenLexbufState)
         prevWasAtomicEnd <- isAtomicExprEndToken(tok)
         tok
+
+    let returnDummyToken startPos endPos tok = 
+        lexbuf.StartPos <- startPos
+        lexbuf.EndPos <- endPos
+        lexbuf.IsPastEndOfStream <- false
+        prevWasAtomicEnd <- isAtomicExprEndToken(tok)
+        tok
     
     let rec suffixExists p l = match l with [] -> false | _::t -> p t || suffixExists p t
 
@@ -1099,14 +1099,14 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
             // span of inserted token lasts from the col + 1 of the prev token 
             // to the beginning of current token
             let lastTokenPos = 
-                let pos = tokenTup.LastTokenPos.Y
+                let pos = tokenTup.LastTokenPos
                 pos.ShiftColumnBy 1
-            returnToken (lexbufStateForInsertedDummyTokens (lastTokenPos, tokenTup.LexbufState.StartPos)) tok
+            returnDummyToken lastTokenPos tokenTup.LexbufState.StartPos tok
 
         let insertToken tok = 
             delayToken tokenTup
             if debug then dprintf "inserting %+A\n" tok
-            returnToken (lexbufStateForInsertedDummyTokens (startPosOfTokenTup tokenTup, tokenTup.LexbufState.EndPos)) tok
+            returnDummyToken (startPosOfTokenTup tokenTup) tokenTup.LexbufState.EndPos tok
 
         let isSemiSemi = match token with SEMICOLON_SEMICOLON -> true | _ -> false
 
@@ -2166,7 +2166,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
                        | PERCENT_OP s -> (s = "%") || (s = "%%") 
                        | _ -> true) &&
                       nextTokenIsAdjacent tokenTup && 
-                      not (prevWasAtomicEnd && (tokenTup.LastTokenPos.Y = startPosOfTokenTup tokenTup))) ->
+                      not (prevWasAtomicEnd && (tokenTup.LastTokenPos = startPosOfTokenTup tokenTup))) ->
 
               let plus = 
                   match tokenTup.Token with 
@@ -2179,7 +2179,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
                   | _ -> false
               let nextTokenTup = popNextTokenTup()
               /// Merge the location of the prefix token and the literal
-              let delayMergedToken tok = delayToken(new TokenTup(tok,new LexbufState(tokenTup.LexbufState.StartPos,nextTokenTup.LexbufState.EndPos,nextTokenTup.LexbufState.PastEOF),tokenTup.LastTokenPos))
+              let delayMergedToken tok = delayToken(new TokenTup(tok,tokenTup.LexbufState,tokenTup.LastTokenPos))
               let noMerge() = 
                   let tokenName = 
                       match tokenTup.Token with 

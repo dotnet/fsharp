@@ -9,9 +9,9 @@ open System.Collections.Generic
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Control
 
-/// Position information stored for lexing tokens
-[<Struct>]
-type internal Position = 
+/// File / Line Position information stored for Positions
+[<Sealed>]
+type internal LinePosition = 
      /// The file index for the file associated with the input stream, use <c>fileOfFileIndex</c> in range.fs to decode
      val FileIndex : int
      /// The line number in the input stream, assuming fresh positions have been updated 
@@ -20,10 +20,23 @@ type internal Position =
      /// The line number for the position in the input stream, assuming fresh positions have been updated 
      /// using for the new line.
      val OriginalLine : int
-     /// The character number in the input stream.
-     val AbsoluteOffset : int
      /// Return absolute offset of the start of the line marked by the position.
      val StartOfLineAbsoluteOffset : int
+
+/// Position information stored for lexing tokens
+[<Struct>]
+type internal Position = 
+     /// Line data for this positon
+     val LinePosition : LinePosition
+     /// The character number in the input stream.
+     val AbsoluteOffset : int
+
+     /// helper properties of LinePosition
+     member inline FileIndex : int
+     member inline Line : int
+     member inline OriginalLine : int
+     member inline StartOfLineAbsoluteOffset : int
+
      /// Return the column number marked by the position, 
      /// i.e. the difference between the <c>AbsoluteOffset</c> and the <c>StartOfLineAbsoluteOffset</c>
      member Column : int

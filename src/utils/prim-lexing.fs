@@ -9,65 +9,69 @@ namespace Internal.Utilities.Text.Lexing
     open Microsoft.FSharp.Collections
     open System.Collections.Generic
 
-    [<Struct>]
-    type internal Position =
+    [<Sealed>]
+    type internal LinePosition =
         val FileIndex: int
         val Line: int
         val OriginalLine: int
-        val AbsoluteOffset: int
         val StartOfLineAbsoluteOffset: int
-        member x.Column = x.AbsoluteOffset - x.StartOfLineAbsoluteOffset
-
-        new (fileIndex: int, line: int, originalLine: int, startOfLineAbsoluteOffset: int, absoluteOffset: int) =
+        new (fileIndex: int, line: int, originalLine:int, startOfLineAbsoluteOffset:int) =             
             { FileIndex = fileIndex
               Line = line
               OriginalLine = originalLine
-              AbsoluteOffset = absoluteOffset
               StartOfLineAbsoluteOffset = startOfLineAbsoluteOffset }
+        static member Empty = LinePosition(0,0,0,0)
+    
+    [<Struct>]
+    type internal Position =
+        val LinePosition: LinePosition
+        val AbsoluteOffset: int
 
-        member x.NextLine = 
-            Position (x.FileIndex,
-                      x.Line + 1,
-                      x.OriginalLine + 1,
-                      x.AbsoluteOffset,
-                      x.AbsoluteOffset)
+        member x.Column = x.AbsoluteOffset - x.LinePosition.StartOfLineAbsoluteOffset
+
+        new (linePosition: LinePosition, absoluteOffset: int) =
+            { LinePosition = linePosition
+              AbsoluteOffset = absoluteOffset }
+
+        member inline x.FileIndex       with get () = x.LinePosition.FileIndex
+        member inline x.Line            with get () = x.LinePosition.Line
+        member inline x.OriginalLine    with get () = x.LinePosition.OriginalLine
+        member inline x.StartOfLineAbsoluteOffset with get () = x.LinePosition.StartOfLineAbsoluteOffset
+
+        member x.NextLine =
+            let newLinePos =  
+                LinePosition( x.LinePosition.FileIndex,
+                              x.LinePosition.Line + 1,
+                              x.LinePosition.OriginalLine + 1,
+                              x.AbsoluteOffset)
+            Position(newLinePos,x.AbsoluteOffset)
 
         member x.EndOfToken n = 
-            Position (x.FileIndex,
-                      x.Line,
-                      x.OriginalLine,
-                      x.StartOfLineAbsoluteOffset,
-                      x.AbsoluteOffset + n)
+            Position (x.LinePosition, x.AbsoluteOffset + n)
 
         member x.ShiftColumnBy by = 
-            Position (x.FileIndex,
-                      x.Line,
-                      x.OriginalLine,
-                      x.StartOfLineAbsoluteOffset,
-                      x.AbsoluteOffset + by)
+            Position (x.LinePosition, x.AbsoluteOffset + by)
 
         member x.ColumnMinusOne = 
-            Position (x.FileIndex,
-                      x.Line,
-                      x.OriginalLine,
-                      x.StartOfLineAbsoluteOffset,
-                      x.StartOfLineAbsoluteOffset - 1)
+            Position (x.LinePosition, x.LinePosition.StartOfLineAbsoluteOffset - 1)
 
         member x.ApplyLineDirective (fileIdx, line) =
-            Position (fileIdx,
-                      line,
-                      x.OriginalLine,
-                      x.AbsoluteOffset,
-                      x.AbsoluteOffset)
+            let newLinePos = 
+                LinePosition( fileIdx,
+                              line,
+                              x.LinePosition.OriginalLine,
+                              x.AbsoluteOffset )
+            Position (newLinePos, x.AbsoluteOffset)
 
-        static member Empty = Position ()
+        static member Empty = Position (LinePosition.Empty, 0)
 
         static member FirstLine fileIdx = 
-            Position (fileIdx,
-                      1,
-                      0,
-                      0,
-                      0)
+            let newLinePos =  
+                LinePosition( fileIdx,
+                              1,
+                              0,
+                              0)
+            Position(newLinePos,0)
 
     type internal LexBufferFiller<'Char> = (LexBuffer<'Char> -> unit) 
         
