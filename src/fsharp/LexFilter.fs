@@ -415,7 +415,9 @@ type TokenTup =
     member x.EndPos = x.LexbufState.EndPos
     
     /// Returns a token 'tok' with the same position as this token
-    member x.UseLocation(tok) = TokenTup(tok,x.LexbufState,x.LastTokenPos)
+    member x.UseLocation(tok) =
+        // we do not want to pass on the same LexbufState if it is PastEoF, but use same if it is not, ensuring always false
+        TokenTup(tok, (if x.LexbufState.PastEOF then LexbufState(x.LexbufState.StartPos,x.LexbufState.EndPos, false) else x.LexbufState), x.LastTokenPos)
         
     /// Returns a token 'tok' with the same position as this token, except that 
     /// it is shifted by specified number of characters from the left and from the right

@@ -130,10 +130,3 @@ tests/fsharpqa/testenv/bin/System.ValueTuple.dll
 msbuild.binlog
 /fcs/FSharp.Compiler.Service.netstandard/*.fs
 /fcs/FSharp.Compiler.Service.netstandard/*.fsi
-/FSharp.Core.dll
-/PerfViewData.etl.zip
-/test.exe
-/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.nuget.props
-/src/fsharp/fsi/Fsi.nuget.props
-/src/fsharp/Fsc/Fsc.nuget.props
-/net40/bin/FSharp.Core.UnitTests.dll.config
