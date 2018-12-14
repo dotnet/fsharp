@@ -3360,7 +3360,7 @@ namespace Microsoft.FSharp.Core
         let inline isNullV (value : Nullable<'T>) = not value.HasValue
 
         [<CompiledName("NonNull")>]
-        let inline nonNull (value : 'T? when 'T : not struct) = 
+        let inline nonNull (value : 'T? when 'T : not struct and 'T : not null) = 
             match box value with 
             | null -> raise (System.NullReferenceException()) 
             | _ -> (# "" value : 'T #)
@@ -3373,7 +3373,7 @@ namespace Microsoft.FSharp.Core
                 raise (System.NullReferenceException())
 
         [<CompiledName("NullMatchPattern")>]
-        let inline (|Null|NotNull|) (value : 'T?) = 
+        let inline (|Null|NotNull|) (value : 'T? when 'T : not null) = 
             match value with 
             | null -> Null () 
             | _ -> NotNull (# "" value : 'T #)
@@ -3384,7 +3384,7 @@ namespace Microsoft.FSharp.Core
             else NullV ()
 
         [<CompiledName("NonNullPattern")>]
-        let inline (|NonNull|) (value : 'T?) =
+        let inline (|NonNull|) (value : 'T? when 'T : not null) =
             match box value with 
             | null -> raise (System.NullReferenceException()) 
             | _ -> (# "" value : 'T #)
@@ -3447,7 +3447,7 @@ namespace Microsoft.FSharp.Core
 
 #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
         [<CompiledName("NullArgCheck")>]
-        let inline nullArgCheck (argumentName:string) (value: 'T? when 'T : not struct) = 
+        let inline nullArgCheck (argumentName:string) (value: 'T? when 'T : not struct and 'T : not null) = 
             match value with 
             | null -> raise (new System.ArgumentNullException(argumentName))        
             | _ ->  (# "" value : 'T #)

@@ -530,7 +530,7 @@ type BraceCompletionSessionProvider
                     let! sessionFactory = document.TryGetLanguageService<IEditorBraceCompletionSessionFactory>()
                     let! session =
                         sessionFactory.TryCreateSession(document, openingPoint.Position, openingBrace, CancellationToken.None)
-                        |> Option.ofObj<IEditorBraceCompletionSession?>
+                        |> Option.ofObj
 
                     let undoHistory = undoManager.GetTextBufferUndoManager(textView.TextBuffer).TextBufferUndoHistory
                     return BraceCompletionSession(

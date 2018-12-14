@@ -17,7 +17,6 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.Shell
 
-[<AllowNullLiteral>]
 type internal FSharpNavigableSymbol(item: INavigableItem, span: SnapshotSpan, gtd: GoToDefinition, statusBar: StatusBar) =
     interface INavigableSymbol with
         member __.Navigate(_: INavigableRelationship) =
@@ -80,7 +79,9 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
                         // The NavigableSymbols API accepts 'null' when there's nothing to navigate to.
                         return null
                 }
-                |> Async.map Option.toObj<INavigableSymbol> // TODO NULLNESS - why is this annotation needed?
+                // Async<INavigableSymbol? option>
+                // --> Async<INavigableSymbol?>
+                |> Async.map Option.toObj
                 |> RoslynHelpers.StartAsyncAsTask cancellationToken
         
         member __.Dispose() =

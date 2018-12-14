@@ -4725,8 +4725,16 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
                 innerTyC, tpenv
 
             | Some innerTyCWithNull ->
-                // The inner type is not allowed to support null or use null as a representation value
-                AddCxTypeDefnNotSupportsNull env.DisplayEnv cenv.css m NoTrace innerTyC
+                // The inner type is not allowed to support null or use null as a representation value.
+                // For example "int option?" is not allowed, not "string??".
+                //
+                // For variable types in FSharp.Core we make an exception because we must allow
+                //    val toObj: value: 'T option -> 'T? when 'T : not struct (* and 'T : not null *)
+                // wihout implying 'T is not null.  This is because it is legitimate to use this
+                // function to "collapse" null and obj-null-coming-from-option using such a function.
+
+                if g.compilingFslib && not (isTyparTy g innerTyC) then 
+                    AddCxTypeDefnNotSupportsNull env.DisplayEnv cenv.css m NoTrace innerTyC
 
                 innerTyCWithNull, tpenv
 

@@ -249,7 +249,7 @@ type internal FSharpAsyncQuickInfoSource
                         let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)
                         let span = getTrackingSpan targetQuickInfo.Span
                         return QuickInfoItem(span, content)
-                }   |> Async.map Option.toObj<QuickInfoItem> // TODO NULLNESS - why is this annotation needed?
+                }   |> Async.map Option.toObj
                     |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
 [<Export(typeof<IAsyncQuickInfoSourceProvider>)>]

@@ -31,7 +31,7 @@ type [<Export>] Logger [<ImportingConstructor>]
     ([<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider) =
     let outputWindow =
         serviceProvider.GetService<SVsOutputWindow,IVsOutputWindow?>()
-        |> Option.ofObj<IVsOutputWindow?> // TODO NULLNESS - this explicit annotation should not be needed
+        |> Option.ofObj
 
     let createPane () =
         outputWindow |> Option.iter (fun x -> 

@@ -13,7 +13,6 @@ namespace Microsoft.FSharp.Collections
 #if FX_RESHAPED_REFLECTION
     open System.Reflection
 #endif
-    #nowarn "3245" // nullness on box-match-null TODO NULLNESS: don't give a warning on this?
 
     /// Basic operations on arrays
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]

@@ -2280,14 +2280,15 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("IsNull")>]
-        val inline isNull : value: 'T -> bool when 'T : not struct and 'T : null // TODO NULLNESS addition of 'T : not struct is compat?
+        // TODO NULLNESS: assess this change - is it a breaking change?
+        val inline isNull : value: 'T -> bool when 'T : not struct and 'T : null
         
 #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
         /// <summary>Determines whether the given value is null.</summary>
         /// <param name="value">The value to check.</param>
         /// <returns>A choice indicating whether the value is null or not-null.</returns>
         [<CompiledName("NullMatchPattern")>]
-        val inline (|Null|NotNull|) : value: 'T? -> Choice<unit, 'T> 
+        val inline (|Null|NotNull|) : value: 'T? -> Choice<unit, 'T>  when 'T : not null
         
         /// <summary>Determines whether the given value is null.</summary>
         /// <param name="value">The value to check.</param>
@@ -2299,7 +2300,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>The non-null value.</returns>
         [<CompiledName("NonNullPattern")>]
-        val inline (|NonNull|) : value: 'T? -> 'T 
+        val inline (|NonNull|) : value: 'T? -> 'T when 'T : not null 
         
         /// <summary>When used in a pattern checks the given value is not null.</summary>
         /// <param name="value">The value to check.</param>
@@ -2330,7 +2331,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("NonNull")>]
-        val inline nonNull : value: 'T? -> 'T when 'T : not struct
+        val inline nonNull : value: 'T? -> 'T when 'T : not struct and 'T : not null
 
         /// <summary>Asserts that the value is non-null.</summary>
         /// <param name="value">The value to check.</param>
@@ -2342,7 +2343,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("WithNull")>]
-        val inline withNull : value:'T -> 'T? when 'T : not struct
+        val inline withNull : value:'T -> 'T? when 'T : not struct (* and 'T : not null *)
 
         /// <summary>Asserts that the value is non-null.</summary>
         /// <param name="value">The value to check.</param>
@@ -2376,7 +2377,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="argumentName">The argument name.</param>
         /// <returns>The result value.</returns>
         [<CompiledName("NullArgCheck")>]
-        val inline nullArgCheck : argumentName:string -> 'T? -> 'T when 'T : not struct
+        val inline nullArgCheck : argumentName:string -> 'T? -> 'T when 'T : not struct and 'T : not null
 #endif
 
         /// <summary>Throw a <c>System.InvalidOperationException</c> exception</summary>

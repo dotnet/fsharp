@@ -1034,8 +1034,9 @@ and SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln origl1 origl2 =
        loop origl1 origl2
 
 and SolveFunTypeEqn csenv ndeep m2 trace cxsln d1 d2 r1 r2 = trackErrors {
-    // TODO NULLNESS: consider flipping the actual and expected in argument position
-    do! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln d1 d2
+    // TODO NULLNESS: consider whether flipping the actual and expected in argument position
+    // causes other problems, e.g. better/worse diagnostics
+    do! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln d2 d1
     return! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln r1 r2
   }
 

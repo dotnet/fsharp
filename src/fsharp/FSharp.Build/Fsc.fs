@@ -597,7 +597,7 @@ type public Fsc () as this =
         match dotnetFscCompilerPath with
         | null | "" -> ()
         | NonNull dotnetFscCompilerPath ->
-            builder.AppendSwitch(dotnetFscCompilerPath) // TODO NULLNESS: why is this explicit instantiation needed?
+            builder.AppendSwitch(dotnetFscCompilerPath)
         builder.ToString()
 
     override fsc.GenerateResponseFileCommands() =

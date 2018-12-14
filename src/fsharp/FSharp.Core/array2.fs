@@ -9,7 +9,6 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.Operators.Checked
 
     #nowarn "3218" // mismatch of parameter name where 'count1' --> 'length1' would shadow function in module of same name
-    #nowarn "3245" // nullness on box-match-null TODO NULLNESS: don't give a warning on this?
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]

@@ -55,23 +55,23 @@ type internal History() =
     member x.Clear() = list.Clear(); current <- -1
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-    member x.Add (line: string) = // TODO NULLNESS: explicit type annotation shouldn't be needed
+    member x.Add (line: string) =
 #else
-    member x.Add (line: string?) = // TODO NULLNESS: explicit type annotation shouldn't be needed
+    member x.Add (line: string?) = 
 #endif
         match line with 
         | null | "" -> ()
         | NonNull line -> list.Add(line)
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-    member x.AddLast (line: string) =  // TODO NULLNESS: explicit type annotation shouldn't be needed
+    member x.AddLast (line: string) =
 #else
-    member x.AddLast (line: string?) =  // TODO NULLNESS: explicit type annotation shouldn't be needed
+    member x.AddLast (line: string?) =  
 #endif
         match line with 
         | null | "" -> ()
         | NonNull line ->
-            list.Add(line) // TODO NULLNESS: explicit instantiation shouldn't be needed
+            list.Add(line)
             current <- list.Count
 
     member x.Previous() = 
