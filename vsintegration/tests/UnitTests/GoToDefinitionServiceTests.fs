@@ -96,11 +96,6 @@ let _ = Module1.foo 1
                 [ ("let _ = Module", Some (2, 2, 7, 14)) ]) 
           ]
 
-      // Adding this new-line character at the end of the source seems odd but is required for some unit tests
-      // Todo: fix tests
-      let addNewLine (source: string) =
-          if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
-
       for fileContents, testCases in manyTestCases do
        for caretMarker, expected in testCases do
         
@@ -126,7 +121,7 @@ let _ = Module1.foo 1
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         let actual = 
-           findDefinition(checker, documentId, SourceText.From(addNewLine fileContents), filePath, caretPosition, [], options, 0) 
+           findDefinition(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0) 
            |> Option.map (fun range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))
 
         if actual <> expected then 
