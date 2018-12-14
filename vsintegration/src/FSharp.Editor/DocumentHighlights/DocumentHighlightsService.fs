@@ -75,7 +75,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
     interface IDocumentHighlightsService with
         member __.GetDocumentHighlightsAsync(document, position, _documentsToSearch, cancellationToken) : Task<ImmutableArray<DocumentHighlights>> =
             asyncMaybe {
-                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) 
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions

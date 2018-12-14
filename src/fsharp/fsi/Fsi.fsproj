@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net46;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp2.0</TargetFrameworks>
     <TargetExt>.exe</TargetExt>
     <AssemblyName>fsi</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
@@ -15,7 +15,7 @@
     <UseAssetTargetFallback>true</UseAssetTargetFallback>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net46'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
     <DefineConstants>$(DefineConstants);FSI_SHADOW_COPY_REFERENCES;FSI_SERVER</DefineConstants>
   </PropertyGroup>
 
@@ -34,10 +34,10 @@
     <ProjectReference Include="..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
 
     <!-- only used when '$(TargetFramework)' == 'net46' -->
-    <ProjectReference Include="..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" Condition="'$(TargetFramework)' == 'net46'" />
+    <ProjectReference Include="..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" Condition="'$(TargetFramework)' == 'net472'" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="PresentationCore" />

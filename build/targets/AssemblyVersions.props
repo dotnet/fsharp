@@ -21,16 +21,16 @@
     <_Build_Number>$(BUILD_BUILDNUMBER.Substring(9))</_Build_Number>
     <Build_FileVersion>$(_Build_Year).$(_Build_Month).$(_Build_Day).$(_Build_Number)</Build_FileVersion>
 
-    <FSCoreMajorVersion>4.5</FSCoreMajorVersion>
-    <FSCorePackageVersion>$(FSCoreMajorVersion).3</FSCorePackageVersion>
+    <FSCoreMajorVersion>4.6</FSCoreMajorVersion>
+    <FSCorePackageVersion>$(FSCoreMajorVersion).0</FSCorePackageVersion>
     <FSCoreVersion>$(FSCoreMajorVersion).0.0</FSCoreVersion>
 
-    <FSPackageMajorVersion>10.2</FSPackageMajorVersion>
-    <FSPackageVersion>$(FSPackageMajorVersion).3</FSPackageVersion>
+    <FSPackageMajorVersion>10.4</FSPackageMajorVersion>
+    <FSPackageVersion>$(FSPackageMajorVersion).0</FSPackageVersion>
     <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
 
-    <VSMajorVersion>15</VSMajorVersion>
-    <VSMinorVersion>8</VSMinorVersion>
+    <VSMajorVersion>16</VSMajorVersion>
+    <VSMinorVersion>0</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersion>$(VSMajorVersion).$(VSMinorVersion).0.0</VSAssemblyVersion>
 
@@ -55,6 +55,9 @@
   </PropertyGroup>
 
   <Target Name="GetVsixPackageVersion" Outputs="$(VsixPackageVersion)">
+  </Target>
+
+  <Target Name="GetVSGeneralVersion" Outputs="$(VSGeneralVersion)">
   </Target>
 
 </Project>

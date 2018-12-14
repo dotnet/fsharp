@@ -1791,12 +1791,11 @@ let GetDefaultFSharpCoreReference () = typeof<list<int>>.Assembly.Location
 
 type private TypeInThisAssembly = class end
 
-// Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
-// or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
+// Use the ValueTuple that is executing with the compiler.  This can come either from [mscorlib] or [System.ValueTuple.dll] alongside the compiler
 let GetDefaultSystemValueTupleReference () =
     try
         let asm = typeof<System.ValueTuple<int, int>>.Assembly 
-        if asm.FullName.StartsWithOrdinal("System.ValueTuple") then  
+        if asm.FullName.StartsWithOrdinal("System.ValueTuple") then
             Some asm.Location
         else
             let location = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)

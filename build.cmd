@@ -800,8 +800,8 @@ REM ---------------- test-net40-fsharp  -----------------------
 if "%TEST_NET40_FSHARP_SUITE%" == "1" (
 
     set LOGFILE=%~dp0tests\TestResults\FSharp.Tests.FSharpSuite.net40.trx
-    echo "%_dotnetexe%" test "%~dp0tests\fsharp\FSharp.Tests.FSharpSuite.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!" -o "%~dp0%BUILD_CONFIG%\net40\bin"
-         "%_dotnetexe%" test "%~dp0tests\fsharp\FSharp.Tests.FSharpSuite.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!" -o "%~dp0%BUILD_CONFIG%\net40\bin"
+    echo "%_dotnetexe%" test "%~dp0tests\fsharp\FSharp.Tests.FSharpSuite.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!" -o "%~dp0%BUILD_CONFIG%\net40\bin"
+         "%_dotnetexe%" test "%~dp0tests\fsharp\FSharp.Tests.FSharpSuite.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!" -o "%~dp0%BUILD_CONFIG%\net40\bin"
 
     if errorlevel 1 (
         echo --------------------------------------------------------------
@@ -816,8 +816,8 @@ REM ---------------- test-fcs  -----------------------
 if "%TEST_FCS%" == "1" (
 
     set LOGFILE=%~dp0tests\TestResults\FSharp.Compiler.Service.Tests.net40.trx
-    echo "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
-         "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+    echo "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
 
     if errorlevel 1 (
         echo --------------------------------------------------------------
@@ -896,8 +896,8 @@ REM ---------------- net40-compilerunit  -----------------------
 if "%TEST_NET40_COMPILERUNIT_SUITE%" == "1" (
 
     set LOGFILE=%~dp0tests\TestResults\FSharp.Compiler.UnitTests.net40.trx
-    echo "%_dotnetexe%" test "%~dp0tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
-         "%_dotnetexe%" test "%~dp0tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+    echo "%_dotnetexe%" test "%~dp0tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
 
     if errorlevel 1 (
         echo -----------------------------------------------------------------
@@ -907,8 +907,8 @@ if "%TEST_NET40_COMPILERUNIT_SUITE%" == "1" (
     )
 
     set LOGFILE=%~dp0tests\TestResults\FSharp.Build.UnitTests.net40.trx
-    echo "%_dotnetexe%" test "%~dp0tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
-         "%_dotnetexe%" test "%~dp0tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+    echo "%_dotnetexe%" test "%~dp0tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
 
     if errorlevel 1 (
         echo -----------------------------------------------------------------
@@ -923,8 +923,8 @@ REM ---------------- net40-coreunit  -----------------------
 if "%TEST_NET40_COREUNIT_SUITE%" == "1" (
 
     set LOGFILE=%~dp0tests\TestResults\FSharp.Core.UnitTests.net40.trx
-    echo "%_dotnetexe%" test "%~dp0tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
-         "%_dotnetexe%" test "%~dp0tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+    echo "%_dotnetexe%" test "%~dp0tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
 
     if errorlevel 1 (
         echo -----------------------------------------------------------------
@@ -980,8 +980,8 @@ REM ---------------- vs-ideunit  -----------------------
 
 if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
     set LOGFILE=%~dp0tests\TestResults\GetTypesVSUnitTests.net40.trx
-    echo "%_dotnetexe%" test "%~dp0vsintegration\tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
-         "%_dotnetexe%" test "%~dp0vsintegration\tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+    echo "%_dotnetexe%" test "%~dp0vsintegration\tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0vsintegration\tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
 
     if errorlevel 1 (
         echo ---------------------------------------------------------------------------
@@ -991,8 +991,8 @@ if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
     )
 
     set LOGFILE=%~dp0tests\TestResults\VisualFSharp.UnitTests.net40.trx
-    echo "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!" -o "%~dp0%BUILD_CONFIG%\net40\bin"
-         "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!" -o "%~dp0%BUILD_CONFIG%\net40\bin"
+    echo "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!" -o "%~dp0%BUILD_CONFIG%\net40\bin"
+         "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!" -o "%~dp0%BUILD_CONFIG%\net40\bin"
     if errorlevel 1 (
         echo ------------------------------------------------------------
         echo Error: Running tests vs-ideunit failed, see file `!LOGFILE!`
