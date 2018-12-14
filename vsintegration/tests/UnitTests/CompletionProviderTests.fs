@@ -134,11 +134,6 @@ let ShouldTriggerCompletionAtCorrectMarkers() =
         ("System.", true)
         ("Console.", true) ]
 
-    // Adding this new-line character at the end of the source seems odd but is required for some unit tests
-    // Todo: fix tests
-    let addNewLine (source: string) =
-        if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
-
     for (marker: string, shouldBeTriggered: bool) in testCases do
     let fileContents = """
 let x = 1
@@ -149,7 +144,7 @@ System.Console.WriteLine(x + y)
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(addNewLine fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.AreEqual(shouldBeTriggered, triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result")
 
 [<Test>]
