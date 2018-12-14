@@ -406,7 +406,7 @@ module internal ReflectionAdapters =
             let s = this.FullyQualifiedName
             s.GetHashCode()
 
-#if COMPILER // This part includes global state in globalLoadContext. Only include this support "once", i.e. when compiling FSharp.Compiler.Private.dll, FSharp.Compiler.Service.dll, fsc-proto.exe
+#if COMPILER // This part includes global state in globalLoadContext. Only include this support "once", i.e. when compiling FSharp.Compiler.Private.dll, FSharp.Compiler.Service.dll
 
     type CustomAssemblyResolver() =
         inherit System.Runtime.Loader.AssemblyLoadContext()
