@@ -1509,7 +1509,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 tcState.Ccu.Deref.Contents <- oldContents
           with e -> 
             errorRecoveryNoRange e
-            mkSimpleAssRef assemblyName, None, None
+            mkSimpleAssemblyRef assemblyName, None, None
 
         let finalAccWithErrors = 
             { finalAcc with 

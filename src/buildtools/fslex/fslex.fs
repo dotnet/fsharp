@@ -67,7 +67,8 @@ let sentinel = 255 * 256 + 255
 let lineCount = ref 0
 let cfprintfn (os: #TextWriter) fmt = Printf.kfprintf (fun () -> incr lineCount; os.WriteLine()) os fmt
 
-let main() = 
+[<EntryPoint>]
+let main(args: string[]) =
   try 
     let filename = (match !input with Some x -> x | None -> failwith "no input given") 
     let domain = if !unicode then "Unicode" else "Ascii" 
@@ -216,10 +217,8 @@ let main() =
         
     printLinesIfCodeDefined spec.BottomCode
     cfprintfn os "# 3000000 \"%s\"" output;
+    0
     
   with e -> 
     eprintf "FSLEX: error FSL000: %s" (match e with Failure s -> s | e -> e.ToString());
     exit 1
-
-
-let result = main()

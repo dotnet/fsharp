@@ -2330,7 +2330,7 @@ let mkILNonGenericValueTy tref = mkILNamedTy AsValue tref []
 
 let mkILNonGenericBoxedTy tref = mkILNamedTy AsObject tref []
 
-let mkSimpleAssRef n = 
+let mkSimpleAssemblyRef n = 
   ILAssemblyRef.Create(n, None, None, false, None, None)
 
 let mkSimpleModRef n = 
@@ -3191,9 +3191,9 @@ let destTypeDefsWithGlobalFunctionsFirst ilg (tdefs: ILTypeDefs) =
   let top2 = if isNil top then [ mkILTypeDefForGlobalFunctions ilg (emptyILMethods, emptyILFields) ] else top
   top2@nontop
 
-let mkILSimpleModule assname modname dll subsystemVersion useHighEntropyVA tdefs hashalg locale flags exportedTypes metadataVersion = 
+let mkILSimpleModule assemblyName modname dll subsystemVersion useHighEntropyVA tdefs hashalg locale flags exportedTypes metadataVersion = 
     let manifest = 
-        { Name=assname
+        { Name=assemblyName
           AuxModuleHashAlgorithm= match hashalg with | Some(alg) -> alg | _ -> 0x8004 // SHA1
           SecurityDeclsStored=emptyILSecurityDeclsStored
           PublicKey= None
@@ -3921,13 +3921,13 @@ let emptyILRefs =
     ModuleReferences = [] }
 
 (* Now find references. *)
-let refs_of_assref (s:ILReferencesAccumulator) x = s.refsA.Add x |> ignore
+let refs_of_assemblyRef (s:ILReferencesAccumulator) x = s.refsA.Add x |> ignore
 let refs_of_modref (s:ILReferencesAccumulator) x = s.refsM.Add x |> ignore
     
 let refs_of_scoref s x = 
     match x with 
     | ILScopeRef.Local -> () 
-    | ILScopeRef.Assembly assref -> refs_of_assref s assref
+    | ILScopeRef.Assembly assemblyRef -> refs_of_assemblyRef s assemblyRef
     | ILScopeRef.Module modref -> refs_of_modref s modref  
 
 let refs_of_tref s (x:ILTypeRef) = refs_of_scoref s x.Scope
@@ -4099,7 +4099,7 @@ and refs_of_resource_where s x =
     | ILResourceLocation.LocalIn _ -> ()
     | ILResourceLocation.LocalOut _ -> ()
     | ILResourceLocation.File (mref, _) -> refs_of_modref s mref
-    | ILResourceLocation.Assembly aref -> refs_of_assref s aref
+    | ILResourceLocation.Assembly aref -> refs_of_assemblyRef s aref
 
 and refs_of_resource s x = 
     refs_of_resource_where s x.Location

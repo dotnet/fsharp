@@ -5,13 +5,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectFiles Include="ItemTemplates\AppConfig\AppConfig.csproj" />
-    <ProjectFiles Include="ItemTemplates\CodeFile\CodeFile.csproj" />
-    <ProjectFiles Include="ItemTemplates\ScriptFile\ScriptFile.csproj" />
-    <ProjectFiles Include="ItemTemplates\SignatureFile\SignatureFile.csproj" />
-    <ProjectFiles Include="ItemTemplates\TextFile\TextFile.csproj" />
-    <ProjectFiles Include="ItemTemplates\XMLFile\XMLFile.csproj" />
-    <ProjectFiles Include="ItemTemplates\ResourceFile\ResourceFile.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)ItemTemplates\AppConfig\AppConfig.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)ItemTemplates\CodeFile\CodeFile.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)ItemTemplates\ScriptFile\ScriptFile.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)ItemTemplates\SignatureFile\SignatureFile.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)ItemTemplates\TextFile\TextFile.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)ItemTemplates\XMLFile\XMLFile.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)ItemTemplates\ResourceFile\ResourceFile.csproj" />
   </ItemGroup>
 
   <Import Project="..\src\root.traversal.targets"/>

@@ -1,0 +1,13 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <Import Project="$(MSBuildThisFileDirectory)..\Directory.Nuget.props" />
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <NuspecFile>Microsoft.FSharp.Compiler.nuspec</NuspecFile>
+    <PreReleaseSuffix Condition="'$(PreRelease)' != 'false'">-rtm-$(NuGetPackageVersionSuffix)</PreReleaseSuffix>
+    <PackageVersion>$(FSPackageVersion)$(PreReleaseSuffix)</PackageVersion>
+  </PropertyGroup>
+
+</Project>

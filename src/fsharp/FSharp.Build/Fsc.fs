@@ -156,6 +156,7 @@ type public Fsc () as this =
             builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
         // DocumentationFile
         builder.AppendSwitchIfNotNull("--doc:", documentationFile)
+
         // GenerateInterfaceFile
         builder.AppendSwitchIfNotNull("--sig:", generateInterfaceFile)
         // KeyFile
@@ -281,6 +282,8 @@ type public Fsc () as this =
             builder.AppendSwitch("--highentropyva-")
 
         builder.AppendSwitchIfNotNull("--targetprofile:", targetProfile)
+
+        builder.AppendSwitch("--nocopyfsharpcore")
 
         // OtherFlags - must be second-to-last
         builder.AppendSwitchUnquotedIfNotNull("", otherFlags)
@@ -532,7 +535,7 @@ type public Fsc () as this =
     override fsc.ToolName = "fsc.exe" 
     override fsc.StandardErrorEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardErrorEncoding
     override fsc.StandardOutputEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardOutputEncoding
-    override fsc.GenerateFullPathToTool() = 
+    override fsc.GenerateFullPathToTool() =
         if toolPath = "" then raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown()))
         System.IO.Path.Combine(toolPath, fsc.ToolExe)
     override fsc.LogToolCommand (message:string) =
@@ -571,24 +574,11 @@ type public Fsc () as this =
                         -1  // ok, this is what happens when VS IDE cancels the build, no need to assert, just log the build-canceled error and return -1 to denote task failed
                     | e -> reraise()
 
-                // Todo: Remove !FX_NO_CONVERTER code path for VS2017.7
-                // Earlier buildtasks usesd System.Converter<int,int> for cross platform we are moving to Func<int>
-                // This is so that during the interim, earlier VS's will still load the OSS project
                 let baseCallDelegate = Func<int>(fun () -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) )
                 try
                     invokeCompiler baseCallDelegate
                 with
                 | e ->
-#if !FX_NO_CONVERTER
-                    try
-                        let baseCall = fun (dummy : int) -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
-                        // We are using a Converter<int,int> rather than a "unit->int" because it is too hard to
-                        // figure out how to pass an F# function object via reflection.  
-                        let baseCallDelegate = new System.Converter<int,int>(baseCall)
-                        invokeCompiler baseCallDelegate
-                    with
-                    | e ->
-#endif
                         Debug.Assert(false, "HostObject received by Fsc task did not have a Compile method or the compile method threw an exception. "+(e.ToString()))
                         reraise()
 
@@ -615,8 +605,7 @@ type public Fsc () as this =
     member internal fsc.InternalExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =
         fsc.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
 
-    member internal fsc.GetCapturedArguments() =
-        [|
+    member internal fsc.GetCapturedArguments() = [|
             yield! capturedArguments
             yield! capturedFilenames
         |]
