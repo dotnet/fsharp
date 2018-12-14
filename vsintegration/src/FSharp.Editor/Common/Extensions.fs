@@ -48,52 +48,50 @@ module private SourceText =
 
     let weakTable = ConditionalWeakTable<SourceText, ISourceText>()
 
+    let create (sourceText: SourceText) =
+        let getLines =
+            lazy
+                [|
+                    for i = 0 to sourceText.Lines.Count - 1 do
+                        yield sourceText.Lines.[i].ToString()
+                |]
+
+        let getLastCharacterPosition =
+            lazy
+                (sourceText.Lines.Count, sourceText.Lines.[sourceText.Lines.Count - 1].Span.Length)
+
+        let sourceText =
+            { new ISourceText with
+            
+                member __.Item with get index = sourceText.[index]
+
+                member __.GetLines() = getLines.Value
+
+                member __.GetLastCharacterPosition() = getLastCharacterPosition.Value
+
+                member __.GetSubTextString(start, length) =
+                    sourceText.GetSubText(TextSpan(start, length)).ToString()
+
+                member __.SubTextEquals(target, startIndex) =
+                    sourceText.GetSubText(TextSpan(startIndex, target.Length)).ContentEquals(SourceText.From(target))
+
+                member __.ContentEquals(sourceText) =
+                    match sourceText with
+                    | :? SourceText as sourceText -> sourceText.ContentEquals(sourceText)
+                    | _ -> false
+
+                member __.Length = sourceText.Length
+
+                member __.CopyTo(sourceIndex, destination, destinationIndex, count) =
+                    sourceText.CopyTo(sourceIndex, destination, destinationIndex, count)
+            }
+
+        sourceText
+
 type SourceText with
 
     member this.ToFSharpSourceText() =
-        match SourceText.weakTable.TryGetValue(this) with
-        | true, sourceText -> sourceText
-        | _ ->
-            let getLines =
-                lazy
-                    [|
-                        for i = 0 to this.Lines.Count - 1 do
-                            yield this.Lines.[i].ToString()
-                    |]
-
-            let getLastCharacterPosition =
-                lazy
-                    (this.Lines.Count, this.Lines.[this.Lines.Count - 1].Span.Length)
-
-            let sourceText =
-                { new ISourceText with
-            
-                    member __.Item with get index = this.[index]
-
-                    member __.GetLines() = getLines.Value
-
-                    member __.GetLastCharacterPosition() = getLastCharacterPosition.Value
-
-                    member __.GetSubTextString(start, length) =
-                        this.GetSubText(TextSpan(start, length)).ToString()
-
-                    member __.SubTextEquals(target, startIndex) =
-                        this.GetSubText(TextSpan(startIndex, target.Length)).ContentEquals(SourceText.From(target))
-
-                    member __.ContentEquals(sourceText) =
-                        match sourceText with
-                        | :? SourceText as sourceText -> this.ContentEquals(sourceText)
-                        | _ -> false
-
-                    member __.Length = this.Length
-
-                    member __.CopyTo(sourceIndex, destination, destinationIndex, count) =
-                        this.CopyTo(sourceIndex, destination, destinationIndex, count)
-                }
-
-            SourceText.weakTable.Add(this, sourceText)
-
-            sourceText
+        SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(SourceText.create))
 
 type FSharpNavigationDeclarationItem with
     member x.RoslynGlyph : Glyph =
