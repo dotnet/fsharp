@@ -64,11 +64,6 @@ marker2
             marker3
 
 marker4"""
-
-    // Adding this new-line character at the end of the source seems odd but is required for some unit tests
-    // Todo: fix tests
-    let addNewLine (source: string) =
-        if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
     
     [<TestCase("marker1", "]")>]
     [<TestCase("marker2", "}")>]
@@ -79,7 +74,7 @@ marker4"""
         let position = indentTemplate.IndexOf(marker)
         Assert.IsTrue(position >= 0, "Precondition failed: unable to find marker in template")
 
-        let sourceText = SourceText.From(addNewLine indentTemplate)
+        let sourceText = SourceText.From(indentTemplate)
         let lineNumber = sourceText.Lines |> Seq.findIndex (fun line -> line.Span.Contains position)
         let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
         
@@ -122,7 +117,7 @@ let foo =
 somethingElseHere
 """
         
-        let sourceText = SourceText.From(start.Replace("$", clipboard) |> addNewLine)
+        let sourceText = SourceText.From(start.Replace("$", clipboard))
         let span = TextSpan(start.IndexOf '$', clipboard.Length)
 
         let formattingOptions = { FormatOnPaste = enabled }
@@ -171,7 +166,7 @@ let foo =
 somethingElseHere
 """
         
-        let sourceText = SourceText.From(start.Replace("$", clipboard) |> addNewLine)
+        let sourceText = SourceText.From(start.Replace("$", clipboard))
         let span = TextSpan(start.IndexOf '$', clipboard.Length)
 
         let formattingOptions = { FormatOnPaste = true }
@@ -216,7 +211,7 @@ let foo =
 somethingElseHere
 """
         
-        let sourceText = SourceText.From(start.Replace("$", clipboard) |> addNewLine)
+        let sourceText = SourceText.From(start.Replace("$", clipboard))
 
         // If we're pasting on an empty line which has been automatically indented,
         // then the pasted span includes this automatic indentation. Check that we
