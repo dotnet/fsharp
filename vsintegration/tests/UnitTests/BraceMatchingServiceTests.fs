@@ -32,13 +32,8 @@ type BraceMatchingServiceTests()  =
         Stamp = None
     }
 
-    // Adding this new-line character at the end of the source seems odd but is required for some unit tests
-    // Todo: fix tests
-    let addNewLine (source: string) =
-        if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
-
     member private this.VerifyNoBraceMatch(fileContents: string, marker: string) =
-        let sourceText = SourceText.From(addNewLine fileContents)
+        let sourceText = SourceText.From(fileContents)
         let position = fileContents.IndexOf(marker)
         Assert.IsTrue(position >= 0, "Cannot find marker '{0}' in file contents", marker)
 
@@ -48,7 +43,7 @@ type BraceMatchingServiceTests()  =
         | Some(left, right) -> Assert.Fail("Found match for brace '{0}'", marker)
         
     member private this.VerifyBraceMatch(fileContents: string, startMarker: string, endMarker: string) =
-        let sourceText = SourceText.From(addNewLine fileContents)
+        let sourceText = SourceText.From(fileContents)
         let startMarkerPosition = fileContents.IndexOf(startMarker)
         let endMarkerPosition = fileContents.IndexOf(endMarker)
 
@@ -174,7 +169,7 @@ let main argv =
     [<TestCase ("[<ReflectedDefinition>]\nlet a7 = 70", [|0;1;22|])>]
     [<TestCase ("let a8 = seq { yield() }", [|13;23|])>]
     member this.DoNotMatchOnInnerSide(fileContents: string, matchingPositions: int[]) =
-        let sourceText = SourceText.From(addNewLine fileContents)
+        let sourceText = SourceText.From(fileContents)
         let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
         
         for position in matchingPositions do
