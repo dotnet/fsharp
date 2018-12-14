@@ -1871,6 +1871,7 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Data"
           yield "System.Drawing"
           yield "System.Core"
+
           // These are the Portable-profile and .NET Standard 1.6 dependencies of FSharp.Core.dll.  These are needed
           // when an F# sript references an F# profile 7, 78, 259 or .NET Standard 1.6 component which in turn refers 
           // to FSharp.Core for profile 7, 78, 259 or .NET Standard.
@@ -1896,17 +1897,24 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Windows.Forms"
           yield "System.Numerics" 
      else
-          yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location), "mscorlib.dll"); // mscorlib
-          yield typeof<System.Console>.Assembly.Location; // System.Console
-          yield typeof<System.ComponentModel.DefaultValueAttribute>.Assembly.Location; // System.Runtime
-          yield typeof<System.ComponentModel.PropertyChangedEventArgs>.Assembly.Location; // System.ObjectModel             
-          yield typeof<System.IO.BufferedStream>.Assembly.Location; // System.IO
-          yield typeof<System.Linq.Enumerable>.Assembly.Location; // System.Linq
-          //yield typeof<System.Xml.Linq.XDocument>.Assembly.Location; // System.Xml.Linq
-          yield typeof<System.Net.WebRequest>.Assembly.Location; // System.Net.Requests
-          yield typeof<System.Numerics.BigInteger>.Assembly.Location; // System.Runtime.Numerics
-          yield typeof<System.Threading.Tasks.TaskExtensions>.Assembly.Location; // System.Threading.Tasks
-          yield typeof<Microsoft.FSharp.Core.MeasureAttribute>.Assembly.Location; // FSharp.Core
+          yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location), "mscorlib.dll")    // mscorlib
+          yield typeof<System.Console>.Assembly.Location                                                        // System.Console
+          yield typeof<System.Collections.BitArray>.Assembly.Location                                           // System.Collections
+          yield typeof<System.Data.SqlClient.SqlCommand>.Assembly.Location                                      // System.Data.SqlClient
+          yield typeof<System.ComponentModel.PropertyChangedEventArgs>.Assembly.Location                        // System.ObjectModel             
+          yield typeof<System.IO.File>.Assembly.Location                                                        // System.IO.FileSystem
+          yield typeof<System.IO.TextWriter>.Assembly.Location                                                  // System.IO
+          yield typeof<System.Linq.Enumerable>.Assembly.Location                                                // System.Linq
+          yield typeof<System.Xml.XmlNodeType>.Assembly.Location                                                // System.Xml
+          yield typeof<System.Xml.Linq.XDocument>.Assembly.Location                                             // System.Xml.Linq
+          yield typeof<System.Net.WebRequest>.Assembly.Location                                                 // System.Net.Requests
+          yield typeof<System.Numerics.BigInteger>.Assembly.Location                                            // System.Runtime.Numerics
+          yield typeof<System.Net.Security.AuthenticatedStream>.Assembly.Location                               // System.Net.Security
+          yield typeof<System.Security.Principal.GenericIdentity>.Assembly.Location                             // System.Security.Claims
+          yield typeof<System.Text.RegularExpressions.Regex>.Assembly.Location                                  // System.Text.RegularExpressions.Regex
+          yield typeof<System.Threading.Tasks.TaskExtensions>.Assembly.Location                                 // System.Threading.Tasks
+          yield typeof<System.Threading.Thread>.Assembly.Location                                               // System.Threading
+          yield typeof<Microsoft.FSharp.Core.MeasureAttribute>.Assembly.Location                                // FSharp.Core
     ]
 
 
@@ -2737,9 +2745,9 @@ type AssemblyResolution =
     member this.GetILAssemblyRef(ctok, reduceMemoryUsage, tryGetMetadataSnapshot) = 
       cancellable {
         match !this.ilAssemblyRef with 
-        | Some(assref) -> return assref
+        | Some(assemblyRef) -> return assemblyRef
         | None ->
-            let! assRefOpt = 
+            let! assemblyRefOpt = 
               cancellable {
                 match this.ProjectReference with 
                 | Some r ->   
@@ -2752,8 +2760,8 @@ type AssemblyResolution =
                         |  _ -> return None
                 | None -> return None
               }
-            let assRef = 
-                match assRefOpt with 
+            let assemblyRef = 
+                match assemblyRefOpt with 
                 | Some aref -> aref
                 | None -> 
                     let readerSettings : ILReaderOptions = 
@@ -2764,8 +2772,8 @@ type AssemblyResolution =
                           tryGetMetadataSnapshot = tryGetMetadataSnapshot } 
                     use reader = OpenILModuleReader this.resolvedPath readerSettings
                     mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
-            this.ilAssemblyRef := Some(assRef)
-            return assRef
+            this.ilAssemblyRef := Some(assemblyRef)
+            return assemblyRef
       }
 
 //----------------------------------------------------------------------------
@@ -3721,10 +3729,10 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
     member tcResolutions.TryFindByOriginalReference(assemblyReference:AssemblyReference) = originalReferenceToResolution.TryFind assemblyReference.Text
 
     /// This doesn't need to be cancellable, it is only used by F# Interactive
-    member tcResolution.TryFindByExactILAssemblyRef (ctok, assref) = 
+    member tcResolution.TryFindByExactILAssemblyRef (ctok, assemblyRef) = 
         results |> List.tryFind (fun ar->
             let r = ar.GetILAssemblyRef(ctok, tcConfig.reduceMemoryUsage, tcConfig.tryGetMetadataSnapshot) |> Cancellable.runWithoutCancellation 
-            r = assref)
+            r = assemblyRef)
 
     /// This doesn't need to be cancellable, it is only used by F# Interactive
     member tcResolution.TryFindBySimpleAssemblyName (ctok, simpleAssemName) = 
@@ -4142,11 +4150,11 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         | ResolvedImportedAssembly(importedAssembly) -> ResolvedCcu(importedAssembly.FSharpViewOfMetadata)
         | UnresolvedImportedAssembly(assemblyName) -> UnresolvedCcu(assemblyName)
 
-    member tcImports.FindCcuFromAssemblyRef(ctok, m, assref:ILAssemblyRef) = 
+    member tcImports.FindCcuFromAssemblyRef(ctok, m, assemblyRef:ILAssemblyRef) = 
         CheckDisposed()
-        match tcImports.FindCcuInfo(ctok, m, assref.Name, lookupOnly=false) with
+        match tcImports.FindCcuInfo(ctok, m, assemblyRef.Name, lookupOnly=false) with
         | ResolvedImportedAssembly(importedAssembly) -> ResolvedCcu(importedAssembly.FSharpViewOfMetadata)
-        | UnresolvedImportedAssembly _ -> UnresolvedCcu(assref.QualifiedName)
+        | UnresolvedImportedAssembly _ -> UnresolvedCcu(assemblyRef.QualifiedName)
 
 
 #if !NO_EXTENSIONTYPING
@@ -4765,8 +4773,8 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         resolutions.TryFindBySimpleAssemblyName (ctok, simpleAssemName) |> Option.map (fun r -> r.resolvedPath)
 
     /// This doesn't need to be cancellable, it is only used by F# Interactive
-    member tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ctok, assref:ILAssemblyRef) :  string option = 
-        resolutions.TryFindByExactILAssemblyRef (ctok, assref)  |> Option.map (fun r -> r.resolvedPath)
+    member tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ctok, assemblyRef:ILAssemblyRef) :  string option = 
+        resolutions.TryFindByExactILAssemblyRef (ctok, assemblyRef)  |> Option.map (fun r -> r.resolvedPath)
 
     member tcImports.TryResolveAssemblyReference(ctok, assemblyReference:AssemblyReference, mode:ResolveAssemblyReferenceMode) : OperationResult<AssemblyResolution list> = 
         let tcConfig = tcConfigP.Get(ctok)

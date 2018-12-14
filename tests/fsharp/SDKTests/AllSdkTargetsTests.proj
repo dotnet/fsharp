@@ -14,5 +14,6 @@
 
   <Target Name="Rebuild" />
   <Target Name="Clean" />
+  <Target Name="Restore" />
 
 </Project>

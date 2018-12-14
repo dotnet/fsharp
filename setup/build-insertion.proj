@@ -1,47 +1,47 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+<Project>
 
-    <Import Project="..\src\Microbuild.Settings.targets" />
+  <Import Project="Directory.Build.props" />
 
+  <PropertyGroup>
+    <SetupRootFolder>.</SetupRootFolder>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+  </PropertyGroup>
+
+  <Target Name="CollectSetupProjects">
+    <ItemGroup>
+      <SwixSetupProjects Include="Microsoft.FSharp.SDK.swixproj">
+        <ProjectPath>Swix\Microsoft.FSharp.SDK\Microsoft.FSharp.SDK.swixproj</ProjectPath>
+      </SwixSetupProjects>
+      <SwixSetupProjects Include="Microsoft.FSharp.Compiler.swixproj">
+        <ProjectPath>Swix\Microsoft.FSharp.Compiler\Microsoft.FSharp.Compiler.swixproj</ProjectPath>
+      </SwixSetupProjects>
+    </ItemGroup>
+
+    <CreateItem Include="@(SetupLanguages)"
+                AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.Compiler.Resources\Microsoft.FSharp.Compiler.Resources.swixproj">
+      <Output ItemName="SwixSetupProjects" TaskParameter="Include"/>
+    </CreateItem>
+  </Target>
+
+  <Target Name="Build" DependsOnTargets="CollectSetupProjects">
     <PropertyGroup>
-        <SetupRootFolder>.</SetupRootFolder>
-        <TargetDotnetProfile Condition="'$(TargetDotnetProfile)'==''">net40</TargetDotnetProfile>
-        <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+      <CustomProps>AssemblySearchPaths={HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}</CustomProps>
     </PropertyGroup>
+    <MSBuild Projects="%(SwixSetupProjects.ProjectPath)"
+             Targets="Build"
+             Properties="Configuration=$(Configuration);LocaleCode=%(SwixSetupProjects.LocaleCode);LocaleId=%(SwixSetupProjects.LocaleId);LocaleParentId=%(SwixSetupProjects.LocaleParentId);LocaleParentCulture=%(SwixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SwixSetupProjects.LocaleSpecificCulture);IsLangPack=%(SwixSetupProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);$(CustomProps)"/>
+  </Target>
 
-    <Import Project="FSharp.Setup.props" />
+  <Target Name="CopyLocalizationResources" BeforeTargets="Build">
+    <ItemGroup>
+      <SetupLocalizationResources Include="resources\**\*.*" />
+    </ItemGroup>
 
-    <Target Name="CollectSetupProjects">
-        <ItemGroup>
-            <SwixSetupProjects Include="Microsoft.FSharp.SDK.swixproj">
-                <ProjectPath>Swix\Microsoft.FSharp.SDK\Microsoft.FSharp.SDK.swixproj</ProjectPath>
-            </SwixSetupProjects>
-            <SwixSetupProjects Include="Microsoft.FSharp.Compiler.swixproj">
-                <ProjectPath>Swix\Microsoft.FSharp.Compiler\Microsoft.FSharp.Compiler.swixproj</ProjectPath>
-            </SwixSetupProjects>
-        </ItemGroup>
+    <Copy SourceFiles="@(SetupLocalizationResources)"
+          DestinationFiles="@(SetupLocalizationResources->'$(OutputPath)\resources\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
 
-        <CreateItem Include="@(SetupLanguages)"
-                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.Compiler.Resources\Microsoft.FSharp.Compiler.Resources.swixproj">
-            <Output ItemName="SwixSetupProjects" TaskParameter="Include"/>
-        </CreateItem>
-    </Target>
+  <Import Project="Directory.Build.targets" />
 
-    <Target Name="Build" DependsOnTargets="CollectSetupProjects">
-        <PropertyGroup>
-          <CustomProps>AssemblySearchPaths={HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}</CustomProps>
-        </PropertyGroup>
-        <MSBuild Projects="%(SwixSetupProjects.ProjectPath)"
-                 Targets="Build"
-                 Properties="Configuration=$(Configuration);LocaleCode=%(SwixSetupProjects.LocaleCode);LocaleId=%(SwixSetupProjects.LocaleId);LocaleParentId=%(SwixSetupProjects.LocaleParentId);LocaleParentCulture=%(SwixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SwixSetupProjects.LocaleSpecificCulture);IsLangPack=%(SwixSetupProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);$(CustomProps)"/>
-    </Target>
-
-    <Target Name="CopyLocalizationResources" BeforeTargets="Build">
-        <ItemGroup>
-            <SetupLocalizationResources Include="resources\**\*.*" />
-        </ItemGroup>
-
-        <Copy SourceFiles="@(SetupLocalizationResources)"
-              DestinationFiles="@(SetupLocalizationResources->'$(OutputPath)\resources\%(RecursiveDir)%(Filename)%(Extension)')" />
-    </Target>
 </Project>

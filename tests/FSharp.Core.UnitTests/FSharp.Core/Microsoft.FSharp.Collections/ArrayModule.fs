@@ -125,44 +125,41 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> Array.average nullArr |> ignore) 
 
         ()
-        
+
     [<Test>]
-    member this.AverageBy() =  
-    
-        // empty double array   
+    member this.AverageBy() =
+
+        // empty double array
         let emptyDouArray = Array.empty<System.Double>
-        let funcd x = x + 6.7
-        CheckThrowsArgumentException(fun () -> Array.averageBy funcd emptyDouArray |> ignore)
-                
+        CheckThrowsArgumentException(fun () -> Array.averageBy (fun x -> x + 6.7) emptyDouArray |> ignore)
+
         // empty float32 array
         let emptyFloat32Array: float32[] = [||]
-        let funcf x = x + 9.8f 
-        CheckThrowsArgumentException(fun () -> Array.averageBy funcf emptyFloat32Array |> ignore)
-        
+        CheckThrowsArgumentException(fun () -> Array.averageBy (fun x -> x + 9.8f) emptyFloat32Array |> ignore)
+
         // empty decimal array
         let emptyDecimalArray = Array.empty<System.Decimal>
-        let funcDecimal x = x + 9.8M 
-        CheckThrowsArgumentException(fun () -> Array.averageBy funcDecimal emptyDecimalArray |> ignore)
-        
+        CheckThrowsArgumentException(fun () -> Array.averageBy (fun x -> x + 9.8M) emptyDecimalArray |> ignore)
+
         // float32 array
-        let floatArray: float32[] = [| 1.2f;3.5f;6.7f |]      
-        let averageOfFloat = Array.averageBy funcf floatArray
-        if averageOfFloat <> 13.5999994f then Assert.Fail()
-        
+        let floatArray: float32[] = [| 1.5f; 2.5f; 3.5f; 4.5f |] // using values that behave nicely with IEEE floats
+        let averageOfFloat = Array.averageBy (fun x -> x + 1.0f) floatArray
+        Assert.AreEqual(4.0f, averageOfFloat)
+
         // double array
-        let doubleArray: System.Double[] = [| 1.0;8.0 |]
-        let averageOfDouble = Array.averageBy funcd doubleArray
-        if averageOfDouble <> 11.2 then Assert.Fail()
-        
+        let doubleArray: System.Double[] = [| 1.0; 8.0 |] // using values that behave nicely with IEEE doubles
+        let averageOfDouble = Array.averageBy (fun x -> x + 1.0) doubleArray
+        Assert.AreEqual(5.5, averageOfDouble)
+
         // decimal array
         let decimalArray: decimal[] = [| 0M;19M;19.03M |]
-        let averageOfDecimal = Array.averageBy funcDecimal decimalArray
-        if averageOfDecimal <> 22.476666666666666666666666667M then Assert.Fail()     
-        
+        let averageOfDecimal = Array.averageBy (fun x -> x + 9.8M) decimalArray
+        Assert.AreEqual(22.476666666666666666666666667M, averageOfDecimal)
+
         // null array
         let nullArr : double[] = null
-        CheckThrowsArgumentNullException (fun () -> Array.averageBy funcd nullArr |> ignore) 
-        
+        CheckThrowsArgumentNullException (fun () -> Array.averageBy (fun x -> x + 6.7) nullArr |> ignore)
+
         ()
 
     [<Test>]
