@@ -40,11 +40,6 @@ let main argv =
     0 // return an integer exit code
     "
 
-    // Adding this new-line character at the end of the source seems odd but is required for some unit tests
-    // Todo: fix tests
-    let addNewLine (source: string) =
-        if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
-
     static member private testCases: Object[][] = [|
         [| "123456";                    None |] // Numeric literals are not interesting
         [| "is a string";               Some("\"This is a string\"") |]
@@ -58,7 +53,7 @@ let main argv =
         let searchPosition = code.IndexOf(searchToken)
         Assert.IsTrue(searchPosition >= 0, "SearchToken '{0}' is not found in code", searchToken)
 
-        let sourceText = SourceText.From(addNewLine code)
+        let sourceText = SourceText.From(code)
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         let classifiedSpans = Tokenizer.getClassifiedSpans(documentId, sourceText, TextSpan.FromBounds(0, sourceText.Length), Some(fileName), defines, CancellationToken.None)
         let actualDataTipSpanOption = FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, searchPosition, classifiedSpans)
