@@ -199,9 +199,9 @@ let accTycon cenv env (tycon:Tycon) =
     abstractSlotValsOfTycons [tycon] |> List.iter (accVal cenv env) 
     tycon.AllFieldsArray |> Array.iter (accTyconRecdField cenv env tycon)
     if tycon.IsUnionTycon then                             (* This covers finite unions. *)
-      tycon.UnionCasesAsList |> List.iter (fun uc ->
+      tycon.UnionCasesArray |> Array.iter (fun uc ->
           accAttribs cenv env uc.Attribs
-          uc.RecdFields |> List.iter (accTyconRecdField cenv env tycon))
+          uc.RecdFieldsArray |> Array.iter (accTyconRecdField cenv env tycon))
 
 let accTycons cenv env tycons = List.iter (accTycon cenv env) tycons
 

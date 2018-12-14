@@ -103,7 +103,7 @@ type ThisLibAssembly
 
 
 
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 module Bug719 = 
 
     open System.Runtime.InteropServices

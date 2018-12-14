@@ -39,20 +39,13 @@ type internal FSharpGoToDefinitionService
 
             let gtdTask = gtd.FindDefinitionTask(document, position, cancellationToken)
 
-            // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled
+            // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled.
             // Task.Wait throws an exception if the task is cancelled, so be sure to catch it.
-            let gtdCompletionOrError =
-                try
-                    // This call to Wait() is fine because we want to be able to provide the error message in the status bar.
-                    gtdTask.Wait()
-                    Ok gtdTask
-                with exc -> 
-                    Error(Exception.flattenMessage exc)
-            
-            match gtdCompletionOrError with
-            | Ok task ->
-                if task.Status = TaskStatus.RanToCompletion && task.Result.IsSome then
-                    let item, _ = task.Result.Value
+            try
+                // This call to Wait() is fine because we want to be able to provide the error message in the status bar.
+                gtdTask.Wait()
+                if gtdTask.Status = TaskStatus.RanToCompletion && gtdTask.Result.IsSome then
+                    let item, _ = gtdTask.Result.Value
                     gtd.NavigateToItem(item, statusBar)
 
                     // 'true' means do it, like Sheev Palpatine would want us to.
@@ -60,8 +53,8 @@ type internal FSharpGoToDefinitionService
                 else 
                     statusBar.TempMessage (SR.CannotDetermineSymbol())
                     false
-            | Error message ->
-                statusBar.TempMessage(String.Format(SR.NavigateToFailed(), message))
+            with exc -> 
+                statusBar.TempMessage(String.Format(SR.NavigateToFailed(), Exception.flattenMessage exc))
 
                 // Don't show the dialog box as it's most likely that the user cancelled.
                 // Don't make them click twice.

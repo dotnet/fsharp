@@ -1,48 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
-    <ProjectLanguage>FSharp</ProjectLanguage>
-    <BuildWith Condition=" '$(Configuration)' == 'Proto' ">LKG</BuildWith>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-  </PropertyGroup>
-
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
-
-  <PropertyGroup>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{DED3BBD7-53F4-428A-8C9F-27968E768605}</ProjectGuid>
     <OutputType>Library</OutputType>
+    <TargetFrameworks>net45;netstandard1.6</TargetFrameworks>
     <AssemblyName>FSharp.Core</AssemblyName>
-    <DefineConstants>FSHARP_CORE;$(DefineConstants)</DefineConstants>
-    <DefineConstants Condition=" '$(Configuration)' == 'Proto'">BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
+    <PackageId>FSharp.Core</PackageId>
+    <PackageVersion>$(FSCorePackageVersion)</PackageVersion>
+    <NuspecFile>FSharp.Core.nuspec</NuspecFile>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
-    <BaseAddress>0x05000000</BaseAddress>
-    <CompilingFsLib>true</CompilingFsLib>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <OtherFlags>$(OtherFlags) --warnon:1182 --compiling-fslib --extraoptimizationloops:1</OtherFlags>
-    <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
-    <OtherFlags>$(OtherFlags) --maxerrors:20</OtherFlags>
-    <OtherFlags>$(OtherFlags) --warnon:1182 --compiling-fslib --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
-    <OtherFlags Condition="'$(TargetDotnetProfile)' == 'net40'">$(OtherFlags) --compiling-fslib-40</OtherFlags>
+    <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
+    <DefineConstants Condition="'$(Configuration)' == 'Proto'">BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
+    <OtherFlags>$(OtherFlags) --warnon:1182 --compiling-fslib --compiling-fslib-40 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
   </PropertyGroup>
 
-  <!-- Nuget packaging configuration -->
   <ItemGroup>
-    <PackageNuspec Include="Testing.FSharp.Core.nuspec" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
-    <None Include="FSharp.Core.runtimeconfig.json"      Condition="'$(TargetDotnetProfile)' == 'coreclr'" ><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(Configuration)' != 'Proto'">
-    <CustomAdditionalCompileInputs Include="$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin\fsc.exe">
-      <Visible>false</Visible>
-    </CustomAdditionalCompileInputs>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="FSCore.resx">
+    <EmbeddedResource Update="FSCore.resx">
       <GenerateSource>true</GenerateSource>
       <GenerateLegacyCode>true</GenerateLegacyCode>
       <GenerateLiterals>false</GenerateLiterals>
@@ -55,9 +30,6 @@
     <CompileBefore Include="prim-types-prelude.fs">
       <Link>Primitives/prim-types-prelude.fs</Link>
     </CompileBefore>
-    <Compile Include="SR.fs" Condition="'$(Configuration)' == 'Proto'">
-      <Link>Primitives/SR.fs</Link>
-    </Compile>
     <Compile Include="prim-types.fsi">
       <Link>Primitives/prim-types.fsi</Link>
     </Compile>
@@ -246,21 +218,16 @@
     </Compile>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetDotnetProfile)' != 'coreclr'">
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Numerics">
-      <Private>false</Private>
-    </Reference>
+  <ItemGroup>
+    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqQueryablePackageVersion)" />
+    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsPackageVersion)" />
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelPackageVersion)" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
-    <None Include="project.json" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
+    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadPackageVersion)" />
+    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolPackageVersion)" />
   </ItemGroup>
-
-  <!-- References -->
-  <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 
   <!-- Hook compilation phase to do custom work -->
   <!-- NOTE: The optdata and sigdata files are no longer needed by the F# compiler (the information is -->
@@ -273,22 +240,6 @@
     </ItemGroup>
     <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.sigdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
     <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.optdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
-  </Target>
-
-  <Target Name="nugetpack"
-          DependsOnTargets="CreateOrUpdateBuildVersionFile"
-          AfterTargets="Build"
-          Condition="'$(TargetDotnetProfile)' == 'coreclr' "
-          Inputs="@(PackageNuspec)" 
-          Outputs='$(FSharpSourcesRoot)\..\$(Configuration)\artifacts\"%(PackageNuspec.Filename)).nupkg'>
-
-    <PropertyGroup>
-      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(FSharpCoreFrozenPortablePackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
-    </PropertyGroup>
-
-    <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts" />
-    <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
-    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\artifacts' />
   </Target>
 
 </Project>

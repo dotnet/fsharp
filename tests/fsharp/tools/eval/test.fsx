@@ -1,6 +1,6 @@
 #light
 
-#if !NETCOREAPP1_0
+#if !NETSTANDARD
 #r @"System.Core.dll"
 #r @"System.Data.Linq.dll"
 #endif

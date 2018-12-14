@@ -1159,22 +1159,22 @@ type TypeCheckInfo
                   match item.Item with
                   | Item.CtorGroup (_, (ILMeth (_,ilinfo,_)) :: _) ->
                       match ilinfo.MetadataScope with
-                      | ILScopeRef.Assembly assref ->
+                      | ILScopeRef.Assembly assemblyRef ->
                           let typeVarNames = getTypeVarNames ilinfo
                           ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
                           |> Option.map (fun args ->
                               let externalSym = ExternalSymbol.Constructor (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, args)
-                              FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
+                              FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                       | _ -> None
 
                   | Item.MethodGroup (name, (ILMeth (_,ilinfo,_)) :: _, _) ->
                       match ilinfo.MetadataScope with
-                      | ILScopeRef.Assembly assref ->
+                      | ILScopeRef.Assembly assemblyRef ->
                           let typeVarNames = getTypeVarNames ilinfo
                           ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
                           |> Option.map (fun args ->
                               let externalSym = ExternalSymbol.Method (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, name, args, ilinfo.ILMethodRef.GenericArity)
-                              FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
+                              FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                       | _ -> None
 
                   | Item.Property (name, ILProp propInfo :: _) ->
@@ -1186,24 +1186,24 @@ type TypeCheckInfo
                       match methInfo with
                       | Some methInfo ->
                           match methInfo.MetadataScope with
-                          | ILScopeRef.Assembly assref ->
+                          | ILScopeRef.Assembly assemblyRef ->
                               let externalSym = ExternalSymbol.Property (methInfo.ILMethodRef.DeclaringTypeRef.FullName, name)
-                              Some (FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
+                              Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                           | _ -> None
                       | None -> None
                   
                   | Item.ILField (ILFieldInfo (typeInfo, fieldDef)) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
                       match typeInfo.ILScopeRef with
-                      | ILScopeRef.Assembly assref ->
+                      | ILScopeRef.Assembly assemblyRef ->
                           let externalSym = ExternalSymbol.Field (typeInfo.ILTypeRef.FullName, fieldDef.Name)
-                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
+                          Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                       | _ -> None
                   
                   | Item.Event (ILEvent (ILEventInfo (typeInfo, eventDef))) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
                       match typeInfo.ILScopeRef with
-                      | ILScopeRef.Assembly assref ->
+                      | ILScopeRef.Assembly assemblyRef ->
                           let externalSym = ExternalSymbol.Event (typeInfo.ILTypeRef.FullName, eventDef.Name)
-                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
+                          Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                       | _ -> None
 
                   | Item.ImplicitOp(_, {contents = Some(TraitConstraintSln.FSMethSln(_, _vref, _))}) ->
@@ -1214,9 +1214,9 @@ type TypeCheckInfo
 
                   | Item.Types (_, [ AppTy g (tr, _) ]) when not tr.IsLocalRef ->
                       match tr.TypeReprInfo, tr.PublicPath with
-                      | TILObjectRepr(TILObjectReprData (ILScopeRef.Assembly assref, _, _)), Some (PubPath parts) ->
+                      | TILObjectRepr(TILObjectReprData (ILScopeRef.Assembly assemblyRef, _, _)), Some (PubPath parts) ->
                           let fullName = parts |> String.concat "."
-                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, ExternalSymbol.Type fullName))
+                          Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, ExternalSymbol.Type fullName))
                       | _ -> None
                   | _ -> None
               match result with
@@ -3341,7 +3341,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, reactorOps: IReactorOperatio
                     let projectResults = 
                         FSharpCheckProjectResults (filename, Some tcConfig, keepAssemblyContents, errors, 
                                                    Some(tcGlobals, tcImports, tcFileInfo.ThisCcu, tcFileInfo.CcuSigForFile,
-                                                        [tcFileInfo.ScopeSymbolUses], None, None, mkSimpleAssRef "stdin", 
+                                                        [tcFileInfo.ScopeSymbolUses], None, None, mkSimpleAssemblyRef "stdin", 
                                                         tcState.TcEnvFromImpls.AccessRights, None, dependencyFiles))
                     parseResults, typeCheckResults, projectResults
                 | _ -> 

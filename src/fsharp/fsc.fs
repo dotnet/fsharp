@@ -329,9 +329,9 @@ module XmlDocWriter =
             if (hasDoc tc.XmlDoc) then tc.XmlDocSig <- XmlDocSigOfTycon [ptext; tc.CompiledName]
             for vref in tc.MembersOfFSharpTyconSorted do 
                 doValSig ptext vref.Deref
-            for uc in tc.UnionCasesAsList do
+            for uc in tc.UnionCasesArray do
                 if (hasDoc uc.XmlDoc) then uc.XmlDocSig <- XmlDocSigOfUnionCase [ptext; tc.CompiledName; uc.Id.idText]
-            for rf in tc.AllFieldsAsList do
+            for rf in tc.AllFieldsArray do
                 if (hasDoc rf.XmlDoc) then
                     rf.XmlDocSig <-
                         if tc.IsRecordTycon && (not rf.IsStatic) then 
@@ -380,9 +380,9 @@ module XmlDocWriter =
             addMember tc.XmlDocSig tc.XmlDoc
             for vref in tc.MembersOfFSharpTyconSorted do 
                 doVal vref.Deref 
-            for uc in tc.UnionCasesAsList do
+            for uc in tc.UnionCasesArray do
                 doUnionCase uc
-            for rf in tc.AllFieldsAsList do
+            for rf in tc.AllFieldsArray do
                 doField rf
 
         let modulMember (m:ModuleOrNamespace) = addMember m.XmlDocSig m.XmlDoc
@@ -2110,4 +2110,5 @@ let compileOfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName
 let mainCompile (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator) = 
     //System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
     typecheckAndCompile(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator)
+
 

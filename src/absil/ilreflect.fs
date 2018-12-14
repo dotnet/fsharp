@@ -289,6 +289,7 @@ module Zmap =
 
 let equalTypes (s:Type) (t:Type) = s.Equals(t)
 let equalTypeLists ss tt = List.lengthsEqAndForall2 equalTypes ss tt
+let equalTypeArrays ss tt = Array.lengthsEqAndForall2 equalTypes ss tt
 
 let getGenericArgumentsOfType (typT : Type) = 
     if typT.IsGenericType   then typT.GetGenericArguments() else [| |]
@@ -1423,7 +1424,7 @@ let convCustomAttr cenv emEnv (cattr: ILAttribute) =
     (methInfo, data)
 
 let emitCustomAttr cenv emEnv add cattr  = add (convCustomAttr cenv emEnv cattr)
-let emitCustomAttrs cenv emEnv add (cattrs : ILAttributes) = List.iter (emitCustomAttr cenv emEnv add) cattrs.AsList
+let emitCustomAttrs cenv emEnv add (cattrs : ILAttributes) = Array.iter (emitCustomAttr cenv emEnv add) cattrs.AsArray
 
 //----------------------------------------------------------------------------
 // buildGenParams
@@ -1597,9 +1598,7 @@ let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMetho
                                              (getGenericArgumentsOfType (typB.AsType()))
                                              (getGenericArgumentsOfMethod methB))
 
-          match mdef.Return.CustomAttrs.AsList with
-          | [] -> ()
-          | _ ->
+          if not (Array.isEmpty mdef.Return.CustomAttrs.AsArray) then
               let retB = methB.DefineParameterAndLog(0, System.Reflection.ParameterAttributes.Retval, null) 
               emitCustomAttrs cenv emEnv (wrapCustomAttr retB.SetCustomAttribute) mdef.Return.CustomAttrs
 
@@ -1825,7 +1824,7 @@ let rec buildTypeDefPass2 cenv nesting emEnv (tdef : ILTypeDef) =
     // add interface impls
     tdef.Implements |> convTypes cenv emEnv |> List.iter (fun implT -> typB.AddInterfaceImplementationAndLog(implT));
     // add methods, properties
-    let emEnv = List.fold (buildMethodPass2      cenv tref typB) emEnv tdef.Methods.AsList 
+    let emEnv = Array.fold (buildMethodPass2      cenv tref typB) emEnv tdef.Methods.AsArray 
     let emEnv = List.fold (buildFieldPass2       cenv tref typB) emEnv tdef.Fields.AsList  
     let emEnv = List.fold (buildPropertyPass2    cenv tref typB) emEnv tdef.Properties.AsList 
     let emEnv = envPopTyvars emEnv
@@ -1942,7 +1941,7 @@ let createTypeRef (visited : Dictionary<_, _>, created : Dictionary<_, _>) emEnv
                 traverseType CollectTypes.All cx
 
         if verbose2 then dprintf "buildTypeDefPass4: Doing method constraints of %s\n" tdef.Name
-        for md in tdef.Methods.AsList do
+        for md in tdef.Methods.AsArray do
             for gp in md.GenericParams do 
                 for cx in gp.Constraints do 
                     traverseType CollectTypes.All cx
