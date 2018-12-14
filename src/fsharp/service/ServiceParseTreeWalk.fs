@@ -27,6 +27,8 @@ module public AstTraversal =
     // treat ranges as though they are fully open: (,)
     let rangeContainsPosEdgesExclusive (m1:range) p = posGt p m1.Start && posGt m1.End p
 
+    let rangeContainsPosLeftEdgeExclusiveAndRightEdgeInclusive (m1:range) p = posGt p m1.Start && posGeq m1.End p
+
     /// used to track route during traversal AST
     [<RequireQualifiedAccess>]
     type TraverseStep = 
