@@ -58,7 +58,10 @@ module private SourceText =
 
         let getLastCharacterPosition =
             lazy
-                (sourceText.Lines.Count, sourceText.Lines.[sourceText.Lines.Count - 1].Span.Length)
+                if sourceText.Lines.Count > 0 then
+                    (sourceText.Lines.Count, sourceText.Lines.[sourceText.Lines.Count - 1].Span.Length)
+                else
+                    (0, 0)
 
         let sourceText =
             { new ISourceText with

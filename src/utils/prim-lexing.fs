@@ -52,7 +52,10 @@ type StringText(str: string) =
 
         member __.GetLastCharacterPosition() =
             let lines = getLines.Value
-            (lines.Length, lines.[lines.Length - 1].Length)
+            if lines.Length > 0 then
+                (lines.Length, lines.[lines.Length - 1].Length)
+            else
+                (0, 0)
 
         member __.GetLines() = getLines.Value
 
