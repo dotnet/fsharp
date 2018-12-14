@@ -45,8 +45,11 @@ let internal identsAndRanges (input: Ast.ParsedInput) =
         | Ast.SynModuleDecl.Attributes(_attrs, _range) -> failwith "Not implemented yet"
         | Ast.SynModuleDecl.HashDirective(_, _range) -> failwith "Not implemented yet"
         | Ast.SynModuleDecl.NamespaceFragment(moduleOrNamespace) -> extractFromModuleOrNamespace moduleOrNamespace
-    and extractFromModuleOrNamespace (Ast.SynModuleOrNamespace(longIdent, _, _, moduleDecls, _, _, _, range)) =
-        (identAndRange (longIdentToString longIdent) range) :: (moduleDecls |> List.collect extractFromModuleDecl)
+    and extractFromModuleOrNamespace (Ast.SynModuleOrNamespace(longIdent, _, _, moduleDecls, _, _, _, _)) =
+        let xs = moduleDecls |> List.collect extractFromModuleDecl
+        if longIdent.IsEmpty then xs
+        else
+            (identAndRange (longIdentToString longIdent) (longIdent |> List.map (fun id -> id.idRange) |> List.reduce Range.unionRanges)) :: xs
 
     match input with
     | Ast.ParsedInput.ImplFile(Ast.ParsedImplFileInput(_, _, _, _, _, modulesOrNamespaces, _)) ->
@@ -71,7 +74,7 @@ let input =
 let ``Test ranges - namespace`` () =
     let res = parseAndExtractRanges input 
     printfn "Test ranges - namespace, res = %A" res
-    res |> shouldEqual [("N", ((4, 4), (6, 0))); ("Sample", ((4, 9), (4, 15)))]
+    res |> shouldEqual [("N", ((2, 14), (2, 15))); ("Sample", ((4, 9), (4, 15)))]
 
 let input2 =
     """
@@ -84,7 +87,7 @@ let input2 =
 let ``Test ranges - module`` () =
     let res = parseAndExtractRanges input2
     printfn "Test ranges - module, res = %A" res
-    res |> shouldEqual [("M", ((2, 4), (4, 26))); ("Sample", ((4, 9), (4, 15)))]
+    res |> shouldEqual [("M", ((2, 11), (2, 12))); ("Sample", ((4, 9), (4, 15)))]
 
 let input3 =
     """
@@ -97,4 +100,4 @@ let input3 =
 let ``Test ranges - global namespace`` () =
     let res = parseAndExtractRanges input3 
     printfn "Test ranges - global namespace, res = %A" res
-    res |> shouldEqual [("", ((4, 4), (6, 0))); ("Sample", ((4, 9), (4, 15)))]
+    res |> shouldEqual [("Sample", ((4, 9), (4, 15)))]
