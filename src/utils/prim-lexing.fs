@@ -44,6 +44,9 @@ type StringText(str: string) =
         |]
 
     let getLines =
+        // This requires allocating and getting all the lines.
+        // However, likely whoever is calling it is using a different implementation of ISourceText
+        // So, it's ok that we do this for now.
         lazy getLines str
 
     member __.String = str
@@ -60,10 +63,6 @@ type StringText(str: string) =
                 (0, 0)
 
         member __.GetLineString(lineIndex) = 
-            // This requires allocating and getting all the lines.
-            // However, it is only called in ServiceXmlDocParser which is rarely called
-            //     and most likely whoever is calling it is using a different implementation of ISourceText
-            // So, it's ok that we do this for now.
             getLines.Value.[lineIndex]
 
         member __.GetLineCount() = getLines.Value.Length
