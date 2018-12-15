@@ -25,6 +25,7 @@ type internal LinePosition =
      /// The line number for the position in the input stream, assuming fresh positions have been updated 
      /// using for the new line.
      val OriginalLine : int
+
      /// Return absolute offset of the start of the line marked by the position.
      val StartOfLineAbsoluteOffset : int
 
@@ -41,12 +42,6 @@ type internal Position =
      member inline Line : int
      member inline OriginalLine : int
      member inline StartOfLineAbsoluteOffset : int
-
-     /// The character number in the input stream.
-     val AbsoluteOffset : int
-
-     /// Return absolute offset of the start of the line marked by the position.
-     val StartOfLineAbsoluteOffset : int
 
      /// Return the column number marked by the position, 
      /// i.e. the difference between the <c>AbsoluteOffset</c> and the <c>StartOfLineAbsoluteOffset</c>
