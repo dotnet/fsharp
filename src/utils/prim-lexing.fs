@@ -11,7 +11,9 @@ type ISourceText =
 
     abstract Item : int -> char with get
 
-    abstract GetLines : unit -> string []
+    abstract GetLineString : lineIndex: int -> string
+
+    abstract GetLineCount : unit -> int
 
     abstract GetLastCharacterPosition : unit -> int * int
 
@@ -21,7 +23,7 @@ type ISourceText =
 
     abstract Length : int
 
-    abstract ContentEquals : ISourceText -> bool
+    abstract ContentEquals : sourceText: ISourceText -> bool
 
     abstract CopyTo : sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit  
 
@@ -57,20 +59,30 @@ type StringText(str: string) =
             else
                 (0, 0)
 
-        member __.GetLines() = getLines.Value
+        member __.GetLineString(lineIndex) = 
+            // This requires allocating and getting all the lines.
+            // However, it is only called in ServiceXmlDocParser which is rarely called
+            //     and most likely whoever is calling it is using a different implementation of ISourceText
+            // So, it's ok that we do this for now.
+            getLines.Value.[lineIndex]
+
+        member __.GetLineCount() = getLines.Value.Length
 
         member __.GetSubTextString(start, length) = 
             str.Substring(start, length)
 
         member __.SubTextEquals(target, startIndex) =
-            if startIndex < 0 then
+            if startIndex < 0 || startIndex >= str.Length then
                 raise (ArgumentOutOfRangeException("startIndex"))
 
             if String.IsNullOrEmpty(target) then
                 raise (ArgumentException("Target is null or empty.", "target"))
 
-            if startIndex + target.Length > str.Length then false
-            else str.IndexOf(target, startIndex, target.Length) <> -1              
+            let lastIndex = startIndex + target.Length
+            if lastIndex <= startIndex || lastIndex >= str.Length then
+                raise (ArgumentException("Target is too big.", "target"))
+
+            str.IndexOf(target, startIndex, target.Length) <> -1              
 
         member __.Length = str.Length
 

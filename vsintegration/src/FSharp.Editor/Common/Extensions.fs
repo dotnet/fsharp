@@ -49,34 +49,49 @@ module private SourceText =
     let weakTable = ConditionalWeakTable<SourceText, ISourceText>()
 
     let create (sourceText: SourceText) =
-        let getLines =
-            lazy
-                [|
-                    for i = 0 to sourceText.Lines.Count - 1 do
-                        yield sourceText.Lines.[i].ToString()
-                |]
-
-        let getLastCharacterPosition =
-            lazy
-                if sourceText.Lines.Count > 0 then
-                    (sourceText.Lines.Count, sourceText.Lines.[sourceText.Lines.Count - 1].Span.Length)
-                else
-                    (0, 0)
 
         let sourceText =
             { new ISourceText with
             
                 member __.Item with get index = sourceText.[index]
 
-                member __.GetLines() = getLines.Value
+                member __.GetLineString(lineIndex) =
+                    sourceText.Lines.[lineIndex].ToString()
 
-                member __.GetLastCharacterPosition() = getLastCharacterPosition.Value
+                member __.GetLineCount() =
+                    sourceText.Lines.Count
+
+                member __.GetLastCharacterPosition() =
+                    if sourceText.Lines.Count > 0 then
+                        (sourceText.Lines.Count, sourceText.Lines.[sourceText.Lines.Count - 1].Span.Length)
+                    else
+                        (0, 0)
 
                 member __.GetSubTextString(start, length) =
                     sourceText.GetSubText(TextSpan(start, length)).ToString()
 
                 member __.SubTextEquals(target, startIndex) =
-                    sourceText.GetSubText(TextSpan(startIndex, target.Length)).ContentEquals(SourceText.From(target))
+                    if startIndex < 0 || startIndex >= sourceText.Length then
+                        raise (ArgumentOutOfRangeException("startIndex"))
+
+                    if String.IsNullOrEmpty(target) then
+                        raise (ArgumentException("Target is null or empty.", "target"))
+
+                    let lastIndex = startIndex + target.Length
+                    if lastIndex <= startIndex || lastIndex >= sourceText.Length then
+                        raise (ArgumentException("Target is too big.", "target"))
+
+                    let mutable finished = false
+                    let mutable didEqual = true
+                    let mutable i = 0
+                    while not finished && i < target.Length do
+                        if target.[i] <> sourceText.[startIndex + i] then
+                            didEqual <- false
+                            finished <- true // bail out early                        
+                        else
+                            i <- i + 1
+
+                    didEqual
 
                 member __.ContentEquals(sourceText) =
                     match sourceText with

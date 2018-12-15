@@ -40,10 +40,10 @@ module XmlDocParsing =
         | SynPat.InstanceMember _
         | SynPat.FromParseError _ -> []
 
-    let getXmlDocablesImpl(sourceCodeLinesOfTheFile: string [], input: ParsedInput option) =
+    let getXmlDocablesImpl(sourceText: ISourceText, input: ParsedInput option) =
         let indentOf (lineNum: int) =
             let mutable i = 0
-            let line = sourceCodeLinesOfTheFile.[lineNum-1] // -1 because lineNum reported by xmldocs are 1-based, but array is 0-based
+            let line = sourceText.GetLineString(lineNum-1) // -1 because lineNum reported by xmldocs are 1-based, but array is 0-based
             while i < line.Length && line.Chars(i) = ' ' do
                 i <- i + 1
             i
@@ -189,4 +189,4 @@ module XmlDocParser =
 
     /// Get the list of Xml documentation from current source code
     let getXmlDocables (sourceText: ISourceText, input) =
-        XmlDocParsing.getXmlDocablesImpl (sourceText.GetLines(), input)
+        XmlDocParsing.getXmlDocablesImpl (sourceText, input)

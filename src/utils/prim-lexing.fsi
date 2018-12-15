@@ -9,7 +9,9 @@ type ISourceText =
 
     abstract Item : int -> char with get
 
-    abstract GetLines : unit -> string []
+    abstract GetLineString : lineIndex: int -> string
+
+    abstract GetLineCount : unit -> int
 
     abstract GetLastCharacterPosition : unit -> int * int
 
@@ -19,7 +21,7 @@ type ISourceText =
 
     abstract Length : int
 
-    abstract ContentEquals : ISourceText -> bool
+    abstract ContentEquals : sourceText: ISourceText -> bool
 
     abstract CopyTo : sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit  
 

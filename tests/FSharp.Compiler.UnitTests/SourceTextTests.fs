@@ -14,18 +14,30 @@ module SourceTextTests =
     let StringText () =
         let text = "test\ntest2\r\ntest3\n\ntest4\ntest5\rtest6\n"
         let sourceText = SourceText.ofString text
-        let lines = sourceText.GetLines()
 
-        Assert.AreEqual("test",  lines.[0])
-        Assert.AreEqual("test2", lines.[1])
-        Assert.AreEqual("test3", lines.[2])
-        Assert.AreEqual("",      lines.[3])
-        Assert.AreEqual("test4", lines.[4])
-        Assert.AreEqual("test5", lines.[5])
-        Assert.AreEqual("test6", lines.[6])
-        Assert.AreEqual("",      lines.[7])
-        Assert.AreEqual(8, lines.Length)
+        Assert.AreEqual("test",  sourceText.GetLineString(0))
+        Assert.AreEqual("test2", sourceText.GetLineString(1))
+        Assert.AreEqual("test3", sourceText.GetLineString(2))
+        Assert.AreEqual("",      sourceText.GetLineString(3))
+        Assert.AreEqual("test4", sourceText.GetLineString(4))
+        Assert.AreEqual("test5", sourceText.GetLineString(5))
+        Assert.AreEqual("test6", sourceText.GetLineString(6))
+        Assert.AreEqual("",      sourceText.GetLineString(7))
+        Assert.AreEqual(8,       sourceText.GetLineCount())
 
         let (count, length) = sourceText.GetLastCharacterPosition()
         Assert.AreEqual(8, count)
         Assert.AreEqual(0, length)
+
+        Assert.True(sourceText.SubTextEquals("test", 0))
+        Assert.True(sourceText.SubTextEquals("test2", 5))
+        Assert.True(sourceText.SubTextEquals("test3", 12))
+
+        Assert.Throws<ArgumentOutOfRangeException>(fun () -> sourceText.SubTextEquals("test", -1) |> ignore) |> ignore
+        Assert.Throws<ArgumentOutOfRangeException>(fun () -> sourceText.SubTextEquals("test", text.Length) |> ignore) |> ignore
+        Assert.Throws<ArgumentException>(fun () -> sourceText.SubTextEquals("", 0) |> ignore) |> ignore
+        Assert.Throws<ArgumentException>(fun () -> sourceText.SubTextEquals(text + text, 0) |> ignore) |> ignore
+
+        Assert.False(sourceText.SubTextEquals("test", 1))
+        Assert.False(sourceText.SubTextEquals("test", 4))
+        Assert.False(sourceText.SubTextEquals("test", 11))
