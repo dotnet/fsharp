@@ -783,7 +783,6 @@ module CoreTests =
         let cfg = testConfig "core/quotes"
 
 
-
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
         fsc cfg "%s -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]

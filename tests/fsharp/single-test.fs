@@ -204,8 +204,10 @@ let singleTestBuildAndRunCore cfg copyFiles p =
         let overridesFileName = Path.Combine(directory, "Directory.Overrides.targets")
         let projectFileName = Path.Combine(directory, Path.GetRandomFileName() + ".fsproj")
         try
-            Directory.CreateDirectory(directory) |> ignore
+            // Clean up directory
+            Directory.CreateDirectory(cfg.Directory) |> ignore
             copyFilesToDest cfg.Directory directory
+            try File.Delete(Path.Combine(directory, "FSharp.Core.dll")) with -> ()
             emitFile targetsFileName targetsBody
             emitFile overridesFileName overridesBody
             if outputType = OutputType.Exe then
