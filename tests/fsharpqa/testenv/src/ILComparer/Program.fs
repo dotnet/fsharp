@@ -3,9 +3,6 @@ open System.IO
 
 [<EntryPoint>]
 let main (argv : string array) =
-    let fn1 = argv.[0]
-    let fn2 = argv.[1]
-
     // Read file into an array
     let File2List (filename:string) = 
         use s = new StreamReader(filename)
@@ -15,9 +12,6 @@ let main (argv : string array) =
             let isblank_or_comment = Regex.IsMatch(line, @"^[ \t]*//") || Regex.IsMatch(line, @"^[ \t]*$")
             if not isblank_or_comment then l <- List.append l ( line :: [])
         l
-
-    let f1 = File2List fn1
-    let f2 = File2List fn2
 
     let rec compareAux (f1:string list) (f2:string list) i =
         match f1, f2 with 
@@ -73,4 +67,22 @@ let main (argv : string array) =
             printfn "%s" (e.ToString())
             false
 
-    exit (if compare f1 f2 then 0 else 1)
+    let fn1 = argv.[0]
+    let fn2 = argv.[1]
+    let fn3 = argv.[0] + ".net47"
+
+    let f2 = File2List fn2
+
+    // Check to see if fn1+".net47" exists, if so check this baseline first if not equal then check fn1 baseline
+    // the fn1 + ".net47" baseline exists in the rare case where il produced has changed for example valuetuple moved form system.valuetuple.dll to mscorlib.dll, making baselines tricky
+    let result =
+        if File.Exists(fn3) then 
+            let f3 = File2List fn3
+            if compare f3 f2 then 0 else 1
+        else
+            1
+    if result = 0 then
+        exit 0
+    else
+        let f1 = File2List fn1
+        exit (if compare f1 f2 then 0 else 1)

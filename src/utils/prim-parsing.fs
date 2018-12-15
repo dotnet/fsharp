@@ -1,6 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
+// NOTE: the code in this file is a drop-in replacement runtime for Parsing.fs from the FsLexYacc repository
+
 namespace  Internal.Utilities.Text.Parsing
+
 open Internal.Utilities
 open Internal.Utilities.Text.Lexing
 
@@ -11,21 +14,29 @@ exception RecoverableParseError
 exception Accept of obj
 
 [<Sealed>]
-type internal IParseState(ruleStartPoss:Position[],ruleEndPoss:Position[],lhsPos:Position[],ruleValues:obj[],lexbuf:LexBuffer<char>) = 
+type internal IParseState(ruleStartPoss:Position[], ruleEndPoss:Position[], lhsPos:Position[], ruleValues:obj[], lexbuf:LexBuffer<char>) = 
     member p.LexBuffer = lexbuf
-    member p.InputRange n = ruleStartPoss.[n-1], ruleEndPoss.[n-1]; 
-    member p.InputStartPosition n = ruleStartPoss.[n-1]
-    member p.InputEndPosition n = ruleEndPoss.[n-1]; 
-    member p.ResultStartPosition    = lhsPos.[0]
-    member p.ResultEndPosition    = lhsPos.[1];  
-    member p.GetInput n    = ruleValues.[n-1];        
-    member p.ResultRange    = (lhsPos.[0], lhsPos.[1]);  
-    member p.RaiseError()  = raise RecoverableParseError  (* NOTE: this binding tests the fairly complex logic associated with an object expression implementing a generic abstract method *)
 
-//-------------------------------------------------------------------------
-// This context is passed to the error reporter when a syntax error occurs
+    member p.InputRange n = ruleStartPoss.[n-1], ruleEndPoss.[n-1]
+
+    member p.InputStartPosition n = ruleStartPoss.[n-1]
+
+    member p.InputEndPosition n = ruleEndPoss.[n-1]
+
+    member p.ResultStartPosition    = lhsPos.[0]
+
+    member p.ResultEndPosition    = lhsPos.[1]
+
+    member p.GetInput n    = ruleValues.[n-1]        
+
+    member p.ResultRange    = (lhsPos.[0], lhsPos.[1])  
+
+    // Side note: this definition coincidentally tests the fairly complex logic associated with an object expression implementing a generic abstract method.
+    member p.RaiseError()  = raise RecoverableParseError 
+
 
 [<Sealed>]
+/// This context is passed to the error reporter when a syntax error occurs
 type internal ParseErrorContext<'tok>
          (//lexbuf: LexBuffer<_>,
           stateStack:int list,
@@ -49,24 +60,24 @@ type internal ParseErrorContext<'tok>
 // This is the data structure emitted as code by FSYACC.  
 
 type internal Tables<'tok> = 
-    { reductions: (IParseState -> obj)[];
-      endOfInputTag: int;
-      tagOfToken: 'tok -> int;
-      dataOfToken: 'tok -> obj; 
-      actionTableElements: uint16[];  
-      actionTableRowOffsets: uint16[];
-      reductionSymbolCounts: uint16[];
-      immediateActions: uint16[];
-      gotos: uint16[];
-      sparseGotoTableRowOffsets: uint16[];
-      stateToProdIdxsTableElements: uint16[];  
-      stateToProdIdxsTableRowOffsets: uint16[];  
-      productionToNonTerminalTable: uint16[];
+    { reductions: (IParseState -> obj)[]
+      endOfInputTag: int
+      tagOfToken: 'tok -> int
+      dataOfToken: 'tok -> obj 
+      actionTableElements: uint16[]  
+      actionTableRowOffsets: uint16[]
+      reductionSymbolCounts: uint16[]
+      immediateActions: uint16[]
+      gotos: uint16[]
+      sparseGotoTableRowOffsets: uint16[]
+      stateToProdIdxsTableElements: uint16[]  
+      stateToProdIdxsTableRowOffsets: uint16[]  
+      productionToNonTerminalTable: uint16[]
       /// For <c>fsyacc.exe</c>, this entry is filled in by context from the generated parser file. If no 'parse_error' function
       /// is defined by the user then <c>ParseHelpers.parse_error</c> is used by default (ParseHelpers is opened
       /// at the top of the generated parser file)
-      parseError:  ParseErrorContext<'tok> -> unit;
-      numTerminals: int;
+      parseError:  ParseErrorContext<'tok> -> unit
+      numTerminals: int
       tagOfErrorTerminal: int }
 
 //-------------------------------------------------------------------------
@@ -91,8 +102,8 @@ type Stack<'a>(n)  =
     member buf.Peep() = contents.[count - 1]
     member buf.Top(n) = [ for x in contents.[max 0 (count-n)..count - 1] -> x ] |> List.rev
     member buf.Push(x) =
-        buf.Ensure(count + 1); 
-        contents.[count] <- x; 
+        buf.Ensure(count + 1) 
+        contents.[count] <- x 
         count <- count + 1
         
     member buf.IsEmpty = (count = 0)
@@ -197,10 +208,10 @@ module internal Implementation =
 
     let interpret (tables: Tables<'tok>) lexer (lexbuf : LexBuffer<_>) initialState =                                                                      
 #if DEBUG
-        if Flags.debug then System.Console.WriteLine("\nParser: interpret tables");
+        if Flags.debug then System.Console.WriteLine("\nParser: interpret tables")
 #endif
         let stateStack : Stack<int> = new Stack<_>(100)
-        stateStack.Push(initialState);
+        stateStack.Push(initialState)
         let valueStack = new Stack<ValueInfo>(100)
         let mutable haveLookahead = false                                                                              
         let mutable lookaheadToken = Unchecked.defaultof<'tok>
@@ -244,19 +255,19 @@ module internal Implementation =
         let rec popStackUntilErrorShifted(tokenOpt) =
             // Keep popping the stack until the "error" terminal is shifted
 #if DEBUG
-            if Flags.debug then System.Console.WriteLine("popStackUntilErrorShifted");
+            if Flags.debug then System.Console.WriteLine("popStackUntilErrorShifted")
 #endif
             if stateStack.IsEmpty then 
 #if DEBUG
                 if Flags.debug then 
-                    System.Console.WriteLine("state stack empty during error recovery - generating parse error");
+                    System.Console.WriteLine("state stack empty during error recovery - generating parse error")
 #endif
-                failwith "parse error";
+                failwith "parse error"
             
             let currState = stateStack.Peep()
 #if DEBUG
             if Flags.debug then 
-                System.Console.WriteLine("In state {0} during error recovery", currState);
+                System.Console.WriteLine("In state {0} during error recovery", currState)
 #endif
             
             let action = actionTable.Read(currState, tables.tagOfErrorTerminal)
@@ -269,22 +280,22 @@ module internal Implementation =
                     actionKind (actionTable.Read(nextState, tables.tagOfToken(token))) = shiftFlag) then
 
 #if DEBUG
-                if Flags.debug then System.Console.WriteLine("shifting error, continuing with error recovery");
+                if Flags.debug then System.Console.WriteLine("shifting error, continuing with error recovery")
 #endif
                 let nextState = actionValue action 
                 // The "error" non terminal needs position information, though it tends to be unreliable.
                 // Use the StartPos/EndPos from the lex buffer.
-                valueStack.Push(ValueInfo(box (), lexbuf.StartPos, lexbuf.EndPos));
+                valueStack.Push(ValueInfo(box (), lexbuf.StartPos, lexbuf.EndPos))
                 stateStack.Push(nextState)
             else
                 if valueStack.IsEmpty then 
-                    failwith "parse error";
+                    failwith "parse error"
 #if DEBUG
                 if Flags.debug then 
-                    System.Console.WriteLine("popping stack during error recovery");
+                    System.Console.WriteLine("popping stack during error recovery")
 #endif
-                valueStack.Pop();
-                stateStack.Pop();
+                valueStack.Pop()
+                stateStack.Pop()
                 popStackUntilErrorShifted(tokenOpt)
 
         while not finished do                                                                                    
@@ -316,7 +327,7 @@ module internal Implementation =
                                 lookaheadToken <- lexer lexbuf
                                 lookaheadStartPos <- lexbuf.StartPos
                                 lookaheadEndPos <- lexbuf.EndPos
-                                haveLookahead <- true;
+                                haveLookahead <- true
 
                         let tag = 
                             if haveLookahead then tables.tagOfToken lookaheadToken 
@@ -328,17 +339,17 @@ module internal Implementation =
                 let kind = actionKind action 
                 if kind = shiftFlag then (
                     if errorSuppressionCountDown > 0 then 
-                        errorSuppressionCountDown <- errorSuppressionCountDown - 1;
+                        errorSuppressionCountDown <- errorSuppressionCountDown - 1
 #if DEBUG
-                        if Flags.debug then Console.WriteLine("shifting, reduced errorRecoverylevel to {0}\n", errorSuppressionCountDown);
+                        if Flags.debug then Console.WriteLine("shifting, reduced errorRecoverylevel to {0}\n", errorSuppressionCountDown)
 #endif
                     let nextState = actionValue action                                     
-                    if not haveLookahead then failwith "shift on end of input!";
+                    if not haveLookahead then failwith "shift on end of input!"
                     let data = tables.dataOfToken lookaheadToken
-                    valueStack.Push(ValueInfo(data, lookaheadStartPos, lookaheadEndPos));
-                    stateStack.Push(nextState);                                                                
+                    valueStack.Push(ValueInfo(data, lookaheadStartPos, lookaheadEndPos))
+                    stateStack.Push(nextState)                                                                
 #if DEBUG
-                    if Flags.debug then Console.WriteLine("shift/consume input {0}, shift to state {1}", report haveLookahead lookaheadToken, nextState);
+                    if Flags.debug then Console.WriteLine("shift/consume input {0}, shift to state {1}", report haveLookahead lookaheadToken, nextState)
 #endif
                     haveLookahead <- false
 
@@ -348,31 +359,31 @@ module internal Implementation =
                     let n = int tables.reductionSymbolCounts.[prod]
                        // pop the symbols, populate the values and populate the locations                              
 #if DEBUG
-                    if Flags.debug then Console.Write("reduce popping {0} values/states, lookahead {1}", n, report haveLookahead lookaheadToken);
+                    if Flags.debug then Console.Write("reduce popping {0} values/states, lookahead {1}", n, report haveLookahead lookaheadToken)
 #endif
                     for i = 0 to n - 1 do                                                                             
-                        if valueStack.IsEmpty then failwith "empty symbol stack";
+                        if valueStack.IsEmpty then failwith "empty symbol stack"
                         let topVal = valueStack.Peep()
-                        valueStack.Pop();
-                        stateStack.Pop();
-                        ruleValues.[(n-i)-1] <- topVal.value;  
-                        ruleStartPoss.[(n-i)-1] <- topVal.startPos;  
-                        ruleEndPoss.[(n-i)-1] <- topVal.endPos;  
-                        if i = 0 then lhsPos.[1] <- topVal.endPos;                                     
+                        valueStack.Pop()
+                        stateStack.Pop()
+                        ruleValues.[(n-i)-1] <- topVal.value  
+                        ruleStartPoss.[(n-i)-1] <- topVal.startPos  
+                        ruleEndPoss.[(n-i)-1] <- topVal.endPos  
+                        if i = 0 then lhsPos.[1] <- topVal.endPos                                     
                         if i = n - 1 then lhsPos.[0] <- topVal.startPos
 
                     // Use the lookahead token to populate the locations if the rhs is empty                        
                     if n = 0 then 
                         if haveLookahead then 
-                           lhsPos.[0] <- lookaheadStartPos;                                                                     
-                           lhsPos.[1] <- lookaheadEndPos;                                                                       
+                           lhsPos.[0] <- lookaheadStartPos                                                                     
+                           lhsPos.[1] <- lookaheadEndPos                                                                       
                         else 
-                           lhsPos.[0] <- lexbuf.StartPos;
-                           lhsPos.[1] <- lexbuf.EndPos;
+                           lhsPos.[0] <- lexbuf.StartPos
+                           lhsPos.[1] <- lexbuf.EndPos
                     try                                                                                               
-                          // printf "reduce %d\n" prod;                                                       
+                          // printf "reduce %d\n" prod                                                       
                         let redResult = reduction parseState                                                          
-                        valueStack.Push(ValueInfo(redResult, lhsPos.[0], lhsPos.[1]));
+                        valueStack.Push(ValueInfo(redResult, lhsPos.[0], lhsPos.[1]))
                         let currState = stateStack.Peep()
                         let newGotoState = gotoTable.Read(int tables.productionToNonTerminalTable.[prod], currState)
                         stateStack.Push(newGotoState)
@@ -381,23 +392,23 @@ module internal Implementation =
 #endif
                     with                                                                                              
                     | Accept res ->                                                                            
-                          finished <- true;                                                                             
+                          finished <- true                                                                             
                           valueStack.Push(ValueInfo(res, lhsPos.[0], lhsPos.[1])) 
                     | RecoverableParseError ->
 #if DEBUG
-                          if Flags.debug then Console.WriteLine("RecoverableParseErrorException...\n");
+                          if Flags.debug then Console.WriteLine("RecoverableParseErrorException...\n")
 #endif
-                          popStackUntilErrorShifted(None);
+                          popStackUntilErrorShifted(None)
                           // User code raised a Parse_error. Don't report errors again until three tokens have been shifted 
                           errorSuppressionCountDown <- 3
                 elif kind = errorFlag then (
 #if DEBUG
-                    if Flags.debug then Console.Write("ErrorFlag... ");
+                    if Flags.debug then Console.Write("ErrorFlag... ")
 #endif
                     // Silently discard inputs and don't report errors 
                     // until three tokens in a row have been shifted 
 #if DEBUG
-                    if Flags.debug then printfn "error on token '%s' " (report haveLookahead lookaheadToken);
+                    if Flags.debug then printfn "error on token '%s' " (report haveLookahead lookaheadToken)
 #endif
                     if errorSuppressionCountDown > 0 then 
                         // If we're in the end-of-file count down then we're very keen to 'Accept'.
@@ -405,16 +416,16 @@ module internal Implementation =
                         // and an EOF token. 
                         if inEofCountDown && eofCountDown < 10 then 
 #if DEBUG
-                            if Flags.debug then printfn "popping stack, looking to shift both 'error' and that token, during end-of-file error recovery" ;
+                            if Flags.debug then printfn "popping stack, looking to shift both 'error' and that token, during end-of-file error recovery" 
 #endif
-                            popStackUntilErrorShifted(if haveLookahead then Some(lookaheadToken) else None);
+                            popStackUntilErrorShifted(if haveLookahead then Some(lookaheadToken) else None)
 
                         // If we don't haveLookahead then the end-of-file count down is over and we have no further options.
                         if not haveLookahead then 
                             failwith "parse error: unexpected end of file"
                             
 #if DEBUG
-                        if Flags.debug then printfn "discarding token '%s' during error suppression" (report haveLookahead lookaheadToken);
+                        if Flags.debug then printfn "discarding token '%s' during error suppression" (report haveLookahead lookaheadToken)
 #endif
                         // Discard the token
                         haveLookahead <- false
@@ -449,28 +460,30 @@ module internal Implementation =
                                     if not (explicit.Contains(tag)) then 
                                          yield tag ] in
                         //let activeRules = stateStack |> List.iter (fun state -> 
-                        let errorContext = new ParseErrorContext<'tok>(stateStack,parseState, reduceTokens,currentToken,reducibleProductions, shiftableTokens, "syntax error")
-                        tables.parseError(errorContext);
-                        popStackUntilErrorShifted(None);
-                        errorSuppressionCountDown <- 3;
+                        let errorContext = new ParseErrorContext<'tok>(stateStack, parseState, reduceTokens, currentToken, reducibleProductions, shiftableTokens, "syntax error")
+                        tables.parseError(errorContext)
+                        popStackUntilErrorShifted(None)
+                        errorSuppressionCountDown <- 3
 #if DEBUG
-                        if Flags.debug then System.Console.WriteLine("generated syntax error and shifted error token, haveLookahead = {0}\n", haveLookahead);
+                        if Flags.debug then System.Console.WriteLine("generated syntax error and shifted error token, haveLookahead = {0}\n", haveLookahead)
 #endif
                     )
                 ) elif kind = acceptFlag then 
                     finished <- true
 #if DEBUG
                 else
-                  if Flags.debug then System.Console.WriteLine("ALARM!!! drop through case in parser");  
+                  if Flags.debug then System.Console.WriteLine("ALARM!!! drop through case in parser")  
 #endif
-        done;                                                                                                     
+        done                                                                                                     
         // OK, we're done - read off the overall generated value
         valueStack.Peep().value
 
 type internal Tables<'tok> with
-    member tables.Interpret (lexer,lexbuf,initialState) = 
+    member tables.Interpret (lexer, lexbuf, initialState) = 
         Implementation.interpret tables lexer lexbuf initialState
     
 module internal ParseHelpers = 
+
     let parse_error (_s:string) = ()
+
     let parse_error_rich = (None : (ParseErrorContext<_> -> unit) option)

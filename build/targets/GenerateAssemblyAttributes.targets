@@ -5,15 +5,20 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
-  <Target Name="GenerateAssemblyLevelAttributes"
-          BeforeTargets="CoreCompile">
-
+  <Target Name="PrepareGenerateAssemblyLevelAttributes">
     <PropertyGroup>
       <GeneratedFSharpAssemblyLevelAttributesFile>$(IntermediateOutputPath)$(MSBuildProjectName).AssemblyLevelAttributes$(DefaultLanguageSourceExtension)</GeneratedFSharpAssemblyLevelAttributesFile>
 
       <!-- The compiler that currently ships with the SDK doesn't like the Git hash being embedded into the AssemblyInformationalVersionAttribute. -->
       <NoWarn Condition="'$(Language)' == 'F#' AND '$(Configuration)' == 'Proto'">$(NoWarn);2003</NoWarn>
     </PropertyGroup>
+  </Target>
+
+  <Target Name="GenerateAssemblyLevelAttributes"
+          Inputs="$(MSBuildThisFileFullPath);$(MSBuildProjectFile)"
+          Outputs="$(GeneratedFSharpAssemblyLevelAttributesFile)"
+          DependsOnTargets="PrepareGenerateAssemblyLevelAttributes;PrepareForBuild"
+          BeforeTargets="CoreCompile">
 
     <WriteCodeFragment AssemblyAttributes="@(AssemblyLevelAttribute)"
                        Language="$(Language)"
@@ -26,10 +31,8 @@
 
   </Target>
 
-  <Target Name="GenerateAssemblyFileVersion"
-          BeforeTargets="CoreCompile"
+  <Target Name="PrepareGenerateAssemblyFileVersion"
           Condition="'$(Language)' != '' AND '$(GenerateAssemblyVersionAttribute)' != 'false'">
-
     <PropertyGroup>
       <MicroBuildAssemblyVersion Condition="'$(MicroBuildAssemblyVersion)' == ''">$(FSCoreVersion)</MicroBuildAssemblyVersion>
 
@@ -41,7 +44,6 @@
 
       <GeneratedFSharpAssemblyVersionFile>$(IntermediateOutputPath)$(MSBuildProjectName).AssemblyVersion$(DefaultLanguageSourceExtension)</GeneratedFSharpAssemblyVersionFile>
     </PropertyGroup>
-
     <PropertyGroup>
       <!-- xbuild and older versions of msbuild don't have F# support for WriteCodeFragment -->
       <_UseWriteCodeFragmentHack Condition="'$(OS)' == 'Unix' and '$(Language)' == 'F#'">true</_UseWriteCodeFragmentHack>
@@ -73,6 +75,15 @@
         <_Parameter1>$(MicroBuildAssemblyVersion)</_Parameter1>
       </_AssemblyVersionAttributes>
     </ItemGroup>
+
+  </Target>
+
+  <Target Name="GenerateAssemblyFileVersion"
+          Inputs="$(MSBuildThisFileFullPath);$(MSBuildProjectFile)"
+          Outputs="$(GeneratedFSharpAssemblyVersionFile)"
+          DependsOnTargets="PrepareGenerateAssemblyFileVersion;PrepareForBuild"
+          BeforeTargets="CoreCompile"
+          Condition="'$(Configuration)' != 'Proto'">
 
     <WriteCodeFragment AssemblyAttributes="@(_AssemblyVersionAttributes)"
                        Language="$(Language)"

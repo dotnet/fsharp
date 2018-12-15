@@ -9,13 +9,17 @@
     <SystemLinqExpressionsPackageVersion>4.3.0</SystemLinqExpressionsPackageVersion>
     <SystemLinqQueryablePackageVersion>4.3.0</SystemLinqQueryablePackageVersion>
     <SystemNetRequestsPackageVersion>4.3.0</SystemNetRequestsPackageVersion>
+    <SystemNetSecurityPackageVersion>4.3.0</SystemNetSecurityPackageVersion>
     <SystemReflectionEmitPackageVersion>4.3.0</SystemReflectionEmitPackageVersion>
     <SystemReflectionMetadataPackageVersion>1.5.0</SystemReflectionMetadataPackageVersion>
     <SystemReflectionTypeExtensionsPackageVersion>4.3.0</SystemReflectionTypeExtensionsPackageVersion>
     <SystemRuntimePackageVersion>4.3.0</SystemRuntimePackageVersion>
     <SystemRuntimeInteropServicesPackageVersion>4.3.0</SystemRuntimeInteropServicesPackageVersion>
     <SystemRuntimeLoaderPackageVersion>4.3.0</SystemRuntimeLoaderPackageVersion>
+    <SystemSecurityClaimsPackageVersion>4.3.0</SystemSecurityClaimsPackageVersion>
     <SystemSecurityCryptographyAlgorithmsPackageVersion>4.3.0</SystemSecurityCryptographyAlgorithmsPackageVersion>
+    <SystemSecurityPrincipalPackageVersion>4.3.0</SystemSecurityPrincipalPackageVersion>
+    <SystemDataSqlClientPackageVersion>4.3.0</SystemDataSqlClientPackageVersion>
     <SystemThreadingTasksParallelPackageVersion>4.3.0</SystemThreadingTasksParallelPackageVersion>
     <SystemThreadingThreadPackageVersion>4.3.0</SystemThreadingThreadPackageVersion>
     <SystemThreadingThreadPoolPackageVersion>4.3.0</SystemThreadingThreadPoolPackageVersion>

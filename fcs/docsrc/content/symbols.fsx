@@ -168,8 +168,8 @@ used in the compilation, called the `ProjectContext`:
 *)
 let projectContext = checkFileResults.ProjectContext
     
-for ass in projectContext.GetReferencedAssemblies() do
-    match ass.FileName with 
+for assembly in projectContext.GetReferencedAssemblies() do
+    match assembly.FileName with 
     | None -> printfn "compilation referenced an assembly without a file" 
     | Some s -> printfn "compilation references assembly '%s'" s
     
