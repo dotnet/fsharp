@@ -4,7 +4,6 @@ open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Text
 open System.Text
 
 [<ClrJob(baseline = true)>]
@@ -34,7 +33,7 @@ type CompilerServiceParsing() =
         match sourceOpt with
         | None ->
             let source = File.ReadAllText("""..\..\..\..\..\src\fsharp\TypeChecker.fs""")
-            sourceOpt <- Some(SourceText.ofString source)
+            sourceOpt <- Some(source)
         | _ -> ()
     
     [<IterationSetup>]
@@ -44,7 +43,7 @@ type CompilerServiceParsing() =
         | Some(checker) ->
             checker.InvalidateAll()
             checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-            checker.ParseFile("dummy.fs", SourceText.ofString "dummy", parsingOptions) |> Async.RunSynchronously |> ignore
+            checker.ParseFile("dummy.fs", "dummy", parsingOptions) |> Async.RunSynchronously |> ignore
 
     [<Benchmark>]
     member __.Parsing() =
