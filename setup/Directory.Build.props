@@ -1,0 +1,12 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <Import Project="$(NuGetPackageRoot)\MicroBuild.Core\$(MicroBuildCorePackageVersion)\build\MicroBuild.Core.props" />
+  <Import Project="FSharp.Setup.props" />
+
+  <PropertyGroup>
+    <DisableOutputPathCopying>true</DisableOutputPathCopying>
+    <EnableXlfLocalization>false</EnableXlfLocalization>
+  </PropertyGroup>
+
+</Project>

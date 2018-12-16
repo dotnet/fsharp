@@ -90,7 +90,7 @@ module internal MsBuildAdapters =
     | Version47 = 11
     | Version471 = 12
     | Version472 = 13
-    | VersionLatest = 10  //TargetDotNetFrameworkVersion.Version462
+    | VersionLatest = 13  //TargetDotNetFrameworkVersion.Version472
 
     /// <summary>
     /// Used to specify the targeted bitness of the .NET Framework for some methods of ToolLocationHelper

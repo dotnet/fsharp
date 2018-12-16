@@ -259,7 +259,6 @@ If you are behind a proxy server, NuGet client tool must be configured to use it
 
 Where you should set proper proxy address, user name and password.
 
-
 #### Resources
 
 The primary technical guide to the core compiler code is [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html).  Please read and contribute to that guide.

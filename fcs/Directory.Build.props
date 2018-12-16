@@ -1,0 +1,23 @@
+<Project>
+  <PropertyGroup>
+    <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' AND '$(OS)' == 'Windows_NT'">$(UserProfile)\.nuget\packages\</NuGetPackageRoot>
+    <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' AND '$(OS)' != 'Windows_NT'">$(HOME)/.nuget/packages/</NuGetPackageRoot>
+    <NuGetPackageRoot Condition="!HasTrailingSlash('$(NuGetPackageRoot)') AND '$(OS)' == 'Windows_NT'">$(NuGetPackageRoot)\</NuGetPackageRoot>
+    <NuGetPackageRoot Condition="!HasTrailingSlash('$(NuGetPackageRoot)') AND '$(OS)' != 'Windows_NT'">$(NuGetPackageRoot)/</NuGetPackageRoot>
+  </PropertyGroup>
+
+  <!-- SDK targets override -->
+  <PropertyGroup>
+    <ProtoOutputPath>$(MSBuildThisFileDirectory)..\Proto\net40\bin</ProtoOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="Exists('$(ProtoOutputPath)')">
+    <!-- <FscToolPath>$(ProtoOutputPath)\</FscToolPath>
+    <FscToolExe>fsc.exe</FscToolExe>
+    <DotnetFscCompilerPath>- -nologo</DotnetFscCompilerPath> -->
+    <FSharpTargetsPath>$(ProtoOutputPath)\Microsoft.FSharp.Targets</FSharpTargetsPath>
+    <FSharpPropsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
+    <FSharpTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
+    <FSharpOverridesTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,70 @@
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- not really a C# project, but pretending it is makes things like package restore really easy -->
+  <PropertyGroup>
+    <TargetFramework>net46</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="**" />
+    <EmbeddedResource Remove="**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FSharp.Core" Version="4.3.4" /><!-- static version used to create the SDK -->
+    <PackageReference Include="MicroBuild.Core" Version="$(MicroBuildCorePackageVersion)" />
+    <PackageReference Include="MicroBuild.Core.Sentinel" Version="$(MicroBuildCoreSentinelPackageVersion)" />
+    <PackageReference Include="MicroBuild.Plugins.SwixBuild" Version="$(MicroBuildPluginsSwixBuildPackageVersion)" />
+    <PackageReference Include="Microsoft.Portable.FSharp.Core" Version="$(MicrosoftPortableFSharpCorePackageVersion)" IncludeAssets="none" />
+    <PackageReference Include="Microsoft.VisualFSharp.Core.Redist" Version="$(MicrosoftVisualFSharpCoreRedistPackageVersion)" />
+  </ItemGroup>
+
+  <Target Name="CollectSetupProjects">
+    <ItemGroup>
+      <VsixProjects Include="VisualFSharpFull.csproj">
+        <ProjectPath>..\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj</ProjectPath>
+      </VsixProjects>
+      <VsixProjects Include="VisualFSharpTemplates.csproj">
+        <ProjectPath>..\vsintegration\Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj</ProjectPath>
+      </VsixProjects>
+    </ItemGroup>
+
+    <CreateItem Include="@(SetupLanguages)"
+                AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.Vsix.Resources\Microsoft.FSharp.Vsix.Resources.swixproj">
+      <Output ItemName="SwixSetupProjects" TaskParameter="Include" />
+    </CreateItem>
+
+    <ItemGroup>
+      <SwixSetupProjects Include="Microsoft.FSharp.Dependencies.swixproj">
+        <ProjectPath>Swix\Microsoft.FSharp.Dependencies\Microsoft.FSharp.Dependencies.swixproj</ProjectPath>
+      </SwixSetupProjects>
+      <SwixSetupProjects Include="Microsoft.FSharp.IDE.swixproj">
+        <ProjectPath>Swix\Microsoft.FSharp.IDE\Microsoft.FSharp.IDE.swixproj</ProjectPath>
+      </SwixSetupProjects>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CopyLocalizationResources">
+    <ItemGroup>
+      <SetupLocalizationResources Include="resources\**\*.*" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(SetupLocalizationResources)"
+          DestinationFiles="@(SetupLocalizationResources->'$(OutputPath)\resources\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+  <Target Name="BuildSetup"
+          AfterTargets="Build"
+          DependsOnTargets="CollectSetupProjects;CopyLocalizationResources">
+    <PropertyGroup>
+      <CustomProps>AssemblySearchPaths={HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}</CustomProps>
+    </PropertyGroup>
+    <MSBuild Projects="%(VsixProjects.ProjectPath)"
+             Targets="Build"
+             Properties="Configuration=$(Configuration);IsLangPack=%(VsixProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);OutputPath=$(VsixBuildLocation);DisableOutputPathCopying=true;$(CustomProps)" />
+    <MSBuild Projects="%(SwixSetupProjects.ProjectPath)"
+             Targets="Build"
+             Properties="LocaleCode=%(SwixSetupProjects.LocaleCode);LocaleId=%(SwixSetupProjects.LocaleId);LocaleParentId=%(SwixSetupProjects.LocaleParentId);LocaleParentCulture=%(SwixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SwixSetupProjects.LocaleSpecificCulture);IsLangPack=%(SwixSetupProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);VSGeneralVersion=$(VSGeneralVersion);TargetFramework=$(TargetFramework);$(CustomProps)"/>
+  </Target>
+
+</Project>

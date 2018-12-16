@@ -242,8 +242,8 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
             let! targetSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
 
             match declarations with
-            | FSharpFindDeclResult.ExternalDecl (assy, targetExternalSym) ->
-                let! project = originDocument.Project.Solution.Projects |> Seq.tryFind (fun p -> p.AssemblyName.Equals(assy, StringComparison.OrdinalIgnoreCase))
+            | FSharpFindDeclResult.ExternalDecl (assembly, targetExternalSym) ->
+                let! project = originDocument.Project.Solution.Projects |> Seq.tryFind (fun p -> p.AssemblyName.Equals(assembly, StringComparison.OrdinalIgnoreCase))
                 let! symbols = SymbolFinder.FindSourceDeclarationsAsync(project, fun _ -> true)
 
                 let roslynSymbols =

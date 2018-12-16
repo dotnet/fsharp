@@ -1,34 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
-    <ProjectLanguage>FSharp</ProjectLanguage>
-    <UseFSharpProductVersion>true</UseFSharpProductVersion>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-  </PropertyGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <!--
-        fsc.exe and fsi.exe only runs on x86 (emulates on ia64, x64) due to 
-        Win32 DLLs and memory mapping dependencies...
-        -->
-    <PlatformTarget Condition=" '$(TargetDotnetProfile)'!='coreclr'">x86</PlatformTarget>
-    <PlatformTarget Condition=" '$(TargetDotnetProfile)'=='coreclr'">AnyCPU</PlatformTarget>
-    <ProjectGuid>{C94C257C-3C0A-4858-B5D8-D746498D1F08}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <NoWarn>$(NoWarn);62</NoWarn>
+    <TargetFrameworks>net472;netcoreapp2.1</TargetFrameworks>
+    <TargetExt>.exe</TargetExt>
     <AssemblyName>fsc</AssemblyName>
+    <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
+    <UseFSharpProductVersion>true</UseFSharpProductVersion>
+    <UseAssetTargetFallback>true</UseAssetTargetFallback>
   </PropertyGroup>
-
-  <ItemGroup>
-    <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
-  </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\fscmain.fs">
@@ -41,25 +25,18 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
-      <None Include="project.json" />
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Build\FSharp.Build.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
   </ItemGroup>
-  <ItemGroup  Condition="'$(TargetDotnetProfile)' != 'coreclr'">
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-  </ItemGroup>
-
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 
   <ItemGroup>
-    <ProjectReference Include="..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj">
-      <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
-      <Name>FSharp.Compiler.Private</Name>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
-      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
-      <Name>FSharp.Core</Name>
-    </ProjectReference>
+    <PackageReference Include="System.Console" Version="$(SystemConsolePackageVersion)" />
+    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsPackageVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" />
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderPackageVersion)" />
+    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalPackageVersion)" />
   </ItemGroup>
 
 </Project>

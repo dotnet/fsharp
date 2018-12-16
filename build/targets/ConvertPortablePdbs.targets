@@ -1,16 +1,21 @@
 <Project>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.DiaSymReader.Pdb2Pdb" Version="$(MicrosoftDiaSymReaderPdb2PdbPackageVersion)" />
+    <PackageReference Include="Pdb2Pdb" Version="$(Pdb2PdbPackageVersion)" />
   </ItemGroup>
 
   <Target Name="ConvertPortablePdbs"
           AfterTargets="AfterBuild"
-          Condition="Exists('$(TargetPath)') AND ('$(DebugType)' == 'portable' OR '$(DebugType)' == 'embedded')">
+          DependsOnTargets="ComputeFinalOutputPaths"
+          Condition="'$(OS)' != 'Unix' AND
+                     Exists('$(TargetPath)') AND
+                     ('$(DebugType)' == 'portable' OR '$(DebugType)' == 'embedded') AND
+                     $(TargetFramework.StartsWith('net4')) AND
+                     '$(Configuration)' != 'Proto'">
     <PropertyGroup>
       <ConvertedPdbsDirectory>$(FinalOutputPath)\ConvertedPdbs</ConvertedPdbsDirectory>
-      <PdbConverterExe>$(NuGetPackageRoot)Microsoft.DiaSymReader.Pdb2Pdb\$(MicrosoftDiaSymReaderPdb2PdbPackageVersion)\tools\Pdb2Pdb.exe</PdbConverterExe>
-      <PdbConverterArgs>"$(TargetPath)" /out "$(ConvertedPdbsDirectory)\$(TargetName).pdb" /verbose /srcsvrvar SRC_INDEX=public</PdbConverterArgs>
+      <PdbConverterExe>$(NuGetPackageRoot)Pdb2Pdb\$(Pdb2PdbPackageVersion)\tools\Pdb2Pdb.exe</PdbConverterExe>
+      <PdbConverterArgs>"$(TargetPath)" /out "$(ConvertedPdbsDirectory)\$(TargetName).pdb" /srcsvrvar SRC_INDEX=public</PdbConverterArgs>
     </PropertyGroup>
 
     <MakeDir Directories="$(ConvertedPdbsDirectory)" />
