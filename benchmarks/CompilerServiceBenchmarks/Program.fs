@@ -32,7 +32,7 @@ type CompilerServiceParsing() =
 
         match sourceOpt with
         | None ->
-            let source = File.ReadAllText("""C:\visualfsharp\src\fsharp\TypeChecker.fs""")
+            let source = File.ReadAllText("""..\..\..\..\..\src\fsharp\TypeChecker.fs""")
             sourceOpt <- Some(source)
         | _ -> ()
     
