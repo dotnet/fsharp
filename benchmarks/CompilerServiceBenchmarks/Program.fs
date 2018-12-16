@@ -6,7 +6,7 @@ open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open System.Text
 
-[<ClrJob(baseline = true)>]
+[<ClrJob(baseline = true); MemoryDiagnoser>]
 type CompilerServiceParsing() =
 
     let mutable checkerOpt = None
