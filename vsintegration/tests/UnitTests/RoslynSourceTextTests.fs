@@ -35,8 +35,8 @@ module RoslynSourceTextTests =
         Assert.True(sourceText.SubTextEquals("test2", 5))
         Assert.True(sourceText.SubTextEquals("test3", 12))
 
-        Assert.Throws<ArgumentOutOfRangeException>(fun () -> sourceText.SubTextEquals("test", -1) |> ignore) |> ignore
-        Assert.Throws<ArgumentOutOfRangeException>(fun () -> sourceText.SubTextEquals("test", text.Length) |> ignore) |> ignore
+        Assert.Throws<ArgumentException>(fun () -> sourceText.SubTextEquals("test", -1) |> ignore) |> ignore
+        Assert.Throws<ArgumentException>(fun () -> sourceText.SubTextEquals("test", text.Length) |> ignore) |> ignore
         Assert.Throws<ArgumentException>(fun () -> sourceText.SubTextEquals("", 0) |> ignore) |> ignore
         Assert.Throws<ArgumentException>(fun () -> sourceText.SubTextEquals(text + text, 0) |> ignore) |> ignore
 

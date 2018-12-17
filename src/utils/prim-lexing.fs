@@ -33,10 +33,10 @@ type StringText(str: string) =
     let getLines (str: string) =
         use reader = new StringReader(str)
         [|
-        let line = ref (reader.ReadLine())
-        while not (isNull !line) do
-            yield !line
-            line := reader.ReadLine()
+        let mutable line = reader.ReadLine()
+        while not (isNull line) do
+            yield line
+            line <- reader.ReadLine()
         if str.EndsWith("\n", StringComparison.Ordinal) then
             // last trailing space not returned
             // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
@@ -72,14 +72,14 @@ type StringText(str: string) =
 
         member __.SubTextEquals(target, startIndex) =
             if startIndex < 0 || startIndex >= str.Length then
-                raise (ArgumentOutOfRangeException("startIndex"))
+                invalidArg "startIndex" "Out of range."
 
             if String.IsNullOrEmpty(target) then
-                raise (ArgumentException("Target is null or empty.", "target"))
+                invalidArg "target" "Is null or empty."
 
             let lastIndex = startIndex + target.Length
             if lastIndex <= startIndex || lastIndex >= str.Length then
-                raise (ArgumentException("Target is too big.", "target"))
+                invalidArg "target" "Too big."
 
             str.IndexOf(target, startIndex, target.Length) <> -1              
 

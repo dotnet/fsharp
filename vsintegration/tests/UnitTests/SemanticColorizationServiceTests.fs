@@ -30,10 +30,10 @@ type SemanticClassificationServiceTests() =
     let checker = FSharpChecker.Create()
     let perfOptions = { LanguageServicePerformanceOptions.Default with AllowStaleCompletionResults = false }
 
-    let getRanges (sourceText: string) : (Range.range * SemanticClassificationType) list =
+    let getRanges (source: string) : (Range.range * SemanticClassificationType) list =
         asyncMaybe {
 
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, 0, SourceText.From(sourceText), projectOptions, perfOptions, "")
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, 0, SourceText.From(source), projectOptions, perfOptions, "")
             return checkFileResults.GetSemanticClassification(None)
         } 
         |> Async.RunSynchronously

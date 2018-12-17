@@ -49,7 +49,6 @@ module private SourceText =
     let weakTable = ConditionalWeakTable<SourceText, ISourceText>()
 
     let create (sourceText: SourceText) =
-
         let sourceText =
             { new ISourceText with
             
@@ -72,14 +71,14 @@ module private SourceText =
 
                 member __.SubTextEquals(target, startIndex) =
                     if startIndex < 0 || startIndex >= sourceText.Length then
-                        raise (ArgumentOutOfRangeException("startIndex"))
+                        invalidArg "startIndex" "Out of range."
 
                     if String.IsNullOrEmpty(target) then
-                        raise (ArgumentException("Target is null or empty.", "target"))
+                        invalidArg "target" "Is null or empty."
 
                     let lastIndex = startIndex + target.Length
                     if lastIndex <= startIndex || lastIndex >= sourceText.Length then
-                        raise (ArgumentException("Target is too big.", "target"))
+                        invalidArg "target" "Too big."
 
                     let mutable finished = false
                     let mutable didEqual = true
