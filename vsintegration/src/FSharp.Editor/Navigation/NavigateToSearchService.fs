@@ -245,9 +245,9 @@ type internal FSharpNavigateToSearchService
         | _ -> NavigateToMatchKind.Regular
 
     interface INavigateToSearchService_RemoveInterfaceAboveAndRenameThisAfterInternalsVisibleToUsersUpdate with
-        member __.SearchProjectAsync(project, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
+        member __.SearchProjectAsync(project, _priorityDocuments, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
             asyncMaybe {
-                let! parsingOptions, _site, _options = projectInfoManager.TryGetOptionsForProject(project.Id)
+                let! parsingOptions, _options = projectInfoManager.TryGetOptionsByProject(project, cancellationToken)
                 let! items =
                     project.Documents
                     |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, parsingOptions, kinds))
@@ -279,7 +279,7 @@ type internal FSharpNavigateToSearchService
 
         member __.SearchDocumentAsync(document, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
             asyncMaybe {
-                let! parsingOptions, _, _ = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
+                let! parsingOptions, _, _ = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken)
                 let! items = getCachedIndexedNavigableItems(document, parsingOptions, kinds) |> liftAsync
                 return items.Find(searchPattern)
             }
