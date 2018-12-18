@@ -1475,7 +1475,6 @@ and
         | NamedModule | AnonModule -> true
         | _ -> false
 
-
 /// SynModuleOrNamespace(lid,isRec,kind,decls,xmlDoc,attribs,SynAccess,m)
 and
     [<NoEquality; NoComparison>]
