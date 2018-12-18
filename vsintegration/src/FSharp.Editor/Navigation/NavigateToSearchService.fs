@@ -199,7 +199,7 @@ type internal FSharpNavigateToSearchService
         async {
             let! cancellationToken = Async.CancellationToken
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-            let! parseResults = checkerProvider.Checker.ParseFile(document.FilePath, sourceText.ToString(), parsingOptions)
+            let! parseResults = checkerProvider.Checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions)
 
             let navItems parsedInput =
                 NavigateTo.getNavigableItems parsedInput

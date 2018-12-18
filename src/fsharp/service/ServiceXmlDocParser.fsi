@@ -3,6 +3,7 @@
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Text
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 
@@ -16,6 +17,7 @@ module public XmlDocComment =
     val isBlank : string -> int option
 
 module public XmlDocParser =
+
     /// Get the list of Xml documentation from current source code
-    val getXmlDocables : sourceCodeOfTheFile : string * input : Ast.ParsedInput option -> XmlDocable list
+    val getXmlDocables : ISourceText * input: Ast.ParsedInput option -> XmlDocable list
     

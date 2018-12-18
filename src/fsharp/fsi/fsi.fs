@@ -20,6 +20,7 @@ open System.Threading
 open System.Reflection
 open System.Runtime.CompilerServices
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Text
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL
@@ -2350,7 +2351,7 @@ type internal FsiInteractionProcessor
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
-        fsiInteractiveChecker.ParseAndCheckInteraction(ctok, text)
+        fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
 
 
 //----------------------------------------------------------------------------

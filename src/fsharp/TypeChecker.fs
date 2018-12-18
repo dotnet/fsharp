@@ -1860,7 +1860,7 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
                         member this.NotifyExprHasType(_, _, _, _, _, _) = assert false // no expr typings in MakeSimpleVals
                         member this.NotifyFormatSpecifierLocation(_, _) = ()
                         member this.NotifyOpenDeclaration(_) = ()
-                        member this.CurrentSource = None 
+                        member this.CurrentSourceText = None 
                         member this.FormatStringCheckContext = None } 
 
                 use _h = WithNewTypecheckResultsSink(sink, cenv.tcSink)

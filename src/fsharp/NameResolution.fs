@@ -5,7 +5,8 @@
 module internal Microsoft.FSharp.Compiler.NameResolution
 
 open Internal.Utilities
-open Microsoft.FSharp.Compiler 
+open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Text
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
@@ -1251,7 +1252,7 @@ type OpenDeclaration =
           IsOwnNamespace = isOwnNamespace }
 
 type FormatStringCheckContext =
-    { Source: string
+    { SourceText: ISourceText
       LineStartPositions: int[] }
 
 /// An abstract type for reporting the results of name resolution and type checking.
@@ -1261,7 +1262,7 @@ type ITypecheckResultsSink =
     abstract NotifyNameResolution : pos * Item * Item * TyparInst * ItemOccurence * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
     abstract NotifyFormatSpecifierLocation : range * int -> unit
     abstract NotifyOpenDeclaration : OpenDeclaration -> unit
-    abstract CurrentSource : string option
+    abstract CurrentSourceText : ISourceText option
     abstract FormatStringCheckContext : FormatStringCheckContext option
 
 let (|ValRefOfProp|_|) (pi : PropInfo) = pi.ArbitraryValRef
@@ -1513,7 +1514,7 @@ type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolutio
     member this.GetFormatSpecifierLocationsAndArity() = formatSpecifierLocations
 
 /// An accumulator for the results being emitted into the tcSink.
-type TcResultsSinkImpl(g, ?source: string) =
+type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
     let capturedEnvs = ResizeArray<_>()
     let capturedExprTypings = ResizeArray<_>()
     let capturedNameResolutions = ResizeArray<_>()
@@ -1537,18 +1538,18 @@ type TcResultsSinkImpl(g, ?source: string) =
 
     let formatStringCheckContext =
         lazy
-            source |> Option.map (fun source ->
+            sourceText |> Option.map (fun sourceText ->
                 let positions =
                     [|
                         yield 0
-                        for i in 1..source.Length do
-                            let c = source.[i-1]
-                            if c = '\r' && i < source.Length && source.[i] = '\n' then ()
+                        for i in 1..sourceText.Length do
+                            let c = sourceText.[i-1]
+                            if c = '\r' && i < sourceText.Length && sourceText.[i] = '\n' then ()
                             elif c = '\r' then yield i
                             elif c = '\n' then yield i
-                        yield source.Length
+                        yield sourceText.Length
                     |]
-                { Source = source 
+                { SourceText = sourceText 
                   LineStartPositions = positions })
 
     member this.GetResolutions() = 
@@ -1603,7 +1604,7 @@ type TcResultsSinkImpl(g, ?source: string) =
         member sink.NotifyOpenDeclaration(openDeclaration) =
             capturedOpenDeclarations.Add(openDeclaration)
 
-        member sink.CurrentSource = source
+        member sink.CurrentSourceText = sourceText
         
         member sink.FormatStringCheckContext = formatStringCheckContext.Value
 

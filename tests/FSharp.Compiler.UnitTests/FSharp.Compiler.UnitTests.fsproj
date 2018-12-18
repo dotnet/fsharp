@@ -18,6 +18,7 @@
     <Compile Include="EditDistance.fs" />
     <Compile Include="ILHelpers.fs" />
     <Compile Include="Language\StringConcat.fs" />
+    <Compile Include="SourceTextTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
