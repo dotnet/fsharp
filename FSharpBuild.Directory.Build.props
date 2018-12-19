@@ -42,7 +42,10 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
     <StrongNames>true</StrongNames>
-    <DelaySign>true</DelaySign>
+    <DelaySign>false</DelaySign>
+    <PublicSign>true</PublicSign>
+    <GenerateSatelliteAssembliesForCore>true</GenerateSatelliteAssembliesForCore>
+    <NoCompilerStandardLib Condition="'$(TargetFramework)' == 'netstandard1.6'">true</NoCompilerStandardLib>
   </PropertyGroup>
   <PropertyGroup Condition="'$(MonoPackaging)' == 'true'">
     <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\test.snk</AssemblyOriginatorKeyFile>
