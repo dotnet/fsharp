@@ -1,12 +1,15 @@
 ﻿open System
 open System.IO
-open BenchmarkDotNet.Attributes
-open BenchmarkDotNet.Running
+open System.Text
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Text
-open System.Text
+open Microsoft.FSharp.Compiler.AbstractIL
+open Microsoft.FSharp.Compiler.AbstractIL.IL
+open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
 open Microsoft.CodeAnalysis.Text
+open BenchmarkDotNet.Attributes
+open BenchmarkDotNet.Running
 
 module private SourceText =
 
@@ -78,7 +81,7 @@ type SourceText with
         SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(SourceText.create))
 
 [<MemoryDiagnoser>]
-type CompilerServiceParsing() =
+type CompilerService() =
 
     let mutable checkerOpt = None
 
@@ -95,6 +98,17 @@ type CompilerServiceParsing() =
             IsExe = false
         }
 
+    let mutable assembliesOpt = None
+
+    let readerOptions =
+        {
+            pdbDirPath = None
+            ilGlobals = mkILGlobals ILScopeRef.Local
+            reduceMemoryUsage = ReduceMemoryFlag.No
+            metadataOnly = MetadataOnlyFlag.Yes
+            tryGetMetadataSnapshot = fun _ -> None
+        }
+
     [<GlobalSetup>]
     member __.Setup() =
         match checkerOpt with
@@ -105,8 +119,16 @@ type CompilerServiceParsing() =
         | None ->
             sourceOpt <- Some <| SourceText.From(File.OpenRead("""..\..\..\..\..\src\fsharp\TypeChecker.fs"""), Encoding.Default, SourceHashAlgorithm.Sha1, true)
         | _ -> ()
+
+        match assembliesOpt with
+        | None -> 
+            assembliesOpt <- 
+                System.AppDomain.CurrentDomain.GetAssemblies()
+                |> Array.map (fun x -> (x.Location))
+                |> Some
+        | _ -> ()
     
-    [<IterationSetup>]
+    [<IterationSetup(Target = "Parsing")>]
     member __.ParsingSetup() =
         match checkerOpt with
         | None -> failwith "no checker"
@@ -124,46 +146,59 @@ type CompilerServiceParsing() =
             let results = checker.ParseFile("TypeChecker.fs", source.ToFSharpSourceText(), parsingOptions) |> Async.RunSynchronously
             if results.ParseHadErrors then failwithf "parse had errors: %A" results.Errors
 
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
-
-[<MemoryDiagnoser>]
-type CompilerILReading() =
-
-    let mutable assembliesOpt = None
-
-    let readerOptions =
-        {
-            pdbDirPath = None
-            ilGlobals = mkILGlobals ILScopeRef.Local
-            reduceMemoryUsage = ReduceMemoryFlag.No
-            metadataOnly = MetadataOnlyFlag.No
-            tryGetMetadataSnapshot = fun _ -> None
-        }
-
-    [<GlobalSetup>]
-    member __.Setup() =
-        match assembliesOpt with
-        | None -> 
-            assembliesOpt <- 
-                System.AppDomain.CurrentDomain.GetAssemblies()
-                |> Array.map (fun x -> x.Location)
-                |> Some
-        | _ -> ()
+    [<IterationSetup(Target = "ILReading")>]
+    member __.ILReadingSetup() =
+        // With caching, performance increases an order of magnitude when re-reading an ILModuleReader.
+        // Clear it for benchmarking.
+        ClearAllILModuleReaderCache()
 
     [<Benchmark>]
     member __.ILReading() =
         match assembliesOpt with
         | None -> failwith "no assemblies"
         | Some(assemblies) ->
+            // We try to read most of everything in the assembly that matter, mainly types with their properties, methods, and fields.
+            // CustomAttrs and SecurityDecls are lazy until you call them, so we call them here for benchmarking.
             assemblies
-            |> Array.iter (fun x ->
-                OpenILModuleReader x readerOptions |> ignore
+            |> Array.iter (fun (fileName) ->
+                let reader = OpenILModuleReader fileName readerOptions
+
+                let ilModuleDef = reader.ILModuleDef
+
+                let ilAssemblyManifest = ilModuleDef.Manifest.Value
+
+                ilAssemblyManifest.CustomAttrs |> ignore
+                ilAssemblyManifest.SecurityDecls |> ignore
+                ilAssemblyManifest.ExportedTypes.AsList
+                |> List.iter (fun x ->
+                   x.CustomAttrs |> ignore
+                )
+
+                ilModuleDef.CustomAttrs |> ignore
+                ilModuleDef.TypeDefs.AsArray
+                |> Array.iter (fun ilTypeDef ->
+                    ilTypeDef.CustomAttrs |> ignore
+                    ilTypeDef.SecurityDecls |> ignore
+
+                    ilTypeDef.Methods.AsArray
+                    |> Array.iter (fun ilMethodDef ->
+                        ilMethodDef.CustomAttrs |> ignore
+                        ilMethodDef.SecurityDecls |> ignore
+                    )
+
+                    ilTypeDef.Fields.AsList
+                    |> List.iter (fun ilFieldDef ->
+                        ilFieldDef.CustomAttrs |> ignore
+                    )
+
+                    ilTypeDef.Properties.AsList
+                    |> List.iter (fun ilPropertyDef ->
+                        ilPropertyDef.CustomAttrs |> ignore
+                    )
+                )
             )
 
 [<EntryPoint>]
 let main argv =
-  //  let _ = BenchmarkRunner.Run<CompilerServiceParsing>()
-    let _ = BenchmarkRunner.Run<CompilerILReading>()
+    let _ = BenchmarkRunner.Run<CompilerService>()
     0

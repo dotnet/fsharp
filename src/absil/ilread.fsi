@@ -80,6 +80,8 @@ type ILModuleReader =
 /// PDB files may not be read with this option. 
 val internal OpenILModuleReader: string -> ILReaderOptions -> ILModuleReader
 
+val internal ClearAllILModuleReaderCache : unit -> unit
+
 /// Open a binary reader based on the given bytes. 
 val internal OpenILModuleReaderFromBytes: fileNameForDebugOutput:string -> assemblyContents: byte[] -> options: ILReaderOptions -> ILModuleReader
 
