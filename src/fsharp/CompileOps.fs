@@ -3415,7 +3415,7 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, filename, impl) 
     | ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, isRec, kind, decls, xmlDoc, attribs, access, m)) -> 
         let lid = 
             match lid with 
-            | [id] when kind = NamedModule && id.idText = MangledGlobalName ->
+            | [id] when kind.IsModule && id.idText = MangledGlobalName ->
                 error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
             | id :: rest when id.idText = MangledGlobalName -> rest
             | _ -> lid
@@ -3445,7 +3445,7 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) 
     | ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, isRec, kind, decls, xmlDoc, attribs, access, m)) -> 
         let lid = 
             match lid with 
-            | [id] when kind = NamedModule && id.idText = MangledGlobalName ->
+            | [id] when kind.IsModule && id.idText = MangledGlobalName ->
                 error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
             | id :: rest when id.idText = MangledGlobalName -> rest
             | _ -> lid

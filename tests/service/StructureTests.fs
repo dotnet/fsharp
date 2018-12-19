@@ -591,5 +591,20 @@ namespace TopLevelNamespace.Another
 module Nested =
     let x = 123
 """
-    => [ (2, 10, 6, 0), (2, 35, 6, 0)
-         (4, 0, 5, 15), (4, 13, 5, 15) ]
+    => [ (4, 0, 5, 15), (4, 13, 5, 15) ]
+
+[<Test>]
+let ``Multiple namespaces`` () =
+    """
+namespace TopLevelNamespace.Another
+
+module Nested =
+    let x = 123
+
+namespace AnotherTopLevel.Nested
+
+module NestedModule =
+    let x = 123
+"""
+    => [ (4, 0, 5, 15), (4, 13, 5, 15)
+         (9, 0, 10, 15), (9, 19, 10, 15) ]

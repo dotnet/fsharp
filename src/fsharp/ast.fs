@@ -1465,17 +1465,16 @@ and SynModuleSigDecls = SynModuleSigDecl list
 and
     [<Struct>]
     SynModuleOrNamespaceKind =
-    | NamedModule
-    | AnonModule
-    | DeclaredNamespace
-    | GlobalNamespace
+        | NamedModule
+        | AnonModule
+        | DeclaredNamespace
+        | GlobalNamespace
 
-    member x.IsModule =
-        match x with
-        | NamedModule | AnonModule -> true
-        | _ -> false
+        member x.IsModule =
+            match x with
+            | NamedModule | AnonModule -> true
+            | _ -> false
 
-/// SynModuleOrNamespace(lid,isRec,kind,decls,xmlDoc,attribs,SynAccess,m)
 and
     [<NoEquality; NoComparison>]
     SynModuleOrNamespace =

@@ -617,7 +617,7 @@ module Structure =
             let collapse = Range.endToEnd idRange r 
         
             // do not return range for top level implicit module in scripts
-            if kind <> AnonModule then
+            if kind = NamedModule then
                 rcheck Scope.Module Collapse.Below fullrange collapse
 
             collectHashDirectives decls
