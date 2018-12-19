@@ -77,7 +77,7 @@ type SourceText with
     member this.ToFSharpSourceText() =
         SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(SourceText.create))
 
-[<ClrJob; MemoryDiagnoser>]
+[<MemoryDiagnoser>]
 type CompilerServiceParsing() =
 
     let mutable checkerOpt = None
@@ -124,7 +124,46 @@ type CompilerServiceParsing() =
             let results = checker.ParseFile("TypeChecker.fs", source.ToFSharpSourceText(), parsingOptions) |> Async.RunSynchronously
             if results.ParseHadErrors then failwithf "parse had errors: %A" results.Errors
 
+open Microsoft.FSharp.Compiler.AbstractIL
+open Microsoft.FSharp.Compiler.AbstractIL.IL
+open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
+
+[<MemoryDiagnoser>]
+type CompilerILReading() =
+
+    let mutable assembliesOpt = None
+
+    let readerOptions =
+        {
+            pdbDirPath = None
+            ilGlobals = mkILGlobals ILScopeRef.Local
+            reduceMemoryUsage = ReduceMemoryFlag.No
+            metadataOnly = MetadataOnlyFlag.No
+            tryGetMetadataSnapshot = fun _ -> None
+        }
+
+    [<GlobalSetup>]
+    member __.Setup() =
+        match assembliesOpt with
+        | None -> 
+            assembliesOpt <- 
+                System.AppDomain.CurrentDomain.GetAssemblies()
+                |> Array.map (fun x -> x.Location)
+                |> Some
+        | _ -> ()
+
+    [<Benchmark>]
+    member __.ILReading() =
+        match assembliesOpt with
+        | None -> failwith "no assemblies"
+        | Some(assemblies) ->
+            assemblies
+            |> Array.iter (fun x ->
+                OpenILModuleReader x readerOptions |> ignore
+            )
+
 [<EntryPoint>]
 let main argv =
-    let _ = BenchmarkRunner.Run<CompilerServiceParsing>()
+  //  let _ = BenchmarkRunner.Run<CompilerServiceParsing>()
+    let _ = BenchmarkRunner.Run<CompilerILReading>()
     0
