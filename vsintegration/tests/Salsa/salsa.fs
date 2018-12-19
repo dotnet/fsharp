@@ -43,13 +43,13 @@ module internal Salsa =
             { new System.IDisposable with
                     member this.Dispose() = actuallyBuild <- true }
         member th.Results = capturedFlags, capturedSources
-        member th.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) = 
+        member th.Compile(compile:System.Func<int>, flags:string[], sources:string[]) =
             capturedFlags <- flags 
             capturedSources <- sources
             if actuallyBuild then
-                compile.Invoke(0)
+                compile.Invoke()
             else
-                0         
+                0
         interface ITaskHost
         
     type BuildResult = {
