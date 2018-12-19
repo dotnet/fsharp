@@ -681,8 +681,8 @@ set asmvercheckpath=%~dp0tests\fsharpqa\testenv\src\AssemblyVersionCheck
 
 if "%BUILD_NET40%" == "1" (
   echo #r @"%USERPROFILE%\.nuget\packages\Newtonsoft.Json\9.0.1\lib\net45\Newtonsoft.Json.dll">%asmvercheckpath%\assemblies.fsx
-  echo "%~dp0artifacts\bin\fsi\%BUILD_CONFIG%\net46\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0artifacts\bin"
-       "%~dp0artifacts\bin\fsi\%BUILD_CONFIG%\net46\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0artifacts\bin"
+  echo "%~dp0artifacts\bin\fsi\%BUILD_CONFIG%\net46\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0artifacts"
+       "%~dp0artifacts\bin\fsi\%BUILD_CONFIG%\net46\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0artifacts"
   if ERRORLEVEL 1 echo Error verifying assembly versions and commit hashes. && goto :failure
 )
 
@@ -692,8 +692,8 @@ if not "%SIGN_TYPE%" == "" (
     echo %_msbuildexe% build\projects\Signing.proj /t:Restore
          %_msbuildexe% build\projects\Signing.proj /t:Restore
 
-    echo %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:BinaryBasePath=%~dp0artifacts\bin /p:ConfigFile=%~dp0build\config\AssemblySignToolData.json
-         %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:BinaryBasePath=%~dp0artifacts\bin /p:ConfigFile=%~dp0build\config\AssemblySignToolData.json
+    echo %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:BinaryBasePath=%~dp0artifacts /p:ConfigFile=%~dp0build\config\AssemblySignToolData.json
+         %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:BinaryBasePath=%~dp0artifacts /p:ConfigFile=%~dp0build\config\AssemblySignToolData.json
 
     if ERRORLEVEL 1 echo Error running sign tool && goto :failure
 )
