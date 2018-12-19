@@ -5,34 +5,34 @@ package name=Microsoft.FSharp.Compiler
 
 folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp"
 
-  file source=$(BinariesFolder)\net40\bin\fsc.exe vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\fsc.exe"
-  file source="$(BinariesFolder)\net40\bin\fsc.exe.config"
+  file source=$(BinariesFolder)\fsc\$(Configuration)\net472\fsc.exe vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\fsc.exe"
+  file source="$(BinariesFolder)\fsc\$(Configuration)\net472\fsc.exe.config"
 
-  file source=$(BinariesFolder)\net40\bin\fsi.exe vs.file.ngen=yes vs.file.ngenArchitecture=X86 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\fsi.exe"
-  file source="$(BinariesFolder)\net40\bin\fsi.exe.config"
+  file source=$(BinariesFolder)\fsi\$(Configuration)\net472\fsi.exe vs.file.ngen=yes vs.file.ngenArchitecture=X86 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\fsi.exe"
+  file source="$(BinariesFolder)\fsi\$(Configuration)\net472\fsi.exe.config"
 
-  file source="$(BinariesFolder)\net40\bin\fsiAnyCpu.exe" vs.file.ngen=yes vs.file.ngenArchitecture=X64 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\fsiAnyCpu.exe"
-  file source="$(BinariesFolder)\net40\bin\fsiAnyCpu.exe.config"
+  file source="$(BinariesFolder)\fsiAnyCpu\$(Configuration)\net472\fsiAnyCpu.exe" vs.file.ngen=yes vs.file.ngenArchitecture=X64 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\fsiAnyCpu.exe"
+  file source="$(BinariesFolder)\fsiAnyCpu\$(Configuration)\net472\fsiAnyCpu.exe.config"
 
-  file source="$(BinariesFolder)\net40\bin\FSharp.Compiler.Interactive.Settings.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
-  file source="$(BinariesFolder)\net40\bin\FSharp.Compiler.Private.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
-  file source="$(BinariesFolder)\net40\bin\FSharp.Compiler.Server.Shared.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)\FSharp.Compiler.Interactive.Settings\$(Configuration)\net472\FSharp.Compiler.Interactive.Settings.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\net472\FSharp.Compiler.Private.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)\FSharp.Compiler.Server.Shared\$(Configuration)\net472\FSharp.Compiler.Server.Shared.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
 
-  file source="$(BinariesFolder)\net40\bin\FSharp.Core.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
-  file source="$(BinariesFolder)\net40\bin\FSharp.Core.optdata"
-  file source="$(BinariesFolder)\net40\bin\FSharp.Core.sigdata"
+  file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\net45\FSharp.Core.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\net45\FSharp.Core.optdata"
+  file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\net45\FSharp.Core.sigdata"
 
-  file source="$(BinariesFolder)\net40\bin\FSharp.Build.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\net472\FSharp.Build.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
 
   file source="$(PackagesFolder)\Microsoft.VisualFSharp.Type.Providers.Redist\$(MicrosoftVisualFSharpTypeProvidersRedistPackageVersion)\content\4.3.0.0\FSharp.Data.TypeProviders.dll"
-  file source="$(BinariesFolder)\net40\bin\Microsoft.Build.dll"
-  file source="$(BinariesFolder)\net40\bin\Microsoft.Build.Framework.dll"
-  file source="$(BinariesFolder)\net40\bin\Microsoft.Build.Tasks.Core.dll"
-  file source="$(BinariesFolder)\net40\bin\Microsoft.Build.Utilities.Core.dll"
-  file source="$(BinariesFolder)\net40\bin\Microsoft.Portable.FSharp.Targets"
-  file source="$(BinariesFolder)\net40\bin\System.Collections.Immutable.dll"
-  file source="$(BinariesFolder)\net40\bin\System.Reflection.Metadata.dll"
-  file source="$(BinariesFolder)\net40\bin\Microsoft.FSharp.NetSdk.props"
-  file source="$(BinariesFolder)\net40\bin\Microsoft.FSharp.NetSdk.targets"
-  file source="$(BinariesFolder)\net40\bin\Microsoft.FSharp.Overrides.NetSdk.targets"
-  file source="$(BinariesFolder)\net40\bin\Microsoft.FSharp.Targets"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\net472\Microsoft.Build.dll"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\net472\Microsoft.Build.Framework.dll"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\net472\Microsoft.Build.Tasks.Core.dll"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\net472\Microsoft.Build.Utilities.Core.dll"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\net472\Microsoft.Portable.FSharp.Targets"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\net472\System.Collections.Immutable.dll"
+  file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\net472\System.Reflection.Metadata.dll"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\net472\Microsoft.FSharp.NetSdk.props"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\net472\Microsoft.FSharp.NetSdk.targets"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\net472\Microsoft.FSharp.Overrides.NetSdk.targets"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\net472\Microsoft.FSharp.Targets"

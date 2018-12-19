@@ -85,7 +85,7 @@
       <Private>True</Private>
       <AdditionalProperties>TargetFramework=net45</AdditionalProperties>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\src\fsharp\fsiAnyCpu\FsiAnyCPU.fsproj">
+    <ProjectReference Include="..\..\..\src\fsharp\fsiAnyCpu\fsiAnyCPU.fsproj">
       <Project>{8B3E283D-B5FE-4055-9D80-7E3A32F3967B}</Project>
       <Name>FsiAnyCPU</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3b</IncludeOutputGroupsInVSIX>
@@ -97,7 +97,7 @@
       <Private>True</Private>
       <AdditionalProperties>TargetFramework=net472</AdditionalProperties>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\src\fsharp\fsi\Fsi.fsproj">
+    <ProjectReference Include="..\..\..\src\fsharp\fsi\fsi.fsproj">
       <Project>{D0E98C0D-490B-4C61-9329-0862F6E87645}</Project>
       <Name>Fsi</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3b</IncludeOutputGroupsInVSIX>
@@ -109,7 +109,7 @@
       <Private>True</Private>
       <AdditionalProperties>TargetFramework=net472</AdditionalProperties>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\src\fsharp\Fsc\Fsc.fsproj">
+    <ProjectReference Include="..\..\..\src\fsharp\fsc\fsc.fsproj">
       <Project>{C94C257C-3C0A-4858-B5D8-D746498D1F08}</Project>
       <Name>fsc</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3b</IncludeOutputGroupsInVSIX>

@@ -12,6 +12,8 @@
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <UseAssetTargetFallback>true</UseAssetTargetFallback>
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -160,6 +162,7 @@
     <None Include="app.runsettings" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsc\fsc.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
@@ -170,6 +173,23 @@
     <ProjectReference Include="..\..\src\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj" />
     <ProjectReference Include="..\..\src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj" />
     <ProjectReference Include="..\..\..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
+  </ItemGroup>
+
+  <!-- assemblies used during tests -->
+  <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" Private="true" />
+    <ProjectReference Include="..\MockTypeProviders\DefinitionLocationAttribute\DefinitionLocationAttribute.csproj" Private="true" />
+    <ProjectReference Include="..\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist\DefinitionLocationAttributeFileDoesnotExist.csproj" Private="true" />
+    <ProjectReference Include="..\MockTypeProviders\DefinitionLocationAttributeLineDoesnotExist\DefinitionLocationAttributeLineDoesnotExist.csproj" Private="true" />
+    <ProjectReference Include="..\MockTypeProviders\DefinitionLocationAttributeWithSpaceInTheType\DefinitionLocationAttributeWithSpaceInTheType.csproj" Private="true" />
+    <ProjectReference Include="..\MockTypeProviders\DummyProviderForLanguageServiceTesting\DummyProviderForLanguageServiceTesting.fsproj" Private="true" />
+    <ProjectReference Include="..\MockTypeProviders\EditorHideMethodsAttribute\EditorHideMethodsAttribute.csproj" Private="true" />
+    <ProjectReference Include="..\MockTypeProviders\EmptyAssembly\EmptyAssembly.fsproj" Private="true" />
+    <ProjectReference Include="..\MockTypeProviders\XmlDocAttributeWithAdequateComment\XmlDocAttributeWithAdequateComment.csproj" Private="true" />
+    <ProjectReference Include="..\MockTypeProviders\XmlDocAttributeWithEmptyComment\XmlDocAttributeWithEmptyComment.csproj" Private="true" />
+    <ProjectReference Include="..\MockTypeProviders\XmlDocAttributeWithLocalizedComment\XmlDocAttributeWithLocalizedComment.csproj" Private="true" />
+    <ProjectReference Include="..\MockTypeProviders\XmlDocAttributeWithLongComment\XmlDocAttributeWithLongComment.csproj" Private="true" />
+    <ProjectReference Include="..\MockTypeProviders\XmlDocAttributeWithNullComment\XmlDocAttributeWithNullComment.csproj" Private="true" />
   </ItemGroup>
 
   <ItemGroup>

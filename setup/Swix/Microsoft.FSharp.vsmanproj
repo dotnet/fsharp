@@ -6,7 +6,7 @@
   <PropertyGroup>
     <FinalizeManifest>true</FinalizeManifest>
     <FinalizeSkipLayout>true</FinalizeSkipLayout>
-    <InsertionDir>$(OutputPath)</InsertionDir>
+    <InsertionDir>$(OutputPath)\Insertion</InsertionDir>
     <ManifestBuildVersion>$(FSharpPackageVersion)</ManifestBuildVersion>
   </PropertyGroup>
 
@@ -23,17 +23,17 @@
 
   <Target Name="IncludeFSharpManifests" DependsOnTargets="CopyInsertionItems">
     <ItemGroup>
-      <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Compiler.json" />
-      <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Compiler.Resources.%(SetupLanguages.LocaleCode).json" />
+      <MergeManifest Include="$(InsertionDir)\Microsoft.FSharp.Compiler.json" />
+      <MergeManifest Include="$(InsertionDir)\Microsoft.FSharp.Compiler.Resources.%(SetupLanguages.LocaleCode).json" />
 
-      <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.SDK.json" />
+      <MergeManifest Include="$(InsertionDir)\Microsoft.FSharp.SDK.json" />
 
-      <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.Core.json" />
-      <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.Resources.%(SetupLanguages.LocaleCode).json" />
+      <MergeManifest Include="$(InsertionDir)\Microsoft.FSharp.Vsix.Full.Core.json" />
+      <MergeManifest Include="$(InsertionDir)\Microsoft.FSharp.Vsix.Full.Resources.%(SetupLanguages.LocaleCode).json" />
 
-      <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.VSIX.Templates.json" />
-      <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Dependencies.json" />
-      <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.IDE.json" />
+      <MergeManifest Include="$(InsertionDir)\Microsoft.FSharp.VSIX.Templates.json" />
+      <MergeManifest Include="$(InsertionDir)\Microsoft.FSharp.Dependencies.json" />
+      <MergeManifest Include="$(InsertionDir)\Microsoft.FSharp.IDE.json" />
     </ItemGroup>
   </Target>
 
