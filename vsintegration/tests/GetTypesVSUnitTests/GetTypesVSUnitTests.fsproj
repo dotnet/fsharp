@@ -3,14 +3,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
+    <TargetFramework>net462</TargetFramework>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
     <NoMsbuild>true</NoMsbuild>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <UseAssetTargetFallback>true</UseAssetTargetFallback>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 

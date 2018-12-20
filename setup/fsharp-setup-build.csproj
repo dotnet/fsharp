@@ -3,7 +3,7 @@
 
   <!-- not really a C# project, but pretending it is makes things like package restore really easy -->
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
+    <TargetFramework>net462</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="**" />

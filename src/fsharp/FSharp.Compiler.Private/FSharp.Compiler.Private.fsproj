@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net46;netstandard1.6</TargetFrameworks>
+    <TargetFrameworks>net462;netstandard1.6</TargetFrameworks>
     <AssemblyName>FSharp.Compiler.Private</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -12,10 +12,9 @@
     <DefineConstants>$(DefineConstants);MSBUILD_AT_LEAST_15</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
-    <UseAssetTargetFallback>true</UseAssetTargetFallback>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net46' AND '$(OS)' == 'Windows_NT'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net462' AND '$(OS)' == 'Windows_NT'">
     <!-- portable PDBs can't be properly generated for this assembly -->
     <DebugType>full</DebugType>
   </PropertyGroup>
@@ -666,7 +665,7 @@
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildPackageVersion)" />
     <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildPackageVersion)" />

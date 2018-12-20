@@ -6,15 +6,6 @@
     <XlfLanguages>en;$(XlfLanguages)</XlfLanguages>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(UseAssetTargetFallback)' == 'true'">
-    <!--
-    HACK: Necessary because the `netstandard1.6` version of FSharp.Compiler.Private requires a package that isn't
-    necessary for `net46`, but the package has a requirement on `net462`.  The reference is excluded from the build
-    during `net46`, but for purposes of restore needs to be present.
-    -->
-    <AssetTargetFallback>$(AssetTargetFallback);net462</AssetTargetFallback>
-  </PropertyGroup>
-
   <PropertyGroup>
     <CompileDependsOn>$(CompileDependsOn);CopyAndSubstituteTextFiles</CompileDependsOn>
   </PropertyGroup>

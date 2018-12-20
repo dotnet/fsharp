@@ -7,7 +7,6 @@
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DefaultValueTuplePackageVersion>$(SystemValueTuplePackageVersion)</DefaultValueTuplePackageVersion>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
-    <UseAssetTargetFallback>true</UseAssetTargetFallback>
   </PropertyGroup>
 
   <ItemGroup>

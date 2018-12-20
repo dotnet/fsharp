@@ -2,12 +2,12 @@
 
   <PropertyGroup>
 
-    <TargetFramework Condition="'$(TargetFramework)' == ''">net46</TargetFramework>
+    <TargetFramework Condition="'$(TargetFramework)' == ''">net462</TargetFramework>
     <_TargetFrameworkVersionWithoutV Condition="'$(_TargetFrameworkVersionWithoutV)' == ''">4.6</_TargetFrameworkVersionWithoutV>
     <TargetFrameworkIdentifier Condition="'$(TargetFrameworkIdentifier)' == ''">.NETFramework</TargetFrameworkIdentifier>
 
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
-    <TargetsDirectory>$(MSBuildThisFileDirectory)..\..\..\..\artifacts\bin\FSharp.Build\$(Configuration)\net46</TargetsDirectory>
+    <TargetsDirectory>$(MSBuildThisFileDirectory)..\..\..\..\artifacts\bin\FSharp.Build\$(Configuration)\net462</TargetsDirectory>
 
     <!-- these properties don't really matter, but they're necessary to make MSBuild happy -->
     <Platform Condition="'$(Platform)' == ''">AnyCPU</Platform>

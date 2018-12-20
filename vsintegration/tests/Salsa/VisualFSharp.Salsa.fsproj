@@ -3,7 +3,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
+    <TargetFramework>net462</TargetFramework>
     <OutputType>Library</OutputType>
     <NoWarn>$(NoWarn);45;47;52;58;75</NoWarn>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -23,7 +23,7 @@
     </Compile>
     <Compile Include="..\unittests\TestLib.Utils.fs">
       <Link>UnitTests.TestLib.Utils.fs</Link>
-    </Compile>
+    </Compile>1
     <Compile Include="FSharpLanguageServiceTestable.fs" />
     <Compile Include="VsMocks.fs" />
     <Compile Include="Salsa.fs" />

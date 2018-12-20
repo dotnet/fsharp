@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net46</TargetFramework>
+    <TargetFramework>net462</TargetFramework>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <TargetExt>.exe</TargetExt>
     <AssemblyName>fsiAnyCpu</AssemblyName>
@@ -13,7 +13,6 @@
     <OtherFlags>$(OtherFlags)  --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <Win32Resource>..\fsi\fsi.res</Win32Resource>
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
-    <UseAssetTargetFallback>true</UseAssetTargetFallback>
   </PropertyGroup>
 
   <PropertyGroup>

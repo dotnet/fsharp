@@ -3,7 +3,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
+    <TargetFramework>net462</TargetFramework>
     <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
   </PropertyGroup>

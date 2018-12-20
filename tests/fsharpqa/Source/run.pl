@@ -265,12 +265,12 @@ if($ENV{REDUCED_RUNTIME} ne "1"){
      my $PEVERIFY = $ENV{PEVERIFY}; 
      unless(defined($PEVERIFY)) {
        my $scriptPath = dirname(__FILE__);
-       $PEVERIFY = "$scriptPath\\..\\..\\..\\artifacts\\bin\\PEVerify\\Release\\net46\\PEVerify.exe";
+       $PEVERIFY = "$scriptPath\\..\\..\\..\\artifacts\\bin\\PEVerify\\Release\\net462\\PEVerify.exe";
        if (-e $PEVERIFY) {
          $ENV{PEVERIFY} = $PEVERIFY;
        }
        else {
-         $ENV{PEVERIFY} = "$scriptPath\\..\\..\\..\\artifacts\\bin\\PEVerify\\Debug\\net46\\PEVerify.exe";
+         $ENV{PEVERIFY} = "$scriptPath\\..\\..\\..\\artifacts\\bin\\PEVerify\\Debug\\net462\\PEVerify.exe";
        }
      }
 

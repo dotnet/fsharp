@@ -3,7 +3,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
+    <TargetFramework>net462</TargetFramework>
     <OutputType>Library</OutputType>
     <NoWarn>$(NoWarn);58;75</NoWarn>
     <DefineConstants>NO_PROJECTCRACKER;$(DefineConstants)</DefineConstants>
@@ -13,7 +13,6 @@
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
-    <UseAssetTargetFallback>true</UseAssetTargetFallback>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 

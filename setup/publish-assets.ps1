@@ -41,7 +41,7 @@ try {
     }
 
     $branchName = $branchName.Replace("/", "_") # can't have slashes in the branch name
-    $vsix = Join-Path $binariesPath "VisualFSharpFull\$configuration\net46\VisualFSharpFull.vsix"
+    $vsix = Join-Path $binariesPath "VisualFSharpFull\$configuration\net462\VisualFSharpFull.vsix"
 
     Write-Host "  Uploading '$vsix' to '$requestUrl'."
 

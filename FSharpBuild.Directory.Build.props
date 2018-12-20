@@ -18,7 +18,7 @@
     <BaseOutputPath>$(ArtifactsBinDir)\$(MSBuildProjectName)</BaseOutputPath>
     <BaseIntermediateOutputPath>$(ArtifactsObjDir)\$(MSBuildProjectName)</BaseIntermediateOutputPath>
     <SymStoreDirectory>$(ArtifactsDir)\SymStore</SymStoreDirectory>
-    <ProtoOutputPath Condition="'$(OS)' != 'Unix'">$(ArtifactsBinDir)\fsc\Proto\net46</ProtoOutputPath>
+    <ProtoOutputPath Condition="'$(OS)' != 'Unix'">$(ArtifactsBinDir)\fsc\Proto\net462</ProtoOutputPath>
     <ProtoOutputPath Condition="'$(OS)' == 'Unix'">$(ArtifactsBinDir)/fsc/Proto/netcoreapp2.1</ProtoOutputPath>
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
   </PropertyGroup>
@@ -40,7 +40,7 @@
   <PropertyGroup Condition="'$(OS)' == 'Unix'">
     <MonoPackaging Condition="$(TargetFramework.StartsWith('net4'))">true</MonoPackaging>
     <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net45'">/usr/lib/mono/4.5-api</FrameworkPathOverride>
-    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net46'">/usr/lib/mono/4.6-api</FrameworkPathOverride>
+    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net462'">/usr/lib/mono/4.6-api</FrameworkPathOverride>
   </PropertyGroup>
 
   <!-- signing -->

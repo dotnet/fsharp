@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- necessary for package restore -->
-    <TargetFramework>net46</TargetFramework>
+    <TargetFramework>net462</TargetFramework>
     <SignToolExe>$(NuGetPackageRoot)RoslynTools.SignTool\$(RoslynToolsSignToolPackageVersion)\tools\SignTool.exe</SignToolExe>
     <SignToolArgs>-msbuildPath "$(MSBuildBinPath)\msbuild.exe" -nugetPackagesPath "$(NuGetPackageRoot.TrimEnd('\'))" -config "$(ConfigFile)"</SignToolArgs>
     <SignToolArgs Condition="'$(SignType)' == 'test'">-testSign $(SignToolArgs)</SignToolArgs>
