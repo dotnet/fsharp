@@ -23,7 +23,7 @@
     <FsiToolPath>$(MSBuildThisFileDirectory)artifacts\toolset\dotnet</FsiToolPath>
     <FsiToolExe Condition="'$(OS)' != 'Unix'">dotnet.exe</FsiToolExe>
     <FsiToolExe Condition="'$(OS)' == 'Unix'">dotnet</FsiToolExe>
-    <DotnetFsiCompilerPath>$(MSBuildThisFileDirectory)artifacts\bin\fsi\$(Configuration)\netcoreapp2.0\fsi.exe</DotnetFsiCompilerPath>
+    <DotnetFsiCompilerPath>$(MSBuildThisFileDirectory)artifacts\bin\fsi\$(Configuration)\netcoreapp2.1\fsi.exe</DotnetFsiCompilerPath>
   </PropertyGroup>
 
   <!-- SDK targets override -->

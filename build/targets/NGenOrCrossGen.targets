@@ -1,0 +1,30 @@
+<Project>
+
+  <Target Name="NGenWindowsBinaries"
+          AfterTargets="AfterBuild"
+          DependsOnTargets="CheckAdministratorPrivilege"
+          Condition="'$(OS)' != 'Unix' 
+                     AND '$(TargetFrameworkIdentifier)' == '.NETFramework' 
+                     AND '$(NGenBinary)' == 'true' 
+                     AND Exists('$(TargetPath)') ">
+    <PropertyGroup>
+      <PathToNGen Condition = " '$(PROCESSOR_ARCHITECTURE)' == 'AMD64' " >$(windir)\Microsoft.NET\Framework64\v4.0.30319\ngen.exe</PathToNGen>
+      <PathToNGen Condition = " '$(PROCESSOR_ARCHITECTURE)' != 'AMD64' " >$(windir)\Microsoft.NET\Framework\v4.0.30319\ngen.exe</PathToNGen>
+    </PropertyGroup>
+
+    <Exec Command='"$(PathToNGen)" install "$(TargetPath)" /ExeConfig:$(TargetPath)' Condition = " Exists('$(PathToNGen)') AND Exists('$(TargetPath).config') AND '$(IsAdministrator)' == 'true' "/>
+    <Exec Command='"$(PathToNGen)" install "$(TargetPath)" ' Condition = " Exists('$(PathToNGen)') AND '$(IsAdministrator)' == 'true' "/>
+  </Target>
+
+  <!-- Amazingly the net session command returns 0 if in an administrator session and > 0 if not --> 
+  <Target Name="CheckAdministratorPrivilege" Condition="'$(OS)' != 'Unix'">
+    <Exec Command="NET SESSION" ConsoleToMSBuild="false" ContinueOnError="true">
+      <Output TaskParameter="ExitCode" PropertyName="ErrorCode"/>
+    </Exec>
+    <PropertyGroup>
+      <IsAdministrator Condition = " '$(ErrorCode)' == '0' ">true</IsAdministrator>
+      <IsAdministrator Condition = " '$(ErrorCode)' != '0' ">false</IsAdministrator>
+    </PropertyGroup>
+  </Target>
+
+</Project>
