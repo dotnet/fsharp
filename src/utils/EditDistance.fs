@@ -39,26 +39,26 @@ let jaro (s1: string) (s2: string) =
                 let ti, ci = nextChar s1 s2 i
                 let tj, cj = nextChar s2 s1 j
                 if ci <> cj then
-                    loop (ti + 1) (tj + 1) (mismatches + 1.0) (c1length + 1.0) (c2length + 1.0)
+                    loop (ti + 1) (tj + 1) (mismatches + 1) (c1length + 1) (c2length + 1)
                 else
-                    loop (ti + 1) (tj + 1) mismatches (c1length + 1.0) (c2length + 1.0)
+                    loop (ti + 1) (tj + 1) mismatches (c1length + 1) (c2length + 1)
             else i, j, mismatches, c1length, c2length
 
-        let i, j, mismatches, c1length, c2length = loop 0 0 0.0 0.0 0.0
+        let i, j, mismatches, c1length, c2length = loop 0 0 0 0 0
 
         let rec loop (s1:string) (s2:string) i length =
             if i < s1.Length - 1 then
                 let c = s1.[i]
                 if existsInWin c s2 i matchRadius then 
-                    loop s1 s2 (i + 1) (length + 1.0)
+                    loop s1 s2 (i + 1) (length + 1)
                 else
                     loop s1 s2 (i + 1) length
             else
                 length
-        let c1length = loop s1 s2 i c1length
-        let c2length = loop s2 s1 j c2length
+        let c1length = loop s1 s2 i c1length |> float
+        let c2length = loop s2 s1 j c2length |> float
 
-        (mismatches + abs (c1length - c2length)) / 2.0, c1length, c2length
+        (float mismatches + abs (c1length - c2length)) / 2.0, c1length, c2length
     
     let tLength = Math.Max(c1length, c2length)
     
