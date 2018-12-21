@@ -14,7 +14,7 @@ goto :ARGUMENTS_OK
 
 echo Build and run a subset of test suites
 echo.
-echo Usage:
+echo Usage:`
 echo.
 echo build.cmd ^<all^|net40^|coreclr^|vs^|fcs^>
 echo           ^<proto^|protofx^>
@@ -586,16 +586,8 @@ if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" se
 :vsversionset
 if "%VisualStudioVersion%" == "" echo Error: Could not find an installation of Visual Studio && goto :failure
 
-if exist "%VS160COMNTOOLS%\..\..\MSBuild\Current\Bin\amd64\MSBuild.exe" (
-    set _msbuildexe="%VS160COMNTOOLS%\..\..\MSBuild\Current\Bin\amd64\MSBuild.exe"
-    goto :havemsbuild
-)
 if exist "%VS160COMNTOOLS%\..\..\MSBuild\Current\Bin\MSBuild.exe" (
     set _msbuildexe="%VS160COMNTOOLS%\..\..\MSBuild\Current\Bin\MSBuild.exe"
-    goto :havemsbuild
-)
-if exist "%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\amd64\MSBuild.exe" (
-    set _msbuildexe="%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\amd64\MSBuild.exe"
     goto :havemsbuild
 )
 if exist "%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
