@@ -189,11 +189,12 @@ type range(code1:int64, code2: int64) =
 
     member r.ToShortString() = sprintf "(%d,%d--%d,%d)" r.StartLine r.StartColumn r.EndLine r.EndColumn
 
-    override r.Equals(obj) = match obj with :? range as r2 -> code1 = r2.Code1 && code2 = r2.Code2 | _ -> false
-
     override r.GetHashCode() = hash code1 + hash code2
 
     override r.ToString() = sprintf "%s (%d,%d--%d,%d) IsSynthetic=%b" r.FileName r.StartLine r.StartColumn r.EndLine r.EndColumn r.IsSynthetic
+
+    static member op_Equality (x: range, y: range) =
+        x.Code1 = y.Code1 && x.Code2 = y.Code2
 
 let mkRange f b e =
     // remove relative parts from full path
