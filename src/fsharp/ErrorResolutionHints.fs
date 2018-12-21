@@ -10,6 +10,7 @@ let maxSuggestions = 5
 let minThresholdForSuggestions = 0.7
 let highConfidenceThreshold = 0.85
 let minStringLengthForThreshold = 3
+let minStringLengthForSuggestion = 5
 
 /// We report a candidate if its edit distance is <= the threshold.
 /// The threshold is set to about a quarter of the number of characters.
@@ -24,7 +25,8 @@ let IsInEditDistanceProximity idText suggestion =
     editDistance <= threshold
 
 /// Filters predictions based on edit distance to the given unknown identifier.
-let FilterPredictions (suggestionF:ErrorLogger.Suggestions) (idText:string) =    
+let FilterPredictions (suggestionF:ErrorLogger.Suggestions) (idText:string) = 
+    if idText.Length < minStringLengthForSuggestion then [] else // we should not try to suggest all the time when people are typing
     let uppercaseText = idText.ToUpperInvariant()
     let allSuggestions = suggestionF()
 
@@ -50,7 +52,7 @@ let FilterPredictions (suggestionF:ErrorLogger.Suggestions) (idText:string) =
         // value as well as to formally squelch the associated compiler
         // error/warning (FS1182), we remove such names from the suggestions,
         // both to prevent accidental usages as well as to encourage good taste
-        if IsOperatorName suggestion || suggestion.StartsWithOrdinal("_") then None else
+        if IsOperatorName suggestion || suggestion.Length < minStringLengthForSuggestion || suggestion.StartsWithOrdinal("_") then None else
         let suggestion:string = demangle suggestion
         let suggestedText = suggestion.ToUpperInvariant()
         let similarity = EditDistance.JaroWinklerDistance uppercaseText suggestedText
