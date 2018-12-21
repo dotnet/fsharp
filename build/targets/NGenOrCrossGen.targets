@@ -8,12 +8,18 @@
                      '$(NGenBinary)' == 'true' AND
                      Exists('$(TargetPath)') ">
     <PropertyGroup>
-      <PathToNGen Condition = " '$(PROCESSOR_ARCHITECTURE)' == 'AMD64' " >$(windir)\Microsoft.NET\Framework64\v4.0.30319\ngen.exe</PathToNGen>
-      <PathToNGen Condition = " '$(PROCESSOR_ARCHITECTURE)' != 'AMD64' " >$(windir)\Microsoft.NET\Framework\v4.0.30319\ngen.exe</PathToNGen>
+      <PathToNGen64>$(windir)\Microsoft.NET\Framework64\v4.0.30319\ngen.exe</PathToNGen64>
+      <PathToNGen32>$(windir)\Microsoft.NET\Framework\v4.0.30319\ngen.exe</PathToNGen32>
     </PropertyGroup>
 
-    <Exec Command='"$(PathToNGen)" install "$(TargetPath)" /ExeConfig:$(TargetPath)' Condition = " Exists('$(PathToNGen)') AND Exists('$(TargetPath).config') AND '$(IsAdministrator)' == 'true' "/>
-    <Exec Command='"$(PathToNGen)" install "$(TargetPath)" ' Condition = " Exists('$(PathToNGen)') AND '$(IsAdministrator)' == 'true' "/>
+    <!-- 
+        NGen for both 32 and 64 bit product.
+        If compiling use the app config file, if present.
+    -->
+    <Exec Command='"$(PathToNGen64)" install "$(TargetPath)" /ExeConfig:$(TargetPath)' Condition = "Exists('$(PathToNGen64)') AND Exists('$(TargetPath).config') AND '$(IsAdministrator)' == 'true'"/>
+    <Exec Command='"$(PathToNGen32)" install "$(TargetPath)" /ExeConfig:$(TargetPath)' Condition = "Exists('$(PathToNGen32)') AND Exists('$(TargetPath).config') AND '$(IsAdministrator)' == 'true'"/>
+    <Exec Command='"$(PathToNGen64)" install "$(TargetPath)"' Condition = " Exists('$(PathToNGen64)') AND (!Exists('$(TargetPath).config')) AND '$(IsAdministrator)' == 'true' "/>
+    <Exec Command='"$(PathToNGen32)" install "$(TargetPath)"' Condition = " Exists('$(PathToNGen32)') AND (!Exists('$(TargetPath).config')) AND '$(IsAdministrator)' == 'true' "/>
   </Target>
 
   <!-- Amazingly the net session command returns 0 if in an administrator session and > 0 if not --> 
