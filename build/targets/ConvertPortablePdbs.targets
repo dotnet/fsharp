@@ -9,7 +9,7 @@
           Condition="'$(OS)' != 'Unix' AND
                      Exists('$(TargetPath)') AND
                      ('$(DebugType)' == 'portable' OR '$(DebugType)' == 'embedded') AND
-                     '$(TargetFrameworkIdentifier)' == '.NETFramework' AND
+                     $(TargetFramework.StartsWith('net4')) AND
                      '$(Configuration)' != 'Proto'">
     <PropertyGroup>
       <PdbConverterExe>$(NuGetPackageRoot)Pdb2Pdb\$(Pdb2PdbPackageVersion)\tools\Pdb2Pdb.exe</PdbConverterExe>
