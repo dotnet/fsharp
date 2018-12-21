@@ -24,10 +24,13 @@ let jaro (s1: string) (s2: string) =
         let minLen = Math.Min(s1.Length, s2.Length)
         minLen / 2 + minLen % 2
 
-    let rec nextChar (s1:string) (s2:string) i =
-        let c = s1.[i]
-        if i < s1.Length && not (existsInWin c s2 i matchRadius) then
-            nextChar s1 s2 (i + 1)
+    let rec nextChar (s1:string) (s2:string) i c =
+        if i < s1.Length then
+            let c = s1.[i]
+            if not (existsInWin c s2 i matchRadius) then
+                nextChar s1 s2 (i + 1) c
+            else
+                i, c
         else
             i, c
 
@@ -36,8 +39,8 @@ let jaro (s1: string) (s2: string) =
     let transpositions, c1length, c2length =
         let rec loop i j mismatches c1length c2length =
             if i < s1.Length && j < s2.Length then
-                let ti, ci = nextChar s1 s2 i
-                let tj, cj = nextChar s2 s1 j
+                let ti, ci = nextChar s1 s2 i ' '
+                let tj, cj = nextChar s2 s1 j ' '
                 if ci <> cj then
                     loop (ti + 1) (tj + 1) (mismatches + 1) (c1length + 1) (c2length + 1)
                 else
