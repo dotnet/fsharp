@@ -38,8 +38,8 @@ build: proto restore
 	$(DotNetExe) build -c $(Configuration) -f netcoreapp2.1 src/fsharp/fsc/fsc.fsproj
 	$(DotNetExe) build -c $(Configuration) -f netstandard1.6 src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj
 	$(DotNetExe) build -c $(Configuration) -f netcoreapp2.1 src/fsharp/fsi/fsi.fsproj
-	$(DotNetExe) build -c $(Configuration) -f netcoreapp2.1 tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj
-	$(DotNetExe) build -c $(Configuration) -f netcoreapp2.1 tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj
+	$(DotNetExe) build -c $(Configuration) -f netcoreapp2.0 tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj
+	$(DotNetExe) build -c $(Configuration) -f netcoreapp2.0 tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj
 
 test: build
 	$(DotNetExe) test -f netcoreapp2.1 -c $(Configuration) --no-restore --no-build tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj -l "trx;LogFileName=$(CURDIR)/tests/TestResults/FSharp.Core.UnitTests.coreclr.trx"

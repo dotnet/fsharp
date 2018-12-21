@@ -42,8 +42,8 @@
     otherwise build it all
   -->
   <PropertyGroup>
-    <BuildNetcore Condition="'$(BUILD_NET40)' != '1'and '$(BUILD_NETCORE)' == '1'">true</BuildNetcore>
-    <BuildDesktop Condition="'$(BUILD_NET40)' == '1' and '$(BUILD_NETCORE)' != '1'">true</BuildDesktop>
+    <BuildNetcore Condition="'$(BUILD_NET40)' != '1'and '$(BUILD_CORECLR)' == '1'">true</BuildNetcore>
+    <BuildDesktop Condition="'$(BUILD_NET40)' == '1' and '$(BUILD_CORECLR)' != '1'">true</BuildDesktop>
   </PropertyGroup>
 
   <Target Name="CollectProjects">
@@ -80,8 +80,6 @@
       <Projects Include="$(MSBuildThisFileDirectory)src\fsharp\fsiAnyCpu\fsiAnyCPU.fsproj">
         <AdditionalProperties Condition="'$(BuildDesktop)' == 'true'">TargetFramework=net46</AdditionalProperties>
       </Projects>
-
-      <NugetProjects Include="$(MSBuildThisFileDirectory)src\fsharp\FSharp.Compiler.nuget\Microsoft.FSharp.Compiler.csproj" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(BuildVS)' == 'true' OR '$(_RunningRestore)' == 'true'">
@@ -101,6 +99,7 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(BuildSetup)' == 'true' OR '$(_RunningRestore)' == 'true'">
+      <NugetProjects Include="$(MSBuildThisFileDirectory)src\fsharp\FSharp.Compiler.nuget\Microsoft.FSharp.Compiler.csproj" />
       <Projects Include="$(MSBuildThisFileDirectory)setup\fsharp-setup-build.csproj" />
     </ItemGroup>
 
