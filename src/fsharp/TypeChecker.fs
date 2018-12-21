@@ -11572,7 +11572,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue overridesOK isGeneratedEventVal cenv 
 
     // Suppress hover tip for "get" and "set" at property definitions, where toolId <> bindingId
     match toolIdOpt with 
-    | Some tid when not tid.idRange.IsSynthetic && tid.idRange <> bindingId.idRange  -> 
+    | Some tid when not tid.idRange.IsSynthetic && not (Range.equals tid.idRange bindingId.idRange) -> 
         let item = Item.Value (mkLocalValRef vspec)
         CallNameResolutionSink cenv.tcSink (tid.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.RelatedText, env.DisplayEnv, env.eAccessRights)
     | _ -> ()

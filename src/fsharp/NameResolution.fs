@@ -2597,7 +2597,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) first fullyQualified 
                           } |> HashSet
 
                       match innerSearch with
-                      | Exception (UndefinedName(0,_,id1,suggestionsF)) when id.idRange = id1.idRange ->
+                      | Exception (UndefinedName(0,_,id1,suggestionsF)) when Range.equals id.idRange id1.idRange ->
                             let mergeSuggestions() =
                                 let res = suggestEverythingInScope()
                                 res.UnionWith(suggestionsF())
@@ -3285,7 +3285,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink:TcResultsSink) (ncenv:NameResolv
         match lid with
         | [] | [_] -> false
         | head :: ids ->
-            ids |> List.forall (fun id -> id.idRange = head.idRange)
+            ids |> List.forall (fun id -> Range.equals id.idRange head.idRange)
 
     let callSink (refinedItem, tpinst) =
         if not isFakeIdents then
