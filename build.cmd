@@ -1,6 +1,5 @@
 rem Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 @if "%_echo%"=="" echo off
-
 setlocal enableDelayedExpansion
 
 :ARGUMENTS_VALIDATION
@@ -66,6 +65,7 @@ set BUILD_FCS=0
 set BUILD_CONFIG=Release
 set BUILD_DIAG=
 set BUILD_PUBLICSIGN=0
+set BUILD_FSHARP_PROJ=1
 
 set TEST_NET40_COMPILERUNIT_SUITE=0
 set TEST_NET40_COREUNIT_SUITE=0
@@ -464,8 +464,13 @@ if /i "%TEST_NET40_FSHARP_SUITE" == "1" (
 )
 
 rem Decide if Proto need building
-if NOT EXIST Proto\net40\bin\fsc.exe (
+if NOT EXIST "%~dp0artifacts\bin\fsc\Proto\net46\fsc.exe" (
   set BUILD_PROTO=1
+)
+
+rem decide if FSharp.Proj needs building
+if "%BUILD_NET40%"=="0" if "%BUILD_NET40_FSHARP_CORE%"=="0" if "%BUILD_CORECLR%"=="0" if "%BUILD_VS%"=="0" if "%BUILD_FCS%"=="0" if "%TEST_NET40_COMPILERUNIT_SUITE%"=="0" if "%TEST_NET40_COREUNIT_SUITE%"=="0" if "%TEST_NET40_FSHARP_SUITE%"=="0" if "%TEST_NET40_FSHARPQA_SUITE%"=="0" if "%TEST_CORECLR_COREUNIT_SUITE%"=="0" if "%TEST_CORECLR_FSHARP_SUITE%"=="0" if "%TEST_VS_IDEUNIT_SUITE%"=="0" if "%TEST_FCS%"=="0" if "%TEST_END_2_END%"=="0" if "%COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES%"=="0" (
+   set BUILD_FSHARP_PROJ=0
 )
 
 rem
@@ -483,7 +488,6 @@ echo BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG%
 echo BUILD_NET40=%BUILD_NET40%
 echo BUILD_NET40_FSHARP_CORE=%BUILD_NET40_FSHARP_CORE%
 echo BUILD_CORECLR=%BUILD_CORECLR%
-echo BUILD_FROMSOURCE=%BUILD_FROMSOURCE%
 echo BUILD_VS=%BUILD_VS%
 echo BUILD_FCS=%BUILD_FCS%
 echo BUILD_SETUP=%BUILD_SETUP%
@@ -491,6 +495,8 @@ echo BUILD_NUGET=%BUILD_NUGET%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
 echo BUILD_MICROBUILD=%BUILD_MICROBUILD%
+echo BUILD_FROMSOURCE=%BUILD_FROMSOURCE%
+echo BUILD_FSHARP_PROJ=%BUILD_FSHARP_PROJ%
 echo.
 echo PB_SKIPTESTS=%PB_SKIPTESTS%
 echo PB_RESTORESOURCE=%PB_RESTORESOURCE%
@@ -665,7 +671,7 @@ if "%BUILD_PROTO%" == "1" (
 
 echo ---------------- Done with SDK restore, starting build ------------------------
 
-if "%BUILD_PHASE%" == "1" (
+if "%BUILD_PHASE%" == "1" if "%BUILD_FSHARP_PROJ%" == "1" (
 
     echo %_dotnetexe% restore fsharp.proj /p:Configuration=%BUILD_CONFIG% /bl:!logdir!\fsharp.proj.restore.binlog
          %_dotnetexe% restore fsharp.proj /p:Configuration=%BUILD_CONFIG% /bl:!logdir!\fsharp.proj.restore.binlog
@@ -1072,6 +1078,7 @@ goto :success
 REM ------ exit -------------------------------------
 :failure
 endlocal
+@echo
 exit /b 1
 
 :success

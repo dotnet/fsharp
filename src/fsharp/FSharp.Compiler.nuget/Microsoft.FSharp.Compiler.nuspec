@@ -55,14 +55,14 @@
         -->
         <!-- assemblies -->
         <file src="$artifactsbindir$\fsc\$configuration$\netcoreapp2.1\fsc.exe"                                                                    target="lib\netcoreapp2.1" />
-        <file src="$artifactsbindir$\fsi\$configuration$\netcoreapp2.0\fsi.exe"                                                                    target="lib\netcoreapp2.1" />
+        <file src="$artifactsbindir$\fsi\$configuration$\netcoreapp2.1\fsi.exe"                                                                    target="lib\netcoreapp2.1" />
         <file src="$artifactsbindir$\FSharp.Core\$configuration$\netstandard1.6\FSharp.Core.dll"                                                   target="lib\netcoreapp2.1" />
         <file src="$artifactsbindir$\FSharp.Compiler.Private\$configuration$\netstandard1.6\FSharp.Compiler.Private.dll"                           target="lib\netcoreapp2.1" />
         <file src="$artifactsbindir$\FSharp.Build\$configuration$\netstandard2.0\FSharp.Build.dll"                                                 target="lib\netcoreapp2.1" />
         <file src="$artifactsbindir$\FSharp.Compiler.Interactive.Settings\$configuration$\netstandard1.6\FSharp.Compiler.Interactive.Settings.dll" target="lib\netcoreapp2.1" />
         <!-- symbols -->
         <file src="$artifactsbindir$\fsc\$configuration$\netcoreapp2.1\fsc.pdb"                                                                    target="lib\netcoreapp2.1" />
-        <file src="$artifactsbindir$\fsi\$configuration$\netcoreapp2.0\fsi.pdb"                                                                    target="lib\netcoreapp2.1" />
+        <file src="$artifactsbindir$\fsi\$configuration$\netcoreapp2.1\fsi.pdb"                                                                    target="lib\netcoreapp2.1" />
         <file src="$artifactsbindir$\FSharp.Core\$configuration$\netstandard1.6\FSharp.Core.pdb"                                                   target="lib\netcoreapp2.1" />
         <file src="$artifactsbindir$\FSharp.Compiler.Private\$configuration$\netstandard1.6\FSharp.Compiler.Private.pdb"                           target="lib\netcoreapp2.1" />
         <file src="$artifactsbindir$\FSharp.Build\$configuration$\netstandard2.0\FSharp.Build.pdb"                                                 target="lib\netcoreapp2.1" />

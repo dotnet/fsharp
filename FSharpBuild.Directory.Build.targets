@@ -34,6 +34,7 @@
     </CreateItem>
   </Target>
 
+  <Import Project="build\targets\NGenOrCrossGen.targets" />
   <Import Project="build\targets\ConvertPortablePdbs.targets" />
   <Import Project="build\targets\GenerateAssemblyAttributes.targets" />
   <Import Project="build\targets\GenerateInternalsVisibleTo.targets" />
