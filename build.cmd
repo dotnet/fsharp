@@ -14,7 +14,7 @@ goto :ARGUMENTS_OK
 
 echo Build and run a subset of test suites
 echo.
-echo Usage:`
+echo Usage:
 echo.
 echo build.cmd ^<all^|net40^|coreclr^|vs^|fcs^>
 echo           ^<proto^|protofx^>
@@ -1079,7 +1079,6 @@ REM ------ exit -------------------------------------
 :failure
 endlocal
 @echo
-@TIME /T >> TIME.LOG
 exit /b 1
 
 :success
