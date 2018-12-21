@@ -54,6 +54,7 @@ let FilterPredictions (suggestionF:ErrorLogger.Suggestions) (idText:string) =
         // both to prevent accidental usages as well as to encourage good taste
         if IsOperatorName suggestion || suggestion.Length < minStringLengthForSuggestion || suggestion.StartsWithOrdinal("_") then None else
         let suggestion:string = demangle suggestion
+        if suggestion.Contains idText then Some(minThresholdForSuggestions,suggestion) else
         let suggestedText = suggestion.ToUpperInvariant()
         let similarity = EditDistance.JaroWinklerDistance uppercaseText suggestedText
         if similarity >= highConfidenceThreshold || suggestion.EndsWithOrdinal(dotIdText) then
