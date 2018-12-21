@@ -35,7 +35,7 @@ let jaro (s1: string) (s2: string) =
     // The number of transpositions within the sets of common characters.
     let transpositions, c1length, c2length =
         let rec loop i j mismatches c1length c2length =
-            if i < s1.Length && j < s1.Length then
+            if i < s1.Length && j < s2.Length then
                 let ti, ci = nextChar s1 s2 i
                 let tj, cj = nextChar s2 s1 j
                 if ci <> cj then
