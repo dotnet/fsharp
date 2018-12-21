@@ -6,7 +6,8 @@
   <PropertyGroup>
     <FinalizeManifest>true</FinalizeManifest>
     <FinalizeSkipLayout>true</FinalizeSkipLayout>
-    <InsertionDir>$(OutputPath)\Insertion</InsertionDir>
+    <OutputPath>$(ArtifactsDir)\VSSetup\$(Configuration)\Insertion</OutputPath>
+    <InsertionDir>$(OutputPath)</InsertionDir>
     <ManifestBuildVersion>$(FSharpPackageVersion)</ManifestBuildVersion>
   </PropertyGroup>
 
