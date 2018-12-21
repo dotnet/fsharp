@@ -2610,12 +2610,12 @@ type TcConfigBuilder =
     member tcConfigB.AddReferencedAssemblyByPath (m, path) = 
         if FileSystem.IsInvalidPathShim(path) then
             warning(Error(FSComp.SR.buildInvalidAssemblyName(path), m))
-        elif not (tcConfigB.referencedDLLs  |> List.exists (fun ar2 -> m=ar2.Range && path=ar2.Text)) then // NOTE: We keep same paths if range is different.
+        elif not (tcConfigB.referencedDLLs  |> List.exists (fun ar2 -> Range.equals m ar2.Range && path=ar2.Text)) then // NOTE: We keep same paths if range is different.
              let projectReference = tcConfigB.projectReferences |> List.tryPick (fun pr -> if pr.FileName = path then Some pr else None)
              tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs ++ AssemblyReference(m, path, projectReference)
              
     member tcConfigB.RemoveReferencedAssemblyByPath (m, path) =
-        tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs |> List.filter (fun ar-> ar.Range <> m || ar.Text <> path)
+        tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs |> List.filter (fun ar -> not (Range.equals ar.Range m) || ar.Text <> path)
     
     static member SplitCommandLineResourceInfo (ri:string) =
         let p = ri.IndexOf ','
@@ -3110,7 +3110,13 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
                 // file is included in the search path. This should ideally already be one of the search paths, but
                 // during some global checks it won't be.  We append to the end of the search list so that this is the last
                 // place that is checked.
-                if m <> range0 && m <> rangeStartup && m <> rangeCmdArgs && FileSystem.IsPathRootedShim m.FileName then
+                let isPoundRReference (r: range) =
+                    not (Range.equals r range0) &&
+                    not (Range.equals r rangeStartup) &&
+                    not (Range.equals r rangeCmdArgs) &&
+                    FileSystem.IsPathRootedShim r.FileName
+
+                if isPoundRReference m then
                     tcConfig.GetSearchPathsForLibraryFiles() @ [Path.GetDirectoryName(m.FileName)]
                 else    
                     tcConfig.GetSearchPathsForLibraryFiles()

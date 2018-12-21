@@ -671,22 +671,22 @@ let ShrinkContext env oldRange newRange =
     | ContextInfo.SequenceExpression _ ->
         env
     | ContextInfo.CollectionElement (b,m) ->
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.CollectionElement(b,newRange) }
     | ContextInfo.FollowingPatternMatchClause m -> 
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.FollowingPatternMatchClause newRange }
     | ContextInfo.PatternMatchGuard m -> 
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.PatternMatchGuard newRange }
     | ContextInfo.IfExpression m -> 
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.IfExpression newRange }
     | ContextInfo.OmittedElseBranch m -> 
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.OmittedElseBranch newRange }
     | ContextInfo.ElseBranchResult m -> 
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.ElseBranchResult newRange }
 
 /// Optimized unification routine that avoids creating new inference 
