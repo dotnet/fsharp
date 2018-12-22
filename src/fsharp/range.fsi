@@ -56,6 +56,8 @@ val mkFileIndexRange : FileIndex -> pos -> pos -> range
 /// This view hides the use of file indexes and just uses filenames 
 val mkRange : string -> pos -> pos -> range
 
+val equals : range -> range -> bool
+
 val trimRangeToLine : range -> range
 
 /// not a total order, but enough to sort on ranges 

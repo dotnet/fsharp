@@ -2307,7 +2307,7 @@ and FSharpStaticParameter(cenv, sp: Tainted< ExtensionTyping.ProvidedParameterIn
     override x.Equals(other: obj) =
         box x === other || 
         match other with
-        |   :? FSharpStaticParameter as p -> x.Name = p.Name && x.DeclarationLocation = p.DeclarationLocation
+        |   :? FSharpStaticParameter as p -> x.Name = p.Name && Range.equals x.DeclarationLocation p.DeclarationLocation
         |   _ -> false
 
     override x.GetHashCode() = hash x.Name
@@ -2352,7 +2352,7 @@ and FSharpParameter(cenv, paramTy:TType, topArgInfo:ArgReprInfo, mOpt, isParamAr
     override x.Equals(other: obj) =
         box x === other || 
         match other with
-        |   :? FSharpParameter as p -> x.Name = p.Name && x.DeclarationLocation = p.DeclarationLocation
+        |   :? FSharpParameter as p -> x.Name = p.Name && Range.equals x.DeclarationLocation p.DeclarationLocation
         |   _ -> false
 
     override x.GetHashCode() = hash (box topArgInfo)

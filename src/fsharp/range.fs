@@ -5,7 +5,6 @@ module Microsoft.FSharp.Compiler.Range
 
 open System
 open System.IO
-open System.Collections.Generic
 open System.Collections.Concurrent
 open Microsoft.FSharp.Core.Printf
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
@@ -199,6 +198,9 @@ let mkRange f b e =
     // remove relative parts from full path
     let normalizedFilePath = if Path.IsPathRooted f then try Path.GetFullPath f with _ -> f else f
     range (fileIndexOfFile normalizedFilePath, b, e)
+
+let equals (r1: range) (r2: range) =
+    r1.Code1 = r2.Code1 && r1.Code2 = r2.Code2
 
 let mkFileIndexRange fi b e = range (fi, b, e)
 

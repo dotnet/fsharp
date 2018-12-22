@@ -1030,7 +1030,7 @@ type TypeCheckInfo
         let pos = mkPos line col
         let isPosMatch(pos, ar:AssemblyReference) : bool = 
             let isRangeMatch = (Range.rangeContainsPos ar.Range pos) 
-            let isNotSpecialRange = (ar.Range <> rangeStartup) && (ar.Range <> range0) && (ar.Range <> rangeCmdArgs)
+            let isNotSpecialRange = not (Range.equals ar.Range rangeStartup) && not (Range.equals ar.Range range0) && not (Range.equals ar.Range rangeCmdArgs)
             let isMatch = isRangeMatch && isNotSpecialRange
             isMatch      
         

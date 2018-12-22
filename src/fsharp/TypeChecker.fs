@@ -671,22 +671,22 @@ let ShrinkContext env oldRange newRange =
     | ContextInfo.SequenceExpression _ ->
         env
     | ContextInfo.CollectionElement (b,m) ->
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.CollectionElement(b,newRange) }
     | ContextInfo.FollowingPatternMatchClause m -> 
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.FollowingPatternMatchClause newRange }
     | ContextInfo.PatternMatchGuard m -> 
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.PatternMatchGuard newRange }
     | ContextInfo.IfExpression m -> 
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.IfExpression newRange }
     | ContextInfo.OmittedElseBranch m -> 
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.OmittedElseBranch newRange }
     | ContextInfo.ElseBranchResult m -> 
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.ElseBranchResult newRange }
 
 /// Optimized unification routine that avoids creating new inference 
@@ -11572,7 +11572,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue overridesOK isGeneratedEventVal cenv 
 
     // Suppress hover tip for "get" and "set" at property definitions, where toolId <> bindingId
     match toolIdOpt with 
-    | Some tid when not tid.idRange.IsSynthetic && tid.idRange <> bindingId.idRange  -> 
+    | Some tid when not tid.idRange.IsSynthetic && not (Range.equals tid.idRange bindingId.idRange) -> 
         let item = Item.Value (mkLocalValRef vspec)
         CallNameResolutionSink cenv.tcSink (tid.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.RelatedText, env.DisplayEnv, env.eAccessRights)
     | _ -> ()
