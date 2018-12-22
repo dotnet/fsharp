@@ -30,24 +30,24 @@ let jaro (s1: string) (s2: string) =
             if not (existsInWin c s2 i matchRadius) then
                 nextChar s1 s2 (i + 1) c
             else
-                i, c
+                struct (i, c)
         else
-            i, c
+            struct (i, c)
 
     // The sets of common characters and their lengths as floats         
     // The number of transpositions within the sets of common characters.
-    let transpositions, c1length, c2length =
+    let struct (transpositions, c1length, c2length) =
         let rec loop i j mismatches c1length c2length =
             if i < s1.Length && j < s2.Length then
-                let ti, ci = nextChar s1 s2 i ' '
-                let tj, cj = nextChar s2 s1 j ' '
+                let struct (ti, ci) = nextChar s1 s2 i ' '
+                let struct (tj, cj) = nextChar s2 s1 j ' '
                 if ci <> cj then
                     loop (ti + 1) (tj + 1) (mismatches + 1) (c1length + 1) (c2length + 1)
                 else
                     loop (ti + 1) (tj + 1) mismatches (c1length + 1) (c2length + 1)
-            else i, j, mismatches, c1length, c2length
+            else struct (i, j, mismatches, c1length, c2length)
 
-        let i, j, mismatches, c1length, c2length = loop 0 0 0 0 0
+        let struct (i, j, mismatches, c1length, c2length) = loop 0 0 0 0 0
 
         let rec loop (s1:string) (s2:string) i length =
             if i < s1.Length - 1 then
@@ -61,7 +61,7 @@ let jaro (s1: string) (s2: string) =
         let c1length = loop s1 s2 i c1length |> float
         let c2length = loop s2 s1 j c2length |> float
 
-        (float mismatches + abs (c1length - c2length)) / 2.0, c1length, c2length
+        struct ((float mismatches + abs (c1length - c2length)) / 2.0, c1length, c2length)
     
     let tLength = Math.Max(c1length, c2length)
     
