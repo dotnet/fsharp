@@ -195,17 +195,18 @@ let parseAndCheckScript (file, input) =
     | FSharpCheckFileAnswer.Succeeded(res) -> parseResult, res
     | res -> failwithf "Parsing did not finish... (%A)" res
 
-let parseSourceCode (name: string, code: string) =
-    let location = Path.Combine(Path.GetTempPath(),"test"+string(hash (name, code)))
-    try Directory.CreateDirectory(location) |> ignore with _ -> ()
+let parseSource (source: string) =
+    let location = Path.GetTempFileName()
+    let filePath = Path.Combine(location, ".fs")
+    let dllPath = Path.Combine(location, ".dll")
 
-    let projPath = Path.Combine(location, name + ".fsproj")
-    let filePath = Path.Combine(location, name + ".fs")
-    let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
     let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
-    let parseResults = checker.ParseFile(filePath, code, options) |> Async.RunSynchronously
-    parseResults.ParseTree
+    let parseResults = checker.ParseFile(filePath, source, options) |> Async.RunSynchronously
+
+    match parseResults.ParseTree with
+    | Some parseTree -> parseTree
+    | None -> failwithf "Expected there to be a parse tree for source:\n%s" source
 
 /// Extract range info 
 let tups (m:Range.range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
