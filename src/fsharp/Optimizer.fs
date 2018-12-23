@@ -1767,19 +1767,19 @@ let TryDetectQueryQuoteAndRun cenv (expr:Expr) =
 let IsILMethodRefDeclaringTypeSystemString (ilg: ILGlobals) (mref: ILMethodRef) =
     mref.DeclaringTypeRef.Scope.IsAssemblyRef &&
     mref.DeclaringTypeRef.Scope.AssemblyRef.Name = ilg.typ_String.TypeRef.Scope.AssemblyRef.Name &&
-    mref.DeclaringTypeRef.FullName = ilg.typ_String.TypeRef.FullName
+    mref.DeclaringTypeRef.BasicQualifiedName = ilg.typ_String.BasicQualifiedName
                 
 let IsILMethodRefSystemStringConcatOverload (ilg: ILGlobals) (mref: ILMethodRef) =
     IsILMethodRefDeclaringTypeSystemString ilg mref &&
     mref.Name = "Concat" &&
-    mref.ReturnType.TypeRef.FullName = ilg.typ_String.TypeRef.FullName &&
-    mref.ArgCount >= 2 && mref.ArgCount <= 4 && mref.ArgTypes |> List.forall(fun ilty -> ilty.TypeRef.FullName = ilg.typ_String.TypeRef.FullName)
+    mref.ReturnType.BasicQualifiedName = ilg.typ_String.BasicQualifiedName &&
+    mref.ArgCount >= 2 && mref.ArgCount <= 4 && mref.ArgTypes |> List.forall(fun ilty -> ilty.BasicQualifiedName = ilg.typ_String.BasicQualifiedName)
 
 let IsILMethodRefSystemStringConcatArray (ilg: ILGlobals) (mref: ILMethodRef) =
     IsILMethodRefDeclaringTypeSystemString ilg mref &&
     mref.Name = "Concat" &&
-    mref.ReturnType.TypeRef.FullName = ilg.typ_String.TypeRef.FullName &&
-    mref.ArgCount = 1 && mref.ArgTypes.Head.TypeRef.FullName = "System.String[]"
+    mref.ReturnType.BasicQualifiedName = ilg.typ_String.BasicQualifiedName &&
+    mref.ArgCount = 1 && mref.ArgTypes.Head.BasicQualifiedName = "System.String[]"
     
 //-------------------------------------------------------------------------
 // The traversal
