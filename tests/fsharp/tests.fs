@@ -1738,22 +1738,6 @@ module RegressionTests =
         peverify cfg "test.exe"
 #endif
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
-    [<Test>]
-    let ``5768`` () =
-        let cfg = testConfig "regression/5768"
-        let outFile = "test.out.bsl"
-        let expectedFile = "test.bsl"
-
-        fscAppendErrExpectFail cfg outFile "%s --nologo --target:library" cfg.fsc_flags ["test.fs"]
-        
-        let diff = fsdiff cfg outFile expectedFile
-
-        match diff with
-        | "" -> ()
-        | _ ->
-            Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff)
-#endif
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module OptimizationTests =
 
     [<Test>]
@@ -2425,6 +2409,9 @@ module TypecheckTests =
 
     [<Test>] 
     let ``type check neg110`` () = singleNegTest (testConfig "typecheck/sigs") "neg110"
+
+    [<Test>] 
+    let ``type check neg111`` () = singleNegTest (testConfig "typecheck/sigs") "neg111"
 
     [<Test>] 
     let ``type check neg_issue_3752`` () = singleNegTest (testConfig "typecheck/sigs") "neg_issue_3752"
