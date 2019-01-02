@@ -25,7 +25,7 @@ type ISourceText =
 
     abstract ContentEquals : sourceText: ISourceText -> bool
 
-    abstract CopyTo : sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit  
+    abstract CopyTo : sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit
 
     abstract GetHashCode : unit -> int
 
@@ -52,6 +52,9 @@ type StringText(str: string) =
         lazy getLines str
 
     member __.String = str
+    
+    override __.GetHashCode() = str.GetHashCode()
+    override __.Equals(obj: obj) = str.Equals(obj)
 
     interface ISourceText with
     
@@ -95,7 +98,7 @@ type StringText(str: string) =
         member __.CopyTo(sourceIndex, destination, destinationIndex, count) =
             str.CopyTo(sourceIndex, destination, destinationIndex, count)
 
-        member __.GetHashCode() = str.GetHashCode()
+        member this.GetHashCode() = this.GetHashCode()
 
 module SourceText =
 
