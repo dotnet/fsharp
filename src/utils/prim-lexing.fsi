@@ -25,8 +25,6 @@ type ISourceText =
 
     abstract CopyTo : sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit
 
-    abstract GetHashCode : unit -> int
-
 module SourceText =
 
     val ofString : string -> ISourceText

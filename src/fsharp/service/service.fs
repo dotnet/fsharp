@@ -2511,13 +2511,14 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     member bc.ParseFile(filename: string, sourceText: ISourceText, options: FSharpParsingOptions, userOpName: string) =
         async {
-            match parseCacheLock.AcquireLock(fun ltok -> parseFileCache.TryGet(ltok, (filename, sourceText.GetHashCode(), options))) with
+            let hash = sourceText.GetHashCode()
+            match parseCacheLock.AcquireLock(fun ltok -> parseFileCache.TryGet(ltok, (filename, hash, options))) with
             | Some res -> return res
             | None ->
                 foregroundParseCount <- foregroundParseCount + 1
                 let parseErrors, parseTreeOpt, anyErrors = Parser.parseFile(sourceText, filename, options, userOpName)
                 let res = FSharpParseFileResults(parseErrors, parseTreeOpt, anyErrors, options.SourceFiles)
-                parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (filename, sourceText.GetHashCode(), options), res))
+                parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (filename, hash, options), res))
                 return res
         }
 
@@ -3010,12 +3011,13 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
 
     member ic.MatchBraces(filename, sourceText: ISourceText, options: FSharpParsingOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
+        let hash = sourceText.GetHashCode()
         async {
-            match braceMatchCache.TryGet(AssumeAnyCallerThreadWithoutEvidence(), (filename, sourceText.GetHashCode(), options)) with
+            match braceMatchCache.TryGet(AssumeAnyCallerThreadWithoutEvidence(), (filename, hash, options)) with
             | Some res -> return res
             | None ->
                 let res = Parser.matchBraces(sourceText, filename, options, userOpName)
-                braceMatchCache.Set(AssumeAnyCallerThreadWithoutEvidence(), (filename, sourceText.GetHashCode(), options), res)
+                braceMatchCache.Set(AssumeAnyCallerThreadWithoutEvidence(), (filename, hash, options), res)
                 return res
         }
 
