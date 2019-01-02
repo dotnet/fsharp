@@ -46,6 +46,15 @@ module private SourceText =
 
     open System.Runtime.CompilerServices
 
+    /// Ported from Roslyn.Utilities
+    [<RequireQualifiedAccess>]
+    module Hash =
+        /// (From Roslyn) This is how VB Anonymous Types combine hash values for fields.
+        let combine (newKey: int) (currentKey: int) = (currentKey * (int 0xA5555529)) + newKey
+
+        let combineValues (values: seq<'T>) =
+            (0, values) ||> Seq.fold (fun hash value -> combine (value.GetHashCode()) hash)
+
     let weakTable = ConditionalWeakTable<SourceText, ISourceText>()
 
     let create (sourceText: SourceText) =
@@ -101,6 +110,16 @@ module private SourceText =
 
                 member __.CopyTo(sourceIndex, destination, destinationIndex, count) =
                     sourceText.CopyTo(sourceIndex, destination, destinationIndex, count)
+
+                member __.GetHashCode() =
+                    let checksum = sourceText.GetChecksum()
+                    let contentsHash = if not checksum.IsDefault then Hash.combineValues checksum else 0
+                    let encodingHash = if not (isNull sourceText.Encoding) then sourceText.Encoding.GetHashCode() else 0
+
+                    sourceText.ChecksumAlgorithm.GetHashCode()
+                    |> Hash.combine encodingHash
+                    |> Hash.combine contentsHash
+                    |> Hash.combine sourceText.Length
             }
 
         sourceText

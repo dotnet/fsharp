@@ -27,6 +27,8 @@ type ISourceText =
 
     abstract CopyTo : sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit  
 
+    abstract GetHashCode : unit -> int
+
 [<Sealed>]
 type StringText(str: string) =
 
@@ -92,6 +94,8 @@ type StringText(str: string) =
 
         member __.CopyTo(sourceIndex, destination, destinationIndex, count) =
             str.CopyTo(sourceIndex, destination, destinationIndex, count)
+
+        member __.GetHashCode() = str.GetHashCode()
 
 module SourceText =
 
