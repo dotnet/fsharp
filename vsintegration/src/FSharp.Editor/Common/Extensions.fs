@@ -61,7 +61,6 @@ module private SourceText =
         let sourceText =
             { 
                 new Object() with
-                    member __.ToString() = sourceText.ToString()
                     override __.GetHashCode() =
                         let checksum = sourceText.GetChecksum()
                         let contentsHash = if not checksum.IsDefault then Hash.combineValues checksum else 0
