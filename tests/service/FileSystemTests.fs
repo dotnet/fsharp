@@ -110,7 +110,8 @@ let ``FileSystem compilation test``() =
           UnresolvedReferences = None 
           OriginalLoadReferences = []
           ExtraProjectInfo = None 
-          Stamp = None }
+          Stamp = None
+          SuggestNamesForErrors = false }
 
     let results = checker.ParseAndCheckProject(projectOptions) |> Async.RunSynchronously
 

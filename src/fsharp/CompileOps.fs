@@ -602,7 +602,7 @@ let getErrorString key = SR.GetString key
 
 let (|InvalidArgument|_|) (exn:exn) = match exn with :? ArgumentException as e -> Some e.Message | _ -> None
 
-let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
+let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) (suggestNames: bool) =
 
     let rec OutputExceptionR (os:StringBuilder) error = 
 
@@ -827,9 +827,10 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
 
       | UndefinedName(_, k, id, suggestionsF) ->
           os.Append(k (DecompileOpName id.idText)) |> ignore
-          let filtered = ErrorResolutionHints.FilterPredictions id.idText suggestionsF
-          if List.isEmpty filtered |> not then
-              os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
+          if suggestNames then
+              let filtered = ErrorResolutionHints.FilterPredictions suggestionsF id.idText 
+              if List.isEmpty filtered |> not then
+                  os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
           
 
       | InternalUndefinedItemRef(f, smr, ccuName, s) ->  
@@ -1367,9 +1368,10 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
 
       | ErrorWithSuggestions ((_, s), _, idText, suggestionF) -> 
           os.Append(DecompileOpName s) |> ignore
-          let filtered = ErrorResolutionHints.FilterPredictions idText suggestionF
-          if List.isEmpty filtered |> not then
-              os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
+          if suggestNames then
+              let filtered = ErrorResolutionHints.FilterPredictions suggestionF idText
+              if List.isEmpty filtered |> not then
+                  os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
 
       | NumberedError ((_, s), _) -> os.Append(s) |> ignore
 
@@ -1585,10 +1587,10 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
 
 
 // remove any newlines and tabs 
-let OutputPhasedDiagnostic (os:System.Text.StringBuilder) (err:PhasedDiagnostic) (flattenErrors:bool) = 
+let OutputPhasedDiagnostic (os:System.Text.StringBuilder) (err:PhasedDiagnostic) (flattenErrors:bool) (suggestNames: bool) = 
     let buf = new System.Text.StringBuilder()
 
-    OutputPhasedErrorR buf err
+    OutputPhasedErrorR buf err suggestNames
     let s = if flattenErrors then ErrorLogger.NormalizeErrorString (buf.ToString()) else buf.ToString()
     
     os.Append(s) |> ignore
@@ -1638,7 +1640,7 @@ type Diagnostic =
     | Long of bool * DiagnosticDetailedInfo
 
 /// returns sequence that contains Diagnostic for the given error + Diagnostic for all related errors
-let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err:PhasedDiagnostic) = 
+let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err:PhasedDiagnostic, suggestNames: bool) = 
     let outputWhere (showFullPaths, errorStyle) m : DiagnosticLocation = 
         if Range.equals m rangeStartup || Range.equals m rangeCmdArgs then 
             { Range = m; TextRepresentation = ""; IsEmpty = true; File = "" }
@@ -1711,7 +1713,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
             let canonical = OutputCanonicalInformation(err.Subcategory(), GetDiagnosticNumber mainError)
             let message = 
                 let os = System.Text.StringBuilder()
-                OutputPhasedDiagnostic os mainError flattenErrors
+                OutputPhasedDiagnostic os mainError flattenErrors suggestNames
                 os.ToString()
             
             let entry : DiagnosticDetailedInfo = { Location = where; Canonical = canonical; Message = message }
@@ -1726,7 +1728,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                     let relCanonical = OutputCanonicalInformation(err.Subcategory(), GetDiagnosticNumber mainError) // Use main error for code
                     let relMessage = 
                         let os = System.Text.StringBuilder()
-                        OutputPhasedDiagnostic os err flattenErrors
+                        OutputPhasedDiagnostic os err flattenErrors suggestNames
                         os.ToString()
 
                     let entry : DiagnosticDetailedInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
@@ -1734,7 +1736,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
 
                 | _ -> 
                     let os = System.Text.StringBuilder()
-                    OutputPhasedDiagnostic os err flattenErrors
+                    OutputPhasedDiagnostic os err flattenErrors suggestNames
                     errors.Add( Diagnostic.Short(isError, os.ToString()) )
         
             relatedErrors |> List.iter OutputRelatedError
@@ -1755,7 +1757,8 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
 /// prints error and related errors to the specified StringBuilder
 let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError) os (err:PhasedDiagnostic) = 
     
-    let errors = CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err)
+    // 'true' for "suggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
+    let errors = CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err, true)
     for e in errors do
         Printf.bprintf os "\n"
         match e with

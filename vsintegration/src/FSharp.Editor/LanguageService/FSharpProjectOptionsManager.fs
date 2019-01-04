@@ -141,6 +141,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                             OriginalLoadReferences = []
                             ExtraProjectInfo= None
                             Stamp = Some(int64 (fileStamp.GetHashCode()))
+                            SuggestNamesForErrors = false
                         }
 
                 cancellationToken.ThrowIfCancellationRequested()
@@ -225,6 +226,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                         OriginalLoadReferences = []
                         ExtraProjectInfo= None
                         Stamp = Some(int64 (project.Version.GetHashCode()))
+                        SuggestNamesForErrors = false
                     }
 
                 cancellationToken.ThrowIfCancellationRequested()

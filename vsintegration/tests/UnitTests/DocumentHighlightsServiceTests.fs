@@ -50,6 +50,7 @@ let internal projectOptions = {
     OriginalLoadReferences = []
     ExtraProjectInfo = None
     Stamp = None
+    SuggestNamesForErrors = false
 }
 
 let private getSpans (sourceText: SourceText) (caretPosition: int) =

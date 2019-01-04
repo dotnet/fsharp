@@ -304,6 +304,10 @@ type public FSharpParsingOptions =
       LightSyntax: bool option
       CompilingFsLib: bool
       IsExe: bool
+
+      /// When true, error messages will include suggestions for parsing errors based on what the compiler knows.
+      /// This is an expensive operation that should be false outside of code fixes, command-line builds, and in-IDE builds.
+      SuggestNamesForErrors: bool
     }
     static member Default: FSharpParsingOptions
 
@@ -352,6 +356,10 @@ type public FSharpProjectOptions =
       /// If two sets of options both have stamps, then they are considered equal
       /// if and only if the stamps are equal
       Stamp: int64 option
+
+      /// When true, error messages will include suggestions for parsing errors based on what the compiler knows.
+      /// This is an expensive operation that should be false outside of code fixes, command-line builds, and in-IDE builds.
+      SuggestNamesForErrors: bool
     }
          
 /// The result of calling TypeCheckResult including the possibility of abort and background compiler not caught up.
@@ -543,14 +551,14 @@ type public FSharpChecker =
     ///
     /// <param name="sourceFiles">Initial source files list. Additional files may be added during argv evaluation.</param>
     /// <param name="argv">The command line arguments for the project build.</param>
-    member GetParsingOptionsFromCommandLineArgs: sourceFiles: string list * argv: string list * ?isInteractive: bool -> FSharpParsingOptions * FSharpErrorInfo list
+    member GetParsingOptionsFromCommandLineArgs: sourceFiles: string list * argv: string list * ?isInteractive: bool * ?suggestNamesForErrors: bool -> FSharpParsingOptions * FSharpErrorInfo list
 
     /// <summary>
     /// <para>Get the FSharpParsingOptions implied by a set of command line arguments.</para>
     /// </summary>
     ///
     /// <param name="argv">The command line arguments for the project build.</param>
-    member GetParsingOptionsFromCommandLineArgs: argv: string list * ?isInteractive: bool -> FSharpParsingOptions * FSharpErrorInfo list
+    member GetParsingOptionsFromCommandLineArgs: argv: string list * ?isInteractive: bool * ?suggestNamesForErrors: bool -> FSharpParsingOptions * FSharpErrorInfo list
 
     /// <summary>
     /// <para>Get the FSharpParsingOptions implied by a FSharpProjectOptions.</para>

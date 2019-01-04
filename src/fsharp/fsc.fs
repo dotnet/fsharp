@@ -132,8 +132,9 @@ type InProcErrorLoggerProvider() =
            member log.CreateErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter) =
             { new ErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter, "InProcCompilerErrorLoggerUpToMaxErrors") with
                     member this.HandleTooManyErrors(text) = warnings.Add(Diagnostic.Short(false, text))
-                    member this.HandleIssue(tcConfigBuilder, err, isError) = 
-                        let errs = CollectDiagnostic(tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths, tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, isError, err)
+                    member this.HandleIssue(tcConfigBuilder, err, isError) =
+                        // 'true' is passed for "suggestNames", since we want to suggest names with fsc.exe runs and this doesn't affect IDE perf
+                        let errs = CollectDiagnostic(tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths, tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, isError, err, true)
                         let container = if isError then errors else warnings 
                         container.AddRange(errs) } 
             :> ErrorLogger }

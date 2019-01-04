@@ -37,6 +37,7 @@ type DocumentDiagnosticAnalyzerTests()  =
         UnresolvedReferences = None
         ExtraProjectInfo = None
         Stamp = None
+        SuggestNamesForErrors = false
     }
 
     let getDiagnostics (fileContents: string) = 

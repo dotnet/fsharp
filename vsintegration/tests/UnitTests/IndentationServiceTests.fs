@@ -32,6 +32,7 @@ type IndentationServiceTests()  =
         UnresolvedReferences = None
         ExtraProjectInfo = None
         Stamp = None
+        SuggestNamesForErrors = false
     }
 
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())

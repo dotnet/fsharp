@@ -282,7 +282,8 @@ let FCS (repositoryDir: string) : Options =
          UnresolvedReferences = None;
          OriginalLoadReferences = []
          ExtraProjectInfo = None 
-         Stamp = None }
+         Stamp = None
+         SuggestNamesForErrors = false }
       FilesToCheck = 
           files 
           |> Array.filter (fun s -> s.Contains "TypeChecker.fs" || 
@@ -404,7 +405,8 @@ let VFPT (repositoryDir: string) : Options =
          UnresolvedReferences = None
          OriginalLoadReferences = []
          ExtraProjectInfo = None 
-         Stamp = None }
+         Stamp = None
+         SuggestNamesForErrors = false }
       FilesToCheck = []
       FileToCheck = repositoryDir </> @"src\FSharp.Editing\CodeGeneration\RecordStubGenerator.fs"
       SymbolText = "option"

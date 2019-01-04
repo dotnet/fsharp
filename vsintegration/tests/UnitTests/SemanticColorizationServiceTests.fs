@@ -25,6 +25,7 @@ type SemanticClassificationServiceTests() =
         OriginalLoadReferences = []
         ExtraProjectInfo = None
         Stamp = None
+        SuggestNamesForErrors = false
     }
 
     let checker = FSharpChecker.Create()
