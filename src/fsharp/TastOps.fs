@@ -1810,8 +1810,6 @@ let rec isUnmanagedTy g ty =
                     // Handle generic structs
                     // REVIEW: This may not be the most optimal, but it's probably better than
                     //     having to iterate over all type arguments for every field that is a 'TType_var'.
-                    //     A possible more optimal solution would be to have a flag (hopefully without having to pickle it) on a Typar that indicates it's used as a backing field. (see 'TyparFlags' type)
-                    //     That way we can ignore fields that are a 'TType_var' and just check the type arguments from 'TType_app' that have the flag.
                     //     However, what we have currently is probably just fine as unmanaged constraints are used infrequently; even more so when combined with generic struct construction.
                     let lookup = Dictionary(typars.Length)
                     (typars, tinst)
@@ -1819,8 +1817,9 @@ let rec isUnmanagedTy g ty =
 
                     tycon.AllInstanceFieldsAsList 
                     |> List.forall (fun r -> 
-                        match tryDestTyparTy g r.rfield_type with
-                        | ValueSome(fieldTypar) ->
+                        let fieldTy = stripTyEqnsAndMeasureEqns g r.rfield_type
+                        match fieldTy with
+                        | TType_var fieldTypar ->
                             match lookup.TryGetValue(fieldTypar.Stamp) with
                             | true, ty -> 
                                 match tryDestTyparTy g ty with
@@ -1829,8 +1828,20 @@ let rec isUnmanagedTy g ty =
                                 | _ ->
                                     isUnmanagedTy g ty
                             | _ -> false
-                        | _ ->
-                            isUnmanagedTy g r.rfield_type
+                        | TType_app(fieldTcref, fieldTinst) ->
+                            // This will also handle nested generic structs
+                            let fieldTinst = 
+                                fieldTinst 
+                                |> List.map (fun ty -> 
+                                    match tryDestTyparTy g ty with
+                                    | ValueSome(typar) -> 
+                                        match lookup.TryGetValue(typar.Stamp) with
+                                        | true, ty -> ty
+                                        | _ -> ty
+                                    | _ -> ty
+                                )
+                            isUnmanagedTy g (mkAppTy fieldTcref fieldTinst)
+                        | _ -> isUnmanagedTy g fieldTy
                     )
             else false
     // Handle struct tuples
