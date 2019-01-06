@@ -1826,8 +1826,8 @@ let rec isUnmanagedTy g ty =
                                     typar.Constraints |> List.exists (function | TyparConstraint.IsUnmanaged _ -> true | _ -> false)
                                 | _ -> isUnmanagedTy g ty
                             | _ -> false
-                        | TType_app(fieldTcref, fieldTinst) ->
-                            // This will also handle nested generic structs
+                        | TType_app(fieldTcref, fieldTinst) when fieldTinst.Length > 0 ->
+                            // This will handle nested generic structs
                             let fieldTinst = 
                                 fieldTinst 
                                 |> List.map (fun ty -> 
