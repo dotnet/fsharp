@@ -1776,19 +1776,17 @@ let isRefTy g ty =
         isUnitTy g ty
     )
 
-// ECMA C# LANGUAGE SPECIFICATION, 27.2
-// An unmanaged-type is any type that isn't a reference-type, a type-parameter, or a generic struct-type and
+// An unmanaged-type is any type that isn't a reference-type and
 // contains no fields whose type is not an unmanaged-type. In other words, an unmanaged-type is one of the
 // following:
 // - sbyte, byte, short, ushort, int, uint, long, ulong, char, float, double, decimal, or bool.
 // - Any enum-type.
 // - Any pointer-type.
-// - Any non-generic user-defined struct-type that contains fields of unmanaged-types only.
-// [Note: Constructed types and type-parameters are never unmanaged-types. end note]
+// - Any generic user-defined struct-type that can be statically determined to be 'unmanaged' at construction.
 let rec isUnmanagedTy g ty =
     let ty = stripTyEqnsAndMeasureEqns g ty
-    match tryDestAppTy g ty with
-    | ValueSome tcref ->
+    match ty with
+    | TType_app(tcref, tinst) ->
         let isEq tcref2  = tyconRefEq g tcref tcref2 
         if          isEq g.nativeptr_tcr || isEq g.nativeint_tcr ||
                     isEq g.sbyte_tcr || isEq g.byte_tcr || 
@@ -1807,11 +1805,38 @@ let rec isUnmanagedTy g ty =
                 true
             elif tycon.IsStructOrEnumTycon then
                 match tycon.TyparsNoRange with
-                | [] -> tycon.AllInstanceFieldsAsList |> List.forall (fun r -> isUnmanagedTy g r.rfield_type) 
-                | _ -> false // generic structs are never 
+                | [] -> tycon.AllInstanceFieldsAsList |> List.forall (fun r -> isUnmanagedTy g r.rfield_type)
+                | typars ->
+                    // Handle generic structs
+                    // REVIEW: This may not be the most optimal, but it's probably better than
+                    //     having to iterate over all type arguments for every field that is a 'TType_var'.
+                    //     A possible more optimal solution would be to have a flag (hopefully without having to pickle it) on a Typar that indicates it's used as a backing field. (see 'TyparFlags' type)
+                    //     That way we can ignore fields that are a 'TType_var' and just check the type arguments from 'TType_app' that have the flag.
+                    //     However, what we have currently is probably just fine as unmanaged constraints are used infrequently; even more so when combined with generic struct construction.
+                    let lookup = Dictionary(typars.Length)
+                    (typars, tinst)
+                    ||> List.iter2 (fun typar ty ->  lookup.Add(typar.Stamp, ty))
+
+                    tycon.AllInstanceFieldsAsList 
+                    |> List.forall (fun r -> 
+                        match tryDestTyparTy g r.rfield_type with
+                        | ValueSome(fieldTypar) ->
+                            match lookup.TryGetValue(fieldTypar.Stamp) with
+                            | true, ty -> 
+                                match tryDestTyparTy g ty with
+                                | ValueSome typar ->
+                                    typar.Constraints |> List.exists (function | TyparConstraint.IsUnmanaged _ -> true | _ -> false)
+                                | _ ->
+                                    isUnmanagedTy g ty
+                            | _ -> false
+                        | _ ->
+                            isUnmanagedTy g r.rfield_type
+                    )
             else false
-    | ValueNone ->
-        false
+    // Handle struct tuples
+    | TType_tuple(TupInfo.Const true, tinst) ->
+        tinst |> List.forall (isUnmanagedTy g)
+    | _ -> false
 
 let isInterfaceTycon x = 
     isILInterfaceTycon x || x.IsFSharpInterfaceTycon
