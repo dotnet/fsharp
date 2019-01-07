@@ -326,7 +326,6 @@ type internal ProjectSitesAndFiles() =
                 OriginalLoadReferences = []
                 ExtraProjectInfo=extraProjectInfo 
                 Stamp = if useUniqueStamp then (stamp <- stamp + 1L; Some stamp) else None
-                SuggestNamesForErrors = false
             }
             match projectId, projectOptionsTable with
             | Some id, Some optionsTable ->

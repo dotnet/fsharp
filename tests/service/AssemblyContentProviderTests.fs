@@ -27,8 +27,7 @@ let private projectOptions : FSharpProjectOptions =
       OriginalLoadReferences = []
       UnresolvedReferences = None
       ExtraProjectInfo = None
-      Stamp = None
-      SuggestNamesForErrors = false }
+      Stamp = None }
 
 let private checker = FSharpChecker.Create()
 

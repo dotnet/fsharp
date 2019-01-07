@@ -47,7 +47,6 @@ let internal projectOptions = {
     UnresolvedReferences = None
     ExtraProjectInfo = None
     Stamp = None
-    SuggestNamesForErrors = false
 }
 
 [<Test>]

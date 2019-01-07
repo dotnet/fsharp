@@ -368,8 +368,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                   UnresolvedReferences = None
                   OriginalLoadReferences = []
                   ExtraProjectInfo=None 
-                  Stamp = None
-                  SuggestNamesForErrors = false}
+                  Stamp = None }
                 |> ic.GetParsingOptionsFromProjectOptions
 
             ic.ParseFile(fileName,  Microsoft.FSharp.Compiler.Text.SourceText.ofString (source.GetText()), co) |> Async.RunSynchronously

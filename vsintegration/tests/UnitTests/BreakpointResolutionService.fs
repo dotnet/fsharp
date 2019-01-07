@@ -35,7 +35,6 @@ type BreakpointResolutionServiceTests()  =
         UnresolvedReferences = None
         ExtraProjectInfo = None
         Stamp = None
-        SuggestNamesForErrors = false
     }
     let code = "
 // This is a comment

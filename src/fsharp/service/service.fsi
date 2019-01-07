@@ -304,10 +304,6 @@ type public FSharpParsingOptions =
       LightSyntax: bool option
       CompilingFsLib: bool
       IsExe: bool
-
-      /// When true, error messages will include suggestions for parsing errors based on what the compiler knows.
-      /// This is an expensive operation that should be false outside of code fixes, command-line builds, and in-IDE builds.
-      SuggestNamesForErrors: bool
     }
     static member Default: FSharpParsingOptions
 
@@ -356,10 +352,6 @@ type public FSharpProjectOptions =
       /// If two sets of options both have stamps, then they are considered equal
       /// if and only if the stamps are equal
       Stamp: int64 option
-
-      /// When true, error messages will include suggestions for parsing errors based on what the compiler knows.
-      /// This is an expensive operation that should be false outside of code fixes, command-line builds, and in-IDE builds.
-      SuggestNamesForErrors: bool
     }
          
 /// The result of calling TypeCheckResult including the possibility of abort and background compiler not caught up.

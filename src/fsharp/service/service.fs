@@ -1433,8 +1433,7 @@ type FSharpParsingOptions =
       IsInteractive: bool
       LightSyntax: bool option
       CompilingFsLib: bool
-      IsExe: bool
-      SuggestNamesForErrors: bool }
+      IsExe: bool }
 
     member x.LastFileName =
         Debug.Assert(not (Array.isEmpty x.SourceFiles), "Parsing options don't contain any file")
@@ -1447,20 +1446,18 @@ type FSharpParsingOptions =
           IsInteractive = false
           LightSyntax = None
           CompilingFsLib = false
-          IsExe = false
-          SuggestNamesForErrors = false }
+          IsExe = false }
 
-    static member FromTcConfig(tcConfig: TcConfig, sourceFiles, isInteractive: bool, suggestNamesForErrors: bool) =
+    static member FromTcConfig(tcConfig: TcConfig, sourceFiles, isInteractive: bool) =
         { SourceFiles = sourceFiles
           ConditionalCompilationDefines = tcConfig.conditionalCompilationDefines
           ErrorSeverityOptions = tcConfig.errorSeverityOptions
           IsInteractive = isInteractive
           LightSyntax = tcConfig.light
           CompilingFsLib = tcConfig.compilingFslib
-          IsExe = tcConfig.target.IsExe
-          SuggestNamesForErrors = suggestNamesForErrors }
+          IsExe = tcConfig.target.IsExe }
 
-    static member FromTcConfigBuidler(tcConfigB: TcConfigBuilder, sourceFiles, isInteractive: bool, suggestNamesForErrors: bool) =
+    static member FromTcConfigBuidler(tcConfigB: TcConfigBuilder, sourceFiles, isInteractive: bool) =
         {
           SourceFiles = sourceFiles
           ConditionalCompilationDefines = tcConfigB.conditionalCompilationDefines
@@ -1469,7 +1466,6 @@ type FSharpParsingOptions =
           LightSyntax = tcConfigB.light
           CompilingFsLib = tcConfigB.compilingFslib
           IsExe = tcConfigB.target.IsExe
-          SuggestNamesForErrors = suggestNamesForErrors 
         }
 
 module internal Parser = 
@@ -1544,7 +1540,7 @@ module internal Parser =
     let createLexbuf sourceText =
         UnicodeLexing.SourceTextAsLexbuf(sourceText)
 
-    let matchBraces(sourceText, fileName, options: FSharpParsingOptions, userOpName: string) =
+    let matchBraces(sourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         let delayedLogger = CapturingErrorLogger("matchBraces")
         use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
@@ -1558,7 +1554,7 @@ module internal Parser =
         
         let matchingBraces = new ResizeArray<_>()
         Lexhelp.usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
-            let errHandler = ErrorHandler(false, fileName, options.ErrorSeverityOptions, sourceText, options.SuggestNamesForErrors)
+            let errHandler = ErrorHandler(false, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
             let lexfun = createLexerFunction fileName options lexbuf errHandler
             let parenTokensBalance t1 t2 =
                 match t1, t2 with
@@ -1586,9 +1582,9 @@ module internal Parser =
             matchBraces [])
         matchingBraces.ToArray()
 
-    let parseFile(sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string) =
+    let parseFile(sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "parseFile", fileName)
-        let errHandler = new ErrorHandler(true, fileName, options.ErrorSeverityOptions, sourceText, options.SuggestNamesForErrors)
+        let errHandler = new ErrorHandler(true, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
         use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> errHandler.ErrorLogger)
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
@@ -1790,7 +1786,6 @@ type FSharpProjectOptions =
       OriginalLoadReferences: (range * string) list
       ExtraProjectInfo : obj option
       Stamp : int64 option
-      SuggestNamesForErrors: bool
     }
     member x.ProjectOptions = x.OtherOptions
     /// Whether the two parse options refer to the same project.
@@ -2602,7 +2597,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                 let! tcErrors, tcFileResult = 
                                     Parser.CheckOneFile(parseResults, sourceText, fileName, options.ProjectFileName, tcPrior.TcConfig, tcPrior.TcGlobals, tcPrior.TcImports, 
                                                         tcPrior.TcState, loadClosure, tcPrior.TcErrors, reactorOps, (fun () -> builder.IsAlive), textSnapshotInfo, userOpName, options.SuggestNamesForErrors)
-                                let parsingOptions = FSharpParsingOptions.FromTcConfig(tcPrior.TcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules, options.SuggestNamesForErrors)
+                                let parsingOptions = FSharpParsingOptions.FromTcConfig(tcPrior.TcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
                                 let checkAnswer = MakeCheckFileAnswer(fileName, tcFileResult, options, builder, Array.ofList tcPrior.TcDependencyFiles, creationErrors, parseResults.Errors, tcErrors)
                                 bc.RecordTypeCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, sourceText)
                                 return checkAnswer
@@ -2725,7 +2720,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                         let! tcPrior = execWithReactorAsync <| fun ctok -> builder.GetCheckResultsBeforeFileInProject (ctok, filename) 
                     
                         // Do the parsing.
-                        let parsingOptions = FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList (builder.SourceFiles), options.UseScriptResolutionRules, options.SuggestNamesForErrors)
+                        let parsingOptions = FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList (builder.SourceFiles), options.UseScriptResolutionRules)
                         let parseErrors, parseTreeOpt, anyErrors = Parser.parseFile (sourceText, filename, parsingOptions, userOpName)
                         let parseTreeOpt = parseTreeOpt |> Option.map builder.DeduplicateParsedInputModuleNameInProject
                         let parseResults = FSharpParseFileResults(parseErrors, parseTreeOpt, anyErrors, builder.AllDependenciesDeprecated)
@@ -3241,7 +3236,7 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
 
         // Apply command-line arguments and collect more source files if they are in the arguments
         let sourceFilesNew = ApplyCommandLineArgs(tcConfigBuilder, initialSourceFiles, argv)
-        FSharpParsingOptions.FromTcConfigBuidler(tcConfigBuilder, Array.ofList sourceFilesNew, isInteractive, suggestNamesForErrors), errorScope.Diagnostics
+        FSharpParsingOptions.FromTcConfigBuidler(tcConfigBuilder, Array.ofList sourceFilesNew, isInteractive), errorScope.Diagnostics
 
     member ic.GetParsingOptionsFromCommandLineArgs(argv, ?isInteractive: bool, ?suggestNamesForErrors: bool) =
         ic.GetParsingOptionsFromCommandLineArgs([], argv, ?isInteractive=isInteractive, ?suggestNamesForErrors=suggestNamesForErrors)
@@ -3315,7 +3310,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, reactorOps: IReactorOperatio
             let userOpName = defaultArg userOpName "Unknown"
             let filename = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
             // Note: projectSourceFiles is only used to compute isLastCompiland, and is ignored if Build.IsScript(mainInputFileName) is true (which it is in this case).
-            let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, [| filename |], true, true)
+            let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, [| filename |], true)
             let parseErrors, parseTreeOpt, anyErrors = Parser.parseFile (sourceText, filename, parsingOptions, userOpName)
             let dependencyFiles = [| |] // interactions have no dependencies
             let parseResults = FSharpParseFileResults(parseErrors, parseTreeOpt, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
