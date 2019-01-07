@@ -114,7 +114,6 @@ let _ = Module1.foo 1
             UnresolvedReferences = None
             ExtraProjectInfo = None
             Stamp = None
-            SuggestNamesForErrors = false
         }
 
         File.WriteAllText(filePath, fileContents)

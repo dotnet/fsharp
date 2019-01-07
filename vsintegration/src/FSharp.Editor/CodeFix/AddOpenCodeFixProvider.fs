@@ -28,7 +28,7 @@ type internal FSharpAddOpenCodeFixProvider
     inherit CodeFixProvider()
 
     static let userOpName = "FSharpAddOpenCodeFixProvider"
-    let fixableDiagnosticIds = [(*"FS0039"; "FS0043"*)]
+    let fixableDiagnosticIds = ["FS0039"; "FS0043"]
 
     let checker = checkerProvider.Checker
     let fixUnderscoresInMenuText (text: string) = text.Replace("_", "__")
