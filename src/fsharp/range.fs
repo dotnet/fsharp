@@ -115,10 +115,17 @@ type FileIndexTable() =
         let ok = fileToIndexTable.TryGetValue(f, &res) 
         if ok then res 
         else
+        // remove relative parts from full path
+        let normalizedFilePath = if Path.IsPathRooted f then try Path.GetFullPath f with _ -> f else f
+        let ok = fileToIndexTable.TryGetValue(normalizedFilePath, &res) 
+        if ok then res 
+        else
             lock fileToIndexTable (fun () -> 
                 let n = indexToFileTable.Count in
-                indexToFileTable.Add(f)
-                fileToIndexTable.[f] <- n
+                indexToFileTable.Add(normalizedFilePath)
+                fileToIndexTable.[normalizedFilePath] <- n
+                if f <> normalizedFilePath then 
+                    fileToIndexTable.[f] <- n
                 n)
 
     member t.IndexToFile n = 
@@ -196,9 +203,7 @@ type range(code1:int64, code2: int64) =
     override r.ToString() = sprintf "%s (%d,%d--%d,%d) IsSynthetic=%b" r.FileName r.StartLine r.StartColumn r.EndLine r.EndColumn r.IsSynthetic
 
 let mkRange f b e =
-    // remove relative parts from full path
-    let normalizedFilePath = if Path.IsPathRooted f then try Path.GetFullPath f with _ -> f else f
-    range (fileIndexOfFile normalizedFilePath, b, e)
+    range (fileIndexOfFile f, b, e)
 
 let mkFileIndexRange fi b e = range (fi, b, e)
 
