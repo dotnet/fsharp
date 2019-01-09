@@ -12,7 +12,6 @@
     <DefineConstants>$(DefineConstants);BUILD_FROM_SOURCE</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_STRONG_NAMES</DefineConstants>
-    <OutputPath>..\..\$(Configuration.ToLower())\fcs</OutputPath>
     <FsLexOutputFolder Condition="'$(TargetFramework)' != ''">$(TargetFramework)\</FsLexOutputFolder>
     <FsYaccOutputFolder Condition="'$(TargetFramework)' != ''">$(TargetFramework)\</FsYaccOutputFolder>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>

@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 set /p DOTNET_TOOLS_VERSION=<"%~dp0DotnetCLIToolsVersion.txt"
-set DOTNET_TOOLS_PATH=%~dp0Tools\dotnet20
+set DOTNET_TOOLS_PATH=%~dp0artifacts\toolset\dotnet
 set dotnetexe=%DOTNET_TOOLS_PATH%\dotnet.exe
 set sdksentinel=%DOTNET_TOOLS_PATH%\sdk-version.txt
 

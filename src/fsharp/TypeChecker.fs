@@ -16785,7 +16785,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             return env
 
 
-        | SynModuleSigDecl.NamespaceFragment (SynModuleOrNamespaceSig(longId, isRec, isModule, defs, xml, attribs, vis, m)) -> 
+        | SynModuleSigDecl.NamespaceFragment (SynModuleOrNamespaceSig(longId, isRec, kind, defs, xml, attribs, vis, m)) -> 
 
             do for id in longId do 
                  CheckNamespaceModuleOrTypeName g id
@@ -16797,7 +16797,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             //    namespace [rec] A.B
             //      module M = ...
             let enclosingNamespacePath, defs = 
-                if isModule then 
+                if kind.IsModule then 
                     let nsp, modName = List.frontAndBack longId
                     let modDecl = [SynModuleSigDecl.NestedModule(ComponentInfo(attribs, [], [], [modName], xml, false, vis, m), false, defs, m)] 
                     nsp, modDecl
@@ -17095,7 +17095,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent typeNames scopem 
               return ((fun modDefs -> modDefn :: modDefs), topAttrsNew), env, envAtEnd
       
 
-      | SynModuleDecl.NamespaceFragment(SynModuleOrNamespace(longId, isRec, isModule, defs, xml, attribs, vis, m)) ->
+      | SynModuleDecl.NamespaceFragment(SynModuleOrNamespace(longId, isRec, kind, defs, xml, attribs, vis, m)) ->
 
           if !progress then dprintn ("Typecheck implementation " + textOfLid longId)
           let endm = m.EndRange
@@ -17110,7 +17110,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent typeNames scopem 
           //    namespace [rec] A.B
           //      module M = ...
           let enclosingNamespacePath, defs = 
-              if isModule then 
+              if kind.IsModule then 
                   let nsp, modName = List.frontAndBack longId
                   let modDecl = [SynModuleDecl.NestedModule(ComponentInfo(attribs, [], [], [modName], xml, false, vis, m), false, defs, true, m)] 
                   nsp, modDecl

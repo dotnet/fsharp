@@ -433,19 +433,15 @@ type UsingMSBuild()  =
                 | [] -> System.String.Format((*Mark*)
                 | x :: xs -> f xs"""
         // Note, 3 of these 8 are only available on .NET 4.6.1.  On .NET 4.5 only 5 overloads are returned.
-        let expected45 =  [["format"; "arg0"];                                  //Net4.5
-                           ["format"; "args"];                                  //Net4.5
-                           ["provider"; "format"; "args"];                      //Net4.5
-                           ["format"; "arg0"; "arg1"];                          //Net4.5
-                           ["format"; "arg0"; "arg1"; "arg2"]]                  //Net4.5
-        let expected461 = [["provider"; "format"; "arg0"];                      //Net4.6.1
-                           ["provider"; "format"; "arg0"; "arg1"];              //Net4.6.1
-                           ["provider"; "format"; "arg0"; "arg1"; "arg2"]]      //Net4.6.1
+        let expected =  [["format"; "arg0"];                                  //Net4.5
+                         ["format"; "args"];                                  //Net4.5
+                         ["provider"; "format"; "args"];                      //Net4.5
+                         ["format"; "arg0"; "arg1"];                          //Net4.5
+                         ["format"; "arg0"; "arg1"; "arg2"];                  //Net4.5
+                         ["provider"; "format"; "arg0"];                      //Net4.6.1
+                         ["provider"; "format"; "arg0"; "arg1"];              //Net4.6.1
+                         ["provider"; "format"; "arg0"; "arg1"; "arg2"]]      //Net4.6.1
 
-        let expected =
-            if Environment.Version.CompareTo(v461) >= 0 then
-                List.concat [expected45;expected461]
-            else expected45
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark*)", expected)
 
     (* --- Parameter Info Systematic Tests ------------------------------------------------- *)

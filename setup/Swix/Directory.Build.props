@@ -1,14 +1,14 @@
 <Project>
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <Import Project="$(NuGetPackageRoot)\MicroBuild.Core\$(MicroBuildCorePackageVersion)\build\MicroBuild.Core.props" />
 
   <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <OutputArchitecture>neutral</OutputArchitecture>
     <OutputLocalized>false</OutputLocalized>
     <OutputType>vsix</OutputType>
     <IsPackage>true</IsPackage>
-    <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
-    <OutputPath>$(BinariesFolder)\insertion</OutputPath>
-    <IntermediateOutputPath>$(MSBuildProjectDirectory)\obj</IntermediateOutputPath>
+    <BinariesFolder>$(ArtifactsBinDir)</BinariesFolder>
   </PropertyGroup>
 
 </Project>

@@ -12,6 +12,7 @@
     <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
     <UseAssetTargetFallback>true</UseAssetTargetFallback>
+    <NGenBinary>true</NGenBinary>
   </PropertyGroup>
 
   <ItemGroup>
