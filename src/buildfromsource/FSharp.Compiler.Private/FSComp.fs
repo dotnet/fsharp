@@ -2611,1830 +2611,1794 @@ type internal SR private() =
     /// Reference an assembly (Short form: -r)
     /// (Originally from ..\FSComp.txt:843)
     static member optsReference() = (GetStringFunc("optsReference",",,,") )
-    /// Specify a Win32 resource file (.res)
+    /// Reference an assembly or diretory containing a design time tool (Short form: -t)
     /// (Originally from ..\FSComp.txt:844)
+    static member optsCompilerTool() = (GetStringFunc("optsCompilerTool",",,,") )
+    /// Specify a Win32 resource file (.res)
+    /// (Originally from ..\FSComp.txt:845)
     static member optsWin32res() = (GetStringFunc("optsWin32res",",,,") )
     /// Specify a Win32 manifest file
-    /// (Originally from ..\FSComp.txt:845)
+    /// (Originally from ..\FSComp.txt:846)
     static member optsWin32manifest() = (GetStringFunc("optsWin32manifest",",,,") )
     /// Do not include the default Win32 manifest
-    /// (Originally from ..\FSComp.txt:846)
+    /// (Originally from ..\FSComp.txt:847)
     static member optsNowin32manifest() = (GetStringFunc("optsNowin32manifest",",,,") )
     /// Embed all source files in the portable PDB file
-    /// (Originally from ..\FSComp.txt:847)
+    /// (Originally from ..\FSComp.txt:848)
     static member optsEmbedAllSource() = (GetStringFunc("optsEmbedAllSource",",,,") )
     /// Embed specific source files in the portable PDB file
-    /// (Originally from ..\FSComp.txt:848)
+    /// (Originally from ..\FSComp.txt:849)
     static member optsEmbedSource() = (GetStringFunc("optsEmbedSource",",,,") )
     /// Source link information file to embed in the portable PDB file
-    /// (Originally from ..\FSComp.txt:849)
+    /// (Originally from ..\FSComp.txt:850)
     static member optsSourceLink() = (GetStringFunc("optsSourceLink",",,,") )
     /// --embed switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)
-    /// (Originally from ..\FSComp.txt:850)
+    /// (Originally from ..\FSComp.txt:851)
     static member optsEmbeddedSourceRequirePortablePDBs() = (1501, GetStringFunc("optsEmbeddedSourceRequirePortablePDBs",",,,") )
     /// --sourcelink switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)
-    /// (Originally from ..\FSComp.txt:851)
+    /// (Originally from ..\FSComp.txt:852)
     static member optsSourceLinkRequirePortablePDBs() = (1502, GetStringFunc("optsSourceLinkRequirePortablePDBs",",,,") )
     /// Source file is too large to embed in a portable PDB
-    /// (Originally from ..\FSComp.txt:852)
+    /// (Originally from ..\FSComp.txt:853)
     static member srcFileTooLarge() = (GetStringFunc("srcFileTooLarge",",,,") )
     /// Embed the specified managed resource
-    /// (Originally from ..\FSComp.txt:853)
+    /// (Originally from ..\FSComp.txt:854)
     static member optsResource() = (GetStringFunc("optsResource",",,,") )
     /// Link the specified resource to this assembly where the resinfo format is <file>[,<string name>[,public|private]]
-    /// (Originally from ..\FSComp.txt:854)
+    /// (Originally from ..\FSComp.txt:855)
     static member optsLinkresource() = (GetStringFunc("optsLinkresource",",,,") )
     /// Emit debug information (Short form: -g)
-    /// (Originally from ..\FSComp.txt:855)
+    /// (Originally from ..\FSComp.txt:856)
     static member optsDebugPM() = (GetStringFunc("optsDebugPM",",,,") )
     /// Specify debugging type: full, portable, embedded, pdbonly. ('%s' is the default if no debuggging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).
-    /// (Originally from ..\FSComp.txt:856)
+    /// (Originally from ..\FSComp.txt:857)
     static member optsDebug(a0 : System.String) = (GetStringFunc("optsDebug",",,,%s,,,") a0)
     /// Enable optimizations (Short form: -O)
-    /// (Originally from ..\FSComp.txt:857)
+    /// (Originally from ..\FSComp.txt:858)
     static member optsOptimize() = (GetStringFunc("optsOptimize",",,,") )
     /// Enable or disable tailcalls
-    /// (Originally from ..\FSComp.txt:858)
+    /// (Originally from ..\FSComp.txt:859)
     static member optsTailcalls() = (GetStringFunc("optsTailcalls",",,,") )
     /// Produce a deterministic assembly (including module version GUID and timestamp)
-    /// (Originally from ..\FSComp.txt:859)
+    /// (Originally from ..\FSComp.txt:860)
     static member optsDeterministic() = (GetStringFunc("optsDeterministic",",,,") )
     /// Enable or disable cross-module optimizations
-    /// (Originally from ..\FSComp.txt:860)
+    /// (Originally from ..\FSComp.txt:861)
     static member optsCrossoptimize() = (GetStringFunc("optsCrossoptimize",",,,") )
     /// Report all warnings as errors
-    /// (Originally from ..\FSComp.txt:861)
+    /// (Originally from ..\FSComp.txt:862)
     static member optsWarnaserrorPM() = (GetStringFunc("optsWarnaserrorPM",",,,") )
     /// Report specific warnings as errors
-    /// (Originally from ..\FSComp.txt:862)
+    /// (Originally from ..\FSComp.txt:863)
     static member optsWarnaserror() = (GetStringFunc("optsWarnaserror",",,,") )
     /// Set a warning level (0-5)
-    /// (Originally from ..\FSComp.txt:863)
+    /// (Originally from ..\FSComp.txt:864)
     static member optsWarn() = (GetStringFunc("optsWarn",",,,") )
     /// Disable specific warning messages
-    /// (Originally from ..\FSComp.txt:864)
+    /// (Originally from ..\FSComp.txt:865)
     static member optsNowarn() = (GetStringFunc("optsNowarn",",,,") )
     /// Enable specific warnings that may be off by default
-    /// (Originally from ..\FSComp.txt:865)
+    /// (Originally from ..\FSComp.txt:866)
     static member optsWarnOn() = (GetStringFunc("optsWarnOn",",,,") )
     /// Generate overflow checks
-    /// (Originally from ..\FSComp.txt:866)
+    /// (Originally from ..\FSComp.txt:867)
     static member optsChecked() = (GetStringFunc("optsChecked",",,,") )
     /// Define conditional compilation symbols (Short form: -d)
-    /// (Originally from ..\FSComp.txt:867)
+    /// (Originally from ..\FSComp.txt:868)
     static member optsDefine() = (GetStringFunc("optsDefine",",,,") )
     /// Ignore ML compatibility warnings
-    /// (Originally from ..\FSComp.txt:868)
+    /// (Originally from ..\FSComp.txt:869)
     static member optsMlcompatibility() = (GetStringFunc("optsMlcompatibility",",,,") )
     /// Suppress compiler copyright message
-    /// (Originally from ..\FSComp.txt:869)
+    /// (Originally from ..\FSComp.txt:870)
     static member optsNologo() = (GetStringFunc("optsNologo",",,,") )
     /// Display this usage message (Short form: -?)
-    /// (Originally from ..\FSComp.txt:870)
+    /// (Originally from ..\FSComp.txt:871)
     static member optsHelp() = (GetStringFunc("optsHelp",",,,") )
     /// Read response file for more options
-    /// (Originally from ..\FSComp.txt:871)
+    /// (Originally from ..\FSComp.txt:872)
     static member optsResponseFile() = (GetStringFunc("optsResponseFile",",,,") )
     /// Specify the codepage used to read source files
-    /// (Originally from ..\FSComp.txt:872)
+    /// (Originally from ..\FSComp.txt:873)
     static member optsCodepage() = (GetStringFunc("optsCodepage",",,,") )
     /// Output messages in UTF-8 encoding
-    /// (Originally from ..\FSComp.txt:873)
+    /// (Originally from ..\FSComp.txt:874)
     static member optsUtf8output() = (GetStringFunc("optsUtf8output",",,,") )
     /// Output messages with fully qualified paths
-    /// (Originally from ..\FSComp.txt:874)
+    /// (Originally from ..\FSComp.txt:875)
     static member optsFullpaths() = (GetStringFunc("optsFullpaths",",,,") )
     /// Specify a directory for the include path which is used to resolve source files and assemblies (Short form: -I)
-    /// (Originally from ..\FSComp.txt:875)
+    /// (Originally from ..\FSComp.txt:876)
     static member optsLib() = (GetStringFunc("optsLib",",,,") )
     /// Base address for the library to be built
-    /// (Originally from ..\FSComp.txt:876)
+    /// (Originally from ..\FSComp.txt:877)
     static member optsBaseaddress() = (GetStringFunc("optsBaseaddress",",,,") )
     /// Do not reference the default CLI assemblies by default
-    /// (Originally from ..\FSComp.txt:877)
+    /// (Originally from ..\FSComp.txt:878)
     static member optsNoframework() = (GetStringFunc("optsNoframework",",,,") )
     /// Statically link the F# library and all referenced DLLs that depend on it into the assembly being generated
-    /// (Originally from ..\FSComp.txt:878)
+    /// (Originally from ..\FSComp.txt:879)
     static member optsStandalone() = (GetStringFunc("optsStandalone",",,,") )
     /// Statically link the given assembly and all referenced DLLs that depend on this assembly. Use an assembly name e.g. mylib, not a DLL name.
-    /// (Originally from ..\FSComp.txt:879)
+    /// (Originally from ..\FSComp.txt:880)
     static member optsStaticlink() = (GetStringFunc("optsStaticlink",",,,") )
     /// Use a resident background compilation service to improve compiler startup times.
-    /// (Originally from ..\FSComp.txt:880)
+    /// (Originally from ..\FSComp.txt:881)
     static member optsResident() = (GetStringFunc("optsResident",",,,") )
     /// Name the output debug file
-    /// (Originally from ..\FSComp.txt:881)
+    /// (Originally from ..\FSComp.txt:882)
     static member optsPdb() = (GetStringFunc("optsPdb",",,,") )
     /// Resolve assembly references using directory-based rules rather than MSBuild resolution
-    /// (Originally from ..\FSComp.txt:882)
+    /// (Originally from ..\FSComp.txt:883)
     static member optsSimpleresolution() = (GetStringFunc("optsSimpleresolution",",,,") )
     /// Unrecognized target '%s', expected 'exe', 'winexe', 'library' or 'module'
-    /// (Originally from ..\FSComp.txt:883)
+    /// (Originally from ..\FSComp.txt:884)
     static member optsUnrecognizedTarget(a0 : System.String) = (1048, GetStringFunc("optsUnrecognizedTarget",",,,%s,,,") a0)
     /// Unrecognized debug type '%s', expected 'pdbonly' or 'full'
-    /// (Originally from ..\FSComp.txt:884)
+    /// (Originally from ..\FSComp.txt:885)
     static member optsUnrecognizedDebugType(a0 : System.String) = (1049, GetStringFunc("optsUnrecognizedDebugType",",,,%s,,,") a0)
     /// Invalid warning level '%d'
-    /// (Originally from ..\FSComp.txt:885)
+    /// (Originally from ..\FSComp.txt:886)
     static member optsInvalidWarningLevel(a0 : System.Int32) = (1050, GetStringFunc("optsInvalidWarningLevel",",,,%d,,,") a0)
     /// Short form of '%s'
-    /// (Originally from ..\FSComp.txt:886)
+    /// (Originally from ..\FSComp.txt:887)
     static member optsShortFormOf(a0 : System.String) = (GetStringFunc("optsShortFormOf",",,,%s,,,") a0)
     /// The command-line option '--cliroot' has been deprecated. Use an explicit reference to a specific copy of mscorlib.dll instead.
-    /// (Originally from ..\FSComp.txt:887)
+    /// (Originally from ..\FSComp.txt:888)
     static member optsClirootDeprecatedMsg() = (GetStringFunc("optsClirootDeprecatedMsg",",,,") )
     /// Use to override where the compiler looks for mscorlib.dll and framework components
-    /// (Originally from ..\FSComp.txt:888)
+    /// (Originally from ..\FSComp.txt:889)
     static member optsClirootDescription() = (GetStringFunc("optsClirootDescription",",,,") )
     /// - OUTPUT FILES -
-    /// (Originally from ..\FSComp.txt:889)
+    /// (Originally from ..\FSComp.txt:890)
     static member optsHelpBannerOutputFiles() = (GetStringFunc("optsHelpBannerOutputFiles",",,,") )
     /// - INPUT FILES -
-    /// (Originally from ..\FSComp.txt:890)
+    /// (Originally from ..\FSComp.txt:891)
     static member optsHelpBannerInputFiles() = (GetStringFunc("optsHelpBannerInputFiles",",,,") )
     /// - RESOURCES -
-    /// (Originally from ..\FSComp.txt:891)
+    /// (Originally from ..\FSComp.txt:892)
     static member optsHelpBannerResources() = (GetStringFunc("optsHelpBannerResources",",,,") )
     /// - CODE GENERATION -
-    /// (Originally from ..\FSComp.txt:892)
+    /// (Originally from ..\FSComp.txt:893)
     static member optsHelpBannerCodeGen() = (GetStringFunc("optsHelpBannerCodeGen",",,,") )
     /// - ADVANCED -
-    /// (Originally from ..\FSComp.txt:893)
+    /// (Originally from ..\FSComp.txt:894)
     static member optsHelpBannerAdvanced() = (GetStringFunc("optsHelpBannerAdvanced",",,,") )
     /// - MISCELLANEOUS -
-    /// (Originally from ..\FSComp.txt:894)
+    /// (Originally from ..\FSComp.txt:895)
     static member optsHelpBannerMisc() = (GetStringFunc("optsHelpBannerMisc",",,,") )
     /// - LANGUAGE -
-    /// (Originally from ..\FSComp.txt:895)
+    /// (Originally from ..\FSComp.txt:896)
     static member optsHelpBannerLanguage() = (GetStringFunc("optsHelpBannerLanguage",",,,") )
     /// - ERRORS AND WARNINGS -
-    /// (Originally from ..\FSComp.txt:896)
+    /// (Originally from ..\FSComp.txt:897)
     static member optsHelpBannerErrsAndWarns() = (GetStringFunc("optsHelpBannerErrsAndWarns",",,,") )
     /// Unknown --test argument: '%s'
-    /// (Originally from ..\FSComp.txt:897)
+    /// (Originally from ..\FSComp.txt:898)
     static member optsUnknownArgumentToTheTestSwitch(a0 : System.String) = (1063, GetStringFunc("optsUnknownArgumentToTheTestSwitch",",,,%s,,,") a0)
     /// Unrecognized platform '%s', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'
-    /// (Originally from ..\FSComp.txt:898)
+    /// (Originally from ..\FSComp.txt:899)
     static member optsUnknownPlatform(a0 : System.String) = (1064, GetStringFunc("optsUnknownPlatform",",,,%s,,,") a0)
     /// The command-line option '%s' is for test purposes only
-    /// (Originally from ..\FSComp.txt:899)
+    /// (Originally from ..\FSComp.txt:900)
     static member optsInternalNoDescription(a0 : System.String) = (GetStringFunc("optsInternalNoDescription",",,,%s,,,") a0)
     /// The command-line option '%s' has been deprecated
-    /// (Originally from ..\FSComp.txt:900)
+    /// (Originally from ..\FSComp.txt:901)
     static member optsDCLONoDescription(a0 : System.String) = (GetStringFunc("optsDCLONoDescription",",,,%s,,,") a0)
     /// The command-line option '%s' has been deprecated. Use '%s' instead.
-    /// (Originally from ..\FSComp.txt:901)
+    /// (Originally from ..\FSComp.txt:902)
     static member optsDCLODeprecatedSuggestAlternative(a0 : System.String, a1 : System.String) = (GetStringFunc("optsDCLODeprecatedSuggestAlternative",",,,%s,,,%s,,,") a0 a1)
     /// The command-line option '%s' has been deprecated. HTML document generation is now part of the F# Power Pack, via the tool FsHtmlDoc.exe.
-    /// (Originally from ..\FSComp.txt:902)
+    /// (Originally from ..\FSComp.txt:903)
     static member optsDCLOHtmlDoc(a0 : System.String) = (GetStringFunc("optsDCLOHtmlDoc",",,,%s,,,") a0)
     /// Output warning and error messages in color
-    /// (Originally from ..\FSComp.txt:903)
+    /// (Originally from ..\FSComp.txt:904)
     static member optsConsoleColors() = (GetStringFunc("optsConsoleColors",",,,") )
     /// Enable high-entropy ASLR
-    /// (Originally from ..\FSComp.txt:904)
+    /// (Originally from ..\FSComp.txt:905)
     static member optsUseHighEntropyVA() = (GetStringFunc("optsUseHighEntropyVA",",,,") )
     /// Specify subsystem version of this assembly
-    /// (Originally from ..\FSComp.txt:905)
+    /// (Originally from ..\FSComp.txt:906)
     static member optsSubSystemVersion() = (GetStringFunc("optsSubSystemVersion",",,,") )
     /// Specify target framework profile of this assembly. Valid values are mscorlib, netcore or netstandard. Default - mscorlib
-    /// (Originally from ..\FSComp.txt:906)
+    /// (Originally from ..\FSComp.txt:907)
     static member optsTargetProfile() = (GetStringFunc("optsTargetProfile",",,,") )
     /// Emit debug information in quotations
-    /// (Originally from ..\FSComp.txt:907)
+    /// (Originally from ..\FSComp.txt:908)
     static member optsEmitDebugInfoInQuotations() = (GetStringFunc("optsEmitDebugInfoInQuotations",",,,") )
     /// Specify the preferred output language culture name (e.g. es-ES, ja-JP)
-    /// (Originally from ..\FSComp.txt:908)
+    /// (Originally from ..\FSComp.txt:909)
     static member optsPreferredUiLang() = (GetStringFunc("optsPreferredUiLang",",,,") )
     /// Don't copy FSharp.Core.dll along the produced binaries
-    /// (Originally from ..\FSComp.txt:909)
+    /// (Originally from ..\FSComp.txt:910)
     static member optsNoCopyFsharpCore() = (GetStringFunc("optsNoCopyFsharpCore",",,,") )
     /// Invalid version '%s' for '--subsystemversion'. The version must be 4.00 or greater.
-    /// (Originally from ..\FSComp.txt:910)
+    /// (Originally from ..\FSComp.txt:911)
     static member optsInvalidSubSystemVersion(a0 : System.String) = (1051, GetStringFunc("optsInvalidSubSystemVersion",",,,%s,,,") a0)
     /// Invalid value '%s' for '--targetprofile', valid values are 'mscorlib', 'netcore' or 'netstandard'.
-    /// (Originally from ..\FSComp.txt:911)
+    /// (Originally from ..\FSComp.txt:912)
     static member optsInvalidTargetProfile(a0 : System.String) = (1052, GetStringFunc("optsInvalidTargetProfile",",,,%s,,,") a0)
     /// Full name
-    /// (Originally from ..\FSComp.txt:912)
+    /// (Originally from ..\FSComp.txt:913)
     static member typeInfoFullName() = (GetStringFunc("typeInfoFullName",",,,") )
     /// and %d other overloads
-    /// (Originally from ..\FSComp.txt:916)
+    /// (Originally from ..\FSComp.txt:917)
     static member typeInfoOtherOverloads(a0 : System.Int32) = (GetStringFunc("typeInfoOtherOverloads",",,,%d,,,") a0)
     /// union case
-    /// (Originally from ..\FSComp.txt:917)
+    /// (Originally from ..\FSComp.txt:918)
     static member typeInfoUnionCase() = (GetStringFunc("typeInfoUnionCase",",,,") )
     /// active pattern result
-    /// (Originally from ..\FSComp.txt:918)
+    /// (Originally from ..\FSComp.txt:919)
     static member typeInfoActivePatternResult() = (GetStringFunc("typeInfoActivePatternResult",",,,") )
     /// active recognizer
-    /// (Originally from ..\FSComp.txt:919)
+    /// (Originally from ..\FSComp.txt:920)
     static member typeInfoActiveRecognizer() = (GetStringFunc("typeInfoActiveRecognizer",",,,") )
     /// field
-    /// (Originally from ..\FSComp.txt:920)
+    /// (Originally from ..\FSComp.txt:921)
     static member typeInfoField() = (GetStringFunc("typeInfoField",",,,") )
     /// event
-    /// (Originally from ..\FSComp.txt:921)
+    /// (Originally from ..\FSComp.txt:922)
     static member typeInfoEvent() = (GetStringFunc("typeInfoEvent",",,,") )
     /// property
-    /// (Originally from ..\FSComp.txt:922)
+    /// (Originally from ..\FSComp.txt:923)
     static member typeInfoProperty() = (GetStringFunc("typeInfoProperty",",,,") )
     /// extension
-    /// (Originally from ..\FSComp.txt:923)
+    /// (Originally from ..\FSComp.txt:924)
     static member typeInfoExtension() = (GetStringFunc("typeInfoExtension",",,,") )
     /// custom operation
-    /// (Originally from ..\FSComp.txt:924)
+    /// (Originally from ..\FSComp.txt:925)
     static member typeInfoCustomOperation() = (GetStringFunc("typeInfoCustomOperation",",,,") )
     /// argument
-    /// (Originally from ..\FSComp.txt:925)
+    /// (Originally from ..\FSComp.txt:926)
     static member typeInfoArgument() = (GetStringFunc("typeInfoArgument",",,,") )
     /// anonymous record field
-    /// (Originally from ..\FSComp.txt:926)
+    /// (Originally from ..\FSComp.txt:927)
     static member typeInfoAnonRecdField() = (GetStringFunc("typeInfoAnonRecdField",",,,") )
     /// patvar
-    /// (Originally from ..\FSComp.txt:927)
+    /// (Originally from ..\FSComp.txt:928)
     static member typeInfoPatternVariable() = (GetStringFunc("typeInfoPatternVariable",",,,") )
     /// namespace
-    /// (Originally from ..\FSComp.txt:928)
+    /// (Originally from ..\FSComp.txt:929)
     static member typeInfoNamespace() = (GetStringFunc("typeInfoNamespace",",,,") )
     /// module
-    /// (Originally from ..\FSComp.txt:929)
+    /// (Originally from ..\FSComp.txt:930)
     static member typeInfoModule() = (GetStringFunc("typeInfoModule",",,,") )
     /// namespace/module
-    /// (Originally from ..\FSComp.txt:930)
+    /// (Originally from ..\FSComp.txt:931)
     static member typeInfoNamespaceOrModule() = (GetStringFunc("typeInfoNamespaceOrModule",",,,") )
     /// from %s
-    /// (Originally from ..\FSComp.txt:931)
+    /// (Originally from ..\FSComp.txt:932)
     static member typeInfoFromFirst(a0 : System.String) = (GetStringFunc("typeInfoFromFirst",",,,%s,,,") a0)
     /// also from %s
-    /// (Originally from ..\FSComp.txt:932)
+    /// (Originally from ..\FSComp.txt:933)
     static member typeInfoFromNext(a0 : System.String) = (GetStringFunc("typeInfoFromNext",",,,%s,,,") a0)
     /// generated property
-    /// (Originally from ..\FSComp.txt:933)
+    /// (Originally from ..\FSComp.txt:934)
     static member typeInfoGeneratedProperty() = (GetStringFunc("typeInfoGeneratedProperty",",,,") )
     /// generated type
-    /// (Originally from ..\FSComp.txt:934)
+    /// (Originally from ..\FSComp.txt:935)
     static member typeInfoGeneratedType() = (GetStringFunc("typeInfoGeneratedType",",,,") )
     /// Found by AssemblyFolders registry key
-    /// (Originally from ..\FSComp.txt:935)
+    /// (Originally from ..\FSComp.txt:936)
     static member assemblyResolutionFoundByAssemblyFoldersKey() = (GetStringFunc("assemblyResolutionFoundByAssemblyFoldersKey",",,,") )
     /// Found by AssemblyFoldersEx registry key
-    /// (Originally from ..\FSComp.txt:936)
+    /// (Originally from ..\FSComp.txt:937)
     static member assemblyResolutionFoundByAssemblyFoldersExKey() = (GetStringFunc("assemblyResolutionFoundByAssemblyFoldersExKey",",,,") )
     /// .NET Framework
-    /// (Originally from ..\FSComp.txt:937)
+    /// (Originally from ..\FSComp.txt:938)
     static member assemblyResolutionNetFramework() = (GetStringFunc("assemblyResolutionNetFramework",",,,") )
     /// Global Assembly Cache
-    /// (Originally from ..\FSComp.txt:938)
+    /// (Originally from ..\FSComp.txt:939)
     static member assemblyResolutionGAC() = (GetStringFunc("assemblyResolutionGAC",",,,") )
     /// Recursive class hierarchy in type '%s'
-    /// (Originally from ..\FSComp.txt:939)
+    /// (Originally from ..\FSComp.txt:940)
     static member recursiveClassHierarchy(a0 : System.String) = (1089, GetStringFunc("recursiveClassHierarchy",",,,%s,,,") a0)
     /// Invalid recursive reference to an abstract slot
-    /// (Originally from ..\FSComp.txt:940)
+    /// (Originally from ..\FSComp.txt:941)
     static member InvalidRecursiveReferenceToAbstractSlot() = (1090, GetStringFunc("InvalidRecursiveReferenceToAbstractSlot",",,,") )
     /// The event '%s' has a non-standard type. If this event is declared in another CLI language, you may need to access this event using the explicit %s and %s methods for the event. If this event is declared in F#, make the type of the event an instantiation of either 'IDelegateEvent<_>' or 'IEvent<_,_>'.
-    /// (Originally from ..\FSComp.txt:941)
+    /// (Originally from ..\FSComp.txt:942)
     static member eventHasNonStandardType(a0 : System.String, a1 : System.String, a2 : System.String) = (1091, GetStringFunc("eventHasNonStandardType",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// The type '%s' is not accessible from this code location
-    /// (Originally from ..\FSComp.txt:942)
+    /// (Originally from ..\FSComp.txt:943)
     static member typeIsNotAccessible(a0 : System.String) = (1092, GetStringFunc("typeIsNotAccessible",",,,%s,,,") a0)
     /// The union cases or fields of the type '%s' are not accessible from this code location
-    /// (Originally from ..\FSComp.txt:943)
+    /// (Originally from ..\FSComp.txt:944)
     static member unionCasesAreNotAccessible(a0 : System.String) = (1093, GetStringFunc("unionCasesAreNotAccessible",",,,%s,,,") a0)
     /// The value '%s' is not accessible from this code location
-    /// (Originally from ..\FSComp.txt:944)
+    /// (Originally from ..\FSComp.txt:945)
     static member valueIsNotAccessible(a0 : System.String) = (1094, GetStringFunc("valueIsNotAccessible",",,,%s,,,") a0)
     /// The union case '%s' is not accessible from this code location
-    /// (Originally from ..\FSComp.txt:945)
+    /// (Originally from ..\FSComp.txt:946)
     static member unionCaseIsNotAccessible(a0 : System.String) = (1095, GetStringFunc("unionCaseIsNotAccessible",",,,%s,,,") a0)
     /// The record, struct or class field '%s' is not accessible from this code location
-    /// (Originally from ..\FSComp.txt:946)
+    /// (Originally from ..\FSComp.txt:947)
     static member fieldIsNotAccessible(a0 : System.String) = (1096, GetStringFunc("fieldIsNotAccessible",",,,%s,,,") a0)
     /// The struct or class field '%s' is not accessible from this code location
-    /// (Originally from ..\FSComp.txt:947)
+    /// (Originally from ..\FSComp.txt:948)
     static member structOrClassFieldIsNotAccessible(a0 : System.String) = (1097, GetStringFunc("structOrClassFieldIsNotAccessible",",,,%s,,,") a0)
     /// This construct is experimental
-    /// (Originally from ..\FSComp.txt:948)
+    /// (Originally from ..\FSComp.txt:949)
     static member experimentalConstruct() = (GetStringFunc("experimentalConstruct",",,,") )
     /// No Invoke methods found for delegate type
-    /// (Originally from ..\FSComp.txt:949)
+    /// (Originally from ..\FSComp.txt:950)
     static member noInvokeMethodsFound() = (1099, GetStringFunc("noInvokeMethodsFound",",,,") )
     /// More than one Invoke method found for delegate type
-    /// (Originally from ..\FSComp.txt:950)
+    /// (Originally from ..\FSComp.txt:951)
     static member moreThanOneInvokeMethodFound() = (GetStringFunc("moreThanOneInvokeMethodFound",",,,") )
     /// Delegates are not allowed to have curried signatures
-    /// (Originally from ..\FSComp.txt:951)
+    /// (Originally from ..\FSComp.txt:952)
     static member delegatesNotAllowedToHaveCurriedSignatures() = (1101, GetStringFunc("delegatesNotAllowedToHaveCurriedSignatures",",,,") )
     /// Unexpected Expr.TyChoose
-    /// (Originally from ..\FSComp.txt:952)
+    /// (Originally from ..\FSComp.txt:953)
     static member tlrUnexpectedTExpr() = (1102, GetStringFunc("tlrUnexpectedTExpr",",,,") )
     /// Note: Lambda-lifting optimizations have not been applied because of the use of this local constrained generic function as a first class value. Adding type constraints may resolve this condition.
-    /// (Originally from ..\FSComp.txt:953)
+    /// (Originally from ..\FSComp.txt:954)
     static member tlrLambdaLiftingOptimizationsNotApplied() = (1103, GetStringFunc("tlrLambdaLiftingOptimizationsNotApplied",",,,") )
     /// Identifiers containing '@' are reserved for use in F# code generation
-    /// (Originally from ..\FSComp.txt:954)
+    /// (Originally from ..\FSComp.txt:955)
     static member lexhlpIdentifiersContainingAtSymbolReserved() = (1104, GetStringFunc("lexhlpIdentifiersContainingAtSymbolReserved",",,,") )
     /// The identifier '%s' is reserved for future use by F#
-    /// (Originally from ..\FSComp.txt:955)
+    /// (Originally from ..\FSComp.txt:956)
     static member lexhlpIdentifierReserved(a0 : System.String) = (GetStringFunc("lexhlpIdentifierReserved",",,,%s,,,") a0)
     /// Missing variable '%s'
-    /// (Originally from ..\FSComp.txt:956)
+    /// (Originally from ..\FSComp.txt:957)
     static member patcMissingVariable(a0 : System.String) = (1106, GetStringFunc("patcMissingVariable",",,,%s,,,") a0)
     /// Partial active patterns may only generate one result
-    /// (Originally from ..\FSComp.txt:957)
+    /// (Originally from ..\FSComp.txt:958)
     static member patcPartialActivePatternsGenerateOneResult() = (1107, GetStringFunc("patcPartialActivePatternsGenerateOneResult",",,,") )
     /// The type '%s' is required here and is unavailable. You must add a reference to assembly '%s'.
-    /// (Originally from ..\FSComp.txt:958)
+    /// (Originally from ..\FSComp.txt:959)
     static member impTypeRequiredUnavailable(a0 : System.String, a1 : System.String) = (1108, GetStringFunc("impTypeRequiredUnavailable",",,,%s,,,%s,,,") a0 a1)
     /// A reference to the type '%s' in assembly '%s' was found, but the type could not be found in that assembly
-    /// (Originally from ..\FSComp.txt:959)
+    /// (Originally from ..\FSComp.txt:960)
     static member impReferencedTypeCouldNotBeFoundInAssembly(a0 : System.String, a1 : System.String) = (1109, GetStringFunc("impReferencedTypeCouldNotBeFoundInAssembly",",,,%s,,,%s,,,") a0 a1)
     /// Internal error or badly formed metadata: not enough type parameters were in scope while importing
-    /// (Originally from ..\FSComp.txt:960)
+    /// (Originally from ..\FSComp.txt:961)
     static member impNotEnoughTypeParamsInScopeWhileImporting() = (1110, GetStringFunc("impNotEnoughTypeParamsInScopeWhileImporting",",,,") )
     /// A reference to the DLL %s is required by assembly %s. The imported type %s is located in the first assembly and could not be resolved.
-    /// (Originally from ..\FSComp.txt:961)
+    /// (Originally from ..\FSComp.txt:962)
     static member impReferenceToDllRequiredByAssembly(a0 : System.String, a1 : System.String, a2 : System.String) = (1111, GetStringFunc("impReferenceToDllRequiredByAssembly",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// An imported assembly uses the type '%s' but that type is not public
-    /// (Originally from ..\FSComp.txt:962)
+    /// (Originally from ..\FSComp.txt:963)
     static member impImportedAssemblyUsesNotPublicType(a0 : System.String) = (1112, GetStringFunc("impImportedAssemblyUsesNotPublicType",",,,%s,,,") a0)
     /// The value '%s' was marked inline but its implementation makes use of an internal or private function which is not sufficiently accessible
-    /// (Originally from ..\FSComp.txt:963)
+    /// (Originally from ..\FSComp.txt:964)
     static member optValueMarkedInlineButIncomplete(a0 : System.String) = (1113, GetStringFunc("optValueMarkedInlineButIncomplete",",,,%s,,,") a0)
     /// The value '%s' was marked inline but was not bound in the optimization environment
-    /// (Originally from ..\FSComp.txt:964)
+    /// (Originally from ..\FSComp.txt:965)
     static member optValueMarkedInlineButWasNotBoundInTheOptEnv(a0 : System.String) = (1114, GetStringFunc("optValueMarkedInlineButWasNotBoundInTheOptEnv",",,,%s,,,") a0)
     /// Local value %s not found during optimization
-    /// (Originally from ..\FSComp.txt:965)
+    /// (Originally from ..\FSComp.txt:966)
     static member optLocalValueNotFoundDuringOptimization(a0 : System.String) = (1115, GetStringFunc("optLocalValueNotFoundDuringOptimization",",,,%s,,,") a0)
     /// A value marked as 'inline' has an unexpected value
-    /// (Originally from ..\FSComp.txt:966)
+    /// (Originally from ..\FSComp.txt:967)
     static member optValueMarkedInlineHasUnexpectedValue() = (1116, GetStringFunc("optValueMarkedInlineHasUnexpectedValue",",,,") )
     /// A value marked as 'inline' could not be inlined
-    /// (Originally from ..\FSComp.txt:967)
+    /// (Originally from ..\FSComp.txt:968)
     static member optValueMarkedInlineCouldNotBeInlined() = (1117, GetStringFunc("optValueMarkedInlineCouldNotBeInlined",",,,") )
     /// Failed to inline the value '%s' marked 'inline', perhaps because a recursive value was marked 'inline'
-    /// (Originally from ..\FSComp.txt:968)
+    /// (Originally from ..\FSComp.txt:969)
     static member optFailedToInlineValue(a0 : System.String) = (1118, GetStringFunc("optFailedToInlineValue",",,,%s,,,") a0)
     /// Recursive ValValue %s
-    /// (Originally from ..\FSComp.txt:969)
+    /// (Originally from ..\FSComp.txt:970)
     static member optRecursiveValValue(a0 : System.String) = (1119, GetStringFunc("optRecursiveValValue",",,,%s,,,") a0)
     /// The indentation of this 'in' token is incorrect with respect to the corresponding 'let'
-    /// (Originally from ..\FSComp.txt:970)
+    /// (Originally from ..\FSComp.txt:971)
     static member lexfltIncorrentIndentationOfIn() = (GetStringFunc("lexfltIncorrentIndentationOfIn",",,,") )
     /// Possible incorrect indentation: this token is offside of context started at position %s. Try indenting this token further or using standard formatting conventions.
-    /// (Originally from ..\FSComp.txt:971)
+    /// (Originally from ..\FSComp.txt:972)
     static member lexfltTokenIsOffsideOfContextStartedEarlier(a0 : System.String) = (GetStringFunc("lexfltTokenIsOffsideOfContextStartedEarlier",",,,%s,,,") a0)
     /// The '|' tokens separating rules of this pattern match are misaligned by one column. Consider realigning your code or using further indentation.
-    /// (Originally from ..\FSComp.txt:972)
+    /// (Originally from ..\FSComp.txt:973)
     static member lexfltSeparatorTokensOfPatternMatchMisaligned() = (GetStringFunc("lexfltSeparatorTokensOfPatternMatchMisaligned",",,,") )
     /// Invalid module/expression/type
-    /// (Originally from ..\FSComp.txt:973)
+    /// (Originally from ..\FSComp.txt:974)
     static member nrInvalidModuleExprType() = (1123, GetStringFunc("nrInvalidModuleExprType",",,,") )
     /// Multiple types exist called '%s', taking different numbers of generic parameters. Provide a type instantiation to disambiguate the type resolution, e.g. '%s'.
-    /// (Originally from ..\FSComp.txt:974)
+    /// (Originally from ..\FSComp.txt:975)
     static member nrTypeInstantiationNeededToDisambiguateTypesWithSameName(a0 : System.String, a1 : System.String) = (1124, GetStringFunc("nrTypeInstantiationNeededToDisambiguateTypesWithSameName",",,,%s,,,%s,,,") a0 a1)
     /// The instantiation of the generic type '%s' is missing and can't be inferred from the arguments or return type of this member. Consider providing a type instantiation when accessing this type, e.g. '%s'.
-    /// (Originally from ..\FSComp.txt:975)
+    /// (Originally from ..\FSComp.txt:976)
     static member nrTypeInstantiationIsMissingAndCouldNotBeInferred(a0 : System.String, a1 : System.String) = (1125, GetStringFunc("nrTypeInstantiationIsMissingAndCouldNotBeInferred",",,,%s,,,%s,,,") a0 a1)
     /// 'global' may only be used as the first name in a qualified path
-    /// (Originally from ..\FSComp.txt:976)
+    /// (Originally from ..\FSComp.txt:977)
     static member nrGlobalUsedOnlyAsFirstName() = (1126, GetStringFunc("nrGlobalUsedOnlyAsFirstName",",,,") )
     /// This is not a constructor or literal, or a constructor is being used incorrectly
-    /// (Originally from ..\FSComp.txt:977)
+    /// (Originally from ..\FSComp.txt:978)
     static member nrIsNotConstructorOrLiteral() = (1127, GetStringFunc("nrIsNotConstructorOrLiteral",",,,") )
     /// Unexpected empty long identifier
-    /// (Originally from ..\FSComp.txt:978)
+    /// (Originally from ..\FSComp.txt:979)
     static member nrUnexpectedEmptyLongId() = (1128, GetStringFunc("nrUnexpectedEmptyLongId",",,,") )
     /// The record type '%s' does not contain a label '%s'.
-    /// (Originally from ..\FSComp.txt:979)
+    /// (Originally from ..\FSComp.txt:980)
     static member nrRecordDoesNotContainSuchLabel(a0 : System.String, a1 : System.String) = (1129, GetStringFunc("nrRecordDoesNotContainSuchLabel",",,,%s,,,%s,,,") a0 a1)
     /// Invalid field label
-    /// (Originally from ..\FSComp.txt:980)
+    /// (Originally from ..\FSComp.txt:981)
     static member nrInvalidFieldLabel() = (1130, GetStringFunc("nrInvalidFieldLabel",",,,") )
     /// Invalid expression '%s'
-    /// (Originally from ..\FSComp.txt:981)
+    /// (Originally from ..\FSComp.txt:982)
     static member nrInvalidExpression(a0 : System.String) = (1132, GetStringFunc("nrInvalidExpression",",,,%s,,,") a0)
     /// No constructors are available for the type '%s'
-    /// (Originally from ..\FSComp.txt:982)
+    /// (Originally from ..\FSComp.txt:983)
     static member nrNoConstructorsAvailableForType(a0 : System.String) = (1133, GetStringFunc("nrNoConstructorsAvailableForType",",,,%s,,,") a0)
     /// The union type for union case '%s' was defined with the RequireQualifiedAccessAttribute. Include the name of the union type ('%s') in the name you are using.
-    /// (Originally from ..\FSComp.txt:983)
+    /// (Originally from ..\FSComp.txt:984)
     static member nrUnionTypeNeedsQualifiedAccess(a0 : System.String, a1 : System.String) = (1134, GetStringFunc("nrUnionTypeNeedsQualifiedAccess",",,,%s,,,%s,,,") a0 a1)
     /// The record type for the record field '%s' was defined with the RequireQualifiedAccessAttribute. Include the name of the record type ('%s') in the name you are using.
-    /// (Originally from ..\FSComp.txt:984)
+    /// (Originally from ..\FSComp.txt:985)
     static member nrRecordTypeNeedsQualifiedAccess(a0 : System.String, a1 : System.String) = (1135, GetStringFunc("nrRecordTypeNeedsQualifiedAccess",",,,%s,,,%s,,,") a0 a1)
     /// Unexpected error creating debug information file '%s'
-    /// (Originally from ..\FSComp.txt:985)
+    /// (Originally from ..\FSComp.txt:986)
     static member ilwriteErrorCreatingPdb(a0 : System.String) = (1136, GetStringFunc("ilwriteErrorCreatingPdb",",,,%s,,,") a0)
     /// This number is outside the allowable range for this integer type
-    /// (Originally from ..\FSComp.txt:986)
+    /// (Originally from ..\FSComp.txt:987)
     static member lexOutsideIntegerRange() = (1138, GetStringFunc("lexOutsideIntegerRange",",,,") )
     /// '%s' is not permitted as a character in operator names and is reserved for future use
-    /// (Originally from ..\FSComp.txt:990)
+    /// (Originally from ..\FSComp.txt:991)
     static member lexCharNotAllowedInOperatorNames(a0 : System.String) = (GetStringFunc("lexCharNotAllowedInOperatorNames",",,,%s,,,") a0)
     /// Unexpected character '%s'
-    /// (Originally from ..\FSComp.txt:991)
+    /// (Originally from ..\FSComp.txt:992)
     static member lexUnexpectedChar(a0 : System.String) = (GetStringFunc("lexUnexpectedChar",",,,%s,,,") a0)
     /// This byte array literal contains characters that do not encode as a single byte
-    /// (Originally from ..\FSComp.txt:992)
+    /// (Originally from ..\FSComp.txt:993)
     static member lexByteArrayCannotEncode() = (1140, GetStringFunc("lexByteArrayCannotEncode",",,,") )
     /// Identifiers followed by '%s' are reserved for future use
-    /// (Originally from ..\FSComp.txt:993)
+    /// (Originally from ..\FSComp.txt:994)
     static member lexIdentEndInMarkReserved(a0 : System.String) = (1141, GetStringFunc("lexIdentEndInMarkReserved",",,,%s,,,") a0)
     /// This number is outside the allowable range for 8-bit signed integers
-    /// (Originally from ..\FSComp.txt:994)
+    /// (Originally from ..\FSComp.txt:995)
     static member lexOutsideEightBitSigned() = (1142, GetStringFunc("lexOutsideEightBitSigned",",,,") )
     /// This number is outside the allowable range for hexadecimal 8-bit signed integers
-    /// (Originally from ..\FSComp.txt:995)
+    /// (Originally from ..\FSComp.txt:996)
     static member lexOutsideEightBitSignedHex() = (1143, GetStringFunc("lexOutsideEightBitSignedHex",",,,") )
     /// This number is outside the allowable range for 8-bit unsigned integers
-    /// (Originally from ..\FSComp.txt:996)
+    /// (Originally from ..\FSComp.txt:997)
     static member lexOutsideEightBitUnsigned() = (1144, GetStringFunc("lexOutsideEightBitUnsigned",",,,") )
     /// This number is outside the allowable range for 16-bit signed integers
-    /// (Originally from ..\FSComp.txt:997)
+    /// (Originally from ..\FSComp.txt:998)
     static member lexOutsideSixteenBitSigned() = (1145, GetStringFunc("lexOutsideSixteenBitSigned",",,,") )
     /// This number is outside the allowable range for 16-bit unsigned integers
-    /// (Originally from ..\FSComp.txt:998)
+    /// (Originally from ..\FSComp.txt:999)
     static member lexOutsideSixteenBitUnsigned() = (1146, GetStringFunc("lexOutsideSixteenBitUnsigned",",,,") )
     /// This number is outside the allowable range for 32-bit signed integers
-    /// (Originally from ..\FSComp.txt:999)
+    /// (Originally from ..\FSComp.txt:1000)
     static member lexOutsideThirtyTwoBitSigned() = (1147, GetStringFunc("lexOutsideThirtyTwoBitSigned",",,,") )
     /// This number is outside the allowable range for 32-bit unsigned integers
-    /// (Originally from ..\FSComp.txt:1000)
+    /// (Originally from ..\FSComp.txt:1001)
     static member lexOutsideThirtyTwoBitUnsigned() = (1148, GetStringFunc("lexOutsideThirtyTwoBitUnsigned",",,,") )
     /// This number is outside the allowable range for 64-bit signed integers
-    /// (Originally from ..\FSComp.txt:1001)
+    /// (Originally from ..\FSComp.txt:1002)
     static member lexOutsideSixtyFourBitSigned() = (1149, GetStringFunc("lexOutsideSixtyFourBitSigned",",,,") )
     /// This number is outside the allowable range for 64-bit unsigned integers
-    /// (Originally from ..\FSComp.txt:1002)
+    /// (Originally from ..\FSComp.txt:1003)
     static member lexOutsideSixtyFourBitUnsigned() = (1150, GetStringFunc("lexOutsideSixtyFourBitUnsigned",",,,") )
     /// This number is outside the allowable range for signed native integers
-    /// (Originally from ..\FSComp.txt:1003)
+    /// (Originally from ..\FSComp.txt:1004)
     static member lexOutsideNativeSigned() = (1151, GetStringFunc("lexOutsideNativeSigned",",,,") )
     /// This number is outside the allowable range for unsigned native integers
-    /// (Originally from ..\FSComp.txt:1004)
+    /// (Originally from ..\FSComp.txt:1005)
     static member lexOutsideNativeUnsigned() = (1152, GetStringFunc("lexOutsideNativeUnsigned",",,,") )
     /// Invalid floating point number
-    /// (Originally from ..\FSComp.txt:1005)
+    /// (Originally from ..\FSComp.txt:1006)
     static member lexInvalidFloat() = (1153, GetStringFunc("lexInvalidFloat",",,,") )
     /// This number is outside the allowable range for decimal literals
-    /// (Originally from ..\FSComp.txt:1006)
+    /// (Originally from ..\FSComp.txt:1007)
     static member lexOusideDecimal() = (1154, GetStringFunc("lexOusideDecimal",",,,") )
     /// This number is outside the allowable range for 32-bit floats
-    /// (Originally from ..\FSComp.txt:1007)
+    /// (Originally from ..\FSComp.txt:1008)
     static member lexOusideThirtyTwoBitFloat() = (1155, GetStringFunc("lexOusideThirtyTwoBitFloat",",,,") )
     /// This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0b0001 (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).
-    /// (Originally from ..\FSComp.txt:1008)
+    /// (Originally from ..\FSComp.txt:1009)
     static member lexInvalidNumericLiteral() = (1156, GetStringFunc("lexInvalidNumericLiteral",",,,") )
     /// This is not a valid byte literal
-    /// (Originally from ..\FSComp.txt:1009)
+    /// (Originally from ..\FSComp.txt:1010)
     static member lexInvalidByteLiteral() = (1157, GetStringFunc("lexInvalidByteLiteral",",,,") )
     /// This is not a valid character literal
-    /// (Originally from ..\FSComp.txt:1010)
+    /// (Originally from ..\FSComp.txt:1011)
     static member lexInvalidCharLiteral() = (1158, GetStringFunc("lexInvalidCharLiteral",",,,") )
     /// This Unicode encoding is only valid in string literals
-    /// (Originally from ..\FSComp.txt:1011)
+    /// (Originally from ..\FSComp.txt:1012)
     static member lexThisUnicodeOnlyInStringLiterals() = (1159, GetStringFunc("lexThisUnicodeOnlyInStringLiterals",",,,") )
     /// This token is reserved for future use
-    /// (Originally from ..\FSComp.txt:1012)
+    /// (Originally from ..\FSComp.txt:1013)
     static member lexTokenReserved() = (1160, GetStringFunc("lexTokenReserved",",,,") )
     /// TABs are not allowed in F# code unless the #indent \"off\" option is used
-    /// (Originally from ..\FSComp.txt:1013)
+    /// (Originally from ..\FSComp.txt:1014)
     static member lexTabsNotAllowed() = (1161, GetStringFunc("lexTabsNotAllowed",",,,") )
     /// Invalid line number: '%s'
-    /// (Originally from ..\FSComp.txt:1014)
+    /// (Originally from ..\FSComp.txt:1015)
     static member lexInvalidLineNumber(a0 : System.String) = (1162, GetStringFunc("lexInvalidLineNumber",",,,%s,,,") a0)
     /// #if directive must appear as the first non-whitespace character on a line
-    /// (Originally from ..\FSComp.txt:1015)
+    /// (Originally from ..\FSComp.txt:1016)
     static member lexHashIfMustBeFirst() = (1163, GetStringFunc("lexHashIfMustBeFirst",",,,") )
     /// #else has no matching #if
-    /// (Originally from ..\FSComp.txt:1016)
+    /// (Originally from ..\FSComp.txt:1017)
     static member lexHashElseNoMatchingIf() = (GetStringFunc("lexHashElseNoMatchingIf",",,,") )
     /// #endif required for #else
-    /// (Originally from ..\FSComp.txt:1017)
+    /// (Originally from ..\FSComp.txt:1018)
     static member lexHashEndifRequiredForElse() = (GetStringFunc("lexHashEndifRequiredForElse",",,,") )
     /// #else directive must appear as the first non-whitespace character on a line
-    /// (Originally from ..\FSComp.txt:1018)
+    /// (Originally from ..\FSComp.txt:1019)
     static member lexHashElseMustBeFirst() = (1166, GetStringFunc("lexHashElseMustBeFirst",",,,") )
     /// #endif has no matching #if
-    /// (Originally from ..\FSComp.txt:1019)
+    /// (Originally from ..\FSComp.txt:1020)
     static member lexHashEndingNoMatchingIf() = (GetStringFunc("lexHashEndingNoMatchingIf",",,,") )
     /// #endif directive must appear as the first non-whitespace character on a line
-    /// (Originally from ..\FSComp.txt:1020)
+    /// (Originally from ..\FSComp.txt:1021)
     static member lexHashEndifMustBeFirst() = (1168, GetStringFunc("lexHashEndifMustBeFirst",",,,") )
     /// #if directive should be immediately followed by an identifier
-    /// (Originally from ..\FSComp.txt:1021)
+    /// (Originally from ..\FSComp.txt:1022)
     static member lexHashIfMustHaveIdent() = (1169, GetStringFunc("lexHashIfMustHaveIdent",",,,") )
     /// Syntax error. Wrong nested #endif, unexpected tokens before it.
-    /// (Originally from ..\FSComp.txt:1022)
+    /// (Originally from ..\FSComp.txt:1023)
     static member lexWrongNestedHashEndif() = (1170, GetStringFunc("lexWrongNestedHashEndif",",,,") )
     /// #! may only appear as the first line at the start of a file.
-    /// (Originally from ..\FSComp.txt:1023)
+    /// (Originally from ..\FSComp.txt:1024)
     static member lexHashBangMustBeFirstInFile() = (GetStringFunc("lexHashBangMustBeFirstInFile",",,,") )
     /// Expected single line comment or end of line
-    /// (Originally from ..\FSComp.txt:1024)
+    /// (Originally from ..\FSComp.txt:1025)
     static member pplexExpectedSingleLineComment() = (1171, GetStringFunc("pplexExpectedSingleLineComment",",,,") )
     /// Infix operator member '%s' has no arguments. Expected a tuple of 2 arguments, e.g. static member (+) (x,y) = ...
-    /// (Originally from ..\FSComp.txt:1025)
+    /// (Originally from ..\FSComp.txt:1026)
     static member memberOperatorDefinitionWithNoArguments(a0 : System.String) = (1172, GetStringFunc("memberOperatorDefinitionWithNoArguments",",,,%s,,,") a0)
     /// Infix operator member '%s' has %d initial argument(s). Expected a tuple of 2 arguments, e.g. static member (+) (x,y) = ...
-    /// (Originally from ..\FSComp.txt:1026)
+    /// (Originally from ..\FSComp.txt:1027)
     static member memberOperatorDefinitionWithNonPairArgument(a0 : System.String, a1 : System.Int32) = (1173, GetStringFunc("memberOperatorDefinitionWithNonPairArgument",",,,%s,,,%d,,,") a0 a1)
     /// Infix operator member '%s' has extra curried arguments. Expected a tuple of 2 arguments, e.g. static member (+) (x,y) = ...
-    /// (Originally from ..\FSComp.txt:1027)
+    /// (Originally from ..\FSComp.txt:1028)
     static member memberOperatorDefinitionWithCurriedArguments(a0 : System.String) = (1174, GetStringFunc("memberOperatorDefinitionWithCurriedArguments",",,,%s,,,") a0)
     /// All record, union and struct types in FSharp.Core.dll must be explicitly labelled with 'StructuralComparison' or 'NoComparison'
-    /// (Originally from ..\FSComp.txt:1028)
+    /// (Originally from ..\FSComp.txt:1029)
     static member tcFSharpCoreRequiresExplicit() = (1175, GetStringFunc("tcFSharpCoreRequiresExplicit",",,,") )
     /// The struct, record or union type '%s' has the 'StructuralComparison' attribute but the type parameter '%s' does not satisfy the 'comparison' constraint. Consider adding the 'comparison' constraint to the type parameter
-    /// (Originally from ..\FSComp.txt:1029)
+    /// (Originally from ..\FSComp.txt:1030)
     static member tcStructuralComparisonNotSatisfied1(a0 : System.String, a1 : System.String) = (1176, GetStringFunc("tcStructuralComparisonNotSatisfied1",",,,%s,,,%s,,,") a0 a1)
     /// The struct, record or union type '%s' has the 'StructuralComparison' attribute but the component type '%s' does not satisfy the 'comparison' constraint
-    /// (Originally from ..\FSComp.txt:1030)
+    /// (Originally from ..\FSComp.txt:1031)
     static member tcStructuralComparisonNotSatisfied2(a0 : System.String, a1 : System.String) = (1177, GetStringFunc("tcStructuralComparisonNotSatisfied2",",,,%s,,,%s,,,") a0 a1)
     /// The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to the type '%s' to clarify that the type is not comparable
-    /// (Originally from ..\FSComp.txt:1031)
+    /// (Originally from ..\FSComp.txt:1032)
     static member tcNoComparisonNeeded1(a0 : System.String, a1 : System.String, a2 : System.String) = (1178, GetStringFunc("tcNoComparisonNeeded1",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to the type '%s' to clarify that the type is not comparable
-    /// (Originally from ..\FSComp.txt:1032)
+    /// (Originally from ..\FSComp.txt:1033)
     static member tcNoComparisonNeeded2(a0 : System.String, a1 : System.String, a2 : System.String) = (1178, GetStringFunc("tcNoComparisonNeeded2",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// The struct, record or union type '%s' does not support structural equality because the type parameter %s does not satisfy the 'equality' constraint. Consider adding the 'NoEquality' attribute to the type '%s' to clarify that the type does not support structural equality
-    /// (Originally from ..\FSComp.txt:1033)
+    /// (Originally from ..\FSComp.txt:1034)
     static member tcNoEqualityNeeded1(a0 : System.String, a1 : System.String, a2 : System.String) = (1178, GetStringFunc("tcNoEqualityNeeded1",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// The struct, record or union type '%s' does not support structural equality because the type '%s' does not satisfy the 'equality' constraint. Consider adding the 'NoEquality' attribute to the type '%s' to clarify that the type does not support structural equality
-    /// (Originally from ..\FSComp.txt:1034)
+    /// (Originally from ..\FSComp.txt:1035)
     static member tcNoEqualityNeeded2(a0 : System.String, a1 : System.String, a2 : System.String) = (1178, GetStringFunc("tcNoEqualityNeeded2",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// The struct, record or union type '%s' has the 'StructuralEquality' attribute but the type parameter '%s' does not satisfy the 'equality' constraint. Consider adding the 'equality' constraint to the type parameter
-    /// (Originally from ..\FSComp.txt:1035)
+    /// (Originally from ..\FSComp.txt:1036)
     static member tcStructuralEqualityNotSatisfied1(a0 : System.String, a1 : System.String) = (1179, GetStringFunc("tcStructuralEqualityNotSatisfied1",",,,%s,,,%s,,,") a0 a1)
     /// The struct, record or union type '%s' has the 'StructuralEquality' attribute but the component type '%s' does not satisfy the 'equality' constraint
-    /// (Originally from ..\FSComp.txt:1036)
+    /// (Originally from ..\FSComp.txt:1037)
     static member tcStructuralEqualityNotSatisfied2(a0 : System.String, a1 : System.String) = (1180, GetStringFunc("tcStructuralEqualityNotSatisfied2",",,,%s,,,%s,,,") a0 a1)
     /// Each argument of the primary constructor for a struct must be given a type, for example 'type S(x1:int, x2: int) = ...'. These arguments determine the fields of the struct.
-    /// (Originally from ..\FSComp.txt:1037)
+    /// (Originally from ..\FSComp.txt:1038)
     static member tcStructsMustDeclareTypesOfImplicitCtorArgsExplicitly() = (1181, GetStringFunc("tcStructsMustDeclareTypesOfImplicitCtorArgsExplicitly",",,,") )
     /// The value '%s' is unused
-    /// (Originally from ..\FSComp.txt:1038)
+    /// (Originally from ..\FSComp.txt:1039)
     static member chkUnusedValue(a0 : System.String) = (1182, GetStringFunc("chkUnusedValue",",,,%s,,,") a0)
     /// The recursive object reference '%s' is unused. The presence of a recursive object reference adds runtime initialization checks to members in this and derived types. Consider removing this recursive object reference.
-    /// (Originally from ..\FSComp.txt:1039)
+    /// (Originally from ..\FSComp.txt:1040)
     static member chkUnusedThisVariable(a0 : System.String) = (1183, GetStringFunc("chkUnusedThisVariable",",,,%s,,,") a0)
     /// A getter property may have at most one argument group
-    /// (Originally from ..\FSComp.txt:1040)
+    /// (Originally from ..\FSComp.txt:1041)
     static member parsGetterAtMostOneArgument() = (1184, GetStringFunc("parsGetterAtMostOneArgument",",,,") )
     /// A setter property may have at most two argument groups
-    /// (Originally from ..\FSComp.txt:1041)
+    /// (Originally from ..\FSComp.txt:1042)
     static member parsSetterAtMostTwoArguments() = (1185, GetStringFunc("parsSetterAtMostTwoArguments",",,,") )
     /// Invalid property getter or setter
-    /// (Originally from ..\FSComp.txt:1042)
+    /// (Originally from ..\FSComp.txt:1043)
     static member parsInvalidProperty() = (1186, GetStringFunc("parsInvalidProperty",",,,") )
     /// An indexer property must be given at least one argument
-    /// (Originally from ..\FSComp.txt:1043)
+    /// (Originally from ..\FSComp.txt:1044)
     static member parsIndexerPropertyRequiresAtLeastOneArgument() = (1187, GetStringFunc("parsIndexerPropertyRequiresAtLeastOneArgument",",,,") )
     /// This operation accesses a mutable top-level value defined in another assembly in an unsupported way. The value cannot be accessed through its address. Consider copying the expression to a mutable local, e.g. 'let mutable x = ...', and if necessary assigning the value back after the completion of the operation
-    /// (Originally from ..\FSComp.txt:1044)
+    /// (Originally from ..\FSComp.txt:1045)
     static member tastInvalidAddressOfMutableAcrossAssemblyBoundary() = (1188, GetStringFunc("tastInvalidAddressOfMutableAcrossAssemblyBoundary",",,,") )
     /// Remove spaces between the type name and type parameter, e.g. \"type C<'T>\", not type \"C   <'T>\". Type parameters must be placed directly adjacent to the type name.
-    /// (Originally from ..\FSComp.txt:1045)
+    /// (Originally from ..\FSComp.txt:1046)
     static member parsNonAdjacentTypars() = (1189, GetStringFunc("parsNonAdjacentTypars",",,,") )
     /// Remove spaces between the type name and type parameter, e.g. \"C<'T>\", not \"C <'T>\". Type parameters must be placed directly adjacent to the type name.
-    /// (Originally from ..\FSComp.txt:1046)
+    /// (Originally from ..\FSComp.txt:1047)
     static member parsNonAdjacentTyargs() = (1190, GetStringFunc("parsNonAdjacentTyargs",",,,") )
     /// The use of the type syntax 'int C' and 'C  <int>' is not permitted here. Consider adjusting this type to be written in the form 'C<int>'
-    /// (Originally from ..\FSComp.txt:1047)
+    /// (Originally from ..\FSComp.txt:1048)
     static member parsNonAtomicType() = (GetStringFunc("parsNonAtomicType",",,,") )
     /// The module/namespace '%s' from compilation unit '%s' did not contain the module/namespace '%s'
-    /// (Originally from ..\FSComp.txt:1050)
+    /// (Originally from ..\FSComp.txt:1051)
     static member tastUndefinedItemRefModuleNamespace(a0 : System.String, a1 : System.String, a2 : System.String) = (1193, GetStringFunc("tastUndefinedItemRefModuleNamespace",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// The module/namespace '%s' from compilation unit '%s' did not contain the val '%s'
-    /// (Originally from ..\FSComp.txt:1051)
+    /// (Originally from ..\FSComp.txt:1052)
     static member tastUndefinedItemRefVal(a0 : System.String, a1 : System.String, a2 : System.String) = (1194, GetStringFunc("tastUndefinedItemRefVal",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// The module/namespace '%s' from compilation unit '%s' did not contain the namespace, module or type '%s'
-    /// (Originally from ..\FSComp.txt:1052)
+    /// (Originally from ..\FSComp.txt:1053)
     static member tastUndefinedItemRefModuleNamespaceType(a0 : System.String, a1 : System.String, a2 : System.String) = (1195, GetStringFunc("tastUndefinedItemRefModuleNamespaceType",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// The 'UseNullAsTrueValue' attribute flag may only be used with union types that have one nullary case and at least one non-nullary case
-    /// (Originally from ..\FSComp.txt:1053)
+    /// (Originally from ..\FSComp.txt:1054)
     static member tcInvalidUseNullAsTrueValue() = (1196, GetStringFunc("tcInvalidUseNullAsTrueValue",",,,") )
     /// The parameter '%s' was inferred to have byref type. Parameters of byref type must be given an explicit type annotation, e.g. 'x1: byref<int>'. When used, a byref parameter is implicitly dereferenced.
-    /// (Originally from ..\FSComp.txt:1054)
+    /// (Originally from ..\FSComp.txt:1055)
     static member tcParameterInferredByref(a0 : System.String) = (1197, GetStringFunc("tcParameterInferredByref",",,,%s,,,") a0)
     /// The generic member '%s' has been used at a non-uniform instantiation prior to this program point. Consider reordering the members so this member occurs first. Alternatively, specify the full type of the member explicitly, including argument types, return type and any additional generic parameters and constraints.
-    /// (Originally from ..\FSComp.txt:1055)
+    /// (Originally from ..\FSComp.txt:1056)
     static member tcNonUniformMemberUse(a0 : System.String) = (1198, GetStringFunc("tcNonUniformMemberUse",",,,%s,,,") a0)
     /// The attribute '%s' appears in both the implementation and the signature, but the attribute arguments differ. Only the attribute from the signature will be included in the compiled code.
-    /// (Originally from ..\FSComp.txt:1056)
+    /// (Originally from ..\FSComp.txt:1057)
     static member tcAttribArgsDiffer(a0 : System.String) = (1200, GetStringFunc("tcAttribArgsDiffer",",,,%s,,,") a0)
     /// Cannot call an abstract base member: '%s'
-    /// (Originally from ..\FSComp.txt:1057)
+    /// (Originally from ..\FSComp.txt:1058)
     static member tcCannotCallAbstractBaseMember(a0 : System.String) = (1201, GetStringFunc("tcCannotCallAbstractBaseMember",",,,%s,,,") a0)
     /// Could not resolve the ambiguity in the use of a generic construct with an 'unmanaged' constraint at or near this position
-    /// (Originally from ..\FSComp.txt:1058)
+    /// (Originally from ..\FSComp.txt:1059)
     static member typrelCannotResolveAmbiguityInUnmanaged() = (1202, GetStringFunc("typrelCannotResolveAmbiguityInUnmanaged",",,,") )
     /// This construct is for ML compatibility. %s. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.
-    /// (Originally from ..\FSComp.txt:1061)
+    /// (Originally from ..\FSComp.txt:1062)
     static member mlCompatMessage(a0 : System.String) = (GetStringFunc("mlCompatMessage",",,,%s,,,") a0)
     /// The type '%s' has been marked as having an Explicit layout, but the field '%s' has not been marked with the 'FieldOffset' attribute
-    /// (Originally from ..\FSComp.txt:1063)
+    /// (Originally from ..\FSComp.txt:1064)
     static member ilFieldDoesNotHaveValidOffsetForStructureLayout(a0 : System.String, a1 : System.String) = (1206, GetStringFunc("ilFieldDoesNotHaveValidOffsetForStructureLayout",",,,%s,,,%s,,,") a0 a1)
     /// Interfaces inherited by other interfaces should be declared using 'inherit ...' instead of 'interface ...'
-    /// (Originally from ..\FSComp.txt:1064)
+    /// (Originally from ..\FSComp.txt:1065)
     static member tcInterfacesShouldUseInheritNotInterface() = (1207, GetStringFunc("tcInterfacesShouldUseInheritNotInterface",",,,") )
     /// Invalid prefix operator
-    /// (Originally from ..\FSComp.txt:1065)
+    /// (Originally from ..\FSComp.txt:1066)
     static member parsInvalidPrefixOperator() = (1208, GetStringFunc("parsInvalidPrefixOperator",",,,") )
     /// Invalid operator definition. Prefix operator definitions must use a valid prefix operator name.
-    /// (Originally from ..\FSComp.txt:1066)
+    /// (Originally from ..\FSComp.txt:1067)
     static member parsInvalidPrefixOperatorDefinition() = (1208, GetStringFunc("parsInvalidPrefixOperatorDefinition",",,,") )
     /// The file extensions '.ml' and '.mli' are for ML compatibility
-    /// (Originally from ..\FSComp.txt:1067)
+    /// (Originally from ..\FSComp.txt:1068)
     static member buildCompilingExtensionIsForML() = (GetStringFunc("buildCompilingExtensionIsForML",",,,") )
     /// Consider using a file with extension '.ml' or '.mli' instead
-    /// (Originally from ..\FSComp.txt:1068)
+    /// (Originally from ..\FSComp.txt:1069)
     static member lexIndentOffForML() = (GetStringFunc("lexIndentOffForML",",,,") )
     /// Active pattern '%s' is not a function
-    /// (Originally from ..\FSComp.txt:1069)
+    /// (Originally from ..\FSComp.txt:1070)
     static member activePatternIdentIsNotFunctionTyped(a0 : System.String) = (1209, GetStringFunc("activePatternIdentIsNotFunctionTyped",",,,%s,,,") a0)
     /// Active pattern '%s' has a result type containing type variables that are not determined by the input. The common cause is a when a result case is not mentioned, e.g. 'let (|A|B|) (x:int) = A x'. This can be fixed with a type constraint, e.g. 'let (|A|B|) (x:int) : Choice<int,unit> = A x'
-    /// (Originally from ..\FSComp.txt:1070)
+    /// (Originally from ..\FSComp.txt:1071)
     static member activePatternChoiceHasFreeTypars(a0 : System.String) = (1210, GetStringFunc("activePatternChoiceHasFreeTypars",",,,%s,,,") a0)
     /// The FieldOffset attribute can only be placed on members of types marked with the StructLayout(LayoutKind.Explicit)
-    /// (Originally from ..\FSComp.txt:1071)
+    /// (Originally from ..\FSComp.txt:1072)
     static member ilFieldHasOffsetForSequentialLayout() = (1211, GetStringFunc("ilFieldHasOffsetForSequentialLayout",",,,") )
     /// Optional arguments must come at the end of the argument list, after any non-optional arguments
-    /// (Originally from ..\FSComp.txt:1072)
+    /// (Originally from ..\FSComp.txt:1073)
     static member tcOptionalArgsMustComeAfterNonOptionalArgs() = (1212, GetStringFunc("tcOptionalArgsMustComeAfterNonOptionalArgs",",,,") )
     /// Attribute 'System.Diagnostics.ConditionalAttribute' is only valid on methods or attribute classes
-    /// (Originally from ..\FSComp.txt:1073)
+    /// (Originally from ..\FSComp.txt:1074)
     static member tcConditionalAttributeUsage() = (1213, GetStringFunc("tcConditionalAttributeUsage",",,,") )
     /// Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.
-    /// (Originally from ..\FSComp.txt:1075)
+    /// (Originally from ..\FSComp.txt:1076)
     static member tcMemberOperatorDefinitionInExtrinsic() = (1215, GetStringFunc("tcMemberOperatorDefinitionInExtrinsic",",,,") )
     /// The name of the MDB file must be <assembly-file-name>.mdb. The --pdb option will be ignored.
-    /// (Originally from ..\FSComp.txt:1076)
+    /// (Originally from ..\FSComp.txt:1077)
     static member ilwriteMDBFileNameCannotBeChangedWarning() = (1216, GetStringFunc("ilwriteMDBFileNameCannotBeChangedWarning",",,,") )
     /// MDB generation failed. Could not find compatible member %s
-    /// (Originally from ..\FSComp.txt:1077)
+    /// (Originally from ..\FSComp.txt:1078)
     static member ilwriteMDBMemberMissing(a0 : System.String) = (1217, GetStringFunc("ilwriteMDBMemberMissing",",,,%s,,,") a0)
     /// Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.
-    /// (Originally from ..\FSComp.txt:1078)
+    /// (Originally from ..\FSComp.txt:1079)
     static member ilwriteErrorCreatingMdb() = (1218, GetStringFunc("ilwriteErrorCreatingMdb",",,,") )
     /// The union case named '%s' conflicts with the generated type '%s'
-    /// (Originally from ..\FSComp.txt:1079)
+    /// (Originally from ..\FSComp.txt:1080)
     static member tcUnionCaseNameConflictsWithGeneratedType(a0 : System.String, a1 : System.String) = (1219, GetStringFunc("tcUnionCaseNameConflictsWithGeneratedType",",,,%s,,,%s,,,") a0 a1)
     /// ReflectedDefinitionAttribute may not be applied to an instance member on a struct type, because the instance member takes an implicit 'this' byref parameter
-    /// (Originally from ..\FSComp.txt:1080)
+    /// (Originally from ..\FSComp.txt:1081)
     static member chkNoReflectedDefinitionOnStructMember() = (1220, GetStringFunc("chkNoReflectedDefinitionOnStructMember",",,,") )
     /// DLLImport bindings must be static members in a class or function definitions in a module
-    /// (Originally from ..\FSComp.txt:1081)
+    /// (Originally from ..\FSComp.txt:1082)
     static member tcDllImportNotAllowed() = (1221, GetStringFunc("tcDllImportNotAllowed",",,,") )
     /// When mscorlib.dll or FSharp.Core.dll is explicitly referenced the %s option must also be passed
-    /// (Originally from ..\FSComp.txt:1082)
+    /// (Originally from ..\FSComp.txt:1083)
     static member buildExplicitCoreLibRequiresNoFramework(a0 : System.String) = (1222, GetStringFunc("buildExplicitCoreLibRequiresNoFramework",",,,%s,,,") a0)
     /// FSharp.Core.sigdata not found alongside FSharp.Core. File expected in %s. Consider upgrading to a more recent version of FSharp.Core, where this file is no longer be required.
-    /// (Originally from ..\FSComp.txt:1083)
+    /// (Originally from ..\FSComp.txt:1084)
     static member buildExpectedSigdataFile(a0 : System.String) = (1223, GetStringFunc("buildExpectedSigdataFile",",,,%s,,,") a0)
     /// File '%s' not found alongside FSharp.Core. File expected in %s. Consider upgrading to a more recent version of FSharp.Core, where this file is no longer be required.
-    /// (Originally from ..\FSComp.txt:1084)
+    /// (Originally from ..\FSComp.txt:1085)
     static member buildExpectedFileAlongSideFSharpCore(a0 : System.String, a1 : System.String) = (1225, GetStringFunc("buildExpectedFileAlongSideFSharpCore",",,,%s,,,%s,,,") a0 a1)
     /// Filename '%s' contains invalid character '%s'
-    /// (Originally from ..\FSComp.txt:1085)
+    /// (Originally from ..\FSComp.txt:1086)
     static member buildUnexpectedFileNameCharacter(a0 : System.String, a1 : System.String) = (1227, GetStringFunc("buildUnexpectedFileNameCharacter",",,,%s,,,%s,,,") a0 a1)
     /// 'use!' bindings must be of the form 'use! <var> = <expr>'
-    /// (Originally from ..\FSComp.txt:1086)
+    /// (Originally from ..\FSComp.txt:1087)
     static member tcInvalidUseBangBinding() = (1228, GetStringFunc("tcInvalidUseBangBinding",",,,") )
     /// Inner generic functions are not permitted in quoted expressions. Consider adding some type constraints until this function is no longer generic.
-    /// (Originally from ..\FSComp.txt:1087)
+    /// (Originally from ..\FSComp.txt:1088)
     static member crefNoInnerGenericsInQuotations() = (1230, GetStringFunc("crefNoInnerGenericsInQuotations",",,,") )
     /// The type '%s' is not a valid enumerator type , i.e. does not have a 'MoveNext()' method returning a bool, and a 'Current' property
-    /// (Originally from ..\FSComp.txt:1088)
+    /// (Originally from ..\FSComp.txt:1089)
     static member tcEnumTypeCannotBeEnumerated(a0 : System.String) = (1231, GetStringFunc("tcEnumTypeCannotBeEnumerated",",,,%s,,,") a0)
     /// End of file in triple-quote string begun at or before here
-    /// (Originally from ..\FSComp.txt:1089)
+    /// (Originally from ..\FSComp.txt:1090)
     static member parsEofInTripleQuoteString() = (1232, GetStringFunc("parsEofInTripleQuoteString",",,,") )
     /// End of file in triple-quote string embedded in comment begun at or before here
-    /// (Originally from ..\FSComp.txt:1090)
+    /// (Originally from ..\FSComp.txt:1091)
     static member parsEofInTripleQuoteStringInComment() = (1233, GetStringFunc("parsEofInTripleQuoteStringInComment",",,,") )
     /// This type test or downcast will ignore the unit-of-measure '%s'
-    /// (Originally from ..\FSComp.txt:1091)
+    /// (Originally from ..\FSComp.txt:1092)
     static member tcTypeTestLosesMeasures(a0 : System.String) = (1240, GetStringFunc("tcTypeTestLosesMeasures",",,,%s,,,") a0)
     /// Expected type argument or static argument
-    /// (Originally from ..\FSComp.txt:1092)
+    /// (Originally from ..\FSComp.txt:1093)
     static member parsMissingTypeArgs() = (1241, GetStringFunc("parsMissingTypeArgs",",,,") )
     /// Unmatched '<'. Expected closing '>'
-    /// (Originally from ..\FSComp.txt:1093)
+    /// (Originally from ..\FSComp.txt:1094)
     static member parsMissingGreaterThan() = (1242, GetStringFunc("parsMissingGreaterThan",",,,") )
     /// Unexpected quotation operator '<@' in type definition. If you intend to pass a verbatim string as a static argument to a type provider, put a space between the '<' and '@' characters.
-    /// (Originally from ..\FSComp.txt:1094)
+    /// (Originally from ..\FSComp.txt:1095)
     static member parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString() = (1243, GetStringFunc("parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString",",,,") )
     /// Attempted to parse this as an operator name, but failed
-    /// (Originally from ..\FSComp.txt:1095)
+    /// (Originally from ..\FSComp.txt:1096)
     static member parsErrorParsingAsOperatorName() = (1244, GetStringFunc("parsErrorParsingAsOperatorName",",,,") )
     /// \U%s is not a valid Unicode character escape sequence
-    /// (Originally from ..\FSComp.txt:1096)
+    /// (Originally from ..\FSComp.txt:1097)
     static member lexInvalidUnicodeLiteral(a0 : System.String) = (1245, GetStringFunc("lexInvalidUnicodeLiteral",",,,%s,,,") a0)
     /// '%s' must be applied to an argument of type '%s', but has been applied to an argument of type '%s'
-    /// (Originally from ..\FSComp.txt:1097)
+    /// (Originally from ..\FSComp.txt:1098)
     static member tcCallerInfoWrongType(a0 : System.String, a1 : System.String, a2 : System.String) = (1246, GetStringFunc("tcCallerInfoWrongType",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// '%s' can only be applied to optional arguments
-    /// (Originally from ..\FSComp.txt:1098)
+    /// (Originally from ..\FSComp.txt:1099)
     static member tcCallerInfoNotOptional(a0 : System.String) = (1247, GetStringFunc("tcCallerInfoNotOptional",",,,%s,,,") a0)
     /// The specified .NET Framework version '%s' is not supported. Please specify a value from the enumeration Microsoft.Build.Utilities.TargetDotNetFrameworkVersion.
-    /// (Originally from ..\FSComp.txt:1100)
+    /// (Originally from ..\FSComp.txt:1101)
     static member toolLocationHelperUnsupportedFrameworkVersion(a0 : System.String) = (1300, GetStringFunc("toolLocationHelperUnsupportedFrameworkVersion",",,,%s,,,") a0)
     /// Invalid Magic value in CLR Header
-    /// (Originally from ..\FSComp.txt:1104)
+    /// (Originally from ..\FSComp.txt:1105)
     static member ilSignInvalidMagicValue() = (1301, GetStringFunc("ilSignInvalidMagicValue",",,,") )
     /// Bad image format
-    /// (Originally from ..\FSComp.txt:1105)
+    /// (Originally from ..\FSComp.txt:1106)
     static member ilSignBadImageFormat() = (1302, GetStringFunc("ilSignBadImageFormat",",,,") )
     /// Private key expected
-    /// (Originally from ..\FSComp.txt:1106)
+    /// (Originally from ..\FSComp.txt:1107)
     static member ilSignPrivateKeyExpected() = (1303, GetStringFunc("ilSignPrivateKeyExpected",",,,") )
     /// RSA key expected
-    /// (Originally from ..\FSComp.txt:1107)
+    /// (Originally from ..\FSComp.txt:1108)
     static member ilSignRsaKeyExpected() = (1304, GetStringFunc("ilSignRsaKeyExpected",",,,") )
     /// Invalid bit Length
-    /// (Originally from ..\FSComp.txt:1108)
+    /// (Originally from ..\FSComp.txt:1109)
     static member ilSignInvalidBitLen() = (1305, GetStringFunc("ilSignInvalidBitLen",",,,") )
     /// Invalid RSAParameters structure - '{0}' expected
-    /// (Originally from ..\FSComp.txt:1109)
+    /// (Originally from ..\FSComp.txt:1110)
     static member ilSignInvalidRSAParams() = (1306, GetStringFunc("ilSignInvalidRSAParams",",,,") )
     /// Invalid algId - 'Exponent' expected
-    /// (Originally from ..\FSComp.txt:1110)
+    /// (Originally from ..\FSComp.txt:1111)
     static member ilSignInvalidAlgId() = (1307, GetStringFunc("ilSignInvalidAlgId",",,,") )
     /// Invalid signature size
-    /// (Originally from ..\FSComp.txt:1111)
+    /// (Originally from ..\FSComp.txt:1112)
     static member ilSignInvalidSignatureSize() = (1308, GetStringFunc("ilSignInvalidSignatureSize",",,,") )
     /// No signature directory
-    /// (Originally from ..\FSComp.txt:1112)
+    /// (Originally from ..\FSComp.txt:1113)
     static member ilSignNoSignatureDirectory() = (1309, GetStringFunc("ilSignNoSignatureDirectory",",,,") )
     /// Invalid Public Key blob
-    /// (Originally from ..\FSComp.txt:1113)
+    /// (Originally from ..\FSComp.txt:1114)
     static member ilSignInvalidPKBlob() = (1310, GetStringFunc("ilSignInvalidPKBlob",",,,") )
     /// Exiting - too many errors
-    /// (Originally from ..\FSComp.txt:1115)
+    /// (Originally from ..\FSComp.txt:1116)
     static member fscTooManyErrors() = (GetStringFunc("fscTooManyErrors",",,,") )
     /// The documentation file has no .xml suffix
-    /// (Originally from ..\FSComp.txt:1116)
+    /// (Originally from ..\FSComp.txt:1117)
     static member docfileNoXmlSuffix() = (2001, GetStringFunc("docfileNoXmlSuffix",",,,") )
     /// No implementation files specified
-    /// (Originally from ..\FSComp.txt:1117)
+    /// (Originally from ..\FSComp.txt:1118)
     static member fscNoImplementationFiles() = (2002, GetStringFunc("fscNoImplementationFiles",",,,") )
     /// The attribute %s specified version '%s', but this value is invalid and has been ignored
-    /// (Originally from ..\FSComp.txt:1118)
+    /// (Originally from ..\FSComp.txt:1119)
     static member fscBadAssemblyVersion(a0 : System.String, a1 : System.String) = (2003, GetStringFunc("fscBadAssemblyVersion",",,,%s,,,%s,,,") a0 a1)
     /// Conflicting options specified: 'win32manifest' and 'win32res'. Only one of these can be used.
-    /// (Originally from ..\FSComp.txt:1119)
+    /// (Originally from ..\FSComp.txt:1120)
     static member fscTwoResourceManifests() = (2004, GetStringFunc("fscTwoResourceManifests",",,,") )
     /// The code in assembly '%s' makes uses of quotation literals. Static linking may not include components that make use of quotation literals unless all assemblies are compiled with at least F# 4.0.
-    /// (Originally from ..\FSComp.txt:1120)
+    /// (Originally from ..\FSComp.txt:1121)
     static member fscQuotationLiteralsStaticLinking(a0 : System.String) = (2005, GetStringFunc("fscQuotationLiteralsStaticLinking",",,,%s,,,") a0)
     /// Code in this assembly makes uses of quotation literals. Static linking may not include components that make use of quotation literals unless all assemblies are compiled with at least F# 4.0.
-    /// (Originally from ..\FSComp.txt:1121)
+    /// (Originally from ..\FSComp.txt:1122)
     static member fscQuotationLiteralsStaticLinking0() = (2006, GetStringFunc("fscQuotationLiteralsStaticLinking0",",,,") )
     /// Static linking may not include a .EXE
-    /// (Originally from ..\FSComp.txt:1122)
+    /// (Originally from ..\FSComp.txt:1123)
     static member fscStaticLinkingNoEXE() = (2007, GetStringFunc("fscStaticLinkingNoEXE",",,,") )
     /// Static linking may not include a mixed managed/unmanaged DLL
-    /// (Originally from ..\FSComp.txt:1123)
+    /// (Originally from ..\FSComp.txt:1124)
     static member fscStaticLinkingNoMixedDLL() = (2008, GetStringFunc("fscStaticLinkingNoMixedDLL",",,,") )
     /// Ignoring mixed managed/unmanaged assembly '%s' during static linking
-    /// (Originally from ..\FSComp.txt:1124)
+    /// (Originally from ..\FSComp.txt:1125)
     static member fscIgnoringMixedWhenLinking(a0 : System.String) = (2009, GetStringFunc("fscIgnoringMixedWhenLinking",",,,%s,,,") a0)
     /// Assembly '%s' was referenced transitively and the assembly could not be resolved automatically. Static linking will assume this DLL has no dependencies on the F# library or other statically linked DLLs. Consider adding an explicit reference to this DLL.
-    /// (Originally from ..\FSComp.txt:1125)
+    /// (Originally from ..\FSComp.txt:1126)
     static member fscAssumeStaticLinkContainsNoDependencies(a0 : System.String) = (2011, GetStringFunc("fscAssumeStaticLinkContainsNoDependencies",",,,%s,,,") a0)
     /// Assembly '%s' not found in dependency set of target binary. Statically linked roots should be specified using an assembly name, without a DLL or EXE extension. If this assembly was referenced explicitly then it is possible the assembly was not actually required by the generated binary, in which case it should not be statically linked.
-    /// (Originally from ..\FSComp.txt:1126)
+    /// (Originally from ..\FSComp.txt:1127)
     static member fscAssemblyNotFoundInDependencySet(a0 : System.String) = (2012, GetStringFunc("fscAssemblyNotFoundInDependencySet",",,,%s,,,") a0)
     /// The key file '%s' could not be opened
-    /// (Originally from ..\FSComp.txt:1127)
+    /// (Originally from ..\FSComp.txt:1128)
     static member fscKeyFileCouldNotBeOpened(a0 : System.String) = (2013, GetStringFunc("fscKeyFileCouldNotBeOpened",",,,%s,,,") a0)
     /// A problem occurred writing the binary '%s': %s
-    /// (Originally from ..\FSComp.txt:1128)
+    /// (Originally from ..\FSComp.txt:1129)
     static member fscProblemWritingBinary(a0 : System.String, a1 : System.String) = (2014, GetStringFunc("fscProblemWritingBinary",",,,%s,,,%s,,,") a0 a1)
     /// The 'AssemblyVersionAttribute' has been ignored because a version was given using a command line option
-    /// (Originally from ..\FSComp.txt:1129)
+    /// (Originally from ..\FSComp.txt:1130)
     static member fscAssemblyVersionAttributeIgnored() = (2015, GetStringFunc("fscAssemblyVersionAttributeIgnored",",,,") )
     /// Error emitting 'System.Reflection.AssemblyCultureAttribute' attribute -- 'Executables cannot be satellite assemblies, Culture should always be empty'
-    /// (Originally from ..\FSComp.txt:1130)
+    /// (Originally from ..\FSComp.txt:1131)
     static member fscAssemblyCultureAttributeError() = (2016, GetStringFunc("fscAssemblyCultureAttributeError",",,,") )
     /// Option '--delaysign' overrides attribute 'System.Reflection.AssemblyDelaySignAttribute' given in a source file or added module
-    /// (Originally from ..\FSComp.txt:1131)
+    /// (Originally from ..\FSComp.txt:1132)
     static member fscDelaySignWarning() = (2017, GetStringFunc("fscDelaySignWarning",",,,") )
     /// Option '--keyfile' overrides attribute 'System.Reflection.AssemblyKeyFileAttribute' given in a source file or added module
-    /// (Originally from ..\FSComp.txt:1132)
+    /// (Originally from ..\FSComp.txt:1133)
     static member fscKeyFileWarning() = (2018, GetStringFunc("fscKeyFileWarning",",,,") )
     /// Option '--keycontainer' overrides attribute 'System.Reflection.AssemblyNameAttribute' given in a source file or added module
-    /// (Originally from ..\FSComp.txt:1133)
+    /// (Originally from ..\FSComp.txt:1134)
     static member fscKeyNameWarning() = (2019, GetStringFunc("fscKeyNameWarning",",,,") )
     /// The assembly '%s' is listed on the command line. Assemblies should be referenced using a command line flag such as '-r'.
-    /// (Originally from ..\FSComp.txt:1134)
+    /// (Originally from ..\FSComp.txt:1135)
     static member fscReferenceOnCommandLine(a0 : System.String) = (2020, GetStringFunc("fscReferenceOnCommandLine",",,,%s,,,") a0)
     /// The resident compilation service was not used because a problem occured in communicating with the server.
-    /// (Originally from ..\FSComp.txt:1135)
+    /// (Originally from ..\FSComp.txt:1136)
     static member fscRemotingError() = (2021, GetStringFunc("fscRemotingError",",,,") )
     /// Problem with filename '%s': Illegal characters in path.
-    /// (Originally from ..\FSComp.txt:1136)
+    /// (Originally from ..\FSComp.txt:1137)
     static member pathIsInvalid(a0 : System.String) = (2022, GetStringFunc("pathIsInvalid",",,,%s,,,") a0)
     /// Passing a .resx file (%s) as a source file to the compiler is deprecated. Use resgen.exe to transform the .resx file into a .resources file to pass as a --resource option. If you are using MSBuild, this can be done via an <EmbeddedResource> item in the .fsproj project file.
-    /// (Originally from ..\FSComp.txt:1137)
+    /// (Originally from ..\FSComp.txt:1138)
     static member fscResxSourceFileDeprecated(a0 : System.String) = (2023, GetStringFunc("fscResxSourceFileDeprecated",",,,%s,,,") a0)
     /// Static linking may not be used on an assembly referencing mscorlib (e.g. a .NET Framework assembly) when generating an assembly that references System.Runtime (e.g. a .NET Core or Portable assembly).
-    /// (Originally from ..\FSComp.txt:1138)
+    /// (Originally from ..\FSComp.txt:1139)
     static member fscStaticLinkingNoProfileMismatches() = (2024, GetStringFunc("fscStaticLinkingNoProfileMismatches",",,,") )
     /// An %s specified version '%s', but this value is a wildcard, and you have requested a deterministic build, these are in conflict.
-    /// (Originally from ..\FSComp.txt:1139)
+    /// (Originally from ..\FSComp.txt:1140)
     static member fscAssemblyWildcardAndDeterminism(a0 : System.String, a1 : System.String) = (2025, GetStringFunc("fscAssemblyWildcardAndDeterminism",",,,%s,,,%s,,,") a0 a1)
     /// Determinstic builds only support portable PDBs (--debug:portable or --debug:embedded)
-    /// (Originally from ..\FSComp.txt:1140)
+    /// (Originally from ..\FSComp.txt:1141)
     static member fscDeterministicDebugRequiresPortablePdb() = (2026, GetStringFunc("fscDeterministicDebugRequiresPortablePdb",",,,") )
     /// Character '%s' is not allowed in provided namespace name '%s'
-    /// (Originally from ..\FSComp.txt:1141)
+    /// (Originally from ..\FSComp.txt:1142)
     static member etIllegalCharactersInNamespaceName(a0 : System.String, a1 : System.String) = (3000, GetStringFunc("etIllegalCharactersInNamespaceName",",,,%s,,,%s,,,") a0 a1)
     /// The provided type '%s' returned a member with a null or empty member name
-    /// (Originally from ..\FSComp.txt:1142)
+    /// (Originally from ..\FSComp.txt:1143)
     static member etNullOrEmptyMemberName(a0 : System.String) = (3001, GetStringFunc("etNullOrEmptyMemberName",",,,%s,,,") a0)
     /// The provided type '%s' returned a null member
-    /// (Originally from ..\FSComp.txt:1143)
+    /// (Originally from ..\FSComp.txt:1144)
     static member etNullMember(a0 : System.String) = (3002, GetStringFunc("etNullMember",",,,%s,,,") a0)
     /// The provided type '%s' member info '%s' has null declaring type
-    /// (Originally from ..\FSComp.txt:1144)
+    /// (Originally from ..\FSComp.txt:1145)
     static member etNullMemberDeclaringType(a0 : System.String, a1 : System.String) = (3003, GetStringFunc("etNullMemberDeclaringType",",,,%s,,,%s,,,") a0 a1)
     /// The provided type '%s' has member '%s' which has declaring type '%s'. Expected declaring type to be the same as provided type.
-    /// (Originally from ..\FSComp.txt:1145)
+    /// (Originally from ..\FSComp.txt:1146)
     static member etNullMemberDeclaringTypeDifferentFromProvidedType(a0 : System.String, a1 : System.String, a2 : System.String) = (3004, GetStringFunc("etNullMemberDeclaringTypeDifferentFromProvidedType",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// Referenced assembly '%s' has assembly level attribute '%s' but no public type provider classes were found
-    /// (Originally from ..\FSComp.txt:1146)
+    /// (Originally from ..\FSComp.txt:1147)
     static member etHostingAssemblyFoundWithoutHosts(a0 : System.String, a1 : System.String) = (3005, GetStringFunc("etHostingAssemblyFoundWithoutHosts",",,,%s,,,%s,,,") a0 a1)
     /// Type '%s' from type provider '%s' has an empty namespace. Use 'null' for the global namespace.
-    /// (Originally from ..\FSComp.txt:1147)
+    /// (Originally from ..\FSComp.txt:1148)
     static member etEmptyNamespaceOfTypeNotAllowed(a0 : System.String, a1 : System.String) = (3006, GetStringFunc("etEmptyNamespaceOfTypeNotAllowed",",,,%s,,,%s,,,") a0 a1)
     /// Empty namespace found from the type provider '%s'. Use 'null' for the global namespace.
-    /// (Originally from ..\FSComp.txt:1148)
+    /// (Originally from ..\FSComp.txt:1149)
     static member etEmptyNamespaceNotAllowed(a0 : System.String) = (3007, GetStringFunc("etEmptyNamespaceNotAllowed",",,,%s,,,") a0)
     /// Provided type '%s' has 'IsGenericType' as true, but generic types are not supported.
-    /// (Originally from ..\FSComp.txt:1149)
+    /// (Originally from ..\FSComp.txt:1150)
     static member etMustNotBeGeneric(a0 : System.String) = (3011, GetStringFunc("etMustNotBeGeneric",",,,%s,,,") a0)
     /// Provided type '%s' has 'IsArray' as true, but array types are not supported.
-    /// (Originally from ..\FSComp.txt:1150)
+    /// (Originally from ..\FSComp.txt:1151)
     static member etMustNotBeAnArray(a0 : System.String) = (3013, GetStringFunc("etMustNotBeAnArray",",,,%s,,,") a0)
     /// Invalid member '%s' on provided type '%s'. Provided type members must be public, and not be generic, virtual, or abstract.
-    /// (Originally from ..\FSComp.txt:1151)
+    /// (Originally from ..\FSComp.txt:1152)
     static member etMethodHasRequirements(a0 : System.String, a1 : System.String) = (3014, GetStringFunc("etMethodHasRequirements",",,,%s,,,%s,,,") a0 a1)
     /// Invalid member '%s' on provided type '%s'. Only properties, methods and constructors are allowed
-    /// (Originally from ..\FSComp.txt:1152)
+    /// (Originally from ..\FSComp.txt:1153)
     static member etUnsupportedMemberKind(a0 : System.String, a1 : System.String) = (3015, GetStringFunc("etUnsupportedMemberKind",",,,%s,,,%s,,,") a0 a1)
     /// Property '%s' on provided type '%s' has CanRead=true but there was no value from GetGetMethod()
-    /// (Originally from ..\FSComp.txt:1153)
+    /// (Originally from ..\FSComp.txt:1154)
     static member etPropertyCanReadButHasNoGetter(a0 : System.String, a1 : System.String) = (3016, GetStringFunc("etPropertyCanReadButHasNoGetter",",,,%s,,,%s,,,") a0 a1)
     /// Property '%s' on provided type '%s' has CanRead=false but GetGetMethod() returned a method
-    /// (Originally from ..\FSComp.txt:1154)
+    /// (Originally from ..\FSComp.txt:1155)
     static member etPropertyHasGetterButNoCanRead(a0 : System.String, a1 : System.String) = (3017, GetStringFunc("etPropertyHasGetterButNoCanRead",",,,%s,,,%s,,,") a0 a1)
     /// Property '%s' on provided type '%s' has CanWrite=true but there was no value from GetSetMethod()
-    /// (Originally from ..\FSComp.txt:1155)
+    /// (Originally from ..\FSComp.txt:1156)
     static member etPropertyCanWriteButHasNoSetter(a0 : System.String, a1 : System.String) = (3018, GetStringFunc("etPropertyCanWriteButHasNoSetter",",,,%s,,,%s,,,") a0 a1)
     /// Property '%s' on provided type '%s' has CanWrite=false but GetSetMethod() returned a method
-    /// (Originally from ..\FSComp.txt:1156)
+    /// (Originally from ..\FSComp.txt:1157)
     static member etPropertyHasSetterButNoCanWrite(a0 : System.String, a1 : System.String) = (3019, GetStringFunc("etPropertyHasSetterButNoCanWrite",",,,%s,,,%s,,,") a0 a1)
     /// One or more errors seen during provided type setup
-    /// (Originally from ..\FSComp.txt:1157)
+    /// (Originally from ..\FSComp.txt:1158)
     static member etOneOrMoreErrorsSeenDuringExtensionTypeSetting() = (3020, GetStringFunc("etOneOrMoreErrorsSeenDuringExtensionTypeSetting",",,,") )
     /// Unexpected exception from provided type '%s' member '%s': %s
-    /// (Originally from ..\FSComp.txt:1158)
+    /// (Originally from ..\FSComp.txt:1159)
     static member etUnexpectedExceptionFromProvidedTypeMember(a0 : System.String, a1 : System.String, a2 : System.String) = (3021, GetStringFunc("etUnexpectedExceptionFromProvidedTypeMember",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// Unsupported constant type '%s'. Quotations provided by type providers can only contain simple constants. The implementation of the type provider may need to be adjusted by moving a value declared outside a provided quotation literal to be a 'let' binding inside the quotation literal.
-    /// (Originally from ..\FSComp.txt:1159)
+    /// (Originally from ..\FSComp.txt:1160)
     static member etUnsupportedConstantType(a0 : System.String) = (3022, GetStringFunc("etUnsupportedConstantType",",,,%s,,,") a0)
     /// Unsupported expression '%s' from type provider. If you are the author of this type provider, consider adjusting it to provide a different provided expression.
-    /// (Originally from ..\FSComp.txt:1160)
+    /// (Originally from ..\FSComp.txt:1161)
     static member etUnsupportedProvidedExpression(a0 : System.String) = (3025, GetStringFunc("etUnsupportedProvidedExpression",",,,%s,,,") a0)
     /// Expected provided type named '%s' but provided type has 'Name' with value '%s'
-    /// (Originally from ..\FSComp.txt:1161)
+    /// (Originally from ..\FSComp.txt:1162)
     static member etProvidedTypeHasUnexpectedName(a0 : System.String, a1 : System.String) = (3028, GetStringFunc("etProvidedTypeHasUnexpectedName",",,,%s,,,%s,,,") a0 a1)
     /// Event '%s' on provided type '%s' has no value from GetAddMethod()
-    /// (Originally from ..\FSComp.txt:1162)
+    /// (Originally from ..\FSComp.txt:1163)
     static member etEventNoAdd(a0 : System.String, a1 : System.String) = (3029, GetStringFunc("etEventNoAdd",",,,%s,,,%s,,,") a0 a1)
     /// Event '%s' on provided type '%s' has no value from GetRemoveMethod()
-    /// (Originally from ..\FSComp.txt:1163)
+    /// (Originally from ..\FSComp.txt:1164)
     static member etEventNoRemove(a0 : System.String, a1 : System.String) = (3030, GetStringFunc("etEventNoRemove",",,,%s,,,%s,,,") a0 a1)
     /// Assembly attribute '%s' refers to a designer assembly '%s' which cannot be loaded or doesn't exist. %s
-    /// (Originally from ..\FSComp.txt:1164)
+    /// (Originally from ..\FSComp.txt:1165)
     static member etProviderHasWrongDesignerAssembly(a0 : System.String, a1 : System.String, a2 : System.String) = (3031, GetStringFunc("etProviderHasWrongDesignerAssembly",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// The type provider does not have a valid constructor. A constructor taking either no arguments or one argument of type 'TypeProviderConfig' was expected.
-    /// (Originally from ..\FSComp.txt:1165)
+    /// (Originally from ..\FSComp.txt:1166)
     static member etProviderDoesNotHaveValidConstructor() = (3032, GetStringFunc("etProviderDoesNotHaveValidConstructor",",,,") )
     /// The type provider '%s' reported an error: %s
-    /// (Originally from ..\FSComp.txt:1166)
+    /// (Originally from ..\FSComp.txt:1167)
     static member etProviderError(a0 : System.String, a1 : System.String) = (3033, GetStringFunc("etProviderError",",,,%s,,,%s,,,") a0 a1)
     /// The type provider '%s' used an invalid parameter in the ParameterExpression: %s
-    /// (Originally from ..\FSComp.txt:1167)
+    /// (Originally from ..\FSComp.txt:1168)
     static member etIncorrectParameterExpression(a0 : System.String, a1 : System.String) = (3034, GetStringFunc("etIncorrectParameterExpression",",,,%s,,,%s,,,") a0 a1)
     /// The type provider '%s' provided a method with a name '%s' and metadata token '%d', which is not reported among its methods of its declaring type '%s'
-    /// (Originally from ..\FSComp.txt:1168)
+    /// (Originally from ..\FSComp.txt:1169)
     static member etIncorrectProvidedMethod(a0 : System.String, a1 : System.String, a2 : System.Int32, a3 : System.String) = (3035, GetStringFunc("etIncorrectProvidedMethod",",,,%s,,,%s,,,%d,,,%s,,,") a0 a1 a2 a3)
     /// The type provider '%s' provided a constructor which is not reported among the constructors of its declaring type '%s'
-    /// (Originally from ..\FSComp.txt:1169)
+    /// (Originally from ..\FSComp.txt:1170)
     static member etIncorrectProvidedConstructor(a0 : System.String, a1 : System.String) = (3036, GetStringFunc("etIncorrectProvidedConstructor",",,,%s,,,%s,,,") a0 a1)
     /// A direct reference to the generated type '%s' is not permitted. Instead, use a type definition, e.g. 'type TypeAlias = <path>'. This indicates that a type provider adds generated types to your assembly.
-    /// (Originally from ..\FSComp.txt:1170)
+    /// (Originally from ..\FSComp.txt:1171)
     static member etDirectReferenceToGeneratedTypeNotAllowed(a0 : System.String) = (3039, GetStringFunc("etDirectReferenceToGeneratedTypeNotAllowed",",,,%s,,,") a0)
     /// Expected provided type with path '%s' but provided type has path '%s'
-    /// (Originally from ..\FSComp.txt:1171)
+    /// (Originally from ..\FSComp.txt:1172)
     static member etProvidedTypeHasUnexpectedPath(a0 : System.String, a1 : System.String) = (3041, GetStringFunc("etProvidedTypeHasUnexpectedPath",",,,%s,,,%s,,,") a0 a1)
     /// Unexpected 'null' return value from provided type '%s' member '%s'
-    /// (Originally from ..\FSComp.txt:1172)
+    /// (Originally from ..\FSComp.txt:1173)
     static member etUnexpectedNullFromProvidedTypeMember(a0 : System.String, a1 : System.String) = (3042, GetStringFunc("etUnexpectedNullFromProvidedTypeMember",",,,%s,,,%s,,,") a0 a1)
     /// Unexpected exception from member '%s' of provided type '%s' member '%s': %s
-    /// (Originally from ..\FSComp.txt:1173)
+    /// (Originally from ..\FSComp.txt:1174)
     static member etUnexpectedExceptionFromProvidedMemberMember(a0 : System.String, a1 : System.String, a2 : System.String, a3 : System.String) = (3043, GetStringFunc("etUnexpectedExceptionFromProvidedMemberMember",",,,%s,,,%s,,,%s,,,%s,,,") a0 a1 a2 a3)
     /// Nested provided types do not take static arguments or generic parameters
-    /// (Originally from ..\FSComp.txt:1174)
+    /// (Originally from ..\FSComp.txt:1175)
     static member etNestedProvidedTypesDoNotTakeStaticArgumentsOrGenericParameters() = (3044, GetStringFunc("etNestedProvidedTypesDoNotTakeStaticArgumentsOrGenericParameters",",,,") )
     /// Invalid static argument to provided type. Expected an argument of kind '%s'.
-    /// (Originally from ..\FSComp.txt:1175)
+    /// (Originally from ..\FSComp.txt:1176)
     static member etInvalidStaticArgument(a0 : System.String) = (3045, GetStringFunc("etInvalidStaticArgument",",,,%s,,,") a0)
     /// An error occured applying the static arguments to a provided type
-    /// (Originally from ..\FSComp.txt:1176)
+    /// (Originally from ..\FSComp.txt:1177)
     static member etErrorApplyingStaticArgumentsToType() = (3046, GetStringFunc("etErrorApplyingStaticArgumentsToType",",,,") )
     /// Unknown static argument kind '%s' when resolving a reference to a provided type or method '%s'
-    /// (Originally from ..\FSComp.txt:1177)
+    /// (Originally from ..\FSComp.txt:1178)
     static member etUnknownStaticArgumentKind(a0 : System.String, a1 : System.String) = (3047, GetStringFunc("etUnknownStaticArgumentKind",",,,%s,,,%s,,,") a0 a1)
     /// invalid namespace for provided type
-    /// (Originally from ..\FSComp.txt:1178)
+    /// (Originally from ..\FSComp.txt:1179)
     static member invalidNamespaceForProvidedType() = (GetStringFunc("invalidNamespaceForProvidedType",",,,") )
     /// invalid full name for provided type
-    /// (Originally from ..\FSComp.txt:1179)
+    /// (Originally from ..\FSComp.txt:1180)
     static member invalidFullNameForProvidedType() = (GetStringFunc("invalidFullNameForProvidedType",",,,") )
     /// The type provider returned 'null', which is not a valid return value from '%s'
-    /// (Originally from ..\FSComp.txt:1181)
+    /// (Originally from ..\FSComp.txt:1182)
     static member etProviderReturnedNull(a0 : System.String) = (3051, GetStringFunc("etProviderReturnedNull",",,,%s,,,") a0)
     /// The type provider constructor has thrown an exception: %s
-    /// (Originally from ..\FSComp.txt:1182)
+    /// (Originally from ..\FSComp.txt:1183)
     static member etTypeProviderConstructorException(a0 : System.String) = (3053, GetStringFunc("etTypeProviderConstructorException",",,,%s,,,") a0)
     /// Type provider '%s' returned null from GetInvokerExpression.
-    /// (Originally from ..\FSComp.txt:1183)
+    /// (Originally from ..\FSComp.txt:1184)
     static member etNullProvidedExpression(a0 : System.String) = (3056, GetStringFunc("etNullProvidedExpression",",,,%s,,,") a0)
     /// The type provider '%s' returned an invalid type from 'ApplyStaticArguments'. A type with name '%s' was expected, but a type with name '%s' was returned.
-    /// (Originally from ..\FSComp.txt:1184)
+    /// (Originally from ..\FSComp.txt:1185)
     static member etProvidedAppliedTypeHadWrongName(a0 : System.String, a1 : System.String, a2 : System.String) = (3057, GetStringFunc("etProvidedAppliedTypeHadWrongName",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// The type provider '%s' returned an invalid method from 'ApplyStaticArgumentsForMethod'. A method with name '%s' was expected, but a method with name '%s' was returned.
-    /// (Originally from ..\FSComp.txt:1185)
+    /// (Originally from ..\FSComp.txt:1186)
     static member etProvidedAppliedMethodHadWrongName(a0 : System.String, a1 : System.String, a2 : System.String) = (3058, GetStringFunc("etProvidedAppliedMethodHadWrongName",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// This type test or downcast will erase the provided type '%s' to the type '%s'
-    /// (Originally from ..\FSComp.txt:1186)
+    /// (Originally from ..\FSComp.txt:1187)
     static member tcTypeTestLossy(a0 : System.String, a1 : System.String) = (3060, GetStringFunc("tcTypeTestLossy",",,,%s,,,%s,,,") a0 a1)
     /// This downcast will erase the provided type '%s' to the type '%s'.
-    /// (Originally from ..\FSComp.txt:1187)
+    /// (Originally from ..\FSComp.txt:1188)
     static member tcTypeCastErased(a0 : System.String, a1 : System.String) = (3061, GetStringFunc("tcTypeCastErased",",,,%s,,,%s,,,") a0 a1)
     /// This type test with a provided type '%s' is not allowed because this provided type will be erased to '%s' at runtime.
-    /// (Originally from ..\FSComp.txt:1188)
+    /// (Originally from ..\FSComp.txt:1189)
     static member tcTypeTestErased(a0 : System.String, a1 : System.String) = (3062, GetStringFunc("tcTypeTestErased",",,,%s,,,%s,,,") a0 a1)
     /// Cannot inherit from erased provided type
-    /// (Originally from ..\FSComp.txt:1189)
+    /// (Originally from ..\FSComp.txt:1190)
     static member tcCannotInheritFromErasedType() = (3063, GetStringFunc("tcCannotInheritFromErasedType",",,,") )
     /// Assembly '%s' hase TypeProviderAssembly attribute with invalid value '%s'. The value should be a valid assembly name
-    /// (Originally from ..\FSComp.txt:1190)
+    /// (Originally from ..\FSComp.txt:1191)
     static member etInvalidTypeProviderAssemblyName(a0 : System.String, a1 : System.String) = (3065, GetStringFunc("etInvalidTypeProviderAssemblyName",",,,%s,,,%s,,,") a0 a1)
     /// Invalid member name. Members may not have name '.ctor' or '.cctor'
-    /// (Originally from ..\FSComp.txt:1191)
+    /// (Originally from ..\FSComp.txt:1192)
     static member tcInvalidMemberNameCtor() = (3066, GetStringFunc("tcInvalidMemberNameCtor",",,,") )
     /// The function or member '%s' is used in a way that requires further type annotations at its definition to ensure consistency of inferred types. The inferred signature is '%s'.
-    /// (Originally from ..\FSComp.txt:1192)
+    /// (Originally from ..\FSComp.txt:1193)
     static member tcInferredGenericTypeGivesRiseToInconsistency(a0 : System.String, a1 : System.String) = (3068, GetStringFunc("tcInferredGenericTypeGivesRiseToInconsistency",",,,%s,,,%s,,,") a0 a1)
     /// The number of type arguments did not match: '%d' given, '%d' expected. This may be related to a previously reported error.
-    /// (Originally from ..\FSComp.txt:1193)
+    /// (Originally from ..\FSComp.txt:1194)
     static member tcInvalidTypeArgumentCount(a0 : System.Int32, a1 : System.Int32) = (3069, GetStringFunc("tcInvalidTypeArgumentCount",",,,%d,,,%d,,,") a0 a1)
     /// Cannot override inherited member '%s' because it is sealed
-    /// (Originally from ..\FSComp.txt:1194)
+    /// (Originally from ..\FSComp.txt:1195)
     static member tcCannotOverrideSealedMethod(a0 : System.String) = (3070, GetStringFunc("tcCannotOverrideSealedMethod",",,,%s,,,") a0)
     /// The type provider '%s' reported an error in the context of provided type '%s', member '%s'. The error: %s
-    /// (Originally from ..\FSComp.txt:1195)
+    /// (Originally from ..\FSComp.txt:1196)
     static member etProviderErrorWithContext(a0 : System.String, a1 : System.String, a2 : System.String, a3 : System.String) = (3071, GetStringFunc("etProviderErrorWithContext",",,,%s,,,%s,,,%s,,,%s,,,") a0 a1 a2 a3)
     /// An exception occurred when accessing the '%s' of a provided type: %s
-    /// (Originally from ..\FSComp.txt:1196)
+    /// (Originally from ..\FSComp.txt:1197)
     static member etProvidedTypeWithNameException(a0 : System.String, a1 : System.String) = (3072, GetStringFunc("etProvidedTypeWithNameException",",,,%s,,,%s,,,") a0 a1)
     /// The '%s' of a provided type was null or empty.
-    /// (Originally from ..\FSComp.txt:1197)
+    /// (Originally from ..\FSComp.txt:1198)
     static member etProvidedTypeWithNullOrEmptyName(a0 : System.String) = (3073, GetStringFunc("etProvidedTypeWithNullOrEmptyName",",,,%s,,,") a0)
     /// Character '%s' is not allowed in provided type name '%s'
-    /// (Originally from ..\FSComp.txt:1198)
+    /// (Originally from ..\FSComp.txt:1199)
     static member etIllegalCharactersInTypeName(a0 : System.String, a1 : System.String) = (3075, GetStringFunc("etIllegalCharactersInTypeName",",,,%s,,,%s,,,") a0 a1)
     /// In queries, '%s' must use a simple pattern
-    /// (Originally from ..\FSComp.txt:1199)
+    /// (Originally from ..\FSComp.txt:1200)
     static member tcJoinMustUseSimplePattern(a0 : System.String) = (3077, GetStringFunc("tcJoinMustUseSimplePattern",",,,%s,,,") a0)
     /// A custom query operation for '%s' is required but not specified
-    /// (Originally from ..\FSComp.txt:1200)
+    /// (Originally from ..\FSComp.txt:1201)
     static member tcMissingCustomOperation(a0 : System.String) = (3078, GetStringFunc("tcMissingCustomOperation",",,,%s,,,") a0)
     /// Named static arguments must come after all unnamed static arguments
-    /// (Originally from ..\FSComp.txt:1201)
+    /// (Originally from ..\FSComp.txt:1202)
     static member etBadUnnamedStaticArgs() = (3080, GetStringFunc("etBadUnnamedStaticArgs",",,,") )
     /// The static parameter '%s' of the provided type or method '%s' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. '%s<%s=...>'.
-    /// (Originally from ..\FSComp.txt:1202)
+    /// (Originally from ..\FSComp.txt:1203)
     static member etStaticParameterRequiresAValue(a0 : System.String, a1 : System.String, a2 : System.String, a3 : System.String) = (3081, GetStringFunc("etStaticParameterRequiresAValue",",,,%s,,,%s,,,%s,,,%s,,,") a0 a1 a2 a3)
     /// No static parameter exists with name '%s'
-    /// (Originally from ..\FSComp.txt:1203)
+    /// (Originally from ..\FSComp.txt:1204)
     static member etNoStaticParameterWithName(a0 : System.String) = (3082, GetStringFunc("etNoStaticParameterWithName",",,,%s,,,") a0)
     /// The static parameter '%s' has already been given a value
-    /// (Originally from ..\FSComp.txt:1204)
+    /// (Originally from ..\FSComp.txt:1205)
     static member etStaticParameterAlreadyHasValue(a0 : System.String) = (3083, GetStringFunc("etStaticParameterAlreadyHasValue",",,,%s,,,") a0)
     /// Multiple static parameters exist with name '%s'
-    /// (Originally from ..\FSComp.txt:1205)
+    /// (Originally from ..\FSComp.txt:1206)
     static member etMultipleStaticParameterWithName(a0 : System.String) = (3084, GetStringFunc("etMultipleStaticParameterWithName",",,,%s,,,") a0)
     /// A custom operation may not be used in conjunction with a non-value or recursive 'let' binding in another part of this computation expression
-    /// (Originally from ..\FSComp.txt:1206)
+    /// (Originally from ..\FSComp.txt:1207)
     static member tcCustomOperationMayNotBeUsedInConjunctionWithNonSimpleLetBindings() = (3085, GetStringFunc("tcCustomOperationMayNotBeUsedInConjunctionWithNonSimpleLetBindings",",,,") )
     /// A custom operation may not be used in conjunction with 'use', 'try/with', 'try/finally', 'if/then/else' or 'match' operators within this computation expression
-    /// (Originally from ..\FSComp.txt:1207)
+    /// (Originally from ..\FSComp.txt:1208)
     static member tcCustomOperationMayNotBeUsedHere() = (3086, GetStringFunc("tcCustomOperationMayNotBeUsedHere",",,,") )
     /// The custom operation '%s' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
-    /// (Originally from ..\FSComp.txt:1208)
+    /// (Originally from ..\FSComp.txt:1209)
     static member tcCustomOperationMayNotBeOverloaded(a0 : System.String) = (3087, GetStringFunc("tcCustomOperationMayNotBeOverloaded",",,,%s,,,") a0)
     /// An if/then/else expression may not be used within queries. Consider using either an if/then expression, or use a sequence expression instead.
-    /// (Originally from ..\FSComp.txt:1209)
+    /// (Originally from ..\FSComp.txt:1210)
     static member tcIfThenElseMayNotBeUsedWithinQueries() = (3090, GetStringFunc("tcIfThenElseMayNotBeUsedWithinQueries",",,,") )
     /// Invalid argument to 'methodhandleof' during codegen
-    /// (Originally from ..\FSComp.txt:1210)
+    /// (Originally from ..\FSComp.txt:1211)
     static member ilxgenUnexpectedArgumentToMethodHandleOfDuringCodegen() = (3091, GetStringFunc("ilxgenUnexpectedArgumentToMethodHandleOfDuringCodegen",",,,") )
     /// A reference to a provided type was missing a value for the static parameter '%s'. You may need to recompile one or more referenced assemblies.
-    /// (Originally from ..\FSComp.txt:1211)
+    /// (Originally from ..\FSComp.txt:1212)
     static member etProvidedTypeReferenceMissingArgument(a0 : System.String) = (3092, GetStringFunc("etProvidedTypeReferenceMissingArgument",",,,%s,,,") a0)
     /// A reference to a provided type had an invalid value '%s' for a static parameter. You may need to recompile one or more referenced assemblies.
-    /// (Originally from ..\FSComp.txt:1212)
+    /// (Originally from ..\FSComp.txt:1213)
     static member etProvidedTypeReferenceInvalidText(a0 : System.String) = (3093, GetStringFunc("etProvidedTypeReferenceInvalidText",",,,%s,,,") a0)
     /// '%s' is not used correctly. This is a custom operation in this query or computation expression.
-    /// (Originally from ..\FSComp.txt:1213)
+    /// (Originally from ..\FSComp.txt:1214)
     static member tcCustomOperationNotUsedCorrectly(a0 : System.String) = (3095, GetStringFunc("tcCustomOperationNotUsedCorrectly",",,,%s,,,") a0)
     /// '%s' is not used correctly. Usage: %s. This is a custom operation in this query or computation expression.
-    /// (Originally from ..\FSComp.txt:1214)
+    /// (Originally from ..\FSComp.txt:1215)
     static member tcCustomOperationNotUsedCorrectly2(a0 : System.String, a1 : System.String) = (3095, GetStringFunc("tcCustomOperationNotUsedCorrectly2",",,,%s,,,%s,,,") a0 a1)
     /// %s var in collection %s (outerKey = innerKey). Note that parentheses are required after '%s'
-    /// (Originally from ..\FSComp.txt:1215)
+    /// (Originally from ..\FSComp.txt:1216)
     static member customOperationTextLikeJoin(a0 : System.String, a1 : System.String, a2 : System.String) = (GetStringFunc("customOperationTextLikeJoin",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// %s var in collection %s (outerKey = innerKey) into group. Note that parentheses are required after '%s'
-    /// (Originally from ..\FSComp.txt:1216)
+    /// (Originally from ..\FSComp.txt:1217)
     static member customOperationTextLikeGroupJoin(a0 : System.String, a1 : System.String, a2 : System.String) = (GetStringFunc("customOperationTextLikeGroupJoin",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// %s var in collection
-    /// (Originally from ..\FSComp.txt:1217)
+    /// (Originally from ..\FSComp.txt:1218)
     static member customOperationTextLikeZip(a0 : System.String) = (GetStringFunc("customOperationTextLikeZip",",,,%s,,,") a0)
     /// '%s' must be followed by a variable name. Usage: %s.
-    /// (Originally from ..\FSComp.txt:1218)
+    /// (Originally from ..\FSComp.txt:1219)
     static member tcBinaryOperatorRequiresVariable(a0 : System.String, a1 : System.String) = (3096, GetStringFunc("tcBinaryOperatorRequiresVariable",",,,%s,,,%s,,,") a0 a1)
     /// Incorrect syntax for '%s'. Usage: %s.
-    /// (Originally from ..\FSComp.txt:1219)
+    /// (Originally from ..\FSComp.txt:1220)
     static member tcOperatorIncorrectSyntax(a0 : System.String, a1 : System.String) = (3097, GetStringFunc("tcOperatorIncorrectSyntax",",,,%s,,,%s,,,") a0 a1)
     /// '%s' must come after a 'for' selection clause and be followed by the rest of the query. Syntax: ... %s ...
-    /// (Originally from ..\FSComp.txt:1220)
+    /// (Originally from ..\FSComp.txt:1221)
     static member tcBinaryOperatorRequiresBody(a0 : System.String, a1 : System.String) = (3098, GetStringFunc("tcBinaryOperatorRequiresBody",",,,%s,,,%s,,,") a0 a1)
     /// '%s' is used with an incorrect number of arguments. This is a custom operation in this query or computation expression. Expected %d argument(s), but given %d.
-    /// (Originally from ..\FSComp.txt:1221)
+    /// (Originally from ..\FSComp.txt:1222)
     static member tcCustomOperationHasIncorrectArgCount(a0 : System.String, a1 : System.Int32, a2 : System.Int32) = (3099, GetStringFunc("tcCustomOperationHasIncorrectArgCount",",,,%s,,,%d,,,%d,,,") a0 a1 a2)
     /// Expected an expression after this point
-    /// (Originally from ..\FSComp.txt:1222)
+    /// (Originally from ..\FSComp.txt:1223)
     static member parsExpectedExpressionAfterToken() = (3100, GetStringFunc("parsExpectedExpressionAfterToken",",,,") )
     /// Expected a type after this point
-    /// (Originally from ..\FSComp.txt:1223)
+    /// (Originally from ..\FSComp.txt:1224)
     static member parsExpectedTypeAfterToken() = (3101, GetStringFunc("parsExpectedTypeAfterToken",",,,") )
     /// Unmatched '[<'. Expected closing '>]'
-    /// (Originally from ..\FSComp.txt:1224)
+    /// (Originally from ..\FSComp.txt:1225)
     static member parsUnmatchedLBrackLess() = (3102, GetStringFunc("parsUnmatchedLBrackLess",",,,") )
     /// Unexpected end of input in 'match' expression. Expected 'match <expr> with | <pat> -> <expr> | <pat> -> <expr> ...'.
-    /// (Originally from ..\FSComp.txt:1225)
+    /// (Originally from ..\FSComp.txt:1226)
     static member parsUnexpectedEndOfFileMatch() = (3103, GetStringFunc("parsUnexpectedEndOfFileMatch",",,,") )
     /// Unexpected end of input in 'try' expression. Expected 'try <expr> with <rules>' or 'try <expr> finally <expr>'.
-    /// (Originally from ..\FSComp.txt:1226)
+    /// (Originally from ..\FSComp.txt:1227)
     static member parsUnexpectedEndOfFileTry() = (3104, GetStringFunc("parsUnexpectedEndOfFileTry",",,,") )
     /// Unexpected end of input in 'while' expression. Expected 'while <expr> do <expr>'.
-    /// (Originally from ..\FSComp.txt:1227)
+    /// (Originally from ..\FSComp.txt:1228)
     static member parsUnexpectedEndOfFileWhile() = (3105, GetStringFunc("parsUnexpectedEndOfFileWhile",",,,") )
     /// Unexpected end of input in 'for' expression. Expected 'for <pat> in <expr> do <expr>'.
-    /// (Originally from ..\FSComp.txt:1228)
+    /// (Originally from ..\FSComp.txt:1229)
     static member parsUnexpectedEndOfFileFor() = (3106, GetStringFunc("parsUnexpectedEndOfFileFor",",,,") )
     /// Unexpected end of input in 'match' or 'try' expression
-    /// (Originally from ..\FSComp.txt:1229)
+    /// (Originally from ..\FSComp.txt:1230)
     static member parsUnexpectedEndOfFileWith() = (3107, GetStringFunc("parsUnexpectedEndOfFileWith",",,,") )
     /// Unexpected end of input in 'then' branch of conditional expression. Expected 'if <expr> then <expr>' or 'if <expr> then <expr> else <expr>'.
-    /// (Originally from ..\FSComp.txt:1230)
+    /// (Originally from ..\FSComp.txt:1231)
     static member parsUnexpectedEndOfFileThen() = (3108, GetStringFunc("parsUnexpectedEndOfFileThen",",,,") )
     /// Unexpected end of input in 'else' branch of conditional expression. Expected 'if <expr> then <expr>' or 'if <expr> then <expr> else <expr>'.
-    /// (Originally from ..\FSComp.txt:1231)
+    /// (Originally from ..\FSComp.txt:1232)
     static member parsUnexpectedEndOfFileElse() = (3109, GetStringFunc("parsUnexpectedEndOfFileElse",",,,") )
     /// Unexpected end of input in body of lambda expression. Expected 'fun <pat> ... <pat> -> <expr>'.
-    /// (Originally from ..\FSComp.txt:1232)
+    /// (Originally from ..\FSComp.txt:1233)
     static member parsUnexpectedEndOfFileFunBody() = (3110, GetStringFunc("parsUnexpectedEndOfFileFunBody",",,,") )
     /// Unexpected end of input in type arguments
-    /// (Originally from ..\FSComp.txt:1233)
+    /// (Originally from ..\FSComp.txt:1234)
     static member parsUnexpectedEndOfFileTypeArgs() = (3111, GetStringFunc("parsUnexpectedEndOfFileTypeArgs",",,,") )
     /// Unexpected end of input in type signature
-    /// (Originally from ..\FSComp.txt:1234)
+    /// (Originally from ..\FSComp.txt:1235)
     static member parsUnexpectedEndOfFileTypeSignature() = (3112, GetStringFunc("parsUnexpectedEndOfFileTypeSignature",",,,") )
     /// Unexpected end of input in type definition
-    /// (Originally from ..\FSComp.txt:1235)
+    /// (Originally from ..\FSComp.txt:1236)
     static member parsUnexpectedEndOfFileTypeDefinition() = (3113, GetStringFunc("parsUnexpectedEndOfFileTypeDefinition",",,,") )
     /// Unexpected end of input in object members
-    /// (Originally from ..\FSComp.txt:1236)
+    /// (Originally from ..\FSComp.txt:1237)
     static member parsUnexpectedEndOfFileObjectMembers() = (3114, GetStringFunc("parsUnexpectedEndOfFileObjectMembers",",,,") )
     /// Unexpected end of input in value, function or member definition
-    /// (Originally from ..\FSComp.txt:1237)
+    /// (Originally from ..\FSComp.txt:1238)
     static member parsUnexpectedEndOfFileDefinition() = (3115, GetStringFunc("parsUnexpectedEndOfFileDefinition",",,,") )
     /// Unexpected end of input in expression
-    /// (Originally from ..\FSComp.txt:1238)
+    /// (Originally from ..\FSComp.txt:1239)
     static member parsUnexpectedEndOfFileExpression() = (3116, GetStringFunc("parsUnexpectedEndOfFileExpression",",,,") )
     /// Unexpected end of type. Expected a name after this point.
-    /// (Originally from ..\FSComp.txt:1239)
+    /// (Originally from ..\FSComp.txt:1240)
     static member parsExpectedNameAfterToken() = (3117, GetStringFunc("parsExpectedNameAfterToken",",,,") )
     /// Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword.
-    /// (Originally from ..\FSComp.txt:1240)
+    /// (Originally from ..\FSComp.txt:1241)
     static member parsUnmatchedLet() = (3118, GetStringFunc("parsUnmatchedLet",",,,") )
     /// Incomplete value definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let!' keyword.
-    /// (Originally from ..\FSComp.txt:1241)
+    /// (Originally from ..\FSComp.txt:1242)
     static member parsUnmatchedLetBang() = (3119, GetStringFunc("parsUnmatchedLetBang",",,,") )
     /// Incomplete value definition. If this is in an expression, the body of the expression must be indented to the same column as the 'use!' keyword.
-    /// (Originally from ..\FSComp.txt:1242)
+    /// (Originally from ..\FSComp.txt:1243)
     static member parsUnmatchedUseBang() = (3120, GetStringFunc("parsUnmatchedUseBang",",,,") )
     /// Incomplete value definition. If this is in an expression, the body of the expression must be indented to the same column as the 'use' keyword.
-    /// (Originally from ..\FSComp.txt:1243)
+    /// (Originally from ..\FSComp.txt:1244)
     static member parsUnmatchedUse() = (3121, GetStringFunc("parsUnmatchedUse",",,,") )
     /// Missing 'do' in 'while' expression. Expected 'while <expr> do <expr>'.
-    /// (Originally from ..\FSComp.txt:1244)
+    /// (Originally from ..\FSComp.txt:1245)
     static member parsWhileDoExpected() = (3122, GetStringFunc("parsWhileDoExpected",",,,") )
     /// Missing 'do' in 'for' expression. Expected 'for <pat> in <expr> do <expr>'.
-    /// (Originally from ..\FSComp.txt:1245)
+    /// (Originally from ..\FSComp.txt:1246)
     static member parsForDoExpected() = (3123, GetStringFunc("parsForDoExpected",",,,") )
     /// Invalid join relation in '%s'. Expected 'expr <op> expr', where <op> is =, =?, ?= or ?=?.
-    /// (Originally from ..\FSComp.txt:1246)
+    /// (Originally from ..\FSComp.txt:1247)
     static member tcInvalidRelationInJoin(a0 : System.String) = (3125, GetStringFunc("tcInvalidRelationInJoin",",,,%s,,,") a0)
     /// Calls
-    /// (Originally from ..\FSComp.txt:1247)
+    /// (Originally from ..\FSComp.txt:1248)
     static member typeInfoCallsWord() = (GetStringFunc("typeInfoCallsWord",",,,") )
     /// Invalid number of generic arguments to type '%s' in provided type. Expected '%d' arguments, given '%d'.
-    /// (Originally from ..\FSComp.txt:1248)
+    /// (Originally from ..\FSComp.txt:1249)
     static member impInvalidNumberOfGenericArguments(a0 : System.String, a1 : System.Int32, a2 : System.Int32) = (3126, GetStringFunc("impInvalidNumberOfGenericArguments",",,,%s,,,%d,,,%d,,,") a0 a1 a2)
     /// Invalid value '%s' for unit-of-measure parameter '%s'
-    /// (Originally from ..\FSComp.txt:1249)
+    /// (Originally from ..\FSComp.txt:1250)
     static member impInvalidMeasureArgument1(a0 : System.String, a1 : System.String) = (3127, GetStringFunc("impInvalidMeasureArgument1",",,,%s,,,%s,,,") a0 a1)
     /// Invalid value unit-of-measure parameter '%s'
-    /// (Originally from ..\FSComp.txt:1250)
+    /// (Originally from ..\FSComp.txt:1251)
     static member impInvalidMeasureArgument2(a0 : System.String) = (3127, GetStringFunc("impInvalidMeasureArgument2",",,,%s,,,") a0)
     /// Property '%s' on provided type '%s' is neither readable nor writable as it has CanRead=false and CanWrite=false
-    /// (Originally from ..\FSComp.txt:1251)
+    /// (Originally from ..\FSComp.txt:1252)
     static member etPropertyNeedsCanWriteOrCanRead(a0 : System.String, a1 : System.String) = (3128, GetStringFunc("etPropertyNeedsCanWriteOrCanRead",",,,%s,,,%s,,,") a0 a1)
     /// A use of 'into' must be followed by the remainder of the computation
-    /// (Originally from ..\FSComp.txt:1252)
+    /// (Originally from ..\FSComp.txt:1253)
     static member tcIntoNeedsRestOfQuery() = (3129, GetStringFunc("tcIntoNeedsRestOfQuery",",,,") )
     /// The operator '%s' does not accept the use of 'into'
-    /// (Originally from ..\FSComp.txt:1253)
+    /// (Originally from ..\FSComp.txt:1254)
     static member tcOperatorDoesntAcceptInto(a0 : System.String) = (3130, GetStringFunc("tcOperatorDoesntAcceptInto",",,,%s,,,") a0)
     /// The definition of the custom operator '%s' does not use a valid combination of attribute flags
-    /// (Originally from ..\FSComp.txt:1254)
+    /// (Originally from ..\FSComp.txt:1255)
     static member tcCustomOperationInvalid(a0 : System.String) = (3131, GetStringFunc("tcCustomOperationInvalid",",,,%s,,,") a0)
     /// This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.
-    /// (Originally from ..\FSComp.txt:1255)
+    /// (Originally from ..\FSComp.txt:1256)
     static member tcThisTypeMayNotHaveACLIMutableAttribute() = (3132, GetStringFunc("tcThisTypeMayNotHaveACLIMutableAttribute",",,,") )
     /// 'member val' definitions are only permitted in types with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.
-    /// (Originally from ..\FSComp.txt:1256)
+    /// (Originally from ..\FSComp.txt:1257)
     static member tcAutoPropertyRequiresImplicitConstructionSequence() = (3133, GetStringFunc("tcAutoPropertyRequiresImplicitConstructionSequence",",,,") )
     /// Property definitions may not be declared mutable. To indicate that this property can be set, use 'member val PropertyName = expr with get,set'.
-    /// (Originally from ..\FSComp.txt:1257)
+    /// (Originally from ..\FSComp.txt:1258)
     static member parsMutableOnAutoPropertyShouldBeGetSet() = (3134, GetStringFunc("parsMutableOnAutoPropertyShouldBeGetSet",",,,") )
     /// To indicate that this property can be set, use 'member val PropertyName = expr with get,set'.
-    /// (Originally from ..\FSComp.txt:1258)
+    /// (Originally from ..\FSComp.txt:1259)
     static member parsMutableOnAutoPropertyShouldBeGetSetNotJustSet() = (3135, GetStringFunc("parsMutableOnAutoPropertyShouldBeGetSetNotJustSet",",,,") )
     /// Type '%s' is illegal because in byref<T>, T cannot contain byref types.
-    /// (Originally from ..\FSComp.txt:1259)
+    /// (Originally from ..\FSComp.txt:1260)
     static member chkNoByrefsOfByrefs(a0 : System.String) = (3136, GetStringFunc("chkNoByrefsOfByrefs",",,,%s,,,") a0)
     /// F# supports array ranks between 1 and 32. The value %d is not allowed.
-    /// (Originally from ..\FSComp.txt:1260)
+    /// (Originally from ..\FSComp.txt:1261)
     static member tastopsMaxArrayThirtyTwo(a0 : System.Int32) = (3138, GetStringFunc("tastopsMaxArrayThirtyTwo",",,,%d,,,") a0)
     /// In queries, use the form 'for x in n .. m do ...' for ranging over integers
-    /// (Originally from ..\FSComp.txt:1261)
+    /// (Originally from ..\FSComp.txt:1262)
     static member tcNoIntegerForLoopInQuery() = (3139, GetStringFunc("tcNoIntegerForLoopInQuery",",,,") )
     /// 'while' expressions may not be used in queries
-    /// (Originally from ..\FSComp.txt:1262)
+    /// (Originally from ..\FSComp.txt:1263)
     static member tcNoWhileInQuery() = (3140, GetStringFunc("tcNoWhileInQuery",",,,") )
     /// 'try/finally' expressions may not be used in queries
-    /// (Originally from ..\FSComp.txt:1263)
+    /// (Originally from ..\FSComp.txt:1264)
     static member tcNoTryFinallyInQuery() = (3141, GetStringFunc("tcNoTryFinallyInQuery",",,,") )
     /// 'use' expressions may not be used in queries
-    /// (Originally from ..\FSComp.txt:1264)
+    /// (Originally from ..\FSComp.txt:1265)
     static member tcUseMayNotBeUsedInQueries() = (3142, GetStringFunc("tcUseMayNotBeUsedInQueries",",,,") )
     /// 'let!', 'use!' and 'do!' expressions may not be used in queries
-    /// (Originally from ..\FSComp.txt:1265)
+    /// (Originally from ..\FSComp.txt:1266)
     static member tcBindMayNotBeUsedInQueries() = (3143, GetStringFunc("tcBindMayNotBeUsedInQueries",",,,") )
     /// 'return' and 'return!' may not be used in queries
-    /// (Originally from ..\FSComp.txt:1266)
+    /// (Originally from ..\FSComp.txt:1267)
     static member tcReturnMayNotBeUsedInQueries() = (3144, GetStringFunc("tcReturnMayNotBeUsedInQueries",",,,") )
     /// This is not a known query operator. Query operators are identifiers such as 'select', 'where', 'sortBy', 'thenBy', 'groupBy', 'groupValBy', 'join', 'groupJoin', 'sumBy' and 'averageBy', defined using corresponding methods on the 'QueryBuilder' type.
-    /// (Originally from ..\FSComp.txt:1267)
+    /// (Originally from ..\FSComp.txt:1268)
     static member tcUnrecognizedQueryOperator() = (3145, GetStringFunc("tcUnrecognizedQueryOperator",",,,") )
     /// 'try/with' expressions may not be used in queries
-    /// (Originally from ..\FSComp.txt:1268)
+    /// (Originally from ..\FSComp.txt:1269)
     static member tcTryWithMayNotBeUsedInQueries() = (3146, GetStringFunc("tcTryWithMayNotBeUsedInQueries",",,,") )
     /// This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
-    /// (Originally from ..\FSComp.txt:1269)
+    /// (Originally from ..\FSComp.txt:1270)
     static member tcNonSimpleLetBindingInQuery() = (3147, GetStringFunc("tcNonSimpleLetBindingInQuery",",,,") )
     /// Too many static parameters. Expected at most %d parameters, but got %d unnamed and %d named parameters.
-    /// (Originally from ..\FSComp.txt:1270)
+    /// (Originally from ..\FSComp.txt:1271)
     static member etTooManyStaticParameters(a0 : System.Int32, a1 : System.Int32, a2 : System.Int32) = (3148, GetStringFunc("etTooManyStaticParameters",",,,%d,,,%d,,,%d,,,") a0 a1 a2)
     /// Invalid provided literal value '%s'
-    /// (Originally from ..\FSComp.txt:1271)
+    /// (Originally from ..\FSComp.txt:1272)
     static member infosInvalidProvidedLiteralValue(a0 : System.String) = (3149, GetStringFunc("infosInvalidProvidedLiteralValue",",,,%s,,,") a0)
     /// The 'anycpu32bitpreferred' platform can only be used with EXE targets. You must use 'anycpu' instead.
-    /// (Originally from ..\FSComp.txt:1272)
+    /// (Originally from ..\FSComp.txt:1273)
     static member invalidPlatformTarget() = (3150, GetStringFunc("invalidPlatformTarget",",,,") )
     /// This member, function or value declaration may not be declared 'inline'
-    /// (Originally from ..\FSComp.txt:1273)
+    /// (Originally from ..\FSComp.txt:1274)
     static member tcThisValueMayNotBeInlined() = (3151, GetStringFunc("tcThisValueMayNotBeInlined",",,,") )
     /// The provider '%s' returned a non-generated type '%s' in the context of a set of generated types. Consider adjusting the type provider to only return generated types.
-    /// (Originally from ..\FSComp.txt:1274)
+    /// (Originally from ..\FSComp.txt:1275)
     static member etErasedTypeUsedInGeneration(a0 : System.String, a1 : System.String) = (3152, GetStringFunc("etErasedTypeUsedInGeneration",",,,%s,,,%s,,,") a0 a1)
     /// Arguments to query operators may require parentheses, e.g. 'where (x > y)' or 'groupBy (x.Length / 10)'
-    /// (Originally from ..\FSComp.txt:1275)
+    /// (Originally from ..\FSComp.txt:1276)
     static member tcUnrecognizedQueryBinaryOperator() = (3153, GetStringFunc("tcUnrecognizedQueryBinaryOperator",",,,") )
     /// A quotation may not involve an assignment to or taking the address of a captured local variable
-    /// (Originally from ..\FSComp.txt:1276)
+    /// (Originally from ..\FSComp.txt:1277)
     static member crefNoSetOfHole() = (3155, GetStringFunc("crefNoSetOfHole",",,,") )
     /// + 1 overload
-    /// (Originally from ..\FSComp.txt:1277)
+    /// (Originally from ..\FSComp.txt:1278)
     static member nicePrintOtherOverloads1() = (GetStringFunc("nicePrintOtherOverloads1",",,,") )
     /// + %d overloads
-    /// (Originally from ..\FSComp.txt:1278)
+    /// (Originally from ..\FSComp.txt:1279)
     static member nicePrintOtherOverloadsN(a0 : System.Int32) = (GetStringFunc("nicePrintOtherOverloadsN",",,,%d,,,") a0)
     /// Erased to
-    /// (Originally from ..\FSComp.txt:1279)
+    /// (Originally from ..\FSComp.txt:1280)
     static member erasedTo() = (GetStringFunc("erasedTo",",,,") )
     /// Unexpected token '%s' or incomplete expression
-    /// (Originally from ..\FSComp.txt:1280)
+    /// (Originally from ..\FSComp.txt:1281)
     static member parsUnfinishedExpression(a0 : System.String) = (3156, GetStringFunc("parsUnfinishedExpression",",,,%s,,,") a0)
     /// Cannot find code target for this attribute, possibly because the code after the attribute is incomplete.
-    /// (Originally from ..\FSComp.txt:1281)
+    /// (Originally from ..\FSComp.txt:1282)
     static member parsAttributeOnIncompleteCode() = (3158, GetStringFunc("parsAttributeOnIncompleteCode",",,,") )
     /// Type name cannot be empty.
-    /// (Originally from ..\FSComp.txt:1282)
+    /// (Originally from ..\FSComp.txt:1283)
     static member parsTypeNameCannotBeEmpty() = (3159, GetStringFunc("parsTypeNameCannotBeEmpty",",,,") )
     /// Problem reading assembly '%s': %s
-    /// (Originally from ..\FSComp.txt:1283)
+    /// (Originally from ..\FSComp.txt:1284)
     static member buildProblemReadingAssembly(a0 : System.String, a1 : System.String) = (3160, GetStringFunc("buildProblemReadingAssembly",",,,%s,,,%s,,,") a0 a1)
     /// Invalid provided field. Provided fields of erased provided types must be literals.
-    /// (Originally from ..\FSComp.txt:1284)
+    /// (Originally from ..\FSComp.txt:1285)
     static member tcTPFieldMustBeLiteral() = (3161, GetStringFunc("tcTPFieldMustBeLiteral",",,,") )
     /// (loading description...)
-    /// (Originally from ..\FSComp.txt:1285)
+    /// (Originally from ..\FSComp.txt:1286)
     static member loadingDescription() = (GetStringFunc("loadingDescription",",,,") )
     /// (description unavailable...)
-    /// (Originally from ..\FSComp.txt:1286)
+    /// (Originally from ..\FSComp.txt:1287)
     static member descriptionUnavailable() = (GetStringFunc("descriptionUnavailable",",,,") )
     /// A type variable has been constrained by multiple different class types. A type variable may only have one class constraint.
-    /// (Originally from ..\FSComp.txt:1287)
+    /// (Originally from ..\FSComp.txt:1288)
     static member chkTyparMultipleClassConstraints() = (3162, GetStringFunc("chkTyparMultipleClassConstraints",",,,") )
     /// 'match' expressions may not be used in queries
-    /// (Originally from ..\FSComp.txt:1288)
+    /// (Originally from ..\FSComp.txt:1289)
     static member tcMatchMayNotBeUsedWithQuery() = (3163, GetStringFunc("tcMatchMayNotBeUsedWithQuery",",,,") )
     /// Infix operator member '%s' has %d initial argument(s). Expected a tuple of 3 arguments
-    /// (Originally from ..\FSComp.txt:1289)
+    /// (Originally from ..\FSComp.txt:1290)
     static member memberOperatorDefinitionWithNonTripleArgument(a0 : System.String, a1 : System.Int32) = (3164, GetStringFunc("memberOperatorDefinitionWithNonTripleArgument",",,,%s,,,%d,,,") a0 a1)
     /// The operator '%s' cannot be resolved. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.
-    /// (Originally from ..\FSComp.txt:1290)
+    /// (Originally from ..\FSComp.txt:1291)
     static member cannotResolveNullableOperators(a0 : System.String) = (3165, GetStringFunc("cannotResolveNullableOperators",",,,%s,,,") a0)
     /// '%s' must be followed by 'in'. Usage: %s.
-    /// (Originally from ..\FSComp.txt:1291)
+    /// (Originally from ..\FSComp.txt:1292)
     static member tcOperatorRequiresIn(a0 : System.String, a1 : System.String) = (3167, GetStringFunc("tcOperatorRequiresIn",",,,%s,,,%s,,,") a0 a1)
     /// Neither 'member val' nor 'override val' definitions are permitted in object expressions.
-    /// (Originally from ..\FSComp.txt:1292)
+    /// (Originally from ..\FSComp.txt:1293)
     static member parsIllegalMemberVarInObjectImplementation() = (3168, GetStringFunc("parsIllegalMemberVarInObjectImplementation",",,,") )
     /// Copy-and-update record expressions must include at least one field.
-    /// (Originally from ..\FSComp.txt:1293)
+    /// (Originally from ..\FSComp.txt:1294)
     static member tcEmptyCopyAndUpdateRecordInvalid() = (3169, GetStringFunc("tcEmptyCopyAndUpdateRecordInvalid",",,,") )
     /// '_' cannot be used as field name
-    /// (Originally from ..\FSComp.txt:1294)
+    /// (Originally from ..\FSComp.txt:1295)
     static member parsUnderscoreInvalidFieldName() = (3170, GetStringFunc("parsUnderscoreInvalidFieldName",",,,") )
     /// The provided types generated by this use of a type provider may not be used from other F# assemblies and should be marked internal or private. Consider using 'type internal TypeName = ...' or 'type private TypeName = ...'.
-    /// (Originally from ..\FSComp.txt:1295)
+    /// (Originally from ..\FSComp.txt:1296)
     static member tcGeneratedTypesShouldBeInternalOrPrivate() = (3171, GetStringFunc("tcGeneratedTypesShouldBeInternalOrPrivate",",,,") )
     /// A property's getter and setter must have the same type. Property '%s' has getter of type '%s' but setter of type '%s'.
-    /// (Originally from ..\FSComp.txt:1296)
+    /// (Originally from ..\FSComp.txt:1297)
     static member chkGetterAndSetterHaveSamePropertyType(a0 : System.String, a1 : System.String, a2 : System.String) = (3172, GetStringFunc("chkGetterAndSetterHaveSamePropertyType",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// Array method '%s' is supplied by the runtime and cannot be directly used in code. For operations with array elements consider using family of GetArray/SetArray functions from LanguagePrimitives.IntrinsicFunctions module.
-    /// (Originally from ..\FSComp.txt:1297)
+    /// (Originally from ..\FSComp.txt:1298)
     static member tcRuntimeSuppliedMethodCannotBeUsedInUserCode(a0 : System.String) = (3173, GetStringFunc("tcRuntimeSuppliedMethodCannotBeUsedInUserCode",",,,%s,,,") a0)
     /// The union case '%s' does not have a field named '%s'.
-    /// (Originally from ..\FSComp.txt:1298)
+    /// (Originally from ..\FSComp.txt:1299)
     static member tcUnionCaseConstructorDoesNotHaveFieldWithGivenName(a0 : System.String, a1 : System.String) = (3174, GetStringFunc("tcUnionCaseConstructorDoesNotHaveFieldWithGivenName",",,,%s,,,%s,,,") a0 a1)
     /// The exception '%s' does not have a field named '%s'.
-    /// (Originally from ..\FSComp.txt:1299)
+    /// (Originally from ..\FSComp.txt:1300)
     static member tcExceptionConstructorDoesNotHaveFieldWithGivenName(a0 : System.String, a1 : System.String) = (3174, GetStringFunc("tcExceptionConstructorDoesNotHaveFieldWithGivenName",",,,%s,,,%s,,,") a0 a1)
     /// Active patterns do not have fields. This syntax is invalid.
-    /// (Originally from ..\FSComp.txt:1300)
+    /// (Originally from ..\FSComp.txt:1301)
     static member tcActivePatternsDoNotHaveFields() = (3174, GetStringFunc("tcActivePatternsDoNotHaveFields",",,,") )
     /// The constructor does not have a field named '%s'.
-    /// (Originally from ..\FSComp.txt:1301)
+    /// (Originally from ..\FSComp.txt:1302)
     static member tcConstructorDoesNotHaveFieldWithGivenName(a0 : System.String) = (3174, GetStringFunc("tcConstructorDoesNotHaveFieldWithGivenName",",,,%s,,,") a0)
     /// Union case/exception field '%s' cannot be used more than once.
-    /// (Originally from ..\FSComp.txt:1302)
+    /// (Originally from ..\FSComp.txt:1303)
     static member tcUnionCaseFieldCannotBeUsedMoreThanOnce(a0 : System.String) = (3175, GetStringFunc("tcUnionCaseFieldCannotBeUsedMoreThanOnce",",,,%s,,,") a0)
     /// Named field '%s' is used more than once.
-    /// (Originally from ..\FSComp.txt:1303)
+    /// (Originally from ..\FSComp.txt:1304)
     static member tcFieldNameIsUsedModeThanOnce(a0 : System.String) = (3176, GetStringFunc("tcFieldNameIsUsedModeThanOnce",",,,%s,,,") a0)
     /// Named field '%s' conflicts with autogenerated name for anonymous field.
-    /// (Originally from ..\FSComp.txt:1304)
+    /// (Originally from ..\FSComp.txt:1305)
     static member tcFieldNameConflictsWithGeneratedNameForAnonymousField(a0 : System.String) = (3176, GetStringFunc("tcFieldNameConflictsWithGeneratedNameForAnonymousField",",,,%s,,,") a0)
     /// This literal expression or attribute argument results in an arithmetic overflow.
-    /// (Originally from ..\FSComp.txt:1305)
+    /// (Originally from ..\FSComp.txt:1306)
     static member tastConstantExpressionOverflow() = (3177, GetStringFunc("tastConstantExpressionOverflow",",,,") )
     /// This is not valid literal expression. The [<Literal>] attribute will be ignored.
-    /// (Originally from ..\FSComp.txt:1306)
+    /// (Originally from ..\FSComp.txt:1307)
     static member tcIllegalStructTypeForConstantExpression() = (3178, GetStringFunc("tcIllegalStructTypeForConstantExpression",",,,") )
     /// System.Runtime.InteropServices assembly is required to use UnknownWrapper\DispatchWrapper classes.
-    /// (Originally from ..\FSComp.txt:1307)
+    /// (Originally from ..\FSComp.txt:1308)
     static member fscSystemRuntimeInteropServicesIsRequired() = (3179, GetStringFunc("fscSystemRuntimeInteropServicesIsRequired",",,,") )
     /// The mutable local '%s' is implicitly allocated as a reference cell because it has been captured by a closure. This warning is for informational purposes only to indicate where implicit allocations are performed.
-    /// (Originally from ..\FSComp.txt:1308)
+    /// (Originally from ..\FSComp.txt:1309)
     static member abImplicitHeapAllocation(a0 : System.String) = (3180, GetStringFunc("abImplicitHeapAllocation",",,,%s,,,") a0)
     /// A type provider implemented GetStaticParametersForMethod, but ApplyStaticArgumentsForMethod was not implemented or invalid
-    /// (Originally from ..\FSComp.txt:1309)
+    /// (Originally from ..\FSComp.txt:1310)
     static member estApplyStaticArgumentsForMethodNotImplemented() = (GetStringFunc("estApplyStaticArgumentsForMethodNotImplemented",",,,") )
     /// An error occured applying the static arguments to a provided method
-    /// (Originally from ..\FSComp.txt:1310)
+    /// (Originally from ..\FSComp.txt:1311)
     static member etErrorApplyingStaticArgumentsToMethod() = (3181, GetStringFunc("etErrorApplyingStaticArgumentsToMethod",",,,") )
     /// Unexpected character '%s' in preprocessor expression
-    /// (Originally from ..\FSComp.txt:1311)
+    /// (Originally from ..\FSComp.txt:1312)
     static member pplexUnexpectedChar(a0 : System.String) = (3182, GetStringFunc("pplexUnexpectedChar",",,,%s,,,") a0)
     /// Unexpected token '%s' in preprocessor expression
-    /// (Originally from ..\FSComp.txt:1312)
+    /// (Originally from ..\FSComp.txt:1313)
     static member ppparsUnexpectedToken(a0 : System.String) = (3183, GetStringFunc("ppparsUnexpectedToken",",,,%s,,,") a0)
     /// Incomplete preprocessor expression
-    /// (Originally from ..\FSComp.txt:1313)
+    /// (Originally from ..\FSComp.txt:1314)
     static member ppparsIncompleteExpression() = (3184, GetStringFunc("ppparsIncompleteExpression",",,,") )
     /// Missing token '%s' in preprocessor expression
-    /// (Originally from ..\FSComp.txt:1314)
+    /// (Originally from ..\FSComp.txt:1315)
     static member ppparsMissingToken(a0 : System.String) = (3185, GetStringFunc("ppparsMissingToken",",,,%s,,,") a0)
     /// An error occurred while reading the F# metadata node at position %d in table '%s' of assembly '%s'. The node had no matching declaration. Please report this warning. You may need to recompile the F# assembly you are using.
-    /// (Originally from ..\FSComp.txt:1315)
+    /// (Originally from ..\FSComp.txt:1316)
     static member pickleMissingDefinition(a0 : System.Int32, a1 : System.String, a2 : System.String) = (3186, GetStringFunc("pickleMissingDefinition",",,,%d,,,%s,,,%s,,,") a0 a1 a2)
     /// Type inference caused the type variable %s to escape its scope. Consider adding an explicit type parameter declaration or adjusting your code to be less generic.
-    /// (Originally from ..\FSComp.txt:1316)
+    /// (Originally from ..\FSComp.txt:1317)
     static member checkNotSufficientlyGenericBecauseOfScope(a0 : System.String) = (3187, GetStringFunc("checkNotSufficientlyGenericBecauseOfScope",",,,%s,,,") a0)
     /// Type inference caused an inference type variable to escape its scope. Consider adding type annotations to make your code less generic.
-    /// (Originally from ..\FSComp.txt:1317)
+    /// (Originally from ..\FSComp.txt:1318)
     static member checkNotSufficientlyGenericBecauseOfScopeAnon() = (3188, GetStringFunc("checkNotSufficientlyGenericBecauseOfScopeAnon",",,,") )
     /// Redundant arguments are being ignored in function '%s'. Expected %d but got %d arguments.
-    /// (Originally from ..\FSComp.txt:1318)
+    /// (Originally from ..\FSComp.txt:1319)
     static member checkRaiseFamilyFunctionArgumentCount(a0 : System.String, a1 : System.Int32, a2 : System.Int32) = (3189, GetStringFunc("checkRaiseFamilyFunctionArgumentCount",",,,%s,,,%d,,,%d,,,") a0 a1 a2)
     /// Lowercase literal '%s' is being shadowed by a new pattern with the same name. Only uppercase and module-prefixed literals can be used as named patterns.
-    /// (Originally from ..\FSComp.txt:1319)
+    /// (Originally from ..\FSComp.txt:1320)
     static member checkLowercaseLiteralBindingInPattern(a0 : System.String) = (3190, GetStringFunc("checkLowercaseLiteralBindingInPattern",",,,%s,,,") a0)
     /// This literal pattern does not take arguments
-    /// (Originally from ..\FSComp.txt:1320)
+    /// (Originally from ..\FSComp.txt:1321)
     static member tcLiteralDoesNotTakeArguments() = (3191, GetStringFunc("tcLiteralDoesNotTakeArguments",",,,") )
     /// Constructors are not permitted as extension members - they must be defined as part of the original definition of the type
-    /// (Originally from ..\FSComp.txt:1321)
+    /// (Originally from ..\FSComp.txt:1322)
     static member tcConstructorsIllegalInAugmentation() = (3192, GetStringFunc("tcConstructorsIllegalInAugmentation",",,,") )
     /// Invalid response file '%s' ( '%s' )
-    /// (Originally from ..\FSComp.txt:1322)
+    /// (Originally from ..\FSComp.txt:1323)
     static member optsInvalidResponseFile(a0 : System.String, a1 : System.String) = (3193, GetStringFunc("optsInvalidResponseFile",",,,%s,,,%s,,,") a0 a1)
     /// Response file '%s' not found in '%s'
-    /// (Originally from ..\FSComp.txt:1323)
+    /// (Originally from ..\FSComp.txt:1324)
     static member optsResponseFileNotFound(a0 : System.String, a1 : System.String) = (3194, GetStringFunc("optsResponseFileNotFound",",,,%s,,,%s,,,") a0 a1)
     /// Response file name '%s' is empty, contains invalid characters, has a drive specification without an absolute path, or is too long
-    /// (Originally from ..\FSComp.txt:1324)
+    /// (Originally from ..\FSComp.txt:1325)
     static member optsResponseFileNameInvalid(a0 : System.String) = (3195, GetStringFunc("optsResponseFileNameInvalid",",,,%s,,,") a0)
     /// Cannot find FSharp.Core.dll in compiler's directory
-    /// (Originally from ..\FSComp.txt:1325)
+    /// (Originally from ..\FSComp.txt:1326)
     static member fsharpCoreNotFoundToBeCopied() = (3196, GetStringFunc("fsharpCoreNotFoundToBeCopied",",,,") )
     /// One tuple type is a struct tuple, the other is a reference tuple
-    /// (Originally from ..\FSComp.txt:1326)
+    /// (Originally from ..\FSComp.txt:1327)
     static member tcTupleStructMismatch() = (GetStringFunc("tcTupleStructMismatch",",,,") )
     /// This provided method requires static parameters
-    /// (Originally from ..\FSComp.txt:1327)
+    /// (Originally from ..\FSComp.txt:1328)
     static member etMissingStaticArgumentsToMethod() = (3197, GetStringFunc("etMissingStaticArgumentsToMethod",",,,") )
     /// The conversion from %s to %s is a compile-time safe upcast, not a downcast. Consider using 'upcast' instead of 'downcast'.
-    /// (Originally from ..\FSComp.txt:1328)
+    /// (Originally from ..\FSComp.txt:1329)
     static member considerUpcast(a0 : System.String, a1 : System.String) = (3198, GetStringFunc("considerUpcast",",,,%s,,,%s,,,") a0 a1)
     /// The conversion from %s to %s is a compile-time safe upcast, not a downcast. Consider using the :> (upcast) operator instead of the :?> (downcast) operator.
-    /// (Originally from ..\FSComp.txt:1329)
+    /// (Originally from ..\FSComp.txt:1330)
     static member considerUpcastOperator(a0 : System.String, a1 : System.String) = (3198, GetStringFunc("considerUpcastOperator",",,,%s,,,%s,,,") a0 a1)
     /// The 'rec' on this module is implied by an outer 'rec' declaration and is being ignored
-    /// (Originally from ..\FSComp.txt:1330)
+    /// (Originally from ..\FSComp.txt:1331)
     static member tcRecImplied() = (3199, GetStringFunc("tcRecImplied",",,,") )
     /// In a recursive declaration group, 'open' declarations must come first in each module
-    /// (Originally from ..\FSComp.txt:1331)
+    /// (Originally from ..\FSComp.txt:1332)
     static member tcOpenFirstInMutRec() = (3200, GetStringFunc("tcOpenFirstInMutRec",",,,") )
     /// In a recursive declaration group, module abbreviations must come after all 'open' declarations and before other declarations
-    /// (Originally from ..\FSComp.txt:1332)
+    /// (Originally from ..\FSComp.txt:1333)
     static member tcModuleAbbrevFirstInMutRec() = (3201, GetStringFunc("tcModuleAbbrevFirstInMutRec",",,,") )
     /// This declaration is not supported in recursive declaration groups
-    /// (Originally from ..\FSComp.txt:1333)
+    /// (Originally from ..\FSComp.txt:1334)
     static member tcUnsupportedMutRecDecl() = (3202, GetStringFunc("tcUnsupportedMutRecDecl",",,,") )
     /// Invalid use of 'rec' keyword
-    /// (Originally from ..\FSComp.txt:1334)
+    /// (Originally from ..\FSComp.txt:1335)
     static member parsInvalidUseOfRec() = (3203, GetStringFunc("parsInvalidUseOfRec",",,,") )
     /// If a union type has more than one case and is a struct, then all fields within the union type must be given unique names.
-    /// (Originally from ..\FSComp.txt:1335)
+    /// (Originally from ..\FSComp.txt:1336)
     static member tcStructUnionMultiCaseDistinctFields() = (3204, GetStringFunc("tcStructUnionMultiCaseDistinctFields",",,,") )
     /// The CallerMemberNameAttribute applied to parameter '%s' will have no effect. It is overridden by the CallerFilePathAttribute.
-    /// (Originally from ..\FSComp.txt:1336)
+    /// (Originally from ..\FSComp.txt:1337)
     static member CallerMemberNameIsOverriden(a0 : System.String) = (3206, GetStringFunc("CallerMemberNameIsOverriden",",,,%s,,,") a0)
     /// Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'
-    /// (Originally from ..\FSComp.txt:1337)
+    /// (Originally from ..\FSComp.txt:1338)
     static member tcFixedNotAllowed() = (3207, GetStringFunc("tcFixedNotAllowed",",,,") )
     /// Could not find method System.Runtime.CompilerServices.OffsetToStringData in references when building 'fixed' expression.
-    /// (Originally from ..\FSComp.txt:1338)
+    /// (Originally from ..\FSComp.txt:1339)
     static member tcCouldNotFindOffsetToStringData() = (3208, GetStringFunc("tcCouldNotFindOffsetToStringData",",,,") )
     /// The address of the variable '%s' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
-    /// (Originally from ..\FSComp.txt:1339)
+    /// (Originally from ..\FSComp.txt:1340)
     static member chkNoByrefAddressOfLocal(a0 : System.String) = (3209, GetStringFunc("chkNoByrefAddressOfLocal",",,,%s,,,") a0)
     /// %s is an active pattern and cannot be treated as a discriminated union case with named fields.
-    /// (Originally from ..\FSComp.txt:1340)
+    /// (Originally from ..\FSComp.txt:1341)
     static member tcNamedActivePattern(a0 : System.String) = (3210, GetStringFunc("tcNamedActivePattern",",,,%s,,,") a0)
     /// The default value does not have the same type as the argument. The DefaultParameterValue attribute and any Optional attribute will be ignored. Note: 'null' needs to be annotated with the correct type, e.g. 'DefaultParameterValue(null:obj)'.
-    /// (Originally from ..\FSComp.txt:1341)
+    /// (Originally from ..\FSComp.txt:1342)
     static member DefaultParameterValueNotAppropriateForArgument() = (3211, GetStringFunc("DefaultParameterValueNotAppropriateForArgument",",,,") )
     /// The system type '%s' was required but no referenced system DLL contained this type
-    /// (Originally from ..\FSComp.txt:1342)
+    /// (Originally from ..\FSComp.txt:1343)
     static member tcGlobalsSystemTypeNotFound(a0 : System.String) = (GetStringFunc("tcGlobalsSystemTypeNotFound",",,,%s,,,") a0)
     /// The member '%s' matches multiple overloads of the same method.\nPlease restrict it to one of the following:%s.
-    /// (Originally from ..\FSComp.txt:1343)
+    /// (Originally from ..\FSComp.txt:1344)
     static member typrelMemberHasMultiplePossibleDispatchSlots(a0 : System.String, a1 : System.String) = (3213, GetStringFunc("typrelMemberHasMultiplePossibleDispatchSlots",",,,%s,,,%s,,,") a0 a1)
     /// Method or object constructor '%s' is not static
-    /// (Originally from ..\FSComp.txt:1344)
+    /// (Originally from ..\FSComp.txt:1345)
     static member methodIsNotStatic(a0 : System.String) = (3214, GetStringFunc("methodIsNotStatic",",,,%s,,,") a0)
     /// Unexpected symbol '=' in expression. Did you intend to use 'for x in y .. z do' instead?
-    /// (Originally from ..\FSComp.txt:1345)
+    /// (Originally from ..\FSComp.txt:1346)
     static member parsUnexpectedSymbolEqualsInsteadOfIn() = (3215, GetStringFunc("parsUnexpectedSymbolEqualsInsteadOfIn",",,,") )
     /// Two anonymous record types are from different assemblies '%s' and '%s'
-    /// (Originally from ..\FSComp.txt:1346)
+    /// (Originally from ..\FSComp.txt:1347)
     static member tcAnonRecdCcuMismatch(a0 : System.String, a1 : System.String) = (GetStringFunc("tcAnonRecdCcuMismatch",",,,%s,,,%s,,,") a0 a1)
     /// Two anonymous record types have mismatched sets of field names '%s' and '%s'
-    /// (Originally from ..\FSComp.txt:1347)
+    /// (Originally from ..\FSComp.txt:1348)
     static member tcAnonRecdFieldNameMismatch(a0 : System.String, a1 : System.String) = (GetStringFunc("tcAnonRecdFieldNameMismatch",",,,%s,,,%s,,,") a0 a1)
     /// Indicates a method that either has no implementation in the type in which it is declared or that is virtual and has a default implementation.
-    /// (Originally from ..\FSComp.txt:1348)
+    /// (Originally from ..\FSComp.txt:1349)
     static member keywordDescriptionAbstract() = (GetStringFunc("keywordDescriptionAbstract",",,,") )
     /// Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.
-    /// (Originally from ..\FSComp.txt:1349)
+    /// (Originally from ..\FSComp.txt:1350)
     static member keyworkDescriptionAnd() = (GetStringFunc("keyworkDescriptionAnd",",,,") )
     /// Used to give the current class object an object name. Also used to give a name to a whole pattern within a pattern match.
-    /// (Originally from ..\FSComp.txt:1350)
+    /// (Originally from ..\FSComp.txt:1351)
     static member keywordDescriptionAs() = (GetStringFunc("keywordDescriptionAs",",,,") )
     /// Used to verify code during debugging.
-    /// (Originally from ..\FSComp.txt:1351)
+    /// (Originally from ..\FSComp.txt:1352)
     static member keywordDescriptionAssert() = (GetStringFunc("keywordDescriptionAssert",",,,") )
     /// Used as the name of the base class object.
-    /// (Originally from ..\FSComp.txt:1352)
+    /// (Originally from ..\FSComp.txt:1353)
     static member keywordDescriptionBase() = (GetStringFunc("keywordDescriptionBase",",,,") )
     /// In verbose syntax, indicates the start of a code block.
-    /// (Originally from ..\FSComp.txt:1353)
+    /// (Originally from ..\FSComp.txt:1354)
     static member keywordDescriptionBegin() = (GetStringFunc("keywordDescriptionBegin",",,,") )
     /// In verbose syntax, indicates the start of a class definition.
-    /// (Originally from ..\FSComp.txt:1354)
+    /// (Originally from ..\FSComp.txt:1355)
     static member keywordDescriptionClass() = (GetStringFunc("keywordDescriptionClass",",,,") )
     /// Indicates an implementation of an abstract method; used together with an abstract method declaration to create a virtual method.
-    /// (Originally from ..\FSComp.txt:1355)
+    /// (Originally from ..\FSComp.txt:1356)
     static member keywordDescriptionDefault() = (GetStringFunc("keywordDescriptionDefault",",,,") )
     /// Used to declare a delegate.
-    /// (Originally from ..\FSComp.txt:1356)
+    /// (Originally from ..\FSComp.txt:1357)
     static member keywordDescriptionDelegate() = (GetStringFunc("keywordDescriptionDelegate",",,,") )
     /// Used in looping constructs or to execute imperative code.
-    /// (Originally from ..\FSComp.txt:1357)
+    /// (Originally from ..\FSComp.txt:1358)
     static member keywordDescriptionDo() = (GetStringFunc("keywordDescriptionDo",",,,") )
     /// In verbose syntax, indicates the end of a block of code in a looping expression.
-    /// (Originally from ..\FSComp.txt:1358)
+    /// (Originally from ..\FSComp.txt:1359)
     static member keywordDescriptionDone() = (GetStringFunc("keywordDescriptionDone",",,,") )
     /// Used to convert to a type that is lower in the inheritance chain.
-    /// (Originally from ..\FSComp.txt:1359)
+    /// (Originally from ..\FSComp.txt:1360)
     static member keywordDescriptionDowncast() = (GetStringFunc("keywordDescriptionDowncast",",,,") )
     /// In a for expression, used when counting in reverse.
-    /// (Originally from ..\FSComp.txt:1360)
+    /// (Originally from ..\FSComp.txt:1361)
     static member keywordDescriptionDownto() = (GetStringFunc("keywordDescriptionDownto",",,,") )
     /// Used in conditional branching. A short form of else if.
-    /// (Originally from ..\FSComp.txt:1361)
+    /// (Originally from ..\FSComp.txt:1362)
     static member keywordDescriptionElif() = (GetStringFunc("keywordDescriptionElif",",,,") )
     /// Used in conditional branching.
-    /// (Originally from ..\FSComp.txt:1362)
+    /// (Originally from ..\FSComp.txt:1363)
     static member keywordDescriptionElse() = (GetStringFunc("keywordDescriptionElse",",,,") )
     /// In type definitions and type extensions, indicates the end of a section of member definitions. In verbose syntax, used to specify the end of a code block that starts with the begin keyword.
-    /// (Originally from ..\FSComp.txt:1363)
+    /// (Originally from ..\FSComp.txt:1364)
     static member keywordDescriptionEnd() = (GetStringFunc("keywordDescriptionEnd",",,,") )
     /// Used to declare an exception type.
-    /// (Originally from ..\FSComp.txt:1364)
+    /// (Originally from ..\FSComp.txt:1365)
     static member keywordDescriptionException() = (GetStringFunc("keywordDescriptionException",",,,") )
     /// Indicates that a declared program element is defined in another binary or assembly.
-    /// (Originally from ..\FSComp.txt:1365)
+    /// (Originally from ..\FSComp.txt:1366)
     static member keywordDescriptionExtern() = (GetStringFunc("keywordDescriptionExtern",",,,") )
     /// Used as a Boolean literal.
-    /// (Originally from ..\FSComp.txt:1366)
+    /// (Originally from ..\FSComp.txt:1367)
     static member keywordDescriptionTrueFalse() = (GetStringFunc("keywordDescriptionTrueFalse",",,,") )
     /// Used together with try to introduce a block of code that executes regardless of whether an exception occurs.
-    /// (Originally from ..\FSComp.txt:1367)
+    /// (Originally from ..\FSComp.txt:1368)
     static member keywordDescriptionFinally() = (GetStringFunc("keywordDescriptionFinally",",,,") )
     /// Used in looping constructs.
-    /// (Originally from ..\FSComp.txt:1368)
+    /// (Originally from ..\FSComp.txt:1369)
     static member keywordDescriptionFor() = (GetStringFunc("keywordDescriptionFor",",,,") )
     /// Used in lambda expressions, also known as anonymous functions.
-    /// (Originally from ..\FSComp.txt:1369)
+    /// (Originally from ..\FSComp.txt:1370)
     static member keywordDescriptionFun() = (GetStringFunc("keywordDescriptionFun",",,,") )
     /// Used as a shorter alternative to the fun keyword and a match expression in a lambda expression that has pattern matching on a single argument.
-    /// (Originally from ..\FSComp.txt:1370)
+    /// (Originally from ..\FSComp.txt:1371)
     static member keywordDescriptionFunction() = (GetStringFunc("keywordDescriptionFunction",",,,") )
     /// Used to reference the top-level .NET namespace.
-    /// (Originally from ..\FSComp.txt:1371)
+    /// (Originally from ..\FSComp.txt:1372)
     static member keywordDescriptionGlobal() = (GetStringFunc("keywordDescriptionGlobal",",,,") )
     /// Used in conditional branching constructs.
-    /// (Originally from ..\FSComp.txt:1372)
+    /// (Originally from ..\FSComp.txt:1373)
     static member keywordDescriptionIf() = (GetStringFunc("keywordDescriptionIf",",,,") )
     /// Used for sequence expressions and, in verbose syntax, to separate expressions from bindings.
-    /// (Originally from ..\FSComp.txt:1373)
+    /// (Originally from ..\FSComp.txt:1374)
     static member keywordDescriptionIn() = (GetStringFunc("keywordDescriptionIn",",,,") )
     /// Used to specify a base class or base interface.
-    /// (Originally from ..\FSComp.txt:1374)
+    /// (Originally from ..\FSComp.txt:1375)
     static member keywordDescriptionInherit() = (GetStringFunc("keywordDescriptionInherit",",,,") )
     /// Used to indicate a function that should be integrated directly into the caller's code.
-    /// (Originally from ..\FSComp.txt:1375)
+    /// (Originally from ..\FSComp.txt:1376)
     static member keywordDescriptionInline() = (GetStringFunc("keywordDescriptionInline",",,,") )
     /// Used to declare and implement interfaces.
-    /// (Originally from ..\FSComp.txt:1376)
+    /// (Originally from ..\FSComp.txt:1377)
     static member keywordDescriptionInterface() = (GetStringFunc("keywordDescriptionInterface",",,,") )
     /// Used to specify that a member is visible inside an assembly but not outside it.
-    /// (Originally from ..\FSComp.txt:1377)
+    /// (Originally from ..\FSComp.txt:1378)
     static member keywordDescriptionInternal() = (GetStringFunc("keywordDescriptionInternal",",,,") )
     /// Used to specify a computation that is to be performed only when a result is needed.
-    /// (Originally from ..\FSComp.txt:1378)
+    /// (Originally from ..\FSComp.txt:1379)
     static member keywordDescriptionLazy() = (GetStringFunc("keywordDescriptionLazy",",,,") )
     /// Used to associate, or bind, a name to a value or function.
-    /// (Originally from ..\FSComp.txt:1379)
+    /// (Originally from ..\FSComp.txt:1380)
     static member keywordDescriptionLet() = (GetStringFunc("keywordDescriptionLet",",,,") )
     /// Used in computation expressions to bind a name to the result of another computation expression.
-    /// (Originally from ..\FSComp.txt:1380)
+    /// (Originally from ..\FSComp.txt:1381)
     static member keywordDescriptionLetBang() = (GetStringFunc("keywordDescriptionLetBang",",,,") )
     /// Used to branch by comparing a value to a pattern.
-    /// (Originally from ..\FSComp.txt:1381)
+    /// (Originally from ..\FSComp.txt:1382)
     static member keywordDescriptionMatch() = (GetStringFunc("keywordDescriptionMatch",",,,") )
     /// Used in computation expressions to pattern match directly over the result of another computation expression.
-    /// (Originally from ..\FSComp.txt:1382)
+    /// (Originally from ..\FSComp.txt:1383)
     static member keywordDescriptionMatchBang() = (GetStringFunc("keywordDescriptionMatchBang",",,,") )
     /// Used to declare a property or method in an object type.
-    /// (Originally from ..\FSComp.txt:1383)
+    /// (Originally from ..\FSComp.txt:1384)
     static member keywordDescriptionMember() = (GetStringFunc("keywordDescriptionMember",",,,") )
     /// Used to associate a name with a group of related types, values, and functions, to logically separate it from other code.
-    /// (Originally from ..\FSComp.txt:1384)
+    /// (Originally from ..\FSComp.txt:1385)
     static member keywordDescriptionModule() = (GetStringFunc("keywordDescriptionModule",",,,") )
     /// Used to declare a variable, that is, a value that can be changed.
-    /// (Originally from ..\FSComp.txt:1385)
+    /// (Originally from ..\FSComp.txt:1386)
     static member keywordDescriptionMutable() = (GetStringFunc("keywordDescriptionMutable",",,,") )
     /// Used to associate a name with a group of related types and modules, to logically separate it from other code.
-    /// (Originally from ..\FSComp.txt:1386)
+    /// (Originally from ..\FSComp.txt:1387)
     static member keywordDescriptionNamespace() = (GetStringFunc("keywordDescriptionNamespace",",,,") )
     /// Used to declare, define, or invoke a constructor that creates or that can create an object. Also used in generic parameter constraints to indicate that a type must have a certain constructor.
-    /// (Originally from ..\FSComp.txt:1387)
+    /// (Originally from ..\FSComp.txt:1388)
     static member keywordDescriptionNew() = (GetStringFunc("keywordDescriptionNew",",,,") )
     /// Not actually a keyword. However, not struct in combination is used as a generic parameter constraint.
-    /// (Originally from ..\FSComp.txt:1388)
+    /// (Originally from ..\FSComp.txt:1389)
     static member keywordDescriptionNot() = (GetStringFunc("keywordDescriptionNot",",,,") )
     /// Indicates the absence of an object. Also used in generic parameter constraints.
-    /// (Originally from ..\FSComp.txt:1389)
+    /// (Originally from ..\FSComp.txt:1390)
     static member keywordDescriptionNull() = (GetStringFunc("keywordDescriptionNull",",,,") )
     /// Used in discriminated unions to indicate the type of categories of values, and in delegate and exception declarations.
-    /// (Originally from ..\FSComp.txt:1390)
+    /// (Originally from ..\FSComp.txt:1391)
     static member keywordDescriptionOf() = (GetStringFunc("keywordDescriptionOf",",,,") )
     /// Used to make the contents of a namespace or module available without qualification.
-    /// (Originally from ..\FSComp.txt:1391)
+    /// (Originally from ..\FSComp.txt:1392)
     static member keywordDescriptionOpen() = (GetStringFunc("keywordDescriptionOpen",",,,") )
     /// Used with Boolean conditions as a Boolean or operator. Equivalent to ||. Also used in member constraints.
-    /// (Originally from ..\FSComp.txt:1392)
+    /// (Originally from ..\FSComp.txt:1393)
     static member keywordDescriptionOr() = (GetStringFunc("keywordDescriptionOr",",,,") )
     /// Used to implement a version of an abstract or virtual method that differs from the base version.
-    /// (Originally from ..\FSComp.txt:1393)
+    /// (Originally from ..\FSComp.txt:1394)
     static member keywordDescriptionOverride() = (GetStringFunc("keywordDescriptionOverride",",,,") )
     /// Restricts access to a member to code in the same type or module.
-    /// (Originally from ..\FSComp.txt:1394)
+    /// (Originally from ..\FSComp.txt:1395)
     static member keywordDescriptionPrivate() = (GetStringFunc("keywordDescriptionPrivate",",,,") )
     /// Allows access to a member from outside the type.
-    /// (Originally from ..\FSComp.txt:1395)
+    /// (Originally from ..\FSComp.txt:1396)
     static member keywordDescriptionPublic() = (GetStringFunc("keywordDescriptionPublic",",,,") )
     /// Used to indicate that a function is recursive.
-    /// (Originally from ..\FSComp.txt:1396)
+    /// (Originally from ..\FSComp.txt:1397)
     static member keywordDescriptionRec() = (GetStringFunc("keywordDescriptionRec",",,,") )
     /// Used to provide a value for the result of the containing computation expression.
-    /// (Originally from ..\FSComp.txt:1397)
+    /// (Originally from ..\FSComp.txt:1398)
     static member keywordDescriptionReturn() = (GetStringFunc("keywordDescriptionReturn",",,,") )
     /// Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.
-    /// (Originally from ..\FSComp.txt:1398)
+    /// (Originally from ..\FSComp.txt:1399)
     static member keywordDescriptionReturnBang() = (GetStringFunc("keywordDescriptionReturnBang",",,,") )
     /// Used in query expressions to specify what fields or columns to extract. Note that this is a contextual keyword, which means that it is not actually a reserved word and it only acts like a keyword in appropriate context.
-    /// (Originally from ..\FSComp.txt:1399)
+    /// (Originally from ..\FSComp.txt:1400)
     static member keywordDescriptionSelect() = (GetStringFunc("keywordDescriptionSelect",",,,") )
     /// Used to indicate a method or property that can be called without an instance of a type, or a value member that is shared among all instances of a type.
-    /// (Originally from ..\FSComp.txt:1400)
+    /// (Originally from ..\FSComp.txt:1401)
     static member keywordDescriptionStatic() = (GetStringFunc("keywordDescriptionStatic",",,,") )
     /// Used to declare a structure type. Also used in generic parameter constraints. Used for OCaml compatibility in module definitions.
-    /// (Originally from ..\FSComp.txt:1401)
+    /// (Originally from ..\FSComp.txt:1402)
     static member keywordDescriptionStruct() = (GetStringFunc("keywordDescriptionStruct",",,,") )
     /// Used in conditional expressions. Also used to perform side effects after object construction.
-    /// (Originally from ..\FSComp.txt:1402)
+    /// (Originally from ..\FSComp.txt:1403)
     static member keywordDescriptionThen() = (GetStringFunc("keywordDescriptionThen",",,,") )
     /// Used in for loops to indicate a range.
-    /// (Originally from ..\FSComp.txt:1403)
+    /// (Originally from ..\FSComp.txt:1404)
     static member keywordDescriptionTo() = (GetStringFunc("keywordDescriptionTo",",,,") )
     /// Used to introduce a block of code that might generate an exception. Used together with with or finally.
-    /// (Originally from ..\FSComp.txt:1404)
+    /// (Originally from ..\FSComp.txt:1405)
     static member keywordDescriptionTry() = (GetStringFunc("keywordDescriptionTry",",,,") )
     /// Used to declare a class, record, structure, discriminated union, enumeration type, unit of measure, or type abbreviation.
-    /// (Originally from ..\FSComp.txt:1405)
+    /// (Originally from ..\FSComp.txt:1406)
     static member keywordDescriptionType() = (GetStringFunc("keywordDescriptionType",",,,") )
     /// Used to convert to a type that is higher in the inheritance chain.
-    /// (Originally from ..\FSComp.txt:1406)
+    /// (Originally from ..\FSComp.txt:1407)
     static member keywordDescriptionUpcast() = (GetStringFunc("keywordDescriptionUpcast",",,,") )
     /// Used instead of let for values that implement IDisposable"
-    /// (Originally from ..\FSComp.txt:1407)
+    /// (Originally from ..\FSComp.txt:1408)
     static member keywordDescriptionUse() = (GetStringFunc("keywordDescriptionUse",",,,") )
     /// Used instead of let! in computation expressions for computation expression results that implement IDisposable.
-    /// (Originally from ..\FSComp.txt:1408)
+    /// (Originally from ..\FSComp.txt:1409)
     static member keywordDescriptionUseBang() = (GetStringFunc("keywordDescriptionUseBang",",,,") )
     /// Used in a signature to indicate a value, or in a type to declare a member, in limited situations.
-    /// (Originally from ..\FSComp.txt:1409)
+    /// (Originally from ..\FSComp.txt:1410)
     static member keywordDescriptionVal() = (GetStringFunc("keywordDescriptionVal",",,,") )
     /// Indicates the .NET void type. Used when interoperating with other .NET languages.
-    /// (Originally from ..\FSComp.txt:1410)
+    /// (Originally from ..\FSComp.txt:1411)
     static member keywordDescriptionVoid() = (GetStringFunc("keywordDescriptionVoid",",,,") )
     /// Used for Boolean conditions (when guards) on pattern matches and to introduce a constraint clause for a generic type parameter.
-    /// (Originally from ..\FSComp.txt:1411)
+    /// (Originally from ..\FSComp.txt:1412)
     static member keywordDescriptionWhen() = (GetStringFunc("keywordDescriptionWhen",",,,") )
     /// Introduces a looping construct.
-    /// (Originally from ..\FSComp.txt:1412)
+    /// (Originally from ..\FSComp.txt:1413)
     static member keywordDescriptionWhile() = (GetStringFunc("keywordDescriptionWhile",",,,") )
     /// Used together with the match keyword in pattern matching expressions. Also used in object expressions, record copying expressions, and type extensions to introduce member definitions, and to introduce exception handlers.
-    /// (Originally from ..\FSComp.txt:1413)
+    /// (Originally from ..\FSComp.txt:1414)
     static member keywordDescriptionWith() = (GetStringFunc("keywordDescriptionWith",",,,") )
     /// Used in a sequence expression to produce a value for a sequence.
-    /// (Originally from ..\FSComp.txt:1414)
+    /// (Originally from ..\FSComp.txt:1415)
     static member keywordDescriptionYield() = (GetStringFunc("keywordDescriptionYield",",,,") )
     /// Used in a computation expression to append the result of a given computation expression to a collection of results for the containing computation expression.
-    /// (Originally from ..\FSComp.txt:1415)
+    /// (Originally from ..\FSComp.txt:1416)
     static member keywordDescriptionYieldBang() = (GetStringFunc("keywordDescriptionYieldBang",",,,") )
     /// In function types, delimits arguments and return values. Yields an expression (in sequence expressions); equivalent to the yield keyword. Used in match expressions
-    /// (Originally from ..\FSComp.txt:1416)
+    /// (Originally from ..\FSComp.txt:1417)
     static member keywordDescriptionRightArrow() = (GetStringFunc("keywordDescriptionRightArrow",",,,") )
     /// Assigns a value to a variable.
-    /// (Originally from ..\FSComp.txt:1417)
+    /// (Originally from ..\FSComp.txt:1418)
     static member keywordDescriptionLeftArrow() = (GetStringFunc("keywordDescriptionLeftArrow",",,,") )
     /// Converts a type to type that is higher in the hierarchy.
-    /// (Originally from ..\FSComp.txt:1418)
+    /// (Originally from ..\FSComp.txt:1419)
     static member keywordDescriptionCast() = (GetStringFunc("keywordDescriptionCast",",,,") )
     /// Converts a type to a type that is lower in the hierarchy.
-    /// (Originally from ..\FSComp.txt:1419)
+    /// (Originally from ..\FSComp.txt:1420)
     static member keywordDescriptionDynamicCast() = (GetStringFunc("keywordDescriptionDynamicCast",",,,") )
     /// Delimits a typed code quotation.
-    /// (Originally from ..\FSComp.txt:1420)
+    /// (Originally from ..\FSComp.txt:1421)
     static member keywordDescriptionTypedQuotation() = (GetStringFunc("keywordDescriptionTypedQuotation",",,,") )
     /// Delimits a untyped code quotation.
-    /// (Originally from ..\FSComp.txt:1421)
+    /// (Originally from ..\FSComp.txt:1422)
     static member keywordDescriptionUntypedQuotation() = (GetStringFunc("keywordDescriptionUntypedQuotation",",,,") )
     /// %s '%s' not found in assembly '%s'. A possible cause may be a version incompatibility. You may need to explicitly reference the correct version of this assembly to allow all referenced components to use the correct version.
-    /// (Originally from ..\FSComp.txt:1422)
+    /// (Originally from ..\FSComp.txt:1423)
     static member itemNotFoundDuringDynamicCodeGen(a0 : System.String, a1 : System.String, a2 : System.String) = (3216, GetStringFunc("itemNotFoundDuringDynamicCodeGen",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
     /// %s '%s' not found in type '%s' from assembly '%s'. A possible cause may be a version incompatibility. You may need to explicitly reference the correct version of this assembly to allow all referenced components to use the correct version.
-    /// (Originally from ..\FSComp.txt:1423)
+    /// (Originally from ..\FSComp.txt:1424)
     static member itemNotFoundInTypeDuringDynamicCodeGen(a0 : System.String, a1 : System.String, a2 : System.String, a3 : System.String) = (3216, GetStringFunc("itemNotFoundInTypeDuringDynamicCodeGen",",,,%s,,,%s,,,%s,,,%s,,,") a0 a1 a2 a3)
     /// is
-    /// (Originally from ..\FSComp.txt:1424)
+    /// (Originally from ..\FSComp.txt:1425)
     static member descriptionWordIs() = (GetStringFunc("descriptionWordIs",",,,") )
     /// This value is not a function and cannot be applied.
-    /// (Originally from ..\FSComp.txt:1425)
+    /// (Originally from ..\FSComp.txt:1426)
     static member notAFunction() = (GetStringFunc("notAFunction",",,,") )
     /// This value is not a function and cannot be applied. Did you intend to access the indexer via %s.[index] instead?
-    /// (Originally from ..\FSComp.txt:1426)
+    /// (Originally from ..\FSComp.txt:1427)
     static member notAFunctionButMaybeIndexerWithName(a0 : System.String) = (GetStringFunc("notAFunctionButMaybeIndexerWithName",",,,%s,,,") a0)
     /// This expression is not a function and cannot be applied. Did you intend to access the indexer via expr.[index] instead?
-    /// (Originally from ..\FSComp.txt:1427)
+    /// (Originally from ..\FSComp.txt:1428)
     static member notAFunctionButMaybeIndexer() = (GetStringFunc("notAFunctionButMaybeIndexer",",,,") )
     /// 
-    /// (Originally from ..\FSComp.txt:1428)
+    /// (Originally from ..\FSComp.txt:1429)
     static member notAFunctionButMaybeIndexerErrorCode() = (3217, GetStringFunc("notAFunctionButMaybeIndexerErrorCode",",,,") )
     /// This value is not a function and cannot be applied. Did you forget to terminate a declaration?
-    /// (Originally from ..\FSComp.txt:1429)
+    /// (Originally from ..\FSComp.txt:1430)
     static member notAFunctionButMaybeDeclaration() = (GetStringFunc("notAFunctionButMaybeDeclaration",",,,") )
     /// The argument names in the signature '%s' and implementation '%s' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.
-    /// (Originally from ..\FSComp.txt:1430)
+    /// (Originally from ..\FSComp.txt:1431)
     static member ArgumentsInSigAndImplMismatch(a0 : System.String, a1 : System.String) = (3218, GetStringFunc("ArgumentsInSigAndImplMismatch",",,,%s,,,%s,,,") a0 a1)
     /// An error occurred while reading the F# metadata of assembly '%s'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.
-    /// (Originally from ..\FSComp.txt:1431)
+    /// (Originally from ..\FSComp.txt:1432)
     static member pickleUnexpectedNonZero(a0 : System.String) = (3219, GetStringFunc("pickleUnexpectedNonZero",",,,%s,,,") a0)
     /// This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.
-    /// (Originally from ..\FSComp.txt:1432)
+    /// (Originally from ..\FSComp.txt:1433)
     static member tcTupleMemberNotNormallyUsed() = (3220, GetStringFunc("tcTupleMemberNotNormallyUsed",",,,") )
     /// This expression returns a value of type '%s' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.
-    /// (Originally from ..\FSComp.txt:1433)
+    /// (Originally from ..\FSComp.txt:1434)
     static member implicitlyDiscardedInSequenceExpression(a0 : System.String) = (3221, GetStringFunc("implicitlyDiscardedInSequenceExpression",",,,%s,,,") a0)
     /// This expression returns a value of type '%s' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.
-    /// (Originally from ..\FSComp.txt:1434)
+    /// (Originally from ..\FSComp.txt:1435)
     static member implicitlyDiscardedSequenceInSequenceExpression(a0 : System.String) = (3222, GetStringFunc("implicitlyDiscardedSequenceInSequenceExpression",",,,%s,,,") a0)
     /// The file '%s' changed on disk unexpectedly, please reload.
-    /// (Originally from ..\FSComp.txt:1435)
+    /// (Originally from ..\FSComp.txt:1436)
     static member ilreadFileChanged(a0 : System.String) = (3223, GetStringFunc("ilreadFileChanged",",,,%s,,,") a0)
     /// The byref pointer is readonly, so this write is not permitted.
-    /// (Originally from ..\FSComp.txt:1436)
+    /// (Originally from ..\FSComp.txt:1437)
     static member writeToReadOnlyByref() = (3224, GetStringFunc("writeToReadOnlyByref",",,,") )
     /// A ReadOnly attribute has been applied to a struct type with a mutable field.
-    /// (Originally from ..\FSComp.txt:1437)
+    /// (Originally from ..\FSComp.txt:1438)
     static member readOnlyAttributeOnStructWithMutableField() = (3225, GetStringFunc("readOnlyAttributeOnStructWithMutableField",",,,") )
     /// A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&f(x)' or '&obj.Method(arg1, arg2)'.
-    /// (Originally from ..\FSComp.txt:1438)
+    /// (Originally from ..\FSComp.txt:1439)
     static member tcByrefReturnImplicitlyDereferenced() = (3226, GetStringFunc("tcByrefReturnImplicitlyDereferenced",",,,") )
     /// A type annotated with IsByRefLike must also be a struct. Consider adding the [<Struct>] attribute to the type.
-    /// (Originally from ..\FSComp.txt:1439)
+    /// (Originally from ..\FSComp.txt:1440)
     static member tcByRefLikeNotStruct() = (3227, GetStringFunc("tcByRefLikeNotStruct",",,,") )
     /// The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
-    /// (Originally from ..\FSComp.txt:1440)
-    static member chkNoByrefAddressOfValueFromExpression() = (3228, GetStringFunc("chkNoByrefAddressOfValueFromExpression",",,,") )
-    /// This value can't be assigned because the target '%s' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.
     /// (Originally from ..\FSComp.txt:1441)
-    static member chkNoWriteToLimitedSpan(a0 : System.String) = (3229, GetStringFunc("chkNoWriteToLimitedSpan",",,,%s,,,") a0)
-    /// A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'
+    static member chkNoByrefAddressOfValueFromExpression() = (3228, GetStringFunc("chkNoByrefAddressOfValueFromExpression",",,,") )
+    /// The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.
     /// (Originally from ..\FSComp.txt:1442)
-    static member tastValueMustBeLocal() = (3230, GetStringFunc("tastValueMustBeLocal",",,,") )
-    /// A type annotated with IsReadOnly must also be a struct. Consider adding the [<Struct>] attribute to the type.
+    static member chkNoReturnOfLimitedSpan() = (3229, GetStringFunc("chkNoReturnOfLimitedSpan",",,,") )
+    /// This value can't be assigned because the target '%s' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.
     /// (Originally from ..\FSComp.txt:1443)
-    static member tcIsReadOnlyNotStruct() = (3231, GetStringFunc("tcIsReadOnlyNotStruct",",,,") )
-    /// Struct members cannot return the address of fields of the struct by reference
+    static member chkNoWriteToLimitedSpan(a0 : System.String) = (3230, GetStringFunc("chkNoWriteToLimitedSpan",",,,%s,,,") a0)
+    /// A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'
     /// (Originally from ..\FSComp.txt:1444)
-    static member chkStructsMayNotReturnAddressesOfContents() = (3232, GetStringFunc("chkStructsMayNotReturnAddressesOfContents",",,,") )
-    /// The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.
+    static member tastValueMustBeLocal() = (3231, GetStringFunc("tastValueMustBeLocal",",,,") )
+    /// A type annotated with IsReadOnly must also be a struct. Consider adding the [<Struct>] attribute to the type.
     /// (Originally from ..\FSComp.txt:1445)
-    static member chkNoByrefLikeFunctionCall() = (3233, GetStringFunc("chkNoByrefLikeFunctionCall",",,,") )
-    /// The Span or IsByRefLike variable '%s' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
+    static member tcIsReadOnlyNotStruct() = (3232, GetStringFunc("tcIsReadOnlyNotStruct",",,,") )
+    /// Struct members cannot return the address of fields of the struct by reference
     /// (Originally from ..\FSComp.txt:1446)
-    static member chkNoSpanLikeVariable(a0 : System.String) = (3234, GetStringFunc("chkNoSpanLikeVariable",",,,%s,,,") a0)
-    /// A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.
+    static member chkStructsMayNotReturnAddressesOfContents() = (3233, GetStringFunc("chkStructsMayNotReturnAddressesOfContents",",,,") )
+    /// The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.
     /// (Originally from ..\FSComp.txt:1447)
-    static member chkNoSpanLikeValueFromExpression() = (3235, GetStringFunc("chkNoSpanLikeValueFromExpression",",,,") )
-    /// Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
+    static member chkNoByrefLikeFunctionCall() = (3234, GetStringFunc("chkNoByrefLikeFunctionCall",",,,") )
+    /// The Span or IsByRefLike variable '%s' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
     /// (Originally from ..\FSComp.txt:1448)
-    static member tastCantTakeAddressOfExpression() = (3236, GetStringFunc("tastCantTakeAddressOfExpression",",,,") )
-    /// Cannot call the byref extension method '%s. The first parameter requires the value to be mutable or a non-readonly byref type.
+    static member chkNoSpanLikeVariable(a0 : System.String) = (3235, GetStringFunc("chkNoSpanLikeVariable",",,,%s,,,") a0)
+    /// A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.
     /// (Originally from ..\FSComp.txt:1449)
-    static member tcCannotCallExtensionMethodInrefToByref(a0 : System.String) = (3237, GetStringFunc("tcCannotCallExtensionMethodInrefToByref",",,,%s,,,") a0)
-    /// Byref types are not allowed to have optional type extensions.
+    static member chkNoSpanLikeValueFromExpression() = (3236, GetStringFunc("chkNoSpanLikeValueFromExpression",",,,") )
+    /// Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
     /// (Originally from ..\FSComp.txt:1450)
-    static member tcByrefsMayNotHaveTypeExtensions() = (3238, GetStringFunc("tcByrefsMayNotHaveTypeExtensions",",,,") )
-    /// Cannot partially apply the extension method '%s' because the first parameter is a byref type.
-    /// (Originally from ..\FSComp.txt:1451)
-    static member tcCannotPartiallyApplyExtensionMethodForByref(a0 : System.String) = (3239, GetStringFunc("tcCannotPartiallyApplyExtensionMethodForByref",",,,%s,,,") a0)
+    static member tastCantTakeAddressOfExpression() = (3237, GetStringFunc("tastCantTakeAddressOfExpression",",,,") )
     /// This type does not inherit Attribute, it will not work correctly with other .NET languages.
-    /// (Originally from ..\FSComp.txt:1452)
+    /// (Originally from ..\FSComp.txt:1451)
     static member tcTypeDoesNotInheritAttribute() = (3242, GetStringFunc("tcTypeDoesNotInheritAttribute",",,,") )
     /// Invalid anonymous record expression
-    /// (Originally from ..\FSComp.txt:1453)
+    /// (Originally from ..\FSComp.txt:1452)
     static member parsInvalidAnonRecdExpr() = (3243, GetStringFunc("parsInvalidAnonRecdExpr",",,,") )
     /// Invalid anonymous record type
-    /// (Originally from ..\FSComp.txt:1454)
+    /// (Originally from ..\FSComp.txt:1453)
     static member parsInvalidAnonRecdType() = (3244, GetStringFunc("parsInvalidAnonRecdType",",,,") )
     /// The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record
-    /// (Originally from ..\FSComp.txt:1455)
+    /// (Originally from ..\FSComp.txt:1454)
     static member tcCopyAndUpdateNeedsRecordType() = (3245, GetStringFunc("tcCopyAndUpdateNeedsRecordType",",,,") )
-    /// The type '%s' does not support a nullness qualitification.
+    /// The dependency manager extension %s could not be loaded: %s
+    /// (Originally from ..\FSComp.txt:1455)
+    static member couldNotLoadDependencyManagerExtension(a0 : System.String, a1 : System.String) = (3246, GetStringFunc("couldNotLoadDependencyManagerExtension",",,,%s,,,%s,,,") a0 a1)
+    /// Package manager key '%s' was not registered in %s. Currently registered: %s
     /// (Originally from ..\FSComp.txt:1456)
-    static member tcTypeDoesNotHaveAnyNull(a0 : System.String) = (3260, GetStringFunc("tcTypeDoesNotHaveAnyNull",",,,%s,,,") a0)
-    /// This language feature is not enabled, use /langversion:5.0 or greater to enable it
-    /// (Originally from ..\FSComp.txt:1461)
-    static member tcLangFeatureNotEnabled50() = (3265, GetStringFunc("tcLangFeatureNotEnabled50",",,,") )
-    /// Nullness warning. The default constructor of a struct type is required but one of the fields of struct type is non-nullable.
-    /// (Originally from ..\FSComp.txt:1462)
-    static member tcDefaultStructConstructorCallNulls() = (3266, GetStringFunc("tcDefaultStructConstructorCallNulls",",,,") )
-    /// Nullness warning. The 'DefaultValue' attribute is used but the type (or one of its fields if a struct) is non-nullable.
-    /// (Originally from ..\FSComp.txt:1463)
-    static member chkValueWithDefaultValueMustHaveDefaultValueNulls() = (3267, GetStringFunc("chkValueWithDefaultValueMustHaveDefaultValueNulls",",,,") )
-    /// The constraints 'null' and 'not null' are inconsistent
-    /// (Originally from ..\FSComp.txt:1464)
-    static member csNullNotNullConstraintInconsistent() = (3268, GetStringFunc("csNullNotNullConstraintInconsistent",",,,") )
-    /// The constraints 'struct' and 'null' are inconsistent
-    /// (Originally from ..\FSComp.txt:1465)
-    static member csStructNullConstraintInconsistent() = (3269, GetStringFunc("csStructNullConstraintInconsistent",",,,") )
-    /// The constraints 'delegate' and 'comparison' are inconsistent
-    /// (Originally from ..\FSComp.txt:1466)
-    static member csDelegateComparisonConstraintInconsistent() = (3270, GetStringFunc("csDelegateComparisonConstraintInconsistent",",,,") )
-    /// The /checknulls language feature is not enabled
-    /// (Originally from ..\FSComp.txt:1467)
-    static member tcNullnessCheckingNotEnabled() = (3271, GetStringFunc("tcNullnessCheckingNotEnabled",",,,") )
-    /// The type '%s' has 'null' as a true representation value but a constraint does not permit this
-    /// (Originally from ..\FSComp.txt:1468)
-    static member csTypeHasNullAsTrueValue(a0 : System.String) = (GetStringFunc("csTypeHasNullAsTrueValue",",,,%s,,,") a0)
-    /// The type '%s' has 'null' as an extra value but a constraint does not permit this
-    /// (Originally from ..\FSComp.txt:1469)
-    static member csTypeHasNullAsExtraValue(a0 : System.String) = (GetStringFunc("csTypeHasNullAsExtraValue",",,,%s,,,") a0)
-    /// The parameter '%s' has an invalid type '%s'. This is not permitted by the rules of Common IL.
-    /// (Originally from ..\FSComp.txt:1470)
-    static member chkInvalidFunctionParameterType(a0 : System.String, a1 : System.String) = (3300, GetStringFunc("chkInvalidFunctionParameterType",",,,%s,,,%s,,,") a0 a1)
-    /// The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL.
-    /// (Originally from ..\FSComp.txt:1471)
-    static member chkInvalidFunctionReturnType(a0 : System.String) = (3301, GetStringFunc("chkInvalidFunctionReturnType",",,,%s,,,") a0)
-    /// Enable nullness declarations and checks
-    /// (Originally from ..\FSComp.txt:1472)
-    static member optsCheckNulls() = (GetStringFunc("optsCheckNulls",",,,") )
-    /// Specify the language version
-    /// (Originally from ..\FSComp.txt:1473)
-    static member optsLangVersion() = (GetStringFunc("optsLangVersion",",,,") )
+    static member packageManagerUnknown(a0 : System.String, a1 : System.String, a2 : System.String) = (3247, GetStringFunc("packageManagerUnknown",",,,%s,,,%s,,,%s,,,") a0 a1 a2)
+    /// %s
+    /// (Originally from ..\FSComp.txt:1457)
+    static member packageManagerError(a0 : System.String) = (3248, GetStringFunc("packageManagerError",",,,%s,,,") a0)
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5270,6 +5234,7 @@ type internal SR private() =
         ignore(GetString("optsNoInterface"))
         ignore(GetString("optsSig"))
         ignore(GetString("optsReference"))
+        ignore(GetString("optsCompilerTool"))
         ignore(GetString("optsWin32res"))
         ignore(GetString("optsWin32manifest"))
         ignore(GetString("optsNowin32manifest"))
@@ -5849,6 +5814,7 @@ type internal SR private() =
         ignore(GetString("tcByrefReturnImplicitlyDereferenced"))
         ignore(GetString("tcByRefLikeNotStruct"))
         ignore(GetString("chkNoByrefAddressOfValueFromExpression"))
+        ignore(GetString("chkNoReturnOfLimitedSpan"))
         ignore(GetString("chkNoWriteToLimitedSpan"))
         ignore(GetString("tastValueMustBeLocal"))
         ignore(GetString("tcIsReadOnlyNotStruct"))
@@ -5857,25 +5823,11 @@ type internal SR private() =
         ignore(GetString("chkNoSpanLikeVariable"))
         ignore(GetString("chkNoSpanLikeValueFromExpression"))
         ignore(GetString("tastCantTakeAddressOfExpression"))
-        ignore(GetString("tcCannotCallExtensionMethodInrefToByref"))
-        ignore(GetString("tcByrefsMayNotHaveTypeExtensions"))
-        ignore(GetString("tcCannotPartiallyApplyExtensionMethodForByref"))
         ignore(GetString("tcTypeDoesNotInheritAttribute"))
         ignore(GetString("parsInvalidAnonRecdExpr"))
         ignore(GetString("parsInvalidAnonRecdType"))
         ignore(GetString("tcCopyAndUpdateNeedsRecordType"))
-        ignore(GetString("tcTypeDoesNotHaveAnyNull"))
-        ignore(GetString("tcLangFeatureNotEnabled50"))
-        ignore(GetString("tcDefaultStructConstructorCallNulls"))
-        ignore(GetString("chkValueWithDefaultValueMustHaveDefaultValueNulls"))
-        ignore(GetString("csNullNotNullConstraintInconsistent"))
-        ignore(GetString("csStructNullConstraintInconsistent"))
-        ignore(GetString("csDelegateComparisonConstraintInconsistent"))
-        ignore(GetString("tcNullnessCheckingNotEnabled"))
-        ignore(GetString("csTypeHasNullAsTrueValue"))
-        ignore(GetString("csTypeHasNullAsExtraValue"))
-        ignore(GetString("chkInvalidFunctionParameterType"))
-        ignore(GetString("chkInvalidFunctionReturnType"))
-        ignore(GetString("optsCheckNulls"))
-        ignore(GetString("optsLangVersion"))
+        ignore(GetString("couldNotLoadDependencyManagerExtension"))
+        ignore(GetString("packageManagerUnknown"))
+        ignore(GetString("packageManagerError"))
         ()
