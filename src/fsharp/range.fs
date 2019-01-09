@@ -110,18 +110,24 @@ let _ = assert (isSyntheticMask = mask64 isSyntheticShift isSyntheticBitCount)
 type FileIndexTable() = 
     let indexToFileTable = new ResizeArray<_>(11)
     let fileToIndexTable = new ConcurrentDictionary<string, int>()
+
     member t.FileToIndex f = 
         let mutable res = 0 
         let ok = fileToIndexTable.TryGetValue(f, &res) 
         if ok then res 
         else
-        // remove relative parts from full path
+        // remove relative parts from full path to store the canonical entry
         let normalizedFilePath = if Path.IsPathRooted f then try Path.GetFullPath f with _ -> f else f
-        let ok = fileToIndexTable.TryGetValue(normalizedFilePath, &res) 
-        if ok then res 
+        let mutable res2 = 0 
+        let ok2 = fileToIndexTable.TryGetValue(normalizedFilePath, &res2) 
+        if ok2 then 
+            if f <> normalizedFilePath then 
+                lock fileToIndexTable (fun () -> 
+                    fileToIndexTable.[f] <- res2)
+            res
         else
             lock fileToIndexTable (fun () -> 
-                let n = indexToFileTable.Count in
+                let n = indexToFileTable.Count
                 indexToFileTable.Add(normalizedFilePath)
                 fileToIndexTable.[normalizedFilePath] <- n
                 if f <> normalizedFilePath then 
