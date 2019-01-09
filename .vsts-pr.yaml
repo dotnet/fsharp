@@ -10,9 +10,9 @@ jobs:
         _command: make
         _args: Configuration=release
       # disabled until it can be properly fixed
-      #release_fcs:
-      #  _command: ./fcs/build.sh
-      #  _args: Build
+      release_fcs:
+        _command: ./fcs/build.sh
+        _args: Build
   steps:
   - script: $(_command) $(_args)
   - task: PublishBuildArtifacts@1
