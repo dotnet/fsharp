@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="ToInstall-Line2">
         <source>'Tools' --&gt; 'Extensions and Updates' --&gt; `Online` and search</source>
-        <target state="translated">'Strumenti' --&gt; 'Estensioni e aggiornamenti' --&gt; `Online` e cercare</target>
+        <target state="translated">'Strumenti' --> 'Estensioni e aggiornamenti' --> `Online` e cercare</target>
         <note />
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line1">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line2">
         <source>'New Project' --&gt; 'Online Templates'</source>
-        <target state="translated">'Nuovo progetto' --&gt; 'Modelli online'</target>
+        <target state="translated">'Nuovo progetto' --> 'Modelli online'</target>
         <note />
       </trans-unit>
       <trans-unit id="SupportsComments">
@@ -194,7 +194,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment-Line1">
         <source>When mutating a value, use '&lt;-' to assign a new value.</source>
-        <target state="translated">Durante la modifica di un valore, usare '&lt;-' per assegnare un nuovo valore.</target>
+        <target state="translated">Durante la modifica di un valore, usare '<-' per assegnare un nuovo valore.</target>
         <note />
       </trans-unit>
       <trans-unit id="MutableAssignment-Line2">
@@ -294,7 +294,7 @@
       </trans-unit>
       <trans-unit id="BooleanOperators">
         <source>Operators on booleans are 'not', '&amp;&amp;' and '||'.</source>
-        <target state="translated">Gli operatori su valori booleani sono 'not', '&amp;&amp;' e '||'.</target>
+        <target state="translated">Gli operatori su valori booleani sono 'not', '&&' e '||'.</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanPrintf">
@@ -434,7 +434,7 @@
       </trans-unit>
       <trans-unit id="Pipes-Line1">
         <source>The F# pipe operators ('|&gt;', '&lt;|', etc.) and F# composition operators ('&gt;&gt;', '&lt;&lt;')</source>
-        <target state="translated">Gli operatori pipe di F# ('|&gt;', '&lt;|' e così via) e gli operatori di composizione di F# ('&gt;&gt;', '&lt;&lt;')</target>
+        <target state="translated">Gli operatori pipe di F# ('|>', '<|' e così via) e gli operatori di composizione di F# ('>>', '<<')</target>
         <note />
       </trans-unit>
       <trans-unit id="Pipes-Line2">
@@ -544,7 +544,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line1">
         <source>Lastly, you can eliminate the need to explicitly take 'values' in as a parameter by using '&gt;&gt;'</source>
-        <target state="translated">È infine possibile evitare di accettare in modo esplicito 'values' come parametro usando '&gt;&gt;'</target>
+        <target state="translated">È infine possibile evitare di accettare in modo esplicito 'values' come parametro usando '>>'</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line2">
@@ -554,7 +554,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line3">
         <source>Likewise, the 'fun x -&gt; ...' bit of the lambda expression is also not needed, because 'x' is simply</source>
-        <target state="translated">Analogamente, anche la parte 'fun x -&gt; ...' dell'espressione lambda non è necessaria perché 'x' viene semplicemente</target>
+        <target state="translated">Analogamente, anche la parte 'fun x -> ...' dell'espressione lambda non è necessaria perché 'x' viene semplicemente</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line4">
@@ -564,7 +564,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line5">
         <source>there as well.</source>
-        <target state="translated">usare anche '&gt;&gt;'.</target>
+        <target state="translated">usare anche '>>'.</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line6">
@@ -774,7 +774,7 @@
       </trans-unit>
       <trans-unit id="Sequences-Line3">
         <source>An F# sequence is an alias for a .NET System.Collections.Generic.IEnumerable&lt;'T&gt;.</source>
-        <target state="translated">Una sequenza F# è un alias dell'elemento System.Collections.Generic.IEnumerable&lt;'T&gt; di .NET.</target>
+        <target state="translated">Una sequenza F# è un alias dell'elemento System.Collections.Generic.IEnumerable<'T> di .NET.</target>
         <note />
       </trans-unit>
       <trans-unit id="Sequences-Line4">
@@ -1299,12 +1299,12 @@
       </trans-unit>
       <trans-unit id="Option-Line2">
         <source>They are used extensively in F# code to represent the cases where many other</source>
-        <target state="translated">Questi valori sono ampiamente usati nel codice F# per rappresentare i casi in cui molti altri</target>
+        <target state="translated">Questi valori sono ampiamente utilizzati nel codice F# per rappresentare i casi in cui molti altri</target>
         <note />
       </trans-unit>
       <trans-unit id="Option-Line3">
         <source>languages would use null references.</source>
-        <target state="translated">linguaggi userebbero riferimenti Null.</target>
+        <target state="translated">linguaggi utilizzerebbero riferimenti null.</target>
         <note />
       </trans-unit>
       <trans-unit id="Option-Line4">
@@ -1389,7 +1389,7 @@
       </trans-unit>
       <trans-unit id="ComputeMileToMeter">
         <source>Compute  metric-system constant</source>
-        <target state="translated">Calcola la costate del sistema metrico</target>
+        <target state="translated">Calcola la costante del sistema metrico</target>
         <note />
       </trans-unit>
       <trans-unit id="PrintUnitsOfMeasure">
@@ -1494,7 +1494,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment">
         <source>use the '&lt;-' operator to mutate the value.</source>
-        <target state="translated">usare l'operatore '&lt;-' per modificare il valore.</target>
+        <target state="translated">usare l'operatore '<-' per modificare il valore.</target>
         <note />
       </trans-unit>
       <trans-unit id="History">

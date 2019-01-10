@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="ToInstall-Line2">
         <source>'Tools' --&gt; 'Extensions and Updates' --&gt; `Online` and search</source>
-        <target state="translated">"Extras" &gt; "Erweiterungen und Updates" &gt; "Online", und suchen Sie nach</target>
+        <target state="translated">"Extras" > "Erweiterungen und Updates" > "Online", und suchen Sie nach</target>
         <note />
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line1">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line2">
         <source>'New Project' --&gt; 'Online Templates'</source>
-        <target state="translated">"Neue Projekte" &gt; "Onlinevorlagen".</target>
+        <target state="translated">"Neue Projekte" > "Onlinevorlagen".</target>
         <note />
       </trans-unit>
       <trans-unit id="SupportsComments">
@@ -194,7 +194,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment-Line1">
         <source>When mutating a value, use '&lt;-' to assign a new value.</source>
-        <target state="translated">Wenn Sie einen Wert verändern, weisen Sie mithilfe von "&lt;-" einen neuen Wert zu.</target>
+        <target state="translated">Wenn Sie einen Wert verändern, weisen Sie mithilfe von "<-" einen neuen Wert zu.</target>
         <note />
       </trans-unit>
       <trans-unit id="MutableAssignment-Line2">
@@ -294,7 +294,7 @@
       </trans-unit>
       <trans-unit id="BooleanOperators">
         <source>Operators on booleans are 'not', '&amp;&amp;' and '||'.</source>
-        <target state="translated">Operatoren für boolesche Werte sind "not", "&amp;&amp;" und "||".</target>
+        <target state="translated">Operatoren für boolesche Werte sind "not", "&&" und "||".</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanPrintf">
@@ -434,7 +434,7 @@
       </trans-unit>
       <trans-unit id="Pipes-Line1">
         <source>The F# pipe operators ('|&gt;', '&lt;|', etc.) and F# composition operators ('&gt;&gt;', '&lt;&lt;')</source>
-        <target state="translated">Die F#-PipeOperatoren ("|&gt;", "&lt;|" usw.) und die F#-Zusammensetzungsoperatoren ("&gt;&gt;", "&lt;&lt;")</target>
+        <target state="translated">Die F#-PipeOperatoren ("|>", "<|" usw.) und die F#-Zusammensetzungsoperatoren (">>", "<<")</target>
         <note />
       </trans-unit>
       <trans-unit id="Pipes-Line2">
@@ -544,7 +544,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line1">
         <source>Lastly, you can eliminate the need to explicitly take 'values' in as a parameter by using '&gt;&gt;'</source>
-        <target state="translated">Es ist nicht mehr erforderlich, "values" als Parameter aufzunehmen, indem Sie mithilfe von "&gt;&gt;"</target>
+        <target state="translated">Es ist nicht mehr erforderlich, "values" als Parameter aufzunehmen, indem Sie mithilfe von ">>"</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line2">
@@ -554,12 +554,12 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line3">
         <source>Likewise, the 'fun x -&gt; ...' bit of the lambda expression is also not needed, because 'x' is simply</source>
-        <target state="translated">Der Teil "fun x -&gt; ..." des Lambdaausdrucks ist dementsprechend ebenfalls nicht erforderlich, da "x" lediglich</target>
+        <target state="translated">Der Teil "fun x -> ..." des Lambdaausdrucks ist dementsprechend ebenfalls nicht erforderlich, da "x" lediglich</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line4">
         <source>being defined in that scope so that it can be passed to a functional pipeline.  Thus, '&gt;&gt;' can be used</source>
-        <target state="translated">in dem Bereich definiert wird, damit es an eine Funktionspipeline übergeben werden kann. Daher kann "&gt;&gt;"</target>
+        <target state="translated">in dem Bereich definiert wird, damit es an eine Funktionspipeline übergeben werden kann. Daher kann ">>"</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line5">
@@ -774,7 +774,7 @@
       </trans-unit>
       <trans-unit id="Sequences-Line3">
         <source>An F# sequence is an alias for a .NET System.Collections.Generic.IEnumerable&lt;'T&gt;.</source>
-        <target state="translated">Eine F#-Sequenz ist ein Alias für .NET System.Collections.Generic.IEnumerable&lt;'T&gt;.</target>
+        <target state="translated">Eine F#-Sequenz ist ein Alias für .NET System.Collections.Generic.IEnumerable<'T>.</target>
         <note />
       </trans-unit>
       <trans-unit id="Sequences-Line4">
@@ -1494,7 +1494,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment">
         <source>use the '&lt;-' operator to mutate the value.</source>
-        <target state="translated">Den '&lt;-'-Operator verwenden, um den Wert zu mutieren</target>
+        <target state="translated">Den '<-'-Operator verwenden, um den Wert zu mutieren</target>
         <note />
       </trans-unit>
       <trans-unit id="History">
@@ -1529,7 +1529,7 @@
       </trans-unit>
       <trans-unit id="Interfaces-Line3">
         <source>To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/interfaces</source>
-        <target state="translated">Weitere Informationen finden Sie unter: https://docs.microsoft.com/de-de/dotnet/articles/fsharp/language-reference/interfaces</target>
+        <target state="translated">Weitere Informationen finden Sie unter:: https://docs.microsoft.com/de-de/dotnet/articles/fsharp/language-reference/interfaces</target>
         <note />
       </trans-unit>
       <trans-unit id="IDisposable">

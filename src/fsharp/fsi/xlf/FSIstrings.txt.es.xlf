@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">Uso: {0} &lt;opciones&gt; [script.fsx [&lt;argumentos&gt;]]</target>
+        <target state="translated">Uso: {0} <opciones> [script.fsx [<argumentos>]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">Se produjo un problema al iniciar el proceso de F# interactivo. Esto puede deberse a un problema conocido de compatibilidad de la consola de procesos en segundo plano con aplicaciones habilitadas para Unicode en algunos sistemas Windows. Pruebe lo siguiente: seleccione Herramientas-&gt;Opciones-&gt;F# interactivo para Visual Studio y escriba “--fsi-server-no-unicode”.</target>
+        <target state="translated">Se produjo un problema al iniciar el proceso de F# interactivo. Esto puede deberse a un problema conocido de compatibilidad de la consola de procesos en segundo plano con aplicaciones habilitadas para Unicode en algunos sistemas Windows. Pruebe lo siguiente: seleccione Herramientas->Opciones->F# interactivo para Visual Studio y escriba '--fsi-server-no-unicode'.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -139,7 +139,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
         <source>  F# Interactive directives:</source>
-        <target state="translated">  Directivas de F# interactivo:</target>
+        <target state="translated">  Directivas de F#:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashrInfo">
@@ -209,32 +209,32 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="translated">--&gt; '{0}' referenciado</target>
+        <target state="translated">--> '{0}' referenciado</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; “{0}” al que se hace referencia (el archivo puede estar bloqueado por un proceso de F# interactivo)</target>
+        <target state="translated">--> '{0}' al que se hace referencia (el archivo puede estar bloqueado por un proceso de F# interactivo)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">--&gt; Se hace referencia a '{0}' (ya se ha hecho referencia a un ensamblado con una marca de tiempo distinta desde esta ubicación, restablecer fsi para cargar el ensamblado actualizado)</target>
+        <target state="translated">--> Se hace referencia a '{0}' (ya se ha hecho referencia a un ensamblado con una marca de tiempo distinta desde esta ubicación, restablecer fsi para cargar el ensamblado actualizado)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="translated">--&gt; Se agregó '{0}' a la ruta de acceso de inclusión de biblioteca</target>
+        <target state="translated">--> Se agregó '{0}' a la ruta de acceso de inclusión de biblioteca</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
         <source>--&gt; Timing now on</source>
-        <target state="translated">--&gt; Control de tiempo activado</target>
+        <target state="translated">--> Control de tiempo activado</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOff">
         <source>--&gt; Timing now off</source>
-        <target state="translated">--&gt; Control de tiempo desactivado</target>
+        <target state="translated">--> Control de tiempo desactivado</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUnexpectedThreadAbortException">
@@ -259,7 +259,7 @@
       </trans-unit>
       <trans-unit id="fsiProductNameCommunity">
         <source>F# Interactive for F# {0}</source>
-        <target state="translated">F# interactivo para F# {0}</target>
+        <target state="translated">F# Interactive para F# {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="shadowCopyReferences">

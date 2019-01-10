@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="lblConditionalCompilationSymbols.Text">
         <source>Conditional compilation s&amp;ymbols:</source>
-        <target state="translated">条件编译符号(&amp;Y):</target>
+        <target state="translated">条件编译符号(&Y):</target>
         <note />
       </trans-unit>
       <trans-unit id="chkPrefer32Bit.Text">
         <source>&amp;Prefer 32-bit</source>
-        <target state="translated">首选 32 位(&amp;P)</target>
+        <target state="translated">首选 32 位(&P)</target>
         <note />
       </trans-unit>
       <trans-unit id="outputLabel.Text">
@@ -34,37 +34,37 @@
       </trans-unit>
       <trans-unit id="chkXMLDocumentationFile.Text">
         <source>&amp;XML documentation file:</source>
-        <target state="translated">XML 文档文件(&amp;X): </target>
+        <target state="translated">XML 文档文件(&X): </target>
         <note />
       </trans-unit>
       <trans-unit id="btnOutputPathBrowse.Text">
         <source>B&amp;rowse...</source>
-        <target state="translated">浏览(&amp;R)...</target>
+        <target state="translated">浏览(&R)...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblOutputPath.Text">
         <source>&amp;Output path:</source>
-        <target state="translated">输出路径(&amp;O): </target>
+        <target state="translated">输出路径(&O): </target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningAll.Text">
         <source>A&amp;ll</source>
-        <target state="translated">所有(&amp;L)</target>
+        <target state="translated">所有(&L)</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningSpecific.Text">
         <source>Specif&amp;ic warnings:</source>
-        <target state="translated">特定警告(&amp;I):</target>
+        <target state="translated">特定警告(&I):</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningNone.Text">
         <source>&amp;None</source>
-        <target state="translated">无(&amp;N)</target>
+        <target state="translated">无(&N)</target>
         <note />
       </trans-unit>
       <trans-unit id="lblSupressWarnings.Text">
         <source>&amp;Suppress warnings:</source>
-        <target state="translated">禁止显示警告(&amp;S):</target>
+        <target state="translated">禁止显示警告(&S):</target>
         <note />
       </trans-unit>
       <trans-unit id="cboWarningLevel.Items">
@@ -99,37 +99,37 @@
       </trans-unit>
       <trans-unit id="lblWarningLevel.Text">
         <source>&amp;Warning level:</source>
-        <target state="translated">警告等级(&amp;W): </target>
+        <target state="translated">警告等级(&W): </target>
         <note />
       </trans-unit>
       <trans-unit id="chkOptimizeCode.Text">
         <source>Optimi&amp;ze code</source>
-        <target state="translated">优化代码(&amp;Z)</target>
+        <target state="translated">优化代码(&Z)</target>
         <note />
       </trans-unit>
       <trans-unit id="chkTailcalls.Text">
         <source>G&amp;enerate tail calls</source>
-        <target state="translated">生成尾调用(&amp;E)</target>
+        <target state="translated">生成尾调用(&E)</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDefineTrace.Text">
         <source>Define TR&amp;ACE constant</source>
-        <target state="translated">定义 TRACE 常数(&amp;A)</target>
+        <target state="translated">定义 TRACE 常数(&A)</target>
         <note />
       </trans-unit>
       <trans-unit id="lblPlatformTarget.Text">
         <source>Platform tar&amp;get:</source>
-        <target state="translated">目标平台(&amp;G): </target>
+        <target state="translated">目标平台(&G): </target>
         <note />
       </trans-unit>
       <trans-unit id="lblOtherFlags.Text">
         <source>Other &amp;flags:</source>
-        <target state="translated">其他标志(&amp;F): </target>
+        <target state="translated">其他标志(&F): </target>
         <note />
       </trans-unit>
       <trans-unit id="chkDefineDebug.Text">
         <source>Define DEB&amp;UG constant</source>
-        <target state="translated">定义 DEBUG 常量(&amp;U)</target>
+        <target state="translated">定义 DEBUG 常量(&U)</target>
         <note />
       </trans-unit>
     </body>

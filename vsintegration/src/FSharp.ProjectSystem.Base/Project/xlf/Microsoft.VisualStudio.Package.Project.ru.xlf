@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="BuildAction">
         <source>Build Action</source>
-        <target state="translated">Действие при сборке</target>
+        <target state="translated">Действие сборки</target>
         <note>Project Build Property Name</note>
       </trans-unit>
       <trans-unit id="BuildActionDescription">
@@ -132,7 +132,7 @@
 – быть пустыми строками; 
 – совпадать с именами, зарезервированными системой, например CON, AUX, PRN, COM1 или LPT2; 
 – содержать только "."; 
-– содержать символы / ? : &amp; \ * " &lt; &gt; | # %.</target>
+– содержать символы / ? : & \ * " < > | # %.</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">
@@ -592,12 +592,12 @@
       </trans-unit>
       <trans-unit id="DetailsImport">
         <source>An 'Import' of the file '{1}' was found in the project file '{0}'. This file is not registered as a safe file to import, and could contain targets and tasks that are harmful.  If this imported file is indeed considered safe, then it can be registered by writing to the registry key {2}.</source>
-        <target state="translated">В файле проекта "{0}" найден &lt;Import&gt; файла "{1}". Этот файл не зарегистрирован как безопасный для импорта, и может содержать опасные цели и задания.  Если файл является безопасным, он может быть зарегистрирован при помощи записи в раздел реестра {2}.</target>
+        <target state="translated">В файле проекта "{0}" найден <Import> файла "{1}". Этот файл не зарегистрирован как безопасный для импорта, и может содержать опасные цели и задания.  Если файл является безопасным, он может быть зарегистрирован при помощи записи в раздел реестра {2}.</target>
         <note />
       </trans-unit>
       <trans-unit id="DetailsUserImport">
         <source>An 'Import' of the file '{1}' was found in the user project file '{0}'.  All imports in user project files are considered unsafe.</source>
-        <target state="translated">В файле проекта пользователя "{0}" найден &lt;Import&gt; файла "{1}".  Весь импорт в пользовательских файлах проекта считается небезопасным.</target>
+        <target state="translated">В файле проекта пользователя "{0}" найден <Import> файла "{1}".  Весь импорт в пользовательских файлах проекта считается небезопасным.</target>
         <note />
       </trans-unit>
       <trans-unit id="DetailsItem">
@@ -612,7 +612,7 @@
       </trans-unit>
       <trans-unit id="DetailsUsingTask">
         <source>A 'UsingTask' tag which registers the '{1}' task was found in the project file '{0}'.  'UsingTask' tags in the project file take precedence over those in the imported .TARGETS files, and therefore could be used to execute arbitrary code during an otherwise unmodified build process.</source>
-        <target state="translated">В файле проекта "{0}" обнаружен тег "UsingTask", регистрирующий задачу "{1}".  Метки &lt;UsingTask&gt; в файле проекта имеют превосходство перед импортированными .TARGETS-файлами, и поэтому могут быть использованы для выполнения произвольного кода во время не изменяемого другими средствами процесса сборки.</target>
+        <target state="translated">В файле проекта "{0}" обнаружен тег "UsingTask", регистрирующий задачу "{1}".  Метки <UsingTask> в файле проекта имеют превосходство перед импортированными .TARGETS-файлами, и поэтому могут быть использованы для выполнения произвольного кода во время не изменяемого другими средствами процесса сборки.</target>
         <note />
       </trans-unit>
       <trans-unit id="DetailsTarget">
@@ -672,7 +672,7 @@
       </trans-unit>
       <trans-unit id="NoZeroImpactProjects">
         <source>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</source>
-        <target state="translated">Microsoft Visual F# не поддерживает проекты с нулевым влиянием. Чтобы создать проект F# из этого шаблона проекта, последовательно выберите в меню Visual Studio "Сервис" команды "Параметры", "Проекты и решения", "Общие", а затем установите флажок "Сохранять новые проекты в момент создания" либо укажите &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; в разделе &lt;TemplateData&gt; файла .vstemplate этого шаблона, а затем повторите операцию.</target>
+        <target state="translated">Microsoft Visual F# не поддерживает проекты с нулевым влиянием. Чтобы создать проект F# из этого шаблона проекта, последовательно выберите в меню Visual Studio "Сервис" команды "Параметры", "Проекты и решения", "Общие", а затем установите флажок "Сохранять новые проекты в момент создания" либо укажите <PromptForSaveOnCreation>true</PromptForSaveOnCreation> в разделе <TemplateData> файла .vstemplate этого шаблона, а затем повторите операцию.</target>
         <note />
       </trans-unit>
       <trans-unit id="NoWildcardsInProject">

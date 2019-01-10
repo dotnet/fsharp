@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="InsertButton.Text">
         <source>I&amp;nsert</source>
-        <target state="translated">E&amp;kle</target>
+        <target state="translated">E&kle</target>
         <note />
       </trans-unit>
       <trans-unit id="OKButton.Text">
@@ -24,12 +24,12 @@
       </trans-unit>
       <trans-unit id="ShowMacrosButton.Text">
         <source>&amp;Macros &gt;&gt;</source>
-        <target state="translated">&amp;Makrolar &gt;&gt;</target>
+        <target state="translated">&Makrolar >></target>
         <note />
       </trans-unit>
       <trans-unit id="HideMacrosButton.Text">
         <source>&lt;&lt; &amp;Macros</source>
-        <target state="translated">&lt;&lt; &amp;Makrolar</target>
+        <target state="translated"><< &Makrolar</target>
         <note />
       </trans-unit>
       <trans-unit id="TokenList.AccessibleName">

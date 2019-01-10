@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="lblConditionalCompilationSymbols.Text">
         <source>Conditional compilation s&amp;ymbols:</source>
-        <target state="translated">Koşullu derleme s&amp;embolleri:</target>
+        <target state="translated">Koşullu derleme s&embolleri:</target>
         <note />
       </trans-unit>
       <trans-unit id="chkPrefer32Bit.Text">
         <source>&amp;Prefer 32-bit</source>
-        <target state="translated">32 Biti &amp;Tercih Et</target>
+        <target state="translated">32 Biti &Tercih Et</target>
         <note />
       </trans-unit>
       <trans-unit id="outputLabel.Text">
@@ -34,37 +34,37 @@
       </trans-unit>
       <trans-unit id="chkXMLDocumentationFile.Text">
         <source>&amp;XML documentation file:</source>
-        <target state="translated">&amp;XML belge dosyası:</target>
+        <target state="translated">&XML belge dosyası:</target>
         <note />
       </trans-unit>
       <trans-unit id="btnOutputPathBrowse.Text">
         <source>B&amp;rowse...</source>
-        <target state="translated">Gö&amp;zat...</target>
+        <target state="translated">Gö&zat...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblOutputPath.Text">
         <source>&amp;Output path:</source>
-        <target state="translated">&amp;Çıkış yolu:</target>
+        <target state="translated">&Çıkış yolu:</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningAll.Text">
         <source>A&amp;ll</source>
-        <target state="translated">&amp;Tümü</target>
+        <target state="translated">&Tümü</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningSpecific.Text">
         <source>Specif&amp;ic warnings:</source>
-        <target state="translated">Özel &amp;uyarılar:</target>
+        <target state="translated">Özel &uyarılar:</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningNone.Text">
         <source>&amp;None</source>
-        <target state="translated">&amp;Hiçbiri</target>
+        <target state="translated">&Hiçbiri</target>
         <note />
       </trans-unit>
       <trans-unit id="lblSupressWarnings.Text">
         <source>&amp;Suppress warnings:</source>
-        <target state="translated">&amp;Uyarıları kapat:</target>
+        <target state="translated">&Uyarıları kapat:</target>
         <note />
       </trans-unit>
       <trans-unit id="cboWarningLevel.Items">
@@ -99,37 +99,37 @@
       </trans-unit>
       <trans-unit id="lblWarningLevel.Text">
         <source>&amp;Warning level:</source>
-        <target state="translated">&amp;Uyarı düzeyi:</target>
+        <target state="translated">&Uyarı düzeyi:</target>
         <note />
       </trans-unit>
       <trans-unit id="chkOptimizeCode.Text">
         <source>Optimi&amp;ze code</source>
-        <target state="translated">Kodu iyileş&amp;tir</target>
+        <target state="translated">Kodu iyileş&tir</target>
         <note />
       </trans-unit>
       <trans-unit id="chkTailcalls.Text">
         <source>G&amp;enerate tail calls</source>
-        <target state="translated">Tail çağrıları &amp;oluştur</target>
+        <target state="translated">Tail çağrıları &oluştur</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDefineTrace.Text">
         <source>Define TR&amp;ACE constant</source>
-        <target state="translated">TR&amp;ACE sabitini tanımla</target>
+        <target state="translated">TR&ACE sabitini tanımla</target>
         <note />
       </trans-unit>
       <trans-unit id="lblPlatformTarget.Text">
         <source>Platform tar&amp;get:</source>
-        <target state="translated">Platform &amp;hedefi:</target>
+        <target state="translated">Platform &hedefi:</target>
         <note />
       </trans-unit>
       <trans-unit id="lblOtherFlags.Text">
         <source>Other &amp;flags:</source>
-        <target state="translated">Diğer &amp;bayraklar:</target>
+        <target state="translated">Diğer &bayraklar:</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDefineDebug.Text">
         <source>Define DEB&amp;UG constant</source>
-        <target state="translated">DEB&amp;UG sabitini tanımla</target>
+        <target state="translated">DEB&UG sabitini tanımla</target>
         <note />
       </trans-unit>
     </body>

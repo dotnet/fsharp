@@ -14,32 +14,32 @@
       </trans-unit>
       <trans-unit id="FSharpAddBelowMenu|ButtonText">
         <source>Add &amp;Below</source>
-        <target state="translated">Přidat &amp;níže</target>
+        <target state="translated">Přidat &níže</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddBelowMenu|MenuText">
         <source>Add &amp;Below</source>
-        <target state="translated">Přidat &amp;níže</target>
+        <target state="translated">Přidat &níže</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddBelowMenu|CommandName">
         <source>Add &amp;Below</source>
-        <target state="translated">Přidat &amp;níže</target>
+        <target state="translated">Přidat &níže</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddAboveMenu|ButtonText">
         <source>Add &amp;Above</source>
-        <target state="translated">Přidat &amp;výše</target>
+        <target state="translated">Přidat &výše</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddAboveMenu|MenuText">
         <source>Add &amp;Above</source>
-        <target state="translated">Přidat &amp;výše</target>
+        <target state="translated">Přidat &výše</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddAboveMenu|CommandName">
         <source>Add &amp;Above</source>
-        <target state="translated">Přidat &amp;výše</target>
+        <target state="translated">Přidat &výše</target>
         <note />
       </trans-unit>
       <trans-unit id="cmdidFsiToolWindow|CommandName">
@@ -84,12 +84,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|ButtonText">
         <source>&amp;Send to F# Interactive</source>
-        <target state="translated">Za&amp;slat do F# Interactive</target>
+        <target state="translated">Za&slat do F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|MenuText">
         <source>&amp;Send to F# Interactive</source>
-        <target state="translated">Za&amp;slat do F# Interactive</target>
+        <target state="translated">Za&slat do F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|CommandName">
@@ -99,12 +99,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|ButtonText">
         <source>&amp;Send References to F# Interactive</source>
-        <target state="translated">Za&amp;slat odkazy do F# Interactive</target>
+        <target state="translated">Za&slat odkazy do F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|MenuText">
         <source>&amp;Send References to F# Interactive</source>
-        <target state="translated">Za&amp;slat odkazy do F# Interactive</target>
+        <target state="translated">Za&slat odkazy do F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|CommandName">
@@ -114,12 +114,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|ButtonText">
         <source>&amp;Send Project Output to F# Interactive</source>
-        <target state="translated">Za&amp;slat výstup projektu do F# Interactive</target>
+        <target state="translated">Za&slat výstup projektu do F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|MenuText">
         <source>&amp;Send Project Output to F# Interactive</source>
-        <target state="translated">Za&amp;slat výstup projektu do F# Interactive</target>
+        <target state="translated">Za&slat výstup projektu do F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|CommandName">
@@ -129,12 +129,12 @@
       </trans-unit>
       <trans-unit id="MoveUpCmd|ButtonText">
         <source>Move &amp;Up</source>
-        <target state="translated">Přesunout &amp;nahoru</target>
+        <target state="translated">Přesunout &nahoru</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveUpCmd|MenuText">
         <source>Move &amp;Up</source>
-        <target state="translated">Přesunout &amp;nahoru</target>
+        <target state="translated">Přesunout &nahoru</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveUpCmd|CommandName">
@@ -144,12 +144,12 @@
       </trans-unit>
       <trans-unit id="MoveDownCmd|ButtonText">
         <source>Mo&amp;ve Down</source>
-        <target state="translated">Přesu&amp;nout dolů</target>
+        <target state="translated">Přesu&nout dolů</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveDownCmd|MenuText">
         <source>Mo&amp;ve Down</source>
-        <target state="translated">Přesu&amp;nout dolů</target>
+        <target state="translated">Přesu&nout dolů</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveDownCmd|CommandName">
@@ -159,12 +159,12 @@
       </trans-unit>
       <trans-unit id="AddNewItemBelow|ButtonText">
         <source>Add Ne&amp;w Item...</source>
-        <target state="translated">Přidat no&amp;vou položku...</target>
+        <target state="translated">Přidat no&vou položku...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewItemBelow|MenuText">
         <source>Ne&amp;w Item...</source>
-        <target state="translated">No&amp;vá položka...</target>
+        <target state="translated">No&vá položka...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewItemBelow|ToolTipText">
@@ -179,12 +179,12 @@
       </trans-unit>
       <trans-unit id="AddExistingItemBelow|ButtonText">
         <source>Add Existin&amp;g Item...</source>
-        <target state="translated">Přidat existujíc&amp;í položku...</target>
+        <target state="translated">Přidat existujíc&í položku...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddExistingItemBelow|MenuText">
         <source>Existin&amp;g Item...</source>
-        <target state="translated">Existujíc&amp;í položka...</target>
+        <target state="translated">Existujíc&í položka...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddExistingItemBelow|ToolTipText">
@@ -199,12 +199,12 @@
       </trans-unit>
       <trans-unit id="AddNewItemAbove|ButtonText">
         <source>Add Ne&amp;w Item...</source>
-        <target state="translated">Přidat no&amp;vou položku...</target>
+        <target state="translated">Přidat no&vou položku...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewItemAbove|MenuText">
         <source>Ne&amp;w Item...</source>
-        <target state="translated">No&amp;vá položka...</target>
+        <target state="translated">No&vá položka...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewItemAbove|ToolTipText">
@@ -219,12 +219,12 @@
       </trans-unit>
       <trans-unit id="AddExistingItemAbove|ButtonText">
         <source>Add Existin&amp;g Item...</source>
-        <target state="translated">Přidat existujíc&amp;í položku...</target>
+        <target state="translated">Přidat existujíc&í položku...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddExistingItemAbove|MenuText">
         <source>Existin&amp;g Item...</source>
-        <target state="translated">Existujíc&amp;í položka...</target>
+        <target state="translated">Existujíc&í položka...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddExistingItemAbove|ToolTipText">
@@ -239,12 +239,12 @@
       </trans-unit>
       <trans-unit id="NewFolderAbove|ButtonText">
         <source>New Fol&amp;der</source>
-        <target state="translated">Nová &amp;složka</target>
+        <target state="translated">Nová &složka</target>
         <note />
       </trans-unit>
       <trans-unit id="NewFolderBelow|ButtonText">
         <source>New Fol&amp;der</source>
-        <target state="translated">Nová &amp;složka</target>
+        <target state="translated">Nová &složka</target>
         <note />
       </trans-unit>
     </body>

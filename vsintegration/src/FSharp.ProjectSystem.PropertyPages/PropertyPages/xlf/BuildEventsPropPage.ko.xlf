@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="lblPreBuildEventCommandLine.Text">
         <source>P&amp;re-build event command line:</source>
-        <target state="translated">빌드 이벤트 명령줄 대화 상자(&amp;R):</target>
+        <target state="translated">빌드 이벤트 명령줄 대화 상자(&R):</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPreBuildEventCommandLine.AccessibleName">
@@ -19,12 +19,12 @@
       </trans-unit>
       <trans-unit id="btnPreBuildBuilder.Text">
         <source>Ed&amp;it Pre-build ...</source>
-        <target state="translated">빌드 전 편집(&amp;I)...</target>
+        <target state="translated">빌드 전 편집(&I)...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblPostBuildEventCommandLine.Text">
         <source>P&amp;ost-build event command line:</source>
-        <target state="translated">빌드 후 이벤트 명령줄(&amp;O):</target>
+        <target state="translated">빌드 후 이벤트 명령줄(&O):</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPostBuildEventCommandLine.AccessibleName">
@@ -39,12 +39,12 @@
       </trans-unit>
       <trans-unit id="btnPostBuildBuilder.Text">
         <source>Edit Post-b&amp;uild ...</source>
-        <target state="translated">빌드 후 편집(&amp;U)...</target>
+        <target state="translated">빌드 후 편집(&U)...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblRunPostBuildEvent.Text">
         <source>Ru&amp;n the post-build event:</source>
-        <target state="translated">빌드 후 이벤트 실행(&amp;N):</target>
+        <target state="translated">빌드 후 이벤트 실행(&N):</target>
         <note />
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items">

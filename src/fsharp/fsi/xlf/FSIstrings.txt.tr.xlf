@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">Kullanım: {0} &lt;seçenekler&gt; [script.fsx [&lt;bağımsız değişkenler&gt;]]</target>
+        <target state="translated">Kullanım: {0} <seçenekler> [script.fsx [<bağımsız değişkenler>]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">F# Etkileşimli işlemi başlatılırken bir sorun oluştu. Bu durum, bazı Windows sistemlerindeki Unicode kullanan uygulamalara yönelik arka plan işlemi konsol desteğinde bilinen bir soruna bağlı olabilir. Visual Studio için Araçlar-&gt;Seçenekler-&gt;F# Etkileşimli'yi seçmeyi deneyin ve '--fsi-server-no-unicode' girin.</target>
+        <target state="translated">F# Interactive işlemi başlatılırken bir sorun oluştu. Bu durum, bazı Windows sistemlerindeki Unicode kullanan uygulamalara yönelik arka plan işlemi konsol desteğinde bilinen bir soruna bağlı olabilir. Visual Studio için Araçlar->Seçenekler->F# Interactive'i seçmeyi deneyin ve '--fsi-server-no-unicode' girin.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -139,7 +139,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
         <source>  F# Interactive directives:</source>
-        <target state="translated">  F# Etkileşimli yönergeleri:</target>
+        <target state="translated">  F# Interactive yönergeleri:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashrInfo">
@@ -209,32 +209,32 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="translated">--&gt; '{0}' öğesine başvuruldu</target>
+        <target state="translated">--> '{0}' öğesine başvuruldu</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; '{0}' öğesine başvuruldu (dosya F# Etkileşimli işlemi tarafından kilitlenmiş olabilir)</target>
+        <target state="translated">--> '{0}' öğesine başvuruldu (dosya F# Interactive işlemi tarafından kilitlenmiş olabilir)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">--&gt; Başvurulan '{0}' (farklı bir zaman damgası olan bir bütünleştirilmiş koda bu konumdan zaten başvuruldu; güncelleştirilen bütünleştirilmiş kodu yüklemek için fsi'yi sıfırlayın)</target>
+        <target state="translated">--> Başvurulan '{0}' (farklı bir zaman damgası olan bir bütünleştirilmiş koda bu konumdan zaten başvuruldu; güncelleştirilen bütünleştirilmiş kodu yüklemek için fsi'yi sıfırlayın)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="translated">--&gt; Kitaplık ekleme yoluna '{0}' eklendi</target>
+        <target state="translated">--> Kitaplık ekleme yoluna '{0}' eklendi</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
         <source>--&gt; Timing now on</source>
-        <target state="translated">--&gt; Zamanlama şimdi açık</target>
+        <target state="translated">--> Zamanlama şimdi açık</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOff">
         <source>--&gt; Timing now off</source>
-        <target state="translated">--&gt; Zamanlama şimdi kapalı</target>
+        <target state="translated">--> Zamanlama şimdi kapalı</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUnexpectedThreadAbortException">
@@ -254,12 +254,12 @@
       </trans-unit>
       <trans-unit id="fsiProductName">
         <source>Microsoft (R) F# Interactive version {0}</source>
-        <target state="translated">Microsoft (R) F# Etkileşimli sürüm {0}</target>
+        <target state="translated">Microsoft (R) F# Interactive sürüm {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiProductNameCommunity">
         <source>F# Interactive for F# {0}</source>
-        <target state="translated">F# {0} için F# Etkileşimli</target>
+        <target state="translated">F# {0} için F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="shadowCopyReferences">

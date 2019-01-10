@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">Składnia: {0} &lt;opcje&gt; [script.fsx [&lt;argumenty&gt;]]</target>
+        <target state="translated">Składnia: {0} <opcje> [script.fsx [<argumenty>]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">Wystąpił problem podczas uruchamiania procesu narzędzia F# Interactive. Taka sytuacja może być spowodowana znanym problemem z obsługą konsoli procesu w tle dla aplikacji obsługujących kodowanie Unicode w niektórych systemach Windows. Spróbuj wybrać kolejno opcje Narzędzia-&gt;Opcje-&gt;F# Interactive dla Visual Studio i wprowadź „--fsi-server-no-unicode”.</target>
+        <target state="translated">Wystąpił problem podczas uruchamiania procesu narzędzia F# Interactive. Taka sytuacja może być spowodowana znanym problemem z obsługą konsoli procesu w tle dla aplikacji obsługujących kodowanie Unicode w niektórych systemach Windows. Spróbuj wybrać kolejno opcje Narzędzia->Opcje->F# Interactive dla Visual Studio i wprowadź „--fsi-server-no-unicode”.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -209,32 +209,32 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="translated">--&gt; Przywołano element „{0}”</target>
+        <target state="translated">--> Przywołano element „{0}”</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; Przywołano element „{0}” (plik może być zablokowany przez proces narzędzia F# Interactive)</target>
+        <target state="translated">--> Przywołano element „{0}” (plik może być zablokowany przez proces narzędzia F# Interactive)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">--&gt; Zestaw „{0}” występujący w odwołaniu (zestaw z inną sygnaturą czasową występuje już w odwołaniu z tej lokalizacji; zresetuj narzędzie fsi, aby załadować zaktualizowany zestaw)</target>
+        <target state="translated">--> Zestaw „{0}” występujący w odwołaniu (zestaw z inną sygnaturą czasową występuje już w odwołaniu z tej lokalizacji; zresetuj narzędzie fsi, aby załadować zaktualizowany zestaw)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="translated">--&gt; Dodano element „{0}” do ścieżki dołączenia biblioteki</target>
+        <target state="translated">--> Dodano element „{0}” do ścieżki dołączenia biblioteki</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
         <source>--&gt; Timing now on</source>
-        <target state="translated">--&gt; Funkcja chronometrażu została włączona</target>
+        <target state="translated">--> Funkcja chronometrażu została włączona</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOff">
         <source>--&gt; Timing now off</source>
-        <target state="translated">--&gt; Funkcja chronometrażu została wyłączona</target>
+        <target state="translated">--> Funkcja chronometrażu została wyłączona</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUnexpectedThreadAbortException">

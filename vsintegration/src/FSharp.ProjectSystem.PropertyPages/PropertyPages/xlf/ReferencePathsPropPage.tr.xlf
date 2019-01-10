@@ -4,17 +4,17 @@
     <body>
       <trans-unit id="AddFolder.Text">
         <source>&amp;Add Folder</source>
-        <target state="translated">&amp;Klasör Ekle</target>
+        <target state="translated">&Klasör Ekle</target>
         <note />
       </trans-unit>
       <trans-unit id="UpdateFolder.Text">
         <source>&amp;Update</source>
-        <target state="translated">&amp;Güncelleştir</target>
+        <target state="translated">&Güncelleştir</target>
         <note />
       </trans-unit>
       <trans-unit id="ReferencePathLabel.Text">
         <source>Reference &amp;paths:</source>
-        <target state="translated">Başvuru &amp;yolları:</target>
+        <target state="translated">Başvuru &yolları:</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderBrowse.AccessibleName">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="FolderLabel.Text">
         <source>&amp;Folder:</source>
-        <target state="translated">&amp;Klasör:</target>
+        <target state="translated">&Klasör:</target>
         <note />
       </trans-unit>
     </body>

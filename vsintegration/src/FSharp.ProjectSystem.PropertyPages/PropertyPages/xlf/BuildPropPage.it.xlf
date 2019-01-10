@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="lblConditionalCompilationSymbols.Text">
         <source>Conditional compilation s&amp;ymbols:</source>
-        <target state="translated">Sim&amp;boli di compilazione condizionale:</target>
+        <target state="translated">Sim&boli di compilazione condizionale:</target>
         <note />
       </trans-unit>
       <trans-unit id="chkPrefer32Bit.Text">
         <source>&amp;Prefer 32-bit</source>
-        <target state="translated">&amp;Preferisci 32 bit</target>
+        <target state="translated">&Preferisci 32 bit</target>
         <note />
       </trans-unit>
       <trans-unit id="outputLabel.Text">
@@ -34,37 +34,37 @@
       </trans-unit>
       <trans-unit id="chkXMLDocumentationFile.Text">
         <source>&amp;XML documentation file:</source>
-        <target state="translated">File di documentazione &amp;XML:</target>
+        <target state="translated">File di documentazione &XML:</target>
         <note />
       </trans-unit>
       <trans-unit id="btnOutputPathBrowse.Text">
         <source>B&amp;rowse...</source>
-        <target state="translated">S&amp;foglia...</target>
+        <target state="translated">S&foglia...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblOutputPath.Text">
         <source>&amp;Output path:</source>
-        <target state="translated">Perc&amp;orso di output:</target>
+        <target state="translated">Perc&orso di output:</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningAll.Text">
         <source>A&amp;ll</source>
-        <target state="translated">T&amp;utti</target>
+        <target state="translated">T&utti</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningSpecific.Text">
         <source>Specif&amp;ic warnings:</source>
-        <target state="translated">Avv&amp;isi specifici:</target>
+        <target state="translated">Avv&isi specifici:</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningNone.Text">
         <source>&amp;None</source>
-        <target state="translated">&amp;Nessuna</target>
+        <target state="translated">&Nessuna</target>
         <note />
       </trans-unit>
       <trans-unit id="lblSupressWarnings.Text">
         <source>&amp;Suppress warnings:</source>
-        <target state="translated">Non visualizzare avvi&amp;si:</target>
+        <target state="translated">Non visualizzare avvi&si:</target>
         <note />
       </trans-unit>
       <trans-unit id="cboWarningLevel.Items">
@@ -99,37 +99,37 @@
       </trans-unit>
       <trans-unit id="lblWarningLevel.Text">
         <source>&amp;Warning level:</source>
-        <target state="translated">&amp;Livello di avviso:</target>
+        <target state="translated">&Livello di avviso:</target>
         <note />
       </trans-unit>
       <trans-unit id="chkOptimizeCode.Text">
         <source>Optimi&amp;ze code</source>
-        <target state="translated">Ottimi&amp;zza codice</target>
+        <target state="translated">Ottimi&zza codice</target>
         <note />
       </trans-unit>
       <trans-unit id="chkTailcalls.Text">
         <source>G&amp;enerate tail calls</source>
-        <target state="translated">&amp;Genera chiamate tail</target>
+        <target state="translated">&Genera chiamate tail</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDefineTrace.Text">
         <source>Define TR&amp;ACE constant</source>
-        <target state="translated">Definisci costante TR&amp;ACE</target>
+        <target state="translated">Definisci costante TR&ACE</target>
         <note />
       </trans-unit>
       <trans-unit id="lblPlatformTarget.Text">
         <source>Platform tar&amp;get:</source>
-        <target state="translated">&amp;Piattaforma di destinazione:</target>
+        <target state="translated">&Piattaforma di destinazione:</target>
         <note />
       </trans-unit>
       <trans-unit id="lblOtherFlags.Text">
         <source>Other &amp;flags:</source>
-        <target state="translated">Altri fla&amp;g:</target>
+        <target state="translated">Altri fla&g:</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDefineDebug.Text">
         <source>Define DEB&amp;UG constant</source>
-        <target state="translated">Definisci costante DEB&amp;UG</target>
+        <target state="translated">Definisci costante DEB&UG</target>
         <note />
       </trans-unit>
     </body>

@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="AssemblyNameLabel.Text">
         <source>Assembly &amp;name:</source>
-        <target state="translated">&amp;Nome do assembly:</target>
+        <target state="translated">&Nome do assembly:</target>
         <note />
       </trans-unit>
       <trans-unit id="Win32ResourceFileBrowse.Text">
@@ -19,12 +19,12 @@
       </trans-unit>
       <trans-unit id="ResourceLabel.Text">
         <source>&amp;Resource File:</source>
-        <target state="translated">Arquivo Fo&amp;nte:</target>
+        <target state="translated">Arquivo Fo&nte:</target>
         <note />
       </trans-unit>
       <trans-unit id="UseStandardResourceNames.Text">
         <source>U&amp;se standard resource names</source>
-        <target state="translated">U&amp;sar os nomes de recurso padrão</target>
+        <target state="translated">U&sar os nomes de recurso padrão</target>
         <note />
       </trans-unit>
       <trans-unit id="ResourcesGroupBox.Text">
@@ -34,12 +34,12 @@
       </trans-unit>
       <trans-unit id="OutputTypeLabel.Text">
         <source>O&amp;utput type:</source>
-        <target state="translated">Ti&amp;po de saída:</target>
+        <target state="translated">Ti&po de saída:</target>
         <note />
       </trans-unit>
       <trans-unit id="TargetFrameworkLabel.Text">
         <source>Tar&amp;get Framework:</source>
-        <target state="translated">Estrutura de &amp;Destino:</target>
+        <target state="translated">Estrutura de &Destino:</target>
         <note />
       </trans-unit>
       <trans-unit id="TargetFSharpCoreVersionLabel.Text">

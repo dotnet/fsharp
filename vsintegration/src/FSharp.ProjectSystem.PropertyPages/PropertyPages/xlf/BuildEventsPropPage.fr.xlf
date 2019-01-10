@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="lblPreBuildEventCommandLine.Text">
         <source>P&amp;re-build event command line:</source>
-        <target state="translated">&amp;Ligne de commande de l'événement pré-build :</target>
+        <target state="translated">&Ligne de commande de l'événement pré-build :</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPreBuildEventCommandLine.AccessibleName">
@@ -19,12 +19,12 @@
       </trans-unit>
       <trans-unit id="btnPreBuildBuilder.Text">
         <source>Ed&amp;it Pre-build ...</source>
-        <target state="translated">M&amp;odifier pré-build ...</target>
+        <target state="translated">M&odifier pré-build ...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblPostBuildEventCommandLine.Text">
         <source>P&amp;ost-build event command line:</source>
-        <target state="translated">&amp;Ligne de commande de l'événement post-build :</target>
+        <target state="translated">&Ligne de commande de l'événement post-build :</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPostBuildEventCommandLine.AccessibleName">
@@ -39,12 +39,12 @@
       </trans-unit>
       <trans-unit id="btnPostBuildBuilder.Text">
         <source>Edit Post-b&amp;uild ...</source>
-        <target state="translated">Mo&amp;difier post-build...</target>
+        <target state="translated">Mo&difier post-build...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblRunPostBuildEvent.Text">
         <source>Ru&amp;n the post-build event:</source>
-        <target state="translated">Exécuter l'évé&amp;nement post-build :</target>
+        <target state="translated">Exécuter l'évé&nement post-build :</target>
         <note />
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items">

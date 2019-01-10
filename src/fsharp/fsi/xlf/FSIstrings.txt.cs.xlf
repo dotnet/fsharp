@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">Použití: {0} &lt;parametry&gt; [skript.fsx [&lt;argumenty&gt;]]</target>
+        <target state="translated">Použití: {0} <parametry> [skript.fsx [<argumenty>]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">Při spuštění procesu F# Interactive se vyskytl problém. Ten mohly způsobit známé potíže s podporou konzoly procesu na pozadí pro aplikace umožňující kódování Unicode v některých systémech Windows. V případě Visual Studia zkuste vybrat Nástroje-&gt;Možnosti-&gt;F# Interactive a zadat: --fsi-server-no-unicode.</target>
+        <target state="translated">Při spuštění procesu F# Interactive se vyskytl problém. Ten mohly způsobit známé potíže s podporou konzoly procesu na pozadí pro aplikace umožňující kódování Unicode v některých systémech Windows. V případě Visual Studia zkuste vybrat Nástroje->Možnosti->F# Interactive a zadat: --fsi-server-no-unicode.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -209,32 +209,32 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="translated">--&gt; Odkazovaný soubor {0}</target>
+        <target state="translated">--> Odkazovaný soubor {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; Odkazovaný soubor {0} (Soubor musí být procesem F# Interactive uzamčený.)</target>
+        <target state="translated">--> Odkazovaný soubor {0} (Soubor musí být procesem F# Interactive uzamčený.)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">--&gt; Odkazováno {0} (na sestavení s odlišným časovým razítkem se už z tohoto umístění odkazovalo, pro načtení aktualizovaného sestavení obnovte soubor fsi)</target>
+        <target state="translated">--> Odkazováno {0} (na sestavení s odlišným časovým razítkem se už z tohoto umístění odkazovalo, pro načtení aktualizovaného sestavení obnovte soubor fsi)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="translated">--&gt; Soubory přidané do knihovny ({0}) zahrnují cestu.</target>
+        <target state="translated">--> Soubory přidané do knihovny ({0}) zahrnují cestu.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
         <source>--&gt; Timing now on</source>
-        <target state="translated">--&gt; Časování je teď zapnuté.</target>
+        <target state="translated">--> Časování je teď zapnuté.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOff">
         <source>--&gt; Timing now off</source>
-        <target state="translated">--&gt; Časování je teď vypnuté.</target>
+        <target state="translated">--> Časování je teď vypnuté.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUnexpectedThreadAbortException">
@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
         <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">Znemožňuje zamknutí referencí procesem nástroje F# Interactive.</target>
+        <target state="translated">Znemožňuje zamknutí referencí interaktivním procesem jazyka F#.</target>
         <note />
       </trans-unit>
     </body>

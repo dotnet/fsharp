@@ -132,7 +132,7 @@
 - être des chaînes vides ; 
 - être des noms réservés au système, notamment 'CON', 'AUX', PRN', 'COM1' ou 'LPT2' ; 
 - contenir uniquement '.' ;
-- comporter les caractères suivants : / ? : &amp;  \ * " &lt; &gt; | # %</target>
+- comporter les caractères suivants : / ? : &  \ * " < > | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">
@@ -487,7 +487,7 @@
       </trans-unit>
       <trans-unit id="CustomToolDescription">
         <source>Specifies the tool that transforms a file at design time and places the output of that transformation into another file. For example, a dataset (.xsd) file comes with a default custom tool.</source>
-        <target state="translated">Spécifie l'outil qui transforme un fichier au moment du design et qui place les résultats de cette transformation dans un autre fichier. Par exemple, un fichier dataset (.xsd) est fourni avec un outil personnalisé par défaut.</target>
+        <target state="translated">Spécifie l'outil qui transforme un fichier au moment du design et place le résultat de cette transformation dans un autre fichier. Par exemple, un fichier de dataset (.xsd) est fourni avec un outil personnalisé par défaut.</target>
         <note />
       </trans-unit>
       <trans-unit id="CustomToolNamespace">
@@ -672,7 +672,7 @@
       </trans-unit>
       <trans-unit id="NoZeroImpactProjects">
         <source>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</source>
-        <target state="translated">Microsoft Visual F# ne prend pas en charge les projets d'impact nul. Pour créer un projet F# à partir de ce modèle de projet, accédez au menu Visual Studio 'Outils, Options..., Projets et solutions, Général' et activez la case à cocher 'Enregistrer les nouveaux projets lors de leur création', ou spécifiez &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; dans la section &lt;TemplateData&gt; du fichier .vstemplate de ce modèle de projet, puis réessayez l'opération.</target>
+        <target state="translated">Microsoft Visual F# ne prend pas en charge les projets d'impact nul. Pour créer un projet F# à partir de ce modèle de projet, accédez au menu Visual Studio 'Outils, Options..., Projets et solutions, Général' et activez la case à cocher 'Enregistrer les nouveaux projets lors de leur création', ou spécifiez <PromptForSaveOnCreation>true</PromptForSaveOnCreation> dans la section <TemplateData> du fichier .vstemplate de ce modèle de projet, puis réessayez l'opération.</target>
         <note />
       </trans-unit>
       <trans-unit id="NoWildcardsInProject">

@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">Sintassi: {0} &lt;opzioni&gt; [script.fsx [&lt;argomenti&gt;]]</target>
+        <target state="translated">Sintassi: {0} <opzioni> [script.fsx [<argomenti>]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">Si è verificato un problema durante l'avvio del processo F# Interactive. Può trattarsi di un problema noto del supporto della console dei processi in background per le applicazioni abilitate per Unicode in alcuni sistemi Windows. Provare a scegliere Strumenti-&gt;Opzioni-&gt;F# Interactive per Visual Studio e immettere '--fsi-server-no-unicode'.</target>
+        <target state="translated">Si è verificato un problema durante l'avvio del processo F# Interactive. Può trattarsi di un problema noto del supporto della console dei processi in background per le applicazioni abilitate per Unicode in alcuni sistemi Windows. Provare a scegliere Strumenti->Opzioni->F# Interactive per Visual Studio e immettere '--fsi-server-no-unicode'.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -209,32 +209,32 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="translated">--&gt; Riferimento a '{0}'</target>
+        <target state="translated">--> Riferimento a '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; Riferimento a '{0}' (il file potrebbe essere bloccato dal processo di F# Interactive)</target>
+        <target state="translated">--> Riferimento a '{0}' (il file potrebbe essere bloccato dal processo di F# Interactive)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">--&gt; Riferimento già presente a '{0}' (un assembly con timestamp diverso è già presente come riferimento in questa posizione. Reimpostare fsi per caricare l'assembly aggiornato)</target>
+        <target state="translated">--> Riferimento già presente a '{0}' (un assembly con timestamp diverso è già presente come riferimento in questa posizione. Reimpostare fsi per caricare l'assembly aggiornato)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="translated">--&gt; Aggiunto '{0}' al percorso di inclusione della libreria</target>
+        <target state="translated">--> Aggiunto '{0}' al percorso di inclusione della libreria</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
         <source>--&gt; Timing now on</source>
-        <target state="translated">--&gt; Temporizzazione attivata</target>
+        <target state="translated">--> Temporizzazione attivata</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOff">
         <source>--&gt; Timing now off</source>
-        <target state="translated">--&gt; Temporizzazione disattivata</target>
+        <target state="translated">--> Temporizzazione disattivata</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUnexpectedThreadAbortException">

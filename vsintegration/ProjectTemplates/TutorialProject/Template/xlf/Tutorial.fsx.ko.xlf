@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line1">
         <source>To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click</source>
-        <target state="translated">F# 대화형에서 코드를 실행하려면 코드 섹션을 강조 표시하고 &lt;Alt+Enter&gt;를 누르거나 마우스 오른쪽 단추를 클릭한 다음</target>
+        <target state="translated">F# 대화형에서 코드를 실행하려면 코드 섹션을 강조 표시하고 <Alt+Enter>를 누르거나 마우스 오른쪽 단추를 클릭한 다음</target>
         <note />
       </trans-unit>
       <trans-unit id="Instructions-Line2">
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="ToInstall-Line2">
         <source>'Tools' --&gt; 'Extensions and Updates' --&gt; `Online` and search</source>
-        <target state="translated">'도구' --&gt; '확장 및 업데이트' --&gt; `온라인`으로 이동하고 검색합니다.</target>
+        <target state="translated">'도구' --> '확장 및 업데이트' --> `온라인`으로 이동하고 검색합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line1">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line2">
         <source>'New Project' --&gt; 'Online Templates'</source>
-        <target state="translated">'새 프로젝트' --&gt; '온라인 템플릿'</target>
+        <target state="translated">'새 프로젝트' --> '온라인 템플릿'</target>
         <note />
       </trans-unit>
       <trans-unit id="SupportsComments">
@@ -194,7 +194,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment-Line1">
         <source>When mutating a value, use '&lt;-' to assign a new value.</source>
-        <target state="translated">값을 변경할 때는 '&lt;-'를 사용하여 새 값을 할당하세요.</target>
+        <target state="translated">값을 변경할 때는 '<-'를 사용하여 새 값을 할당하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="MutableAssignment-Line2">
@@ -294,7 +294,7 @@
       </trans-unit>
       <trans-unit id="BooleanOperators">
         <source>Operators on booleans are 'not', '&amp;&amp;' and '||'.</source>
-        <target state="translated">부울의 연산자는 'not', '&amp;&amp;' 및 '||'입니다.</target>
+        <target state="translated">부울의 연산자는 'not', '&&' 및 '||'입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanPrintf">
@@ -434,7 +434,7 @@
       </trans-unit>
       <trans-unit id="Pipes-Line1">
         <source>The F# pipe operators ('|&gt;', '&lt;|', etc.) and F# composition operators ('&gt;&gt;', '&lt;&lt;')</source>
-        <target state="translated">F# 파이프 연산자('|&gt;', '&lt;|' 등) 및 F# 합성 연산자('&gt;&gt;', '&lt;&lt;')는</target>
+        <target state="translated">F# 파이프 연산자('|>', '<|' 등) 및 F# 합성 연산자('>>', '<<')는</target>
         <note />
       </trans-unit>
       <trans-unit id="Pipes-Line2">
@@ -444,7 +444,7 @@
       </trans-unit>
       <trans-unit id="Pipes-Line3">
         <source>which make use of Partial Application.</source>
-        <target state="translated">부분 응용 프로그램을 사용합니다.</target>
+        <target state="translated">부분 애플리케이션을 사용합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="Pipes-Line4">
@@ -454,7 +454,7 @@
       </trans-unit>
       <trans-unit id="Pipes-Line5">
         <source>To learn more about Partial Application, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/functions/#partial-application-of-arguments</source>
-        <target state="translated">부분 응용 프로그램에 대해 자세히 알아보려면 다음을 참조하세요. https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/functions/#partial-application-of-arguments</target>
+        <target state="translated">부분 애플리케이션에 대해 자세히 알아보려면 다음을 참조하세요. https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/functions/#partial-application-of-arguments</target>
         <note />
       </trans-unit>
       <trans-unit id="Squares">
@@ -544,7 +544,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line1">
         <source>Lastly, you can eliminate the need to explicitly take 'values' in as a parameter by using '&gt;&gt;'</source>
-        <target state="translated">마지막으로 명시적으로 'values'를 매개 변수로 사용할 필요가 없습니다. '&gt;&gt;'를 사용하여</target>
+        <target state="translated">마지막으로 명시적으로 'values'를 매개 변수로 사용할 필요가 없습니다. '>>'를 사용하여</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line2">
@@ -554,12 +554,12 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line3">
         <source>Likewise, the 'fun x -&gt; ...' bit of the lambda expression is also not needed, because 'x' is simply</source>
-        <target state="translated">마찬가지로 'fun x -&gt; ...' 람다 식도 필요하지 않습니다. 'x'를 해당 범위에서 간단히</target>
+        <target state="translated">마찬가지로 'fun x -> ...' 람다 식도 필요하지 않습니다. 'x'를 해당 범위에서 간단히</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line4">
         <source>being defined in that scope so that it can be passed to a functional pipeline.  Thus, '&gt;&gt;' can be used</source>
-        <target state="translated">정의하여 함수 파이프라인에 전달할 수 있기 때문입니다. 따라서 여기에서도 '&gt;&gt;'를</target>
+        <target state="translated">정의하여 함수 파이프라인에 전달할 수 있기 때문입니다. 따라서 여기에서도 '>>'를</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line5">
@@ -589,7 +589,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line10">
         <source>use Partial Application and the input and output types of each data processing operation match</source>
-        <target state="translated">부분 응용 프로그램을 사용하고 각 데이터 처리 작업의 입력 및 출력 형식이 사용 중인 함수의</target>
+        <target state="translated">부분 애플리케이션을 사용하고 각 데이터 처리 작업의 입력 및 출력 형식이 사용 중인 함수의</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line11">
@@ -774,7 +774,7 @@
       </trans-unit>
       <trans-unit id="Sequences-Line3">
         <source>An F# sequence is an alias for a .NET System.Collections.Generic.IEnumerable&lt;'T&gt;.</source>
-        <target state="translated">F# 시퀀스는 .NET System.Collections.Generic.IEnumerable&lt;'T&gt;의 별칭입니다.</target>
+        <target state="translated">F# 시퀀스는 .NET System.Collections.Generic.IEnumerable<'T>의 별칭입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="Sequences-Line4">
@@ -1259,7 +1259,7 @@
       </trans-unit>
       <trans-unit id="MatchShorthand-Line2">
         <source>which is useful when you're writing functions which make use of Partial Application.</source>
-        <target state="translated">이 구문은 부분 응용 프로그램을 사용하는 함수를 작성할 때 유용합니다.</target>
+        <target state="translated">이 구문은 부분 애플리케이션을 사용하는 함수를 작성할 때 유용합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="ParseHelpers">
@@ -1494,7 +1494,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment">
         <source>use the '&lt;-' operator to mutate the value.</source>
-        <target state="translated">'&lt;-' 연산자를 사용하여 값을 변경합니다.</target>
+        <target state="translated">'<-' 연산자를 사용하여 값을 변경합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="History">
@@ -1594,7 +1594,7 @@
       </trans-unit>
       <trans-unit id="Events-Line1">
         <source>Events are a common idiom for .NET programming, especially with WinForms or WPF applications.</source>
-        <target state="translated">이벤트는 특히 WinForms 또는 WPF 응용 프로그램을 사용하는 .NET 프로그래밍에서 일반적으로 사용되는 말입니다.</target>
+        <target state="translated">이벤트는 특히 WinForms 또는 WPF 애플리케이션을 사용하는 .NET 프로그래밍에서 일반적으로 사용되는 말입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="Events-Line2">

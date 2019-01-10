@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="lblConditionalCompilationSymbols.Text">
         <source>Conditional compilation s&amp;ymbols:</source>
-        <target state="translated">Symboly podmíněné &amp;kompilace:</target>
+        <target state="translated">Symboly podmíněné &kompilace:</target>
         <note />
       </trans-unit>
       <trans-unit id="chkPrefer32Bit.Text">
         <source>&amp;Prefer 32-bit</source>
-        <target state="translated">&amp;Preferovat 32bitovou verzi</target>
+        <target state="translated">&Preferovat 32bitovou verzi</target>
         <note />
       </trans-unit>
       <trans-unit id="outputLabel.Text">
@@ -34,37 +34,37 @@
       </trans-unit>
       <trans-unit id="chkXMLDocumentationFile.Text">
         <source>&amp;XML documentation file:</source>
-        <target state="translated">Soubor dokumentace &amp;XML:</target>
+        <target state="translated">Soubor dokumentace &XML:</target>
         <note />
       </trans-unit>
       <trans-unit id="btnOutputPathBrowse.Text">
         <source>B&amp;rowse...</source>
-        <target state="translated">P&amp;rocházet...</target>
+        <target state="translated">P&rocházet...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblOutputPath.Text">
         <source>&amp;Output path:</source>
-        <target state="translated">&amp;Cesta výstupu:</target>
+        <target state="translated">&Cesta výstupu:</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningAll.Text">
         <source>A&amp;ll</source>
-        <target state="translated">&amp;Vše</target>
+        <target state="translated">&Vše</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningSpecific.Text">
         <source>Specif&amp;ic warnings:</source>
-        <target state="translated">Specifická &amp;upozornění:</target>
+        <target state="translated">Specifická &upozornění:</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningNone.Text">
         <source>&amp;None</source>
-        <target state="translated">Žád&amp;ná</target>
+        <target state="translated">Žád&ná</target>
         <note />
       </trans-unit>
       <trans-unit id="lblSupressWarnings.Text">
         <source>&amp;Suppress warnings:</source>
-        <target state="translated">Potlačit upozo&amp;rnění:</target>
+        <target state="translated">Potlačit upozo&rnění:</target>
         <note />
       </trans-unit>
       <trans-unit id="cboWarningLevel.Items">
@@ -99,37 +99,37 @@
       </trans-unit>
       <trans-unit id="lblWarningLevel.Text">
         <source>&amp;Warning level:</source>
-        <target state="translated">Úroveň pro &amp;upozornění:</target>
+        <target state="translated">Úroveň pro &upozornění:</target>
         <note />
       </trans-unit>
       <trans-unit id="chkOptimizeCode.Text">
         <source>Optimi&amp;ze code</source>
-        <target state="translated">Optimali&amp;zovat kód</target>
+        <target state="translated">Optimali&zovat kód</target>
         <note />
       </trans-unit>
       <trans-unit id="chkTailcalls.Text">
         <source>G&amp;enerate tail calls</source>
-        <target state="translated">G&amp;enerovat volání funkce Tail</target>
+        <target state="translated">G&enerovat volání funkce Tail</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDefineTrace.Text">
         <source>Define TR&amp;ACE constant</source>
-        <target state="translated">Definovat konstantu TR&amp;ACE</target>
+        <target state="translated">Definovat konstantu TR&ACE</target>
         <note />
       </trans-unit>
       <trans-unit id="lblPlatformTarget.Text">
         <source>Platform tar&amp;get:</source>
-        <target state="translated">Cílová &amp;platforma:</target>
+        <target state="translated">Cílová &platforma:</target>
         <note />
       </trans-unit>
       <trans-unit id="lblOtherFlags.Text">
         <source>Other &amp;flags:</source>
-        <target state="translated">Jiné &amp;příznaky:</target>
+        <target state="translated">Jiné &příznaky:</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDefineDebug.Text">
         <source>Define DEB&amp;UG constant</source>
-        <target state="translated">Definovat konstantu DEB&amp;UG</target>
+        <target state="translated">Definovat konstantu DEB&UG</target>
         <note />
       </trans-unit>
     </body>

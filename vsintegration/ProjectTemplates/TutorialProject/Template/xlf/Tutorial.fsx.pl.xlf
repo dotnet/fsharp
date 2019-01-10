@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line1">
         <source>To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click</source>
-        <target state="translated">Aby wykonać kod w narzędziu F# Interactive, zaznacz sekcję kodu i naciśnij kombinację klawiszy Alt-Enter lub kliknij prawym przyciskiem myszy,</target>
+        <target state="translated">Aby wykonać kod w programie F# Interactive, zaznacz sekcję kodu i naciśnij kombinację klawiszy Alt-Enter lub kliknij prawym przyciskiem myszy,</target>
         <note />
       </trans-unit>
       <trans-unit id="Instructions-Line2">
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="ToInstall-Line2">
         <source>'Tools' --&gt; 'Extensions and Updates' --&gt; `Online` and search</source>
-        <target state="translated">„Narzędzia” --&gt; „Rozszerzenia i aktualizacje” --&gt; „Online” i wyszukaj</target>
+        <target state="translated">„Narzędzia” --> „Rozszerzenia i aktualizacje” --> „Online” i wyszukaj</target>
         <note />
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line1">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line2">
         <source>'New Project' --&gt; 'Online Templates'</source>
-        <target state="translated">„Nowy projekt” --&gt; „Szablony w trybie online”</target>
+        <target state="translated">„Nowy projekt” --> „Szablony w trybie online”</target>
         <note />
       </trans-unit>
       <trans-unit id="SupportsComments">
@@ -194,7 +194,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment-Line1">
         <source>When mutating a value, use '&lt;-' to assign a new value.</source>
-        <target state="translated">Podczas modyfikowania wartości użyj strzałki „&lt;-”, aby przydzielić nową wartość.</target>
+        <target state="translated">Podczas modyfikowania wartości użyj strzałki „<-”, aby przydzielić nową wartość.</target>
         <note />
       </trans-unit>
       <trans-unit id="MutableAssignment-Line2">
@@ -294,7 +294,7 @@
       </trans-unit>
       <trans-unit id="BooleanOperators">
         <source>Operators on booleans are 'not', '&amp;&amp;' and '||'.</source>
-        <target state="translated">Operatory wartości logicznych to „not”, „&amp;&amp;” i „||”.</target>
+        <target state="translated">Operatory wartości logicznych to „not”, „&&” i „||”.</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanPrintf">
@@ -434,7 +434,7 @@
       </trans-unit>
       <trans-unit id="Pipes-Line1">
         <source>The F# pipe operators ('|&gt;', '&lt;|', etc.) and F# composition operators ('&gt;&gt;', '&lt;&lt;')</source>
-        <target state="translated">Operatory potoków języka F# („|&gt;”, „&lt;|” itp.) oraz operatory kompozycji języka F# („&gt;&gt;”, „&lt;&lt;”)</target>
+        <target state="translated">Operatory potoków języka F# („|>”, „<|” itp.) oraz operatory kompozycji języka F# („>>”, „<<”)</target>
         <note />
       </trans-unit>
       <trans-unit id="Pipes-Line2">
@@ -544,7 +544,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line1">
         <source>Lastly, you can eliminate the need to explicitly take 'values' in as a parameter by using '&gt;&gt;'</source>
-        <target state="translated">W końcu możesz wyeliminować potrzebę jawnego przyjmowania elementu „values” jako parametru, używając wyrażenia „&gt;&gt;”,</target>
+        <target state="translated">W końcu możesz wyeliminować potrzebę jawnego przyjmowania elementu „values” jako parametru, używając wyrażenia „>>”,</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line2">
@@ -554,12 +554,12 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line3">
         <source>Likewise, the 'fun x -&gt; ...' bit of the lambda expression is also not needed, because 'x' is simply</source>
-        <target state="translated">Podobnie fragment „fun x -&gt; ...” wyrażenia lambda nie jest wymagany, ponieważ wartość „x” jest po prostu</target>
+        <target state="translated">Podobnie fragment „fun x -> ...” wyrażenia lambda nie jest wymagany, ponieważ wartość „x” jest po prostu</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line4">
         <source>being defined in that scope so that it can be passed to a functional pipeline.  Thus, '&gt;&gt;' can be used</source>
-        <target state="translated">definiowana w tym zakresie w celu przekazania do potoku funkcyjnego. Dlatego można również użyć wyrażenia „&gt;&gt;”</target>
+        <target state="translated">definiowana w tym zakresie w celu przekazania do potoku funkcyjnego. Dlatego można również użyć wyrażenia „>>”</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line5">
@@ -774,7 +774,7 @@
       </trans-unit>
       <trans-unit id="Sequences-Line3">
         <source>An F# sequence is an alias for a .NET System.Collections.Generic.IEnumerable&lt;'T&gt;.</source>
-        <target state="translated">Sekwencja języka F# jest aliasem dla elementu .NET System.Collections.Generic.IEnumerable&lt;'T&gt;.</target>
+        <target state="translated">Sekwencja języka F# jest aliasem dla elementu .NET System.Collections.Generic.IEnumerable<'T>.</target>
         <note />
       </trans-unit>
       <trans-unit id="Sequences-Line4">
@@ -1494,7 +1494,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment">
         <source>use the '&lt;-' operator to mutate the value.</source>
-        <target state="translated">użyj operatora „&lt;-”, aby zmodyfikować wartość.</target>
+        <target state="translated">użyj operatora „<-”, aby zmodyfikować wartość.</target>
         <note />
       </trans-unit>
       <trans-unit id="History">

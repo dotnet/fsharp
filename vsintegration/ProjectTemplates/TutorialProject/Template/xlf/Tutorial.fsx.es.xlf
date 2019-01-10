@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="ToInstall-Line2">
         <source>'Tools' --&gt; 'Extensions and Updates' --&gt; `Online` and search</source>
-        <target state="translated">"Herramientas" --&gt; "Extensiones y actualizaciones" --&gt; "En línea" y busque</target>
+        <target state="translated">"Herramientas" --> "Extensiones y actualizaciones" --> "En línea" y busque</target>
         <note />
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line1">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line2">
         <source>'New Project' --&gt; 'Online Templates'</source>
-        <target state="translated">"Nuevo proyecto" --&gt; "Plantillas en línea"</target>
+        <target state="translated">"Nuevo proyecto" --> "Plantillas en línea"</target>
         <note />
       </trans-unit>
       <trans-unit id="SupportsComments">
@@ -194,7 +194,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment-Line1">
         <source>When mutating a value, use '&lt;-' to assign a new value.</source>
-        <target state="translated">Para la mutación de un valor, use "&lt;-" para asignar un valor nuevo.</target>
+        <target state="translated">Para la mutación de un valor, use "<-" para asignar un valor nuevo.</target>
         <note />
       </trans-unit>
       <trans-unit id="MutableAssignment-Line2">
@@ -294,7 +294,7 @@
       </trans-unit>
       <trans-unit id="BooleanOperators">
         <source>Operators on booleans are 'not', '&amp;&amp;' and '||'.</source>
-        <target state="translated">Los operadores de valores booleanos son "not", "&amp;&amp;" y "||".</target>
+        <target state="translated">Los operadores de valores booleanos son "not", "&&" y "||".</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanPrintf">
@@ -434,7 +434,7 @@
       </trans-unit>
       <trans-unit id="Pipes-Line1">
         <source>The F# pipe operators ('|&gt;', '&lt;|', etc.) and F# composition operators ('&gt;&gt;', '&lt;&lt;')</source>
-        <target state="translated">Los operadores de canalización ("|&gt;", "&lt;|", etc.) y de composición ("&gt;&gt;", "&lt;&lt;") de F#</target>
+        <target state="translated">Los operadores de canalización ("|>", "<|", etc.) y de composición (">>", "<<") de F#</target>
         <note />
       </trans-unit>
       <trans-unit id="Pipes-Line2">
@@ -544,7 +544,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line1">
         <source>Lastly, you can eliminate the need to explicitly take 'values' in as a parameter by using '&gt;&gt;'</source>
-        <target state="translated">Por último, puede eliminar la necesidad de tomar "valores" de forma explícita como parámetro usando "&gt;&gt;"</target>
+        <target state="translated">Por último, puede eliminar la necesidad de tomar "valores" de forma explícita como parámetro usando ">>"</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line2">
@@ -554,12 +554,12 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line3">
         <source>Likewise, the 'fun x -&gt; ...' bit of the lambda expression is also not needed, because 'x' is simply</source>
-        <target state="translated">De igual modo, no se necesita tampoco la parte "fun x -&gt; ..." de la expresión lambda, porque "x"</target>
+        <target state="translated">De igual modo, no se necesita tampoco la parte "fun x -> ..." de la expresión lambda, porque "x"</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line4">
         <source>being defined in that scope so that it can be passed to a functional pipeline.  Thus, '&gt;&gt;' can be used</source>
-        <target state="translated">se define en ese ámbito para poderlo pasar a una canalización funcional. Por tanto, "&gt;&gt;" se pude usar</target>
+        <target state="translated">se define en ese ámbito para poderlo pasar a una canalización funcional. Por tanto, ">>" se pude usar</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line5">
@@ -774,7 +774,7 @@
       </trans-unit>
       <trans-unit id="Sequences-Line3">
         <source>An F# sequence is an alias for a .NET System.Collections.Generic.IEnumerable&lt;'T&gt;.</source>
-        <target state="translated">Una secuencia de F# es un alias para un elemento System.Collections.Generic.IEnumerable&lt;'T&gt; de .NET.</target>
+        <target state="translated">Una secuencia de F# es un alias para un elemento System.Collections.Generic.IEnumerable<'T> de .NET.</target>
         <note />
       </trans-unit>
       <trans-unit id="Sequences-Line4">
@@ -1139,7 +1139,7 @@
       </trans-unit>
       <trans-unit id="BinaryTreeInsert-Line4">
         <source>No need to insert, it already exists; return the node.</source>
-        <target state="translated">No es necesario insertarlo, ya existe; vuelve al nodo.</target>
+        <target state="translated">No es necesario insertarlo, ya existe; devuelve el nodo.</target>
         <note />
       </trans-unit>
       <trans-unit id="BinaryTreeInsert-Line5">
@@ -1494,7 +1494,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment">
         <source>use the '&lt;-' operator to mutate the value.</source>
-        <target state="translated">Use el operador "&lt;-" para mutar el valor.</target>
+        <target state="translated">Use el operador "<-" para mutar el valor.</target>
         <note />
       </trans-unit>
       <trans-unit id="History">

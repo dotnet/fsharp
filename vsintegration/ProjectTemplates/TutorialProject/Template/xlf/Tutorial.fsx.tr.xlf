@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line1">
         <source>To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click</source>
-        <target state="translated">Kodu F# Etkileşimli'de yürütmek için kodun bir bölümünü vurgulayın ve Alt-Enter'a basın veya sağ tıklatın</target>
+        <target state="translated">Kodu Etkileşimli F#'da yürütmek için kodun bir bölümünü vurgulayın ve Alt-Enter'a basın veya sağ tıklatın</target>
         <note />
       </trans-unit>
       <trans-unit id="Instructions-Line2">
@@ -29,7 +29,7 @@
       </trans-unit>
       <trans-unit id="LearnMoreAbout">
         <source>To learn more about applied F# programming, use</source>
-        <target state="translated">Uygulamalı #F programlama hakkında daha fazla bilgi edinmek için şunu kullanın:</target>
+        <target state="translated">Uygulamalı F# programlama hakkında daha fazla bilgi edinmek için şunu kullanın:</target>
         <note />
       </trans-unit>
       <trans-unit id="ToInstall-Line1">
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="ToInstall-Line2">
         <source>'Tools' --&gt; 'Extensions and Updates' --&gt; `Online` and search</source>
-        <target state="translated">'Araçlar' --&gt; 'Uzantılar ve Güncelleştirmeler' --&gt; `Çevrimiçi` seçeneğini kullanın ve arama yapın</target>
+        <target state="translated">'Araçlar' --> 'Uzantılar ve Güncelleştirmeler' --> `Çevrimiçi` seçeneğini kullanın ve arama yapın</target>
         <note />
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line1">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line2">
         <source>'New Project' --&gt; 'Online Templates'</source>
-        <target state="translated">'Yeni Proje' --&gt; 'Çevrimiçi Şablonlar'</target>
+        <target state="translated">'Yeni Proje' --> 'Çevrimiçi Şablonlar'</target>
         <note />
       </trans-unit>
       <trans-unit id="SupportsComments">
@@ -194,7 +194,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment-Line1">
         <source>When mutating a value, use '&lt;-' to assign a new value.</source>
-        <target state="translated">Bir değeri değiştirirken, yeni bir değer atamak için '&lt;-' kullanın.</target>
+        <target state="translated">Bir değeri değiştirirken, yeni bir değer atamak için '<-' kullanın.</target>
         <note />
       </trans-unit>
       <trans-unit id="MutableAssignment-Line2">
@@ -294,7 +294,7 @@
       </trans-unit>
       <trans-unit id="BooleanOperators">
         <source>Operators on booleans are 'not', '&amp;&amp;' and '||'.</source>
-        <target state="translated">Boole değerleri üzerindeki işleçler: 'not', '&amp;&amp;' ve '||'.</target>
+        <target state="translated">Boole değerleri üzerindeki işleçler: 'not', '&&' ve '||'.</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanPrintf">
@@ -434,7 +434,7 @@
       </trans-unit>
       <trans-unit id="Pipes-Line1">
         <source>The F# pipe operators ('|&gt;', '&lt;|', etc.) and F# composition operators ('&gt;&gt;', '&lt;&lt;')</source>
-        <target state="translated">F# kanal işleçleri ('|&gt;', '&lt;|', vb.) ve F# birleştirme işleçleri ('&gt;&gt;', '&lt;&lt;')</target>
+        <target state="translated">F# kanal işleçleri ('|>', '<|', vb.) ve F# birleştirme işleçleri ('>>', '<<')</target>
         <note />
       </trans-unit>
       <trans-unit id="Pipes-Line2">
@@ -544,7 +544,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line1">
         <source>Lastly, you can eliminate the need to explicitly take 'values' in as a parameter by using '&gt;&gt;'</source>
-        <target state="translated">Son olarak, şu iki temel işlemi oluşturmak için '&gt;&gt;' kullanarak 'values' öğesini parametre olarak</target>
+        <target state="translated">Son olarak, şu iki temel işlemi oluşturmak için '>>' kullanarak 'values' öğesini parametre olarak</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line2">
@@ -559,7 +559,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line4">
         <source>being defined in that scope so that it can be passed to a functional pipeline.  Thus, '&gt;&gt;' can be used</source>
-        <target state="translated">lambda ifadesindeki 'fun x -&gt; ...' bölümü de gerekli değildir. Bu nedenle, '&gt;&gt;'</target>
+        <target state="translated">lambda ifadesindeki 'fun x -> ...' bölümü de gerekli değildir. Bu nedenle, '>>'</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line5">
@@ -774,7 +774,7 @@
       </trans-unit>
       <trans-unit id="Sequences-Line3">
         <source>An F# sequence is an alias for a .NET System.Collections.Generic.IEnumerable&lt;'T&gt;.</source>
-        <target state="translated">F# sırası, .NET System.Collections.Generic.IEnumerable&lt;'T&gt; için diğer addır.</target>
+        <target state="translated">F# sırası, .NET System.Collections.Generic.IEnumerable<'T> için diğer addır.</target>
         <note />
       </trans-unit>
       <trans-unit id="Sequences-Line4">
@@ -1494,7 +1494,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment">
         <source>use the '&lt;-' operator to mutate the value.</source>
-        <target state="translated">değeri değiştirmek için '&lt;-' işlecini kullanın.</target>
+        <target state="translated">değeri değiştirmek için '<-' işlecini kullanın.</target>
         <note />
       </trans-unit>
       <trans-unit id="History">

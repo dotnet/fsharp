@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="AssemblyOptionDialog_Option">
         <source>&amp;Remember my decision for '{0}'.</source>
-        <target state="translated">記住對 '{0}' 的決定(&amp;R)</target>
+        <target state="translated">記住對 '{0}' 的決定(&R)</target>
         <note>Text for the option on add / remove My extensions dialog.</note>
       </trans-unit>
       <trans-unit id="AssemblyOptionDialog_Remove_Question">

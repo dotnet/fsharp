@@ -14,32 +14,32 @@
       </trans-unit>
       <trans-unit id="FSharpAddBelowMenu|ButtonText">
         <source>Add &amp;Below</source>
-        <target state="translated">加入下方(&amp;B)</target>
+        <target state="translated">加入下方(&B)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddBelowMenu|MenuText">
         <source>Add &amp;Below</source>
-        <target state="translated">加入下方(&amp;B)</target>
+        <target state="translated">加入下方(&B)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddBelowMenu|CommandName">
         <source>Add &amp;Below</source>
-        <target state="translated">加入下方(&amp;B)</target>
+        <target state="translated">加入下方(&B)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddAboveMenu|ButtonText">
         <source>Add &amp;Above</source>
-        <target state="translated">加入上方(&amp;A)</target>
+        <target state="translated">加入上方(&A)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddAboveMenu|MenuText">
         <source>Add &amp;Above</source>
-        <target state="translated">加入上方(&amp;A)</target>
+        <target state="translated">加入上方(&A)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddAboveMenu|CommandName">
         <source>Add &amp;Above</source>
-        <target state="translated">加入上方(&amp;A)</target>
+        <target state="translated">加入上方(&A)</target>
         <note />
       </trans-unit>
       <trans-unit id="cmdidFsiToolWindow|CommandName">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="cmdidFsiToolWindow|ButtonText">
         <source>F# Interactive</source>
-        <target state="translated">F# 互動</target>
+        <target state="translated">F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="cmdidAttachDebugger|CommandName">
@@ -84,12 +84,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|ButtonText">
         <source>&amp;Send to F# Interactive</source>
-        <target state="translated">傳送到 F# 互動 (&amp;S)</target>
+        <target state="translated">傳送到 F# Interactive(&S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|MenuText">
         <source>&amp;Send to F# Interactive</source>
-        <target state="translated">傳送到 F# 互動 (&amp;S)</target>
+        <target state="translated">傳送到 F# Interactive(&S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|CommandName">
@@ -99,12 +99,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|ButtonText">
         <source>&amp;Send References to F# Interactive</source>
-        <target state="translated">傳送參考到 F# 互動 (&amp;S)</target>
+        <target state="translated">傳送參考到 F# 互動 (&S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|MenuText">
         <source>&amp;Send References to F# Interactive</source>
-        <target state="translated">傳送參考到 F# 互動 (&amp;S)</target>
+        <target state="translated">傳送參考到 F# 互動 (&S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|CommandName">
@@ -114,12 +114,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|ButtonText">
         <source>&amp;Send Project Output to F# Interactive</source>
-        <target state="translated">傳送專案輸出到 F# 互動 (&amp;S)</target>
+        <target state="translated">傳送專案輸出到 F# Interactive(&S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|MenuText">
         <source>&amp;Send Project Output to F# Interactive</source>
-        <target state="translated">傳送專案輸出到 F# 互動 (&amp;S)</target>
+        <target state="translated">傳送專案輸出到 F# Interactive(&S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|CommandName">
@@ -129,12 +129,12 @@
       </trans-unit>
       <trans-unit id="MoveUpCmd|ButtonText">
         <source>Move &amp;Up</source>
-        <target state="translated">上移(&amp;U)</target>
+        <target state="translated">上移(&U)</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveUpCmd|MenuText">
         <source>Move &amp;Up</source>
-        <target state="translated">上移(&amp;U)</target>
+        <target state="translated">上移(&U)</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveUpCmd|CommandName">
@@ -144,12 +144,12 @@
       </trans-unit>
       <trans-unit id="MoveDownCmd|ButtonText">
         <source>Mo&amp;ve Down</source>
-        <target state="translated">下移(&amp;V)</target>
+        <target state="translated">下移(&V)</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveDownCmd|MenuText">
         <source>Mo&amp;ve Down</source>
-        <target state="translated">下移(&amp;V)</target>
+        <target state="translated">下移(&V)</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveDownCmd|CommandName">
@@ -159,12 +159,12 @@
       </trans-unit>
       <trans-unit id="AddNewItemBelow|ButtonText">
         <source>Add Ne&amp;w Item...</source>
-        <target state="translated">加入新項目(&amp;W)...</target>
+        <target state="translated">加入新項目(&W)...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewItemBelow|MenuText">
         <source>Ne&amp;w Item...</source>
-        <target state="translated">新增項目(&amp;W)...</target>
+        <target state="translated">新增項目(&W)...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewItemBelow|ToolTipText">
@@ -179,12 +179,12 @@
       </trans-unit>
       <trans-unit id="AddExistingItemBelow|ButtonText">
         <source>Add Existin&amp;g Item...</source>
-        <target state="translated">加入現有項目(&amp;G)...</target>
+        <target state="translated">加入現有項目(&G)...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddExistingItemBelow|MenuText">
         <source>Existin&amp;g Item...</source>
-        <target state="translated">現有項目(&amp;G)...</target>
+        <target state="translated">現有項目(&G)...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddExistingItemBelow|ToolTipText">
@@ -199,12 +199,12 @@
       </trans-unit>
       <trans-unit id="AddNewItemAbove|ButtonText">
         <source>Add Ne&amp;w Item...</source>
-        <target state="translated">加入新項目(&amp;W)...</target>
+        <target state="translated">加入新項目(&W)...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewItemAbove|MenuText">
         <source>Ne&amp;w Item...</source>
-        <target state="translated">新增項目(&amp;W)...</target>
+        <target state="translated">新增項目(&W)...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewItemAbove|ToolTipText">
@@ -219,12 +219,12 @@
       </trans-unit>
       <trans-unit id="AddExistingItemAbove|ButtonText">
         <source>Add Existin&amp;g Item...</source>
-        <target state="translated">加入現有項目(&amp;G)...</target>
+        <target state="translated">加入現有項目(&G)...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddExistingItemAbove|MenuText">
         <source>Existin&amp;g Item...</source>
-        <target state="translated">現有項目(&amp;G)...</target>
+        <target state="translated">現有項目(&G)...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddExistingItemAbove|ToolTipText">
@@ -239,12 +239,12 @@
       </trans-unit>
       <trans-unit id="NewFolderAbove|ButtonText">
         <source>New Fol&amp;der</source>
-        <target state="translated">新增資料夾(&amp;D)</target>
+        <target state="translated">新增資料夾(&D)</target>
         <note />
       </trans-unit>
       <trans-unit id="NewFolderBelow|ButtonText">
         <source>New Fol&amp;der</source>
-        <target state="translated">新增資料夾(&amp;D)</target>
+        <target state="translated">新增資料夾(&D)</target>
         <note />
       </trans-unit>
     </body>

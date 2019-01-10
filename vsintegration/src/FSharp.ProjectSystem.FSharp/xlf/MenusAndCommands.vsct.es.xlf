@@ -14,32 +14,32 @@
       </trans-unit>
       <trans-unit id="FSharpAddBelowMenu|ButtonText">
         <source>Add &amp;Below</source>
-        <target state="translated">Agregar de&amp;bajo</target>
+        <target state="translated">Agregar de&bajo</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddBelowMenu|MenuText">
         <source>Add &amp;Below</source>
-        <target state="translated">Agregar de&amp;bajo</target>
+        <target state="translated">Agregar de&bajo</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddBelowMenu|CommandName">
         <source>Add &amp;Below</source>
-        <target state="translated">Agregar de&amp;bajo</target>
+        <target state="translated">Agregar de&bajo</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddAboveMenu|ButtonText">
         <source>Add &amp;Above</source>
-        <target state="translated">Agregar &amp;encima</target>
+        <target state="translated">Agregar &encima</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddAboveMenu|MenuText">
         <source>Add &amp;Above</source>
-        <target state="translated">Agregar &amp;encima</target>
+        <target state="translated">Agregar &encima</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddAboveMenu|CommandName">
         <source>Add &amp;Above</source>
-        <target state="translated">Agregar &amp;encima</target>
+        <target state="translated">Agregar &encima</target>
         <note />
       </trans-unit>
       <trans-unit id="cmdidFsiToolWindow|CommandName">
@@ -74,7 +74,7 @@
       </trans-unit>
       <trans-unit id="cmdidDebugSelection|ButtonText">
         <source>Debug In Interactive</source>
-        <target state="translated">Depurar en interactivo</target>
+        <target state="translated">Depurar en Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="cmdidDebugSelection|CommandName">
@@ -84,12 +84,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|ButtonText">
         <source>&amp;Send to F# Interactive</source>
-        <target state="translated">&amp;Enviar a F# interactivo</target>
+        <target state="translated">&Enviar a F# interactivo</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|MenuText">
         <source>&amp;Send to F# Interactive</source>
-        <target state="translated">&amp;Enviar a F# interactivo</target>
+        <target state="translated">&Enviar a F# interactivo</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|CommandName">
@@ -99,12 +99,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|ButtonText">
         <source>&amp;Send References to F# Interactive</source>
-        <target state="translated">&amp;Enviar referencias a F# interactivo</target>
+        <target state="translated">&Enviar referencias a F# interactivo</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|MenuText">
         <source>&amp;Send References to F# Interactive</source>
-        <target state="translated">&amp;Enviar referencias a F# interactivo</target>
+        <target state="translated">&Enviar referencias a F# interactivo</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|CommandName">
@@ -114,12 +114,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|ButtonText">
         <source>&amp;Send Project Output to F# Interactive</source>
-        <target state="translated">&amp;Enviar resultados del proyecto a F# interactivo</target>
+        <target state="translated">&Enviar resultados del proyecto a F# interactivo</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|MenuText">
         <source>&amp;Send Project Output to F# Interactive</source>
-        <target state="translated">&amp;Enviar resultados del proyecto a F# interactivo</target>
+        <target state="translated">&Enviar resultados del proyecto a F# interactivo</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|CommandName">
@@ -129,12 +129,12 @@
       </trans-unit>
       <trans-unit id="MoveUpCmd|ButtonText">
         <source>Move &amp;Up</source>
-        <target state="translated">S&amp;ubir</target>
+        <target state="translated">S&ubir</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveUpCmd|MenuText">
         <source>Move &amp;Up</source>
-        <target state="translated">S&amp;ubir</target>
+        <target state="translated">S&ubir</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveUpCmd|CommandName">
@@ -144,12 +144,12 @@
       </trans-unit>
       <trans-unit id="MoveDownCmd|ButtonText">
         <source>Mo&amp;ve Down</source>
-        <target state="translated">&amp;Bajar</target>
+        <target state="translated">&Bajar</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveDownCmd|MenuText">
         <source>Mo&amp;ve Down</source>
-        <target state="translated">&amp;Bajar</target>
+        <target state="translated">&Bajar</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveDownCmd|CommandName">
@@ -159,12 +159,12 @@
       </trans-unit>
       <trans-unit id="AddNewItemBelow|ButtonText">
         <source>Add Ne&amp;w Item...</source>
-        <target state="translated">Agregar nue&amp;vo elemento...</target>
+        <target state="translated">Agregar nue&vo elemento...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewItemBelow|MenuText">
         <source>Ne&amp;w Item...</source>
-        <target state="translated">Nue&amp;vo elemento...</target>
+        <target state="translated">Nue&vo elemento...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewItemBelow|ToolTipText">
@@ -179,12 +179,12 @@
       </trans-unit>
       <trans-unit id="AddExistingItemBelow|ButtonText">
         <source>Add Existin&amp;g Item...</source>
-        <target state="translated">A&amp;gregar elemento existente...</target>
+        <target state="translated">A&gregar elemento existente...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddExistingItemBelow|MenuText">
         <source>Existin&amp;g Item...</source>
-        <target state="translated">Elemento e&amp;xistente...</target>
+        <target state="translated">Elemento e&xistente...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddExistingItemBelow|ToolTipText">
@@ -199,12 +199,12 @@
       </trans-unit>
       <trans-unit id="AddNewItemAbove|ButtonText">
         <source>Add Ne&amp;w Item...</source>
-        <target state="translated">Agregar nue&amp;vo elemento...</target>
+        <target state="translated">Agregar nue&vo elemento...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewItemAbove|MenuText">
         <source>Ne&amp;w Item...</source>
-        <target state="translated">Nue&amp;vo elemento...</target>
+        <target state="translated">Nue&vo elemento...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewItemAbove|ToolTipText">
@@ -219,12 +219,12 @@
       </trans-unit>
       <trans-unit id="AddExistingItemAbove|ButtonText">
         <source>Add Existin&amp;g Item...</source>
-        <target state="translated">A&amp;gregar elemento existente...</target>
+        <target state="translated">A&gregar elemento existente...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddExistingItemAbove|MenuText">
         <source>Existin&amp;g Item...</source>
-        <target state="translated">Elemento e&amp;xistente...</target>
+        <target state="translated">Elemento e&xistente...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddExistingItemAbove|ToolTipText">
@@ -239,12 +239,12 @@
       </trans-unit>
       <trans-unit id="NewFolderAbove|ButtonText">
         <source>New Fol&amp;der</source>
-        <target state="translated">N&amp;ueva carpeta</target>
+        <target state="translated">N&ueva carpeta</target>
         <note />
       </trans-unit>
       <trans-unit id="NewFolderBelow|ButtonText">
         <source>New Fol&amp;der</source>
-        <target state="translated">N&amp;ueva carpeta</target>
+        <target state="translated">N&ueva carpeta</target>
         <note />
       </trans-unit>
     </body>

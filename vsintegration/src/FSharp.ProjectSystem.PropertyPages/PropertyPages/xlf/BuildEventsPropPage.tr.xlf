@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="lblPreBuildEventCommandLine.Text">
         <source>P&amp;re-build event command line:</source>
-        <target state="translated">&amp;Derleme öncesi olay komut satırı:</target>
+        <target state="translated">&Derleme öncesi olay komut satırı:</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPreBuildEventCommandLine.AccessibleName">
@@ -19,12 +19,12 @@
       </trans-unit>
       <trans-unit id="btnPreBuildBuilder.Text">
         <source>Ed&amp;it Pre-build ...</source>
-        <target state="translated">Oluşturma Öncesi Dü&amp;zenle ...</target>
+        <target state="translated">Oluşturma Öncesi Dü&zenle ...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblPostBuildEventCommandLine.Text">
         <source>P&amp;ost-build event command line:</source>
-        <target state="translated">D&amp;erleme sonrası olay komut satırı:</target>
+        <target state="translated">D&erleme sonrası olay komut satırı:</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPostBuildEventCommandLine.AccessibleName">
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="btnPostBuildBuilder.Text">
         <source>Edit Post-b&amp;uild ...</source>
-        <target state="translated">Oluşturma Sonrası D&amp;üzenle ...</target>
+        <target state="translated">Oluşturma Sonrası D&üzenle ...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblRunPostBuildEvent.Text">

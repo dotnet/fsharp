@@ -4,17 +4,17 @@
     <body>
       <trans-unit id="AddFolder.Text">
         <source>&amp;Add Folder</source>
-        <target state="translated">&amp;Dodaj folder</target>
+        <target state="translated">&Dodaj folder</target>
         <note />
       </trans-unit>
       <trans-unit id="UpdateFolder.Text">
         <source>&amp;Update</source>
-        <target state="translated">&amp;Aktualizuj</target>
+        <target state="translated">&Aktualizuj</target>
         <note />
       </trans-unit>
       <trans-unit id="ReferencePathLabel.Text">
         <source>Reference &amp;paths:</source>
-        <target state="translated">Ścieżki &amp;odwołania:</target>
+        <target state="translated">Ścieżki &odwołania:</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderBrowse.AccessibleName">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="FolderLabel.Text">
         <source>&amp;Folder:</source>
-        <target state="translated">&amp;Folder:</target>
+        <target state="translated">&Folder:</target>
         <note />
       </trans-unit>
     </body>

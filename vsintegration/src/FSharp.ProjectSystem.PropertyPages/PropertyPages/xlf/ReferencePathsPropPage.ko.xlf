@@ -4,17 +4,17 @@
     <body>
       <trans-unit id="AddFolder.Text">
         <source>&amp;Add Folder</source>
-        <target state="translated">폴더 추가(&amp;A)</target>
+        <target state="translated">폴더 추가(&A)</target>
         <note />
       </trans-unit>
       <trans-unit id="UpdateFolder.Text">
         <source>&amp;Update</source>
-        <target state="translated">업데이트(&amp;U)</target>
+        <target state="translated">업데이트(&U)</target>
         <note />
       </trans-unit>
       <trans-unit id="ReferencePathLabel.Text">
         <source>Reference &amp;paths:</source>
-        <target state="translated">참조 경로(&amp;P):</target>
+        <target state="translated">참조 경로(&P):</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderBrowse.AccessibleName">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="FolderLabel.Text">
         <source>&amp;Folder:</source>
-        <target state="translated">폴더(&amp;F):</target>
+        <target state="translated">폴더(&F):</target>
         <note />
       </trans-unit>
     </body>

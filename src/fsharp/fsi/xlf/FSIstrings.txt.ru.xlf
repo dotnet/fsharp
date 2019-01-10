@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">Использование: {0} &lt;параметры&gt; [script.fsx [&lt;аргументы&gt;]]</target>
+        <target state="translated">Использование: {0} <параметры> [script.fsx [<аргументы>]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">Возникла проблема при запуске процесса F# Interactive. Это может быть вызвано известной проблемой с поддержкой консоли фонового процесса для приложений с поддержкой Юникода в некоторых системах Windows. Попробуйте выбрать "Сервис" -&gt; "Параметры" -&gt; "F# Interactive для Visual Studio" и ввести "--fsi-server-no-unicode".</target>
+        <target state="translated">Возникла проблема при запуске процесса F# Interactive. Это может быть вызвано известной проблемой с поддержкой консоли фонового процесса для приложений с поддержкой Юникода в некоторых системах Windows. Попробуйте выбрать "Сервис" -> "Параметры" -> "F# Interactive для Visual Studio" и ввести "--fsi-server-no-unicode".</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -209,32 +209,32 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="translated">--&gt; Задана ссылка на "{0}"</target>
+        <target state="translated">--> Задана ссылка на "{0}"</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; Задана ссылка на "{0}" (возможно, файл заблокирован процессом F# Interactive)</target>
+        <target state="translated">--> Задана ссылка на "{0}" (возможно, файл заблокирован процессом F# Interactive)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">--&gt; "{0}" с заданной ссылкой (из этого расположения уже задана ссылка на сборку с другой меткой времени, выполните сброс fsi, чтобы загрузить обновленную сборку)</target>
+        <target state="translated">--> "{0}" с заданной ссылкой (из этого расположения уже задана ссылка на сборку с другой меткой времени, выполните сброс fsi, чтобы загрузить обновленную сборку)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="translated">--&gt; Выполнено добавление "{0}" по пути включения в библиотеку</target>
+        <target state="translated">--> Выполнено добавление "{0}" по пути включения в библиотеку</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
         <source>--&gt; Timing now on</source>
-        <target state="translated">--&gt; Таймер включен</target>
+        <target state="translated">--> Таймер включен</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOff">
         <source>--&gt; Timing now off</source>
-        <target state="translated">--&gt; Таймер отключен</target>
+        <target state="translated">--> Таймер отключен</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUnexpectedThreadAbortException">
@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
         <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">Предотвращает блокировку ссылок процессом F# Interactive.</target>
+        <target state="translated">Предотвращает блокировку ссылок интерактивным процессом F#.</target>
         <note />
       </trans-unit>
     </body>

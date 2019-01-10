@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="lblPreBuildEventCommandLine.Text">
         <source>P&amp;re-build event command line:</source>
-        <target state="translated">ビルド前イベントのコマンド ライン(&amp;R):</target>
+        <target state="translated">ビルド前イベントのコマンド ライン(&R):</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPreBuildEventCommandLine.AccessibleName">
@@ -19,12 +19,12 @@
       </trans-unit>
       <trans-unit id="btnPreBuildBuilder.Text">
         <source>Ed&amp;it Pre-build ...</source>
-        <target state="translated">ビルド前の編集(&amp;I)...</target>
+        <target state="translated">ビルド前の編集(&I)...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblPostBuildEventCommandLine.Text">
         <source>P&amp;ost-build event command line:</source>
-        <target state="translated">ビルド後イベントのコマンド ライン(&amp;O):</target>
+        <target state="translated">ビルド後イベントのコマンド ライン(&O):</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPostBuildEventCommandLine.AccessibleName">
@@ -39,12 +39,12 @@
       </trans-unit>
       <trans-unit id="btnPostBuildBuilder.Text">
         <source>Edit Post-b&amp;uild ...</source>
-        <target state="translated">ビルド後の編集(&amp;U)...</target>
+        <target state="translated">ビルド後の編集(&U)...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblRunPostBuildEvent.Text">
         <source>Ru&amp;n the post-build event:</source>
-        <target state="translated">ビルド後イベントの実行(&amp;N):</target>
+        <target state="translated">ビルド後イベントの実行(&N):</target>
         <note />
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items">

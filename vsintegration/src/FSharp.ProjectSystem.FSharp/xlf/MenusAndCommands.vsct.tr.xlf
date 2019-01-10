@@ -14,32 +14,32 @@
       </trans-unit>
       <trans-unit id="FSharpAddBelowMenu|ButtonText">
         <source>Add &amp;Below</source>
-        <target state="translated">Aşağıya &amp;Ekle</target>
+        <target state="translated">Aşağıya &Ekle</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddBelowMenu|MenuText">
         <source>Add &amp;Below</source>
-        <target state="translated">Aşağıya &amp;Ekle</target>
+        <target state="translated">Aşağıya &Ekle</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddBelowMenu|CommandName">
         <source>Add &amp;Below</source>
-        <target state="translated">Aşağıya &amp;Ekle</target>
+        <target state="translated">Aşağıya &Ekle</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddAboveMenu|ButtonText">
         <source>Add &amp;Above</source>
-        <target state="translated">&amp;Yukarıya Ekle</target>
+        <target state="translated">&Yukarıya Ekle</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddAboveMenu|MenuText">
         <source>Add &amp;Above</source>
-        <target state="translated">&amp;Yukarıya Ekle</target>
+        <target state="translated">&Yukarıya Ekle</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpAddAboveMenu|CommandName">
         <source>Add &amp;Above</source>
-        <target state="translated">&amp;Yukarıya Ekle</target>
+        <target state="translated">&Yukarıya Ekle</target>
         <note />
       </trans-unit>
       <trans-unit id="cmdidFsiToolWindow|CommandName">
@@ -84,12 +84,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|ButtonText">
         <source>&amp;Send to F# Interactive</source>
-        <target state="translated">&amp;F# Etkileşimli'ye Gönder</target>
+        <target state="translated">&F# Etkileşimli'ye Gönder</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|MenuText">
         <source>&amp;Send to F# Interactive</source>
-        <target state="translated">&amp;F# Etkileşimli'ye Gönder</target>
+        <target state="translated">&F# Etkileşimli'ye Gönder</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendThisReferenceToInteractiveCmd|CommandName">
@@ -99,12 +99,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|ButtonText">
         <source>&amp;Send References to F# Interactive</source>
-        <target state="translated">&amp;Başvuruları F# Etkileşimli'ye Gönder</target>
+        <target state="translated">&Başvuruları F# Interactive'e Gönder</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|MenuText">
         <source>&amp;Send References to F# Interactive</source>
-        <target state="translated">&amp;Başvuruları F# Etkileşimli'ye Gönder</target>
+        <target state="translated">&Başvuruları F# Interactive'e Gönder</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|CommandName">
@@ -114,12 +114,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|ButtonText">
         <source>&amp;Send Project Output to F# Interactive</source>
-        <target state="translated">&amp;Proje Çıkışını F# Etkileşimli'ye Gönder</target>
+        <target state="translated">&Proje Çıkışını F# Interactive'e Gönder</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|MenuText">
         <source>&amp;Send Project Output to F# Interactive</source>
-        <target state="translated">&amp;Proje Çıkışını F# Etkileşimli'ye Gönder</target>
+        <target state="translated">&Proje Çıkışını F# Interactive'e Gönder</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendProjectOutputToInteractiveCmd|CommandName">
@@ -129,12 +129,12 @@
       </trans-unit>
       <trans-unit id="MoveUpCmd|ButtonText">
         <source>Move &amp;Up</source>
-        <target state="translated">&amp;Yukarı Taşı</target>
+        <target state="translated">&Yukarı Taşı</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveUpCmd|MenuText">
         <source>Move &amp;Up</source>
-        <target state="translated">&amp;Yukarı Taşı</target>
+        <target state="translated">&Yukarı Taşı</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveUpCmd|CommandName">
@@ -144,12 +144,12 @@
       </trans-unit>
       <trans-unit id="MoveDownCmd|ButtonText">
         <source>Mo&amp;ve Down</source>
-        <target state="translated">&amp;Aşağı Taşı</target>
+        <target state="translated">&Aşağı Taşı</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveDownCmd|MenuText">
         <source>Mo&amp;ve Down</source>
-        <target state="translated">&amp;Aşağı Taşı</target>
+        <target state="translated">&Aşağı Taşı</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveDownCmd|CommandName">
@@ -159,12 +159,12 @@
       </trans-unit>
       <trans-unit id="AddNewItemBelow|ButtonText">
         <source>Add Ne&amp;w Item...</source>
-        <target state="translated">&amp;Yeni Öğe Ekle...</target>
+        <target state="translated">&Yeni Öğe Ekle...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewItemBelow|MenuText">
         <source>Ne&amp;w Item...</source>
-        <target state="translated">Ye&amp;ni Öğe...</target>
+        <target state="translated">Ye&ni Öğe...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewItemBelow|ToolTipText">
@@ -179,12 +179,12 @@
       </trans-unit>
       <trans-unit id="AddExistingItemBelow|ButtonText">
         <source>Add Existin&amp;g Item...</source>
-        <target state="translated">&amp;Var Olan Öğeyi Ekle...</target>
+        <target state="translated">&Var Olan Öğeyi Ekle...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddExistingItemBelow|MenuText">
         <source>Existin&amp;g Item...</source>
-        <target state="translated">Var &amp;Olan Öğe...</target>
+        <target state="translated">Var &Olan Öğe...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddExistingItemBelow|ToolTipText">
@@ -199,12 +199,12 @@
       </trans-unit>
       <trans-unit id="AddNewItemAbove|ButtonText">
         <source>Add Ne&amp;w Item...</source>
-        <target state="translated">&amp;Yeni Öğe Ekle...</target>
+        <target state="translated">&Yeni Öğe Ekle...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewItemAbove|MenuText">
         <source>Ne&amp;w Item...</source>
-        <target state="translated">Ye&amp;ni Öğe...</target>
+        <target state="translated">Ye&ni Öğe...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewItemAbove|ToolTipText">
@@ -219,12 +219,12 @@
       </trans-unit>
       <trans-unit id="AddExistingItemAbove|ButtonText">
         <source>Add Existin&amp;g Item...</source>
-        <target state="translated">&amp;Var Olan Öğeyi Ekle...</target>
+        <target state="translated">&Var Olan Öğeyi Ekle...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddExistingItemAbove|MenuText">
         <source>Existin&amp;g Item...</source>
-        <target state="translated">Var &amp;Olan Öğe...</target>
+        <target state="translated">Var &Olan Öğe...</target>
         <note />
       </trans-unit>
       <trans-unit id="AddExistingItemAbove|ToolTipText">
@@ -239,12 +239,12 @@
       </trans-unit>
       <trans-unit id="NewFolderAbove|ButtonText">
         <source>New Fol&amp;der</source>
-        <target state="translated">Yeni &amp;Klasör</target>
+        <target state="translated">Yeni &Klasör</target>
         <note />
       </trans-unit>
       <trans-unit id="NewFolderBelow|ButtonText">
         <source>New Fol&amp;der</source>
-        <target state="translated">Yeni &amp;Klasör</target>
+        <target state="translated">Yeni &Klasör</target>
         <note />
       </trans-unit>
     </body>

@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line2">
         <source>and select "Execute in Interactive".  You can open the F# Interactive Window from the "View" menu.</source>
-        <target state="translated">и выберите команду "Выполнение в Interactive". Окно F# Interactive можно также открыть из меню "Вид".</target>
+        <target state="translated">и выберите команду "Выполнение в интерактивном режиме".  Интерактивное окно F# можно также открыть из меню "Вид".</target>
         <note />
       </trans-unit>
       <trans-unit id="MoreAbout">
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="ToInstall-Line2">
         <source>'Tools' --&gt; 'Extensions and Updates' --&gt; `Online` and search</source>
-        <target state="translated">"Сервис" --&gt; "Расширения и обновления" --&gt; "В сети" и выполните поиск</target>
+        <target state="translated">"Сервис" --> "Расширения и обновления" --> "В сети" и выполните поиск</target>
         <note />
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line1">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line2">
         <source>'New Project' --&gt; 'Online Templates'</source>
-        <target state="translated">"Создать проект --&gt; Шаблоны в Интернете"</target>
+        <target state="translated">"Создать проект --> Шаблоны в Интернете"</target>
         <note />
       </trans-unit>
       <trans-unit id="SupportsComments">
@@ -194,7 +194,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment-Line1">
         <source>When mutating a value, use '&lt;-' to assign a new value.</source>
-        <target state="translated">При изменении значения используйте "&lt;-", чтобы присвоить новое значение.</target>
+        <target state="translated">При изменении значения используйте "<-", чтобы присвоить новое значение.</target>
         <note />
       </trans-unit>
       <trans-unit id="MutableAssignment-Line2">
@@ -294,7 +294,7 @@
       </trans-unit>
       <trans-unit id="BooleanOperators">
         <source>Operators on booleans are 'not', '&amp;&amp;' and '||'.</source>
-        <target state="translated">Операторы для логических значений — not, &amp;&amp; и ||.</target>
+        <target state="translated">Операторы для логических значений — not, && и ||.</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanPrintf">
@@ -434,7 +434,7 @@
       </trans-unit>
       <trans-unit id="Pipes-Line1">
         <source>The F# pipe operators ('|&gt;', '&lt;|', etc.) and F# composition operators ('&gt;&gt;', '&lt;&lt;')</source>
-        <target state="translated">Операторы конвейера F# ("|&gt;", "&lt;|" и т. д.) и операторы объединения F# ("&gt;&gt;", "&lt;&lt;")</target>
+        <target state="translated">Операторы конвейера F# ("|>", "<|" и т. д.) и операторы объединения F# (">>", "<<")</target>
         <note />
       </trans-unit>
       <trans-unit id="Pipes-Line2">
@@ -544,7 +544,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line1">
         <source>Lastly, you can eliminate the need to explicitly take 'values' in as a parameter by using '&gt;&gt;'</source>
-        <target state="translated">И наконец, можно исключить необходимость явного принятия значений в качестве параметра при помощи "&gt;&gt;"</target>
+        <target state="translated">И наконец, можно исключить необходимость явного принятия значений в качестве параметра при помощи ">>"</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line2">
@@ -554,7 +554,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line3">
         <source>Likewise, the 'fun x -&gt; ...' bit of the lambda expression is also not needed, because 'x' is simply</source>
-        <target state="translated">Аналогично, часть "fun x -&gt; ..." лямбда-выражения также не требуется, так как x просто</target>
+        <target state="translated">Аналогично, часть "fun x -> ..." лямбда-выражения также не требуется, так как x просто</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line4">
@@ -564,7 +564,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line5">
         <source>there as well.</source>
-        <target state="translated">использовать "&gt;&gt;".</target>
+        <target state="translated">использовать ">>".</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line6">
@@ -774,7 +774,7 @@
       </trans-unit>
       <trans-unit id="Sequences-Line3">
         <source>An F# sequence is an alias for a .NET System.Collections.Generic.IEnumerable&lt;'T&gt;.</source>
-        <target state="translated">Последовательность F# является псевдонимом для .NET System.Collections.Generic.IEnumerable&lt;'T&gt;.</target>
+        <target state="translated">Последовательность F# является псевдонимом для .NET System.Collections.Generic.IEnumerable<'T>.</target>
         <note />
       </trans-unit>
       <trans-unit id="Sequences-Line4">
@@ -1494,7 +1494,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment">
         <source>use the '&lt;-' operator to mutate the value.</source>
-        <target state="translated">Оператор "&lt;-" служит для изменения значения.</target>
+        <target state="translated">Оператор "<-" служит для изменения значения.</target>
         <note />
       </trans-unit>
       <trans-unit id="History">

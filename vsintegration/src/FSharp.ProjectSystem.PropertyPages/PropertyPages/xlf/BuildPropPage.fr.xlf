@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="lblConditionalCompilationSymbols.Text">
         <source>Conditional compilation s&amp;ymbols:</source>
-        <target state="translated">S&amp;ymboles de compilation conditionnelle :</target>
+        <target state="translated">S&ymboles de compilation conditionnelle :</target>
         <note />
       </trans-unit>
       <trans-unit id="chkPrefer32Bit.Text">
         <source>&amp;Prefer 32-bit</source>
-        <target state="translated">&amp;Préférer 32 bits</target>
+        <target state="translated">&Préférer 32 bits</target>
         <note />
       </trans-unit>
       <trans-unit id="outputLabel.Text">
@@ -34,37 +34,37 @@
       </trans-unit>
       <trans-unit id="chkXMLDocumentationFile.Text">
         <source>&amp;XML documentation file:</source>
-        <target state="translated">&amp;Fichier de documentation XML :</target>
+        <target state="translated">&Fichier de documentation XML :</target>
         <note />
       </trans-unit>
       <trans-unit id="btnOutputPathBrowse.Text">
         <source>B&amp;rowse...</source>
-        <target state="translated">P&amp;arcourir...</target>
+        <target state="translated">P&arcourir...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblOutputPath.Text">
         <source>&amp;Output path:</source>
-        <target state="translated">Chemin de s&amp;ortie :</target>
+        <target state="translated">Chemin de s&ortie :</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningAll.Text">
         <source>A&amp;ll</source>
-        <target state="translated">T&amp;out</target>
+        <target state="translated">T&out</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningSpecific.Text">
         <source>Specif&amp;ic warnings:</source>
-        <target state="translated">Avertissements spéci&amp;fiques :</target>
+        <target state="translated">Avertissements spéci&fiques :</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningNone.Text">
         <source>&amp;None</source>
-        <target state="translated">&amp;Aucune</target>
+        <target state="translated">&Aucune</target>
         <note />
       </trans-unit>
       <trans-unit id="lblSupressWarnings.Text">
         <source>&amp;Suppress warnings:</source>
-        <target state="translated">&amp;Supprimer les avertissements :</target>
+        <target state="translated">&Supprimer les avertissements :</target>
         <note />
       </trans-unit>
       <trans-unit id="cboWarningLevel.Items">
@@ -99,37 +99,37 @@
       </trans-unit>
       <trans-unit id="lblWarningLevel.Text">
         <source>&amp;Warning level:</source>
-        <target state="translated">Niveau d'&amp;avertissement :</target>
+        <target state="translated">Niveau d'&avertissement :</target>
         <note />
       </trans-unit>
       <trans-unit id="chkOptimizeCode.Text">
         <source>Optimi&amp;ze code</source>
-        <target state="translated">Optimi&amp;ser le code</target>
+        <target state="translated">Optimi&ser le code</target>
         <note />
       </trans-unit>
       <trans-unit id="chkTailcalls.Text">
         <source>G&amp;enerate tail calls</source>
-        <target state="translated">G&amp;énérer des appels tail</target>
+        <target state="translated">G&énérer des appels tail</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDefineTrace.Text">
         <source>Define TR&amp;ACE constant</source>
-        <target state="translated">&amp;Définir la constante TRACE</target>
+        <target state="translated">&Définir la constante TRACE</target>
         <note />
       </trans-unit>
       <trans-unit id="lblPlatformTarget.Text">
         <source>Platform tar&amp;get:</source>
-        <target state="translated">Plateforme ci&amp;ble :</target>
+        <target state="translated">Plateforme ci&ble :</target>
         <note />
       </trans-unit>
       <trans-unit id="lblOtherFlags.Text">
         <source>Other &amp;flags:</source>
-        <target state="translated">Autres &amp;indicateurs :</target>
+        <target state="translated">Autres &indicateurs :</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDefineDebug.Text">
         <source>Define DEB&amp;UG constant</source>
-        <target state="translated">Définir la constante DEB&amp;UG</target>
+        <target state="translated">Définir la constante DEB&UG</target>
         <note />
       </trans-unit>
     </body>

@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="rbStartProject.Text">
         <source>&amp;Start project</source>
-        <target state="translated">&amp;Spustit projekt</target>
+        <target state="translated">&Spustit projekt</target>
         <note />
       </trans-unit>
       <trans-unit id="rbStartProgram.Text">
         <source>Start e&amp;xternal program:</source>
-        <target state="translated">Spustit e&amp;xterní program:</target>
+        <target state="translated">Spustit e&xterní program:</target>
         <note />
       </trans-unit>
       <trans-unit id="StartProgram.AccessibleName">
@@ -39,17 +39,17 @@
       </trans-unit>
       <trans-unit id="CommandLineArgsLabel.Text">
         <source>Comma&amp;nd line arguments:</source>
-        <target state="translated">&amp;Argumenty příkazového řádku:</target>
+        <target state="translated">&Argumenty příkazového řádku:</target>
         <note />
       </trans-unit>
       <trans-unit id="WorkingDirLabel.Text">
         <source>Wor&amp;king directory:</source>
-        <target state="translated">Pracov&amp;ní adresář:</target>
+        <target state="translated">Pracov&ní adresář:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoteDebugEnabled.Text">
         <source>Use remote m&amp;achine</source>
-        <target state="translated">Použít vzdál&amp;ený počítač</target>
+        <target state="translated">Použít vzdál&ený počítač</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoteDebugMachine.AccessibleName">
@@ -74,17 +74,17 @@
       </trans-unit>
       <trans-unit id="EnableSQLServerDebugging.Text">
         <source>Enable SQ&amp;L Server debugging</source>
-        <target state="translated">Povolit ladění SQ&amp;L Serveru</target>
+        <target state="translated">Povolit ladění SQ&L Serveru</target>
         <note />
       </trans-unit>
       <trans-unit id="UseVSHostingProcess.Text">
         <source>Enable the Visual Studio h&amp;osting process</source>
-        <target state="translated">Povolit &amp;hostitelský proces sady Visual Studio</target>
+        <target state="translated">Povolit &hostitelský proces sady Visual Studio</target>
         <note />
       </trans-unit>
       <trans-unit id="EnableUnmanagedDebugging.Text">
         <source>Enable &amp;unmanaged code debugging</source>
-        <target state="translated">Povolit ladění &amp;nespravovaného kódu</target>
+        <target state="translated">Povolit ladění &nespravovaného kódu</target>
         <note />
       </trans-unit>
     </body>

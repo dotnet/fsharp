@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">Utilisation : {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</target>
+        <target state="translated">Utilisation : {0} <options> [script.fsx [<arguments>]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">Un problème s'est produit lors du démarrage du processus F# Interactive. Cela peut être dû à un problème connu lié à la prise en charge par la console des processus en arrière-plan pour les applications Unicode sur certains systèmes Windows. Essayez de sélectionner Outils-&gt;Options-&gt;F# Interactive pour Visual Studio, puis entrez '--fsi-server-no-unicode'.</target>
+        <target state="translated">Un problème s'est produit lors du démarrage du processus F# Interactive. Cela peut être dû à un problème connu lié à la prise en charge par la console des processus en arrière-plan pour les applications Unicode sur certains systèmes Windows. Essayez de sélectionner Outils->Options->F# Interactive pour Visual Studio, puis entrez '--fsi-server-no-unicode'.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -134,7 +134,7 @@
       </trans-unit>
       <trans-unit id="fsiExceptionDuringPrettyPrinting">
         <source>\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</source>
-        <target state="translated">\n\nException déclenchée durant l'impression automatique.\nSignalez ce problème afin qu'il soit corrigé.\nTrace : {0}\n</target>
+        <target state="translated">\n\nException déclenchée pendant le listing en mode Pretty. \nSignalez ce problème afin qu'il soit corrigé.\nTrace : {0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
@@ -209,32 +209,32 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="translated">--&gt; Référencement de '{0}'</target>
+        <target state="translated">--> Référencement de '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; Référencement de '{0}' (le fichier est peut-être verrouillé par le processus F# Interactive)</target>
+        <target state="translated">--> Référencement de '{0}' (le fichier est peut-être verrouillé par le processus F# Interactive)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">--&gt; Référencement de '{0}' (un assembly avec un horodatage différent a déjà été référencé à partir de cet emplacement, réinitialisez fsi pour charger l'assembly mis à jour)</target>
+        <target state="translated">--> Référencement de '{0}' (un assembly avec un horodatage différent a déjà été référencé à partir de cet emplacement, réinitialisez fsi pour charger l'assembly mis à jour)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="translated">--&gt; Ajout de '{0}' au chemin d'accès Include de la bibliothèque</target>
+        <target state="translated">--> Ajout de '{0}' au chemin d'accès Include de la bibliothèque</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
         <source>--&gt; Timing now on</source>
-        <target state="translated">--&gt; Minutage activé</target>
+        <target state="translated">--> Minutage activé</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOff">
         <source>--&gt; Timing now off</source>
-        <target state="translated">--&gt; Minutage désactivé</target>
+        <target state="translated">--> Minutage désactivé</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUnexpectedThreadAbortException">

@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="AssemblyOptionDialog_Option">
         <source>&amp;Remember my decision for '{0}'.</source>
-        <target state="translated">Mémorise&amp;r ma décision pour '{0}'.</target>
+        <target state="translated">Mémorise&r ma décision pour '{0}'.</target>
         <note>Text for the option on add / remove My extensions dialog.</note>
       </trans-unit>
       <trans-unit id="AssemblyOptionDialog_Remove_Question">

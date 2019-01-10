@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="ToInstall-Line2">
         <source>'Tools' --&gt; 'Extensions and Updates' --&gt; `Online` and search</source>
-        <target state="translated">Nástroje --&gt; Rozšíření a aktualizace --&gt; Online a potom hledejte</target>
+        <target state="translated">Nástroje --> Rozšíření a aktualizace --> Online a potom hledejte</target>
         <note />
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line1">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line2">
         <source>'New Project' --&gt; 'Online Templates'</source>
-        <target state="translated">Nový projekt --&gt; Online šablony.</target>
+        <target state="translated">Nový projekt --> Online šablony.</target>
         <note />
       </trans-unit>
       <trans-unit id="SupportsComments">
@@ -194,7 +194,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment-Line1">
         <source>When mutating a value, use '&lt;-' to assign a new value.</source>
-        <target state="translated">Při změnách hodnoty použijte &lt;- pro přiřazení nové hodnoty.</target>
+        <target state="translated">Při změnách hodnoty použijte <- pro přiřazení nové hodnoty.</target>
         <note />
       </trans-unit>
       <trans-unit id="MutableAssignment-Line2">
@@ -294,7 +294,7 @@
       </trans-unit>
       <trans-unit id="BooleanOperators">
         <source>Operators on booleans are 'not', '&amp;&amp;' and '||'.</source>
-        <target state="translated">Operátory u logických hodnot jsou not, &amp;&amp; a ||.</target>
+        <target state="translated">Operátory u logických hodnot jsou not, && a ||.</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanPrintf">
@@ -434,7 +434,7 @@
       </trans-unit>
       <trans-unit id="Pipes-Line1">
         <source>The F# pipe operators ('|&gt;', '&lt;|', etc.) and F# composition operators ('&gt;&gt;', '&lt;&lt;')</source>
-        <target state="translated">Operátory kanálu (|&gt;, &lt;| atd.) a operátory složení (&gt;&gt;, &lt;&lt;) v jazyce F#</target>
+        <target state="translated">Operátory kanálu (|>, <| atd.) a operátory složení (>>, <<) v jazyce F#</target>
         <note />
       </trans-unit>
       <trans-unit id="Pipes-Line2">
@@ -544,7 +544,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line1">
         <source>Lastly, you can eliminate the need to explicitly take 'values' in as a parameter by using '&gt;&gt;'</source>
-        <target state="translated">A konečně, můžete eliminovat nutnost explicitně převzít values jako parametr pomocí &gt;&gt;</target>
+        <target state="translated">A konečně, můžete eliminovat nutnost explicitně převzít values jako parametr pomocí >></target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line2">
@@ -554,12 +554,12 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line3">
         <source>Likewise, the 'fun x -&gt; ...' bit of the lambda expression is also not needed, because 'x' is simply</source>
-        <target state="translated">Obdobně není nutná část výrazu lambda „fun x -&gt; ...“, protože x se jednoduše</target>
+        <target state="translated">Obdobně není nutná část výrazu lambda „fun x -> ...“, protože x se jednoduše</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line4">
         <source>being defined in that scope so that it can be passed to a functional pipeline.  Thus, '&gt;&gt;' can be used</source>
-        <target state="translated">v tomto oboru definuje tak, aby ho bylo možné předat jako funkční kanál. Proto je tam &gt;&gt; možné použít</target>
+        <target state="translated">v tomto oboru definuje tak, aby ho bylo možné předat jako funkční kanál. Proto je tam >> možné použít</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line5">
@@ -774,7 +774,7 @@
       </trans-unit>
       <trans-unit id="Sequences-Line3">
         <source>An F# sequence is an alias for a .NET System.Collections.Generic.IEnumerable&lt;'T&gt;.</source>
-        <target state="translated">Sekvence F# je alias pro .NET System.Collections.Generic.IEnumerable&lt;'T&gt;.</target>
+        <target state="translated">Sekvence F# je alias pro .NET System.Collections.Generic.IEnumerable<'T>.</target>
         <note />
       </trans-unit>
       <trans-unit id="Sequences-Line4">
@@ -1494,7 +1494,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment">
         <source>use the '&lt;-' operator to mutate the value.</source>
-        <target state="translated">Použije operátor &lt;- ke změně (mutaci) hodnoty.</target>
+        <target state="translated">Použije operátor <- ke změně (mutaci) hodnoty.</target>
         <note />
       </trans-unit>
       <trans-unit id="History">

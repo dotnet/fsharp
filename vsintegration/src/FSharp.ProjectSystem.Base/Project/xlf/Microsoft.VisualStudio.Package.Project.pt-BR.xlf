@@ -132,7 +132,7 @@
 – Cadeias de caracteres vazias
 – Nomes reservados do sistema, incluindo 'CON', 'AUX', PRN', 'COM1' ou 'LPT2'
 – conter somente '.'
-– ter um destes caracteres: / ? : &amp; \ * " &lt; &gt; | # %</target>
+– ter um destes caracteres: / ? : & \ * " < > | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">
@@ -672,7 +672,7 @@
       </trans-unit>
       <trans-unit id="NoZeroImpactProjects">
         <source>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</source>
-        <target state="translated">Microsoft Visual F# não dá suporte a projetos de impacto zero. Para criar um projeto F# a partir deste modelo de projeto, vá até o menu 'Ferramentas, Opções..., Projetos e Soluções, Geral' do Visual Studio e marque a caixa 'Salvar novo projeto quando criado', ou especifique &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; na seção &lt;TemplateData&gt; deste modelo de projeto de arquivo .vstemplate e repita esta operação.</target>
+        <target state="translated">Microsoft Visual F# não dá suporte a projetos de impacto zero. Para criar um projeto F# a partir deste modelo de projeto, vá até o menu 'Ferramentas, Opções..., Projetos e Soluções, Geral' do Visual Studio e marque a caixa 'Salvar novo projeto quando criado', ou especifique <PromptForSaveOnCreation>true</PromptForSaveOnCreation> na seção <TemplateData> deste modelo de projeto de arquivo .vstemplate e repita esta operação.</target>
         <note />
       </trans-unit>
       <trans-unit id="NoWildcardsInProject">

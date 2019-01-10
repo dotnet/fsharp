@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="rbStartProject.Text">
         <source>&amp;Start project</source>
-        <target state="translated">起始專案(&amp;S)</target>
+        <target state="translated">起始專案(&S)</target>
         <note />
       </trans-unit>
       <trans-unit id="rbStartProgram.Text">
         <source>Start e&amp;xternal program:</source>
-        <target state="translated">啟動外部程式(&amp;X):</target>
+        <target state="translated">啟動外部程式(&X):</target>
         <note />
       </trans-unit>
       <trans-unit id="StartProgram.AccessibleName">
@@ -39,17 +39,17 @@
       </trans-unit>
       <trans-unit id="CommandLineArgsLabel.Text">
         <source>Comma&amp;nd line arguments:</source>
-        <target state="translated">命令列引數(&amp;N):</target>
+        <target state="translated">命令列引數(&N):</target>
         <note />
       </trans-unit>
       <trans-unit id="WorkingDirLabel.Text">
         <source>Wor&amp;king directory:</source>
-        <target state="translated">工作目錄(&amp;K):</target>
+        <target state="translated">工作目錄(&K):</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoteDebugEnabled.Text">
         <source>Use remote m&amp;achine</source>
-        <target state="translated">使用遠端電腦(&amp;A)</target>
+        <target state="translated">使用遠端電腦(&A)</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoteDebugMachine.AccessibleName">
@@ -74,17 +74,17 @@
       </trans-unit>
       <trans-unit id="EnableSQLServerDebugging.Text">
         <source>Enable SQ&amp;L Server debugging</source>
-        <target state="translated">啟用 SQL Server 偵錯(&amp;L)</target>
+        <target state="translated">啟用 SQL Server 偵錯(&L)</target>
         <note />
       </trans-unit>
       <trans-unit id="UseVSHostingProcess.Text">
         <source>Enable the Visual Studio h&amp;osting process</source>
-        <target state="translated">啟用 Visual Studio 裝載處理序(&amp;O)</target>
+        <target state="translated">啟用 Visual Studio 裝載處理序(&O)</target>
         <note />
       </trans-unit>
       <trans-unit id="EnableUnmanagedDebugging.Text">
         <source>Enable &amp;unmanaged code debugging</source>
-        <target state="translated">啟用非受控程式碼偵錯(&amp;U)</target>
+        <target state="translated">啟用非受控程式碼偵錯(&U)</target>
         <note />
       </trans-unit>
     </body>

@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="lblPreBuildEventCommandLine.Text">
         <source>P&amp;re-build event command line:</source>
-        <target state="translated">生成前事件命令行(&amp;R):</target>
+        <target state="translated">生成前事件命令行(&R):</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPreBuildEventCommandLine.AccessibleName">
@@ -19,12 +19,12 @@
       </trans-unit>
       <trans-unit id="btnPreBuildBuilder.Text">
         <source>Ed&amp;it Pre-build ...</source>
-        <target state="translated">编辑预先生成事件(&amp;I)...</target>
+        <target state="translated">编辑预先生成事件(&I)...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblPostBuildEventCommandLine.Text">
         <source>P&amp;ost-build event command line:</source>
-        <target state="translated">生成后事件命令行(&amp;O): </target>
+        <target state="translated">生成后事件命令行(&O): </target>
         <note />
       </trans-unit>
       <trans-unit id="txtPostBuildEventCommandLine.AccessibleName">
@@ -39,12 +39,12 @@
       </trans-unit>
       <trans-unit id="btnPostBuildBuilder.Text">
         <source>Edit Post-b&amp;uild ...</source>
-        <target state="translated">编辑后期生成事件(&amp;U)...</target>
+        <target state="translated">编辑后期生成事件(&U)...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblRunPostBuildEvent.Text">
         <source>Ru&amp;n the post-build event:</source>
-        <target state="translated">运行生成后事件(&amp;N):</target>
+        <target state="translated">运行生成后事件(&N):</target>
         <note />
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items">

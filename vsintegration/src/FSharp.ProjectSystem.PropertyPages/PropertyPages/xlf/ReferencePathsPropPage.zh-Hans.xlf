@@ -4,17 +4,17 @@
     <body>
       <trans-unit id="AddFolder.Text">
         <source>&amp;Add Folder</source>
-        <target state="translated">添加文件夹(&amp;A)</target>
+        <target state="translated">添加文件夹(&A)</target>
         <note />
       </trans-unit>
       <trans-unit id="UpdateFolder.Text">
         <source>&amp;Update</source>
-        <target state="translated">更新(&amp;U)</target>
+        <target state="translated">更新(&U)</target>
         <note />
       </trans-unit>
       <trans-unit id="ReferencePathLabel.Text">
         <source>Reference &amp;paths:</source>
-        <target state="translated">引用路径(&amp;P):</target>
+        <target state="translated">引用路径(&P):</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderBrowse.AccessibleName">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="FolderLabel.Text">
         <source>&amp;Folder:</source>
-        <target state="translated">文件夹(&amp;F):</target>
+        <target state="translated">文件夹(&F):</target>
         <note />
       </trans-unit>
     </body>

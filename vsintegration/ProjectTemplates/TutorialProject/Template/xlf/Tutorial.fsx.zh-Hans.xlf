@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line2">
         <source>and select "Execute in Interactive".  You can open the F# Interactive Window from the "View" menu.</source>
-        <target state="translated">并选择“在交互窗口中执行”。  可从“视图”菜单中打开 F# 交互窗口。</target>
+        <target state="translated">并选择“在 Interactive 中执行”。  可从“视图”菜单中打开 F# 交互窗口。</target>
         <note />
       </trans-unit>
       <trans-unit id="MoreAbout">
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="ToInstall-Line2">
         <source>'Tools' --&gt; 'Extensions and Updates' --&gt; `Online` and search</source>
-        <target state="translated">“工具”--&gt;“扩展和更新”--&gt;“联机”和搜索</target>
+        <target state="translated">“工具”-->“扩展和更新”-->“联机”和搜索</target>
         <note />
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line1">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line2">
         <source>'New Project' --&gt; 'Online Templates'</source>
-        <target state="translated">“新建项目”--&gt;“联机模板”</target>
+        <target state="translated">“新建项目”-->“联机模板”</target>
         <note />
       </trans-unit>
       <trans-unit id="SupportsComments">
@@ -194,7 +194,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment-Line1">
         <source>When mutating a value, use '&lt;-' to assign a new value.</source>
-        <target state="translated">若要改变值，请使用 "&lt;-" 分配新值。</target>
+        <target state="translated">若要改变值，请使用 "<-" 分配新值。</target>
         <note />
       </trans-unit>
       <trans-unit id="MutableAssignment-Line2">
@@ -294,7 +294,7 @@
       </trans-unit>
       <trans-unit id="BooleanOperators">
         <source>Operators on booleans are 'not', '&amp;&amp;' and '||'.</source>
-        <target state="translated">布尔运算符为 "not"、"&amp;&amp;" 和 "||"。</target>
+        <target state="translated">布尔运算符为 "not"、"&&" 和 "||"。</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanPrintf">
@@ -434,7 +434,7 @@
       </trans-unit>
       <trans-unit id="Pipes-Line1">
         <source>The F# pipe operators ('|&gt;', '&lt;|', etc.) and F# composition operators ('&gt;&gt;', '&lt;&lt;')</source>
-        <target state="translated">F# 管道运算符("|&gt;"、"&lt;|" 等 )和 F# 组合运算符("&gt;&gt;"、"&lt;&lt;")</target>
+        <target state="translated">F# 管道运算符("|>"、"<|" 等 )和 F# 组合运算符(">>"、"<<")</target>
         <note />
       </trans-unit>
       <trans-unit id="Pipes-Line2">
@@ -544,7 +544,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line1">
         <source>Lastly, you can eliminate the need to explicitly take 'values' in as a parameter by using '&gt;&gt;'</source>
-        <target state="translated">最后，无需再将 "value" 显式作为参数，你可使用 "&gt;&gt;"</target>
+        <target state="translated">最后，无需再将 "value" 显式作为参数，你可使用 ">>"</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line2">
@@ -554,12 +554,12 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line3">
         <source>Likewise, the 'fun x -&gt; ...' bit of the lambda expression is also not needed, because 'x' is simply</source>
-        <target state="translated">同样，lambda 表达式的 "fun x -&gt; ..." 也不需要了，因为 "x" 只是</target>
+        <target state="translated">同样，lambda 表达式的 "fun x -> ..." 也不需要了，因为 "x" 只是</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line4">
         <source>being defined in that scope so that it can be passed to a functional pipeline.  Thus, '&gt;&gt;' can be used</source>
-        <target state="translated">在该范围内定义，以便可传递到功能管道。因此，也可将 "&gt;&gt;"</target>
+        <target state="translated">在该范围内定义，以便可传递到功能管道。因此，也可将 ">>"</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line5">
@@ -774,7 +774,7 @@
       </trans-unit>
       <trans-unit id="Sequences-Line3">
         <source>An F# sequence is an alias for a .NET System.Collections.Generic.IEnumerable&lt;'T&gt;.</source>
-        <target state="translated">F# 序列是 .NET System.Collections.Generic.IEnumerable&lt;'T&gt; 的别名。</target>
+        <target state="translated">F# 序列是 .NET System.Collections.Generic.IEnumerable<'T> 的别名。</target>
         <note />
       </trans-unit>
       <trans-unit id="Sequences-Line4">
@@ -1494,7 +1494,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment">
         <source>use the '&lt;-' operator to mutate the value.</source>
-        <target state="translated">使用 "&lt;-" 运算符改变值。</target>
+        <target state="translated">使用 "<-" 运算符改变值。</target>
         <note />
       </trans-unit>
       <trans-unit id="History">

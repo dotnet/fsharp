@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="lblConditionalCompilationSymbols.Text">
         <source>Conditional compilation s&amp;ymbols:</source>
-        <target state="translated">条件付きコンパイル シンボル(&amp;Y):</target>
+        <target state="translated">条件付きコンパイル シンボル(&Y):</target>
         <note />
       </trans-unit>
       <trans-unit id="chkPrefer32Bit.Text">
         <source>&amp;Prefer 32-bit</source>
-        <target state="translated">32 ビットを優先(&amp;P)</target>
+        <target state="translated">32 ビットを優先(&P)</target>
         <note />
       </trans-unit>
       <trans-unit id="outputLabel.Text">
@@ -34,37 +34,37 @@
       </trans-unit>
       <trans-unit id="chkXMLDocumentationFile.Text">
         <source>&amp;XML documentation file:</source>
-        <target state="translated">XML ドキュメント ファイル(&amp;X):</target>
+        <target state="translated">XML ドキュメント ファイル(&X):</target>
         <note />
       </trans-unit>
       <trans-unit id="btnOutputPathBrowse.Text">
         <source>B&amp;rowse...</source>
-        <target state="translated">参照(&amp;R)...</target>
+        <target state="translated">参照(&R)...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblOutputPath.Text">
         <source>&amp;Output path:</source>
-        <target state="translated">出力パス(&amp;O):</target>
+        <target state="translated">出力パス(&O):</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningAll.Text">
         <source>A&amp;ll</source>
-        <target state="translated">すべて(&amp;L)</target>
+        <target state="translated">すべて(&L)</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningSpecific.Text">
         <source>Specif&amp;ic warnings:</source>
-        <target state="translated">特定の警告(&amp;I):</target>
+        <target state="translated">特定の警告(&I):</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningNone.Text">
         <source>&amp;None</source>
-        <target state="translated">なし(&amp;N)</target>
+        <target state="translated">なし(&N)</target>
         <note />
       </trans-unit>
       <trans-unit id="lblSupressWarnings.Text">
         <source>&amp;Suppress warnings:</source>
-        <target state="translated">警告の表示なし(&amp;S):</target>
+        <target state="translated">警告の表示なし(&S):</target>
         <note />
       </trans-unit>
       <trans-unit id="cboWarningLevel.Items">
@@ -99,37 +99,37 @@
       </trans-unit>
       <trans-unit id="lblWarningLevel.Text">
         <source>&amp;Warning level:</source>
-        <target state="translated">警告レベル(&amp;W):</target>
+        <target state="translated">警告レベル(&W):</target>
         <note />
       </trans-unit>
       <trans-unit id="chkOptimizeCode.Text">
         <source>Optimi&amp;ze code</source>
-        <target state="translated">コードの最適化(&amp;Z)</target>
+        <target state="translated">コードの最適化(&Z)</target>
         <note />
       </trans-unit>
       <trans-unit id="chkTailcalls.Text">
         <source>G&amp;enerate tail calls</source>
-        <target state="translated">末尾呼び出しの生成(&amp;E)</target>
+        <target state="translated">末尾呼び出しの生成(&E)</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDefineTrace.Text">
         <source>Define TR&amp;ACE constant</source>
-        <target state="translated">定数 TRACE の定義(&amp;A)</target>
+        <target state="translated">定数 TRACE の定義(&A)</target>
         <note />
       </trans-unit>
       <trans-unit id="lblPlatformTarget.Text">
         <source>Platform tar&amp;get:</source>
-        <target state="translated">プラットフォーム ターゲット(&amp;G):</target>
+        <target state="translated">プラットフォーム ターゲット(&G):</target>
         <note />
       </trans-unit>
       <trans-unit id="lblOtherFlags.Text">
         <source>Other &amp;flags:</source>
-        <target state="translated">その他のフラグ(&amp;F):</target>
+        <target state="translated">その他のフラグ(&F):</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDefineDebug.Text">
         <source>Define DEB&amp;UG constant</source>
-        <target state="translated">DEBUG 定数の定義(&amp;U)</target>
+        <target state="translated">DEBUG 定数の定義(&U)</target>
         <note />
       </trans-unit>
     </body>

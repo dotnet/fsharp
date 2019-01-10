@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">使い方: {0} &lt;オプション&gt; [script.fsx [&lt;引数&gt;]]</target>
+        <target state="translated">使い方: {0} <オプション> [script.fsx [<引数>]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">F# インタラクティブのプロセスの開始中に問題が発生しました。この原因は、一部の Windows システム上での Unicode 対応アプリケーションのバックグラウンド プロセス コンソールのサポートに関する既知の問題にある可能性があります。[ツール]5D; の [オプション]5D; から [F# Interactive for Visual Studio]5D; を選択し、「--fsi-server-no-unicode」と入力してください。</target>
+        <target state="translated">F# Interactive のプロセスの開始中に問題が発生しました。この原因は、一部の Windows システム上での Unicode 対応アプリケーションのバックグラウンド プロセス コンソールのサポートに関する既知の問題にある可能性があります。[ツール]5D; の [オプション]5D; から [F# Interactive for Visual Studio]5D; を選択し、「--fsi-server-no-unicode」と入力してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -209,32 +209,32 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="translated">--&gt; '{0}' を参照しました</target>
+        <target state="translated">--> '{0}' を参照しました</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; '{0}' を参照しました (ファイルが F# インタラクティブのプロセスによってロックされている可能性があります)</target>
+        <target state="translated">--> '{0}' を参照しました (ファイルが F# Interactive のプロセスによってロックされている可能性があります)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">--&gt; 参照された '{0}' (タイムスタンプが異なるアセンブリが既にこの場所から参照されています。fsi をリセットして更新されたアセンブリを読み込んでください)</target>
+        <target state="translated">--> 参照された '{0}' (タイムスタンプが異なるアセンブリが既にこの場所から参照されています。fsi をリセットして更新されたアセンブリを読み込んでください)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="translated">--&gt; ライブラリのインクルード パスに '{0}' を追加しました</target>
+        <target state="translated">--> ライブラリのインクルード パスに '{0}' を追加しました</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
         <source>--&gt; Timing now on</source>
-        <target state="translated">--&gt; 現在タイミングはオンです</target>
+        <target state="translated">--> 現在タイミングはオンです</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOff">
         <source>--&gt; Timing now off</source>
-        <target state="translated">--&gt; 現在タイミングはオフです</target>
+        <target state="translated">--> 現在タイミングはオフです</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUnexpectedThreadAbortException">
@@ -259,12 +259,12 @@
       </trans-unit>
       <trans-unit id="fsiProductNameCommunity">
         <source>F# Interactive for F# {0}</source>
-        <target state="translated">F# {0} の F# インタラクティブ</target>
+        <target state="translated">F# {0} の F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
         <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">参照が F# インタラクティブ プロセスによってロックされないようにします。</target>
+        <target state="translated">参照が F# 対話型プロセスによってロックされないようにします。</target>
         <note />
       </trans-unit>
     </body>

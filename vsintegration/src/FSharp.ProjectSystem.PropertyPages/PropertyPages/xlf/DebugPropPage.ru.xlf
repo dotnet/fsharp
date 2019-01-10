@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="rbStartProject.Text">
         <source>&amp;Start project</source>
-        <target state="translated">&amp;Запуск проекта</target>
+        <target state="translated">&Запуск проекта</target>
         <note />
       </trans-unit>
       <trans-unit id="rbStartProgram.Text">
         <source>Start e&amp;xternal program:</source>
-        <target state="translated">Запуск &amp;внешней программы:</target>
+        <target state="translated">Запуск &внешней программы:</target>
         <note />
       </trans-unit>
       <trans-unit id="StartProgram.AccessibleName">
@@ -39,17 +39,17 @@
       </trans-unit>
       <trans-unit id="CommandLineArgsLabel.Text">
         <source>Comma&amp;nd line arguments:</source>
-        <target state="translated">&amp;Аргументы командной строки:</target>
+        <target state="translated">&Аргументы командной строки:</target>
         <note />
       </trans-unit>
       <trans-unit id="WorkingDirLabel.Text">
         <source>Wor&amp;king directory:</source>
-        <target state="translated">Ра&amp;бочий каталог:</target>
+        <target state="translated">Ра&бочий каталог:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoteDebugEnabled.Text">
         <source>Use remote m&amp;achine</source>
-        <target state="translated">Использовать удаленный &amp;компьютер</target>
+        <target state="translated">Использовать удаленный &компьютер</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoteDebugMachine.AccessibleName">
@@ -74,17 +74,17 @@
       </trans-unit>
       <trans-unit id="EnableSQLServerDebugging.Text">
         <source>Enable SQ&amp;L Server debugging</source>
-        <target state="translated">&amp;Включить отладку SQL Server</target>
+        <target state="translated">&Включить отладку SQL Server</target>
         <note />
       </trans-unit>
       <trans-unit id="UseVSHostingProcess.Text">
         <source>Enable the Visual Studio h&amp;osting process</source>
-        <target state="translated">Включить ведущий &amp;процесс Visual Studio</target>
+        <target state="translated">Включить ведущий &процесс Visual Studio</target>
         <note />
       </trans-unit>
       <trans-unit id="EnableUnmanagedDebugging.Text">
         <source>Enable &amp;unmanaged code debugging</source>
-        <target state="translated">Включить отладку &amp;неуправляемого кода</target>
+        <target state="translated">Включить отладку &неуправляемого кода</target>
         <note />
       </trans-unit>
     </body>

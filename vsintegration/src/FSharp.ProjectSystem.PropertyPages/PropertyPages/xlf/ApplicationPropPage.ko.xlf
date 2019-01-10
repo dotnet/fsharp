@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="AssemblyNameLabel.Text">
         <source>Assembly &amp;name:</source>
-        <target state="translated">어셈블리 이름(&amp;N):</target>
+        <target state="translated">어셈블리 이름(&N):</target>
         <note />
       </trans-unit>
       <trans-unit id="Win32ResourceFileBrowse.Text">
@@ -14,17 +14,17 @@
       </trans-unit>
       <trans-unit id="ResourcesLabel.Text">
         <source>Specify how application resources will be managed:</source>
-        <target state="translated">응용 프로그램 리소스 관리 방법을 지정하세요.</target>
+        <target state="translated">애플리케이션 리소스 관리 방법을 지정하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ResourceLabel.Text">
         <source>&amp;Resource File:</source>
-        <target state="translated">리소스 파일(&amp;R):</target>
+        <target state="translated">리소스 파일(&R):</target>
         <note />
       </trans-unit>
       <trans-unit id="UseStandardResourceNames.Text">
         <source>U&amp;se standard resource names</source>
-        <target state="translated">표준 리소스 이름 사용(&amp;S)</target>
+        <target state="translated">표준 리소스 이름 사용(&S)</target>
         <note />
       </trans-unit>
       <trans-unit id="ResourcesGroupBox.Text">
@@ -34,12 +34,12 @@
       </trans-unit>
       <trans-unit id="OutputTypeLabel.Text">
         <source>O&amp;utput type:</source>
-        <target state="translated">출력 형식(&amp;U):</target>
+        <target state="translated">출력 형식(&U):</target>
         <note />
       </trans-unit>
       <trans-unit id="TargetFrameworkLabel.Text">
         <source>Tar&amp;get Framework:</source>
-        <target state="translated">대상 프레임워크(&amp;G):</target>
+        <target state="translated">대상 프레임워크(&G):</target>
         <note />
       </trans-unit>
       <trans-unit id="TargetFSharpCoreVersionLabel.Text">

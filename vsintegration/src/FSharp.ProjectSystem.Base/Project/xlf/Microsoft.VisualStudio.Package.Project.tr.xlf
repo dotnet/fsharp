@@ -132,7 +132,7 @@
 - Boş dize 
 - 'CON', 'AUX', PRN', 'COM1' veya 'LPT2' gibi sistem tarafından ayrılmış adlar 
 - yalnızca '.' içeren
-- şu karakterlerden herhangi birini içeren: / ? : &amp;  \ * " &lt; &gt; | # %</target>
+- şu karakterlerden herhangi birini içeren: / ? : &  \ * " < > | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">
@@ -672,7 +672,7 @@
       </trans-unit>
       <trans-unit id="NoZeroImpactProjects">
         <source>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</source>
-        <target state="translated">Microsoft Visual F# sıfır etkili projeleri desteklemez. Bu proje şablonundan bir F# projesi oluşturmak için Visual Studio menüsü 'Araçlar, Seçenekler..., Projeler ve Çözümler, Genel' seçeneğine gidip 'Oluşturulduklarında yeni projeleri kaydet' yazan kutuyu işaretleyin veya bu proje şablonunun .vstemplate dosyasındaki &lt;TemplateData&gt; bölümünde &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; belirttikten sonra bu işlemi yeniden deneyin.</target>
+        <target state="translated">Microsoft Visual F# sıfır etkili projeleri desteklemez. Bu proje şablonundan bir F# projesi oluşturmak için Visual Studio menüsü 'Araçlar, Seçenekler..., Projeler ve Çözümler, Genel' seçeneğine gidip 'Oluşturulduklarında yeni projeleri kaydet' yazan kutuyu işaretleyin veya bu proje şablonunun .vstemplate dosyasındaki <TemplateData> bölümünde <PromptForSaveOnCreation>true</PromptForSaveOnCreation> belirttikten sonra bu işlemi yeniden deneyin.</target>
         <note />
       </trans-unit>
       <trans-unit id="NoWildcardsInProject">

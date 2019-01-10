@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="lblPreBuildEventCommandLine.Text">
         <source>P&amp;re-build event command line:</source>
-        <target state="translated">Příkazový řádek události &amp;před sestavením:</target>
+        <target state="translated">Příkazový řádek události &před sestavením:</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPreBuildEventCommandLine.AccessibleName">
@@ -19,12 +19,12 @@
       </trans-unit>
       <trans-unit id="btnPreBuildBuilder.Text">
         <source>Ed&amp;it Pre-build ...</source>
-        <target state="translated">Ed&amp;itovat před sestavením ...</target>
+        <target state="translated">Ed&itovat před sestavením ...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblPostBuildEventCommandLine.Text">
         <source>P&amp;ost-build event command line:</source>
-        <target state="translated">Příkazový řádek události p&amp;o sestavení:</target>
+        <target state="translated">Příkazový řádek události p&o sestavení:</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPostBuildEventCommandLine.AccessibleName">
@@ -39,12 +39,12 @@
       </trans-unit>
       <trans-unit id="btnPostBuildBuilder.Text">
         <source>Edit Post-b&amp;uild ...</source>
-        <target state="translated">Editovat p&amp;o sestavení ...</target>
+        <target state="translated">Editovat p&o sestavení ...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblRunPostBuildEvent.Text">
         <source>Ru&amp;n the post-build event:</source>
-        <target state="translated">Spustit událost po sestave&amp;ní:</target>
+        <target state="translated">Spustit událost po sestave&ní:</target>
         <note />
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items">

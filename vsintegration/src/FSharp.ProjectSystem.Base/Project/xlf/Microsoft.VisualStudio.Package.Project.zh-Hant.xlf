@@ -132,7 +132,7 @@
 - 空字串 
 - 系統保留名稱，包括 'CON'、'AUX'、'PRN'、'COM1' 或 'LPT2' 
 - 只有 '.'
-- 有下列任一字元: / ? : &amp;  \ * " &lt; &gt; | # %</target>
+- 有下列任一字元: / ? : &  \ * " < > | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">
@@ -672,7 +672,7 @@
       </trans-unit>
       <trans-unit id="NoZeroImpactProjects">
         <source>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</source>
-        <target state="translated">Microsoft Visual F# 不支援零影響專案。若要從這個專案範本建立 F# 專案，您可以前往 Visual Studio 功能表 [工具]5D;、[選項...]5D;、[專案和方案]5D;、[一般]5D;，然後選取標記為 [建立時儲存新專案]5D;，或在這個專案範本的 .vstemplate 檔案的 &lt;TemplateData&gt; 區段中指定 &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt;，然後重試這項作業。</target>
+        <target state="translated">Microsoft Visual F# 不支援零影響專案。若要從這個專案範本建立 F# 專案，您可以前往 Visual Studio 功能表 [工具]5D;、[選項...]5D;、[專案和方案]5D;、[一般]5D;，然後選取標記為 [建立時儲存新專案]5D;，或在這個專案範本的 .vstemplate 檔案的 <TemplateData> 區段中指定 <PromptForSaveOnCreation>true</PromptForSaveOnCreation>，然後重試這項作業。</target>
         <note />
       </trans-unit>
       <trans-unit id="NoWildcardsInProject">

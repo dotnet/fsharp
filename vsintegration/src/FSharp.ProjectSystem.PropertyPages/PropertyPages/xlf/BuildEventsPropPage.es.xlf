@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="lblPreBuildEventCommandLine.Text">
         <source>P&amp;re-build event command line:</source>
-        <target state="translated">Lí&amp;nea de comandos del evento anterior a la compilación:</target>
+        <target state="translated">Lí&nea de comandos del evento anterior a la compilación:</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPreBuildEventCommandLine.AccessibleName">
@@ -19,12 +19,12 @@
       </trans-unit>
       <trans-unit id="btnPreBuildBuilder.Text">
         <source>Ed&amp;it Pre-build ...</source>
-        <target state="translated">&amp;Edición anterior a la compilación...</target>
+        <target state="translated">&Edición anterior a la compilación...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblPostBuildEventCommandLine.Text">
         <source>P&amp;ost-build event command line:</source>
-        <target state="translated">&amp;Línea de comandos del evento posterior a la compilación:</target>
+        <target state="translated">&Línea de comandos del evento posterior a la compilación:</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPostBuildEventCommandLine.AccessibleName">
@@ -39,12 +39,12 @@
       </trans-unit>
       <trans-unit id="btnPostBuildBuilder.Text">
         <source>Edit Post-b&amp;uild ...</source>
-        <target state="translated">E&amp;dición posterior a la compilación...</target>
+        <target state="translated">E&dición posterior a la compilación...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblRunPostBuildEvent.Text">
         <source>Ru&amp;n the post-build event:</source>
-        <target state="translated">Eje&amp;cutar el evento posterior a la compilación:</target>
+        <target state="translated">Eje&cutar el evento posterior a la compilación:</target>
         <note />
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items">

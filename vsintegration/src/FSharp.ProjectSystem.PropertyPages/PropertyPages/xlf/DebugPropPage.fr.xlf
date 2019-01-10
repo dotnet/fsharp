@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="rbStartProject.Text">
         <source>&amp;Start project</source>
-        <target state="translated">Démarrer le proje&amp;t</target>
+        <target state="translated">Démarrer le proje&t</target>
         <note />
       </trans-unit>
       <trans-unit id="rbStartProgram.Text">
         <source>Start e&amp;xternal program:</source>
-        <target state="translated">Démarrer le programme e&amp;xterne :</target>
+        <target state="translated">Démarrer le programme e&xterne :</target>
         <note />
       </trans-unit>
       <trans-unit id="StartProgram.AccessibleName">
@@ -39,17 +39,17 @@
       </trans-unit>
       <trans-unit id="CommandLineArgsLabel.Text">
         <source>Comma&amp;nd line arguments:</source>
-        <target state="translated">&amp;Arguments de la ligne de commande :</target>
+        <target state="translated">&Arguments de la ligne de commande :</target>
         <note />
       </trans-unit>
       <trans-unit id="WorkingDirLabel.Text">
         <source>Wor&amp;king directory:</source>
-        <target state="translated">Répertoire de tra&amp;vail :</target>
+        <target state="translated">Répertoire de tra&vail :</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoteDebugEnabled.Text">
         <source>Use remote m&amp;achine</source>
-        <target state="translated">Utiliser l'ordin&amp;ateur distant</target>
+        <target state="translated">Utiliser l'ordin&ateur distant</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoteDebugMachine.AccessibleName">
@@ -74,17 +74,17 @@
       </trans-unit>
       <trans-unit id="EnableSQLServerDebugging.Text">
         <source>Enable SQ&amp;L Server debugging</source>
-        <target state="translated">Activer le dé&amp;bogage SQL Server</target>
+        <target state="translated">Activer le dé&bogage SQL Server</target>
         <note />
       </trans-unit>
       <trans-unit id="UseVSHostingProcess.Text">
         <source>Enable the Visual Studio h&amp;osting process</source>
-        <target state="translated">Activer le processus d'&amp;hébergement Visual Studio</target>
+        <target state="translated">Activer le processus d'&hébergement Visual Studio</target>
         <note />
       </trans-unit>
       <trans-unit id="EnableUnmanagedDebugging.Text">
         <source>Enable &amp;unmanaged code debugging</source>
-        <target state="translated">Activ&amp;er le débogage de code non managé</target>
+        <target state="translated">Activ&er le débogage de code non managé</target>
         <note />
       </trans-unit>
     </body>
