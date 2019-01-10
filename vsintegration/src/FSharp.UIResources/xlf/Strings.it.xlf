@@ -187,6 +187,11 @@
         <target state="new">Re-format indentation on paste</target>
         <note />
       </trans-unit>
+      <trans-unit id="Suggest_names_for_errors_code_fix">
+        <source>Suggest names for unresolved identifiers</source>
+        <target state="new">Suggest names for unresolved identifiers</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

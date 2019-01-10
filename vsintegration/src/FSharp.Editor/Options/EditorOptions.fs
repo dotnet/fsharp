@@ -53,14 +53,17 @@ type CodeFixesOptions =
     { SimplifyName: bool
       AlwaysPlaceOpensAtTopLevel: bool
       UnusedOpens: bool 
-      UnusedDeclarations: bool }
+      UnusedDeclarations: bool
+      SuggestNamesForErrors: bool }
     static member Default =
       { // We have this off by default, disable until we work out how to make this low priority 
         // See https://github.com/Microsoft/visualfsharp/pull/3238#issue-237699595
         SimplifyName = false 
         AlwaysPlaceOpensAtTopLevel = true
         UnusedOpens = true 
-        UnusedDeclarations = true }
+        UnusedDeclarations = true
+        // Off by default due to perf problems in the implementation
+        SuggestNamesForErrors = false }
 
 [<CLIMutable>]
 type LanguageServicePerformanceOptions = 
