@@ -13,6 +13,7 @@
     <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
     <UseAssetTargetFallback>true</UseAssetTargetFallback>
+    <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net46' AND '$(OS)' == 'Windows_NT'">
