@@ -11,12 +11,6 @@ open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-module M =
-    let foo() = ()
-
-    let f = foo()
-
-
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ReplaceWithSuggestion"); Shared>]
 type internal FSharpReplaceWithSuggestionCodeFixProvider
     [<ImportingConstructor>]
@@ -26,6 +20,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
         settings: EditorOptions
     ) =
     inherit CodeFixProvider()
+
     static let userOpName = "ReplaceWithSuggestionCodeFix"
     let fixableDiagnosticIds = set ["FS0039"; "FS1129"; "FS0495"]
     let checker = checkerProvider.Checker

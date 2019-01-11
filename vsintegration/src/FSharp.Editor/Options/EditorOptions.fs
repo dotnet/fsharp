@@ -62,8 +62,7 @@ type CodeFixesOptions =
         AlwaysPlaceOpensAtTopLevel = true
         UnusedOpens = true 
         UnusedDeclarations = true
-        // Off by default due to perf problems in the implementation
-        SuggestNamesForErrors = false }
+        SuggestNamesForErrors = true }
 
 [<CLIMutable>]
 type LanguageServicePerformanceOptions = 
