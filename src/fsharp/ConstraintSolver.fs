@@ -1885,8 +1885,8 @@ and SolveTypeIsNonNullableValueType (csenv:ConstraintSolverEnv) ndeep m2 trace t
             return! AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsNonNullableStruct m)
         | _ ->
             let underlyingTy = stripTyEqnsAndMeasureEqns g ty
-            if isStructTy g underlyingTy && isAppTy g underlyingTy then
-                if tyconRefEq g g.system_Nullable_tcref (tcrefOfAppTy g underlyingTy) then
+            if isStructTy g underlyingTy then
+                if isAppTy g underlyingTy && tyconRefEq g g.system_Nullable_tcref (tcrefOfAppTy g underlyingTy) then
                     return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeParameterCannotBeNullable(), m, m))
             else
                 return! ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresStructType(NicePrint.minimalStringOfType denv ty), m, m2))
