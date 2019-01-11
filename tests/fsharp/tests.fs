@@ -1988,8 +1988,8 @@ module TypecheckTests =
     [<Test>]
     let ``sigs pos32`` () = 
         let cfg = testConfig "typecheck/sigs"
-        fsc cfg "%s --target:exe -o:pos32.exe --warnaserror" cfg.fsc_flags ["pos32.fs"]
-        peverify cfg "pos32.exe"
+        fsc cfg "%s --target:library -o:pos32.dll --warnaserror" cfg.fsc_flags ["pos32.fs"]
+        peverify cfg "pos32.dll"
 
     [<Test>]
     let ``sigs pos23`` () = 
