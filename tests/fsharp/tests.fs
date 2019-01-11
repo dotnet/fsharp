@@ -1986,6 +1986,12 @@ module TypecheckTests =
         peverify cfg "pos31.exe"
 
     [<Test>]
+    let ``sigs pos32`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos32.dll --warnaserror" cfg.fsc_flags ["pos32.fs"]
+        peverify cfg "pos32.dll"
+
+    [<Test>]
     let ``sigs pos23`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos23.exe" cfg.fsc_flags ["pos23.fs"]
@@ -2469,6 +2475,9 @@ module TypecheckTests =
 
     [<Test>] 
     let ``type check neg114`` () = singleNegTest (testConfig "typecheck/sigs") "neg114"
+
+    [<Test>] 
+    let ``type check neg115`` () = singleNegTest (testConfig "typecheck/sigs") "neg115"
 
     [<Test>] 
     let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"
