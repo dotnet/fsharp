@@ -10,6 +10,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.Range
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ReplaceWithSuggestion"); Shared>]
 type internal FSharpReplaceWithSuggestionCodeFixProvider
@@ -33,14 +34,21 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
 
             let document = context.Document
             let! _, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName=userOpName)
-            
-            let! allSymbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
+            let! parseFileResults, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName=userOpName)
+
+            // This is all needed to get a declaration list
             let! sourceText = document.GetTextAsync(context.CancellationToken)
             let unresolvedIdentifierText = sourceText.GetSubText(context.Span).ToString()
+            let pos = context.Span.End
+            let caretLinePos = sourceText.Lines.GetLinePosition(pos)            
+            let caretLine = sourceText.Lines.GetLineFromPosition(pos)
+            let fcsCaretLineNumber = Line.fromZ caretLinePos.Line
+            let partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLinePos.Character - 1)
                 
-            let suggestedNames = ErrorResolutionHints.getSuggestedNames allSymbolUses unresolvedIdentifierText
+            let! declInfo = checkFileResults.GetDeclarationListInfo(Some parseFileResults, fcsCaretLineNumber, caretLine.ToString(), partialName, userOpName=userOpName) |> liftAsync
+            let namesToCheck = declInfo.Items |> Array.map (fun item -> item.Name)
 
+            let suggestedNames = ErrorResolutionHints.getSuggestedNames namesToCheck unresolvedIdentifierText
             match suggestedNames with
             | None -> ()
             | Some suggestions ->
