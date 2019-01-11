@@ -124,7 +124,7 @@ type FileIndexTable() =
             if f <> normalizedFilePath then 
                 lock fileToIndexTable (fun () -> 
                     fileToIndexTable.[f] <- res2)
-            res
+            res2
         else
             lock fileToIndexTable (fun () -> 
                 let n = indexToFileTable.Count
