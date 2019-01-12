@@ -112,9 +112,13 @@ type internal XmlDocCommandFilter
             else
                 VSConstants.E_FAIL
 
-[<Export(typeof<IWpfTextViewCreationListener>)>]
-[<ContentType(FSharpConstants.FSharpContentTypeName)>]
-[<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
+// Disabled:
+// - https://github.com/Microsoft/visualfsharp/issues/6076
+// - The feature does not work; it should probably use an exposed Roslyn API of some sort
+// - Despite not working, it is a source of UI delays
+//[<Export(typeof<IWpfTextViewCreationListener>)>]
+//[<ContentType(FSharpConstants.FSharpContentTypeName)>]
+//[<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
 type internal XmlDocCommandFilterProvider 
     [<ImportingConstructor>] 
     (checkerProvider: FSharpCheckerProvider,
