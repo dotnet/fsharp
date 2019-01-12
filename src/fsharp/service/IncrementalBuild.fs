@@ -55,15 +55,16 @@ module internal IncrementalBuild =
         /// Get the Id for the given ScalarBuildRule.
         member  x.Id = 
             match x with
-            | ScalarInput(id, _) ->id
-            | ScalarDemultiplex(id, _, _, _) ->id
-            | ScalarMap(id, _, _, _) ->id
+            | ScalarInput(id, _) -> id
+            | ScalarDemultiplex(id, _, _, _) -> id
+            | ScalarMap(id, _, _, _) -> id
+
         /// Get the Name for the givenScalarExpr.
         member x.Name = 
             match x with 
-            | ScalarInput(_, n) ->n                
-            | ScalarDemultiplex(_, n, _, _) ->n
-            | ScalarMap(_, n, _, _) ->n                
+            | ScalarInput(_, n) -> n                
+            | ScalarDemultiplex(_, n, _, _) -> n
+            | ScalarMap(_, n, _, _) -> n                
 
     /// A build rule with a vector of outputs
     and VectorBuildRule = 
@@ -1034,6 +1035,7 @@ type TypeCheckAccumulator =
 
       /// Accumulated 'open' declarations, last file first
       tcOpenDeclarationsRev: OpenDeclaration[] list
+
       topAttribs:TopAttribs option
 
       /// Result of checking most recent file, if any
@@ -1042,6 +1044,9 @@ type TypeCheckAccumulator =
       latestCcuSigForFile: ModuleOrNamespaceType option
 
       tcDependencyFiles: string list
+
+      /// Disambiguation table for module names
+      tcModuleNamesDict: ModuleNamesDict
 
       /// Accumulated errors, last file first
       tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list }
@@ -1125,10 +1130,17 @@ type PartialCheckResults =
       /// Kept in a stack so that each incremental update shares storage with previous files
       TcOpenDeclarationsRev: OpenDeclaration[] list
 
+      /// Disambiguation table for module names
+      ModuleNamesDict: ModuleNamesDict
+
       TcDependencyFiles: string list 
+
       TopAttribs: TopAttribs option
+
       TimeStamp: DateTime
+
       LatestImplementationFile: TypedImplFile option 
+
       LastestCcuSigForFile: ModuleOrNamespaceType option }
 
     member x.TcErrors  = Array.concat (List.rev x.TcErrorsRev)
@@ -1146,6 +1158,7 @@ type PartialCheckResults =
           TcOpenDeclarationsRev = tcAcc.tcOpenDeclarationsRev
           TcDependencyFiles = tcAcc.tcDependencyFiles
           TopAttribs = tcAcc.topAttribs
+          ModuleNamesDict = tcAcc.tcModuleNamesDict
           TimeStamp = timestamp 
           LatestImplementationFile = tcAcc.latestImplFile 
           LastestCcuSigForFile = tcAcc.latestCcuSigForFile }
@@ -1258,9 +1271,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         assertNotDisposed()
         cache.GetFileTimeStamp filename
 
-    // Deduplicate module names
-    let moduleNamesDict = ConcurrentDictionary<string, Set<string>>()
-                            
     /// This is a build task function that gets placed into the build rules as the computation for a VectorMap
     ///
     /// Parse the given files and return the given inputs. This function is expected to be
@@ -1278,9 +1288,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed filename)
             let input = ParseOneInputFile(tcConfig, lexResourceManager, [], filename , isLastCompiland, errorLogger, (*retryLocked*)true)
             fileParsed.Trigger (filename)
-            let result = Option.map (DeduplicateParsedInputModuleName moduleNamesDict) input
 
-            result, sourceRange, filename, errorLogger.GetErrors ()
+            input, sourceRange, filename, errorLogger.GetErrors ()
         with exn -> 
             let msg = sprintf "unexpected failure in IncrementalFSharpBuild.Parse\nerror = %s" (exn.ToString())
             System.Diagnostics.Debug.Assert(false, msg)
@@ -1357,7 +1366,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
               latestImplFile=None
               latestCcuSigForFile=None
               tcDependencyFiles=basicDependencies
-              tcErrorsRev = [ initialErrors ] }   
+              tcErrorsRev = [ initialErrors ] 
+              tcModuleNamesDict = Map.empty }   
         return tcAcc }
                 
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.ScanLeft
@@ -1377,6 +1387,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filename) |> ignore
                     let sink = TcResultsSinkImpl(tcAcc.tcGlobals)
                     let hadParseErrors = not (Array.isEmpty parseErrors)
+
+                    let input, moduleNamesDict = DeduplicateParsedInputModuleName tcAcc.tcModuleNamesDict input
 
                     let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState = 
                         TypeCheckOneInputEventually 
@@ -1406,6 +1418,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                                        tcSymbolUsesRev=tcSymbolUses :: tcAcc.tcSymbolUsesRev
                                        tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: tcAcc.tcOpenDeclarationsRev
                                        tcErrorsRev = newErrors :: tcAcc.tcErrorsRev 
+                                       tcModuleNamesDict = moduleNamesDict
                                        tcDependencyFiles = filename :: tcAcc.tcDependencyFiles } 
                 }
                     
@@ -1651,9 +1664,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
     member builder.GetCheckResultsAfterLastFileInProject (ctok: CompilationThreadToken) = 
         builder.GetCheckResultsBeforeSlotInProject(ctok, builder.GetSlotsCount()) 
-
-    member builder.DeduplicateParsedInputModuleNameInProject (input) = 
-        DeduplicateParsedInputModuleName moduleNamesDict input
 
     member __.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) = 
       cancellable {

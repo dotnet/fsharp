@@ -3520,34 +3520,39 @@ let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSig
 
     ParsedInput.SigFile(ParsedSigFileInput(filename, qualName, scopedPragmas, hashDirectives, specs))
 
+type ModuleNamesDict = Map<string,Set<string>>
+
 /// Checks if a module name is already given and deduplicates the name if needed.
-let DeduplicateModuleName (moduleNamesDict:IDictionary<string, Set<string>>) (paths: Set<string>) path (qualifiedNameOfFile: QualifiedNameOfFile) =
+let DeduplicateModuleName (moduleNamesDict:ModuleNamesDict) (paths: Set<string>) path (qualifiedNameOfFile: QualifiedNameOfFile) =
     let count = if paths.Contains path then paths.Count else paths.Count + 1
-    moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.add path paths
+    let moduleNamesDictT = moduleNamesDict.Add(qualifiedNameOfFile.Text, Set.add path paths)
     let id = qualifiedNameOfFile.Id
-    if count = 1 then qualifiedNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(), id.idRange))
+    let qualifiedNameOfFileT = if count = 1 then qualifiedNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(), id.idRange))
+    qualifiedNameOfFileT, moduleNamesDictT
 
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
-let DeduplicateParsedInputModuleName (moduleNamesDict:IDictionary<string, Set<string>>) input =
+let DeduplicateParsedInputModuleName (moduleNamesDict: ModuleNamesDict) input =
     match input with
     | ParsedInput.ImplFile (ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe))) ->
         let path = Path.GetDirectoryName fileName
         match moduleNamesDict.TryGetValue qualifiedNameOfFile.Text with
         | true, paths ->
-            let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
-            ParsedInput.ImplFile(ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe)))
+            let qualifiedNameOfFile, moduleNamesDictT = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
+            let inputT = ParsedInput.ImplFile(ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe)))
+            inputT, moduleNamesDictT
         | _ ->
-            moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.singleton path
-            input
+            let moduleNamesDictT = moduleNamesDict.Add(qualifiedNameOfFile.Text, Set.singleton path)
+            input, moduleNamesDictT
     | ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules)) ->
         let path = Path.GetDirectoryName fileName
         match moduleNamesDict.TryGetValue qualifiedNameOfFile.Text with
         | true, paths ->
-            let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
-            ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules))
+            let qualifiedNameOfFile, moduleNamesDictT = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
+            let inputT = ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules))
+            inputT, moduleNamesDictT
         | _ ->
-            moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.singleton path
-            input
+            let moduleNamesDictT = moduleNamesDict.Add(qualifiedNameOfFile.Text, Set.singleton path)
+            input, moduleNamesDictT
 
 let ParseInput (lexer, errorLogger:ErrorLogger, lexbuf:UnicodeLexing.Lexbuf, defaultNamespace, filename, isLastCompiland) = 
     // The assert below is almost ok, but it fires in two cases:
