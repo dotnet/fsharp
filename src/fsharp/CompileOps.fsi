@@ -59,14 +59,13 @@ val ComputeQualifiedNameOfFileFromUniquePath: range * string list -> Ast.Qualifi
 
 val PrependPathToInput: Ast.Ident list -> Ast.ParsedInput -> Ast.ParsedInput
 
-type ModuleNamesDict = Map<string,Set<string>>
-
-/// Checks if a module name is already given and deduplicates the name if needed.
-val DeduplicateModuleName: ModuleNamesDict -> Set<string> -> string -> Ast.QualifiedNameOfFile -> Ast.QualifiedNameOfFile * ModuleNamesDict
+/// State used to de-deuplicate module names along a list of file names
+type ModuleNamesDict = Map<string,Map<string,QualifiedNameOfFile>>
 
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
 val DeduplicateParsedInputModuleName: ModuleNamesDict -> Ast.ParsedInput -> Ast.ParsedInput * ModuleNamesDict
 
+/// Parse a single input (A signature file or implementation file)
 val ParseInput: (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLexing.Lexbuf * string option * string * isLastCompiland:(bool * bool) -> Ast.ParsedInput
 
 //----------------------------------------------------------------------------

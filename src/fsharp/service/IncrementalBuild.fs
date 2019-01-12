@@ -1188,7 +1188,9 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState:
             yield (ccuName, (fun () -> r.GetBytes())) ]
 
     let autoOpenAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_AutoOpenAttribute)
+
     let ivtAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute)
+
     interface IRawFSharpAssemblyData with 
         member __.GetAutoOpenAttributes(_ilg) = autoOpenAttrs
         member __.GetInternalsVisibleToAttributes(_ilg) =  ivtAttrs
@@ -1259,6 +1261,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     let assertNotDisposed() =
         if disposed then  
             System.Diagnostics.Debug.Assert(false, "IncrementalBuild object has already been disposed!")
+
     let mutable referenceCount = 0
 
     //----------------------------------------------------
@@ -1273,9 +1276,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
     /// This is a build task function that gets placed into the build rules as the computation for a VectorMap
     ///
-    /// Parse the given files and return the given inputs. This function is expected to be
-    /// able to be called with a subset of sourceFiles and return the corresponding subset of
-    /// parsed inputs. 
+    /// Parse the given file and return the given input.
     let ParseTask ctok (sourceRange:range, filename:string, isLastCompiland) =
         assertNotDisposed()
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
@@ -1461,55 +1462,55 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             TypeCheckMultipleInputsFinish (results, finalAcc.tcState)
   
         let ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt = 
-          try
-           // TypeCheckClosedInputSetFinish fills in tcState.Ccu but in incremental scenarios we don't want this, 
-           // so we make this temporary here
-           let oldContents = tcState.Ccu.Deref.Contents
-           try
-            let tcState, tcAssemblyExpr = TypeCheckClosedInputSetFinish (mimpls, tcState)
-
-            // Compute the identity of the generated assembly based on attributes, options etc.
-            // Some of this is duplicated from fsc.fs
-            let ilAssemRef = 
-                let publicKey = 
-                    try 
-                        let signingInfo = Driver.ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttrs)
-                        match Driver.GetStrongNameSigner signingInfo with 
-                        | None -> None
-                        | Some s -> Some (PublicKey.KeyAsToken(s.PublicKey))
-                    with e -> 
-                        errorRecoveryNoRange e
-                        None
-                let locale = TryFindFSharpStringAttribute tcGlobals (tcGlobals.FindSysAttrib  "System.Reflection.AssemblyCultureAttribute") topAttrs.assemblyAttrs
-                let assemVerFromAttrib = 
-                    TryFindFSharpStringAttribute tcGlobals (tcGlobals.FindSysAttrib "System.Reflection.AssemblyVersionAttribute") topAttrs.assemblyAttrs 
-                    |> Option.bind  (fun v -> try Some (parseILVersion v) with _ -> None)
-                let ver = 
-                    match assemVerFromAttrib with 
-                    | None -> tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)
-                    | Some v -> v
-                ILAssemblyRef.Create(assemblyName, None, publicKey, false, Some ver, locale)
-                
-            let tcAssemblyDataOpt = 
+            try
+                // TypeCheckClosedInputSetFinish fills in tcState.Ccu but in incremental scenarios we don't want this, 
+                // so we make this temporary here
+                let oldContents = tcState.Ccu.Deref.Contents
                 try
-                  // Assemblies containing type provider components can not successfully be used via cross-assembly references.
-                  // We return 'None' for the assembly portion of the cross-assembly reference 
-                  let hasTypeProviderAssemblyAttrib = 
-                      topAttrs.assemblyAttrs |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) -> tcref.CompiledRepresentationForNamedType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
-                  if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
-                    None
-                  else
-                    Some  (RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState, outfile, topAttrs, assemblyName, ilAssemRef) :> IRawFSharpAssemblyData)
+                    let tcState, tcAssemblyExpr = TypeCheckClosedInputSetFinish (mimpls, tcState)
 
-                with e -> 
-                    errorRecoveryNoRange e
-                    None
-            ilAssemRef, tcAssemblyDataOpt, Some tcAssemblyExpr
-            finally 
-                tcState.Ccu.Deref.Contents <- oldContents
-          with e -> 
-            errorRecoveryNoRange e
-            mkSimpleAssemblyRef assemblyName, None, None
+                    // Compute the identity of the generated assembly based on attributes, options etc.
+                    // Some of this is duplicated from fsc.fs
+                    let ilAssemRef = 
+                        let publicKey = 
+                            try 
+                                let signingInfo = Driver.ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttrs)
+                                match Driver.GetStrongNameSigner signingInfo with 
+                                | None -> None
+                                | Some s -> Some (PublicKey.KeyAsToken(s.PublicKey))
+                            with e -> 
+                                errorRecoveryNoRange e
+                                None
+                        let locale = TryFindFSharpStringAttribute tcGlobals (tcGlobals.FindSysAttrib  "System.Reflection.AssemblyCultureAttribute") topAttrs.assemblyAttrs
+                        let assemVerFromAttrib = 
+                            TryFindFSharpStringAttribute tcGlobals (tcGlobals.FindSysAttrib "System.Reflection.AssemblyVersionAttribute") topAttrs.assemblyAttrs 
+                            |> Option.bind  (fun v -> try Some (parseILVersion v) with _ -> None)
+                        let ver = 
+                            match assemVerFromAttrib with 
+                            | None -> tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)
+                            | Some v -> v
+                        ILAssemblyRef.Create(assemblyName, None, publicKey, false, Some ver, locale)
+                
+                    let tcAssemblyDataOpt = 
+                        try
+                          // Assemblies containing type provider components can not successfully be used via cross-assembly references.
+                          // We return 'None' for the assembly portion of the cross-assembly reference 
+                          let hasTypeProviderAssemblyAttrib = 
+                              topAttrs.assemblyAttrs |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) -> tcref.CompiledRepresentationForNamedType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
+                          if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
+                            None
+                          else
+                            Some  (RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState, outfile, topAttrs, assemblyName, ilAssemRef) :> IRawFSharpAssemblyData)
+
+                        with e -> 
+                            errorRecoveryNoRange e
+                            None
+                    ilAssemRef, tcAssemblyDataOpt, Some tcAssemblyExpr
+                finally 
+                    tcState.Ccu.Deref.Contents <- oldContents
+            with e -> 
+                errorRecoveryNoRange e
+                mkSimpleAssemblyRef assemblyName, None, None
 
         let finalAccWithErrors = 
             { finalAcc with 
@@ -1574,9 +1575,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     member this.IncrementUsageCount() = 
         assertNotDisposed() 
         System.Threading.Interlocked.Increment(&referenceCount) |> ignore
-        { new System.IDisposable with member x.Dispose() = this.DecrementUsageCount() }
+        { new System.IDisposable with member __.Dispose() = this.DecrementUsageCount() }
 
-    member this.DecrementUsageCount() = 
+    member __.DecrementUsageCount() = 
         assertNotDisposed()
         let currentValue =  System.Threading.Interlocked.Decrement(&referenceCount)
         if currentValue = 0 then 
@@ -1586,11 +1587,17 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     member __.IsAlive = referenceCount > 0
 
     member __.TcConfig = tcConfig
+
     member __.FileParsed = fileParsed.Publish
+
     member __.BeforeFileChecked = beforeFileChecked.Publish
+
     member __.FileChecked = fileChecked.Publish
+
     member __.ProjectChecked = projectChecked.Publish
+
     member __.ImportedCcusInvalidated = importsInvalidated.Publish
+
     member __.AllDependenciesDeprecated = allDependencies
 
 #if !NO_EXTENSIONTYPING
@@ -1635,7 +1642,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         | (*first file*) 0 -> IncrementalBuild.IsReady cache (Target(initialTcAccNode, None)) partialBuild 
         | _ -> IncrementalBuild.IsReady cache (Target(tcStatesNode, Some (slotOfFile-1))) partialBuild  
         
-    member builder.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile) = 
+    member __.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile) = 
       cancellable {
         let cache = TimeStampCache(defaultTimeStamp)
         let! result = 
@@ -1871,10 +1878,11 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
         return builderOpt, diagnostics
       }
+
     static member KeepBuilderAlive (builderOpt: IncrementalBuilder option) = 
         match builderOpt with 
         | Some builder -> builder.IncrementUsageCount() 
         | None -> { new System.IDisposable with member __.Dispose() = () }
 
-    member builder.IsBeingKeptAliveApartFromCacheEntry = (referenceCount >= 2)
+    member __.IsBeingKeptAliveApartFromCacheEntry = (referenceCount >= 2)
 
