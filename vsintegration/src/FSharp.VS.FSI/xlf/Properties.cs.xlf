@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopyDescr">
         <source>Prevents referenced assemblies from being locked by the F# Interactive process.</source>
-        <target state="translated">Znemožňuje zamknutí odkazovaných sestavení procesem nástroje F# Interactive.</target>
+        <target state="translated">Znemožňuje zamknutí odkazovaných sestavení interaktivním procesem jazyka F#.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugMode">

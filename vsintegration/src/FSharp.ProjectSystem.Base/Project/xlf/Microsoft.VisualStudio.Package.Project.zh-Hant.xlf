@@ -132,7 +132,7 @@
 - 空字串 
 - 系統保留名稱，包括 'CON'、'AUX'、'PRN'、'COM1' 或 'LPT2' 
 - 只有 '.'
-- 有下列任一字元: / ? : &amp;  \ * " &lt; &gt; | # %</target>
+- 有下列任一字元: / ? : &  \ * " < > | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">

@@ -132,7 +132,7 @@
 - 空の文字列 
 - システム予約名 ('CON'、'AUX'、'PRN'、'COM1'、'LPT2' など)
 - '.' のみ
-- 次の文字を含む: / ? : &amp;  \ * " &lt; &gt; | # %</target>
+- 次の文字を含む: / ? : &  \ * " < > | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">

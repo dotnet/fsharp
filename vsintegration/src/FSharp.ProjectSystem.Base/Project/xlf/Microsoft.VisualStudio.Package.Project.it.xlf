@@ -132,7 +132,7 @@
 - Essere una stringa vuota 
 - Essere un nome riservato del sistema, ad esempio 'CON', 'AUX', PRN', 'COM1' o 'LPT2' 
 - Contenere solo '.'
-- Contenere uno dei seguenti caratteri: / ? : &amp;  \ * " &lt; &gt; | # %</target>
+- Contenere uno dei seguenti caratteri: / ? : &  \ * " < > | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">

@@ -74,7 +74,7 @@
       </trans-unit>
       <trans-unit id="cmdidDebugSelection|ButtonText">
         <source>Debug In Interactive</source>
-        <target state="translated">Отладка в Interactive</target>
+        <target state="translated">Интерактивная отладка</target>
         <note />
       </trans-unit>
       <trans-unit id="cmdidDebugSelection|CommandName">

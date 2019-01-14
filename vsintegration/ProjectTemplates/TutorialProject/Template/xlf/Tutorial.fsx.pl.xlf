@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line1">
         <source>To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click</source>
-        <target state="translated">Aby wykonać kod w narzędziu F# Interactive, zaznacz sekcję kodu i naciśnij kombinację klawiszy Alt-Enter lub kliknij prawym przyciskiem myszy,</target>
+        <target state="translated">Aby wykonać kod w programie F# Interactive, zaznacz sekcję kodu i naciśnij kombinację klawiszy Alt-Enter lub kliknij prawym przyciskiem myszy,</target>
         <note />
       </trans-unit>
       <trans-unit id="Instructions-Line2">

@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="BuildAction">
         <source>Build Action</source>
-        <target state="translated">Действие при сборке</target>
+        <target state="translated">Действие сборки</target>
         <note>Project Build Property Name</note>
       </trans-unit>
       <trans-unit id="BuildActionDescription">
@@ -132,7 +132,7 @@
 – быть пустыми строками; 
 – совпадать с именами, зарезервированными системой, например CON, AUX, PRN, COM1 или LPT2; 
 – содержать только "."; 
-– содержать символы / ? : &amp; \ * " &lt; &gt; | # %.</target>
+– содержать символы / ? : & \ * " < > | # %.</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">

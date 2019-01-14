@@ -132,7 +132,7 @@
 – Být prázdnými řetězci
 – Být systémem rezervovanými názvy včetně CON, AUX, PRN, COM1 nebo LPT2
 – Obsahovat jenom tečku (.)
-– Obsahovat jakýkoli z následujících znaků: / ? : &amp;  \ * " &lt; &gt; | # %</target>
+– Obsahovat jakýkoli z následujících znaků: / ? : &  \ * " < > | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">

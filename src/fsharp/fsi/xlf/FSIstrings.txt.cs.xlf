@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
         <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">Znemožňuje zamknutí referencí procesem nástroje F# Interactive.</target>
+        <target state="translated">Znemožňuje zamknutí referencí interaktivním procesem jazyka F#.</target>
         <note />
       </trans-unit>
     </body>

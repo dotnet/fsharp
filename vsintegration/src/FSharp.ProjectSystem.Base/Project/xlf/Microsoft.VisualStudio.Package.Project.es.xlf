@@ -132,7 +132,7 @@
 - Ser cadenas vacías 
 - Ser nombres reservados del sistema, como "CON", "AUX", "PRN", "COM1" o "LPT2" 
 - Contener "."
-- Tener cualquiera de los siguientes caracteres: / ? : &amp;  \ * " &lt; &gt; | # %</target>
+- Tener cualquiera de los siguientes caracteres: / ? : &  \ * " < > | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">

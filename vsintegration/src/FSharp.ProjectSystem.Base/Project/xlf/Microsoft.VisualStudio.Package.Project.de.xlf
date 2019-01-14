@@ -132,7 +132,7 @@
 - Sie dürfen keine leeren Zeichenfolgen sein. 
 - Sie dürfen keine für das System reservierten Namen aufweisen, einschließlich "CON", "AUX", PRN", "COM1" oder "LPT2". 
 - Sie dürfen nicht nur "." enthalten.
-- Sie dürfen folgende Zeichen nicht aufweisen: / ? : &amp;  \ * " &lt; &gt; | # %</target>
+- Sie dürfen folgende Zeichen nicht aufweisen: / ? : &  \ * " < > | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">
