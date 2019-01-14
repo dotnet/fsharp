@@ -10060,7 +10060,7 @@ and TcMethodApplication
                                     | CallerLineNumber, _ when typeEquiv cenv.g currCalledArgTy cenv.g.int_ty ->
                                         emptyPreBinder, Expr.Const(Const.Int32(mMethExpr.StartLine), mMethExpr, currCalledArgTy)
                                     | CallerFilePath, _ when typeEquiv cenv.g currCalledArgTy cenv.g.string_ty ->
-                                        emptyPreBinder, Expr.Const(Const.String(System.IO.Path.GetFullPath(mMethExpr.FileName)), mMethExpr, currCalledArgTy)
+                                        emptyPreBinder, Expr.Const(Const.String(FileSystem.GetFullPathShim(mMethExpr.FileName)), mMethExpr, currCalledArgTy)
                                     | CallerMemberName, Some(callerName) when (typeEquiv cenv.g currCalledArgTy cenv.g.string_ty) ->
                                         emptyPreBinder, Expr.Const(Const.String(callerName), mMethExpr, currCalledArgTy)
                                     | _ ->
@@ -10099,7 +10099,7 @@ and TcMethodApplication
                           let lineExpr = Expr.Const(Const.Int32(mMethExpr.StartLine), mMethExpr, calledNonOptTy)
                           emptyPreBinder, mkUnionCaseExpr(mkSomeCase cenv.g, [calledNonOptTy], [lineExpr], mMethExpr)
                       | CallerFilePath, _ when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
-                          let filePathExpr = Expr.Const(Const.String(System.IO.Path.GetFullPath(mMethExpr.FileName)), mMethExpr, calledNonOptTy)
+                          let filePathExpr = Expr.Const(Const.String(FileSystem.GetFullPathShim(mMethExpr.FileName)), mMethExpr, calledNonOptTy)
                           emptyPreBinder, mkUnionCaseExpr(mkSomeCase cenv.g, [calledNonOptTy], [filePathExpr], mMethExpr)
                       | CallerMemberName, Some(callerName) when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
                           let memberNameExpr = Expr.Const(Const.String(callerName), mMethExpr, calledNonOptTy)
