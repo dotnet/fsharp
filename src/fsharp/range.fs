@@ -126,7 +126,7 @@ let _ = assert (isSyntheticMask = mask64 isSyntheticShift isSyntheticBitCount)
 #endif
 
 /// Removes relative parts from any full paths
-let normalizeFilePath filePath = 
+let normalizeFilePath (filePath: string) = 
     try 
         if Path.IsPathRooted filePath then 
             Path.GetFullPath filePath
