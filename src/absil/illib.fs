@@ -441,7 +441,7 @@ module ResizeArray =
     /// Split a ResizeArray into an array of smaller chunks.
     /// This requires `items/chunkSize` Array copies of length `chunkSize` if `items/chunkSize % 0 = 0`,
     /// otherwise `items/chunkSize + 1` Array copies.
-    let chunkBySize chunkSize (items: ResizeArray<'t>) =
+    let chunkBySize chunkSize f (items: ResizeArray<'t>) =
         // we could use Seq.chunkBySize here, but that would involve many enumerator.MoveNext() calls that we can sidestep with a bit of math
         let itemCount = items.Count
         if itemCount = 0
@@ -456,10 +456,14 @@ module ResizeArray =
                 let startIndex = index * chunkSize
                 let takeCount = min (itemCount - startIndex) chunkSize
 
-                // pre-creating the array and doing a single copy is slightly better than
-                // two copies via ResizeArray<'t>.GetRange(start, count).ToArray().
                 let holder = Array.zeroCreate takeCount
-                items.CopyTo(startIndex, holder, 0, takeCount)
+                // we take a bounds-check hit here on each access.
+                // other alternatives here include
+                // * iterating across an IEnumerator (incurs MoveNext penalty)
+                // * doing a block copy using `List.CopyTo(index, array, index, count)` (requires more copies to do the mapping)
+                // none are significantly better.
+                for i in 0 .. takeCount - 1 do
+                    holder.[i] <- f items.[i]
                 yield holder |]
 
     /// Split a large ResizeArray into a series of array chunks that are each under the
@@ -471,8 +475,7 @@ module ResizeArray =
 
         /// chunk the provided input into arrays that are smaller than the LOH limit
         /// in order to prevent long-term storage of those values
-        chunkBySize maxArrayItemCount inp
-        |> Array.map (Array.map f)
+        chunkBySize maxArrayItemCount f inp
 
 
 /// Because FSharp.Compiler.Service is a library that will target FSharp.Core 4.5.2 for the forseeable future,
