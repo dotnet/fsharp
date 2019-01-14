@@ -23,7 +23,7 @@ type ISourceText =
 
     abstract ContentEquals : sourceText: ISourceText -> bool
 
-    abstract CopyTo : sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit  
+    abstract CopyTo : sourceIndex: int * destination: char [] * destinationIndex: int * count: int -> unit
 
 module SourceText =
 
