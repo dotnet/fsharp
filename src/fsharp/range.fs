@@ -116,12 +116,13 @@ type FileIndexTable() =
         | true, idx -> idx
         | _ -> 
         
-        // remove relative parts from full path to store the normalized entry
-        let normalizedFilePath = try if isRooted then Path.GetFullPath filePath else filePath with _ -> filePath
+        // Try again looking for a normalized entry.
+        // Remove relative parts from any full paths to store the normalized entry.
+        let normalizedFilePath = try if Path.IsPathRooted filePath then Path.GetFullPath filePath else filePath with _ -> filePath
         match fileToIndexTable.TryGetValue(normalizedFilePath) with 
         | true, idx ->
             // Record the non-normalized entry if necessary
-            if f <> normalizedFilePath then 
+            if filePath <> normalizedFilePath then 
                 lock fileToIndexTable (fun () -> 
                     fileToIndexTable.[filePath] <- idx)
                     
@@ -138,7 +139,7 @@ type FileIndexTable() =
                 fileToIndexTable.[normalizedFilePath] <- idx
                 
                 // Record the non-normalized entry if necessary
-                if f <> normalizedFilePath then 
+                if filePath <> normalizedFilePath then 
                     fileToIndexTable.[filePath] <- idx
 
                 // Return the index

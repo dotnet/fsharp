@@ -63,6 +63,10 @@ let ``Intro test`` () =
     let identToken = FSharpTokenTag.IDENT
 //    let projectOptions = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
 
+    // So we check that the messages are the same
+    for msg in typeCheckResults.Errors do 
+        printfn "Got an error, hopefully with the right text: %A" msg
+
     // We only expect one reported error. However,
     // on Unix, using filenames like /home/user/Test.fsx gives a second copy of all parse errors due to the
     // way the load closure for scripts is generated. So this returns two identical errors
