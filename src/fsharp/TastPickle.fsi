@@ -18,7 +18,7 @@ type PickledDataWithReferences<'RawData> =
     { /// The data that uses a collection of CcuThunks internally
       RawData: 'RawData 
       /// The assumptions that need to be fixed up
-      FixupThunks: list<CcuThunk> } 
+      FixupThunks: CcuThunk [] } 
 
     member Fixup : (CcuReference -> CcuThunk) -> 'RawData
     /// Like Fixup but loader may return None, in which case there is no fixup.

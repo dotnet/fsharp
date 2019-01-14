@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../Microsoft.VisualStudio.Package.Project.resx">
     <body>
@@ -119,7 +119,7 @@
       </trans-unit>
       <trans-unit id="Error">
         <source>error</source>
-        <target state="translated">chyba</target>
+        <target state="translated">Chyba</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidFileName">
@@ -252,7 +252,7 @@
       </trans-unit>
       <trans-unit id="Minimal">
         <source>Minimal</source>
-        <target state="translated">Minimální</target>
+        <target state="translated">minimální</target>
         <note />
       </trans-unit>
       <trans-unit id="Misc">
@@ -262,7 +262,7 @@
       </trans-unit>
       <trans-unit id="None">
         <source>None</source>
-        <target state="translated">Žádné</target>
+        <target state="translated">žádné</target>
         <note />
       </trans-unit>
       <trans-unit id="Normal">
@@ -387,7 +387,7 @@
       </trans-unit>
       <trans-unit id="Warning">
         <source>warning</source>
-        <target state="translated">upozornění</target>
+        <target state="translated">Upozornění</target>
         <note />
       </trans-unit>
       <trans-unit id="WinExe">
@@ -792,7 +792,7 @@
       </trans-unit>
       <trans-unit id="Path">
         <source>Path</source>
-        <target state="translated">Cesta</target>
+        <target state="translated">PATH</target>
         <note />
       </trans-unit>
       <trans-unit id="PathDescription">
@@ -802,7 +802,7 @@
       </trans-unit>
       <trans-unit id="Version">
         <source>Version</source>
-        <target state="translated">Verze</target>
+        <target state="translated">VERSION</target>
         <note />
       </trans-unit>
       <trans-unit id="CopyOf">

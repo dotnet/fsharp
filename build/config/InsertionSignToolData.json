@@ -4,11 +4,11 @@
       "certificate": "VsixSHA2",
       "strongName": null,
       "values": [
-        "insertion\\Microsoft.FSharp.Compiler.vsix",
-        "insertion\\Microsoft.FSharp.Compiler.Resources.*.vsix",
-        "insertion\\Microsoft.FSharp.Dependencies.vsix",
-        "insertion\\Microsoft.FSharp.IDE.vsix",
-        "insertion\\Microsoft.FSharp.SDK.vsix"
+        "Microsoft.FSharp.Compiler.vsix",
+        "Microsoft.FSharp.Compiler.Resources.*.vsix",
+        "Microsoft.FSharp.Dependencies.vsix",
+        "Microsoft.FSharp.IDE.vsix",
+        "Microsoft.FSharp.SDK.vsix"
       ]
     }
   ],

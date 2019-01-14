@@ -960,12 +960,12 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
               | Parser.TOKEN_RPAREN | Parser.TOKEN_RPAREN_COMING_SOON | Parser.TOKEN_RPAREN_IS_HERE -> getErrorString("Parser.TOKEN.RPAREN")
               | Parser.TOKEN_LQUOTE  -> getErrorString("Parser.TOKEN.LQUOTE")
               | Parser.TOKEN_LBRACK  -> getErrorString("Parser.TOKEN.LBRACK")
+              | Parser.TOKEN_LBRACE_BAR   -> getErrorString("Parser.TOKEN.LBRACE.BAR")
               | Parser.TOKEN_LBRACK_BAR  -> getErrorString("Parser.TOKEN.LBRACK.BAR")
               | Parser.TOKEN_LBRACK_LESS  -> getErrorString("Parser.TOKEN.LBRACK.LESS")
               | Parser.TOKEN_LBRACE   -> getErrorString("Parser.TOKEN.LBRACE")
-              | Parser.TOKEN_LBRACE_LESS-> getErrorString("Parser.TOKEN.LBRACE.LESS")
               | Parser.TOKEN_BAR_RBRACK   -> getErrorString("Parser.TOKEN.BAR.RBRACK")
-              | Parser.TOKEN_GREATER_RBRACE   -> getErrorString("Parser.TOKEN.GREATER.RBRACE")
+              | Parser.TOKEN_BAR_RBRACE   -> getErrorString("Parser.TOKEN.BAR.RBRACE")
               | Parser.TOKEN_GREATER_RBRACK  -> getErrorString("Parser.TOKEN.GREATER.RBRACK")
               | Parser.TOKEN_RQUOTE_DOT _ 
               | Parser.TOKEN_RQUOTE  -> getErrorString("Parser.TOKEN.RQUOTE")
@@ -1096,7 +1096,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
                   (* Merge a bunch of expression non terminals *)
                   let (|NONTERM_Category_Expr|_|) = function
                         | Parser.NONTERM_argExpr|Parser.NONTERM_minusExpr|Parser.NONTERM_parenExpr|Parser.NONTERM_atomicExpr
-                        | Parser.NONTERM_appExpr|Parser.NONTERM_tupleExpr|Parser.NONTERM_declExpr|Parser.NONTERM_braceExpr
+                        | Parser.NONTERM_appExpr|Parser.NONTERM_tupleExpr|Parser.NONTERM_declExpr|Parser.NONTERM_braceExpr|Parser.NONTERM_braceBarExpr
                         | Parser.NONTERM_typedSeqExprBlock
                         | Parser.NONTERM_interactiveExpr -> Some()
                         | _ -> None
@@ -1825,6 +1825,7 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Data"
           yield "System.Drawing"
           yield "System.Core"
+
           // These are the Portable-profile and .NET Standard 1.6 dependencies of FSharp.Core.dll.  These are needed
           // when an F# sript references an F# profile 7, 78, 259 or .NET Standard 1.6 component which in turn refers 
           // to FSharp.Core for profile 7, 78, 259 or .NET Standard.
@@ -1850,17 +1851,24 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Windows.Forms"
           yield "System.Numerics" 
      else
-          yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location), "mscorlib.dll"); // mscorlib
-          yield typeof<System.Console>.Assembly.Location; // System.Console
-          yield typeof<System.ComponentModel.DefaultValueAttribute>.Assembly.Location; // System.Runtime
-          yield typeof<System.ComponentModel.PropertyChangedEventArgs>.Assembly.Location; // System.ObjectModel             
-          yield typeof<System.IO.BufferedStream>.Assembly.Location; // System.IO
-          yield typeof<System.Linq.Enumerable>.Assembly.Location; // System.Linq
-          //yield typeof<System.Xml.Linq.XDocument>.Assembly.Location; // System.Xml.Linq
-          yield typeof<System.Net.WebRequest>.Assembly.Location; // System.Net.Requests
-          yield typeof<System.Numerics.BigInteger>.Assembly.Location; // System.Runtime.Numerics
-          yield typeof<System.Threading.Tasks.TaskExtensions>.Assembly.Location; // System.Threading.Tasks
-          yield typeof<Microsoft.FSharp.Core.MeasureAttribute>.Assembly.Location; // FSharp.Core
+          yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location), "mscorlib.dll")    // mscorlib
+          yield typeof<System.Console>.Assembly.Location                                                        // System.Console
+          yield typeof<System.Collections.BitArray>.Assembly.Location                                           // System.Collections
+          yield typeof<System.Data.SqlClient.SqlCommand>.Assembly.Location                                      // System.Data.SqlClient
+          yield typeof<System.ComponentModel.PropertyChangedEventArgs>.Assembly.Location                        // System.ObjectModel             
+          yield typeof<System.IO.File>.Assembly.Location                                                        // System.IO.FileSystem
+          yield typeof<System.IO.TextWriter>.Assembly.Location                                                  // System.IO
+          yield typeof<System.Linq.Enumerable>.Assembly.Location                                                // System.Linq
+          yield typeof<System.Xml.XmlNodeType>.Assembly.Location                                                // System.Xml
+          yield typeof<System.Xml.Linq.XDocument>.Assembly.Location                                             // System.Xml.Linq
+          yield typeof<System.Net.WebRequest>.Assembly.Location                                                 // System.Net.Requests
+          yield typeof<System.Numerics.BigInteger>.Assembly.Location                                            // System.Runtime.Numerics
+          yield typeof<System.Net.Security.AuthenticatedStream>.Assembly.Location                               // System.Net.Security
+          yield typeof<System.Security.Principal.GenericIdentity>.Assembly.Location                             // System.Security.Claims
+          yield typeof<System.Text.RegularExpressions.Regex>.Assembly.Location                                  // System.Text.RegularExpressions.Regex
+          yield typeof<System.Threading.Tasks.TaskExtensions>.Assembly.Location                                 // System.Threading.Tasks
+          yield typeof<System.Threading.Thread>.Assembly.Location                                               // System.Threading
+          yield typeof<Microsoft.FSharp.Core.MeasureAttribute>.Assembly.Location                                // FSharp.Core
     ]
 
 
@@ -2674,9 +2682,9 @@ type AssemblyResolution =
     member this.GetILAssemblyRef(ctok, reduceMemoryUsage, tryGetMetadataSnapshot) = 
       cancellable {
         match !this.ilAssemblyRef with 
-        | Some(assref) -> return assref
+        | Some(assemblyRef) -> return assemblyRef
         | None ->
-            let! assRefOpt = 
+            let! assemblyRefOpt = 
               cancellable {
                 match this.ProjectReference with 
                 | Some r ->   
@@ -2689,8 +2697,8 @@ type AssemblyResolution =
                         |  _ -> return None
                 | None -> return None
               }
-            let assRef = 
-                match assRefOpt with 
+            let assemblyRef = 
+                match assemblyRefOpt with 
                 | Some aref -> aref
                 | None -> 
                     let readerSettings : ILReaderOptions = 
@@ -2701,8 +2709,8 @@ type AssemblyResolution =
                           tryGetMetadataSnapshot = tryGetMetadataSnapshot } 
                     use reader = OpenILModuleReader this.resolvedPath readerSettings
                     mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
-            this.ilAssemblyRef := Some(assRef)
-            return assRef
+            this.ilAssemblyRef := Some(assemblyRef)
+            return assemblyRef
       }
 
 //----------------------------------------------------------------------------
@@ -3376,14 +3384,14 @@ let ComputeQualifiedNameOfFileFromUniquePath (m, p: string list) = QualifiedName
 
 let QualFileNameOfSpecs filename specs = 
     match specs with 
-    | [SynModuleOrNamespaceSig(modname, _, true, _, _, _, _, m)] -> QualFileNameOfModuleName m filename modname
-    | [SynModuleOrNamespaceSig(_, _, false, _, _, _, _, m)] -> QualFileNameOfFilename m filename
+    | [SynModuleOrNamespaceSig(modname, _, kind, _, _, _, _, m)] when kind.IsModule -> QualFileNameOfModuleName m filename modname
+    | [SynModuleOrNamespaceSig(_, _, kind, _, _, _, _, m)] when not kind.IsModule -> QualFileNameOfFilename m filename
     | _ -> QualFileNameOfFilename (mkRange filename pos0 pos0) filename
 
 let QualFileNameOfImpls filename specs = 
     match specs with 
-    | [SynModuleOrNamespace(modname, _, true, _, _, _, _, m)] -> QualFileNameOfModuleName m filename modname
-    | [SynModuleOrNamespace(_, _, false, _, _, _, _, m)] -> QualFileNameOfFilename m filename
+    | [SynModuleOrNamespace(modname, _, kind, _, _, _, _, m)] when kind.IsModule -> QualFileNameOfModuleName m filename modname
+    | [SynModuleOrNamespace(_, _, kind, _, _, _, _, m)]  when not kind.IsModule -> QualFileNameOfFilename m filename
     | _ -> QualFileNameOfFilename (mkRange filename pos0 pos0) filename
 
 let PrepandPathToQualFileName x (QualifiedNameOfFile(q)) = ComputeQualifiedNameOfFileFromUniquePath (q.idRange, pathOfLid x@[q.idText])
@@ -3412,13 +3420,14 @@ let ComputeAnonModuleName check defaultNamespace filename (m: range) =
 
 let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, filename, impl) = 
     match impl with 
-    | ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, isRec, isModule, decls, xmlDoc, attribs, access, m)) -> 
+    | ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, isRec, kind, decls, xmlDoc, attribs, access, m)) -> 
         let lid = 
             match lid with 
-            | [id] when isModule && id.idText = MangledGlobalName -> error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
+            | [id] when kind.IsModule && id.idText = MangledGlobalName ->
+                error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
             | id :: rest when id.idText = MangledGlobalName -> rest
             | _ -> lid
-        SynModuleOrNamespace(lid, isRec, isModule, decls, xmlDoc, attribs, access, m)
+        SynModuleOrNamespace(lid, isRec, kind, decls, xmlDoc, attribs, access, m)
 
     | ParsedImplFileFragment.AnonModule (defs, m)-> 
         let isLast, isExe = isLastCompiland 
@@ -3429,24 +3438,26 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, filename, impl) 
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), trimRangeToLine m))
 
         let modname = ComputeAnonModuleName (not (isNil defs)) defaultNamespace filename (trimRangeToLine m)
-        SynModuleOrNamespace(modname, false, true, defs, PreXmlDoc.Empty, [], None, m)
+        SynModuleOrNamespace(modname, false, AnonModule, defs, PreXmlDoc.Empty, [], None, m)
 
-    | ParsedImplFileFragment.NamespaceFragment (lid, a, b, c, d, e, m)-> 
-        let lid = 
+    | ParsedImplFileFragment.NamespaceFragment (lid, a, kind, c, d, e, m)-> 
+        let lid, kind = 
             match lid with 
-            | id :: rest when id.idText = MangledGlobalName -> rest
-            | _ -> lid
-        SynModuleOrNamespace(lid, a, b, c, d, e, None, m)
+            | id :: rest when id.idText = MangledGlobalName ->
+                rest, if List.isEmpty rest then GlobalNamespace else kind
+            | _ -> lid, kind
+        SynModuleOrNamespace(lid, a, kind, c, d, e, None, m)
 
 let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) = 
     match intf with 
-    | ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, isRec, isModule, decls, xmlDoc, attribs, access, m)) -> 
+    | ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, isRec, kind, decls, xmlDoc, attribs, access, m)) -> 
         let lid = 
             match lid with 
-            | [id] when isModule && id.idText = MangledGlobalName -> error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
+            | [id] when kind.IsModule && id.idText = MangledGlobalName ->
+                error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
             | id :: rest when id.idText = MangledGlobalName -> rest
             | _ -> lid
-        SynModuleOrNamespaceSig(lid, isRec, isModule, decls, xmlDoc, attribs, access, m)
+        SynModuleOrNamespaceSig(lid, isRec, NamedModule, decls, xmlDoc, attribs, access, m)
 
     | ParsedSigFileFragment.AnonModule (defs, m) -> 
         let isLast, isExe = isLastCompiland
@@ -3457,14 +3468,15 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) 
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), m))
 
         let modname = ComputeAnonModuleName (not (isNil defs)) defaultNamespace filename (trimRangeToLine m)
-        SynModuleOrNamespaceSig(modname, false, true, defs, PreXmlDoc.Empty, [], None, m)
+        SynModuleOrNamespaceSig(modname, false, AnonModule, defs, PreXmlDoc.Empty, [], None, m)
 
-    | ParsedSigFileFragment.NamespaceFragment (lid, a, b, c, d, e, m)-> 
-        let lid = 
+    | ParsedSigFileFragment.NamespaceFragment (lid, a, kind, c, d, e, m)-> 
+        let lid, kind = 
             match lid with 
-            | id :: rest when id.idText = MangledGlobalName -> rest
-            | _ -> lid
-        SynModuleOrNamespaceSig(lid, a, b, c, d, e, None, m)
+            | id :: rest when id.idText = MangledGlobalName ->
+                rest, if List.isEmpty rest then GlobalNamespace else kind
+            | _ -> lid, kind
+        SynModuleOrNamespaceSig(lid, a, kind, c, d, e, None, m)
 
 
 
@@ -3655,10 +3667,10 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
     member tcResolutions.TryFindByOriginalReference(assemblyReference:AssemblyReference) = originalReferenceToResolution.TryFind assemblyReference.Text
 
     /// This doesn't need to be cancellable, it is only used by F# Interactive
-    member tcResolution.TryFindByExactILAssemblyRef (ctok, assref) = 
+    member tcResolution.TryFindByExactILAssemblyRef (ctok, assemblyRef) = 
         results |> List.tryFind (fun ar->
             let r = ar.GetILAssemblyRef(ctok, tcConfig.reduceMemoryUsage, tcConfig.tryGetMetadataSnapshot) |> Cancellable.runWithoutCancellation 
-            r = assref)
+            r = assemblyRef)
 
     /// This doesn't need to be cancellable, it is only used by F# Interactive
     member tcResolution.TryFindBySimpleAssemblyName (ctok, simpleAssemName) = 
@@ -4026,11 +4038,11 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         | ResolvedImportedAssembly(importedAssembly) -> ResolvedCcu(importedAssembly.FSharpViewOfMetadata)
         | UnresolvedImportedAssembly(assemblyName) -> UnresolvedCcu(assemblyName)
 
-    member tcImports.FindCcuFromAssemblyRef(ctok, m, assref:ILAssemblyRef) = 
+    member tcImports.FindCcuFromAssemblyRef(ctok, m, assemblyRef:ILAssemblyRef) = 
         CheckDisposed()
-        match tcImports.FindCcuInfo(ctok, m, assref.Name, lookupOnly=false) with
+        match tcImports.FindCcuInfo(ctok, m, assemblyRef.Name, lookupOnly=false) with
         | ResolvedImportedAssembly(importedAssembly) -> ResolvedCcu(importedAssembly.FSharpViewOfMetadata)
-        | UnresolvedImportedAssembly _ -> UnresolvedCcu(assref.QualifiedName)
+        | UnresolvedImportedAssembly _ -> UnresolvedCcu(assemblyRef.QualifiedName)
 
 
 #if !NO_EXTENSIONTYPING
@@ -4641,8 +4653,8 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         resolutions.TryFindBySimpleAssemblyName (ctok, simpleAssemName) |> Option.map (fun r -> r.resolvedPath)
 
     /// This doesn't need to be cancellable, it is only used by F# Interactive
-    member tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ctok, assref:ILAssemblyRef) :  string option = 
-        resolutions.TryFindByExactILAssemblyRef (ctok, assref)  |> Option.map (fun r -> r.resolvedPath)
+    member tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ctok, assemblyRef:ILAssemblyRef) :  string option = 
+        resolutions.TryFindByExactILAssemblyRef (ctok, assemblyRef)  |> Option.map (fun r -> r.resolvedPath)
 
     member tcImports.TryResolveAssemblyReference(ctok, assemblyReference:AssemblyReference, mode:ResolveAssemblyReferenceMode) : OperationResult<AssemblyResolution list> = 
         let tcConfig = tcConfigP.Get(ctok)

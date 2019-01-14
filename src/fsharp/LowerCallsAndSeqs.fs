@@ -52,11 +52,11 @@ let InterceptExpr g cont expr =
 /// known arity to lambda expressions and beta-var-reduces to bind 
 /// any known arguments.  The results are later optimized by the peephole 
 /// optimizer in opt.fs
-let LowerImplFile g ass = 
+let LowerImplFile g assembly = 
     RewriteImplFile { PreIntercept = Some(InterceptExpr g)
                       PreInterceptBinding=None
                       PostTransform= (fun _ -> None)
-                      IsUnderQuotations=false } ass
+                      IsUnderQuotations=false } assembly
 
 
 //----------------------------------------------------------------------------
@@ -512,12 +512,12 @@ let LowerSeqExpr g amap overallExpr =
         // Note, however, this leads to a loss of tailcalls: the case not 
         // handled correctly yet is sequence expressions that use yield! in the last position
         // This can give rise to infinite iterator chains when implemented by the naive expansion to 
-        // “for x in e yield e”. For example consider this:
+        // ï¿½for x in e yield eï¿½. For example consider this:
         //
         // let rec rwalk x = {  yield x 
         //                      yield! rwalk (x + rand()) }
         //
-        // This is the moral equivalent of a tailcall optimization. These also don’t compile well 
+        // This is the moral equivalent of a tailcall optimization. These also donï¿½t compile well 
         // in the C# compilation model
 
         | arbitrarySeqExpr -> 

@@ -11,6 +11,9 @@ module OtherModule =
 
   let foo () = [ for (k: KeyValuePair<string,MyType>) in []    -> () ]
 
+  let testAnonRecordInFsi1 (x : {| X : int |}) = ()
+
+  let testAnonRecordInFsi2 () : {| X : int |} = failwith "ok"
 
   let _ =
           stdout.WriteLine "Test Passed"

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../Microsoft.VisualStudio.Package.Project.resx">
     <body>
@@ -267,7 +267,7 @@
       </trans-unit>
       <trans-unit id="Normal">
         <source>Normal</source>
-        <target state="translated">標準</target>
+        <target state="translated">NORMAL</target>
         <note />
       </trans-unit>
       <trans-unit id="PasteFailed">
@@ -667,7 +667,7 @@
       </trans-unit>
       <trans-unit id="SpecificVersionDescription">
         <source>Indicates whether this reference is to a specific version of an assembly.</source>
-        <target state="translated">指出這個參考是否為某一組件的特定版本。</target>
+        <target state="translated">指出這個參考是否指向某一組件的特定版本。</target>
         <note />
       </trans-unit>
       <trans-unit id="NoZeroImpactProjects">
@@ -792,7 +792,7 @@
       </trans-unit>
       <trans-unit id="Path">
         <source>Path</source>
-        <target state="translated">路徑</target>
+        <target state="translated">PATH</target>
         <note />
       </trans-unit>
       <trans-unit id="PathDescription">

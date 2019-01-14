@@ -1617,6 +1617,16 @@
         <target state="new">internal error: {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACE.BAR">
+        <source>symbol '{|'</source>
+        <target state="new">symbol '{|'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR.RBRACE">
+        <source>symbol '|}'</source>
+        <target state="new">symbol '|}'</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

@@ -523,9 +523,11 @@ let main() =
 
   logf (fun oso -> oso.Close())
 
-let result = 
-    try main()
+[<EntryPoint>]
+let result(args: string[]) =
+    try
+        main()
+        0
     with e -> 
-      eprintf "FSYACC: error FSY000: %s" (match e with Failure s -> s | e -> e.Message);
-      exit 1
-
+        eprintf "FSYACC: error FSY000: %s" (match e with Failure s -> s | e -> e.Message);
+        1

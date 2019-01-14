@@ -143,7 +143,8 @@ module SurfaceArea =
 
         let logFile =
             let workDir = TestContext.CurrentContext.WorkDirectory
-            sprintf "%s\\CoreUnit_%s_Xml.xml" workDir platform
+            sprintf "%s\\FSharp.Core.SurfaceArea.%s.txt" workDir platform
+        System.IO.File.WriteAllText(logFile, String.Join("\r\n", actual))
 
         // The surface areas don't match; prepare an easily-readable output message.
         let msg =
