@@ -197,7 +197,7 @@ type range(code1:int64, code2: int64) =
 
 let mkRange f b e =
     // remove relative parts from full path
-    let normalizedFilePath = if Path.IsPathRooted f then try Path.GetFullPath f with _ -> f else f
+    let normalizedFilePath = if FileSystem.IsPathRootedShim f then try FileSystem.GetFullPathShim f with _ -> f else f
     range (fileIndexOfFile normalizedFilePath, b, e)
 
 let mkFileIndexRange fi b e = range (fi, b, e)

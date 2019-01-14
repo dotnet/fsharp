@@ -1624,6 +1624,7 @@ module internal Parser =
            tcGlobals: TcGlobals,
            tcImports: TcImports,
            tcState: TcState,
+           moduleNamesDict: ModuleNamesDict,
            loadClosure: LoadClosure option,
            // These are the errors and warnings seen by the background compiler for the entire antecedent 
            backgroundDiagnostics: (PhasedDiagnostic * FSharpErrorSeverity)[],    
@@ -1727,6 +1728,9 @@ module internal Parser =
                     async {
                         try
                             let checkForErrors() = (parseResults.ParseHadErrors || errHandler.ErrorCount > 0)
+
+                            let parsedMainInput, _moduleNamesDict = DeduplicateParsedInputModuleName moduleNamesDict parsedMainInput
+
                             // Typecheck is potentially a long running operation. We chop it up here with an Eventually continuation and, at each slice, give a chance
                             // for the client to claim the result as obsolete and have the typecheck abort.
                             
@@ -2605,7 +2609,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                 let loadClosure = scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.TryGet (ltok, options))
                                 let! tcErrors, tcFileResult = 
                                     Parser.CheckOneFile(parseResults, source, fileName, options.ProjectFileName, tcPrior.TcConfig, tcPrior.TcGlobals, tcPrior.TcImports, 
-                                                        tcPrior.TcState, loadClosure, tcPrior.TcErrors, reactorOps, (fun () -> builder.IsAlive), textSnapshotInfo, userOpName)
+                                                        tcPrior.TcState, tcPrior.ModuleNamesDict, loadClosure, tcPrior.TcErrors, reactorOps, (fun () -> builder.IsAlive), textSnapshotInfo, userOpName)
                                 let parsingOptions = FSharpParsingOptions.FromTcConfig(tcPrior.TcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
                                 let checkAnswer = MakeCheckFileAnswer(fileName, tcFileResult, options, builder, Array.ofList tcPrior.TcDependencyFiles, creationErrors, parseResults.Errors, tcErrors)
                                 bc.RecordTypeCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, source)
@@ -2686,9 +2690,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     | _ ->
                         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CheckFileInProject.CacheMiss", filename)
                         let! tcPrior = execWithReactorAsync <| fun ctok -> builder.GetCheckResultsBeforeFileInProject (ctok, filename)
-                        let parseTreeOpt = parseResults.ParseTree |> Option.map builder.DeduplicateParsedInputModuleNameInProject
-                        let parseResultsAterDeDuplication = FSharpParseFileResults(parseResults.Errors, parseTreeOpt, parseResults.ParseHadErrors, parseResults.DependencyFiles)
-                        let! checkAnswer = bc.CheckOneFileImpl(parseResultsAterDeDuplication, source, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors, userOpName)
+                        let! checkAnswer = bc.CheckOneFileImpl(parseResults, source, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors, userOpName)
                         return checkAnswer
             finally 
                 bc.ImplicitlyStartCheckProjectInBackground(options, userOpName)
@@ -2731,7 +2733,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                         // Do the parsing.
                         let parsingOptions = FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList (builder.SourceFiles), options.UseScriptResolutionRules)
                         let parseErrors, parseTreeOpt, anyErrors = Parser.parseFile (source, filename, parsingOptions, userOpName)
-                        let parseTreeOpt = parseTreeOpt |> Option.map builder.DeduplicateParsedInputModuleNameInProject
                         let parseResults = FSharpParseFileResults(parseErrors, parseTreeOpt, anyErrors, builder.AllDependenciesDeprecated)
                         let! checkResults = bc.CheckOneFileImpl(parseResults, source, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors, userOpName)
 
@@ -3331,7 +3332,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, reactorOps: IReactorOperatio
                 CompileOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, [ ])
 
             let loadClosure = LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, CodeContext.Editing, tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework, tryGetMetadataSnapshot=(fun _ -> None), reduceMemoryUsage=reduceMemoryUsage)
-            let! tcErrors, tcFileResult =  Parser.CheckOneFile(parseResults, source, filename, "project", tcConfig, tcGlobals, tcImports,  tcState, Some loadClosure, backgroundDiagnostics, reactorOps, (fun () -> true), None, userOpName)
+            let! tcErrors, tcFileResult =  Parser.CheckOneFile(parseResults, source, filename, "project", tcConfig, tcGlobals, tcImports,  tcState, Map.empty, Some loadClosure, backgroundDiagnostics, reactorOps, (fun () -> true), None, userOpName)
 
             return
                 match tcFileResult with 
