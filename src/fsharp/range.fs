@@ -111,28 +111,38 @@ type FileIndexTable() =
     let indexToFileTable = new ResizeArray<_>(11)
     let fileToIndexTable = new ConcurrentDictionary<string, int>()
 
-    member t.FileToIndex f = 
-        let mutable res = 0 
-        let ok = fileToIndexTable.TryGetValue(f, &res) 
-        if ok then res 
-        else
-        // remove relative parts from full path to store the canonical entry
-        let normalizedFilePath = if Path.IsPathRooted f then try Path.GetFullPath f with _ -> f else f
-        let mutable res2 = 0 
-        let ok2 = fileToIndexTable.TryGetValue(normalizedFilePath, &res2) 
-        if ok2 then 
+    member t.FileToIndex filePath = 
+        match fileToIndexTable.TryGetValue(filePath) with 
+        | true, idx -> idx
+        | _ -> 
+        
+        // remove relative parts from full path to store the normalized entry
+        let normalizedFilePath = try if isRooted then Path.GetFullPath filePath else filePath with _ -> filePath
+        match fileToIndexTable.TryGetValue(normalizedFilePath) with 
+        | true, idx ->
+            // Record the non-normalized entry if necessary
             if f <> normalizedFilePath then 
                 lock fileToIndexTable (fun () -> 
-                    fileToIndexTable.[f] <- res2)
-            res2
-        else
+                    fileToIndexTable.[filePath] <- idx)
+                    
+            // Return the index
+            idx
+            
+        | _ -> 
             lock fileToIndexTable (fun () -> 
-                let n = indexToFileTable.Count
+                // Get the new index
+                let idx = indexToFileTable.Count
+                
+                // Record the normalized entry
                 indexToFileTable.Add(normalizedFilePath)
-                fileToIndexTable.[normalizedFilePath] <- n
+                fileToIndexTable.[normalizedFilePath] <- idx
+                
+                // Record the non-normalized entry if necessary
                 if f <> normalizedFilePath then 
-                    fileToIndexTable.[f] <- n
-                n)
+                    fileToIndexTable.[filePath] <- idx
+
+                // Return the index
+                idx)
 
     member t.IndexToFile n = 
         (if n < 0 then failwithf "fileOfFileIndex: negative argument: n = %d\n" n)
