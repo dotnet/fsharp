@@ -237,7 +237,7 @@ If you change error messages you may need to update FSComp.fs in `src\buildfroms
 To do this, build the non-buildfromsource version of FSharp.Compiler.Private (src\fsharp\FSharp.Compiler.Private) then check its obj\ directory for `FSComp.fs` and manually copy that into the buildfromsource directory.
 
     .\build net40
-    copy /y src\fsharp\FSharp.Compiler.Private\obj\release\net40\FSComp.* src\buildfromsource\FSharp.Compiler.Private\
+    copy /y artifacts\obj\FSharp.Compiler.Private\Release\net46\FSComp.* src\buildfromsource\FSharp.Compiler.Private\
 
 If your changes involve modifying the list of language keywords in any way, (e.g. when implementing a new keyword), the XLF localization files need to be synced with the corresponding resx files. This can be done automatically by running
 
