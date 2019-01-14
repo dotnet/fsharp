@@ -35,7 +35,7 @@ module internal SymbolHelpers =
             return symbolUses
         }
 
-    let getSymbolUsesInProjects (symbol: FSharpSymbol, projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, projects: seq<Project>, userOpName) =
+    let getSymbolUsesInProjects (symbol: FSharpSymbol, projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, projects: Project list, userOpName) =
         projects
         |> Seq.map (fun project ->
             async {
@@ -80,7 +80,7 @@ module internal SymbolHelpers =
                     (fun (id, _) -> id), 
                     fun (_, xs) -> xs |> Seq.map snd |> Seq.toArray)
         }
-        
+ 
     type OriginalText = string
 
     // Note, this function is broken and shouldn't be used because the source text ranges to replace are applied sequentially,
