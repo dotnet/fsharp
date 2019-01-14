@@ -41,6 +41,10 @@ let inline isNonNull x = not (isNull x)
 let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
 let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
+/// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
+/// We set the limit to slightly under that to allow for some 'slop'
+let LOH_SIZE_THRESHOLD_BYTES = 84_900
+
 //---------------------------------------------------------------------
 // Library: ReportTime
 //---------------------------------------------------------------------
@@ -462,14 +466,14 @@ module ResizeArray =
     /// Large Object Heap limit, in order to prevent the entire array from not being garbage-collected.
     let mapToSmallArrayChunks f (inp: ResizeArray<'t>) =
         let itemSizeBytes = sizeof<'t>
-        let lohSizeThresholdBytes = 85_000
         // rounding down here is good because it ensures we don't go over
-        let maxArrayItemCount = lohSizeThresholdBytes / itemSizeBytes
+        let maxArrayItemCount = LOH_SIZE_THRESHOLD_BYTES / itemSizeBytes
 
         /// chunk the provided input into arrays that are smaller than the LOH limit
         /// in order to prevent long-term storage of those values
         chunkBySize maxArrayItemCount inp
         |> Array.map (Array.map f)
+
 
 /// Because FSharp.Compiler.Service is a library that will target FSharp.Core 4.5.2 for the forseeable future,
 /// we need to stick these functions in this module rather than using the module functions for ValueOption
