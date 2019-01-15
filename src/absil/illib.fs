@@ -466,8 +466,9 @@ module ResizeArray =
                     holder.[i] <- f items.[i]
                 yield holder |]
 
-    /// Split a large ResizeArray into a series of array chunks that are each under the
-    /// Large Object Heap limit, in order to prevent the entire array from not being garbage-collected.
+    /// Split a large ResizeArray into a series of array chunks that are each under the Large Object Heap limit.
+    /// This is done to help prevent a stop-the-world collection of the single large array, instead allowing for a greater
+    /// probability of smaller collections. Stop-the-world is still possible, just less likely.
     let mapToSmallArrayChunks f (inp: ResizeArray<'t>) =
         let itemSizeBytes = sizeof<'t>
         // rounding down here is good because it ensures we don't go over
