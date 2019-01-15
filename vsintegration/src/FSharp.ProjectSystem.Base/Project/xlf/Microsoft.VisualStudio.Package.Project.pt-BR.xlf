@@ -132,7 +132,7 @@
 – Cadeias de caracteres vazias
 – Nomes reservados do sistema, incluindo 'CON', 'AUX', PRN', 'COM1' ou 'LPT2'
 – conter somente '.'
-– ter um destes caracteres: / ? : & \ * " < > | # %</target>
+– ter um destes caracteres: / ? : &amp; \ * " &lt; &gt; | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">

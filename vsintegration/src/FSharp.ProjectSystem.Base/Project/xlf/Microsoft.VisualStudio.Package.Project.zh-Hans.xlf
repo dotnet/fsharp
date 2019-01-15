@@ -132,7 +132,7 @@
 - 为空字符串
 - 为系统保留的名称，包括“CON”、“AUX”、“PRN”、“COM1”或“LPT2”
 - 仅包含“.”
-- 具有以下任一字符: / ? : & \ * " < > | # %</target>
+- 具有以下任一字符: / ? : &amp; \ * " &lt; &gt; | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">

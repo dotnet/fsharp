@@ -132,7 +132,7 @@
 - Boş dize 
 - 'CON', 'AUX', PRN', 'COM1' veya 'LPT2' gibi sistem tarafından ayrılmış adlar 
 - yalnızca '.' içeren
-- şu karakterlerden herhangi birini içeren: / ? : &  \ * " < > | # %</target>
+- şu karakterlerden herhangi birini içeren: / ? : &amp;  \ * " &lt; &gt; | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">

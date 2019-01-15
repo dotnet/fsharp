@@ -132,7 +132,7 @@
 - być pustymi ciągami
 - być nazwami zarezerwowanymi przez system, w tym „CON”, „AUX”, „PRN”, „COM1” lub „LPT2”
 - zawierać samego znaku „.”
-- zawierać następujących znaków: / ? : &  \ * " < > | # %</target>
+- zawierać następujących znaków: / ? : &amp;  \ * " &lt; &gt; | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">
