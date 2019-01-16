@@ -711,29 +711,49 @@ let reduceTyconMeasureableOrProvided (g:TcGlobals) (tycon:Tycon) tyargs =
 let reduceTyconRefMeasureableOrProvided (g:TcGlobals) (tcref:TyconRef) tyargs = 
     reduceTyconMeasureableOrProvided g tcref.Deref tyargs
 
-let rec stripTyEqnsA g canShortcut ty = 
-    let ty = stripTyparEqnsAux canShortcut ty 
-    match ty with 
-    | TType_app (tcref, tinst) -> 
-        let tycon = tcref.Deref
-        match tycon.TypeAbbrev with 
-        | Some abbrevTy -> 
-            stripTyEqnsA g canShortcut (applyTyconAbbrev abbrevTy tycon tinst)
-        | None -> 
-            // This is the point where we get to add additional coditional normalizing equations 
-            // into the type system. Such power!
-            // 
-            // Add the equation byref<'T> = byref<'T, ByRefKinds.InOut> for when using sufficient FSharp.Core
-            // See RFC FS-1053.md
-            if tyconRefEq g tcref g.byref_tcr && g.byref2_tcr.CanDeref  && g.byrefkind_InOut_tcr.CanDeref then 
-                mkByref2Ty g tinst.[0]  (TType_app(g.byrefkind_InOut_tcr, []))
+let stripCache = System.Runtime.CompilerServices.ConditionalWeakTable<TType,TType>()
 
-            // Add the equation double<1> = double for units of measure.
-            elif tycon.IsMeasureableReprTycon && List.forall (isDimensionless g) tinst then
-                stripTyEqnsA g canShortcut (reduceTyconMeasureableOrProvided g tycon tinst)
-            else 
-                ty
-    | ty -> ty
+let rec stripTyEqnsA g canShortcut ty : TType =
+    let mutable result = Unchecked.defaultof<TType>
+    match stripCache.TryGetValue(ty,&result) with 
+    | true -> result
+    | false ->
+        let key = ty
+        let ty = stripTyparEqnsAux canShortcut ty 
+        match ty with 
+        | TType_app (tcref, tinst) -> 
+            let tycon = tcref.Deref
+            match tycon.TypeAbbrev with 
+            | Some abbrevTy -> 
+                stripTyEqnsA g canShortcut (applyTyconAbbrev abbrevTy tycon tinst)
+            | None -> 
+                // This is the point where we get to add additional coditional normalizing equations 
+                // into the type system. Such power!
+                // 
+                // Add the equation byref<'T> = byref<'T, ByRefKinds.InOut> for when using sufficient FSharp.Core
+                // See RFC FS-1053.md
+                if tyconRefEq g tcref g.byref_tcr && g.byref2_tcr.CanDeref  && g.byrefkind_InOut_tcr.CanDeref then 
+                    let result = mkByref2Ty g tinst.[0]  (TType_app(g.byrefkind_InOut_tcr, []))
+                    stripCache.Add(key,result)
+                    result
+
+                // Add the equation double<1> = double for units of measure.
+                elif tycon.IsMeasureableReprTycon && List.forall (isDimensionless g) tinst then
+                    stripTyEqnsA g canShortcut (reduceTyconMeasureableOrProvided g tycon tinst)
+                else
+                    stripCache.Add(key,ty)
+                    ty
+        //cannot be cached
+        | TType_fun _ 
+        | TType_var _ -> ty
+        //can be cached
+        | TType_anon _
+        | TType_ucase _
+        | TType_forall _
+        | TType_tuple _  
+        | TType_measure _ -> 
+            stripCache.Add(key,ty)
+            ty
 
 let stripTyEqns g ty = stripTyEqnsA g false ty
 
@@ -1563,10 +1583,18 @@ let destTopForallTy g (ValReprInfo (ntps, _, _)) ty =
     let tps = NormalizeDeclaredTyparsForEquiRecursiveInference g tps
     tps, tau
 
+let topValCache = System.Runtime.CompilerServices.ConditionalWeakTable<TType,_>()
+
 let GetTopValTypeInFSharpForm g (ValReprInfo(_, argInfos, retInfo) as topValInfo) ty m =
-    let tps, tau = destTopForallTy g topValInfo ty
-    let argtysl, rty = GetTopTauTypeInFSharpForm g argInfos tau m
-    tps, argtysl, rty, retInfo
+    let mutable result = Unchecked.defaultof<_>
+    if topValCache.TryGetValue(ty,&result) then
+        result
+    else
+        let tps, tau = destTopForallTy g topValInfo ty
+        let argtysl, rty = GetTopTauTypeInFSharpForm g argInfos tau m
+        let result = tps, argtysl, rty, retInfo
+        topValCache.Add(ty,result)
+        result
 
 
 let IsCompiledAsStaticProperty g (v:Val) =
@@ -7816,7 +7844,7 @@ let mkChoiceCaseRef g m n i =
 type PrettyNaming.ActivePatternInfo with 
     member x.Names = x.ActiveTags
 
-    member apinfo.ResultType g m rtys = 
+    member apinfo.ResultType g m rtys =
         let choicety = mkChoiceTy g m rtys
         if apinfo.IsTotal then choicety else mkOptionTy g choicety
     
