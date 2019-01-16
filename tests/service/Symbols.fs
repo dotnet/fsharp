@@ -115,8 +115,8 @@ type FooAttribute() =
 [<Foo>]
 let x = 123
 """
-        let fileName, options = mkTestFileAndOptions source [| "--noConditionalErasure" |]
-        let _, checkResults = parseAndCheckFile fileName source options    
+        let fileName, options = mkTestFileAndOptions source [| "--noconditionalerasure" |]
+        let _, checkResults = parseAndCheckFile fileName source options
 
         checkResults.GetAllUsesOfAllSymbolsInFile()
          |> Async.RunSynchronously
