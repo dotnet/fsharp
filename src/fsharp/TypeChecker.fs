@@ -504,8 +504,8 @@ type cenv =
       /// Used to resolve names
       nameResolver: NameResolver
       
-      /// The set of active conditional defines
-      conditionalDefines: string list
+      /// The set of active conditional defines. The value is None when conditional erasure is disabled in tooling.
+      conditionalDefines: string list option
             
       isInternalTestSpanStackReferring: bool
     } 
@@ -3004,8 +3004,8 @@ let BuildPossiblyConditionalMethodCall cenv env isMutable m isProp minfo valUseF
 
     let conditionalCallDefineOpt = TryFindMethInfoStringAttribute cenv.g m cenv.g.attrib_ConditionalAttribute minfo 
 
-    match conditionalCallDefineOpt with 
-    | Some d when not (List.contains d cenv.conditionalDefines) -> 
+    match conditionalCallDefineOpt, cenv.conditionalDefines with 
+    | Some d, Some defines when not (List.contains d defines) -> 
 
         // Methods marked with 'Conditional' must return 'unit' 
         UnifyTypes cenv env m cenv.g.unit_ty (minfo.GetFSharpReturnTy(cenv.amap, m, minst))
@@ -10828,11 +10828,10 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
 
     let conditionalCallDefineOpt = TryFindTyconRefStringAttribute cenv.g mAttr cenv.g.attrib_ConditionalAttribute tcref 
 
-    match conditionalCallDefineOpt with 
-    | Some d when not (List.contains d cenv.conditionalDefines) -> 
+    match conditionalCallDefineOpt, cenv.conditionalDefines with 
+    | Some d, Some defines when not (List.contains d defines) -> 
         [], false
     | _ ->
-
          // REVIEW: take notice of inherited? 
         let validOn, _inherited = 
             let validOnDefault = 0x7fff

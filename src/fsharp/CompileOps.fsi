@@ -367,6 +367,9 @@ type TcConfigBuilder =
 
       /// if true - 'let mutable x = Span.Empty', the value 'x' is a stack referring span. Used for internal testing purposes only until we get true stack spans.
       mutable internalTestSpanStackReferring : bool
+
+      /// Prevent erasure of conditional attributes and methods so tooling is able analyse them.
+      mutable noConditionalErasure: bool
     }
 
     static member Initial: TcConfigBuilder
