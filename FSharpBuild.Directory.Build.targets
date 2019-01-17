@@ -34,42 +34,7 @@
     </CreateItem>
   </Target>
 
-  <Target Name="ComputeFinalOutputPaths">
-    <!--
-    Ideally we'd set <OutputPath> to `$(Configuration)\[net40|coreclr]\bin`, but the calculation of `[net40|coreclr]`
-    depends on the `$(TargetFramework)` variable which is set by the individual project files, but by the time we have
-    that value (e.g., in this file) it's too late; some targets, particularly from the VsSDK have already used the
-    values of $(OutputPath)/$(OutDir).
-
-    The fix is to not set `$(Outputpath)` and simply copy stuff there after the fact.
-    -->
-
-    <PropertyGroup>
-      <TargetDotnetProfile Condition="$(TargetFramework.StartsWith('netstandard')) or $(TargetFramework.StartsWith('netcoreapp'))">coreclr</TargetDotnetProfile>
-      <TargetDotnetProfile Condition="$(TargetFramework.StartsWith('net4'))">net40</TargetDotnetProfile>
-      <ActualOutputPath Condition="'$(Language)' != 'VB'">$(MSBuildProjectDirectory)\$(OutputPath)</ActualOutputPath>
-      <ActualOutputPath Condition="'$(Language)' == 'VB'">$(OutputPath)</ActualOutputPath>
-      <FinalOutputPath>$(RepoRoot)$(Configuration)\$(TargetDotnetProfile)\bin</FinalOutputPath>
-      <FinalIntermediateOutputPath>$(RepoRoot)$(Configuration)\$(TargetDotnetProfile)\obj</FinalIntermediateOutputPath>
-    </PropertyGroup>
-  </Target>
-
-  <Target Name="HACK_CopyOutputsToTheProperLocation"
-          AfterTargets="AfterBuild"
-          DependsOnTargets="ComputeFinalOutputPaths"
-          Condition="'$(DisableOutputPathCopying)' != 'true'">
-
-    <ItemGroup>
-      <OutputFilesToCopy Include="$(ActualOutputPath)**" />
-      <IntermediateFilesToCopy Include="$(IntermediateOutputPath)\**" />
-    </ItemGroup>
-
-    <Message Text="Copying build artifacts to $(FinalOutputPath)" />
-    <MakeDir Directories="$(FinalOutputPath);$(FinalIntermediateOutputPath)" />
-    <Copy SourceFiles="@(OutputFilesToCopy)" DestinationFolder="$(FinalOutputPath)\%(RecursiveDir)" />
-    <Copy SourceFiles="@(IntermediateFilesToCopy)" DestinationFolder="$(FinalIntermediateOutputPath)\%(RecursiveDir)" />
-  </Target>
-
+  <Import Project="build\targets\NGenOrCrossGen.targets" />
   <Import Project="build\targets\ConvertPortablePdbs.targets" />
   <Import Project="build\targets\GenerateAssemblyAttributes.targets" />
   <Import Project="build\targets\GenerateInternalsVisibleTo.targets" />

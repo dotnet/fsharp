@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);FSharpPackageVersion=$(FSharpPackageVersion)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);SetupResourcesDir=$(MSBuildThisFileDirectory)..\..\resources</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);TargetFramework=$(TargetFramework)</PackagePreprocessorDefinitions>
   </PropertyGroup>
 

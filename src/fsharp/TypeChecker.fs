@@ -504,8 +504,8 @@ type cenv =
       /// Used to resolve names
       nameResolver: NameResolver
       
-      /// The set of active conditional defines
-      conditionalDefines: string list
+      /// The set of active conditional defines. The value is None when conditional erasure is disabled in tooling.
+      conditionalDefines: string list option
             
       isInternalTestSpanStackReferring: bool
     } 
@@ -3004,8 +3004,8 @@ let BuildPossiblyConditionalMethodCall cenv env isMutable m isProp minfo valUseF
 
     let conditionalCallDefineOpt = TryFindMethInfoStringAttribute cenv.g m cenv.g.attrib_ConditionalAttribute minfo 
 
-    match conditionalCallDefineOpt with 
-    | Some d when not (List.contains d cenv.conditionalDefines) -> 
+    match conditionalCallDefineOpt, cenv.conditionalDefines with 
+    | Some d, Some defines when not (List.contains d defines) -> 
 
         // Methods marked with 'Conditional' must return 'unit' 
         UnifyTypes cenv env m cenv.g.unit_ty (minfo.GetFSharpReturnTy(cenv.amap, m, minst))
@@ -10060,7 +10060,7 @@ and TcMethodApplication
                                     | CallerLineNumber, _ when typeEquiv cenv.g currCalledArgTy cenv.g.int_ty ->
                                         emptyPreBinder, Expr.Const(Const.Int32(mMethExpr.StartLine), mMethExpr, currCalledArgTy)
                                     | CallerFilePath, _ when typeEquiv cenv.g currCalledArgTy cenv.g.string_ty ->
-                                        emptyPreBinder, Expr.Const(Const.String(System.IO.Path.GetFullPath(mMethExpr.FileName)), mMethExpr, currCalledArgTy)
+                                        emptyPreBinder, Expr.Const(Const.String(FileSystem.GetFullPathShim(mMethExpr.FileName)), mMethExpr, currCalledArgTy)
                                     | CallerMemberName, Some(callerName) when (typeEquiv cenv.g currCalledArgTy cenv.g.string_ty) ->
                                         emptyPreBinder, Expr.Const(Const.String(callerName), mMethExpr, currCalledArgTy)
                                     | _ ->
@@ -10099,7 +10099,7 @@ and TcMethodApplication
                           let lineExpr = Expr.Const(Const.Int32(mMethExpr.StartLine), mMethExpr, calledNonOptTy)
                           emptyPreBinder, mkUnionCaseExpr(mkSomeCase cenv.g, [calledNonOptTy], [lineExpr], mMethExpr)
                       | CallerFilePath, _ when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
-                          let filePathExpr = Expr.Const(Const.String(System.IO.Path.GetFullPath(mMethExpr.FileName)), mMethExpr, calledNonOptTy)
+                          let filePathExpr = Expr.Const(Const.String(FileSystem.GetFullPathShim(mMethExpr.FileName)), mMethExpr, calledNonOptTy)
                           emptyPreBinder, mkUnionCaseExpr(mkSomeCase cenv.g, [calledNonOptTy], [filePathExpr], mMethExpr)
                       | CallerMemberName, Some(callerName) when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
                           let memberNameExpr = Expr.Const(Const.String(callerName), mMethExpr, calledNonOptTy)
@@ -10828,11 +10828,10 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
 
     let conditionalCallDefineOpt = TryFindTyconRefStringAttribute cenv.g mAttr cenv.g.attrib_ConditionalAttribute tcref 
 
-    match conditionalCallDefineOpt with 
-    | Some d when not (List.contains d cenv.conditionalDefines) -> 
+    match conditionalCallDefineOpt, cenv.conditionalDefines with 
+    | Some d, Some defines when not (List.contains d defines) -> 
         [], false
     | _ ->
-
          // REVIEW: take notice of inherited? 
         let validOn, _inherited = 
             let validOnDefault = 0x7fff
@@ -16713,7 +16712,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             return env
 
 
-        | SynModuleSigDecl.NamespaceFragment (SynModuleOrNamespaceSig(longId, isRec, isModule, defs, xml, attribs, vis, m)) -> 
+        | SynModuleSigDecl.NamespaceFragment (SynModuleOrNamespaceSig(longId, isRec, kind, defs, xml, attribs, vis, m)) -> 
 
             do for id in longId do 
                  CheckNamespaceModuleOrTypeName cenv.g id
@@ -16725,7 +16724,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             //    namespace [rec] A.B
             //      module M = ...
             let enclosingNamespacePath, defs = 
-                if isModule then 
+                if kind.IsModule then 
                     let nsp, modName = List.frontAndBack longId
                     let modDecl = [SynModuleSigDecl.NestedModule(ComponentInfo(attribs, [], [], [modName], xml, false, vis, m), false, defs, m)] 
                     nsp, modDecl
@@ -17022,7 +17021,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent typeNames scopem 
               return ((fun modDefs -> modDefn :: modDefs), topAttrsNew), env, envAtEnd
       
 
-      | SynModuleDecl.NamespaceFragment(SynModuleOrNamespace(longId, isRec, isModule, defs, xml, attribs, vis, m)) ->
+      | SynModuleDecl.NamespaceFragment(SynModuleOrNamespace(longId, isRec, kind, defs, xml, attribs, vis, m)) ->
 
           if !progress then dprintn ("Typecheck implementation " + textOfLid longId)
           let endm = m.EndRange
@@ -17037,7 +17036,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent typeNames scopem 
           //    namespace [rec] A.B
           //      module M = ...
           let enclosingNamespacePath, defs = 
-              if isModule then 
+              if kind.IsModule then 
                   let nsp, modName = List.frontAndBack longId
                   let modDecl = [SynModuleDecl.NestedModule(ComponentInfo(attribs, [], [], [modName], xml, false, vis, m), false, defs, true, m)] 
                   nsp, modDecl

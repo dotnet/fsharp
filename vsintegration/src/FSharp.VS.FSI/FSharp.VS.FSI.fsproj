@@ -29,7 +29,6 @@
     <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs">
       <Link>CompilerLocationUtils.fs</Link>
     </Compile>
-    <Compile Include="quickparse.fs" />
     <Compile Include="sessions.fs" />
     <Compile Include="fsiBasis.fs" />
     <Compile Include="fsiLanguageService.fs" />

@@ -5,16 +5,16 @@ package name=Microsoft.FSharp.VSIX.Full.Resources
         vs.package.language=$(LocaleSpecificCulture)
 
 folder "InstallDir:Common7\IDE\PublicAssemblies\$(LocaleParentCulture)"
-  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Core.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\net45\$(LocaleParentCulture)\FSharp.Core.resources.dll" vs.file.ngen=yes
 
 folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\$(LocaleParentCulture)"
-  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Compiler.Private.resources.dll" vs.file.ngen=yes
-  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Core.resources.dll" vs.file.ngen=yes
-  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Editor.resources.dll" vs.file.ngen=yes
-  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.LanguageService.Base.resources.dll" vs.file.ngen=yes
-  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.LanguageService.resources.dll" vs.file.ngen=yes
-  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.ProjectSystem.Base.resources.dll" vs.file.ngen=yes
-  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.ProjectSystem.FSharp.resources.dll" vs.file.ngen=yes
-  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.ProjectSystem.PropertyPages.resources.dll" vs.file.ngen=yes
-  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.UIResources.resources.dll" vs.file.ngen=yes
-  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.VS.FSI.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\net46\$(LocaleParentCulture)\FSharp.Compiler.Private.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\net45\$(LocaleParentCulture)\FSharp.Core.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\FSharp.Editor\$(Configuration)\net46\$(LocaleParentCulture)\FSharp.Editor.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\FSharp.LanguageService.Base\$(Configuration)\net46\$(LocaleParentCulture)\FSharp.LanguageService.Base.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\FSharp.LanguageService\$(Configuration)\net46\$(LocaleParentCulture)\FSharp.LanguageService.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\ProjectSystem.Base\$(Configuration)\net46\$(LocaleParentCulture)\FSharp.ProjectSystem.Base.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\ProjectSystem\$(Configuration)\net46\$(LocaleParentCulture)\FSharp.ProjectSystem.FSharp.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\FSharp.PropertiesPages\$(Configuration)\net46\$(LocaleParentCulture)\FSharp.ProjectSystem.PropertyPages.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\FSharp.UIResources\$(Configuration)\net46\$(LocaleParentCulture)\FSharp.UIResources.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\FSharp.VS.FSI\$(Configuration)\net46\$(LocaleParentCulture)\FSharp.VS.FSI.resources.dll" vs.file.ngen=yes
