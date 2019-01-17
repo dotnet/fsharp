@@ -2744,6 +2744,8 @@ let GetInternalsVisibleToAttributes ilg ilModule =
 // TcConfig 
 //--------------------------------------------------------------------------
 
+type ScriptMetaCommandsAllowed = | Ok | AsWarning | AsError
+
 [<Sealed>]
 /// This type is immutable and must be kept as such. Do not extract or mutate the underlying data except by cloning it.
 type TcConfig private (data : TcConfigBuilder, validate:bool) =
@@ -4880,17 +4882,24 @@ let ProcessMetaCommandsFromInput
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
     let canHaveScriptMetaCommands = 
-        match inp with 
-        | ParsedInput.SigFile(_) ->  false
-        | ParsedInput.ImplFile(ParsedImplFileInput(isScript = isScript)) -> isScript
+        match inp with
+        | ParsedInput.SigFile(_) -> ScriptMetaCommandsAllowed.AsError
+        | ParsedInput.ImplFile(ParsedImplFileInput(isScript = isScript)) ->
+            match isScript, tcConfig.isInteractive with
+            | true, true  -> ScriptMetaCommandsAllowed.Ok
+            | true, false -> ScriptMetaCommandsAllowed.AsWarning
+            | false, _    -> ScriptMetaCommandsAllowed.AsError
 
     let ProcessMetaCommand state hash  =
         let mutable matchedm = range0
         try 
             match hash with 
             | ParsedHashDirective("I", args, m) ->
-               if not canHaveScriptMetaCommands then 
-                   errorR(HashIncludeNotAllowedInNonScript(m))
+               match canHaveScriptMetaCommands with
+               | ScriptMetaCommandsAllowed.AsWarning -> warning(HashIncludeNotAllowedInNonScript(m))     /// Customise warning message
+               | ScriptMetaCommandsAllowed.AsError -> errorR(HashIncludeNotAllowedInNonScript(m))
+               | ScriptMetaCommandsAllowed.Ok -> ()
+
                match args with 
                | [path] -> 
                    matchedm<-m
@@ -4902,8 +4911,11 @@ let ProcessMetaCommandsFromInput
             | ParsedHashDirective("nowarn", numbers, m) ->
                List.fold (fun state d -> nowarnF state (m, d)) state numbers
             | ParsedHashDirective(("reference" | "r"), args, m) -> 
-               if not canHaveScriptMetaCommands then 
-                   errorR(HashReferenceNotAllowedInNonScript(m))
+               match canHaveScriptMetaCommands with
+               | ScriptMetaCommandsAllowed.AsWarning -> warning(HashReferenceNotAllowedInNonScript(m))   /// Customise warning message
+               | ScriptMetaCommandsAllowed.AsError -> errorR(HashReferenceNotAllowedInNonScript(m))
+               | ScriptMetaCommandsAllowed.Ok -> ()
+
                match args with 
                | [path] -> 
                    matchedm<-m
@@ -4912,8 +4924,11 @@ let ProcessMetaCommandsFromInput
                    errorR(Error(FSComp.SR.buildInvalidHashrDirective(), m))
                    state
             | ParsedHashDirective("load", args, m) -> 
-               if not canHaveScriptMetaCommands then 
-                   errorR(HashDirectiveNotAllowedInNonScript(m))
+               match canHaveScriptMetaCommands with
+               | ScriptMetaCommandsAllowed.AsWarning -> warning(HashDirectiveNotAllowedInNonScript(m))   /// Customise warning message
+               | ScriptMetaCommandsAllowed.AsError -> errorR(HashDirectiveNotAllowedInNonScript(m))
+               | ScriptMetaCommandsAllowed.Ok -> ()
+
                match args with 
                | _ :: _ -> 
                   matchedm<-m
@@ -4922,8 +4937,11 @@ let ProcessMetaCommandsFromInput
                   errorR(Error(FSComp.SR.buildInvalidHashloadDirective(), m))
                state
             | ParsedHashDirective("time", args, m) -> 
-               if not canHaveScriptMetaCommands then 
-                   errorR(HashDirectiveNotAllowedInNonScript(m))
+               match canHaveScriptMetaCommands with
+               | ScriptMetaCommandsAllowed.AsWarning -> warning(HashDirectiveNotAllowedInNonScript(m))   /// Customise warning message
+               | ScriptMetaCommandsAllowed.AsError -> errorR(HashDirectiveNotAllowedInNonScript(m))
+               | ScriptMetaCommandsAllowed.Ok -> ()
+
                match args with 
                | [] -> 
                    ()

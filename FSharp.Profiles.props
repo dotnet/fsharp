@@ -7,6 +7,7 @@
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_COMPILE_SCRIPT_REFERENCES</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard')) OR $(TargetFramework.StartsWith('netcoreapp'))">

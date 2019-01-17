@@ -177,6 +177,9 @@ let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger:ErrorLogger, as
         errorRecovery e rangeStartup
         exiter.Exit 1
 
+#if FX_COMPILE_SCRIPT_REFERENCES
+/// On the desktop compiler, we allow the compiler to gather references from #r in .fsx files and gather sources from #load
+/// This is not enabled on the coreclr compiler.  We believe that tooling to support this would be performance prohibitive.
 
 /// Check for .fsx and, if present, compute the load closure for of #loaded files.
 let AdjustForScriptCompile(ctok, tcConfigB:TcConfigBuilder, commandLineSourceFiles, lexResourceManager) =
@@ -217,6 +220,7 @@ let AdjustForScriptCompile(ctok, tcConfigB:TcConfigBuilder, commandLineSourceFil
     commandLineSourceFiles |> List.iter AppendClosureInformation
 
     List.rev !allSources
+#endif
 
 //----------------------------------------------------------------------------
 // ProcessCommandLineFlags
@@ -1697,12 +1701,13 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemor
 
         // The ParseCompilerOptions function calls imperative function to process "real" args
         // Rather than start processing, just collect names, then process them. 
-        try 
-            let sourceFiles = 
-                let files = ProcessCommandLineFlags (tcConfigB, setProcessThreadLocals, lcidFromCodePage, argv)
-                AdjustForScriptCompile(ctok, tcConfigB, files, lexResourceManager)
-            sourceFiles
-
+        try
+            let files = ProcessCommandLineFlags (tcConfigB, setProcessThreadLocals, lcidFromCodePage, argv)
+#if FX_COMPILE_SCRIPT_REFERENCES
+            AdjustForScriptCompile(ctok, tcConfigB, files, lexResourceManager)
+#else
+            files
+#endif
         with e -> 
             errorRecovery e rangeStartup
             delayForFlagsLogger.ForwardDelayedDiagnostics(tcConfigB)
