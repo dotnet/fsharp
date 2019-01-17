@@ -1427,7 +1427,7 @@ and
     SynModuleDecl =
     | ModuleAbbrev of ident:Ident * longId:LongIdent * range:range
     | NestedModule of SynComponentInfo * isRecursive:bool * SynModuleDecls * bool * range:range
-    | Let of bool * SynBinding list * range:range
+    | Let of isRecursive:bool * SynBinding list * range:range
     | DoExpr of SequencePointInfoForBinding * SynExpr * range:range
     | Types of SynTypeDefn list * range:range
     | Exception of SynExceptionDefn * range:range
