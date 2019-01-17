@@ -352,7 +352,8 @@ let rec CheckTypeDeep (cenv: cenv) ((visitTy,visitTyconRefOpt,visitAppTyOpt,visi
     | TType_anon (anonInfo,tys) -> 
         if not (cenv.anonRecdTypes.ContainsKey anonInfo.Stamp) then 
              cenv.anonRecdTypes <- cenv.anonRecdTypes.Add(anonInfo.Stamp, anonInfo)
-        CheckTypesDeep cenv f g env tys
+
+        CheckTypesDeepNoInner cenv f g env tys
 
     | TType_ucase (_,tinst) -> CheckTypesDeep cenv f g env tinst
     | TType_tuple (_,tys) -> CheckTypesDeep cenv f g env tys
