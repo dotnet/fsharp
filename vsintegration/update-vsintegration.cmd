@@ -267,46 +267,6 @@ if "%DEPLOY%" == "yes" if "!ISADMIN!" == "yes" (
     REG ADD "HKLM\SOFTWARE\Microsoft\.NETFramework\v4.0.30319\AssemblyFoldersEx\F# !FSHARPVERSION! Core Assemblies (Open Source)" /ve /t REG_SZ /f /d "!X86_PROGRAMFILES!\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.!FSHARPVERSION!.0\
     REG ADD "HKLM\SOFTWARE\Microsoft\.NETFramework\v4.0.50709\AssemblyFoldersEx\F# !FSHARPVERSION! Core Assemblies (Open Source)" /ve /t REG_SZ /f /d "!X86_PROGRAMFILES!\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.!FSHARPVERSION!.0\
 
-    rem Disable strong-name validation for F# binaries built from open source that are signed with the microsoft key
-    echo.
-    CALL :colorEcho 02 "[!ACTION!] Removing strong-name validation of F# binaries" & echo.
-    !SN32! -Vr FSharp.Core,b03f5f7f11d50a3a 1>NUL 2>NUL
-    !SN32! -Vr FSharp.Build,b03f5f7f11d50a3a 1>NUL 2>NUL
-    !SN32! -Vr FSharp.Compiler.Interactive.Settings,b03f5f7f11d50a3a 1>NUL 2>NUL
-    !SN32! -Vr HostedCompilerServer,b03f5f7f11d50a3a 1>NUL 2>NUL
-
-    !SN32! -Vr FSharp.Compiler,b03f5f7f11d50a3a 1>NUL 2>NUL
-    !SN32! -Vr FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a 1>NUL 2>NUL
-    !SN32! -Vr FSharp.Editor,b03f5f7f11d50a3a 1>NUL 2>NUL
-    !SN32! -Vr FSharp.LanguageService,b03f5f7f11d50a3a 1>NUL 2>NUL
-    !SN32! -Vr FSharp.LanguageService.Base,b03f5f7f11d50a3a 1>NUL 2>NUL
-    !SN32! -Vr FSharp.ProjectSystem.Base,b03f5f7f11d50a3a 1>NUL 2>NUL
-    !SN32! -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a 1>NUL 2>NUL
-    !SN32! -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a 1>NUL 2>NUL
-    !SN32! -Vr FSharp.VS.FSI,b03f5f7f11d50a3a 1>NUL 2>NUL
-    !SN32! -Vr VisualFSharp.UnitTests,b03f5f7f11d50a3a 1>NUL 2>NUL
-    !SN32! -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a 1>NUL 2>NUL
-
-    REM Do this *in addition* to the above for x64 systems
-    if /i "!PROCESSOR_ARCHITECTURE!"=="AMD64" (
-        !SN64! -Vr FSharp.Core,b03f5f7f11d50a3a 1>NUL 2>NUL
-        !SN64! -Vr FSharp.Build,b03f5f7f11d50a3a 1>NUL 2>NUL
-        !SN64! -Vr FSharp.Compiler.Interactive.Settings,b03f5f7f11d50a3a 1>NUL 2>NUL
-        !SN64! -Vr HostedCompilerServer,b03f5f7f11d50a3a 1>NUL 2>NUL
-
-        !SN64! -Vr FSharp.Compiler,b03f5f7f11d50a3a 1>NUL 2>NUL
-        !SN64! -Vr FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a 1>NUL 2>NUL
-        !SN64! -Vr FSharp.Editor,b03f5f7f11d50a3a 1>NUL 2>NUL
-        !SN64! -Vr FSharp.LanguageService,b03f5f7f11d50a3a 1>NUL 2>NUL
-        !SN64! -Vr FSharp.LanguageService.Base,b03f5f7f11d50a3a 1>NUL 2>NUL
-        !SN64! -Vr FSharp.ProjectSystem.Base,b03f5f7f11d50a3a 1>NUL 2>NUL
-        !SN64! -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a 1>NUL 2>NUL
-        !SN64! -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a 1>NUL 2>NUL
-        !SN64! -Vr FSharp.VS.FSI,b03f5f7f11d50a3a 1>NUL 2>NUL
-        !SN64! -Vr VisualFSharp.UnitTests,b03f5f7f11d50a3a 1>NUL 2>NUL
-        !SN64! -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a 1>NUL 2>NUL
-    )
-
     rem NGen fsc, fsi, fsiAnyCpu, and FSharp.Build.dll
     
     echo.
