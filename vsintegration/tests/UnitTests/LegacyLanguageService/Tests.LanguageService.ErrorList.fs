@@ -142,6 +142,7 @@ let g (t : T) = t.Count()
 
         ReplaceFileInMemory file <|
             [
+                "#nowarn \"76\""
                 "#r \"System\""
                 "#r \"System2\""
             ]

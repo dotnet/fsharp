@@ -600,9 +600,6 @@
     <Compile Include="..\service\ServiceXmlDocParser.fs">
       <Link>Service/ServiceXmlDocParser.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\reshapedmsbuild.fs">
-      <Link>Service/reshapedmsbuild.fs</Link>
-    </Compile>
     <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
       <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
     </Compile>

@@ -536,6 +536,7 @@ let x = 42
 """
 
     let fileSource2 = """
+#nowarn "76"
 #load "Impl.fs"
 ImplFile.x
 """
