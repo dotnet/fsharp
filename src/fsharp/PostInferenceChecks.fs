@@ -312,7 +312,7 @@ let RecordAnonRecdInfo cenv (anonInfo: AnonRecdTypeInfo) =
 // approx walk of type
 //--------------------------------------------------------------------------
 
-let rec CheckTypeDeep (cenv: cenv) ((visitTy, visitTyconRefOpt, visitAppTyOpt, visitTraitSolutionOpt, visitTyparOpt) as f) g env isInner ty =
+let rec CheckTypeDeep (cenv: cenv) ((visitTy,visitTyconRefOpt,visitAppTyOpt,visitTraitSolutionOpt, visitTyparOpt) as f) (g: TcGlobals) env isInner ty =
     // We iterate the _solved_ constraints as well, to pick up any record of trait constraint solutions
     // This means we walk _all_ the constraints _everywhere_ in a type, including
     // those attached to _solved_ type variables. This is used by PostTypeCheckSemanticChecks to detect uses of
@@ -331,11 +331,12 @@ let rec CheckTypeDeep (cenv: cenv) ((visitTy, visitTyconRefOpt, visitAppTyOpt, v
             | _ -> ())
     | _ -> ()
     
-    let ty = stripTyparEqns ty 
+    let ty = stripTyparEqns ty
+    let ty = if not g.compilingFslib then stripTyEqns g ty else ty
     visitTy ty
 
     match ty with
-    | TType_forall (tps, body) -> 
+    | TType_forall (tps,body) -> 
         let env = BindTypars g env tps
         CheckTypeDeep cenv f g env isInner body           
         tps |> List.iter (fun tp -> tp.Constraints |> List.iter (CheckTypeConstraintDeep cenv f g env))
@@ -2233,8 +2234,11 @@ let CheckEntityDefn cenv env (tycon: Entity) =
          | None     -> ()
          | Some ty -> 
              // Library-defined outref<'T> and inref<'T> contain byrefs on the r.h.s.
-             if not g.compilingFslib then 
-                 CheckForByrefType cenv env ty (fun () -> errorR(Error(FSComp.SR.chkNoByrefInTypeAbbrev(), tycon.Range)))
+             if not g.compilingFslib then
+                if isByrefTy cenv.g ty then
+                    errorR(Error(FSComp.SR.chkNoByrefInTypeAbbrev(), tycon.Range))
+                else
+                    CheckTypeNoInnerByrefs cenv env m ty
 
 let CheckEntityDefns cenv env tycons = 
     tycons |> List.iter (CheckEntityDefn cenv env) 
