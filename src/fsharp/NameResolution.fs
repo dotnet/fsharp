@@ -1211,7 +1211,7 @@ let GetNestedTypesOfType (ad, ncenv:NameResolver, optFilter, staticResInfo, chec
 //------------------------------------------------------------------------- 
 
 /// Represents the kind of the occurrence when reporting a name in name resolution
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; Struct>]
 type ItemOccurence = 
     /// This is a binding / declaration of the item
     | Binding 
@@ -1495,17 +1495,24 @@ type TcSymbolUseData =
 /// This is a memory-critical data structure - allocations of this data structure and its immediate contents
 /// is one of the highest memory long-lived data structures in typical uses of IDEs. Not many of these objects
 /// are allocated (one per file), but they are large because the allUsesOfAllSymbols array is large.
-type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolution>, formatSpecifierLocations: (range * int)[]) = 
-    
+type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolution>, formatSpecifierLocations: (range * int)[]) =
+
     // Make sure we only capture the information we really need to report symbol uses
-    let allUsesOfSymbols = [| for cnr in capturedNameResolutions -> { Item=cnr.Item; ItemOccurence=cnr.ItemOccurence; DisplayEnv=cnr.DisplayEnv; Range=cnr.Range } |]
+    let allUsesOfSymbols =
+        capturedNameResolutions
+        |> ResizeArray.mapToSmallArrayChunks (fun cnr -> { Item=cnr.Item; ItemOccurence=cnr.ItemOccurence; DisplayEnv=cnr.DisplayEnv; Range=cnr.Range })
+
     let capturedNameResolutions = () 
     do ignore capturedNameResolutions // don't capture this!
 
     member this.GetUsesOfSymbol(item) = 
-        [| for symbolUse in allUsesOfSymbols do
-               if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item symbolUse.Item) then
-                  yield symbolUse |]
+        // This member returns what is potentially a very large array, which may approach the size constraints of the Large Object Heap.
+        // This is unlikely in practice, though, because we filter down the set of all symbol uses to those specifically for the given `item`.
+        // Consequently we have a much lesser chance of ending up with an array large enough to be promoted to the LOH.
+        [| for symbolUseChunk in allUsesOfSymbols do
+            for symbolUse in symbolUseChunk do
+                if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item symbolUse.Item) then
+                    yield symbolUse |]
 
     member this.AllUsesOfSymbols = allUsesOfSymbols
 
