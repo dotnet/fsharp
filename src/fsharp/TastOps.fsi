@@ -406,82 +406,101 @@ type ValMultiMap<'T> =
 
     static member Empty : ValMultiMap<'T>
 
+/// Maps type parameters to entries based on stamp keys
 [<Sealed>]
-/// Maps Typar to T based on stamp keys
 type TyparMap<'T>  =
 
+    /// Get the entry for the given type parameter
     member Item : Typar -> 'T with get
 
+    /// Determine is the map contains an entry for the given type parameter
     member ContainsKey : Typar -> bool
 
+    /// Try to find the entry for the given type parameter
     member TryFind : Typar -> 'T option
 
+    /// Make a new map, containing a new entry for the given type parameter
     member Add : Typar * 'T -> TyparMap<'T> 
 
+    /// The empty map
     static member Empty : TyparMap<'T> 
 
-[<NoEquality; NoComparison;Sealed>]
 /// Maps TyconRef to T based on stamp keys
+[<NoEquality; NoComparison; Sealed>]
 type TyconRefMap<'T> =
 
+    /// Get the entry for the given type definition
     member Item : TyconRef -> 'T with get
 
+    /// Try to find the entry for the given type definition
     member TryFind : TyconRef -> 'T option
 
+    /// Determine is the map contains an entry for the given type definition
     member ContainsKey : TyconRef -> bool
 
+    /// Make a new map, containing a new entry for the given type definition
     member Add : TyconRef -> 'T -> TyconRefMap<'T>
 
+    /// Remove the entry for the given type definition, if any
     member Remove : TyconRef -> TyconRefMap<'T>
 
+    /// Determine if the map is empty
     member IsEmpty : bool
 
+    /// The empty map
     static member Empty : TyconRefMap<'T>
 
+    /// Make a new map, containing entries for the given type definitions
     static member OfList : (TyconRef * 'T) list -> TyconRefMap<'T>
 
 /// Maps TyconRef to list of T based on stamp keys
 [<Struct; NoEquality; NoComparison>]
 type TyconRefMultiMap<'T> =
 
+    /// Fetch the entries for the given type definition
     member Find : TyconRef -> 'T list
 
+    /// Make a new map, containing a new entry for the given type definition
     member Add : TyconRef * 'T -> TyconRefMultiMap<'T>
 
+    /// The empty map
     static member Empty : TyconRefMultiMap<'T>
 
+    /// Make a new map, containing a entries for the given type definitions
     static member OfList : (TyconRef * 'T) list -> TyconRefMultiMap<'T>
 
-//-------------------------------------------------------------------------
-// Orderings on Tycon, Val, RecdFieldRef, Typar
-//------------------------------------------------------------------------- 
+/// An ordering for value definitions, based on stamp
+val valOrder: IComparer<Val>
 
-val valOrder          : IComparer<Val>
+/// An ordering for type definitions, based on stamp
+val tyconOrder: IComparer<Tycon>
 
-val tyconOrder        : IComparer<Tycon>
+/// An ordering for record fields, based on stamp
+val recdFieldRefOrder: IComparer<RecdFieldRef>
 
-val recdFieldRefOrder : IComparer<RecdFieldRef>
+/// An ordering for type parameters, based on stamp
+val typarOrder: IComparer<Typar>
 
-val typarOrder        : IComparer<Typar>
-
-//-------------------------------------------------------------------------
-// Equality on Tycon and Val
-//------------------------------------------------------------------------- 
-
+/// Equality for type definition references
 val tyconRefEq : TcGlobals -> TyconRef -> TyconRef -> bool
 
+/// Equality for value references
 val valRefEq : TcGlobals -> ValRef -> ValRef -> bool
 
 //-------------------------------------------------------------------------
 // Operations on types: substitution
 //------------------------------------------------------------------------- 
 
+/// Represents an instantiation where types replace type parameters
 type TyparInst = (Typar * TType) list
 
+/// Represents an instantiation where type definition references replace other type definition references
 type TyconRefRemap = TyconRefMap<TyconRef>
 
+/// Represents an instantiation where value references replace other value references
 type ValRemap = ValMap<ValRef>
 
+/// Represents a combination of substitutions/instantiations where things replace other things during remapping
 [<NoEquality; NoComparison>]
 type Remap =
     { tpinst : TyparInst
@@ -496,6 +515,7 @@ val addTyconRefRemap : TyconRef -> TyconRef -> Remap -> Remap
 val addValRemap : Val -> Val -> Remap -> Remap
 
 val mkTyparInst : Typars -> TTypes -> TyparInst
+
 val mkTyconRefInst : TyconRef -> TypeInst -> TyparInst
 
 val emptyTyparInst : TyparInst
