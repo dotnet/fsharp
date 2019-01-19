@@ -1223,6 +1223,7 @@ val mkPrintfFormatTy : TcGlobals -> TType -> TType -> TType -> TType -> TType ->
 // Classify types
 //------------------------------------------------------------------------- 
 
+/// Represents metadata extracted from a nominal type
 type TypeDefMetadata = 
      | ILTypeMetadata of TILObjectReprData
      | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata 
@@ -1230,43 +1231,94 @@ type TypeDefMetadata =
      | ProvidedTypeMetadata of  TProvidedTypeInfo
 #endif
 
+/// Extract metadata from a type definition
 val metadataOfTycon : Tycon -> TypeDefMetadata
+
+/// Extract metadata from a type
 val metadataOfTy : TcGlobals -> TType -> TypeDefMetadata
 
-val isStringTy       : TcGlobals -> TType -> bool
-val isListTy         : TcGlobals -> TType -> bool
-val isILAppTy      : TcGlobals -> TType -> bool
-val isArrayTy        : TcGlobals -> TType -> bool
-val isArray1DTy       : TcGlobals -> TType -> bool
-val destArrayTy     : TcGlobals -> TType -> TType
-val destListTy      : TcGlobals -> TType -> TType
+/// Determine if a type is the System.String type
+val isStringTy : TcGlobals -> TType -> bool
 
-val mkArrayTy         : TcGlobals -> int -> TType -> range -> TType
-val isArrayTyconRef      : TcGlobals -> TyconRef -> bool
-val rankOfArrayTyconRef : TcGlobals -> TyconRef -> int
+/// Determine if a type is an F# list type
+val isListTy : TcGlobals -> TType -> bool
 
-val isUnitTy          : TcGlobals -> TType -> bool
-val isObjTy           : TcGlobals -> TType -> bool
-val isVoidTy          : TcGlobals -> TType -> bool
+/// Determine if a type is a nominal .NET type
+val isILAppTy : TcGlobals -> TType -> bool
+
+/// Determine if a type is any kind of array type
+val isArrayTy : TcGlobals -> TType -> bool
+
+/// Determine if a type is a single-dimensional array type
+val isArray1DTy : TcGlobals -> TType -> bool
 
 /// Get the element type of an array type
-val destArrayTy    : TcGlobals -> TType -> TType
+val destArrayTy : TcGlobals -> TType -> TType
+
+/// Get the element type of an F# list type
+val destListTy : TcGlobals -> TType -> TType
+
+/// Build an array type of the given rank
+val mkArrayTy : TcGlobals -> int -> TType -> range -> TType
+
+/// Check if a type definition is one of the artifical type definitions used for array types of different ranks 
+val isArrayTyconRef : TcGlobals -> TyconRef -> bool
+
+/// Determine the rank of one of the artifical type definitions used for array types
+val rankOfArrayTyconRef : TcGlobals -> TyconRef -> int
+
+/// Determine if a type is the F# unit type
+val isUnitTy : TcGlobals -> TType -> bool
+
+/// Determine if a type is the System.Object type
+val isObjTy : TcGlobals -> TType -> bool
+
+/// Determine if a type is the System.Void type
+val isVoidTy : TcGlobals -> TType -> bool
+
+/// Get the element type of an array type
+val destArrayTy : TcGlobals -> TType -> TType
+
 /// Get the rank of an array type
 val rankOfArrayTy : TcGlobals -> TType -> int
 
-val isInterfaceTyconRef                 : TyconRef -> bool
+/// Determine if a reference to a type definition is an interface type
+val isInterfaceTyconRef : TyconRef -> bool
 
-val isDelegateTy                 : TcGlobals -> TType -> bool
-val isInterfaceTy                : TcGlobals -> TType -> bool
-val isRefTy                      : TcGlobals -> TType -> bool
-val isSealedTy                   : TcGlobals -> TType -> bool
-val isComInteropTy               : TcGlobals -> TType -> bool
-val underlyingTypeOfEnumTy       : TcGlobals -> TType -> TType
-val normalizeEnumTy              : TcGlobals -> TType -> TType
+/// Determine if a type is a delegate type
+val isDelegateTy : TcGlobals -> TType -> bool
+
+/// Determine if a type is an interface type
+val isInterfaceTy : TcGlobals -> TType -> bool
+
+/// Determine if a type is a FSharpRef type
+val isRefTy : TcGlobals -> TType -> bool
+
+/// Determine if a type is a sealed type
+val isSealedTy : TcGlobals -> TType -> bool
+
+/// Determine if a type is a ComInterop type
+val isComInteropTy : TcGlobals -> TType -> bool
+
+/// Determine the underlying type of an enum type (normally int32)
+val underlyingTypeOfEnumTy : TcGlobals -> TType -> TType
+
+/// If the input type is an enum type, then convert to its underlying type, otherwise return the input type
+val normalizeEnumTy : TcGlobals -> TType -> TType
+
+/// Determine if a type is a struct type
 val isStructTy                   : TcGlobals -> TType -> bool
+
+/// Determine if a type is an unmanaged type
 val isUnmanagedTy                : TcGlobals -> TType -> bool
+
+/// Determine if a type is a class type
 val isClassTy                    : TcGlobals -> TType -> bool
+
+/// Determine if a type is an enum type
 val isEnumTy                     : TcGlobals -> TType -> bool
+
+/// Determine if a type is a struct, record or union type
 val isStructRecordOrUnionTyconTy : TcGlobals -> TType -> bool
 
 /// For "type Class as self", 'self' is fixed up after initialization. To support this,
@@ -1274,9 +1326,16 @@ val isStructRecordOrUnionTyconTy : TcGlobals -> TType -> bool
 /// returns the underlying type.
 val StripSelfRefCell : TcGlobals * ValBaseOrThisInfo * TType -> TType
 
+/// An active pattern to determine if a type is a nominal type, possibly instantiated
 val (|AppTy|_|)   : TcGlobals -> TType -> (TyconRef * TType list) option
+
+/// An active pattern to match System.Nullable types
 val (|NullableTy|_|)   : TcGlobals -> TType -> TType option
+
+/// An active pattern to transform System.Nullable types to their input, otherwise leave the input unchanged
 val (|StripNullableTy|)   : TcGlobals -> TType -> TType 
+
+/// Matches any byref type, yielding the target type
 val (|ByrefTy|_|)   : TcGlobals -> TType -> TType option
 
 //-------------------------------------------------------------------------
