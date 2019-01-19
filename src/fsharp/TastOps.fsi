@@ -77,73 +77,123 @@ val stripExpr : Expr -> Expr
 
 /// Get the values for a set of bindings
 val valsOfBinds : Bindings -> Vals 
+
+/// Look for a use of an F# value, possibly including application of a generic thing to a set of type arguments
 val (|ExprValWithPossibleTypeInst|_|) : Expr -> (ValRef * ValUseFlag * TType list * range) option
 
-//-------------------------------------------------------------------------
-// Build decision trees imperatively
-//------------------------------------------------------------------------- 
-
+/// Build decision trees imperatively
 type MatchBuilder =
+
+    /// Create a new builder
     new : SequencePointInfoForBinding * range -> MatchBuilder
+
+    /// Add a new destination target
     member AddTarget : DecisionTreeTarget -> int
+
+    /// Add a new destination target that is an expression result
     member AddResultTarget : Expr * SequencePointInfoForTarget -> DecisionTree
+
+    /// Finish the targets
     member CloseTargets : unit -> DecisionTreeTarget list
+
+    /// Build the overall expression
     member Close : DecisionTree * range * TType -> Expr
 
-//-------------------------------------------------------------------------
-// Make some special decision graphs
-//------------------------------------------------------------------------- 
-
+/// Add an if-then-else boolean conditional node into a decision tree
 val mkBoolSwitch : range -> Expr -> DecisionTree -> DecisionTree -> DecisionTree
+
+/// Build a conditional expression
 val primMkCond : SequencePointInfoForBinding -> SequencePointInfoForTarget -> SequencePointInfoForTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
+
+/// Build a conditional expression
 val mkCond : SequencePointInfoForBinding -> SequencePointInfoForTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
+
+/// Build a conditional expression that checks for non-nullness
 val mkNonNullCond : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
+
+/// Build an if-then statement
 val mkIfThen : TcGlobals -> range -> Expr -> Expr -> Expr 
 
 //-------------------------------------------------------------------------
 // Generate new locals
 //------------------------------------------------------------------------- 
 
+/// Build an expression corresponding to the use of a value
 /// Note: try to use exprForValRef or the expression returned from mkLocal instead of this. 
 val exprForVal : range -> Val -> Expr
+
+/// Build an expression corresponding to the use of a reference to a value
 val exprForValRef : range -> ValRef -> Expr
 
-/// Return the local and an expression to reference it
+/// Make a new local value and build an expression to reference it
 val mkLocal : range -> string -> TType -> Val * Expr
+
+/// Make a new compiler-generated local value and build an expression to reference it
 val mkCompGenLocal : range -> string -> TType -> Val * Expr
+
+/// Make a new mutable compiler-generated local value and build an expression to reference it
 val mkMutableCompGenLocal : range -> string -> TType -> Val * Expr
+
+/// Make a new mutable compiler-generated local value, 'let' bind it to an expression 
+/// 'invisibly' (no sequence point etc.), and build an expression to reference it
 val mkCompGenLocalAndInvisbleBind : TcGlobals -> string -> range -> Expr -> Val * Expr * Binding 
 
-//-------------------------------------------------------------------------
-// Make lambdas
-//------------------------------------------------------------------------- 
 
+/// Build a lambda expression taking multiple values
 val mkMultiLambda : range -> Val list -> Expr * TType -> Expr
+
+/// Rebuild a lambda during an expression tree traversal
 val rebuildLambda : range -> Val option -> Val option -> Val list -> Expr * TType -> Expr
+
+/// Build a lambda expression taking a single value 
 val mkLambda : range -> Val -> Expr * TType -> Expr
+
+/// Build a generic lambda expression (type abstraction)
 val mkTypeLambda : range -> Typars -> Expr * TType -> Expr
+
+/// Build an object expression
 val mkObjExpr : TType * Val option * Expr * ObjExprMethod list * (TType * ObjExprMethod list) list * Range.range -> Expr
+
+/// Build an type-chose expression, indicating that a local free choice of a type variable
 val mkTypeChoose : range -> Typars -> Expr -> Expr
+
+/// Build an iterated (curried) lambda expression
 val mkLambdas : range -> Typars -> Val list -> Expr * TType -> Expr
+
+/// Build an iterated (tupled+curried) lambda expression
 val mkMultiLambdasCore : range -> Val list list -> Expr * TType -> Expr * TType
+
+/// Build an iterated generic (type abstraction + tupled+curried) lambda expression
 val mkMultiLambdas : range -> Typars -> Val list list -> Expr * TType -> Expr
+
+/// Build a lambda expression that corresponds to the implementation of a member
 val mkMemberLambdas : range -> Typars -> Val option -> Val option -> Val list list -> Expr * TType -> Expr
 
+/// Build a 'while' loop expression
 val mkWhile      : TcGlobals -> SequencePointInfoForWhileLoop * SpecialWhileLoopMarker * Expr * Expr * range                          -> Expr
+
+/// Build a 'for' loop expression
 val mkFor        : TcGlobals -> SequencePointInfoForForLoop * Val * Expr * ForLoopStyle * Expr * Expr * range -> Expr
+
+/// Build a 'try/with' expression
 val mkTryWith  : TcGlobals -> Expr * (* filter val *) Val * (* filter expr *) Expr * (* handler val *) Val * (* handler expr *) Expr * range * TType * SequencePointInfoForTry * SequencePointInfoForWith -> Expr
+
+/// Build a 'try/finally' expression
 val mkTryFinally: TcGlobals -> Expr * Expr * range * TType * SequencePointInfoForTry * SequencePointInfoForFinally -> Expr
 
-//-------------------------------------------------------------------------
-// Make let/letrec
-//------------------------------------------------------------------------- 
- 
-
-// Generate a user-level let-bindings
+/// Build a user-level value binding
 val mkBind : SequencePointInfoForBinding -> Val -> Expr -> Binding
+
+/// Build a user-level let-binding
 val mkLetBind : range -> Binding -> Expr -> Expr
+
+/// Build a user-level value sequence of let bindings
 val mkLetsBind : range -> Binding list -> Expr -> Expr
+
+/// Build a user-level value sequence of let bindings
 val mkLetsFromBindings : range -> Bindings -> Expr -> Expr
+
+/// Build a user-level let expression
 val mkLet : SequencePointInfoForBinding -> range -> Val -> Expr -> Expr -> Expr
 val mkMultiLambdaBind : Val -> SequencePointInfoForBinding -> range -> Typars -> Val list list -> Expr * TType -> Binding
 
@@ -797,219 +847,307 @@ val freeInExpr  : FreeVarOptions -> Expr  -> FreeVars
 /// Get the free variables in the right hand side of a binding.
 val freeInBindingRhs   : FreeVarOptions -> Binding  -> FreeVars
 
+/// Check if a set of free type variables are all public
 val freeTyvarsAllPublic  : FreeTyvars -> bool
+
+/// Check if a set of free variables are all public
 val freeVarsAllPublic     : FreeVars -> bool
 
-//-------------------------------------------------------------------------
-// Mark/range/position information from expressions
-//------------------------------------------------------------------------- 
-
+/// Get the mark/range/position information from an expression
 type Expr with 
     member Range : range
 
-//-------------------------------------------------------------------------
-// type-of operations on the expression tree
-//------------------------------------------------------------------------- 
-
+/// Compute the type of an expression from the expression itself
 val tyOfExpr : TcGlobals -> Expr -> TType 
 
-//-------------------------------------------------------------------------
-// Top expressions to implement top types
-//------------------------------------------------------------------------- 
-
+/// A flag to govern whether arity inference should be type-directed or syntax-directed when 
+/// inferring an arity from a lambda expression.
 [<RequireQualifiedAccess>]
-type AllowTypeDirectedDetupling = Yes | No
+type AllowTypeDirectedDetupling = 
+    | Yes 
+    | No
 
+/// Given a (curried) lambda expression, pull off its arguments
 val stripTopLambda : Expr * TType -> Typars * Val list list * Expr * TType
+
+/// Given a lambda expression, extract the ValReprInfo for its arguments and other details
 val InferArityOfExpr : TcGlobals -> AllowTypeDirectedDetupling -> TType -> Attribs list list -> Attribs -> Expr -> ValReprInfo
+
+/// Given a lambda binding, extract the ValReprInfo for its arguments and other details
 val InferArityOfExprBinding : TcGlobals -> AllowTypeDirectedDetupling -> Val -> Expr -> ValReprInfo
 
-//-------------------------------------------------------------------------
-//  Copy expressions and types
-//------------------------------------------------------------------------- 
-                   
+/// Mutate a value to indicate it should be considered a local rather than a module-bound definition
 // REVIEW: this mutation should not be needed 
 val setValHasNoArity : Val -> Val
 
+/// Indicate what should happen to value definitions when copying expressions
 type ValCopyFlag = 
     | CloneAll
     | CloneAllAndMarkExprValsAsCompilerGenerated
-    // OnlyCloneExprVals is a nasty setting to reuse the cloning logic in a mode where all 
-    // Tycon and "module/member" Val objects keep their identity, but the Val objects for all Expr bindings
-    // are cloned. This is used to 'fixup' the TAST created by tlr.fs 
-    //
-    // This is a fragile mode of use. It's not really clear why TLR needs to create a "bad" expression tree that
-    // reuses Val objects as multiple value bindings, and its been the cause of several subtle bugs.
+
+    /// OnlyCloneExprVals is a nasty setting to reuse the cloning logic in a mode where all 
+    /// Tycon and "module/member" Val objects keep their identity, but the Val objects for all Expr bindings
+    /// are cloned. This is used to 'fixup' the TAST created by tlr.fs 
+    ///
+    /// This is a fragile mode of use. It's not really clear why TLR needs to create a "bad" expression tree that
+    /// reuses Val objects as multiple value bindings, and its been the cause of several subtle bugs.
     | OnlyCloneExprVals
 
+/// Remap a reference to a type definition using the given remapping substitution
 val remapTyconRef : TyconRefRemap -> TyconRef -> TyconRef
+
+/// Remap a reference to a union case using the given remapping substitution
 val remapUnionCaseRef : TyconRefRemap -> UnionCaseRef -> UnionCaseRef
+
+/// Remap a reference to a record field using the given remapping substitution
 val remapRecdFieldRef : TyconRefRemap -> RecdFieldRef -> RecdFieldRef
+
+/// Remap a reference to a value using the given remapping substitution
 val remapValRef : Remap -> ValRef -> ValRef
+
+/// Remap an expression using the given remapping substitution
 val remapExpr : TcGlobals -> ValCopyFlag -> Remap -> Expr -> Expr
+
+/// Remap an attribute using the given remapping substitution
 val remapAttrib : TcGlobals -> Remap -> Attrib -> Attrib
+
+/// Remap a (possible generic) type using the given remapping substitution
 val remapPossibleForallTy : TcGlobals -> Remap -> TType -> TType
+
+/// Copy an entire module or namespace type using the given copying flags
 val copyModuleOrNamespaceType : TcGlobals -> ValCopyFlag -> ModuleOrNamespaceType -> ModuleOrNamespaceType
+
+/// Copy an entire expression using the given copying flags
 val copyExpr : TcGlobals -> ValCopyFlag -> Expr -> Expr
+
+/// Copy an entire implementation file using the given copying flags
 val copyImplFile : TcGlobals -> ValCopyFlag -> TypedImplFile -> TypedImplFile
+
+/// Copy a method slot signature, including new generic type parameters if the slot signature represents a generic method
 val copySlotSig : SlotSig -> SlotSig
+
+/// Instantiate the generic type parameters in a method slot signature, building a new one
 val instSlotSig : TyparInst -> SlotSig -> SlotSig
+
+/// Instantiate the generic type parameters in an expression, building a new one
 val instExpr : TcGlobals -> TyparInst -> Expr -> Expr
 
-//-------------------------------------------------------------------------
-// Build the remapping that corresponds to a module meeting its signature
-// and also report the set of tycons, tycon representations and values hidden in the process.
-//------------------------------------------------------------------------- 
-
+/// The remapping that corresponds to a module meeting its signature
+/// and also report the set of tycons, tycon representations and values hidden in the process.
 type SignatureRepackageInfo = 
-    { mrpiVals: (ValRef * ValRef) list;
-      mrpiEntities: (TyconRef * TyconRef) list  }
+    { /// The list of corresponding values
+      RepackagedVals: (ValRef * ValRef) list
 
+      /// The list of corresponding modules, namespacea and type definitions
+      RepackagedEntities: (TyconRef * TyconRef) list  }
+
+    /// The empty table
     static member Empty : SignatureRepackageInfo
       
+/// A set of tables summarizing the items hidden by a signature
 type SignatureHidingInfo = 
-    { mhiTycons  : Zset<Tycon>; 
-      mhiTyconReprs : Zset<Tycon>;  
-      mhiVals       : Zset<Val>; 
-      mhiRecdFields : Zset<RecdFieldRef>;
-      mhiUnionCases : Zset<UnionCaseRef> }
+    { HiddenTycons: Zset<Tycon>
+      HiddenTyconReprs: Zset<Tycon>  
+      HiddenVals: Zset<Val>
+      HiddenRecdFields: Zset<RecdFieldRef>
+      HiddenUnionCases: Zset<UnionCaseRef> }
+
+    /// The empty table representing no hiding
     static member Empty : SignatureHidingInfo
 
-val ComputeRemappingFromInferredSignatureToExplicitSignature : TcGlobals -> ModuleOrNamespaceType -> ModuleOrNamespaceType -> SignatureRepackageInfo * SignatureHidingInfo
+/// Compute the remapping information implied by a signature being inferred for a particular implementation
 val ComputeRemappingFromImplementationToSignature : TcGlobals -> ModuleOrNamespaceExpr -> ModuleOrNamespaceType -> SignatureRepackageInfo * SignatureHidingInfo
+
+/// Compute the remapping information implied by an explicit signature being given for an inferred signature
+val ComputeRemappingFromInferredSignatureToExplicitSignature : TcGlobals -> ModuleOrNamespaceType -> ModuleOrNamespaceType -> SignatureRepackageInfo * SignatureHidingInfo
+
+/// Compute the hiding information that corresponds to the hiding applied at an assembly boundary
 val ComputeHidingInfoAtAssemblyBoundary : ModuleOrNamespaceType -> SignatureHidingInfo -> SignatureHidingInfo
+
 val mkRepackageRemapping : SignatureRepackageInfo -> Remap 
 
+/// Wrap one module or namespace implementation in a 'namespace N' outer wrapper
 val wrapModuleOrNamespaceExprInNamespace : Ident -> CompilationPath -> ModuleOrNamespaceExpr -> ModuleOrNamespaceExpr
+
+/// Wrap one module or namespace definition in a 'namespace N' outer wrapper
 val wrapModuleOrNamespaceTypeInNamespace : Ident -> CompilationPath -> ModuleOrNamespaceType -> ModuleOrNamespaceType * ModuleOrNamespace  
+
+/// Wrap one module or namespace definition in a 'module M = ..' outer wrapper
 val wrapModuleOrNamespaceType : Ident -> CompilationPath -> ModuleOrNamespaceType -> ModuleOrNamespace
 
+/// Given an implementation, fetch its recorded signature
 val SigTypeOfImplFile : TypedImplFile -> ModuleOrNamespaceType
 
-//-------------------------------------------------------------------------
-// Given a list of top-most signatures that together constrain the public compilation units
-// of an assembly, compute a remapping that converts local references to non-local references.
-// This remapping must be applied to all pickled expressions and types 
-// exported from the assembly.
-//------------------------------------------------------------------------- 
-
-
+/// Given a namespace, module or type definition, try to produce a reference to that entity.
 val tryRescopeEntity : CcuThunk -> Entity -> ValueOption<EntityRef>
+
+/// Given a value definition, try to produce a reference to that value. Fails for local values.
 val tryRescopeVal    : CcuThunk -> Remap -> Val -> ValueOption<ValRef>
 
+/// Make the substitution (remapping) table for viewing a module or namespace 'from the outside'
+///
+/// Given the top-most signatures constrains the public compilation units
+/// of an assembly, compute a remapping that converts local references to non-local references.
+/// This remapping must be applied to all pickled expressions and types 
+/// exported from the assembly.
 val MakeExportRemapping : CcuThunk -> ModuleOrNamespace -> Remap
+
+/// Make a remapping table for viewing a module or namespace 'from the outside'
 val ApplyExportRemappingToEntity :  TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace 
 
-/// Query SignatureRepackageInfo
+/// Determine if a type definition is hidden by a signature
 val IsHiddenTycon     : (Remap * SignatureHidingInfo) list -> Tycon -> bool
+
+/// Determine if the representation of a type definition is hidden by a signature
 val IsHiddenTyconRepr : (Remap * SignatureHidingInfo) list -> Tycon -> bool
+
+/// Determine if a member, function or value is hidden by a signature
 val IsHiddenVal       : (Remap * SignatureHidingInfo) list -> Val -> bool
+
+/// Determine if a record field is hidden by a signature
 val IsHiddenRecdField : (Remap * SignatureHidingInfo) list -> RecdFieldRef -> bool
 
-//-------------------------------------------------------------------------
-//  Adjust marks in expressions
-//------------------------------------------------------------------------- 
-
+/// Adjust marks in expressions, replacing all marks by thegiven mark.
+/// Used when inlining.
 val remarkExpr : range -> Expr -> Expr
 
-//-------------------------------------------------------------------------
-// Make applications
-//------------------------------------------------------------------------- 
  
+/// Build the application of a (possibly generic, possibly curried) function value to a set of type and expression arguments
 val primMkApp : (Expr * TType) -> TypeInst -> Exprs -> range -> Expr
+
+/// Build the application of a (possibly generic, possibly curried) function value to a set of type and expression arguments.
+/// Reduce the application via let-bindings if the function value is a lambda expression.
 val mkApps : TcGlobals -> (Expr * TType) * TType list list * Exprs * range -> Expr
+
+/// Build the application of a generic construct to a set of type arguments.
+/// Reduce the application via substitution if the function value is a typed lambda expression.
 val mkTyAppExpr : range -> Expr * TType -> TType list -> Expr
 
+/// Build an expression to mutate a local
 ///   localv <- e      
 val mkValSet   : range -> ValRef -> Expr -> Expr
+
+/// Build an expression to mutate the contents of a local pointer
 ///  *localv_ptr = e   
 val mkAddrSet  : range -> ValRef -> Expr -> Expr
+
+/// Build an expression to dereference a local pointer
 /// *localv_ptr        
 val mkAddrGet  : range -> ValRef -> Expr
+
+/// Build an expression to take the address of a local 
 /// &localv           
 val mkValAddr  : range -> readonly: bool -> ValRef -> Expr
 
-//-------------------------------------------------------------------------
-// Note these take the address of the record expression if it is a struct, and
-// apply a type instantiation if it is a first-class polymorphic record field.
-//------------------------------------------------------------------------- 
-
+/// Build an exression representing the read of an instance class or record field.
+/// First take the address of the record expression if it is a struct.
 val mkRecdFieldGet : TcGlobals -> Expr * RecdFieldRef * TypeInst * range -> Expr
 
-//-------------------------------------------------------------------------
-//  Get the targets used in a decision graph (for reporting warnings)
-//------------------------------------------------------------------------- 
-
+///  Accumulate the targets actually used in a decision graph (for reporting warnings)
 val accTargetsOfDecisionTree : DecisionTree -> int list -> int list
 
-//-------------------------------------------------------------------------
-//  Optimizations on decision graphs
-//------------------------------------------------------------------------- 
-
+/// Make a 'match' expression applying some peep-hole optimizations along the way, e.g to 
+/// pre-decide the branch taken at compile-time.
 val mkAndSimplifyMatch : SequencePointInfoForBinding  -> range -> range -> TType -> DecisionTree -> DecisionTreeTarget list -> Expr
 
+/// Make a 'match' expression without applying any peep-hole optimizations.
 val primMkMatch : SequencePointInfoForBinding * range * DecisionTree * DecisionTreeTarget array * range * TType -> Expr
 
-//-------------------------------------------------------------------------
-//  Work out what things on the r.h.s. of a let rec need to be fixed up
-//------------------------------------------------------------------------- 
-
+///  Work out what things on the right-han-side of a 'let rec' recursive binding need to be fixed up
 val IterateRecursiveFixups : 
    TcGlobals -> Val option  -> 
    (Val option -> Expr -> (Expr -> Expr) -> Expr -> unit) -> 
    Expr * (Expr -> Expr) -> Expr -> unit
 
-//-------------------------------------------------------------------------
-// From lambdas taking multiple variables to lambdas taking a single variable
-// of tuple type. 
-//------------------------------------------------------------------------- 
-
+/// Given a lambda expression taking multiple variables, build a corresponding lambda taking a tuple
 val MultiLambdaToTupledLambda : TcGlobals -> Val list -> Expr -> Val * Expr
+
+/// Given a lambda expression, adjust it to have be one or two lambda expressions (fun a -> (fun b -> ...)) 
+/// where the first has the given arity.
 val AdjustArityOfLambdaBody : TcGlobals -> int -> Val list -> Expr -> Val list * Expr
 
-//-------------------------------------------------------------------------
-// Make applications, doing beta reduction by introducing let-bindings
-//------------------------------------------------------------------------- 
-
+/// Make an application expression, doing beta reduction by introducing let-bindings
 val MakeApplicationAndBetaReduce : TcGlobals -> Expr * TType * TypeInst list * Exprs * range -> Expr
 
+/// COmbine two static-resolution requirements on a type parameter
 val JoinTyparStaticReq : TyparStaticReq -> TyparStaticReq -> TyparStaticReq
 
-//-------------------------------------------------------------------------
-// More layout - this is for debugging
-//------------------------------------------------------------------------- 
+/// Layout for internal compiler debugging purposes
 module DebugPrint =
 
+    /// A global flag indicating whether debug output should include ranges
     val layoutRanges : bool ref
+
+    /// Convert a type to a string for debugging purposes
     val showType : TType -> string
+
+    /// Convert an expression to a string for debugging purposes
     val showExpr : Expr -> string
 
+    /// Debug layout for a reference to a value
     val valRefL : ValRef -> layout
+
+    /// Debug layout for a reference to a union case
     val unionCaseRefL : UnionCaseRef -> layout
-    val vspecAtBindL : Val -> layout
+
+    /// Debug layout for an value definition at its binding site
+    val valAtBindL : Val -> layout
+
+    /// Debug layout for an integer
     val intL : int -> layout
+
+    /// Debug layout for a value definition
     val valL : Val -> layout
+
+    /// Debug layout for a type parameter definition
     val typarDeclL : Typar -> layout
+
+    /// Debug layout for a trait constraint
     val traitL : TraitConstraintInfo -> layout
+
+    /// Debug layout for a type parameter
     val typarL : Typar -> layout
+
+    /// Debug layout for a set of type parameters
     val typarsL : Typars -> layout
+
+    /// Debug layout for a type
     val typeL : TType -> layout
+
+    /// Debug layout for a method slot signature
     val slotSigL : SlotSig -> layout
+
+    /// Debug layout for the type signature of a module or namespace definition
     val entityTypeL : ModuleOrNamespaceType -> layout
+
+    /// Debug layout for a module or namespace definition
     val entityL : ModuleOrNamespace -> layout
+
+    /// Debug layout for the type of a value
     val typeOfValL : Val -> layout
+
+    /// Debug layout for a binding of an expression to a value
     val bindingL : Binding -> layout
+
+    /// Debug layout for an expression
     val exprL : Expr -> layout
+
+    /// Debug layout for a type definition
     val tyconL : Tycon -> layout
+
+    /// Debug layout for a decision tree
     val decisionTreeL : DecisionTree -> layout
+
+    /// Debug layout for an implementation file
     val implFileL : TypedImplFile -> layout
+
+    /// Debug layout for a list of implementation files
     val implFilesL : TypedImplFile list -> layout
+
+    /// Debug layout for class and record fields
     val recdFieldRefL : RecdFieldRef -> layout
 
-//-------------------------------------------------------------------------
-// Fold on expressions
-//------------------------------------------------------------------------- 
-
+/// A set of function parameters (visitor) for folding over expressions
 type ExprFolder<'State> =
     { exprIntercept            : ('State -> Expr -> 'State) -> 'State -> Expr -> 'State option;
       valBindingSiteIntercept  : 'State -> bool * Val -> 'State;
@@ -1018,50 +1156,67 @@ type ExprFolder<'State> =
       dtreeIntercept           : 'State -> DecisionTree -> 'State;
       targetIntercept          : ('State -> Expr -> 'State) -> 'State -> DecisionTreeTarget -> 'State option;
       tmethodIntercept         : ('State -> Expr -> 'State) -> 'State -> ObjExprMethod -> 'State option;}
+
+/// The empty set of actions for folding over expressions
 val ExprFolder0 : ExprFolder<'State>
+
+/// Fold over all the expressions in an implementation file
 val FoldImplFile: ExprFolder<'State> -> ('State -> TypedImplFile -> 'State) 
+
+/// Fold over all the expressions in an expression
 val FoldExpr : ExprFolder<'State> -> ('State -> Expr -> 'State) 
 
 #if DEBUG
+/// Extract some statistics from an expression
 val ExprStats : Expr -> string
 #endif
 
-//-------------------------------------------------------------------------
-// Make some common types
-//------------------------------------------------------------------------- 
-
+/// Build a nativeptr type
 val mkNativePtrTy  : TcGlobals -> TType -> TType
+
+/// Build a 'voidptr' type
 val mkVoidPtrTy  : TcGlobals -> TType
+
+/// Build a single-dimensional array type
 val mkArrayType      : TcGlobals -> TType -> TType
+
+/// Determine is a type is an option type
 val isOptionTy     : TcGlobals -> TType -> bool
+
+/// Take apart an option type
 val destOptionTy   : TcGlobals -> TType -> TType
+
+/// Try to take apart an option type
 val tryDestOptionTy : TcGlobals -> TType -> ValueOption<TType>
 
+/// Determine if a type is a System.Linq.Expression type
 val isLinqExpressionTy     : TcGlobals -> TType -> bool
+
+/// Take apart a System.Linq.Expression type
 val destLinqExpressionTy   : TcGlobals -> TType -> TType
+
+/// Try to take apart a System.Linq.Expression type
 val tryDestLinqExpressionTy : TcGlobals -> TType -> TType option
 
-(*
-val isQuoteExprTy     : TcGlobals -> TType -> bool
-val destQuoteExprTy   : TcGlobals -> TType -> TType
-val tryDestQuoteExprTy : TcGlobals -> TType -> TType option
-*)
-
-//-------------------------------------------------------------------------
-// Primitives associated with compiling the IEvent idiom to .NET events
-//------------------------------------------------------------------------- 
-
+/// Determine if a type is an IDelegateEvent type
 val isIDelegateEventType   : TcGlobals -> TType -> bool
+
+/// Take apart an IDelegateEvent type
 val destIDelegateEventType : TcGlobals -> TType -> TType 
+
+/// Build an IEvent type
 val mkIEventType   : TcGlobals -> TType -> TType -> TType
+
+/// Build an IObservable type
 val mkIObservableType   : TcGlobals -> TType -> TType
+
+/// Build an IObserver type
 val mkIObserverType   : TcGlobals -> TType -> TType
 
-//-------------------------------------------------------------------------
-// Primitives associated with printf format string parsing
-//------------------------------------------------------------------------- 
-
+/// Build an Lazy type
 val mkLazyTy : TcGlobals -> TType -> TType
+
+/// Build an PrintFormat type
 val mkPrintfFormatTy : TcGlobals -> TType -> TType -> TType -> TType -> TType -> TType
 
 //-------------------------------------------------------------------------
