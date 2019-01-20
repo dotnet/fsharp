@@ -178,6 +178,8 @@ val mkLetsFromBindings : range -> Bindings -> Expr -> Expr
 
 /// Build a user-level let expression
 val mkLet : SequencePointInfoForBinding -> range -> Val -> Expr -> Expr -> Expr
+
+/// Make a binding that binds a function value to a lambda taking multiple arguments
 val mkMultiLambdaBind : Val -> SequencePointInfoForBinding -> range -> Typars -> Val list list -> Expr * TType -> Binding
 
 // Compiler generated bindings may involve a user variable.
@@ -185,24 +187,32 @@ val mkMultiLambdaBind : Val -> SequencePointInfoForBinding -> range -> Typars ->
 // an SPAlways expression. Compiler generated bindings can arise from for example, inlining.
 val mkCompGenBind : Val -> Expr -> Binding
 
+/// Make a set of bindings that bind compiler generated values to corresponding expressions.
+/// Compiler-generated bindings do not give rise to a sequence point in debugging.
 val mkCompGenBinds : Val list -> Exprs -> Bindings
 
+/// Make a let-expression that locally binds a compiler-generated value to an expression.
+/// Compiler-generated bindings do not give rise to a sequence point in debugging.
 val mkCompGenLet : range -> Val -> Expr -> Expr -> Expr
 
+/// Make a let-expression that locally binds a compiler-generated value to an expression, where the expression
+/// is returned by the given continuation. Compiler-generated bindings do not give rise to a sequence point in debugging.
 val mkCompGenLetIn: range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
 
-// Invisible bindings are never given a sequence point and should never have side effects
+/// Make a let-expression that locally binds a value to an expression in an "invisible" way.
+/// Invisible bindings are not given a sequence point and should not have side effects.
 val mkInvisibleLet : range -> Val -> Expr -> Expr -> Expr
 
+/// Make a binding that binds a value to an expression in an "invisible" way.
+/// Invisible bindings are not given a sequence point and should not have side effects.
 val mkInvisibleBind : Val -> Expr -> Binding
 
+/// Make a set of bindings that bind values to expressions in an "invisible" way.
+/// Invisible bindings are not given a sequence point and should not have side effects.
 val mkInvisibleBinds : Vals -> Exprs -> Bindings
 
+/// Make a let-rec expression that locally binds values to expressions where self-reference back to the values is possible.
 val mkLetRecBinds : range -> Bindings -> Expr -> Expr
- 
-//-------------------------------------------------------------------------
-// Generalization/inference helpers
-//------------------------------------------------------------------------- 
  
 /// TypeScheme (generalizedTypars, tauTy)
 ///
@@ -210,64 +220,77 @@ val mkLetRecBinds : range -> Bindings -> Expr -> Expr
 ///    tauTy  --  the body of the generalized type. A 'tau' type is one with its type parameters stripped off.
 type TypeScheme = TypeScheme of Typars  * TType    
 
+/// Make the right-hand side of a generalized binding, incorporating the generalized generic parameters from the type
+/// scheme into the right-hand side as type generalizations.
 val mkGenericBindRhs : TcGlobals -> range -> Typars -> TypeScheme -> Expr -> Expr
 
+/// Test if the type parameter is one of those being generalized by a type scheme.
 val isBeingGeneralized : Typar -> TypeScheme -> bool
 
-//-------------------------------------------------------------------------
-// Make lazy and/or
-//------------------------------------------------------------------------- 
-
+/// Make the expression corresponding to 'expr1 && expr2'
 val mkLazyAnd  : TcGlobals -> range -> Expr -> Expr -> Expr
 
+/// Make the expression corresponding to 'expr1 || expr2'
 val mkLazyOr   : TcGlobals -> range -> Expr -> Expr -> Expr
 
+/// Make a byref type 
 val mkByrefTy  : TcGlobals -> TType -> TType
 
+/// Make a byref type with a in/out kind inference parameter
 val mkByrefTyWithInference  : TcGlobals -> TType -> TType -> TType
 
+/// Make a in-byref type with a in kind parameter
 val mkInByrefTy  : TcGlobals -> TType -> TType
 
+/// Make an out-byref type with an out kind parameter
 val mkOutByrefTy  : TcGlobals -> TType -> TType
 
-//-------------------------------------------------------------------------
-// Make construction operations
-//------------------------------------------------------------------------- 
-
+/// Make an expression that constructs a union case, e.g. 'Some(expr)'
 val mkUnionCaseExpr : UnionCaseRef * TypeInst * Exprs * range -> Expr
 
+/// Make an expression that constructs an exception value
 val mkExnExpr : TyconRef * Exprs * range -> Expr
 
+/// Make an expression that is IL assembly code
 val mkAsmExpr : ILInstr list * TypeInst * Exprs * TTypes * range -> Expr
 
+/// Make an expression that coerces one expression to another type
 val mkCoerceExpr : Expr * TType * range * TType -> Expr
 
+/// Make an expression that re-raises an exception
 val mkReraise : range -> TType -> Expr
 
+/// Make an expression that re-raises an exception via a library call
 val mkReraiseLibCall : TcGlobals -> TType -> range -> Expr
-
-//-------------------------------------------------------------------------
-// Make projection operations
-//------------------------------------------------------------------------- 
  
+/// Make an expression that gets an item from a tuple
 val mkTupleFieldGet                : TcGlobals -> TupInfo * Expr * TypeInst * int * range -> Expr
 
+/// Make an expression that gets an item from an anonymous record
 val mkAnonRecdFieldGet             : TcGlobals -> AnonRecdTypeInfo * Expr * TypeInst * int * range -> Expr
 
+/// Make an expression that gets an item from an anonymous record (via the address of the value if it is a struct)
 val mkAnonRecdFieldGetViaExprAddr  : AnonRecdTypeInfo * Expr * TypeInst * int * range -> Expr
 
+/// Make an expression that gets an instance field from a record or class (via the address of the value if it is a struct)
 val mkRecdFieldGetViaExprAddr      :                  Expr * RecdFieldRef   * TypeInst               * range -> Expr
 
+/// Make an expression that gets the address of an instance field from a record or class (via the address of the value if it is a struct)
 val mkRecdFieldGetAddrViaExprAddr  : readonly: bool * Expr * RecdFieldRef   * TypeInst               * range -> Expr
 
+/// Make an expression that gets a static field from a record or class 
 val mkStaticRecdFieldGet           :                         RecdFieldRef   * TypeInst               * range -> Expr
 
+/// Make an expression that sets a static field in a record or class 
 val mkStaticRecdFieldSet           :                         RecdFieldRef   * TypeInst * Expr        * range -> Expr
 
+/// Make an expression that gets the address of a static field in a record or class 
 val mkStaticRecdFieldGetAddr       : readonly: bool *        RecdFieldRef   * TypeInst               * range -> Expr
 
+/// Make an expression that sets an instance the field of a record or class (via the address of the value if it is a struct)
 val mkRecdFieldSetViaExprAddr      :                  Expr * RecdFieldRef   * TypeInst * Expr        * range -> Expr
 
+/// Make an expression that gets the tag of a union value (via the address of the value if it is a struct)
 val mkUnionCaseTagGetViaExprAddr   : Expr * TyconRef       * TypeInst               * range -> Expr
 
 /// Make a 'TOp.UnionCaseProof' expression, which proves a union value is over a particular case (used only for ref-unions, not struct-unions)
@@ -296,10 +319,13 @@ val mkUnionCaseFieldSet            : Expr * UnionCaseRef   * TypeInst * int  * E
 /// Like mkUnionCaseFieldGetUnprovenViaExprAddr, but for struct-unions, the input should be a copy of the expression.
 val mkUnionCaseFieldGetUnproven    : TcGlobals -> Expr * UnionCaseRef   * TypeInst * int         * range -> Expr
 
+/// Make an expression that gets an instance field from an F# exception value 
 val mkExnCaseFieldGet              : Expr * TyconRef               * int         * range -> Expr
 
+/// Make an expression that sets an instance field in an F# exception value 
 val mkExnCaseFieldSet              : Expr * TyconRef               * int  * Expr * range -> Expr
 
+/// Make an expression that gets the address of an element in an array
 val mkArrayElemAddress : TcGlobals -> readonly: bool * ILReadonly * bool * ILArrayShape * TType * Expr list * range -> Expr
 
 //-------------------------------------------------------------------------
@@ -332,29 +358,25 @@ val mkGetTupleItemN : TcGlobals -> range -> int -> ILType -> bool -> Expr -> TTy
 /// but TupInfo may later be used carry variables that infer structness.
 val evalTupInfoIsStruct : TupInfo -> bool
 
+/// Evaluate the AnonRecdTypeInfo to work out if it is a struct or a ref. 
 val evalAnonInfoIsStruct : AnonRecdTypeInfo -> bool
 
 /// If it is a tuple type, ensure it's outermost type is a .NET tuple type, otherwise leave unchanged
 val convertToTypeWithMetadataIfPossible : TcGlobals -> TType -> TType
 
-//-------------------------------------------------------------------------
-// Take the address of an expression, or force it into a mutable local. Any allocated
-// mutable local may need to be kept alive over a larger expression, hence we return
-// a wrapping function that wraps "let mutable loc = Expr in ..." around a larger
-// expression.
-//------------------------------------------------------------------------- 
-
+/// An exception representing a warning for a defensive copy of an immutable struct
 exception DefensiveCopyWarning of string * range 
 
 type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
 
+/// Helper to take the address of an expression
 val mkExprAddrOfExprAux : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Val * Expr) option * Expr * bool * bool
 
+/// Take the address of an expression, or force it into a mutable local. Any allocated
+/// mutable local may need to be kept alive over a larger expression, hence we return
+/// a wrapping function that wraps "let mutable loc = Expr in ..." around a larger
+/// expression.
 val mkExprAddrOfExpr : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Expr -> Expr) * Expr * bool * bool
-
-//-------------------------------------------------------------------------
-// Tables keyed on values and/or type parameters
-//------------------------------------------------------------------------- 
 
 /// Maps Val to T, based on stamps
 [<Struct;NoEquality; NoComparison>]
