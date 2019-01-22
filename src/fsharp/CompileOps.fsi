@@ -354,7 +354,7 @@ type TcConfigBuilder =
       mutable noDebugData: bool
 
       /// If true, indicates all type checking and code generation is in the context of fsi.exe
-      isInteractive: bool 
+      mutable isInteractive: bool 
       isInvalidationSupported: bool 
       mutable emitDebugInfoInQuotations: bool
       mutable exename: string option 
@@ -668,7 +668,7 @@ val ProcessMetaCommandsFromInput:
 val ApplyMetaCommandsFromInputToTcConfig: TcConfig * Ast.ParsedInput * string -> TcConfig
 
 /// Process the #nowarn in an input
-val ApplyNoWarnsToTcConfig: TcConfig * Ast.ParsedInput * string -> TcConfig
+val ApplyNoWarnsAndUseScriptResolutionRulesToTcConfig: TcConfig * Ast.ParsedInput * bool * string -> TcConfig
 
 //----------------------------------------------------------------------------
 // Scoped pragmas

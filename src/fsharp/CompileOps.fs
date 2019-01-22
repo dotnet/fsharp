@@ -2335,7 +2335,7 @@ type TcConfigBuilder =
       mutable noDebugData : bool
 
       /// if true, indicates all type checking and code generation is in the context of fsi.exe
-      isInteractive : bool
+      mutable isInteractive : bool
       isInvalidationSupported : bool
 
       /// used to log sqm data
@@ -4999,9 +4999,10 @@ let ProcessMetaCommandsFromInput
         let state = List.fold ProcessMetaCommandsFromModuleImpl state impls
         state
 
-let ApplyNoWarnsToTcConfig (tcConfig:TcConfig, inp:ParsedInput, pathOfMetaCommandSource) = 
+let ApplyNoWarnsAndUseScriptResolutionRulesToTcConfig (tcConfig:TcConfig, inp:ParsedInput, useScriptResolutionRules, pathOfMetaCommandSource) = 
     // Clone
-    let tcConfigB = tcConfig.CloneOfOriginalBuilder 
+    let tcConfigB = tcConfig.CloneOfOriginalBuilder
+    tcConfigB.isInteractive <- useScriptResolutionRules
     let addNoWarn = fun () (m, s) -> tcConfigB.TurnWarningOff(m, s)
     let addReferencedAssemblyByPath = fun () (_m, _s) -> ()
     let addLoadedSource = fun () (_m, _s) -> ()
@@ -5103,7 +5104,7 @@ module private ScriptPreprocessClosure =
     /// Create a TcConfig for load closure starting from a single .fsx file
     let CreateScriptTextTcConfig (legacyReferenceResolver, defaultFSharpBinariesDir, filename:string, codeContext, useSimpleResolution, useFsiAuxLib, basicReferences, applyCommandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage) =  
         let projectDir = Path.GetDirectoryName(filename)
-        let isInteractive = (codeContext = CodeContext.CompilationAndEvaluation)
+        let isInteractive = true                            //(codeContext = CodeContext.CompilationAndEvaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
         let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, projectDir, isInteractive, isInvalidationSupported, defaultCopyFSharpCore=CopyFSharpCoreFlag.No, tryGetMetadataSnapshot=tryGetMetadataSnapshot) 
         applyCommandLineArgs tcConfigB

@@ -1620,6 +1620,7 @@ module internal Parser =
            source: string,
            mainInputFileName: string,
            projectFileName: string,
+           useScriptResolutionRules: bool,
            tcConfig: TcConfig,
            tcGlobals: TcGlobals,
            tcImports: TcImports,
@@ -1650,7 +1651,7 @@ module internal Parser =
                 use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
             
                 // Apply nowarns to tcConfig (may generate errors, so ensure errorLogger is installed)
-                let tcConfig = ApplyNoWarnsToTcConfig (tcConfig, parsedMainInput,Path.GetDirectoryName mainInputFileName)
+                let tcConfig = ApplyNoWarnsAndUseScriptResolutionRulesToTcConfig (tcConfig, parsedMainInput, useScriptResolutionRules, Path.GetDirectoryName mainInputFileName)
                         
                 // update the error handler with the modified tcConfig
                 errHandler.ErrorSeverityOptions <- tcConfig.errorSeverityOptions
@@ -2608,7 +2609,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                 // For scripts, this will have been recorded by GetProjectOptionsFromScript.
                                 let loadClosure = scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.TryGet (ltok, options))
                                 let! tcErrors, tcFileResult = 
-                                    Parser.CheckOneFile(parseResults, source, fileName, options.ProjectFileName, tcPrior.TcConfig, tcPrior.TcGlobals, tcPrior.TcImports, 
+                                    Parser.CheckOneFile(parseResults, source, fileName, options.ProjectFileName, options.UseScriptResolutionRules, tcPrior.TcConfig, tcPrior.TcGlobals, tcPrior.TcImports, 
                                                         tcPrior.TcState, tcPrior.ModuleNamesDict, loadClosure, tcPrior.TcErrors, reactorOps, (fun () -> builder.IsAlive), textSnapshotInfo, userOpName)
                                 let parsingOptions = FSharpParsingOptions.FromTcConfig(tcPrior.TcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
                                 let checkAnswer = MakeCheckFileAnswer(fileName, tcFileResult, options, builder, Array.ofList tcPrior.TcDependencyFiles, creationErrors, parseResults.Errors, tcErrors)
@@ -3332,7 +3333,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, reactorOps: IReactorOperatio
                 CompileOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, [ ])
 
             let loadClosure = LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, CodeContext.Editing, tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework, tryGetMetadataSnapshot=(fun _ -> None), reduceMemoryUsage=reduceMemoryUsage)
-            let! tcErrors, tcFileResult =  Parser.CheckOneFile(parseResults, source, filename, "project", tcConfig, tcGlobals, tcImports,  tcState, Map.empty, Some loadClosure, backgroundDiagnostics, reactorOps, (fun () -> true), None, userOpName)
+            let! tcErrors, tcFileResult =  Parser.CheckOneFile(parseResults, source, filename, "project", false, tcConfig, tcGlobals, tcImports,  tcState, Map.empty, Some loadClosure, backgroundDiagnostics, reactorOps, (fun () -> true), None, userOpName)
 
             return
                 match tcFileResult with 
