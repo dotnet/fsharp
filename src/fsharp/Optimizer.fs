@@ -976,11 +976,11 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
     // Under those checks, the further hidden* checks may be subsumed (meaning, not required anymore).
 
     let hiddenTycon, hiddenTyconRepr, hiddenVal, hiddenRecdField, hiddenUnionCase = 
-        Zset.memberOf mhi.mhiTycons, 
-        Zset.memberOf mhi.mhiTyconReprs, 
-        Zset.memberOf mhi.mhiVals, 
-        Zset.memberOf mhi.mhiRecdFields, 
-        Zset.memberOf mhi.mhiUnionCases
+        Zset.memberOf mhi.HiddenTycons, 
+        Zset.memberOf mhi.HiddenTyconReprs, 
+        Zset.memberOf mhi.HiddenVals, 
+        Zset.memberOf mhi.HiddenRecdFields, 
+        Zset.memberOf mhi.HiddenUnionCases
 
     let rec abstractExprInfo ivalue = 
         match ivalue with 
@@ -3231,7 +3231,7 @@ and OptimizeModuleExpr cenv env x =
                     not (ValueIsUsedOrHasEffect cenv (fun () -> fvs.FreeLocals) (bind, binfo)) &&
 
                     // Check the thing is hidden by the signature (if any)
-                    hidden.mhiVals.Contains bind.Var && 
+                    hidden.HiddenVals.Contains bind.Var && 
 
                     // Check the thing is not compiled as a static field or property, since reflected definitions and other reflective stuff might need it
                     not (IsCompiledAsStaticProperty cenv.g bind.Var))

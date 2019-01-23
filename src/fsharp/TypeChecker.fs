@@ -17460,7 +17460,7 @@ let CheckModuleSignature g cenv m denvAtEnd rootSigOpt implFileTypePriorToSig im
                     // Compute the remapping from implementation to signature
                     let remapInfo , _ = ComputeRemappingFromInferredSignatureToExplicitSignature g implFileTypePriorToSig sigFileType
                      
-                    let aenv = { TypeEquivEnv.Empty with EquivTycons = TyconRefMap.OfList remapInfo.mrpiEntities }
+                    let aenv = { TypeEquivEnv.Empty with EquivTycons = TyconRefMap.OfList remapInfo.RepackagedEntities }
                     
                     if not (SignatureConformance.Checker(g, cenv.amap, denv, remapInfo, true).CheckSignature  aenv (mkLocalModRef implFileSpecPriorToSig) sigFileType) then  (
                         // We can just raise 'ReportedError' since CheckModuleOrNamespace raises its own error 
