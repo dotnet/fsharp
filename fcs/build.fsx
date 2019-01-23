@@ -24,7 +24,13 @@ let isMono = false
 // Utilities
 // --------------------------------------------------------------------------------------
 
-let dotnetExePath = DotNetCli.InstallDotNetSDK "2.1.403"
+let dotnetSdkVersion = "2.1.403"
+
+printfn "Desired .NET SDK version = %s" dotnetSdkVersion
+printfn "DotNetCli.isInstalled() = %b" (DotNetCli.isInstalled())
+if DotNetCli.isInstalled() then printfn "DotNetCli.getVersion() = %s" (DotNetCli.getVersion())
+
+let dotnetExePath = DotNetCli.InstallDotNetSDK dotnetSdkVersion
 
 let runDotnet workingDir args =
     let result =

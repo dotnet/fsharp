@@ -212,7 +212,7 @@ type internal ProjectSitesAndFiles() =
         | None -> None
         | Some (:? IVsHierarchy as hier) ->
             match hier.GetProperty(VSConstants.VSITEMID_ROOT, int __VSHPROPID.VSHPROPID_ExtObject) with
-            | VSConstants.S_OK, (:? EnvDTE.Project as p) when not (isNull p) ->
+            | VSConstants.S_OK, (:? EnvDTE.Project as p) ->
                 Some ((p.Object :?> VSLangProj.VSProject).References
                         |> Seq.cast<VSLangProj.Reference>
                         |> Seq.choose (fun r ->

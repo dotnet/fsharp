@@ -1,5 +1,6 @@
 // #NoMT #CompilerOptions #RequiresENU 
-#light
+open System
+open System.IO
 
 let fn1 = fsi.CommandLineArgs.[1]
 let fn2 = fsi.CommandLineArgs.[2]
@@ -29,5 +30,12 @@ let compare (f1:string list) (f2:string list) = List.forall2  (fun (a:string) (b
                                                                             printfn "\t<< %s" b
                                                                             false
                                                                        ) f1 f2
+
+
+let update = try Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") = "1" with _ -> false
+
+if update then 
+    printfn "Updating %s --> %s" fn1 fn2
+    File.Copy(fn1, fn2, true)
 
 exit (if compare f1 f2 then 0 else 1)

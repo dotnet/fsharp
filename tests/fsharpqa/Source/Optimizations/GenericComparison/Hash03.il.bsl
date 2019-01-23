@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly Hash03
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.Hash03
 {
-  // Offset: 0x00000000 Length: 0x00000220
+  // Offset: 0x00000000 Length: 0x00000228
+}
+.mresource public FSharpSignatureDataB.Hash03
+{
+  // Offset: 0x00000230 Length: 0x00000003
 }
 .mresource public FSharpOptimizationData.Hash03
 {
-  // Offset: 0x00000228 Length: 0x000000B0
+  // Offset: 0x00000238 Length: 0x000000B0
+}
+.mresource public FSharpOptimizationDataB.Hash03
+{
+  // Offset: 0x000002F0 Length: 0x00000000
 }
 .module Hash03.dll
-// MVID: {59B18AEE-9642-788D-A745-0383EE8AB159}
+// MVID: {5BF2E04A-9642-788D-A745-03834AE0F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02DA0000
+// Image base: 0x01670000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

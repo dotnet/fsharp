@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly DoNotBoxStruct_MDArray_FSInterface_NoExtMeth
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.DoNotBoxStruct_MDArray_FSInterface_NoExtMeth
 {
-  // Offset: 0x00000000 Length: 0x0000027F
+  // Offset: 0x00000000 Length: 0x00000287
+}
+.mresource public FSharpSignatureDataB.DoNotBoxStruct_MDArray_FSInterface_NoExtMeth
+{
+  // Offset: 0x00000290 Length: 0x00000006
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_MDArray_FSInterface_NoExtMeth
 {
-  // Offset: 0x00000288 Length: 0x000000B0
+  // Offset: 0x000002A0 Length: 0x000000B0
+}
+.mresource public FSharpOptimizationDataB.DoNotBoxStruct_MDArray_FSInterface_NoExtMeth
+{
+  // Offset: 0x00000358 Length: 0x00000000
 }
 .module DoNotBoxStruct_MDArray_FSInterface_NoExtMeth.exe
-// MVID: {59B1920A-A67D-867A-A745-03830A92B159}
+// MVID: {5BF2D3C6-A67D-867A-A745-0383C6D3F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x010C0000
+// Image base: 0x002E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -51,7 +59,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'F@6-2'
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'F@6-26'
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -63,7 +71,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ret
-    } // end of method 'F@6-2'::.ctor
+    } // end of method 'F@6-26'::.ctor
 
     .method assembly hidebysig instance void 
             Invoke(object x,
@@ -78,9 +86,9 @@
       IL_0001:  stloc.0
       .line 6,6 : 77,79 ''
       IL_0002:  ret
-    } // end of method 'F@6-2'::Invoke
+    } // end of method 'F@6-26'::Invoke
 
-  } // end of class 'F@6-2'
+  } // end of class 'F@6-26'
 
   .method public static void  F<(class [FSharp.Core]Microsoft.FSharp.Control.IEvent`2<class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>,int32>) T>(!!T[0...,0...] x) cil managed
   {
@@ -93,9 +101,9 @@
     IL_0003:  readonly.
     IL_0005:  call       instance !!T& !!T[0...,0...]::Address(int32,
                                                                int32)
-    IL_000a:  newobj     instance void DoNotBoxStruct_MDArray_FSInterface_NoExtMeth/'F@6-2'::.ctor()
-    IL_000f:  ldftn      instance void DoNotBoxStruct_MDArray_FSInterface_NoExtMeth/'F@6-2'::Invoke(object,
-                                                                                                    int32)
+    IL_000a:  newobj     instance void DoNotBoxStruct_MDArray_FSInterface_NoExtMeth/'F@6-26'::.ctor()
+    IL_000f:  ldftn      instance void DoNotBoxStruct_MDArray_FSInterface_NoExtMeth/'F@6-26'::Invoke(object,
+                                                                                                     int32)
     IL_0015:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>::.ctor(object,
                                                                                                                  native int)
     IL_001a:  constrained. !!T

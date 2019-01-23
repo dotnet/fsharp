@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly StaticInit_Module01
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.StaticInit_Module01
 {
-  // Offset: 0x00000000 Length: 0x000002A7
+  // Offset: 0x00000000 Length: 0x000002AF
+}
+.mresource public FSharpSignatureDataB.StaticInit_Module01
+{
+  // Offset: 0x000002B8 Length: 0x00000003
 }
 .mresource public FSharpOptimizationData.StaticInit_Module01
 {
-  // Offset: 0x000002B0 Length: 0x000000DF
+  // Offset: 0x000002C0 Length: 0x000000DF
+}
+.mresource public FSharpOptimizationDataB.StaticInit_Module01
+{
+  // Offset: 0x000003A8 Length: 0x00000000
 }
 .module StaticInit_Module01.dll
-// MVID: {59B19250-705F-DF4F-A745-03835092B159}
+// MVID: {5BF2D3CD-705F-DF4F-A745-0383CDD3F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00370000
+// Image base: 0x00310000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -64,7 +72,7 @@
       {
         // Code size       6 (0x6)
         .maxstack  8
-        IL_0000:  ldsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::y@7
+        IL_0000:  ldsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::'y@7-93'
         IL_0005:  ret
       } // end of method N::get_y
 
@@ -73,7 +81,7 @@
       {
         // Code size       6 (0x6)
         .maxstack  8
-        IL_0000:  ldsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::z@8
+        IL_0000:  ldsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::'z@8-17'
         IL_0005:  ret
       } // end of method N::get_z
 
@@ -94,7 +102,7 @@
     {
       // Code size       6 (0x6)
       .maxstack  8
-      IL_0000:  ldsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::'x@5-1'
+      IL_0000:  ldsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::'x@5-121'
       IL_0005:  ret
     } // end of method M::get_x
 
@@ -110,11 +118,11 @@
 .class private abstract auto ansi sealed '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01
        extends [mscorlib]System.Object
 {
-  .field static assembly initonly int32 'x@5-1'
+  .field static assembly initonly int32 'x@5-121'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly initonly int32 y@7
+  .field static assembly initonly int32 'y@7-93'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly initonly int32 z@8
+  .field static assembly initonly int32 'z@8-17'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -133,7 +141,7 @@
     IL_0000:  ldstr      "1"
     IL_0005:  callvirt   instance int32 [mscorlib]System.String::get_Length()
     IL_000a:  dup
-    IL_000b:  stsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::'x@5-1'
+    IL_000b:  stsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::'x@5-121'
     IL_0010:  stloc.0
     .line 7,7 : 5,27 ''
     IL_0011:  call       int32 StaticInit_Module01/M::get_x()
@@ -141,7 +149,7 @@
     IL_001b:  callvirt   instance int32 [mscorlib]System.String::get_Length()
     IL_0020:  add
     IL_0021:  dup
-    IL_0022:  stsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::y@7
+    IL_0022:  stsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::'y@7-93'
     IL_0027:  stloc.1
     .line 8,8 : 5,27 ''
     IL_0028:  call       int32 StaticInit_Module01/M/N::get_y()
@@ -149,7 +157,7 @@
     IL_0032:  callvirt   instance int32 [mscorlib]System.String::get_Length()
     IL_0037:  add
     IL_0038:  dup
-    IL_0039:  stsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::z@8
+    IL_0039:  stsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::'z@8-17'
     IL_003e:  stloc.2
     IL_003f:  ret
   } // end of method $StaticInit_Module01::.cctor

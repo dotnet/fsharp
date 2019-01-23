@@ -24,6 +24,11 @@ let notlazy v = Lazy<_>.CreateFromValue v
 
 let inline isNil l = List.isEmpty l
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+let inline (|NonNull|) x = match x with null -> raise (NullReferenceException()) | v -> v
+let inline nonNull<'T> (x: 'T) = x
+#endif
+
 /// Returns true if the list has less than 2 elements. Otherwise false.
 let inline isNilOrSingleton l =
     match l with
@@ -38,7 +43,6 @@ let inline isSingleton l =
     | _ -> false
 
 let inline isNonNull x = not (isNull x)
-let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
 let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
 /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
@@ -68,13 +72,17 @@ let reportTime =
 type InlineDelayInit<'T when 'T : not struct> = 
     new (f: unit -> 'T) = {store = Unchecked.defaultof<'T>; func = Func<_>(f) } 
     val mutable store : 'T
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     val mutable func : Func<'T>
+#else
+    val mutable func : Func<'T> ?
+#endif
     member x.Value = 
         match x.func with 
         | null -> x.store 
         | _ -> 
         let res = LazyInitializer.EnsureInitialized(&x.store, x.func) 
-        x.func <- Unchecked.defaultof<_>
+        x.func <- null
         res
 
 //-------------------------------------------------------------------------
@@ -198,9 +206,7 @@ module Array =
     /// ~0.8x slower for ints
     let inline areEqual (xs: 'T []) (ys: 'T []) =
         match xs, ys with
-        | null, null -> true
         | [||], [||] -> true
-        | null, _ | _, null -> false
         | _ when xs.Length <> ys.Length -> false
         | _ ->
             let mutable break' = false
@@ -224,8 +230,7 @@ module Array =
     /// check if subArray is found in the wholeArray starting 
     /// at the provided index
     let inline isSubArray (subArray: 'T []) (wholeArray:'T []) index = 
-        if isNull subArray || isNull wholeArray then false
-        elif subArray.Length = 0 then true
+        if subArray.Length = 0 then true
         elif subArray.Length > wholeArray.Length then false
         elif subArray.Length = wholeArray.Length then areEqual subArray wholeArray else
         let rec loop subidx idx =
@@ -540,9 +545,6 @@ module String =
             String (strArr)
 
     let extractTrailingIndex (str: string) =
-        match str with
-        | null -> null, None
-        | _ ->
             let charr = str.ToCharArray() 
             Array.revInPlace charr
             let digits = Array.takeWhile Char.IsDigit charr
@@ -552,13 +554,9 @@ module String =
                | "" -> str, None
                | index -> str.Substring (0, str.Length - index.Length), Some (int index)
 
-    /// Remove all trailing and leading whitespace from the string
-    /// return null if the string is null
-    let trim (value: string) = if isNull value then null else value.Trim()
-    
     /// Splits a string into substrings based on the strings in the array separators
     let split options (separator: string []) (value: string) = 
-        if isNull value  then null else value.Split(separator, options)
+        value.Split(separator, options)
 
     let (|StartsWith|_|) pattern value =
         if String.IsNullOrWhiteSpace value then
@@ -994,21 +992,28 @@ type LazyWithContextFailure(exn:exn) =
 type LazyWithContext<'T,'ctxt> = 
     { /// This field holds the result of a successful computation. It's initial value is Unchecked.defaultof
       mutable value : 'T
+
       /// This field holds either the function to run or a LazyWithContextFailure object recording the exception raised 
       /// from running the function. It is null if the thunk has been evaluated successfully.
-      mutable funcOrException: obj;
+      mutable funcOrException: obj 
+
       /// A helper to ensure we rethrow the "original" exception
       findOriginalException : exn -> exn }
+
     static member Create(f: ('ctxt->'T), findOriginalException) : LazyWithContext<'T,'ctxt> = 
         { value = Unchecked.defaultof<'T>;
-          funcOrException = box f;
+          funcOrException = box f
           findOriginalException = findOriginalException }
+
     static member NotLazy(x:'T) : LazyWithContext<'T,'ctxt> = 
         { value = x
           funcOrException = null
           findOriginalException = id }
+
     member x.IsDelayed = (match x.funcOrException with null -> false | :? LazyWithContextFailure -> false | _ -> true)
+
     member x.IsForced = (match x.funcOrException with null -> true | _ -> false)
+
     member x.Force(ctxt:'ctxt) =  
         match x.funcOrException with 
         | null -> x.value 
@@ -1023,19 +1028,22 @@ type LazyWithContext<'T,'ctxt> =
     member x.UnsynchronizedForce(ctxt) = 
         match x.funcOrException with 
         | null -> x.value 
+
         | :? LazyWithContextFailure as res -> 
               // Re-raise the original exception 
               raise (x.findOriginalException res.Exception)
+
         | :? ('ctxt -> 'T) as f -> 
               x.funcOrException <- box(LazyWithContextFailure.Undefined)
               try 
                   let res = f ctxt 
-                  x.value <- res; 
-                  x.funcOrException <- null; 
+                  x.value <- res
+                  x.funcOrException <- null
                   res
               with e -> 
-                  x.funcOrException <- box(new LazyWithContextFailure(e)); 
+                  x.funcOrException <- box(new LazyWithContextFailure(e))
                   reraise()
+
         | _ -> 
             failwith "unreachable"
 
@@ -1287,14 +1295,32 @@ module Shim =
             member __.IsPathRootedShim (path: string) = Path.IsPathRooted path
 
             member __.IsInvalidPathShim(path: string) = 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
                 let isInvalidPath(p:string) = 
-                    String.IsNullOrEmpty(p) || p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+#else
+                let isInvalidPath(p:string?) = 
+#endif
+                    match p with 
+                    | null | "" -> true
+                    | NonNull p -> p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
                 let isInvalidFilename(p:string) = 
-                    String.IsNullOrEmpty(p) || p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
+#else
+                let isInvalidFilename(p:string?) = 
+#endif
+                    match p with 
+                    | null | "" -> true
+                    | NonNull p -> p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
                 let isInvalidDirectory(d:string) = 
-                    d=null || d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+#else
+                let isInvalidDirectory(d:string?) = 
+#endif
+                    match d with 
+                    | null -> true
+                    | NonNull d -> d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
                 isInvalidPath (path) || 
                 let directory = Path.GetDirectoryName(path)

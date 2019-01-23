@@ -122,7 +122,7 @@ type internal LegacyProjectWorkspaceMap(workspace: VisualStudioWorkspaceImpl,
             let fakeProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
             if isNull (workspace.ProjectTracker.GetProject fakeProjectId) then
-                let hierarchy =
+                let hierarchy : IVsHierarchy? =
                     site.ProjectProvider
                     |> Option.map (fun p -> p :?> IVsHierarchy)
                     |> Option.toObj

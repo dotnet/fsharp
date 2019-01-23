@@ -112,7 +112,7 @@ type BigIntType() =
 #endif
         
         // Null
-        Assert.IsFalse(a.Equals(null))
+        Assert.IsFalse(a.Equals(null:obj)) // TODO NULLNESS - this type annoation was needed to resolve overloading, even with /checknulls off
 
 #if CROSS_PLATFORM_COMPILER // see https://bugzilla.xamarin.com/show_bug.cgi?id=22591
 #else

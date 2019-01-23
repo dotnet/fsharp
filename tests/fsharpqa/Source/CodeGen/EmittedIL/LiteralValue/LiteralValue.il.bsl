@@ -1,5 +1,6 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.5.22220.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
 
@@ -12,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 4:5:0:0
 }
 .assembly LiteralValue
 {
@@ -28,22 +29,28 @@
 }
 .mresource public FSharpSignatureData.LiteralValue
 {
-  // Offset: 0x00000000 Length: 0x00000274
-  // WARNING: managed resource file FSharpSignatureData.test created
+  // Offset: 0x00000000 Length: 0x00000287
+}
+.mresource public FSharpSignatureDataB.LiteralValue
+{
+  // Offset: 0x00000290 Length: 0x0000000B
 }
 .mresource public FSharpOptimizationData.LiteralValue
 {
-  // Offset: 0x00000278 Length: 0x0000006F
-  // WARNING: managed resource file FSharpOptimizationData.test created
+  // Offset: 0x000002A0 Length: 0x0000007F
+}
+.mresource public FSharpOptimizationDataB.LiteralValue
+{
+  // Offset: 0x00000328 Length: 0x00000000
 }
 .module LiteralValue.exe
- // MVID: {5AA663EB-D9C1-2E4E-A745-0383EB63A65A}
+// MVID: {5BF2DEA8-196E-5E7E-A745-0383A8DEF25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02BF0000
+// Image base: 0x016C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -62,7 +69,7 @@
     // Code size       2 (0x2)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 6,6 : 5,6 'D:\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\LiteralValue\\LiteralValue.fs'
+    .line 6,6 : 5,6 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\LiteralValue\\LiteralValue.fs'
     IL_0000:  ldc.i4.0
     IL_0001:  ret
   } // end of method LiteralValue::main
@@ -72,10 +79,9 @@
 .class private abstract auto ansi sealed '<StartupCode$LiteralValue>'.$LiteralValue
        extends [mscorlib]System.Object
 {
-} // end of class '<StartupCode$test>'.$LiteralValue
+} // end of class '<StartupCode$LiteralValue>'.$LiteralValue
 
 
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file test.res

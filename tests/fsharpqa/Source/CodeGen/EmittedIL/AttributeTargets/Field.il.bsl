@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly Field
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.Field
 {
-  // Offset: 0x00000000 Length: 0x000003F4
+  // Offset: 0x00000000 Length: 0x000003FC
+}
+.mresource public FSharpSignatureDataB.Field
+{
+  // Offset: 0x00000400 Length: 0x00000019
 }
 .mresource public FSharpOptimizationData.Field
 {
-  // Offset: 0x000003F8 Length: 0x000000B8
+  // Offset: 0x00000420 Length: 0x000000B8
+}
+.mresource public FSharpOptimizationDataB.Field
+{
+  // Offset: 0x000004E0 Length: 0x00000003
 }
 .module Field.dll
-// MVID: {59B19208-96F8-CD6E-A745-03830892B159}
+// MVID: {5BF2D3CD-96F8-CD6E-A745-0383CDD3F25B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00F60000
+// Image base: 0x007B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -78,7 +86,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     int32 '<StartupCode$Field>'.$M::'T@12-2'
+    IL_0000:  ldsfld     int32 '<StartupCode$Field>'.$M::'T@12-20'
     IL_0005:  ret
   } // end of method M::get_T
 
@@ -92,7 +100,7 @@
 .class private abstract auto ansi sealed '<StartupCode$Field>'.$M
        extends [mscorlib]System.Object
 {
-  .field static assembly initonly int32 'T@12-2'
+  .field static assembly initonly int32 'T@12-20'
   .custom instance void M/ExportAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
@@ -113,7 +121,7 @@
     .line 12,12 : 27,28 ''
     IL_0010:  ldc.i4.1
     IL_0011:  dup
-    IL_0012:  stsfld     int32 '<StartupCode$Field>'.$M::'T@12-2'
+    IL_0012:  stsfld     int32 '<StartupCode$Field>'.$M::'T@12-20'
     IL_0017:  stloc.0
     IL_0018:  ret
   } // end of method $M::.cctor

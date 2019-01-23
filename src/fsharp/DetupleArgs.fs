@@ -482,7 +482,7 @@ let mkTransform g (f:Val) m tps x1Ntys rty (callPattern, tyfringes: (TType list 
     let tys1r = List.collect fst tyfringes  (* types for collapsed initial r args *)
     let tysrN = List.drop tyfringes.Length x1Ntys    (* types for remaining args *)
     let argtys = tys1r @ tysrN
-    let fCty  = mkLambdaTy tps argtys rty                  
+    let fCty  = mkLambdaTy g tps argtys rty                  
     let transformedVal  = mkLocalVal f.Range (globalNng.FreshCompilerGeneratedName (f.LogicalName, f.Range)) fCty topValInfo
     { transformCallPattern = callPattern
       transformedFormals      = transformedFormals
@@ -798,8 +798,8 @@ let passBind penv (TBind(fOrig, repr, letSeqPtOpt) as bind) =
          let rebinds = List.concat (List.map2 transRebind transformedFormals x1ps)
          // fCBody - rebuild 
          // fCBody = TLambda tps. Lam formals. let rebinds in body 
-         let rbody, rt  = mkLetsBind            m rebinds body, rty   
-         let bind      = mkMultiLambdaBind transformedVal letSeqPtOpt m tps formals (rbody, rt)
+         let rbody, rt  = mkLetsBind m rebinds body, rty   
+         let bind      = mkMultiLambdaBind penv.g transformedVal letSeqPtOpt m tps formals (rbody, rt)
          // result 
          bind
 
