@@ -623,10 +623,6 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
 echo ---------------- Done with prepare, starting package restore ----------------
 
-:: create a global.json
-set /p DOTNET_TOOLS_VERSION=<"%~dp0DotnetCLIToolsVersion.txt"
-echo { "sdk": { "version": "%DOTNET_TOOLS_VERSION%" } }>global.json
-
 :: Restore the Tools directory
 call "%~dp0init-tools.cmd"
 set _dotnetexe=%~dp0artifacts\toolset\dotnet\dotnet.exe
