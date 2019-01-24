@@ -7,10 +7,7 @@ all: proto restore build test
 tools:
 	$(CURDIR)/scripts/dotnet-install.sh --version $(DotNetVersion) --install-dir $(CURDIR)/Tools/dotnet20
 
-global.json: tools
-	echo { \"sdk\": { \"version\": \"$(DotNetVersion)\" } }>global.json
-
-proto: global.json
+proto: tools
 	$(DotNetExe) build-server shutdown
 	$(DotNetExe) restore src/buildtools/buildtools.proj
 	$(DotNetExe) restore src/fsharp/FSharp.Build/FSharp.Build.fsproj
@@ -19,7 +16,7 @@ proto: global.json
 	$(DotNetExe) build src/fsharp/FSharp.Build/FSharp.Build.fsproj -f netstandard2.0 -c Proto
 	$(DotNetExe) build src/fsharp/Fsc/Fsc.fsproj -f netcoreapp2.1 -c Proto
 
-restore: global.json
+restore:
 	$(DotNetExe) restore src/fsharp/FSharp.Core/FSharp.Core.fsproj
 	$(DotNetExe) restore src/fsharp/FSharp.Build/FSharp.Build.fsproj
 	$(DotNetExe) restore src/fsharp/FSharp.Compiler.Private/FSharp.Compiler.Private.fsproj
