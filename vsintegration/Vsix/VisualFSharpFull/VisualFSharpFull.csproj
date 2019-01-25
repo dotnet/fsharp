@@ -199,14 +199,6 @@
       <Private>True</Private>
     </ProjectReference>
 
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ItemTemplates\AppConfig\AppConfig.csproj">
-      <Project>{6ba13aa4-c25f-480f-856b-8e8000299a72}</Project>
-      <Name>AppConfig</Name>
-      <VSIXSubPath>ItemTemplates</VSIXSubPath>
-      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ItemTemplates\CodeFile\CodeFile.csproj">
       <Project>{12ac2813-e895-4aaa-ae6c-94e21da09f64}</Project>
       <Name>CodeFile</Name>

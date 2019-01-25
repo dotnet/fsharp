@@ -6,6 +6,7 @@
   <PropertyGroup>
     <NuspecProperties>
       $(NuspecProperties);
+      fsLanguageVersion=$(FSLanguageVersion);
       fsCoreMajorVersion=$(FSCoreMajorVersion);
       fsPackageMajorVersion=$(FSPackageMajorVersion);
     </NuspecProperties>
