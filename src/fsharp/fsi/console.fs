@@ -365,7 +365,7 @@ type internal ReadLineConsole() =
             let c = ConsoleOptions.readKeyFixup c
             insertChar(c);
             
-        let backspace() =                 
+        let backspace() =
             if (input.Length > 0 && !current > 0) then
                 input.Remove(!current - 1, 1) |> ignore;
                 current := !current - 1;
@@ -380,18 +380,18 @@ type internal ReadLineConsole() =
                 line;
         let clear() = 
             current := input.Length
-            let setPrompt(prompt) = 
-                if prompt then //we only allow clearing if prompt is ">"
+            let setPrompt prompt = 
+                if prompt then // We only allow clearing if prompt is ">"
                     Console.Clear()
-                    Console.Write ( x.Prompt)
-                    Console.Write( input.ToString())
+                    Console.Write (x.Prompt)
+                    Console.Write(input.ToString())
                     anchor := Anchor.Top(x.Inset)   
             let previous = history.Previous()
             history.Next() |> ignore
             if previous = "" then
-                setPrompt(true)
+                setPrompt true
             else
-                setPrompt(previous.[previous.Length - 2..previous.Length - 1] = ";;")            
+                setPrompt (previous.EndsWith(";;"))
 
             
         let home() =
