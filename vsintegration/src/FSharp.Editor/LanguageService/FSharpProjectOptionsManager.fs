@@ -200,7 +200,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     |> Seq.map (fun x -> "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath)
                     |> Array.ofSeq
                     |> Array.append (
-                            project.MetadataReferences.OfType<VisualStudioMetadataReference.Snapshot>()
+                            project.MetadataReferences.OfType<PortableExecutableReference>()
                             |> Seq.map (fun x -> "-r:" + x.FilePath)
                             |> Array.ofSeq
                             |> Array.append (
