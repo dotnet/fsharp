@@ -3,16 +3,16 @@
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
 
   <PropertyGroup>
-    <AssemblyName>LibraryProject</AssemblyName>
+    <AssemblyName>AppConfig</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
-    <VSTemplate Include="Template\Library.vstemplate">
-      <TranslatableResources>
-        Template\AssemblyInfo.fs;
-        Template\Script.fsx;
-      </TranslatableResources>
-    </VSTemplate>
+    <VSTemplate Include="Template\AppConfig.vstemplate" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <TemplateFiles Include="Template\App.config" />
+    <TemplateFiles Include="Template\AppConfig.vstemplate" />
   </ItemGroup>
 
 </Project>
