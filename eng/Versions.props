@@ -1,0 +1,14 @@
+<Project>
+
+  <Import Project="$(MSBuildThisFileDirectory)..\build\targets\AssemblyVersions.props" />
+
+  <!-- version number assignment -->
+  <PropertyGroup>
+    <VersionPrefix>$(FSCoreVersion)</VersionPrefix>
+    <VersionPrefix Condition="'$(UseFSharpProductVersion)' == 'true'">$(FSProductVersion)</VersionPrefix>
+    <VersionPrefix Condition="'$(UseVsMicroBuildAssemblyVersion)' == 'true'">$(VSAssemblyVersion)</VersionPrefix>
+
+    <AssemblyVersion>$(VersionPrefix)</AssemblyVersion>
+  </PropertyGroup>
+
+</Project>

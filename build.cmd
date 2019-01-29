@@ -498,7 +498,6 @@ echo BUILD_FROMSOURCE=%BUILD_FROMSOURCE%
 echo BUILD_FSHARP_PROJ=%BUILD_FSHARP_PROJ%
 echo.
 echo PB_SKIPTESTS=%PB_SKIPTESTS%
-echo PB_RESTORESOURCE=%PB_RESTORESOURCE%
 echo.
 echo SIGN_TYPE=%SIGN_TYPE%
 echo.
@@ -617,18 +616,6 @@ echo ---------------- Done with prepare, starting package restore --------------
 call "%~dp0init-tools.cmd"
 set _dotnetexe=%~dp0artifacts\toolset\dotnet\dotnet.exe
 set path=%~dp0artifacts\toolset\dotnet;%path%
-
-if not "%PB_PackageVersionPropsUrl%" == "" (
-    echo ----------- do dependency uptake check -----------
-
-    set dependencyUptakeDir=%~dp0artifacts\dependencyUptake
-    if not exist "!dependencyUptakeDir!" mkdir "!dependencyUptakeDir!"
-
-    :: download package version overrides
-    echo powershell -noprofile -executionPolicy RemoteSigned -command "Invoke-WebRequest -Uri '%PB_PackageVersionPropsUrl%' -OutFile '!dependencyUptakeDir!\PackageVersions.props'"
-         powershell -noprofile -executionPolicy RemoteSigned -command "Invoke-WebRequest -Uri '%PB_PackageVersionPropsUrl%' -OutFile '!dependencyUptakeDir!\PackageVersions.props'"
-    if ERRORLEVEL 1 echo Error downloading package version properties && goto :failure
-)
 
 if "%RestorePackages%" == "true" (
     if "%BUILD_FCS%" == "1" (

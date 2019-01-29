@@ -15,10 +15,6 @@
       https://dotnet.myget.org/F/symreader-converter/api/v3/index.json;
     </RestoreSources>
 
-    <!-- synchronized build package sources -->
-    <RestoreSources Condition="'$(PB_RestoreSource)' != ''">$(PB_RestoreSource);$(RestoreSources)</RestoreSources>
-    <DotNetPackageVersionPropsPath>$(MSBuildThisFileDirectory)..\..\artifacts\dependencyUptake\PackageVersions.props</DotNetPackageVersionPropsPath>
-
     <!-- version numbers from files -->
     <RoslynPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\..\RoslynPackageVersion.txt').Trim())</RoslynPackageVersion>
 
@@ -137,8 +133,5 @@
     <XliffTasksPackageVersion>0.2.0-beta-000081</XliffTasksPackageVersion>
 
   </PropertyGroup>
-
-  <!-- dependency uptake version overrides -->
-  <Import Project="$(DotNetPackageVersionPropsPath)" Condition="'$(DotNetPackageVersionPropsPath)' != '' AND Exists('$(DotNetPackageVersionPropsPath)')" />
 
 </Project>
