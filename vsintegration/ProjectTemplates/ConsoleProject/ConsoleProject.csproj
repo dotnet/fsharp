@@ -9,6 +9,7 @@
   <ItemGroup>
     <VSTemplate Include="Template\ConsoleApplication.vstemplate">
       <TranslatableResources>
+        Template\AssemblyInfo.fs;
         Template\Program.fs;
       </TranslatableResources>
     </VSTemplate>

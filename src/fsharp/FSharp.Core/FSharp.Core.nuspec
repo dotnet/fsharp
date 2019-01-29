@@ -2,10 +2,10 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         <id>FSharp.Core</id>
-        <title>FSharp.Core for F# $fsLanguageVersion$</title>
-        <summary>FSharp.Core for F# $fsLanguageVersion$</summary>
+        <title>FSharp.Core for F# $fsCoreMajorVersion$</title>
+        <summary>FSharp.Core for F# $fsCoreMajorVersion$</summary>
         <description>
-            FSharp.Core redistributables from Visual F# Tools version $fsPackageMajorVersion$ For F# $fsLanguageVersion$
+            FSharp.Core redistributables from Visual F# Tools version $fsPackageMajorVersion$ For F# $fsCoreMajorVersion$
                 Supported Platforms:
                     .NET Framework 4.5+ (net45)
                     netstandard1.6      (netstandard1.6)

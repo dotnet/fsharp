@@ -96,6 +96,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TutorialProject", "vsintegr
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ItemTemplates", "ItemTemplates", "{F6DAEE9A-8BE1-4C4A-BC83-09215517C7DA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppConfig", "vsintegration\ItemTemplates\AppConfig\AppConfig.csproj", "{6BA13AA4-C25F-480F-856B-8E8000299A72}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeFile", "vsintegration\ItemTemplates\CodeFile\CodeFile.csproj", "{12AC2813-E895-4AAA-AE6C-94E21DA09F64}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScriptFile", "vsintegration\ItemTemplates\ScriptFile\ScriptFile.csproj", "{A333B85A-DC23-49B6-9797-B89A7951E92D}"
