@@ -273,7 +273,7 @@ module NavigationImpl =
         let items = 
             // Show base name for this module only if it's not the root one
             let singleTopLevel = (modules.Length = 1)
-            modules |> List.collect (fun (SynModuleOrNamespace(id, _isRec, isModule, decls, _, _, access, m)) ->
+            modules |> List.collect (fun (SynModuleOrNamespace(id, _isRec, kind, decls, _, _, access, m)) ->
                 let baseName = if (not singleTopLevel) then textOfLid id else ""
                 // Find let bindings (for the right dropdown)
                 let nested = processNestedDeclarations(decls)
@@ -286,7 +286,7 @@ module NavigationImpl =
                 | _ ->
                     let decl =
                         FSharpNavigationDeclarationItem.Create
-                            (textOfLid id, (if isModule then ModuleFileDecl else NamespaceDecl),
+                            (textOfLid id, (if kind.IsModule then ModuleFileDecl else NamespaceDecl),
                                 FSharpGlyph.Module, m, 
                                 unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid id) other), 
                                 singleTopLevel, FSharpEnclosingEntityKind.Module, false, access), (addItemName(textOfLid id)), nested
@@ -413,7 +413,7 @@ module NavigationImpl =
         let items = 
             // Show base name for this module only if it's not the root one
             let singleTopLevel = (modules.Length = 1)
-            modules |> List.collect (fun (SynModuleOrNamespaceSig(id, _isRec, isModule, decls, _, _, access, m)) ->
+            modules |> List.collect (fun (SynModuleOrNamespaceSig(id, _isRec, kind, decls, _, _, access, m)) ->
                 let baseName = if (not singleTopLevel) then textOfLid id else ""
                 // Find let bindings (for the right dropdown)
                 let nested = processNestedSigDeclarations(decls)
@@ -423,7 +423,7 @@ module NavigationImpl =
                 // Create explicitly - it can be 'single top level' thing that is hidden
                 let decl =
                     FSharpNavigationDeclarationItem.Create
-                        (textOfLid id, (if isModule then ModuleFileDecl else NamespaceDecl),
+                        (textOfLid id, (if kind.IsModule then ModuleFileDecl else NamespaceDecl),
                             FSharpGlyph.Module, m, 
                             unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid id) other), 
                             singleTopLevel, FSharpEnclosingEntityKind.Module, false, access), (addItemName(textOfLid id)), nested
@@ -577,7 +577,8 @@ module NavigateTo =
             for item in moduleOrNamespaceList do
                 walkSynModuleOrNamespaceSig item { Type = ContainerType.File; Name = fileName }
     
-        and walkSynModuleOrNamespaceSig (SynModuleOrNamespaceSig(lid, _, isModule, decls, _, _, _, _)) container = 
+        and walkSynModuleOrNamespaceSig (SynModuleOrNamespaceSig(lid, _, kind, decls, _, _, _, _)) container =
+            let isModule = kind.IsModule
             if isModule then
                 addModule lid true container
             let container = 
@@ -634,7 +635,8 @@ module NavigateTo =
             for item in moduleOrNamespaceList do
                 walkSynModuleOrNamespace item container
     
-        and walkSynModuleOrNamespace(SynModuleOrNamespace(lid, _, isModule, decls, _, _, _, _)) container =
+        and walkSynModuleOrNamespace(SynModuleOrNamespace(lid, _, kind, decls, _, _, _, _)) container =
+            let isModule = kind.IsModule
             if isModule then
                 addModule lid false container
             let container = 

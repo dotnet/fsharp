@@ -5,7 +5,7 @@ package name=Microsoft.FSharp.Compiler.Resources
         vs.package.language=$(LocaleSpecificCulture)
 
 folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharpCompiler\$(LocaleParentCulture)"
-  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Build.resources.dll"
-  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Compiler.Interactive.Settings.resources.dll"
-  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Compiler.Private.resources.dll"
-  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Core.resources.dll"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\net46\$(LocaleParentCulture)\FSharp.Build.resources.dll"
+  file source="$(BinariesFolder)\FSharp.Compiler.Interactive.Settings\$(Configuration)\net46\$(LocaleParentCulture)\FSharp.Compiler.Interactive.Settings.resources.dll"
+  file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\net46\$(LocaleParentCulture)\FSharp.Compiler.Private.resources.dll"
+  file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\net45\$(LocaleParentCulture)\FSharp.Core.resources.dll"

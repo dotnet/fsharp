@@ -19,7 +19,7 @@
 
     <!-- synchronized build package sources -->
     <RestoreSources Condition="'$(PB_RestoreSource)' != ''">$(PB_RestoreSource);$(RestoreSources)</RestoreSources>
-    <DotNetPackageVersionPropsPath>$(MSBuildThisFileDirectory)..\..\Tools\dependencyUptake\PackageVersions.props</DotNetPackageVersionPropsPath>
+    <DotNetPackageVersionPropsPath>$(MSBuildThisFileDirectory)..\..\artifacts\dependencyUptake\PackageVersions.props</DotNetPackageVersionPropsPath>
 
     <!-- version numbers from files -->
     <RoslynPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\..\RoslynPackageVersion.txt').Trim())</RoslynPackageVersion>

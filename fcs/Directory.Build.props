@@ -4,17 +4,19 @@
     <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' AND '$(OS)' != 'Windows_NT'">$(HOME)/.nuget/packages/</NuGetPackageRoot>
     <NuGetPackageRoot Condition="!HasTrailingSlash('$(NuGetPackageRoot)') AND '$(OS)' == 'Windows_NT'">$(NuGetPackageRoot)\</NuGetPackageRoot>
     <NuGetPackageRoot Condition="!HasTrailingSlash('$(NuGetPackageRoot)') AND '$(OS)' != 'Windows_NT'">$(NuGetPackageRoot)/</NuGetPackageRoot>
+    <ArtifactsDir>$(MSBuildThisFileDirectory)..\artifacts</ArtifactsDir>
+    <ArtifactsBinDir>$(ArtifactsDir)\bin</ArtifactsBinDir>
+    <ArtifactsObjDir>$(ArtifactsDir)\obj</ArtifactsObjDir>
+    <OutputPath>$(ArtifactsBinDir)\fcs</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsObjDir)\fcs</IntermediateOutputPath>
   </PropertyGroup>
 
   <!-- SDK targets override -->
   <PropertyGroup>
-    <ProtoOutputPath>$(MSBuildThisFileDirectory)..\Proto\net40\bin</ProtoOutputPath>
+    <ProtoOutputPath>$(ArtifactsBinDir)\FSharp.Build\Proto\net46</ProtoOutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="Exists('$(ProtoOutputPath)')">
-    <!-- <FscToolPath>$(ProtoOutputPath)\</FscToolPath>
-    <FscToolExe>fsc.exe</FscToolExe>
-    <DotnetFscCompilerPath>- -nologo</DotnetFscCompilerPath> -->
     <FSharpTargetsPath>$(ProtoOutputPath)\Microsoft.FSharp.Targets</FSharpTargetsPath>
     <FSharpPropsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
     <FSharpTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>

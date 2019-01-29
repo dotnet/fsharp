@@ -57,11 +57,7 @@ let internal identsAndRanges (input: Ast.ParsedInput) =
     | Ast.ParsedInput.SigFile _ -> []
 
 let internal parseAndExtractRanges code =
-    let file = "Test"
-    let result = parseSourceCode (file, code)
-    match result with
-    | Some tree -> tree |> identsAndRanges
-    | None -> failwith "fail to parse..."
+    parseSource code |> identsAndRanges
 
 let input =
     """
