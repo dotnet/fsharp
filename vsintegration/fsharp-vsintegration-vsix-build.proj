@@ -1,12 +1,9 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
-  <PropertyGroup>
-    <TargetDotnetProfile Condition="'$(TargetDotnetProfile)'==''">net40</TargetDotnetProfile>
-  </PropertyGroup>
 
   <ItemGroup>
-    <ProjectFiles Include="Vsix\VisualFSharpFull\VisualFSharpFull.csproj" />
-    <ProjectFiles Include="Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)Vsix\VisualFSharpFull\VisualFSharpFull.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj" />
   </ItemGroup>
 
   <Import Project="..\src\root.traversal.targets"/>

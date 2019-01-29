@@ -8409,8 +8409,8 @@ namespace ProviderImplementation.ProvidedTypes
                     | None -> None
                     | Some _ ->
                         let m = mdef.ManifestOfAssembly
-                        let assRef = ILAssemblyRef(m.Name, UNone, (match m.PublicKey with USome k -> USome (PublicKey.KeyAsToken(k)) | UNone -> UNone), m.Retargetable, m.Version, m.Locale)
-                        Some (ILScopeRef.Assembly assRef)
+                        let assemblyRef = ILAssemblyRef(m.Name, UNone, (match m.PublicKey with USome k -> USome (PublicKey.KeyAsToken(k)) | UNone -> UNone), m.Retargetable, m.Version, m.Locale)
+                        Some (ILScopeRef.Assembly assemblyRef)
                 else
                     None
               with _ -> None )

@@ -1576,15 +1576,15 @@ namespace Microsoft.FSharp.Core
                   when 'T : nativeint  = (# "ceq" x y : bool #)
                   when 'T : unativeint  = (# "ceq" x y : bool #)
                   when 'T : float = 
-                    if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then
+                    if (# "ceq" x y : bool #) then
                         true
                     else
-                        (# "ceq" x y : bool #)
+                        not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #)
                   when 'T : float32 =
-                    if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then
+                    if (# "ceq" x y : bool #) then
                         true
                     else
-                        (# "ceq" x y : bool #)
+                        not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #)
                   when 'T : char    = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
                   when 'T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
@@ -3054,12 +3054,29 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<Struct>]
     [<CompiledName("FSharpValueOption`1")>]
+    [<DebuggerDisplay("ValueSome({Value})")>]
     type ValueOption<'T> =
         | ValueNone : 'T voption
         | ValueSome : 'T -> 'T voption
 
         member x.Value = match x with ValueSome x -> x | ValueNone -> raise (new System.InvalidOperationException("ValueOption.Value"))
 
+        [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+        static member None : 'T voption = ValueNone
+
+        static member Some (value) : 'T voption = ValueSome(value)
+
+        [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+        member x.IsNone = match x with ValueNone -> true | _ -> false
+
+        [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+        member x.IsSome = match x with ValueSome _ -> true | _ -> false
+
+        static member op_Implicit (value) : 'T option = Some(value)
+
+        override x.ToString() = 
+           // x is non-null, hence ValueSome
+           "ValueSome("^anyToStringShowingNull x.Value^")"
 
     and 'T voption = ValueOption<'T>
 

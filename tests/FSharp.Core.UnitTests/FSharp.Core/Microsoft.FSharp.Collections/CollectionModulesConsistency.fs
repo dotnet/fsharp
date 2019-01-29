@@ -200,6 +200,18 @@ let ``exactlyOne is consistent`` () =
     smallerSizeCheck exactlyOne<string>
     smallerSizeCheck exactlyOne<NormalFloat>
 
+let tryExactlyOne<'a when 'a : comparison> (xs : 'a []) =
+    let s = runAndCheckErrorType (fun () -> xs |> Seq.tryExactlyOne)
+    let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.tryExactlyOne)
+    let a = runAndCheckErrorType (fun () -> xs |> Array.tryExactlyOne)
+    consistency "tryExactlyOne" s l a
+
+[<Test>]
+let ``tryExactlyOne is consistent`` () =
+    smallerSizeCheck tryExactlyOne<int>
+    smallerSizeCheck tryExactlyOne<string>
+    smallerSizeCheck tryExactlyOne<NormalFloat>
+
 let except<'a when 'a : equality> (xs : 'a []) (itemsToExclude: 'a []) =
     let s = xs |> Seq.except itemsToExclude |> Seq.toArray
     let l = xs |> List.ofArray |> List.except itemsToExclude |> List.toArray

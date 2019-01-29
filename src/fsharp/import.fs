@@ -62,13 +62,13 @@ let CanImportILScopeRef (env:ImportMap) m scoref =
     match scoref with 
     | ILScopeRef.Local    -> true
     | ILScopeRef.Module _ -> true
-    | ILScopeRef.Assembly assref -> 
+    | ILScopeRef.Assembly assemblyRef -> 
 
         // Explanation: This represents an unchecked invariant in the hosted compiler: that any operations
         // which import types (and resolve assemblies from the tcImports tables) happen on the compilation thread.
         let ctok = AssumeCompilationThreadWithoutEvidence() 
 
-        match env.assemblyLoader.FindCcuFromAssemblyRef (ctok, m, assref) with
+        match env.assemblyLoader.FindCcuFromAssemblyRef (ctok, m, assemblyRef) with
         | UnresolvedCcu _ ->  false
         | ResolvedCcu _ -> true
 
@@ -84,7 +84,7 @@ let ImportTypeRefData (env:ImportMap) m (scoref,path,typeName) =
         match scoref with 
         | ILScopeRef.Local    -> error(InternalError("ImportILTypeRef: unexpected local scope",m))
         | ILScopeRef.Module _ -> error(InternalError("ImportILTypeRef: reference found to a type in an auxiliary module",m))
-        | ILScopeRef.Assembly assref -> env.assemblyLoader.FindCcuFromAssemblyRef (ctok, m, assref)  // NOTE: only assemblyLoader callsite
+        | ILScopeRef.Assembly assemblyRef -> env.assemblyLoader.FindCcuFromAssemblyRef (ctok, m, assemblyRef)  // NOTE: only assemblyLoader callsite
 
     // Do a dereference of a fake tcref for the type just to check it exists in the target assembly and to find
     // the corresponding Tycon.
@@ -109,8 +109,8 @@ let ImportTypeRefData (env:ImportMap) m (scoref,path,typeName) =
             ()
 #endif
     match tryRescopeEntity ccu tycon with 
-    | None -> error (Error(FSComp.SR.impImportedAssemblyUsesNotPublicType(String.concat "." (Array.toList path@[typeName])),m))
-    | Some tcref -> tcref
+    | ValueNone -> error (Error(FSComp.SR.impImportedAssemblyUsesNotPublicType(String.concat "." (Array.toList path@[typeName])),m))
+    | ValueSome tcref -> tcref
     
 
 /// Import a reference to a type definition, given an AbstractIL ILTypeRef, without caching
@@ -168,7 +168,6 @@ let rec ImportILType (env:ImportMap) m tinst ty =
         let inst = tspec.GenericArgs |> List.map (ImportILType env m tinst) 
         ImportTyconRefApp env tcref inst
 
-    | ILType.Modified(_,tref,ILType.Byref ty) when tref.Name = "System.Runtime.InteropServices.InAttribute" -> mkInByrefTy env.g (ImportILType env m tinst ty)
     | ILType.Byref ty -> mkByrefTy env.g (ImportILType env m tinst ty)
     | ILType.Ptr ILType.Void  when env.g.voidptr_tcr.CanDeref -> mkVoidPtrTy env.g
     | ILType.Ptr ty  -> mkNativePtrTy env.g (ImportILType env m tinst ty)

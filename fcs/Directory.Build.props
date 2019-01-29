@@ -1,0 +1,25 @@
+<Project>
+  <PropertyGroup>
+    <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' AND '$(OS)' == 'Windows_NT'">$(UserProfile)\.nuget\packages\</NuGetPackageRoot>
+    <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' AND '$(OS)' != 'Windows_NT'">$(HOME)/.nuget/packages/</NuGetPackageRoot>
+    <NuGetPackageRoot Condition="!HasTrailingSlash('$(NuGetPackageRoot)') AND '$(OS)' == 'Windows_NT'">$(NuGetPackageRoot)\</NuGetPackageRoot>
+    <NuGetPackageRoot Condition="!HasTrailingSlash('$(NuGetPackageRoot)') AND '$(OS)' != 'Windows_NT'">$(NuGetPackageRoot)/</NuGetPackageRoot>
+    <ArtifactsDir>$(MSBuildThisFileDirectory)..\artifacts</ArtifactsDir>
+    <ArtifactsBinDir>$(ArtifactsDir)\bin</ArtifactsBinDir>
+    <ArtifactsObjDir>$(ArtifactsDir)\obj</ArtifactsObjDir>
+    <OutputPath>$(ArtifactsBinDir)\fcs</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsObjDir)\fcs</IntermediateOutputPath>
+  </PropertyGroup>
+
+  <!-- SDK targets override -->
+  <PropertyGroup>
+    <ProtoOutputPath>$(ArtifactsBinDir)\FSharp.Build\Proto\net46</ProtoOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="Exists('$(ProtoOutputPath)')">
+    <FSharpTargetsPath>$(ProtoOutputPath)\Microsoft.FSharp.Targets</FSharpTargetsPath>
+    <FSharpPropsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
+    <FSharpTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
+    <FSharpOverridesTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
+  </PropertyGroup>
+</Project>

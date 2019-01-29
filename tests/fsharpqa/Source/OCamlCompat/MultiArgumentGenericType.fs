@@ -2,7 +2,7 @@
 
 
 // Regressin Test for FSharp1.0:2098 - OCaml-compat warning for generics written like this: (string, int)Dictionary
-//<Expects status="error" span="(11,33)" id="FS0035">This construct is deprecated: The use of the type syntax 'int C' and 'C  <int>' is not permitted here\. Consider adjusting this type to be written in the form 'C<int>'$</Expects>
+//<Expects status="error" span="(11,44)" id="FS0010">Unexpected identifier in expression$</Expects>
 
 open System.Collections.Generic
 

@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="BuildActionDescription">
         <source>How the file relates to the build and deployment process</source>
-        <target state="translated">Роль этого файла в процессе сборки и развертывания</target>
+        <target state="translated">Роль этого файла в процессе построения и развертывания</target>
         <note>Project Build Property Description</note>
       </trans-unit>
       <trans-unit id="BuildVerbosity">
@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="Compile">
         <source>Compile</source>
-        <target state="translated">Компилировать</target>
+        <target state="translated">Компиляция</target>
         <note>Build Action - drop down option</note>
       </trans-unit>
       <trans-unit id="ConfirmExtensionChange">
@@ -79,7 +79,7 @@
       </trans-unit>
       <trans-unit id="Content">
         <source>Content</source>
-        <target state="translated">Объект</target>
+        <target state="translated">Содержимое</target>
         <note>Build Action - drop down option</note>
       </trans-unit>
       <trans-unit id="CopyToLocal">
@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="Diagnostic">
         <source>Diagnostic</source>
-        <target state="translated">Диагностический</target>
+        <target state="translated">Диагностика</target>
         <note />
       </trans-unit>
       <trans-unit id="DirectoryExistError">
@@ -119,7 +119,7 @@
       </trans-unit>
       <trans-unit id="Error">
         <source>error</source>
-        <target state="translated">ошибка</target>
+        <target state="translated">Ошибка</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidFileName">
@@ -252,7 +252,7 @@
       </trans-unit>
       <trans-unit id="Minimal">
         <source>Minimal</source>
-        <target state="translated">Минимальные</target>
+        <target state="translated">minimal</target>
         <note />
       </trans-unit>
       <trans-unit id="Misc">
@@ -262,12 +262,12 @@
       </trans-unit>
       <trans-unit id="None">
         <source>None</source>
-        <target state="translated">Отсутствует</target>
+        <target state="translated">NONE</target>
         <note />
       </trans-unit>
       <trans-unit id="Normal">
         <source>Normal</source>
-        <target state="translated">Средний</target>
+        <target state="translated">NORMAL</target>
         <note />
       </trans-unit>
       <trans-unit id="PasteFailed">
@@ -312,7 +312,7 @@
       </trans-unit>
       <trans-unit id="Quiet">
         <source>Quiet</source>
-        <target state="translated">Тихий режим</target>
+        <target state="translated">Тихий</target>
         <note />
       </trans-unit>
       <trans-unit id="RefName">
@@ -362,7 +362,7 @@
       </trans-unit>
       <trans-unit id="URL">
         <source>URL</source>
-        <target state="translated">URL</target>
+        <target state="translated">URL-адрес</target>
         <note />
       </trans-unit>
       <trans-unit id="UseOfDeletedItemError">
@@ -387,7 +387,7 @@
       </trans-unit>
       <trans-unit id="Warning">
         <source>warning</source>
-        <target state="translated">предупреждение</target>
+        <target state="translated">Предупреждение</target>
         <note />
       </trans-unit>
       <trans-unit id="WinExe">
@@ -507,7 +507,7 @@
       </trans-unit>
       <trans-unit id="OutputContentFiles">
         <source>Content Files</source>
-        <target state="translated">Файлы с содержимым</target>
+        <target state="translated">Файлы содержимого</target>
         <note />
       </trans-unit>
       <trans-unit id="OutputDocumentation">
@@ -587,7 +587,7 @@
       </trans-unit>
       <trans-unit id="ErrorReferenceCouldNotBeAdded">
         <source>A reference to {0} could not be added. Please make sure that the file is accessible, and that it is a valid assembly or COM component.</source>
-        <target state="translated">Не удается добавить ссылку на "{0}". Убедитесь, что файл доступен и действительно представляет собой сборку или компонент COM.</target>
+        <target state="translated">Не удалось добавить ссылку на {0}. Убедитесь в том, что файл доступен и является допустимой сборкой или COM-компонентом.</target>
         <note />
       </trans-unit>
       <trans-unit id="DetailsImport">
@@ -782,7 +782,7 @@
       </trans-unit>
       <trans-unit id="Identity">
         <source>Identity</source>
-        <target state="translated">Удостоверение</target>
+        <target state="translated">Идентификатор</target>
         <note />
       </trans-unit>
       <trans-unit id="IdentityDescription">

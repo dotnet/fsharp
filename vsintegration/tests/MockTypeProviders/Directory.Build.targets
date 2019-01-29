@@ -1,3 +1,4 @@
 <Project>
-  <!-- empty to prevent directory crawling -->
+  <!-- leap-frog up to the root of the repo -->
+  <Import Project="$(MSBuildThisFileDirectory)..\..\..\FSharp.Directory.Build.targets" />
 </Project>

@@ -49,48 +49,63 @@ module public AstTraversal =
         ///          traverseSynExpr(subExpr)   to recurse deeper on some particular sub-expression based on your own logic
         /// path helps to track AST nodes that were passed during traversal
         abstract VisitExpr : TraversePath * (SynExpr -> 'T option) * (SynExpr -> 'T option) * SynExpr -> 'T option
+
         /// VisitTypeAbbrev(ty,m), defaults to ignoring this leaf of the AST
         abstract VisitTypeAbbrev : SynType * range -> 'T option
         default this.VisitTypeAbbrev(_ty,_m) = None
+
         /// VisitImplicitInherit(defaultTraverse,ty,expr,m), defaults to just visiting expr
         abstract VisitImplicitInherit : (SynExpr -> 'T option) * SynType * SynExpr * range -> 'T option
         default this.VisitImplicitInherit(defaultTraverse, _ty, expr, _m) = defaultTraverse expr
+
         /// VisitModuleDecl allows overriding module declaration behavior
         abstract VisitModuleDecl : (SynModuleDecl -> 'T option) * SynModuleDecl -> 'T option
         default this.VisitModuleDecl(defaultTraverse, decl) = defaultTraverse decl
+
         /// VisitBinding allows overriding binding behavior (note: by default it would defaultTraverse expression)
         abstract VisitBinding : (SynBinding -> 'T option) * SynBinding -> 'T option
         default this.VisitBinding(defaultTraverse, binding) = defaultTraverse binding
+
         /// VisitMatchClause allows overriding clause behavior (note: by default it would defaultTraverse expression)
         abstract VisitMatchClause : (SynMatchClause -> 'T option) * SynMatchClause -> 'T option
         default this.VisitMatchClause(defaultTraverse, mc) = defaultTraverse mc
+
         /// VisitInheritSynMemberDefn allows overriding inherit behavior (by default do nothing)
         abstract VisitInheritSynMemberDefn : SynComponentInfo * SynTypeDefnKind * SynType  * SynMemberDefns * range -> 'T option
         default this.VisitInheritSynMemberDefn(_componentInfo, _typeDefnKind, _synType, _members, _range) = None
+
         /// VisitInterfaceSynMemberDefnType allows overriding behavior for visiting interface member in types (by default - do nothing)
         abstract VisitInterfaceSynMemberDefnType : SynType -> 'T option
         default this.VisitInterfaceSynMemberDefnType(_synType) = None
+
         /// VisitRecordField allows overriding behavior when visiting l.h.s. of constructed record instances
         abstract VisitRecordField : TraversePath * SynExpr option * LongIdentWithDots option -> 'T option
         default this.VisitRecordField (_path, _copyOpt, _recordField) = None
+
         /// VisitHashDirective allows overriding behavior when visiting hash directives in FSX scripts, like #r, #load and #I.
         abstract VisitHashDirective : range -> 'T option
         default this.VisitHashDirective (_) = None
+
         /// VisitModuleOrNamespace allows overriding behavior when visiting module or namespaces
         abstract VisitModuleOrNamespace : SynModuleOrNamespace -> 'T option
         default this.VisitModuleOrNamespace (_) = None
+
         /// VisitComponentInfo allows overriding behavior when visiting type component infos 
         abstract VisitComponentInfo : SynComponentInfo -> 'T option
         default this.VisitComponentInfo (_) = None
+
         /// VisitLetOrUse allows overriding behavior when visiting module or local let or use bindings
         abstract VisitLetOrUse : TraversePath * (SynBinding -> 'T option) * SynBinding list * range -> 'T option
         default this.VisitLetOrUse (_, _, _, _) = None
+
         /// VisitType allows overriding behavior when visiting simple pats
         abstract VisitSimplePats : SynSimplePat list -> 'T option
         default this.VisitSimplePats (_) = None
+
         /// VisitPat allows overriding behavior when visiting patterns
         abstract VisitPat : (SynPat -> 'T option) * SynPat -> 'T option
         default this.VisitPat (defaultTraverse, pat) = defaultTraverse pat
+
         /// VisitType allows overriding behavior when visiting type hints (x: ..., etc.)
         abstract VisitType : (SynType -> 'T option) * SynType -> 'T option
         default this.VisitType (defaultTraverse, ty) = defaultTraverse ty
@@ -191,9 +206,25 @@ module public AstTraversal =
                     |> pick expr
                 | SynExpr.Const(_synConst, _range) -> None
                 | SynExpr.Typed(synExpr, synType, _range) -> [ traverseSynExpr synExpr; traverseSynType synType ] |> List.tryPick id
-                | SynExpr.Tuple(synExprList, _, _range) 
-                | SynExpr.StructTuple(synExprList, _, _range) -> synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
+                | SynExpr.Tuple(_, synExprList, _, _range) 
                 | SynExpr.ArrayOrList(_, synExprList, _range) -> synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
+                
+                | SynExpr.AnonRecd(_isStruct, copyOpt, synExprList, _range) -> 
+                    [   match copyOpt with
+                        | Some(expr, (withRange, _)) -> 
+                            yield dive expr expr.Range traverseSynExpr 
+                            yield dive () withRange (fun () ->
+                                if posGeq pos withRange.End then 
+                                    // special case: caret is after WITH
+                                    // { x with $ }
+                                    visitor.VisitRecordField (path, Some expr, None) 
+                                else
+                                    None
+                            )
+                        | _ -> ()
+                        for (_,x) in synExprList do 
+                            yield dive x x.Range traverseSynExpr
+                    ] |> pick expr
                 | SynExpr.Record(inheritOpt,copyOpt,fields, _range) -> 
                     [ 
                         let diveIntoSeparator offsideColumn scPosOpt copyOpt  = 
@@ -425,9 +456,12 @@ module public AstTraversal =
                      dive synExpr2 synExpr2.Range traverseSynExpr
                      dive synExpr3 synExpr3.Range traverseSynExpr]
                     |> pick expr
-                | SynExpr.TypeTest(synExpr, _synType, _range) -> traverseSynExpr synExpr
-                | SynExpr.Upcast(synExpr, _synType, _range) -> traverseSynExpr synExpr
-                | SynExpr.Downcast(synExpr, _synType, _range) -> traverseSynExpr synExpr
+                | SynExpr.TypeTest(synExpr, synType, _range)
+                | SynExpr.Upcast(synExpr, synType, _range)
+                | SynExpr.Downcast(synExpr, synType, _range) ->
+                    [dive synExpr synExpr.Range traverseSynExpr
+                     dive synType synType.Range traverseSynType]
+                    |> pick expr
                 | SynExpr.InferredUpcast(synExpr, _range) -> traverseSynExpr synExpr
                 | SynExpr.InferredDowncast(synExpr, _range) -> traverseSynExpr synExpr
                 | SynExpr.Null(_range) -> None
@@ -462,8 +496,7 @@ module public AstTraversal =
                 | SynPat.Paren (p, _) -> traversePat p
                 | SynPat.Or (p1, p2, _) -> [ p1; p2] |> List.tryPick traversePat
                 | SynPat.Ands (ps, _)
-                | SynPat.Tuple (ps, _)
-                | SynPat.StructTuple (ps, _)
+                | SynPat.Tuple (_, ps, _)
                 | SynPat.ArrayOrList (_, ps, _) -> ps |> List.tryPick traversePat
                 | SynPat.Attrib (p, _, _) -> traversePat p
                 | SynPat.LongIdent(_, _, _, args, _, _) ->
@@ -492,8 +525,7 @@ module public AstTraversal =
                 | SynType.Array (_, ty, _) -> traverseSynType ty
                 | SynType.StaticConstantNamed (ty1, ty2, _)
                 | SynType.MeasureDivide (ty1, ty2, _) -> [ty1; ty2] |> List.tryPick traverseSynType
-                | SynType.Tuple (tys, _)
-                | SynType.StructTuple (tys, _) -> tys |> List.map snd |> List.tryPick traverseSynType
+                | SynType.Tuple (_, tys, _) -> tys |> List.map snd |> List.tryPick traverseSynType
                 | SynType.StaticConstantExpr (expr, _) -> traverseSynExpr [] expr
                 | SynType.Anon _ -> None
                 | _ -> None

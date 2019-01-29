@@ -41,6 +41,10 @@ let inline isNonNull x = not (isNull x)
 let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
 let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
+/// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
+/// We set the limit to slightly under that to allow for some 'slop'
+let LOH_SIZE_THRESHOLD_BYTES = 84_900
+
 //---------------------------------------------------------------------
 // Library: ReportTime
 //---------------------------------------------------------------------
@@ -91,7 +95,7 @@ module Order =
     let toFunction (pxOrder: IComparer<'U>) x y = pxOrder.Compare(x,y)
 
 //-------------------------------------------------------------------------
-// Library: arrays,lists,options
+// Library: arrays,lists,options,resizearrays
 //-------------------------------------------------------------------------
 
 module Array = 
@@ -432,18 +436,57 @@ module List =
     let existsSquared f xss = xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
     let mapiFoldSquared f z xss =  mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i,j,x)))
 
-[<Struct>]
-type ValueOption<'T> =
-    | ValueSome of 'T
-    | ValueNone
-    member x.IsSome = match x with ValueSome _ -> true | ValueNone -> false
-    member x.IsNone = match x with ValueSome _ -> false | ValueNone -> true
-    member x.Value = match x with ValueSome r -> r | ValueNone -> failwith "ValueOption.Value: value is None"
+module ResizeArray =
 
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module ValueOption =
+    /// Split a ResizeArray into an array of smaller chunks.
+    /// This requires `items/chunkSize` Array copies of length `chunkSize` if `items/chunkSize % 0 = 0`,
+    /// otherwise `items/chunkSize + 1` Array copies.
+    let chunkBySize chunkSize f (items: ResizeArray<'t>) =
+        // we could use Seq.chunkBySize here, but that would involve many enumerator.MoveNext() calls that we can sidestep with a bit of math
+        let itemCount = items.Count
+        if itemCount = 0
+        then [||]
+        else
+            let chunksCount =
+                match itemCount / chunkSize with
+                | n when itemCount % chunkSize = 0 -> n
+                | n -> n + 1 // any remainder means we need an additional chunk to store it
+
+            [| for index in 0..chunksCount-1 do
+                let startIndex = index * chunkSize
+                let takeCount = min (itemCount - startIndex) chunkSize
+
+                let holder = Array.zeroCreate takeCount
+                // we take a bounds-check hit here on each access.
+                // other alternatives here include
+                // * iterating across an IEnumerator (incurs MoveNext penalty)
+                // * doing a block copy using `List.CopyTo(index, array, index, count)` (requires more copies to do the mapping)
+                // none are significantly better.
+                for i in 0 .. takeCount - 1 do
+                    holder.[i] <- f items.[i]
+                yield holder |]
+
+    /// Split a large ResizeArray into a series of array chunks that are each under the Large Object Heap limit.
+    /// This is done to help prevent a stop-the-world collection of the single large array, instead allowing for a greater
+    /// probability of smaller collections. Stop-the-world is still possible, just less likely.
+    let mapToSmallArrayChunks f (inp: ResizeArray<'t>) =
+        let itemSizeBytes = sizeof<'t>
+        // rounding down here is good because it ensures we don't go over
+        let maxArrayItemCount = LOH_SIZE_THRESHOLD_BYTES / itemSizeBytes
+
+        /// chunk the provided input into arrays that are smaller than the LOH limit
+        /// in order to prevent long-term storage of those values
+        chunkBySize maxArrayItemCount f inp
+
+
+/// Because FSharp.Compiler.Service is a library that will target FSharp.Core 4.5.2 for the forseeable future,
+/// we need to stick these functions in this module rather than using the module functions for ValueOption
+/// that come after FSharp.Core 4.5.2.
+module ValueOptionInternal =
     let inline ofOption x = match x with Some x -> ValueSome x | None -> ValueNone
     let inline bind f x = match x with ValueSome x -> f x | ValueNone -> ValueNone
+    let inline isSome x = match x with ValueSome _ -> true | ValueNone -> false
+    let inline isNone x = match x with ValueSome _ -> false | ValueNone -> true
 
 type String with
     member inline x.StartsWithOrdinal(value) =
@@ -452,25 +495,14 @@ type String with
     member inline x.EndsWithOrdinal(value) =
         x.EndsWith(value, StringComparison.Ordinal)
 
-module String = 
-    let indexNotFound() = raise (new KeyNotFoundException("An index for the character was not found in the string"))
-
+module String =
     let make (n: int) (c: char) : string = new String(c, n)
 
     let get (str:string) i = str.[i]
 
     let sub (s:string) (start:int) (len:int) = s.Substring(start,len)
 
-    let index (s:string) (c:char) =  
-        let r = s.IndexOf(c) 
-        if r = -1 then indexNotFound() else r
-
-    let rindex (s:string) (c:char) =
-        let r =  s.LastIndexOf(c) 
-        if r = -1 then indexNotFound() else r
-
-    let contains (s:string) (c:char) = 
-        s.IndexOf(c,0,String.length s) <> -1
+    let contains (s:string) (c:char) = s.IndexOf(c) <> -1
 
     let order = LanguagePrimitives.FastGenericComparer<string>
    
@@ -1134,7 +1166,7 @@ module NameMap =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameMultiMap = 
     let existsInRange f (m: NameMultiMap<'T>) = NameMap.exists (fun _ l -> List.exists f l) m
-    let find v (m: NameMultiMap<'T>) = match Map.tryFind v m with None -> [] | Some r -> r
+    let find v (m: NameMultiMap<'T>) = match m.TryGetValue v with true, r -> r | _ -> []
     let add v x (m: NameMultiMap<'T>) = NameMap.add v (x :: find v m) m
     let range (m: NameMultiMap<'T>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []
     let rangeReversingEachBucket (m: NameMultiMap<'T>) = Map.foldBack (fun _ x sofar -> List.rev x @ sofar) m []
@@ -1148,7 +1180,7 @@ module NameMultiMap =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module MultiMap = 
     let existsInRange f (m: MultiMap<_,_>) = Map.exists (fun _ l -> List.exists f l) m
-    let find v (m: MultiMap<_,_>) = match Map.tryFind v m with None -> [] | Some r -> r
+    let find v (m: MultiMap<_,_>) = match m.TryGetValue v with true, r -> r | _ -> []
     let add v x (m: MultiMap<_,_>) = Map.add v (x :: find v m) m
     let range (m: MultiMap<_,_>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []
     let empty : MultiMap<_,_> = Map.empty
@@ -1159,11 +1191,6 @@ type LayeredMap<'Key,'Value  when 'Key : comparison> = Map<'Key,'Value>
 type Map<'Key,'Value when 'Key : comparison> with
     static member Empty : Map<'Key,'Value> = Map.empty
 
-    member m.TryGetValue (key,res:byref<'Value>) = 
-        match m.TryFind key with 
-        | None -> false
-        | Some r -> res <- r; true
-
     member x.Values = [ for (KeyValue(_,v)) in x -> v ]
     member x.AddAndMarkAsCollapsible (kvs: _[])   = (x,kvs) ||> Array.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
     member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
@@ -1173,12 +1200,13 @@ type Map<'Key,'Value when 'Key : comparison> with
 [<Sealed>]
 type LayeredMultiMap<'Key,'Value when 'Key : equality and 'Key : comparison>(contents : LayeredMap<'Key,'Value list>) = 
     member x.Add (k,v) = LayeredMultiMap(contents.Add(k,v :: x.[k]))
-    member x.Item with get k = match contents.TryFind k with None -> [] | Some l -> l
+    member x.Item with get k = match contents.TryGetValue k with true, l -> l | _ -> []
     member x.AddAndMarkAsCollapsible (kvs: _[])  = 
         let x = (x,kvs) ||> Array.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
         x.MarkAsCollapsible()
     member x.MarkAsCollapsible() = LayeredMultiMap(contents.MarkAsCollapsible())
     member x.TryFind k = contents.TryFind k
+    member x.TryGetValue k = contents.TryGetValue k
     member x.Values = contents.Values |> List.concat
     static member Empty : LayeredMultiMap<'Key,'Value> = LayeredMultiMap LayeredMap.Empty
 

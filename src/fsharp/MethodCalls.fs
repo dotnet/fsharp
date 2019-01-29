@@ -346,9 +346,9 @@ type CalledMeth<'T>
                                 Choice1Of2(AssignedItemSetter(id, AssignedILFieldSetter(finfo), e))
                             | _ ->              
                               match infoReader.TryFindRecdOrClassFieldInfoOfType(nm, m, returnedObjTy) with
-                              | Some rfinfo -> 
+                              | ValueSome rfinfo -> 
                                   Choice1Of2(AssignedItemSetter(id, AssignedRecdFieldSetter(rfinfo), e))
-                              | None -> 
+                              | _ -> 
                                   Choice2Of2(arg))
 
             let names = namedCallerArgs |> List.map (fun (CallerNamedArg(nm, _)) -> nm.idText) 
@@ -585,7 +585,7 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
             let hasCallInfo = ccallInfo.IsSome
             let mustTakeAddress = hasCallInfo || minfo.ObjArgNeedsAddress(amap, m)
             let objArgTy = tyOfExpr g objArgExpr
-            let wrap, objArgExpr', _readonly, _writeonly = mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m
+            let wrap, objArgExpr', isReadOnly, _isWriteOnly = mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m
             
             // Extension members and calls to class constraints may need a coercion for their object argument
             let objArgExpr' = 
@@ -594,6 +594,16 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
                   mkCoerceExpr(objArgExpr', minfo.ApparentEnclosingType, m, objArgTy)
               else
                   objArgExpr'
+
+            // Check to see if the extension member uses the extending type as a byref.
+            //     If so, make sure we don't allow readonly/immutable values to be passed byref from an extension member. 
+            //     An inref will work though.
+            if isReadOnly && mustTakeAddress && minfo.IsExtensionMember then
+                minfo.TryObjArgByrefType(amap, m, minfo.FormalMethodInst)
+                |> Option.iter (fun ty ->
+                    if not (isInByrefTy g ty) then
+                        errorR(Error(FSComp.SR.tcCannotCallExtensionMethodInrefToByref(minfo.DisplayName), m)))
+                        
 
             wrap, [objArgExpr'] 
 

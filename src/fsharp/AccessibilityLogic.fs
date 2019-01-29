@@ -194,9 +194,10 @@ let CheckTyconReprAccessible amap m ad tcref =
             
 /// Indicates if a type is accessible (both definition and instantiation)
 let rec IsTypeAccessible g amap m ad ty = 
-    not (isAppTy g ty) ||
-    let tcref, tinst = destAppTy g ty
-    IsEntityAccessible amap m ad tcref && IsTypeInstAccessible g amap m ad tinst
+    match tryAppTy g ty with
+    | ValueNone -> true
+    | ValueSome(tcref, tinst) ->
+        IsEntityAccessible amap m ad tcref && IsTypeInstAccessible g amap m ad tinst
 
 and IsTypeInstAccessible g amap m ad tinst = 
     match tinst with 
@@ -210,7 +211,7 @@ let IsProvidedMemberAccessible (amap:Import.ImportMap) m ad ty access =
     if not isTyAccessible then false
     else
         not (isAppTy g ty) ||
-        let tcrefOfViewedItem, _ = destAppTy g ty
+        let tcrefOfViewedItem = tcrefOfAppTy g ty
         IsILMemberAccessible g amap m tcrefOfViewedItem ad access
 
 /// Compute the accessibility of a provided member

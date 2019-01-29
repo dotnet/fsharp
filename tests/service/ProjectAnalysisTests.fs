@@ -5048,6 +5048,101 @@ let ``Test Project40 all symbols`` () =
            ("IsItAnAMethod", ((13, 25), (13, 40)), ["member"; "funky"]);
            ("g", ((13, 4), (13, 5)), ["val"]); ("M", ((2, 7), (2, 8)), ["module"])]
 
+//--------------------------------------------
+
+module internal Project41 = 
+    open System.IO
+
+    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    // We need to us a stable name to keep the hashes stable
+    let base2 = Path.Combine(Path.GetDirectoryName(Path.GetTempFileName()), "stabletmp.tmp")
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+    let fileSource1 = """
+module M
+
+    let data1 = {| X = 1 |}
+
+    // Types can be written with the same syntax
+    let data2 : {| X : int |} = data1
+
+    type D = {| X : int |}
+
+    // Access is as expected
+    let f1 (v : {| X : int |}) = v.X
+
+    // Access is as expected
+    let f2 (v : D) = v.X
+
+    // Access can be nested
+    let f3 (v : {| X: {| X : int; Y : string |} |}) = v.X.X
+
+    """
+    File.WriteAllText(fileName1, fileSource1)
+    let fileNames = [fileName1]
+    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let cleanFileName a = if a = fileName1 then "file1" else "??"
+
+[<Test>]
+let ``Test project41 all symbols`` () = 
+
+    let wholeProjectResults = checker.ParseAndCheckProject(Project41.options) |> Async.RunSynchronously
+    let allSymbolUses = wholeProjectResults.GetAllUsesOfAllSymbols() |> Async.RunSynchronously
+    let allSymbolUsesInfo =  
+        [ for s in allSymbolUses do
+              let pos = 
+                  match s.Symbol.DeclarationLocation with 
+                  | Some r when r.FileName = Project41.fileName1 -> r.StartLine, r.StartColumn
+                  | _ -> (0,0)
+              yield (s.Symbol.DisplayName, tups s.RangeAlternate, attribsOfSymbol s.Symbol, pos) ]
+    allSymbolUsesInfo |> shouldEqual
+          [("X", ((4, 19), (4, 20)),
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (4, 19));
+           ("data1", ((4, 8), (4, 13)), ["val"], (4, 8));
+           ("int", ((7, 23), (7, 26)), ["abbrev"], (0, 0));
+           ("X", ((7, 19), (7, 20)),
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (7, 19));
+           ("data1", ((7, 32), (7, 37)), ["val"], (4, 8));
+           ("data2", ((7, 8), (7, 13)), ["val"], (7, 8));
+           ("int", ((9, 20), (9, 23)), ["abbrev"], (0, 0));
+           ("X", ((9, 16), (9, 17)),
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (9, 16));
+           ("int", ((9, 20), (9, 23)), ["abbrev"], (0, 0));
+           ("X", ((9, 16), (9, 17)),
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (9, 16));
+           ("D", ((9, 9), (9, 10)), ["abbrev"], (9, 9));
+           ("int", ((12, 23), (12, 26)), ["abbrev"], (0, 0));
+           ("X", ((12, 19), (12, 20)),
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (12, 19));
+           ("v", ((12, 12), (12, 13)), [], (12, 12));
+           ("v", ((12, 33), (12, 34)), [], (12, 12));
+           ("X", ((12, 33), (12, 36)),
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (12, 19));
+           ("f1", ((12, 8), (12, 10)), ["val"], (12, 8));
+           ("D", ((15, 16), (15, 17)), ["abbrev"], (9, 9));
+           ("v", ((15, 12), (15, 13)), [], (15, 12));
+           ("v", ((15, 21), (15, 22)), [], (15, 12));
+           ("X", ((15, 21), (15, 24)),
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (9, 16));
+           ("f2", ((15, 8), (15, 10)), ["val"], (15, 8));
+           ("int", ((18, 29), (18, 32)), ["abbrev"], (0, 0));
+           ("string", ((18, 38), (18, 44)), ["abbrev"], (0, 0));
+           ("X", ((18, 25), (18, 26)),
+            ["field"; "anon(0, [//<>f__AnonymousType4026451324`2']X,Y)"], (18, 25));
+           ("Y", ((18, 34), (18, 35)),
+            ["field"; "anon(1, [//<>f__AnonymousType4026451324`2']X,Y)"], (18, 34));
+           ("X", ((18, 19), (18, 20)),
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (18, 19));
+           ("v", ((18, 12), (18, 13)), [], (18, 12));
+           ("v", ((18, 54), (18, 55)), [], (18, 12));
+           ("X", ((18, 56), (18, 57)),
+            ["field"; "anon(0, [//<>f__AnonymousType1416859829`1']X)"], (18, 19));
+           ("X", ((18, 54), (18, 59)),
+            ["field"; "anon(0, [//<>f__AnonymousType4026451324`2']X,Y)"], (18, 25));
+           ("f3", ((18, 8), (18, 10)), ["val"], (18, 8));
+           ("M", ((2, 7), (2, 8)), ["module"], (2, 7))]
+
 
 module internal ProjectBig = 
     open System.IO

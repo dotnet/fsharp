@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<Project>
+
+  <ItemGroup>
+    <SetupLanguages Include="ENU">
+      <LocaleCode>ENU</LocaleCode>
+      <LocaleId>1033</LocaleId>
+      <LocaleParentId>9</LocaleParentId>
+      <LocaleParentCulture>en</LocaleParentCulture>
+      <LocaleSpecificCulture>en-US</LocaleSpecificCulture>
+      <IsLangPack>false</IsLangPack>
+    </SetupLanguages>
+    <SetupLanguages Include="CHT">
+      <LocaleCode>CHT</LocaleCode>
+      <LocaleId>1028</LocaleId>
+      <LocaleParentId>31748</LocaleParentId>
+      <LocaleParentCulture>zh-Hant</LocaleParentCulture>
+      <LocaleSpecificCulture>zh-TW</LocaleSpecificCulture>
+      <IsLangPack>true</IsLangPack>
+    </SetupLanguages>
+    <SetupLanguages Include="CSY">
+      <LocaleCode>CSY</LocaleCode>
+      <LocaleId>1029</LocaleId>
+      <LocaleParentId>5</LocaleParentId>
+      <LocaleParentCulture>cs</LocaleParentCulture>
+      <LocaleSpecificCulture>cs-CZ</LocaleSpecificCulture>
+      <IsLangPack>true</IsLangPack>
+    </SetupLanguages>
+    <SetupLanguages Include="DEU">
+      <LocaleCode>DEU</LocaleCode>
+      <LocaleId>1031</LocaleId>
+      <LocaleParentId>7</LocaleParentId>
+      <LocaleParentCulture>de</LocaleParentCulture>
+      <LocaleSpecificCulture>de-DE</LocaleSpecificCulture>
+      <IsLangPack>true</IsLangPack>
+    </SetupLanguages>
+    <SetupLanguages Include="FRA">
+      <LocaleCode>FRA</LocaleCode>
+      <LocaleId>1036</LocaleId>
+      <LocaleParentId>12</LocaleParentId>
+      <LocaleParentCulture>fr</LocaleParentCulture>
+      <LocaleSpecificCulture>fr-FR</LocaleSpecificCulture>
+      <IsLangPack>true</IsLangPack>
+    </SetupLanguages>
+    <SetupLanguages Include="ITA">
+      <LocaleCode>ITA</LocaleCode>
+      <LocaleId>1040</LocaleId>
+      <LocaleParentId>16</LocaleParentId>
+      <LocaleParentCulture>it</LocaleParentCulture>
+      <LocaleSpecificCulture>it-IT</LocaleSpecificCulture>
+      <IsLangPack>true</IsLangPack>
+    </SetupLanguages>
+    <SetupLanguages Include="JPN">
+      <LocaleCode>JPN</LocaleCode>
+      <LocaleId>1041</LocaleId>
+      <LocaleParentId>17</LocaleParentId>
+      <LocaleParentCulture>ja</LocaleParentCulture>
+      <LocaleSpecificCulture>ja-JP</LocaleSpecificCulture>
+      <IsLangPack>true</IsLangPack>
+    </SetupLanguages>
+    <SetupLanguages Include="KOR">
+      <LocaleCode>KOR</LocaleCode>
+      <LocaleId>1042</LocaleId>
+      <LocaleParentId>18</LocaleParentId>
+      <LocaleParentCulture>ko</LocaleParentCulture>
+      <LocaleSpecificCulture>ko-KR</LocaleSpecificCulture>
+      <IsLangPack>true</IsLangPack>
+    </SetupLanguages>
+    <SetupLanguages Include="PLK">
+      <LocaleCode>PLK</LocaleCode>
+      <LocaleId>1045</LocaleId>
+      <LocaleParentId>21</LocaleParentId>
+      <LocaleParentCulture>pl</LocaleParentCulture>
+      <LocaleSpecificCulture>pl-PL</LocaleSpecificCulture>
+      <IsLangPack>true</IsLangPack>
+    </SetupLanguages>
+    <SetupLanguages Include="PTB">
+      <LocaleCode>PTB</LocaleCode>
+      <LocaleId>1046</LocaleId>
+      <LocaleParentId>1046</LocaleParentId>
+      <LocaleParentCulture>pt-BR</LocaleParentCulture>
+      <LocaleSpecificCulture>pt-BR</LocaleSpecificCulture>
+      <IsLangPack>true</IsLangPack>
+    </SetupLanguages>
+    <SetupLanguages Include="RUS">
+      <LocaleCode>RUS</LocaleCode>
+      <LocaleId>1049</LocaleId>
+      <LocaleParentId>25</LocaleParentId>
+      <LocaleParentCulture>ru</LocaleParentCulture>
+      <LocaleSpecificCulture>ru-RU</LocaleSpecificCulture>
+      <IsLangPack>true</IsLangPack>
+    </SetupLanguages>
+    <SetupLanguages Include="TRK">
+      <LocaleCode>TRK</LocaleCode>
+      <LocaleId>1055</LocaleId>
+      <LocaleParentId>31</LocaleParentId>
+      <LocaleParentCulture>tr</LocaleParentCulture>
+      <LocaleSpecificCulture>tr-TR</LocaleSpecificCulture>
+      <IsLangPack>true</IsLangPack>
+    </SetupLanguages>
+    <SetupLanguages Include="CHS">
+      <LocaleCode>CHS</LocaleCode>
+      <LocaleId>2052</LocaleId>
+      <LocaleParentId>4</LocaleParentId>
+      <LocaleParentCulture>zh-Hans</LocaleParentCulture>
+      <LocaleSpecificCulture>zh-CN</LocaleSpecificCulture>
+      <IsLangPack>true</IsLangPack>
+    </SetupLanguages>
+    <SetupLanguages Include="ESN">
+      <LocaleCode>ESN</LocaleCode>
+      <LocaleId>3082</LocaleId>
+      <LocaleParentId>10</LocaleParentId>
+      <LocaleParentCulture>es</LocaleParentCulture>
+      <LocaleSpecificCulture>es-ES</LocaleSpecificCulture>
+      <IsLangPack>true</IsLangPack>
+    </SetupLanguages>
+  </ItemGroup>
+
+</Project>

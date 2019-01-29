@@ -136,7 +136,7 @@ let rec celem_ty2ty f celem =
 let cnamedarg_ty2ty f ((nm, ty, isProp, elem) : ILAttributeNamedArg)  =
     (nm, f ty, isProp, celem_ty2ty f elem) 
 
-let cattr_ty2ty ilg f c =
+let cattr_ty2ty ilg f (c: ILAttribute) =
     let meth = mspec_ty2ty (f, (fun _ -> f)) c.Method
     // dev11 M3 defensive coding: if anything goes wrong with attribute decoding or encoding, then back out.
     if morphCustomAttributeData then
@@ -144,11 +144,11 @@ let cattr_ty2ty ilg f c =
            let elems,namedArgs = IL.decodeILAttribData ilg c 
            let elems = elems |> List.map (celem_ty2ty f)
            let namedArgs = namedArgs |> List.map (cnamedarg_ty2ty f)
-           IL.mkILCustomAttribMethRef ilg (meth, elems, namedArgs)       
-        with _ -> 
-           { c with Method = meth }
+           mkILCustomAttribMethRef ilg (meth, elems, namedArgs)
+        with _ ->
+           c.WithMethod(meth)
     else
-        { c with Method = meth }
+        c.WithMethod(meth)
 
 
 let cattrs_ty2ty ilg f (cs: ILAttributes) =

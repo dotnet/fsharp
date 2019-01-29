@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="de" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -19,12 +19,12 @@
       </trans-unit>
       <trans-unit id="PPG_VersionTitle">
         <source>Version</source>
-        <target state="translated">Version</target>
+        <target state="translated">VERSION</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SigningTitle">
         <source>Signing</source>
-        <target state="translated">Signierung</target>
+        <target state="translated">Signieren</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_ApplicationTitle">
@@ -133,7 +133,7 @@ Klicken Sie auf "OK", um diese Meldung zu ignorieren und den Vorgang fortzusetze
       </trans-unit>
       <trans-unit id="PPG_NotApplicable">
         <source>N/A</source>
-        <target state="translated">Nicht zutreffend</target>
+        <target state="translated">N/V</target>
         <note>This is used in the platform and configuration comboboxes when showing pages that don't care about the current platform/configuration</note>
       </trans-unit>
       <trans-unit id="PPG_ConfigNotFound_2Args">
@@ -355,7 +355,7 @@ Wählen Sie einen gültigen Ordnerpfad aus.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_None">
         <source>None</source>
-        <target state="translated">Keine</target>
+        <target state="translated">NONE</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Warning">
@@ -557,7 +557,7 @@ Wenn diese Einstellung geändert wird, werden die Einstellungen in allen Konfigu
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_BadDropDownValue">
         <source>Invalid value</source>
-        <target state="translated">Ungültiger Wert</target>
+        <target state="translated">Ungültiger Wert.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_SecurityPermissionCannotBeExcluded">
@@ -875,7 +875,7 @@ Fehler:</target>
       </trans-unit>
       <trans-unit id="PPG_UrlBehavior_Static">
         <source>Static</source>
-        <target state="translated">Statisch</target>
+        <target state="translated">Static</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_UrlBehavior_Dynamic">
@@ -1627,7 +1627,7 @@ Fehler:</target>
       </trans-unit>
       <trans-unit id="RSE_CommentColumn">
         <source>Comment</source>
-        <target state="translated">Kommentieren</target>
+        <target state="translated">Kommentar</target>
         <note>Column names for the string table</note>
       </trans-unit>
       <trans-unit id="SingleFileGenerator_FailedToGenerateFile_1Arg">
@@ -1818,7 +1818,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_Comment">
         <source>Comment</source>
-        <target state="translated">Kommentieren</target>
+        <target state="translated">Kommentar</target>
         <note>Columns for the "Details" view of the resource editor</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_Encoding">
@@ -1828,7 +1828,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_GraphicSizeFormat">
         <source>{0} x {1}</source>
-        <target state="translated">{0} x {1}</target>
+        <target state="needs-review-translation">{0} x {1}</target>
         <note>Format string for showing a graphic's size
 
 #  {0} = width (as an integer)
@@ -2344,19 +2344,9 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">Anwendung</target>
         <note />
       </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebApplicationScope">
-        <source>Application (Web)</source>
-        <target state="translated">Anwendung (Web)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="SD_ComboBoxItem_UserScope">
         <source>User</source>
         <target state="translated">Benutzer</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebUserScope">
-        <source>User (Web)</source>
-        <target state="translated">Benutzer (Web)</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewNameColumnHeaderText">

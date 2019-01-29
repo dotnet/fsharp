@@ -5,14 +5,13 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.ProjectSystem.Base</AssemblyName>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <ImportVsSDK>true</ImportVsSDK>
     <CreateVsixContainer>false</CreateVsixContainer>
     <NoWarn>$(NoWarn),1570,1572,1573,1574,1591,3001,3002,3003,3005,3008,3009,3021,3024</NoWarn>
     <DefineConstants>$(DefineConstants);CODE_ANALYSIS</DefineConstants>
     <RootNamespace>Microsoft.VisualStudio.FSharp.ProjectSystem</RootNamespace>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
+    <UseAssetTargetFallback>true</UseAssetTargetFallback>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
 
@@ -69,7 +68,7 @@
       We require a reference to Microsoft.VisualStudio.Shell.14.0.dll, but that causes some issues with duplicate type
       names.  The ~hack~ fix is to include the package reference and ensure the Aliases metadata gets set afterwards.
       -->
-      <ReferencePathWithRefAssemblies Update="%(Identity)" Aliases="Shell14" Condition="'%(ReferencePathWithRefAssemblies.NuGetPackageId)' == 'Microsoft.VisualStudio.Shell.14.0'" />
+      <ReferencePathWithRefAssemblies Update="%(Identity)" Aliases="Shell14" Condition="'%(ReferencePathWithRefAssemblies.FusionName)' == 'Microsoft.VisualStudio.Shell.14.0, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'" />
     </ItemGroup>
   </Target>
 

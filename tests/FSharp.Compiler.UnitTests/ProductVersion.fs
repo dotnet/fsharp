@@ -91,8 +91,10 @@ module TypeProviderDesignTimeComponentLoading =
 
     [<Test>]
     let ``check tooling paths for type provider design time component loading`` () =
-        let expected = 
-          [ Path.Combine("typeproviders", "fsharp41", "net461")
+        let expected =
+          [
+#if NET46 // only available on net46
+            Path.Combine("typeproviders", "fsharp41", "net461")
             Path.Combine("tools", "fsharp41", "net461")
             Path.Combine("typeproviders", "fsharp41", "net452")
             Path.Combine("tools", "fsharp41", "net452")
@@ -100,9 +102,13 @@ module TypeProviderDesignTimeComponentLoading =
             Path.Combine("tools", "fsharp41", "net451")
             Path.Combine("typeproviders", "fsharp41", "net45")
             Path.Combine("tools", "fsharp41", "net45")
+#else // only available on netcoreapp2.0
+            Path.Combine("typeproviders", "fsharp41", "netcoreapp2.0")
+            Path.Combine("tools", "fsharp41", "netcoreapp2.0")
+#endif // available in both
             Path.Combine("typeproviders", "fsharp41", "netstandard2.0")
             Path.Combine("tools", "fsharp41", "netstandard2.0")
-          ]        
+          ]
         let actual = Microsoft.FSharp.Compiler.ExtensionTyping.toolingCompatiblePaths()
         printfn "actual = %A" actual
         printfn "expected = %A" expected

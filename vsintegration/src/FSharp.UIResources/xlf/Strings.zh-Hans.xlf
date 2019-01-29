@@ -69,7 +69,7 @@
       </trans-unit>
       <trans-unit id="Show_completion_list_after_a_character_is_deleted">
         <source>Show completion list after a character is _deleted</source>
-        <target state="translated">删除字符后显示完成列表</target>
+        <target state="translated">删除字符后显示完成列表(_D)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
@@ -180,6 +180,11 @@
       <trans-unit id="Enter_Key_Rule">
         <source>Enter key behavior</source>
         <target state="new">Enter key behavior</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Format_on_paste">
+        <source>Re-format indentation on paste</source>
+        <target state="new">Re-format indentation on paste</target>
         <note />
       </trans-unit>
     </body>

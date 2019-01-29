@@ -242,16 +242,16 @@ module internal TokenClassifications =
         | RPAREN | RPAREN_COMING_SOON | RPAREN_IS_HERE
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamEnd ||| FSharpTokenTriggerClass.MatchBraces)
               
-        | LBRACK_LESS  | LBRACE_LESS
+        | LBRACK_LESS
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None )
           
-        | LQUOTE _  | LBRACK  | LBRACE | LBRACK_BAR 
+        | LQUOTE _  | LBRACK  | LBRACE | LBRACK_BAR | LBRACE_BAR 
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MatchBraces )
           
-        | GREATER_RBRACE   | GREATER_RBRACK  | GREATER_BAR_RBRACK
+        | GREATER_RBRACK  | GREATER_BAR_RBRACK
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None )
 
-        | RQUOTE _  | RBRACK  | RBRACE | RBRACE_COMING_SOON | RBRACE_IS_HERE | BAR_RBRACK   
+        | RQUOTE _  | RBRACK  | RBRACE | RBRACE_COMING_SOON | RBRACE_IS_HERE | BAR_RBRACK | BAR_RBRACE
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MatchBraces )
               
         | PUBLIC | PRIVATE | INTERNAL | BASE | GLOBAL
@@ -307,7 +307,14 @@ module internal TestExpose =
     //----------------------------------------------------------------------------
     // Lexer states encoded to/from integers
     //--------------------------------------------------------------------------
-type FSharpTokenizerLexState = int64
+[<Struct; CustomEquality; NoComparison>]
+type FSharpTokenizerLexState = 
+    { PosBits: int64
+      OtherBits: int64 }
+    static member Initial = { PosBits = 0L; OtherBits = 0L }
+    member this.Equals (other: FSharpTokenizerLexState) = (this.PosBits = other.PosBits) && (this.OtherBits = other.OtherBits)
+    override this.Equals (obj: obj) = match obj with :? FSharpTokenizerLexState as other -> this.Equals(other) | _ -> false
+    override this.GetHashCode () = hash this.PosBits + hash this.OtherBits
 
 type FSharpTokenizerColorState =
     | Token = 1
@@ -323,7 +330,6 @@ type FSharpTokenizerColorState =
     | EndLineThenToken = 12
     | TripleQuoteString = 13
     | TripleQuoteStringInComment = 14
-    
     | InitialState = 0 
     
 
@@ -348,31 +354,25 @@ module internal LexerStateEncoding =
     // Note that this will discard all lexcont state, including the ifdefStack.
     let revertToDefaultLexCont = LexCont.Token []
 
-    let resize32 (i:int32) : FSharpTokenizerLexState = int64 i
-
     let lexstateNumBits = 4
-    let ncommentsNumBits = 2
-    let startPosNumBits = pos.EncodingSize
+    let ncommentsNumBits = 4
     let hardwhiteNumBits = 1
-    let ifdefstackCountNumBits = 4
-    let ifdefstackNumBits = 16           // 0 means if, 1 means else
+    let ifdefstackCountNumBits = 8
+    let ifdefstackNumBits = 24           // 0 means if, 1 means else
     let _ = assert (lexstateNumBits 
                     + ncommentsNumBits 
-                    + startPosNumBits 
                     + hardwhiteNumBits 
                     + ifdefstackCountNumBits 
                     + ifdefstackNumBits <= 64)
 
     let lexstateStart         = 0
     let ncommentsStart        = lexstateNumBits
-    let startPosStart         = lexstateNumBits+ncommentsNumBits
-    let hardwhitePosStart     = lexstateNumBits+ncommentsNumBits+startPosNumBits
-    let ifdefstackCountStart  = lexstateNumBits+ncommentsNumBits+startPosNumBits+hardwhiteNumBits
-    let ifdefstackStart       = lexstateNumBits+ncommentsNumBits+startPosNumBits+hardwhiteNumBits+ifdefstackCountNumBits
+    let hardwhitePosStart     = lexstateNumBits+ncommentsNumBits
+    let ifdefstackCountStart  = lexstateNumBits+ncommentsNumBits+hardwhiteNumBits
+    let ifdefstackStart       = lexstateNumBits+ncommentsNumBits+hardwhiteNumBits+ifdefstackCountNumBits
     
     let lexstateMask          = Bits.mask64 lexstateStart lexstateNumBits
     let ncommentsMask         = Bits.mask64 ncommentsStart ncommentsNumBits
-    let startPosMask          = Bits.mask64 startPosStart startPosNumBits
     let hardwhitePosMask      = Bits.mask64 hardwhitePosStart hardwhiteNumBits
     let ifdefstackCountMask   = Bits.mask64 ifdefstackCountStart ifdefstackCountNumBits
     let ifdefstackMask        = Bits.mask64 ifdefstackStart ifdefstackNumBits
@@ -381,7 +381,7 @@ module internal LexerStateEncoding =
     let boolOfBit n = (n = 1L)
 
     let inline colorStateOfLexState (state: FSharpTokenizerLexState) =
-        enum<FSharpTokenizerColorState> (int32 ((state &&& lexstateMask) >>> lexstateStart))
+        enum<FSharpTokenizerColorState> (int32 ((state.OtherBits &&& lexstateMask) >>> lexstateStart))
 
     let inline lexStateOfColorState (state: FSharpTokenizerColorState) =
         (int64 state <<< lexstateStart) &&& lexstateMask
@@ -396,42 +396,46 @@ module internal LexerStateEncoding =
                     ifdefStackBits <- (ifdefStackBits ||| (1 <<< ifdefStackCount))
             ifdefStackCount <- ifdefStackCount + 1
 
-        lexStateOfColorState colorState
-        ||| ((ncomments <<< ncommentsStart) &&& ncommentsMask)
-        ||| ((resize32 b.Encoding <<< startPosStart) &&& startPosMask)
-        ||| ((resize32 (bitOfBool light) <<< hardwhitePosStart) &&& hardwhitePosMask)
-        ||| ((resize32 ifdefStackCount <<< ifdefstackCountStart) &&& ifdefstackCountMask)
-        ||| ((resize32 ifdefStackBits <<< ifdefstackStart) &&& ifdefstackMask)
+        let bits = 
+            lexStateOfColorState colorState
+            ||| ((ncomments <<< ncommentsStart) &&& ncommentsMask)
+            ||| ((int64 (bitOfBool light) <<< hardwhitePosStart) &&& hardwhitePosMask)
+            ||| ((int64 ifdefStackCount <<< ifdefstackCountStart) &&& ifdefstackCountMask)
+            ||| ((int64 ifdefStackBits <<< ifdefstackStart) &&& ifdefstackMask)
+        { PosBits = b.Encoding
+          OtherBits = bits }
     
+
     let decodeLexCont (state:FSharpTokenizerLexState) = 
         let mutable ifDefs = []
-        let ifdefStackCount = (int32) ((state &&& ifdefstackCountMask) >>> ifdefstackCountStart)
+        let bits = state.OtherBits
+        let ifdefStackCount = (int32) ((bits &&& ifdefstackCountMask) >>> ifdefstackCountStart)
         if ifdefStackCount>0 then 
-            let ifdefStack = (int32) ((state &&& ifdefstackMask) >>> ifdefstackStart)
+            let ifdefStack = (int32) ((bits &&& ifdefstackMask) >>> ifdefstackStart)
             for i in 1..ifdefStackCount do
                 let bit = ifdefStackCount-i
                 let mask = 1 <<< bit
                 let ifDef = (if ifdefStack &&& mask = 0 then IfDefIf else IfDefElse)
                 ifDefs<-(ifDef,range0)::ifDefs
         colorStateOfLexState state,
-        (int32) ((state &&& ncommentsMask) >>> ncommentsStart),
-        pos.Decode (int32 ((state &&& startPosMask) >>> startPosStart)),
+        int32 ((bits &&& ncommentsMask) >>> ncommentsStart),
+        pos.Decode state.PosBits,
         ifDefs,
-        boolOfBit ((state &&& hardwhitePosMask) >>> hardwhitePosStart)
+        boolOfBit ((bits &&& hardwhitePosMask) >>> hardwhitePosStart)
 
     let encodeLexInt lightSyntaxStatus (lexcont:LexerWhitespaceContinuation) = 
         let tag,n1,p1,ifd = 
             match lexcont with 
             | LexCont.Token ifd                                       -> FSharpTokenizerColorState.Token,                     0L,         pos0,    ifd
-            | LexCont.IfDefSkip (ifd,n,m)                             -> FSharpTokenizerColorState.IfDefSkip,                 resize32 n, m.Start, ifd
-            | LexCont.EndLine(LexerEndlineContinuation.Skip(ifd,n,m)) -> FSharpTokenizerColorState.EndLineThenSkip,           resize32 n, m.Start, ifd
+            | LexCont.IfDefSkip (ifd,n,m)                             -> FSharpTokenizerColorState.IfDefSkip,                 int64 n, m.Start, ifd
+            | LexCont.EndLine(LexerEndlineContinuation.Skip(ifd,n,m)) -> FSharpTokenizerColorState.EndLineThenSkip,           int64 n, m.Start, ifd
             | LexCont.EndLine(LexerEndlineContinuation.Token(ifd))    -> FSharpTokenizerColorState.EndLineThenToken,          0L,         pos0,    ifd
             | LexCont.String (ifd,m)                                  -> FSharpTokenizerColorState.String,                    0L,         m.Start, ifd
-            | LexCont.Comment (ifd,n,m)                               -> FSharpTokenizerColorState.Comment,                   resize32 n, m.Start, ifd
-            | LexCont.SingleLineComment (ifd,n,m)                     -> FSharpTokenizerColorState.SingleLineComment,         resize32 n, m.Start, ifd
-            | LexCont.StringInComment (ifd,n,m)                       -> FSharpTokenizerColorState.StringInComment,           resize32 n, m.Start, ifd
-            | LexCont.VerbatimStringInComment (ifd,n,m)               -> FSharpTokenizerColorState.VerbatimStringInComment,   resize32 n, m.Start, ifd
-            | LexCont.TripleQuoteStringInComment (ifd,n,m)            -> FSharpTokenizerColorState.TripleQuoteStringInComment,resize32 n, m.Start, ifd
+            | LexCont.Comment (ifd,n,m)                               -> FSharpTokenizerColorState.Comment,                   int64 n, m.Start, ifd
+            | LexCont.SingleLineComment (ifd,n,m)                     -> FSharpTokenizerColorState.SingleLineComment,         int64 n, m.Start, ifd
+            | LexCont.StringInComment (ifd,n,m)                       -> FSharpTokenizerColorState.StringInComment,           int64 n, m.Start, ifd
+            | LexCont.VerbatimStringInComment (ifd,n,m)               -> FSharpTokenizerColorState.VerbatimStringInComment,   int64 n, m.Start, ifd
+            | LexCont.TripleQuoteStringInComment (ifd,n,m)            -> FSharpTokenizerColorState.TripleQuoteStringInComment,int64 n, m.Start, ifd
             | LexCont.MLOnly (ifd,m)                                  -> FSharpTokenizerColorState.CamlOnly,                  0L,         m.Start, ifd
             | LexCont.VerbatimString (ifd,m)                          -> FSharpTokenizerColorState.VerbatimString,            0L,         m.Start, ifd
             | LexCont.TripleQuoteString (ifd,m)                       -> FSharpTokenizerColorState.TripleQuoteString,         0L,         m.Start, ifd
@@ -576,7 +580,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         | None -> lexbuf.EndPos <- Internal.Utilities.Text.Lexing.Position.Empty
         | Some(value) -> resetLexbufPos value lexbuf
      
-    member x.ScanToken(lexintInitial) : Option<FSharpTokenInfo> * FSharpTokenizerLexState = 
+    member x.ScanToken(lexintInitial) : FSharpTokenInfo option * FSharpTokenizerLexState = 
 
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)
@@ -749,10 +753,10 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         LexerStateEncoding.colorStateOfLexState lexState
 
     static member LexStateOfColorState(colorState: FSharpTokenizerColorState) = 
-        LexerStateEncoding.lexStateOfColorState colorState
+        { PosBits = 0L; OtherBits = LexerStateEncoding.lexStateOfColorState colorState }
 
 [<Sealed>]
-type FSharpSourceTokenizer(defineConstants : string list, filename : Option<string>) =     
+type FSharpSourceTokenizer(defineConstants : string list, filename : string option) =     
     let lexResourceManager = new Lexhelp.LexResourceManager() 
 
     let lexArgsLightOn = mkLexargs(filename,defineConstants,LightSyntaxStatus(true,false),lexResourceManager, ref [],DiscardErrorsLogger) 

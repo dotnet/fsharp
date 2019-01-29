@@ -64,6 +64,9 @@ type Item =
     /// Represents the resolution of a name to an F# record field.
     | RecdField of RecdFieldInfo
 
+    /// Represents the resolution of a name to a field of an anonymous record type.
+    | AnonRecdField of AnonRecdTypeInfo * TTypes * int * range
+
     // The following are never in the items table but are valid results of binding 
     // an identifier in different circumstances. 
 
@@ -166,8 +169,8 @@ type FullyQualifiedFlag =
 [<RequireQualifiedAccess>]
 type BulkAdd = Yes | No
 
-/// Lookup patterns in name resolution environment
-val internal TryFindPatternByName : string -> NameResolutionEnv -> Item option
+/// Find a field in anonymous record type
+val internal TryFindAnonRecdFieldOfType : TcGlobals -> TType -> string -> Item option
 
 /// Add extra items to the environment for Visual Studio, e.g. static members 
 val internal AddFakeNamedValRefToNameEnv : string -> NameResolutionEnv -> ValRef -> NameResolutionEnv
@@ -237,7 +240,7 @@ type TypeNameResolutionInfo =
   static member ResolveToTypeRefs : TypeNameResolutionStaticArgsInfo -> TypeNameResolutionInfo
 
 /// Represents the kind of the occurrence when reporting a name in name resolution
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; Struct>]
 type internal ItemOccurence = 
     | Binding 
     | Use 
@@ -316,7 +319,7 @@ type internal TcSymbolUses =
     member GetUsesOfSymbol : Item -> TcSymbolUseData[]
 
     /// All the uses of all items within the file
-    member AllUsesOfSymbols : TcSymbolUseData[]
+    member AllUsesOfSymbols : TcSymbolUseData[][]
 
     /// Get the locations of all the printf format specifiers in the file
     member GetFormatSpecifierLocationsAndArity : unit -> (range * int)[]
@@ -341,12 +344,12 @@ type internal OpenDeclaration =
     /// Create a new instance of OpenDeclaration.
     static member Create : longId: Ident list * modules: ModuleOrNamespaceRef list * appliedScope: range * isOwnNamespace: bool -> OpenDeclaration
     
-/// Line-end normalized source text and an array of line end positions, used for format string parsing
+/// Source text and an array of line end positions, used for format string parsing
 type FormatStringCheckContext =
-    { /// Line-end normalized source text
-      NormalizedSource: string
-      /// Array of line end positions
-      LineEndPositions: int[] }
+    { /// Source text
+      Source: string
+      /// Array of line start positions
+      LineStartPositions: int[] }
 
 /// An abstract type for reporting the results of name resolution and type checking
 type ITypecheckResultsSink =
