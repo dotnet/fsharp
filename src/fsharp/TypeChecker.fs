@@ -6898,7 +6898,7 @@ and TcAssertExpr cenv overallTy env (m:range) tpenv x  =
 //------------------------------------------------------------------------- 
 
 and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr) =
-    let buildForNestdFlds (lidwd : LongIdentWithDots) v =
+    let transformAstForNestedUpdates (lidwd : LongIdentWithDots) v =
         let recdExprCopyInfo ids (optOrigExpr : (SynExpr * BlockSeparator) option) (id : Ident) =
             let upToId origSepRng id lidwd =
                 let rec buildLid res (id : Ident) =
@@ -6922,21 +6922,35 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
 
             let totalRange (origId : Ident) (id : Ident) =
                 mkRange origId.idRange.FileName origId.idRange.End id.idRange.Start
+
+            let rangeOfBlockSeperator (id : Ident) =
+                let idEnd = id.idRange.End
+                let blockSeperatorStartCol = idEnd.Column
+                let blockSeperatorEndCol = blockSeperatorStartCol + 4
+                let blockSeperatorStartPos = mkPos idEnd.Line blockSeperatorStartCol
+                let blockSeporatorEndPos = mkPos idEnd.Line blockSeperatorEndCol
+
+                mkRange id.idRange.FileName blockSeperatorStartPos blockSeporatorEndPos
                 
             match optOrigExpr with 
             | Some (SynExpr.Ident origId, (sepRange, _)) ->
                 let lid, rng = upToId sepRange id (origId :: ids)
-                Some (SynExpr.LongIdent (false, LongIdentWithDots(lid, rng), None, totalRange origId id), (id.idRange, None)) // TODO: id.idRange should be the range of the next separator
+                Some (SynExpr.LongIdent (false, LongIdentWithDots(lid, rng), None, totalRange origId id), (rangeOfBlockSeperator id, None)) // TODO: id.idRange should be the range of the next separator
             | _ -> None
 
 
         let rec synExprRecd copyInfo id flds =
-            Some(SynExpr.Record((None, (copyInfo id), [ match flds with 
-                                                        | [] -> yield ((LongIdentWithDots ([], []), true), v, None)
-                                                        | [fldId] -> yield ((LongIdentWithDots ([fldId],[]), true), v, None)
-                                                        | fldId :: rest -> 
-                                                            let nestedFld = synExprRecd copyInfo fldId
-                                                            yield ((LongIdentWithDots ([fldId], []), true), nestedFld rest, None)], id.idRange)))
+            SynExpr.Record(
+                None,
+                (copyInfo id),
+                [ match flds with 
+                  | [] -> yield ((LongIdentWithDots ([], []), true), v, None)
+                  | [fldId] -> yield ((LongIdentWithDots ([fldId],[]), true), v, None)
+                  | fldId :: rest -> 
+                      let nestedFld = synExprRecd copyInfo fldId
+                      yield ((LongIdentWithDots ([fldId], []), true), nestedFld rest, None) ],
+                id.idRange)
+            |> Some
 
         let access, flds = lidwd.Lid |> ResolveNestedField cenv.tcSink cenv.nameResolver env.eNameResEnv env.eAccessRights overallTy
 
@@ -6951,15 +6965,15 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
             ]
 
         expanded
-
-    let reduceNstdUpdates flds =
-        let grpdByFld = flds |> List.groupBy (fun ((_, fld : Ident), _) -> fld.idText)
+    
+    let groupUpdatesToNestedFields flds =
+        let groupedByField = flds |> List.groupBy (fun ((_, fld : Ident), _) -> fld.idText)
         [
-            for (_, flds) in grpdByFld do
+            for (_, flds) in groupedByField do
                 if (flds |> List.length < 2) then 
                     yield! flds
                 else
-                    let rec grpIfNstd res xs =
+                    let rec groupIfNested res xs =
                         match xs with
                         | [] -> res
                         | x::[] -> x :: res 
@@ -6967,15 +6981,14 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                                       | (lidwid, Some(SynExpr.Record (aBI, aCI, aFlds, aRng))), (_, Some(SynExpr.Record (_, _, bFlds, _))) ->
                                             let combinedFlds = aFlds @ bFlds
                                             let reducedRecd = (lidwid, Some(SynExpr.Record (aBI, aCI, combinedFlds, aRng))) 
-                                            grpIfNstd (reducedRecd :: res) ys
-                                      | _ -> grpIfNstd (x :: res) (y :: ys)
+                                            groupIfNested (reducedRecd :: res) ys
+                                      | _ -> groupIfNested (x :: res) (y :: ys)
                     
-                    yield! flds |> grpIfNstd []
+                    yield! flds |> groupIfNested []
         ]
 
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors 
     let haveCtor = Option.isSome inherits
-
 
     let optOrigExprInfo, tpenv = 
       match optOrigExpr with 
@@ -7003,8 +7016,8 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                     match lidwd.Lid with
                     | [] -> ()
                     | [id] -> yield (([], id), v)
-                    | _ -> yield! buildForNestdFlds lidwd v                 
-            ] |> reduceNstdUpdates
+                    | _ -> yield! transformAstForNestedUpdates lidwd v                 
+            ] |> groupUpdatesToNestedFields
                    
         match flds with 
         | [] -> []
