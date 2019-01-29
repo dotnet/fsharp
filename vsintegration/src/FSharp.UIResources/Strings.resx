@@ -225,4 +225,7 @@
   <data name="Enter_Key_Rule" xml:space="preserve">
     <value>Enter key behavior</value>
   </data>
+  <data name="Format_on_paste" xml:space="preserve">
+    <value>Re-format indentation on paste</value>
+  </data>
 </root>

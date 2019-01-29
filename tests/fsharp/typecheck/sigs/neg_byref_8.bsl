@@ -1,4 +1,8 @@
 
+neg_byref_8.fs(2,31,2,35): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+neg_byref_8.fs(2,31,2,35): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
 neg_byref_8.fs(2,38,2,43): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
 neg_byref_8.fs(2,38,2,43): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.

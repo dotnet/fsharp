@@ -62,6 +62,10 @@ type public IlxGenResults =
       ilAssemAttrs           : ILAttribute list
       /// The generated IL/ILX .NET module attributes
       ilNetModuleAttrs       : ILAttribute list
+      /// The attributes for the assembly in F# form
+      topAssemblyAttrs : Attribs
+      /// The security attributes to attach to the assembly
+      permissionSets : ILSecurityDecl list
       /// The generated IL/ILX resources associated with F# quotations
       quotationResourceInfo : (ILTypeRef list * byte[])  list }
 
@@ -87,9 +91,6 @@ type public IlxAssemblyGenerator =
 
     /// Generate ILX code for an assembly fragment
     member GenerateCode : IlxGenOptions * TypedAssemblyAfterOptimization * Attribs * Attribs -> IlxGenResults
-
-    /// Create the CAS permission sets for an assembly fragment
-    member CreatePermissionSets : Attrib list ->  ILSecurityDecl list
 
     /// Invert the compilation of the given value and clear the storage of the value
     member ClearGeneratedValue : ExecutionContext * Val -> unit

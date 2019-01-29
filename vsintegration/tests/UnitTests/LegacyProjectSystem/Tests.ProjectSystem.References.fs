@@ -70,8 +70,8 @@ type References() =
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))
             use project = TheTests.CreateProject(projFile) 
-            let assName = new AssemblyName(typeof<System.Windows.Forms.Form>.Assembly.FullName)
-            let selectorData = new VSCOMPONENTSELECTORDATA(``type`` = VSCOMPONENTTYPE.VSCOMPONENTTYPE_ComPlus, bstrFile = "*" + assName.FullName)
+            let assemblyName = new AssemblyName(typeof<System.Windows.Forms.Form>.Assembly.FullName)
+            let selectorData = new VSCOMPONENTSELECTORDATA(``type`` = VSCOMPONENTTYPE.VSCOMPONENTTYPE_ComPlus, bstrFile = "*" + assemblyName.FullName)
             let refContainer = GetReferenceContainerNode(project)
             refContainer.AddReferenceFromSelectorData(selectorData) |> Assert.IsNotNull
             let l = new List<AssemblyReferenceNode>()

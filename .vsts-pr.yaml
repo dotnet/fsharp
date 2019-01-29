@@ -1,32 +1,34 @@
-phases:
-- phase: Linux
-  queue:
-    name: Hosted Linux Preview
-    timeoutInMinutes: 90
-    parallel: 2
+jobs:
+- job: Linux
+  pool:
+    vmImage: ubuntu-16.04
+  timeoutInMinutes: 90
+  strategy:
+    maxParallel: 2
     matrix:
-      release_default:
-        _command: ./mono/cibuild.sh
-        _args: release
+      dotnet_sdk:
+        _command: make
+        _args: Configuration=release
       # disabled until it can be properly fixed
-      #release_fcs:
-      #  _command: ./fcs/build.sh
-      #  _args: Build
+      release_fcs:
+        _command: ./fcs/build.sh
+        _args: Build
   steps:
-    - script: $(_command) $(_args)
-    - task: PublishBuildArtifacts@1
-      inputs:
-        PathtoPublish: '$(Build.SourcesDirectory)/tests/TestResults'
-        ArtifactName: 'Linux $(_command) $(_args)'
-        publishLocation: Container
-      continueOnError: true
-      condition: failed()
+  - script: $(_command) $(_args)
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults'
+      ArtifactName: 'Linux $(_command) $(_args)'
+      publishLocation: Container
+    continueOnError: true
+    condition: failed()
 
-- phase: Windows
-  queue:
-    name: Hosted VS2017
-    timeoutInMinutes: 90
-    parallel: 7
+- job: Windows
+  pool:
+    vmImage: vs2017-win2016
+  timeoutInMinutes: 120
+  strategy:
+    maxParallel: 7
     matrix:
       ci_part1:
         _command: build.cmd
@@ -50,11 +52,11 @@ phases:
         _command: fcs\build.cmd
         _args: TestAndNuget
   steps:
-    - script: $(_command) $(_args)
-    - task: PublishBuildArtifacts@1
-      inputs:
-        PathtoPublish: '$(Build.SourcesDirectory)\tests\TestResults'
-        ArtifactName: 'Windows $(_command) $(_args)'
-        publishLocation: Container
-      continueOnError: true
-      condition: failed()
+  - script: $(_command) $(_args)
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults'
+      ArtifactName: 'Windows $(_command) $(_args)'
+      publishLocation: Container
+    continueOnError: true
+    condition: failed()

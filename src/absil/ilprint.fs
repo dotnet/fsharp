@@ -30,13 +30,14 @@ let tyvar_generator =
 // Carry an environment because the way we print method variables 
 // depends on the gparams of the current scope. 
 type ppenv = 
-    { ppenvClassFormals: int;
+    { ilGlobals: ILGlobals
+      ppenvClassFormals: int;
       ppenvMethodFormals: int }
 let ppenv_enter_method  mgparams env = 
     {env with ppenvMethodFormals=mgparams}
 let ppenv_enter_tdef gparams env =
     {env with ppenvClassFormals=List.length gparams; ppenvMethodFormals=0}
-let mk_ppenv = { ppenvClassFormals=0; ppenvMethodFormals=0 }
+let mk_ppenv ilg = { ilGlobals = ilg; ppenvClassFormals = 0; ppenvMethodFormals = 0 }
 let debug_ppenv = mk_ppenv 
 let ppenv_enter_modul env = { env with  ppenvClassFormals=0; ppenvMethodFormals=0 }
 
@@ -96,6 +97,13 @@ let output_seq sep f os (a:seq<_>) =
       while e.MoveNext() do
           output_string os sep; 
           f os e.Current
+
+let output_array sep f os (a:_ []) =
+  if not (Array.isEmpty a) then
+      for i in 0..a.Length-2 do
+        f os a.[i]
+        output_string os sep
+      f os (a.[a.Length - 1])
 
 let output_parens f os a = output_string os "("; f os a; output_string os ")"
 let output_angled f os a = output_string os "<"; f os a; output_string os ">"
@@ -436,12 +444,12 @@ let output_option f os = function None -> () | Some x -> f os x
     
 let goutput_alternative_ref env os (alt: IlxUnionAlternative) = 
   output_id os alt.Name; 
-  alt.FieldDefs |> Array.toList |> output_parens (output_seq "," (fun os fdef -> goutput_typ env os fdef.Type)) os 
+  alt.FieldDefs |> output_parens (output_array "," (fun os fdef -> goutput_typ env os fdef.Type)) os 
 
 let goutput_curef env os (IlxUnionRef(_,tref,alts,_,_)) =
   output_string os " .classunion import ";
   goutput_tref env os tref;
-  output_parens (output_seq "," (goutput_alternative_ref env)) os (Array.toList alts)
+  output_parens (output_array "," (goutput_alternative_ref env)) os alts
     
 let goutput_cuspec env os (IlxUnionSpec(IlxUnionRef(_,tref,_,_,_),i)) =
   output_string os "class /* classunion */ ";
@@ -469,13 +477,14 @@ let output_basic_type os x =
 let output_custom_attr_data os data = 
   output_string os " = "; output_parens output_bytes os data
       
-let goutput_custom_attr env os attr =
+let goutput_custom_attr env os (attr: ILAttribute) =
   output_string os " .custom "
   goutput_mspec env os attr.Method
-  output_custom_attr_data os attr.Data
+  let data = getCustomAttrData env.ilGlobals attr
+  output_custom_attr_data os data
 
 let goutput_custom_attrs env os (attrs : ILAttributes) =
-  List.iter (fun attr -> goutput_custom_attr env os attr;  output_string os "\n" ) attrs.AsList
+  Array.iter (fun attr -> goutput_custom_attr env os attr;  output_string os "\n" ) attrs.AsArray
 
 let goutput_fdef _tref env os (fd: ILFieldDef) =
   output_string os " .field "
@@ -702,7 +711,7 @@ let rec goutput_instr env os inst =
         goutput_dlocref env os (mkILArrTy(typ,shape));
         output_string os ".ctor";
         let rank = shape.Rank 
-        output_parens (output_seq "," (goutput_typ env)) os (Array.toList (Array.create ( rank) EcmaMscorlibILGlobals.typ_Int32))
+        output_parens (output_array "," (goutput_typ env)) os (Array.create ( rank) EcmaMscorlibILGlobals.typ_Int32)
   | I_stelem_any (shape,dt)     -> 
       if shape = ILArrayShape.SingleDimensional then 
         output_string os "stelem.any "; goutput_typ env os dt 
@@ -711,7 +720,9 @@ let rec goutput_instr env os inst =
         goutput_dlocref env os (mkILArrTy(dt,shape));
         output_string os "Set";
         let rank = shape.Rank 
-        output_parens (output_seq "," (goutput_typ env)) os (Array.toList (Array.create ( rank) EcmaMscorlibILGlobals.typ_Int32) @ [dt])
+        let arr = Array.create (rank + 1) EcmaMscorlibILGlobals.typ_Int32
+        arr.[rank] <- dt
+        output_parens (output_array "," (goutput_typ env)) os arr
   | I_ldelem_any (shape,tok) -> 
       if shape = ILArrayShape.SingleDimensional then 
         output_string os "ldelem.any "; goutput_typ env os tok 
@@ -722,7 +733,7 @@ let rec goutput_instr env os inst =
         goutput_dlocref env os (mkILArrTy(tok,shape));
         output_string os "Get";
         let rank = shape.Rank 
-        output_parens (output_seq "," (goutput_typ env)) os (Array.toList (Array.create ( rank) EcmaMscorlibILGlobals.typ_Int32))
+        output_parens (output_array "," (goutput_typ env)) os (Array.create ( rank) EcmaMscorlibILGlobals.typ_Int32)
   | I_ldelema   (ro,_,shape,tok)  -> 
       if ro = ReadonlyAddress then output_string os "readonly. ";
       if shape = ILArrayShape.SingleDimensional then 
@@ -734,7 +745,7 @@ let rec goutput_instr env os inst =
         goutput_dlocref env os (mkILArrTy(tok,shape));
         output_string os "Address";
         let rank = shape.Rank 
-        output_parens (output_seq "," (goutput_typ env)) os (Array.toList (Array.create ( rank) EcmaMscorlibILGlobals.typ_Int32))
+        output_parens (output_array "," (goutput_typ env)) os (Array.create ( rank) EcmaMscorlibILGlobals.typ_Int32)
       
   | I_box       tok     -> output_string os "box "; goutput_typ env os tok
   | I_unbox     tok     -> output_string os "unbox "; goutput_typ env os tok
@@ -888,7 +899,7 @@ let splitTypeLayout = function
 let goutput_fdefs tref env os (fdefs: ILFieldDefs) = 
   List.iter (fun f -> (goutput_fdef tref env) os f; output_string os "\n" ) fdefs.AsList
 let goutput_mdefs env os (mdefs: ILMethodDefs) = 
-  List.iter (fun f -> (goutput_mdef env) os f; output_string os "\n" ) mdefs.AsList
+  Array.iter (fun f -> (goutput_mdef env) os f; output_string os "\n" ) mdefs.AsArray
 let goutput_pdefs env os (pdefs: ILPropertyDefs) = 
   List.iter (fun f -> (goutput_pdef env) os f; output_string os "\n" ) pdefs.AsList
 
@@ -975,7 +986,7 @@ let output_publickeyinfo os = function
   | PublicKey k -> output_publickey os k
   | PublicKeyToken k -> output_publickeytoken os k
 
-let output_assref os (aref:ILAssemblyRef) =
+let output_assemblyRef os (aref:ILAssemblyRef) =
   output_string os " .assembly extern ";
   output_sqstring os aref.Name;
   if aref.Retargetable then output_string os " retargetable "; 
@@ -1029,9 +1040,9 @@ let goutput_manifest env os m =
   output_string os " } \n"
 
 
-let output_module_fragment_aux _refs os  modul = 
+let output_module_fragment_aux _refs os (ilg: ILGlobals) modul =
   try 
-    let env = mk_ppenv 
+    let env = mk_ppenv ilg
     let env = ppenv_enter_modul env 
     goutput_tdefs false ([]) env os modul.TypeDefs;
     goutput_tdefs true ([]) env os modul.TypeDefs;
@@ -1039,13 +1050,13 @@ let output_module_fragment_aux _refs os  modul =
     output_string os "*** Error during printing : "; output_string os (e.ToString()); os.Flush();
     reraise()
 
-let output_module_fragment os  modul = 
+let output_module_fragment os (ilg: ILGlobals) modul =
   let refs = computeILRefs modul 
-  output_module_fragment_aux refs os  modul;
+  output_module_fragment_aux refs os ilg modul
   refs
 
 let output_module_refs os refs = 
-  List.iter (fun  x -> output_assref os x; output_string os "\n") refs.AssemblyReferences;
+  List.iter (fun  x -> output_assemblyRef os x; output_string os "\n") refs.AssemblyReferences;
   List.iter (fun x -> output_modref os x; output_string os "\n") refs.ModuleReferences
   
 let goutput_module_manifest env os modul = 
@@ -1059,14 +1070,14 @@ let goutput_module_manifest env os modul =
   output_string os "\n";
   (output_option (goutput_manifest env)) os modul.Manifest
 
-let output_module os  modul = 
+let output_module os (ilg: ILGlobals) modul =
   try 
     let refs = computeILRefs modul 
-    let env = mk_ppenv 
+    let env = mk_ppenv ilg
     let env = ppenv_enter_modul env 
     output_module_refs  os refs;
     goutput_module_manifest env os modul;
-    output_module_fragment_aux refs os  modul;
+    output_module_fragment_aux refs os ilg modul;
   with e ->  
     output_string os "*** Error during printing : "; output_string os (e.ToString()); os.Flush();
     raise e

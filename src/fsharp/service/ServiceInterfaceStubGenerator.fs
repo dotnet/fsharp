@@ -151,8 +151,8 @@ type internal InterfaceData =
                         None
                 | SynType.Anon _ -> 
                     Some "_"
-                | SynType.Tuple(ts, _) ->
-                    Some (ts |> Seq.choose (snd >> (|TypeIdent|_|)) |> String.concat " * ")
+                | SynType.AnonRecd (_, ts, _)  -> 
+                    Some (ts |> Seq.choose (snd >> (|TypeIdent|_|)) |> String.concat "; ")
                 | SynType.Array(dimension, TypeIdent typeName, _) ->
                     Some (sprintf "%s [%s]" typeName (new String(',', dimension-1)))
                 | SynType.MeasurePower(TypeIdent typeName, RationalConst power, _) ->
@@ -761,7 +761,7 @@ module internal InterfaceStubGenerator =
                 | SynExpr.Typed(synExpr, _synType, _range) -> 
                     walkExpr synExpr
 
-                | SynExpr.Tuple(synExprList, _, _range)
+                | SynExpr.Tuple(_, synExprList, _, _range)
                 | SynExpr.ArrayOrList(_, synExprList, _range) ->
                     List.tryPick walkExpr synExprList
 

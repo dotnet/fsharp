@@ -304,12 +304,12 @@ module SimplePickle =
 open SimplePickle
 
 
-let p_assref x st = p_string x st
+let p_assemblyref x st = p_string x st
 
 let p_NamedType x st = 
     match x with 
-    | Idx n -> p_tup2 p_string p_assref (string n, "") st
-    | Named (nm,ass) -> p_tup2 p_string p_assref (nm, ass) st
+    | Idx n -> p_tup2 p_string p_assemblyref (string n, "") st
+    | Named (nm,a) -> p_tup2 p_string p_assemblyref (nm, a) st
 
 let p_tycon x st = 
     match x with

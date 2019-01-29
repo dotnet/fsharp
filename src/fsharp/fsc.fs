@@ -296,7 +296,7 @@ module InterfaceFileWriter =
             fprintfn os "#light" 
             fprintfn os "" 
 
-        for (TImplFile(_, _, mexpr, _, _)) in declaredImpls do
+        for (TImplFile(_, _, mexpr, _, _, _)) in declaredImpls do
             let denv = BuildInitialDisplayEnvForSigFileGeneration tcGlobals
             writeViaBufferWithEnvironmentNewLines os (fun os s -> Printf.bprintf os "%s\n\n" s)
               (NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr |> Layout.squashTo 80 |> Layout.showL)
@@ -329,9 +329,9 @@ module XmlDocWriter =
             if (hasDoc tc.XmlDoc) then tc.XmlDocSig <- XmlDocSigOfTycon [ptext; tc.CompiledName]
             for vref in tc.MembersOfFSharpTyconSorted do 
                 doValSig ptext vref.Deref
-            for uc in tc.UnionCasesAsList do
+            for uc in tc.UnionCasesArray do
                 if (hasDoc uc.XmlDoc) then uc.XmlDocSig <- XmlDocSigOfUnionCase [ptext; tc.CompiledName; uc.Id.idText]
-            for rf in tc.AllFieldsAsList do
+            for rf in tc.AllFieldsArray do
                 if (hasDoc rf.XmlDoc) then
                     rf.XmlDocSig <-
                         if tc.IsRecordTycon && (not rf.IsStatic) then 
@@ -380,9 +380,9 @@ module XmlDocWriter =
             addMember tc.XmlDocSig tc.XmlDoc
             for vref in tc.MembersOfFSharpTyconSorted do 
                 doVal vref.Deref 
-            for uc in tc.UnionCasesAsList do
+            for uc in tc.UnionCasesArray do
                 doUnionCase uc
-            for rf in tc.AllFieldsAsList do
+            for rf in tc.AllFieldsArray do
                 doField rf
 
         let modulMember (m:ModuleOrNamespace) = addMember m.XmlDocSig m.XmlDoc
@@ -1773,11 +1773,9 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemor
             errorRecoveryNoRange e
             exiter.Exit 1
     
-    let inputs =
-        // Deduplicate module names
-        let moduleNamesDict = ConcurrentDictionary<string,Set<string>>()
-        inputs
-        |> List.map (fun (input,x) -> DeduplicateParsedInputModuleName moduleNamesDict input,x)
+    let inputs, _ =
+        (Map.empty, inputs)
+        ||> List.mapFold (fun state (input,x) -> let inputT, stateT = DeduplicateParsedInputModuleName state input in (inputT,x), stateT)
 
     if tcConfig.parseOnly then exiter.Exit 0 
     if not tcConfig.continueAfterParseFailure then 
@@ -1831,7 +1829,7 @@ let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
     // it as the updated global error logger and never remove it
     let oldLogger = errorLogger
     let errorLogger = 
-        let scopedPragmas = [ for (TImplFile(_, pragmas, _, _, _)) in typedImplFiles do yield! pragmas ]
+        let scopedPragmas = [ for (TImplFile(_, pragmas, _, _, _, _)) in typedImplFiles do yield! pragmas ]
         GetErrorLoggerFilteringByScopedPragmas(true, scopedPragmas, oldLogger)
 
     let _unwindEL_3 = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
@@ -1999,13 +1997,10 @@ let main2b (tcImportsCapture,dynamicAssemblyCreator) (Args (ctok, tcConfig: TcCo
     let ilxGenerator = CreateIlxAssemblyGenerator (tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), generatedCcu)
 
     let codegenResults = GenerateIlxCode ((if Option.isSome dynamicAssemblyCreator then IlReflectBackend else IlWriteBackend), Option.isSome dynamicAssemblyCreator, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator)
-    let casApplied = new Dictionary<Stamp, bool>()
-    let securityAttrs, topAssemblyAttrs = topAttrs.assemblyAttrs |> List.partition (fun a -> IsSecurityAttribute tcGlobals (tcImports.GetImportMap()) casApplied a rangeStartup)
-
-    // remove any security attributes from the top-level assembly attribute list
+    let topAssemblyAttrs = codegenResults.topAssemblyAttrs
     let topAttrs = {topAttrs with assemblyAttrs=topAssemblyAttrs}
-    let permissionSets = ilxGenerator.CreatePermissionSets securityAttrs
-    let secDecls = if List.isEmpty securityAttrs then emptyILSecurityDecls else mkILSecurityDecls permissionSets
+    let permissionSets = codegenResults.permissionSets
+    let secDecls = mkILSecurityDecls permissionSets 
 
     let ilxMainModule = MainModuleBuilder.CreateMainModule (ctok, tcConfig, tcGlobals, tcImports, pdbfile, assemblyName, outfile, topAttrs, idata, optDataResources, codegenResults, assemVerFromAttrib, metadataVersion, secDecls)
 
@@ -2039,7 +2034,7 @@ let main4 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
 
     DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
-    let pdbfile = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
+    let pdbfile = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> FileSystem.GetFullPathShim)
 
     let normalizeAssemblyRefs (aref:ILAssemblyRef) = 
         match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, aref.Name, lookupOnly=false) with 
@@ -2113,4 +2108,5 @@ let compileOfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName
 let mainCompile (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator) = 
     //System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
     typecheckAndCompile(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator)
+
 

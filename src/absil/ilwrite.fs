@@ -1382,8 +1382,9 @@ and GetMethodRefAsCustomAttribType cenv (mref:ILMethodRef) =
 let rec GetCustomAttrDataAsBlobIdx cenv (data:byte[]) = 
     if data.Length = 0 then 0 else GetBytesAsBlobIdx cenv data
 
-and GetCustomAttrRow cenv hca attr = 
+and GetCustomAttrRow cenv hca (attr: ILAttribute) =
     let cat = GetMethodRefAsCustomAttribType cenv attr.Method.MethodRef
+    let data = getCustomAttrData cenv.ilg attr
     for element in attr.Elements do
         match element with
         | ILAttribElem.Type (Some ty) when ty.IsNominal -> GetTypeRefAsTypeRefIdx cenv ty.TypeRef |> ignore
@@ -1393,14 +1394,14 @@ and GetCustomAttrRow cenv hca attr =
     UnsharedRow
             [| HasCustomAttribute (fst hca, snd hca);
                CustomAttributeType (fst cat, snd cat);
-               Blob (GetCustomAttrDataAsBlobIdx cenv attr.Data)
+               Blob (GetCustomAttrDataAsBlobIdx cenv data)
             |]
 
 and GenCustomAttrPass3Or4 cenv hca attr = 
     AddUnsharedRow cenv TableNames.CustomAttribute (GetCustomAttrRow cenv hca attr) |> ignore
 
 and GenCustomAttrsPass3Or4 cenv hca (attrs: ILAttributes) = 
-    attrs.AsList |> List.iter (GenCustomAttrPass3Or4 cenv hca) 
+    attrs.AsArray |> Array.iter (GenCustomAttrPass3Or4 cenv hca) 
 
 // -------------------------------------------------------------------- 
 // ILSecurityDecl --> DeclSecurity rows
@@ -2462,7 +2463,7 @@ let GenReturnAsParamRow (returnv : ILReturn) =
            StringE 0 |]  
 
 let GenReturnPass3 cenv (returnv: ILReturn) = 
-    if Option.isSome returnv.Marshal || not (isNil returnv.CustomAttrs.AsList) then
+    if Option.isSome returnv.Marshal || not (Array.isEmpty returnv.CustomAttrs.AsArray) then
         let pidx = AddUnsharedRow cenv TableNames.Param (GenReturnAsParamRow returnv)
         GenCustomAttrsPass3Or4 cenv (hca_ParamDef, pidx) returnv.CustomAttrs
         match returnv.Marshal with 

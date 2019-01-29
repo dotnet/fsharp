@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pl" original="../Microsoft.VisualStudio.Package.Project.resx">
     <body>
@@ -119,7 +119,7 @@
       </trans-unit>
       <trans-unit id="Error">
         <source>error</source>
-        <target state="translated">błąd</target>
+        <target state="translated">Błąd</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidFileName">
@@ -252,17 +252,17 @@
       </trans-unit>
       <trans-unit id="Minimal">
         <source>Minimal</source>
-        <target state="translated">Minimalny</target>
+        <target state="translated">minimalne</target>
         <note />
       </trans-unit>
       <trans-unit id="Misc">
         <source>Misc</source>
-        <target state="translated">Różne</target>
+        <target state="translated">Misc</target>
         <note />
       </trans-unit>
       <trans-unit id="None">
         <source>None</source>
-        <target state="translated">Brak</target>
+        <target state="translated">brak</target>
         <note />
       </trans-unit>
       <trans-unit id="Normal">
@@ -387,7 +387,7 @@
       </trans-unit>
       <trans-unit id="Warning">
         <source>warning</source>
-        <target state="translated">ostrzeżenie</target>
+        <target state="translated">Ostrzeżenie</target>
         <note />
       </trans-unit>
       <trans-unit id="WinExe">
@@ -637,7 +637,7 @@
       </trans-unit>
       <trans-unit id="CopyAlways">
         <source>Copy always</source>
-        <target state="translated">Zawsze kopiuj</target>
+        <target state="translated">Zawsze Kopiuj</target>
         <note>CopyToOutputDirectory - drop down option</note>
       </trans-unit>
       <trans-unit id="CopyToOutputDirectory">
@@ -792,7 +792,7 @@
       </trans-unit>
       <trans-unit id="Path">
         <source>Path</source>
-        <target state="translated">Ścieżka</target>
+        <target state="translated">ŚCIEŻKA</target>
         <note />
       </trans-unit>
       <trans-unit id="PathDescription">

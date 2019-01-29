@@ -1,0 +1,11 @@
+<Project>
+
+  <PropertyGroup>
+    <NuspecProperties>
+      $(NuspecProperties);
+      packageId=$(PackageId);
+      version=$(PackageVersion);
+    </NuspecProperties>
+  </PropertyGroup>
+
+</Project>

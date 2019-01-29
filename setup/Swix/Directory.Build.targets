@@ -1,0 +1,10 @@
+<Project>
+
+  <PropertyGroup>
+    <!-- for everything else, $(PackageOutputPath) is interpreted as a directory, but for the SWIX toolset a file name -->
+    <PackageOutputPath>$(ArtifactsDir)\VSSetup\$(Configuration)\Insertion\$(OutputName).vsix</PackageOutputPath>
+  </PropertyGroup>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
+  <Import Project="$(NuGetPackageRoot)\MicroBuild.Core\$(MicroBuildCorePackageVersion)\build\MicroBuild.Core.targets" />
+</Project>

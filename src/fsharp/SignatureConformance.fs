@@ -37,8 +37,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
         // Used when checking attributes.
         let sigToImplRemap = 
             let remap = Remap.Empty 
-            let remap = (remapInfo.mrpiEntities,remap) ||> List.foldBack (fun (implTcref ,signTcref) acc -> addTyconRefRemap signTcref implTcref acc) 
-            let remap = (remapInfo.mrpiVals    ,remap) ||> List.foldBack (fun (implValRef,signValRef) acc -> addValRemap signValRef.Deref implValRef.Deref acc) 
+            let remap = (remapInfo.RepackagedEntities,remap) ||> List.foldBack (fun (implTcref ,signTcref) acc -> addTyconRefRemap signTcref implTcref acc) 
+            let remap = (remapInfo.RepackagedVals    ,remap) ||> List.foldBack (fun (implValRef,signValRef) acc -> addValRemap signValRef.Deref implValRef.Deref acc) 
             remap
             
         // For all attributable elements (types, modules, exceptions, record fields, unions, parameters, generic type parameters)
@@ -177,46 +177,62 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                    |> ListSet.setify (typeEquiv g) 
                    |> List.filter (isInterfaceTy g)
                 let aintfs     = flatten aintfs 
-                let aintfsUser = flatten aintfsUser 
                 let fintfs     = flatten fintfs 
               
                 let unimpl = ListSet.subtract (fun fity aity -> typeAEquiv g aenv aity fity) fintfs aintfs
-                (unimpl |> List.forall (fun ity -> errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName, NicePrint.minimalStringOfType denv ity),m)); false)) &&
+                (unimpl 
+                 |> List.forall (fun ity -> 
+                    let errorMessage = FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName, NicePrint.minimalStringOfType denv ity)
+                    errorR (Error(errorMessage,m)); false)) &&
+                    
+                let aintfsUser = flatten aintfsUser
+
                 let hidden = ListSet.subtract (typeAEquiv g aenv) aintfsUser fintfs
-                let warningOrError = if implTycon.IsFSharpInterfaceTycon then error else warning
-                hidden |> List.iter (fun ity -> warningOrError (InterfaceNotRevealed(denv,ity,implTycon.Range)))
+                let continueChecks,warningOrError = if implTycon.IsFSharpInterfaceTycon then false,errorR else true,warning
+                (hidden |> List.forall (fun ity -> warningOrError (InterfaceNotRevealed(denv,ity,implTycon.Range)); continueChecks)) &&
 
                 let aNull = IsUnionTypeWithNullAsTrueValue g implTycon
                 let fNull = IsUnionTypeWithNullAsTrueValue g sigTycon
                 if aNull && not fNull then 
-                  errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
                 elif fNull && not aNull then 
-                  errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
+                else
 
                 let aNull2 = TypeNullIsExtraValue g m (generalizedTyconRef (mkLocalTyconRef implTycon))
                 let fNull2 = TypeNullIsExtraValue g m (generalizedTyconRef (mkLocalTyconRef implTycon))
                 if aNull2 && not fNull2 then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull2(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
                 elif fNull2 && not aNull2 then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull2(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
+                else
 
                 let aSealed = isSealedTy g (generalizedTyconRef (mkLocalTyconRef implTycon))
                 let fSealed = isSealedTy g (generalizedTyconRef (mkLocalTyconRef sigTycon))
-                if  aSealed && not fSealed  then 
+                if aSealed && not fSealed then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSealed(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
-                if  not aSealed && fSealed  then 
+                    false
+                elif not aSealed && fSealed then
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
+                else
 
                 let aPartial = isAbstractTycon implTycon
                 let fPartial = isAbstractTycon sigTycon
                 if aPartial && not fPartial then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
-
-                if not aPartial && fPartial then 
+                    false
+                elif not aPartial && fPartial then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureIsAbstract(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
-
-                if not (typeAEquiv g aenv (superOfTycon g implTycon) (superOfTycon g sigTycon)) then 
+                    false
+                elif not (typeAEquiv g aenv (superOfTycon g implTycon) (superOfTycon g sigTycon)) then 
                     errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypesHaveDifferentBaseTypes(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
+                else
 
                 checkTypars m aenv implTypars sigTypars &&
                 checkTypeRepr m aenv implTycon sigTycon.TypeReprInfo &&

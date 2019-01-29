@@ -2101,7 +2101,7 @@ and sigptrGetTy (ctxt: ILMetadataReader)  numtypars bytes sigptr =
             let dim i =
               (if i <  numLoBounded then Some (List.item i lobounds) else None), 
               (if i <  numSized then Some (List.item i sizes) else None)
-            ILArrayShape (Array.toList (Array.init rank dim))
+            ILArrayShape (List.init rank dim)
         mkILArrTy (ty, shape), sigptr
         
     elif b0 = et_VOID then ILType.Void, sigptr
@@ -2567,12 +2567,13 @@ and seekReadCustomAttr ctxt (TaggedIndex(cat, idx), b) =
 
 and seekReadCustomAttrUncached ctxtH (CustomAttrIdx (cat, idx, valIdx)) = 
     let ctxt = getHole ctxtH
-    { Method=seekReadCustomAttrType ctxt (TaggedIndex(cat, idx))
-      Data=
+    let method = seekReadCustomAttrType ctxt (TaggedIndex(cat, idx))
+    let data =
         match readBlobHeapOption ctxt valIdx with
         | Some bytes -> bytes
-        | None -> Bytes.ofInt32Array [| |] 
-      Elements = [] }
+        | None -> Bytes.ofInt32Array [| |]
+    let elements = []
+    ILAttribute.Encoded (method, data, elements)
 
 and securityDeclsReader ctxtH tag = 
     mkILSecurityDeclsReader

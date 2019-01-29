@@ -17,4 +17,4 @@ neg104.fs(32,27,32,28): parse error FS0604: Unmatched '{'
 
 neg104.fs(35,19,35,20): parse error FS0010: Unexpected symbol '}' in definition. Expected incomplete structured construct at or before this point or other token.
 
-neg104.fs(35,1,35,20): parse error FS0010: Incomplete structured construct at or before this point in implementation file
+neg104.fs(36,1,36,1): parse error FS0010: Incomplete structured construct at or before this point in implementation file
