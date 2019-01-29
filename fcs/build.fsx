@@ -13,8 +13,8 @@ open Fake.ReleaseNotesHelper
 #if MONO
 // prevent incorrect output encoding (e.g. https://github.com/fsharp/FAKE/issues/1196)
 System.Console.OutputEncoding <- System.Text.Encoding.UTF8
-CleanDir (__SOURCE_DIRECTORY__ + "/../tests/TestResults") 
-File.WriteAllText(__SOURCE_DIRECTORY__ + "/../tests/TestResults/notestsyet.txt","No tests yet")
+CleanDir (__SOURCE_DIRECTORY__ + "/../artifacts/TestResults") 
+File.WriteAllText(__SOURCE_DIRECTORY__ + "/../artifacts/TestResults/notestsyet.txt","No tests yet")
 let isMono = true
 #else
 let isMono = false
@@ -54,7 +54,7 @@ let runCmdIn workDir (exe:string) = Printf.ksprintf (fun (args:string) ->
 // The rest of the code is standard F# build script
 // --------------------------------------------------------------------------------------
 
-let releaseDir = Path.Combine(__SOURCE_DIRECTORY__, "../release/fcs")
+let releaseDir = Path.Combine(__SOURCE_DIRECTORY__, "../artifacts/bin/fcs")
 
 // Read release notes & version info from RELEASE_NOTES.md
 let release = LoadReleaseNotes (__SOURCE_DIRECTORY__ + "/RELEASE_NOTES.md")

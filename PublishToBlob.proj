@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <!-- the string '-rtm-' is important, because that's the package with a per-build unique version number -->
-    <NuGetPackages Include="$(MSBuildThisFileDirectory)$(Configuration)\artifacts\Microsoft.FSharp.Compiler.*-rtm-*.nupkg" />
+    <NuGetPackages Include="$(MSBuildThisFileDirectory)artifacts\packages\$(Configuration)\Microsoft.FSharp.Compiler.*-rtm-*.nupkg" />
   </ItemGroup>
 
   <PropertyGroup>

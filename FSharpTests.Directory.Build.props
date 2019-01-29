@@ -1,48 +1,43 @@
 <Project>
 
-  <!-- SDK targets override -->
-  <PropertyGroup Condition=" '$(FSharpTestCompilerVersion)' == 'net40' ">
-    <_FSharpCompilerPath>$(MSBuildThisFileDirectory)$(Configuration)/net40/bin</_FSharpCompilerPath>
-
+  <PropertyGroup Condition="'$(FSharpTestCompilerVersion)' == 'net40'">
     <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
 
-    <FscToolPath>$(_FSharpCompilerPath)</FscToolPath>
+    <FscToolPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\net472</FscToolPath>
     <FscToolExe>fsc.exe</FscToolExe>
     <DotnetFscCompilerPath></DotnetFscCompilerPath>
 
-    <FsiToolPath>$(_FSharpCompilerPath)</FsiToolPath>
+    <FsiToolPath>$(MSBuildThisFileDirectory)artifacts\bin\fsi\$(Configuration)\net472</FsiToolPath>
     <FsiToolExe>fsi.exe</FsiToolExe>
     <DotnetFsiCompilerPath></DotnetFsiCompilerPath>
   </PropertyGroup>
 
-  <!-- SDK targets override -->
-  <PropertyGroup Condition=" '$(FSharpTestCompilerVersion)' == 'coreclr' ">
-    <_FSharpCompilerPath>$(MSBuildThisFileDirectory)$(Configuration)/coreclr/bin</_FSharpCompilerPath>
-
+  <PropertyGroup Condition="'$(FSharpTestCompilerVersion)' == 'coreclr'">
     <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
-    <FscToolPath>$(MSBuildThisFileDirectory)Tools/dotnet20</FscToolPath>
+
+    <FscToolPath>$(MSBuildThisFileDirectory)artifacts\toolset\dotnet</FscToolPath>
     <FscToolExe Condition="'$(OS)' != 'Unix'">dotnet.exe</FscToolExe>
     <FscToolExe Condition="'$(OS)' == 'Unix'">dotnet</FscToolExe>
-    <DotnetFscCompilerPath>$(_FSharpCompilerPath)/fsc.exe</DotnetFscCompilerPath>
+    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\netcoreapp2.1\fsc.exe</DotnetFscCompilerPath>
 
-    <FsiToolPath>$(MSBuildThisFileDirectory)Tools/dotnet20</FsiToolPath>
+    <FsiToolPath>$(MSBuildThisFileDirectory)artifacts\toolset\dotnet</FsiToolPath>
     <FsiToolExe Condition="'$(OS)' != 'Unix'">dotnet.exe</FsiToolExe>
     <FsiToolExe Condition="'$(OS)' == 'Unix'">dotnet</FsiToolExe>
-    <DotnetFsiCompilerPath>$(_FSharpCompilerPath)/fsi.exe</DotnetFsiCompilerPath>
+    <DotnetFsiCompilerPath>$(MSBuildThisFileDirectory)artifacts\bin\fsi\$(Configuration)\netcoreapp2.1\fsi.exe</DotnetFsiCompilerPath>
   </PropertyGroup>
 
   <!-- SDK targets override -->
   <PropertyGroup>
-    <FSharpTargetsPath>$(_FSharpCompilerPath)/Microsoft.FSharp.Targets</FSharpTargetsPath>
-    <FSharpPropsShim>$(_FSharpCompilerPath)/Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
-    <FSharpTargetsShim>$(_FSharpCompilerPath)/Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
-    <FSharpOverridesTargetsShim>$(_FSharpCompilerPath)/Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
+    <_FSharpBuildTargetFramework Condition="'$(FSharpTestCompilerVersion)' == 'net40'">net472</_FSharpBuildTargetFramework>
+    <_FSharpBuildTargetFramework Condition="'$(FSharpTestCompilerVersion)' == 'coreclr'">netstandard2.0</_FSharpBuildTargetFramework>
+    <_FSharpBuildBinPath>$(MSBuildThisFileDirectory)artifacts\bin\FSharp.Build\$(Configuration)\$(_FSharpBuildTargetFramework)</_FSharpBuildBinPath>
+
+    <FSharpBuildAssemblyFile>$(_FSharpBuildBinPath)\FSharp.Build.dll</FSharpBuildAssemblyFile>
+
+    <FSharpTargetsPath>$(_FSharpBuildBinPath)/Microsoft.FSharp.Targets</FSharpTargetsPath>
+    <FSharpPropsShim>$(_FSharpBuildBinPath)/Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
+    <FSharpTargetsShim>$(_FSharpBuildBinPath)/Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
+    <FSharpOverridesTargetsShim>$(_FSharpBuildBinPath)/Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
   </PropertyGroup>
 
-
-  <!-- We are running under netcore so even though we will use the fsc compiler we can't use the desktop version of the fsharp.build tasks -->
-  <PropertyGroup>
-    <FSharpBuildAssemblyFile Condition = " '$(DOTNET_HOST_PATH)' != '' ">$(MSBuildThisFileDirectory)$(Configuration)\coreclr\bin\FSharp.Build.dll</FSharpBuildAssemblyFile>
-    <FSharpBuildAssemblyFile Condition = " '$(DOTNET_HOST_PATH)' == '' ">$(MSBuildThisFileDirectory)$(Configuration)\net40\bin\FSharp.Build.dll</FSharpBuildAssemblyFile>
-  </PropertyGroup>
 </Project>
