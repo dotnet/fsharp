@@ -298,6 +298,7 @@ if /i "%ARG%" == "ci_part4" (
     set BUILD_CORECLR=1
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_NET40=1
+    set BUILD_NUGET=1
     set BUILD_FCS=1
     set TEST_FCS=1
     set CI=1
