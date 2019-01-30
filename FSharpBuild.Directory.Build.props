@@ -18,6 +18,10 @@
 
   <!-- nuget -->
   <PropertyGroup>
+    <!-- Point to artifacts folder as an additional nuget package source  -->
+    <RestoreAdditionalProjectSources Condition = "'$(RestoreAdditionalProjectSources)' != ''">$(RestoreAdditionalProjectSources);$(MSBuildThisFileDirectory)\artifacts</RestoreAdditionalProjectSources>
+    <RestoreAdditionalProjectSources Condition = "'$(RestoreAdditionalProjectSources)' == ''">$(MSBuildThisFileDirectory)\artifacts</RestoreAdditionalProjectSources>
+
     <!-- default NuGet package restore location -->
     <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == ''">$(NUGET_PACKAGES)</NuGetPackageRoot>
     <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' AND '$(OS)' == 'Windows_NT'">$(UserProfile)\.nuget\packages\</NuGetPackageRoot>

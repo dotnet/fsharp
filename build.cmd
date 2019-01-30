@@ -108,10 +108,12 @@ if /i "%_autoselect%" == "1" (
 
 if /i "%_autoselect_tests%" == "1" (
     if /i "%BUILD_NET40_FSHARP_CORE%" == "1" (
+        set BUILD_NUGET=1
         set TEST_NET40_COREUNIT_SUITE=1
     )
 
     if /i "%BUILD_NET40%" == "1" (
+        set BUILD_NUGET=1
         set TEST_NET40_COMPILERUNIT_SUITE=1
         set TEST_NET40_COREUNIT_SUITE=1
         set TEST_NET40_FSHARP_SUITE=1
@@ -265,6 +267,7 @@ if /i "%ARG%" == "ci_part2" (
     set BUILD_PROTO=1
     set BUILD_NET40=1
     set BUILD_NET40_FSHARP_CORE=1
+    set BUILD_NUGET=1
     set TEST_NET40_COMPILERUNIT_SUITE=1
     set TEST_NET40_COREUNIT_SUITE=1
     set TEST_NET40_FSHARPQA_SUITE=1
@@ -394,6 +397,7 @@ if /i "%ARG%" == "test-net40-ideunit" (
 if /i "%ARG%" == "test-net40-coreunit" (
     set _autoselect=0
     set BUILD_NET40_FSHARP_CORE=1
+    set BUILD_NUGET=1
     set TEST_NET40_COREUNIT_SUITE=1
 )
 
@@ -401,6 +405,7 @@ if /i "%ARG%" == "test-coreclr-coreunit" (
     set _autoselect=0
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_CORECLR=1
+    set BUILD_NUGET=1
     set TEST_CORECLR_COREUNIT_SUITE=1
 )
 
@@ -693,12 +698,6 @@ if not "%SIGN_TYPE%" == "" (
 
     if ERRORLEVEL 1 echo Error running sign tool && goto :failure
 )
-
-echo ---------------- Done with assembly signing, start package creation ---------------
-
-echo %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG% /t:Pack /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
-     %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG% /t:Pack /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
-if ERRORLEVEL 1 echo Error building NuGet packages && goto :failure
 
 if not "%SIGN_TYPE%" == "" (
     echo %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:ConfigFile=%~dp0build\config\PackageSignToolData.json
