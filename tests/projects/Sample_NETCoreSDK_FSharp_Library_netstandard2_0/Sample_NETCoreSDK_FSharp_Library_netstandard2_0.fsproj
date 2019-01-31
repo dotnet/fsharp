@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <FSharpCoreImplicitPackageVersion>4.5.*</FSharpCoreImplicitPackageVersion>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Library1.fs" />

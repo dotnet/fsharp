@@ -21,7 +21,8 @@
     <_Build_Number>$(BUILD_BUILDNUMBER.Substring(9))</_Build_Number>
     <Build_FileVersion>$(_Build_Year).$(_Build_Month).$(_Build_Day).$(_Build_Number)</Build_FileVersion>
 
-    <FSCoreMajorVersion>4.5</FSCoreMajorVersion>
+    <FSLanguageVersion>4.5</FSLanguageVersion>
+    <FSCoreMajorVersion>$(FSLanguageVersion)</FSCoreMajorVersion>
     <FSCorePackageVersion>$(FSCoreMajorVersion).5</FSCorePackageVersion>
     <FSCoreVersion>$(FSCoreMajorVersion).0.0</FSCoreVersion>
 
