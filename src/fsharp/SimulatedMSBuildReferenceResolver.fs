@@ -147,13 +147,14 @@ let internal SimulatedMSBuildResolver =
                         match n.Version, n.GetPublicKeyToken()  with 
                         | null, _ | _,null -> 
                             let options = 
-                                [ for gacdir in Directory.EnumerateDirectories(gac) do 
-                                    let assdir = Path.Combine(gacdir,n.Name)
-                                    if Directory.Exists(assdir) then 
-                                        for tdir in Directory.EnumerateDirectories(assdir) do 
-                                            let trialPath = Path.Combine(tdir,qual)
-                                            if FileSystem.SafeExists(trialPath) then 
-                                                yield trialPath ]
+                                [ if Directory.Exists(gac) then 
+                                    for gacdir in Directory.EnumerateDirectories(gac) do 
+                                        let assdir = Path.Combine(gacdir,n.Name)
+                                        if Directory.Exists(assdir) then 
+                                            for tdir in Directory.EnumerateDirectories(assdir) do 
+                                                let trialPath = Path.Combine(tdir,qual)
+                                                if FileSystem.SafeExists(trialPath) then 
+                                                    yield trialPath ]
                             //printfn "sorting GAC paths: %A" options
                             options 
                             |> List.sort // puts latest version last
@@ -161,21 +162,22 @@ let internal SimulatedMSBuildResolver =
                             |> function None -> () | Some p -> success p
 
                         | v,tok -> 
-                            for gacdir in Directory.EnumerateDirectories(gac) do 
-                                //printfn "searching GAC directory: %s" gacdir
-                                let assdir = Path.Combine(gacdir,n.Name)
-                                if Directory.Exists(assdir) then 
-                                    //printfn "searching GAC directory: %s" assdir
+                            if Directory.Exists(gac) then 
+                                for gacdir in Directory.EnumerateDirectories(gac) do 
+                                    //printfn "searching GAC directory: %s" gacdir
+                                    let assdir = Path.Combine(gacdir,n.Name)
+                                    if Directory.Exists(assdir) then 
+                                        //printfn "searching GAC directory: %s" assdir
 
-                                    let tokText = String.concat "" [| for b in tok -> sprintf "%02x" b |]
-                                    let verdir = Path.Combine(assdir,"v4.0_"+v.ToString()+"__"+tokText)
-                                    //printfn "searching GAC directory: %s" verdir
+                                        let tokText = String.concat "" [| for b in tok -> sprintf "%02x" b |]
+                                        let verdir = Path.Combine(assdir,"v4.0_"+v.ToString()+"__"+tokText)
+                                        //printfn "searching GAC directory: %s" verdir
 
-                                    if Directory.Exists(verdir) then 
-                                        let trialPath = Path.Combine(verdir,qual)
-                                        //printfn "searching GAC: %s" trialPath
-                                        if FileSystem.SafeExists(trialPath) then 
-                                            success trialPath
+                                        if Directory.Exists(verdir) then 
+                                            let trialPath = Path.Combine(verdir,qual)
+                                            //printfn "searching GAC: %s" trialPath
+                                            if FileSystem.SafeExists(trialPath) then 
+                                                success trialPath
                 with e -> logWarningOrError false "SR001" (e.ToString())
 #endif
 
