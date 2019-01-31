@@ -54,11 +54,18 @@
         "insertion\\Microsoft.FSharp.Dependencies.vsix",
         "insertion\\Microsoft.FSharp.VSIX.Full.Resources.*.vsix"
       ]
+    },
+    {
+      "certificate": "NuGet",
+      "strongName": null,
+      "values": [
+        "artifacts\\*.nupkg",
+        "artifacts\\*\\*.nupkg"
+      ]
     }
   ],
   "exclude": [
     "e_sqlite3.dll",
-    "FSharp.Core.4.5.2.nupkg",
     "FSharp.Data.TypeProviders.dll",
     "Microsoft.Build.dll",
     "Microsoft.Build.Framework.dll",

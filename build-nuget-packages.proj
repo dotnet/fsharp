@@ -6,7 +6,11 @@
     <PackageProjects Include="src\fsharp\FSharp.Core\FSharp.Core.fsproj" Condition="'$(BUILD_NUGET)'=='1'" />
   </ItemGroup>
 
-  <Target Name="Pack">
+  <Target Name="Build">
+    <MSBuild Projects="@(PackageProjects)" Targets="Pack" BuildInParallel="true" Properties="Configuration=$(Configuration)" />
+  </Target>
+
+  <Target Name="Rebuild">
     <MSBuild Projects="@(PackageProjects)" Targets="Pack" BuildInParallel="true" Properties="Configuration=$(Configuration)" />
   </Target>
 
