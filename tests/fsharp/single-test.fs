@@ -130,6 +130,8 @@ let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework =
     <DefineConstants>FX_RESHAPED_REFLECTION</DefineConstants>
     <DefineConstants Condition=""'$(OutputType)' == 'Script' and '$(FSharpTestCompilerVersion)' == 'coreclr'"">NETCOREAPP</DefineConstants>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' == ''"">$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
+    <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' != ''"">$(RestoreAdditionalProjectSources);$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
   </PropertyGroup>
 
   <!-- Utility sources -->
@@ -170,6 +172,8 @@ let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework =
         |> replaceTokens "$(OPTIMIZE)" optimize
         |> replaceTokens "$(DEBUG)" debug
         |> replaceTokens "$(TARGETFRAMEWORK)" targetFramework
+        |> replaceTokens "$(RestoreFromArtifactsPath)" (Path.GetFullPath(__SOURCE_DIRECTORY__) + "/../../artifacts")
+
     generateProjBody
 
 let singleTestBuildAndRunCore cfg copyFiles p =
