@@ -9,6 +9,7 @@
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
     <NoMsbuild>true</NoMsbuild>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
