@@ -28,6 +28,7 @@
     <BuildFCS Condition="'$(BUILD_FCS)' == '1'">true</BuildFCS>
     <BuildNuget Condition="'$(BUILD_NUGET)' == '1' or '$(BUILD_SETUP)' == '1'">true</BuildNuget>
     <BuildSetup Condition="'$(BUILD_SETUP)' == '1'">true</BuildSetup>
+    <BuildNuget Condition="'$(BUILD_NUGET)' == '1'">true</BuildNuget>
 
     <TestCompiler Condition="'$(TEST_NET40_COMPILERUNIT_SUITE)' == '1'">true</TestCompiler>
     <TestCompiler Condition="'$(TEST_CORECLR_COREUNIT_SUITE)' == '1'">true</TestCompiler>
@@ -91,6 +92,10 @@
       <Projects Include="$(MSBuildThisFileDirectory)vsintegration\fsharp-vsintegration-item-templates-build.proj" />
       <Projects Include="$(MSBuildThisFileDirectory)vsintegration\fsharp-vsintegration-project-templates-build.proj" />
       <Projects Include="$(MSBuildThisFileDirectory)vsintegration\fsharp-vsintegration-vsix-build.proj" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(BuildCompiler)' == 'true' OR '$(BuildNuget)' == 'true' OR '$(BuildVS)' == 'true' OR'$(_RunningRestore)' == 'true'">
+      <NugetProjects Include="src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(BuildFCS)' == 'true' OR '$(_RunningRestore)' == 'true'">

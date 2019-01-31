@@ -108,10 +108,12 @@ if /i "%_autoselect%" == "1" (
 
 if /i "%_autoselect_tests%" == "1" (
     if /i "%BUILD_NET40_FSHARP_CORE%" == "1" (
+        set BUILD_NUGET=1
         set TEST_NET40_COREUNIT_SUITE=1
     )
 
     if /i "%BUILD_NET40%" == "1" (
+        set BUILD_NUGET=1
         set TEST_NET40_COMPILERUNIT_SUITE=1
         set TEST_NET40_COREUNIT_SUITE=1
         set TEST_NET40_FSHARP_SUITE=1
@@ -264,6 +266,7 @@ if /i "%ARG%" == "ci_part2" (
     set BUILD_PROTO=1
     set BUILD_NET40=1
     set BUILD_NET40_FSHARP_CORE=1
+    set BUILD_NUGET=1
     set TEST_NET40_COMPILERUNIT_SUITE=1
     set TEST_NET40_COREUNIT_SUITE=1
     set TEST_NET40_FSHARPQA_SUITE=1
@@ -294,6 +297,7 @@ if /i "%ARG%" == "ci_part4" (
     set BUILD_CORECLR=1
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_NET40=1
+    set BUILD_NUGET=1
     set BUILD_FCS=1
     set TEST_FCS=1
     set CI=1
@@ -393,6 +397,7 @@ if /i "%ARG%" == "test-net40-ideunit" (
 if /i "%ARG%" == "test-net40-coreunit" (
     set _autoselect=0
     set BUILD_NET40_FSHARP_CORE=1
+    set BUILD_NUGET=1
     set TEST_NET40_COREUNIT_SUITE=1
 )
 
@@ -400,6 +405,7 @@ if /i "%ARG%" == "test-coreclr-coreunit" (
     set _autoselect=0
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_CORECLR=1
+    set BUILD_NUGET=1
     set TEST_CORECLR_COREUNIT_SUITE=1
 )
 
