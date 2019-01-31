@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net472;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp2.1</TargetFrameworks>
     <TargetExt>.exe</TargetExt>
     <AssemblyName>fsi</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
@@ -13,6 +13,7 @@
     <Win32Resource>fsi.res</Win32Resource>
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
     <UseAssetTargetFallback>true</UseAssetTargetFallback>
+    <NGenBinary>true</NGenBinary>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
@@ -28,10 +29,10 @@
   <ItemGroup>
     <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+    <ProjectReference Include="..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
 
     <!-- only used when '$(TargetFramework)' == 'netstandard2.0' -->
     <ProjectReference Include="..\FSharp.Build\FSharp.Build.fsproj" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
-    <ProjectReference Include="..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
 
     <!-- only used when '$(TargetFramework)' == 'net46' -->
     <ProjectReference Include="..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" Condition="'$(TargetFramework)' == 'net472'" />
@@ -45,7 +46,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1'">
     <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessPackageVersion)" />
     <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsPackageVersion)" />
     <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitPackageVersion)" />
