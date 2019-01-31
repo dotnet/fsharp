@@ -26,8 +26,8 @@
   <!-- nuget -->
   <PropertyGroup>
     <!-- Point to artifacts folder as an additional nuget package source  -->
-    <RestoreAdditionalProjectSources Condition = "'$(RestoreAdditionalProjectSources)' != ''">$(RestoreAdditionalProjectSources);$(ArtifactsPackagesDir)</RestoreAdditionalProjectSources>
-    <RestoreAdditionalProjectSources Condition = "'$(RestoreAdditionalProjectSources)' == ''">$(ArtifactsPackagesDir)</RestoreAdditionalProjectSources>
+    <RestoreAdditionalProjectSources Condition = "Exists('$(ArtifactsPackagesDir)') and '$(RestoreAdditionalProjectSources)' != ''">$(RestoreAdditionalProjectSources);$(ArtifactsPackagesDir)</RestoreAdditionalProjectSources>
+    <RestoreAdditionalProjectSources Condition = "Exists('$(ArtifactsPackagesDir)') and '$(RestoreAdditionalProjectSources)' == ''">$(ArtifactsPackagesDir)</RestoreAdditionalProjectSources>
 
     <!-- default NuGet package restore location -->
     <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == ''">$(NUGET_PACKAGES)</NuGetPackageRoot>

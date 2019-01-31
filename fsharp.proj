@@ -155,6 +155,7 @@
   </Target>
 
   <Target Name="Build" DependsOnTargets="CollectProjects">
+    <!-- Nuget projects need to be built before the vsix stuff, so that the vsix build -->
     <MSBuild Projects="@(NugetProjects)" Targets="Pack" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
     <MSBuild Projects="@(Projects);@(NugetProjects)" Targets="Build" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
