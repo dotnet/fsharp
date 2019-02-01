@@ -2582,6 +2582,8 @@ type ILGlobals(primaryScopeRef) =
     let m_typ_IntPtr = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_IntPtr))
     let m_typ_UIntPtr = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UIntPtr))
 
+    let m_typ_IEquatableT = mkILBoxedType (mkILTySpec (m_mkSysILTypeRef "System.IEquatable`1", [ mkILTyvarTy 1us ]))
+
     member x.primaryAssemblyScopeRef    = m_typ_Object.TypeRef.Scope
     member x.primaryAssemblyName        = m_typ_Object.TypeRef.Scope.AssemblyRef.Name
     member x.typ_Object                 = m_typ_Object
@@ -2602,6 +2604,7 @@ type ILGlobals(primaryScopeRef) =
     member x.typ_Double                 = m_typ_Double
     member x.typ_Bool                   = m_typ_Bool
     member x.typ_Char                   = m_typ_Char
+    member x.typ_IEquatableT            = m_typ_IEquatableT
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]

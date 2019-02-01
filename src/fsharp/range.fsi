@@ -2,6 +2,7 @@
 
 module public Microsoft.FSharp.Compiler.Range
 
+open System
 open System.Text
 open System.Collections.Generic
 open Internal.Utilities
@@ -49,6 +50,8 @@ type range =
     member MakeSynthetic : unit -> range
     member ToShortString : unit -> string
     static member Zero : range
+
+    interface IEquatable<range>
   
 /// This view of range marks uses file indexes explicitly 
 val mkFileIndexRange : FileIndex -> pos -> pos -> range

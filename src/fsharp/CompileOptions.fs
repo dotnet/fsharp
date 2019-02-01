@@ -416,6 +416,11 @@ let SetOptimizeOn(tcConfigB : TcConfigBuilder) =
 let SetOptimizeSwitch (tcConfigB : TcConfigBuilder) switch = 
     if (switch = OptionSwitch.On) then SetOptimizeOn(tcConfigB) else SetOptimizeOff(tcConfigB)
 
+let SetSpecificOptimizeSwitch (tcConfigB : TcConfigBuilder) n switch = 
+    match n with 
+    | "equality" -> tcConfigB.optSettings <- { tcConfigB.optSettings with optimizeComparisonLogic = (switch = OptionSwitch.On) }
+    | _ -> failwithf "dodgy flag %s" n
+
 let SetTailcallSwitch (tcConfigB : TcConfigBuilder) switch =
     tcConfigB.emitTailcalls <- (switch = OptionSwitch.On)
 
@@ -695,6 +700,8 @@ let codeGenerationFlags isFsi (tcConfigB : TcConfigBuilder) =
         ]
     let codegen =
         [CompilerOption("optimize", tagNone, OptionSwitch (SetOptimizeSwitch tcConfigB) , None, 
+                            Some (FSComp.SR.optsOptimize()))
+         CompilerOption("optimize", tagNone, OptionStringListSwitch (SetSpecificOptimizeSwitch tcConfigB) , None, 
                             Some (FSComp.SR.optsOptimize()))
          CompilerOption("tailcalls", tagNone, OptionSwitch (SetTailcallSwitch tcConfigB), None,
                             Some (FSComp.SR.optsTailcalls()))

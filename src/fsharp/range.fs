@@ -195,6 +195,10 @@ type range(code1:int64, code2: int64) =
 
     override r.ToString() = sprintf "%s (%d,%d--%d,%d) IsSynthetic=%b" r.FileName r.StartLine r.StartColumn r.EndLine r.EndColumn r.IsSynthetic
 
+    interface IEquatable<range> with
+
+        member this.Equals(m) = this.Code1 = m.Code1 && this.Code2 = m.Code2
+
 let mkRange f b e =
     // remove relative parts from full path
     let normalizedFilePath = if Path.IsPathRooted f then try Path.GetFullPath f with _ -> f else f

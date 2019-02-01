@@ -261,6 +261,7 @@ type OptimizationSettings =
       jitOptUser : bool option
       localOptUser : bool option
       crossModuleOptUser : bool option 
+      optimizeComparisonLogic : bool  
       /// size after which we start chopping methods in two, though only at match targets 
       bigTargetSize : int   
       /// size after which we start enforcing splitting sub-expressions to new methods, to avoid hitting .NET IL limitations 
@@ -278,6 +279,7 @@ type OptimizationSettings =
         { abstractBigTargets = false
           jitOptUser = None
           localOptUser = None
+          optimizeComparisonLogic = false
           /// size after which we start chopping methods in two, though only at match targets 
           bigTargetSize = 100  
           /// size after which we start enforcing splitting sub-expressions to new methods, to avoid hitting .NET IL limitations 
@@ -2472,7 +2474,34 @@ and DevirtualizeApplication cenv env (vref:ValRef) ty tyargs args m =
     let wrap, args = TakeAddressOfStructArgumentIfNeeded cenv vref ty args m
     let transformedExpr = wrap (MakeApplicationAndBetaReduce cenv.g (exprForValRef m vref, vref.Type, (if isNil tyargs then [] else [tyargs]), args, m))
     OptimizeExpr cenv env transformedExpr
-  
+
+and DevirtualizeGenericEqualityIntrinsic cenv env receiver arg m =
+    let call = mkCall_IEquatableT_Equals cenv.g m receiver arg
+    OptimizeExpr cenv env call
+
+/// Check if a type 'ty' implements 'IEquatable<ty>'
+and IsIEquatableTy cenv m ty =
+    let searchTy = mkAppTy cenv.g.system_GenericIEquatable_tcref [ty]
+    ExistsInEntireHierarchyOfType (fun t -> typeEquiv cenv.g t searchTy) cenv.g cenv.amap m AllowMultiIntfInstantiations.Yes ty
+
+/// Check if a type 'ty' implements 'IStructuralEquatable'
+and IsIStructuralEquatableTy cenv m ty =
+    let searchTy = mkAppTy cenv.g.tcref_System_IStructuralEquatable []
+    ExistsInEntireHierarchyOfType (fun t -> typeEquiv cenv.g t searchTy) cenv.g cenv.amap m AllowMultiIntfInstantiations.Yes ty    
+
+/// Check if a type 'ty' is a structural F# type with default structural equality semantics
+and IsGeneratedHashAndEqualsTy g ty =
+    isAnonRecdTy g ty || 
+    (isAppTy g ty &&
+     (let tcref = tcrefOfAppTy g ty
+      tcref.GeneratedHashAndEqualsValues.IsSome && tcref.GeneratedHashAndEqualsWithComparerValues.IsSome))
+
+/// Check if we can (perhaps optimistically) convert the reduced optimization of 'a = b' to '(a :> IEquatable).Equals(b)' 
+and CanOptimizeGenericEqualityIntrinsicToIEquatableEquals cenv m ty  = 
+    IsIEquatableTy cenv m ty && 
+    not (isAnyTupleTy cenv.g ty) && 
+    (IsGeneratedHashAndEqualsTy cenv.g ty || (cenv.settings.optimizeComparisonLogic && not (IsIStructuralEquatableTy cenv m ty)))
+
 and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
     match f, tyargs, args with 
 
@@ -2529,7 +2558,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
         | _ -> None 
       
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparer
-    | Expr.Val(v, _, _), [ty], _ when CanDevirtualizeApplication cenv v cenv.g.generic_equality_per_inner_vref ty args  && not(isRefTupleTy cenv.g ty) ->
+    | Expr.Val(v, _, _), [ty], _ when CanDevirtualizeApplication cenv v cenv.g.generic_equality_withc_outer_vref ty args  && not(isRefTupleTy cenv.g ty) ->
        let tcref, tyargs = StripToNominalTyconRef cenv ty
        match tcref.GeneratedHashAndEqualsWithComparerValues, args with
        | Some (_, _, withcEqualsVal), [x; y] -> 
@@ -2599,7 +2628,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
         match vref with 
         | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs (mkCallGetGenericPEREqualityComparer cenv.g m :: args) m)            
         | None -> None
-        
+
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericComparisonWithComparerIntrinsic for tuple types
     | Expr.Val(v, _, _), [ty], _ when  valRefEq cenv.g v cenv.g.generic_comparison_withc_inner_vref && isRefTupleTy cenv.g ty ->
         let tyargs = destRefTupleTy cenv.g ty 
@@ -2667,6 +2696,9 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
                 HasEffect=false
                 MightMakeCriticalTailcall = false
                 Info=UnknownValue})
+
+    | Expr.Val(v, _, _), [_], [receiver; arg] when valRefEq cenv.g v cenv.g.generic_equality_per_inner_vref &&  CanOptimizeGenericEqualityIntrinsicToIEquatableEquals cenv m (tyOfExpr cenv.g receiver) ->
+        Some(DevirtualizeGenericEqualityIntrinsic cenv env receiver arg m)
 
     | _ -> None
 

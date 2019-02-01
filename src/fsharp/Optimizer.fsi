@@ -12,6 +12,7 @@ type OptimizationSettings =
       jitOptUser : bool option
       localOptUser : bool option
       crossModuleOptUser : bool option
+      optimizeComparisonLogic : bool  
       bigTargetSize : int
       veryBigExprSize : int 
       lambdaInlineThreshold : int

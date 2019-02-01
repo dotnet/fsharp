@@ -1583,6 +1583,7 @@ type ILGlobals =
     member typ_Double: ILType
     member typ_Bool: ILType
     member typ_Char: ILType
+    member typ_IEquatableT: ILType
 
 
 /// Build the table of commonly used references given functions to find types in system assemblies
