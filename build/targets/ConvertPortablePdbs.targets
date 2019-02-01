@@ -12,7 +12,7 @@
                      ('$(DebugType)' == 'portable' OR '$(DebugType)' == 'embedded') AND
                      '$(Configuration)' != 'Proto'">
     <PropertyGroup>
-      <ConvertedPdbsDirectory$(SymStoreDirectory)\$(TargetFramework)</ConvertedPdbsDirectory>
+      <ConvertedPdbsDirectory>$(SymStoreDirectory)\$(TargetFramework)</ConvertedPdbsDirectory>
       <PdbConverterExe>$(NuGetPackageRoot)Pdb2Pdb\$(Pdb2PdbPackageVersion)\tools\Pdb2Pdb.exe</PdbConverterExe>
       <PdbConverterArgs>"$(TargetPath)" /out "$(ConvertedPdbsDirectory)\$(TargetName).pdb" /srcsvrvar SRC_INDEX=public</PdbConverterArgs>
     </PropertyGroup>
