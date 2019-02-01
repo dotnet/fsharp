@@ -2139,7 +2139,9 @@ and u_attribs_ext extraf st = u_list_ext extraf u_attrib st
 and u_unioncase_spec st = 
     let a = u_rfield_table  st
     let b = u_ty st
-    let c = u_string st
+
+    // The union case compiled name is now computed from Id field when needed and is not stored in UnionCase record.
+    let _c = u_string st
     let d = u_ident  st
     // The XmlDoc is only present in the extended in-memory format. We detect its presence using a marker bit here
     let xmldoc, e = u_attribs_ext u_xmldoc st
@@ -2147,7 +2149,6 @@ and u_unioncase_spec st =
     let i = u_access st
     { FieldTable=a 
       ReturnType=b 
-      CompiledName=c 
       Id=d 
       Attribs=e
       XmlDoc= defaultArg xmldoc XmlDoc.Empty
