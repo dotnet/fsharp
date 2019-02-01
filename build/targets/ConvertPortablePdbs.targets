@@ -10,6 +10,7 @@
                      '$(SkipPDBConversion)' != 'true' AND
                      Exists('$(TargetPath)') AND
                      ('$(DebugType)' == 'portable' OR '$(DebugType)' == 'embedded') AND
+                     $(TargetFramework.StartsWith('net')) AND
                      '$(Configuration)' != 'Proto'">
     <PropertyGroup>
       <ConvertedPdbsDirectory>$(SymStoreDirectory)\$(TargetFramework)</ConvertedPdbsDirectory>
