@@ -8,12 +8,13 @@
           AfterTargets="AfterBuild"
           DependsOnTargets="ComputeFinalOutputPaths"
           Condition="'$(OS)' != 'Unix' AND
+                     '$(SkipPDBConversion)' != 'true' AND
                      Exists('$(TargetPath)') AND
                      ('$(DebugType)' == 'portable' OR '$(DebugType)' == 'embedded') AND
-                     $(TargetFramework.StartsWith('net4')) AND
+                     $(TargetFramework.StartsWith('net')) AND
                      '$(Configuration)' != 'Proto'">
     <PropertyGroup>
-      <ConvertedPdbsDirectory>$(FinalOutputPath)\ConvertedPdbs</ConvertedPdbsDirectory>
+      <ConvertedPdbsDirectory>$(FinalOutputPath)\ConvertedPdbs\$(TargetFramework)</ConvertedPdbsDirectory>
       <PdbConverterExe>$(NuGetPackageRoot)Pdb2Pdb\$(Pdb2PdbPackageVersion)\tools\Pdb2Pdb.exe</PdbConverterExe>
       <PdbConverterArgs>"$(TargetPath)" /out "$(ConvertedPdbsDirectory)\$(TargetName).pdb" /srcsvrvar SRC_INDEX=public</PdbConverterArgs>
     </PropertyGroup>
