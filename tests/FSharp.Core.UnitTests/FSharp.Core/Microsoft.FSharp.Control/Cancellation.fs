@@ -199,7 +199,6 @@ type CancellationType() =
         let asyncs = seq { for i in 1..1000 do yield async { cts.Cancel() } }
         asyncs |> Async.Parallel |> Async.RunSynchronously |> ignore
         Assert.IsTrue(!callbackRun, "Callback should run at least once")
-        
 
     [<Test>]
     member this.TestRegistrationRace() =
@@ -215,7 +214,7 @@ type CancellationType() =
                         }                     
             }               
         (asyncs |> Async.Parallel |> Async.RunSynchronously |> ignore)
-        
+
     [<Test>]
     member this.LinkedSourceCancellationRace() =
         let asyncs =
