@@ -6932,18 +6932,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors 
     let haveCtor = Option.isSome inherits
 
-    let optOrigExprInfo, tpenv = 
-      match optOrigExpr with 
-      | None -> None, tpenv 
-      | Some (origExpr, _) -> 
-          match inherits with 
-          | Some (_, _, mInherits, _, _) -> error(Error(FSComp.SR.tcInvalidRecordConstruction(), mInherits))
-          | None -> 
-              let olde, tpenv = TcExpr cenv overallTy env tpenv origExpr
-              let oldvaddr, oldvaddre = mkCompGenLocal mWholeExpr "inputRecord" (if isStructTy cenv.g overallTy then mkByrefTy cenv.g overallTy else overallTy)
-              Some (olde, oldvaddr, oldvaddre), tpenv
-
-    let hasOrigExpr = optOrigExprInfo.IsSome
+    let hasOrigExpr = optOrigExpr.IsSome
 
     let fldsList = 
         let flds = 
@@ -6969,6 +6958,17 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                 match v with
                 | Some v -> yield n, v
                 | None -> () ]
+
+    let optOrigExprInfo, tpenv = 
+      match optOrigExpr with 
+      | None -> None, tpenv 
+      | Some (origExpr, _) -> 
+          match inherits with 
+          | Some (_, _, mInherits, _, _) -> error(Error(FSComp.SR.tcInvalidRecordConstruction(), mInherits))
+          | None -> 
+              let olde, tpenv = TcExpr cenv overallTy env tpenv origExpr
+              let oldvaddr, oldvaddre = mkCompGenLocal mWholeExpr "inputRecord" (if isStructTy cenv.g overallTy then mkByrefTy cenv.g overallTy else overallTy)
+              Some (olde, oldvaddr, oldvaddre), tpenv
 
     if hasOrigExpr && not (isRecdTy cenv.g overallTy) then 
         errorR(Error(FSComp.SR.tcExpressionFormRequiresRecordTypes(), mWholeExpr))
