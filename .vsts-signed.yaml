@@ -36,7 +36,7 @@ jobs:
     displayName: Publish nightly package to MyGet
     inputs:
       scriptName: 'setup\publish-assets.ps1'
-      arguments: '-binariesPath $(BuildConfiguration) -branchName $(Build.SourceBranch) -apiKey $(FSharp.MyGetApiKey)'
+      arguments: '-binariesPath artifacts\bin -configuration $(BuildConfiguration) -branchName $(Build.SourceBranch) -apiKey $(FSharp.MyGetApiKey)'
     condition: and(succeeded(), contains(variables['PB_PublishType'], 'myget'))
 
   # Package publish
@@ -50,12 +50,12 @@ jobs:
     displayName: Publish packages to Azure Blob Storage
     inputs:
       solution: PublishToBlob.proj
-      msbuildArguments: '/t:Build /p:Configuration=$(BuildConfiguration) /p:ExpectedFeedUrl=$(PB_PublishBlobFeedUrl) /p:AccountKey=$(PB_PublishBlobFeedKey) /p:ManifestRepouri=$(Build.Repository.Uri) /p:ManifestBranch=$(Build.SourceBranch) /p:ManifestCommit=$(Build.SourceVersion) /p:ManifestBuildId=$(Build.BuildNumber) /bl:$(Build.SourcesDirectory)/$(BuildConfiguration)/log/publish.binlog'
+      msbuildArguments: '/t:Build /p:Configuration=$(BuildConfiguration) /p:ExpectedFeedUrl=$(PB_PublishBlobFeedUrl) /p:AccountKey=$(PB_PublishBlobFeedKey) /p:ManifestRepouri=$(Build.Repository.Uri) /p:ManifestBranch=$(Build.SourceBranch) /p:ManifestCommit=$(Build.SourceVersion) /p:ManifestBuildId=$(Build.BuildNumber) /bl:$(Build.SourcesDirectory)/artifacts/log/$(BuildConfiguration)/pub/publish.binlog'
     condition: and(succeeded(), contains(variables['PB_PublishType'], 'blob'))
   - task: PublishBuildArtifacts@1
     displayName: Publish publishing bin log
     inputs:
-      PathtoPublish: '$(Build.SourcesDirectory)/$(BuildConfiguration)/log'
+      PathtoPublish: '$(Build.SourcesDirectory)/artifacts/log/$(BuildConfiguration)/pub'
       ArtifactName: 'Publish_bin_log'
       publishLocation: Container
     continueOnError: true
@@ -80,7 +80,7 @@ jobs:
   - task: PublishBuildArtifacts@1
     displayName: Create static drop
     inputs:
-      PathtoPublish: '$(BuildConfiguration)'
+      PathtoPublish: 'artifacts'
       ArtifactName: '$(Build.BuildNumber)'
       publishLocation: FilePath
       TargetPath: '$(DropRoot)\$(Build.DefinitionName)\$(Build.SourceBranchName)'
@@ -94,7 +94,7 @@ jobs:
     inputs:
       SymbolsPath: '$(DropRoot)\$(Build.DefinitionName)\$(Build.SourceBranchName)\$(Build.BuildNumber)\Symbols'
       SearchPattern: '**\*.dll;**\*.exe;**\*.pdb'
-      SymbolsFolder: '$(Build.SourcesDirectory)\$(BuildConfiguration)'
+      SymbolsFolder: '$(Build.SourcesDirectory)\artifacts\SymStore'
       TreatNotIndexedAsWarning: true
       SymbolsProduct: '$(Build.DefinitionName)'
       SymbolsVersion: '$(Build.BuildNumber)'
@@ -105,7 +105,7 @@ jobs:
   - task: ms-vseng.MicroBuildTasks.4305a8de-ba66-4d8b-b2d1-0dc4ecbbf5e8.MicroBuildUploadVstsDropFolder@1
     displayName: Upload VSTS Drop
     inputs:
-      DropFolder: '$(Build.SourcesDirectory)\$(BuildConfiguration)\insertion'
+      DropFolder: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(BuildConfiguration)\Insertion'
     condition: and(succeeded(), contains(variables['PB_PublishType'], 'vsts'))
 
   # Execute cleanup tasks
@@ -127,7 +127,7 @@ jobs:
     displayName: Publish symbols to SymWeb
     inputs:
       symbolServiceURI: 'https://microsoft.artifacts.visualstudio.com/DefaultCollection'
-      sourcePath: '$(DropRoot)\$(Build.DefinitionName)\$(Build.SourceBranchName)\$(Build.BuildNumber)\Symbols'
+      sourcePath: '$(DropRoot)\$(Build.DefinitionName)\$(Build.SourceBranchName)\$(Build.BuildNumber)\SymStore'
       usePat: false
     condition: and(succeeded(), contains(variables['PB_PublishType'], 'symweb'))
 

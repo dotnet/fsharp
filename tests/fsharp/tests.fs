@@ -1068,7 +1068,7 @@ module CoreTests =
 
         echo "Test 6================================================="
 
-        fscAppend cfg stdoutPath stderrPath "--nologo -r FSharp.Compiler.Interactive.Settings" ["usesfsi.fsx"]
+        fscAppend cfg stdoutPath stderrPath "--nologo -r \"%s\"" cfg.FSharpCompilerInteractiveSettings ["usesfsi.fsx"]
 
         echo "Test 7================================================="
 
@@ -1628,13 +1628,13 @@ module CoreTests =
     let verify () = 
         let cfg = testConfig "core/verify"
 
-        peverifyWithArgs cfg "/nologo" (cfg.BinPath ++ "FSharp.Build.dll")
+        peverifyWithArgs cfg "/nologo" (cfg.FSharpBuild)
 
-       // peverifyWithArgs cfg "/nologo /MD" (cfg.BinPath ++ "FSharp.Compiler.dll")
+       // peverifyWithArgs cfg "/nologo /MD" (getDirectoryName(cfg.FSC) ++ "FSharp.Compiler.dll")
 
-        peverifyWithArgs cfg "/nologo" (cfg.BinPath ++ "fsi.exe")
+        peverifyWithArgs cfg "/nologo" (cfg.FSI)
 
-        peverifyWithArgs cfg "/nologo" (cfg.BinPath ++ "FSharp.Compiler.Interactive.Settings.dll")
+        peverifyWithArgs cfg "/nologo" (cfg.FSharpCompilerInteractiveSettings)
 
         fsc cfg "%s -o:xmlverify.exe -g" cfg.fsc_flags ["xmlverify.fs"]
 

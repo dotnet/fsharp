@@ -40,8 +40,8 @@ type MyLogger(f : string -> unit) =
 type FauxHostObject() =
     let mutable myFlags : string[] = null
     let mutable mySources : string[] = null
-    member x.Compile(compile:System.Func<int>, flags:string[], sources:string[]) = 
-        myFlags <- flags        
+    member x.Compile(compile:System.Func<int>, flags:string[], sources:string[]) =
+        myFlags <- flags
         mySources <- sources
         0
     member x.Flags = myFlags
@@ -301,7 +301,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore"  + Environment.NewLine)
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -485,7 +485,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine )
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -501,7 +501,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine )
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -517,7 +517,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine )
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -532,7 +532,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine )
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -547,7 +547,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine )
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -562,7 +562,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine )
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd 
 
     [<Test>]
@@ -576,7 +576,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva+" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine )
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd 
 
     [<Test>]
@@ -591,7 +591,7 @@ type Build() =
                      "--flaterrors" + Environment.NewLine +
                      "--subsystemversion:6.02" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine )
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd 
 
     [<Test>]

@@ -3,6 +3,7 @@
 
   <ItemGroup>
     <PackageProjects Include="src\fsharp\FSharp.Compiler.nuget\Microsoft.FSharp.Compiler.csproj" Condition="'$(BUILD_CORECLR)'=='1'" />
+    <PackageProjects Include="src\fsharp\FSharp.Compiler.nuget\Microsoft.FSharp.Compiler.Prerelease.csproj" Condition="'$(BUILD_CORECLR)'=='1'" />
     <PackageProjects Include="src\fsharp\FSharp.Core\FSharp.Core.fsproj" Condition="'$(BUILD_NUGET)'=='1'" />
   </ItemGroup>
 

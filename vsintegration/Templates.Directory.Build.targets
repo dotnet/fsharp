@@ -11,4 +11,21 @@
 
   <Target Name="CoreCompile" />
 
+  <!-- The templates have to build to directories relative to their projects, this target copies the relevant files to the appropriate output location. -->
+  <Target Name="CopyTemplatesToOutputDirectory"
+          AfterTargets="Build">
+
+    <PropertyGroup>
+      <TemplatesRootPath>$(OutputPath)$(TemplateCategory)\FSharp</TemplatesRootPath>
+      <TemplatesRootPath Condition="!$([System.IO.Path]::IsPathRooted('$(TemplatesRootPath)'))">$(MSBuildProjectDirectory)\$(TemplatesRootPath)</TemplatesRootPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Templates Include="$(TemplatesRootPath)\**\*.zip" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(Templates)" DestinationFolder="$(ArtifactsBinDir)\$(MSBuildProjectName)\$(Configuration)\%(Templates.RecursiveDir)" />
+
+  </Target>
+
 </Project>

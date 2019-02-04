@@ -10,9 +10,16 @@
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
     <FSharpSourcesRoot>$(RepoRoot)src</FSharpSourcesRoot>
-    <ToolsRoot>$(RepoRoot)Tools</ToolsRoot>
-    <ProtoOutputPath Condition="'$(OS)' != 'Unix'">$(RepoRoot)Proto\net40\bin</ProtoOutputPath>
-    <ProtoOutputPath Condition="'$(OS)' == 'Unix'">$(RepoRoot)Proto\coreclr\bin</ProtoOutputPath>
+    <ArtifactsDir>$(RepoRoot)artifacts</ArtifactsDir>
+    <ToolsRoot>$(ArtifactsDir)\toolset</ToolsRoot>
+    <ArtifactsBinDir>$(ArtifactsDir)\bin</ArtifactsBinDir>
+    <ArtifactsObjDir>$(ArtifactsDir)\obj</ArtifactsObjDir>
+    <ArtifactsPackagesDir>$(ArtifactsDir)\packages</ArtifactsPackagesDir>
+    <BaseOutputPath>$(ArtifactsBinDir)\$(MSBuildProjectName)</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(ArtifactsObjDir)\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <SymStoreDirectory>$(ArtifactsDir)\SymStore</SymStoreDirectory>
+    <ProtoOutputPath Condition="'$(OS)' != 'Unix'">$(ArtifactsBinDir)\fsc\Proto\net472</ProtoOutputPath>
+    <ProtoOutputPath Condition="'$(OS)' == 'Unix'">$(ArtifactsBinDir)/fsc/Proto/netcoreapp2.1</ProtoOutputPath>
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
   </PropertyGroup>
 
