@@ -15,6 +15,7 @@
     <UseAssetTargetFallback>true</UseAssetTargetFallback>
     <SkipPDBConversion>true</SkipPDBConversion>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
+    <SkipPDBConversion>true</SkipPDBConversion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net472' AND '$(OS)' == 'Windows_NT'">

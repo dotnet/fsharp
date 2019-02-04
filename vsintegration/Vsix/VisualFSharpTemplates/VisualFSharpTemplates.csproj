@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <Content Include="$(MSBuildThisFileDirectory)\..\..\..\artifacts\FSharp.Core.$(FSCorePackageVersion).nupkg">
+    <Content Include="$(MSBuildThisFileDirectory)\..\..\..\artifacts\packages\$(Configuration)\FSharp.Core.$(FSCorePackageVersion).nupkg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>packages\FSharp.Core.$(FSCorePackageVersion).nupkg</Link>
       <IncludeInVSIX>true</IncludeInVSIX>

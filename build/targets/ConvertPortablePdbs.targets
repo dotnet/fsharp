@@ -13,11 +13,12 @@
                      $(TargetFramework.StartsWith('net')) AND
                      '$(Configuration)' != 'Proto'">
     <PropertyGroup>
+      <ConvertedPdbsDirectory>$(SymStoreDirectory)\$(TargetFramework)</ConvertedPdbsDirectory>
       <PdbConverterExe>$(NuGetPackageRoot)Pdb2Pdb\$(Pdb2PdbPackageVersion)\tools\Pdb2Pdb.exe</PdbConverterExe>
-      <PdbConverterArgs>"$(TargetPath)" /out "$(SymStoreDirectory)\$(TargetName).pdb" /srcsvrvar SRC_INDEX=public</PdbConverterArgs>
+      <PdbConverterArgs>"$(TargetPath)" /out "$(ConvertedPdbsDirectory)\$(TargetName).pdb" /srcsvrvar SRC_INDEX=public</PdbConverterArgs>
     </PropertyGroup>
 
-    <MakeDir Directories="$(SymStoreDirectory)" />
+    <MakeDir Directories="$(ConvertedPdbsDirectory)" />
     <Exec Command='"$(PdbConverterExe)" $(PdbConverterArgs)' />
   </Target>
 

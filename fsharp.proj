@@ -140,7 +140,6 @@
     <ItemGroup Condition="'$(TestFCS)' == 'true' OR '$(_RunningRestore)' == 'true'">
       <Projects Include="$(MSBuildThisFileDirectory)fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" />
       <Projects Include="$(MSBuildThisFileDirectory)tests\projects\Sample_NETCoreSDK_FSharp_Library_netstandard2_0\Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj" />
-      <Projects Include="$(MSBuildThisFileDirectory)fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TestIDE)' == 'true' OR '$(_RunningRestore)' == 'true'">
@@ -156,8 +155,9 @@
   </Target>
 
   <Target Name="Build" DependsOnTargets="CollectProjects">
-    <MSBuild Projects="@(Projects);@(NugetProjects)" Targets="Build" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <!-- Nuget projects need to be built before the vsix stuff, so that the vsix build -->
     <MSBuild Projects="@(NugetProjects)" Targets="Pack" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(Projects);@(NugetProjects)" Targets="Build" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
 
   <Target Name="Rebuild" DependsOnTargets="CollectProjects">
