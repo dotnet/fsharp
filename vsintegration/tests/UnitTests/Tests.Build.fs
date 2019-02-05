@@ -40,8 +40,8 @@ type MyLogger(f : string -> unit) =
 type FauxHostObject() =
     let mutable myFlags : string[] = null
     let mutable mySources : string[] = null
-    member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) = 
-        myFlags <- flags        
+    member x.Compile(compile:System.Func<int>, flags:string[], sources:string[]) =
+        myFlags <- flags
         mySources <- sources
         0
     member x.Flags = myFlags
@@ -77,7 +77,7 @@ type Build() =
             let p = tool.InternalGenerateFullPathToTool()
             Assert.Fail("should not succeed")
         with e -> 
-            e.Message.AssertMatchesPattern("ToolPath is unknown; specify the path to fsc.exe as the ToolPath property.")
+            e.Message.AssertMatchesPattern("ToolPath is unknown; specify the path to the tool.")
         
     [<Test>]
     member public this.TestCodePage() =
@@ -92,7 +92,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-"  + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -107,7 +108,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -122,7 +124,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -139,7 +142,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -154,7 +158,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -168,7 +173,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -183,7 +189,8 @@ type Build() =
                      "--warnaserror-:52,109" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -198,7 +205,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -213,7 +221,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -228,7 +237,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -243,7 +253,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -258,7 +269,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -272,7 +284,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -287,7 +300,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -302,6 +316,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine +
                      "--yadda" + Environment.NewLine +
                      "yadda" + Environment.NewLine)
                     cmd
@@ -318,7 +333,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -333,7 +349,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -348,7 +365,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -363,7 +381,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -379,7 +398,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -395,7 +415,9 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine) cmd
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestReferencePathWithSpaces() =
@@ -410,7 +432,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -425,7 +448,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -442,6 +466,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine +
                      src + Environment.NewLine +
                      src + Environment.NewLine)
                     cmd
@@ -459,7 +484,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -474,7 +500,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -489,7 +516,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -503,7 +531,8 @@ type Build() =
                      "--utf8output" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -517,7 +546,8 @@ type Build() =
                      "--win32res:foo.res" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd
 
     [<Test>]
@@ -531,7 +561,8 @@ type Build() =
                      "--win32manifest:foo.manifest" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd 
 
     [<Test>]
@@ -544,7 +575,8 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva+" + Environment.NewLine)
+                     "--highentropyva+" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd 
 
     [<Test>]
@@ -558,7 +590,8 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--subsystemversion:6.02" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine)
                     cmd 
 
     [<Test>]
@@ -627,6 +660,7 @@ type Build() =
             "--flaterrors" + Environment.NewLine +
             "--subsystemversion:4.0" + Environment.NewLine +
             "--highentropyva-" + Environment.NewLine +
+            "--nocopyfsharpcore" + Environment.NewLine +
             "--yadda:yadda" + Environment.NewLine +
             "--other:internal quote" + Environment.NewLine +
             "blah" + Environment.NewLine +
@@ -670,6 +704,7 @@ type Build() =
             "--flaterrors"
             "--subsystemversion:4.0"
             "--highentropyva-"
+            "--nocopyfsharpcore"
             "--yadda:yadda"
             "--other:internal quote" // note stripped internal quotes
             "blah" |]

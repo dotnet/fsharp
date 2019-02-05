@@ -1774,11 +1774,9 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemor
             errorRecoveryNoRange e
             exiter.Exit 1
     
-    let inputs =
-        // Deduplicate module names
-        let moduleNamesDict = ConcurrentDictionary<string,Set<string>>()
-        inputs
-        |> List.map (fun (input,x) -> DeduplicateParsedInputModuleName moduleNamesDict input,x)
+    let inputs, _ =
+        (Map.empty, inputs)
+        ||> List.mapFold (fun state (input,x) -> let inputT, stateT = DeduplicateParsedInputModuleName state input in (inputT,x), stateT)
 
     if tcConfig.parseOnly then exiter.Exit 0 
     if not tcConfig.continueAfterParseFailure then 
@@ -2037,7 +2035,7 @@ let main4 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
 
     DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
-    let pdbfile = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
+    let pdbfile = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> FileSystem.GetFullPathShim)
 
     let normalizeAssemblyRefs (aref:ILAssemblyRef) = 
         match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, aref.Name, lookupOnly=false) with 

@@ -68,7 +68,7 @@
       We require a reference to Microsoft.VisualStudio.Shell.14.0.dll, but that causes some issues with duplicate type
       names.  The ~hack~ fix is to include the package reference and ensure the Aliases metadata gets set afterwards.
       -->
-      <ReferencePathWithRefAssemblies Update="%(Identity)" Aliases="Shell14" Condition="'%(ReferencePathWithRefAssemblies.NuGetPackageId)' == 'Microsoft.VisualStudio.Shell.14.0'" />
+      <ReferencePathWithRefAssemblies Update="%(Identity)" Aliases="Shell14" Condition="'%(ReferencePathWithRefAssemblies.FusionName)' == 'Microsoft.VisualStudio.Shell.14.0, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'" />
     </ItemGroup>
   </Target>
 

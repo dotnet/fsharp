@@ -23,33 +23,45 @@ let jaro (s1: string) (s2: string) =
     let matchRadius = 
         let minLen = Math.Min(s1.Length, s2.Length)
         minLen / 2 + minLen % 2
-    
-    // An inner function which recursively finds the number  
-    // of matched characters within the radius.
-    let commonChars (chars1: string) (chars2: string) =
-        let result = ResizeArray(chars1.Length)
-        for i = 0 to chars1.Length - 1 do
-            let c = chars1.[i]
-            if existsInWin c chars2 i matchRadius then 
-                result.Add c
-        result
-    
-    // The sets of common characters and their lengths as floats 
-    let c1 = commonChars s1 s2
-    let c2 = commonChars s2 s1
-    let c1length = float c1.Count
-    let c2length = float c2.Count
-        
+
+    let rec nextChar (s1:string) (s2:string) i c =
+        if i < s1.Length then
+            let c = s1.[i]
+            if not (existsInWin c s2 i matchRadius) then
+                nextChar s1 s2 (i + 1) c
+            else
+                struct (i, c)
+        else
+            struct (i, c)
+
+    // The sets of common characters and their lengths as floats         
     // The number of transpositions within the sets of common characters.
-    let transpositions =
-        let mutable mismatches = 0.0
-        for i = 0 to (Math.Min(c1.Count, c2.Count)) - 1 do
-            if c1.[i] <> c2.[i] then 
-                mismatches <- mismatches + 1.0
-                        
-        // If one common string is longer than the other
-        // each additional char counts as half a transposition
-        (mismatches + abs (c1length - c2length)) / 2.0
+    let struct (transpositions, c1length, c2length) =
+        let rec loop i j mismatches c1length c2length =
+            if i < s1.Length && j < s2.Length then
+                let struct (ti, ci) = nextChar s1 s2 i ' '
+                let struct (tj, cj) = nextChar s2 s1 j ' '
+                if ci <> cj then
+                    loop (ti + 1) (tj + 1) (mismatches + 1) (c1length + 1) (c2length + 1)
+                else
+                    loop (ti + 1) (tj + 1) mismatches (c1length + 1) (c2length + 1)
+            else struct (i, j, mismatches, c1length, c2length)
+
+        let struct (i, j, mismatches, c1length, c2length) = loop 0 0 0 0 0
+
+        let rec loop (s1:string) (s2:string) i length =
+            if i < s1.Length - 1 then
+                let c = s1.[i]
+                if existsInWin c s2 i matchRadius then 
+                    loop s1 s2 (i + 1) (length + 1)
+                else
+                    loop s1 s2 (i + 1) length
+            else
+                length
+        let c1length = loop s1 s2 i c1length |> float
+        let c2length = loop s2 s1 j c2length |> float
+
+        struct ((float mismatches + abs (c1length - c2length)) / 2.0, c1length, c2length)
     
     let tLength = Math.Max(c1length, c2length)
     

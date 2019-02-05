@@ -2359,6 +2359,8 @@ type TcConfigBuilder =
       mutable tryGetMetadataSnapshot : ILReaderTryGetMetadataSnapshot
 
       mutable internalTestSpanStackReferring : bool
+
+      mutable noConditionalErasure : bool
       }
 
     static member Initial =
@@ -2496,6 +2498,7 @@ type TcConfigBuilder =
           shadowCopyReferences = false
           tryGetMetadataSnapshot = (fun _ -> None)
           internalTestSpanStackReferring = false
+          noConditionalErasure = false
         }
 
     static member CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
@@ -2957,6 +2960,8 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     member x.shadowCopyReferences = data.shadowCopyReferences
     member x.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot
     member x.internalTestSpanStackReferring = data.internalTestSpanStackReferring
+    member x.noConditionalErasure = data.noConditionalErasure
+
     static member Create(builder, validate) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         TcConfig(builder, validate)
@@ -3393,14 +3398,14 @@ let ComputeQualifiedNameOfFileFromUniquePath (m, p: string list) = QualifiedName
 
 let QualFileNameOfSpecs filename specs = 
     match specs with 
-    | [SynModuleOrNamespaceSig(modname, _, true, _, _, _, _, m)] -> QualFileNameOfModuleName m filename modname
-    | [SynModuleOrNamespaceSig(_, _, false, _, _, _, _, m)] -> QualFileNameOfFilename m filename
+    | [SynModuleOrNamespaceSig(modname, _, kind, _, _, _, _, m)] when kind.IsModule -> QualFileNameOfModuleName m filename modname
+    | [SynModuleOrNamespaceSig(_, _, kind, _, _, _, _, m)] when not kind.IsModule -> QualFileNameOfFilename m filename
     | _ -> QualFileNameOfFilename (mkRange filename pos0 pos0) filename
 
 let QualFileNameOfImpls filename specs = 
     match specs with 
-    | [SynModuleOrNamespace(modname, _, true, _, _, _, _, m)] -> QualFileNameOfModuleName m filename modname
-    | [SynModuleOrNamespace(_, _, false, _, _, _, _, m)] -> QualFileNameOfFilename m filename
+    | [SynModuleOrNamespace(modname, _, kind, _, _, _, _, m)] when kind.IsModule -> QualFileNameOfModuleName m filename modname
+    | [SynModuleOrNamespace(_, _, kind, _, _, _, _, m)]  when not kind.IsModule -> QualFileNameOfFilename m filename
     | _ -> QualFileNameOfFilename (mkRange filename pos0 pos0) filename
 
 let PrepandPathToQualFileName x (QualifiedNameOfFile(q)) = ComputeQualifiedNameOfFileFromUniquePath (q.idRange, pathOfLid x@[q.idText])
@@ -3429,13 +3434,14 @@ let ComputeAnonModuleName check defaultNamespace filename (m: range) =
 
 let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, filename, impl) = 
     match impl with 
-    | ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, isRec, isModule, decls, xmlDoc, attribs, access, m)) -> 
+    | ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, isRec, kind, decls, xmlDoc, attribs, access, m)) -> 
         let lid = 
             match lid with 
-            | [id] when isModule && id.idText = MangledGlobalName -> error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
+            | [id] when kind.IsModule && id.idText = MangledGlobalName ->
+                error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
             | id :: rest when id.idText = MangledGlobalName -> rest
             | _ -> lid
-        SynModuleOrNamespace(lid, isRec, isModule, decls, xmlDoc, attribs, access, m)
+        SynModuleOrNamespace(lid, isRec, kind, decls, xmlDoc, attribs, access, m)
 
     | ParsedImplFileFragment.AnonModule (defs, m)-> 
         let isLast, isExe = isLastCompiland 
@@ -3446,24 +3452,26 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, filename, impl) 
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), trimRangeToLine m))
 
         let modname = ComputeAnonModuleName (not (isNil defs)) defaultNamespace filename (trimRangeToLine m)
-        SynModuleOrNamespace(modname, false, true, defs, PreXmlDoc.Empty, [], None, m)
+        SynModuleOrNamespace(modname, false, AnonModule, defs, PreXmlDoc.Empty, [], None, m)
 
-    | ParsedImplFileFragment.NamespaceFragment (lid, a, b, c, d, e, m)-> 
-        let lid = 
+    | ParsedImplFileFragment.NamespaceFragment (lid, a, kind, c, d, e, m)-> 
+        let lid, kind = 
             match lid with 
-            | id :: rest when id.idText = MangledGlobalName -> rest
-            | _ -> lid
-        SynModuleOrNamespace(lid, a, b, c, d, e, None, m)
+            | id :: rest when id.idText = MangledGlobalName ->
+                rest, if List.isEmpty rest then GlobalNamespace else kind
+            | _ -> lid, kind
+        SynModuleOrNamespace(lid, a, kind, c, d, e, None, m)
 
 let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) = 
     match intf with 
-    | ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, isRec, isModule, decls, xmlDoc, attribs, access, m)) -> 
+    | ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, isRec, kind, decls, xmlDoc, attribs, access, m)) -> 
         let lid = 
             match lid with 
-            | [id] when isModule && id.idText = MangledGlobalName -> error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
+            | [id] when kind.IsModule && id.idText = MangledGlobalName ->
+                error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
             | id :: rest when id.idText = MangledGlobalName -> rest
             | _ -> lid
-        SynModuleOrNamespaceSig(lid, isRec, isModule, decls, xmlDoc, attribs, access, m)
+        SynModuleOrNamespaceSig(lid, isRec, NamedModule, decls, xmlDoc, attribs, access, m)
 
     | ParsedSigFileFragment.AnonModule (defs, m) -> 
         let isLast, isExe = isLastCompiland
@@ -3474,14 +3482,15 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) 
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), m))
 
         let modname = ComputeAnonModuleName (not (isNil defs)) defaultNamespace filename (trimRangeToLine m)
-        SynModuleOrNamespaceSig(modname, false, true, defs, PreXmlDoc.Empty, [], None, m)
+        SynModuleOrNamespaceSig(modname, false, AnonModule, defs, PreXmlDoc.Empty, [], None, m)
 
-    | ParsedSigFileFragment.NamespaceFragment (lid, a, b, c, d, e, m)-> 
-        let lid = 
+    | ParsedSigFileFragment.NamespaceFragment (lid, a, kind, c, d, e, m)-> 
+        let lid, kind = 
             match lid with 
-            | id :: rest when id.idText = MangledGlobalName -> rest
-            | _ -> lid
-        SynModuleOrNamespaceSig(lid, a, b, c, d, e, None, m)
+            | id :: rest when id.idText = MangledGlobalName ->
+                rest, if List.isEmpty rest then GlobalNamespace else kind
+            | _ -> lid, kind
+        SynModuleOrNamespaceSig(lid, a, kind, c, d, e, None, m)
 
 
 
@@ -3525,34 +3534,37 @@ let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSig
 
     ParsedInput.SigFile(ParsedSigFileInput(filename, qualName, scopedPragmas, hashDirectives, specs))
 
+type ModuleNamesDict = Map<string,Map<string,QualifiedNameOfFile>>
+
 /// Checks if a module name is already given and deduplicates the name if needed.
-let DeduplicateModuleName (moduleNamesDict:IDictionary<string, Set<string>>) (paths: Set<string>) path (qualifiedNameOfFile: QualifiedNameOfFile) =
-    let count = if paths.Contains path then paths.Count else paths.Count + 1
-    moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.add path paths
-    let id = qualifiedNameOfFile.Id
-    if count = 1 then qualifiedNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(), id.idRange))
+let DeduplicateModuleName (moduleNamesDict:ModuleNamesDict) fileName (qualNameOfFile: QualifiedNameOfFile) =
+    let path = Path.GetDirectoryName fileName
+    let path = if FileSystem.IsPathRootedShim path then try FileSystem.GetFullPathShim path with _ -> path else path
+    match moduleNamesDict.TryGetValue qualNameOfFile.Text with
+    | true, paths ->
+        if paths.ContainsKey path then 
+            paths.[path], moduleNamesDict
+        else
+            let count = paths.Count + 1
+            let id = qualNameOfFile.Id
+            let qualNameOfFileT = if count = 1 then qualNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(), id.idRange))
+            let moduleNamesDictT = moduleNamesDict.Add(qualNameOfFile.Text, paths.Add(path, qualNameOfFileT))
+            qualNameOfFileT, moduleNamesDictT
+    | _ ->
+        let moduleNamesDictT = moduleNamesDict.Add(qualNameOfFile.Text, Map.empty.Add(path, qualNameOfFile))
+        qualNameOfFile, moduleNamesDictT
 
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
-let DeduplicateParsedInputModuleName (moduleNamesDict:IDictionary<string, Set<string>>) input =
+let DeduplicateParsedInputModuleName (moduleNamesDict: ModuleNamesDict) input =
     match input with
-    | ParsedInput.ImplFile (ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe))) ->
-        let path = Path.GetDirectoryName fileName
-        match moduleNamesDict.TryGetValue qualifiedNameOfFile.Text with
-        | true, paths ->
-            let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
-            ParsedInput.ImplFile(ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe)))
-        | _ ->
-            moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.singleton path
-            input
-    | ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules)) ->
-        let path = Path.GetDirectoryName fileName
-        match moduleNamesDict.TryGetValue qualifiedNameOfFile.Text with
-        | true, paths ->
-            let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
-            ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules))
-        | _ ->
-            moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.singleton path
-            input
+    | ParsedInput.ImplFile (ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe))) ->
+        let qualNameOfFileT, moduleNamesDictT = DeduplicateModuleName moduleNamesDict fileName qualNameOfFile
+        let inputT = ParsedInput.ImplFile(ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualNameOfFileT, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe)))
+        inputT, moduleNamesDictT
+    | ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualNameOfFile, scopedPragmas, hashDirectives, modules)) ->
+        let qualNameOfFileT, moduleNamesDictT = DeduplicateModuleName moduleNamesDict fileName qualNameOfFile
+        let inputT = ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualNameOfFileT, scopedPragmas, hashDirectives, modules))
+        inputT, moduleNamesDictT
 
 let ParseInput (lexer, errorLogger:ErrorLogger, lexbuf:UnicodeLexing.Lexbuf, defaultNamespace, filename, isLastCompiland) = 
     // The assert below is almost ok, but it fires in two cases:
@@ -5449,9 +5461,12 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig:TcConfig, tcImports:Tc
               if Zset.contains qualNameOfFile tcState.tcsRootImpls then 
                   errorR(Error(FSComp.SR.buildImplementationAlreadyGivenDetail(qualNameOfFile.Text), m))
 
+              let conditionalDefines =
+                  if tcConfig.noConditionalErasure then None else Some (tcConfig.conditionalCompilationDefines)
+
               // Typecheck the signature file 
               let! (tcEnv, sigFileType, createsGeneratedProvidedTypes) = 
-                  TypeCheckOneSigFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcState.tcsTcSigEnv file
+                  TypeCheckOneSigFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcState.tcsTcSigEnv file
 
               let rootSigs = Zmap.add qualNameOfFile  sigFileType tcState.tcsRootSigs
 
@@ -5486,9 +5501,12 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig:TcConfig, tcImports:Tc
 
               let tcImplEnv = tcState.tcsTcImplEnv
 
+              let conditionalDefines =
+                  if tcConfig.noConditionalErasure then None else Some (tcConfig.conditionalCompilationDefines)
+
               // Typecheck the implementation file 
               let! topAttrs, implFile, _implFileHiddenType, tcEnvAtEnd, createsGeneratedProvidedTypes = 
-                  TypeCheckOneImplFile  (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcImplEnv rootSigOpt file
+                  TypeCheckOneImplFile  (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcImplEnv rootSigOpt file
 
               let hadSig = rootSigOpt.IsSome
               let implFileSigType = SigTypeOfImplFile implFile
