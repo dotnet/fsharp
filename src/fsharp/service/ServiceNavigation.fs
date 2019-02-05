@@ -71,7 +71,10 @@ type FSharpNavigationItems(declarations:FSharpNavigationTopLevelDeclaration[]) =
     member x.Declarations = declarations
 
 module NavigationImpl =
-    let unionRangesChecked r1 r2 = if r1 = range.Zero then r2 elif r2 = range.Zero then r1 else unionRanges r1 r2
+    let unionRangesChecked r1 r2 =
+        if Microsoft.FSharp.Compiler.Range.equals r1 range.Zero then r2
+        elif Microsoft.FSharp.Compiler.Range.equals r2 range.Zero then r1
+        else unionRanges r1 r2
     
     let rangeOfDecls2 f decls = 
       match (decls |> List.map (f >> (fun (d:FSharpNavigationDeclarationItem) -> d.bodyRange))) with 
