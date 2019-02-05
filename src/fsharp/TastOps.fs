@@ -3027,7 +3027,22 @@ let isByrefLikeTy g m ty =
 
 let isSpanLikeTy g m ty =
     isByrefLikeTy g m ty && 
-    not (isByrefTy g ty) 
+    not (isByrefTy g ty)
+
+let isSpanTyconRef (g: TcGlobals) m (tcref: TyconRef) =
+    if isByrefLikeTyconRef g m tcref then
+        match tcref.ILTyconInfo with
+        | TILObjectReprData(_, _, ilTypeDef) -> ilTypeDef.Name = "System.Span`1"
+    else
+        false
+    
+let isSpanTy g m ty =
+    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isSpanTyconRef g m tcref | _ -> false)
+
+let destSpanTy (g:TcGlobals) m ty =
+    match tryAppTy g ty with
+    | ValueSome(tcref, [ty]) when isSpanTyconRef g m tcref -> ty
+    | _ -> failwith "destSpanTy"
 
 //-------------------------------------------------------------------------
 // List and reference types...

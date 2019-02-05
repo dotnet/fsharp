@@ -7135,17 +7135,23 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
         | _ when isArray1DTy cenv.g enumExprTy -> 
             let arrVar, arrExpr = mkCompGenLocal mEnumExpr "arr" enumExprTy
             let idxVar, idxExpr = mkCompGenLocal mPat "idx" cenv.g.int32_ty
-            let elemTy = destArrayTy cenv.g enumExprTy
+            let elemTy = 
+                if isArray1DTy cenv.g enumExprTy then destArrayTy cenv.g enumExprTy
+                else destSpanTy cenv.g mWholeExpr enumExprTy
             
             // Evaluate the array index lookup
-            let bodyExprFixup elemVar bodyExpr = mkCompGenLet mForLoopStart elemVar (mkLdelem cenv.g mForLoopStart elemTy arrExpr idxExpr) bodyExpr
+            let bodyExprFixup elemVar bodyExpr = 
+                let e = mkCompGenLet mForLoopStart elemVar (mkLdelem cenv.g mForLoopStart elemTy arrExpr idxExpr) bodyExpr
+                if isArray1DTy cenv.g enumExprTy then
+                    e
+                else
+                    mkCompGenLet mForLoopStart elemVar e (mkAddrGet mForLoopStart (mkLocalValRef elemVar))
 
             // Evaluate the array expression once and put it in arrVar
             let overallExprFixup overallExpr = mkCompGenLet mForLoopStart arrVar enumExpr overallExpr
 
             // Ask for a loop over integers for the given range
             (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero cenv.g mForLoopStart, mkDecr cenv.g mForLoopStart (mkLdlen cenv.g mForLoopStart arrExpr)))
-
         | _ -> 
 
             let enumerableVar, enumerableExprInVar = mkCompGenLocal mEnumExpr "inputSequence" enumExprTy
