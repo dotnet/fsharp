@@ -63,6 +63,12 @@ let ``Intro test`` () =
     let identToken = FSharpTokenTag.IDENT
 //    let projectOptions = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
 
+    // So we check that the messages are the same
+    for msg in typeCheckResults.Errors do 
+        printfn "Got an error, hopefully with the right text: %A" msg
+
+    printfn "typeCheckResults.Errors.Length = %d" typeCheckResults.Errors.Length
+
     // We only expect one reported error. However,
     // on Unix, using filenames like /home/user/Test.fsx gives a second copy of all parse errors due to the
     // way the load closure for scripts is generated. So this returns two identical errors
@@ -116,8 +122,8 @@ let ``Basic cancellation test`` () =
     let file = "/home/user/Test.fsx"
     async { 
         checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-        let! checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, input) 
-        let! parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, input, checkOptions) 
+        let! checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, Microsoft.FSharp.Compiler.Text.SourceText.ofString input) 
+        let! parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, Microsoft.FSharp.Compiler.Text.SourceText.ofString input, checkOptions) 
         return parseResult, typedRes
     } |> Async.RunSynchronously
       |> ignore
@@ -335,6 +341,50 @@ type Test() =
 
     let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
     decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
+
+
+[<Test>]
+let ``Completion in base constructor`` () = 
+    let input = 
+      """
+type A(foo) =
+    class
+    end
+
+type B(bar) =
+    inherit A(bar)""" 
+
+    // Split the input & define file name
+    let inputLines = input.Split('\n')
+    let file = "/home/user/Test.fsx"
+    let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
+
+    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines.[6], PartialLongName.Empty(17), (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
+    decls.Items |> Seq.exists (fun d -> d.Name = "bar") |> shouldEqual true
+
+
+
+[<Test>]
+let ``Completion in do in base constructor`` () = 
+    let input = 
+      """
+type A() =
+    class
+    end
+
+type B(bar) =
+    inherit A()
+    
+    do bar""" 
+
+    // Split the input & define file name
+    let inputLines = input.Split('\n')
+    let file = "/home/user/Test.fsx"
+    let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
+
+    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 9, inputLines.[8], PartialLongName.Empty(7), (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
+    decls.Items |> Seq.exists (fun d -> d.Name = "bar") |> shouldEqual true
+
 
 [<Test; Ignore("SKIPPED: see #139")>]
 let ``Symbol based find function from member 1`` () = 
@@ -1092,7 +1142,7 @@ let _ = RegexTypedStatic.IsMatch<"ABC" >(  (*$*) ) // TEST: no assert on Ctrl-sp
     File.WriteAllText(fileName1, fileSource1)
     let fileLines1 = File.ReadAllLines(fileName1)
     let fileNames = [fileName1]
-    let args = Array.append (mkProjectCommandLineArgs (dllName, fileNames)) [| "-r:" + PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll") |]
+    let args = Array.append (mkProjectCommandLineArgs (dllName, fileNames)) [| "-r:" + PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll") |]
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 

@@ -22,7 +22,8 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 
-open Microsoft.FSharp.Compiler 
+open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Text
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.AttributeChecking
 open Microsoft.FSharp.Compiler.ConstraintSolver
@@ -645,16 +646,16 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           
           match contextInfo with
-          | ContextInfo.IfExpression range when range = m -> os.Append(FSComp.SR.ifExpression(t1, t2)) |> ignore
-          | ContextInfo.CollectionElement (isArray, range) when range = m -> 
+          | ContextInfo.IfExpression range when Range.equals range m -> os.Append(FSComp.SR.ifExpression(t1, t2)) |> ignore
+          | ContextInfo.CollectionElement (isArray, range) when Range.equals range m -> 
             if isArray then
                 os.Append(FSComp.SR.arrayElementHasWrongType(t1, t2)) |> ignore
             else
                 os.Append(FSComp.SR.listElementHasWrongType(t1, t2)) |> ignore
-          | ContextInfo.OmittedElseBranch range when range = m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
-          | ContextInfo.ElseBranchResult range when range = m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1, t2)) |> ignore
-          | ContextInfo.FollowingPatternMatchClause range when range = m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1, t2)) |> ignore
-          | ContextInfo.PatternMatchGuard range when range = m -> os.Append(FSComp.SR.patternMatchGuardIsNotBool(t2)) |> ignore
+          | ContextInfo.OmittedElseBranch range when Range.equals range m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
+          | ContextInfo.ElseBranchResult range when Range.equals range m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1, t2)) |> ignore
+          | ContextInfo.FollowingPatternMatchClause range when Range.equals range m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1, t2)) |> ignore
+          | ContextInfo.PatternMatchGuard range when Range.equals range m -> os.Append(FSComp.SR.patternMatchGuardIsNotBool(t2)) |> ignore
           | _ -> os.Append(ConstraintSolverTypesNotInEqualityRelation2E().Format t1 t2) |> ignore
           if m.StartLine <> m2.StartLine then 
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
@@ -682,16 +683,16 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
          &&   typeEquiv g t2 t2' ->
           let t1, t2, tpcs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           match contextInfo with
-          | ContextInfo.IfExpression range when range = m -> os.Append(FSComp.SR.ifExpression(t1, t2)) |> ignore
-          | ContextInfo.CollectionElement (isArray, range) when range = m -> 
+          | ContextInfo.IfExpression range when Range.equals range m -> os.Append(FSComp.SR.ifExpression(t1, t2)) |> ignore
+          | ContextInfo.CollectionElement (isArray, range) when Range.equals range m -> 
             if isArray then
                 os.Append(FSComp.SR.arrayElementHasWrongType(t1, t2)) |> ignore
             else
                 os.Append(FSComp.SR.listElementHasWrongType(t1, t2)) |> ignore
-          | ContextInfo.OmittedElseBranch range when range = m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
-          | ContextInfo.ElseBranchResult range when range = m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1, t2)) |> ignore
-          | ContextInfo.FollowingPatternMatchClause range when range = m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1, t2)) |> ignore
-          | ContextInfo.PatternMatchGuard range when range = m -> os.Append(FSComp.SR.patternMatchGuardIsNotBool(t2)) |> ignore
+          | ContextInfo.OmittedElseBranch range when Range.equals range m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
+          | ContextInfo.ElseBranchResult range when Range.equals range m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1, t2)) |> ignore
+          | ContextInfo.FollowingPatternMatchClause range when Range.equals range m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1, t2)) |> ignore
+          | ContextInfo.PatternMatchGuard range when Range.equals range m -> os.Append(FSComp.SR.patternMatchGuardIsNotBool(t2)) |> ignore
           | ContextInfo.TupleInRecordFields ->
                 os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
                 os.Append(System.Environment.NewLine + FSComp.SR.commaInsteadOfSemicolonInRecord()) |> ignore
@@ -1639,7 +1640,7 @@ type Diagnostic =
 /// returns sequence that contains Diagnostic for the given error + Diagnostic for all related errors
 let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err:PhasedDiagnostic) = 
     let outputWhere (showFullPaths, errorStyle) m : DiagnosticLocation = 
-        if m = rangeStartup || m = rangeCmdArgs then 
+        if Range.equals m rangeStartup || Range.equals m rangeCmdArgs then 
             { Range = m; TextRepresentation = ""; IsEmpty = true; File = "" }
         else
             let file = m.FileName
@@ -1674,7 +1675,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                   | ErrorStyle.VSErrors      -> 
                         // Show prefix only for real files. Otherwise, we just want a truncated error like:
                         //      parse error FS0031 : blah blah
-                        if m<>range0 && m<>rangeStartup && m<>rangeCmdArgs then 
+                        if not (Range.equals m range0) && not (Range.equals m rangeStartup) && not (Range.equals m rangeCmdArgs) then 
                             let file = file.Replace("/", "\\")
                             let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1) )
                             sprintf "%s(%d,%d,%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
@@ -1791,12 +1792,11 @@ let GetDefaultFSharpCoreReference () = typeof<list<int>>.Assembly.Location
 
 type private TypeInThisAssembly = class end
 
-// Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
-// or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
+// Use the ValueTuple that is executing with the compiler.  This can come either from [mscorlib] or [System.ValueTuple.dll] alongside the compiler
 let GetDefaultSystemValueTupleReference () =
     try
         let asm = typeof<System.ValueTuple<int, int>>.Assembly 
-        if asm.FullName.StartsWithOrdinal("System.ValueTuple") then  
+        if asm.FullName.StartsWithOrdinal("System.ValueTuple") then
             Some asm.Location
         else
             let location = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
@@ -1825,6 +1825,7 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Data"
           yield "System.Drawing"
           yield "System.Core"
+
           // These are the Portable-profile and .NET Standard 1.6 dependencies of FSharp.Core.dll.  These are needed
           // when an F# sript references an F# profile 7, 78, 259 or .NET Standard 1.6 component which in turn refers 
           // to FSharp.Core for profile 7, 78, 259 or .NET Standard.
@@ -1850,17 +1851,24 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Windows.Forms"
           yield "System.Numerics" 
      else
-          yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location), "mscorlib.dll"); // mscorlib
-          yield typeof<System.Console>.Assembly.Location; // System.Console
-          yield typeof<System.ComponentModel.DefaultValueAttribute>.Assembly.Location; // System.Runtime
-          yield typeof<System.ComponentModel.PropertyChangedEventArgs>.Assembly.Location; // System.ObjectModel             
-          yield typeof<System.IO.BufferedStream>.Assembly.Location; // System.IO
-          yield typeof<System.Linq.Enumerable>.Assembly.Location; // System.Linq
-          //yield typeof<System.Xml.Linq.XDocument>.Assembly.Location; // System.Xml.Linq
-          yield typeof<System.Net.WebRequest>.Assembly.Location; // System.Net.Requests
-          yield typeof<System.Numerics.BigInteger>.Assembly.Location; // System.Runtime.Numerics
-          yield typeof<System.Threading.Tasks.TaskExtensions>.Assembly.Location; // System.Threading.Tasks
-          yield typeof<Microsoft.FSharp.Core.MeasureAttribute>.Assembly.Location; // FSharp.Core
+          yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location), "mscorlib.dll")    // mscorlib
+          yield typeof<System.Console>.Assembly.Location                                                        // System.Console
+          yield typeof<System.Collections.BitArray>.Assembly.Location                                           // System.Collections
+          yield typeof<System.Data.SqlClient.SqlCommand>.Assembly.Location                                      // System.Data.SqlClient
+          yield typeof<System.ComponentModel.PropertyChangedEventArgs>.Assembly.Location                        // System.ObjectModel             
+          yield typeof<System.IO.File>.Assembly.Location                                                        // System.IO.FileSystem
+          yield typeof<System.IO.TextWriter>.Assembly.Location                                                  // System.IO
+          yield typeof<System.Linq.Enumerable>.Assembly.Location                                                // System.Linq
+          yield typeof<System.Xml.XmlNodeType>.Assembly.Location                                                // System.Xml
+          yield typeof<System.Xml.Linq.XDocument>.Assembly.Location                                             // System.Xml.Linq
+          yield typeof<System.Net.WebRequest>.Assembly.Location                                                 // System.Net.Requests
+          yield typeof<System.Numerics.BigInteger>.Assembly.Location                                            // System.Runtime.Numerics
+          yield typeof<System.Net.Security.AuthenticatedStream>.Assembly.Location                               // System.Net.Security
+          yield typeof<System.Security.Principal.GenericIdentity>.Assembly.Location                             // System.Security.Claims
+          yield typeof<System.Text.RegularExpressions.Regex>.Assembly.Location                                  // System.Text.RegularExpressions.Regex
+          yield typeof<System.Threading.Tasks.TaskExtensions>.Assembly.Location                                 // System.Threading.Tasks
+          yield typeof<System.Threading.Thread>.Assembly.Location                                               // System.Threading
+          yield typeof<Microsoft.FSharp.Core.MeasureAttribute>.Assembly.Location                                // FSharp.Core
     ]
 
 
@@ -2348,6 +2356,8 @@ type TcConfigBuilder =
       mutable tryGetMetadataSnapshot : ILReaderTryGetMetadataSnapshot
 
       mutable internalTestSpanStackReferring : bool
+
+      mutable noConditionalErasure : bool
       }
 
     static member Initial =
@@ -2485,6 +2495,7 @@ type TcConfigBuilder =
           shadowCopyReferences = false
           tryGetMetadataSnapshot = (fun _ -> None)
           internalTestSpanStackReferring = false
+          noConditionalErasure = false
         }
 
     static member CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
@@ -2602,12 +2613,12 @@ type TcConfigBuilder =
     member tcConfigB.AddReferencedAssemblyByPath (m, path) = 
         if FileSystem.IsInvalidPathShim(path) then
             warning(Error(FSComp.SR.buildInvalidAssemblyName(path), m))
-        elif not (tcConfigB.referencedDLLs  |> List.exists (fun ar2 -> m=ar2.Range && path=ar2.Text)) then // NOTE: We keep same paths if range is different.
+        elif not (tcConfigB.referencedDLLs  |> List.exists (fun ar2 -> Range.equals m ar2.Range && path=ar2.Text)) then // NOTE: We keep same paths if range is different.
              let projectReference = tcConfigB.projectReferences |> List.tryPick (fun pr -> if pr.FileName = path then Some pr else None)
              tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs ++ AssemblyReference(m, path, projectReference)
              
     member tcConfigB.RemoveReferencedAssemblyByPath (m, path) =
-        tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs |> List.filter (fun ar-> ar.Range <> m || ar.Text <> path)
+        tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs |> List.filter (fun ar -> not (Range.equals ar.Range m) || ar.Text <> path)
     
     static member SplitCommandLineResourceInfo (ri:string) =
         let p = ri.IndexOf ','
@@ -2674,9 +2685,9 @@ type AssemblyResolution =
     member this.GetILAssemblyRef(ctok, reduceMemoryUsage, tryGetMetadataSnapshot) = 
       cancellable {
         match !this.ilAssemblyRef with 
-        | Some(assref) -> return assref
+        | Some(assemblyRef) -> return assemblyRef
         | None ->
-            let! assRefOpt = 
+            let! assemblyRefOpt = 
               cancellable {
                 match this.ProjectReference with 
                 | Some r ->   
@@ -2689,8 +2700,8 @@ type AssemblyResolution =
                         |  _ -> return None
                 | None -> return None
               }
-            let assRef = 
-                match assRefOpt with 
+            let assemblyRef = 
+                match assemblyRefOpt with 
                 | Some aref -> aref
                 | None -> 
                     let readerSettings : ILReaderOptions = 
@@ -2701,8 +2712,8 @@ type AssemblyResolution =
                           tryGetMetadataSnapshot = tryGetMetadataSnapshot } 
                     use reader = OpenILModuleReader this.resolvedPath readerSettings
                     mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
-            this.ilAssemblyRef := Some(assRef)
-            return assRef
+            this.ilAssemblyRef := Some(assemblyRef)
+            return assemblyRef
       }
 
 //----------------------------------------------------------------------------
@@ -2752,7 +2763,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
                 r, Some(filename)
             else   
                 // If the file doesn't exist, let reference resolution logic report the error later...
-                defaultCoreLibraryReference, if r.Range =rangeStartup then Some(filename) else None
+                defaultCoreLibraryReference, if Range.equals r.Range rangeStartup then Some(filename) else None
         match data.referencedDLLs |> List.filter (fun assemblyReference -> assemblyReference.SimpleAssemblyNameIs libraryName) with
         | [r] -> nameOfDll r
         | [] -> 
@@ -2946,6 +2957,8 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     member x.shadowCopyReferences = data.shadowCopyReferences
     member x.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot
     member x.internalTestSpanStackReferring = data.internalTestSpanStackReferring
+    member x.noConditionalErasure = data.noConditionalErasure
+
     static member Create(builder, validate) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         TcConfig(builder, validate)
@@ -3102,7 +3115,13 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
                 // file is included in the search path. This should ideally already be one of the search paths, but
                 // during some global checks it won't be.  We append to the end of the search list so that this is the last
                 // place that is checked.
-                if m <> range0 && m <> rangeStartup && m <> rangeCmdArgs && FileSystem.IsPathRootedShim m.FileName then
+                let isPoundRReference (r: range) =
+                    not (Range.equals r range0) &&
+                    not (Range.equals r rangeStartup) &&
+                    not (Range.equals r rangeCmdArgs) &&
+                    FileSystem.IsPathRootedShim r.FileName
+
+                if isPoundRReference m then
                     tcConfig.GetSearchPathsForLibraryFiles() @ [Path.GetDirectoryName(m.FileName)]
                 else    
                     tcConfig.GetSearchPathsForLibraryFiles()
@@ -3376,14 +3395,14 @@ let ComputeQualifiedNameOfFileFromUniquePath (m, p: string list) = QualifiedName
 
 let QualFileNameOfSpecs filename specs = 
     match specs with 
-    | [SynModuleOrNamespaceSig(modname, _, true, _, _, _, _, m)] -> QualFileNameOfModuleName m filename modname
-    | [SynModuleOrNamespaceSig(_, _, false, _, _, _, _, m)] -> QualFileNameOfFilename m filename
+    | [SynModuleOrNamespaceSig(modname, _, kind, _, _, _, _, m)] when kind.IsModule -> QualFileNameOfModuleName m filename modname
+    | [SynModuleOrNamespaceSig(_, _, kind, _, _, _, _, m)] when not kind.IsModule -> QualFileNameOfFilename m filename
     | _ -> QualFileNameOfFilename (mkRange filename pos0 pos0) filename
 
 let QualFileNameOfImpls filename specs = 
     match specs with 
-    | [SynModuleOrNamespace(modname, _, true, _, _, _, _, m)] -> QualFileNameOfModuleName m filename modname
-    | [SynModuleOrNamespace(_, _, false, _, _, _, _, m)] -> QualFileNameOfFilename m filename
+    | [SynModuleOrNamespace(modname, _, kind, _, _, _, _, m)] when kind.IsModule -> QualFileNameOfModuleName m filename modname
+    | [SynModuleOrNamespace(_, _, kind, _, _, _, _, m)]  when not kind.IsModule -> QualFileNameOfFilename m filename
     | _ -> QualFileNameOfFilename (mkRange filename pos0 pos0) filename
 
 let PrepandPathToQualFileName x (QualifiedNameOfFile(q)) = ComputeQualifiedNameOfFileFromUniquePath (q.idRange, pathOfLid x@[q.idText])
@@ -3412,13 +3431,14 @@ let ComputeAnonModuleName check defaultNamespace filename (m: range) =
 
 let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, filename, impl) = 
     match impl with 
-    | ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, isRec, isModule, decls, xmlDoc, attribs, access, m)) -> 
+    | ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, isRec, kind, decls, xmlDoc, attribs, access, m)) -> 
         let lid = 
             match lid with 
-            | [id] when isModule && id.idText = MangledGlobalName -> error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
+            | [id] when kind.IsModule && id.idText = MangledGlobalName ->
+                error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
             | id :: rest when id.idText = MangledGlobalName -> rest
             | _ -> lid
-        SynModuleOrNamespace(lid, isRec, isModule, decls, xmlDoc, attribs, access, m)
+        SynModuleOrNamespace(lid, isRec, kind, decls, xmlDoc, attribs, access, m)
 
     | ParsedImplFileFragment.AnonModule (defs, m)-> 
         let isLast, isExe = isLastCompiland 
@@ -3429,24 +3449,26 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, filename, impl) 
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), trimRangeToLine m))
 
         let modname = ComputeAnonModuleName (not (isNil defs)) defaultNamespace filename (trimRangeToLine m)
-        SynModuleOrNamespace(modname, false, true, defs, PreXmlDoc.Empty, [], None, m)
+        SynModuleOrNamespace(modname, false, AnonModule, defs, PreXmlDoc.Empty, [], None, m)
 
-    | ParsedImplFileFragment.NamespaceFragment (lid, a, b, c, d, e, m)-> 
-        let lid = 
+    | ParsedImplFileFragment.NamespaceFragment (lid, a, kind, c, d, e, m)-> 
+        let lid, kind = 
             match lid with 
-            | id :: rest when id.idText = MangledGlobalName -> rest
-            | _ -> lid
-        SynModuleOrNamespace(lid, a, b, c, d, e, None, m)
+            | id :: rest when id.idText = MangledGlobalName ->
+                rest, if List.isEmpty rest then GlobalNamespace else kind
+            | _ -> lid, kind
+        SynModuleOrNamespace(lid, a, kind, c, d, e, None, m)
 
 let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) = 
     match intf with 
-    | ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, isRec, isModule, decls, xmlDoc, attribs, access, m)) -> 
+    | ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, isRec, kind, decls, xmlDoc, attribs, access, m)) -> 
         let lid = 
             match lid with 
-            | [id] when isModule && id.idText = MangledGlobalName -> error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
+            | [id] when kind.IsModule && id.idText = MangledGlobalName ->
+                error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
             | id :: rest when id.idText = MangledGlobalName -> rest
             | _ -> lid
-        SynModuleOrNamespaceSig(lid, isRec, isModule, decls, xmlDoc, attribs, access, m)
+        SynModuleOrNamespaceSig(lid, isRec, NamedModule, decls, xmlDoc, attribs, access, m)
 
     | ParsedSigFileFragment.AnonModule (defs, m) -> 
         let isLast, isExe = isLastCompiland
@@ -3457,14 +3479,15 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) 
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), m))
 
         let modname = ComputeAnonModuleName (not (isNil defs)) defaultNamespace filename (trimRangeToLine m)
-        SynModuleOrNamespaceSig(modname, false, true, defs, PreXmlDoc.Empty, [], None, m)
+        SynModuleOrNamespaceSig(modname, false, AnonModule, defs, PreXmlDoc.Empty, [], None, m)
 
-    | ParsedSigFileFragment.NamespaceFragment (lid, a, b, c, d, e, m)-> 
-        let lid = 
+    | ParsedSigFileFragment.NamespaceFragment (lid, a, kind, c, d, e, m)-> 
+        let lid, kind = 
             match lid with 
-            | id :: rest when id.idText = MangledGlobalName -> rest
-            | _ -> lid
-        SynModuleOrNamespaceSig(lid, a, b, c, d, e, None, m)
+            | id :: rest when id.idText = MangledGlobalName ->
+                rest, if List.isEmpty rest then GlobalNamespace else kind
+            | _ -> lid, kind
+        SynModuleOrNamespaceSig(lid, a, kind, c, d, e, None, m)
 
 
 
@@ -3508,34 +3531,37 @@ let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSig
 
     ParsedInput.SigFile(ParsedSigFileInput(filename, qualName, scopedPragmas, hashDirectives, specs))
 
+type ModuleNamesDict = Map<string,Map<string,QualifiedNameOfFile>>
+
 /// Checks if a module name is already given and deduplicates the name if needed.
-let DeduplicateModuleName (moduleNamesDict:IDictionary<string, Set<string>>) (paths: Set<string>) path (qualifiedNameOfFile: QualifiedNameOfFile) =
-    let count = if paths.Contains path then paths.Count else paths.Count + 1
-    moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.add path paths
-    let id = qualifiedNameOfFile.Id
-    if count = 1 then qualifiedNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(), id.idRange))
+let DeduplicateModuleName (moduleNamesDict:ModuleNamesDict) fileName (qualNameOfFile: QualifiedNameOfFile) =
+    let path = Path.GetDirectoryName fileName
+    let path = if FileSystem.IsPathRootedShim path then try FileSystem.GetFullPathShim path with _ -> path else path
+    match moduleNamesDict.TryGetValue qualNameOfFile.Text with
+    | true, paths ->
+        if paths.ContainsKey path then 
+            paths.[path], moduleNamesDict
+        else
+            let count = paths.Count + 1
+            let id = qualNameOfFile.Id
+            let qualNameOfFileT = if count = 1 then qualNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(), id.idRange))
+            let moduleNamesDictT = moduleNamesDict.Add(qualNameOfFile.Text, paths.Add(path, qualNameOfFileT))
+            qualNameOfFileT, moduleNamesDictT
+    | _ ->
+        let moduleNamesDictT = moduleNamesDict.Add(qualNameOfFile.Text, Map.empty.Add(path, qualNameOfFile))
+        qualNameOfFile, moduleNamesDictT
 
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
-let DeduplicateParsedInputModuleName (moduleNamesDict:IDictionary<string, Set<string>>) input =
+let DeduplicateParsedInputModuleName (moduleNamesDict: ModuleNamesDict) input =
     match input with
-    | ParsedInput.ImplFile (ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe))) ->
-        let path = Path.GetDirectoryName fileName
-        match moduleNamesDict.TryGetValue qualifiedNameOfFile.Text with
-        | true, paths ->
-            let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
-            ParsedInput.ImplFile(ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe)))
-        | _ ->
-            moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.singleton path
-            input
-    | ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules)) ->
-        let path = Path.GetDirectoryName fileName
-        match moduleNamesDict.TryGetValue qualifiedNameOfFile.Text with
-        | true, paths ->
-            let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
-            ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules))
-        | _ ->
-            moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.singleton path
-            input
+    | ParsedInput.ImplFile (ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe))) ->
+        let qualNameOfFileT, moduleNamesDictT = DeduplicateModuleName moduleNamesDict fileName qualNameOfFile
+        let inputT = ParsedInput.ImplFile(ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualNameOfFileT, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe)))
+        inputT, moduleNamesDictT
+    | ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualNameOfFile, scopedPragmas, hashDirectives, modules)) ->
+        let qualNameOfFileT, moduleNamesDictT = DeduplicateModuleName moduleNamesDict fileName qualNameOfFile
+        let inputT = ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualNameOfFileT, scopedPragmas, hashDirectives, modules))
+        inputT, moduleNamesDictT
 
 let ParseInput (lexer, errorLogger:ErrorLogger, lexbuf:UnicodeLexing.Lexbuf, defaultNamespace, filename, isLastCompiland) = 
     // The assert below is almost ok, but it fires in two cases:
@@ -3655,10 +3681,10 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
     member tcResolutions.TryFindByOriginalReference(assemblyReference:AssemblyReference) = originalReferenceToResolution.TryFind assemblyReference.Text
 
     /// This doesn't need to be cancellable, it is only used by F# Interactive
-    member tcResolution.TryFindByExactILAssemblyRef (ctok, assref) = 
+    member tcResolution.TryFindByExactILAssemblyRef (ctok, assemblyRef) = 
         results |> List.tryFind (fun ar->
             let r = ar.GetILAssemblyRef(ctok, tcConfig.reduceMemoryUsage, tcConfig.tryGetMetadataSnapshot) |> Cancellable.runWithoutCancellation 
-            r = assref)
+            r = assemblyRef)
 
     /// This doesn't need to be cancellable, it is only used by F# Interactive
     member tcResolution.TryFindBySimpleAssemblyName (ctok, simpleAssemName) = 
@@ -4026,11 +4052,11 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         | ResolvedImportedAssembly(importedAssembly) -> ResolvedCcu(importedAssembly.FSharpViewOfMetadata)
         | UnresolvedImportedAssembly(assemblyName) -> UnresolvedCcu(assemblyName)
 
-    member tcImports.FindCcuFromAssemblyRef(ctok, m, assref:ILAssemblyRef) = 
+    member tcImports.FindCcuFromAssemblyRef(ctok, m, assemblyRef:ILAssemblyRef) = 
         CheckDisposed()
-        match tcImports.FindCcuInfo(ctok, m, assref.Name, lookupOnly=false) with
+        match tcImports.FindCcuInfo(ctok, m, assemblyRef.Name, lookupOnly=false) with
         | ResolvedImportedAssembly(importedAssembly) -> ResolvedCcu(importedAssembly.FSharpViewOfMetadata)
-        | UnresolvedImportedAssembly _ -> UnresolvedCcu(assref.QualifiedName)
+        | UnresolvedImportedAssembly _ -> UnresolvedCcu(assemblyRef.QualifiedName)
 
 
 #if !NO_EXTENSIONTYPING
@@ -4641,8 +4667,8 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         resolutions.TryFindBySimpleAssemblyName (ctok, simpleAssemName) |> Option.map (fun r -> r.resolvedPath)
 
     /// This doesn't need to be cancellable, it is only used by F# Interactive
-    member tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ctok, assref:ILAssemblyRef) :  string option = 
-        resolutions.TryFindByExactILAssemblyRef (ctok, assref)  |> Option.map (fun r -> r.resolvedPath)
+    member tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ctok, assemblyRef:ILAssemblyRef) :  string option = 
+        resolutions.TryFindByExactILAssemblyRef (ctok, assemblyRef)  |> Option.map (fun r -> r.resolvedPath)
 
     member tcImports.TryResolveAssemblyReference(ctok, assemblyReference:AssemblyReference, mode:ResolveAssemblyReferenceMode) : OperationResult<AssemblyResolution list> = 
         let tcConfig = tcConfigP.Get(ctok)
@@ -5030,7 +5056,7 @@ module private ScriptPreprocessClosure =
     open Internal.Utilities.Text.Lexing
     
     /// Represents an input to the closure finding process
-    type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: string * parseRequired: bool 
+    type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: ISourceText * parseRequired: bool 
         
     /// Represents an output of the closure finding process
     type ClosureFile = ClosureFile  of string * range * ParsedInput option * (PhasedDiagnostic * bool) list * (PhasedDiagnostic * bool) list * (string * range) list // filename, range, errors, warnings, nowarns
@@ -5045,7 +5071,7 @@ module private ScriptPreprocessClosure =
             seen.ContainsKey(check)
     
     /// Parse a script from source.
-    let ParseScriptText(filename:string, source:string, tcConfig:TcConfig, codeContext, lexResourceManager:Lexhelp.LexResourceManager, errorLogger:ErrorLogger) =    
+    let ParseScriptText(filename:string, sourceText:ISourceText, tcConfig:TcConfig, codeContext, lexResourceManager:Lexhelp.LexResourceManager, errorLogger:ErrorLogger) =    
 
         // fsc.exe -- COMPILED\!INTERACTIVE
         // fsi.exe -- !COMPILED\INTERACTIVE
@@ -5057,7 +5083,7 @@ module private ScriptPreprocessClosure =
             | CodeContext.CompilationAndEvaluation -> ["INTERACTIVE"]
             | CodeContext.Compilation -> ["COMPILED"]
             | CodeContext.Editing -> "EDITING" :: (if IsScript filename then ["INTERACTIVE"] else ["COMPILED"])
-        let lexbuf = UnicodeLexing.StringAsLexbuf source 
+        let lexbuf = UnicodeLexing.SourceTextAsLexbuf(sourceText) 
         
         let isLastCompiland = (IsScript filename), tcConfig.target.IsExe        // The root compiland is last in the list of compilands.
         ParseOneInputLexbuf (tcConfig, lexResourceManager, defines, lexbuf, filename, isLastCompiland, errorLogger) 
@@ -5094,7 +5120,7 @@ module private ScriptPreprocessClosure =
                 | None -> new  StreamReader(stream, true)
                 | Some (n: int) -> new  StreamReader(stream, Encoding.GetEncoding(n)) 
             let source = reader.ReadToEnd()
-            [ClosureSource(filename, m, source, parseRequired)]
+            [ClosureSource(filename, m, SourceText.ofString source, parseRequired)]
         with e -> 
             errorRecovery e m 
             []
@@ -5122,7 +5148,7 @@ module private ScriptPreprocessClosure =
         let tcConfig = ref tcConfig
         
         let observedSources = Observed()
-        let rec loop (ClosureSource(filename, m, source, parseRequired)) = 
+        let rec loop (ClosureSource(filename, m, sourceText, parseRequired)) = 
           [     if not (observedSources.HaveSeen(filename)) then
                     observedSources.SetSeen(filename)
                     //printfn "visiting %s" filename
@@ -5130,7 +5156,7 @@ module private ScriptPreprocessClosure =
                         let parseResult, parseDiagnostics =
                             let errorLogger = CapturingErrorLogger("FindClosureParse")                    
                             use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                            let result = ParseScriptText (filename, source, !tcConfig, codeContext, lexResourceManager, errorLogger) 
+                            let result = ParseScriptText (filename, sourceText, !tcConfig, codeContext, lexResourceManager, errorLogger) 
                             result, errorLogger.Diagnostics
 
                         match parseResult with 
@@ -5208,7 +5234,7 @@ module private ScriptPreprocessClosure =
             match GetRangeOfDiagnostic exn with
             | Some m -> 
                 // Return true if the error was *not* from a #load-ed file.
-                let isArgParameterWhileNotEditing = (codeContext <> CodeContext.Editing) && (m = range0 || m = rangeStartup || m = rangeCmdArgs)
+                let isArgParameterWhileNotEditing = (codeContext <> CodeContext.Editing) && (Range.equals m range0 || Range.equals m rangeStartup || Range.equals m rangeCmdArgs)
                 let isThisFileName = (0 = String.Compare(rootFilename, m.FileName, StringComparison.OrdinalIgnoreCase))
                 isArgParameterWhileNotEditing || isThisFileName
             | None -> true
@@ -5230,7 +5256,7 @@ module private ScriptPreprocessClosure =
         result
 
     /// Given source text, find the full load closure. Used from service.fs, when editing a script file
-    let GetFullClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage) = 
+    let GetFullClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText, codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage) = 
         // Resolve the basic references such as FSharp.Core.dll first, before processing any #I directives in the script
         //
         // This is tries to mimic the action of running the script in F# Interactive - the initial context for scripting is created
@@ -5243,7 +5269,7 @@ module private ScriptPreprocessClosure =
 
         let tcConfig = CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, filename, codeContext, useSimpleResolution, useFsiAuxLib, Some references0, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage)
 
-        let closureSources = [ClosureSource(filename, range0, source, true)]
+        let closureSources = [ClosureSource(filename, range0, sourceText, true)]
         let closureFiles, tcConfig = FindClosureFiles(closureSources, tcConfig, codeContext, lexResourceManager)
         GetLoadClosure(ctok, filename, closureFiles, tcConfig, codeContext)
         
@@ -5261,9 +5287,9 @@ type LoadClosure with
     //
     /// A temporary TcConfig is created along the way, is why this routine takes so many arguments. We want to be sure to use exactly the
     /// same arguments as the rest of the application.
-    static member ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename:string, source:string, codeContext, useSimpleResolution:bool, useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage) : LoadClosure = 
+    static member ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename:string, sourceText:ISourceText, codeContext, useSimpleResolution:bool, useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage) : LoadClosure = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        ScriptPreprocessClosure.GetFullClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage)
+        ScriptPreprocessClosure.GetFullClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText, codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage)
 
     /// Analyze a set of script files and find the closure of their references. The resulting references are then added to the given TcConfig.
     /// Used from fsi.fs and fsc.fs, for #load and command line. 
@@ -5432,9 +5458,12 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig:TcConfig, tcImports:Tc
               if Zset.contains qualNameOfFile tcState.tcsRootImpls then 
                   errorR(Error(FSComp.SR.buildImplementationAlreadyGivenDetail(qualNameOfFile.Text), m))
 
+              let conditionalDefines =
+                  if tcConfig.noConditionalErasure then None else Some (tcConfig.conditionalCompilationDefines)
+
               // Typecheck the signature file 
               let! (tcEnv, sigFileType, createsGeneratedProvidedTypes) = 
-                  TypeCheckOneSigFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcState.tcsTcSigEnv file
+                  TypeCheckOneSigFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcState.tcsTcSigEnv file
 
               let rootSigs = Zmap.add qualNameOfFile  sigFileType tcState.tcsRootSigs
 
@@ -5469,9 +5498,12 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig:TcConfig, tcImports:Tc
 
               let tcImplEnv = tcState.tcsTcImplEnv
 
+              let conditionalDefines =
+                  if tcConfig.noConditionalErasure then None else Some (tcConfig.conditionalCompilationDefines)
+
               // Typecheck the implementation file 
               let! topAttrs, implFile, _implFileHiddenType, tcEnvAtEnd, createsGeneratedProvidedTypes = 
-                  TypeCheckOneImplFile  (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcImplEnv rootSigOpt file
+                  TypeCheckOneImplFile  (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcImplEnv rootSigOpt file
 
               let hadSig = rootSigOpt.IsSome
               let implFileSigType = SigTypeOfImplFile implFile

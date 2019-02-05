@@ -31,7 +31,7 @@ module internal Project1 =
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSources = [ for (i,f) in fileNamesI -> (f, "module M" + string i) ]
     for (f,text) in fileSources do File.WriteAllText(f, text)
-    let fileSources2 = [ for (i,f) in fileSources -> f ]
+    let fileSources2 = [ for (i,f) in fileSources -> Microsoft.FSharp.Compiler.Text.SourceText.ofString f ]
 
     let fileNames = [ for (_,f) in fileNamesI -> f ]
     let args = mkProjectCommandLineArgs (dllName, fileNames)

@@ -205,7 +205,7 @@ let AdjustForScriptCompile(ctok, tcConfigB:TcConfigBuilder, commandLineSourceFil
             let closure = LoadClosure.ComputeClosureOfScriptFiles(ctok, tcConfig, [filename, rangeStartup], CodeContext.Compilation, lexResourceManager=lexResourceManager)
             // Record the references from the analysis of the script. The full resolutions are recorded as the corresponding #I paths used to resolve them
             // are local to the scripts and not added to the tcConfigB (they are added to localized clones of the tcConfigB).
-            let references = closure.References |> List.collect snd |> List.filter (fun r->r.originalReference.Range<>range0 && r.originalReference.Range<>rangeStartup)
+            let references = closure.References |> List.collect snd |> List.filter (fun r -> not (Range.equals r.originalReference.Range range0) && not (Range.equals r.originalReference.Range rangeStartup))
             references |> List.iter (fun r-> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
             closure.NoWarns |> List.collect (fun (n, ms) -> ms|>List.map(fun m->m, n)) |> List.iter (fun (x,m) -> tcConfigB.TurnWarningOff(x, m))
             closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
@@ -1773,11 +1773,9 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemor
             errorRecoveryNoRange e
             exiter.Exit 1
     
-    let inputs =
-        // Deduplicate module names
-        let moduleNamesDict = ConcurrentDictionary<string,Set<string>>()
-        inputs
-        |> List.map (fun (input,x) -> DeduplicateParsedInputModuleName moduleNamesDict input,x)
+    let inputs, _ =
+        (Map.empty, inputs)
+        ||> List.mapFold (fun state (input,x) -> let inputT, stateT = DeduplicateParsedInputModuleName state input in (inputT,x), stateT)
 
     if tcConfig.parseOnly then exiter.Exit 0 
     if not tcConfig.continueAfterParseFailure then 
@@ -2036,7 +2034,7 @@ let main4 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
 
     DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
-    let pdbfile = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
+    let pdbfile = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> FileSystem.GetFullPathShim)
 
     let normalizeAssemblyRefs (aref:ILAssemblyRef) = 
         match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, aref.Name, lookupOnly=false) with 
@@ -2110,4 +2108,5 @@ let compileOfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName
 let mainCompile (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator) = 
     //System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
     typecheckAndCompile(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator)
+
 

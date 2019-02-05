@@ -234,7 +234,7 @@ type HelpContextServiceTests() =
                 Some "N1"
             ]
         this.TestF1Keywords(keywords, file, 
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -252,7 +252,7 @@ type HelpContextServiceTests() =
                 Some "N1.T"
             ]
         this.TestF1Keywords(keywords, file, 
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``EndOfLine``() =

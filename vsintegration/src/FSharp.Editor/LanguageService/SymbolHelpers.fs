@@ -34,7 +34,7 @@ module internal SymbolHelpers =
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false)
             let settings = document.FSharpOptions
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document.FilePath, textVersionHash, sourceText.ToString(), projectOptions, settings.LanguageServicePerformance, userOpName = userOpName) 
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document.FilePath, textVersionHash, sourceText, projectOptions, settings.LanguageServicePerformance, userOpName = userOpName) 
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=userOpName)
             let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol) |> liftAsync
             return symbolUses

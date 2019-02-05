@@ -913,7 +913,7 @@ let ``Type provider project references should not throw exceptions`` () =
     //printfn "options: %A" options
     let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/Program.fs"    
     let fileSource = File.ReadAllText(fileName)
-    let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, fileSource, options) |> Async.RunSynchronously
+    let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, Microsoft.FSharp.Compiler.Text.SourceText.ofString fileSource, options) |> Async.RunSynchronously
     let fileCheckResults = 
         match fileCheckAnswer with
         | FSharpCheckFileAnswer.Succeeded(res) -> res
@@ -1010,7 +1010,7 @@ let ``Projects creating generated types should not utilize cross-project-referen
     //printfn "options: %A" options
     let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/Program.fs"    
     let fileSource = File.ReadAllText(fileName)
-    let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, fileSource, options) |> Async.RunSynchronously
+    let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, Microsoft.FSharp.Compiler.Text.SourceText.ofString fileSource, options) |> Async.RunSynchronously
     let fileCheckResults = 
         match fileCheckAnswer with
         | FSharpCheckFileAnswer.Succeeded(res) -> res

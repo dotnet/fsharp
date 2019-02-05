@@ -1,0 +1,32 @@
+<Project>
+
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Projects Include="fslex\fslex.fsproj" />
+    <Projects Include="fsyacc\fsyacc.fsproj" />
+  </ItemGroup>
+
+  <Target Name="Build">
+    <MSBuild Projects="@(Projects)" Targets="Build" Properties="Configuration=$(Configuration)" />
+  </Target>
+
+  <Target Name="Rebuild">
+    <MSBuild Projects="@(Projects)" Targets="Rebuild" Properties="Configuration=$(Configuration)" />
+  </Target>
+
+  <Target Name="Clean">
+    <MSBuild Projects="@(Projects)" Targets="Clean" Properties="Configuration=$(Configuration)" />
+  </Target>
+
+  <Target Name="Restore">
+    <MSBuild Projects="@(Projects)" Targets="Restore" Properties="Configuration=$(Configuration)" />
+  </Target>
+
+  <Target Name="Publish">
+    <MSBuild Projects="@(Projects)" Targets="Publish" Properties="Configuration=$(Configuration)" />
+  </Target>
+
+</Project>

@@ -43,6 +43,7 @@ let FilterPredictions (idText:string) (suggestionF:ErrorLogger.Suggestions) =
             name |> Seq.forall (fun c -> c <> ' ')
 
     if allSuggestions.Contains idText then [] else // some other parsing error occurred
+    let dotIdText = "." + idText
     allSuggestions
     |> Seq.choose (fun suggestion ->
         // Because beginning a name with _ is used both to indicate an unused
@@ -53,7 +54,7 @@ let FilterPredictions (idText:string) (suggestionF:ErrorLogger.Suggestions) =
         let suggestion:string = demangle suggestion
         let suggestedText = suggestion.ToUpperInvariant()
         let similarity = EditDistance.JaroWinklerDistance uppercaseText suggestedText
-        if similarity >= highConfidenceThreshold || suggestion.EndsWithOrdinal("." + idText) then
+        if similarity >= highConfidenceThreshold || suggestion.EndsWithOrdinal(dotIdText) then
             Some(similarity, suggestion)
         elif similarity < minThresholdForSuggestions && suggestedText.Length > minStringLengthForThreshold then
             None

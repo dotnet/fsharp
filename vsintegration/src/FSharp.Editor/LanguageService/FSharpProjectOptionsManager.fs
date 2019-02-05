@@ -119,9 +119,9 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
 
     let rec tryComputeOptionsByFile (document: Document) cancellationToken =
         async {
-            let! text = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! fileStamp = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-            let! scriptProjectOptions, _ = checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, text.ToString(), DateTime.Now)
+            let! scriptProjectOptions, _ = checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, sourceText.ToFSharpSourceText(), DateTime.Now)
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
                 let projectOptions =
@@ -200,7 +200,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     |> Seq.map (fun x -> "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath)
                     |> Array.ofSeq
                     |> Array.append (
-                            project.MetadataReferences.OfType<VisualStudioMetadataReference.Snapshot>()
+                            project.MetadataReferences.OfType<PortableExecutableReference>()
                             |> Seq.map (fun x -> "-r:" + x.FilePath)
                             |> Array.ofSeq
                             |> Array.append (

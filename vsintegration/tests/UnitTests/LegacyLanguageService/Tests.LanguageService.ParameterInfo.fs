@@ -253,6 +253,7 @@ type UsingMSBuild()  =
         this.VerifyHasParameterInfo(fileContent, "(*Mark*)")
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.DotNet.StaticMethod``() =
         let code = 
                                     ["#light"
@@ -329,7 +330,7 @@ type UsingMSBuild()  =
             let foo = N1.T1.M1((*Marker*)
             """
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Marker*)",[["arg1"]],
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
                   
     [<Test>]
     [<Category("TypeProvider")>]
@@ -340,7 +341,7 @@ type UsingMSBuild()  =
             let foo = N1.T1.M2((*Marker*)
             """
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Marker*)",[["arg1";"arg2"]],
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -353,7 +354,7 @@ type UsingMSBuild()  =
             let foo = N1.T1.M2((*Marker*)
             """
         this.VerifyFirstParameterInfoColonContent(fileContent,"(*Marker*)",": int",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
 
     [<Test>]
@@ -365,7 +366,7 @@ type UsingMSBuild()  =
             let foo = new N1.T1((*Marker*)
             """
         this.VerifyParameterInfoOverloadMethodIndex(fileContent,"(*Marker*)",0,[],
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
               
     [<Test>]
     [<Category("TypeProvider")>]
@@ -376,7 +377,7 @@ type UsingMSBuild()  =
             let foo = new N1.T1((*Marker*)
             """
         this.VerifyParameterInfoOverloadMethodIndex(fileContent,"(*Marker*)",1,["arg1"],
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
          
     [<Test>]
     [<Category("TypeProvider")>]
@@ -387,7 +388,7 @@ type UsingMSBuild()  =
             let foo = new N1.T1((*Marker*)
             """
         this.VerifyParameterInfoOverloadMethodIndex(fileContent,"(*Marker*)",2,["arg1";"arg2"],
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
          
     [<Test>]
     [<Category("TypeProvider")>]
@@ -398,7 +399,7 @@ type UsingMSBuild()  =
             type foo = N1.T<(*Marker*)
             """
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Marker*)",[["Param1";"ParamIgnored"]],
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
         
     [<Test>]
     [<Category("TypeProvider")>]
@@ -410,7 +411,7 @@ type UsingMSBuild()  =
             type foo = N1.T< "Hello", 2>(*Marker*)
             """
         this.VerifyNoParameterInfoAtStartOfMarker(fileContent,"(*Marker*)",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -421,26 +422,30 @@ type UsingMSBuild()  =
             type foo = N1.T<"Hello",(*Marker*)
             """
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContent,"(*Marker*)",["Param1";"ParamIgnored"],
-             [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+             [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
         
               
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.InMatchClause``() =
+        let v461 = Version(4,6,1)
         let fileContent = """
             let rec f l = 
                 match l with
                 | [] -> System.String.Format((*Mark*)
                 | x :: xs -> f xs"""
         // Note, 3 of these 8 are only available on .NET 4.6.1.  On .NET 4.5 only 5 overloads are returned.
-        this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark*)",[["format"; "arg0"];
-                                                                        ["format"; "args"];
-                                                                        ["provider"; "format"; "args"];
-                                                                        ["provider"; "format"; "arg0"];
-                                                                        ["format"; "arg0"; "arg1"];
-                                                                        ["provider"; "format"; "arg0"; "arg1"];
-                                                                        ["format"; "arg0"; "arg1"; "arg2"];
-                                                                        ["provider"; "format"; "arg0"; "arg1"; "arg2"]])
-  
+        let expected =  [["format"; "arg0"];                                  //Net4.5
+                         ["format"; "args"];                                  //Net4.5
+                         ["provider"; "format"; "args"];                      //Net4.5
+                         ["format"; "arg0"; "arg1"];                          //Net4.5
+                         ["format"; "arg0"; "arg1"; "arg2"];                  //Net4.5
+                         ["provider"; "format"; "arg0"];                      //Net4.6.1
+                         ["provider"; "format"; "arg0"; "arg1"];              //Net4.6.1
+                         ["provider"; "format"; "arg0"; "arg1"; "arg2"]]      //Net4.6.1
+
+        this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark*)", expected)
+
     (* --- Parameter Info Systematic Tests ------------------------------------------------- *)
 
     member public this.TestSystematicParameterInfo (marker, methReq, ?startOfMarker) =
@@ -599,6 +604,7 @@ type UsingMSBuild()  =
     
     // Test PI does not pop up after non-parameterized properties and after values
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Locations.EndOfFile`` () = 
         this.TestSystematicParameterInfo("System.Console.ReadLine(", [ [] ])
         
@@ -637,37 +643,47 @@ type UsingMSBuild()  =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("typeof<int>(", [])
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.MathAbs``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("Math.Abs(", sevenTimes ["value"])
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.ExchangeInt``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("Interlocked.Exchange<int>(", sevenTimes ["location1"; "value"])
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.Exchange``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("Interlocked.Exchange(", sevenTimes ["location1"; "value"])
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.ExchangeUnder``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("Interlocked.Exchange<_> (", sevenTimes ["location1"; "value"])
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.Dictionary``() =
         this.TestGenericParameterInfo("System.Collections.Generic.Dictionary<_, option<int>>(", [ []; ["capacity"]; ["comparer"]; ["capacity"; "comparer"]; ["dictionary"]; ["dictionary"; "comparer"] ])
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.List``() =
         this.TestGenericParameterInfo("new System.Collections.Generic.List< _ > ( ", [ []; ["capacity"]; ["collection"] ])
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.ListInt``() =
         this.TestGenericParameterInfo("System.Collections.Generic.List<int>(", [ []; ["capacity"]; ["collection"] ])
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.EventHandler``() =
         this.TestGenericParameterInfo("new System.EventHandler( ", [ [""] ]) // function arg doesn't have a name
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.EventHandlerEventArgs``() =
         this.TestGenericParameterInfo("System.EventHandler<EventArgs>(", [ [""] ]) // function arg doesn't have a name
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.EventHandlerEventArgsNew``() =
         this.TestGenericParameterInfo("new System.EventHandler<EventArgs> ( ", [ [""] ]) // function arg doesn't have a name
 
@@ -740,6 +756,7 @@ type UsingMSBuild()  =
         this.TestParameterInfoLocation("let a = Interlocked.Exchange($", 8)
         
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Locations.WithGenericArgs``() =
         this.TestParameterInfoLocation("Interlocked.Exchange<int>($", 0)
         
@@ -762,19 +779,21 @@ type UsingMSBuild()  =
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     //This test verifies that ParamInfo location on a provided type with namespace that exposes static parameter that takes >1 argument works normally.
     member public this.``TypeProvider.Type.ParameterInfoLocation.WithNamespace`` () =
         this.TestParameterInfoLocation("type boo = N1.T<$",11,
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
  
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     //This test verifies that ParamInfo location on a provided type without the namespace that exposes static parameter that takes >1 argument works normally.
     member public this.``TypeProvider.Type.ParameterInfoLocation.WithOutNamespace`` () =
         this.TestParameterInfoLocation("open N1 \n"+"type boo = T<$",
             expectedPos = 11,
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
  
     [<Test>]
     [<Category("TypeProvider")>]
@@ -783,7 +802,7 @@ type UsingMSBuild()  =
      //The intent here to make sure the ParamInfo is not shown when inside a string
     member public this.``TypeProvider.Type.Negative.InString`` () =
         this.TestParameterInfoNegative("type boo = \"N1.T<$\"",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -792,7 +811,7 @@ type UsingMSBuild()  =
     //The intent here to make sure the ParamInfo is not shown when inside a comment
     member public this.``TypeProvider.Type.Negative.InComment`` () =
         this.TestParameterInfoNegative("// type boo = N1.T<$",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
  
 
  // Following are tricky:
@@ -862,6 +881,7 @@ type UsingMSBuild()  =
             ("// System.Console.WriteLine($)")
   
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member this.``Regression.LocationOfParams.AfterQuicklyTyping.Bug91373``() =        
         let code = [ "let f x = x   "
                      "let f1 y = y  "
@@ -886,6 +906,7 @@ type UsingMSBuild()  =
         AssertEqual([|(2,10);(2,12);(2,13);(3,0)|], info.GetNoteworthyParamInfoLocations())
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member this.``LocationOfParams.AfterQuicklyTyping.CallConstructor``() =        
         let code = [ "type Foo() = class end" ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -1051,6 +1072,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         ()
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Regression.LocationOfParams.Bug91479``() =        
         this.TestParameterInfoLocationOfParams("""let z = fun x -> x + ^System.Int16.Parse^(^$ """, markAtEOF=true)
 
@@ -1176,6 +1198,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             ^l.Aggregate^(^$^) // was once a bug""")
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.BY_DESIGN.WayThatMismatchedParensFailOver.Case1``() =        
         // when only one 'statement' after the mismatched parens after a comma, the comma swallows it and it becomes a badly-indented
         // continuation of the expression from the previous line
@@ -1187,6 +1210,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             c.M(1,2,3,4)""", markAtEOF=true)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.BY_DESIGN.WayThatMismatchedParensFailOver.Case2``() =        
         // when multiple 'statements' after the mismatched parens after a comma, the parser sees a single argument to the method that
         // is a statement sequence, e.g. a bunch of discarded expressions.  That is, 
@@ -1220,6 +1244,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             ^System.Console.WriteLine^(^ $(42,43) ^) // oops""")
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.Tuples.Bug123219``() =
         this.TestParameterInfoLocationOfParams("""
             type Expr = | Num of int
@@ -1420,6 +1445,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 let x = 10 """)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.QueryCustomOperation.Bug222128``() =        
         this.TestParameterInfoLocationOfParams("""
             type T() =
@@ -1524,56 +1550,62 @@ We really need to rewrite some code paths here to use the real parse tree rather
     member public this.``LocationOfParams.TypeProviders.Basic``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ 42 ^>""", 
-            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.BasicNamed``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ ParamIgnored=42 ^>""", 
-            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.TypeProviders.Prefix0``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ $ """, // missing all params, just have <
             markAtEnd = true,
-            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.TypeProviders.Prefix1``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ 42 """, // missing >
             markAtEnd = true,
-            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.TypeProviders.Prefix1Named``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ ParamIgnored=42 """, // missing >
             markAtEnd = true,
-            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.TypeProviders.Prefix2``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ """, // missing last param
             markAtEnd = true,
-            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.TypeProviders.Prefix2Named1``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ ParamIgnored= """, // missing last param after name with equals
             markAtEnd = true,
-            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.TypeProviders.Prefix2Named2``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ ParamIgnored """, // missing last param after name sans equals
             markAtEnd = true,
-            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Negative1``() =       
@@ -1595,7 +1627,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     member public this.``LocationOfParams.TypeProviders.Negative4.Bug181000``() =       
             this.TestNoParameterInfo("""
                 type U = ^N1.T^<^ "foo",^ 42 ^>$  """,   // when the caret is right of the '>', we should not report any param info
-                additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+                additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.BasicWithinExpr``() =
@@ -1603,7 +1635,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 let f() =
                     let r = id( ^N1.T^<^ "fo$o",^ ParamIgnored=42 ^> )
                     r    """, 
-                additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+                additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.BasicWithinExpr.DoesNotInterfereWithOuterFunction``() =        
@@ -1611,37 +1643,37 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let f() =
                 let r = ^id^(^ N1.$T< "foo", ParamIgnored=42 > ^)
                 r    """, 
-            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Bug199744.ExcessCommasShouldNotAssertAndShouldGiveInfo.Case1``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ 42,^ ,^ ^>""", 
-            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Bug199744.ExcessCommasShouldNotAssertAndShouldGiveInfo.Case2``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ ,^ ^>""", 
-            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Bug199744.ExcessCommasShouldNotAssertAndShouldGiveInfo.Case3``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ ,^$ ^>""", 
-            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
     member public this.``LocationOfParams.TypeProviders.StaticParametersAtConstructorCallSite``() =
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             let x = new ^N1.T^<^ "fo$o",^ 42 ^>()""", 
-            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``TypeProvider.FormatOfNamesOfSystemTypes``() =
         let code = ["""type TTT = N1.T< "foo", ParamIgnored=42 > """]
-        let references = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
+        let references = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")]
         let (_, _, file) = this.CreateSingleFileProject(code, references = references)
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         MoveCursorToEndOfMarker(file,"foo")
@@ -1770,6 +1802,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string";"System.Globalization.NumberStyles"])
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Multi.DotNet.StaticMethod.WithinLambda``() =
         let fileContents = """let z = fun x -> x + System.Int16.Parse("",(*Mark*)"""
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string";"System.Globalization.NumberStyles"])
@@ -1788,6 +1821,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     (* Common functions for multi-parameterinfo tests -------------------------------------------------- *)
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Multi.DotNet.Constructor``() = 
         let fileContents = "let _ = new System.DateTime(2010,12,(*Mark*)"
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["int";"int";"int"])
@@ -1883,6 +1917,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int list"]])
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Multi.Function.WithOptionType``() = 
         let fileContents = """
             let foo( a : int option, b : string ref) = 0
@@ -1899,6 +1934,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int option";"float option"]])
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Multi.Function.WithRefType``() = 
         let fileContents = """
             let foo( a : int ref, b : string ref) = 0

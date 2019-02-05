@@ -4,7 +4,6 @@
 
   <PropertyGroup>
     <VSRootSuffix>RoslynDev</VSRootSuffix>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <DeployExtension Condition="'$(DeployExtension)' == '' and '$(CI)' != ''">false</DeployExtension>
     <DeployExtension Condition="'$(DeployExtension)' == '' and '$(CI)' == ''">true</DeployExtension>
     <VSSDKTargetPlatformRegRootSuffix>$(VSRootSuffix)</VSSDKTargetPlatformRegRootSuffix>

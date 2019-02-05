@@ -1605,7 +1605,7 @@ val decodeILAttribData:
       ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
 
 /// Generate simple references to assemblies and modules.
-val mkSimpleAssRef: string -> ILAssemblyRef
+val mkSimpleAssemblyRef: string -> ILAssemblyRef
 
 val mkSimpleModRef: string -> ILModuleRef
 

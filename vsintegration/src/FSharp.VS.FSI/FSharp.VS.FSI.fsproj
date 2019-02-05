@@ -11,7 +11,7 @@
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DefaultValueTuplePackageVersion>$(SystemValueTuplePackageVersion)</DefaultValueTuplePackageVersion>
     <OtherFlags>$(OtherFlags) --subsystemversion:6.00</OtherFlags>
-    <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
+    <UseAssetTargetFallback>true</UseAssetTargetFallback>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
 
@@ -29,7 +29,6 @@
     <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs">
       <Link>CompilerLocationUtils.fs</Link>
     </Compile>
-    <Compile Include="quickparse.fs" />
     <Compile Include="sessions.fs" />
     <Compile Include="fsiBasis.fs" />
     <Compile Include="fsiLanguageService.fs" />

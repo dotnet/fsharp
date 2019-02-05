@@ -3,6 +3,7 @@
 module internal Microsoft.FSharp.Compiler.NameResolution
 
 open Microsoft.FSharp.Compiler 
+open Microsoft.FSharp.Compiler.Text
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Infos
@@ -240,7 +241,7 @@ type TypeNameResolutionInfo =
   static member ResolveToTypeRefs : TypeNameResolutionStaticArgsInfo -> TypeNameResolutionInfo
 
 /// Represents the kind of the occurrence when reporting a name in name resolution
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; Struct>]
 type internal ItemOccurence = 
     | Binding 
     | Use 
@@ -319,7 +320,7 @@ type internal TcSymbolUses =
     member GetUsesOfSymbol : Item -> TcSymbolUseData[]
 
     /// All the uses of all items within the file
-    member AllUsesOfSymbols : TcSymbolUseData[]
+    member AllUsesOfSymbols : TcSymbolUseData[][]
 
     /// Get the locations of all the printf format specifiers in the file
     member GetFormatSpecifierLocationsAndArity : unit -> (range * int)[]
@@ -347,7 +348,7 @@ type internal OpenDeclaration =
 /// Source text and an array of line end positions, used for format string parsing
 type FormatStringCheckContext =
     { /// Source text
-      Source: string
+      SourceText: ISourceText
       /// Array of line start positions
       LineStartPositions: int[] }
 
@@ -370,7 +371,7 @@ type ITypecheckResultsSink =
     abstract NotifyOpenDeclaration : OpenDeclaration -> unit
 
     /// Get the current source
-    abstract CurrentSource : string option
+    abstract CurrentSourceText : ISourceText option
 
     /// Cached line-end normalized source text and an array of line end positions, used for format string parsing
     abstract FormatStringCheckContext : FormatStringCheckContext option
@@ -379,7 +380,7 @@ type ITypecheckResultsSink =
 type internal TcResultsSinkImpl =
 
     /// Create a TcResultsSinkImpl
-    new : tcGlobals : TcGlobals * ?source:string -> TcResultsSinkImpl
+    new : tcGlobals : TcGlobals * ?sourceText: ISourceText -> TcResultsSinkImpl
 
     /// Get all the resolutions reported to the sink
     member GetResolutions : unit -> TcResolutions

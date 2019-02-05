@@ -175,8 +175,8 @@ argTy1c.TypeDefinition.CompiledName // "Int32"
 *)
 let projectContext = checkFileResults.ProjectContext
 
-for ass in projectContext.GetReferencedAssemblies() do
-    match ass.FileName with 
+for assembly in projectContext.GetReferencedAssemblies() do
+    match assembly.FileName with 
     | None -> printfn "コンパイル時にファイルの存在しないアセンブリを参照しました"
     | Some s -> printfn "コンパイル時にアセンブリ '%s' を参照しました" s
 

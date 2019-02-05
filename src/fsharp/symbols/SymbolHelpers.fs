@@ -742,7 +742,7 @@ module internal SymbolHelpers =
               | Item.TypeVar (nm1, tp1), Item.TypeVar (nm2, tp2) -> 
                     (nm1 = nm2) && typarRefEq tp1 tp2
               | Item.ModuleOrNamespaces(modref1 :: _), Item.ModuleOrNamespaces(modref2 :: _) -> fullDisplayTextOfModRef modref1 = fullDisplayTextOfModRef modref2
-              | Item.SetterArg(id1, _), Item.SetterArg(id2, _) -> (id1.idRange, id1.idText) = (id2.idRange, id2.idText)
+              | Item.SetterArg(id1, _), Item.SetterArg(id2, _) -> Range.equals id1.idRange id2.idRange && id1.idText = id2.idText
               | Item.MethodGroup(_, meths1, _), Item.MethodGroup(_, meths2, _) -> 
                   Seq.zip meths1 meths2 |> Seq.forall (fun (minfo1, minfo2) ->
                     MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)

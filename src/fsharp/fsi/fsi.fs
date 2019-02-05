@@ -20,6 +20,7 @@ open System.Threading
 open System.Reflection
 open System.Runtime.CompilerServices
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Text
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL
@@ -1154,7 +1155,7 @@ type internal FsiDynamicCompiler
         let i = nextFragmentId()
         let prefix = mkFragmentPath i
         let prefixPath = pathOfLid prefix
-        let impl = SynModuleOrNamespace(prefix,(*isRec*)false, (* isModule: *) true,defs,PreXmlDoc.Empty,[],None,rangeStdin)
+        let impl = SynModuleOrNamespace(prefix,(*isRec*)false, NamedModule,defs,PreXmlDoc.Empty,[],None,rangeStdin)
         let input = ParsedInput.ImplFile(ParsedImplFileInput(filename,true, ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath),[],[],[impl],(true (* isLastCompiland *), false (* isExe *)) ))
         let istate,tcEnvAtEndOfLastInput,declaredImpls = ProcessInputs (ctok, errorLogger, istate, [input], showTypes, true, isInteractiveItExpr, prefix)
         let tcState = istate.tcState 
@@ -2350,7 +2351,7 @@ type internal FsiInteractionProcessor
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
-        fsiInteractiveChecker.ParseAndCheckInteraction(ctok, text)
+        fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
 
 
 //----------------------------------------------------------------------------

@@ -6,8 +6,8 @@ package name=Microsoft.FSharp.VSIX.Full.Resources
 
 folder "InstallDir:Common7\IDE\ProjectTemplates\FSharp\$(LocaleId)"
   folder "ConsoleApplication"
-    file source="$(BinariesFolder)\net40\bin\ProjectTemplates\FSharp\$(LocaleParentId)\ConsoleApplication.zip"
+    file source="$(BinariesFolder)\ConsoleProject\$(Configuration)\$(LocaleParentId)\ConsoleApplication.zip"
   folder "Library"
-    file source="$(BinariesFolder)\net40\bin\ProjectTemplates\FSharp\$(LocaleParentId)\Library.zip"
+    file source="$(BinariesFolder)\LibraryProject\$(Configuration)\$(LocaleParentId)\Library.zip"
   folder "Tutorial"
-    file source="$(BinariesFolder)\net40\bin\ProjectTemplates\FSharp\$(LocaleParentId)\Tutorial.zip"
+    file source="$(BinariesFolder)\TutorialProject\$(Configuration)\$(LocaleParentId)\Tutorial.zip"

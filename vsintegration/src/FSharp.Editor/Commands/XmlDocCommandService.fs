@@ -68,9 +68,9 @@ type internal XmlDocCommandFilter
                                 let curLineNum = wpfTextView.Caret.Position.BufferPosition.GetContainingLine().LineNumber + 1
                                 let! document = document.Value
                                 let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, CancellationToken.None)
-                                let sourceText = wpfTextView.TextBuffer.CurrentSnapshot.GetText()
+                                let! sourceText = document.GetTextAsync(CancellationToken.None)
                                 let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
-                                let xmlDocables = XmlDocParser.getXmlDocables (sourceText, Some parsedInput) 
+                                let xmlDocables = XmlDocParser.getXmlDocables (sourceText.ToFSharpSourceText(), Some parsedInput) 
                                 let xmlDocablesBelowThisLine = 
                                     // +1 because looking below current line for e.g. a 'member'
                                     xmlDocables |> List.filter (fun (XmlDocable(line,_indent,_paramNames)) -> line = curLineNum+1) 
@@ -112,9 +112,13 @@ type internal XmlDocCommandFilter
             else
                 VSConstants.E_FAIL
 
-[<Export(typeof<IWpfTextViewCreationListener>)>]
-[<ContentType(FSharpConstants.FSharpContentTypeName)>]
-[<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
+// Disabled:
+// - https://github.com/Microsoft/visualfsharp/issues/6076
+// - The feature does not work; it should probably use an exposed Roslyn API of some sort
+// - Despite not working, it is a source of UI delays
+//[<Export(typeof<IWpfTextViewCreationListener>)>]
+//[<ContentType(FSharpConstants.FSharpContentTypeName)>]
+//[<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
 type internal XmlDocCommandFilterProvider 
     [<ImportingConstructor>] 
     (checkerProvider: FSharpCheckerProvider,

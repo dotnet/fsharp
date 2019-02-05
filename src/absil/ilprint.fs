@@ -986,7 +986,7 @@ let output_publickeyinfo os = function
   | PublicKey k -> output_publickey os k
   | PublicKeyToken k -> output_publickeytoken os k
 
-let output_assref os (aref:ILAssemblyRef) =
+let output_assemblyRef os (aref:ILAssemblyRef) =
   output_string os " .assembly extern ";
   output_sqstring os aref.Name;
   if aref.Retargetable then output_string os " retargetable "; 
@@ -1056,7 +1056,7 @@ let output_module_fragment os (ilg: ILGlobals) modul =
   refs
 
 let output_module_refs os refs = 
-  List.iter (fun  x -> output_assref os x; output_string os "\n") refs.AssemblyReferences;
+  List.iter (fun  x -> output_assemblyRef os x; output_string os "\n") refs.AssemblyReferences;
   List.iter (fun x -> output_modref os x; output_string os "\n") refs.ModuleReferences
   
 let goutput_module_manifest env os modul = 

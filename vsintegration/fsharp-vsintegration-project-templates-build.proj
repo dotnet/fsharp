@@ -5,9 +5,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectFiles Include="ProjectTemplates\ConsoleProject\ConsoleProject.csproj" />
-    <ProjectFiles Include="ProjectTemplates\LibraryProject\LibraryProject.csproj" />
-    <ProjectFiles Include="ProjectTemplates\TutorialProject\TutorialProject.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)ProjectTemplates\ConsoleProject\ConsoleProject.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)ProjectTemplates\LibraryProject\LibraryProject.csproj" />
+    <ProjectFiles Include="$(MSBuildThisFileDirectory)ProjectTemplates\TutorialProject\TutorialProject.csproj" />
   </ItemGroup>
 
   <Import Project="..\src\root.traversal.targets"/>

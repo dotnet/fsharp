@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-// this was restored by packages.config in the root
-#r @"..\..\..\..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll"
+// this points to assemblies that were restored by packages.config in the root
+#load "assemblies.fsx"
 
 open System
 open System.Diagnostics

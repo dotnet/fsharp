@@ -59,12 +59,13 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
 
     static member GetDiagnostics(checker: FSharpChecker, filePath: string, sourceText: SourceText, textVersionHash: int, parsingOptions: FSharpParsingOptions, options: FSharpProjectOptions, diagnosticType: DiagnosticsType) = 
         async {
-            let! parseResults = checker.ParseFile(filePath, sourceText.ToString(), parsingOptions, userOpName=userOpName) 
+            let fsSourceText = sourceText.ToFSharpSourceText()
+            let! parseResults = checker.ParseFile(filePath, fsSourceText, parsingOptions, userOpName=userOpName) 
             let! errors = 
                 async {
                     match diagnosticType with
                     | DiagnosticsType.Semantic ->
-                        let! checkResultsAnswer = checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options, userOpName=userOpName) 
+                        let! checkResultsAnswer = checker.CheckFileInProject(parseResults, filePath, textVersionHash, fsSourceText, options, userOpName=userOpName) 
                         match checkResultsAnswer with
                         | FSharpCheckFileAnswer.Aborted -> return [||]
                         | FSharpCheckFileAnswer.Succeeded results ->
