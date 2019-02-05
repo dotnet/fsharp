@@ -15,7 +15,7 @@ proto: tools
 	$(DotNetExe) restore src/fsharp/fsc/fsc.fsproj
 	$(DotNetExe) build src/buildtools/buildtools.proj -c Proto
 	$(DotNetExe) build src/fsharp/FSharp.Build/FSharp.Build.fsproj -c Proto
-	$(DotNetExe) build src/fsharp/fsc/fsc.fsproj -c Proto
+	$(DotNetExe) build src/fsharp/fsc/fsc.fsproj -v detailed -c Proto
 
 restore:
 	$(DotNetExe) restore src/fsharp/FSharp.Core/FSharp.Core.fsproj
