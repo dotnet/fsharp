@@ -1279,6 +1279,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             namespace^ Other""")
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6196")>]
     member public this.``LocationOfParams.UnmatchedParens.Bug91609.Ok``() =        
         this.TestParameterInfoLocationOfParams("""
             let arr = Array.create 4 1
@@ -1288,6 +1289,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let rec Evaluate (env:Map<string,int>) exp = ()""")
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6196")>]
     member public this.``LocationOfParams.UnmatchedParens.Bug91609.AlsoOk``() =        
         this.TestParameterInfoLocationOfParams("""
             let arr = Array.create 4 1
@@ -1297,6 +1299,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let rec Evaluate (env:Map<string,int>) exp = ()""")
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6196")>]
     member public this.``LocationOfParams.UnmatchedParens.Bug91609.NowGood``() =        
         // This case originally failed, by Design, as there is a finite limit to how many unmatched parens we can handle before the parser gives up and fails catastrophically.
         // However now that we recover from more kinds of tokens, e.g. OBLOCKEND, we can easily go much much deeper, and so this case (and most practical cases) now succeeds.
@@ -1308,6 +1311,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let rec Evaluate (env:Map<string,int>) exp = ()""")
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6196")>]
     member public this.``LocationOfParams.UnmatchedParens.Bug150492.Case1``() =        
         this.TestParameterInfoLocationOfParams("""
             module Inner =
@@ -1318,6 +1322,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             do () """)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6196")>]
     member public this.``LocationOfParams.UnmatchedParens.Bug150492.Case2``() =        
         // like previous test, but with explicit begin-end at module
         this.TestParameterInfoLocationOfParams("""
@@ -1330,6 +1335,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             do () """)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6196")>]
     member public this.``LocationOfParams.UnmatchedParens.Bug150492.Case1.WhenExtraModule``() =        
         this.TestParameterInfoLocationOfParams("""
             module Program
@@ -1343,6 +1349,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             do () """)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6196")>]
     member public this.``LocationOfParams.UnmatchedParens.Bug150492.Case2.OkWhenExtraModule``() =        
         // like previous test, but with explicit begin-end at module
         this.TestParameterInfoLocationOfParams("""
@@ -1397,6 +1404,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                                 ($)  """)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6196")>]
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case1a``() =        
         this.TestParameterInfoLocationOfParams("""
             module Repro =
@@ -1405,6 +1413,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 let x = 10 """)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6196")>]
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case1b``() =        
         this.TestParameterInfoLocationOfParams("""
             module Repro =
@@ -1413,6 +1422,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 let x = 10 """)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6196")>]
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case1c``() =        
         this.TestParameterInfoLocationOfParams("""
             module Repro =
@@ -1429,6 +1439,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 let x = 10 """)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6196")>]
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case2b``() =        
         this.TestParameterInfoLocationOfParams("""
             module Repro =
@@ -1437,6 +1448,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 let x = 10 """)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6196")>]
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case2c``() =        
         this.TestParameterInfoLocationOfParams("""
             module Repro =
@@ -1457,6 +1469,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             ^} """)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6196")>]
     member public this.``LocationOfParams.QueryCurlies.Bug204150.Case1``() =        
         this.TestParameterInfoLocationOfParams("""
             type T() =
@@ -1468,6 +1481,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                   ^} """)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6196")>]
     member public this.``LocationOfParams.QueryCurlies.Bug204150.Case2``() =        
         this.TestParameterInfoLocationOfParams("""
             type T() =
@@ -1479,6 +1493,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                   ^} """)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6196")>]
     member public this.``LocationOfParams.QueryCurlies.Bug204150.Case3``() =        
         this.TestParameterInfoLocationOfParams("""
             type T() =
@@ -1490,6 +1505,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                   ^} """)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6196")>]
     member public this.``LocationOfParams.QueryCurlies.Bug204150.Case4``() =        
         this.TestParameterInfoLocationOfParams("""
             type T() =
