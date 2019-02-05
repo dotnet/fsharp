@@ -297,6 +297,7 @@ this file.
               References="@(ReferencePath)"
               ReferencePath="$(ReferencePath)"
               Resources="@(ActualEmbeddedResources)"
+              SimpleResolution="$(SimpleResolution)"
               SkipCompilerExecution="$(SkipCompilerExecution)"
               SourceLink="$(SourceLink)"
               Sources="@(CompileBefore);@(Compile);@(CompileAfter)"

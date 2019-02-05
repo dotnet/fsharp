@@ -47,7 +47,7 @@
     <DefineConstants>$(DefineConstants);FX_RESHAPED_GLOBALIZATION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_MSBUILD</DefineConstants>
-    <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
+    <OtherFlags Condition="'$(SimpleResolution)' == ''">$(OtherFlags) --simpleresolution</OtherFlags>
   </PropertyGroup>
 
 </Project>
