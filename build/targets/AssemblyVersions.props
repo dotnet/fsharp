@@ -31,7 +31,7 @@
     <FSProductVersion>$(FSPackageMajorVersion).0.0</FSProductVersion>
 
     <VSMajorVersion>16</VSMajorVersion>
-    <VSMinorVersion>0</VSMinorVersion>
+    <VSMinorVersion>1</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersion>$(VSMajorVersion).$(VSMinorVersion).0.0</VSAssemblyVersion>
 

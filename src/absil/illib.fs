@@ -41,6 +41,10 @@ let inline isNonNull x = not (isNull x)
 let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
 let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
+/// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
+/// We set the limit to slightly under that to allow for some 'slop'
+let LOH_SIZE_THRESHOLD_BYTES = 84_900
+
 //---------------------------------------------------------------------
 // Library: ReportTime
 //---------------------------------------------------------------------
@@ -91,7 +95,7 @@ module Order =
     let toFunction (pxOrder: IComparer<'U>) x y = pxOrder.Compare(x,y)
 
 //-------------------------------------------------------------------------
-// Library: arrays,lists,options
+// Library: arrays,lists,options,resizearrays
 //-------------------------------------------------------------------------
 
 module Array = 
@@ -431,6 +435,49 @@ module List =
     let mapiSquared f xss = xss |> List.mapi (fun i xs -> xs |> List.mapi (fun j x -> f i j x))
     let existsSquared f xss = xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
     let mapiFoldSquared f z xss =  mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i,j,x)))
+
+module ResizeArray =
+
+    /// Split a ResizeArray into an array of smaller chunks.
+    /// This requires `items/chunkSize` Array copies of length `chunkSize` if `items/chunkSize % 0 = 0`,
+    /// otherwise `items/chunkSize + 1` Array copies.
+    let chunkBySize chunkSize f (items: ResizeArray<'t>) =
+        // we could use Seq.chunkBySize here, but that would involve many enumerator.MoveNext() calls that we can sidestep with a bit of math
+        let itemCount = items.Count
+        if itemCount = 0
+        then [||]
+        else
+            let chunksCount =
+                match itemCount / chunkSize with
+                | n when itemCount % chunkSize = 0 -> n
+                | n -> n + 1 // any remainder means we need an additional chunk to store it
+
+            [| for index in 0..chunksCount-1 do
+                let startIndex = index * chunkSize
+                let takeCount = min (itemCount - startIndex) chunkSize
+
+                let holder = Array.zeroCreate takeCount
+                // we take a bounds-check hit here on each access.
+                // other alternatives here include
+                // * iterating across an IEnumerator (incurs MoveNext penalty)
+                // * doing a block copy using `List.CopyTo(index, array, index, count)` (requires more copies to do the mapping)
+                // none are significantly better.
+                for i in 0 .. takeCount - 1 do
+                    holder.[i] <- f items.[i]
+                yield holder |]
+
+    /// Split a large ResizeArray into a series of array chunks that are each under the Large Object Heap limit.
+    /// This is done to help prevent a stop-the-world collection of the single large array, instead allowing for a greater
+    /// probability of smaller collections. Stop-the-world is still possible, just less likely.
+    let mapToSmallArrayChunks f (inp: ResizeArray<'t>) =
+        let itemSizeBytes = sizeof<'t>
+        // rounding down here is good because it ensures we don't go over
+        let maxArrayItemCount = LOH_SIZE_THRESHOLD_BYTES / itemSizeBytes
+
+        /// chunk the provided input into arrays that are smaller than the LOH limit
+        /// in order to prevent long-term storage of those values
+        chunkBySize maxArrayItemCount f inp
+
 
 /// Because FSharp.Compiler.Service is a library that will target FSharp.Core 4.5.2 for the forseeable future,
 /// we need to stick these functions in this module rather than using the module functions for ValueOption

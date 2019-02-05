@@ -1,11 +1,16 @@
 <Project>
 
+  <PropertyGroup>
+    <PreReleaseSuffix Condition="'$(PreRelease)' != 'false'">-rtm-$(NuGetPackageVersionSuffix)</PreReleaseSuffix>
+    <PackageVersion>$(FSPackageVersion)$(PreReleaseSuffix)</PackageVersion>
+  </PropertyGroup>
+
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
   <Import Project="$(MSBuildThisFileDirectory)..\Directory.Nuget.targets" />
 
   <ItemGroup>
-    <ProjectReference Include="..\Fsc\Fsc.fsproj" />
-    <ProjectReference Include="..\fsi\Fsi.fsproj" />
+    <ProjectReference Include="..\fsc\fsc.fsproj" />
+    <ProjectReference Include="..\fsi\fsi.fsproj" />
     <ProjectReference Include="..\FSharp.Build\FSharp.Build.fsproj" />
     <ProjectReference Include="..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
   </ItemGroup>

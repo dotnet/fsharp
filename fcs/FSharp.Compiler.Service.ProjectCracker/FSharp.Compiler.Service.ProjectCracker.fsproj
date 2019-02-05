@@ -1,13 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
-  </PropertyGroup>
   <Import Project="..\fcs.props" />
   <Import Project="..\netfx.props" />
   <PropertyGroup>
     <TargetFrameworks>net45</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <OutputPath>..\..\$(Configuration.ToLower())\fcs</OutputPath>
   </PropertyGroup>
   <PropertyGroup>
     <Description>Legacy project file cracker for the F# compiler service.</Description>
@@ -25,8 +21,8 @@
     </Compile>
     <Compile Include="ProjectCracker.fs" />
     <Content Include="..\FSharp.Compiler.Service.ProjectCrackerTool\FSharp.Compiler.Service.ProjectCracker.targets" PackagePath="build\net45" />
-    <Content Include="..\..\release\fcs\net45\FSharp.Compiler.Service.ProjectCrackerTool.exe" PackagePath="utilities\net45" />
-    <Content Include="..\..\release\fcs\net45\FSharp.Compiler.Service.ProjectCrackerTool.exe.config" PackagePath="utilities\net45" />
+    <Content Include="$(ArtifactsBinDir)\fcs\net45\FSharp.Compiler.Service.ProjectCrackerTool.exe" PackagePath="utilities\net45" />
+    <Content Include="$(ArtifactsBinDir)\fcs\net45\FSharp.Compiler.Service.ProjectCrackerTool.exe.config" PackagePath="utilities\net45" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Runtime" />
