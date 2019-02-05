@@ -34,7 +34,7 @@ build: proto restore
 	$(DotNetExe) build -c $(Configuration) src/fsharp/FSharp.Compiler.Private/FSharp.Compiler.Private.fsproj
 	$(DotNetExe) build -c $(Configuration) src/fsharp/fsc/fsc.fsproj
 	$(DotNetExe) build -c $(Configuration) src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj
-	$(DotNetExe) build -c $(Configuration) src/fsharp/fsi/fsi.fsproj
+	$(DotNetExe) build -c $(Configuration) -v detailed src/fsharp/fsi/fsi.fsproj
 	$(DotNetExe) build -c $(Configuration) tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj
 	$(DotNetExe) build -c $(Configuration) tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj
 
