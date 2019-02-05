@@ -47,6 +47,27 @@
     <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net47'">$(MonoLibFolder)/4.7-api</FrameworkPathOverride>
     <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net471'">$(MonoLibFolder)/4.7.1-api</FrameworkPathOverride>
     <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net472'">$(MonoLibFolder)/4.7.2-api</FrameworkPathOverride>
+    <!--
+      Need Facades search directory as well for some netframework TFMs. THIS IS BAD. 
+      We have to copy/paste in search directories straight out of MSBuild: https://github.com/Microsoft/msbuild/blob/master/src/Tasks/Microsoft.Common.CurrentVersion.targets#L560-L571.
+      This is because a simple override of `$(FrameworkPathOverride);$(FrameworkPathOverride)/Facades;$(AssemblySearchPaths)` resolves before MSBuild's own logic, 
+      and so this default set of paths is never added.  This is likely because of the layering order of Directory.Build.props
+     -->
+    <AssemblySearchPaths >
+      {CandidateAssemblyFiles};
+      $(ReferencePath);
+      {HintPathFromItem};
+      {TargetFrameworkDirectory};
+      $(FrameworkPathOverride);
+      $(FrameworkPathOverride)/Facades;
+      $(AssemblyFoldersConfigFileSearchPath)
+      {Registry:$(FrameworkRegistryBase),$(TargetFrameworkVersion),$(AssemblyFoldersSuffix)$(AssemblyFoldersExConditions)};
+      {AssemblyFolders};
+      {GAC};
+      {RawFileName};
+      $(OutDir);
+      </AssemblySearchPaths>
+    <!-- <AssemblySearchPaths>$(AssemblySearchPaths);</AssemblySearchPaths> -->
   </PropertyGroup>
 
   <!-- signing -->

@@ -675,8 +675,10 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
-    <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="System.Runtime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <!-- ISymWrapper is only present on Windows, and is late-bound anyway in the compiler, so it doesn't need to be a reference on all platforms. -->
+    <Reference Include="ISymWrapper" Condition="$([MSBuild]::IsOsPlatform('Windows'))" />
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.IO" />
     <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildPackageVersion)" />
     <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildPackageVersion)" />
     <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildPackageVersion)" />
