@@ -187,6 +187,11 @@
         <target state="translated">붙여넣을 때 들여쓰기 서식 다시 지정</target>
         <note />
       </trans-unit>
+      <trans-unit id="Suggest_names_for_errors_code_fix">
+        <source>Suggest names for unresolved identifiers</source>
+        <target state="new">Suggest names for unresolved identifiers</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

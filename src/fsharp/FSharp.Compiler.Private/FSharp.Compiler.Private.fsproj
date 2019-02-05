@@ -634,6 +634,12 @@
     <Compile Include="..\service\service.fs">
       <Link>Service/service.fs</Link>
     </Compile>
+    <Compile Include="..\service\ServiceErrorResolutionHints.fsi">
+      <Link>Service/ServiceErrorResolutionHints.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceErrorResolutionHints.fs">
+      <Link>Service/ServiceErrorResolutionHints.fs</Link>
+    </Compile>
     <Compile Include="..\service\ServiceInterfaceStubGenerator.fsi">
       <Link>Service/ServiceInterfaceStubGenerator.fsi</Link>
     </Compile>
