@@ -55,7 +55,6 @@ type public Fsc () as this =
     let mutable references : ITaskItem[] = [||]
     let mutable referencePath : string = null
     let mutable resources : ITaskItem[] = [||]
-    let mutable simpleResolution:bool = false
     let mutable skipCompilerExecution : bool  = false
     let mutable sources : ITaskItem[] = [||]
     let mutable sourceLink : string = null
@@ -157,7 +156,6 @@ type public Fsc () as this =
 
         // VersionFile
         builder.AppendSwitchIfNotNull("--versionfile:", versionFile)
-        
         // References
         if references <> null then 
             for item in references do
@@ -240,9 +238,6 @@ type public Fsc () as this =
 
         builder.AppendSwitch("--nocopyfsharpcore")
 
-        // SimpleResolution
-        if simpleResolution then builder.AppendSwitch("--simpleresolution")
-        
         // OtherFlags - must be second-to-last
         builder.AppendSwitchUnquotedIfNotNull("", otherFlags)
         capturedArguments <- builder.CapturedArguments()
@@ -398,10 +393,6 @@ type public Fsc () as this =
     member fsc.Resources
         with get() = resources
         and set(a) = resources <- a
-
-    member fsc.SimpleResolution
-        with get() = simpleResolution
-        and set(p) = simpleResolution <- p
 
     member fsc.SkipCompilerExecution
         with get() = skipCompilerExecution
