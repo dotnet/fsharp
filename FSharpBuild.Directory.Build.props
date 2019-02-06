@@ -53,7 +53,7 @@
       This is because a simple override of `$(FrameworkPathOverride);$(FrameworkPathOverride)/Facades;$(AssemblySearchPaths)` resolves before MSBuild's own logic, 
       and so this default set of paths is never added.  This is likely because of the layering order of Directory.Build.props
      -->
-    <AssemblySearchPaths Condition="'$(MonoPackaging)' != 'true'">
+    <AssemblySearchPaths Condition="'$(MonoPackaging)' == 'true'">
       {CandidateAssemblyFiles};
       $(ReferencePath);
       {HintPathFromItem};
