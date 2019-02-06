@@ -40,19 +40,22 @@ let (=>) (source: string) (expectedRanges: (Range * Range) list) =
 
     let getRange (r: range) = (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn)
 
-    let tree = parseSource source
+    let ast = parseSourceCode(fileName, source)
     try
-        let actual =
-            Structure.getOutliningRanges lines tree
-            |> Seq.filter (fun sr -> sr.Range.StartLine <> sr.Range.EndLine)
-            |> Seq.map (fun sr -> getRange sr.Range, getRange sr.CollapseRange)
-            |> Seq.sort
-            |> List.ofSeq
-        let expected = List.sort expectedRanges
-        if actual <> expected then
-            failwithf "Expected %s, but was %s" (formatList expected) (formatList actual)
+        match ast with
+        | Some tree ->
+            let actual =
+                Structure.getOutliningRanges lines tree
+                |> Seq.filter (fun sr -> sr.Range.StartLine <> sr.Range.EndLine)
+                |> Seq.map (fun sr -> getRange sr.Range, getRange sr.CollapseRange)
+                |> Seq.sort
+                |> List.ofSeq
+            let expected = List.sort expectedRanges
+            if actual <> expected then
+                failwithf "Expected %s, but was %s" (formatList expected) (formatList actual)
+        | None -> failwithf "Expected there to be a parse tree for source:\n%s" source
     with _ ->
-        printfn "AST:\n%+A" tree
+        printfn "AST:\n%+A" ast
         reraise()
 
 [<Test>]

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pt-BR" original="../FSIstrings.resx">
     <body>
@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">Um problema ocorreu na inicialização do processo F# Interativo. Isto pode ter ocorrido devido a um problema conhecido com processo de fundo do console de apoio pelo aplicativos habilitados Unicode em alguns sistemas do Windows. Tente Ferramentas-&gt;Opções-&gt;F# Interativo para Visual Studio e insira '--fsi-server-no-unicode'.</target>
+        <target state="translated">Um problema ocorreu na inicialização do processo interativo #F. Isto pode ter ocorrido devido a um problema conhecido com processo de fundo do console de apoio pelo aplicativos habilitados Unicode em alguns sistemas do Windows. Tente Ferramentas-&gt;Opções-&gt;Interativo F# para Visual Studio e insira '--fsi-server-no-unicode'.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -134,7 +134,7 @@
       </trans-unit>
       <trans-unit id="fsiExceptionDuringPrettyPrinting">
         <source>\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</source>
-        <target state="translated">\n\nExceção levantadas durante a reformatação automática.\nReporte esta exceção para ela que possa ser corrigida.\nRastrear: {0}\n</target>
+        <target state="translated">\n\nExceção levantada durante a reformatação automática.\nReporte esta exceção para ela que possa ser corrigida.\nRastrear: {0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
         <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">Impede que as referências sejam bloqueadas pelo processo de F# Interativo</target>
+        <target state="translated">Impede que as referências sejam bloqueadas pelo processo de F# interativo</target>
         <note />
       </trans-unit>
     </body>

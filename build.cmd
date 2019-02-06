@@ -469,7 +469,7 @@ if /i "%TEST_NET40_FSHARP_SUITE" == "1" (
 )
 
 rem Decide if Proto need building
-if NOT EXIST "%~dp0artifacts\bin\fsc\Proto\net46\fsc.exe" (
+if NOT EXIST "%~dp0artifacts\bin\fsc\Proto\net472\fsc.exe" (
   set BUILD_PROTO=1
 )
 
@@ -688,8 +688,8 @@ set asmvercheckpath=%~dp0tests\fsharpqa\testenv\src\AssemblyVersionCheck
 
 if "%BUILD_NET40%" == "1" (
   echo #r @"%USERPROFILE%\.nuget\packages\Newtonsoft.Json\9.0.1\lib\net45\Newtonsoft.Json.dll">%asmvercheckpath%\assemblies.fsx
-  echo "%~dp0artifacts\bin\fsi\%BUILD_CONFIG%\net46\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0artifacts"
-       "%~dp0artifacts\bin\fsi\%BUILD_CONFIG%\net46\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0artifacts"
+  echo "%~dp0artifacts\bin\fsi\%BUILD_CONFIG%\net472\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0artifacts"
+       "%~dp0artifacts\bin\fsi\%BUILD_CONFIG%\net472\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0artifacts"
   if ERRORLEVEL 1 echo Error verifying assembly versions and commit hashes. && goto :failure
 )
 
@@ -778,7 +778,7 @@ if not exist "%link_exe%" (
 
 if /I not "%single_threaded%" == "true" (set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%) else set PARALLEL_ARG=-procs:0
 
-set FSCBINPATH=%~dp0artifacts\bin\fsc\%BUILD_CONFIG%\net46
+set FSCBINPATH=%~dp0artifacts\bin\fsc\%BUILD_CONFIG%\net472
 
 ECHO FSCBINPATH=%FSCBINPATH%
 ECHO link_exe=%link_exe%
@@ -788,9 +788,9 @@ REM ---------------- test-net40-fsharp  -----------------------
 set TESTLOGDIR=%~dp0artifacts\TestResults\%BUILD_CONFIG%
 if "%TEST_NET40_FSHARP_SUITE%" == "1" (
 
-    set LOGFILE=%TESTLOGDIR%\FSharp.Tests.FSharpSuite_net46.trx
-    echo "%_dotnetexe%" test "%~dp0tests\fsharp\FSharp.Tests.FSharpSuite.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
-         "%_dotnetexe%" test "%~dp0tests\fsharp\FSharp.Tests.FSharpSuite.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+    set LOGFILE=%TESTLOGDIR%\FSharp.Tests.FSharpSuite_net472.trx
+    echo "%_dotnetexe%" test "%~dp0tests\fsharp\FSharp.Tests.FSharpSuite.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0tests\fsharp\FSharp.Tests.FSharpSuite.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
 
     if errorlevel 1 (
         echo --------------------------------------------------------------
@@ -907,9 +907,9 @@ REM ---------------- net40-compilerunit  -----------------------
 
 if "%TEST_NET40_COMPILERUNIT_SUITE%" == "1" (
 
-    set LOGFILE=%TESTLOGDIR%\FSharp.Compiler.UnitTests_net46.trx
-    echo "%_dotnetexe%" test "%~dp0tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
-         "%_dotnetexe%" test "%~dp0tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+    set LOGFILE=%TESTLOGDIR%\FSharp.Compiler.UnitTests_net472.trx
+    echo "%_dotnetexe%" test "%~dp0tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
 
     if errorlevel 1 (
         echo -----------------------------------------------------------------
@@ -925,9 +925,9 @@ if "%TEST_NET40_COMPILERUNIT_SUITE%" == "1" (
         goto :failure
     )
 
-    set LOGFILE=%TESTLOGDIR%\FSharp.Build.UnitTests_net46.trx
-    echo "%_dotnetexe%" test "%~dp0tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
-         "%_dotnetexe%" test "%~dp0tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+    set LOGFILE=%TESTLOGDIR%\FSharp.Build.UnitTests_net472.trx
+    echo "%_dotnetexe%" test "%~dp0tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
 
     if errorlevel 1 (
         echo -----------------------------------------------------------------
@@ -948,9 +948,9 @@ REM ---------------- net40-coreunit  -----------------------
 
 if "%TEST_NET40_COREUNIT_SUITE%" == "1" (
 
-    set LOGFILE=%TESTLOGDIR%\FSharp.Core.UnitTests_net46.trx
-    echo "%_dotnetexe%" test "%~dp0tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
-         "%_dotnetexe%" test "%~dp0tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+    set LOGFILE=%TESTLOGDIR%\FSharp.Core.UnitTests_net472.trx
+    echo "%_dotnetexe%" test "%~dp0tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
 
     if errorlevel 1 (
         echo -----------------------------------------------------------------
@@ -1033,9 +1033,9 @@ if "%TEST_CORECLR_FSHARP_SUITE%" == "1" (
 REM ---------------- vs-ideunit  -----------------------
 
 if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
-    set LOGFILE=%TESTLOGDIR%\GetTypesVSUnitTests_net46.trx
-    echo "%_dotnetexe%" test "%~dp0vsintegration\tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
-         "%_dotnetexe%" test "%~dp0vsintegration\tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+    set LOGFILE=%TESTLOGDIR%\GetTypesVSUnitTests_net472.trx
+    echo "%_dotnetexe%" test "%~dp0vsintegration\tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0vsintegration\tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
 
     if errorlevel 1 (
         echo ---------------------------------------------------------------------------
@@ -1051,9 +1051,9 @@ if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
         goto :failure
     )
 
-    set LOGFILE=%TESTLOGDIR%\VisualFSharp.UnitTests_net46.trx
-    echo "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
-         "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+    set LOGFILE=%TESTLOGDIR%\VisualFSharp.UnitTests_net472.trx
+    echo "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
     if errorlevel 1 (
         echo ------------------------------------------------------------
         echo Error: Running tests vs-ideunit failed, see file `!LOGFILE!`
