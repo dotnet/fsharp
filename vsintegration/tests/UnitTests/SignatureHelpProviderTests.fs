@@ -66,7 +66,7 @@ System.Console.WriteLine(format="Hello, {0}",arg0="World")
              ("arg0", Some ("[7..64)", 1, 2, Some "arg0"));
              ("arg0=", Some ("[7..64)", 1, 2, Some "arg0")); 
              ("World", Some ("[7..64)", 1, 2, Some "arg0"));
-             (")", None)]);
+             (")", Some("[7..64)", 0, 2, Some "format"))]);
           ( """
 //2
 open System
@@ -127,6 +127,8 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
 //Test case 5
           ( """let _ = System.DateTime(""",
             [("let _ = System.DateTime(",  Some ("[8..24)", 0, 0, None)) ])
+          ( """let _ = System.DateTime(1L,""",
+            [("let _ = System.DateTime(1L,", Some ("[8..27)", 1, 2, None )) ])
           ]
 
     let sb = StringBuilder()
