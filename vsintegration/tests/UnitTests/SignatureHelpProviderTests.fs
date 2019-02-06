@@ -66,7 +66,7 @@ System.Console.WriteLine(format="Hello, {0}",arg0="World")
              ("arg0", Some ("[7..64)", 1, 2, Some "arg0"));
              ("arg0=", Some ("[7..64)", 1, 2, Some "arg0")); 
              ("World", Some ("[7..64)", 1, 2, Some "arg0"));
-             (")", None)]);
+             (")", Some("[7..64)", 0, 2, Some "format"))]);
           ( """
 //2
 open System
