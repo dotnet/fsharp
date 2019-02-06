@@ -3,7 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
@@ -15,11 +14,7 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor.Symbols 
 
-
 module internal SymbolHelpers =
-    open Microsoft.CodeAnalysis.CodeFixes
-    open Microsoft.CodeAnalysis.CodeActions
-
     /// Used for local code fixes in a document, e.g. to rename local parameters
     let getSymbolUsesOfSymbolAtLocationInDocument (document: Document, position: int, projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, userOpName) =
         asyncMaybe {
@@ -85,7 +80,7 @@ module internal SymbolHelpers =
                     (fun (id, _) -> id), 
                     fun (_, xs) -> xs |> Seq.map snd |> Seq.toArray)
         }
-
+ 
     type OriginalText = string
 
     // Note, this function is broken and shouldn't be used because the source text ranges to replace are applied sequentially,
@@ -120,9 +115,9 @@ module internal SymbolHelpers =
                     async {
                         let! symbolUsesByDocumentId = 
                             getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, projectInfoManager, checker, document.Project.Solution, userOpName)
-                    
-                        let mutable solution = document.Project.Solution
                         
+                        let mutable solution = document.Project.Solution
+                            
                         for KeyValue(documentId, symbolUses) in symbolUsesByDocumentId do
                             let document = document.Project.Solution.GetDocument(documentId)
                             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
@@ -136,20 +131,5 @@ module internal SymbolHelpers =
                                     solution <- solution.WithDocumentText(documentId, sourceText)
                         return solution
                     } |> RoslynHelpers.StartAsyncAsTask cancellationToken),
-               originalText
+                originalText
         }
-
-    let createTextChangeCodeFix (title: string, context: CodeFixContext, computeTextChanges: unit -> Async<TextChange[] option>) =
-        CodeAction.Create(
-            title,
-            (fun (cancellationToken: CancellationToken) ->
-                async {
-                    let! cancellationToken = Async.CancellationToken
-                    let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let! changesOpt = computeTextChanges()
-                    match changesOpt with
-                    | None -> return context.Document
-                    | Some textChanges -> return context.Document.WithText(sourceText.WithChanges(textChanges))
-                } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-            title)
-

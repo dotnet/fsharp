@@ -83,7 +83,7 @@ val GetDiagnosticNumber: PhasedDiagnostic -> int
 val SplitRelatedDiagnostics: PhasedDiagnostic -> PhasedDiagnostic * PhasedDiagnostic list
 
 /// Output an error to a buffer
-val OutputPhasedDiagnostic: StringBuilder -> PhasedDiagnostic -> flattenErrors: bool -> unit
+val OutputPhasedDiagnostic: StringBuilder -> PhasedDiagnostic -> flattenErrors: bool -> suggestNames: bool -> unit
 
 /// Output an error or warning to a buffer
 val OutputDiagnostic: implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  isError:bool -> StringBuilder -> PhasedDiagnostic -> unit
@@ -120,7 +120,7 @@ type Diagnostic =
     | Long of bool * DiagnosticDetailedInfo
 
 /// Part of LegacyHostedCompilerForTesting
-val CollectDiagnostic: implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  warning:bool * PhasedDiagnostic -> seq<Diagnostic>
+val CollectDiagnostic: implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  warning:bool * PhasedDiagnostic * suggestNames: bool -> seq<Diagnostic>
 
 //----------------------------------------------------------------------------
 // Resolve assembly references 
