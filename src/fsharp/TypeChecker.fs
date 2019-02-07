@@ -7135,24 +7135,38 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
         | _ when isArray1DTy cenv.g enumExprTy -> 
             let arrVar, arrExpr = mkCompGenLocal mEnumExpr "arr" enumExprTy
             let idxVar, idxExpr = mkCompGenLocal mPat "idx" cenv.g.int32_ty
-            let elemTy = 
-                if isArray1DTy cenv.g enumExprTy then destArrayTy cenv.g enumExprTy
-                else destSpanTy cenv.g mWholeExpr enumExprTy
+            let elemTy = destArrayTy cenv.g enumExprTy
 
             // Evaluate the array index lookup
-            let bodyExprFixup elemVar bodyExpr = 
-                if isArray1DTy cenv.g enumExprTy then
-                    mkCompGenLet mForLoopStart elemVar (mkLdelem cenv.g mForLoopStart elemTy arrExpr idxExpr) bodyExpr
-                else
-                    let elemVarAddr, _ = mkCompGenLocal mForLoopStart "addr" (mkByrefTy cenv.g elemTy)
-                    let e = mkCompGenLet mForLoopStart elemVar (mkAddrGet mForLoopStart (mkLocalValRef elemVarAddr)) bodyExpr
-                    mkCompGenLet mForLoopStart elemVarAddr (mkCall_Span_GetItem cenv.g mForLoopStart elemTy arrExpr) e
+            let bodyExprFixup elemVar bodyExpr = mkCompGenLet mForLoopStart elemVar (mkLdelem cenv.g mForLoopStart elemTy arrExpr idxExpr) bodyExpr
 
             // Evaluate the array expression once and put it in arrVar
             let overallExprFixup overallExpr = mkCompGenLet mForLoopStart arrVar enumExpr overallExpr
 
             // Ask for a loop over integers for the given range
             (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero cenv.g mForLoopStart, mkDecr cenv.g mForLoopStart (mkLdlen cenv.g mForLoopStart arrExpr)))
+
+        // optimize 'for i in span do' 
+        | _ when isSpanTy cenv.g mWholeExpr enumExprTy -> 
+            let spanVar, spanExpr = mkCompGenLocal mEnumExpr "span" enumExprTy
+            let idxVar, idxExpr = mkCompGenLocal mPat "idx" cenv.g.int32_ty
+            let elemTy = destSpanTy cenv.g mWholeExpr enumExprTy
+            let elemAddrTy = mkByrefTy cenv.g elemTy
+
+            // Evaluate the span index lookup
+            let bodyExprFixup elemVar bodyExpr = 
+                let elemAddrVar, _ = mkCompGenLocal mForLoopStart "addr" elemAddrTy
+                let e = mkCompGenLet mForLoopStart elemVar (mkAddrGet mForLoopStart (mkLocalValRef elemAddrVar)) bodyExpr
+                mkCompGenLet mForLoopStart elemAddrVar (mkCall_Span_GetItem cenv.g mForLoopStart elemTy spanExpr idxExpr) e
+
+            // Evaluate the span expression once and put it in spanVar
+            let overallExprFixup overallExpr = mkCompGenLet mForLoopStart spanVar enumExpr overallExpr
+
+            let lengthExpr = mkCall_Span_Length cenv.g mForLoopStart elemTy spanExpr
+    
+            // Ask for a loop over integers for the given range
+            (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero cenv.g mForLoopStart, mkDecr cenv.g mForLoopStart lengthExpr))
+
         | _ -> 
 
             let enumerableVar, enumerableExprInVar = mkCompGenLocal mEnumExpr "inputSequence" enumExprTy

@@ -6597,6 +6597,9 @@ let mspec_String_Concat_Array (g: TcGlobals) =
 let mspec_Span_GetItem (g: TcGlobals) =
     mkILNonGenericInstanceMethSpecInTy (g.span_ilty, "GetItem", [ g.ilg.typ_Int32 ], ILType.Byref(g.span_ilty.TypeSpec.GenericArgs.Head))
 
+let mspec_Span_Length (g: TcGlobals) =
+    mkILNonGenericInstanceMethSpecInTy (g.span_ilty, "get_Length", [], g.ilg.typ_Int32)
+
 let fspec_Missing_Value (g: TcGlobals) = IL.mkILFieldSpecInTy(g.iltyp_Missing, "Value", g.iltyp_Missing)
 
 let mkInitializeArrayMethSpec (g: TcGlobals) = 
@@ -6905,9 +6908,17 @@ let mkStaticCall_String_Concat_Array g m arg =
     let mspec = mspec_String_Concat_Array g
     Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [], [], [g.string_ty]), [], [arg], m)
 
-let mkCall_Span_GetItem g m ty arg =
+let mkCall_Span_GetItem g m ty receiver arg =
     let mspec = mspec_Span_GetItem g
-    Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [ty], [], [mkByrefTy g ty]), [], [arg], m)
+    let wrap, addrOfReceiver, _, _ = mkExprAddrOfExpr g true false Mutates.NeverMutates receiver None m
+    Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [ty], [], [mkByrefTy g ty]), [], [addrOfReceiver; arg], m)
+    |> wrap
+
+let mkCall_Span_Length g m ty receiver =
+    let mspec = mspec_Span_Length g
+    let wrap, addrOfReceiver, _, _ = mkExprAddrOfExpr g true false Mutates.NeverMutates receiver None m
+    Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [ty], [], [g.int32_ty]), [], [addrOfReceiver], m)
+    |> wrap
 
 // Quotations can't contain any IL.
 // As a result, we aim to get rid of all IL generation in the typechecker and pattern match
