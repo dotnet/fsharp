@@ -49,8 +49,7 @@
       "certificate": "NuGet",
       "strongName": null,
       "values": [
-        "artifacts\\*.nupkg",
-        "artifacts\\*\\*.nupkg"
+        "packages\\*\\*.nupkg"
       ]
     }
   ],
