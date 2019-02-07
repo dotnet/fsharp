@@ -1965,6 +1965,8 @@ val mkStaticCall_String_Concat4 : TcGlobals -> range -> Expr -> Expr -> Expr -> 
 
 val mkStaticCall_String_Concat_Array : TcGlobals -> range -> Expr -> Expr
 
+val mkCall_Span_GetItem : TcGlobals -> range -> TType -> Expr -> Expr
+
 //-------------------------------------------------------------------------
 // operations primarily associated with the optimization to fix
 // up loops to generate .NET code that does not include array bound checks

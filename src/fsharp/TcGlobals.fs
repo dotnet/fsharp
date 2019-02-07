@@ -170,6 +170,8 @@ let tname_DebuggableAttribute = "System.Diagnostics.DebuggableAttribute"
 let tname_AsyncCallback = "System.AsyncCallback"
 [<Literal>]
 let tname_IAsyncResult = "System.IAsyncResult"
+[<Literal>]
+let tname_Span = "System.Span`1"
 
 //-------------------------------------------------------------------------
 // Table of all these "globals"
@@ -729,6 +731,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_check_this_info            = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "CheckThis"                            , None                 , None                          , [vara],      ([[varaTy]], varaTy))
   let v_quote_to_linq_lambda_info  = makeIntrinsicValRef(fslib_MFLinqRuntimeHelpersQuotationConverter_nleref,  "QuotationToLambdaExpression"          , None                 , None                          , [vara],      ([[mkQuotedExprTy varaTy]], mkLinqExpressionTy varaTy))
     
+  let v_span_ilty =
+    mkILValueTy (findSysILTypeRef tname_Span) [ mkILTyvarTy 0us ]
+
   let tref_DebuggableAttribute = findSysILTypeRef tname_DebuggableAttribute
   let tref_CompilerGeneratedAttribute  = findSysILTypeRef tname_CompilerGeneratedAttribute
 
@@ -1437,6 +1442,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member __.cons_ucref = v_cons_ucref
   member __.nil_ucref = v_nil_ucref
+
+  member __.span_ilty = v_span_ilty
     
     // A list of types that are explicitly suppressed from the F# intellisense 
     // Note that the suppression checks for the precise name of the type

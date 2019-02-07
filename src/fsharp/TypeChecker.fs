@@ -7138,14 +7138,15 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
             let elemTy = 
                 if isArray1DTy cenv.g enumExprTy then destArrayTy cenv.g enumExprTy
                 else destSpanTy cenv.g mWholeExpr enumExprTy
-            
+
             // Evaluate the array index lookup
             let bodyExprFixup elemVar bodyExpr = 
-                let e = mkCompGenLet mForLoopStart elemVar (mkLdelem cenv.g mForLoopStart elemTy arrExpr idxExpr) bodyExpr
                 if isArray1DTy cenv.g enumExprTy then
-                    e
+                    mkCompGenLet mForLoopStart elemVar (mkLdelem cenv.g mForLoopStart elemTy arrExpr idxExpr) bodyExpr
                 else
-                    mkCompGenLet mForLoopStart elemVar e (mkAddrGet mForLoopStart (mkLocalValRef elemVar))
+                    let elemVarAddr, _ = mkCompGenLocal mForLoopStart "addr" (mkByrefTy cenv.g elemTy)
+                    let e = mkCompGenLet mForLoopStart elemVar (mkAddrGet mForLoopStart (mkLocalValRef elemVarAddr)) bodyExpr
+                    mkCompGenLet mForLoopStart elemVarAddr (mkCall_Span_GetItem cenv.g mForLoopStart elemTy arrExpr) e
 
             // Evaluate the array expression once and put it in arrVar
             let overallExprFixup overallExpr = mkCompGenLet mForLoopStart arrVar enumExpr overallExpr

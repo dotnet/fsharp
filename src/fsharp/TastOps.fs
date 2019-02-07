@@ -6594,6 +6594,9 @@ let mspec_String_Concat4 (g: TcGlobals) =
 let mspec_String_Concat_Array (g: TcGlobals) = 
     mkILNonGenericStaticMethSpecInTy (g.ilg.typ_String, "Concat", [ mkILArr1DTy g.ilg.typ_String ], g.ilg.typ_String)
 
+let mspec_Span_GetItem (g: TcGlobals) =
+    mkILNonGenericInstanceMethSpecInTy (g.span_ilty, "GetItem", [ g.ilg.typ_Int32 ], ILType.Byref(g.span_ilty.TypeSpec.GenericArgs.Head))
+
 let fspec_Missing_Value (g: TcGlobals) = IL.mkILFieldSpecInTy(g.iltyp_Missing, "Value", g.iltyp_Missing)
 
 let mkInitializeArrayMethSpec (g: TcGlobals) = 
@@ -6901,6 +6904,10 @@ let mkStaticCall_String_Concat4 g m arg1 arg2 arg3 arg4 =
 let mkStaticCall_String_Concat_Array g m arg =
     let mspec = mspec_String_Concat_Array g
     Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [], [], [g.string_ty]), [], [arg], m)
+
+let mkCall_Span_GetItem g m ty arg =
+    let mspec = mspec_Span_GetItem g
+    Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [ty], [], [mkByrefTy g ty]), [], [arg], m)
 
 // Quotations can't contain any IL.
 // As a result, we aim to get rid of all IL generation in the typechecker and pattern match
