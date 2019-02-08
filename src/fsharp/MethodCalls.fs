@@ -317,7 +317,7 @@ type CalledMeth<'T>
                 let returnedObjTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else methodRetTy
                 unassignedNamedItems |> List.splitChoose (fun (CallerNamedArg(id, e) as arg) -> 
                     let nm = id.idText
-                    let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (Some(nm), ad, AllowMultiIntfInstantiations.Yes) IgnoreOverrides id.idRange returnedObjTy
+                    let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides id.idRange returnedObjTy
                     let pinfos = pinfos |> ExcludeHiddenOfPropInfos g infoReader.amap m 
                     match pinfos with 
                     | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer -> 
@@ -327,7 +327,7 @@ type CalledMeth<'T>
                     | _ ->
                         let epinfos = 
                             match nameEnv with  
-                            | Some(ne) ->  ExtensionPropInfosOfTypeInScope infoReader ne (Some(nm), ad) m returnedObjTy
+                            | Some ne -> ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader ne (Some nm) ad m returnedObjTy
                             | _ -> []
                         match epinfos with 
                         | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer -> 
@@ -337,8 +337,8 @@ type CalledMeth<'T>
                                          | _ -> freshenMethInfo m pminfo
 
                             let pminst = match tyargsOpt with
-                                          | Some(TType.TType_app(_, types)) -> types
-                                          | _ -> pminst
+                                         | Some(TType.TType_app(_, types)) -> types
+                                         | _ -> pminst
                             Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(pinfo, pminfo, pminst), e))
                         |  _ ->    
                             match infoReader.GetILFieldInfosOfType(Some(nm), ad, m, returnedObjTy) with
