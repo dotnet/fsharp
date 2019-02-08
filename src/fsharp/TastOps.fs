@@ -6594,8 +6594,8 @@ let mspec_String_Concat4 (g: TcGlobals) =
 let mspec_String_Concat_Array (g: TcGlobals) = 
     mkILNonGenericStaticMethSpecInTy (g.ilg.typ_String, "Concat", [ mkILArr1DTy g.ilg.typ_String ], g.ilg.typ_String)
 
-let mspec_Span_GetItem (g: TcGlobals) =
-    mkILNonGenericInstanceMethSpecInTy (g.span_ilty, "GetItem", [ g.ilg.typ_Int32 ], ILType.Byref(g.span_ilty.TypeSpec.GenericArgs.Head))
+let mspec_Span_Item (g: TcGlobals) =
+    mkILNonGenericInstanceMethSpecInTy (g.span_ilty, "get_Item", [ g.ilg.typ_Int32 ], ILType.Byref(g.span_ilty.TypeSpec.GenericArgs.Head))
 
 let mspec_Span_Length (g: TcGlobals) =
     mkILNonGenericInstanceMethSpecInTy (g.span_ilty, "get_Length", [], g.ilg.typ_Int32)
@@ -6908,16 +6908,16 @@ let mkStaticCall_String_Concat_Array g m arg =
     let mspec = mspec_String_Concat_Array g
     Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [], [], [g.string_ty]), [], [arg], m)
 
-let mkCall_Span_GetItem g m ty receiver arg =
-    let mspec = mspec_Span_GetItem g
+let mkCall_Span_Item g m ty receiver arg =
+    let mspec = mspec_Span_Item g
     let wrap, addrOfReceiver, _, _ = mkExprAddrOfExpr g true false Mutates.NeverMutates receiver None m
-    Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [ty], [], [mkByrefTy g ty]), [], [addrOfReceiver; arg], m)
+    Expr.Op(TOp.ILCall(false, false, true, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [ty], [], [mkByrefTy g ty]), [], [addrOfReceiver; arg], m)
     |> wrap
 
 let mkCall_Span_Length g m ty receiver =
     let mspec = mspec_Span_Length g
     let wrap, addrOfReceiver, _, _ = mkExprAddrOfExpr g true false Mutates.NeverMutates receiver None m
-    Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [ty], [], [g.int32_ty]), [], [addrOfReceiver], m)
+    Expr.Op(TOp.ILCall(false, false, true, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [ty], [], [g.int32_ty]), [], [addrOfReceiver], m)
     |> wrap
 
 // Quotations can't contain any IL.

@@ -7157,7 +7157,7 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
             let bodyExprFixup elemVar bodyExpr = 
                 let elemAddrVar, _ = mkCompGenLocal mForLoopStart "addr" elemAddrTy
                 let e = mkCompGenLet mForLoopStart elemVar (mkAddrGet mForLoopStart (mkLocalValRef elemAddrVar)) bodyExpr
-                mkCompGenLet mForLoopStart elemAddrVar (mkCall_Span_GetItem cenv.g mForLoopStart elemTy spanExpr idxExpr) e
+                mkCompGenLet mForLoopStart elemAddrVar (mkCall_Span_Item cenv.g mForLoopStart elemTy spanExpr idxExpr) e
 
             // Evaluate the span expression once and put it in spanVar
             let overallExprFixup overallExpr = mkCompGenLet mForLoopStart spanVar enumExpr overallExpr

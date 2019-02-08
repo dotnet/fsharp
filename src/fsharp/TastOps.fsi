@@ -1965,7 +1965,7 @@ val mkStaticCall_String_Concat4 : TcGlobals -> range -> Expr -> Expr -> Expr -> 
 
 val mkStaticCall_String_Concat_Array : TcGlobals -> range -> Expr -> Expr
 
-val mkCall_Span_GetItem : TcGlobals -> range -> TType -> receiver: Expr -> arg: Expr -> Expr
+val mkCall_Span_Item : TcGlobals -> range -> TType -> receiver: Expr -> arg: Expr -> Expr
 
 val mkCall_Span_Length : TcGlobals -> range -> TType -> receiver: Expr -> Expr
 
