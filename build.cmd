@@ -285,6 +285,7 @@ if /i "%ARG%" == "ci_part3" (
     set BUILD_NET40=1
     set TEST_CORECLR_FSHARP_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=1
+    set TEST_END_2_END=1
     set CI=1
 )
 
