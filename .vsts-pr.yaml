@@ -4,12 +4,15 @@ jobs:
     vmImage: ubuntu-16.04
   timeoutInMinutes: 90
   strategy:
-    maxParallel: 2
+    maxParallel: 3
     matrix:
+      # we should be able to build the compiler for .net framework on *nix
+      mono:
+        _command: dotnet
+        _args: build -c release -f net46 src/fsharp/fsc/fsc.fsproj
       dotnet_sdk:
         _command: make
         _args: Configuration=release
-      # disabled until it can be properly fixed
       release_fcs:
         _command: ./fcs/build.sh
         _args: Build
@@ -19,6 +22,33 @@ jobs:
     inputs:
       PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults'
       ArtifactName: 'Linux $(_command) $(_args)'
+      publishLocation: Container
+    continueOnError: true
+    condition: failed()
+
+- job: MacOS
+  pool:
+    vmImage: macOS-10.13
+  timeoutInMinutes: 90
+  strategy:
+    maxParallel: 3
+    matrix:
+      # we should be able to build the compiler for .net framework on *nix
+      mono:
+        _command: dotnet
+        _args: build -c release -f net46 src/fsharp/fsc/fsc.fsproj
+      dotnet_sdk:
+        _command: make
+        _args: Configuration=release
+      release_fcs:
+        _command: ./fcs/build.sh
+        _args: Build
+  steps:
+  - script: $(_command) $(_args)
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults'
+      ArtifactName: 'MacOS $(_command) $(_args)'
       publishLocation: Container
     continueOnError: true
     condition: failed()
