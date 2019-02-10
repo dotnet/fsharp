@@ -6,10 +6,6 @@ jobs:
   strategy:
     maxParallel: 3
     matrix:
-      # we should be able to build the compiler for .net framework on *nix
-      mono:
-        _command: dotnet
-        _args: build -c release -f net46 src/fsharp/fsc/fsc.fsproj
       dotnet_sdk:
         _command: make
         _args: Configuration=release
@@ -33,10 +29,6 @@ jobs:
   strategy:
     maxParallel: 3
     matrix:
-      # we should be able to build the compiler for .net framework on *nix
-      mono:
-        _command: dotnet
-        _args: build -c release -f net46 src/fsharp/fsc/fsc.fsproj
       dotnet_sdk:
         _command: make
         _args: Configuration=release
