@@ -30,6 +30,7 @@
     "Microsoft.Build.Framework.dll",
     "Microsoft.Build.Tasks.Core.dll",
     "Microsoft.Build.Utilities.Core.dll",
+    "System.IO.Compression.dll",
     "System.Collections.Immutable.dll",
     "System.Reflection.Metadata.dll",
     "System.ValueTuple.dll"

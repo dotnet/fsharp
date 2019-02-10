@@ -62,6 +62,7 @@
     "Microsoft.Build.Utilities.Core.dll",
     "Newtonsoft.Json.dll",
     "System.Collections.Immutable.dll",
+    "System.IO.Compression.dll",
     "System.Reflection.Metadata.dll",
     "System.ValueTuple.4.4.0.nupkg",
     "System.ValueTuple.dll"
