@@ -17,7 +17,9 @@ module ILChecker =
 
     let private (++) a b = Path.Combine(a,b)
 
-    let private getfullpath workDir (path: string) =
+    let packagesDir = Environment.GetEnvironmentVariable("USERPROFILE") ++ ".nuget" ++ "packages"
+
+    let private getfullpath workDir path =
         let rooted =
             if Path.IsPathRooted(path) then path
             else Path.Combine(workDir, path)
@@ -37,17 +39,7 @@ module ILChecker =
         p.WaitForExit()
         p.StandardError.ReadToEnd(), p.ExitCode
 
-    /// Compile the source and check to see if the expected IL exists.
-    /// The first line of each expected IL string is found first.
-    let check source expectedIL =
-        let packagesDir = 
-            // On Unix the user profile directory is in the variable HOME
-            // On windows it's called USERPROFILE
-            let userProfile =
-                let profile = Environment.GetEnvironmentVariable("USERPROFILE")
-                if not (String.IsNullOrEmpty(profile)) then profile
-                else Environment.GetEnvironmentVariable("HOME")
-            userProfile ++ ".nuget" ++ "packages"
+    let private checkAux extraDlls source expectedIL =
         let Is64BitOperatingSystem = sizeof<nativeint> = 8
         let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
         let ildasmExe = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
@@ -65,7 +57,8 @@ module ILChecker =
 
             File.WriteAllText(tmpFs, source)
 
-            let errors, exitCode = checker.Compile([| "fsc.exe"; "--optimize+"; "-o"; tmpDll; "-a"; tmpFs |]) |> Async.RunSynchronously
+            let extraPackages = extraDlls |> Array.ofList |> Array.map (fun package -> "-r:" + package)
+            let errors, exitCode = checker.Compile(Array.append [| "fsc.exe"; "--optimize+"; "-o"; tmpDll; "-a"; tmpFs; |] extraPackages) |> Async.RunSynchronously
             let errors =
                 String.concat "\n" (errors |> Array.map (fun x -> x.Message))
 
@@ -106,6 +99,9 @@ module ILChecker =
                             errorMsgOpt <- Some(msg + "\n\n\n==ACTUAL==\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
                 )
 
+                if expectedIL.Length = 0 then
+                    errorMsgOpt <- Some ("No Expected IL")
+
                 match errorMsgOpt with
                 | Some(msg) -> errorMsgOpt <- Some(msg + "\n\n\n==ENTIRE ACTUAL==\n" + textNoComments)
                 | _ -> ()
@@ -121,4 +117,18 @@ module ILChecker =
             | Some(errorMsg) -> 
                 Assert.Fail(errorMsg)
             | _ -> ()
+
+    let getPackageDlls name version framework dllNames =
+        dllNames
+        |> List.map (fun dllName ->
+            requireFile (packagesDir ++ name ++ version ++ "lib" ++ framework ++ dllName)
+        )
             
+    /// Compile the source and check to see if the expected IL exists.
+    /// The first line of each expected IL string is found first.
+    let check source expectedIL =
+        checkAux [] source expectedIL
+
+    let checkWithDlls extraDlls source expectedIL =
+        checkAux extraDlls source expectedIL
+

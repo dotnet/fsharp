@@ -21,6 +21,7 @@
     <Compile Include="ILHelpers.fs" />
     <Compile Include="Language\AnonRecords.fs" />
     <Compile Include="Language\StringConcat.fs" />
+    <Compile Include="Language\SpanOptimizationTests.fs" />
     <Compile Include="SourceTextTests.fs" />
   </ItemGroup>
 
