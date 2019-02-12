@@ -3032,17 +3032,42 @@ let isSpanLikeTy g m ty =
 let isSpanTyconRef (g: TcGlobals) m (tcref: TyconRef) =
     if isByrefLikeTyconRef g m tcref then
         match tcref.ILTyconInfo with
-        | TILObjectReprData(_, _, ilTypeDef) -> ilTypeDef.Name = "System.Span`1"
+        | TILObjectReprData(_, _, ilTypeDef) -> ilTypeDef.Name = tname_Span
     else
         false
     
 let isSpanTy g m ty =
     ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isSpanTyconRef g m tcref | _ -> false)
 
-let destSpanTy (g:TcGlobals) m ty =
+let tryDestSpanTy (g:TcGlobals) m ty =
     match tryAppTy g ty with
-    | ValueSome(tcref, [ty]) when isSpanTyconRef g m tcref -> ty
+    | ValueSome(tcref, [ty]) when isSpanTyconRef g m tcref -> ValueSome(ty)
+    | _ -> ValueNone
+
+let destSpanTy g m ty =
+    match tryDestSpanTy g m ty with
+    | ValueSome(ty) -> ty
     | _ -> failwith "destSpanTy"
+
+let isReadOnlySpanTyconRef (g: TcGlobals) m (tcref: TyconRef) =
+    if isByrefLikeTyconRef g m tcref then
+        match tcref.ILTyconInfo with
+        | TILObjectReprData(_, _, ilTypeDef) -> ilTypeDef.Name = tname_ReadOnlySpan
+    else
+        false
+
+let isReadOnlySpanTy g m ty =
+    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isReadOnlySpanTyconRef g m tcref | _ -> false)
+
+let tryDestReadOnlySpanTy (g:TcGlobals) m ty =
+    match tryAppTy g ty with
+    | ValueSome(tcref, [ty]) when isReadOnlySpanTyconRef g m tcref -> ValueSome(ty)
+    | _ -> ValueNone
+
+let destReadOnlySpanTy g m ty =
+    match tryDestReadOnlySpanTy g m ty with
+    | ValueSome(ty) -> ty
+    | _ -> failwith "destReadOnlySpanTy"
 
 //-------------------------------------------------------------------------
 // List and reference types...
@@ -6600,6 +6625,12 @@ let mspec_Span_Item (g: TcGlobals) =
 let mspec_Span_Length (g: TcGlobals) =
     mkILNonGenericInstanceMethSpecInTy (g.span_ilty, "get_Length", [], g.ilg.typ_Int32)
 
+let mspec_ReadOnlySpan_Item (g: TcGlobals) =
+    mkILNonGenericInstanceMethSpecInTy (g.read_only_span_ilty, "get_Item", [ g.ilg.typ_Int32 ], g.span_ilty.TypeSpec.GenericArgs.Head)
+
+let mspec_ReadOnlySpan_Length (g: TcGlobals) =
+    mkILNonGenericInstanceMethSpecInTy (g.read_only_span_ilty, "get_Length", [], g.ilg.typ_Int32)
+
 let fspec_Missing_Value (g: TcGlobals) = IL.mkILFieldSpecInTy(g.iltyp_Missing, "Value", g.iltyp_Missing)
 
 let mkInitializeArrayMethSpec (g: TcGlobals) = 
@@ -6916,6 +6947,18 @@ let mkCall_Span_Item g m ty receiver arg =
 
 let mkCall_Span_Length g m ty receiver =
     let mspec = mspec_Span_Length g
+    let wrap, addrOfReceiver, _, _ = mkExprAddrOfExpr g true false Mutates.NeverMutates receiver None m
+    Expr.Op(TOp.ILCall(false, false, true, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [ty], [], [g.int32_ty]), [], [addrOfReceiver], m)
+    |> wrap
+
+let mkCall_ReadOnlySpan_Item g m ty receiver arg =
+    let mspec = mspec_ReadOnlySpan_Item g
+    let wrap, addrOfReceiver, _, _ = mkExprAddrOfExpr g true false Mutates.NeverMutates receiver None m
+    Expr.Op(TOp.ILCall(false, false, true, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [ty], [], [ty]), [], [addrOfReceiver; arg], m)
+    |> wrap
+
+let mkCall_ReadOnlySpan_Length g m ty receiver =
+    let mspec = mspec_ReadOnlySpan_Length g
     let wrap, addrOfReceiver, _, _ = mkExprAddrOfExpr g true false Mutates.NeverMutates receiver None m
     Expr.Op(TOp.ILCall(false, false, true, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [ty], [], [g.int32_ty]), [], [addrOfReceiver], m)
     |> wrap

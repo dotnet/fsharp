@@ -1969,6 +1969,10 @@ val mkCall_Span_Item : TcGlobals -> range -> TType -> receiver: Expr -> arg: Exp
 
 val mkCall_Span_Length : TcGlobals -> range -> TType -> receiver: Expr -> Expr
 
+val mkCall_ReadOnlySpan_Item : TcGlobals -> range -> TType -> receiver: Expr -> arg: Expr -> Expr
+
+val mkCall_ReadOnlySpan_Length : TcGlobals -> range -> TType -> receiver: Expr -> Expr
+
 //-------------------------------------------------------------------------
 // operations primarily associated with the optimization to fix
 // up loops to generate .NET code that does not include array bound checks
@@ -2084,7 +2088,15 @@ val isSpanLikeTy : TcGlobals -> range -> TType -> bool
 
 val isSpanTy : TcGlobals -> range -> TType -> bool
 
+val tryDestSpanTy : TcGlobals -> range -> TType -> TType voption
+
 val destSpanTy : TcGlobals -> range -> TType -> TType
+
+val isReadOnlySpanTy : TcGlobals -> range -> TType -> bool
+
+val tryDestReadOnlySpanTy : TcGlobals -> range -> TType -> TType voption
+
+val destReadOnlySpanTy : TcGlobals -> range -> TType -> TType
 
 //-------------------------------------------------------------------------
 // Tuple constructors/destructors

@@ -172,6 +172,8 @@ let tname_AsyncCallback = "System.AsyncCallback"
 let tname_IAsyncResult = "System.IAsyncResult"
 [<Literal>]
 let tname_Span = "System.Span`1"
+[<Literal>]
+let tname_ReadOnlySpan = "System.ReadOnlySpan`1"
 
 //-------------------------------------------------------------------------
 // Table of all these "globals"
@@ -733,6 +735,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
     
   let v_span_ilty =
     mkILValueTy (findSysILTypeRef tname_Span) [ mkILTyvarTy 0us ]
+
+  let v_read_only_span_ilty =
+    mkILValueTy (findSysILTypeRef tname_ReadOnlySpan) [ mkILTyvarTy 0us ]
 
   let tref_DebuggableAttribute = findSysILTypeRef tname_DebuggableAttribute
   let tref_CompilerGeneratedAttribute  = findSysILTypeRef tname_CompilerGeneratedAttribute
@@ -1444,6 +1449,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.nil_ucref = v_nil_ucref
 
   member __.span_ilty = v_span_ilty
+  member __.read_only_span_ilty = v_read_only_span_ilty
     
     // A list of types that are explicitly suppressed from the F# intellisense 
     // Note that the suppression checks for the precise name of the type
