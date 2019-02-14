@@ -39,6 +39,13 @@ module ILChecker =
         p.WaitForExit()
         p.StandardError.ReadToEnd(), p.ExitCode
 
+    /// Filters i.e ['The system type \'System.ReadOnlySpan`1\' was required but no referenced system DLL contained this type']
+    let private filterSpecialComment (text: string) =
+        let pattern = @"(\[\'(.*?)\'\])"
+        System.Text.RegularExpressions.Regex.Replace(text, pattern,
+            (fun me -> String.Empty)
+        )
+
     let private checkAux extraDlls source expectedIL =
         let Is64BitOperatingSystem = sizeof<nativeint> = 8
         let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
@@ -57,8 +64,8 @@ module ILChecker =
 
             File.WriteAllText(tmpFs, source)
 
-            let extraPackages = extraDlls |> Array.ofList |> Array.map (fun package -> "-r:" + package)
-            let errors, exitCode = checker.Compile(Array.append [| "fsc.exe"; "--optimize+"; "-o"; tmpDll; "-a"; tmpFs; |] extraPackages) |> Async.RunSynchronously
+            let extraReferences = extraDlls |> Array.ofList |> Array.map (fun reference -> "-r:" + reference)
+            let errors, exitCode = checker.Compile(Array.append [| "fsc.exe"; "--optimize+"; "-o"; tmpDll; "-a"; tmpFs; |] extraReferences) |> Async.RunSynchronously
             let errors =
                 String.concat "\n" (errors |> Array.map (fun x -> x.Message))
 
@@ -78,6 +85,7 @@ module ILChecker =
                                 if me.Value.StartsWith("//") then Environment.NewLine else String.Empty
                             else
                                 me.Value), System.Text.RegularExpressions.RegexOptions.Singleline)
+                    |> filterSpecialComment
                 
                 expectedIL
                 |> List.iter (fun (ilCode: string) ->

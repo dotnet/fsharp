@@ -38,7 +38,7 @@ let test () =
   IL_0006:  ldc.i4.0
   IL_0007:  stloc.2
   IL_0008:  ldloca.s   V_0
-  IL_000a:  call       instance int32 valuetype ['The system type \'System.Span`1\' was required but no referenced system DLL contained this type']System.Span`1<object>::get_Length()
+  IL_000a:  call       instance int32 valuetype System.Span`1<object>::get_Length()
   IL_000f:  ldc.i4.1
   IL_0010:  sub
   IL_0011:  stloc.1
@@ -48,7 +48,7 @@ let test () =
 
   IL_0016:  ldloca.s   V_0
   IL_0018:  ldloc.2
-  IL_0019:  call       instance !0& valuetype ['The system type \'System.Span`1\' was required but no referenced system DLL contained this type']System.Span`1<object>::get_Item(int32)
+  IL_0019:  call       instance !0& valuetype System.Span`1<object>::get_Item(int32)
   IL_001e:  stloc.3
   IL_001f:  ldloc.3
   IL_0020:  ldobj      [mscorlib]System.Object
@@ -97,7 +97,7 @@ let test () =
     IL_0006:  ldc.i4.0
     IL_0007:  stloc.2
     IL_0008:  ldloca.s   V_0
-    IL_000a:  call       instance int32 valuetype ['The system type \'System.ReadOnlySpan`1\' was required but no referenced system DLL contained this type']System.ReadOnlySpan`1<object>::get_Length()
+    IL_000a:  call       instance int32 valuetype System.ReadOnlySpan`1<object>::get_Length()
     IL_000f:  ldc.i4.1
     IL_0010:  sub
     IL_0011:  stloc.1
@@ -107,7 +107,7 @@ let test () =
 
     IL_0016:  ldloca.s   V_0
     IL_0018:  ldloc.2
-    IL_0019:  call       instance !0 valuetype ['The system type \'System.ReadOnlySpan`1\' was required but no referenced system DLL contained this type']System.ReadOnlySpan`1<object>::get_Item(int32)
+    IL_0019:  call       instance !0 valuetype System.ReadOnlySpan`1<object>::get_Item(int32)
     IL_001e:  call       void [mscorlib]System.Console::WriteLine(object)
     IL_0023:  ldloc.2
     IL_0024:  ldc.i4.1
