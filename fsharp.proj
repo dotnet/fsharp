@@ -90,7 +90,9 @@
       <Projects Include="$(MSBuildThisFileDirectory)vsintegration\Utils\LanguageServiceProfiling\LanguageServiceProfiling.fsproj" />
       <Projects Include="$(MSBuildThisFileDirectory)vsintegration\fsharp-vsintegration-item-templates-build.proj" />
       <Projects Include="$(MSBuildThisFileDirectory)vsintegration\fsharp-vsintegration-project-templates-build.proj" />
-      <VsixProjects Include="$(MSBuildThisFileDirectory)vsintegration\fsharp-vsintegration-vsix-build.proj" />
+<!--      <VsixProjects Include="$(MSBuildThisFileDirectory)vsintegration\fsharp-vsintegration-vsix-build.proj" /> -->
+      <VsixProjects Include="$(MSBuildThisFileDirectory)\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj" />
+      <VsixProjects Include="$(MSBuildThisFileDirectory)\vsintegration\Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(BuildCompiler)' == 'true' OR '$(BuildNuget)' == 'true' OR '$(BuildVS)' == 'true' OR '$(_RunningRestore)' == 'true'">
@@ -110,7 +112,7 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(BuildSetup)' == 'true' OR '$(_RunningRestore)' == 'true'">
-      <SetupProjects Include="$(MSBuildThisFileDirectory)setup\fsharp-setup-build.csproj" />
+    <SetupProjects Include="$(MSBuildThisFileDirectory)setup\fsharp-setup-build.csproj" />
     </ItemGroup>
 
     <!-- test binaries -->

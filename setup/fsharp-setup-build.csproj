@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <Target Name="CollectSetupProjects">
+<!--
     <ItemGroup>
       <VsixProjects Include="VisualFSharpFull.csproj">
         <ProjectPath>..\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj</ProjectPath>
@@ -28,7 +29,7 @@
         <ProjectPath>..\vsintegration\Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj</ProjectPath>
       </VsixProjects>
     </ItemGroup>
-
+-->
     <CreateItem Include="@(SetupLanguages)"
                 AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.Vsix.Resources\Microsoft.FSharp.Vsix.Resources.swixproj">
       <Output ItemName="SwixSetupProjects" TaskParameter="Include" />
