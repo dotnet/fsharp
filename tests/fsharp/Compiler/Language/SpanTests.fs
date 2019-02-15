@@ -8,13 +8,13 @@ open NUnit.Framework
 [<TestFixture>]
 module SpanTests =
 
+    let x = 1
+
+#if NET472
+#else
     [<Test>]
     let Script_SpanForInDo() =
-        let references = 
-            ILChecker.getPackageDlls "System.Memory" "4.5.0" "netstandard2.0" [ "System.Memory.dll" ]
-            |> List.fold (fun references dll -> references + "#r " + "\"\"\"" + dll + "\"\"\"\n") String.Empty
         let script = 
-            references +
             """
 open System
 
@@ -25,7 +25,8 @@ let test () =
         result.Add(item)
     result.ToArray()
 
-//test ()
+test ()
             """
         
-        CompilerAssert.RunScript script (Some [|1;2;3;4|])
+        CompilerAssert.RunScript script ""
+#endif

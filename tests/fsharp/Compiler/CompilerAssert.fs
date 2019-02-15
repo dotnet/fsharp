@@ -5,6 +5,7 @@ namespace FSharp.Compiler.UnitTests
 open System
 open System.IO
 open System.Text
+open System.Diagnostics
 open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Interactive.Shell
@@ -15,6 +16,8 @@ open NUnit.Framework
 module CompilerAssert =
 
     let checker = FSharpChecker.Create()
+
+    let private config = TestFramework.initializeSuite ()
 
     let private defaultProjectOptions =
         {
@@ -32,20 +35,13 @@ module CompilerAssert =
             Stamp = None
         }
 
-    let private createFsiSession () =
-        // Intialize output and input streams
-        let sbOut = new StringBuilder()
-        let sbErr = new StringBuilder()
-        let inStream = new StringReader("")
-        let outStream = new StringWriter(sbOut)
-        let errStream = new StringWriter(sbErr)
-
-        // Bmand line arguments & start FSI session
-        let argv = [| "C:\\fsi.exe" |]
-        let allArgs = Array.append argv [|"--noninteractive"|]
-
-        let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-        FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream)
+    let private exec exe args =
+        let startInfo = ProcessStartInfo(exe, String.concat " " args)
+        startInfo.RedirectStandardError <- true
+        startInfo.UseShellExecute <- false
+        use p = Process.Start(startInfo)
+        p.WaitForExit()
+        p.StandardOutput.ReadToEnd(), p.StandardError.ReadToEnd(), p.ExitCode
 
     let Pass (source: string) =
         let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
@@ -76,29 +72,19 @@ module CompilerAssert =
             Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
         )
 
-    let RunScript (source: string) (expectedOutput: 'T option) =
+    let RunScript (source: string) (expectedOutput: string) =
         let tmp = Path.GetTempFileName()
         let tmpFsx = Path.ChangeExtension(tmp, ".fsx")
 
         try
             File.WriteAllText(tmpFsx, source)
+            let output, errors, exitCode = exec config.FSI [tmpFsx]
 
-            use fsiSession = createFsiSession ()
-
-            let _, errors = fsiSession.EvalScriptNonThrowing(tmpFsx)
-
-            if errors.Length > 0 then
+            if errors.Length > 0 || exitCode <> 0 then
+                Assert.Fail(sprintf "Exit Code: %i" exitCode)
                 Assert.Fail(sprintf "%A" errors)
-
-            //match fsiSession.EvalExpressionNonThrowing(source) with
-            //| _, errors when errors.Length > 0 -> Assert.Fail(errors |> List.ofArray |> string)
-            //| Choice.Choice1Of2(result), _ ->
-            //    match result, expectedOutput with
-            //    | Some fsiValue, Some expectedOutput -> Assert.AreEqual(fsiValue.ReflectionValue, expectedOutput)
-            //    | Some fsiValue, None ->                Assert.AreEqual(null, fsiValue.ReflectionValue)
-            //    | None, Some expectedOutput ->          Assert.AreEqual(expectedOutput, null)
-            //    | _ -> ()
-            //| _ -> ()
+                
+            Assert.AreEqual(expectedOutput, output)
 
         finally
             try File.Delete(tmp) with | _ -> ()
