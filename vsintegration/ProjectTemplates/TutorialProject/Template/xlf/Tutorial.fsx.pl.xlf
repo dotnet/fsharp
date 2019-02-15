@@ -1294,7 +1294,7 @@
       </trans-unit>
       <trans-unit id="Option-Line1">
         <source>Option values are any kind of value tagged with either 'Some' or 'None'.</source>
-        <target state="translated">Wartości opcji to dowolne wartości oznaczone jako „Some” lub „None”.</target>
+        <target state="translated">Wartości opcji to dowolne wartości otagowane jako „Some” lub „None”.</target>
         <note />
       </trans-unit>
       <trans-unit id="Option-Line2">

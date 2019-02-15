@@ -257,7 +257,7 @@
       </trans-unit>
       <trans-unit id="Misc">
         <source>Misc</source>
-        <target state="translated">Misc</target>
+        <target state="translated">기타</target>
         <note />
       </trans-unit>
       <trans-unit id="None">
@@ -792,7 +792,7 @@
       </trans-unit>
       <trans-unit id="Path">
         <source>Path</source>
-        <target state="translated">PATH</target>
+        <target state="translated">경로</target>
         <note />
       </trans-unit>
       <trans-unit id="PathDescription">

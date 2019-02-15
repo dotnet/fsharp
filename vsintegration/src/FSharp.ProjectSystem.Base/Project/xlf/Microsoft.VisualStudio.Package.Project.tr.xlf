@@ -257,7 +257,7 @@
       </trans-unit>
       <trans-unit id="Misc">
         <source>Misc</source>
-        <target state="translated">Misc</target>
+        <target state="translated">Çeşitli</target>
         <note />
       </trans-unit>
       <trans-unit id="None">
@@ -792,7 +792,7 @@
       </trans-unit>
       <trans-unit id="Path">
         <source>Path</source>
-        <target state="translated">PATH</target>
+        <target state="translated">Yol</target>
         <note />
       </trans-unit>
       <trans-unit id="PathDescription">

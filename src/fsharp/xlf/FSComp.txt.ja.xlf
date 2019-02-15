@@ -5916,12 +5916,12 @@
       </trans-unit>
       <trans-unit id="customOperationTextLikeJoin">
         <source>{0} var in collection {1} (outerKey = innerKey). Note that parentheses are required after '{2}'</source>
-        <target state="translated">{0} var in collection {1} (outerKey = innerKey)。'{2}' の後ろにはかっこが必要です。</target>
+        <target state="translated">{0} var in collection {1} (outerKey = innerKey)。'{2}' の後にかっこが必要であることに注意してください</target>
         <note />
       </trans-unit>
       <trans-unit id="customOperationTextLikeGroupJoin">
         <source>{0} var in collection {1} (outerKey = innerKey) into group. Note that parentheses are required after '{2}'</source>
-        <target state="translated">{0} var in collection {1} (outerKey = innerKey) into group。'{2}' の後ろにかっこが必要です</target>
+        <target state="translated">コレクション {1} (outerKey = innerKey) の {0} をグループに var 宣言します。'{2}' の後にかっこが必要であることに注意してください</target>
         <note />
       </trans-unit>
       <trans-unit id="customOperationTextLikeZip">
