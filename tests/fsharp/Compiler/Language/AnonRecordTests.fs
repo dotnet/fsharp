@@ -5,13 +5,13 @@ namespace FSharp.Compiler.UnitTests
 open NUnit.Framework
 
 [<TestFixture>]
-module AnonRecords =
+module AnonRecordsTests =
 
 #if !NETCOREAPP
     [<Test>]
 #endif
     let NotStructConstraintPass() =
-        Compiler.AssertPass
+        CompilerAssert.Pass
             """
 type RefClass<'a when 'a : not struct>() = class end
 let rAnon = RefClass<{| R: int |}>()
@@ -21,7 +21,7 @@ let rAnon = RefClass<{| R: int |}>()
     [<Test>]
 #endif
     let StructConstraintPass() =
-        Compiler.AssertPass
+        CompilerAssert.Pass
             """
 type StructClass<'a when 'a : struct>() = class end
 let sAnon = StructClass<struct {| S: int |}>()
@@ -31,7 +31,7 @@ let sAnon = StructClass<struct {| S: int |}>()
     [<Test>]
 #endif
     let NotStructConstraintFail() =
-        Compiler.AssertSingleErrorTypeCheck 
+        CompilerAssert.TypeCheckSingleError
             """
     type RefClass<'a when 'a : not struct>() = class end
     let rAnon = RefClass<struct {| R: int |}>()
@@ -44,7 +44,7 @@ let sAnon = StructClass<struct {| S: int |}>()
     [<Test>]
 #endif
     let StructConstraintFail() =
-        Compiler.AssertSingleErrorTypeCheck 
+        CompilerAssert.TypeCheckSingleError
             """
 type StructClass<'a when 'a : struct>() = class end
 let sAnon = StructClass<{| S: int |}>()

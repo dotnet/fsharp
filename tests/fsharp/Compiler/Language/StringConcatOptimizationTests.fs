@@ -6,7 +6,7 @@ open System
 open NUnit.Framework
 
 [<TestFixture>]
-module StringConcat =
+module StringConcatOptimizationTests =
 
 // helper methods in this test only run on the full framework
 #if !NETCOREAPP

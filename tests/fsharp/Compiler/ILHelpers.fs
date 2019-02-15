@@ -10,26 +10,14 @@ open NUnit.Framework
 
 open FSharp.Compiler.SourceCodeServices
 
+open TestFramework
+
 [<RequireQualifiedAccess>]
 module ILChecker =
 
-    let checker = Compiler.checker
+    let checker = CompilerAssert.checker
 
-    let private (++) a b = Path.Combine(a,b)
-
-    let packagesDir = Environment.GetEnvironmentVariable("USERPROFILE") ++ ".nuget" ++ "packages"
-
-    let private getfullpath workDir path =
-        let rooted =
-            if Path.IsPathRooted(path) then path
-            else Path.Combine(workDir, path)
-        rooted |> Path.GetFullPath
-
-    let private fileExists workDir path = 
-        if path |> getfullpath workDir |> File.Exists then Some path else None
-
-    let private requireFile nm = 
-        if fileExists __SOURCE_DIRECTORY__ nm |> Option.isSome then nm else failwith (sprintf "couldn't find %s. Running 'build test' once might solve this issue" nm)
+    let config = initializeSuite ()
 
     let private exec exe args =
         let startInfo = ProcessStartInfo(exe, String.concat " " args)
@@ -47,11 +35,6 @@ module ILChecker =
         )
 
     let private checkAux extraDlls source expectedIL =
-        let Is64BitOperatingSystem = sizeof<nativeint> = 8
-        let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
-        let ildasmExe = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
-        let coreclrDll = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "coreclr.dll")
-
         let tmp = Path.GetTempFileName()
         let tmpFs = Path.ChangeExtension(tmp, ".fs")
         let tmpDll = Path.ChangeExtension(tmp, ".dll")
@@ -59,8 +42,7 @@ module ILChecker =
 
         let mutable errorMsgOpt = None
         try
-            // ildasm requires coreclr.dll to run which has already been restored to the packages directory
-            File.Copy(coreclrDll, Path.GetDirectoryName(ildasmExe) ++ "coreclr.dll", overwrite=true)
+            let ildasmPath = config.ILDASM
 
             File.WriteAllText(tmpFs, source)
 
@@ -70,7 +52,7 @@ module ILChecker =
                 String.concat "\n" (errors |> Array.map (fun x -> x.Message))
 
             if exitCode = 0 then
-                exec ildasmExe [ sprintf "%s /out=%s" tmpDll tmpIL ] |> ignore
+                exec ildasmPath [ sprintf "%s /out=%s" tmpDll tmpIL ] |> ignore
 
                 let text = File.ReadAllText(tmpIL)
                 let blockComments = @"/\*(.*?)\*/"
