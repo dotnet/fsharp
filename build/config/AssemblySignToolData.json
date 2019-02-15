@@ -39,7 +39,7 @@
       "certificate": "VsixSHA2",
       "strongName": null,
       "values": [
-        "bin\\VisualFSharpFull\\*\\*VisualFSharpFull.vsix",
+        "bin\\VisualFSharpFull\\*\\*\\VisualFSharpFull.vsix",
         "bin\\VisualFSharpTemplates\\*\\*\\VisualFSharpTemplate.vsix",
         "VSSetup\\*\\Insertion\\Microsoft.FSharp.Dependencies.vsix",
         "VSSetup\\*\\Insertion\\Microsoft.FSharp.VSIX.Full.Resources.*.vsix"
