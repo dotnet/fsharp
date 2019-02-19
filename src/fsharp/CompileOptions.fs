@@ -636,7 +636,17 @@ let outputFileFlagsFsc (tcConfigB : TcConfigBuilder) =
         CompilerOption("keycontainer", tagString, OptionString(fun s -> tcConfigB.container <- Some(s)),None,
                            Some(FSComp.SR.optsStrongKeyContainer()))
 
-        CompilerOption("platform", tagString, OptionString (fun s -> tcConfigB.platform <- match s with | "x86" -> Some X86 | "x64" -> Some AMD64 | "Itanium" -> Some IA64 | "anycpu32bitpreferred" -> (tcConfigB.prefer32Bit <- true; None) | "anycpu" -> None | _ -> error(Error(FSComp.SR.optsUnknownPlatform(s),rangeCmdArgs))), None,
+        CompilerOption("platform", tagString, OptionString (fun s -> 
+                                                 tcConfigB.platform <- 
+                                                     match s with 
+                                                     | "x86" -> Some X86 
+                                                     | "x64" -> Some AMD64 
+                                                     | "Itanium" -> Some IA64 
+                                                     | "anycpu32bitpreferred" -> 
+                                                         tcConfigB.prefer32Bit <- true
+                                                         None 
+                                                     | "anycpu" -> None 
+                                                     | _ -> error(Error(FSComp.SR.optsUnknownPlatform(s),rangeCmdArgs))), None,
                             Some(FSComp.SR.optsPlatform())) 
 
         CompilerOption("nooptimizationdata", tagNone, OptionUnit (fun () -> tcConfigB.onlyEssentialOptimizationData <- true), None,
@@ -889,25 +899,41 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
     CompilerOption("abortonerror", tagNone, OptionUnit (fun () -> tcConfigB.abortOnError <- true), Some(InternalCommandLineOption("--abortonerror", rangeCmdArgs)), None)
     CompilerOption("implicitresolution", tagNone, OptionUnit (fun _ -> tcConfigB.implicitlyResolveAssemblies <- true), Some(InternalCommandLineOption("--implicitresolution", rangeCmdArgs)), None)
 
-    CompilerOption("resolutions", tagNone, OptionUnit (fun () -> tcConfigB.showReferenceResolutions <- true), Some(InternalCommandLineOption("", rangeCmdArgs)), None) // "Display assembly reference resolution information") 
-    CompilerOption("resolutionframeworkregistrybase", tagString, OptionString (fun _ -> ()), Some(InternalCommandLineOption("", rangeCmdArgs)), None) // "The base registry key to use for assembly resolution. This part in brackets here: HKEY_LOCAL_MACHINE\[SOFTWARE\Microsoft\.NETFramework]\v2.0.50727\AssemblyFoldersEx")
-    CompilerOption("resolutionassemblyfoldersuffix", tagString, OptionString (fun _ -> ()), Some(InternalCommandLineOption("resolutionassemblyfoldersuffix", rangeCmdArgs)), None) // "The base registry key to use for assembly resolution. This part in brackets here: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework\v2.0.50727\[AssemblyFoldersEx]")
-    CompilerOption("resolutionassemblyfoldersconditions", tagString, OptionString (fun _ -> ()), Some(InternalCommandLineOption("resolutionassemblyfoldersconditions", rangeCmdArgs)), None) // "Additional reference resolution conditions. For example \"OSVersion=5.1.2600.0,PlatformID=id")
-    CompilerOption("msbuildresolution", tagNone, OptionUnit (fun () -> tcConfigB.useSimpleResolution<-false), Some(InternalCommandLineOption("msbuildresolution", rangeCmdArgs)), None) // "Resolve assembly references using MSBuild resolution rules rather than directory based (Default=true except when running fsc.exe under mono)")
+    // "Display assembly reference resolution information") 
+    CompilerOption("resolutions", tagNone, OptionUnit (fun () -> tcConfigB.showReferenceResolutions <- true), Some(InternalCommandLineOption("", rangeCmdArgs)), None) 
+    
+    // "The base registry key to use for assembly resolution. This part in brackets here: HKEY_LOCAL_MACHINE\[SOFTWARE\Microsoft\.NETFramework]\v2.0.50727\AssemblyFoldersEx")
+    CompilerOption("resolutionframeworkregistrybase", tagString, OptionString (fun _ -> ()), Some(InternalCommandLineOption("", rangeCmdArgs)), None) 
+    
+    // "The base registry key to use for assembly resolution. This part in brackets here: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework\v2.0.50727\[AssemblyFoldersEx]")
+    CompilerOption("resolutionassemblyfoldersuffix", tagString, OptionString (fun _ -> ()), Some(InternalCommandLineOption("resolutionassemblyfoldersuffix", rangeCmdArgs)), None)
+    
+    // "Additional reference resolution conditions. For example \"OSVersion=5.1.2600.0,PlatformID=id")
+    CompilerOption("resolutionassemblyfoldersconditions", tagString, OptionString (fun _ -> ()), Some(InternalCommandLineOption("resolutionassemblyfoldersconditions", rangeCmdArgs)), None) 
+    
+    // "Resolve assembly references using MSBuild resolution rules rather than directory based (Default=true except when running fsc.exe under mono)")
+    CompilerOption("msbuildresolution", tagNone, OptionUnit (fun () -> tcConfigB.useSimpleResolution<-false), Some(InternalCommandLineOption("msbuildresolution", rangeCmdArgs)), None)
+
     CompilerOption("alwayscallvirt",tagNone,OptionSwitch(callVirtSwitch tcConfigB),Some(InternalCommandLineOption("alwayscallvirt",rangeCmdArgs)), None)
+
     CompilerOption("nodebugdata",tagNone, OptionUnit (fun () -> tcConfigB.noDebugData<-true),Some(InternalCommandLineOption("--nodebugdata",rangeCmdArgs)), None)
+    
     testFlag tcConfigB  ] @
+
   editorSpecificFlags tcConfigB @
   [ CompilerOption("jit", tagNone, OptionSwitch (jitoptimizeSwitch tcConfigB), Some(InternalCommandLineOption("jit", rangeCmdArgs)), None)
     CompilerOption("localoptimize", tagNone, OptionSwitch(localoptimizeSwitch tcConfigB),Some(InternalCommandLineOption("localoptimize", rangeCmdArgs)), None)
     CompilerOption("splitting", tagNone, OptionSwitch(splittingSwitch tcConfigB),Some(InternalCommandLineOption("splitting", rangeCmdArgs)), None)
     CompilerOption("versionfile", tagString, OptionString (fun s -> tcConfigB.version <- VersionFile s), Some(InternalCommandLineOption("versionfile", rangeCmdArgs)), None)
-    CompilerOption("times" , tagNone, OptionUnit  (fun () -> tcConfigB.showTimes <- true), Some(InternalCommandLineOption("times", rangeCmdArgs)), None) // "Display timing profiles for compilation")
+
+    // "Display timing profiles for compilation"
+    CompilerOption("times" , tagNone, OptionUnit  (fun () -> tcConfigB.showTimes <- true), Some(InternalCommandLineOption("times", rangeCmdArgs)), None) 
+
 #if !NO_EXTENSIONTYPING
-    CompilerOption("showextensionresolution" , tagNone, OptionUnit  (fun () -> tcConfigB.showExtensionTypeMessages <- true), Some(InternalCommandLineOption("showextensionresolution", rangeCmdArgs)), None) // "Display information about extension type resolution")
+    // "Display information about extension type resolution")
+    CompilerOption("showextensionresolution" , tagNone, OptionUnit  (fun () -> tcConfigB.showExtensionTypeMessages <- true), Some(InternalCommandLineOption("showextensionresolution", rangeCmdArgs)), None) 
 #endif
-    (* BEGIN: Consider as public Retail option? *)
-    // Some System.Console do not have operational colors, make this available in Retail?    
+
     CompilerOption("metadataversion", tagString, OptionString (fun s -> tcConfigB.metadataVersion <- Some(s)), Some(InternalCommandLineOption("metadataversion", rangeCmdArgs)), None)
   ]
 
@@ -921,23 +947,51 @@ let compilingFsLibFlag (tcConfigB : TcConfigBuilder) =
                                                                          ErrorLogger.reportLibraryOnlyFeatures <- false
                                                                          IlxSettings.ilxCompilingFSharpCoreLib := true), Some(InternalCommandLineOption("--compiling-fslib", rangeCmdArgs)), None)
 let compilingFsLib20Flag (tcConfigB : TcConfigBuilder) = 
-        CompilerOption("compiling-fslib-20", tagNone, OptionString (fun s -> tcConfigB.compilingFslib20 <- Some s ), Some(InternalCommandLineOption("--compiling-fslib-20", rangeCmdArgs)), None)
+    CompilerOption
+        ("compiling-fslib-20", tagNone, 
+         OptionString (fun s -> tcConfigB.compilingFslib20 <- Some s ), 
+         Some(InternalCommandLineOption("--compiling-fslib-20", rangeCmdArgs)), None)
+
 let compilingFsLib40Flag (tcConfigB : TcConfigBuilder) = 
-        CompilerOption("compiling-fslib-40", tagNone, OptionUnit (fun () -> tcConfigB.compilingFslib40 <- true ), Some(InternalCommandLineOption("--compiling-fslib-40", rangeCmdArgs)), None)
+    CompilerOption
+        ("compiling-fslib-40", tagNone, 
+         OptionUnit (fun () -> tcConfigB.compilingFslib40 <- true ), 
+         Some(InternalCommandLineOption("--compiling-fslib-40", rangeCmdArgs)), None)
+
 let compilingFsLibNoBigIntFlag (tcConfigB : TcConfigBuilder) = 
-        CompilerOption("compiling-fslib-nobigint", tagNone, OptionUnit (fun () -> tcConfigB.compilingFslibNoBigInt <- true ), Some(InternalCommandLineOption("--compiling-fslib-nobigint", rangeCmdArgs)), None)
+    CompilerOption
+        ("compiling-fslib-nobigint", tagNone, 
+         OptionUnit (fun () -> tcConfigB.compilingFslibNoBigInt <- true ), 
+         Some(InternalCommandLineOption("--compiling-fslib-nobigint", rangeCmdArgs)), None)
 
 let mlKeywordsFlag = 
-        CompilerOption("ml-keywords", tagNone, OptionUnit (fun () -> ()), Some(DeprecatedCommandLineOptionNoDescription("--ml-keywords", rangeCmdArgs)), None)
+    CompilerOption
+        ("ml-keywords", tagNone, 
+         OptionUnit (fun () -> ()), 
+         Some(DeprecatedCommandLineOptionNoDescription("--ml-keywords", rangeCmdArgs)), None)
 
 let gnuStyleErrorsFlag tcConfigB = 
-        CompilerOption("gnu-style-errors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.EmacsErrors), Some(DeprecatedCommandLineOptionNoDescription("--gnu-style-errors", rangeCmdArgs)), None)
+    CompilerOption
+        ("gnu-style-errors", tagNone, 
+         OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.EmacsErrors), 
+         Some(DeprecatedCommandLineOptionNoDescription("--gnu-style-errors", rangeCmdArgs)), None)
 
 let deprecatedFlagsBoth tcConfigB =
     [ 
-      CompilerOption("light", tagNone, OptionUnit (fun () -> tcConfigB.light <- Some(true)), Some(DeprecatedCommandLineOptionNoDescription("--light", rangeCmdArgs)), None)
-      CompilerOption("indentation-syntax", tagNone, OptionUnit (fun () -> tcConfigB.light <- Some(true)), Some(DeprecatedCommandLineOptionNoDescription("--indentation-syntax", rangeCmdArgs)), None)
-      CompilerOption("no-indentation-syntax", tagNone, OptionUnit (fun () -> tcConfigB.light <- Some(false)), Some(DeprecatedCommandLineOptionNoDescription("--no-indentation-syntax", rangeCmdArgs)), None) 
+      CompilerOption
+         ("light", tagNone, 
+          OptionUnit (fun () -> tcConfigB.light <- Some(true)), 
+          Some(DeprecatedCommandLineOptionNoDescription("--light", rangeCmdArgs)), None)
+
+      CompilerOption
+         ("indentation-syntax", tagNone, 
+          OptionUnit (fun () -> tcConfigB.light <- Some(true)), 
+          Some(DeprecatedCommandLineOptionNoDescription("--indentation-syntax", rangeCmdArgs)), None)
+
+      CompilerOption
+         ("no-indentation-syntax", tagNone, 
+          OptionUnit (fun () -> tcConfigB.light <- Some(false)), 
+          Some(DeprecatedCommandLineOptionNoDescription("--no-indentation-syntax", rangeCmdArgs)), None) 
     ]
           
 let deprecatedFlagsFsi tcConfigB = deprecatedFlagsBoth tcConfigB
@@ -945,32 +999,101 @@ let deprecatedFlagsFsc tcConfigB =
     deprecatedFlagsBoth tcConfigB @
     [
     cliRootFlag tcConfigB
-    CompilerOption("jit-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some true }), Some(DeprecatedCommandLineOptionNoDescription("--jit-optimize", rangeCmdArgs)), None)
-    CompilerOption("no-jit-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some false }), Some(DeprecatedCommandLineOptionNoDescription("--no-jit-optimize", rangeCmdArgs)), None)
-    CompilerOption("jit-tracking", tagNone, OptionUnit (fun _ -> (tcConfigB.jitTracking <- true) ), Some(DeprecatedCommandLineOptionNoDescription("--jit-tracking", rangeCmdArgs)), None)
-    CompilerOption("no-jit-tracking", tagNone, OptionUnit (fun _ -> (tcConfigB.jitTracking <- false) ), Some(DeprecatedCommandLineOptionNoDescription("--no-jit-tracking", rangeCmdArgs)), None)
-    CompilerOption("progress", tagNone, OptionUnit (fun () -> progress := true), Some(DeprecatedCommandLineOptionNoDescription("--progress", rangeCmdArgs)), None)
-    (compilingFsLibFlag tcConfigB) 
-    (compilingFsLib20Flag tcConfigB) 
-    (compilingFsLib40Flag tcConfigB) 
-    (compilingFsLibNoBigIntFlag tcConfigB) 
-    CompilerOption("version", tagString, OptionString (fun s -> tcConfigB.version <- VersionString s), Some(DeprecatedCommandLineOptionNoDescription("--version", rangeCmdArgs)), None)
+    CompilerOption
+       ("jit-optimize", tagNone, 
+        OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some true }), 
+        Some(DeprecatedCommandLineOptionNoDescription("--jit-optimize", rangeCmdArgs)), None)
+
+    CompilerOption
+       ("no-jit-optimize", tagNone, 
+        OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some false }), 
+        Some(DeprecatedCommandLineOptionNoDescription("--no-jit-optimize", rangeCmdArgs)), None)
+
+    CompilerOption
+       ("jit-tracking", tagNone, 
+        OptionUnit (fun _ -> (tcConfigB.jitTracking <- true) ), 
+        Some(DeprecatedCommandLineOptionNoDescription("--jit-tracking", rangeCmdArgs)), None)
+
+    CompilerOption
+       ("no-jit-tracking", tagNone, 
+        OptionUnit (fun _ -> (tcConfigB.jitTracking <- false) ), 
+        Some(DeprecatedCommandLineOptionNoDescription("--no-jit-tracking", rangeCmdArgs)), None)
+
+    CompilerOption
+       ("progress", tagNone, 
+        OptionUnit (fun () -> progress := true), 
+        Some(DeprecatedCommandLineOptionNoDescription("--progress", rangeCmdArgs)), None)
+
+    compilingFsLibFlag tcConfigB
+    compilingFsLib20Flag tcConfigB 
+    compilingFsLib40Flag tcConfigB
+    compilingFsLibNoBigIntFlag tcConfigB
+
+    CompilerOption
+       ("version", tagString, 
+        OptionString (fun s -> tcConfigB.version <- VersionString s), 
+        Some(DeprecatedCommandLineOptionNoDescription("--version", rangeCmdArgs)), None)
 //  "--clr-mscorlib", OptionString (fun s -> warning(Some(DeprecatedCommandLineOptionNoDescription("--clr-mscorlib", rangeCmdArgs)))    tcConfigB.Build.mscorlib_assembly_name <- s), "\n\tThe name of mscorlib on the target CLR" 
-    CompilerOption("local-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some true }), Some(DeprecatedCommandLineOptionNoDescription("--local-optimize", rangeCmdArgs)), None)
-    CompilerOption("no-local-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some false }), Some(DeprecatedCommandLineOptionNoDescription("--no-local-optimize", rangeCmdArgs)), None)
-    CompilerOption("cross-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some true }), Some(DeprecatedCommandLineOptionNoDescription("--cross-optimize", rangeCmdArgs)), None)
-    CompilerOption("no-cross-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some false }), Some(DeprecatedCommandLineOptionNoDescription("--no-cross-optimize", rangeCmdArgs)), None)
-    CompilerOption("no-string-interning", tagNone, OptionUnit (fun () -> tcConfigB.internConstantStrings <- false), Some(DeprecatedCommandLineOptionNoDescription("--no-string-interning", rangeCmdArgs)), None)
-    CompilerOption("statistics", tagNone, OptionUnit (fun () -> tcConfigB.stats <- true), Some(DeprecatedCommandLineOptionNoDescription("--statistics", rangeCmdArgs)), None)
-    CompilerOption("generate-filter-blocks", tagNone, OptionUnit (fun () -> tcConfigB.generateFilterBlocks <- true), Some(DeprecatedCommandLineOptionNoDescription("--generate-filter-blocks", rangeCmdArgs)), None) 
+
+    CompilerOption
+       ("local-optimize", tagNone, 
+        OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some true }), 
+        Some(DeprecatedCommandLineOptionNoDescription("--local-optimize", rangeCmdArgs)), None)
+
+    CompilerOption
+       ("no-local-optimize", tagNone, 
+        OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some false }), 
+        Some(DeprecatedCommandLineOptionNoDescription("--no-local-optimize", rangeCmdArgs)), None)
+
+    CompilerOption
+       ("cross-optimize", tagNone, 
+        OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some true }), 
+        Some(DeprecatedCommandLineOptionNoDescription("--cross-optimize", rangeCmdArgs)), None)
+
+    CompilerOption
+       ("no-cross-optimize", tagNone, 
+        OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some false }), 
+        Some(DeprecatedCommandLineOptionNoDescription("--no-cross-optimize", rangeCmdArgs)), None)
+    
+    CompilerOption
+       ("no-string-interning", tagNone, 
+        OptionUnit (fun () -> tcConfigB.internConstantStrings <- false), 
+        Some(DeprecatedCommandLineOptionNoDescription("--no-string-interning", rangeCmdArgs)), None)
+    
+    CompilerOption
+       ("statistics", tagNone, 
+        OptionUnit (fun () -> tcConfigB.stats <- true), 
+        Some(DeprecatedCommandLineOptionNoDescription("--statistics", rangeCmdArgs)), None)
+    
+    CompilerOption
+       ("generate-filter-blocks", tagNone, 
+        OptionUnit (fun () -> tcConfigB.generateFilterBlocks <- true), 
+        Some(DeprecatedCommandLineOptionNoDescription("--generate-filter-blocks", rangeCmdArgs)), None) 
+    
     //CompilerOption("no-generate-filter-blocks", tagNone, OptionUnit (fun () -> tcConfigB.generateFilterBlocks <- false), Some(DeprecatedCommandLineOptionNoDescription("--generate-filter-blocks", rangeCmdArgs)), None) 
-    CompilerOption("max-errors", tagInt, OptionInt (fun n -> tcConfigB.maxErrors <- n), Some(DeprecatedCommandLineOptionSuggestAlternative("--max-errors", "--maxerrors", rangeCmdArgs)),None)
-    CompilerOption("debug-file", tagNone, OptionString (fun s -> tcConfigB.debugSymbolFile <- Some s), Some(DeprecatedCommandLineOptionSuggestAlternative("--debug-file", "--pdb", rangeCmdArgs)), None)
-    CompilerOption("no-debug-file", tagNone,  OptionUnit (fun () -> tcConfigB.debuginfo <- false), Some(DeprecatedCommandLineOptionSuggestAlternative("--no-debug-file", "--debug-", rangeCmdArgs)), None)
-    CompilerOption("Ooff", tagNone, OptionUnit (fun () -> SetOptimizeOff(tcConfigB)), Some(DeprecatedCommandLineOptionSuggestAlternative("-Ooff", "--optimize-", rangeCmdArgs)), None)
+    
+    CompilerOption
+       ("max-errors", tagInt, 
+        OptionInt (fun n -> tcConfigB.maxErrors <- n), 
+        Some(DeprecatedCommandLineOptionSuggestAlternative("--max-errors", "--maxerrors", rangeCmdArgs)),None)
+    
+    CompilerOption
+       ("debug-file", tagNone, 
+        OptionString (fun s -> tcConfigB.debugSymbolFile <- Some s), 
+        Some(DeprecatedCommandLineOptionSuggestAlternative("--debug-file", "--pdb", rangeCmdArgs)), None)
+    
+    CompilerOption
+       ("no-debug-file", tagNone, 
+        OptionUnit (fun () -> tcConfigB.debuginfo <- false), 
+        Some(DeprecatedCommandLineOptionSuggestAlternative("--no-debug-file", "--debug-", rangeCmdArgs)), None)
+    
+    CompilerOption
+       ("Ooff", tagNone, 
+        OptionUnit (fun () -> SetOptimizeOff(tcConfigB)), 
+        Some(DeprecatedCommandLineOptionSuggestAlternative("-Ooff", "--optimize-", rangeCmdArgs)), None)
+
     mlKeywordsFlag 
-    gnuStyleErrorsFlag tcConfigB
-    ]
+    gnuStyleErrorsFlag tcConfigB ]
 
 
 // OptionBlock: Miscellaneous options

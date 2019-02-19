@@ -398,9 +398,19 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 
                 let rooted, unrooted = references |> Array.partition (fst >> FileSystem.IsPathRootedShim)
 
-                let rootedResults = ResolveCore(resolutionEnvironment, rooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, true, logMessage, logDiagnostic)
+                let rootedResults = 
+                    ResolveCore
+                       (resolutionEnvironment, rooted,  targetFrameworkVersion, 
+                        targetFrameworkDirectories, targetProcessorArchitecture, 
+                        fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, 
+                        true, logMessage, logDiagnostic)
 
-                let unrootedResults = ResolveCore(resolutionEnvironment, unrooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, false, logMessage, logDiagnostic)
+                let unrootedResults = 
+                    ResolveCore
+                       (resolutionEnvironment, unrooted,  targetFrameworkVersion, 
+                        targetFrameworkDirectories, targetProcessorArchitecture, 
+                        fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, 
+                        false, logMessage, logDiagnostic)
 
                 // now unify the two sets of results
                 Array.concat [| rootedResults; unrootedResults |]

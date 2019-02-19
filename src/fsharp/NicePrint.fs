@@ -1860,16 +1860,40 @@ module private InferredSigPrinting =
         and imdefL denv  x = 
             let filterVal    (v:Val) = not v.IsCompilerGenerated && Option.isNone v.MemberInfo
             let filterExtMem (v:Val) = v.IsExtensionMember
+
             match x with 
             | TMDefRec(_,tycons,mbinds,_) -> 
-                  TastDefinitionPrinting.layoutTyconDefns denv infoReader ad m tycons @@ 
-                  (mbinds |> List.choose (function ModuleOrNamespaceBinding.Binding bind -> Some bind | _ -> None) |> valsOfBinds |> List.filter filterExtMem |> TastDefinitionPrinting.layoutExtensionMembers denv) @@
-                  (mbinds |> List.choose (function ModuleOrNamespaceBinding.Binding bind -> Some bind | _ -> None) |> valsOfBinds |> List.filter filterVal    |> List.map (PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv)   |> aboveListL) @@
-                  (mbinds |> List.choose (function ModuleOrNamespaceBinding.Module (mspec,def) -> Some (mspec,def) | _ -> None) |> List.map (imbindL denv) |> aboveListL)
-            | TMDefLet(bind,_) -> ([bind.Var] |> List.filter filterVal    |> List.map (PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv) |> aboveListL)
+                TastDefinitionPrinting.layoutTyconDefns denv infoReader ad m tycons @@ 
+                (mbinds 
+                    |> List.choose (function ModuleOrNamespaceBinding.Binding bind -> Some bind | _ -> None) 
+                    |> valsOfBinds 
+                    |> List.filter filterExtMem
+                    |> TastDefinitionPrinting.layoutExtensionMembers denv) @@
+
+                (mbinds 
+                    |> List.choose (function ModuleOrNamespaceBinding.Binding bind -> Some bind | _ -> None) 
+                    |> valsOfBinds 
+                    |> List.filter filterVal    
+                    |> List.map (PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv)   
+                    |> aboveListL) @@
+
+                (mbinds 
+                    |> List.choose (function ModuleOrNamespaceBinding.Module (mspec,def) -> Some (mspec,def) | _ -> None) 
+                    |> List.map (imbindL denv) 
+                    |> aboveListL)
+
+            | TMDefLet(bind,_) -> 
+                ([bind.Var] 
+                    |> List.filter filterVal    
+                    |> List.map (PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv) 
+                    |> aboveListL)
+
             | TMDefs defs -> imdefsL denv defs
+
             | TMDefDo _  -> emptyL
+
             | TMAbstract mexpr -> imexprLP denv mexpr
+
         and imbindL denv  (mspec, def) = 
             let nm =  mspec.DemangledModuleOrNamespaceName
             let innerPath = (fullCompPathOfModuleOrNamespace mspec).AccessPath

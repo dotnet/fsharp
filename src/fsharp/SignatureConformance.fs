@@ -430,8 +430,15 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
         and checkVirtualSlots denv m (implTycon:Tycon) implAbstractSlots sigAbstractSlots =
             let m1 = NameMap.ofKeyedList (fun (v:ValRef) -> v.DisplayName) implAbstractSlots
             let m2 = NameMap.ofKeyedList (fun (v:ValRef) -> v.DisplayName) sigAbstractSlots
-            (m1,m2) ||> NameMap.suball2 (fun _s vref -> errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInImpl(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, NicePrint.stringValOrMember denv vref.Deref),m)); false) (fun _x _y -> true)  &&
-            (m2,m1) ||> NameMap.suball2 (fun _s vref -> errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInSig(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, NicePrint.stringValOrMember denv vref.Deref),m)); false) (fun _x _y -> true)  
+            (m1,m2) ||> NameMap.suball2 (fun _s vref -> 
+                let kindText = implTycon.TypeOrMeasureKind.ToString()
+                let valText = NicePrint.stringValOrMember denv vref.Deref
+                errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInImpl(kindText, implTycon.DisplayName, valText),m)); false) (fun _x _y -> true)  &&
+
+            (m2,m1) ||> NameMap.suball2 (fun _s vref -> 
+                let kindText = implTycon.TypeOrMeasureKind.ToString()
+                let valText = NicePrint.stringValOrMember denv vref.Deref
+                errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInSig(kindText, implTycon.DisplayName, valText),m)); false) (fun _x _y -> true)  
 
         and checkClassFields isStruct m aenv (implTycon:Tycon) (implFields:TyconRecdFields) (sigFields:TyconRecdFields) =
             let implFields = implFields.TrueFieldsAsList

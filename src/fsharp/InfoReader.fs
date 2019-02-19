@@ -624,11 +624,25 @@ let private FilterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverri
     
 /// Filter the overrides of methods, either keeping the overrides or keeping the dispatch slots.
 let private FilterOverridesOfMethInfos findFlag g amap m minfos = 
-    FilterOverrides findFlag ((fun (minfo:MethInfo) -> minfo.IsVirtual),(fun minfo -> minfo.IsNewSlot),(fun minfo -> minfo.IsDefiniteFSharpOverride),(fun minfo -> minfo.IsFinal),MethInfosEquivByNameAndSig EraseNone true g amap m,(fun minfo -> minfo.LogicalName)) minfos
+    minfos 
+    |> FilterOverrides findFlag 
+        ((fun (minfo:MethInfo) -> minfo.IsVirtual),
+         (fun minfo -> minfo.IsNewSlot),
+         (fun minfo -> minfo.IsDefiniteFSharpOverride),
+         (fun minfo -> minfo.IsFinal),
+         MethInfosEquivByNameAndSig EraseNone true g amap m,
+         (fun minfo -> minfo.LogicalName)) 
 
 /// Filter the overrides of properties, either keeping the overrides or keeping the dispatch slots.
 let private FilterOverridesOfPropInfos findFlag g amap m props = 
-    FilterOverrides findFlag ((fun (pinfo:PropInfo) -> pinfo.IsVirtualProperty),(fun pinfo -> pinfo.IsNewSlot),(fun pinfo -> pinfo.IsDefiniteFSharpOverride),(fun _ -> false),PropInfosEquivByNameAndSig EraseNone g amap m, (fun pinfo -> pinfo.PropertyName)) props
+    props 
+    |> FilterOverrides findFlag 
+          ((fun (pinfo:PropInfo) -> pinfo.IsVirtualProperty),
+           (fun pinfo -> pinfo.IsNewSlot),
+           (fun pinfo -> pinfo.IsDefiniteFSharpOverride),
+           (fun _ -> false),
+           PropInfosEquivByNameAndSig EraseNone g amap m, 
+           (fun pinfo -> pinfo.PropertyName)) 
 
 /// Exclude methods from super types which have the same signature as a method in a more specific type.
 let ExcludeHiddenOfMethInfos g amap m (minfos:MethInfo list list) = 

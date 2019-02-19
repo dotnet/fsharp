@@ -1,0 +1,32 @@
+
+
+open System.IO
+
+let lines = 
+    [| for file in Directory.EnumerateFiles(@"c:\github\dsyme\visualfsharp2\src\fsharp","*.fs") do
+        // TcGlobals.fs gets an exception
+            let lines = File.ReadAllLines file
+            for (line, lineText) in Array.indexed lines do 
+
+                // We hardwire some exceptions
+                if not (Path.GetFileName(file) = "TcGlobals.fs") &&
+                   not (Path.GetFileName(file) = "tast.fs" && line > 2100 && line < 2400) then
+                
+                    yield file, (line+1, lineText) |]
+
+let totalLines = lines.Length
+let buckets = lines |> Array.groupBy (fun (_file, (_line, lineText)) -> lineText.Length / 10) |> Array.sortByDescending (fun (key, vs) -> key)
+
+for (key, sz) in buckets do
+    printfn "bucket %d-%d - %%%2.1f" (key*10) (key*10+9) (double sz.Length / double totalLines * 100.0)
+
+printfn "top bucket: "
+
+for (file, (line, text)) in snd buckets.[0] do   
+   printfn "%s %d %s..." file line text.[0..50]
+
+let numLong = lines |> Array.filter (fun (_, (line, lineText)) -> lineText.Length > 120) |> Array.length
+let numHuge = lines |> Array.filter (fun (_, (line, lineText)) -> lineText.Length > 200) |> Array.length
+
+printfn "%d long lines = %2.1f" numLong (double numLong / double totalLines)
+printfn "%d huge lines = %2.1f" numHuge (double numHuge / double totalLines)

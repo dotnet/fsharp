@@ -1401,8 +1401,12 @@ let CheckForAbnormalOperatorNames cenv (idRange:range) coreDisplayName (memberIn
                 warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberNameFixedTypes opName, idRange))
         | PrettyNaming.Other -> ()
 
-let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, (ValScheme(id, typeScheme, topValData, memberInfoOpt, isMutable, inlineFlag, baseOrThis, vis, compgen, isIncrClass, isTyFunc, hasDeclaredTypars)), attrs, doc, konst, isGeneratedEventVal) =
+let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, vscheme, attrs, doc, konst, isGeneratedEventVal) =
+
+    let (ValScheme(id, typeScheme, topValData, memberInfoOpt, isMutable, inlineFlag, baseOrThis, vis, compgen, isIncrClass, isTyFunc, hasDeclaredTypars)) = vscheme
+
     let ty = GeneralizedTypeForTypeScheme typeScheme
+
     let m = id.idRange
 
     let isTopBinding = 
@@ -1413,6 +1417,7 @@ let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, (ValSche
         | _ -> false
 
     let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
+
     let actualParent, overrideVis = 
         // Use the parent of the member if it's available 
         // If it's an extrinsic extension member or not a member then use the containing module.
@@ -11029,7 +11034,9 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
                    [] 
                 else 
                    let freeInEnv = lazyFreeInEnv.Force()
-                   GeneralizationHelpers.ComputeAndGeneralizeGenericTypars(cenv, denv, m, freeInEnv, canInferTypars, GeneralizationHelpers.CanGeneralizeConstrainedTyparsForDecl(declKind), inlineFlag, Some rhsExpr, allDeclaredTypars, maxInferredTypars, tauTy, false)
+                   let canConstrain = GeneralizationHelpers.CanGeneralizeConstrainedTyparsForDecl(declKind)
+                   GeneralizationHelpers.ComputeAndGeneralizeGenericTypars
+                       (cenv, denv, m, freeInEnv, canInferTypars, canConstrain, inlineFlag, Some rhsExpr, allDeclaredTypars, maxInferredTypars, tauTy, false)
 
             let prelimValSchemes2 = GeneralizeVals cenv denv enclosingDeclaredTypars  generalizedTypars nameToPrelimValSchemeMap
 
@@ -11091,7 +11098,8 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
         // Add the compilation of the pattern to the bodyExpr we get from mkCleanup
         let mkPatBind (bodyExpr, bodyExprTy) =
             let valsDefinedByMatching = ListSet.remove valEq patternInputTmp allValsDefinedByPattern
-            let matchx = CompilePatternForMatch cenv env m m true ThrowIncompleteMatchException (patternInputTmp, generalizedTypars, Some rhsExpr) [TClause(checkedPat2, None, TTarget(valsDefinedByMatching, bodyExpr, SuppressSequencePointAtTarget), m)] tauTy bodyExprTy
+            let clauses = [TClause(checkedPat2, None, TTarget(valsDefinedByMatching, bodyExpr, SuppressSequencePointAtTarget), m)]
+            let matchx = CompilePatternForMatch cenv env m m true ThrowIncompleteMatchException (patternInputTmp, generalizedTypars, Some rhsExpr) clauses tauTy bodyExprTy
             let matchx = if (DeclKind.ConvertToLinearBindings declKind) then LinearizeTopMatch cenv.g altActualParent matchx else matchx
             matchx, bodyExprTy
 
@@ -11344,7 +11352,16 @@ and CheckForNonAbstractInterface declKind tcref memberFlags m =
 // TcLetrec - AnalyzeAndMakeAndPublishRecursiveValue(s)
 //------------------------------------------------------------------------
 
-and AnalyzeRecursiveStaticMemberOrValDecl (cenv, envinner: TcEnv, tpenv, declKind, newslotsOK, overridesOK, tcrefContainerInfo, vis1, id:Ident, vis2, declaredTypars, memberFlagsOpt, thisIdOpt, bindingAttribs, valSynInfo, ty, bindingRhs, mBinding, flex) =
+and AnalyzeRecursiveStaticMemberOrValDecl 
+       (cenv, envinner: TcEnv, 
+        tpenv, declKind, 
+        newslotsOK, overridesOK,
+        tcrefContainerInfo, vis1,
+        id:Ident, vis2, declaredTypars, 
+        memberFlagsOpt, thisIdOpt, 
+        bindingAttribs, valSynInfo, ty, 
+        bindingRhs, mBinding, flex) =
+
     let vis = CombineVisibilityAttribs vis1 vis2 mBinding
 
     // Check if we're defining a member, in which case generate the internal unique 
@@ -11409,7 +11426,12 @@ and AnalyzeRecursiveStaticMemberOrValDecl (cenv, envinner: TcEnv, tpenv, declKin
         envinner, tpenv, id, None, None, vis, vis2, None, [], None, flex, bindingRhs, declaredTypars
     
 
-and AnalyzeRecursiveInstanceMemberDecl (cenv, envinner: TcEnv, tpenv, declKind, synTyparDecls, valSynInfo, flex:ExplicitTyparInfo, newslotsOK, overridesOK, vis1, thisId, memberId:Ident, toolId:Ident option, bindingAttribs, vis2, tcrefContainerInfo, memberFlagsOpt, ty, bindingRhs, mBinding) =
+and AnalyzeRecursiveInstanceMemberDecl 
+       (cenv, envinner: TcEnv, tpenv, declKind, synTyparDecls, valSynInfo, 
+        flex:ExplicitTyparInfo, newslotsOK, overridesOK, vis1, thisId, 
+        memberId:Ident, toolId:Ident option, bindingAttribs, vis2, 
+        tcrefContainerInfo, memberFlagsOpt, ty, bindingRhs, mBinding) =
+
     let vis = CombineVisibilityAttribs vis1 vis2 mBinding
     let (ExplicitTyparInfo(_, declaredTypars, infer)) = flex
     match tcrefContainerInfo, memberFlagsOpt with 
@@ -11494,10 +11516,20 @@ and AnalyzeRecursiveDecl (cenv, envinner, tpenv, declKind, synTyparDecls, declar
              analyzeRecursiveDeclPat tpenv (SynPat.Named (SynPat.Wild m, id, false, None, m))
              
         | SynPat.Named (SynPat.Wild _, id, _, vis2, _) -> 
-            AnalyzeRecursiveStaticMemberOrValDecl (cenv, envinner, tpenv, declKind, newslotsOK, overridesOK, tcrefContainerInfo, vis1, id, vis2, declaredTypars, memberFlagsOpt, thisIdOpt, bindingAttribs, valSynInfo, ty, bindingRhs, mBinding, flex)
+            AnalyzeRecursiveStaticMemberOrValDecl 
+                (cenv, envinner, tpenv, declKind, 
+                 newslotsOK, overridesOK, tcrefContainerInfo, 
+                 vis1, id, vis2, declaredTypars, 
+                 memberFlagsOpt, thisIdOpt, bindingAttribs, 
+                 valSynInfo, ty, bindingRhs, mBinding, flex)
             
         | SynPat.InstanceMember(thisId, memberId, toolId, vis2, _) -> 
-            AnalyzeRecursiveInstanceMemberDecl (cenv, envinner, tpenv, declKind, synTyparDecls, valSynInfo, flex, newslotsOK, overridesOK, vis1, thisId, memberId, toolId, bindingAttribs, vis2, tcrefContainerInfo, memberFlagsOpt, ty, bindingRhs, mBinding)
+            AnalyzeRecursiveInstanceMemberDecl 
+                (cenv, envinner, tpenv, declKind, 
+                 synTyparDecls, valSynInfo, flex, newslotsOK, 
+                 overridesOK, vis1, thisId, memberId, toolId, 
+                 bindingAttribs, vis2, tcrefContainerInfo, 
+                 memberFlagsOpt, ty, bindingRhs, mBinding)
 
         | _ -> error(Error(FSComp.SR.tcOnlySimplePatternsInLetRec(), mBinding))
 
@@ -13367,7 +13399,9 @@ module MutRecBindingChecking =
                             // ideally we'd have the 'm' of the type declaration stored here, to avoid needing to trim to line to approx
                             error(Error(FSComp.SR.tcTypeAbbreviationsMayNotHaveMembers(), (trimRangeToLine m)))
 
-                        if tcref.IsEnumTycon && (declKind <> ExtrinsicExtensionBinding) then error(Error(FSComp.SR.tcEnumerationsMayNotHaveMembers(), (trimRangeToLine m))) // ideally we'd have the 'm' of the type declaration stored here, to avoid needing to trim to line to approx
+                        if tcref.IsEnumTycon && (declKind <> ExtrinsicExtensionBinding) then 
+                            // ideally we'd have the 'm' of the type declaration stored here, to avoid needing to trim to line to approx
+                            error(Error(FSComp.SR.tcEnumerationsMayNotHaveMembers(), (trimRangeToLine m))) 
 
                         match classMemberDef, containerInfo with
                         | SynMemberDefn.ImplicitCtor (vis, attrs, spats, thisIdOpt, m), ContainerInfo(_, Some(MemberOrValContainerInfo(tcref, _, baseValOpt, safeInitInfo, _))) ->
@@ -13528,7 +13562,8 @@ module MutRecBindingChecking =
 
                         let (tpenv, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable) = innerState
 
-                        let (envNonRec, generalizedRecBinds, preGeneralizationRecBinds, _, uncheckedRecBindsTable) = TcLetrecBinding (cenv, envStatic, scopem, [], None) (envNonRec, generalizedRecBinds, preGeneralizationRecBinds, tpenv, uncheckedRecBindsTable) rbind
+                        let (envNonRec, generalizedRecBinds, preGeneralizationRecBinds, _, uncheckedRecBindsTable) = 
+                            TcLetrecBinding (cenv, envStatic, scopem, [], None) (envNonRec, generalizedRecBinds, preGeneralizationRecBinds, tpenv, uncheckedRecBindsTable) rbind
                              
                         let innerState = (tpenv, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
                         rbind.RecBindingInfo.Index, innerState)
@@ -14399,7 +14434,11 @@ module TyconConstraintInference =
             let newSet = 
                 assumedTycons |> Set.filter (fun tyconStamp -> 
                    let (tycon, structuralTypes) = tab.[tyconStamp] 
-                   if cenv.g.compilingFslib && AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare cenv.g tycon && not (HasFSharpAttribute g g.attrib_StructuralComparisonAttribute tycon.Attribs) && not (HasFSharpAttribute g g.attrib_NoComparisonAttribute tycon.Attribs) then 
+
+                   if cenv.g.compilingFslib && 
+                      AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare cenv.g tycon && 
+                      not (HasFSharpAttribute g g.attrib_StructuralComparisonAttribute tycon.Attribs) && 
+                      not (HasFSharpAttribute g g.attrib_NoComparisonAttribute tycon.Attribs) then 
                        errorR(Error(FSComp.SR.tcFSharpCoreRequiresExplicit(), tycon.Range)) 
 
                    let res = (structuralTypes |> List.forall (fst >> checkIfFieldTypeSupportsComparison tycon))
@@ -14521,8 +14560,13 @@ module TyconConstraintInference =
 
             let newSet = 
                 assumedTycons |> Set.filter (fun tyconStamp -> 
+
                    let (tycon, structuralTypes) = tab.[tyconStamp] 
-                   if cenv.g.compilingFslib && AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals cenv.g tycon && not (HasFSharpAttribute g g.attrib_StructuralEqualityAttribute tycon.Attribs) && not (HasFSharpAttribute g g.attrib_NoEqualityAttribute tycon.Attribs) then 
+
+                   if cenv.g.compilingFslib && 
+                      AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals cenv.g tycon && 
+                      not (HasFSharpAttribute g g.attrib_StructuralEqualityAttribute tycon.Attribs) && 
+                      not (HasFSharpAttribute g g.attrib_NoEqualityAttribute tycon.Attribs) then 
                        errorR(Error(FSComp.SR.tcFSharpCoreRequiresExplicit(), tycon.Range)) 
 
                    // Remove structural types with incomparable elements from the assumedTycons
@@ -15732,7 +15776,8 @@ module EstablishTypeDefinitionCores =
                     noAllowNullLiteralAttributeCheck()
                     let vfld = NewRecdField false None (ident("value__", m)) false fieldTy false false [] [] XmlDoc.Empty taccessPublic true
                     
-                    if not (ListSet.contains (typeEquiv cenv.g) fieldTy [ cenv.g.int32_ty; cenv.g.int16_ty; cenv.g.sbyte_ty; cenv.g.int64_ty; cenv.g.char_ty; cenv.g.bool_ty; cenv.g.uint32_ty; cenv.g.uint16_ty; cenv.g.byte_ty; cenv.g.uint64_ty ]) then 
+                    let legitEnumTypes = [ cenv.g.int32_ty; cenv.g.int16_ty; cenv.g.sbyte_ty; cenv.g.int64_ty; cenv.g.char_ty; cenv.g.bool_ty; cenv.g.uint32_ty; cenv.g.uint16_ty; cenv.g.byte_ty; cenv.g.uint64_ty ]
+                    if not (ListSet.contains (typeEquiv cenv.g) fieldTy legitEnumTypes) then 
                         errorR(Error(FSComp.SR.tcInvalidTypeForLiteralEnumeration(), m))
 
                     writeFakeRecordFieldsToSink fields' 
@@ -17472,10 +17517,18 @@ let TypeCheckOneImplFile
     // errors we turn off error reporting. This is because it performs various fixups over the TAST, e.g. 
     // assigning nice names for inference variables.
     let hasExplicitEntryPoint, anonRecdTypes = 
+
         conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
+
             try  
                 let reportErrors = not (checkForErrors())
-                PostTypeCheckSemanticChecks.CheckTopImpl (g, cenv.amap, reportErrors, cenv.infoReader, env.eInternalsVisibleCompPaths, cenv.topCcu, envAtEnd.DisplayEnv, implFileExprAfterSig, extraAttribs, isLastCompiland, isInternalTestSpanStackReferring)
+
+                PostTypeCheckSemanticChecks.CheckTopImpl 
+                   (g, cenv.amap, reportErrors, cenv.infoReader, 
+                    env.eInternalsVisibleCompPaths, cenv.topCcu, envAtEnd.DisplayEnv, 
+                    implFileExprAfterSig, extraAttribs, isLastCompiland, 
+                    isInternalTestSpanStackReferring)
+
             with e -> 
                 errorRecovery e m
                 false, StampMap.Empty)

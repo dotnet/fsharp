@@ -821,7 +821,8 @@ let GetMethodSpecForMemberVal amap g (memberInfo:ValMemberInfo) (vref:ValRef) =
            List.iter2
               (fun gtp ty2 -> 
                 if not (typeEquiv g (mkTyparTy gtp) ty2) then 
-                  warning(InternalError("CodeGen check: type checking did not quantify the correct type variables for this method: generalization list contained " + gtp.Name + "#" + string gtp.Stamp + " and list from 'this' pointer contained " +  (showL(typeL ty2)), m)))
+                  warning(InternalError("CodeGen check: type checking did not quantify the correct type variables for this method: generalization list contained "
+                                           + gtp.Name + "#" + string gtp.Stamp + " and list from 'this' pointer contained " +  (showL(typeL ty2)), m)))
               ctps 
               thisArgTys
         let methodArgTys,paramInfos = List.unzip flatArgInfos
@@ -1066,7 +1067,10 @@ let MergeOptions m o1 o2 =
     | Some x, Some _ -> 
 #if DEBUG
        // This warning fires on some code that also triggers this warning:
-       //          warning(Error("The implementation of a specified generic interface required a method implementation not fully supported by F# Interactive. In the unlikely event that the resulting class fails to load then compile the interface type into a statically-compiled DLL and reference it using '#r'",m))
+       //    The implementation of a specified generic interface 
+       //    required a method implementation not fully supported by F# Interactive. In 
+       //    the unlikely event that the resulting class fails to load then compile 
+       //    the interface type into a statically-compiled DLL and reference it using '#r'
        // The code is OK so we don't print this.
        errorR(InternalError("MergeOptions: two values given",m)) 
 #else
@@ -3886,7 +3890,10 @@ and GenSequenceExpr cenv (cgbuf:CodeGenBuffer) eenvouter (nextEnumeratorValRef:V
         let spReq = SPSuppress
         // the 'next enumerator' byref arg is at arg position 1 
         let eenvinner = eenvinner |> AddStorageForLocalVals cenv.g [ (nextEnumeratorValRef.Deref, Arg 1) ]
-        mkILNonGenericVirtualMethod("GenerateNext",ILMemberAccess.Public, [mkILParamNamed("next",ILType.Byref ilCloEnumerableTy)], mkILReturn cenv.g.ilg.typ_Int32, MethodBody.IL (CodeGenMethodForExpr cenv cgbuf.mgbuf (spReq,[],"GenerateNext",eenvinner,2,generateNextExpr,Return)))
+        let ilParams = [mkILParamNamed("next",ILType.Byref ilCloEnumerableTy)]
+        let ilReturn = mkILReturn cenv.g.ilg.typ_Int32
+        let ilCode = MethodBody.IL (CodeGenMethodForExpr cenv cgbuf.mgbuf (spReq,[],"GenerateNext",eenvinner,2,generateNextExpr,Return))
+        mkILNonGenericVirtualMethod("GenerateNext",ILMemberAccess.Public, ilParams, ilReturn, ilCode)
 
     let lastGeneratedMethod = 
         mkILNonGenericVirtualMethod("get_LastGenerated",ILMemberAccess.Public, [], mkILReturn ilCloSeqElemTy, MethodBody.IL (CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress,[],"get_LastGenerated",eenvinner,1,exprForValRef m currvref,Return)))
@@ -3990,7 +3997,18 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
                               implements = [],
                               extends= Some cenv.g.ilg.typ_Object,
                               securityDecls= emptyILSecurityDecls)
-                let ilContractTypeDef = ilContractTypeDef.WithAbstract(true).WithAccess(ComputeTypeAccess ilContractTypeRef true).WithSerializable(true).WithSpecialName(true).WithLayout(ILTypeDefLayout.Auto).WithInitSemantics(ILTypeInit.BeforeField).WithEncoding(ILDefaultPInvokeEncoding.Auto) // the contract type is an abstract type and not sealed
+
+                // the contract type is an abstract type and not sealed
+                let ilContractTypeDef = 
+                    ilContractTypeDef
+                        .WithAbstract(true)
+                        .WithAccess(ComputeTypeAccess ilContractTypeRef true)
+                        .WithSerializable(true)
+                        .WithSpecialName(true)
+                        .WithLayout(ILTypeDefLayout.Auto)
+                        .WithInitSemantics(ILTypeInit.BeforeField)
+                        .WithEncoding(ILDefaultPInvokeEncoding.Auto) 
+
                 cgbuf.mgbuf.AddTypeDef(ilContractTypeRef, ilContractTypeDef, false, false, None)
                 
                 let ilCtorBody =  mkILMethodBody (true,[],8,nonBranchingInstrsToCode (mkCallBaseConstructor(ilContractTy,[])), None )
