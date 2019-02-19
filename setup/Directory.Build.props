@@ -1,0 +1,21 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <Import Project="Localization.props" />
+
+  <PropertyGroup>
+    <DisableOutputPathCopying>true</DisableOutputPathCopying>
+    <EnableXlfLocalization>false</EnableXlfLocalization>
+    <SetupRootFolder>$(MSBuildThisFileDirectory)</SetupRootFolder>
+    <SetupResourcesDirectory>$(SetupRootFolder)resources</SetupResourcesDirectory>
+    <BinariesDir>$(SetupRootFolder)..\artifacts\bin</BinariesDir>
+    <OutputPath>$(ArtifactsDir)\VSSetup\$(Configuration)</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)\VSSetup.obj\$(Configuration)\$(MSBuildProjectName)</IntermediateOutputPath>
+    <VsixBuildLocation>$(SetupRootFolder)..\artifacts\VSSetup\$(Configuration)</VsixBuildLocation>
+    <InsertionDir>$(SetupRootFolder)..\artifacts\VSSetup\$(Configuration)\Insertion</InsertionDir>
+
+    <!-- FSharpPackageVersion should be {VS version}.{today's date}.{build number}. Example: 15.6.20160901.3 -->
+    <FSharpPackageVersion>$(VSMajorVersion).$(VSMinorVersion).$(BUILD_BUILDNUMBER)</FSharpPackageVersion>
+  </PropertyGroup>
+
+</Project>

@@ -309,8 +309,12 @@ module SHA1 =
         let (_h0, _h1, _h2, h3, h4) = sha1Hash { stream = s; pos = 0; eof = false }   // the result of the SHA algorithm is stored in registers 3 and 4
         Array.map byte [|  b0 h4; b1 h4; b2 h4; b3 h4; b0 h3; b1 h3; b2 h3; b3 h3; |]
 
+    let sha1HashInt64 s = 
+        let (_h0,_h1,_h2,h3,h4) = sha1Hash { stream = s; pos = 0; eof = false }   // the result of the SHA algorithm is stored in registers 3 and 4
+        (int64 h3 <<< 32) |||  int64 h4
 
 let sha1HashBytes s = SHA1.sha1HashBytes s
+let sha1HashInt64 s = SHA1.sha1HashInt64 s
 
 // --------------------------------------------------------------------
 // 
@@ -2326,7 +2330,7 @@ let mkILNonGenericValueTy tref = mkILNamedTy AsValue tref []
 
 let mkILNonGenericBoxedTy tref = mkILNamedTy AsObject tref []
 
-let mkSimpleAssRef n = 
+let mkSimpleAssemblyRef n = 
   ILAssemblyRef.Create(n, None, None, false, None, None)
 
 let mkSimpleModRef n = 
@@ -3187,9 +3191,9 @@ let destTypeDefsWithGlobalFunctionsFirst ilg (tdefs: ILTypeDefs) =
   let top2 = if isNil top then [ mkILTypeDefForGlobalFunctions ilg (emptyILMethods, emptyILFields) ] else top
   top2@nontop
 
-let mkILSimpleModule assname modname dll subsystemVersion useHighEntropyVA tdefs hashalg locale flags exportedTypes metadataVersion = 
+let mkILSimpleModule assemblyName modname dll subsystemVersion useHighEntropyVA tdefs hashalg locale flags exportedTypes metadataVersion = 
     let manifest = 
-        { Name=assname
+        { Name=assemblyName
           AuxModuleHashAlgorithm= match hashalg with | Some(alg) -> alg | _ -> 0x8004 // SHA1
           SecurityDeclsStored=emptyILSecurityDeclsStored
           PublicKey= None
@@ -3917,13 +3921,13 @@ let emptyILRefs =
     ModuleReferences = [] }
 
 (* Now find references. *)
-let refs_of_assref (s:ILReferencesAccumulator) x = s.refsA.Add x |> ignore
+let refs_of_assemblyRef (s:ILReferencesAccumulator) x = s.refsA.Add x |> ignore
 let refs_of_modref (s:ILReferencesAccumulator) x = s.refsM.Add x |> ignore
     
 let refs_of_scoref s x = 
     match x with 
     | ILScopeRef.Local -> () 
-    | ILScopeRef.Assembly assref -> refs_of_assref s assref
+    | ILScopeRef.Assembly assemblyRef -> refs_of_assemblyRef s assemblyRef
     | ILScopeRef.Module modref -> refs_of_modref s modref  
 
 let refs_of_tref s (x:ILTypeRef) = refs_of_scoref s x.Scope
@@ -3971,7 +3975,7 @@ and refs_of_token s x =
 
 and refs_of_custom_attr s (cattr: ILAttribute) = refs_of_mspec s cattr.Method
     
-and refs_of_custom_attrs s (cas : ILAttributes) = List.iter (refs_of_custom_attr s) cas.AsList
+and refs_of_custom_attrs s (cas : ILAttributes) = Array.iter (refs_of_custom_attr s) cas.AsArray
 and refs_of_varargs s tyso = Option.iter (refs_of_tys s) tyso 
 and refs_of_instr s x = 
     match x with
@@ -4095,7 +4099,7 @@ and refs_of_resource_where s x =
     | ILResourceLocation.LocalIn _ -> ()
     | ILResourceLocation.LocalOut _ -> ()
     | ILResourceLocation.File (mref, _) -> refs_of_modref s mref
-    | ILResourceLocation.Assembly aref -> refs_of_assref s aref
+    | ILResourceLocation.Assembly aref -> refs_of_assemblyRef s aref
 
 and refs_of_resource s x = 
     refs_of_resource_where s x.Location

@@ -4,21 +4,43 @@ jobs:
     vmImage: ubuntu-16.04
   timeoutInMinutes: 90
   strategy:
-    maxParallel: 2
+    maxParallel: 3
     matrix:
-      release_default:
-        _command: ./mono/cibuild.sh
-        _args: release
-      # disabled until it can be properly fixed
-      #release_fcs:
-      #  _command: ./fcs/build.sh
-      #  _args: Build
+      dotnet_sdk:
+        _command: make
+        _args: Configuration=release
+      release_fcs:
+        _command: ./fcs/build.sh
+        _args: Build
   steps:
   - script: $(_command) $(_args)
   - task: PublishBuildArtifacts@1
     inputs:
-      PathtoPublish: '$(Build.SourcesDirectory)/tests/TestResults'
+      PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults'
       ArtifactName: 'Linux $(_command) $(_args)'
+      publishLocation: Container
+    continueOnError: true
+    condition: failed()
+
+- job: MacOS
+  pool:
+    vmImage: macOS-10.13
+  timeoutInMinutes: 90
+  strategy:
+    maxParallel: 3
+    matrix:
+      dotnet_sdk:
+        _command: make
+        _args: Configuration=release
+      release_fcs:
+        _command: ./fcs/build.sh
+        _args: Build
+  steps:
+  - script: $(_command) $(_args)
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults'
+      ArtifactName: 'MacOS $(_command) $(_args)'
       publishLocation: Container
     continueOnError: true
     condition: failed()
@@ -26,7 +48,7 @@ jobs:
 - job: Windows
   pool:
     vmImage: vs2017-win2016
-  timeoutInMinutes: 90
+  timeoutInMinutes: 120
   strategy:
     maxParallel: 7
     matrix:
@@ -55,7 +77,7 @@ jobs:
   - script: $(_command) $(_args)
   - task: PublishBuildArtifacts@1
     inputs:
-      PathtoPublish: '$(Build.SourcesDirectory)\tests\TestResults'
+      PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults'
       ArtifactName: 'Windows $(_command) $(_args)'
       publishLocation: Container
     continueOnError: true

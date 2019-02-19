@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="needs-review-translation">パターン マッチ式のすべてのブランチは、同じ型の値を返す必要があります。最初のブランチが返した値の型は '{0}' ですが、このブランチが返した値の型は '{1}' です。</target>
+        <target state="needs-review-translation">パターン一致式のすべてのブランチは同じ型の値を返す必要があります。最初のブランチは、型 '{0}' の値を返しましたが、このブランチは型 '{1}' の値を返しました。</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -209,17 +209,12 @@
       </trans-unit>
       <trans-unit id="buildInvalidPrivacy">
         <source>Unrecognized privacy setting '{0}' for managed resource, valid options are 'public' and 'private'</source>
-        <target state="translated">マネージド リソースの認識されないプライバシー設定 '{0}'。有効なオプションは 'public' および 'private' です。</target>
+        <target state="translated">マネージ リソースの認識されないプライバシー設定 '{0}'。有効なオプションは 'public' および 'private' です。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildMultipleReferencesNotAllowed">
         <source>Multiple references to '{0}.dll' are not permitted</source>
         <target state="translated">'{0}.dll' に対する複数の参照は許可されていません</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildCouldNotReadVersionInfoFromMscorlib">
-        <source>Could not read version from mscorlib.dll</source>
-        <target state="translated">mscorlib.dll からバージョンを読み取ることができませんでした</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
@@ -354,7 +349,7 @@
       </trans-unit>
       <trans-unit id="pickleErrorReadingWritingMetadata">
         <source>Error reading/writing metadata for the F# compiled DLL '{0}'. Was the DLL compiled with an earlier version of the F# compiler? (error: '{1}').</source>
-        <target state="translated">F# でコンパイルした DLL '{0}' のメタデータの読み取り/書き込み中にエラーが発生しました。旧バージョンの F# コンパイラでコンパイルした DLL ですか? (エラー: '{1}')</target>
+        <target state="translated">F# でコンパイルした DLL '{0}' のメタデータの読み取り/書き込み中にエラーが発生しました。旧バージョンの F# コンパイラーでコンパイルした DLL ですか? (エラー: '{1}')</target>
         <note />
       </trans-unit>
       <trans-unit id="tastTypeOrModuleNotConcrete">
@@ -1949,7 +1944,7 @@
       </trans-unit>
       <trans-unit id="parsSyntaxError">
         <source>Syntax error</source>
-        <target state="translated">構文エラー</target>
+        <target state="translated">構文エラーです</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAugmentationsIllegalOnDelegateType">
@@ -2969,7 +2964,7 @@
       </trans-unit>
       <trans-unit id="tcNoAbstractOrVirtualMemberFound">
         <source>The member '{0}' does not correspond to any abstract or virtual method available to override or implement.</source>
-        <target state="translated">メンバー '{0}' は、オーバーライドまたは実装に使用できるどの抽象メソッドまたは仮想メソッドにも対応していません。</target>
+        <target state="translated">メンバー '{0}' は、無視または実装に使用できるどの抽象メソッドまたは仮想メソッドにも対応していません。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMemberFoundIsNotAbstractOrVirtual">
@@ -4069,7 +4064,7 @@
       </trans-unit>
       <trans-unit id="optsCopyright">
         <source>Copyright (c) Microsoft Corporation. All Rights Reserved.</source>
-        <target state="translated">Copyright (c) Microsoft Corporation. All Rights Reserved.</target>
+        <target state="translated">Copyright (C) Microsoft Corporation. All rights reserved.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsCopyrightCommunity">
@@ -4279,7 +4274,7 @@
       </trans-unit>
       <trans-unit id="optsNologo">
         <source>Suppress compiler copyright message</source>
-        <target state="translated">コンパイラの著作権メッセージを表示しません</target>
+        <target state="translated">コンパイラーの著作権メッセージを表示しません</target>
         <note />
       </trans-unit>
       <trans-unit id="optsHelp">
@@ -4434,7 +4429,7 @@
       </trans-unit>
       <trans-unit id="optsDCLONoDescription">
         <source>The command-line option '{0}' has been deprecated</source>
-        <target state="translated">コマンド ライン オプション '{0}' は非推奨になりました</target>
+        <target state="translated">コマンド ライン オプション '{0}' は使用されなくなりました</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDCLODeprecatedSuggestAlternative">
@@ -4444,7 +4439,7 @@
       </trans-unit>
       <trans-unit id="optsDCLOHtmlDoc">
         <source>The command-line option '{0}' has been deprecated. HTML document generation is now part of the F# Power Pack, via the tool FsHtmlDoc.exe.</source>
-        <target state="translated">コマンド ライン オプション '{0}' は非推奨になりました。HTML ドキュメントの生成は、F# Power Pack のツール FsHtmlDoc.exe で実行できるようになりました。</target>
+        <target state="translated">コマンド ライン オプション '{0}' は使用されなくなりました。HTML ドキュメントの生成は、F# Power Pack のツール FsHtmlDoc.exe で実行できるようになりました。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsConsoleColors">
@@ -5459,7 +5454,7 @@
       </trans-unit>
       <trans-unit id="fscStaticLinkingNoMixedDLL">
         <source>Static linking may not include a mixed managed/unmanaged DLL</source>
-        <target state="translated">静的リンクでは、混合マネージド/アンマネージド DLL がインクルードされない可能性があります</target>
+        <target state="translated">静的リンクでは、混合マネージ/アンマネージ DLL がインクルードされない可能性があります</target>
         <note />
       </trans-unit>
       <trans-unit id="fscIgnoringMixedWhenLinking">
@@ -6504,7 +6499,7 @@
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
-        <target state="translated">パラメーター '{0}' に適用される CallerMemberNameAttribute は無効になります。CallerFilePathAttribute に上書きされます。</target>
+        <target state="translated">パラメーター '{0}' に適用された CallerMemberNameAttribute は、CallerFilePathAttribute.によってオーバーライドされるため無効となります。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
@@ -7057,14 +7052,14 @@
         <target state="translated">式から返された値のアドレスを取得できません。アドレスを取得する前に、let でバインドされた値に戻り値を割り当ててください。</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="new">The Span or IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+      <trans-unit id="parsUnmatchedBraceBar">
+        <source>Unmatched '{{|'</source>
+        <target state="new">Unmatched '{{|'</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcTypeDoesNotInheritAttribute">
-        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
-        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
+      <trans-unit id="typeInfoAnonRecdField">
+        <source>anonymous record field</source>
+        <target state="new">anonymous record field</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExceptionConstructorDoesNotHaveFieldWithGivenName">
@@ -7072,14 +7067,69 @@
         <target state="new">The exception '{0}' does not have a field named '{1}'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcActivePatternsDoNotHaveFields">
+        <source>Active patterns do not have fields. This syntax is invalid.</source>
+        <target state="new">Active patterns do not have fields. This syntax is invalid.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcConstructorDoesNotHaveFieldWithGivenName">
         <source>The constructor does not have a field named '{0}'.</source>
         <target state="new">The constructor does not have a field named '{0}'.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcActivePatternsDoNotHaveFields">
-        <source>Active patterns do not have fields. This syntax is invalid.</source>
-        <target state="new">Active patterns do not have fields. This syntax is invalid.</target>
+      <trans-unit id="tcAnonRecdCcuMismatch">
+        <source>Two anonymous record types are from different assemblies '{0}' and '{1}'</source>
+        <target state="new">Two anonymous record types are from different assemblies '{0}' and '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameMismatch">
+        <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
+        <target state="new">Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
+        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
+        <target state="new">Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
+        <source>Byref types are not allowed to have optional type extensions.</source>
+        <target state="new">Byref types are not allowed to have optional type extensions.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotPartiallyApplyExtensionMethodForByref">
+        <source>Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</source>
+        <target state="new">Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDoesNotInheritAttribute">
+        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
+        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsInvalidAnonRecdExpr">
+        <source>Invalid anonymous record expression</source>
+        <target state="new">Invalid anonymous record expression</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsInvalidAnonRecdType">
+        <source>Invalid anonymous record type</source>
+        <target state="new">Invalid anonymous record type</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCopyAndUpdateNeedsRecordType">
+        <source>The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</source>
+        <target state="new">The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInvalidFunctionParameterType">
+        <source>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</source>
+        <target state="new">The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInvalidFunctionReturnType">
+        <source>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</source>
+        <target state="new">The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</target>
         <note />
       </trans-unit>
     </body>

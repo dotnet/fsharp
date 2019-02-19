@@ -12,7 +12,6 @@ type Permutation =
     | FSI_CORECLR
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     | FSI_FILE
-    | FSIANYCPU_FILE
     | FSI_STDIN
     | GENERATED_SIGNATURE
     | FSC_OPT_MINUS_DEBUG
@@ -29,83 +28,232 @@ let cleanUpFSharpCore cfg =
     removeFSharpCore ()
     { new System.IDisposable with member x.Dispose() = removeFSharpCore () }
 
-let singleTestBuildAndRunCore  cfg (copyFiles:string) p = 
+// Generate a project files
+let emitFile filename (body:string) =
+    try
+        // Create a file to write to
+        use sw = File.CreateText(filename)
+        sw.WriteLine(body)
+    with | _ -> ()
 
-    let sources =
-        ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
-        |> List.filter (fileExists cfg)
+let copyFilesToDest sourceDir destDir =
+    let filenames = Directory.GetFiles(sourceDir, "*", SearchOption.TopDirectoryOnly)
+    for file in filenames do
+        let dest = Path.Combine(destDir, Path.GetFileName(file))
+        File.Copy(file, dest)
 
-    match p with 
-    | FSC_CORECLR ->
-        use cleanup = (cleanUpFSharpCore cfg)
-        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
+type CompileItem = Reference | Compile | UseSource | LoadSource
 
-        let testName = getBasename cfg.Directory
-        let extraSource = (__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs")
-        let outDir =  (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/fsharp/core/%s" cfg.BUILD_CONFIG testName)
-        let outFile = (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/fsharp/core/%s/test.exe" cfg.BUILD_CONFIG testName)
+type OutputType = Library | Exe | Script
 
-        makeDirectory (getDirectoryName outFile)
-        let fscArgs = 
-            sprintf """--debug:portable --debug+ --out:%s  --target:exe -g --define:FX_RESHAPED_REFLECTION --define:NETCOREAPP1_0 "%s" %s """
-               outFile
-               extraSource
-               (String.concat " " sources)
+type ProjectConfiguration = {
+    OutputType:OutputType
+    Framework:string
+    SourceDirectory:string
+    SourceItems:string list
+    ExtraSourceItems:string list
+    UtilitySourceItems:string list
+    ReferenceItems:string list
+    LoadSources:string list
+    UseSources:string list
+    Optimize:bool
+}
 
-        let fsccArgs = sprintf """--OutputDir:%s --CopyDlls:%s %s""" outDir copyFiles fscArgs
 
-        fsi_script cfg "--exec %s %s %s"
-               cfg.fsi_flags
-               (__SOURCE_DIRECTORY__ ++ @"../scripts/fscc.fsx")
-               fsccArgs
-               []
+let replaceTokens tag (replacement:string) (template:string) = template.Replace(tag, replacement)
 
-        exec cfg  cfg.DotNetExe outFile
+let generateProps testCompilerVersion =
+    let template = @"<Project>
+  <PropertyGroup>
+    <Configuration Condition=""'$(Configuration)' == ''"">Release</Configuration>
+    <FSharpTestCompilerVersion>$(TESTCOMPILERVERSION)</FSharpTestCompilerVersion>
+  </PropertyGroup>
+  <Import Project=""$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.props', '$(PROJECTDIRECTORY)'))"" />
+</Project>"
+    template
+    |> replaceTokens "$(PROJECTDIRECTORY)" (Path.GetFullPath(__SOURCE_DIRECTORY__))
+    |> replaceTokens "$(TESTCOMPILERVERSION)" testCompilerVersion
 
-        testOkFile.CheckExists()
+let generateTargets =
+    let template = @"<Project>
+  <Import Project=""$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.targets', '$(PROJECTDIRECTORY)'))"" />
+  <Import Project=""$(MSBuildThisFileDirectory)Directory.Overrides.targets"" Condition=""'$(OutputType)'=='Script'"" />
+</Project>"
+    template
+    |> replaceTokens "$(PROJECTDIRECTORY)" (Path.GetFullPath(__SOURCE_DIRECTORY__))
 
-    | FSI_CORECLR -> 
-        use cleanup = (cleanUpFSharpCore cfg)
-        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
+let generateOverrides =
+    let template = @"<Project>
+  <Target Name=""Build"" DependsOnTargets=""RunFSharpScript"" />
+  <Target Name=""Rebuild"" DependsOnTargets=""RunFSharpScript"" />
+</Project>"
+    template
 
-        let testName = getBasename cfg.Directory
-        let extraSource = (__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs")
-        let outDir =  (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/fsharp/core/%s" cfg.BUILD_CONFIG testName)
-        let fsiArgs = 
-            sprintf """ --define:NETCOREAPP1_0 --define:FX_RESHAPED_REFLECTION "%s" %s """
-               extraSource
-               (String.concat " " sources)
+let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework configuration =
+    let computeSourceItems addDirectory addCondition (compileItem:CompileItem) sources =
+        let computeInclude src =
+            let fileName = if addDirectory then Path.Combine(pc.SourceDirectory, src) else src
+            let condition = if addCondition then " Condition=\"Exists('" + fileName + "')\"" else ""
+            match compileItem with
+            | CompileItem.Compile ->
+                "\n    <Compile Include='" + fileName + "'" + condition + " />"
+            | CompileItem.Reference ->
+                "\n    <Reference Include='" + fileName + "'" + condition + " />"
+            | CompileItem.UseSource ->
+                "\n    <UseSource Include='" + fileName + "'" + condition + " />"
+            | CompileItem.LoadSource ->
+                "\n    <LoadSource Include='" + fileName + "'" + condition + " />"
 
-        let fsciArgs = sprintf """--verbose:repro --OutputDir:%s --CopyDlls:%s %s""" outDir copyFiles fsiArgs
+        sources
+        |> List.map(fun src -> computeInclude src)
+        |> List.fold (fun acc s -> acc + s) ""
 
-        fsi_script cfg "--exec %s %s %s"
-               cfg.fsi_flags
-               (__SOURCE_DIRECTORY__ ++ @"../scripts/fsci.fsx")
-               fsciArgs
-               []
+    let replace tag items addDirectory addCondition compileItem (template:string) = template.Replace(tag, computeSourceItems addDirectory addCondition compileItem items)
 
-        testOkFile.CheckExists()
+    let outputType =
+        match pc.OutputType with
+        | OutputType.Script -> "Script"
+        | _ -> "Exe"
+    let optimize = if pc.Optimize then "True" else "False"
+    let debug = if pc.Optimize then "True" else "False"
+    let generateProjBody =
+        let template = @"<Project Sdk='Microsoft.NET.Sdk'>
+        
+  <PropertyGroup>
+    <OutputType>$(OUTPUTTYPE)</OutputType>
+    <TargetFramework>$(TARGETFRAMEWORK)</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <DebugSymbols>$(DEBUG)</DebugSymbols>
+    <DebugType>portable</DebugType>
+    <Optimize>$(OPTIMIZE)</Optimize>
+    <SignAssembly>false</SignAssembly>
+    <DefineConstants>FX_RESHAPED_REFLECTION</DefineConstants>
+    <DefineConstants Condition=""'$(OutputType)' == 'Script' and '$(FSharpTestCompilerVersion)' == 'coreclr'"">NETCOREAPP</DefineConstants>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' == ''"">$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
+    <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' != ''"">$(RestoreAdditionalProjectSources);$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
+  </PropertyGroup>
+
+  <!-- Utility sources -->
+  <ItemGroup>$(UTILITYSOURCEITEMS)
+  </ItemGroup>
+
+  <!-- Sources -->
+  <ItemGroup>$(SOURCEITEMS)
+  </ItemGroup>
+
+  <!-- Extra sources -->
+  <ItemGroup>$(EXTRASOURCEITEMS)
+  </ItemGroup>
+
+  <!-- References -->
+  <ItemGroup>$(REFERENCEITEMS)
+    <Reference Condition=""$(TargetFramework.StartsWith('net4'))"" Include=""System.Windows.Forms"" />
+    <Reference Condition=""$(TargetFramework.StartsWith('net4'))"" Include=""System.Web"" />
+  </ItemGroup>
+
+  <Target Name='CopyCustomContentOnPublish' AfterTargets='Build'>
+    <ItemGroup>
+        <Libraries Include='*.dll' />
+    </ItemGroup>
+    <Copy SourceFiles='@(Libraries)' DestinationFolder='$(OutputPath)' SkipUnchangedFiles='false' />
+  </Target>
+
+</Project>"
+        template
+        |> replace "$(UTILITYSOURCEITEMS)" pc.UtilitySourceItems false false CompileItem.Compile
+        |> replace "$(SOURCEITEMS)" pc.SourceItems true false CompileItem.Compile
+        |> replace "$(EXTRASOURCEITEMS)" pc.ExtraSourceItems true true CompileItem.Compile
+        |> replace "$(REFERENCEITEMS)" pc.ReferenceItems true true CompileItem.Reference
+        |> replace "$(LOADSOURCEITEMS)" pc.LoadSources true true CompileItem.LoadSource
+        |> replace "$(USESOURCEITEMS)" pc.UseSources true true CompileItem.UseSource
+        |> replaceTokens "$(DIRECTORYBUILDLOCATION)" (Path.GetFullPath(__SOURCE_DIRECTORY__))
+        |> replaceTokens "$(OUTPUTTYPE)" outputType
+        |> replaceTokens "$(OPTIMIZE)" optimize
+        |> replaceTokens "$(DEBUG)" debug
+        |> replaceTokens "$(TARGETFRAMEWORK)" targetFramework
+        |> replaceTokens "$(RestoreFromArtifactsPath)" (Path.GetFullPath(__SOURCE_DIRECTORY__) + "/../../artifacts/packages/" + configuration)
+
+    generateProjBody
+
+let singleTestBuildAndRunCore cfg copyFiles p =
+    let sources = []
+    let loadSources = []
+    let useSources = []
+    let extraSources = ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
+    let utilitySources = [__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs"]
+    let referenceItems =  if String.IsNullOrEmpty(copyFiles) then [] else [copyFiles]
+    let framework = "netcoreapp2.0"
+
+    let executeSingleTestBuildAndRun outputType compilerType targetFramework optimize =
+        let mutable result = false
+        let directory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() )
+        let pc = {
+            OutputType = outputType
+            Framework = framework
+            SourceDirectory = cfg.Directory
+            SourceItems = sources
+            ExtraSourceItems = extraSources
+            UtilitySourceItems = utilitySources
+            ReferenceItems = referenceItems
+            LoadSources = loadSources
+            UseSources = useSources
+            Optimize = optimize
+        }
+
+        let targetsBody = generateTargets
+        let overridesBody = generateOverrides
+        let targetsFileName = Path.Combine(directory, "Directory.Build.targets")
+        let propsFileName = Path.Combine(directory, "Directory.Build.props")
+        let overridesFileName = Path.Combine(directory, "Directory.Overrides.targets")
+        let projectFileName = Path.Combine(directory, Path.GetRandomFileName() + ".fsproj")
+        try
+            Directory.CreateDirectory(directory) |> ignore
+            copyFilesToDest cfg.Directory directory
+            emitFile targetsFileName targetsBody
+            emitFile overridesFileName overridesBody
+            if outputType = OutputType.Exe then
+                let executeFsc testCompilerVersion targetFramework =
+                    let propsBody = generateProps testCompilerVersion
+                    emitFile propsFileName propsBody
+                    let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
+                    emitFile projectFileName projectBody
+                    use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
+                    exec { cfg with Directory = directory }  cfg.DotNetExe (sprintf "run -f %s" targetFramework)
+                    testOkFile.CheckExists()
+                executeFsc compilerType targetFramework
+            else
+                let executeFsi testCompilerVersion targetFramework =
+                    let propsBody = generateProps testCompilerVersion
+                    emitFile propsFileName propsBody
+                    let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
+                    emitFile projectFileName projectBody
+                    use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
+                    exec { cfg with Directory = directory }  cfg.DotNetExe "build /t:RunFSharpScript"
+                    testOkFile.CheckExists()
+                executeFsi compilerType targetFramework
+                result <- true
+        finally
+            if result <> false then
+                Directory.Delete(directory, true)
+            else
+                printfn "Configuration: %s" cfg.Directory
+                printfn "Directory: %s" directory
+                printfn "Filename: %s" projectFileName
+
+    match p with
+    | FSC_CORECLR -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "netcoreapp2.0" true
+    | FSI_CORECLR -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "netcoreapp2.0" true
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
-    | FSI_FILE -> 
-        use cleanup = (cleanUpFSharpCore cfg)
-        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
-
-        fsi cfg "%s" cfg.fsi_flags sources
-
-        testOkFile.CheckExists()
-
-    | FSIANYCPU_FILE -> 
-        use cleanup = (cleanUpFSharpCore cfg)
-        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
-
-        fsiAnyCpu cfg "%s" cfg.fsi_flags sources
-
-        testOkFile.CheckExists()
+    | FSC_OPT_PLUS_DEBUG -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" true
+    | FSC_OPT_MINUS_DEBUG -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" false
+    | FSI_FILE -> executeSingleTestBuildAndRun OutputType.Script "net40" "net472" true
 
     | FSI_STDIN -> 
         use cleanup = (cleanUpFSharpCore cfg)
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
+        let sources = extraSources |> List.filter (fileExists cfg)
 
         fsiStdin cfg (sources |> List.rev |> List.head) "" [] //use last file, because `cmd < a.txt b.txt` redirect b.txt only
 
@@ -122,35 +270,15 @@ let singleTestBuildAndRunCore  cfg (copyFiles:string) p =
         source1 |> Option.iter (fun from -> copy_y cfg from "tmptest.fs")
 
         log "Generated signature file..."
-        fsc cfg "%s --sig:tmptest.fsi --define:TESTS_AS_APP" cfg.fsc_flags ["tmptest.fs"]
+        fsc cfg "%s --sig:tmptest.fsi" cfg.fsc_flags ["tmptest.fs"]
         (if File.Exists("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build") |> ignore
 
         log "Compiling against generated signature file..."
-        fsc cfg "%s -o:tmptest1.exe  --define:TESTS_AS_APP" cfg.fsc_flags ["tmptest.fsi";"tmptest.fs"]
+        fsc cfg "%s -o:tmptest1.exe" cfg.fsc_flags ["tmptest.fsi";"tmptest.fs"]
         (if File.Exists("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build") |> ignore
 
         log "Verifying built .exe..."
         peverify cfg "tmptest1.exe"
-
-    | FSC_OPT_MINUS_DEBUG -> 
-        use cleanup = (cleanUpFSharpCore cfg)
-        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
-
-        fsc cfg "%s --optimize- --debug -o:test--optminus--debug.exe -g" cfg.fsc_flags sources
-        peverify cfg "test--optminus--debug.exe"
-        exec cfg ("." ++ "test--optminus--debug.exe") ""
-
-        testOkFile.CheckExists()
-
-    | FSC_OPT_PLUS_DEBUG -> 
-        use cleanup = (cleanUpFSharpCore cfg)
-        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
-
-        fsc cfg "%s --optimize+ --debug -o:test--optplus--debug.exe -g" cfg.fsc_flags sources
-        peverify cfg "test--optplus--debug.exe"
-        exec cfg ("." ++ "test--optplus--debug.exe") ""
-
-        testOkFile.CheckExists()
 
     | AS_DLL -> 
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
@@ -158,6 +286,8 @@ let singleTestBuildAndRunCore  cfg (copyFiles:string) p =
         // compiler will unpickle the interface and optimization data, so we test unpickling as well.
         use cleanup = (cleanUpFSharpCore cfg)
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
+        
+        let sources = extraSources |> List.filter (fileExists cfg)
 
         fsc cfg "%s --optimize -a -o:test--optimize-lib.dll -g" cfg.fsc_flags sources
         fsc cfg "%s --optimize -r:test--optimize-lib.dll -o:test--optimize-client-of-lib.exe -g" cfg.fsc_flags sources
@@ -210,13 +340,24 @@ let singleNegTest (cfg: TestConfig) testname =
         then fsc cfg "%s -a -o:%s-pre.dll" cfg.fsc_flags testname [testname + "-pre.fs"] 
         else ()
 
+    if fileExists cfg (testname + "-pre.fsx") then
+        fsi_script cfg "--exec %s %s %s"
+               cfg.fsi_flags
+               (cfg.Directory ++ (testname + "-pre.fsx"))
+               ""
+               []
+
     log "Negative typechecker testing: %s" testname
 
-    fscAppendErrExpectFail cfg  (sprintf "%s.err" testname) """%s --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%s.dll""" cfg.fsc_flags testname sources
+    let warnaserror =
+        if cfg.fsc_flags.Contains("--warnaserror-") then String.Empty
+        else "--warnaserror"
+
+    fscAppendErrExpectFail cfg  (sprintf "%s.err" testname) """%s --vserrors %s --nologo --maxerrors:10000 -a -o:%s.dll""" cfg.fsc_flags warnaserror testname sources
 
     let diff = fsdiff cfg (sprintf "%s.err" testname) (sprintf "%s.bsl" testname)
 
-    fscAppendErrExpectFail cfg (sprintf "%s.vserr" testname) "%s --test:ContinueAfterParseFailure --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%s.dll" cfg.fsc_flags testname sources
+    fscAppendErrExpectFail cfg (sprintf "%s.vserr" testname) "%s --test:ContinueAfterParseFailure --vserrors %s --nologo --maxerrors:10000 -a -o:%s.dll" cfg.fsc_flags warnaserror testname sources
 
     let vbslDiff = fsdiff cfg (sprintf "%s.vserr" testname) VSBSLFILE
 

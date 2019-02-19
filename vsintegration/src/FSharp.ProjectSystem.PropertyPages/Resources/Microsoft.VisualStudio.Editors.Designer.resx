@@ -1696,14 +1696,8 @@ CONSIDER: get this from CodeDom</comment>
   <data name="SD_ComboBoxItem_ApplicationScope" xml:space="preserve">
     <value>Application</value>
   </data>
-  <data name="SD_ComboBoxItem_WebApplicationScope" xml:space="preserve">
-    <value>Application (Web)</value>
-  </data>
   <data name="SD_ComboBoxItem_UserScope" xml:space="preserve">
     <value>User</value>
-  </data>
-  <data name="SD_ComboBoxItem_WebUserScope" xml:space="preserve">
-    <value>User (Web)</value>
   </data>
   <data name="SD_GridViewNameColumnHeaderText" xml:space="preserve">
     <value>Name</value>

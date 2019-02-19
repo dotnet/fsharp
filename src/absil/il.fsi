@@ -1605,7 +1605,7 @@ val decodeILAttribData:
       ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
 
 /// Generate simple references to assemblies and modules.
-val mkSimpleAssRef: string -> ILAssemblyRef
+val mkSimpleAssemblyRef: string -> ILAssemblyRef
 
 val mkSimpleModRef: string -> ILModuleRef
 
@@ -1955,6 +1955,7 @@ val isILTypedReferenceTy: ILType -> bool
 val isILDoubleTy: ILType -> bool
 val isILSingleTy: ILType -> bool
 
+val sha1HashInt64 : byte[] -> int64
 /// Get a public key token from a public key.
 val sha1HashBytes: byte[] -> byte[] (* SHA1 hash *)
 

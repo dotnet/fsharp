@@ -167,12 +167,12 @@ components installed in that VS installation.  You can revert this step by disab
 For **Debug**, uninstall then reinstall:
 
     VSIXInstaller.exe /u:"VisualFSharp"
-    VSIXInstaller.exe debug\net40\bin\VisualFSharpFull.vsix
+    VSIXInstaller.exe artifacts\bin\VisualFSharpFull\Debug\net46\VisualFSharpFull.vsix
 
 For **Release**, uninstall then reinstall:
 
     VSIXInstaller.exe /u:"VisualFSharp"
-    VSIXInstaller.exe release\net40\bin\VisualFSharpFull.vsix
+    VSIXInstaller.exe artifacts\bin\VisualFSharpFull\Release\net46\VisualFSharpFull.vsix
 
 Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools with updated F# Interactive.
 
@@ -230,14 +230,22 @@ See the "Debugging The Compiler" section of this [article](https://medium.com/@w
  - We use the proto compiler to compile the source for `FSharp.Core.dll` in this distribution.
  - We use the proto compiler to compile the source for `FSharp.Compiler.dll`, `fsc.exe`, `fsi.exe`, and other binaries found in this distribution.
 
-#### Updating FSComp.fs
+#### Updating FSComp.fs, FSComp.resx and XLF
 
 If you change error messages you may need to update FSComp.fs in `src\buildfromsource\FSharp.Compiler.Private`.
 
 To do this, build the non-buildfromsource version of FSharp.Compiler.Private (src\fsharp\FSharp.Compiler.Private) then check its obj\ directory for `FSComp.fs` and manually copy that into the buildfromsource directory.
 
     .\build net40
-    copy /y src\fsharp\FSharp.Compiler.Private\obj\release\net40\FSComp.* src\buildfromsource\FSharp.Compiler.Private\
+    copy /y artifacts\obj\FSharp.Compiler.Private\Release\net46\FSComp.* src\buildfromsource\FSharp.Compiler.Private\
+
+If your changes involve modifying the list of language keywords in any way, (e.g. when implementing a new keyword), the XLF localization files need to be synced with the corresponding resx files. This can be done automatically by running
+
+    pushd src\fsharp\FSharp.Compiler.Private
+    msbuild FSharp.Compiler.Private.fsproj /t:UpdateXlf
+    popd
+
+This only works on Windows/.NETStandard framework, so changing this from any other platform requires editing and syncing all of the XLF files manually.
 
 You can also change build.cmd to default COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES to 1 under ":ARGUMENTS_OK" label.
 
@@ -250,12 +258,6 @@ If you are behind a proxy server, NuGet client tool must be configured to use it
     .nuget\nuget.exe config -set http_proxy.password=user_password -ConfigFile NuGet.Config
 
 Where you should set proper proxy address, user name and password.
-
-#### When modifying, adding, or removing keywords or compiler messages
-
-If your changes involve modifying the list of language keywords in any way, (e.g. when implementing a new keyword), the XLF localization files need to be synced with the corresponding resx files. This can be done automatically by running `msbuild FSharp.Compiler.Private.fsproj /t:UpdateXlf` (located in [src\fsharp\FSharp.Compiler.Private](https://github.com/Microsoft/visualfsharp/tree/master/src/fsharp/FSharp.Compiler.Private)). This only works on Windows/.NETStandard framework, so changing this from any other platform requires editing and syncing all of the XLF files manually.
-
-After this, you must copy any differing `resx` files from the output directory into the corresponding subdirectory in [src\buildfromsource](https://github.com/Microsoft/visualfsharp/tree/master/src/fsharp/FSharp.Compiler.Private). This step will soon be eliminated (see issue [#3905](https://github.com/Microsoft/visualfsharp/issues/3905)).
 
 #### Resources
 

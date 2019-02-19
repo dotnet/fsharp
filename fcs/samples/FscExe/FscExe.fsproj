@@ -14,7 +14,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Runtime.Remoting" />
-    <PackageReference Include="FSharp.Core" Version="4.1.*" />
+    <PackageReference Include="FSharp.Core" Version="4.5.2" />
     <ProjectReference Include="..\..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net46'">

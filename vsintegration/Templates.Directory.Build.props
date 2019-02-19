@@ -2,6 +2,12 @@
 
   <Import Project="Directory.Build.props" />
 
+  <!-- The VSSDK can't handle these values being fully qualified.  The ~hack~ fix is to unset them and manually copy the templates after the build. -->
+  <PropertyGroup>
+    <BaseOutputPath></BaseOutputPath>
+    <BaseIntermediateOutputPath></BaseIntermediateOutputPath>
+  </PropertyGroup>
+
   <PropertyGroup>
     <TargetFramework>net46</TargetFramework>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>

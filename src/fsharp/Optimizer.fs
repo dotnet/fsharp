@@ -157,17 +157,20 @@ let braceL x = leftL (tagText "{") ^^ x ^^ rightL (tagText "}")
 let seqL xL xs = Seq.fold (fun z x -> z @@ xL x)  emptyL xs
 let namemapL xL xmap = NameMap.foldBack (fun nm x z -> xL nm x @@ z)  xmap emptyL
 
-let rec exprValueInfoL g = function
-  | ConstValue (x, ty)         -> NicePrint.layoutConst g ty x
-  | UnknownValue             -> wordL (tagText "?")
-  | SizeValue (_, vinfo)      -> exprValueInfoL g vinfo
-  | ValValue (vr, vinfo)      -> bracketL ((valRefL vr ^^ wordL (tagText "alias")) --- exprValueInfoL g vinfo)
-  | TupleValue vinfos    -> bracketL (exprValueInfosL g vinfos)
-  | RecdValue (_, vinfos)     -> braceL   (exprValueInfosL g vinfos)
-  | UnionCaseValue (ucr, vinfos) -> unionCaseRefL ucr ^^ bracketL (exprValueInfosL g vinfos)
-  | CurriedLambdaValue(_lambdaId, _arities, _bsize, expr', _ety) -> wordL (tagText "lam") ++ exprL expr' (* (sprintf "lam(size=%d)" bsize) *)
-  | ConstExprValue (_size, x)  -> exprL x
+let rec exprValueInfoL g exprVal = 
+    match exprVal with
+    | ConstValue (x, ty)         -> NicePrint.layoutConst g ty x
+    | UnknownValue             -> wordL (tagText "?")
+    | SizeValue (_, vinfo)      -> exprValueInfoL g vinfo
+    | ValValue (vr, vinfo)      -> bracketL ((valRefL vr ^^ wordL (tagText "alias")) --- exprValueInfoL g vinfo)
+    | TupleValue vinfos    -> bracketL (exprValueInfosL g vinfos)
+    | RecdValue (_, vinfos)     -> braceL   (exprValueInfosL g vinfos)
+    | UnionCaseValue (ucr, vinfos) -> unionCaseRefL ucr ^^ bracketL (exprValueInfosL g vinfos)
+    | CurriedLambdaValue(_lambdaId, _arities, _bsize, expr', _ety) -> wordL (tagText "lam") ++ exprL expr' (* (sprintf "lam(size=%d)" bsize) *)
+    | ConstExprValue (_size, x)  -> exprL x
+
 and exprValueInfosL g vinfos = commaListL (List.map (exprValueInfoL g) (Array.toList vinfos))
+
 and moduleInfoL g (x:LazyModuleInfo) = 
     let x = x.Force()
     braceL ((wordL (tagText "Modules: ") @@ (x.ModuleOrNamespaceInfos |> namemapL (fun nm x -> wordL (tagText nm) ^^ moduleInfoL g x) ) )
@@ -973,11 +976,11 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
     // Under those checks, the further hidden* checks may be subsumed (meaning, not required anymore).
 
     let hiddenTycon, hiddenTyconRepr, hiddenVal, hiddenRecdField, hiddenUnionCase = 
-        Zset.memberOf mhi.mhiTycons, 
-        Zset.memberOf mhi.mhiTyconReprs, 
-        Zset.memberOf mhi.mhiVals, 
-        Zset.memberOf mhi.mhiRecdFields, 
-        Zset.memberOf mhi.mhiUnionCases
+        Zset.memberOf mhi.HiddenTycons, 
+        Zset.memberOf mhi.HiddenTyconReprs, 
+        Zset.memberOf mhi.HiddenVals, 
+        Zset.memberOf mhi.HiddenRecdFields, 
+        Zset.memberOf mhi.HiddenUnionCases
 
     let rec abstractExprInfo ivalue = 
         match ivalue with 
@@ -1277,6 +1280,7 @@ and BindingHasEffect g bind = bind.Expr |> ExprHasEffect g
 and OpHasEffect g m op = 
     match op with 
     | TOp.Tuple _ -> false
+    | TOp.AnonRecd _ -> false
     | TOp.Recd (ctor, tcref) -> 
         match ctor with 
         | RecdExprIsObjInit -> true
@@ -1291,7 +1295,8 @@ and OpHasEffect g m op =
     | TOp.TupleFieldGet(_) -> false
     | TOp.ExnFieldGet(ecref, n) -> isExnFieldMutable ecref n 
     | TOp.RefAddrGet _ -> false
-    | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable || (TryFindTyconRefBoolAttribute g Range.range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = Some true)
+    | TOp.AnonRecdGet _ -> true // conservative
+    | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable || (TryFindTyconRefBoolAttribute g Range.range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = Some(true))
     | TOp.ValFieldGetAddr (rfref, _readonly)  -> rfref.RecdField.IsMutable
     | TOp.UnionCaseFieldGetAddr _ -> false // union case fields are immutable
     | TOp.LValueOp (LAddrOf _, _) -> false // addresses of values are always constants
@@ -1759,7 +1764,15 @@ let TryDetectQueryQuoteAndRun cenv (expr:Expr) =
         //printfn "Not eliminating because no Run found"
         None
                 
+let IsSystemStringConcatOverload (methRef: ILMethodRef) =
+    methRef.Name = "Concat" && methRef.DeclaringTypeRef.FullName = "System.String" && 
+    methRef.ReturnType.BasicQualifiedName = "System.String" &&
+    methRef.ArgTypes |> List.forall(fun ilty -> ilty.BasicQualifiedName = "System.String")
 
+let IsSystemStringConcatArray (methRef: ILMethodRef) =
+    methRef.Name = "Concat" && methRef.DeclaringTypeRef.FullName = "System.String" && 
+    methRef.ReturnType.BasicQualifiedName = "System.String" &&
+    methRef.ArgTypes.Length = 1 && methRef.ArgTypes.Head.BasicQualifiedName = "System.String[]"
     
 //-------------------------------------------------------------------------
 // The traversal
@@ -1819,7 +1832,6 @@ let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
         assert ("unexpected reclink" = "")
         failwith "Unexpected reclink"
 
-
 //-------------------------------------------------------------------------
 // Optimize/analyze an object expression
 //------------------------------------------------------------------------- 
@@ -1869,8 +1881,53 @@ and OptimizeInterfaceImpl cenv env baseValOpt (ty, overrides) =
       Info=UnknownValue}
 
 //-------------------------------------------------------------------------
-// Optimize/analyze an application of an intrinsic operator to arguments
+// Make and optimize String.Concat calls
 //------------------------------------------------------------------------- 
+
+and MakeOptimizedSystemStringConcatCall cenv env m args =
+    let rec optimizeArg e accArgs =
+        match e, accArgs with
+        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ], _), _ when IsSystemStringConcatArray methRef ->
+            optimizeArgs args accArgs
+
+        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, args, _), _ when IsSystemStringConcatOverload methRef ->
+            optimizeArgs args accArgs
+
+        // Optimize string constants, e.g. "1" + "2" will turn into "12"
+        | Expr.Const(Const.String str1, _, _), Expr.Const(Const.String str2, _, _) :: accArgs ->
+            mkString cenv.g m (str1 + str2) :: accArgs
+
+        | arg, _ -> arg :: accArgs
+
+    and optimizeArgs args accArgs =
+        (args, accArgs)
+        ||> List.foldBack (fun arg accArgs -> optimizeArg arg accArgs)
+
+    let args = optimizeArgs args []
+
+    let e =
+        match args with
+        | [ arg ] ->
+            arg
+        | [ arg1; arg2 ] -> 
+            mkStaticCall_String_Concat2 cenv.g m arg1 arg2
+        | [ arg1; arg2; arg3 ] ->
+            mkStaticCall_String_Concat3 cenv.g m arg1 arg2 arg3
+        | [ arg1; arg2; arg3; arg4 ] ->
+            mkStaticCall_String_Concat4 cenv.g m arg1 arg2 arg3 arg4
+        | args ->
+            let arg = mkArray (cenv.g.string_ty, args, m)
+            mkStaticCall_String_Concat_Array cenv.g m arg
+
+    match e with
+    | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _) as op, tyargs, args, m) when IsSystemStringConcatOverload methRef || IsSystemStringConcatArray methRef ->
+        OptimizeExprOpReductions cenv env (op, tyargs, args, m)
+    | _ ->
+        OptimizeExpr cenv env e
+
+//-------------------------------------------------------------------------
+// Optimize/analyze an application of an intrinsic operator to arguments
+//-------------------------------------------------------------------------
 
 and OptimizeExprOp cenv env (op, tyargs, args, m) =
 
@@ -1935,22 +1992,30 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
     // if the types match up. 
     | TOp.ILAsm([], [ty]), _, [a] when typeEquiv cenv.g (tyOfExpr cenv.g a) ty -> OptimizeExpr cenv env a
 
-    | _ -> 
-        // Reductions 
-        let args', arginfos = OptimizeExprsThenConsiderSplits cenv env args
-        let knownValue = 
-            match op, arginfos with 
-            | TOp.ValFieldGet (rf), [e1info] -> TryOptimizeRecordFieldGet cenv env (e1info, rf, tyargs, m) 
-            | TOp.TupleFieldGet (tupInfo, n), [e1info] -> TryOptimizeTupleFieldGet cenv env (tupInfo, e1info, tyargs, n, m)
-            | TOp.UnionCaseFieldGet (cspec, n), [e1info] -> TryOptimizeUnionCaseGet cenv env (e1info, cspec, tyargs, n, m)
-            | _ -> None
-        match knownValue with 
-        | Some valu -> 
-            match TryOptimizeVal cenv env (false, valu, m)  with 
-            | Some res -> OptimizeExpr cenv env res  (* discard e1 since guard ensures it has no effects *)
-            | None -> OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos valu
-        | None -> OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos UnknownValue
+    // Optimize calls when concatenating strings, e.g. "1" + "2" + "3" + "4" .. etc.
+    | TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ] when IsSystemStringConcatArray methRef ->
+        MakeOptimizedSystemStringConcatCall cenv env m args
+    | TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, args when IsSystemStringConcatOverload methRef ->
+        MakeOptimizedSystemStringConcatCall cenv env m args
 
+    | _ -> 
+        // Reductions
+        OptimizeExprOpReductions cenv env (op, tyargs, args, m)
+
+and OptimizeExprOpReductions cenv env (op, tyargs, args, m) =
+    let args', arginfos = OptimizeExprsThenConsiderSplits cenv env args
+    let knownValue = 
+        match op, arginfos with 
+        | TOp.ValFieldGet (rf), [e1info] -> TryOptimizeRecordFieldGet cenv env (e1info, rf, tyargs, m) 
+        | TOp.TupleFieldGet (tupInfo, n), [e1info] -> TryOptimizeTupleFieldGet cenv env (tupInfo, e1info, tyargs, n, m)
+        | TOp.UnionCaseFieldGet (cspec, n), [e1info] -> TryOptimizeUnionCaseGet cenv env (e1info, cspec, tyargs, n, m)
+        | _ -> None
+    match knownValue with 
+    | Some valu -> 
+        match TryOptimizeVal cenv env (false, valu, m)  with 
+        | Some res -> OptimizeExpr cenv env res  (* discard e1 since guard ensures it has no effects *)
+        | None -> OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos valu
+    | None -> OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos UnknownValue
 
 and OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos valu =
     // The generic case - we may collect information, but the construction/projection doesn't disappear 
@@ -1966,7 +2031,12 @@ and OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos valu =
       | TOp.Tuple tupInfo        -> 
           let isStruct = evalTupInfoIsStruct tupInfo 
           if isStruct then 0, valu 
-          else 1, MakeValueInfoForTuple (Array.ofList argValues)
+          else 1,MakeValueInfoForTuple (Array.ofList argValues)
+      | TOp.AnonRecd anonInfo        -> 
+          let isStruct = evalAnonInfoIsStruct anonInfo 
+          if isStruct then 0, valu 
+          else 1, valu
+      | TOp.AnonRecdGet _ 
       | TOp.ValFieldGet _     
       | TOp.TupleFieldGet _    
       | TOp.UnionCaseFieldGet _   
@@ -2672,7 +2742,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         // Inlining:  beta reducing 
         let expr' = MakeApplicationAndBetaReduce cenv.g (f2', f2ty, [tyargs], args', m)
         // Inlining: reoptimizing
-        Some (OptimizeExpr cenv {env with dontInline= Zset.add lambdaId env.dontInline} expr')
+        Some(OptimizeExpr cenv {env with dontInline= Zset.add lambdaId env.dontInline} expr')
           
     | _ -> None
 
@@ -3092,7 +3162,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     | None -> false
                     | Some mbrTyconRef ->
                     // Check we can deref system_MarshalByRefObject_tcref. When compiling against the Silverlight mscorlib we can't
-                    if ValueOption.isSome mbrTyconRef.TryDeref then
+                    if ValueOptionInternal.isSome mbrTyconRef.TryDeref then
                         // Check if this is a subtype of MarshalByRefObject
                         assert (cenv.g.system_MarshalByRefObject_ty.IsSome)
                         ExistsSameHeadTypeInHierarchy cenv.g cenv.amap vref.Range (generalizedTyconRef tcref) cenv.g.system_MarshalByRefObject_ty.Value
@@ -3159,7 +3229,7 @@ and OptimizeModuleExpr cenv env x =
                     not (ValueIsUsedOrHasEffect cenv (fun () -> fvs.FreeLocals) (bind, binfo)) &&
 
                     // Check the thing is hidden by the signature (if any)
-                    hidden.mhiVals.Contains bind.Var && 
+                    hidden.HiddenVals.Contains bind.Var && 
 
                     // Check the thing is not compiled as a static field or property, since reflected definitions and other reflective stuff might need it
                     not (IsCompiledAsStaticProperty cenv.g bind.Var))
@@ -3269,7 +3339,7 @@ and OptimizeModuleDefs cenv (env, bindInfosColl) defs =
     let defs, minfos = List.unzip defs
     (defs, UnionOptimizationInfos minfos), (env, bindInfosColl)
    
-and OptimizeImplFileInternal cenv env isIncrementalFragment hidden (TImplFile(qname, pragmas, mexpr, hasExplicitEntryPoint, isScript)) =
+and OptimizeImplFileInternal cenv env isIncrementalFragment hidden (TImplFile(qname, pragmas, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) =
     let env, mexpr', minfo  = 
         match mexpr with 
         // FSI: FSI compiles everything as if you're typing incrementally into one module 
@@ -3288,7 +3358,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment hidden (TImplFile(qn
     let hidden = ComputeHidingInfoAtAssemblyBoundary mexpr.Type hidden
 
     let minfo = AbstractLazyModulInfoByHiding true hidden minfo
-    env, TImplFile(qname, pragmas, mexpr', hasExplicitEntryPoint, isScript), minfo, hidden
+    env, TImplFile(qname, pragmas, mexpr', hasExplicitEntryPoint, isScript, anonRecdTypes), minfo, hidden
 
 //-------------------------------------------------------------------------
 // Entry point

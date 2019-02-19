@@ -118,7 +118,7 @@ module TypeParamAttributesDifferent =
 type ThisLibAssembly = X | Y
 
 
-#if !NETCOREAPP1_0
+#if !NETCOREAPP
 module Bug719 = 
 
     open System.Runtime.InteropServices

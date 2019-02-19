@@ -1,9 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-//-------------------------------------------------------------------------
-// Find unsolved, uninstantiated type variables
-//------------------------------------------------------------------------- 
 
+/// Find unsolved, uninstantiated type variables
 module internal Microsoft.FSharp.Compiler.FindUnsolved
 
 open Microsoft.FSharp.Compiler
@@ -16,24 +14,24 @@ open Microsoft.FSharp.Compiler.TypeRelations
 
 type env = Nix
 
+/// The environment and collector
 type cenv = 
     { g: TcGlobals 
       amap: Import.ImportMap 
       denv: DisplayEnv 
       mutable unsolved: Typars }
 
+/// Walk types, collecting type variables
 let accTy cenv _env ty =
-    (freeInType CollectTyparsNoCaching (tryNormalizeMeasureInType cenv.g ty)).FreeTypars |> Zset.iter (fun tp -> 
-            if (tp.Rigidity <> TyparRigidity.Rigid) then 
-                cenv.unsolved <- tp :: cenv.unsolved) 
+    let normalizedTy = tryNormalizeMeasureInType cenv.g ty
+    (freeInType CollectTyparsNoCaching normalizedTy).FreeTypars |> Zset.iter (fun tp -> 
+        if (tp.Rigidity <> TyparRigidity.Rigid) then 
+            cenv.unsolved <- tp :: cenv.unsolved) 
 
 let accTypeInst cenv env tyargs =
-  tyargs |> List.iter (accTy cenv env)
+    tyargs |> List.iter (accTy cenv env)
 
-//--------------------------------------------------------------------------
-// walk exprs etc
-//--------------------------------------------------------------------------
-  
+/// Walk expressions, collecting type variables
 let rec accExpr   (cenv:cenv) (env:env) expr =     
     let expr = stripExpr expr 
     match expr with
@@ -62,7 +60,6 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
         accTypeInst cenv env tyargs
         accExpr cenv env f
         accExprs cenv env argsl
-    // REVIEW: fold the next two cases together 
     | Expr.Lambda(_,_ctorThisValOpt,_baseValOpt,argvs,_body,m,rty) -> 
         let topValInfo = ValReprInfo ([],[argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)],ValReprInfo.unnamedRetVal) 
         let ty = mkMultiLambdaTy m argvs rty 
@@ -136,6 +133,7 @@ and accLambdas cenv env topValInfo e ety =
         accExpr cenv env e
 
 and accExprs            cenv env exprs = exprs |> List.iter (accExpr cenv env) 
+
 and accTargets cenv env m ty targets = Array.iter (accTarget cenv env m ty) targets
 
 and accTarget cenv env _m _ty (TTarget(_vs,e,_)) = accExpr cenv env e
@@ -192,10 +190,6 @@ and accBind cenv env (bind:Binding) =
 
 and accBinds cenv env xs = xs |> List.iter (accBind cenv env) 
 
-//--------------------------------------------------------------------------
-// check tycons
-//--------------------------------------------------------------------------
-  
 let accTyconRecdField cenv env _tycon (rfield:RecdField) = 
     accAttribs cenv env rfield.PropertyAttribs
     accAttribs cenv env rfield.FieldAttribs
@@ -205,16 +199,11 @@ let accTycon cenv env (tycon:Tycon) =
     abstractSlotValsOfTycons [tycon] |> List.iter (accVal cenv env) 
     tycon.AllFieldsArray |> Array.iter (accTyconRecdField cenv env tycon)
     if tycon.IsUnionTycon then                             (* This covers finite unions. *)
-      tycon.UnionCasesAsList |> List.iter (fun uc ->
+      tycon.UnionCasesArray |> Array.iter (fun uc ->
           accAttribs cenv env uc.Attribs
-          uc.RecdFields |> List.iter (accTyconRecdField cenv env tycon))
-  
+          uc.RecdFieldsArray |> Array.iter (accTyconRecdField cenv env tycon))
 
 let accTycons cenv env tycons = List.iter (accTycon cenv env) tycons
-
-//--------------------------------------------------------------------------
-// check modules
-//--------------------------------------------------------------------------
 
 let rec accModuleOrNamespaceExpr cenv env x = 
     match x with  
@@ -231,7 +220,9 @@ and accModuleOrNamespaceDef cenv env x =
     | TMDefDo(e,_m)  -> accExpr cenv env e
     | TMAbstract(def)  -> accModuleOrNamespaceExpr cenv env def
     | TMDefs(defs) -> accModuleOrNamespaceDefs cenv env defs 
+
 and accModuleOrNamespaceBinds cenv env xs = List.iter (accModuleOrNamespaceBind cenv env) xs
+
 and accModuleOrNamespaceBind cenv env x = 
     match x with 
     | ModuleOrNamespaceBinding.Binding bind -> accBind cenv env bind

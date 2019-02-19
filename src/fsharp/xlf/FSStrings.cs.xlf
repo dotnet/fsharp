@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../FSStrings.resx">
     <body>
@@ -959,7 +959,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COMMENT">
         <source>comment</source>
-        <target state="translated">komentář</target>
+        <target state="translated">Komentář</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LINE.COMMENT">
@@ -1174,7 +1174,7 @@
       </trans-unit>
       <trans-unit id="FixKeyword">
         <source>keyword </source>
-        <target state="translated">klíčové slovo </target>
+        <target state="translated">Klíčové slovo</target>
         <note />
       </trans-unit>
       <trans-unit id="FixSymbol">
@@ -1615,6 +1615,16 @@
       <trans-unit id="TargetInvocationExceptionWrapper">
         <source>internal error: {0}</source>
         <target state="translated">Vnitřní chyba: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACE.BAR">
+        <source>symbol '{|'</source>
+        <target state="new">symbol '{|'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR.RBRACE">
+        <source>symbol '|}'</source>
+        <target state="new">symbol '|}'</target>
         <note />
       </trans-unit>
     </body>

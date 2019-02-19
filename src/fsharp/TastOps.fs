@@ -181,6 +181,12 @@ let rec remapTypeAux (tyenv : Remap) (ty:TType) =
       | Some tcr' ->  TType_ucase (UCRef(tcr', n), remapTypesAux tyenv tinst)
       | None -> TType_ucase (UCRef(tcr, n), remapTypesAux tyenv tinst)
 
+  | TType_anon (anonInfo, l)  as ty -> 
+      let tupInfo' = remapTupInfoAux tyenv anonInfo.TupInfo
+      let l' = remapTypesAux tyenv l
+      if anonInfo.TupInfo === tupInfo' && l === l' then ty else  
+      TType_anon (AnonRecdTypeInfo.Create(anonInfo.Assembly, tupInfo', anonInfo.SortedIds), l')
+
   | TType_tuple (tupInfo, l)  as ty -> 
       let tupInfo' = remapTupInfoAux tyenv tupInfo
       let l' = remapTypesAux tyenv l
@@ -263,6 +269,8 @@ and remapTraitAux tyenv (TTrait(tys, nm, mf, argtys, rty, slnCell)) =
                      FSMethSln(remapTypeAux tyenv ty, remapValRef tyenv vref, remapTypesAux tyenv minst)  
                 | FSRecdFieldSln(tinst, rfref, isSet) ->
                      FSRecdFieldSln(remapTypesAux tyenv tinst, remapRecdFieldRef tyenv.tyconRefRemap rfref, isSet)  
+                | FSAnonRecdFieldSln(anonInfo, tinst, n) ->
+                     FSAnonRecdFieldSln(anonInfo, remapTypesAux tyenv tinst, n)  
                 | BuiltInSln -> 
                      BuiltInSln
                 | ClosedExprSln e -> 
@@ -667,7 +675,7 @@ let mkOuterCompiledTupleTy g isStruct tupElemTys =
             let marker = TType_app (mkCompiledTupleTyconRef g isStruct 1, [tyB])
             TType_app (tcref, tysA@[marker])
         | _ ->
-            TType_app (tcref, tysA@[TType_tuple (TupInfo.Const isStruct, tysB)])
+            TType_app (tcref, tysA@[TType_tuple (mkTupInfo isStruct, tysB)])
 
 //---------------------------------------------------------------------------
 // Remove inference equations and abbreviations from types 
@@ -733,6 +741,9 @@ let evalTupInfoIsStruct aexpr =
     match aexpr with 
     | TupInfo.Const b -> b
 
+let evalAnonInfoIsStruct (anonInfo: AnonRecdTypeInfo) = 
+    evalTupInfoIsStruct anonInfo.TupInfo
+
 /// This erases outermost occurrences of inference equations, type abbreviations, non-generated provided types
 /// and measureable types (float<_>).
 /// It also optionally erases all "compilation representations", i.e. function and
@@ -783,6 +794,8 @@ let isForallTy     g ty = ty |> stripTyEqns g |> (function TType_forall _ -> tru
 let isAnyTupleTy      g ty = ty |> stripTyEqns g |> (function TType_tuple _ -> true | _ -> false)
 let isRefTupleTy      g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, _) -> not (evalTupInfoIsStruct tupInfo) | _ -> false)
 let isStructTupleTy      g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, _) -> evalTupInfoIsStruct tupInfo | _ -> false)
+let isAnonRecdTy      g ty = ty |> stripTyEqns g |> (function TType_anon _ -> true | _ -> false)
+let isStructAnonRecdTy      g ty = ty |> stripTyEqns g |> (function TType_anon (anonInfo, _) -> evalAnonInfoIsStruct anonInfo | _ -> false)
 let isUnionTy      g ty = ty |> stripTyEqns g |> (function TType_app(tcr, _) -> tcr.IsUnionTycon | _ -> false)
 let isReprHiddenTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcr, _) -> tcr.IsHiddenReprTycon | _ -> false)
 let isFSharpObjModelTy g ty = ty |> stripTyEqns g |> (function TType_app(tcr, _) -> tcr.IsFSharpObjectModelTycon | _ -> false)
@@ -806,6 +819,7 @@ let argsOfAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(_, tinst) ->
 let tryDestTyparTy g ty = ty |> stripTyEqns g |> (function TType_var v -> ValueSome v | _ -> ValueNone)
 let tryDestFunTy   g ty = ty |> stripTyEqns g |> (function TType_fun (tyv, tau) -> ValueSome(tyv, tau) | _ -> ValueNone)
 let tryDestAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> ValueSome tcref | _ -> ValueNone)
+let tryDestAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon (anonInfo, tys) -> ValueSome (anonInfo, tys) | _ -> ValueNone)
 
 let tryAnyParTy    g ty = ty |> stripTyEqns g |> (function TType_var v -> ValueSome v | TType_measure unt when isUnitParMeasure g unt -> ValueSome(destUnitParMeasure g unt) | _ -> ValueNone)
 let tryAnyParTyOption  g ty = ty |> stripTyEqns g |> (function TType_var v -> Some v | TType_measure unt when isUnitParMeasure g unt -> Some(destUnitParMeasure g unt) | _ -> None)
@@ -966,6 +980,9 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         typesAEquivAux erasureFlag g aenv b1 b2
     | TType_tuple (s1, l1), TType_tuple (s2, l2) -> 
         structnessAEquiv s1 s2 && typesAEquivAux erasureFlag g aenv l1 l2
+    | TType_anon (anonInfo1, l1), TType_anon (anonInfo2, l2) -> 
+        anonInfoEquiv anonInfo1 anonInfo2 &&
+        typesAEquivAux erasureFlag g aenv l1 l2
     | TType_fun (dtys1, rty1), TType_fun (dtys2, rty2) -> 
         typeAEquivAux erasureFlag g aenv dtys1 dtys2 && typeAEquivAux erasureFlag g aenv rty1 rty2
     | TType_measure m1, TType_measure m2 -> 
@@ -973,6 +990,12 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         | EraseNone -> measureAEquiv g aenv m1 m2 
         | _ -> true 
     | _ -> false
+
+
+and anonInfoEquiv (anonInfo1: AnonRecdTypeInfo) (anonInfo2: AnonRecdTypeInfo) =
+    ccuEq anonInfo1.Assembly anonInfo2.Assembly && 
+    structnessAEquiv anonInfo1.TupInfo anonInfo2.TupInfo && 
+    anonInfo1.SortedNames = anonInfo2.SortedNames 
 
 and structnessAEquiv un1 un2 =
     match un1, un2 with 
@@ -1020,7 +1043,7 @@ let rec getErasedTypes g ty =
         getErasedTypes g rty
     | TType_var tp -> 
         if tp.IsErased then [ty] else []
-    | TType_app (_, b) | TType_ucase(_, b) | TType_tuple (_, b) ->
+    | TType_app (_, b) | TType_ucase(_, b) | TType_anon (_, b) | TType_tuple (_, b) ->
         List.foldBack (fun ty tys -> getErasedTypes g ty @ tys) b []
     | TType_fun (dty, rty) -> 
         getErasedTypes g dty @ getErasedTypes g rty
@@ -1279,6 +1302,7 @@ let mkAsmExpr(code, tinst, args, rettys, m)                 = Expr.Op (TOp.ILAsm
 let mkUnionCaseExpr(uc, tinst, args, m)                        = Expr.Op (TOp.UnionCase uc, tinst, args, m)
 let mkExnExpr(uc, args, m)                          = Expr.Op (TOp.ExnConstr uc, [], args, m)
 let mkTupleFieldGetViaExprAddr(tupInfo, e, tinst, i, m)                  = Expr.Op (TOp.TupleFieldGet(tupInfo, i), tinst, [e], m)
+let mkAnonRecdFieldGetViaExprAddr(anonInfo, e, tinst, i, m)                  = Expr.Op (TOp.AnonRecdGet(anonInfo, i), tinst, [e], m)
 
 let mkRecdFieldGetViaExprAddr(e, fref, tinst, m)      = Expr.Op (TOp.ValFieldGet(fref), tinst, [e], m)
 let mkRecdFieldGetAddrViaExprAddr(readonly, e, fref, tinst, m) = Expr.Op (TOp.ValFieldGetAddr(fref, readonly), tinst, [e], m)
@@ -1736,7 +1760,8 @@ let isStructTy g ty =
     | ValueSome tcref -> 
         let tycon = tcref.Deref
         tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon
-    | _ -> isStructTupleTy g ty
+    | _ -> 
+        isStructAnonRecdTy g ty || isStructTupleTy g ty
 
 let isRefTy g ty = 
     not (isStructOrEnumTyconTy g ty) &&
@@ -2018,6 +2043,8 @@ and accFreeInTraitSln opts sln acc =
          accFreeInType opts ty 
             (accFreeValRefInTraitSln opts vref  
                (accFreeInTypes opts minst acc))
+    | FSAnonRecdFieldSln(_anonInfo, tinst, _n) ->
+         accFreeInTypes opts tinst acc
     | FSRecdFieldSln(tinst, _rfref, _isSet) ->
          accFreeInTypes opts tinst acc
     | BuiltInSln -> acc
@@ -2044,6 +2071,7 @@ and accFreeTyparRef opts (tp:Typar) acc =
 and accFreeInType opts ty acc  = 
     match stripTyparEqns ty with 
     | TType_tuple (tupInfo, l) -> accFreeInTypes opts l (accFreeInTupInfo opts tupInfo acc)
+    | TType_anon (anonInfo, l) -> accFreeInTypes opts l (accFreeInTupInfo opts anonInfo.TupInfo acc)
     | TType_app (tc, tinst) -> 
         let acc = accFreeTycon opts tc acc
         match tinst with 
@@ -2133,6 +2161,9 @@ and accFreeTyparRefLeftToRight g cxFlag thruFlag acc (tp:Typar) =
 and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty  = 
     if verbose then dprintf "--> accFreeInTypeLeftToRight \n"
     match (if thruFlag then stripTyEqns g ty else stripTyparEqns ty) with 
+    | TType_anon (anonInfo, l)  ->
+        let acc = accFreeInTupInfoLeftToRight g cxFlag thruFlag acc anonInfo.TupInfo 
+        accFreeInTypesLeftToRight g cxFlag thruFlag acc l 
     | TType_tuple (tupInfo, l) -> 
         let acc = accFreeInTupInfoLeftToRight g cxFlag thruFlag acc tupInfo 
         accFreeInTypesLeftToRight g cxFlag thruFlag acc l 
@@ -2525,8 +2556,9 @@ module SimplifyTypes =
         let z = f z ty
         match ty with
         | TType_forall (_, body) -> foldTypeButNotConstraints f z body
-        | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
+        | TType_app (_, tys) 
+        | TType_ucase (_, tys) 
+        | TType_anon (_, tys) 
         | TType_tuple (_, tys) -> List.fold (foldTypeButNotConstraints f) z tys
         | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
         | TType_var _            -> z
@@ -3149,6 +3181,7 @@ module DebugPrint = begin
     let squareAngleL x = LeftL.leftBracketAngle ^^ x ^^ RightL.rightBracketAngle
     let angleL x = sepL Literals.leftAngle ^^ x ^^ rightL Literals.rightAngle
     let braceL x = leftL Literals.leftBrace  ^^ x ^^ rightL Literals.rightBrace
+    let braceBarL x = leftL Literals.leftBraceBar  ^^ x ^^ rightL Literals.rightBraceBar
     let boolL = function true -> WordL.keywordTrue | false -> WordL.keywordFalse
 
     let intL (n:int)          = wordL (tagNumericLiteral (string n ))
@@ -3210,6 +3243,7 @@ module DebugPrint = begin
            let prefix = tcref.IsPrefixDisplay
            let tcL = layoutTyconRef tcref
            auxTyparsL env tcL prefix tinst
+        | TType_anon (anonInfo, tys) -> braceBarL (sepListL (wordL (tagText ";")) (List.map2 (fun nm ty -> wordL (tagField nm) --- auxTypeAtomL env ty) (Array.toList anonInfo.SortedNames) tys))
         | TType_tuple (_tupInfo, tys) -> sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
         | TType_fun (f, x)           -> ((auxTypeAtomL env f ^^ wordL (tagText "->")) --- auxTypeL env x) |> wrap
         | TType_var typar           -> auxTyparWrapL env isAtomic typar 
@@ -3408,7 +3442,7 @@ module DebugPrint = begin
     let rec MemberL (v:Val) (membInfo:ValMemberInfo) = 
         (aboveListL [ wordL(tagText "compiled_name! = ") ^^ wordL (tagText v.CompiledName) ;
                       wordL(tagText "membInfo-slotsig! = ") ^^ listL slotSigL membInfo.ImplementedSlotSigs ]) 
-    and vspecAtBindL  v = 
+    and valAtBindL  v = 
         let vL = valL v  in
         let mutL = (if v.IsMutable then wordL(tagText "mutable") ++ vL else vL)
         mutL  --- (aboveListL (List.concat [[wordL(tagText ":") ^^ typeL v.Type];
@@ -3478,7 +3512,7 @@ module DebugPrint = begin
             then emptyL 
             else 
                 let iimplsLs = iimpls |> List.map (fun (ty, _, _) -> wordL(tagText "interface") --- typeL ty)
-                let adhocLs  = adhoc  |> List.map (fun vref -> vspecAtBindL  vref.Deref)
+                let adhocLs  = adhoc  |> List.map (fun vref -> valAtBindL  vref.Deref)
                 (wordL(tagText "with") @@-- aboveListL (iimplsLs @ adhocLs)) @@ wordL(tagText "end")
 
         let layoutUnionCaseArgTypes argtys = sepListL (wordL(tagText "*")) (List.map typeL argtys)
@@ -3525,7 +3559,7 @@ module DebugPrint = begin
                     let vsprs = 
                         tycon.MembersOfFSharpTyconSorted 
                             |> List.filter (fun v -> v.IsDispatchSlot) 
-                            |> List.map (fun vref -> vspecAtBindL vref.Deref)
+                            |> List.map (fun vref -> valAtBindL vref.Deref)
                     let vals  = tycon.TrueFieldsAsList |> List.map (fun f -> (if f.IsStatic then wordL(tagText "static") else emptyL) ^^ wordL(tagText "val") ^^ layoutRecdField f)
                     let alldecls = inherits @ vsprs @ vals
                     let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil alldecls | _ -> false
@@ -3556,7 +3590,7 @@ module DebugPrint = begin
     //--------------------------------------------------------------------------
 
     and bindingL (TBind(v, repr, _)) =
-        vspecAtBindL v --- (wordL(tagText "=") ^^ exprL repr)
+        valAtBindL v --- (wordL(tagText "=") ^^ exprL repr)
 
     and exprL expr = exprWrapL false expr
     and atomL expr = exprWrapL true  expr // true means bracket if needed to be atomic expr 
@@ -3594,11 +3628,11 @@ module DebugPrint = begin
                     | ThenDoSeq   -> "; (*ThenDo*)" 
                 ((exprL x0 ^^ rightL (tagText flag)) @@ exprL x1) |> wrap
             | Expr.Lambda(_, _, baseValOpt, argvs, body, _, _)  -> 
-                let formalsL = spaceListL (List.map vspecAtBindL argvs) in
+                let formalsL = spaceListL (List.map valAtBindL argvs) in
                 let bindingL = 
                     match baseValOpt with
                     | None       -> wordL(tagText "lam") ^^ formalsL ^^ rightL(tagText ".")
-                    | Some basev -> wordL(tagText "lam") ^^ (leftL(tagText "base=") ^^ vspecAtBindL basev) --- formalsL ^^ rightL(tagText ".") in
+                    | Some basev -> wordL(tagText "lam") ^^ (leftL(tagText "base=") ^^ valAtBindL basev) --- formalsL ^^ rightL(tagText ".") in
                 (bindingL ++ exprL body) |> wrap
             | Expr.TyLambda(_, argtyvs, body, _, _) -> 
                 ((wordL(tagText "LAM")    ^^ spaceListL (List.map typarL       argtyvs) ^^ rightL(tagText ".")) ++ exprL body) |> wrap
@@ -3693,7 +3727,7 @@ module DebugPrint = begin
             | Expr.Obj (_lambdaId, ty, basev, ccall, overrides, iimpls, _)              -> 
                 wordL(tagText "OBJ:") ^^ aboveListL [typeL ty;
                                             exprL ccall;
-                                            optionL vspecAtBindL basev;
+                                            optionL valAtBindL basev;
                                             aboveListL (List.map overrideL overrides);
                                             aboveListL (List.map iimplL iimpls)]
 
@@ -3715,8 +3749,8 @@ module DebugPrint = begin
         let z = z --- sepL(tagText "`") --- (spaceListL (List.map atomL args))
         z
        
-    and implFileL (TImplFile(_, _, e, _, _)) =
-        aboveListL [(wordL(tagText "top implementation ")) @@-- mexprL e]
+    and implFileL (TImplFile(_, _, mexpr, _, _, _)) =
+        aboveListL [(wordL(tagText "top implementation ")) @@-- mexprL mexpr]
 
     and mexprL x =
         match x with 
@@ -3778,7 +3812,7 @@ module DebugPrint = begin
     and tmethodL (TObjExprMethod(TSlotSig(nm, _, _, _, _, _), _, tps, vs, e, _)) =
         (wordL(tagText "TObjExprMethod") --- (wordL (tagText nm)) ^^ wordL(tagText "=")) --
           (wordL(tagText "METH-LAM") --- angleBracketListL (List.map typarL       tps) ^^ rightL(tagText ".")) ---
-          (wordL(tagText "meth-lam") --- tupleL (List.map (List.map vspecAtBindL >> tupleL) vs)  ^^ rightL(tagText ".")) ---
+          (wordL(tagText "meth-lam") --- tupleL (List.map (List.map valAtBindL >> tupleL) vs)  ^^ rightL(tagText ".")) ---
           (atomL e) 
     and overrideL tmeth     = wordL(tagText "with") ^^ tmethodL tmeth 
     and iimplL (ty, tmeths) = wordL(tagText "impl") ^^ aboveListL (typeL ty :: List.map tmethodL tmeths) 
@@ -3807,7 +3841,7 @@ let wrapModuleOrNamespaceExprInNamespace (id :Ident) cpath mexpr =
     TMDefRec (false, [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], id.idRange)
 
 // cleanup: make this a property
-let SigTypeOfImplFile (TImplFile(_, _, mexpr, _, _)) = mexpr.Type 
+let SigTypeOfImplFile (TImplFile(_, _, mexpr, _, _, _)) = mexpr.Type 
 
 
 //--------------------------------------------------------------------------
@@ -3816,33 +3850,33 @@ let SigTypeOfImplFile (TImplFile(_, _, mexpr, _, _)) = mexpr.Type
 //--------------------------------------------------------------------------
 
 type SignatureRepackageInfo = 
-    { mrpiVals  : (ValRef * ValRef) list;
-      mrpiEntities: (TyconRef * TyconRef) list  }
+    { RepackagedVals  : (ValRef * ValRef) list;
+      RepackagedEntities: (TyconRef * TyconRef) list  }
     
-    member remapInfo.ImplToSigMapping = { TypeEquivEnv.Empty with EquivTycons = TyconRefMap.OfList remapInfo.mrpiEntities }
-    static member Empty = { mrpiVals = []; mrpiEntities= [] } 
+    member remapInfo.ImplToSigMapping = { TypeEquivEnv.Empty with EquivTycons = TyconRefMap.OfList remapInfo.RepackagedEntities }
+    static member Empty = { RepackagedVals = []; RepackagedEntities= [] } 
 
 type SignatureHidingInfo = 
-    { mhiTycons     : Zset<Tycon>; 
-      mhiTyconReprs : Zset<Tycon>;  
-      mhiVals       : Zset<Val>; 
-      mhiRecdFields : Zset<RecdFieldRef>; 
-      mhiUnionCases : Zset<UnionCaseRef> }
+    { HiddenTycons     : Zset<Tycon>; 
+      HiddenTyconReprs : Zset<Tycon>;  
+      HiddenVals       : Zset<Val>; 
+      HiddenRecdFields : Zset<RecdFieldRef>; 
+      HiddenUnionCases : Zset<UnionCaseRef> }
 
     static member Empty = 
-        { mhiTycons      = Zset.empty tyconOrder; 
-          mhiTyconReprs  = Zset.empty tyconOrder;  
-          mhiVals        = Zset.empty valOrder; 
-          mhiRecdFields  = Zset.empty recdFieldRefOrder; 
-          mhiUnionCases  = Zset.empty unionCaseRefOrder }
+        { HiddenTycons      = Zset.empty tyconOrder; 
+          HiddenTyconReprs  = Zset.empty tyconOrder;  
+          HiddenVals        = Zset.empty valOrder; 
+          HiddenRecdFields  = Zset.empty recdFieldRefOrder; 
+          HiddenUnionCases  = Zset.empty unionCaseRefOrder }
 
 let addValRemap v v' tmenv = 
     { tmenv with valRemap= tmenv.valRemap.Add v (mkLocalValRef v')  }
 
 let mkRepackageRemapping mrpi = 
-    { valRemap = ValMap.OfList (mrpi.mrpiVals |> List.map (fun (vref, x) -> vref.Deref, x));
+    { valRemap = ValMap.OfList (mrpi.RepackagedVals |> List.map (fun (vref, x) -> vref.Deref, x));
       tpinst = emptyTyparInst; 
-      tyconRefRemap = TyconRefMap.OfList mrpi.mrpiEntities
+      tyconRefRemap = TyconRefMap.OfList mrpi.RepackagedEntities
       removeTraitSolutions = false }
 
 //--------------------------------------------------------------------------
@@ -3854,18 +3888,18 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi) =
     match sigtyconOpt with 
     | None -> 
         // The type constructor is not present in the signature. Hence it is hidden. 
-        let mhi = { mhi with mhiTycons = Zset.add entity mhi.mhiTycons }
+        let mhi = { mhi with HiddenTycons = Zset.add entity mhi.HiddenTycons }
         (mrpi, mhi) 
     | Some sigtycon  -> 
         // The type constructor is in the signature. Hence record the repackage entry 
         let sigtcref = mkLocalTyconRef sigtycon
         let tcref = mkLocalTyconRef entity
-        let mrpi = { mrpi with mrpiEntities = ((tcref, sigtcref) :: mrpi.mrpiEntities) }
+        let mrpi = { mrpi with RepackagedEntities = ((tcref, sigtcref) :: mrpi.RepackagedEntities) }
         // OK, now look for hidden things 
         let mhi = 
             if (match entity.TypeReprInfo with TNoRepr -> false | _ -> true) && (match sigtycon.TypeReprInfo with TNoRepr -> true | _ -> false) then 
                 // The type representation is absent in the signature, hence it is hidden 
-                { mhi with mhiTyconReprs = Zset.add entity mhi.mhiTyconReprs } 
+                { mhi with HiddenTyconReprs = Zset.add entity mhi.HiddenTyconReprs } 
             else 
                 // The type representation is present in the signature. 
                 // Find the fields that have been hidden or which were non-public anyway. 
@@ -3878,7 +3912,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi) =
                             | _ -> 
                                 // The field is not in the signature. Hence it is regarded as hidden. 
                                 let rfref = tcref.MakeNestedRecdFieldRef rfield
-                                { mhi with mhiRecdFields =  Zset.add rfref mhi.mhiRecdFields })
+                                { mhi with HiddenRecdFields =  Zset.add rfref mhi.HiddenRecdFields })
                         entity.AllFieldsArray
                 |> List.foldBack  (fun (ucase:UnionCase) mhi ->
                             match sigtycon.GetUnionCaseByName ucase.DisplayName with 
@@ -3888,7 +3922,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi) =
                             | _ -> 
                                 // The constructor is not in the signature. Hence it is regarded as hidden. 
                                 let ucref = tcref.MakeNestedUnionCaseRef ucase
-                                { mhi with mhiUnionCases =  Zset.add ucref mhi.mhiUnionCases })
+                                { mhi with HiddenUnionCases =  Zset.add ucref mhi.HiddenUnionCases })
                         (entity.UnionCasesAsList)  
         (mrpi, mhi) 
 
@@ -3897,13 +3931,13 @@ let accSubEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi)
     match sigtyconOpt with 
     | None -> 
         // The type constructor is not present in the signature. Hence it is hidden. 
-        let mhi = { mhi with mhiTycons = Zset.add entity mhi.mhiTycons }
+        let mhi = { mhi with HiddenTycons = Zset.add entity mhi.HiddenTycons }
         (mrpi, mhi) 
     | Some sigtycon  -> 
         // The type constructor is in the signature. Hence record the repackage entry 
         let sigtcref = mkLocalTyconRef sigtycon
         let tcref = mkLocalTyconRef entity
-        let mrpi = { mrpi with mrpiEntities = ((tcref, sigtcref) :: mrpi.mrpiEntities) }
+        let mrpi = { mrpi with RepackagedEntities = ((tcref, sigtcref) :: mrpi.RepackagedEntities) }
         (mrpi, mhi) 
 
 let valLinkageAEquiv g aenv (v1:Val) (v2:Val) = 
@@ -3921,11 +3955,11 @@ let accValRemap g aenv (msigty:ModuleOrNamespaceType) (implVal:Val) (mrpi, mhi) 
     match sigValOpt with 
     | None -> 
         if verbose then dprintf "accValRemap, hide = %s#%d\n" implVal.LogicalName implVal.Stamp
-        let mhi = { mhi with mhiVals = Zset.add implVal mhi.mhiVals }
+        let mhi = { mhi with HiddenVals = Zset.add implVal mhi.HiddenVals }
         (mrpi, mhi) 
     | Some (sigVal:Val)  -> 
         // The value is in the signature. Add the repackage entry. 
-        let mrpi = { mrpi with mrpiVals = (vref, mkLocalValRef sigVal) :: mrpi.mrpiVals }
+        let mrpi = { mrpi with RepackagedVals = (vref, mkLocalValRef sigVal) :: mrpi.RepackagedVals }
         (mrpi, mhi) 
 
 let getCorrespondingSigTy nm (msigty:ModuleOrNamespaceType) = 
@@ -4019,9 +4053,9 @@ let ComputeRemappingFromImplementationToSignature g mdef msigty =
 let accTyconHidingInfoAtAssemblyBoundary (tycon:Tycon) mhi =
     if not (canAccessFromEverywhere tycon.Accessibility) then 
         // The type constructor is not public, hence hidden at the assembly boundary. 
-        { mhi with mhiTycons = Zset.add tycon mhi.mhiTycons } 
+        { mhi with HiddenTycons = Zset.add tycon mhi.HiddenTycons } 
     elif not (canAccessFromEverywhere tycon.TypeReprAccessibility) then 
-        { mhi with mhiTyconReprs = Zset.add tycon mhi.mhiTyconReprs } 
+        { mhi with HiddenTyconReprs = Zset.add tycon mhi.HiddenTyconReprs } 
     else 
         mhi 
         |> Array.foldBack  
@@ -4029,7 +4063,7 @@ let accTyconHidingInfoAtAssemblyBoundary (tycon:Tycon) mhi =
                    if not (canAccessFromEverywhere rfield.Accessibility) then 
                        let tcref = mkLocalTyconRef tycon
                        let rfref = tcref.MakeNestedRecdFieldRef rfield
-                       { mhi with mhiRecdFields = Zset.add rfref mhi.mhiRecdFields } 
+                       { mhi with HiddenRecdFields = Zset.add rfref mhi.HiddenRecdFields } 
                    else mhi)
                tycon.AllFieldsArray  
         |> List.foldBack  
@@ -4037,7 +4071,7 @@ let accTyconHidingInfoAtAssemblyBoundary (tycon:Tycon) mhi =
                    if not (canAccessFromEverywhere ucase.Accessibility) then 
                        let tcref = mkLocalTyconRef tycon
                        let ucref = tcref.MakeNestedUnionCaseRef ucase
-                       { mhi with mhiUnionCases = Zset.add ucref mhi.mhiUnionCases } 
+                       { mhi with HiddenUnionCases = Zset.add ucref mhi.HiddenUnionCases } 
                    else mhi)
                (tycon.UnionCasesAsList)   
 
@@ -4052,7 +4086,7 @@ let accValHidingInfoAtAssemblyBoundary (vspec:Val) mhi =
        // anything that's not a module or member binding gets assembly visibility
        not vspec.IsMemberOrModuleBinding then 
         // The value is not public, hence hidden at the assembly boundary. 
-        { mhi with mhiVals = Zset.add vspec mhi.mhiVals } 
+        { mhi with HiddenVals = Zset.add vspec mhi.HiddenVals } 
     else 
         mhi
 
@@ -4087,10 +4121,10 @@ let IsHidden setF accessF remapF debugF =
         if verbose then dprintf "IsHidden, #mrmi = %d, %s = %b\n" mrmi.Length (showL (debugF x)) res;
         res
         
-let IsHiddenTycon     mrmi x = IsHidden (fun mhi -> mhi.mhiTycons)     (fun tc -> tc.Accessibility)        (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
-let IsHiddenTyconRepr mrmi x = IsHidden (fun mhi -> mhi.mhiTyconReprs) (fun v -> v.TypeReprAccessibility)  (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
-let IsHiddenVal       mrmi x = IsHidden (fun mhi -> mhi.mhiVals)       (fun v -> v.Accessibility)          (fun rpi x ->  (remapValRef rpi (mkLocalValRef x)).Deref) DebugPrint.valL mrmi x 
-let IsHiddenRecdField mrmi x = IsHidden (fun mhi -> mhi.mhiRecdFields) (fun rfref -> rfref.RecdField.Accessibility) (fun rpi x ->  remapRecdFieldRef rpi.tyconRefRemap x) DebugPrint.recdFieldRefL mrmi x 
+let IsHiddenTycon     mrmi x = IsHidden (fun mhi -> mhi.HiddenTycons)     (fun tc -> tc.Accessibility)        (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
+let IsHiddenTyconRepr mrmi x = IsHidden (fun mhi -> mhi.HiddenTyconReprs) (fun v -> v.TypeReprAccessibility)  (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
+let IsHiddenVal       mrmi x = IsHidden (fun mhi -> mhi.HiddenVals)       (fun v -> v.Accessibility)          (fun rpi x ->  (remapValRef rpi (mkLocalValRef x)).Deref) DebugPrint.valL mrmi x 
+let IsHiddenRecdField mrmi x = IsHidden (fun mhi -> mhi.HiddenRecdFields) (fun rfref -> rfref.RecdField.Accessibility) (fun rpi x ->  remapRecdFieldRef rpi.tyconRefRemap x) DebugPrint.recdFieldRefL mrmi x 
 
 
 //--------------------------------------------------------------------------
@@ -4411,7 +4445,9 @@ and accFreeInOp opts op acc =
     | TOp.Goto _ | TOp.Label _ | TOp.Return 
     | TOp.TupleFieldGet _ -> acc
 
-    | TOp.Tuple tupInfo -> accFreeTyvars opts accFreeInTupInfo tupInfo acc
+    | TOp.Tuple tupInfo  -> accFreeTyvars opts accFreeInTupInfo tupInfo acc
+    | TOp.AnonRecd anonInfo 
+    | TOp.AnonRecdGet (anonInfo, _) -> accFreeTyvars opts accFreeInTupInfo anonInfo.TupInfo acc
     
     | TOp.UnionCaseTagGet tr -> accUsedRecdOrUnionTyconRepr opts tr.Deref acc
     
@@ -5388,6 +5424,9 @@ let mkAnyTupledTy (g:TcGlobals) tupInfo tys =
     | [h] -> h
     | _ -> TType_tuple(tupInfo, tys)
 
+let mkAnyAnonRecdTy (_g:TcGlobals) anonInfo tys = 
+    TType_anon(anonInfo, tys)
+
 let mkRefTupledTy g tys = mkAnyTupledTy g tupInfoRef tys
 let mkRefTupledVarsTy g vs = mkRefTupledTy g (typesOfVals vs)
 
@@ -5426,8 +5465,10 @@ let rec tyOfExpr g e =
         | TOp.ExnConstr _ -> g.exn_ty
         | TOp.Bytes _ -> mkByteArrayTy g
         | TOp.UInt16s _ -> mkArrayType g g.uint16_ty
+        | TOp.AnonRecdGet(_, i) -> List.item i tinst
         | TOp.TupleFieldGet(_, i) -> List.item i tinst
         | TOp.Tuple tupInfo -> mkAnyTupledTy g tupInfo tinst
+        | TOp.AnonRecd anonInfo -> mkAnyAnonRecdTy g anonInfo tinst
         | (TOp.For _ | TOp.While _) -> g.unit_ty
         | TOp.Array -> (match tinst with [ty] -> mkArrayType g ty | _ -> failwith "bad TOp.Array node")
         | (TOp.TryCatch _ | TOp.TryFinally _) -> (match tinst with [ty] ->  ty | _ -> failwith "bad TOp_try node")
@@ -5870,16 +5911,23 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             let ty = tyOfExpr g expr
             if isStructTy g ty then 
                 match mut with 
-                | NeverMutates -> ()
-                | AddressOfOp -> 
-                    // we get an inref
-                    errorR(Error(FSComp.SR.tastCantTakeAddressOfExpression(), m))
+                | NeverMutates
+                | AddressOfOp -> ()
                 | DefinitelyMutates -> 
                     // Give a nice error message for mutating something we can't take the address of
                     errorR(Error(FSComp.SR.tastInvalidMutationOfConstant(), m))
                 | PossiblyMutates -> 
                     // Warn on defensive copy of something we can't take the address of
                     warning(DefensiveCopyWarning(FSComp.SR.tastValueHasBeenCopied(), m))
+
+            match mut with
+            | NeverMutates
+            | DefinitelyMutates
+            | PossiblyMutates -> ()
+            | AddressOfOp -> 
+                // we get an inref
+                errorR(Error(FSComp.SR.tastCantTakeAddressOfExpression(), m))
+
             // Take a defensive copy
             let tmp, _ = 
                 match mut with 
@@ -5900,6 +5948,10 @@ let mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut e a
 let mkTupleFieldGet g (tupInfo, e, tinst, i, m) = 
     let wrap, e', _readonly, _writeonly = mkExprAddrOfExpr g (evalTupInfoIsStruct tupInfo) false NeverMutates e None m
     wrap (mkTupleFieldGetViaExprAddr(tupInfo, e', tinst, i, m))
+
+let mkAnonRecdFieldGet g (anonInfo:AnonRecdTypeInfo, e, tinst, i, m) = 
+    let wrap, e', _readonly, _writeonly = mkExprAddrOfExpr g (evalAnonInfoIsStruct anonInfo) false NeverMutates e None m
+    wrap (mkAnonRecdFieldGetViaExprAddr(anonInfo, e', tinst, i, m))
 
 let mkRecdFieldGet g (e, fref:RecdFieldRef, tinst, m) = 
     assert (not (isByrefTy g (tyOfExpr g e)))
@@ -6212,6 +6264,9 @@ let mkRefTupled g m es tys = mkAnyTupled g m tupInfoRef es tys
 let mkRefTupledNoTypes g m args = mkRefTupled g m args (List.map (tyOfExpr g) args)
 let mkRefTupledVars g m vs = mkRefTupled g m (List.map (exprForVal m) vs) (typesOfVals vs)
 
+let mkAnonRecd (_g:TcGlobals) m anonInfo es tys = Expr.Op (TOp.AnonRecd (anonInfo),tys,es,m)
+
+
 //--------------------------------------------------------------------------
 // Permute expressions
 //--------------------------------------------------------------------------
@@ -6267,11 +6322,6 @@ let permuteExprList (sigma:int[]) (exprs: Expr list) (ty: TType list) (names:str
     let reorderedExprs  = permute sigma (Array.ofList newExprs)
     binds, Array.toList reorderedExprs
     
-//-------------------------------------------------------------------------
-// Build record expressions...
-//------------------------------------------------------------------------- 
-
-
 /// Evaluate the expressions in the original order, but build a record with the results in field order 
 /// Note some fields may be static. If this were not the case we could just use 
 ///     let sigma       = Array.map #Index  ()  
@@ -6322,6 +6372,18 @@ let mkIsInst ty e m = mkAsmExpr ([ isinst ], [ty], [e], [ ty ], m)
 
 let mspec_Type_GetTypeFromHandle (g: TcGlobals) = IL.mkILNonGenericStaticMethSpecInTy(g.ilg.typ_Type, "GetTypeFromHandle", [g.iltyp_RuntimeTypeHandle], g.ilg.typ_Type)
 let mspec_String_Length (g: TcGlobals) = mkILNonGenericInstanceMethSpecInTy (g.ilg.typ_String, "get_Length", [], g.ilg.typ_Int32)
+
+let mspec_String_Concat2 (g: TcGlobals) = 
+    mkILNonGenericStaticMethSpecInTy (g.ilg.typ_String, "Concat", [ g.ilg.typ_String; g.ilg.typ_String ], g.ilg.typ_String)
+
+let mspec_String_Concat3 (g: TcGlobals) = 
+    mkILNonGenericStaticMethSpecInTy (g.ilg.typ_String, "Concat", [ g.ilg.typ_String; g.ilg.typ_String; g.ilg.typ_String ], g.ilg.typ_String)
+
+let mspec_String_Concat4 (g: TcGlobals) = 
+    mkILNonGenericStaticMethSpecInTy (g.ilg.typ_String, "Concat", [ g.ilg.typ_String; g.ilg.typ_String; g.ilg.typ_String; g.ilg.typ_String ], g.ilg.typ_String)
+
+let mspec_String_Concat_Array (g: TcGlobals) = 
+    mkILNonGenericStaticMethSpecInTy (g.ilg.typ_String, "Concat", [ mkILArr1DTy g.ilg.typ_String ], g.ilg.typ_String)
 
 let fspec_Missing_Value (g: TcGlobals) = IL.mkILFieldSpecInTy(g.iltyp_Missing, "Value", g.iltyp_Missing)
 
@@ -6544,6 +6606,21 @@ let mkGetStringLength g m e =
     /// ILCall(useCallvirt, isProtected, valu, newobj, valUseFlags, isProp, noTailCall, mref, actualTypeInst, actualMethInst, retTy)
     Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, true, false, mspec.MethodRef, [], [], [g.int32_ty]), [], [e], m)
 
+let mkStaticCall_String_Concat2 g m arg1 arg2 =
+    let mspec = mspec_String_Concat2 g
+    Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [], [], [g.string_ty]), [], [arg1; arg2], m)
+
+let mkStaticCall_String_Concat3 g m arg1 arg2 arg3 =
+    let mspec = mspec_String_Concat3 g
+    Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [], [], [g.string_ty]), [], [arg1; arg2; arg3], m)
+
+let mkStaticCall_String_Concat4 g m arg1 arg2 arg3 arg4 =
+    let mspec = mspec_String_Concat4 g
+    Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [], [], [g.string_ty]), [], [arg1; arg2; arg3; arg4], m)
+
+let mkStaticCall_String_Concat_Array g m arg =
+    let mspec = mspec_String_Concat_Array g
+    Expr.Op(TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [], [], [g.string_ty]), [], [arg], m)
 
 // Quotations can't contain any IL.
 // As a result, we aim to get rid of all IL generation in the typechecker and pattern match
@@ -7302,6 +7379,7 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
     match stripped with 
     | TType_forall _ -> 
         "Microsoft.FSharp.Core.FSharpTypeFunc"
+
     | _ when isArrayTy g ty   -> 
         let tcref, tinst = destAppTy g ty
         let arraySuffix = 
@@ -7317,6 +7395,7 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
             | 4 -> "[0:, 0:, 0:, 0:]"
             | _ -> failwith "impossible: rankOfArrayTyconRef: unsupported array rank"
         typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + arraySuffix
+
     | TType_ucase (UCRef(tcref, _), tinst)   
     | TType_app (tcref, tinst)   -> 
         if tyconRefEq g g.byref_tcr tcref then
@@ -7334,15 +7413,22 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
                     textOfPath (List.map DemangleGenericTypeName path)
                 | _ -> assert(false); failwith "impossible"
             tyName + tyargsEnc g (gtpsType, gtpsMethod) tinst
+
+    | TType_anon (anonInfo, tinst) -> 
+        sprintf "%s%s" anonInfo.ILTypeRef.FullName (tyargsEnc g (gtpsType, gtpsMethod) tinst)
+
     | TType_tuple (tupInfo, tys) -> 
         if evalTupInfoIsStruct tupInfo then 
             sprintf "System.ValueTuple%s"(tyargsEnc g (gtpsType, gtpsMethod) tys)
         else 
             sprintf "System.Tuple%s"(tyargsEnc g (gtpsType, gtpsMethod) tys)
+
     | TType_fun (f, x)           -> 
         "Microsoft.FSharp.Core.FSharpFunc" + tyargsEnc g (gtpsType, gtpsMethod) [f;x]
+
     | TType_var typar           -> 
         typarEnc g (gtpsType, gtpsMethod) typar
+
     | TType_measure _ -> "?"
 
 and tyargsEnc g (gtpsType, gtpsMethod) args = 
@@ -7503,6 +7589,10 @@ let rec TypeHasDefaultValue g m ty =
             flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValue g m)
          elif isStructTupleTy g ty then 
             destStructTupleTy g ty |> List.forall (TypeHasDefaultValue g m)
+         elif isStructAnonRecdTy g ty then 
+            match tryDestAnonRecdTy g ty with
+            | ValueNone -> true
+            | ValueSome (_, ptys) -> ptys |> List.forall (TypeHasDefaultValue g m)
          else
             // All struct types defined in other .NET languages have a DefaultValue regardless of their
             // instantiation
@@ -7515,6 +7605,10 @@ let (|SpecialComparableHeadType|_|) g ty =
     if isAnyTupleTy g ty then 
         let _tupInfo, elemTys = destAnyTupleTy g ty
         Some elemTys 
+    elif isAnonRecdTy g ty then 
+        match tryDestAnonRecdTy g ty with
+        | ValueNone -> Some []
+        | ValueSome (_anonInfo, elemTys) -> Some elemTys 
     else
         match tryAppTy g ty with
         | ValueSome (tcref, tinst) ->
@@ -8281,12 +8375,12 @@ let rec mkCompiledTuple g isStruct (argtys, args, m) =
                     ty8, arg8
                 | _ ->
                     let ty8enc = TType_app((if isStruct then g.struct_tuple1_tcr else g.ref_tuple1_tcr), [ty8])
-                    let v8enc = Expr.Op (TOp.Tuple (TupInfo.Const isStruct), [ty8], [arg8], m) 
+                    let v8enc = Expr.Op (TOp.Tuple (mkTupInfo isStruct), [ty8], [arg8], m) 
                     ty8enc, v8enc
             | _ -> 
                 let a, b, c, d = mkCompiledTuple g isStruct (argtysB, argsB, m)
                 let ty8plus = TType_app(a, b)
-                let v8plus = Expr.Op (TOp.Tuple(TupInfo.Const isStruct), b, c, d)
+                let v8plus = Expr.Op (TOp.Tuple(mkTupInfo isStruct), b, c, d)
                 ty8plus, v8plus
         let argtysAB = argtysA @ [ty8] 
         (mkCompiledTupleTyconRef g isStruct (List.length argtysAB), argtysAB, argsA @ [v8], m)

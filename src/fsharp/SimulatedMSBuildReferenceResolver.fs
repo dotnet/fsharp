@@ -147,13 +147,14 @@ let internal SimulatedMSBuildResolver =
                         match n.Version, n.GetPublicKeyToken()  with 
                         | null, _ | _,null -> 
                             let options = 
-                                [ for gacdir in Directory.EnumerateDirectories(gac) do 
-                                    let assdir = Path.Combine(gacdir,n.Name)
-                                    if Directory.Exists(assdir) then 
-                                        for tdir in Directory.EnumerateDirectories(assdir) do 
-                                            let trialPath = Path.Combine(tdir,qual)
-                                            if FileSystem.SafeExists(trialPath) then 
-                                                yield trialPath ]
+                                [ if Directory.Exists(gac) then 
+                                    for gacdir in Directory.EnumerateDirectories(gac) do 
+                                        let assemblyDir = Path.Combine(gacdir,n.Name)
+                                        if Directory.Exists(assemblyDir) then 
+                                            for tdir in Directory.EnumerateDirectories(assemblyDir) do 
+                                                let trialPath = Path.Combine(tdir,qual)
+                                                if FileSystem.SafeExists(trialPath) then 
+                                                    yield trialPath ]
                             //printfn "sorting GAC paths: %A" options
                             options 
                             |> List.sort // puts latest version last
@@ -161,21 +162,22 @@ let internal SimulatedMSBuildResolver =
                             |> function None -> () | Some p -> success p
 
                         | v,tok -> 
-                            for gacdir in Directory.EnumerateDirectories(gac) do 
-                                //printfn "searching GAC directory: %s" gacdir
-                                let assdir = Path.Combine(gacdir,n.Name)
-                                if Directory.Exists(assdir) then 
-                                    //printfn "searching GAC directory: %s" assdir
+                            if Directory.Exists(gac) then 
+                                for gacdir in Directory.EnumerateDirectories(gac) do 
+                                    //printfn "searching GAC directory: %s" gacdir
+                                    let assemblyDir = Path.Combine(gacdir,n.Name)
+                                    if Directory.Exists(assemblyDir) then 
+                                        //printfn "searching GAC directory: %s" assemblyDir
 
-                                    let tokText = String.concat "" [| for b in tok -> sprintf "%02x" b |]
-                                    let verdir = Path.Combine(assdir,"v4.0_"+v.ToString()+"__"+tokText)
-                                    //printfn "searching GAC directory: %s" verdir
+                                        let tokText = String.concat "" [| for b in tok -> sprintf "%02x" b |]
+                                        let verdir = Path.Combine(assemblyDir,"v4.0_"+v.ToString()+"__"+tokText)
+                                        //printfn "searching GAC directory: %s" verdir
 
-                                    if Directory.Exists(verdir) then 
-                                        let trialPath = Path.Combine(verdir,qual)
-                                        //printfn "searching GAC: %s" trialPath
-                                        if FileSystem.SafeExists(trialPath) then 
-                                            success trialPath
+                                        if Directory.Exists(verdir) then 
+                                            let trialPath = Path.Combine(verdir,qual)
+                                            //printfn "searching GAC: %s" trialPath
+                                            if FileSystem.SafeExists(trialPath) then 
+                                                success trialPath
                 with e -> logWarningOrError false "SR001" (e.ToString())
 #endif
 
@@ -186,8 +188,8 @@ let internal GetBestAvailableResolver() =
     let tryMSBuild v = 
         // Detect if MSBuild is on the machine, if so use the resolver from there
         let mb = try Assembly.Load(sprintf "Microsoft.Build.Framework, Version=%s.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" v) |> Option.ofObj with _ -> None
-        let ass = mb |> Option.bind (fun _ -> try Assembly.Load(sprintf "FSharp.Compiler.Service.MSBuild.v%s" v) |> Option.ofObj with _ -> None)
-        let ty = ass |> Option.bind (fun ass -> ass.GetType("Microsoft.FSharp.Compiler.MSBuildReferenceResolver") |> Option.ofObj)
+        let assembly = mb |> Option.bind (fun _ -> try Assembly.Load(sprintf "FSharp.Compiler.Service.MSBuild.v%s" v) |> Option.ofObj with _ -> None)
+        let ty = assembly |> Option.bind (fun a -> a.GetType("Microsoft.FSharp.Compiler.MSBuildReferenceResolver") |> Option.ofObj)
         let obj = ty |> Option.bind (fun ty -> ty.InvokeMember("get_Resolver",BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.InvokeMethod ||| BindingFlags.NonPublic, null, null, [| |]) |> Option.ofObj)
         let resolver = obj |> Option.bind (fun obj -> match obj with :? Resolver as r -> Some r | _ -> None)
         resolver

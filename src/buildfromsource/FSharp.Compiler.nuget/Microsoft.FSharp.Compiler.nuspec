@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+    <metadata>
+        <id>Microsoft.FSharp.Compiler</id>
+        <description>
+            .NET Core compatible version of the F# compiler fsc.exe.
+            Supported Platforms: - .NET Core (.netstandard2.0).
+            Commit hash: $githeadsha$.
+        </description>
+        <language>en-US</language>
+        <requireLicenseAcceptance>true</requireLicenseAcceptance>
+        <version>$version$</version>
+        <authors>$authors$</authors>
+        <licenseUrl>$licenseUrl$</licenseUrl>
+        <projectUrl>$projectUrl$</projectUrl>
+        <tags>$tags$</tags>
+        <dependencies>
+            <group targetFramework=".NETStandard2.0">
+                <dependency id="Microsoft.NETCore.Platforms" version="2.0.0" />
+                <dependency id="NETStandard.Library" version="2.0.0" />
+                <dependency id="System.Collections.Immutable" version="1.5.0" />
+                <dependency id="System.Diagnostics.Process" version="4.3.0" />
+                <dependency id="System.Diagnostics.TraceSource" version="4.3.0" />
+                <dependency id="System.Linq.Expressions" version="4.3.0" />
+                <dependency id="System.Linq.Queryable" version="4.3.0" />
+                <dependency id="System.Net.Requests" version="4.3.0" />
+                <dependency id="System.Reflection.Emit" version="4.3.0" />
+                <dependency id="System.Reflection.Metadata" version="1.6.0" />
+                <dependency id="System.Runtime.InteropServices" version="4.3.0" />
+                <dependency id="System.Runtime.Loader" version="4.3.0" />
+                <dependency id="System.Security.Cryptography.Algorithms" version="4.3.0" />
+                <dependency id="System.Threading.Tasks.Parallel" version="4.3.0" />
+                <dependency id="System.Threading.Thread" version="4.3.0" />
+                <dependency id="System.Threading.ThreadPool" version="4.3.0" />
+                <dependency id="System.ValueTuple" version="4.4.0" />
+            </group>
+        </dependencies>
+        <contentFiles>
+            <files include="any\any\default.win32manifest"                       buildAction="Content" copyToOutput="true" flatten="false" />
+            <files include="any\any\Microsoft.FSharp.Targets"                    buildAction="Content" copyToOutput="true" flatten="false" />
+            <files include="any\any\Microsoft.Portable.FSharp.targets"           buildAction="Content" copyToOutput="true" flatten="false" />
+            <files include="any\any\Microsoft.FSharp.NetSdk.props"               buildAction="Content" copyToOutput="true" flatten="false" />
+            <files include="any\any\Microsoft.FSharp.NetSdk.targets"             buildAction="Content" copyToOutput="true" flatten="false" />
+            <files include="any\any\Microsoft.FSharp.Overrides.NetSdk.targets"   buildAction="Content" copyToOutput="true" flatten="false" />
+        </contentFiles>
+    </metadata>
+    <files>
+        <!--
+            Why is this like this?
+            This package is used to deploy the fsharp compiler tools as built product.
+
+            We need nuget package to merely deploy the contents of the lib directory.
+            tools, build and runtime/native make unnecessary copies.
+            this approach gives a very small deployment. Which is kind of necessary.
+        -->
+        <!-- assemblies -->
+        <file src="fsc.exe"                                     target="lib\netstandard2.0" />
+        <file src="fsi.exe"                                     target="lib\netstandard2.0" />
+        <file src="FSharp.Core.dll"                             target="lib\netstandard2.0" />
+        <file src="FSharp.Compiler.Private.dll"                 target="lib\netstandard2.0" />
+        <file src="FSharp.Build.dll"                            target="lib\netstandard2.0" />
+        <file src="FSharp.Compiler.Interactive.Settings.dll"    target="lib\netstandard2.0" />
+        <!-- symbols -->
+        <file src="fsc.pdb"                                     target="lib\netstandard2.0" />
+        <file src="fsi.pdb"                                     target="lib\netstandard2.0" />
+        <file src="FSharp.Core.pdb"                             target="lib\netstandard2.0" />
+        <file src="FSharp.Compiler.Private.pdb"                 target="lib\netstandard2.0" />
+        <file src="FSharp.Build.pdb"                            target="lib\netstandard2.0" />
+        <file src="FSharp.Compiler.Interactive.Settings.pdb"    target="lib\netstandard2.0" />
+        <!-- additional files -->
+        <file src="default.win32manifest"                       target="contentFiles\any\any"  />
+        <file src="Microsoft.FSharp.Targets"                    target="contentFiles\any\any"  />
+        <file src="Microsoft.Portable.FSharp.Targets"           target="contentFiles\any\any"  />
+        <file src="Microsoft.FSharp.NetSdk.props"               target="contentFiles\any\any"  />
+        <file src="Microsoft.FSharp.NetSdk.targets"             target="contentFiles\any\any"  />
+        <file src="Microsoft.FSharp.Overrides.NetSdk.targets"   target="contentFiles\any\any"  />
+        <!-- resources -->
+        <file src="**\FSharp.Core.resources.dll"                          target="lib\netstandard2.0" />
+        <file src="**\FSharp.Compiler.Private.resources.dll"              target="lib\netstandard2.0" />
+        <file src="**\FSharp.Compiler.Interactive.Settings.resources.dll" target="lib\netstandard2.0" />
+        <file src="**\FSharp.Build.resources.dll"                         target="lib\netstandard2.0" />
+    </files>
+</package>

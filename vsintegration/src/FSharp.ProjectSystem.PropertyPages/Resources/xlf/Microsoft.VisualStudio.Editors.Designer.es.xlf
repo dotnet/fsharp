@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="es" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="PPG_DebugTitle">
         <source>Debug</source>
-        <target state="translated">Depurar</target>
+        <target state="translated">depurar</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_DeployTitle">
@@ -230,12 +230,12 @@ Seleccione una ruta de acceso de carpeta válida.</target>
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_InvalidVersion">
         <source>Invalid version format, expected "[Major]", "[Major].[Minor]", "[Major].[Minor].[Build]" or "[Major].[Minor].[Build].[Revision]"</source>
-        <target state="translated">Formato de versión no válido, se esperaba "[Principal]", "[Principal].[Secundaria]", "[Principal].[Secundaria].[Compilación]" o "[Principal].[Secundaria].[Compilación].[Revisión]"</target>
+        <target state="translated">Formato de versión no válido; se esperaba "[Principal]", "[Principal].[Secundaria]", "[Principal].[Secundaria].[Compilación]" o "[Principal].[Secundaria].[Compilación].[Revisión]"</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_BadWildcard">
         <source>A wildcard ("*") is not allowed in this field.</source>
-        <target state="translated">No se permite el carácter comodín ("*") en este campo.</target>
+        <target state="translated">No se permite el uso de caracteres comodín ("*") en este campo.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_VersionOutOfRange_2Args">
@@ -355,7 +355,7 @@ Seleccione una ruta de acceso de carpeta válida.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_None">
         <source>None</source>
-        <target state="translated">Ninguno</target>
+        <target state="translated">NONE</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Warning">
@@ -365,7 +365,7 @@ Seleccione una ruta de acceso de carpeta válida.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Error">
         <source>Error</source>
-        <target state="translated">Error</target>
+        <target state="translated">Fehler</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_OptionStrict_Custom">
@@ -390,7 +390,7 @@ Seleccione una ruta de acceso de carpeta válida.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_42104">
         <source>Use of variable prior to assignment</source>
-        <target state="translated">Uso de variable anterior a la asignación.</target>
+        <target state="translated">Uso de variable anterior a la asignación</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_420XX">
@@ -400,7 +400,7 @@ Seleccione una ruta de acceso de carpeta válida.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_42024">
         <source>Unused local variable</source>
-        <target state="translated">Variable local no usada.</target>
+        <target state="translated">Variable local no usada</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_42025">
@@ -502,7 +502,7 @@ Si cambia este valor, se restablecerán los valores de todas las configuraciones
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_CustomZone">
         <source>(Custom)</source>
-        <target state="translated">(Personalizada)</target>
+        <target state="translated">(Personalizado)</target>
         <note>Don't use</note>
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_ZoneDefault">
@@ -614,7 +614,7 @@ Error:</target>
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_PermCalcFailedCaption">
         <source>Error</source>
-        <target state="translated">Error</target>
+        <target state="translated">Fehler</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SecurityAdvancedPage_Title">
@@ -684,7 +684,7 @@ Error:</target>
       </trans-unit>
       <trans-unit id="PPG_Signing_NewPassMismatch">
         <source>The new passwords do not match. Enter the password again.</source>
-        <target state="translated">Las contraseñas no coinciden. Vuelva a escribir la contraseña.</target>
+        <target state="translated">Las nuevas contraseñas no coinciden. Vuelva a escribir la contraseña.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_NewPassTooShort">
@@ -1087,7 +1087,7 @@ Error:</target>
       </trans-unit>
       <trans-unit id="PPG_Property_AssemblyVersion">
         <source>Assembly Version</source>
-        <target state="translated">Versión del ensamblado</target>
+        <target state="translated">Versión de ensamblado</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Property_AssemblyFileVersion">
@@ -1828,7 +1828,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_GraphicSizeFormat">
         <source>{0} x {1}</source>
-        <target state="translated">{0} x {1}</target>
+        <target state="needs-review-translation">{0} x {1}</target>
         <note>Format string for showing a graphic's size
 
 #  {0} = width (as an integer)
@@ -2344,19 +2344,9 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">Aplicación</target>
         <note />
       </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebApplicationScope">
-        <source>Application (Web)</source>
-        <target state="translated">Aplicación (web)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="SD_ComboBoxItem_UserScope">
         <source>User</source>
         <target state="translated">Usuario</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebUserScope">
-        <source>User (Web)</source>
-        <target state="translated">Usuario (web)</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewNameColumnHeaderText">
@@ -2830,22 +2820,22 @@ El nuevo valor del archivo app.config es '{1}'
       </trans-unit>
       <trans-unit id="PPG_Services_Seconds">
         <source>seconds</source>
-        <target state="translated">segundos</target>
+        <target state="translated">Segundos</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Minutes">
         <source>minutes</source>
-        <target state="translated">minutos</target>
+        <target state="translated">Minutos</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Hours">
         <source>hours</source>
-        <target state="translated">horas</target>
+        <target state="translated">Horas</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Days">
         <source>days</source>
-        <target state="translated">días</target>
+        <target state="translated">Días</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">
@@ -2855,7 +2845,7 @@ El nuevo valor del archivo app.config es '{1}'
       </trans-unit>
       <trans-unit id="PPG_Services_InvalidAppConfigXml">
         <source>An error occurred while reading the Application configuration file.  The file might be corrupted or contain invalid XML.</source>
-        <target state="translated">Error al leer el archivo de configuración de la aplicación. Puede que el archivo esté dañado o que contenga código XML no válido.</target>
+        <target state="translated">Error al leer el archivo de configuración de la aplicación.  Puede que esté dañado o que contenga código XML no válido.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_InvalidUrl">
