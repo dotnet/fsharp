@@ -217,11 +217,6 @@
         <target state="translated">不允许多次引用“{0}.dll”</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotReadVersionInfoFromMscorlib">
-        <source>Could not read version from mscorlib.dll</source>
-        <target state="translated">未能从 mscorlib.dll 读取版本</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">无法读取程序集“{0}”</target>
