@@ -102,7 +102,7 @@ let compilerOptionUsage (CompilerOption(s,tag,spec,_,_)) =
     | OptionGeneral _  -> if tag="" then sprintf "%s" s else sprintf "%s:%s" s tag (* still being decided *)
 
 let PrintCompilerOption (CompilerOption(_s,_tag,_spec,_,help) as compilerOption) =
-    let flagWidth = 30 // fixed width for printing of flags, e.g. --warnaserror:<warn...>
+    let flagWidth = 42 // fixed width for printing of flags, e.g. --debug:{full|pdbonly|portable|embedded}
     let defaultLineWidth = 80 // the fallback width
     let lineWidth = 
         try 
@@ -113,7 +113,6 @@ let PrintCompilerOption (CompilerOption(_s,_tag,_spec,_,help) as compilerOption)
     //   flagWidth chars - for flags description or padding on continuation lines.
     //   single space    - space.
     //   description     - words upto but excluding the final character of the line.
-    assert(flagWidth = 30)
     printf "%-40s" (compilerOptionUsage compilerOption)
     let printWord column (word:string) =
         // Have printed upto column.
@@ -121,7 +120,6 @@ let PrintCompilerOption (CompilerOption(_s,_tag,_spec,_,help) as compilerOption)
         // Returns the column printed to (suited to folding).
         if column + 1 (*space*) + word.Length >= lineWidth then // NOTE: "equality" ensures final character of the line is never printed
           printfn "" (* newline *)
-          assert(flagWidth = 30)
           printf  "%-40s %s" ""(*<--flags*) word
           flagWidth + 1 + word.Length
         else
