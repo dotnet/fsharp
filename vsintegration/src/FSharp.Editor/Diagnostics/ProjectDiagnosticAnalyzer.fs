@@ -15,9 +15,9 @@ open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.SolutionCrawler
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
 
 #if PROJECT_ANALYSIS
 // Project-wide error analysis.  We don't enable this because ParseAndCheckProject checks projects against the versions of the files

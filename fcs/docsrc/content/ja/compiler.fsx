@@ -18,7 +18,7 @@
 *)
 
 #r "FSharp.Compiler.Service.dll"
-open Microsoft.FSharp.Compiler.SimpleSourceCodeServices
+open FSharp.Compiler.SimpleSourceCodeServices
 open System.IO
 
 let scs = SimpleSourceCodeServices()
