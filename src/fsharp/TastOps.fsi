@@ -564,7 +564,7 @@ val generalizeTypars : Typars -> TypeInst
 
 val generalizeTyconRef : TcGlobals -> TyconRef -> TTypes * TType
 
-val generalizedTyconRef : TcGlobals -> TyconRef -> TType
+val generalizedTyOfTyconRef : TcGlobals -> TyconRef -> TType
 
 val mkTyparToTyparRenaming : Typars -> Typars -> TyparInst * TTypes
 
@@ -1805,8 +1805,6 @@ val mkCallHash               : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallBox                : TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallIsNull             : TcGlobals -> range -> TType -> Expr -> Expr
-
-val mkCallIsNotNull          : TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallRaise              : TcGlobals -> range -> TType -> Expr -> Expr
 
