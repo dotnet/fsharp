@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="RemoveFolder.AccessibleName">
         <source>Delete</source>
-        <target state="translated">löschen</target>
+        <target state="translated">Löschen</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderLabel.Text">

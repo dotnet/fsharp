@@ -875,7 +875,7 @@ Fehler:</target>
       </trans-unit>
       <trans-unit id="PPG_UrlBehavior_Static">
         <source>Static</source>
-        <target state="translated">Static</target>
+        <target state="translated">Statisch</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_UrlBehavior_Dynamic">

@@ -1609,7 +1609,7 @@
       </trans-unit>
       <trans-unit id="MSBuildReferenceResolutionError">
         <source>{0} (Code={1})</source>
-        <target state="translated">{0} (Code={1})</target>
+        <target state="translated">{0} (コード={1})</target>
         <note />
       </trans-unit>
       <trans-unit id="TargetInvocationExceptionWrapper">

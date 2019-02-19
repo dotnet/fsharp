@@ -954,7 +954,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.WHITESPACE">
         <source>whitespace</source>
-        <target state="translated">whitespace</target>
+        <target state="translated">boşluk</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COMMENT">

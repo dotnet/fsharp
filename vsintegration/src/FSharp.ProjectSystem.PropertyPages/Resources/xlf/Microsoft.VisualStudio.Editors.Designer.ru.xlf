@@ -1217,7 +1217,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="DFX_Error_Default_Caption">
         <source>Microsoft Visual Studio</source>
-        <target state="translated">Службы Microsoft Visual Studio</target>
+        <target state="translated">Microsoft Visual Studio</target>
         <note>Error reporting</note>
       </trans-unit>
       <trans-unit id="OptionPage_Editor_InvalidTabSize">
@@ -1813,7 +1813,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_Size">
         <source>Size</source>
-        <target state="translated">Size</target>
+        <target state="translated">Размер</target>
         <note>Columns for the "Details" view of the resource editor</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_Comment">

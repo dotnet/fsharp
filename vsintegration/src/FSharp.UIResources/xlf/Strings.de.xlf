@@ -164,22 +164,22 @@
       </trans-unit>
       <trans-unit id="Enter_key_always">
         <source>Always add new line on enter</source>
-        <target state="translated">Always add new line on enter</target>
+        <target state="translated">Nach Drücken der EINGABETASTE immer neue Zeile hinzufügen</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_never">
         <source>Never add new line on enter</source>
-        <target state="translated">Never add new line on enter</target>
+        <target state="translated">Nach Drücken der EINGABETASTE niemals neue Zeile hinzufügen</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_only">
         <source>Only add new line on enter after end of fully typed word</source>
-        <target state="translated">Only add new line on enter after end of fully typed word</target>
+        <target state="translated">Nach Drücken der EINGABETASTE nur nach dem Ende eines vollständigen Worts neue Zeile hinzufügen</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_Key_Rule">
         <source>Enter key behavior</source>
-        <target state="translated">Enter key behavior</target>
+        <target state="translated">Eingabetastenverhalten</target>
         <note />
       </trans-unit>
       <trans-unit id="Format_on_paste">
@@ -189,7 +189,7 @@
       </trans-unit>
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
-        <target state="new">Suggest names for unresolved identifiers</target>
+        <target state="translated">Namen für nicht aufgelöste Bezeichner vorschlagen</target>
         <note />
       </trans-unit>
     </body>

@@ -899,7 +899,7 @@
       </trans-unit>
       <trans-unit id="Records-Line1">
         <source>Records are an aggregate of named values, with optional members (such as methods).</source>
-        <target state="translated">レコードは、オプションのメンバー (メソッドなど) を含む名前付きの値の集合です。</target>
+        <target state="translated">レコードは、オプションのメンバー (メソッドなど) を含む名前付きの値の集約です。</target>
         <note />
       </trans-unit>
       <trans-unit id="Records-Line2">
@@ -1294,7 +1294,7 @@
       </trans-unit>
       <trans-unit id="Option-Line1">
         <source>Option values are any kind of value tagged with either 'Some' or 'None'.</source>
-        <target state="translated">オプション値とは、'Some' または 'None' が指定されたあらゆる種類の値です。</target>
+        <target state="translated">オプション値とは、'Some' または 'None' がタグされたあらゆる種類の値です。</target>
         <note />
       </trans-unit>
       <trans-unit id="Option-Line2">
