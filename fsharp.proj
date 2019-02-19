@@ -58,29 +58,29 @@
       </Projects>
       <Projects Include="$(MSBuildThisFileDirectory)src\fsharp\FSharp.Build\FSharp.Build.fsproj">
         <AdditionalProperties Condition="'$(BuildNetcore)' == 'true'">TargetFramework=netstandard2.0</AdditionalProperties>
-        <AdditionalProperties Condition="'$(BuildDesktop)' == 'true'">TargetFramework=net46</AdditionalProperties>
+        <AdditionalProperties Condition="'$(BuildDesktop)' == 'true'">TargetFramework=net472</AdditionalProperties>
       </Projects>
       <Projects Include="$(MSBuildThisFileDirectory)src\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj">
         <AdditionalProperties Condition="'$(BuildNetcore)' == 'true'">TargetFramework=netstandard1.6</AdditionalProperties>
-        <AdditionalProperties Condition="'$(BuildDesktop)' == 'true'">TargetFramework=net46</AdditionalProperties>
+        <AdditionalProperties Condition="'$(BuildDesktop)' == 'true'">TargetFramework=net472</AdditionalProperties>
       </Projects>
       <Projects Include="$(MSBuildThisFileDirectory)src\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj">
-        <AdditionalProperties Condition="'$(BuildDesktop)' == 'true'">TargetFramework=net46</AdditionalProperties>
+        <AdditionalProperties Condition="'$(BuildDesktop)' == 'true'">TargetFramework=net472</AdditionalProperties>
       </Projects>
       <Projects Include="$(MSBuildThisFileDirectory)src\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj">
         <AdditionalProperties Condition="'$(BuildNetcore)' == 'true'">TargetFramework=netstandard1.6</AdditionalProperties>
-        <AdditionalProperties Condition="'$(BuildDesktop)' == 'true'">TargetFramework=net46</AdditionalProperties>
+        <AdditionalProperties Condition="'$(BuildDesktop)' == 'true'">TargetFramework=net472</AdditionalProperties>
       </Projects>
       <Projects Include="$(MSBuildThisFileDirectory)src\fsharp\fsc\fsc.fsproj">
         <AdditionalProperties Condition="'$(BuildNetcore)' == 'true'">TargetFramework=netcoreapp2.1</AdditionalProperties>
-        <AdditionalProperties Condition="'$(BuildDesktop)' == 'true'">TargetFramework=net46</AdditionalProperties>
+        <AdditionalProperties Condition="'$(BuildDesktop)' == 'true'">TargetFramework=net472</AdditionalProperties>
       </Projects>
       <Projects Include="$(MSBuildThisFileDirectory)src\fsharp\fsi\fsi.fsproj">
         <AdditionalProperties Condition="'$(BuildNetcore)' == 'true'">TargetFramework=netcoreapp2.1</AdditionalProperties>
-        <AdditionalProperties Condition="'$(BuildDesktop)' == 'true'">TargetFramework=net46</AdditionalProperties>
+        <AdditionalProperties Condition="'$(BuildDesktop)' == 'true'">TargetFramework=net472</AdditionalProperties>
       </Projects>
       <Projects Include="$(MSBuildThisFileDirectory)src\fsharp\fsiAnyCpu\fsiAnyCPU.fsproj">
-        <AdditionalProperties Condition="'$(BuildDesktop)' == 'true'">TargetFramework=net46</AdditionalProperties>
+        <AdditionalProperties Condition="'$(BuildDesktop)' == 'true'">TargetFramework=net472</AdditionalProperties>
       </Projects>
     </ItemGroup>
 

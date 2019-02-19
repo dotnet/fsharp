@@ -42,6 +42,7 @@ Results look like this:
 *)
 
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Text
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open System
 open System.IO
@@ -89,7 +90,7 @@ let main argv =
         async {
             eprintfn "ParseAndCheckFileInProject(%s)..." options.FileToCheck
             let sw = Stopwatch.StartNew()
-            let! _, answer = checker.ParseAndCheckFileInProject(options.FileToCheck, fileVersion, File.ReadAllText options.FileToCheck, options.Options)
+            let! _, answer = checker.ParseAndCheckFileInProject(options.FileToCheck, fileVersion, SourceText.ofString (File.ReadAllText options.FileToCheck), options.Options)
             match answer with
             | FSharpCheckFileAnswer.Aborted ->
                 eprintfn "Abortedin %O!" sw.Elapsed
@@ -110,7 +111,7 @@ let main argv =
             let answers = 
                options.FilesToCheck |> List.map (fun file -> 
                    eprintfn "doing %s" file
-                   checker.ParseAndCheckFileInProject(file, fileVersion, File.ReadAllText file, options.Options) |> Async.RunSynchronously)
+                   checker.ParseAndCheckFileInProject(file, fileVersion, SourceText.ofString (File.ReadAllText file), options.Options) |> Async.RunSynchronously)
             for _,answer in answers do 
                 match answer with
                 | FSharpCheckFileAnswer.Aborted ->
@@ -157,7 +158,7 @@ let main argv =
                 match fileResults with
                 | Some fileResults ->
                     let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions(options.Options)
-                    let! parseResult = checker.ParseFile(options.FileToCheck, getFileText(), parsingOptions) 
+                    let! parseResult = checker.ParseFile(options.FileToCheck, SourceText.ofString (getFileText()), parsingOptions) 
                     for completion in options.CompletionPositions do
                         eprintfn "querying %A %s" completion.QualifyingNames completion.PartialName
                         let! listInfo =

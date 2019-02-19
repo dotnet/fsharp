@@ -28,7 +28,7 @@ module internal Project1 =
     let fileName2 = Path.ChangeExtension(base2, ".fs")
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
-    let fileSource1 = """
+    let fileSource1Text = """
 module M
 
 type C() = 
@@ -39,9 +39,10 @@ let fff () = xxx + xxx
 
 type CAbbrev = C
     """
-    File.WriteAllText(fileName1, fileSource1)
+    let fileSource1 = Microsoft.FSharp.Compiler.Text.SourceText.ofString fileSource1Text
+    File.WriteAllText(fileName1, fileSource1Text)
 
-    let fileSource2 = """
+    let fileSource2Text = """
 module N
 
 open M
@@ -83,7 +84,8 @@ let mmmm1 : M.C = new M.C()             // note, these don't count as uses of CA
 let mmmm2 : M.CAbbrev = new M.CAbbrev() // note, these don't count as uses of C
 
     """
-    File.WriteAllText(fileName2, fileSource2)
+    let fileSource2 = Microsoft.FSharp.Compiler.Text.SourceText.ofString fileSource2Text
+    File.WriteAllText(fileName2, fileSource2Text)
 
     let fileNames = [fileName1; fileName2]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -2411,7 +2413,7 @@ module internal Project16 =
     let base2 = Path.GetTempFileName()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
-    let fileSource1 = """
+    let fileSource1Text = """
 module Impl
 
 type C() = 
@@ -2427,9 +2429,10 @@ and F = { Field1 : int; Field2 : int }
 and G = Case1 | Case2 of int
 
     """
-    File.WriteAllText(fileName1, fileSource1)
+    let fileSource1 = Microsoft.FSharp.Compiler.Text.SourceText.ofString fileSource1Text
+    File.WriteAllText(fileName1, fileSource1Text)
 
-    let sigFileSource1 = """
+    let sigFileSource1Text = """
 module Impl
 
 type C = 
@@ -2448,7 +2451,8 @@ and F = { Field1 : int; Field2 : int }
 and G = Case1 | Case2 of int
 
     """
-    File.WriteAllText(sigFileName1, sigFileSource1)
+    let sigFileSource1 = Microsoft.FSharp.Compiler.Text.SourceText.ofString sigFileSource1Text
+    File.WriteAllText(sigFileName1, sigFileSource1Text)
     let cleanFileName a = if a = fileName1 then "file1" elif a = sigFileName1 then "sig1"  else "??"
 
     let fileNames = [sigFileName1; fileName1]
@@ -4506,11 +4510,12 @@ module internal Project35b =
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fsx")
-    let fileSource1 = """
+    let fileSource1Text = """
 #r "System.dll"
 #r "notexist.dll"
 """
-    File.WriteAllText(fileName1, fileSource1)
+    let fileSource1 = Microsoft.FSharp.Compiler.Text.SourceText.ofString fileSource1Text
+    File.WriteAllText(fileName1, fileSource1Text)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
@@ -5153,7 +5158,7 @@ module internal ProjectBig =
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSources = [ for (i,f) in fileNamesI -> (f, "module M" + string i) ]
     for (f,text) in fileSources do File.WriteAllText(f, text)
-    let fileSources2 = [ for (i,f) in fileSources -> f ]
+    let fileSources2 = [ for (i,f) in fileSources -> Microsoft.FSharp.Compiler.Text.SourceText.ofString f ]
 
     let fileNames = [ for (_,f) in fileNamesI -> f ]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -5274,14 +5279,14 @@ module internal ProjectLineDirectives =
     let base2 = Path.GetTempFileName()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
-    let fileSource1 = """
+    let fileSource1Text = """
 module M
 
 # 10 "Test.fsy"
 let x = (1 = 3.0)
     """
-
-    File.WriteAllText(fileName1, fileSource1)
+    let fileSource1 = Microsoft.FSharp.Compiler.Text.SourceText.ofString fileSource1Text
+    File.WriteAllText(fileName1, fileSource1Text)
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
@@ -5317,11 +5322,12 @@ let ``ParseAndCheckFileResults contains ImplFile list if FSharpChecker is create
     let base2 = Path.GetTempFileName()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
-    let fileSource1 = """
+    let fileSource1Text = """
 type A(i:int) =
     member x.Value = i
 """
-    File.WriteAllText(fileName1, fileSource1)
+    let fileSource1 = Microsoft.FSharp.Compiler.Text.SourceText.ofString fileSource1Text
+    File.WriteAllText(fileName1, fileSource1Text)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -5374,7 +5380,7 @@ let ``Unused opens in rec module smoke test 1``() =
     let base2 = Path.GetTempFileName()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
-    let fileSource1 = """
+    let fileSource1Text = """
 module rec Module
 
 open System.Collections // unused
@@ -5411,7 +5417,8 @@ type UseTheThings(i:int) =
     member x.UseSomeUsedModuleContainingExtensionMember() = (3).Q
     member x.UseSomeUsedModuleContainingUnion() = A
 """
-    File.WriteAllText(fileName1, fileSource1)
+    let fileSource1 = Microsoft.FSharp.Compiler.Text.SourceText.ofString fileSource1Text
+    File.WriteAllText(fileName1, fileSource1Text)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -5446,7 +5453,7 @@ let ``Unused opens in non rec module smoke test 1``() =
     let base2 = Path.GetTempFileName()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
-    let fileSource1 = """
+    let fileSource1Text = """
 module Module
 
 open System.Collections // unused
@@ -5483,7 +5490,8 @@ type UseTheThings(i:int) =
     member x.UseSomeUsedModuleContainingExtensionMember() = (3).Q
     member x.UseSomeUsedModuleContainingUnion() = A
 """
-    File.WriteAllText(fileName1, fileSource1)
+    let fileSource1 = Microsoft.FSharp.Compiler.Text.SourceText.ofString fileSource1Text
+    File.WriteAllText(fileName1, fileSource1Text)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -5518,7 +5526,7 @@ let ``Unused opens smoke test auto open``() =
     let base2 = Path.GetTempFileName()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
-    let fileSource1 = """
+    let fileSource1Text = """
 open System.Collections // unused
 open System.Collections.Generic // used, should not appear
 open FSharp.Control // unused
@@ -5555,7 +5563,8 @@ type UseTheThings(i:int) =
     member x.UseSomeUsedModuleContainingExtensionMember() = (3).Q
     member x.UseSomeUsedModuleContainingUnion() = A
 """
-    File.WriteAllText(fileName1, fileSource1)
+    let fileSource1 = Microsoft.FSharp.Compiler.Text.SourceText.ofString fileSource1Text
+    File.WriteAllText(fileName1, fileSource1Text)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)

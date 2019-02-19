@@ -326,7 +326,6 @@ module CoreTests =
 
         fsc cfg "%s -a -o:lib.dll" cfg.fsc_flags ["lib.fs"]
 
-        copySystemValueTuple cfg
         peverify cfg "lib.dll"
 
         fsc cfg "%s -r:lib.dll" cfg.fsc_flags ["test.fsx"]
@@ -478,8 +477,6 @@ module CoreTests =
         let cfg = testConfig "core/fsfromfsviacs"
 
         fsc cfg "%s -a -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
-
-        copySystemValueTuple cfg
 
         peverify cfg "lib.dll"
 
@@ -785,11 +782,10 @@ module CoreTests =
     let quotes () = 
         let cfg = testConfig "core/quotes"
 
+
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
         fsc cfg "%s -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
-
-        copySystemValueTuple cfg
 
         peverify cfg "test.exe"
 
@@ -1957,7 +1953,6 @@ module TypecheckTests =
     let ``sigs pos27`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos27.exe" cfg.fsc_flags ["pos27.fs"]
-        copySystemValueTuple cfg
         peverify cfg "pos27.exe"
 
     [<Test>]
@@ -1989,6 +1984,12 @@ module TypecheckTests =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos31.exe --warnaserror" cfg.fsc_flags ["pos31.fsi"; "pos31.fs"]
         peverify cfg "pos31.exe"
+
+    [<Test>]
+    let ``sigs pos32`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos32.dll --warnaserror" cfg.fsc_flags ["pos32.fs"]
+        peverify cfg "pos32.dll"
 
     [<Test>]
     let ``sigs pos23`` () = 
@@ -2463,14 +2464,20 @@ module TypecheckTests =
     [<Test>]
     let ``type check neg109`` () = singleNegTest (testConfig "typecheck/sigs") "neg109"
 
-    [<Test>] 
+    [<Test>]
     let ``type check neg110`` () = singleNegTest (testConfig "typecheck/sigs") "neg110"
+
+    [<Test>]
+    let ``type check neg111`` () = singleNegTest (testConfig "typecheck/sigs") "neg111"
 
     [<Test>] 
     let ``type check neg113`` () = singleNegTest (testConfig "typecheck/sigs") "neg113"
 
     [<Test>] 
     let ``type check neg114`` () = singleNegTest (testConfig "typecheck/sigs") "neg114"
+
+    [<Test>] 
+    let ``type check neg115`` () = singleNegTest (testConfig "typecheck/sigs") "neg115"
 
     [<Test>] 
     let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"
@@ -2616,7 +2623,7 @@ open System.Runtime.InteropServices
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
 #endif
 
-#if NET46
+#if NET472
 module ProductVersionTest =
 
     let informationalVersionAttrName = typeof<System.Reflection.AssemblyInformationalVersionAttribute>.FullName

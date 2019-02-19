@@ -132,8 +132,9 @@ type InProcErrorLoggerProvider() =
            member log.CreateErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter) =
             { new ErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter, "InProcCompilerErrorLoggerUpToMaxErrors") with
                     member this.HandleTooManyErrors(text) = warnings.Add(Diagnostic.Short(false, text))
-                    member this.HandleIssue(tcConfigBuilder, err, isError) = 
-                        let errs = CollectDiagnostic(tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths, tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, isError, err)
+                    member this.HandleIssue(tcConfigBuilder, err, isError) =
+                        // 'true' is passed for "suggestNames", since we want to suggest names with fsc.exe runs and this doesn't affect IDE perf
+                        let errs = CollectDiagnostic(tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths, tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, isError, err, true)
                         let container = if isError then errors else warnings 
                         container.AddRange(errs) } 
             :> ErrorLogger }
@@ -205,7 +206,7 @@ let AdjustForScriptCompile(ctok, tcConfigB:TcConfigBuilder, commandLineSourceFil
             let closure = LoadClosure.ComputeClosureOfScriptFiles(ctok, tcConfig, [filename, rangeStartup], CodeContext.Compilation, lexResourceManager=lexResourceManager)
             // Record the references from the analysis of the script. The full resolutions are recorded as the corresponding #I paths used to resolve them
             // are local to the scripts and not added to the tcConfigB (they are added to localized clones of the tcConfigB).
-            let references = closure.References |> List.collect snd |> List.filter (fun r->r.originalReference.Range<>range0 && r.originalReference.Range<>rangeStartup)
+            let references = closure.References |> List.collect snd |> List.filter (fun r -> not (Range.equals r.originalReference.Range range0) && not (Range.equals r.originalReference.Range rangeStartup))
             references |> List.iter (fun r-> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
             closure.NoWarns |> List.collect (fun (n, ms) -> ms|>List.map(fun m->m, n)) |> List.iter (fun (x,m) -> tcConfigB.TurnWarningOff(x, m))
             closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent

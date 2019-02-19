@@ -2,6 +2,8 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
+open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Text
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 
 /// Represent an Xml documentation block in source code
@@ -38,10 +40,10 @@ module XmlDocParsing =
         | SynPat.InstanceMember _
         | SynPat.FromParseError _ -> []
 
-    let getXmlDocablesImpl(sourceCodeLinesOfTheFile: string [], input: ParsedInput option) =
+    let getXmlDocablesImpl(sourceText: ISourceText, input: ParsedInput option) =
         let indentOf (lineNum: int) =
             let mutable i = 0
-            let line = sourceCodeLinesOfTheFile.[lineNum-1] // -1 because lineNum reported by xmldocs are 1-based, but array is 0-based
+            let line = sourceText.GetLineString(lineNum-1) // -1 because lineNum reported by xmldocs are 1-based, but array is 0-based
             while i < line.Length && line.Chars(i) = ' ' do
                 i <- i + 1
             i
@@ -184,7 +186,7 @@ module XmlDocComment =
         res
 
 module XmlDocParser =
+
     /// Get the list of Xml documentation from current source code
-    let getXmlDocables (sourceCodeOfTheFile, input) =
-        let sourceCodeLinesOfTheFile = String.getLines sourceCodeOfTheFile
-        XmlDocParsing.getXmlDocablesImpl (sourceCodeLinesOfTheFile, input)
+    let getXmlDocables (sourceText: ISourceText, input) =
+        XmlDocParsing.getXmlDocablesImpl (sourceText, input)
