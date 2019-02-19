@@ -342,6 +342,50 @@ type Test() =
     let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
     decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
 
+
+[<Test>]
+let ``Completion in base constructor`` () = 
+    let input = 
+      """
+type A(foo) =
+    class
+    end
+
+type B(bar) =
+    inherit A(bar)""" 
+
+    // Split the input & define file name
+    let inputLines = input.Split('\n')
+    let file = "/home/user/Test.fsx"
+    let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
+
+    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines.[6], PartialLongName.Empty(17), (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
+    decls.Items |> Seq.exists (fun d -> d.Name = "bar") |> shouldEqual true
+
+
+
+[<Test>]
+let ``Completion in do in base constructor`` () = 
+    let input = 
+      """
+type A() =
+    class
+    end
+
+type B(bar) =
+    inherit A()
+    
+    do bar""" 
+
+    // Split the input & define file name
+    let inputLines = input.Split('\n')
+    let file = "/home/user/Test.fsx"
+    let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
+
+    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 9, inputLines.[8], PartialLongName.Empty(7), (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
+    decls.Items |> Seq.exists (fun d -> d.Name = "bar") |> shouldEqual true
+
+
 [<Test; Ignore("SKIPPED: see #139")>]
 let ``Symbol based find function from member 1`` () = 
     let input = 
