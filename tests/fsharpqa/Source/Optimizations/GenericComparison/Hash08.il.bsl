@@ -33,18 +33,18 @@
 }
 .mresource public FSharpSignatureDataB.Hash08
 {
-  // Offset: 0x000006D0 Length: 0x0000007B
+  // Offset: 0x000006D0 Length: 0x0000007D
 }
 .mresource public FSharpOptimizationData.Hash08
 {
-  // Offset: 0x00000750 Length: 0x000003B3
+  // Offset: 0x00000758 Length: 0x000003B3
 }
 .mresource public FSharpOptimizationDataB.Hash08
 {
-  // Offset: 0x00000B08 Length: 0x00000057
+  // Offset: 0x00000B10 Length: 0x00000057
 }
 .module Hash08.dll
-// MVID: {5BF2E04A-9642-77BC-A745-03834AE0F25B}
+// MVID: {5C6C9457-1418-D796-A745-038357946C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000

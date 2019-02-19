@@ -29,7 +29,7 @@
 }
 .mresource public FSharpSignatureDataB.StructUnion01
 {
-  // Offset: 0x00000888 Length: 0x000000AE
+  // Offset: 0x00000888 Length: 0x000000B0
 }
 .mresource public FSharpOptimizationData.StructUnion01
 {
@@ -40,13 +40,13 @@
   // Offset: 0x00000D68 Length: 0x00000067
 }
 .module StructUnion01.dll
-// MVID: {5BF2E04A-D3E9-6B24-A745-03834AE0F25B}
+// MVID: {5C6C9457-997B-102F-A745-038357946C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00F80000
+// Image base: 0x002F0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

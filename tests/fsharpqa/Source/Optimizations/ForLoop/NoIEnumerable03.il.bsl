@@ -44,13 +44,13 @@
   // Offset: 0x00000270 Length: 0x00000000
 }
 .module NoIEnumerable03.dll
-// MVID: {5BF2D394-7903-6020-A745-038394D3F25B}
+// MVID: {5C6C9457-52CF-81FC-A745-038357946C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x013C0000
+// Image base: 0x00B40000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

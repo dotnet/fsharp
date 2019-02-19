@@ -33,24 +33,24 @@
 }
 .mresource public FSharpSignatureDataB.Hash06
 {
-  // Offset: 0x000006E0 Length: 0x0000007C
+  // Offset: 0x000006E0 Length: 0x0000007E
 }
 .mresource public FSharpOptimizationData.Hash06
 {
-  // Offset: 0x00000760 Length: 0x000003B2
+  // Offset: 0x00000768 Length: 0x000003B2
 }
 .mresource public FSharpOptimizationDataB.Hash06
 {
-  // Offset: 0x00000B18 Length: 0x00000057
+  // Offset: 0x00000B20 Length: 0x00000057
 }
 .module Hash06.dll
-// MVID: {5BF2E04A-9642-78F2-A745-03834AE0F25B}
+// MVID: {5C6C9457-9426-A792-A745-038357946C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01400000
+// Image base: 0x007A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

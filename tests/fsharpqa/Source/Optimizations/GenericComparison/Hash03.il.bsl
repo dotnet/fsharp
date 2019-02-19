@@ -44,13 +44,13 @@
   // Offset: 0x000002F0 Length: 0x00000000
 }
 .module Hash03.dll
-// MVID: {5BF2E04A-9642-788D-A745-03834AE0F25B}
+// MVID: {5C6C9457-091F-A0D6-A745-038357946C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01670000
+// Image base: 0x01270000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

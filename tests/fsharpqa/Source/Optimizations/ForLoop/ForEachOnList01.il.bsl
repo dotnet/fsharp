@@ -44,13 +44,13 @@
   // Offset: 0x00000400 Length: 0x00000000
 }
 .module ForEachOnList01.dll
-// MVID: {5BF2D394-56DF-F74F-A745-038394D3F25B}
+// MVID: {5C6C9457-0E98-FFDA-A745-038357946C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01760000
+// Image base: 0x01A80000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -59,7 +59,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'test6@38-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit test6@38
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
   {
     .method assembly specialname rtspecialname 
@@ -72,7 +72,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::.ctor()
       IL_0006:  ret
-    } // end of method 'test6@38-2'::.ctor
+    } // end of method test6@38::.ctor
 
     .method public strict virtual instance int32 
             Invoke(int32 x) cil managed
@@ -85,11 +85,11 @@
       IL_0001:  ldc.i4.1
       IL_0002:  add
       IL_0003:  ret
-    } // end of method 'test6@38-2'::Invoke
+    } // end of method test6@38::Invoke
 
-  } // end of class 'test6@38-2'
+  } // end of class test6@38
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'test7@47-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit test7@47
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
   {
     .method assembly specialname rtspecialname 
@@ -102,7 +102,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::.ctor()
       IL_0006:  ret
-    } // end of method 'test7@47-1'::.ctor
+    } // end of method test7@47::.ctor
 
     .method public strict virtual instance int32 
             Invoke(int32 x) cil managed
@@ -114,9 +114,9 @@
       IL_0001:  ldc.i4.1
       IL_0002:  add
       IL_0003:  ret
-    } // end of method 'test7@47-1'::Invoke
+    } // end of method test7@47::Invoke
 
-  } // end of class 'test7@47-1'
+  } // end of class test7@47
 
   .method public static void  test1(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> lst) cil managed
   {
@@ -398,7 +398,7 @@
              [2] int32 i,
              [3] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_3)
     .line 36,40 : 5,21 ''
-    IL_0000:  newobj     instance void ForEachOnList01/'test6@38-2'::.ctor()
+    IL_0000:  newobj     instance void ForEachOnList01/test6@38::.ctor()
     IL_0005:  ldc.i4.1
     IL_0006:  ldc.i4.2
     IL_0007:  ldc.i4.3
@@ -461,7 +461,7 @@
              [3] int32 tmp,
              [4] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_4)
     .line 45,49 : 5,21 ''
-    IL_0000:  newobj     instance void ForEachOnList01/'test7@47-1'::.ctor()
+    IL_0000:  newobj     instance void ForEachOnList01/test7@47::.ctor()
     IL_0005:  ldc.i4.1
     IL_0006:  ldc.i4.2
     IL_0007:  ldc.i4.3
