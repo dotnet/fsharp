@@ -111,7 +111,7 @@ type ErrorScope()  =
 
     member x.FirstError with get() = firstError and set v = firstError <- v
     
-    /// Used at entry points to FSharp.Compiler.Service (service.fsi) which manipulate symbols and
+    /// Used at entry points to FSharp.Compiler.Service (FSharpChecker.fsi) which manipulate symbols and
     /// perform other operations which might expose us to either bona-fide F# error messages such 
     /// "missing assembly" (for incomplete assembly reference sets), or, if there is a compiler bug, 
     /// may hit internal compiler failures.

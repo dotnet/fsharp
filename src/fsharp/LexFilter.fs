@@ -441,7 +441,7 @@ type TokenTup =
 //--------------------------------------------------------------------------*)
 
 // Strip a bunch of leading '>' of a token, at the end of a typar application
-// Note: this is used in the 'service.fs' to do limited postprocessing
+// Note: this is used in the 'FSharpChecker.fs' to do limited postprocessing
 let (|TyparsCloseOp|_|) (txt:string) = 
     let angles = txt |> Seq.takeWhile (fun c -> c = '>') |> Seq.toList
     let afterAngles = txt |> Seq.skipWhile (fun c -> c = '>') |> Seq.toList

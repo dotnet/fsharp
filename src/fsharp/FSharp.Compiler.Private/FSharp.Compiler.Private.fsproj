@@ -619,11 +619,17 @@
     <Compile Include="..\service\QuickParse.fs">
       <Link>Service/QuickParse.fs</Link>
     </Compile>
-    <Compile Include="..\service\service.fsi">
-      <Link>Service/service.fsi</Link>
+    <Compile Include="..\..\fsharp\service\FSharpCheckerResults.fsi">
+      <Link>Service/FSharpCheckerResults.fsi</Link>
     </Compile>
-    <Compile Include="..\service\service.fs">
-      <Link>Service/service.fs</Link>
+    <Compile Include="..\..\fsharp\service\FSharpCheckerResults.fs">
+      <Link>Service/FSharpCheckerResults.fs</Link>
+    </Compile>
+    <Compile Include="..\service\FSharpChecker.fsi">
+      <Link>Service/FSharpChecker.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\FSharpChecker.fs">
+      <Link>Service/FSharpChecker.fs</Link>
     </Compile>
     <Compile Include="..\service\ServiceInterfaceStubGenerator.fsi">
       <Link>Service/ServiceInterfaceStubGenerator.fsi</Link>

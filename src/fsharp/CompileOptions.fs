@@ -1070,7 +1070,7 @@ let testingAndQAFlags _tcConfigB =
     The compiler options are put into blocks, named as <block>Flags.
     Some block options differ between fsc and fsi, in this case they split as <block>FlagsFsc and <block>FlagsFsi.
     
-    The "service.fs" (language service) flags are the same as the fsc flags (except help options are removed).
+    The "FSharpChecker.fs" (language service) flags are the same as the fsc flags (except help options are removed).
     REVIEW: is this correct? what about fsx files in VS and fsi options?
   
     Block                      | notes
@@ -1090,7 +1090,7 @@ let testingAndQAFlags _tcConfigB =
     ---------------------------|--------------------
 *)
 
-// Core compiler options exported to fsc.fs, service.fs and fsi.fs
+// Core compiler options exported to fsc.fs, FSharpChecker.fs and fsi.fs
 //----------------------------------------------------------------
 
 /// The core/common options used by fsc.exe. [not currently extended by fsc.fs].

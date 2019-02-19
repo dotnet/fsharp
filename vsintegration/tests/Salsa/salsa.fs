@@ -1159,7 +1159,7 @@ module internal Salsa =
                     
             member file.DoIntellisenseRequest(parseReason) =
                 if parseReason = BackgroundRequestReason.MemberSelect then
-                    // In the actual product, the only thing that can trigger MemberSelect is the auto-popup caused by the "." or ".." tokens (see service.fs:TokenClassifications.tokenInfo)
+                    // In the actual product, the only thing that can trigger MemberSelect is the auto-popup caused by the "." or ".." tokens (see FSharpChecker.fs:TokenClassifications.tokenInfo)
                     // Thus, let's try to ensure that unit tests are only testing code paths from the actual product, and assert/fail if not.  Best effort.
                     let lineIndex, colIndex = cursor.line-1, cursor.col-1
                     System.Diagnostics.Debug.Assert(colIndex > 0, "hm, how did we invoke at start of line?")

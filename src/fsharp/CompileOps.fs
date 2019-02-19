@@ -1812,7 +1812,7 @@ let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"
 // This list is the default set of references for "non-project" files. 
 //
 // These DLLs are
-//    (a) included in the environment used for all .fsx files (see service.fs)
+//    (a) included in the environment used for all .fsx files (see FSharpChecker.fs)
 //    (b) included in environment for files 'orphaned' from a project context
 //            -- for orphaned files (files in VS without a project context)
 //            -- for files given on a command line without --noframework set
@@ -5254,7 +5254,7 @@ module private ScriptPreprocessClosure =
 
         result
 
-    /// Given source text, find the full load closure. Used from service.fs, when editing a script file
+    /// Given source text, find the full load closure. Used from FSharpChecker.fs, when editing a script file
     let GetFullClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage) = 
         // Resolve the basic references such as FSharp.Core.dll first, before processing any #I directives in the script
         //
