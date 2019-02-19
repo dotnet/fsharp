@@ -2072,7 +2072,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_FilterSave_GIF">
         <source>Graphics Interchange Format</source>
-        <target state="translated">Graphics Interchange Format</target>
+        <target state="translated">Formato de intercâmbio de gráficos</target>
         <note># File dialog filters
 #
 # E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources

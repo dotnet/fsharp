@@ -189,7 +189,7 @@
       </trans-unit>
       <trans-unit id="fsiInterrupt">
         <source>\n- Interrupt\n</source>
-        <target state="translated">\n- Interrupt\n</target>
+        <target state="translated">\n- Прерывать\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiExit">

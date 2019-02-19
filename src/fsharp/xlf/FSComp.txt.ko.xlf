@@ -5914,7 +5914,7 @@
       </trans-unit>
       <trans-unit id="customOperationTextLikeJoin">
         <source>{0} var in collection {1} (outerKey = innerKey). Note that parentheses are required after '{2}'</source>
-        <target state="translated">{0} var in collection {1} (outerKey = innerKey). '{2}' 다음에 괄호가 필요합니다.</target>
+        <target state="translated">{0} var in collection {1} (outerKey = innerKey). '{2}' 뒤에 괄호가 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="customOperationTextLikeGroupJoin">
