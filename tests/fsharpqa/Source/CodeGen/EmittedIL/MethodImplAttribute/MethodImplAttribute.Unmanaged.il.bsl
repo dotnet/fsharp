@@ -44,13 +44,13 @@
   // Offset: 0x000003D0 Length: 0x00000000
 }
 .module MethodImplAttribute.Unmanaged.dll
-// MVID: {5BF2DEA8-FF34-309C-A745-0383A8DEF25B}
+// MVID: {5C6C932A-F5DD-260B-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00CE0000
+// Image base: 0x011E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

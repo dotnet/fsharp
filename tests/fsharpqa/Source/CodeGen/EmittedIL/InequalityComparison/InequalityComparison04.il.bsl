@@ -44,13 +44,13 @@
   // Offset: 0x000002C0 Length: 0x00000000
 }
 .module InequalityComparison04.exe
-// MVID: {5BF2D394-263A-E772-A745-038394D3F25B}
+// MVID: {5C6C932A-9F76-4F9E-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02870000
+// Image base: 0x01020000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

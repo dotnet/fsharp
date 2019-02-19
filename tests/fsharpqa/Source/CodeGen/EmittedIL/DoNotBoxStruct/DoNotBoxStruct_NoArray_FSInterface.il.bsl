@@ -33,7 +33,7 @@
 }
 .mresource public FSharpSignatureDataB.DoNotBoxStruct_NoArray_FSInterface
 {
-  // Offset: 0x00000260 Length: 0x00000005
+  // Offset: 0x00000260 Length: 0x00000006
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_NoArray_FSInterface
 {
@@ -44,13 +44,13 @@
   // Offset: 0x00000310 Length: 0x00000000
 }
 .module DoNotBoxStruct_NoArray_FSInterface.exe
-// MVID: {5BF2D3C6-3F8A-B9D0-A745-0383C6D3F25B}
+// MVID: {5C6C932A-F5B0-6DAF-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00A50000
+// Image base: 0x00800000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -59,7 +59,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'F@5-31'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'F@5-7'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
   {
     .method assembly specialname rtspecialname 
@@ -72,7 +72,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
       IL_0006:  ret
-    } // end of method 'F@5-31'::.ctor
+    } // end of method 'F@5-7'::.ctor
 
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit 
             Invoke(int32 x) cil managed
@@ -83,9 +83,9 @@
       .line 5,5 : 59,61 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_NoArray_FSInterface.fs'
       IL_0000:  ldnull
       IL_0001:  ret
-    } // end of method 'F@5-31'::Invoke
+    } // end of method 'F@5-7'::Invoke
 
-  } // end of class 'F@5-31'
+  } // end of class 'F@5-7'
 
   .method public static void  F<(class [FSharp.Core]Microsoft.FSharp.Control.IEvent`2<class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>,int32>) T>(!!T x) cil managed
   {
@@ -95,7 +95,7 @@
     IL_0000:  ldarg.0
     IL_0001:  box        !!T
     IL_0006:  unbox.any  class [mscorlib]System.IObservable`1<int32>
-    IL_000b:  newobj     instance void DoNotBoxStruct_NoArray_FSInterface/'F@5-31'::.ctor()
+    IL_000b:  newobj     instance void DoNotBoxStruct_NoArray_FSInterface/'F@5-7'::.ctor()
     IL_0010:  tail.
     IL_0012:  call       void [FSharp.Core]Microsoft.FSharp.Control.CommonExtensions::AddToObservable<int32>(class [mscorlib]System.IObservable`1<!!0>,
                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)

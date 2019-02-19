@@ -44,13 +44,13 @@
   // Offset: 0x00000328 Length: 0x00000000
 }
 .module LiteralValue.exe
-// MVID: {5BF2DEA8-196E-5E7E-A745-0383A8DEF25B}
+// MVID: {5C6C932A-80D4-A6FF-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x016C0000
+// Image base: 0x00370000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

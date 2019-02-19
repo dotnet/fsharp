@@ -33,7 +33,7 @@
 }
 .mresource public FSharpSignatureDataB.SteppingMatch09
 {
-  // Offset: 0x00000320 Length: 0x00000012
+  // Offset: 0x00000320 Length: 0x00000013
 }
 .mresource public FSharpOptimizationData.SteppingMatch09
 {
@@ -44,13 +44,13 @@
   // Offset: 0x00000428 Length: 0x00000000
 }
 .module SteppingMatch09.dll
-// MVID: {5BF32B72-4935-D6AC-A745-0383722BF35B}
+// MVID: {5C6C932B-6608-E210-A745-03832B936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x007A0000
+// Image base: 0x00F20000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

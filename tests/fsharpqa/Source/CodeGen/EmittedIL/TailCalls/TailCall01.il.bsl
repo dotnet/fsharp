@@ -33,7 +33,7 @@
 }
 .mresource public FSharpSignatureDataB.TailCall01
 {
-  // Offset: 0x00000228 Length: 0x00000007
+  // Offset: 0x00000228 Length: 0x00000008
 }
 .mresource public FSharpOptimizationData.TailCall01
 {
@@ -44,13 +44,13 @@
   // Offset: 0x000002B8 Length: 0x00000000
 }
 .module TailCall01.exe
-// MVID: {5BF2DEA9-7D8F-CF4A-A745-0383A9DEF25B}
+// MVID: {5C6C932B-B1B5-7213-A745-03832B936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00D00000
+// Image base: 0x00FF0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

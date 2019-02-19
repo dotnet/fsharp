@@ -33,7 +33,7 @@
 }
 .mresource public FSharpSignatureDataB.Property
 {
-  // Offset: 0x00000410 Length: 0x00000019
+  // Offset: 0x00000410 Length: 0x0000001A
 }
 .mresource public FSharpOptimizationData.Property
 {
@@ -44,13 +44,13 @@
   // Offset: 0x000004F0 Length: 0x00000003
 }
 .module Property.dll
-// MVID: {5BF2D3CD-9B5C-7949-A745-0383CDD3F25B}
+// MVID: {5C6C9329-845D-34D4-A745-038329936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01250000
+// Image base: 0x011D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -86,7 +86,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     int32 '<StartupCode$Property>'.$M::'T@12-22'
+    IL_0000:  ldsfld     int32 '<StartupCode$Property>'.$M::'T@12-4'
     IL_0005:  ret
   } // end of method M::get_T
 
@@ -101,7 +101,7 @@
 .class private abstract auto ansi sealed '<StartupCode$Property>'.$M
        extends [mscorlib]System.Object
 {
-  .field static assembly initonly int32 'T@12-22'
+  .field static assembly initonly int32 'T@12-4'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -121,7 +121,7 @@
     .line 12,12 : 27,28 ''
     IL_0010:  ldc.i4.1
     IL_0011:  dup
-    IL_0012:  stsfld     int32 '<StartupCode$Property>'.$M::'T@12-22'
+    IL_0012:  stsfld     int32 '<StartupCode$Property>'.$M::'T@12-4'
     IL_0017:  stloc.0
     IL_0018:  ret
   } // end of method $M::.cctor

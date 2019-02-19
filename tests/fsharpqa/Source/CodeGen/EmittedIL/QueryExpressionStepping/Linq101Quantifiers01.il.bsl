@@ -53,13 +53,13 @@
   // Offset: 0x000004C8 Length: 0x00000000
 }
 .module Linq101Quantifiers01.exe
-// MVID: {5BF2D3C6-76DD-E373-A745-0383C6D3F25B}
+// MVID: {5C6C932B-BDD0-1A4E-A745-03832B936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00380000
+// Image base: 0x01A60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -68,7 +68,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'iAfterE@12-6'
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname iAfterE@12
          extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<string>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -93,17 +93,17 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/'iAfterE@12-6'::'enum'
+      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/iAfterE@12::'enum'
       IL_0007:  ldarg.0
       IL_0008:  ldarg.2
-      IL_0009:  stfld      int32 Linq101Quantifiers01/'iAfterE@12-6'::pc
+      IL_0009:  stfld      int32 Linq101Quantifiers01/iAfterE@12::pc
       IL_000e:  ldarg.0
       IL_000f:  ldarg.3
-      IL_0010:  stfld      string Linq101Quantifiers01/'iAfterE@12-6'::current
+      IL_0010:  stfld      string Linq101Quantifiers01/iAfterE@12::current
       IL_0015:  ldarg.0
       IL_0016:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<string>::.ctor()
       IL_001b:  ret
-    } // end of method 'iAfterE@12-6'::.ctor
+    } // end of method iAfterE@12::.ctor
 
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<string>& next) cil managed
@@ -115,7 +115,7 @@
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
       .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Quantifiers01.fs'
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Quantifiers01/'iAfterE@12-6'::pc
+      IL_0001:  ldfld      int32 Linq101Quantifiers01/iAfterE@12::pc
       IL_0006:  ldc.i4.1
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -148,18 +148,18 @@
       IL_002b:  ldarg.0
       IL_002c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Quantifiers01::get_words()
       IL_0031:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
-      IL_0036:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/'iAfterE@12-6'::'enum'
+      IL_0036:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/iAfterE@12::'enum'
       IL_003b:  ldarg.0
       IL_003c:  ldc.i4.1
-      IL_003d:  stfld      int32 Linq101Quantifiers01/'iAfterE@12-6'::pc
+      IL_003d:  stfld      int32 Linq101Quantifiers01/iAfterE@12::pc
       .line 12,12 : 9,26 ''
       IL_0042:  ldarg.0
-      IL_0043:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/'iAfterE@12-6'::'enum'
+      IL_0043:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/iAfterE@12::'enum'
       IL_0048:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
       IL_004d:  brfalse.s  IL_0070
 
       IL_004f:  ldarg.0
-      IL_0050:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/'iAfterE@12-6'::'enum'
+      IL_0050:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/iAfterE@12::'enum'
       IL_0055:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
       IL_005a:  stloc.0
       .line 12,12 : 9,26 ''
@@ -167,11 +167,11 @@
       IL_005c:  stloc.1
       IL_005d:  ldarg.0
       IL_005e:  ldc.i4.2
-      IL_005f:  stfld      int32 Linq101Quantifiers01/'iAfterE@12-6'::pc
+      IL_005f:  stfld      int32 Linq101Quantifiers01/iAfterE@12::pc
       .line 13,13 : 9,34 ''
       IL_0064:  ldarg.0
       IL_0065:  ldloc.1
-      IL_0066:  stfld      string Linq101Quantifiers01/'iAfterE@12-6'::current
+      IL_0066:  stfld      string Linq101Quantifiers01/iAfterE@12::current
       IL_006b:  ldc.i4.1
       IL_006c:  ret
 
@@ -181,24 +181,24 @@
 
       IL_0070:  ldarg.0
       IL_0071:  ldc.i4.3
-      IL_0072:  stfld      int32 Linq101Quantifiers01/'iAfterE@12-6'::pc
+      IL_0072:  stfld      int32 Linq101Quantifiers01/iAfterE@12::pc
       .line 12,12 : 9,26 ''
       IL_0077:  ldarg.0
-      IL_0078:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/'iAfterE@12-6'::'enum'
+      IL_0078:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/iAfterE@12::'enum'
       IL_007d:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
       IL_0082:  nop
       IL_0083:  ldarg.0
       IL_0084:  ldnull
-      IL_0085:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/'iAfterE@12-6'::'enum'
+      IL_0085:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/iAfterE@12::'enum'
       IL_008a:  ldarg.0
       IL_008b:  ldc.i4.3
-      IL_008c:  stfld      int32 Linq101Quantifiers01/'iAfterE@12-6'::pc
+      IL_008c:  stfld      int32 Linq101Quantifiers01/iAfterE@12::pc
       IL_0091:  ldarg.0
       IL_0092:  ldnull
-      IL_0093:  stfld      string Linq101Quantifiers01/'iAfterE@12-6'::current
+      IL_0093:  stfld      string Linq101Quantifiers01/iAfterE@12::current
       IL_0098:  ldc.i4.0
       IL_0099:  ret
-    } // end of method 'iAfterE@12-6'::GenerateNext
+    } // end of method iAfterE@12::GenerateNext
 
     .method public strict virtual instance void 
             Close() cil managed
@@ -210,7 +210,7 @@
                [2] class [mscorlib]System.Exception e)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Quantifiers01/'iAfterE@12-6'::pc
+      IL_0001:  ldfld      int32 Linq101Quantifiers01/iAfterE@12::pc
       IL_0006:  ldc.i4.3
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -226,7 +226,7 @@
       .try
       {
         IL_001a:  ldarg.0
-        IL_001b:  ldfld      int32 Linq101Quantifiers01/'iAfterE@12-6'::pc
+        IL_001b:  ldfld      int32 Linq101Quantifiers01/iAfterE@12::pc
         IL_0020:  switch     ( 
                               IL_0037,
                               IL_0039,
@@ -264,19 +264,19 @@
         IL_004c:  nop
         IL_004d:  ldarg.0
         IL_004e:  ldc.i4.3
-        IL_004f:  stfld      int32 Linq101Quantifiers01/'iAfterE@12-6'::pc
+        IL_004f:  stfld      int32 Linq101Quantifiers01/iAfterE@12::pc
         IL_0054:  ldarg.0
-        IL_0055:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/'iAfterE@12-6'::'enum'
+        IL_0055:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/iAfterE@12::'enum'
         IL_005a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
         IL_005f:  nop
         .line 100001,100001 : 0,0 ''
         IL_0060:  nop
         IL_0061:  ldarg.0
         IL_0062:  ldc.i4.3
-        IL_0063:  stfld      int32 Linq101Quantifiers01/'iAfterE@12-6'::pc
+        IL_0063:  stfld      int32 Linq101Quantifiers01/iAfterE@12::pc
         IL_0068:  ldarg.0
         IL_0069:  ldnull
-        IL_006a:  stfld      string Linq101Quantifiers01/'iAfterE@12-6'::current
+        IL_006a:  stfld      string Linq101Quantifiers01/iAfterE@12::current
         IL_006f:  ldnull
         IL_0070:  stloc.1
         IL_0071:  leave.s    IL_007f
@@ -316,7 +316,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0093:  ret
-    } // end of method 'iAfterE@12-6'::Close
+    } // end of method iAfterE@12::Close
 
     .method public strict virtual instance bool 
             get_CheckClose() cil managed
@@ -325,7 +325,7 @@
       .maxstack  8
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Quantifiers01/'iAfterE@12-6'::pc
+      IL_0001:  ldfld      int32 Linq101Quantifiers01/iAfterE@12::pc
       IL_0006:  switch     ( 
                             IL_001d,
                             IL_001f,
@@ -367,7 +367,7 @@
 
       IL_0036:  ldc.i4.0
       IL_0037:  ret
-    } // end of method 'iAfterE@12-6'::get_CheckClose
+    } // end of method iAfterE@12::get_CheckClose
 
     .method public strict virtual instance string 
             get_LastGenerated() cil managed
@@ -377,9 +377,9 @@
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      string Linq101Quantifiers01/'iAfterE@12-6'::current
+      IL_0001:  ldfld      string Linq101Quantifiers01/iAfterE@12::current
       IL_0006:  ret
-    } // end of method 'iAfterE@12-6'::get_LastGenerated
+    } // end of method iAfterE@12::get_LastGenerated
 
     .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<string> 
             GetFreshEnumerator() cil managed
@@ -391,15 +391,15 @@
       IL_0000:  ldnull
       IL_0001:  ldc.i4.0
       IL_0002:  ldnull
-      IL_0003:  newobj     instance void Linq101Quantifiers01/'iAfterE@12-6'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
-                                                                                    int32,
-                                                                                    string)
+      IL_0003:  newobj     instance void Linq101Quantifiers01/iAfterE@12::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
+                                                                                int32,
+                                                                                string)
       IL_0008:  ret
-    } // end of method 'iAfterE@12-6'::GetFreshEnumerator
+    } // end of method iAfterE@12::GetFreshEnumerator
 
-  } // end of class 'iAfterE@12-6'
+  } // end of class iAfterE@12
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'iAfterE@13-7'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'iAfterE@13-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,bool>
   {
     .method assembly specialname rtspecialname 
@@ -412,7 +412,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,bool>::.ctor()
       IL_0006:  ret
-    } // end of method 'iAfterE@13-7'::.ctor
+    } // end of method 'iAfterE@13-1'::.ctor
 
     .method public strict virtual instance bool 
             Invoke(string w) cil managed
@@ -424,11 +424,11 @@
       IL_0001:  ldstr      "ei"
       IL_0006:  callvirt   instance bool [mscorlib]System.String::Contains(string)
       IL_000b:  ret
-    } // end of method 'iAfterE@13-7'::Invoke
+    } // end of method 'iAfterE@13-1'::Invoke
 
-  } // end of class 'iAfterE@13-7'
+  } // end of class 'iAfterE@13-1'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups@21-21'
+  .class auto ansi serializable sealed nested assembly beforefieldinit productGroups@21
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -446,9 +446,9 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,object>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/'productGroups@21-21'::builder@
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/productGroups@21::builder@
       IL_000d:  ret
-    } // end of method 'productGroups@21-21'::.ctor
+    } // end of method productGroups@21::.ctor
 
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,object> 
             Invoke(class [Utils]Utils/Product _arg1) cil managed
@@ -461,16 +461,16 @@
       IL_0001:  stloc.0
       .line 22,22 : 9,32 ''
       IL_0002:  ldarg.0
-      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/'productGroups@21-21'::builder@
+      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/productGroups@21::builder@
       IL_0008:  ldloc.0
       IL_0009:  tail.
       IL_000b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [Utils]Utils/Product,object>(!!0)
       IL_0010:  ret
-    } // end of method 'productGroups@21-21'::Invoke
+    } // end of method productGroups@21::Invoke
 
-  } // end of class 'productGroups@21-21'
+  } // end of class productGroups@21
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups@22-22'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups@22-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [Utils]Utils/Product>
   {
     .method assembly specialname rtspecialname 
@@ -483,7 +483,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [Utils]Utils/Product>::.ctor()
       IL_0006:  ret
-    } // end of method 'productGroups@22-22'::.ctor
+    } // end of method 'productGroups@22-1'::.ctor
 
     .method public strict virtual instance class [Utils]Utils/Product 
             Invoke(class [Utils]Utils/Product p) cil managed
@@ -493,11 +493,11 @@
       .line 22,22 : 20,21 ''
       IL_0000:  ldarg.1
       IL_0001:  ret
-    } // end of method 'productGroups@22-22'::Invoke
+    } // end of method 'productGroups@22-1'::Invoke
 
-  } // end of class 'productGroups@22-22'
+  } // end of class 'productGroups@22-1'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups@22-23'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups@22-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,string>
   {
     .method assembly specialname rtspecialname 
@@ -510,7 +510,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,string>::.ctor()
       IL_0006:  ret
-    } // end of method 'productGroups@22-23'::.ctor
+    } // end of method 'productGroups@22-2'::.ctor
 
     .method public strict virtual instance string 
             Invoke(class [Utils]Utils/Product p) cil managed
@@ -522,11 +522,11 @@
       IL_0001:  tail.
       IL_0003:  callvirt   instance string [Utils]Utils/Product::get_Category()
       IL_0008:  ret
-    } // end of method 'productGroups@22-23'::Invoke
+    } // end of method 'productGroups@22-2'::Invoke
 
-  } // end of class 'productGroups@22-23'
+  } // end of class 'productGroups@22-2'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups@22-24'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups@22-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -544,9 +544,9 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,object>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/'productGroups@22-24'::builder@
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/'productGroups@22-3'::builder@
       IL_000d:  ret
-    } // end of method 'productGroups@22-24'::.ctor
+    } // end of method 'productGroups@22-3'::.ctor
 
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,object> 
             Invoke(class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> _arg2) cil managed
@@ -558,16 +558,16 @@
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       IL_0002:  ldarg.0
-      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/'productGroups@22-24'::builder@
+      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/'productGroups@22-3'::builder@
       IL_0008:  ldloc.0
       IL_0009:  tail.
       IL_000b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,object>(!!0)
       IL_0010:  ret
-    } // end of method 'productGroups@22-24'::Invoke
+    } // end of method 'productGroups@22-3'::Invoke
 
-  } // end of class 'productGroups@22-24'
+  } // end of class 'productGroups@22-3'
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'productGroups@23-26'
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'productGroups@23-5'
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -579,7 +579,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ret
-    } // end of method 'productGroups@23-26'::.ctor
+    } // end of method 'productGroups@23-5'::.ctor
 
     .method assembly hidebysig instance bool 
             Invoke(class [Utils]Utils/Product x) cil managed
@@ -592,11 +592,11 @@
       IL_0006:  ldc.i4.0
       IL_0007:  ceq
       IL_0009:  ret
-    } // end of method 'productGroups@23-26'::Invoke
+    } // end of method 'productGroups@23-5'::Invoke
 
-  } // end of class 'productGroups@23-26'
+  } // end of class 'productGroups@23-5'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups@23-25'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups@23-4'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,bool>
   {
     .method assembly specialname rtspecialname 
@@ -609,7 +609,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,bool>::.ctor()
       IL_0006:  ret
-    } // end of method 'productGroups@23-25'::.ctor
+    } // end of method 'productGroups@23-4'::.ctor
 
     .method public strict virtual instance bool 
             Invoke(class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g) cil managed
@@ -618,18 +618,18 @@
       .maxstack  8
       .line 23,23 : 16,50 ''
       IL_0000:  ldarg.1
-      IL_0001:  newobj     instance void Linq101Quantifiers01/'productGroups@23-26'::.ctor()
-      IL_0006:  ldftn      instance bool Linq101Quantifiers01/'productGroups@23-26'::Invoke(class [Utils]Utils/Product)
+      IL_0001:  newobj     instance void Linq101Quantifiers01/'productGroups@23-5'::.ctor()
+      IL_0006:  ldftn      instance bool Linq101Quantifiers01/'productGroups@23-5'::Invoke(class [Utils]Utils/Product)
       IL_000c:  newobj     instance void class [mscorlib]System.Func`2<class [Utils]Utils/Product,bool>::.ctor(object,
                                                                                                                native int)
       IL_0011:  call       bool [System.Core]System.Linq.Enumerable::Any<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>,
                                                                                                      class [mscorlib]System.Func`2<!!0,bool>)
       IL_0016:  ret
-    } // end of method 'productGroups@23-25'::Invoke
+    } // end of method 'productGroups@23-4'::Invoke
 
-  } // end of class 'productGroups@23-25'
+  } // end of class 'productGroups@23-4'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups@24-27'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups@24-6'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>>
   {
     .method assembly specialname rtspecialname 
@@ -642,7 +642,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>>::.ctor()
       IL_0006:  ret
-    } // end of method 'productGroups@24-27'::.ctor
+    } // end of method 'productGroups@24-6'::.ctor
 
     .method public strict virtual instance class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>> 
             Invoke(class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g) cil managed
@@ -656,11 +656,11 @@
       IL_0007:  newobj     instance void class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>::.ctor(!0,
                                                                                                                                                                      !1)
       IL_000c:  ret
-    } // end of method 'productGroups@24-27'::Invoke
+    } // end of method 'productGroups@24-6'::Invoke
 
-  } // end of class 'productGroups@24-27'
+  } // end of class 'productGroups@24-6'
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'onlyOdd@32-6'
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname onlyOdd@32
          extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -685,17 +685,17 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/'onlyOdd@32-6'::'enum'
+      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/onlyOdd@32::'enum'
       IL_0007:  ldarg.0
       IL_0008:  ldarg.2
-      IL_0009:  stfld      int32 Linq101Quantifiers01/'onlyOdd@32-6'::pc
+      IL_0009:  stfld      int32 Linq101Quantifiers01/onlyOdd@32::pc
       IL_000e:  ldarg.0
       IL_000f:  ldarg.3
-      IL_0010:  stfld      int32 Linq101Quantifiers01/'onlyOdd@32-6'::current
+      IL_0010:  stfld      int32 Linq101Quantifiers01/onlyOdd@32::current
       IL_0015:  ldarg.0
       IL_0016:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
       IL_001b:  ret
-    } // end of method 'onlyOdd@32-6'::.ctor
+    } // end of method onlyOdd@32::.ctor
 
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
@@ -706,7 +706,7 @@
                [1] int32 n)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Quantifiers01/'onlyOdd@32-6'::pc
+      IL_0001:  ldfld      int32 Linq101Quantifiers01/onlyOdd@32::pc
       IL_0006:  ldc.i4.1
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -739,18 +739,18 @@
       IL_002b:  ldarg.0
       IL_002c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101Quantifiers01::get_numbers()
       IL_0031:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-      IL_0036:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/'onlyOdd@32-6'::'enum'
+      IL_0036:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/onlyOdd@32::'enum'
       IL_003b:  ldarg.0
       IL_003c:  ldc.i4.1
-      IL_003d:  stfld      int32 Linq101Quantifiers01/'onlyOdd@32-6'::pc
+      IL_003d:  stfld      int32 Linq101Quantifiers01/onlyOdd@32::pc
       .line 32,32 : 9,28 ''
       IL_0042:  ldarg.0
-      IL_0043:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/'onlyOdd@32-6'::'enum'
+      IL_0043:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/onlyOdd@32::'enum'
       IL_0048:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
       IL_004d:  brfalse.s  IL_0070
 
       IL_004f:  ldarg.0
-      IL_0050:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/'onlyOdd@32-6'::'enum'
+      IL_0050:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/onlyOdd@32::'enum'
       IL_0055:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
       IL_005a:  stloc.0
       .line 32,32 : 9,28 ''
@@ -758,11 +758,11 @@
       IL_005c:  stloc.1
       IL_005d:  ldarg.0
       IL_005e:  ldc.i4.2
-      IL_005f:  stfld      int32 Linq101Quantifiers01/'onlyOdd@32-6'::pc
+      IL_005f:  stfld      int32 Linq101Quantifiers01/onlyOdd@32::pc
       .line 33,33 : 9,24 ''
       IL_0064:  ldarg.0
       IL_0065:  ldloc.1
-      IL_0066:  stfld      int32 Linq101Quantifiers01/'onlyOdd@32-6'::current
+      IL_0066:  stfld      int32 Linq101Quantifiers01/onlyOdd@32::current
       IL_006b:  ldc.i4.1
       IL_006c:  ret
 
@@ -772,24 +772,24 @@
 
       IL_0070:  ldarg.0
       IL_0071:  ldc.i4.3
-      IL_0072:  stfld      int32 Linq101Quantifiers01/'onlyOdd@32-6'::pc
+      IL_0072:  stfld      int32 Linq101Quantifiers01/onlyOdd@32::pc
       .line 32,32 : 9,28 ''
       IL_0077:  ldarg.0
-      IL_0078:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/'onlyOdd@32-6'::'enum'
+      IL_0078:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/onlyOdd@32::'enum'
       IL_007d:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
       IL_0082:  nop
       IL_0083:  ldarg.0
       IL_0084:  ldnull
-      IL_0085:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/'onlyOdd@32-6'::'enum'
+      IL_0085:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/onlyOdd@32::'enum'
       IL_008a:  ldarg.0
       IL_008b:  ldc.i4.3
-      IL_008c:  stfld      int32 Linq101Quantifiers01/'onlyOdd@32-6'::pc
+      IL_008c:  stfld      int32 Linq101Quantifiers01/onlyOdd@32::pc
       IL_0091:  ldarg.0
       IL_0092:  ldc.i4.0
-      IL_0093:  stfld      int32 Linq101Quantifiers01/'onlyOdd@32-6'::current
+      IL_0093:  stfld      int32 Linq101Quantifiers01/onlyOdd@32::current
       IL_0098:  ldc.i4.0
       IL_0099:  ret
-    } // end of method 'onlyOdd@32-6'::GenerateNext
+    } // end of method onlyOdd@32::GenerateNext
 
     .method public strict virtual instance void 
             Close() cil managed
@@ -801,7 +801,7 @@
                [2] class [mscorlib]System.Exception e)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Quantifiers01/'onlyOdd@32-6'::pc
+      IL_0001:  ldfld      int32 Linq101Quantifiers01/onlyOdd@32::pc
       IL_0006:  ldc.i4.3
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -817,7 +817,7 @@
       .try
       {
         IL_001a:  ldarg.0
-        IL_001b:  ldfld      int32 Linq101Quantifiers01/'onlyOdd@32-6'::pc
+        IL_001b:  ldfld      int32 Linq101Quantifiers01/onlyOdd@32::pc
         IL_0020:  switch     ( 
                               IL_0037,
                               IL_0039,
@@ -855,19 +855,19 @@
         IL_004c:  nop
         IL_004d:  ldarg.0
         IL_004e:  ldc.i4.3
-        IL_004f:  stfld      int32 Linq101Quantifiers01/'onlyOdd@32-6'::pc
+        IL_004f:  stfld      int32 Linq101Quantifiers01/onlyOdd@32::pc
         IL_0054:  ldarg.0
-        IL_0055:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/'onlyOdd@32-6'::'enum'
+        IL_0055:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/onlyOdd@32::'enum'
         IL_005a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
         IL_005f:  nop
         .line 100001,100001 : 0,0 ''
         IL_0060:  nop
         IL_0061:  ldarg.0
         IL_0062:  ldc.i4.3
-        IL_0063:  stfld      int32 Linq101Quantifiers01/'onlyOdd@32-6'::pc
+        IL_0063:  stfld      int32 Linq101Quantifiers01/onlyOdd@32::pc
         IL_0068:  ldarg.0
         IL_0069:  ldc.i4.0
-        IL_006a:  stfld      int32 Linq101Quantifiers01/'onlyOdd@32-6'::current
+        IL_006a:  stfld      int32 Linq101Quantifiers01/onlyOdd@32::current
         IL_006f:  ldnull
         IL_0070:  stloc.1
         IL_0071:  leave.s    IL_007f
@@ -907,7 +907,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0093:  ret
-    } // end of method 'onlyOdd@32-6'::Close
+    } // end of method onlyOdd@32::Close
 
     .method public strict virtual instance bool 
             get_CheckClose() cil managed
@@ -916,7 +916,7 @@
       .maxstack  8
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Quantifiers01/'onlyOdd@32-6'::pc
+      IL_0001:  ldfld      int32 Linq101Quantifiers01/onlyOdd@32::pc
       IL_0006:  switch     ( 
                             IL_001d,
                             IL_001f,
@@ -958,7 +958,7 @@
 
       IL_0036:  ldc.i4.0
       IL_0037:  ret
-    } // end of method 'onlyOdd@32-6'::get_CheckClose
+    } // end of method onlyOdd@32::get_CheckClose
 
     .method public strict virtual instance int32 
             get_LastGenerated() cil managed
@@ -968,9 +968,9 @@
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101Quantifiers01/'onlyOdd@32-6'::current
+      IL_0001:  ldfld      int32 Linq101Quantifiers01/onlyOdd@32::current
       IL_0006:  ret
-    } // end of method 'onlyOdd@32-6'::get_LastGenerated
+    } // end of method onlyOdd@32::get_LastGenerated
 
     .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> 
             GetFreshEnumerator() cil managed
@@ -982,15 +982,15 @@
       IL_0000:  ldnull
       IL_0001:  ldc.i4.0
       IL_0002:  ldc.i4.0
-      IL_0003:  newobj     instance void Linq101Quantifiers01/'onlyOdd@32-6'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                                    int32,
-                                                                                    int32)
+      IL_0003:  newobj     instance void Linq101Quantifiers01/onlyOdd@32::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+                                                                                int32,
+                                                                                int32)
       IL_0008:  ret
-    } // end of method 'onlyOdd@32-6'::GetFreshEnumerator
+    } // end of method onlyOdd@32::GetFreshEnumerator
 
-  } // end of class 'onlyOdd@32-6'
+  } // end of class onlyOdd@32
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'onlyOdd@33-7'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'onlyOdd@33-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
   {
     .method assembly specialname rtspecialname 
@@ -1003,7 +1003,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::.ctor()
       IL_0006:  ret
-    } // end of method 'onlyOdd@33-7'::.ctor
+    } // end of method 'onlyOdd@33-1'::.ctor
 
     .method public strict virtual instance bool 
             Invoke(int32 n) cil managed
@@ -1017,11 +1017,11 @@
       IL_0003:  ldc.i4.1
       IL_0004:  ceq
       IL_0006:  ret
-    } // end of method 'onlyOdd@33-7'::Invoke
+    } // end of method 'onlyOdd@33-1'::Invoke
 
-  } // end of class 'onlyOdd@33-7'
+  } // end of class 'onlyOdd@33-1'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups2@39-21'
+  .class auto ansi serializable sealed nested assembly beforefieldinit productGroups2@39
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -1039,9 +1039,9 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,object>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/'productGroups2@39-21'::builder@
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/productGroups2@39::builder@
       IL_000d:  ret
-    } // end of method 'productGroups2@39-21'::.ctor
+    } // end of method productGroups2@39::.ctor
 
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,object> 
             Invoke(class [Utils]Utils/Product _arg1) cil managed
@@ -1054,16 +1054,16 @@
       IL_0001:  stloc.0
       .line 40,40 : 9,32 ''
       IL_0002:  ldarg.0
-      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/'productGroups2@39-21'::builder@
+      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/productGroups2@39::builder@
       IL_0008:  ldloc.0
       IL_0009:  tail.
       IL_000b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [Utils]Utils/Product,object>(!!0)
       IL_0010:  ret
-    } // end of method 'productGroups2@39-21'::Invoke
+    } // end of method productGroups2@39::Invoke
 
-  } // end of class 'productGroups2@39-21'
+  } // end of class productGroups2@39
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups2@40-22'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups2@40-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [Utils]Utils/Product>
   {
     .method assembly specialname rtspecialname 
@@ -1076,7 +1076,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [Utils]Utils/Product>::.ctor()
       IL_0006:  ret
-    } // end of method 'productGroups2@40-22'::.ctor
+    } // end of method 'productGroups2@40-1'::.ctor
 
     .method public strict virtual instance class [Utils]Utils/Product 
             Invoke(class [Utils]Utils/Product p) cil managed
@@ -1086,11 +1086,11 @@
       .line 40,40 : 20,21 ''
       IL_0000:  ldarg.1
       IL_0001:  ret
-    } // end of method 'productGroups2@40-22'::Invoke
+    } // end of method 'productGroups2@40-1'::Invoke
 
-  } // end of class 'productGroups2@40-22'
+  } // end of class 'productGroups2@40-1'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups2@40-23'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups2@40-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,string>
   {
     .method assembly specialname rtspecialname 
@@ -1103,7 +1103,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,string>::.ctor()
       IL_0006:  ret
-    } // end of method 'productGroups2@40-23'::.ctor
+    } // end of method 'productGroups2@40-2'::.ctor
 
     .method public strict virtual instance string 
             Invoke(class [Utils]Utils/Product p) cil managed
@@ -1115,11 +1115,11 @@
       IL_0001:  tail.
       IL_0003:  callvirt   instance string [Utils]Utils/Product::get_Category()
       IL_0008:  ret
-    } // end of method 'productGroups2@40-23'::Invoke
+    } // end of method 'productGroups2@40-2'::Invoke
 
-  } // end of class 'productGroups2@40-23'
+  } // end of class 'productGroups2@40-2'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups2@40-24'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups2@40-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -1137,9 +1137,9 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,object>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/'productGroups2@40-24'::builder@
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/'productGroups2@40-3'::builder@
       IL_000d:  ret
-    } // end of method 'productGroups2@40-24'::.ctor
+    } // end of method 'productGroups2@40-3'::.ctor
 
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,object> 
             Invoke(class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> _arg2) cil managed
@@ -1151,16 +1151,16 @@
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       IL_0002:  ldarg.0
-      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/'productGroups2@40-24'::builder@
+      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/'productGroups2@40-3'::builder@
       IL_0008:  ldloc.0
       IL_0009:  tail.
       IL_000b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,object>(!!0)
       IL_0010:  ret
-    } // end of method 'productGroups2@40-24'::Invoke
+    } // end of method 'productGroups2@40-3'::Invoke
 
-  } // end of class 'productGroups2@40-24'
+  } // end of class 'productGroups2@40-3'
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'productGroups2@41-26'
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'productGroups2@41-5'
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -1172,7 +1172,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ret
-    } // end of method 'productGroups2@41-26'::.ctor
+    } // end of method 'productGroups2@41-5'::.ctor
 
     .method assembly hidebysig instance bool 
             Invoke(class [Utils]Utils/Product x) cil managed
@@ -1185,11 +1185,11 @@
       IL_0006:  ldc.i4.0
       IL_0007:  cgt
       IL_0009:  ret
-    } // end of method 'productGroups2@41-26'::Invoke
+    } // end of method 'productGroups2@41-5'::Invoke
 
-  } // end of class 'productGroups2@41-26'
+  } // end of class 'productGroups2@41-5'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups2@41-25'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups2@41-4'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,bool>
   {
     .method assembly specialname rtspecialname 
@@ -1202,7 +1202,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,bool>::.ctor()
       IL_0006:  ret
-    } // end of method 'productGroups2@41-25'::.ctor
+    } // end of method 'productGroups2@41-4'::.ctor
 
     .method public strict virtual instance bool 
             Invoke(class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g) cil managed
@@ -1211,18 +1211,18 @@
       .maxstack  8
       .line 41,41 : 16,50 ''
       IL_0000:  ldarg.1
-      IL_0001:  newobj     instance void Linq101Quantifiers01/'productGroups2@41-26'::.ctor()
-      IL_0006:  ldftn      instance bool Linq101Quantifiers01/'productGroups2@41-26'::Invoke(class [Utils]Utils/Product)
+      IL_0001:  newobj     instance void Linq101Quantifiers01/'productGroups2@41-5'::.ctor()
+      IL_0006:  ldftn      instance bool Linq101Quantifiers01/'productGroups2@41-5'::Invoke(class [Utils]Utils/Product)
       IL_000c:  newobj     instance void class [mscorlib]System.Func`2<class [Utils]Utils/Product,bool>::.ctor(object,
                                                                                                                native int)
       IL_0011:  call       bool [System.Core]System.Linq.Enumerable::All<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>,
                                                                                                      class [mscorlib]System.Func`2<!!0,bool>)
       IL_0016:  ret
-    } // end of method 'productGroups2@41-25'::Invoke
+    } // end of method 'productGroups2@41-4'::Invoke
 
-  } // end of class 'productGroups2@41-25'
+  } // end of class 'productGroups2@41-4'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups2@42-27'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'productGroups2@42-6'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>>
   {
     .method assembly specialname rtspecialname 
@@ -1235,7 +1235,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>>::.ctor()
       IL_0006:  ret
-    } // end of method 'productGroups2@42-27'::.ctor
+    } // end of method 'productGroups2@42-6'::.ctor
 
     .method public strict virtual instance class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>> 
             Invoke(class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g) cil managed
@@ -1249,16 +1249,16 @@
       IL_0007:  newobj     instance void class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>::.ctor(!0,
                                                                                                                                                                      !1)
       IL_000c:  ret
-    } // end of method 'productGroups2@42-27'::Invoke
+    } // end of method 'productGroups2@42-6'::Invoke
 
-  } // end of class 'productGroups2@42-27'
+  } // end of class 'productGroups2@42-6'
 
   .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> 
           get_words() cil managed
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'words@8-36'
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'words@8-6'
     IL_0005:  ret
   } // end of method Linq101Quantifiers01::get_words
 
@@ -1267,7 +1267,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     bool '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'iAfterE@10-6'
+    IL_0000:  ldsfld     bool '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::iAfterE@10
     IL_0005:  ret
   } // end of method Linq101Quantifiers01::get_iAfterE
 
@@ -1276,7 +1276,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'products@17-64'
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'products@17-10'
     IL_0005:  ret
   } // end of method Linq101Quantifiers01::get_products
 
@@ -1285,7 +1285,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>[] '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'productGroups@19-6'
+    IL_0000:  ldsfld     class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>[] '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::productGroups@19
     IL_0005:  ret
   } // end of method Linq101Quantifiers01::get_productGroups
 
@@ -1294,7 +1294,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'numbers@28-46'
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'numbers@28-7'
     IL_0005:  ret
   } // end of method Linq101Quantifiers01::get_numbers
 
@@ -1303,7 +1303,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     bool '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'onlyOdd@30-6'
+    IL_0000:  ldsfld     bool '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::onlyOdd@30
     IL_0005:  ret
   } // end of method Linq101Quantifiers01::get_onlyOdd
 
@@ -1312,7 +1312,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>[] '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'productGroups2@37-6'
+    IL_0000:  ldsfld     class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>[] '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::productGroups2@37
     IL_0005:  ret
   } // end of method Linq101Quantifiers01::get_productGroups2
 
@@ -1361,19 +1361,19 @@
 .class private abstract auto ansi sealed '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01
        extends [mscorlib]System.Object
 {
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> 'words@8-36'
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> 'words@8-6'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly bool 'iAfterE@10-6'
+  .field static assembly bool iAfterE@10
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> 'products@17-64'
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> 'products@17-10'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>[] 'productGroups@19-6'
+  .field static assembly class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>[] productGroups@19
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'numbers@28-46'
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'numbers@28-7'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly bool 'onlyOdd@30-6'
+  .field static assembly bool onlyOdd@30
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>[] 'productGroups2@37-6'
+  .field static assembly class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>[] productGroups2@37
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -1408,26 +1408,26 @@
     IL_0028:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_002d:  dup
-    IL_002e:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'words@8-36'
+    IL_002e:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'words@8-6'
     IL_0033:  stloc.0
     IL_0034:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0039:  ldnull
     IL_003a:  ldc.i4.0
     IL_003b:  ldnull
-    IL_003c:  newobj     instance void Linq101Quantifiers01/'iAfterE@12-6'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
-                                                                                  int32,
-                                                                                  string)
+    IL_003c:  newobj     instance void Linq101Quantifiers01/iAfterE@12::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
+                                                                              int32,
+                                                                              string)
     IL_0041:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_0046:  newobj     instance void Linq101Quantifiers01/'iAfterE@13-7'::.ctor()
+    IL_0046:  newobj     instance void Linq101Quantifiers01/'iAfterE@13-1'::.ctor()
     IL_004b:  callvirt   instance bool [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Exists<string,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
     IL_0050:  dup
-    IL_0051:  stsfld     bool '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'iAfterE@10-6'
+    IL_0051:  stsfld     bool '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::iAfterE@10
     IL_0056:  stloc.1
     .line 17,17 : 1,32 ''
     IL_0057:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> [Utils]Utils::getProductList()
     IL_005c:  dup
-    IL_005d:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'products@17-64'
+    IL_005d:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'products@17-10'
     IL_0062:  stloc.2
     .line 19,25 : 1,21 ''
     IL_0063:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
@@ -1441,28 +1441,28 @@
     IL_0076:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Quantifiers01::get_products()
     IL_007b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_0080:  ldloc.s    V_7
-    IL_0082:  newobj     instance void Linq101Quantifiers01/'productGroups@21-21'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_0082:  newobj     instance void Linq101Quantifiers01/productGroups@21::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
     IL_0087:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_008c:  newobj     instance void Linq101Quantifiers01/'productGroups@22-22'::.ctor()
-    IL_0091:  newobj     instance void Linq101Quantifiers01/'productGroups@22-23'::.ctor()
+    IL_008c:  newobj     instance void Linq101Quantifiers01/'productGroups@22-1'::.ctor()
+    IL_0091:  newobj     instance void Linq101Quantifiers01/'productGroups@22-2'::.ctor()
     IL_0096:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Product,string,class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>)
     IL_009b:  ldloc.s    V_7
-    IL_009d:  newobj     instance void Linq101Quantifiers01/'productGroups@22-24'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_009d:  newobj     instance void Linq101Quantifiers01/'productGroups@22-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
     IL_00a2:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                           class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_00a7:  newobj     instance void Linq101Quantifiers01/'productGroups@23-25'::.ctor()
+    IL_00a7:  newobj     instance void Linq101Quantifiers01/'productGroups@23-4'::.ctor()
     IL_00ac:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
-    IL_00b1:  newobj     instance void Linq101Quantifiers01/'productGroups@24-27'::.ctor()
+    IL_00b1:  newobj     instance void Linq101Quantifiers01/'productGroups@24-6'::.ctor()
     IL_00b6:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_00bb:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
     IL_00c0:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_00c5:  dup
-    IL_00c6:  stsfld     class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>[] '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'productGroups@19-6'
+    IL_00c6:  stsfld     class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>[] '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::productGroups@19
     IL_00cb:  stloc.3
     .line 28,28 : 1,35 ''
     IL_00cc:  ldc.i4.1
@@ -1488,21 +1488,21 @@
     IL_00fb:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_0100:  dup
-    IL_0101:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'numbers@28-46'
+    IL_0101:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'numbers@28-7'
     IL_0106:  stloc.s    numbers
     IL_0108:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_010d:  ldnull
     IL_010e:  ldc.i4.0
     IL_010f:  ldc.i4.0
-    IL_0110:  newobj     instance void Linq101Quantifiers01/'onlyOdd@32-6'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                                  int32,
-                                                                                  int32)
+    IL_0110:  newobj     instance void Linq101Quantifiers01/onlyOdd@32::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+                                                                              int32,
+                                                                              int32)
     IL_0115:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_011a:  newobj     instance void Linq101Quantifiers01/'onlyOdd@33-7'::.ctor()
+    IL_011a:  newobj     instance void Linq101Quantifiers01/'onlyOdd@33-1'::.ctor()
     IL_011f:  callvirt   instance bool [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::All<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
     IL_0124:  dup
-    IL_0125:  stsfld     bool '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'onlyOdd@30-6'
+    IL_0125:  stsfld     bool '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::onlyOdd@30
     IL_012a:  stloc.s    onlyOdd
     .line 37,43 : 1,21 ''
     IL_012c:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
@@ -1516,28 +1516,28 @@
     IL_013f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Quantifiers01::get_products()
     IL_0144:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_0149:  ldloc.s    V_8
-    IL_014b:  newobj     instance void Linq101Quantifiers01/'productGroups2@39-21'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_014b:  newobj     instance void Linq101Quantifiers01/productGroups2@39::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
     IL_0150:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_0155:  newobj     instance void Linq101Quantifiers01/'productGroups2@40-22'::.ctor()
-    IL_015a:  newobj     instance void Linq101Quantifiers01/'productGroups2@40-23'::.ctor()
+    IL_0155:  newobj     instance void Linq101Quantifiers01/'productGroups2@40-1'::.ctor()
+    IL_015a:  newobj     instance void Linq101Quantifiers01/'productGroups2@40-2'::.ctor()
     IL_015f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Product,string,class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>)
     IL_0164:  ldloc.s    V_8
-    IL_0166:  newobj     instance void Linq101Quantifiers01/'productGroups2@40-24'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_0166:  newobj     instance void Linq101Quantifiers01/'productGroups2@40-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
     IL_016b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                           class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_0170:  newobj     instance void Linq101Quantifiers01/'productGroups2@41-25'::.ctor()
+    IL_0170:  newobj     instance void Linq101Quantifiers01/'productGroups2@41-4'::.ctor()
     IL_0175:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
-    IL_017a:  newobj     instance void Linq101Quantifiers01/'productGroups2@42-27'::.ctor()
+    IL_017a:  newobj     instance void Linq101Quantifiers01/'productGroups2@42-6'::.ctor()
     IL_017f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_0184:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
     IL_0189:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_018e:  dup
-    IL_018f:  stsfld     class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>[] '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'productGroups2@37-6'
+    IL_018f:  stsfld     class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>[] '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::productGroups2@37
     IL_0194:  stloc.s    productGroups2
     IL_0196:  ret
   } // end of method $Linq101Quantifiers01::main@

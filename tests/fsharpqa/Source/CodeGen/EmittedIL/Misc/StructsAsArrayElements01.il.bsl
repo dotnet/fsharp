@@ -33,7 +33,7 @@
 }
 .mresource public FSharpSignatureDataB.StructsAsArrayElements01
 {
-  // Offset: 0x00000760 Length: 0x00000099
+  // Offset: 0x00000760 Length: 0x0000009B
 }
 .mresource public FSharpOptimizationData.StructsAsArrayElements01
 {
@@ -44,13 +44,13 @@
   // Offset: 0x00000A30 Length: 0x00000038
 }
 .module StructsAsArrayElements01.dll
-// MVID: {5BF2DEA8-29F3-6E68-A745-0383A8DEF25B}
+// MVID: {5C6C932A-0C0D-4AEA-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00CE0000
+// Image base: 0x01240000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

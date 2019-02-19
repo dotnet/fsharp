@@ -33,7 +33,7 @@
 }
 .mresource public FSharpSignatureDataB.DoNotBoxStruct_MDArray_CSInterface
 {
-  // Offset: 0x00000268 Length: 0x00000005
+  // Offset: 0x00000268 Length: 0x00000006
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_MDArray_CSInterface
 {
@@ -44,13 +44,13 @@
   // Offset: 0x00000318 Length: 0x00000000
 }
 .module DoNotBoxStruct_MDArray_CSInterface.exe
-// MVID: {5BF2D3C6-24A8-8796-A745-0383C6D3F25B}
+// MVID: {5C6C932A-DC23-91F9-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00C40000
+// Image base: 0x00AC0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

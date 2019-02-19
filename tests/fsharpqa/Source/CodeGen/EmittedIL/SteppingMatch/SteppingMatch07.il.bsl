@@ -33,24 +33,24 @@
 }
 .mresource public FSharpSignatureDataB.SteppingMatch07
 {
-  // Offset: 0x00000680 Length: 0x0000007B
+  // Offset: 0x00000680 Length: 0x0000007D
 }
 .mresource public FSharpOptimizationData.SteppingMatch07
 {
-  // Offset: 0x00000700 Length: 0x000001D9
+  // Offset: 0x00000708 Length: 0x000001D9
 }
 .mresource public FSharpOptimizationDataB.SteppingMatch07
 {
-  // Offset: 0x000008E0 Length: 0x0000002A
+  // Offset: 0x000008E8 Length: 0x0000002A
 }
 .module SteppingMatch07.dll
-// MVID: {5BF2D3CD-D373-07F3-A745-0383CDD3F25B}
+// MVID: {5C6C932B-6FFE-E210-A745-03832B936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00CD0000
+// Image base: 0x01090000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

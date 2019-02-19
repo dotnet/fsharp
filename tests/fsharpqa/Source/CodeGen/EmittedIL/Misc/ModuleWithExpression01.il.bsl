@@ -44,13 +44,13 @@
   // Offset: 0x000002D8 Length: 0x00000000
 }
 .module ModuleWithExpression01.exe
-// MVID: {5BF2DEA8-CD1E-A8B4-A745-0383A8DEF25B}
+// MVID: {5C6C932A-EE8D-AD63-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02D70000
+// Image base: 0x02A90000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

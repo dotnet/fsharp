@@ -29,7 +29,7 @@
 }
 .mresource public FSharpSignatureData.StaticInit_Class01
 {
-  // Offset: 0x00000000 Length: 0x0000033E
+  // Offset: 0x00000000 Length: 0x0000033D
 }
 .mresource public FSharpSignatureDataB.StaticInit_Class01
 {
@@ -44,13 +44,13 @@
   // Offset: 0x00000418 Length: 0x00000003
 }
 .module StaticInit_Class01.dll
-// MVID: {5BF2D3CD-EC34-E66E-A745-0383CDD3F25B}
+// MVID: {5C6C932B-A030-4E6D-A745-03832B936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00C90000
+// Image base: 0x00690000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -64,7 +64,7 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field static assembly int32 x
-    .field static assembly int32 'init@4-17'
+    .field static assembly int32 'init@4-1'
     .method public specialname rtspecialname 
             instance void  .ctor(valuetype [mscorlib]System.DateTime s) cil managed
     {
@@ -87,7 +87,7 @@
       .maxstack  8
       .line 7,7 : 23,37 ''
       IL_0000:  volatile.
-      IL_0002:  ldsfld     int32 StaticInit_ClassS01/C::'init@4-17'
+      IL_0002:  ldsfld     int32 StaticInit_ClassS01/C::'init@4-1'
       IL_0007:  ldc.i4.1
       IL_0008:  bge.s      IL_000c
 
@@ -146,7 +146,7 @@
     IL_000a:  stsfld     int32 StaticInit_ClassS01/C::x
     IL_000f:  ldc.i4.1
     IL_0010:  volatile.
-    IL_0012:  stsfld     int32 StaticInit_ClassS01/C::'init@4-17'
+    IL_0012:  stsfld     int32 StaticInit_ClassS01/C::'init@4-1'
     .line 4,4 : 6,7 ''
     IL_0017:  ret
   } // end of method $StaticInit_ClassS01::.cctor

@@ -33,24 +33,24 @@
 }
 .mresource public FSharpSignatureDataB.DoNotBoxStruct_NoArray_CSInterface
 {
-  // Offset: 0x00000258 Length: 0x00000004
+  // Offset: 0x00000258 Length: 0x00000005
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_NoArray_CSInterface
 {
-  // Offset: 0x00000260 Length: 0x0000009C
+  // Offset: 0x00000268 Length: 0x0000009C
 }
 .mresource public FSharpOptimizationDataB.DoNotBoxStruct_NoArray_CSInterface
 {
-  // Offset: 0x00000300 Length: 0x00000000
+  // Offset: 0x00000308 Length: 0x00000000
 }
 .module DoNotBoxStruct_NoArray_CSInterface.exe
-// MVID: {5BF2D3C6-5654-8082-A745-0383C6D3F25B}
+// MVID: {5C6C932A-58FF-535C-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00680000
+// Image base: 0x00720000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

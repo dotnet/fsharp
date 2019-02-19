@@ -44,13 +44,13 @@
   // Offset: 0x00000340 Length: 0x00000000
 }
 .module AsyncExpressionSteppingTest3.dll
-// MVID: {5BF2D3CD-6394-F35E-A745-0383CDD3F25B}
+// MVID: {5C6C9329-3BB9-87B8-A745-038329936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01640000
+// Image base: 0x00570000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,7 +63,7 @@
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@10-37'
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@10-1'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
     {
       .field public int32 'value'
@@ -81,9 +81,9 @@
         IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
-        IL_0008:  stfld      int32 AsyncExpressionSteppingTest3/AsyncExpressionSteppingTest3/'f3@10-37'::'value'
+        IL_0008:  stfld      int32 AsyncExpressionSteppingTest3/AsyncExpressionSteppingTest3/'f3@10-1'::'value'
         IL_000d:  ret
-      } // end of method 'f3@10-37'::.ctor
+      } // end of method 'f3@10-1'::.ctor
 
       .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn 
               Invoke(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
@@ -94,14 +94,14 @@
         .line 10,10 : 17,25 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\AsyncExpressionStepping\\AsyncExpressionSteppingTest3.fs'
         IL_0000:  ldarga.s   ctxt
         IL_0002:  ldarg.0
-        IL_0003:  ldfld      int32 AsyncExpressionSteppingTest3/AsyncExpressionSteppingTest3/'f3@10-37'::'value'
+        IL_0003:  ldfld      int32 AsyncExpressionSteppingTest3/AsyncExpressionSteppingTest3/'f3@10-1'::'value'
         IL_0008:  call       instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::OnSuccess(!0)
         IL_000d:  ret
-      } // end of method 'f3@10-37'::Invoke
+      } // end of method 'f3@10-1'::Invoke
 
-    } // end of class 'f3@10-37'
+    } // end of class 'f3@10-1'
 
-    .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@5-36'
+    .class auto ansi serializable sealed nested assembly beforefieldinit f3@5
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@
@@ -119,9 +119,9 @@
         IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
-        IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder AsyncExpressionSteppingTest3/AsyncExpressionSteppingTest3/'f3@5-36'::builder@
+        IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder AsyncExpressionSteppingTest3/AsyncExpressionSteppingTest3/f3@5::builder@
         IL_000d:  ret
-      } // end of method 'f3@5-36'::.ctor
+      } // end of method f3@5::.ctor
 
       .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> 
               Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
@@ -158,18 +158,18 @@
         IL_0029:  stloc.2
         .line 10,10 : 17,25 ''
         IL_002a:  ldarg.0
-        IL_002b:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder AsyncExpressionSteppingTest3/AsyncExpressionSteppingTest3/'f3@5-36'::builder@
+        IL_002b:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder AsyncExpressionSteppingTest3/AsyncExpressionSteppingTest3/f3@5::builder@
         IL_0030:  stloc.3
         IL_0031:  ldloc.2
         IL_0032:  stloc.s    V_4
         IL_0034:  ldloc.s    V_4
-        IL_0036:  newobj     instance void AsyncExpressionSteppingTest3/AsyncExpressionSteppingTest3/'f3@10-37'::.ctor(int32)
+        IL_0036:  newobj     instance void AsyncExpressionSteppingTest3/AsyncExpressionSteppingTest3/'f3@10-1'::.ctor(int32)
         IL_003b:  tail.
         IL_003d:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
         IL_0042:  ret
-      } // end of method 'f3@5-36'::Invoke
+      } // end of method f3@5::Invoke
 
-    } // end of class 'f3@5-36'
+    } // end of class f3@5
 
     .method public static class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> 
             f3() cil managed
@@ -182,7 +182,7 @@
       IL_0005:  stloc.0
       IL_0006:  ldloc.0
       IL_0007:  ldloc.0
-      IL_0008:  newobj     instance void AsyncExpressionSteppingTest3/AsyncExpressionSteppingTest3/'f3@5-36'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder)
+      IL_0008:  newobj     instance void AsyncExpressionSteppingTest3/AsyncExpressionSteppingTest3/f3@5::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder)
       IL_000d:  tail.
       IL_000f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder::Delay<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>>)
       IL_0014:  ret

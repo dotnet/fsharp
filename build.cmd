@@ -901,6 +901,7 @@ if "%TEST_NET40_FSHARPQA_SUITE%" == "1" (
     set OUTPUTFILE=test-net40-fsharpqa-results.log
     set ERRORFILE=test-net40-fsharpqa-errors.log
     set FAILENV=test-net40-fsharpqa-errors
+    mkdir !RESULTSDIR!
 
     pushd %~dp0tests\fsharpqa\source
     echo !perlexe! %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!

@@ -15,11 +15,6 @@
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
   .ver 4:5:0:0
 }
-.assembly extern System.ValueTuple
-{
-  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
-  .ver 4:0:1:0
-}
 .assembly ValueTupleAliasConstructor
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
@@ -49,13 +44,13 @@
   // Offset: 0x00000260 Length: 0x00000000
 }
 .module ValueTupleAliasConstructor.exe
-// MVID: {5BF2DEAA-A8CF-BB34-A745-0383AADEF25B}
+// MVID: {5C6C932B-E59F-7FAD-A745-03832B936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02E70000
+// Image base: 0x01150000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -82,8 +77,8 @@
     .line 3,3 : 9,22 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Tuples\\ValueTupleAliasConstructor.fs'
     IL_0000:  ldc.i4.2
     IL_0001:  ldc.i4.2
-    IL_0002:  newobj     instance void valuetype [System.ValueTuple]System.ValueTuple`2<int32,int32>::.ctor(!0,
-                                                                                                            !1)
+    IL_0002:  newobj     instance void valuetype [mscorlib]System.ValueTuple`2<int32,int32>::.ctor(!0,
+                                                                                                   !1)
     IL_0007:  pop
     IL_0008:  ret
   } // end of method $ValueTupleAliasConstructor::main@

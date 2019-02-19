@@ -33,24 +33,24 @@
 }
 .mresource public FSharpSignatureDataB.GenericTypeStaticField01
 {
-  // Offset: 0x00000618 Length: 0x00000037
+  // Offset: 0x00000618 Length: 0x0000004C
 }
 .mresource public FSharpOptimizationData.GenericTypeStaticField01
 {
-  // Offset: 0x00000658 Length: 0x000001E7
+  // Offset: 0x00000668 Length: 0x000001E7
 }
 .mresource public FSharpOptimizationDataB.GenericTypeStaticField01
 {
-  // Offset: 0x00000848 Length: 0x00000012
+  // Offset: 0x00000858 Length: 0x00000018
 }
 .module GenericTypeStaticField01.exe
-// MVID: {5BF2DEA8-1E75-7E6B-A745-0383A8DEF25B}
+// MVID: {5C6C932A-315A-51B2-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x011D0000
+// Image base: 0x00350000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

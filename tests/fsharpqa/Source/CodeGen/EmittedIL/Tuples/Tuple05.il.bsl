@@ -44,13 +44,13 @@
   // Offset: 0x000001B0 Length: 0x00000000
 }
 .module Tuple05.exe
-// MVID: {5BF2DEAA-349F-319F-A745-0383AADEF25B}
+// MVID: {5C6C932B-D0B3-6D31-A745-03832B936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00970000
+// Image base: 0x002F0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

@@ -33,7 +33,7 @@
 }
 .mresource public FSharpSignatureDataB.Field
 {
-  // Offset: 0x00000400 Length: 0x00000019
+  // Offset: 0x00000400 Length: 0x0000001A
 }
 .mresource public FSharpOptimizationData.Field
 {
@@ -44,13 +44,13 @@
   // Offset: 0x000004E0 Length: 0x00000003
 }
 .module Field.dll
-// MVID: {5BF2D3CD-96F8-CD6E-A745-0383CDD3F25B}
+// MVID: {5C6C9329-94F4-D3EF-A745-038329936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x007B0000
+// Image base: 0x014C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -86,7 +86,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     int32 '<StartupCode$Field>'.$M::'T@12-20'
+    IL_0000:  ldsfld     int32 '<StartupCode$Field>'.$M::'T@12-2'
     IL_0005:  ret
   } // end of method M::get_T
 
@@ -100,7 +100,7 @@
 .class private abstract auto ansi sealed '<StartupCode$Field>'.$M
        extends [mscorlib]System.Object
 {
-  .field static assembly initonly int32 'T@12-20'
+  .field static assembly initonly int32 'T@12-2'
   .custom instance void M/ExportAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
@@ -121,7 +121,7 @@
     .line 12,12 : 27,28 ''
     IL_0010:  ldc.i4.1
     IL_0011:  dup
-    IL_0012:  stsfld     int32 '<StartupCode$Field>'.$M::'T@12-20'
+    IL_0012:  stsfld     int32 '<StartupCode$Field>'.$M::'T@12-2'
     IL_0017:  stloc.0
     IL_0018:  ret
   } // end of method $M::.cctor

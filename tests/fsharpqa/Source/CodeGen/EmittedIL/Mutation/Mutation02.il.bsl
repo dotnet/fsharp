@@ -44,13 +44,13 @@
   // Offset: 0x00000220 Length: 0x00000000
 }
 .module Mutation02.exe
-// MVID: {5BF2DEA8-8C6A-2F0D-A745-0383A8DEF25B}
+// MVID: {5C6C932A-F355-8B25-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01730000
+// Image base: 0x00490000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

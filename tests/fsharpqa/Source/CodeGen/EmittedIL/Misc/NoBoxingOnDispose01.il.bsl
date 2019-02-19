@@ -33,24 +33,24 @@
 }
 .mresource public FSharpSignatureDataB.NoBoxingOnDispose01
 {
-  // Offset: 0x00000228 Length: 0x00000004
+  // Offset: 0x00000228 Length: 0x00000005
 }
 .mresource public FSharpOptimizationData.NoBoxingOnDispose01
 {
-  // Offset: 0x00000230 Length: 0x0000007F
+  // Offset: 0x00000238 Length: 0x0000007F
 }
 .mresource public FSharpOptimizationDataB.NoBoxingOnDispose01
 {
-  // Offset: 0x000002B8 Length: 0x00000000
+  // Offset: 0x000002C0 Length: 0x00000000
 }
 .module NoBoxingOnDispose01.exe
-// MVID: {5BF2DEA8-4EA9-C934-A745-0383A8DEF25B}
+// MVID: {5C6C932A-C029-5AC1-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00C50000
+// Image base: 0x00E80000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

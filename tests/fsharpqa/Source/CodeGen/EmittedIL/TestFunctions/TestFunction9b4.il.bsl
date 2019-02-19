@@ -33,7 +33,7 @@
 }
 .mresource public FSharpSignatureDataB.TestFunction9b4
 {
-  // Offset: 0x00000250 Length: 0x00000005
+  // Offset: 0x00000250 Length: 0x00000006
 }
 .mresource public FSharpOptimizationData.TestFunction9b4
 {
@@ -44,13 +44,13 @@
   // Offset: 0x000002F0 Length: 0x00000000
 }
 .module TestFunction9b4.exe
-// MVID: {5BF2DEA9-A091-56C1-A745-0383A9DEF25B}
+// MVID: {5C6C932B-9FB1-31E1-A745-03832B936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00680000
+// Image base: 0x014A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
