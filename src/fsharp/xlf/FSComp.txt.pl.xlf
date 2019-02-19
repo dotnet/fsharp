@@ -217,11 +217,6 @@
         <target state="translated">Używanie wielu odwołań do pliku „{0}.dll” jest niedozwolone</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotReadVersionInfoFromMscorlib">
-        <source>Could not read version from mscorlib.dll</source>
-        <target state="translated">Nie można odczytać wersji z pliku mscorlib.dll</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">Nie można odczytać zestawu „{0}”</target>

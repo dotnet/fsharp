@@ -2790,22 +2790,26 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
             error(Error(FSComp.SR.buildExplicitCoreLibRequiresNoFramework("--noframework"), rangeStartup))
 
     let ilGlobals = mkILGlobals ILScopeRef.Local
+
+    // clrRoot: the location of the primary assembly (mscorlib.dll or netstandard.dll or System.Runtime.dll)
+    //
+    // targetFrameworkVersionValue: Normally just HighestInstalledNetFrameworkVersion()
+    //
+    // Note, when mscorlib.dll has been given explicitly the actual value of
+    // targetFrameworkVersion shouldn't matter since resolution has already happened.
+    // In those cases where it does matter (e.g. --noframework is not being used or we are processing further
+    // resolutions for a script) then it is correct to just use HighestInstalledNetFrameworkVersion().
     let clrRootValue, targetFrameworkVersionValue  = 
         match primaryAssemblyExplicitFilenameOpt with
-        | Some(primaryAssemblyFilename) ->
+        | Some primaryAssemblyFilename ->
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir primaryAssemblyFilename
             try 
-                use ilReader = OpenILBinary(filename, data.reduceMemoryUsage, ilGlobals, None, data.shadowCopyReferences, data.tryGetMetadataSnapshot)
-                let ilModule = ilReader.ILModuleDef
-                match ilModule.ManifestOfAssembly.Version with 
-                | Some(v1, v2, _, _) -> 
-                    let clrRoot = Some(Path.GetDirectoryName(FileSystem.GetFullPathShim(filename)))
-                    clrRoot, (sprintf "v%d.%d" v1 v2)
-                | _ -> 
-                    failwith (FSComp.SR.buildCouldNotReadVersionInfoFromMscorlib())
+                let clrRoot = Some(Path.GetDirectoryName(FileSystem.GetFullPathShim(filename)))
+                clrRoot, data.legacyReferenceResolver.HighestInstalledNetFrameworkVersion()
             with e ->
+                // We no longer expect the above to fail but leaving this just in case
                 error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
-        | _ ->
+        | None ->
 #if !ENABLE_MONO_SUPPORT
             // TODO:  we have to get msbuild out of this
             if data.useSimpleResolution then
@@ -2821,6 +2825,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     let fsharpBinariesDirValue = 
 // NOTE: It's not clear why this behaviour has been changed for the NETSTANDARD compilations of the F# compiler
 #if NETSTANDARD1_6 || NETSTANDARD2_0
+        ignore ilGlobals
         data.defaultFSharpBinariesDir
 #else
         match fslibExplicitFilenameOpt with
