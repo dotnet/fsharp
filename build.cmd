@@ -789,8 +789,12 @@ if not exist "%link_exe%" (
 if /I not "%single_threaded%" == "true" (set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%) else set PARALLEL_ARG=-procs:0
 
 set FSCBINPATH=%~dp0artifacts\bin\fsc\%BUILD_CONFIG%\net46
+set FSIANYCPUBINPATH=%~dp0artifacts\bin\fsiAnyCpu\%BUILD_CONFIG%\net46
+set FSIBINPATH=%~dp0artifacts\bin\fsi\%BUILD_CONFIG%\net46
 
 ECHO FSCBINPATH=%FSCBINPATH%
+ECHO FSIANYCPUBINPATH=%FSIANYCPUBINPATH%
+ECHO FSIBINPATH=%FSIBINPATH%
 ECHO link_exe=%link_exe%
 
 REM ---------------- test-net40-fsharp  -----------------------
@@ -886,8 +890,10 @@ if "%TEST_NET40_FSHARPQA_SUITE%" == "1" (
 
     set CSC_PIPE=%USERPROFILE%\.nuget\packages\Microsoft.Net.Compilers\2.7.0\tools\csc.exe
     set FSC=!FSCBINPATH!\fsc.exe
+    set FSI=!FSIBINPATH!\fsi.exe
+    set FSIANYCPU=!FSIANYCPUBINPATH!\fsi.exe
     set FSCOREDLLPATH=!FSCBinPath!\FSharp.Core.dll
-    set PATH=!FSCBINPATH!;!PATH!
+    set PATH=!FSCBINPATH!;!FSIBINPATH!;!FSIANYCPUBINPATH!;!PATH!
     set perlexe=%USERPROFILE%\.nuget\packages\StrawberryPerl64\5.22.2.1\Tools\perl\bin\perl.exe
     if not exist !perlexe! (echo Error: perl was not downloaded from check the packages directory: !perlexe! && goto :failure )
 
