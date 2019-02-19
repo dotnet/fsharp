@@ -3,7 +3,8 @@
 open System.IO
 
 let lines = 
-    [| for file in Directory.EnumerateFiles(@"c:\github\dsyme\visualfsharp2\src\fsharp","*.fs") do
+    [| for dir in [ "src/fsharp"; "src/fsharp/symbols"; "src/fsharp/service"; "src/absil" ]do
+          for file in Directory.EnumerateFiles(__SOURCE_DIRECTORY__ + "/../../" + dir,"*.fs") do
         // TcGlobals.fs gets an exception
             let lines = File.ReadAllLines file
             for (line, lineText) in Array.indexed lines do 
@@ -26,7 +27,9 @@ for (file, (line, text)) in snd buckets.[0] do
    printfn "%s %d %s..." file line text.[0..50]
 
 let numLong = lines |> Array.filter (fun (_, (line, lineText)) -> lineText.Length > 120) |> Array.length
-let numHuge = lines |> Array.filter (fun (_, (line, lineText)) -> lineText.Length > 200) |> Array.length
+let numHuge = lines |> Array.filter (fun (_, (line, lineText)) -> lineText.Length > 160) |> Array.length
+let numHumungous = lines |> Array.filter (fun (_, (line, lineText)) -> lineText.Length > 200) |> Array.length
 
-printfn "%d long lines = %2.1f" numLong (double numLong / double totalLines)
-printfn "%d huge lines = %2.1f" numHuge (double numHuge / double totalLines)
+printfn "%d long lines = %2.2f%%" numLong (double numLong / double totalLines)
+printfn "%d huge lines = %2.2f%%" numHuge (double numHuge / double totalLines)
+printfn "%d humungous lines = %2.2f%%" numHumungous (double numHumungous / double totalLines)
