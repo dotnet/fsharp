@@ -24,7 +24,11 @@ module CompilerAssert =
             ProjectFileName = "Z:\\test.fsproj"
             ProjectId = None
             SourceFiles = [|"test.fs"|]
+#if NET472
             OtherOptions = [||]
+#else
+            OtherOptions = [|"--targetprofile:netcore"|]
+#endif
             ReferencedProjects = [||]
             IsIncompleteTypeCheckEnvironment = false
             UseScriptResolutionRules = false
@@ -38,6 +42,7 @@ module CompilerAssert =
     let private exec exe args =
         let startInfo = ProcessStartInfo(exe, String.concat " " args)
         startInfo.RedirectStandardError <- true
+        startInfo.RedirectStandardOutput <- true
         startInfo.UseShellExecute <- false
         use p = Process.Start(startInfo)
         p.WaitForExit()
