@@ -149,9 +149,9 @@ let internal SimulatedMSBuildResolver =
                             let options = 
                                 [ if Directory.Exists(gac) then 
                                     for gacdir in Directory.EnumerateDirectories(gac) do 
-                                        let assdir = Path.Combine(gacdir,n.Name)
-                                        if Directory.Exists(assdir) then 
-                                            for tdir in Directory.EnumerateDirectories(assdir) do 
+                                        let assemblyDir = Path.Combine(gacdir,n.Name)
+                                        if Directory.Exists(assemblyDir) then 
+                                            for tdir in Directory.EnumerateDirectories(assemblyDir) do 
                                                 let trialPath = Path.Combine(tdir,qual)
                                                 if FileSystem.SafeExists(trialPath) then 
                                                     yield trialPath ]
@@ -165,12 +165,12 @@ let internal SimulatedMSBuildResolver =
                             if Directory.Exists(gac) then 
                                 for gacdir in Directory.EnumerateDirectories(gac) do 
                                     //printfn "searching GAC directory: %s" gacdir
-                                    let assdir = Path.Combine(gacdir,n.Name)
-                                    if Directory.Exists(assdir) then 
-                                        //printfn "searching GAC directory: %s" assdir
+                                    let assemblyDir = Path.Combine(gacdir,n.Name)
+                                    if Directory.Exists(assemblyDir) then 
+                                        //printfn "searching GAC directory: %s" assemblyDir
 
                                         let tokText = String.concat "" [| for b in tok -> sprintf "%02x" b |]
-                                        let verdir = Path.Combine(assdir,"v4.0_"+v.ToString()+"__"+tokText)
+                                        let verdir = Path.Combine(assemblyDir,"v4.0_"+v.ToString()+"__"+tokText)
                                         //printfn "searching GAC directory: %s" verdir
 
                                         if Directory.Exists(verdir) then 

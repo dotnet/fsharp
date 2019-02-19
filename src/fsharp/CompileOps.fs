@@ -2825,6 +2825,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     let fsharpBinariesDirValue = 
 // NOTE: It's not clear why this behaviour has been changed for the NETSTANDARD compilations of the F# compiler
 #if NETSTANDARD1_6 || NETSTANDARD2_0
+        ignore ilGlobals
         data.defaultFSharpBinariesDir
 #else
         match fslibExplicitFilenameOpt with
