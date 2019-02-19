@@ -1866,7 +1866,8 @@ type FSharpCheckFileResults
         let userOpName = defaultArg userOpName "Unknown"
         let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
         let getAllEntities = defaultArg getAllEntities (fun() -> [])
-        reactorOp userOpName "GetDeclarationListSymbols" List.empty (fun ctok scope -> scope.GetDeclarationListSymbols(ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck))
+        reactorOp userOpName "GetDeclarationListSymbols" List.empty (fun ctok scope -> 
+            scope.GetDeclarationListSymbols(ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck))
 
     /// Resolve the names at the given location to give a data tip 
     member __.GetStructuredToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag, ?userOpName: string) = 
@@ -1874,9 +1875,11 @@ type FSharpCheckFileResults
         let dflt = FSharpToolTipText []
         match tokenTagToTokenId tokenTag with 
         | TOKEN_IDENT -> 
-            reactorOp userOpName "GetStructuredToolTipText" dflt (fun ctok scope -> scope.GetStructuredToolTipText(ctok, line, lineStr, colAtEndOfNames, names))
+            reactorOp userOpName "GetStructuredToolTipText" dflt (fun ctok scope -> 
+                scope.GetStructuredToolTipText(ctok, line, lineStr, colAtEndOfNames, names))
         | TOKEN_STRING | TOKEN_STRING_TEXT -> 
-            reactorOp userOpName "GetReferenceResolutionToolTipText" dflt (fun ctok scope -> scope.GetReferenceResolutionStructuredToolTipText(ctok, line, colAtEndOfNames) )
+            reactorOp userOpName "GetReferenceResolutionToolTipText" dflt (fun ctok scope ->
+                scope.GetReferenceResolutionStructuredToolTipText(ctok, line, colAtEndOfNames) )
         | _ -> 
             async.Return dflt
 
@@ -2050,14 +2053,14 @@ type FSharpCheckFileResults
          implFileOpt, 
          openDeclarations) = 
 
-        let scope = 
+        let tcFileInfo = 
             TypeCheckInfo(tcConfig, tcGlobals, ccuSigForFile, thisCcu, tcImports, tcAccessRights, 
                           projectFileName, mainInputFileName, sResolutions, sSymbolUses, 
                           sFallback, loadClosure, reactorOps, (fun () -> builder.IsAlive),
                           None, implFileOpt, openDeclarations) 
                 
         let errors = FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
-        FSharpCheckFileResults (mainInputFileName, errors, Some scope, dependencyFiles, Some builder, reactorOps, keepAssemblyContents)
+        FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, reactorOps, keepAssemblyContents)
 
     static member CheckOneFile
         (parseResults: FSharpParseFileResults,
@@ -2081,17 +2084,17 @@ type FSharpCheckFileResults
          parseErrors: FSharpErrorInfo[], 
          keepAssemblyContents: bool) = 
         async {
-            let! tcErrors, tcFileResult = 
+            let! tcErrors, tcFileInfo = 
                 ParseAndCheckFile.CheckOneFile
                     (parseResults, source, mainInputFileName, projectFileName, tcConfig, tcGlobals, tcImports, 
                      tcState, moduleNamesDict, loadClosure, backgroundDiagnostics, reactorOps, 
                      (fun () -> builder.IsAlive), textSnapshotInfo, userOpName)
-            match tcFileResult with 
+            match tcFileInfo with 
             | Result.Error ()  ->  
                 return FSharpCheckFileAnswer.Aborted                
-            | Result.Ok scope -> 
+            | Result.Ok tcFileInfo -> 
                 let errors = FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
-                let results = FSharpCheckFileResults (mainInputFileName, errors, Some scope, dependencyFiles, Some builder, reactorOps, keepAssemblyContents)
+                let results = FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, reactorOps, keepAssemblyContents)
                 return FSharpCheckFileAnswer.Succeeded(results)
         }
 
@@ -2238,13 +2241,13 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                 CompileOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, [ ])
 
             let loadClosure = LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, CodeContext.Editing, tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework, tryGetMetadataSnapshot=(fun _ -> None), reduceMemoryUsage=reduceMemoryUsage)
-            let! tcErrors, tcFileResult =  
+            let! tcErrors, tcFileInfo =  
                 ParseAndCheckFile.CheckOneFile
                     (parseResults, source, filename, "project", tcConfig, tcGlobals, tcImports,  tcState, 
                      Map.empty, Some loadClosure, backgroundDiagnostics, reactorOps, (fun () -> true), None, userOpName)
 
             return
-                match tcFileResult with 
+                match tcFileInfo with 
                 | Result.Ok tcFileInfo ->
                     let errors = [|  yield! parseErrors; yield! tcErrors |]
                     let typeCheckResults = FSharpCheckFileResults (filename, errors, Some tcFileInfo, dependencyFiles, None, reactorOps, false)   
