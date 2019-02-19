@@ -1,4 +1,4 @@
-﻿open FSharp.CompilerSourceCodeServices
+﻿open FSharp.Compiler.SourceCodeServices
 
 let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx")
 
