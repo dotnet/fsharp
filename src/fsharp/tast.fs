@@ -2799,7 +2799,7 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     //   - in opt.fs   : when compiling fslib, we bind an entry for the value in a global table (see bind_escaping_local_vspec)
     //   - in ilxgen.fs: when compiling fslib, we bind an entry for the value in a global table (see bind_escaping_local_vspec)
     //   - in opt.fs   : (fullDebugTextOfValRef) for error reporting of non-inlinable values
-    //   - in FSharpChecker.fs (boutput_item_description): to display the full text of a value's binding location
+    //   - in service.fs (boutput_item_description): to display the full text of a value's binding location
     //   - in check.fs: as a boolean to detect public values for saving quotations 
     //   - in ilxgen.fs: as a boolean to detect public values for saving quotations 
     //   - in MakeExportRemapping, to build non-local references for values

@@ -609,11 +609,11 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\FSharpCheckerResults.fs">
       <Link>Service/FSharpCheckerResults.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\FSharpChecker.fsi">
-      <Link>Service/FSharpChecker.fsi</Link>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\service.fsi">
+      <Link>Service/service.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\FSharpChecker.fs">
-      <Link>Service/FSharpChecker.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\service.fs">
+      <Link>Service/service.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ServiceInterfaceStubGenerator.fsi">
       <Link>Service/ServiceInterfaceStubGenerator.fsi</Link>

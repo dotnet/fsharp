@@ -178,7 +178,7 @@ module internal FSharpEnvironment =
     // Used for
     //     - location of design-time copies of FSharp.Core.dll and FSharp.Compiler.Interactive.Settings.dll for the default assumed environment for scripts
     //     - default ToolPath in tasks in FSharp.Build.dll (for Fsc tasks, but note a probe location is given)
-    //     - default F# binaries directory in FSharpChecker.fs (REVIEW: check this)
+    //     - default F# binaries directory in service.fs (REVIEW: check this)
     //     - default location of fsi.exe in FSharp.VS.FSI.dll (REVIEW: check this)
     //     - default F# binaries directory in (project system) Project.fs
     let BinFolderOfDefaultFSharpCompiler(probePoint:string option) = 

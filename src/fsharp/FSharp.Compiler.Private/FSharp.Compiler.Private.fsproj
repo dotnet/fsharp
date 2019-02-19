@@ -625,11 +625,11 @@
     <Compile Include="..\..\fsharp\service\FSharpCheckerResults.fs">
       <Link>Service/FSharpCheckerResults.fs</Link>
     </Compile>
-    <Compile Include="..\service\FSharpChecker.fsi">
-      <Link>Service/FSharpChecker.fsi</Link>
+    <Compile Include="..\service\service.fsi">
+      <Link>Service/service.fsi</Link>
     </Compile>
-    <Compile Include="..\service\FSharpChecker.fs">
-      <Link>Service/FSharpChecker.fs</Link>
+    <Compile Include="..\service\service.fs">
+      <Link>Service/service.fs</Link>
     </Compile>
     <Compile Include="..\service\ServiceInterfaceStubGenerator.fsi">
       <Link>Service/ServiceInterfaceStubGenerator.fsi</Link>

@@ -88,7 +88,7 @@ let getUntypedTree (file, input) =
 `FSharpChecker` の詳細については
 [ APIドキュメント](../reference/microsoft-fsharp-compiler-sourcecodeservices-FSharpChecker.html)
 の他に、F# ソースコードのインラインコメントも参考になるでしょう
-( [`FSharpChecker.fsi` のソースコードを参照](https://github.com/fsharp/fsharp/blob/fsharp_31/src/fsharp/service/FSharpChecker.fsi) )。
+( [`service.fsi` のソースコードを参照](https://github.com/fsharp/fsharp/blob/fsharp_31/src/fsharp/service/service.fsi) )。
 
 ASTの走査
 ---------

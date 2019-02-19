@@ -31,7 +31,7 @@ type AccessorDomain =
     /// This is used 
     ///    - when solving member trait constraints, which are solved independently of accessibility 
     ///    - for failure paths in error reporting, e.g. to produce an error that an F# item is not accessible
-    ///    - an adhoc use in FSharpChecker.fs to look up a delegate signature
+    ///    - an adhoc use in service.fs to look up a delegate signature
     | AccessibleFromSomeFSharpCode 
 
     /// An AccessorDomain which returns all items

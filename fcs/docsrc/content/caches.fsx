@@ -57,12 +57,12 @@ Low-Memory Condition
 -------
 
 Version 1.4.0.8 added a "maximum memory" limit specified by the `MaxMemory` property on FSharpChecker (in MB). If an FCS project operation
-is performed (see `CheckMaxMemoryReached` in `FSharpChecker.fs`) and `System.GC.GetTotalMemory(false)` reports a figure greater than this, then
+is performed (see `CheckMaxMemoryReached` in `service.fs`) and `System.GC.GetTotalMemory(false)` reports a figure greater than this, then
 the strong sizes of all FCS caches are reduced to either 0 or 1.  This happens for the remainder of the lifetime of the FSharpChecker object. 
 In practice this will still make tools like the Visual Studio F# Power Tools usable, but some operations like renaming across multiple 
 projects may take substantially longer.
 
-By default the maximum memory trigger is disabled, see `maxMBDefault` in `FSharpChecker.fs`. 
+By default the maximum memory trigger is disabled, see `maxMBDefault` in `service.fs`. 
 
 Reducing the FCS strong cache sizes does not guarantee there will be enough memory to continue operations - even holding one project 
 strongly may exceed a process memory budget. It just means FCS may hold less memory strongly.
