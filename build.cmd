@@ -812,8 +812,8 @@ REM ---------------- test-fcs  -----------------------
 if "%TEST_FCS%" == "1" (
 
     set LOGFILE=%TESTLOGDIR%\FSharp.Compiler.Service.Tests_net46.trx
-    echo "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
-         "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+    echo "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -s "%~dp0dp0fcs\FSharp.Compiler.Service.Tests\app.runsettings"  --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -s "%~dp0dp0fcs\FSharp.Compiler.Service.Tests\app.runsettings" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
 
     if errorlevel 1 (
         echo --------------------------------------------------------------
