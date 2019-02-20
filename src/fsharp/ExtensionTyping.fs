@@ -940,6 +940,9 @@ module internal ExtensionTyping =
         override __.GetHashCode() = x.GetHashCode()
 
     [<RequireQualifiedAccess; Class; Sealed>]
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    [<AllowNullLiteral>]
+#endif
     type ProvidedVar (x:Quotations.Var, ctxt) =
         member __.Type = x.Type |> ProvidedType.Create ctxt
         member __.Name = x.Name
