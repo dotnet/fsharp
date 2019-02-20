@@ -140,7 +140,7 @@ and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m:range, 
         | E.LetRec (ves, b) -> (List.map snd ves) @ [b]
         | E.NewRecord (_recordType, es) -> es
         | E.NewAnonRecord (_recordType, es) -> es
-        | E.AnonRecordGet (e, _recordType, n) -> [e]
+        | E.AnonRecordGet (e, _recordType, _n) -> [e]
         | E.NewUnionCase (_unionType, _unionCase, es) -> es
         | E.NewTuple (_tupleType, es) -> es
         | E.TupleGet (_tupleType, _itemIndex, tupleExpr) -> [tupleExpr]
@@ -835,7 +835,7 @@ module FSharpExprConvert =
                 let replExpr = mkRecdFieldGetAddrViaExprAddr(readonly, e, mkRefCellContentsRef cenv.g, [ty], m)
                 ConvExprPrim cenv env replExpr
 
-            //| _ -> wfail (sprintf "unhandled construct in AST", m)
+            | _ -> wfail (sprintf "unhandled construct in AST", m)
         | _ -> 
             wfail (sprintf "unhandled construct in AST", expr.Range)
 
