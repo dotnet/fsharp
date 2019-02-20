@@ -160,7 +160,9 @@
       <Link>Roslyn\DocumentHighlightsServiceTests.fs</Link>
     </Compile>
     <None Include="App.config" />
-    <None Include="app.runsettings" />
+    <None Include="app.runsettings">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsc\fsc.fsproj" />
