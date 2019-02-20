@@ -5161,45 +5161,6 @@ module internal ProjectBig =
     let parsingOptions, _ = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
 
 
-[<Test>]
-let ``Test request for parse and check doesn't check whole project`` () = 
-
-    let backgroundParseCount = ref 0 
-    let backgroundCheckCount = ref 0 
-    checker.FileChecked.Add (fun x -> incr backgroundCheckCount)
-    checker.FileParsed.Add (fun x -> incr backgroundParseCount)
-
-    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-    let pB, tB = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
-    let parseResults1 = checker.ParseFile(ProjectBig.fileNames.[5], ProjectBig.fileSources2.[5], ProjectBig.parsingOptions)  |> Async.RunSynchronously
-    let pC, tC = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
-    (pC - pB) |> shouldEqual 1
-    (tC - tB) |> shouldEqual 0
-    backgroundParseCount.Value |> shouldEqual 0
-    backgroundCheckCount.Value |> shouldEqual 0
-    let checkResults1 = checker.CheckFileInProject(parseResults1, ProjectBig.fileNames.[5], 0, ProjectBig.fileSources2.[5], ProjectBig.options)  |> Async.RunSynchronously
-    let pD, tD = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
-    backgroundParseCount.Value |> shouldEqual 5
-    backgroundCheckCount.Value |> shouldEqual 5
-    (pD - pC) |> shouldEqual 0
-    (tD - tC) |> shouldEqual 1
-
-    let checkResults2 = checker.CheckFileInProject(parseResults1, ProjectBig.fileNames.[7], 0, ProjectBig.fileSources2.[7], ProjectBig.options)  |> Async.RunSynchronously
-    let pE, tE = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
-    (pE - pD) |> shouldEqual 0
-    (tE - tD) |> shouldEqual 1
-    (backgroundParseCount.Value <= 8) |> shouldEqual true // but note, the project does not get reparsed
-    (backgroundCheckCount.Value <= 8) |> shouldEqual true // only two extra typechecks of files
-
-    // A subsequent ParseAndCheck of identical source code doesn't do any more anything
-    let checkResults2 = checker.ParseAndCheckFileInProject(ProjectBig.fileNames.[7], 0, ProjectBig.fileSources2.[7], ProjectBig.options)  |> Async.RunSynchronously
-    let pF, tF = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
-    (pF - pE) |> shouldEqual 0  // note, no new parse of the file
-    (tF - tE) |> shouldEqual 0  // note, no new typecheck of the file
-    (backgroundParseCount.Value <= 8) |> shouldEqual true // but note, the project does not get reparsed
-    (backgroundCheckCount.Value <= 8) |> shouldEqual true // only two extra typechecks of files
-
-    ()
 
 [<Test>]
 // Simplified repro for https://github.com/Microsoft/visualfsharp/issues/2679
