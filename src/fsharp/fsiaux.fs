@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.Interactive
+namespace FSharp.Compiler.Interactive
 
 #nowarn "51"
 #nowarn "9"
@@ -115,13 +115,25 @@ type InteractiveSession()  =
                      member __.Invoke(f) = invoke((fun () -> f() |> box)) |> unbox
                      member __.ScheduleRestart() = restart() }
     
-[<assembly: CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1009:DeclareEventHandlersCorrectly", Scope="member", Target="Microsoft.FSharp.Compiler.Interactive.InteractiveSession.#ThreadException")>]
+[<assembly: CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1009:DeclareEventHandlersCorrectly", Scope="member", Target="FSharp.Compiler.Interactive.InteractiveSession.#ThreadException")>]
 do()
   
   
 module Settings = 
     let fsi = new InteractiveSession()
    
-    [<assembly: AutoOpen("Microsoft.FSharp.Compiler.Interactive.Settings")>]
+    [<assembly: AutoOpen("FSharp.Compiler.Interactive.Settings")>]
     do()
+
+// For legacy compatibility with old naming
+namespace Microsoft.FSharp.Compiler.Interactive
+
+    type IEventLoop = FSharp.Compiler.Interactive.IEventLoop
+
+    type InteractiveSession = FSharp.Compiler.Interactive.InteractiveSession
+
+    module Settings = 
+
+      let fsi = FSharp.Compiler.Interactive.Settings.fsi
+
 

@@ -4,7 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.ComponentModel.Composition
 open Microsoft.CodeAnalysis.Editor
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 open System.Runtime.InteropServices
 
 [<ExportBraceMatcher(FSharpConstants.FSharpLanguageName)>]

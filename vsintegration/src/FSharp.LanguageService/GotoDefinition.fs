@@ -12,16 +12,16 @@ open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop 
 open Microsoft.VisualStudio.TextManager.Interop 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.Lib
+open FSharp.Compiler.SourceCodeServices
 
 module internal OperatorToken =
     
     let asIdentifier_DEPRECATED (token : TokenInfo) =
         // Typechecker reports information about all values in the same fashion no matter whether it is named value (let binding) or operator
         // here we piggyback on this fact and just pretend that we need data time for identifier
-        let tagOfIdentToken = Microsoft.FSharp.Compiler.Parser.tagOfToken(Microsoft.FSharp.Compiler.Parser.IDENT "")
+        let tagOfIdentToken = FSharp.Compiler.Parser.tagOfToken(FSharp.Compiler.Parser.IDENT "")
         let endCol = token.EndIndex + 1 // EndIndex from GetTokenInfoAt points to the last operator char, but here it should point to column 'after' the last char 
         tagOfIdentToken, token.StartIndex, endCol
 

@@ -21,7 +21,7 @@ open System
 open System.IO
 open System.Collections.Generic
 open System.Text
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 let defaultFileSystem = Shim.FileSystem
 
@@ -90,7 +90,7 @@ FileSystemによるコンパイルの実行
 --------------------------------
 
 *)
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 let checker = FSharpChecker.Create()
 let projectOptions = 

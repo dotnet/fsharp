@@ -5,12 +5,12 @@
 ///
 /// Must be updated if the Printf runtime component is updated.
 
-module internal Microsoft.FSharp.Compiler.CheckFormatStrings
+module internal FSharp.Compiler.CheckFormatStrings
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.NameResolution
-open Microsoft.FSharp.Compiler.Tast 
-open Microsoft.FSharp.Compiler.TcGlobals
+open FSharp.Compiler 
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.Tast 
+open FSharp.Compiler.TcGlobals
 
 val ParseFormatString : Range.range -> TcGlobals -> formatStringCheckContext: FormatStringCheckContext option -> fmt: string -> bty: TType -> cty: TType -> dty: TType -> (TType * TType) * (Range.range * int) list
 
