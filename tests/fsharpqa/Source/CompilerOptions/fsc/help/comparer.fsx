@@ -2,7 +2,6 @@
 open System
 open System.IO
 
-
 let arg0 = System.Environment.GetCommandLineArgs().[0]
 let path = System.Environment.GetEnvironmentVariable("PATH")
 let fn1 = fsi.CommandLineArgs.[1]

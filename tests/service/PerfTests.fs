@@ -64,10 +64,17 @@ let ``Test request for parse and check doesn't check whole project`` () =
     printfn "CheckFileInProject()..."
     let checkResults1 = checker.CheckFileInProject(parseResults1, Project1.fileNames.[5], 0, Project1.fileSources2.[5], Project1.options)  |> Async.RunSynchronously
     let pD, tD = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
-    printfn "checking backgroundParseCount.Value = %d" backgroundParseCount.Value
-    backgroundParseCount.Value |> shouldEqual 5
-    printfn "checking backgroundCheckCount.Value = %d" backgroundCheckCount.Value
-    backgroundCheckCount.Value |> shouldEqual 5
+
+    printfn "checking background parsing happened...., backgroundParseCount.Value = %d" backgroundParseCount.Value
+    (backgroundParseCount.Value  >= 5) |> shouldEqual true // but note, the project does not get reparsed
+    printfn "checking background typechecks happened...., backgroundCheckCount.Value = %d" backgroundCheckCount.Value
+    (backgroundCheckCount.Value  >= 5) |> shouldEqual true // only two extra typechecks of files
+
+    printfn "checking no extra background parsing...., backgroundParseCount.Value = %d" backgroundParseCount.Value
+    (backgroundParseCount.Value  <= 10) |> shouldEqual true // but note, the project does not get reparsed
+    printfn "checking no extra background typechecks...., backgroundCheckCount.Value = %d" backgroundCheckCount.Value
+    (backgroundCheckCount.Value  <= 10) |> shouldEqual true // only two extra typechecks of files
+
     printfn "checking (pD - pC) = %d" (pD - pC)
     (pD - pC) |> shouldEqual 0
     printfn "checking (tD - tC) = %d" (tD - tC)
@@ -81,9 +88,9 @@ let ``Test request for parse and check doesn't check whole project`` () =
     printfn "checking one foreground typecheck...., tE - tD = %d" (tE - tD)
     (tE - tD) |> shouldEqual 1
     printfn "checking no extra background parsing...., backgroundParseCount.Value = %d" backgroundParseCount.Value
-    (backgroundParseCount.Value  <= 9) |> shouldEqual true // but note, the project does not get reparsed
+    (backgroundParseCount.Value  <= 10) |> shouldEqual true // but note, the project does not get reparsed
     printfn "checking no extra background typechecks...., backgroundCheckCount.Value = %d" backgroundCheckCount.Value
-    (backgroundCheckCount.Value  <= 9) |> shouldEqual true // only two extra typechecks of files
+    (backgroundCheckCount.Value  <= 10) |> shouldEqual true // only two extra typechecks of files
 
     printfn "ParseAndCheckFileInProject()..."
     // A subsequent ParseAndCheck of identical source code doesn't do any more anything
@@ -94,8 +101,8 @@ let ``Test request for parse and check doesn't check whole project`` () =
     printfn "checking no extra foreground typechecks...."
     (tF - tE) |> shouldEqual 0  // note, no new typecheck of the file
     printfn "checking no extra background parsing...., backgroundParseCount.Value = %d" backgroundParseCount.Value
-    (backgroundParseCount.Value <= 9) |> shouldEqual true // but note, the project does not get reparsed
+    (backgroundParseCount.Value <= 10) |> shouldEqual true // but note, the project does not get reparsed
     printfn "checking no extra background typechecks...., backgroundCheckCount.Value = %d" backgroundCheckCount.Value
-    (backgroundCheckCount.Value <= 9) |> shouldEqual true // only two extra typechecks of files
+    (backgroundCheckCount.Value <= 10) |> shouldEqual true // only two extra typechecks of files
     ()
 
