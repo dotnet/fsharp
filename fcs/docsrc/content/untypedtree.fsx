@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin/v4.5/"
+#I "../../../artifacts/bin/fcs/net45"
 (**
 Compiler Services: Processing untyped syntax tree
 =================================================
@@ -56,7 +56,7 @@ return the `ParseTree` property:
 /// Get untyped tree for a specified input
 let getUntypedTree (file, input) = 
   // Get compiler options for the 'project' implied by a single script file
-  let projOptions = 
+  let projOptions, errors = 
       checker.GetProjectOptionsFromScript(file, input)
       |> Async.RunSynchronously
 

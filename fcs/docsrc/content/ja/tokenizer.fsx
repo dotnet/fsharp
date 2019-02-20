@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../../debug/bin/net45/"
+#I "../../../../artifacts/bin/fcs/net45"
 (**
 コンパイラサービス：F#トークナイザを使用する
 ============================================
@@ -124,7 +124,7 @@ let rec tokenizeLines state count lines =
 *)
 lines
 |> List.ofSeq
-|> tokenizeLines 0L 1
+|> tokenizeLines FSharpTokenizerLexState.Initial 1
 (**
 重要ではない部分(各行の先頭にある空白文字や、1行目のように空白文字しかない行)
 を除けば、このコードを実行すると以下のような出力になります:

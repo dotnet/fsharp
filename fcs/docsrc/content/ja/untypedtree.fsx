@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../../debug/bin/net45/"
+#I "../../../../artifacts/bin/fcs/net45"
 (**
 コンパイラサービス：型無し構文木の処理
 ======================================
@@ -69,7 +69,7 @@ ASTを取得するために、ファイル名とソースコードを受け取�
 let getUntypedTree (file, input) = 
   // 1つのスクリプトファイルから推測される「プロジェクト」用の
   // コンパイラオプションを取得する
-  let projectOptions =
+  let projOptions, errors =
       checker.GetProjectOptionsFromScript(file, input) 
       |> Async.RunSynchronously
 
