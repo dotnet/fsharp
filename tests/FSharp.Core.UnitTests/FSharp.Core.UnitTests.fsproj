@@ -77,7 +77,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
     <Compile Include="TypeForwarding.fs" />
     <Compile Include="StructTuples.fs" />
-    <Compile Include="SurfaceArea.coreclr.fs" Condition="$(TargetFramework.StartsWith('netcoreapp')) == true and '$(FX_VERIFY_SURFACEAREA)' == 'true'" />
+    <Compile Include="SurfaceArea.coreclr.fs" Condition="$(TargetFramework.StartsWith('netcoreapp')) and '$(FX_VERIFY_SURFACEAREA)' == 'true'" />
     <Compile Include="SurfaceArea.net40.fs" Condition="$(TargetFramework.StartsWith('net4')) and '$(FX_VERIFY_SURFACEAREA)' == 'true'" />
   </ItemGroup>
 

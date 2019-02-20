@@ -15,7 +15,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <Content Include="$(MSBuildProjectDirectory)\**\*.*"
-             Exclude="$(MSBuildProjectDirectory)\bin\**\*.*;$(MSBuildProjectDirectory)\obj\**\*.*;$(MSBuildProjectDirectory)\FSharp.Core\SampleTuples\**\*.*;$(MSBuildProjectDirectory)\Directory.Build.props;$(MSBuildProjectDirectory)\Directory.Build.targes;">
+             Exclude="$(MSBuildProjectDirectory)\bin\**\*.*;$(MSBuildProjectDirectory)\obj\**\*.*;$(MSBuildProjectDirectory)\FSharp.Core\SampleTuples\**\*.*;$(MSBuildProjectDirectory)\Directory.Build.props;$(MSBuildProjectDirectory)\Directory.Build.targets;">
         <Pack>true</Pack>
         <PackagePath>content\myfiles\</PackagePath>
     </Content>
