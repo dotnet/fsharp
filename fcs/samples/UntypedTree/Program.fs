@@ -1,6 +1,6 @@
 ﻿// Open the namespace with InteractiveChecker type
 open System
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 
 // Create a checker instance (ignore notifications)
@@ -18,7 +18,7 @@ let getUntypedTree (file, input) =
 
 // ------------------------------------------------------------------
 
-open Microsoft.FSharp.Compiler.Ast
+open FSharp.Compiler.Ast
 
 /// Walk over all module or namespace declarations 
 /// (basically 'module Foo =' or 'namespace Foo.Bar')

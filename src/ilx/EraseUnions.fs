@@ -5,15 +5,15 @@
 // -------------------------------------------------------------------- 
 
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.EraseUnions
+module internal FSharp.Compiler.AbstractIL.Extensions.ILX.EraseUnions
 
 open System.Collections.Generic
 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Extensions.ILX
+open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open System.Reflection
 
 

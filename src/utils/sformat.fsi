@@ -285,7 +285,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     /// <example>
     /// From F# Interactive the default settings can be adjusted using, for example, 
     /// <pre>
-    ///   open Microsoft.FSharp.Compiler.Interactive.Settings;;
+    ///   open FSharp.Compiler.Interactive.Settings;;
     ///   setPrintWidth 120;;
     /// </pre>
     /// </example>

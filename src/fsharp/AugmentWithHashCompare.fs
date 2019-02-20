@@ -1,17 +1,17 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 ///  Generate the hash/compare functions we add to user-defined types by default.
-module internal Microsoft.FSharp.Compiler.AugmentWithHashCompare
+module internal FSharp.Compiler.AugmentWithHashCompare
  
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Infos
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Infos
 
 let mkIComparableCompareToSlotSig (g: TcGlobals) = 
     TSlotSig("CompareTo",g.mk_IComparable_ty, [],[], [[TSlotParam(Some("obj"),g.obj_ty,false,false,false,[])]],Some g.int_ty)

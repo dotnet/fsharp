@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Blobs of bytes, cross-compiling 
-namespace Microsoft.FSharp.Compiler.AbstractIL.Internal
+namespace FSharp.Compiler.AbstractIL.Internal
 
 open Internal.Utilities
 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.Internal 
 
 
 module internal Bytes = 

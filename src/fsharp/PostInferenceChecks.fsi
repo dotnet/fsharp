@@ -2,13 +2,13 @@
 
 /// Implements a set of checks on the TAST for a file that can only be performed after type inference
 /// is complete.
-module internal Microsoft.FSharp.Compiler.PostTypeCheckSemanticChecks
+module internal FSharp.Compiler.PostTypeCheckSemanticChecks
 
-open Microsoft.FSharp.Compiler.Import
-open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Import
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
 
 val testFlagMemberBody : bool ref
 

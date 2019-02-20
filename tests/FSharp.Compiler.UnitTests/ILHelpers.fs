@@ -8,7 +8,7 @@ open System.Diagnostics
 
 open NUnit.Framework
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 module ILChecker =
 

@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.Optimizer
+module internal FSharp.Compiler.Optimizer
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals 
+open FSharp.Compiler 
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals 
 
 type OptimizationSettings = 
     { abstractBigTargets : bool

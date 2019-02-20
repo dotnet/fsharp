@@ -7,7 +7,7 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.TextManager.Interop
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.Build.Framework
 
 open Salsa
