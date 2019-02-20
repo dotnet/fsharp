@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Various constants and utilities used when parsing the ILASM format for IL
-module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiConstants
+module internal FSharp.Compiler.AbstractIL.Internal.AsciiConstants
 
 open Internal.Utilities
 
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Extensions.ILX.Types 
+open FSharp.Compiler.AbstractIL.IL 
 
 // -------------------------------------------------------------------- 
 // IL Parser state - must be initialized before parsing a module

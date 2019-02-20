@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 
-module public Microsoft.FSharp.Compiler.Interactive.Shell
+module public FSharp.Compiler.Interactive.Shell
 
 open System.IO
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 
 [<Class>]
 /// Represents an evaluated F# value

@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Code to pickle out quotations in the quotation binary format.
-module internal Microsoft.FSharp.Compiler.QuotationPickler
+module internal FSharp.Compiler.QuotationPickler
 #nowarn "1178" // The struct, record or union type 'internal_instr_extension' is not structurally comparable because the type
 
 open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Bytes
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Lib
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Bytes
+open FSharp.Compiler 
+open FSharp.Compiler.Lib
 
 type TypeData 
 type TypeVarData =  { tvName: string }

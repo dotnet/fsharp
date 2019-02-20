@@ -19,7 +19,7 @@ open Microsoft.CodeAnalysis.Text
 // IVT, we'll maintain the status quo.
 #nowarn "44"
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 [<ExportLanguageService(typeof<IEditorClassificationService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpClassificationService
