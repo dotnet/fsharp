@@ -14,8 +14,8 @@ open System
 open System.IO
 open System.Collections.Generic
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.Service.Tests.Common
 
@@ -47,6 +47,7 @@ let ``Test request for parse and check doesn't check whole project`` () =
     checker.FileChecked.Add (fun x -> incr backgroundCheckCount)
     checker.FileParsed.Add (fun x -> incr backgroundParseCount)
 
+    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
     let pB, tB = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
     let parseResults1 = checker.ParseFile(Project1.fileNames.[5], Project1.fileSources2.[5], Project1.parsingOptions)  |> Async.RunSynchronously
     let pC, tC = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic

@@ -28,7 +28,7 @@
 #r "FSharp.Compiler.Service.dll"
 
 open System
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 // インタラクティブチェッカーのインスタンスを作成
 let checker = FSharpChecker.Create()
@@ -137,7 +137,7 @@ let checkFileResults =
 
 *)
 // 最後の引数に指定する、IDENTトークンのタグを取得
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
 
 // 特定の位置におけるツールチップを取得
 let tip = checkFileResults.GetToolTipText(4, 7, inputLines.[1], ["foo"], FSharpTokenTag.Identifier)

@@ -11,8 +11,8 @@ module FSharp.Compiler.Service.Tests.InteractiveChecker
 open NUnit.Framework
 open FsUnit
 open System
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
 
 let internal longIdentToString (longIdent: Ast.LongIdent) =

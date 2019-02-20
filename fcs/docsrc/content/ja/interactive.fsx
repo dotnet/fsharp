@@ -42,8 +42,8 @@ F# Interactiveの開始
 *)
 
 #r "FSharp.Compiler.Service.dll"
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Interactive.Shell
 
 (**
 F# Interactiveとやりとりするには、入出力を表すストリームを作成する必要があります。
@@ -244,7 +244,7 @@ checkResults.Errors.Length // 1
 要求することもできます:
 
 *)
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
 
 // ツールチップを取得する
 checkResults.GetToolTipText(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT) 

@@ -3,12 +3,12 @@
 //----------------------------------------------------------------------------
 // API for declaration lists and method overload lists
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.NameResolution
-open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.Tastops
+open FSharp.Compiler.Range
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Tastops
 
 
 [<Sealed>]

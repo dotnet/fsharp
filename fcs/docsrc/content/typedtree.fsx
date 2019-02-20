@@ -25,7 +25,7 @@ To use the interactive checker, reference `FSharp.Compiler.Service.dll` and open
 #r "FSharp.Compiler.Service.dll"
 open System
 open System.IO
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 (**
 
 ### Checking code

@@ -18,7 +18,7 @@ of `FSharpChecker`:
 
 open System
 open System.IO
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 // Create an interactive checker instance 
 let checker = FSharpChecker.Create()

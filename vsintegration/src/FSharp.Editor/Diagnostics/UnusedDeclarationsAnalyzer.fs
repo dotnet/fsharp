@@ -10,7 +10,7 @@ open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 [<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
 type internal UnusedDeclarationsAnalyzer() =
@@ -70,7 +70,7 @@ type internal UnusedDeclarationsAnalyzer() =
             |> Array.map (fun (m, _) -> m)
 
         //#if DEBUG
-        //let formatRange (x: Microsoft.FSharp.Compiler.Range.range) = sprintf "(%d, %d) - (%d, %d)" x.StartLine x.StartColumn x.EndLine x.EndColumn
+        //let formatRange (x: FSharp.Compiler.Range.range) = sprintf "(%d, %d) - (%d, %d)" x.StartLine x.StartColumn x.EndLine x.EndColumn
 
         //symbolsUses
         //|> Array.map (fun su -> sprintf "%s, %s, is definition = %b, Symbol (def range = %A)" 

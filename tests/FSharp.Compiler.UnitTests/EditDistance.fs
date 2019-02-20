@@ -5,7 +5,7 @@ open System
 open System.Globalization
 open System.Text
 open NUnit.Framework
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
 
 [<TestFixture>]
 module EditDistance =

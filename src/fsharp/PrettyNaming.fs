@@ -5,15 +5,15 @@
 //--------------------------------------------------------------------------
 
 /// Anything to do with special names of identifiers and other lexical rules 
-module public Microsoft.FSharp.Compiler.PrettyNaming
+module public FSharp.Compiler.PrettyNaming
     open System
     open System.Collections.Generic
     open System.Collections.Concurrent
     open System.Globalization
     open System.Text
 
-    open Microsoft.FSharp.Compiler
-    open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+    open FSharp.Compiler
+    open FSharp.Compiler.AbstractIL.Internal.Library
 
     open Internal.Utilities
     open Internal.Utilities.StructuredFormat

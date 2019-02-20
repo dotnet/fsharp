@@ -14,9 +14,9 @@ open System
 open System.IO
 open System.Collections.Generic
 open System.Text
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Service.Tests.Common
 
 let fileName1 = @"c:\mycode\test1.fs" // note, the path doesn' exist

@@ -1,12 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.CompileOps
+open FSharp.Compiler
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Range
+open FSharp.Compiler.CompileOps
 
 
 /// Represents the definitional contents of an assembly, as seen by the F# language

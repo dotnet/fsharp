@@ -10,10 +10,10 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Diagnostics
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler
+open FSharp.Compiler.Layout
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
 open Microsoft.VisualStudio.FSharp.Editor.Logging
 
 [<RequireQualifiedAccess>]

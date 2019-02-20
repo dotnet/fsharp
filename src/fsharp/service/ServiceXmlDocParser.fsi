@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
+open FSharp.Compiler
+open FSharp.Compiler.Range
+open FSharp.Compiler.Ast
 
 /// Represent an Xml documentation block in source code
 type public XmlDocable =

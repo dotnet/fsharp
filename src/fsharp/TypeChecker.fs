@@ -2,43 +2,43 @@
 
 /// The typechecker.  Left-to-right constrained type checking 
 /// with generalization at appropriate points.
-module internal Microsoft.FSharp.Compiler.TypeChecker
+module internal FSharp.Compiler.TypeChecker
 
 open System
 open System.Collections.Generic
 
 open Internal.Utilities
 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library.ResultOrException
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Library.ResultOrException
+open FSharp.Compiler.AbstractIL.Diagnostics 
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Rational
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.PatternMatchCompilation
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.AccessibilityLogic
-open Microsoft.FSharp.Compiler.AttributeChecking
-open Microsoft.FSharp.Compiler.TypeRelations
-open Microsoft.FSharp.Compiler.MethodCalls
-open Microsoft.FSharp.Compiler.MethodOverrides
-open Microsoft.FSharp.Compiler.ConstraintSolver
-open Microsoft.FSharp.Compiler.NameResolution
-open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.InfoReader
+open FSharp.Compiler 
+open FSharp.Compiler.Range
+open FSharp.Compiler.Rational
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.PatternMatchCompilation
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Infos
+open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.TypeRelations
+open FSharp.Compiler.MethodCalls
+open FSharp.Compiler.MethodOverrides
+open FSharp.Compiler.ConstraintSolver
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.InfoReader
 
 #if !NO_EXTENSIONTYPING
-open Microsoft.FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.ExtensionTyping
 #endif
 
 //-------------------------------------------------------------------------
@@ -17307,7 +17307,7 @@ let rec IterTyconsOfModuleOrNamespaceType f (mty:ModuleOrNamespaceType) =
 // Defaults get applied in priority order. Defaults listed last get priority 0 (lowest), 2nd last priority 1 etc. 
 let ApplyDefaults cenv g denvAtEnd m mexpr extraAttribs = 
     try
-        let unsolved = Microsoft.FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
+        let unsolved = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
 
         GeneralizationHelpers.CanonicalizePartialInferenceProblem (cenv, denvAtEnd, m) unsolved
 
@@ -17359,7 +17359,7 @@ let CheckValueRestriction denvAtEnd rootSigOpt implFileTypePriorToSig m =
 
 
 let SolveInternalUnknowns g cenv denvAtEnd mexpr extraAttribs =
-    let unsolved = Microsoft.FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
+    let unsolved = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
 
     unsolved |> List.iter (fun tp -> 
             if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 

@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler
+namespace FSharp.Compiler
 
 open System
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.SourceCodeServices
 
 /// Qualified long name.
 type PartialLongName =
@@ -48,7 +48,7 @@ module QuickParse =
     // - if we're inside active pattern name (at the bar), correct the token TAG to be an identifier
     let CorrectIdentifierToken (tokenText: string) (tokenTag: int) = 
         if tokenText.EndsWithOrdinal("|") then
-            Microsoft.FSharp.Compiler.Parser.tagOfToken (Microsoft.FSharp.Compiler.Parser.token.IDENT tokenText)
+            FSharp.Compiler.Parser.tagOfToken (FSharp.Compiler.Parser.token.IDENT tokenText)
         else tokenTag
 
     let rec isValidStrippedName (name:string) idx = 

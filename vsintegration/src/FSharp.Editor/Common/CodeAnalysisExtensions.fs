@@ -2,7 +2,7 @@
 module internal Microsoft.VisualStudio.FSharp.Editor.CodeAnalysisExtensions
 
 open Microsoft.CodeAnalysis
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.Range
 open System.IO
 
 type Project with
