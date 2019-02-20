@@ -151,14 +151,26 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
 
         and checkTypeDef (aenv: TypeEquivEnv) (implTycon:Tycon) (sigTycon:Tycon) =
             let m = implTycon.Range
+            
             // Propagate defn location information from implementation to signature . 
             sigTycon.SetOtherRange (implTycon.Range, true)
             implTycon.SetOtherRange (sigTycon.Range, false)
-            if implTycon.LogicalName <> sigTycon.LogicalName then (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer(implTycon.TypeOrMeasureKind.ToString(),sigTycon.LogicalName,implTycon.LogicalName),m)); false) else
-            if implTycon.CompiledName <> sigTycon.CompiledName then (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer(implTycon.TypeOrMeasureKind.ToString(),sigTycon.CompiledName,implTycon.CompiledName),m)); false) else
+            
+            if implTycon.LogicalName <> sigTycon.LogicalName then 
+                errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer(implTycon.TypeOrMeasureKind.ToString(),sigTycon.LogicalName,implTycon.LogicalName),m))
+                false 
+            else
+            
+            if implTycon.CompiledName <> sigTycon.CompiledName then 
+                errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer(implTycon.TypeOrMeasureKind.ToString(),sigTycon.CompiledName,implTycon.CompiledName),m))
+                false 
+            else
+            
             checkExnInfo  (fun f -> ExnconstrNotContained(denv,implTycon,sigTycon,f)) aenv implTycon.ExceptionInfo sigTycon.ExceptionInfo &&
+            
             let implTypars = implTycon.Typars m
             let sigTypars = sigTycon.Typars m
+            
             if implTypars.Length <> sigTypars.Length then  
                 errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleParameterCountsDiffer(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m)) 
                 false
@@ -597,11 +609,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                              // for each formal requirement, try to find a precisely matching actual requirement
                              let matchingPairs = 
                                  fvs |> List.choose (fun fv -> 
-                                     match avs |> List.tryFind (fun av -> 
-                                                         let res = valLinkageAEquiv g aenv av fv
-                                                         //if res then printfn "%s" (bufs (fun buf -> Printf.bprintf buf "YES MATCH: fv '%a', av '%a'" (NicePrint.outputQualifiedValOrMember denv) fv (NicePrint.outputQualifiedValOrMember denv) av))
-                                                         //else printfn "%s" (bufs (fun buf -> Printf.bprintf buf "NO MATCH: fv '%a', av '%a'" (NicePrint.outputQualifiedValOrMember denv) fv (NicePrint.outputQualifiedValOrMember denv) av))  
-                                                         res) with 
+                                     match avs |> List.tryFind (fun av -> valLinkageAEquiv g aenv av fv) with
                                       | None -> None
                                       | Some av -> Some(fv,av))
                              

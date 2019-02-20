@@ -10,7 +10,9 @@ let lines =
             for (line, lineText) in Array.indexed lines do 
 
                 // We hardwire some exceptions
-                if not (Path.GetFileName(file) = "TcGlobals.fs") &&
+                if not (Path.GetFileName(file) = "service.fs") &&  // churning
+                   not (lineText.Contains("SuppressMessage")) && // old fxcop annotation
+                   not (Path.GetFileName(file) = "TcGlobals.fs") &&
                    not (Path.GetFileName(file) = "tast.fs" && line > 2100 && line < 2400) then
                 
                     yield file, (line+1, lineText) |]

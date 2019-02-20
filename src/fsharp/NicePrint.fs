@@ -194,8 +194,13 @@ module private PrintIL =
         let args = signatur.ArgTypes |> List.map (layoutILType denv ilTyparSubst) 
         let res  = 
             match cons with
-            | Some className -> layoutILTypeRefName denv (SplitNamesForILPath (PrettyNaming.DemangleGenericTypeName className)) ^^ (pruneParms className ilTyparSubst |> paramsL) // special case for constructor return-type (viz., the class itself)
-            | None           -> signatur.ReturnType |> layoutILType denv ilTyparSubst
+            | Some className -> 
+                let names = SplitNamesForILPath (PrettyNaming.DemangleGenericTypeName className)
+                // special case for constructor return-type (viz., the class itself)
+                layoutILTypeRefName denv names ^^ (pruneParms className ilTyparSubst |> paramsL) 
+            | None -> 
+                signatur.ReturnType |> layoutILType denv ilTyparSubst
+        
         match args with
         | []   -> WordL.structUnit ^^ WordL.arrow ^^ res
         | [x]  -> x ^^ WordL.arrow ^^ res
@@ -221,14 +226,16 @@ module private PrintIL =
 
     /// Layout a function pointer signature using type-only-F#-style. No argument names are printed.
     and private layoutILParameters denv ilTyparSubst cons (parameters: ILParameters, retType: ILType) =
-        // We need a special case for
-        // constructors (Their return types are reported as `void`, but this is
+        // We need a special case for constructors (Their return types are reported as `void`, but this is
         // incorrect; so if we're dealing with a constructor we require that the
         // return type be passed along as the `cons` parameter.)
         let res  = 
             match cons with
-            | Some className -> layoutILTypeRefName denv (SplitNamesForILPath (PrettyNaming.DemangleGenericTypeName className)) ^^ (pruneParms className ilTyparSubst |> paramsL) // special case for constructor return-type (viz., the class itself)
-            | None           -> retType |> layoutILType denv ilTyparSubst
+            | Some className -> 
+                let names = SplitNamesForILPath (PrettyNaming.DemangleGenericTypeName className)
+                layoutILTypeRefName denv names ^^ (pruneParms className ilTyparSubst |> paramsL) 
+            | None -> retType |> layoutILType denv ilTyparSubst
+        
         match parameters with
         | []   -> WordL.structUnit ^^ WordL.arrow ^^ res
         | [x]  -> layoutILParameter denv ilTyparSubst x ^^ WordL.arrow ^^ res

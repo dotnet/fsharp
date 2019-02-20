@@ -4579,6 +4579,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
     | SynType.LongIdent(LongIdentWithDots([], _)) -> 
         // special case when type name is absent - i.e. empty inherit part in type declaration
         cenv.g.obj_ty, tpenv
+
     | SynType.LongIdent(LongIdentWithDots(tc, _) as lidwd) -> 
         let m = lidwd.Range
         let ad = env.eAccessRights
@@ -4597,14 +4598,21 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
 
     | SynType.App (SynType.LongIdent(LongIdentWithDots(tc, _)), _, args, _commas, _, postfix, m) -> 
         let ad = env.eAccessRights
-        let tcref = ForceRaise(ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified env.eNameResEnv ad tc (TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length) PermitDirectReferenceToGeneratedType.No)
+
+        let tcref = 
+            let tyResInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length
+            ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified env.eNameResEnv ad tc tyResInfo PermitDirectReferenceToGeneratedType.No
+            |> ForceRaise
+
         match optKind, tcref.TypeOrMeasureKind with
         | Some TyparKind.Type, TyparKind.Measure ->
             error(Error(FSComp.SR.tcExpectedTypeNotUnitOfMeasure(), m)) 
             NewErrorType (), tpenv
+
         | Some TyparKind.Measure, TyparKind.Type ->
             error(Error(FSComp.SR.tcExpectedUnitOfMeasureNotType(), m)) 
             TType_measure (NewErrorMeasure ()), tpenv
+
         | _, TyparKind.Type ->
             if postfix && tcref.Typars(m) |> List.exists (fun tp -> match tp.Kind with TyparKind.Measure -> true | _ -> false) 
             then error(Error(FSComp.SR.tcInvalidUnitsOfMeasurePrefix(), m))
@@ -4698,11 +4706,12 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
         | _ -> 
             errorR(Error(FSComp.SR.parsInvalidLiteralInType(), m)) 
             NewErrorType (), tpenv
+
     | SynType.StaticConstantNamed (_, _, m)
+
     | SynType.StaticConstantExpr (_, m) ->
         errorR(Error(FSComp.SR.parsInvalidLiteralInType(), m)) 
         NewErrorType (), tpenv
-
 
     | SynType.MeasurePower(ty, exponent, m) ->
         match optKind with
@@ -4730,7 +4739,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
             let ms2, tpenv = TcMeasure cenv newOk checkCxs occ env tpenv arg2 m
             TType_measure (Measure.Prod(ms1, ms2)), tpenv
 
-        | _, _, _ ->
+        | _ ->
             errorR(Error(FSComp.SR.tcTypeParameterInvalidAsTypeConstructor(), m)) 
             NewErrorType (), tpenv
 
@@ -4749,10 +4758,9 @@ and TcMeasure cenv newOk checkCxs occ env (tpenv:SyntacticUnscopedTyparEnv) ty m
     | _ ->
         match TcTypeOrMeasure (Some TyparKind.Measure) cenv newOk checkCxs occ env tpenv ty with
         | TType_measure ms, tpenv -> ms, tpenv
-        | _, _ -> 
+        | _ -> 
             error(Error(FSComp.SR.tcExpectedUnitOfMeasureNotType(), m)) 
             NewErrorMeasure (), tpenv
-
 
 and TcAnonTypeOrMeasure optKind _cenv rigid dyn newOk m =
     if newOk = NoNewTypars then errorR (Error(FSComp.SR.tcAnonymousTypeInvalidInDeclaration(), m))
@@ -4782,7 +4790,6 @@ and TcMeasuresAsTuple cenv newOk checkCxs occ env (tpenv:SyntacticUnscopedTyparE
             let ms1, tpenv = TcMeasure cenv newOk checkCxs occ env tpenv ty m
             gather args tpenv nextisquot (if isquot then Measure.Prod(acc, Measure.Inv ms1) else Measure.Prod(acc, ms1))
     gather args tpenv false Measure.One
-
 
 and TcTypesOrMeasures optKinds cenv newOk checkCxs occ env tpenv args m =
     match optKinds with
@@ -7888,7 +7895,9 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                     let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (pat, None) 
                     vspecs, envinner)
 
-            Some (trans true q varSpace innerComp (fun holeFill -> translatedCtxt (mkSynCall "For" mFor [wrappedSourceExpr; SynExpr.MatchLambda(false, sourceExpr.Range, [Clause(pat, None, holeFill, mPat, SequencePointAtTarget)], spBind, mFor) ])) )
+            Some (trans true q varSpace innerComp 
+                    (fun holeFill -> 
+                        translatedCtxt (mkSynCall "For" mFor [wrappedSourceExpr; SynExpr.MatchLambda(false, sourceExpr.Range, [Clause(pat, None, holeFill, mPat, SequencePointAtTarget)], spBind, mFor) ])) )
 
         | SynExpr.For (spBind, id, start, dir, finish, innerComp, m) ->
             let mFor = match spBind with SequencePointAtForLoop m -> m | _ -> m
