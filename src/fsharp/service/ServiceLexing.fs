@@ -4,19 +4,19 @@
 // Open up the compiler as an incremental service for lexing.
 //--------------------------------------------------------------------------
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
 open System
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler.AbstractIL.Internal  
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library  
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Parser
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Lexhelp
-open Microsoft.FSharp.Compiler.Lib
+open FSharp.Compiler.AbstractIL.Internal  
+open FSharp.Compiler.AbstractIL.Internal.Library  
+open FSharp.Compiler 
+open FSharp.Compiler.Parser
+open FSharp.Compiler.Range
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Lexhelp
+open FSharp.Compiler.Lib
 
 type Position = int * int
 type Range = Position * Position
@@ -775,7 +775,7 @@ type FSharpSourceTokenizer(defineConstants : string list, filename : string opti
         FSharpLineTokenizer(lexbuf, None, filename, lexArgsLightOn, lexArgsLightOff)
 
 module Keywords =
-    open Microsoft.FSharp.Compiler.Lexhelp.Keywords
+    open FSharp.Compiler.Lexhelp.Keywords
 
     let QuoteIdentifierIfNeeded s = QuoteIdentifierIfNeeded s
     let NormalizeIdentifierBackticks s = NormalizeIdentifierBackticks s

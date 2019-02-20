@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.IlxGen
+module internal FSharp.Compiler.IlxGen
 
 open System
 open System.IO
 open System.Reflection
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.TcGlobals
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Tast
+open FSharp.Compiler.TcGlobals
 
 /// Indicates how the generated IL code is ultimately emitted 
 type IlxGenBackend =

@@ -10,7 +10,7 @@
 //    - Linking (including ILX-IL transformation)
 
 
-module internal Microsoft.FSharp.Compiler.Driver 
+module internal FSharp.Compiler.Driver 
 
 open System
 open System.Collections.Concurrent
@@ -27,31 +27,31 @@ open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Filename
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.IlxGen
+open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.ILBinaryReader 
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.IlxGen
 
-open Microsoft.FSharp.Compiler.AccessibilityLogic
-open Microsoft.FSharp.Compiler.AttributeChecking
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.CompileOptions
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.TypeChecker
+open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.Ast
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CompileOptions
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Range
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypeChecker
 
 #if !NO_EXTENSIONTYPING
-open Microsoft.FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.ExtensionTyping
 #endif
 
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method

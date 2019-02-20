@@ -9,9 +9,9 @@ open System.Text.RegularExpressions
 open Internal.Utilities.Collections
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Layout
+open FSharp.Compiler.Layout.TaggedTextOps
 
 type internal ITaggedTextCollector =
     abstract Add: text: TaggedText -> unit

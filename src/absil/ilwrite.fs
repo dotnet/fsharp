@@ -1,26 +1,26 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.ILBinaryWriter 
+module internal FSharp.Compiler.AbstractIL.ILBinaryWriter 
 
 open System.Collections.Generic 
 open System.IO
 
 open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.ILAsciiWriter 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types  
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Support 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter
-open Microsoft.FSharp.Compiler.DiagnosticMessage
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.ILAsciiWriter 
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Diagnostics 
+open FSharp.Compiler.AbstractIL.Extensions.ILX.Types  
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
+open FSharp.Compiler.AbstractIL.Internal.Support 
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.ILPdbWriter
+open FSharp.Compiler.DiagnosticMessage
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Range
 #if FX_NO_CORHOST_SIGNER
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.StrongNameSign
+open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 #endif
 
 

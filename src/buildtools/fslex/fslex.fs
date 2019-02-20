@@ -13,7 +13,7 @@ open System.Collections.Generic
 open System.IO 
 
 //------------------------------------------------------------------
-// This code is duplicated from Microsoft.FSharp.Compiler.UnicodeLexing
+// This code is duplicated from FSharp.Compiler.UnicodeLexing
 
 type Lexbuf =  LexBuffer<char>
 

@@ -2,16 +2,16 @@
 
 /// Primary relations on types and signatures, with the exception of
 /// constraint solving and method overload resolution.
-module internal Microsoft.FSharp.Compiler.TypeRelations
+module internal FSharp.Compiler.TypeRelations
 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Infos
+open FSharp.Compiler.PrettyNaming
 
 //-------------------------------------------------------------------------
 // a :> b without coercion based on finalized (no type variable) types

@@ -21,7 +21,7 @@ F#のソースコードに対して、トークナイザは
 `SourceCodeServices` 名前空間をオープンします：
 *)
 #r "FSharp.Compiler.Service.dll"
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 (**
 すると `FSharpSourceTokenizer` のインスタンスを作成できるようになります。
 このクラスには2つの引数を指定します。

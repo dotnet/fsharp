@@ -4,7 +4,7 @@ namespace FSharp.Compiler.UnitTests
 open System
 open System.Text
 open NUnit.Framework
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
 
 [<TestFixture>]
 type ManglingNamesOfProvidedTypesWithSingleParameter() = 

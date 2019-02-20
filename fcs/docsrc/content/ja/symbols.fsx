@@ -21,7 +21,7 @@
 
 open System
 open System.IO
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 // インタラクティブチェッカーのインスタンスを作成
 let checker = FSharpChecker.Create()

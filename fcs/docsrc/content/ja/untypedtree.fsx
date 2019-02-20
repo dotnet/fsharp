@@ -41,7 +41,7 @@
 *)
 #r "FSharp.Compiler.Service.dll"
 open System
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 (**
 
 ### 型無しパースの実行
@@ -101,7 +101,7 @@ ASTを理解するには
 
 ASTに関連する要素は以下の名前空間に含まれています:
 *)
-open Microsoft.FSharp.Compiler.Ast
+open FSharp.Compiler.Ast
 (**
 
 ASTを処理する場合、異なる文法的要素に対するパターンマッチを行うような

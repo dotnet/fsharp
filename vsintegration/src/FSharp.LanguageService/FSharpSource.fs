@@ -20,8 +20,8 @@ open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Text.Formatting
 open Microsoft.VisualStudio.TextManager.Interop 
 open Microsoft.VisualStudio.OLE.Interop
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
 
@@ -445,7 +445,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                 if reason = BackgroundRequestReason.CompleteWord then
                     let upi = source.GetParseTree()
                     let isBetweenDotAndIdent =
-                        match Microsoft.FSharp.Compiler.SourceCodeServices.UntypedParseImpl.TryFindExpressionASTLeftOfDotLeftOfCursor(Range.Pos.fromZ !line !idx, upi.ParseTree) with
+                        match FSharp.Compiler.SourceCodeServices.UntypedParseImpl.TryFindExpressionASTLeftOfDotLeftOfCursor(Range.Pos.fromZ !line !idx, upi.ParseTree) with
                         | Some(_,isBetweenDotAndIdent) -> isBetweenDotAndIdent
                         | None -> false
                     if isBetweenDotAndIdent then

@@ -3,16 +3,16 @@
 #if INTERACTIVE
 #load "../utils/ResizeArray.fs" "../absil/illib.fs" "../fsharp/ReferenceResolver.fs"
 #else
-module internal Microsoft.FSharp.Compiler.SimulatedMSBuildReferenceResolver
+module internal FSharp.Compiler.SimulatedMSBuildReferenceResolver
 #endif
 
 open System
 open System.IO
 open System.Reflection
 open Microsoft.Win32
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.ReferenceResolver
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler
+open FSharp.Compiler.ReferenceResolver
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 let internal SimulatedMSBuildResolver =
     let supportedFrameworks = [|
@@ -189,7 +189,7 @@ let internal GetBestAvailableResolver() =
         // Detect if MSBuild is on the machine, if so use the resolver from there
         let mb = try Assembly.Load(sprintf "Microsoft.Build.Framework, Version=%s.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" v) |> Option.ofObj with _ -> None
         let assembly = mb |> Option.bind (fun _ -> try Assembly.Load(sprintf "FSharp.Compiler.Service.MSBuild.v%s" v) |> Option.ofObj with _ -> None)
-        let ty = assembly |> Option.bind (fun a -> a.GetType("Microsoft.FSharp.Compiler.MSBuildReferenceResolver") |> Option.ofObj)
+        let ty = assembly |> Option.bind (fun a -> a.GetType("FSharp.Compiler.MSBuildReferenceResolver") |> Option.ofObj)
         let obj = ty |> Option.bind (fun ty -> ty.InvokeMember("get_Resolver",BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.InvokeMethod ||| BindingFlags.NonPublic, null, null, [| |]) |> Option.ofObj)
         let resolver = obj |> Option.bind (fun obj -> match obj with :? Resolver as r -> Some r | _ -> None)
         resolver

@@ -1,19 +1,19 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public Microsoft.FSharp.Compiler.Ast
+module public FSharp.Compiler.Ast
 
 open System.Collections.Generic
 open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Text.Parsing
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.UnicodeLexing
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler
+open FSharp.Compiler.UnicodeLexing
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Range
 
 /// The prefix of the names used for the fake namespace path added to all dynamic code entries in FSI.EXE
 let FsiDynamicModulePrefix = "FSI_"
@@ -1964,8 +1964,8 @@ let ParseAssemblyCodeInstructions _s m =
     [| |]
 #else
 let ParseAssemblyCodeInstructions s m =
-    try Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilInstrs
-           Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
+    try FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilInstrs
+           FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
            (UnicodeLexing.StringAsLexbuf s)
     with RecoverableParseError ->
       errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [| |]
@@ -1979,8 +1979,8 @@ let ParseAssemblyCodeType _s m =
     IL.EcmaMscorlibILGlobals.typ_Object
 #else
 let ParseAssemblyCodeType s m =
-    try Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilType
-           Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
+    try FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilType
+           FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
            (UnicodeLexing.StringAsLexbuf s)
     with RecoverableParseError ->
       errorR(Error(FSComp.SR.astParseEmbeddedILTypeError(),m));

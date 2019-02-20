@@ -11,7 +11,7 @@ open System
 open System.IO
 open System.Text
 open NUnit.Framework
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 let private filePath = "C:\\test.fs"
 
