@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler
+namespace FSharp.Compiler
 
 
 open System
@@ -8,23 +8,23 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
 open System.Threading
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.NameResolution
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.CompileOptions
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.TypeChecker
-open Microsoft.FSharp.Compiler.Tast 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.Lib
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CompileOptions
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.Tast 
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open Internal.Utilities.Collections
 
 [<AutoOpen>]
@@ -1015,7 +1015,7 @@ module IncrementalBuilderEventTesting =
     let GetMostRecentIncrementalBuildEvents(n) = MRU.MostRecentList(n)
     let GetCurrentIncrementalBuildEventNum() = MRU.CurrentEventNum 
 
-module Tc = Microsoft.FSharp.Compiler.TypeChecker
+module Tc = FSharp.Compiler.TypeChecker
 
 
 /// Accumulated results of type checking.

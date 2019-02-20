@@ -1,22 +1,22 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Primary logic related to method overrides.
-module internal Microsoft.FSharp.Compiler.MethodOverrides
+module internal FSharp.Compiler.MethodOverrides
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.AccessibilityLogic
-open Microsoft.FSharp.Compiler.NameResolution
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.TypeRelations
+open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Infos
+open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.Range
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypeRelations
 
 //-------------------------------------------------------------------------
 // Completeness of classes

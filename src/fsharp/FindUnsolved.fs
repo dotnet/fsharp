@@ -2,15 +2,15 @@
 
 
 /// Find unsolved, uninstantiated type variables
-module internal Microsoft.FSharp.Compiler.FindUnsolved
+module internal FSharp.Compiler.FindUnsolved
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AbstractIL.Internal
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.TypeRelations
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypeRelations
 
 type env = Nix
 

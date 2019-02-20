@@ -57,7 +57,7 @@ type TaskItem (itemSpec:string) =
             let m = buildUtilitiesTaskType.GetMethod("SetMetadata", [|typeof<string>;typeof<string>|])
             (m.Invoke(instance,[|metadataName; metadataValue|])) |>ignore
 
-namespace Microsoft.FSharp.Compiler
+namespace FSharp.Compiler
 open System
 open System.Collections
 open System.Collections.Concurrent

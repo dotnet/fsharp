@@ -5,8 +5,8 @@ open System.IO
 open System.Text
 open NUnit.Framework
 
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.Driver.MainModuleBuilder
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Driver.MainModuleBuilder
 
 #nowarn "3180"
 
@@ -109,7 +109,7 @@ module TypeProviderDesignTimeComponentLoading =
             Path.Combine("typeproviders", "fsharp41", "netstandard2.0")
             Path.Combine("tools", "fsharp41", "netstandard2.0")
           ]
-        let actual = Microsoft.FSharp.Compiler.ExtensionTyping.toolingCompatiblePaths()
+        let actual = FSharp.Compiler.ExtensionTyping.toolingCompatiblePaths()
         printfn "actual = %A" actual
         printfn "expected = %A" expected
         Assert.True((expected=actual))

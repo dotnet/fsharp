@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Coordinating compiler operations - configuration, loading initial context, reporting errors etc.
-module internal Microsoft.FSharp.Compiler.CompileOps
+module internal FSharp.Compiler.CompileOps
 
 open System
 open System.Collections.Generic
@@ -14,39 +14,39 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Filename
 open Internal.Utilities.Text
 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Extensions.ILX
+open FSharp.Compiler.AbstractIL.Diagnostics 
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.AttributeChecking
-open Microsoft.FSharp.Compiler.ConstraintSolver
-open Microsoft.FSharp.Compiler.DiagnosticMessage
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Import
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.Lexhelp
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.MethodCalls
-open Microsoft.FSharp.Compiler.MethodOverrides
-open Microsoft.FSharp.Compiler.NameResolution
-open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.ReferenceResolver
-open Microsoft.FSharp.Compiler.SignatureConformance
-open Microsoft.FSharp.Compiler.TastPickle
-open Microsoft.FSharp.Compiler.TypeChecker
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
+open FSharp.Compiler 
+open FSharp.Compiler.Ast
+open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.ConstraintSolver
+open FSharp.Compiler.DiagnosticMessage
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Import
+open FSharp.Compiler.Infos
+open FSharp.Compiler.Lexhelp
+open FSharp.Compiler.Lib
+open FSharp.Compiler.MethodCalls
+open FSharp.Compiler.MethodOverrides
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Range
+open FSharp.Compiler.ReferenceResolver
+open FSharp.Compiler.SignatureConformance
+open FSharp.Compiler.TastPickle
+open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
 
 #if !NO_EXTENSIONTYPING
-open Microsoft.FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
 
@@ -442,7 +442,7 @@ let SplitRelatedDiagnostics(err:PhasedDiagnostic) =
     SplitRelatedException(err.Exception)
 
 
-let DeclareMesssage = Microsoft.FSharp.Compiler.DiagnosticMessage.DeclareResourceString
+let DeclareMesssage = FSharp.Compiler.DiagnosticMessage.DeclareResourceString
 
 do FSComp.SR.RunStartupValidation()
 let SeeAlsoE() = DeclareResourceString("SeeAlso", "%s")
@@ -2605,12 +2605,12 @@ type TcConfigBuilder =
         let pdbfile = 
             if tcConfigB.debuginfo then
               Some (match tcConfigB.debugSymbolFile with 
-                    | None -> Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile tcConfigB.portablePDB
+                    | None -> FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile tcConfigB.portablePDB
 #if ENABLE_MONO_SUPPORT
                     | Some _ when runningOnMono ->
                         // On Mono, the name of the debug file has to be "<assemblyname>.mdb" so specifying it explicitly is an error
                         warning(Error(FSComp.SR.ilwriteMDBFileNameCannotBeChangedWarning(), rangeCmdArgs))
-                        Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile tcConfigB.portablePDB
+                        FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile tcConfigB.portablePDB
 #endif
                     | Some f -> f)   
             elif (tcConfigB.debugSymbolFile <> None) && (not (tcConfigB.debuginfo)) then
@@ -4929,7 +4929,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 #endif
         // do this prior to parsing, since parsing IL assembly code may refer to mscorlib
 #if !NO_INLINE_IL_PARSER
-        Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiConstants.parseILGlobals := tcGlobals.ilg 
+        FSharp.Compiler.AbstractIL.Internal.AsciiConstants.parseILGlobals := tcGlobals.ilg 
 #endif
         frameworkTcImports.SetTcGlobals(tcGlobals)
         return tcGlobals, frameworkTcImports

@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Anything to do with special names of identifiers and other lexical rules 
-module Microsoft.FSharp.Compiler.Range
+module FSharp.Compiler.Range
 
 open System
 open System.IO
 open System.Collections.Concurrent
 open Microsoft.FSharp.Core.Printf
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Lib.Bits
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Lib.Bits
 
 type FileIndex = int32 
 

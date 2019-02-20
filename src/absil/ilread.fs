@@ -5,7 +5,7 @@
 //
 //---------------------------------------------------------------------
 
-module Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader 
+module FSharp.Compiler.AbstractIL.ILBinaryReader 
 
 #nowarn "42" // This construct is deprecated: it is only for use in the F# library
 
@@ -17,17 +17,17 @@ open System.Runtime.InteropServices
 open System.Text
 open Internal.Utilities
 open Internal.Utilities.Collections
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.Internal 
 #if !FX_NO_PDB_READER
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Support 
+open FSharp.Compiler.AbstractIL.Internal.Support 
 #endif
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
-open Microsoft.FSharp.Compiler.AbstractIL.IL  
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.AbstractIL.Diagnostics 
+open FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
+open FSharp.Compiler.AbstractIL.IL  
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Range
 open Microsoft.FSharp.NativeInterop
 open System.Reflection
 
@@ -4116,7 +4116,7 @@ let OpenILModuleReader fileName opts =
 
 [<AutoOpen>]
 module Shim =
-    open Microsoft.FSharp.Compiler.Lib
+    open FSharp.Compiler.Lib
 
     type IAssemblyReader =
         abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> ILModuleReader

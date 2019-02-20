@@ -1,22 +1,22 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.LowerCallsAndSeqs 
+module internal FSharp.Compiler.LowerCallsAndSeqs 
 
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.Library
 
-open Microsoft.FSharp.Compiler.AccessibilityLogic 
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.MethodCalls
+open FSharp.Compiler.AccessibilityLogic 
+open FSharp.Compiler.Ast
+open FSharp.Compiler.Infos
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.Lib
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.MethodCalls
 
 //----------------------------------------------------------------------------
 // Eta-expansion of calls to top-level-methods

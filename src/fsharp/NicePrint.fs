@@ -4,26 +4,26 @@
 // Print Signatures/Types, for signatures, intellisense, quick info, FSI responses
 //-------------------------------------------------------------------------- 
 
-module internal Microsoft.FSharp.Compiler.NicePrint
+module internal FSharp.Compiler.NicePrint
 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Rational
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.AttributeChecking
-open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
-open Microsoft.FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler 
+open FSharp.Compiler.Rational
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Infos
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.Layout
+open FSharp.Compiler.Layout.TaggedTextOps
+open FSharp.Compiler.PrettyNaming
 
 open Microsoft.FSharp.Core.Printf
 
@@ -100,7 +100,7 @@ module internal PrintUtilities =
 
 module private PrintIL = 
 
-    open Microsoft.FSharp.Compiler.AbstractIL.IL
+    open FSharp.Compiler.AbstractIL.IL
         
     let fullySplitILTypeRef (tref:ILTypeRef) = 
         (List.collect IL.splitNamespace (tref.Enclosing @ [PrettyNaming.DemangleGenericTypeName tref.Name])) 

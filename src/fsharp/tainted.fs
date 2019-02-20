@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler
+namespace FSharp.Compiler
 
 #if !NO_EXTENSIONTYPING
 
 open System
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.Range
 open Microsoft.FSharp.Core.CompilerServices
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Internal.Library 
 open System.Reflection
 open System.Collections.Generic
 open ErrorLogger
@@ -17,7 +17,7 @@ type internal TypeProviderError
     (
         errNum : int,
         tpDesignation : string,
-        m:Microsoft.FSharp.Compiler.Range.range,
+        m:FSharp.Compiler.Range.range,
         errors : string list,
         typeNameContext : string option,
         methodNameContext : string option

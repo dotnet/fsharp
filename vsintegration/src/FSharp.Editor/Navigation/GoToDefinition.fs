@@ -17,8 +17,8 @@ open Microsoft.CodeAnalysis.Navigation
 
 open Microsoft.VisualStudio.Shell.Interop
 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 
 module private Symbol =
     let fullName (root: ISymbol) : string =

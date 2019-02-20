@@ -8,9 +8,9 @@
 module FSharp.Compiler.Service.Tests.FsiTests
 #endif
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Interactive.Shell
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.SourceCodeServices
 
 open NUnit.Framework
 open FsUnit
@@ -79,7 +79,7 @@ let ``EvalExpression test 1 nothrow``() =
 [<Test>]
 // 'fsi' can be evaluated because we passed it in explicitly up above
 let ``EvalExpression fsi test``() = 
-    evalExpression "fsi" |> shouldEqual "Microsoft.FSharp.Compiler.Interactive.InteractiveSession"
+    evalExpression "fsi" |> shouldEqual "FSharp.Compiler.Interactive.InteractiveSession"
 
 [<Test>]
 // 'fsi' can be evaluated because we passed it in explicitly up above

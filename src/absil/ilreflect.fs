@@ -5,7 +5,7 @@
 //----------------------------------------------------------------------------
 
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.ILRuntimeWriter    
+module internal FSharp.Compiler.AbstractIL.ILRuntimeWriter    
 
 open System
 open System.Reflection
@@ -13,13 +13,13 @@ open System.Reflection.Emit
 open System.Runtime.InteropServices
 open System.Collections.Generic
 
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Diagnostics 
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Range
 
 open Microsoft.FSharp.Core.Printf
 
@@ -30,7 +30,7 @@ open Microsoft.FSharp.Core.ReflectionAdapters
 let codeLabelOrder = ComparisonIdentity.Structural<ILCodeLabel>
 
 // Convert the output of convCustomAttr
-open Microsoft.FSharp.Compiler.AbstractIL.ILAsciiWriter 
+open FSharp.Compiler.AbstractIL.ILAsciiWriter 
 let wrapCustomAttr setCustomAttr (cinfo, bytes) =
     setCustomAttr(cinfo, bytes)
 

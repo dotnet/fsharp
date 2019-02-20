@@ -9,12 +9,12 @@ open System
 open System.IO
 open System.Text
 open System.Text.RegularExpressions
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Driver
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler
+open FSharp.Compiler.Driver
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.Internal.Library 
 
 /// build issue location
 type internal Location =

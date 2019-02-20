@@ -1,25 +1,25 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.TastPickle 
+module internal FSharp.Compiler.TastPickle 
 
 open System.Collections.Generic
 open System.Text
 open Internal.Utilities
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Lib.Bits
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Rational
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.ErrorLogger
+open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Lib.Bits
+open FSharp.Compiler.Range
+open FSharp.Compiler.Rational
+open FSharp.Compiler.Ast
+open FSharp.Compiler.Tast
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.ErrorLogger
 
 
 let verbose = false

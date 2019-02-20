@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
+open FSharp.Compiler.Range
+open FSharp.Compiler.Ast
 
 [<Sealed>]
 type FSharpNoteworthyParamInfoLocations(longId: string list, longIdRange: range, openParenLocation: pos,  tupleEndLocations: pos list, isThereACloseParen: bool, namedParamNames: string option list) =

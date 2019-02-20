@@ -5,20 +5,20 @@
 // type checking and intellisense-like environment-reporting.
 //--------------------------------------------------------------------------
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
 open System
 open System.IO
 open System.Collections.Generic
 open System.Diagnostics
  
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library  
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.Lib
+open FSharp.Compiler.AbstractIL.Internal.Library  
+open FSharp.Compiler 
+open FSharp.Compiler.Range
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.Lib
 
 /// Methods for dealing with F# sources files.
 module SourceFile =
@@ -445,7 +445,7 @@ type EntityKind =
 
 module UntypedParseImpl =
     open System.Text.RegularExpressions
-    open Microsoft.FSharp.Compiler.PrettyNaming
+    open FSharp.Compiler.PrettyNaming
     
     let emptyStringSet = HashSet<string>()
 
@@ -792,7 +792,7 @@ module UntypedParseImpl =
         and walkType = function
             | SynType.LongIdent ident -> 
                 // we protect it with try..with because System.Exception : rangeOfLidwd may raise
-                // at Microsoft.FSharp.Compiler.Ast.LongIdentWithDots.get_Range() in D:\j\workspace\release_ci_pa---3f142ccc\src\fsharp\ast.fs:line 156
+                // at FSharp.Compiler.Ast.LongIdentWithDots.get_Range() in D:\j\workspace\release_ci_pa---3f142ccc\src\fsharp\ast.fs:line 156
                 try ifPosInRange ident.Range (fun _ -> Some EntityKind.Type) with _ -> None
             | SynType.App(ty, _, types, _, _, _, _) -> 
                 walkType ty |> Option.orElse (List.tryPick walkType types)

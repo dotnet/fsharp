@@ -10,7 +10,7 @@ module Tests.Service.Symbols
 open FSharp.Compiler.Service.Tests.Common
 open FsUnit
 open NUnit.Framework
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 module ActivePatterns =
 

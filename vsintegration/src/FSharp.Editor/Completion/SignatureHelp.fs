@@ -14,9 +14,9 @@ open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 
-open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Layout
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 
 [<Shared>]
 [<ExportSignatureHelpProvider("FSharpSignatureHelpProvider", FSharpConstants.FSharpLanguageName)>]

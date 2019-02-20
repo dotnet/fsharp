@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// The ILPdbWriter 
-module internal Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter 
+module internal FSharp.Compiler.AbstractIL.ILPdbWriter 
 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Range
 open System.Collections.Generic 
 open System.IO
 open System.Reflection.Metadata

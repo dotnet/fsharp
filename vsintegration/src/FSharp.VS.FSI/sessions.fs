@@ -2,7 +2,7 @@
 
 module internal Microsoft.VisualStudio.FSharp.Interactive.Session
 
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
 open System
 open System.IO
 open System.Text
@@ -139,7 +139,7 @@ let determineFsiRelativePath1 () =
 
 // This path is relative to the location of "FSharp.Compiler.Interactive.Settings.dll"
 let determineFsiRelativePath2 () =
-    let thisAssembly : System.Reflection.Assembly = typeof<Microsoft.FSharp.Compiler.Server.Shared.FSharpInteractiveServer>.Assembly
+    let thisAssembly : System.Reflection.Assembly = typeof<FSharp.Compiler.Server.Shared.FSharpInteractiveServer>.Assembly
     let thisAssemblyDirectory = thisAssembly.Location |> Path.GetDirectoryName
     // Use the quick-development path if available    
     Path.Combine(thisAssemblyDirectory,fsiExeName() )
@@ -284,7 +284,7 @@ type FsiSession() =
     do cmdProcess.EnableRaisingEvents <- true
 
     let client   = 
-        try Microsoft.FSharp.Compiler.Server.Shared.FSharpInteractiveServer.StartClient(channelName)
+        try FSharp.Compiler.Server.Shared.FSharpInteractiveServer.StartClient(channelName)
         with e -> raise (SessionError (VFSIstrings.SR.exceptionRaisedWhenCreatingRemotingClient(e.ToString())))
 
     /// interrupt timeout in miliseconds 

@@ -1,23 +1,23 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.QuotationTranslator
+module internal FSharp.Compiler.QuotationTranslator
 
 open Internal.Utilities
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Ast
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Range
 open System.Collections.Generic
 
-module QP = Microsoft.FSharp.Compiler.QuotationPickler
+module QP = FSharp.Compiler.QuotationPickler
 
 let verboseCReflect = condition "VERBOSE_CREFLECT"
 

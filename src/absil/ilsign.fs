@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.StrongNameSign
+module internal FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 
 #nowarn "9"
 
@@ -10,7 +10,7 @@ open System.Collections.Immutable
 open System.Reflection.PortableExecutable
 open System.Security.Cryptography
 open System.Runtime.InteropServices
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Library
 
     type KeyType = 
     | Public

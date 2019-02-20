@@ -5,27 +5,27 @@
 // type checking and intellisense-like environment-reporting.
 //----------------------------------------------------------------------------
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 open System
 open System.IO
 open System.Collections.Generic
 
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.Driver
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.NameResolution
-open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler 
+open FSharp.Compiler.Ast
+open FSharp.Compiler.Driver
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Range
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.Infos
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
 
 /// Represents the reason why the GetDeclarationLocation operation failed.
 [<RequireQualifiedAccess>]
