@@ -878,6 +878,8 @@ let ``Test Optimized Declarations Project1`` () =
         "type LetLambda";
         "let f = fun a -> fun b -> Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (a,b) @ (247,8--247,24)";
         "let letLambdaRes = ListModule.Map<Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun tupledArg -> let a: Microsoft.FSharp.Core.int = tupledArg.Item0 in let b: Microsoft.FSharp.Core.int = tupledArg.Item1 in (LetLambda.f () a) b,Cons((1,2),Empty())) @ (249,19--249,71)";
+        "let anonRecd = {X = 1; Y = 2} @ (251,15--251,33)"
+        "let anonRecdGet = (M.anonRecd ().X,M.anonRecd ().Y) @ (252,19--252,41)"
       ]
 
     let expected2 = [
