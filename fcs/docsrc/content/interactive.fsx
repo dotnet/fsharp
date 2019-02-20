@@ -31,8 +31,8 @@ First, we need to reference the libraries that contain F# interactive service:
 *)
 
 #r "FSharp.Compiler.Service.dll"
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Interactive.Shell
 
 (**
 To communicate with F# interactive, we need to create streams that represent input and
@@ -225,7 +225,7 @@ based on the declarations executed so far.
 
 You can also request declaration list information, tooltip text and symbol resolution:
 *)
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
 
 // get a tooltip
 checkResults.GetToolTipTextAlternate(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT) 

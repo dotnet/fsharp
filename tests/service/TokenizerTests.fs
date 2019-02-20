@@ -8,9 +8,9 @@
 module FSharp.Compiler.Service.Tests.TokenizerTests
 #endif
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Interactive.Shell
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.SourceCodeServices
 
 open NUnit.Framework
 open FsUnit

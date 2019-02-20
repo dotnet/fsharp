@@ -11,8 +11,8 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor.Symbols 
 
 

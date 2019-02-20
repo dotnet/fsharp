@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Byte arrays
-namespace Microsoft.FSharp.Compiler.AbstractIL.Internal
+namespace FSharp.Compiler.AbstractIL.Internal
 
 open System.IO
 open Internal.Utilities
 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.Internal 
 
 module internal Bytes = 
     let b0 n =  (n &&& 0xFF)

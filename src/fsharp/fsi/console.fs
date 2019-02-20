@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.Interactive
+namespace FSharp.Compiler.Interactive
 
 open System
 open System.Text
@@ -96,7 +96,7 @@ module internal Utils =
     let guard(f) = 
         try f() 
         with e -> 
-             Microsoft.FSharp.Compiler.ErrorLogger.warning(Failure(sprintf "Note: an unexpected exception in fsi.exe readline console support. Consider starting fsi.exe with the --no-readline option and report the stack trace below to the .NET or Mono implementors\n%s\n%s\n" e.Message e.StackTrace));
+             FSharp.Compiler.ErrorLogger.warning(Failure(sprintf "Note: an unexpected exception in fsi.exe readline console support. Consider starting fsi.exe with the --no-readline option and report the stack trace below to the .NET or Mono implementors\n%s\n%s\n" e.Message e.StackTrace));
 
     // Quick and dirty dirty method lookup for inlined IL
     // In some situations, we can't use ldtoken to obtain a RuntimeMethodHandle, since the method

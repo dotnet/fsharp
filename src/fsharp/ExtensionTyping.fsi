@@ -2,7 +2,7 @@
 
 // Extension typing, validation of extension types, etc.
 
-namespace Microsoft.FSharp.Compiler
+namespace FSharp.Compiler
 
 #if !NO_EXTENSIONTYPING
 
@@ -12,9 +12,9 @@ module internal ExtensionTyping =
     open System.IO
     open System.Collections.Generic
     open Microsoft.FSharp.Core.CompilerServices
-    open Microsoft.FSharp.Compiler.AbstractIL.IL
-    open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-    open Microsoft.FSharp.Compiler.Range
+    open FSharp.Compiler.AbstractIL.IL
+    open FSharp.Compiler.AbstractIL.Internal.Library
+    open FSharp.Compiler.Range
 
     type TypeProviderDesignation = TypeProviderDesignation of string
 
@@ -351,11 +351,11 @@ module internal ExtensionTyping =
     
     /// Get the ILTypeRef for the provided type (including for nested types). Take into account
     /// any type relocations or static linking for generated types.
-    val GetILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> Microsoft.FSharp.Compiler.AbstractIL.IL.ILTypeRef
+    val GetILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> FSharp.Compiler.AbstractIL.IL.ILTypeRef
 
     /// Get the ILTypeRef for the provided type (including for nested types). Do not take into account
     /// any type relocations or static linking for generated types.
-    val GetOriginalILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> Microsoft.FSharp.Compiler.AbstractIL.IL.ILTypeRef
+    val GetOriginalILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> FSharp.Compiler.AbstractIL.IL.ILTypeRef
 
 
     /// Represents the remapping information for a generated provided type and its nested types.

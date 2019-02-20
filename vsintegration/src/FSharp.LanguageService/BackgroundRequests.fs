@@ -9,7 +9,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 open System
 open Microsoft.VisualStudio.TextManager.Interop 
 open Microsoft.VisualStudio.Text
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
 
 

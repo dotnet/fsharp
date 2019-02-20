@@ -5,9 +5,9 @@
 // type checking and intellisense-like environment-reporting.
 //----------------------------------------------------------------------------
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler 
+open FSharp.Compiler 
 
 /// Indicates a kind of item to show in an F# navigation bar
 type public FSharpNavigationDeclarationItemKind =

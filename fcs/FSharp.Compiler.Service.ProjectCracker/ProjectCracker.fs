@@ -1,4 +1,4 @@
-﻿namespace Microsoft.FSharp.Compiler.SourceCodeServices
+﻿namespace FSharp.Compiler.SourceCodeServices
 
 #if !NETSTANDARD1_6
 open System.Runtime.Serialization.Json
@@ -69,7 +69,7 @@ type ProjectCracker =
                 yield v
         |]
         
-        let ret, opts = Microsoft.FSharp.Compiler.SourceCodeServices.ProjectCrackerTool.ProjectCrackerTool.crackOpen arguments
+        let ret, opts = FSharp.Compiler.SourceCodeServices.ProjectCrackerTool.ProjectCrackerTool.crackOpen arguments
         ignore ret
 #else
         let arguments = new StringBuilder()

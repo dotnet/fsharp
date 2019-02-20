@@ -2,14 +2,14 @@
 
 // Convert quoted TAST data structures to structures ready for pickling 
 
-module internal Microsoft.FSharp.Compiler.QuotationTranslator
+module internal FSharp.Compiler.QuotationTranslator
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Import
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler 
+open FSharp.Compiler.Range
+open FSharp.Compiler.Import
+open FSharp.Compiler.Tast
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.AbstractIL.IL
 
 [<Sealed>]
 type QuotationTranslationEnv =
