@@ -830,8 +830,8 @@ if "%TEST_FCS%" == "1" (
     )
 
     set LOGFILE=%TESTLOGDIR%\FSharp.Compiler.Service.Tests_netcoreapp2.0.trx
-    echo "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!"
-         "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!"
+    echo "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -s "%~dp0fcs\FSharp.Compiler.Service.Tests\app.runsettings" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -s "%~dp0fcs\FSharp.Compiler.Service.Tests\app.runsettings" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!"
 
     if errorlevel 1 (
         echo --------------------------------------------------------------
