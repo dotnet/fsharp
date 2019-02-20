@@ -28,7 +28,6 @@
     <BuildFCS Condition="'$(BUILD_FCS)' == '1'">true</BuildFCS>
     <BuildNuget Condition="'$(BUILD_NUGET)' == '1' or '$(BUILD_SETUP)' == '1'">true</BuildNuget>
     <BuildSetup Condition="'$(BUILD_SETUP)' == '1'">true</BuildSetup>
-    <BuildNuget Condition="'$(BUILD_NUGET)' == '1'">true</BuildNuget>
 
     <TestCompiler Condition="'$(TEST_NET40_COMPILERUNIT_SUITE)' == '1'">true</TestCompiler>
     <TestCompiler Condition="'$(TEST_CORECLR_COREUNIT_SUITE)' == '1'">true</TestCompiler>
@@ -91,10 +90,11 @@
       <Projects Include="$(MSBuildThisFileDirectory)vsintegration\Utils\LanguageServiceProfiling\LanguageServiceProfiling.fsproj" />
       <Projects Include="$(MSBuildThisFileDirectory)vsintegration\fsharp-vsintegration-item-templates-build.proj" />
       <Projects Include="$(MSBuildThisFileDirectory)vsintegration\fsharp-vsintegration-project-templates-build.proj" />
-      <Projects Include="$(MSBuildThisFileDirectory)vsintegration\fsharp-vsintegration-vsix-build.proj" />
+      <VsixProjects Include="$(MSBuildThisFileDirectory)\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj" />
+      <VsixProjects Include="$(MSBuildThisFileDirectory)\vsintegration\Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj" />
     </ItemGroup>
 
-    <ItemGroup Condition="'$(BuildCompiler)' == 'true' OR '$(BuildNuget)' == 'true' OR '$(BuildVS)' == 'true' OR'$(_RunningRestore)' == 'true'">
+    <ItemGroup Condition="'$(BuildCompiler)' == 'true' OR '$(BuildNuget)' == 'true' OR '$(BuildVS)' == 'true' OR '$(_RunningRestore)' == 'true'">
       <NugetProjects Include="src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     </ItemGroup>
 
@@ -111,7 +111,7 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(BuildSetup)' == 'true' OR '$(_RunningRestore)' == 'true'">
-      <Projects Include="$(MSBuildThisFileDirectory)setup\fsharp-setup-build.csproj" />
+    <SetupProjects Include="$(MSBuildThisFileDirectory)setup\fsharp-setup-build.csproj" />
     </ItemGroup>
 
     <!-- test binaries -->
@@ -155,21 +155,25 @@
   </Target>
 
   <Target Name="Build" DependsOnTargets="CollectProjects">
-    <!-- Nuget projects need to be built before the vsix stuff, so that the vsix build -->
+    <MSBuild Projects="@(NugetProjects);@(Projects)" Targets="Build" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
     <MSBuild Projects="@(NugetProjects)" Targets="Pack" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
-    <MSBuild Projects="@(Projects);@(NugetProjects)" Targets="Build" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(VsixProjects)" Targets="Build" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(SetupProjects)" Targets="Build" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
 
   <Target Name="Rebuild" DependsOnTargets="CollectProjects">
-    <MSBuild Projects="@(Projects);@(NugetProjects)" Targets="Rebuild" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(NugetProjects);@(Projects)" Targets="Rebuild" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(NugetProjects)" Targets="Pack" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(VsixProjects)" Targets="Rebuild" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(SetupProjects)" Targets="Rebuild" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
 
   <Target Name="Clean" DependsOnTargets="CollectProjects">
-    <MSBuild Projects="@(Projects);@(NugetProjects)" Targets="Clean" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(Projects);@(NugetProjects);@(VsixProjects);@(SetupProjects)" Targets="Clean" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
 
   <Target Name="Restore" DependsOnTargets="_BeforeRestore;CollectProjects">
-    <MSBuild Projects="@(Projects);@(NugetProjects)" Targets="Restore" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(Projects);@(NugetProjects);@(VsixProjects);@(SetupProjects)" Targets="Restore" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
 
 </Project>

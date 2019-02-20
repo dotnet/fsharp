@@ -217,11 +217,6 @@
         <target state="translated">Birden çok '{0}.dll' başvurusuna izin verilmiyor</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotReadVersionInfoFromMscorlib">
-        <source>Could not read version from mscorlib.dll</source>
-        <target state="translated">Sürüm, mscorlib.dll'den okunamadı</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">'{0}' bütünleştirilmiş kodu okunamıyor</target>

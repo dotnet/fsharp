@@ -217,11 +217,6 @@
         <target state="translated">Víc odkazů na knihovnu {0}.dll se nepovoluje.</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotReadVersionInfoFromMscorlib">
-        <source>Could not read version from mscorlib.dll</source>
-        <target state="translated">Nedala se přečíst verze souboru mscorlib.dll.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">Sestavení {0} se nedá přečíst.</target>

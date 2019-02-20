@@ -217,11 +217,6 @@
         <target state="translated">Non sono consentiti più riferimenti a '{0}.dll'</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotReadVersionInfoFromMscorlib">
-        <source>Could not read version from mscorlib.dll</source>
-        <target state="translated">Non è stato possibile leggere la versione da mscorlib.dll</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">Non è possibile leggere l'assembly '{0}'</target>
