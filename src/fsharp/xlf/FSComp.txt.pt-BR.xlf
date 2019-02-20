@@ -217,11 +217,6 @@
         <target state="translated">As referências múltiplas '{0}.dll' não são permitidas</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotReadVersionInfoFromMscorlib">
-        <source>Could not read version from mscorlib.dll</source>
-        <target state="translated">Não foi possível ler a versão em mscorlib.dll</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">Não é possível ler o assembly '{0}'</target>

@@ -1547,12 +1547,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     let stampedFileNamesNode        = Vector.Stamp "SourceFileTimeStamps" StampFileNameTask fileNamesNode
     let stampedReferencedAssembliesNode = Vector.Stamp "StampReferencedAssembly" StampReferencedAssemblyTask referencedAssembliesNode
     let initialTcAccNode            = Vector.Demultiplex "CombineImportedAssemblies" CombineImportedAssembliesTask stampedReferencedAssembliesNode
-#if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
-    let parseTreesNode              = Vector.Map "ParseTrees" ParseTask stampedFileNamesNode
-    let tcStatesNode                = Vector.ScanLeft "TypeCheckingStates" TypeCheckTask initialTcAccNode stampedFileNamesNode
-#else
     let tcStatesNode                = Vector.ScanLeft "TypeCheckingStates" (fun ctok tcAcc n -> TypeCheckTask ctok tcAcc (ParseTask ctok n)) initialTcAccNode stampedFileNamesNode
-#endif
     let finalizedTypeCheckNode      = Vector.Demultiplex "FinalizeTypeCheck" FinalizeTypeCheckTask tcStatesNode
 
     // Outputs
@@ -1560,9 +1555,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
     do buildDescription.DeclareVectorOutput stampedFileNamesNode
     do buildDescription.DeclareVectorOutput stampedReferencedAssembliesNode
-#if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
-    do buildDescription.DeclareVectorOutput parseTreesNode
-#endif
     do buildDescription.DeclareVectorOutput tcStatesNode
     do buildDescription.DeclareScalarOutput initialTcAccNode
     do buildDescription.DeclareScalarOutput finalizedTypeCheckNode
@@ -1725,15 +1717,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     member builder.GetParseResultsForFile (ctok: CompilationThreadToken, filename) =
       cancellable {
         let slotOfFile = builder.GetSlotOfFileName filename
-#if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
-        match GetVectorResultBySlot(parseTreesNode, slotOfFile, partialBuild) with
-        | Some (results, _) -> return results
-        | None -> 
-            let! build = IncrementalBuild.EvalUpTo ctok SavePartialBuild (parseTreesNode, slotOfFile) partialBuild  
-            match GetVectorResultBySlot(parseTreesNode, slotOfFile, build) with
-            | Some (results, _) -> return results
-            | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetParseResultsForFile)."
-#else
         let! results = 
           cancellable {
             match GetVectorResultBySlot(stampedFileNamesNode, slotOfFile, partialBuild) with
@@ -1747,7 +1730,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
           }
         // re-parse on demand instead of retaining
         return ParseTask ctok results
-#endif
       }
 
     member __.SourceFiles  = sourceFiles  |> List.map (fun (_, f, _) -> f)

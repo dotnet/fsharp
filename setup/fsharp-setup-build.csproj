@@ -20,15 +20,6 @@
   </ItemGroup>
 
   <Target Name="CollectSetupProjects">
-    <ItemGroup>
-      <VsixProjects Include="VisualFSharpFull.csproj">
-        <ProjectPath>..\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj</ProjectPath>
-      </VsixProjects>
-      <VsixProjects Include="VisualFSharpTemplates.csproj">
-        <ProjectPath>..\vsintegration\Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj</ProjectPath>
-      </VsixProjects>
-    </ItemGroup>
-
     <CreateItem Include="@(SetupLanguages)"
                 AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.Vsix.Resources\Microsoft.FSharp.Vsix.Resources.swixproj">
       <Output ItemName="SwixSetupProjects" TaskParameter="Include" />
@@ -59,9 +50,6 @@
     <PropertyGroup>
       <CustomProps>AssemblySearchPaths={HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}</CustomProps>
     </PropertyGroup>
-    <MSBuild Projects="%(VsixProjects.ProjectPath)"
-             Targets="Build"
-             Properties="Configuration=$(Configuration);IsLangPack=%(VsixProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);OutputPath=$(VsixBuildLocation);DisableOutputPathCopying=true;$(CustomProps)" />
     <MSBuild Projects="%(SwixSetupProjects.ProjectPath)"
              Targets="Build"
              Properties="LocaleCode=%(SwixSetupProjects.LocaleCode);LocaleId=%(SwixSetupProjects.LocaleId);LocaleParentId=%(SwixSetupProjects.LocaleParentId);LocaleParentCulture=%(SwixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SwixSetupProjects.LocaleSpecificCulture);IsLangPack=%(SwixSetupProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);VSGeneralVersion=$(VSGeneralVersion);TargetFramework=$(TargetFramework);$(CustomProps)"/>
