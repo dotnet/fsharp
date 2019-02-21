@@ -13,6 +13,7 @@ open Microsoft.FSharp.Core.Operators.Checked
 [<TestFixture>]
 type OperatorsModule2() =
 
+#if IGNORED
     [<Test; Ignore( "[FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int 32 int64 ")>]
     member this.int() =         
         // int 
@@ -39,7 +40,9 @@ type OperatorsModule2() =
         CheckThrowsOverflowException(fun() -> Operators.int System.Double.MaxValue |>ignore)
         
         ()
-    
+#endif
+
+#if IGNORED
     [<Test; Ignore( "[FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int 32 int64 ")>]
     member this.int16() =         
         // int 
@@ -64,9 +67,10 @@ type OperatorsModule2() =
         
         // overflow
         CheckThrowsOverflowException(fun() -> Operators.int16 System.Double.MaxValue |>ignore)
-        
         ()
-        
+#endif
+
+#if IGNORED
     [<Test; Ignore( "[FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int 32 int64 ")>]
     member this.int32() =         
         // int 
@@ -91,9 +95,10 @@ type OperatorsModule2() =
         
         // overflow
         CheckThrowsOverflowException(fun() -> Operators.int32 System.Double.MaxValue |>ignore)
-        
         ()
-        
+#endif
+
+#if IGNORED
     [<Test; Ignore( "[FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int 32 int64 ")>]
     member this.int64() =         
         // int 
@@ -118,9 +123,9 @@ type OperatorsModule2() =
         
         // overflow
         CheckThrowsOverflowException(fun() -> Operators.int64 System.Double.MaxValue |>ignore)
-        
         ()
-        
+#endif
+
 //    [<Test>]
 //    member this.invalidArg() =         
 //        CheckThrowsArgumentException(fun() -> Operators.invalidArg  "A" "B" |>ignore )
@@ -243,7 +248,8 @@ type OperatorsModule2() =
         Assert.AreEqual(result,System.Single.NaN) 
         
         ()
-        
+
+#if IGNORED
     [<Test; Ignore( "[FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int 32 int64 ")>]
     member this.nativeint() =  
         // int 
@@ -270,7 +276,8 @@ type OperatorsModule2() =
         CheckThrowsOverflowException(fun() -> Operators.nativeint System.Double.MaxValue |>ignore)
         
         ()
-        
+#endif
+
     [<Test>]
     member this.not() =  
         let result = Operators.not true

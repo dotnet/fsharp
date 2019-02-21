@@ -119,7 +119,7 @@
     <MicrosoftVisualFSharpCoreRedistPackageVersion>1.0.0</MicrosoftVisualFSharpCoreRedistPackageVersion>
 
     <!-- other packages -->
-    <FsCheckPackageVersion>3.0.0-alpha3</FsCheckPackageVersion>
+    <FsCheckPackageVersion>3.0.0-alpha4</FsCheckPackageVersion>
     <MicrosoftCompositionPackageVersion>1.0.30</MicrosoftCompositionPackageVersion>
     <Pdb2PdbPackageVersion>1.1.0-beta1-63314-01</Pdb2PdbPackageVersion>
     <MicrosoftMSXMLPackageVersion>8.0.0-alpha</MicrosoftMSXMLPackageVersion>
