@@ -715,7 +715,9 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
 /// a single, non-overloaded item such as union case or a named function value.
 // Note: instances of this type do not hold any references to any compiler resources.
 [<Sealed; NoEquality; NoComparison>]
-type FSharpMethodGroupItem(description: FSharpToolTipText<layout>, xmlDoc: FSharpXmlDoc, returnType: layout, parameters: FSharpMethodGroupItemParameter[], hasParameters: bool, hasParamArrayArg: bool, staticParameters: FSharpMethodGroupItemParameter[]) = 
+type FSharpMethodGroupItem(description: FSharpToolTipText<layout>, xmlDoc: FSharpXmlDoc, 
+                           returnType: layout, parameters: FSharpMethodGroupItemParameter[], 
+                           hasParameters: bool, hasParamArrayArg: bool, staticParameters: FSharpMethodGroupItemParameter[]) = 
 
     /// The structured description representation for the method (or other item)
     member __.StructuredDescription = description

@@ -45,7 +45,13 @@ module Driver =
         let timesFlag = argv |> Array.exists  (fun x -> x = "/times" || x = "--times")
         if timesFlag then 
             let stats = ILBinaryReader.GetStatistics()
-            AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> printfn "STATS: #ByteArrayFile = %d, #MemoryMappedFileOpen = %d, #MemoryMappedFileClosed = %d, #RawMemoryFile = %d, #WeakByteArrayFile = %d" stats.byteFileCount stats.memoryMapFileOpenedCount stats.memoryMapFileClosedCount stats.rawMemoryFileCount stats.weakByteFileCount)
+            AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> 
+                printfn "STATS: #ByteArrayFile = %d, #MemoryMappedFileOpen = %d, #MemoryMappedFileClosed = %d, #RawMemoryFile = %d, #WeakByteArrayFile = %d" 
+                    stats.byteFileCount 
+                    stats.memoryMapFileOpenedCount 
+                    stats.memoryMapFileClosedCount 
+                    stats.rawMemoryFileCount 
+                    stats.weakByteFileCount)
 #endif
 
         let quitProcessExiter = 

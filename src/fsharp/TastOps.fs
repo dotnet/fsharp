@@ -3418,10 +3418,13 @@ module DebugPrint = begin
           ^^ (if v.IsMutable then wordL(tagText "mutable ") else emptyL)
           ^^ wordL (tagText ":")) -- typeL v.Type
 
-
     let tslotparamL(TSlotParam(nmOpt, ty, inFlag, outFlag, _, _)) =
-        (optionL (tagText >> wordL) nmOpt) ^^ wordL(tagText ":") ^^ typeL ty ^^ (if inFlag then wordL(tagText "[in]") else emptyL)  ^^ (if outFlag then wordL(tagText "[out]") else emptyL)  ^^ (if inFlag then wordL(tagText "[opt]") else emptyL)
-    
+        (optionL (tagText >> wordL) nmOpt) ^^ 
+         wordL(tagText ":") ^^ 
+         typeL ty ^^ 
+         (if inFlag then wordL(tagText "[in]") else emptyL)  ^^ 
+         (if outFlag then wordL(tagText "[out]") else emptyL)  ^^ 
+         (if inFlag then wordL(tagText "[opt]") else emptyL)
 
     let slotSigL (slotsig:SlotSig) =
 #if DEBUG
@@ -3451,10 +3454,6 @@ module DebugPrint = begin
 
     let unionCaseRefL (ucr:UnionCaseRef) = wordL (tagText ucr.CaseName)
     let recdFieldRefL (rfref:RecdFieldRef) = wordL (tagText rfref.FieldName)
-
-    //--------------------------------------------------------------------------
-    // DEBUG layout - bind, expr, dtree etc.
-    //--------------------------------------------------------------------------
 
     let identL (id:Ident) = wordL (tagText id.idText)  
 

@@ -523,6 +523,25 @@ let (|ListEmptyDiscrim|_|) g = function
      | _ -> None
 #endif
 
+let (|ConstNeedsDefaultCase|_|) c = 
+    match c with 
+    | Const.Decimal _ 
+    | Const.String _ 
+    | Const.Single _ 
+    |  Const.Double _ 
+    | Const.SByte _ 
+    | Const.Byte _
+    | Const.Int16 _ 
+    | Const.UInt16 _ 
+    | Const.Int32 _ 
+    | Const.UInt32 _ 
+    | Const.Int64 _ 
+    | Const.UInt64 _ 
+    | Const.IntPtr _ 
+    | Const.UIntPtr _ 
+    | Const.Char _ -> Some ()
+    | _ -> None
+
 /// Build a dtree, equivalent to: TDSwitch("expr",edges,default,m) 
 ///
 /// Once we've chosen a particular active to investigate, we compile the
@@ -568,7 +587,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
 #endif
                 
     // All these should also always have default cases 
-    | TCase(DecisionTreeTest.Const (Const.Decimal _ | Const.String _ | Const.Single _ |  Const.Double _ | Const.SByte _ | Const.Byte _| Const.Int16 _ | Const.UInt16 _ | Const.Int32 _ | Const.UInt32 _ | Const.Int64 _ | Const.UInt64 _ | Const.IntPtr _ | Const.UIntPtr _ | Const.Char _ ),_) :: _, None -> 
+    | (TCase(DecisionTreeTest.Const ConstNeedsDefaultCase,_) :: _), None -> 
         error(InternalError("inexhaustive match - need a default cases!",m))
 
     // Split string, float, uint64, int64, unativeint, nativeint matches into serial equality tests 
