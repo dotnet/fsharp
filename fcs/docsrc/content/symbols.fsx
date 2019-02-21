@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin/v4.5/"
+#I "../../../artifacts/bin/fcs/net45"
 (**
 Compiler Services: Working with symbols
 ============================================
@@ -31,7 +31,7 @@ We now perform type checking on the specified input:
 
 let parseAndTypeCheckSingleFile (file, input) = 
     // Get context representing a stand-alone (script) file
-    let projOptions = 
+    let projOptions, errors = 
         checker.GetProjectOptionsFromScript(file, input)
         |> Async.RunSynchronously
 
@@ -109,8 +109,8 @@ fnVal.CurriedParameterGroups.[0].[0].Name // "x"
 fnVal.CurriedParameterGroups.[0].[1].Name // "y"
 fnVal.DeclarationLocation.StartLine // 3
 fnVal.DisplayName // "foo"
-fnVal.DeclaringEntity.DisplayName // "Test"
-fnVal.DeclaringEntity.DeclarationLocation.StartLine // 1
+fnVal.DeclaringEntity.Value.DisplayName // "Test"
+fnVal.DeclaringEntity.Value.DeclarationLocation.StartLine // 1
 fnVal.GenericParameters.Count // 0
 fnVal.InlineAnnotation // FSharpInlineAnnotation.OptionalInline
 fnVal.IsActivePattern // false
@@ -193,7 +193,7 @@ the project for a single script. By specifying a different "projOptions" you can
 a specification of a larger project.
 *)
 let parseAndCheckScript (file, input) = 
-    let projOptions = 
+    let projOptions, errors = 
         checker.GetProjectOptionsFromScript(file, input)
         |> Async.RunSynchronously
 

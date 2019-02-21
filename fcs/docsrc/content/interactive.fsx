@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin/v4.5/"
+#I "../../../artifacts/bin/fcs/net45"
 (**
 Interactive Service: Embedding F# Interactive
 =============================================
@@ -211,7 +211,9 @@ fsiSession.EvalInteraction "let xxx = 1 + 1"
 Now you want to typecheck the partially complete code `xxx + xx`
 *)
 
-let parseResults, checkResults, checkProjectResults = fsiSession.ParseAndCheckInteraction("xxx + xx")
+let parseResults, checkResults, checkProjectResults = 
+    fsiSession.ParseAndCheckInteraction("xxx + xx")
+    |> Async.RunSynchronously
 
 (** 
 The `parseResults` and `checkResults` have types `ParseFileResults` and `CheckFileResults`
@@ -228,7 +230,7 @@ You can also request declaration list information, tooltip text and symbol resol
 open FSharp.Compiler
 
 // get a tooltip
-checkResults.GetToolTipTextAlternate(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT) 
+checkResults.GetToolTipText(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT) 
 
 checkResults.GetSymbolUseAtLocation(1, 2, "xxx + xx", ["xxx"]) // symbol xxx
   

@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../../debug/bin/net45/"
+#I "../../../../artifacts/bin/fcs/net45"
 (**
 インタラクティブサービス: F# Interactiveの組み込み
 ==================================================
@@ -226,7 +226,8 @@ fsiSession.EvalInteraction "let xxx = 1 + 1"
 次に部分的に完全な `xxx + xx` というコードの型チェックを実行したいとします:
 *)
 
-let parseResults, checkResults, checkProjectResults = fsiSession.ParseAndCheckInteraction("xxx + xx")
+let parseResults, checkResults, checkProjectResults = 
+    fsiSession.ParseAndCheckInteraction("xxx + xx") |> Async.RunSynchronously
 
 (** 
 `parseResults` と `checkResults` はそれぞれ [エディタ](editor.html)
@@ -246,7 +247,7 @@ checkResults.Errors.Length // 1
 open FSharp.Compiler
 
 // ツールチップを取得する
-checkResults.GetToolTipTextAlternate(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT) 
+checkResults.GetToolTipText(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT) 
 
 checkResults.GetSymbolUseAtLocation(1, 2, "xxx + xx", ["xxx"]) // シンボル xxx
   
