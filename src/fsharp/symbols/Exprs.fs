@@ -51,8 +51,11 @@ module ExprTranslationImpl =
         member env.BindSubstVal v e = 
             { env with substVals = env.substVals.Add v e  }
 
-        member env.BindVals vs = (env, vs) ||> List.fold (fun env v -> env.BindVal v) 
-        member env.BindCurriedVals vsl = (env, vsl) ||> List.fold (fun env vs -> env.BindVals vs) 
+        member env.BindVals vs = 
+            (env, vs) ||> List.fold (fun env v -> env.BindVal v) 
+
+        member env.BindCurriedVals vsl = 
+            (env, vsl) ||> List.fold (fun env vs -> env.BindVals vs) 
 
     exception IgnoringPartOfQuotedTermWarning of string * Range.range
 
@@ -81,6 +84,8 @@ type E =
     | FSharpFieldGet of  FSharpExpr option * FSharpType * FSharpField 
     | FSharpFieldSet of  FSharpExpr option * FSharpType * FSharpField * FSharpExpr 
     | NewUnionCase of FSharpType * FSharpUnionCase * FSharpExpr list  
+    | NewAnonRecord of FSharpType * FSharpExpr list
+    | AnonRecordGet of FSharpExpr * FSharpType * int 
     | UnionCaseGet of FSharpExpr * FSharpType * FSharpUnionCase * FSharpField 
     | UnionCaseSet of FSharpExpr * FSharpType * FSharpUnionCase * FSharpField  * FSharpExpr
     | UnionCaseTag of FSharpExpr * FSharpType 
@@ -134,6 +139,8 @@ and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m:range, 
         | E.Let ((_bindingVar, bindingExpr), b) -> [bindingExpr;b]
         | E.LetRec (ves, b) -> (List.map snd ves) @ [b]
         | E.NewRecord (_recordType, es) -> es
+        | E.NewAnonRecord (_recordType, es) -> es
+        | E.AnonRecordGet (e, _recordType, _n) -> [e]
         | E.NewUnionCase (_unionType, _unionCase, es) -> es
         | E.NewTuple (_tupleType, es) -> es
         | E.TupleGet (_tupleType, _itemIndex, tupleExpr) -> [tupleExpr]
@@ -560,6 +567,11 @@ module FSharpExprConvert =
                 let argsR = ConvExprs cenv env args
                 E.NewUnionCase(typR, mkR, argsR) 
 
+            | TOp.AnonRecd anonInfo, _, _ -> 
+                let typR = ConvType cenv (mkAnyAnonRecdTy cenv.g anonInfo tyargs)
+                let argsR = ConvExprs cenv env args
+                E.NewAnonRecord(typR, argsR) 
+
             | TOp.Tuple tupInfo, tyargs, _ -> 
                 let tyR = ConvType cenv (mkAnyTupledTy g tupInfo tyargs)
                 let argsR = ConvExprs cenv env args
@@ -575,6 +587,10 @@ module FSharpExprConvert =
                 let typR = ConvType cenv (mkAppTy ucref.TyconRef tyargs)
                 let projR = FSharpField(cenv, ucref, n)
                 E.UnionCaseGet(ConvExpr cenv env e1, typR, mkR, projR) 
+
+            | TOp.AnonRecdGet (anonInfo, n), tyargs, [e1] -> 
+                let typR = ConvType cenv (mkAnyAnonRecdTy cenv.g anonInfo tyargs)
+                E.AnonRecordGet(ConvExpr cenv env e1, typR, n) 
 
             | TOp.UnionCaseFieldSet (ucref, n), tyargs, [e1;e2] -> 
                 let mkR = ConvUnionCaseRef cenv ucref 
@@ -1279,12 +1295,14 @@ module BasicPatterns =
     let (|Let|_|) (e:FSharpExpr) = match e.E with E.Let ((v, e), b) -> Some ((v, e), b) | _ -> None
     let (|LetRec|_|) (e:FSharpExpr) = match e.E with E.LetRec (ves, b) -> Some (ves, b) | _ -> None
     let (|NewRecord|_|) (e:FSharpExpr) = match e.E with E.NewRecord (ty, es) -> Some (ty, es) | _ -> None
+    let (|NewAnonRecord|_|) (e:FSharpExpr) = match e.E with E.NewAnonRecord (ty, es) -> Some (ty, es) | _ -> None
     let (|NewUnionCase|_|) (e:FSharpExpr) = match e.E with E.NewUnionCase (e, tys, es) -> Some (e, tys, es) | _ -> None
     let (|NewTuple|_|) (e:FSharpExpr) = match e.E with E.NewTuple (ty, es) -> Some (ty, es) | _ -> None
     let (|TupleGet|_|) (e:FSharpExpr) = match e.E with E.TupleGet (ty, n, es) -> Some (ty, n, es) | _ -> None
     let (|Call|_|) (e:FSharpExpr) = match e.E with E.Call (a, b, c, d, e) -> Some (a, b, c, d, e) | _ -> None
     let (|NewObject|_|) (e:FSharpExpr) = match e.E with E.NewObject (a, b, c) -> Some (a, b, c) | _ -> None
     let (|FSharpFieldGet|_|) (e:FSharpExpr) = match e.E with E.FSharpFieldGet (a, b, c) -> Some (a, b, c) | _ -> None
+    let (|AnonRecordGet|_|) (e:FSharpExpr) = match e.E with E.AnonRecordGet (a, b, c) -> Some (a, b, c) | _ -> None
     let (|FSharpFieldSet|_|) (e:FSharpExpr) = match e.E with E.FSharpFieldSet (a, b, c, d) -> Some (a, b, c, d) | _ -> None
     let (|UnionCaseGet|_|) (e:FSharpExpr) = match e.E with E.UnionCaseGet (a, b, c, d) -> Some (a, b, c, d) | _ -> None
     let (|UnionCaseTag|_|) (e:FSharpExpr) = match e.E with E.UnionCaseTag (a, b) -> Some (a, b) | _ -> None

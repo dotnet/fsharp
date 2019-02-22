@@ -6833,7 +6833,7 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that implement IDisposable"</source>
+        <source>Used instead of let for values that implement IDisposable</source>
         <target state="needs-review-translation">用于替代 let，以便要求 Dispose 的值可调用到免费资源。</target>
         <note />
       </trans-unit>

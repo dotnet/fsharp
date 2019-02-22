@@ -6833,8 +6833,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that implement IDisposable"</source>
-        <target state="new">Used instead of let for values that implement IDisposable"</target>
+        <source>Used instead of let for values that implement IDisposable</source>
+        <target state="new">Used instead of let for values that implement IDisposable</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">

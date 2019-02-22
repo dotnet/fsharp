@@ -547,7 +547,9 @@ module internal SymbolHelpers =
                     | false -> filminfo.GetParamTypes(amap, m, minfo.FormalMethodInst)
 
                 // http://msdn.microsoft.com/en-us/library/fsbx0t7x.aspx
-                // If the name of the item itself has periods, they are replaced by the hash-sign ('#'). It is assumed that no item has a hash-sign directly in its name. For example, the fully qualified name of the String constructor would be "System.String.#ctor".
+                // If the name of the item itself has periods, they are replaced by the hash-sign ('#'). 
+                // It is assumed that no item has a hash-sign directly in its name. For example, the fully 
+                // qualified name of the String constructor would be "System.String.#ctor".
                 let normalizedName = ilminfo.ILName.Replace(".", "#")
 
                 Some (ccuFileName, "M:"+actualTypeName+"."+normalizedName+genArity+XmlDocArgsEnc g (formalTypars, fmtps) args)

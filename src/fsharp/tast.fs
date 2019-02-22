@@ -658,7 +658,16 @@ and /// Represents a type definition, exception definition, module definition or
       mutable entity_opt_data : EntityOptionalData option
     }
 
-    static member EmptyEntityOptData = { entity_compiled_name = None; entity_other_range = None; entity_kind = TyparKind.Type; entity_xmldoc = XmlDoc.Empty; entity_xmldocsig = ""; entity_tycon_abbrev = None; entity_tycon_repr_accessibility = TAccess []; entity_accessiblity = TAccess []; entity_exn_info = TExnNone }
+    static member NewEmptyEntityOptData() = 
+        { entity_compiled_name = None 
+          entity_other_range = None
+          entity_kind = TyparKind.Type
+          entity_xmldoc = XmlDoc.Empty 
+          entity_xmldocsig = ""
+          entity_tycon_abbrev = None
+          entity_tycon_repr_accessibility = TAccess []
+          entity_accessiblity = TAccess []
+          entity_exn_info = TExnNone }
 
     /// The name of the namespace, module or type, possibly with mangling, e.g. List`1, List or FailureException 
     member x.LogicalName = x.entity_logical_name
@@ -677,7 +686,7 @@ and /// Represents a type definition, exception definition, module definition or
     member x.SetCompiledName(name) =
         match x.entity_opt_data with
         | Some optData -> optData.entity_compiled_name <- name
-        | _ -> x.entity_opt_data <- Some { Entity.EmptyEntityOptData with entity_compiled_name = name }
+        | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_compiled_name = name }
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, and no static parameters
     member x.DisplayName = x.GetDisplayName(false, false)
@@ -748,7 +757,7 @@ and /// Represents a type definition, exception definition, module definition or
     member x.SetOtherRange m                              = 
         match x.entity_opt_data with 
         | Some optData -> optData.entity_other_range <- Some m
-        | _ -> x.entity_opt_data <- Some { Entity.EmptyEntityOptData with entity_other_range = Some m }
+        | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_other_range = Some m }
 
     /// A unique stamp for this module, namespace or type definition within the context of this compilation. 
     /// Note that because of signatures, there are situations where in a single compilation the "same" 
@@ -783,7 +792,7 @@ and /// Represents a type definition, exception definition, module definition or
         and set v =
             match x.entity_opt_data with
             | Some optData -> optData.entity_xmldocsig <- v
-            | _ -> x.entity_opt_data <- Some { Entity.EmptyEntityOptData with entity_xmldocsig = v }
+            | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_xmldocsig = v }
 
     /// The logical contents of the entity when it is a module or namespace fragment.
     member x.ModuleOrNamespaceType = x.entity_modul_contents.Force()
@@ -800,7 +809,7 @@ and /// Represents a type definition, exception definition, module definition or
     member x.SetTypeOrMeasureKind kind =
         match x.entity_opt_data with
         | Some optData -> optData.entity_kind <- kind
-        | _ -> x.entity_opt_data <- Some { Entity.EmptyEntityOptData with entity_kind = kind }
+        | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_kind = kind }
 
     /// The identifier at the point of declaration of the type definition.
     member x.Id = ident(x.LogicalName, x.Range)
@@ -817,7 +826,7 @@ and /// Represents a type definition, exception definition, module definition or
     member x.SetExceptionInfo exn_info =
         match x.entity_opt_data with
         | Some optData -> optData.entity_exn_info <- exn_info
-        | _ -> x.entity_opt_data <- Some { Entity.EmptyEntityOptData with entity_exn_info = exn_info }
+        | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_exn_info = exn_info }
 
     /// Indicates if the entity represents an F# exception declaration.
     member x.IsExceptionDecl = match x.ExceptionInfo with TExnNone -> false | _ -> true
@@ -843,7 +852,7 @@ and /// Represents a type definition, exception definition, module definition or
     member x.SetTypeAbbrev tycon_abbrev = 
         match x.entity_opt_data with
         | Some optData -> optData.entity_tycon_abbrev <- tycon_abbrev
-        | _ -> x.entity_opt_data <- Some { Entity.EmptyEntityOptData with entity_tycon_abbrev = tycon_abbrev }
+        | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_tycon_abbrev = tycon_abbrev }
 
     /// Indicates if this entity is an F# type abbreviation definition
     member x.IsTypeAbbrev = x.TypeAbbrev.IsSome
@@ -1020,7 +1029,16 @@ and /// Represents a type definition, exception definition, module definition or
         x.entity_il_repr_cache             <- tg.entity_il_repr_cache 
         match tg.entity_opt_data with
         | Some tg ->
-            x.entity_opt_data <- Some { entity_compiled_name = tg.entity_compiled_name; entity_other_range = tg.entity_other_range; entity_kind = tg.entity_kind; entity_xmldoc = tg.entity_xmldoc; entity_xmldocsig = tg.entity_xmldocsig; entity_tycon_abbrev = tg.entity_tycon_abbrev; entity_tycon_repr_accessibility = tg.entity_tycon_repr_accessibility; entity_accessiblity = tg.entity_accessiblity; entity_exn_info = tg.entity_exn_info }
+            x.entity_opt_data <- 
+                Some { entity_compiled_name = tg.entity_compiled_name
+                       entity_other_range = tg.entity_other_range
+                       entity_kind = tg.entity_kind
+                       entity_xmldoc = tg.entity_xmldoc
+                       entity_xmldocsig = tg.entity_xmldocsig
+                       entity_tycon_abbrev = tg.entity_tycon_abbrev
+                       entity_tycon_repr_accessibility = tg.entity_tycon_repr_accessibility
+                       entity_accessiblity = tg.entity_accessiblity
+                       entity_exn_info = tg.entity_exn_info }
         | None -> ()
 
 
@@ -2051,7 +2069,7 @@ and Construct =
             entity_opt_data =
                 match kind, access with
                 | TyparKind.Type, TAccess [] -> None
-                | _ -> Some { Entity.EmptyEntityOptData with entity_kind = kind; entity_accessiblity = access } } 
+                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_kind = kind; entity_accessiblity = access } } 
 #endif
 
     static member NewModuleOrNamespace cpath access (id:Ident) xml attribs mtype = 
@@ -2073,7 +2091,7 @@ and Construct =
             entity_opt_data =
                 match xml, access with
                 | XmlDoc [||], TAccess [] -> None
-                | _ -> Some { Entity.EmptyEntityOptData with entity_xmldoc = xml; entity_tycon_repr_accessibility = access; entity_accessiblity = access } } 
+                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = xml; entity_tycon_repr_accessibility = access; entity_accessiblity = access } } 
 
 and 
     [<StructuralEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -2550,7 +2568,18 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
       
       mutable val_opt_data : ValOptionalData option } 
 
-    static member EmptyValOptData = { val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc.Empty; val_member_info = None; val_declaring_entity = ParentNone; val_xmldocsig = String.Empty; val_attribs = [] }
+    static member NewEmptyValOptData() = 
+        { val_compiled_name = None
+          val_other_range = None
+          val_const = None
+          val_defn = None
+          val_repr_info = None
+          val_access = TAccess []
+          val_xmldoc = XmlDoc.Empty
+          val_member_info = None
+          val_declaring_entity = ParentNone
+          val_xmldocsig = String.Empty
+          val_attribs = [] }
 
     /// Range of the definition (implementation) of the value, used by Visual Studio 
     member x.DefinitionRange            = 
@@ -2760,7 +2789,7 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
         and set(v) = 
             match x.val_opt_data with 
             | Some optData -> optData.val_xmldocsig <- v 
-            | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_xmldocsig = v }
+            | _            -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_xmldocsig = v }
 
     /// The parent type or module, if any (None for expression bindings and parameters)
     member x.DeclaringEntity               = 
@@ -2935,34 +2964,34 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     member x.SetValReprInfo info                         = 
         match x.val_opt_data with
         | Some optData -> optData.val_repr_info <- info
-        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_repr_info = info }
+        | _            -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_repr_info = info }
 
     member x.SetType ty                                  = x.val_type <- ty
 
     member x.SetOtherRange m                             =
         match x.val_opt_data with
         | Some optData -> optData.val_other_range <- Some m
-        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_other_range = Some m }
+        | _            -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_other_range = Some m }
 
     member x.SetDeclaringEntity parent                   = 
         match x.val_opt_data with
         | Some optData -> optData.val_declaring_entity <- parent
-        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_declaring_entity = parent }
+        | _            -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_declaring_entity = parent }
 
     member x.SetAttribs attribs                          = 
         match x.val_opt_data with
         | Some optData -> optData.val_attribs <- attribs
-        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_attribs = attribs }
+        | _            -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_attribs = attribs }
 
     member x.SetMemberInfo member_info                   = 
         match x.val_opt_data with
         | Some optData -> optData.val_member_info <- Some member_info
-        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_member_info = Some member_info }
+        | _            -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_member_info = Some member_info }
 
     member x.SetValDefn val_defn                         = 
         match x.val_opt_data with
         | Some optData -> optData.val_defn <- Some val_defn
-        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_defn = Some val_defn }
+        | _            -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_defn = Some val_defn }
 
     /// Create a new value with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Val  = 
@@ -2988,7 +3017,19 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
         x.val_stamp           <- tg.val_stamp        
         x.val_flags           <- tg.val_flags        
         match tg.val_opt_data with
-        | Some tg -> x.val_opt_data <- Some { val_compiled_name = tg.val_compiled_name; val_other_range = tg.val_other_range; val_const = tg.val_const; val_defn = tg.val_defn; val_repr_info = tg.val_repr_info; val_access = tg.val_access; val_xmldoc = tg.val_xmldoc; val_member_info = tg.val_member_info; val_declaring_entity = tg.val_declaring_entity; val_xmldocsig = tg.val_xmldocsig; val_attribs = tg.val_attribs }
+        | Some tg -> 
+            x.val_opt_data <- 
+                Some { val_compiled_name = tg.val_compiled_name
+                       val_other_range = tg.val_other_range
+                       val_const = tg.val_const
+                       val_defn = tg.val_defn
+                       val_repr_info = tg.val_repr_info
+                       val_access = tg.val_access
+                       val_xmldoc = tg.val_xmldoc
+                       val_member_info = tg.val_member_info
+                       val_declaring_entity = tg.val_declaring_entity
+                       val_xmldocsig = tg.val_xmldocsig
+                       val_attribs = tg.val_attribs }
         | None -> ()
 
     /// Indicates if a value is linked to backing data yet. Only used during unpickling of F# metadata.
@@ -5801,7 +5842,7 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_opt_data =
             match doc, access, repr with
             | XmlDoc [||], TAccess [], TExnNone -> None
-            | _ -> Some { Entity.EmptyEntityOptData with entity_xmldoc = doc; entity_accessiblity = access; entity_tycon_repr_accessibility = access; entity_exn_info = repr } } 
+            | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = doc; entity_accessiblity = access; entity_tycon_repr_accessibility = access; entity_exn_info = repr } } 
 
 /// Create a new TAST RecdField node for an F# class, struct or record field
 let NewRecdField  stat konst id nameGenerated ty isMutable isVolatile pattribs fattribs docOption access secret =
@@ -5839,7 +5880,7 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
         entity_opt_data =
             match kind, docOption, reprAccess, access with
             | TyparKind.Type, XmlDoc [||], TAccess [], TAccess [] -> None
-            | _ -> Some { Entity.EmptyEntityOptData with entity_kind = kind; entity_xmldoc = docOption; entity_tycon_repr_accessibility = reprAccess; entity_accessiblity=access } } 
+            | _ -> Some { Entity.NewEmptyEntityOptData() with entity_kind = kind; entity_xmldoc = docOption; entity_tycon_repr_accessibility = reprAccess; entity_accessiblity=access } } 
 
 
 let NewILTycon nlpath (nm,m) tps (scoref:ILScopeRef, enc, tdef:ILTypeDef) mtyp =
@@ -5856,9 +5897,16 @@ exception Duplicate of string * string * range
 exception NameClash of string * string * string * range * string * string * range
 exception FullAbstraction of string * range
 
-let NewModuleOrNamespace cpath access (id:Ident) xml attribs mtype = Construct.NewModuleOrNamespace cpath access id xml attribs mtype
+let NewModuleOrNamespace cpath access (id:Ident) xml attribs mtype = 
+    Construct.NewModuleOrNamespace cpath access id xml attribs mtype
 
-let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity,access,recValInfo,specialRepr,baseOrThis,attribs,inlineInfo,doc,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal,konst,actualParent) : Val = 
+/// Create a new Val object
+let NewVal 
+       (logicalName:string, m:range, compiledName, ty, isMutable, isCompGen, arity, access,
+        recValInfo, specialRepr, baseOrThis, attribs, inlineInfo, doc, isModuleOrMemberBinding,
+        isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal,
+        konst, actualParent) : Val = 
+
     let stamp = newStamp()
     Val.New
         { val_stamp        = stamp
@@ -5870,7 +5918,7 @@ let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity
             match compiledName, arity, konst, access, doc, specialRepr, actualParent, attribs with
             | None, None, None, TAccess [], XmlDoc [||], None, ParentNone, [] -> None
             | _ -> 
-                Some { Val.EmptyValOptData with
+                Some { Val.NewEmptyValOptData() with
                          val_compiled_name    = (match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)
                          val_repr_info        = arity
                          val_const            = konst
@@ -5882,6 +5930,7 @@ let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity
         }
 
 
+/// Create the new contents of an overall assembly
 let NewCcuContents sref m nm mty =
     NewModuleOrNamespace (Some(CompPath(sref,[]))) taccessPublic (ident(nm,m)) XmlDoc.Empty [] (MaybeLazy.Strict mty)
       
@@ -5962,7 +6011,7 @@ let CombineCcuContentFragments m l =
                              entity_opt_data = 
                                 match data1.entity_opt_data with
                                 | Some optData -> Some { optData with entity_xmldoc = xml }
-                                | _ -> Some { Entity.EmptyEntityOptData with entity_xmldoc = xml } }) 
+                                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = xml } }) 
         | false,false -> 
             error(Error(FSComp.SR.tastDuplicateTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path),entity2.Range))
         | _,_ -> 

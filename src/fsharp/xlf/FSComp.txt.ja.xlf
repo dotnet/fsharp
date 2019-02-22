@@ -6833,7 +6833,7 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that implement IDisposable"</source>
+        <source>Used instead of let for values that implement IDisposable</source>
         <target state="needs-review-translation">Dispose を呼び出してリソースを解放する必要のある値に対して、let の代わりに使用します。</target>
         <note />
       </trans-unit>
