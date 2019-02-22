@@ -24,7 +24,14 @@ let isMono = false
 // Utilities
 // --------------------------------------------------------------------------------------
 
-let dotnetExePath = DotNetCli.InstallDotNetSDK "2.1.403"
+let dotnetExePath =
+    // Build.cmd normally downloads a dotnet cli to: <repo-root>\artifacts\toolset\dotnet
+    // check if there is one there to avoid downloading an additional one here
+    let pathToCli = Path.Combine(__SOURCE_DIRECTORY__, @"..\artifacts\toolset\dotnet\dotnet.exe")
+    if File.Exists(pathToCli) then
+        pathToCli
+    else
+        DotNetCli.InstallDotNetSDK "2.1.403"
 
 let runDotnet workingDir args =
     let result =
