@@ -84,7 +84,7 @@ Target "BuildVersion" (fun _ ->
 )
 
 Target "Build" (fun _ ->
-    runDotnet __SOURCE_DIRECTORY__ "build ../src/buildtools/buildtools.proj -v n -c Proto"
+    runDotnet __SOURCE_DIRECTORY__ "msbuild ../src/buildtools/buildtools.proj -verbosity:normal /p:Configuration=Proto"
     runDotnet __SOURCE_DIRECTORY__ "build FSharp.Compiler.Service.sln -v n -c release"
 )
 
