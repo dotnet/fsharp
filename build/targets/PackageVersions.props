@@ -44,7 +44,6 @@
     <SystemSecurityClaimsPackageVersion>4.3.0</SystemSecurityClaimsPackageVersion>
     <SystemSecurityCryptographyAlgorithmsPackageVersion>4.3.0</SystemSecurityCryptographyAlgorithmsPackageVersion>
     <SystemSecurityPrincipalPackageVersion>4.3.0</SystemSecurityPrincipalPackageVersion>
-    <SystemDataSqlClientPackageVersion>4.3.0</SystemDataSqlClientPackageVersion>
     <SystemThreadingTasksParallelPackageVersion>4.3.0</SystemThreadingTasksParallelPackageVersion>
     <SystemThreadingThreadPackageVersion>4.3.0</SystemThreadingThreadPackageVersion>
     <SystemThreadingThreadPoolPackageVersion>4.3.0</SystemThreadingThreadPoolPackageVersion>
