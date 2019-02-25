@@ -1,20 +1,20 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Solves constraints using a mutable constraint-solver state
-module internal Microsoft.FSharp.Compiler.ConstraintSolver
+module internal FSharp.Compiler.ConstraintSolver
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AccessibilityLogic
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Import
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.MethodCalls
-open Microsoft.FSharp.Compiler.InfoReader
+open FSharp.Compiler 
+open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Range
+open FSharp.Compiler.Import
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Infos
+open FSharp.Compiler.MethodCalls
+open FSharp.Compiler.InfoReader
 
 /// Create a type variable representing the use of a "_" in F# code
 val NewAnonTypar : TyparKind * range * TyparRigidity * TyparStaticReq * TyparDynamicReq -> Typar

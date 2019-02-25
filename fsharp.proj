@@ -32,6 +32,7 @@
     <TestCompiler Condition="'$(TEST_NET40_COMPILERUNIT_SUITE)' == '1'">true</TestCompiler>
     <TestCompiler Condition="'$(TEST_CORECLR_COREUNIT_SUITE)' == '1'">true</TestCompiler>
     <TestFSharpSuite Condition="'$(TEST_NET40_FSHARP_SUITE)' == '1'">true</TestFSharpSuite>
+    <TestFSharpCoreUnitTest Condition="'$(TEST_NET40_COREUNIT_SUITE)' == '1'">true</TestFSharpCoreUnitTest>
     <TestFSharpSuite Condition="'$(TEST_CORECLR_FSHARP_SUITE)' == '1'">true</TestFSharpSuite>
     <TestFSharpQASuite Condition="'$(TEST_NET40_FSHARPQA_SUITE)' == '1'">true</TestFSharpQASuite>
     <TestFCS Condition="'$(TEST_FCS)' == '1'">true</TestFCS>
@@ -107,7 +108,7 @@
 
     <ItemGroup Condition="'$(BuildNuget)' == 'true' OR '$(_RunningRestore)' == 'true'">
       <NugetProjects Include="$(MSBuildThisFileDirectory)src\fsharp\FSharp.Compiler.nuget\Microsoft.FSharp.Compiler.csproj" />
-      <NugetProjects Include="$(MSBuildThisFileDirectory)src\fsharp\FSharp.Compiler.nuget\Microsoft.FSharp.Compiler.Prerelease.csproj" />
+      <NugetProjects Include="$(MSBuildThisFileDirectory)tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(BuildSetup)' == 'true' OR '$(_RunningRestore)' == 'true'">
@@ -115,8 +116,7 @@
     </ItemGroup>
 
     <!-- test binaries -->
-
-    <ItemGroup Condition="'$(TestCompiler)' == 'true' OR '$(_RunningRestore)' == 'true'">
+    <ItemGroup Condition="'$(TestCompiler)' == 'true' OR '$(BuildNuget)' == 'true' OR '$(_RunningRestore)' == 'true'">
       <Projects Include="$(MSBuildThisFileDirectory)tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" />
       <Projects Include="$(MSBuildThisFileDirectory)tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" />
       <Projects Include="$(MSBuildThisFileDirectory)tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" />
@@ -127,7 +127,6 @@
       <Projects Include="$(MSBuildThisFileDirectory)tests\fsharp\SDKTests\AllSdkTargetsTests.proj" />
       <Projects Include="$(MSBuildThisFileDirectory)tests\fsharpqa\testenv\src\PEVerify\PEVerify.csproj" />
       <Projects Include="$(MSBuildThisFileDirectory)src\fsharp\FSharp.Compiler.nuget\Testing.FSharp.Compiler.csproj" />
-
       <NugetProjects Include="$(MSBuildThisFileDirectory)src\fsharp\FSharp.Compiler.nuget\Testing.FSharp.Compiler.csproj" />
     </ItemGroup>
 

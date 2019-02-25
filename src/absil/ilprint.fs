@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.ILAsciiWriter 
+module internal FSharp.Compiler.AbstractIL.ILAsciiWriter 
 
 open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiConstants 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Diagnostics 
+open FSharp.Compiler.AbstractIL.Extensions.ILX.Types 
+open FSharp.Compiler.AbstractIL.Internal.AsciiConstants 
+open FSharp.Compiler.AbstractIL.IL 
 
 open System.Text
 open System.IO

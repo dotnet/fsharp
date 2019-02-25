@@ -12,8 +12,8 @@ open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Editor.FindUsages
 open Microsoft.CodeAnalysis.FindUsages
 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 
 [<ExportLanguageService(typeof<IFindUsagesService>, FSharpConstants.FSharpLanguageName); Shared>]
 type internal FSharpFindUsagesService

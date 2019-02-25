@@ -1,8 +1,8 @@
 ﻿
 #if INTERACTIVE
-#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../debug/fcs/net45/FSharp.Compiler.Service.ProjectCracker.dll"
-#r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.ProjectCracker.dll"
+#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -15,8 +15,8 @@ open FsUnit
 open System
 open System.IO
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service
 open FSharp.Compiler.Service.Tests.Common
 
@@ -49,10 +49,14 @@ module internal Utils =
         | BasicPatterns.NewRecord(v,args) -> 
             let fields = v.TypeDefinition.FSharpFields
             "{" + ((fields, args) ||> Seq.map2 (fun f a -> f.Name + " = " + printExpr 0 a) |> String.concat "; ") + "}" 
+        | BasicPatterns.NewAnonRecord(v,args) -> 
+            let fields = v.AnonRecordTypeDetails.SortedFieldNames 
+            "{" + ((fields, args) ||> Seq.map2 (fun f a -> f+ " = " + printExpr 0 a) |> String.concat "; ") + "}" 
         | BasicPatterns.NewTuple(v,args) -> printTupledArgs args 
         | BasicPatterns.NewUnionCase(ty,uc,args) -> uc.CompiledName + printTupledArgs args 
         | BasicPatterns.Quote(e1) -> "quote" + printTupledArgs [e1]
         | BasicPatterns.FSharpFieldGet(obj, ty,f) -> printObjOpt obj + f.Name 
+        | BasicPatterns.AnonRecordGet(obj, ty, n) -> printExpr 0 obj + "." + ty.AnonRecordTypeDetails.SortedFieldNames.[n]
         | BasicPatterns.FSharpFieldSet(obj, ty,f,arg) -> printObjOpt obj + f.Name + " <- " + printExpr 0 arg
         | BasicPatterns.Sequential(e1,e2) -> "(" + printExpr 0 e1 + "; " + printExpr 0 e2 + ")"
         | BasicPatterns.ThisValue _ -> "this"
@@ -535,6 +539,8 @@ module LetLambda =
 
 let letLambdaRes = [ 1, 2 ] |> List.map (fun (a, b) -> LetLambda.f a b) 
 
+let anonRecd = {| X = 1; Y = 2 |}
+let anonRecdGet = (anonRecd.X, anonRecd.Y)
 
     """
     File.WriteAllText(fileName1, fileSource1)
@@ -732,6 +738,8 @@ let ``Test Unoptimized Declarations Project1`` () =
         "type LetLambda";
         "let f = ((); fun a -> fun b -> Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (a,b)) @ (246,8--247,24)";
         "let letLambdaRes = Operators.op_PipeRight<(Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int) Microsoft.FSharp.Collections.list,Microsoft.FSharp.Core.int Microsoft.FSharp.Collections.list> (Cons((1,2),Empty()),let mapping: Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.int = fun tupledArg -> let a: Microsoft.FSharp.Core.int = tupledArg.Item0 in let b: Microsoft.FSharp.Core.int = tupledArg.Item1 in (LetLambda.f () a) b in fun list -> ListModule.Map<Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (mapping,list)) @ (249,19--249,71)";
+        "let anonRecd = {X = 1; Y = 2} @ (251,15--251,33)"
+        "let anonRecdGet = (M.anonRecd ().X,M.anonRecd ().Y) @ (252,19--252,41)"
       ]
 
     let expected2 = [
@@ -870,6 +878,8 @@ let ``Test Optimized Declarations Project1`` () =
         "type LetLambda";
         "let f = fun a -> fun b -> Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (a,b) @ (247,8--247,24)";
         "let letLambdaRes = ListModule.Map<Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun tupledArg -> let a: Microsoft.FSharp.Core.int = tupledArg.Item0 in let b: Microsoft.FSharp.Core.int = tupledArg.Item1 in (LetLambda.f () a) b,Cons((1,2),Empty())) @ (249,19--249,71)";
+        "let anonRecd = {X = 1; Y = 2} @ (251,15--251,33)"
+        "let anonRecdGet = (M.anonRecd ().X,M.anonRecd ().Y) @ (252,19--252,41)"
       ]
 
     let expected2 = [

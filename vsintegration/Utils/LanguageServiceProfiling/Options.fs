@@ -1,8 +1,8 @@
 ﻿module internal  LanguageServiceProfiling.Options
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open System
 open System.IO
 

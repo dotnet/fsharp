@@ -4,19 +4,19 @@
 // Open up the compiler as an incremental service for lexing.
 //--------------------------------------------------------------------------
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
 open System
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler.AbstractIL.Internal  
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library  
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Parser
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Lexhelp
-open Microsoft.FSharp.Compiler.Lib
+open FSharp.Compiler.AbstractIL.Internal  
+open FSharp.Compiler.AbstractIL.Internal.Library  
+open FSharp.Compiler 
+open FSharp.Compiler.Parser
+open FSharp.Compiler.Range
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Lexhelp
+open FSharp.Compiler.Lib
 
 type Position = int * int
 type Range = Position * Position
@@ -257,7 +257,10 @@ module internal TokenClassifications =
         | PUBLIC | PRIVATE | INTERNAL | BASE | GLOBAL
         | CONSTRAINT | INSTANCE | DELEGATE | INHERIT|CONSTRUCTOR|DEFAULT|OVERRIDE|ABSTRACT|CLASS
         | MEMBER | STATIC | NAMESPACE
-        | OASSERT | OLAZY | ODECLEND | OBLOCKSEP | OEND | OBLOCKBEGIN | ORIGHT_BLOCK_END | OBLOCKEND | OBLOCKEND_COMING_SOON | OBLOCKEND_IS_HERE | OTHEN | OELSE | OLET(_) | OBINDER _ | BINDER _ | ODO | OWITH | OFUNCTION | OFUN | ORESET | ODUMMY _ | DO_BANG | ODO_BANG | YIELD _ | YIELD_BANG  _ | OINTERFACE_MEMBER
+        | OASSERT | OLAZY | ODECLEND | OBLOCKSEP | OEND | OBLOCKBEGIN | ORIGHT_BLOCK_END 
+        | OBLOCKEND | OBLOCKEND_COMING_SOON | OBLOCKEND_IS_HERE | OTHEN | OELSE | OLET(_) 
+        | OBINDER _ | BINDER _ | ODO | OWITH | OFUNCTION | OFUN | ORESET | ODUMMY _ | DO_BANG 
+        | ODO_BANG | YIELD _ | YIELD_BANG  _ | OINTERFACE_MEMBER
         | ELIF | RARROW | LARROW | SIG | STRUCT 
         | UPCAST   | DOWNCAST   | NULL   | RESERVED    | MODULE    | AND    | AS   | ASSERT   | ASR
         | DOWNTO   | EXCEPTION   | FALSE   | FOR   | FUN   | FUNCTION
@@ -772,7 +775,7 @@ type FSharpSourceTokenizer(defineConstants : string list, filename : string opti
         FSharpLineTokenizer(lexbuf, None, filename, lexArgsLightOn, lexArgsLightOff)
 
 module Keywords =
-    open Microsoft.FSharp.Compiler.Lexhelp.Keywords
+    open FSharp.Compiler.Lexhelp.Keywords
 
     let QuoteIdentifierIfNeeded s = QuoteIdentifierIfNeeded s
     let NormalizeIdentifierBackticks s = NormalizeIdentifierBackticks s

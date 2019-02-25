@@ -6833,8 +6833,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that implement IDisposable"</source>
-        <target state="translated">用來取代 let 以得出會實作 IDisposable" 的值</target>
+        <source>Used instead of let for values that implement IDisposable</source>
+        <target state="needs-review-translation">用來對需要 Dispose 才能呼叫以釋放資源的值取代 let。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">

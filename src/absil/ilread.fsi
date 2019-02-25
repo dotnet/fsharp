@@ -24,13 +24,13 @@
 ///     class.  That is not particularly satisfactory, and it may be
 ///     a good idea to build a small library which extracts the information
 ///     you need.  
-module Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader 
+module FSharp.Compiler.AbstractIL.ILBinaryReader 
 
 open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.ErrorLogger
 open System.IO
 
 /// Used to implement a Binary file over native memory, used by Roslyn integration

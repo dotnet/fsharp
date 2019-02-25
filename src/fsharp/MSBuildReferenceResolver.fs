@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver 
+module internal FSharp.Compiler.MSBuildReferenceResolver 
 
     open System
     open System.IO
@@ -10,12 +10,12 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 #if FX_RESHAPED_MSBUILD
-    open Microsoft.FSharp.Compiler.MsBuildAdapters
-    open Microsoft.FSharp.Compiler.ToolLocationHelper
+    open FSharp.Compiler.MsBuildAdapters
+    open FSharp.Compiler.ToolLocationHelper
 #endif
 
-    open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-    open Microsoft.FSharp.Compiler.ReferenceResolver
+    open FSharp.Compiler.AbstractIL.Internal.Library 
+    open FSharp.Compiler.ReferenceResolver
     open Microsoft.Build.Tasks
     open Microsoft.Build.Utilities
     open Microsoft.Build.Framework
@@ -344,7 +344,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 #if ENABLE_MONO_SUPPORT
         // The properties TargetedRuntimeVersion and CopyLocalDependenciesWhenParentReferenceInGac 
         // are not available on Mono. So we only set them if available (to avoid a compile-time dependency). 
-        if not Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono then  
+        if not FSharp.Compiler.AbstractIL.IL.runningOnMono then  
             typeof<ResolveAssemblyReference>.InvokeMember("TargetedRuntimeVersion",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box targetedRuntimeVersionValue |])  |> ignore 
             typeof<ResolveAssemblyReference>.InvokeMember("CopyLocalDependenciesWhenParentReferenceInGac",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box true |])  |> ignore 
 #else
@@ -398,9 +398,19 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 
                 let rooted, unrooted = references |> Array.partition (fst >> FileSystem.IsPathRootedShim)
 
-                let rootedResults = ResolveCore(resolutionEnvironment, rooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, true, logMessage, logDiagnostic)
+                let rootedResults = 
+                    ResolveCore
+                       (resolutionEnvironment, rooted,  targetFrameworkVersion, 
+                        targetFrameworkDirectories, targetProcessorArchitecture, 
+                        fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, 
+                        true, logMessage, logDiagnostic)
 
-                let unrootedResults = ResolveCore(resolutionEnvironment, unrooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, false, logMessage, logDiagnostic)
+                let unrootedResults = 
+                    ResolveCore
+                       (resolutionEnvironment, unrooted,  targetFrameworkVersion, 
+                        targetFrameworkDirectories, targetProcessorArchitecture, 
+                        fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, 
+                        false, logMessage, logDiagnostic)
 
                 // now unify the two sets of results
                 Array.concat [| rootedResults; unrootedResults |]

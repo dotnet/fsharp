@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.StrongNameSign
+module internal FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 
 #nowarn "9"
 

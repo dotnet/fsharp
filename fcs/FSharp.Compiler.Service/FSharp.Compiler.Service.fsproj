@@ -57,11 +57,11 @@
       <LogicalName>FSStrings.resources</LogicalName>
     </EmbeddedResource>
     <FsYacc Include="$(FSharpSourcesRoot)\absil\ilpars.fsy">
-      <OtherFlags>--module Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser --open Microsoft.FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.AbstractIL.Internal.AsciiParser --open FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ilpars.fsy</Link>
     </FsYacc>
     <FsYacc Include="$(FSharpSourcesRoot)\fsharp\pars.fsy">
-      <OtherFlags>--module Microsoft.FSharp.Compiler.Parser --open Microsoft.FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.Parser --open FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>pars.fsy</Link>
     </FsYacc>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/Logger.fsi">
@@ -294,7 +294,7 @@
       <Link>ParserAndUntypedAST/pplex.fsl</Link>
     </FsLex>
     <FsYacc Include="$(FSharpSourcesRoot)\fsharp\pppars.fsy">
-      <OtherFlags>--module Microsoft.FSharp.Compiler.PPParser --open Microsoft.FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.PPParser --open FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ParserAndUntypedAST/pppars.fsy</Link>
     </FsYacc>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/UnicodeLexing.fsi">
@@ -640,7 +640,6 @@
     <PackageReference Include="System.Reflection.Metadata" Version="1.6.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="System.Data.SqlClient" Version="4.3.0" />
     <PackageReference Include="System.Diagnostics.Process" Version="4.1.0" />
     <PackageReference Include="System.Diagnostics.TraceSource" Version="4.0.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />

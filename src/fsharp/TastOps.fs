@@ -1,29 +1,29 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Defines derived expression manipulation and construction functions.
-module internal Microsoft.FSharp.Compiler.Tastops
+module internal FSharp.Compiler.Tastops
 
 open System.Collections.Generic 
 open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Rational
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
-open Microsoft.FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Extensions.ILX 
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler 
+open FSharp.Compiler.Range
+open FSharp.Compiler.Rational
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Tast
+open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.Lib
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Layout
+open FSharp.Compiler.Layout.TaggedTextOps
+open FSharp.Compiler.PrettyNaming
 #if !NO_EXTENSIONTYPING
-open Microsoft.FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.ExtensionTyping
 #endif
 
 //---------------------------------------------------------------------------
@@ -3175,7 +3175,7 @@ let (|TypeDefOfExpr|_|) g expr =
 //---------------------------------------------------------------------------
 
 module DebugPrint = begin
-    open Microsoft.FSharp.Compiler.Layout
+    open FSharp.Compiler.Layout
     open PrettyTypes
     let layoutRanges = ref false  
 
@@ -3419,10 +3419,13 @@ module DebugPrint = begin
           ^^ (if v.IsMutable then wordL(tagText "mutable ") else emptyL)
           ^^ wordL (tagText ":")) -- typeL v.Type
 
-
     let tslotparamL(TSlotParam(nmOpt, ty, inFlag, outFlag, _, _)) =
-        (optionL (tagText >> wordL) nmOpt) ^^ wordL(tagText ":") ^^ typeL ty ^^ (if inFlag then wordL(tagText "[in]") else emptyL)  ^^ (if outFlag then wordL(tagText "[out]") else emptyL)  ^^ (if inFlag then wordL(tagText "[opt]") else emptyL)
-    
+        (optionL (tagText >> wordL) nmOpt) ^^ 
+         wordL(tagText ":") ^^ 
+         typeL ty ^^ 
+         (if inFlag then wordL(tagText "[in]") else emptyL)  ^^ 
+         (if outFlag then wordL(tagText "[out]") else emptyL)  ^^ 
+         (if inFlag then wordL(tagText "[opt]") else emptyL)
 
     let slotSigL (slotsig:SlotSig) =
 #if DEBUG
@@ -3452,10 +3455,6 @@ module DebugPrint = begin
 
     let unionCaseRefL (ucr:UnionCaseRef) = wordL (tagText ucr.CaseName)
     let recdFieldRefL (rfref:RecdFieldRef) = wordL (tagText rfref.FieldName)
-
-    //--------------------------------------------------------------------------
-    // DEBUG layout - bind, expr, dtree etc.
-    //--------------------------------------------------------------------------
 
     let identL (id:Ident) = wordL (tagText id.idText)  
 

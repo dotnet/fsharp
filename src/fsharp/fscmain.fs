@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.CommandLineMain
+module internal FSharp.Compiler.CommandLineMain
 
 open System
 open System.Diagnostics
@@ -8,16 +8,16 @@ open System.IO
 open System.Reflection
 open System.Runtime.CompilerServices
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader 
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Driver
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.ILBinaryReader 
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Driver
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Range
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.AbstractIL.Internal.Library 
 open Internal.Utilities
 
 #if FX_RESHAPED_REFLECTION
@@ -45,7 +45,13 @@ module Driver =
         let timesFlag = argv |> Array.exists  (fun x -> x = "/times" || x = "--times")
         if timesFlag then 
             let stats = ILBinaryReader.GetStatistics()
-            AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> printfn "STATS: #ByteArrayFile = %d, #MemoryMappedFileOpen = %d, #MemoryMappedFileClosed = %d, #RawMemoryFile = %d, #WeakByteArrayFile = %d" stats.byteFileCount stats.memoryMapFileOpenedCount stats.memoryMapFileClosedCount stats.rawMemoryFileCount stats.weakByteFileCount)
+            AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> 
+                printfn "STATS: #ByteArrayFile = %d, #MemoryMappedFileOpen = %d, #MemoryMappedFileClosed = %d, #RawMemoryFile = %d, #WeakByteArrayFile = %d" 
+                    stats.byteFileCount 
+                    stats.memoryMapFileOpenedCount 
+                    stats.memoryMapFileClosedCount 
+                    stats.rawMemoryFileCount 
+                    stats.weakByteFileCount)
 #endif
 
         let quitProcessExiter = 
@@ -85,5 +91,5 @@ let main(argv) =
     try 
         Driver.main(Array.append [| "fsc.exe" |] argv)
     with e -> 
-        errorRecovery e Microsoft.FSharp.Compiler.Range.range0
+        errorRecovery e FSharp.Compiler.Range.range0
         1

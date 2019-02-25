@@ -5,10 +5,10 @@
 // type checking and intellisense-like environment-reporting.
 //--------------------------------------------------------------------------
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
+open FSharp.Compiler.Range
+open FSharp.Compiler.Ast
 
 /// Represents the different kinds of items that can appear in the navigation bar
 type FSharpNavigationDeclarationItemKind =
@@ -72,8 +72,8 @@ type FSharpNavigationItems(declarations:FSharpNavigationTopLevelDeclaration[]) =
 
 module NavigationImpl =
     let unionRangesChecked r1 r2 =
-        if Microsoft.FSharp.Compiler.Range.equals r1 range.Zero then r2
-        elif Microsoft.FSharp.Compiler.Range.equals r2 range.Zero then r1
+        if FSharp.Compiler.Range.equals r1 range.Zero then r2
+        elif FSharp.Compiler.Range.equals r2 range.Zero then r1
         else unionRanges r1 r2
     
     let rangeOfDecls2 f decls = 

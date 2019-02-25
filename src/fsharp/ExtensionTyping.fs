@@ -2,7 +2,7 @@
 
 // Type providers, validation of provided types, etc.
 
-namespace Microsoft.FSharp.Compiler
+namespace FSharp.Compiler
 
 #if !NO_EXTENSIONTYPING
 
@@ -12,11 +12,11 @@ module internal ExtensionTyping =
     open System.Collections.Generic
     open System.Reflection
     open Microsoft.FSharp.Core.CompilerServices
-    open Microsoft.FSharp.Compiler.ErrorLogger
-    open Microsoft.FSharp.Compiler.Range
-    open Microsoft.FSharp.Compiler.AbstractIL.IL
-    open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics // dprintfn
-    open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
+    open FSharp.Compiler.ErrorLogger
+    open FSharp.Compiler.Range
+    open FSharp.Compiler.AbstractIL.IL
+    open FSharp.Compiler.AbstractIL.Diagnostics // dprintfn
+    open FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
 
 #if FX_RESHAPED_REFLECTION
     open Microsoft.FSharp.Core.ReflectionAdapters

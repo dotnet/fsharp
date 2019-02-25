@@ -5,7 +5,7 @@
 /// Runtime, e.g. between the SSCLI, Mono and the Microsoft CLR.
 ///
 /// The implementation of the functions can be found in ilsupp-*.fs
-module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Support
+module internal FSharp.Compiler.AbstractIL.Internal.Support
 
 #if !FX_NO_PDB_WRITER
 type PdbWriter
@@ -25,9 +25,9 @@ open System.Runtime.InteropServices
 open System.Diagnostics.SymbolStore
 #endif
 open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.IL 
 
 #if !FX_NO_LINKEDRESOURCES
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
