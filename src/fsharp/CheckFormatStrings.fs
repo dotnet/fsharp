@@ -42,7 +42,7 @@ type FormatInfoRegister =
     mutable addZeros       : bool
     mutable precision      : bool}
 
-let newInfo ()= 
+let newInfo () = 
   { leftJustify    = false
     numPrefixIfPos = None
     addZeros       = false
