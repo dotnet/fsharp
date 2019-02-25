@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly extern ComputationExprLibrary
 {
@@ -33,20 +33,28 @@
 }
 .mresource public FSharpSignatureData.ComputationExpr03
 {
-  // Offset: 0x00000000 Length: 0x00000222
+  // Offset: 0x00000000 Length: 0x00000244
+}
+.mresource public FSharpSignatureDataB.ComputationExpr03
+{
+  // Offset: 0x00000248 Length: 0x00000004
 }
 .mresource public FSharpOptimizationData.ComputationExpr03
 {
-  // Offset: 0x00000228 Length: 0x0000008C
+  // Offset: 0x00000250 Length: 0x0000008C
+}
+.mresource public FSharpOptimizationDataB.ComputationExpr03
+{
+  // Offset: 0x000002E0 Length: 0x00000000
 }
 .module ComputationExpr03.exe
-// MVID: {5A1F62A7-3649-E566-A745-0383A7621F5A}
+// MVID: {5C6C932A-A73F-ACD5-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00BF0000
+// Image base: 0x00D80000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -84,7 +92,7 @@
       .maxstack  7
       .locals init ([0] int32 x)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 8,8 : 18,33 'C:\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr03.fs'
+      .line 8,8 : 18,33 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr03.fs'
       IL_0000:  ldstr      "hello"
       IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
       IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)

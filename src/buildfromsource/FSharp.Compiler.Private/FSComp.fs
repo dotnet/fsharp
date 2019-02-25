@@ -4393,12 +4393,48 @@ type internal SR private() =
     /// The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record
     /// (Originally from ..\FSComp.txt:1455)
     static member tcCopyAndUpdateNeedsRecordType() = (3245, GetStringFunc("tcCopyAndUpdateNeedsRecordType",",,,") )
-    /// The parameter '%s' has an invalid type '%s'. This is not permitted by the rules of Common IL.
+    /// The type '%s' does not support a nullness qualitification.
     /// (Originally from ..\FSComp.txt:1456)
+    static member tcTypeDoesNotHaveAnyNull(a0 : System.String) = (3260, GetStringFunc("tcTypeDoesNotHaveAnyNull",",,,%s,,,") a0)
+    /// This language feature is not enabled, use /langversion:5.0 or greater to enable it
+    /// (Originally from ..\FSComp.txt:1461)
+    static member tcLangFeatureNotEnabled50() = (3265, GetStringFunc("tcLangFeatureNotEnabled50",",,,") )
+    /// Nullness warning. The default constructor of a struct type is required but one of the fields of struct type is non-nullable.
+    /// (Originally from ..\FSComp.txt:1462)
+    static member tcDefaultStructConstructorCallNulls() = (3266, GetStringFunc("tcDefaultStructConstructorCallNulls",",,,") )
+    /// Nullness warning. The 'DefaultValue' attribute is used but the type (or one of its fields if a struct) is non-nullable.
+    /// (Originally from ..\FSComp.txt:1463)
+    static member chkValueWithDefaultValueMustHaveDefaultValueNulls() = (3267, GetStringFunc("chkValueWithDefaultValueMustHaveDefaultValueNulls",",,,") )
+    /// The constraints 'null' and 'not null' are inconsistent
+    /// (Originally from ..\FSComp.txt:1464)
+    static member csNullNotNullConstraintInconsistent() = (3268, GetStringFunc("csNullNotNullConstraintInconsistent",",,,") )
+    /// The constraints 'struct' and 'null' are inconsistent
+    /// (Originally from ..\FSComp.txt:1465)
+    static member csStructNullConstraintInconsistent() = (3269, GetStringFunc("csStructNullConstraintInconsistent",",,,") )
+    /// The constraints 'delegate' and 'comparison' are inconsistent
+    /// (Originally from ..\FSComp.txt:1466)
+    static member csDelegateComparisonConstraintInconsistent() = (3270, GetStringFunc("csDelegateComparisonConstraintInconsistent",",,,") )
+    /// The /checknulls language feature is not enabled
+    /// (Originally from ..\FSComp.txt:1467)
+    static member tcNullnessCheckingNotEnabled() = (3271, GetStringFunc("tcNullnessCheckingNotEnabled",",,,") )
+    /// The type '%s' has 'null' as a true representation value but a constraint does not permit this
+    /// (Originally from ..\FSComp.txt:1468)
+    static member csTypeHasNullAsTrueValue(a0 : System.String) = (GetStringFunc("csTypeHasNullAsTrueValue",",,,%s,,,") a0)
+    /// The type '%s' has 'null' as an extra value but a constraint does not permit this
+    /// (Originally from ..\FSComp.txt:1469)
+    static member csTypeHasNullAsExtraValue(a0 : System.String) = (GetStringFunc("csTypeHasNullAsExtraValue",",,,%s,,,") a0)
+    /// The parameter '%s' has an invalid type '%s'. This is not permitted by the rules of Common IL.
+    /// (Originally from ..\FSComp.txt:1470)
     static member chkInvalidFunctionParameterType(a0 : System.String, a1 : System.String) = (3300, GetStringFunc("chkInvalidFunctionParameterType",",,,%s,,,%s,,,") a0 a1)
     /// The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL.
-    /// (Originally from ..\FSComp.txt:1457)
+    /// (Originally from ..\FSComp.txt:1471)
     static member chkInvalidFunctionReturnType(a0 : System.String) = (3301, GetStringFunc("chkInvalidFunctionReturnType",",,,%s,,,") a0)
+    /// Enable nullness declarations and checks
+    /// (Originally from ..\FSComp.txt:1472)
+    static member optsCheckNulls() = (GetStringFunc("optsCheckNulls",",,,") )
+    /// Specify the language version
+    /// (Originally from ..\FSComp.txt:1473)
+    static member optsLangVersion() = (GetStringFunc("optsLangVersion",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5828,6 +5864,18 @@ type internal SR private() =
         ignore(GetString("parsInvalidAnonRecdExpr"))
         ignore(GetString("parsInvalidAnonRecdType"))
         ignore(GetString("tcCopyAndUpdateNeedsRecordType"))
+        ignore(GetString("tcTypeDoesNotHaveAnyNull"))
+        ignore(GetString("tcLangFeatureNotEnabled50"))
+        ignore(GetString("tcDefaultStructConstructorCallNulls"))
+        ignore(GetString("chkValueWithDefaultValueMustHaveDefaultValueNulls"))
+        ignore(GetString("csNullNotNullConstraintInconsistent"))
+        ignore(GetString("csStructNullConstraintInconsistent"))
+        ignore(GetString("csDelegateComparisonConstraintInconsistent"))
+        ignore(GetString("tcNullnessCheckingNotEnabled"))
+        ignore(GetString("csTypeHasNullAsTrueValue"))
+        ignore(GetString("csTypeHasNullAsExtraValue"))
         ignore(GetString("chkInvalidFunctionParameterType"))
         ignore(GetString("chkInvalidFunctionReturnType"))
+        ignore(GetString("optsCheckNulls"))
+        ignore(GetString("optsLangVersion"))
         ()

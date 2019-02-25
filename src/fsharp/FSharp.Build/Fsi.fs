@@ -15,6 +15,12 @@ open Internal.Utilities
 open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+[<AutoOpen>]
+module UtilsFsi = 
+    let inline (|NonNull|) x = match x with null -> raise (NullReferenceException()) | v -> v
+#endif
+
 //There are a lot of flags on fsi.exe.
 //For now, not all of them are represented in the "Fsi class" object model.
 //The goal is to have the most common/important flags available via the Fsi class, and the
@@ -95,7 +101,7 @@ type public Fsi () as this =
         // NoWarn
         match disabledWarnings with
         | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
+        | NonNull disabledWarnings -> builder.AppendSwitchesIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
 
         builder.AppendSwitchIfNotNull("--warn:", warningLevel)
 
@@ -105,13 +111,13 @@ type public Fsi () as this =
         let warningsAsErrorsArray =
             match warningsAsErrors with
             | null -> [| "76" |]
-            | _ -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
+            | NonNull warningsAsErrors -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
-        builder.AppendSwitchIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
+        builder.AppendSwitchesIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
 
         match warningsNotAsErrors with
         | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
+        | NonNull warningsNotAsErrors -> builder.AppendSwitchesIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
 
         builder.AppendSwitchIfNotNull("--LCID:", vslcid)
 
@@ -315,7 +321,10 @@ type public Fsi () as this =
 
     override fsi.GenerateCommandLineCommands() =
         let builder = new FSharpCommandLineBuilder()
-        if not (String.IsNullOrEmpty(dotnetFsiCompilerPath)) then builder.AppendSwitch(dotnetFsiCompilerPath)
+        match dotnetFsiCompilerPath with
+        | null | "" -> ()
+        | NonNull dotnetFsiCompilerPath ->
+            builder.AppendSwitch(dotnetFsiCompilerPath)
         builder.ToString()
 
     override fsi.GenerateResponseFileCommands() =

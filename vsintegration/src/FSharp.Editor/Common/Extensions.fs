@@ -181,13 +181,13 @@ module Array =
     /// Optimized arrays equality. ~100x faster than `array1 = array2` on strings.
     /// ~2x faster for floats
     /// ~0.8x slower for ints
-    let areEqual (xs: 'T []) (ys: 'T []) =
+    let areEqual (xs: 'T []?) (ys: 'T []?) =
         match xs, ys with
         | null, null -> true
         | [||], [||] -> true
         | null, _ | _, null -> false
-        | _ when xs.Length <> ys.Length -> false
-        | _ ->
+        | NonNull xs, NonNull ys when xs.Length <> ys.Length -> false
+        | NonNull xs, NonNull ys ->
             let mutable stop = false
             let mutable i = 0
             let mutable result = true
@@ -200,9 +200,11 @@ module Array =
     
     /// check if subArray is found in the wholeArray starting 
     /// at the provided index
-    let isSubArray (subArray: 'T []) (wholeArray:'T []) index = 
-        if isNull subArray || isNull wholeArray then false
-        elif subArray.Length = 0 then true
+    let isSubArray (subArray: 'T []?) (wholeArray:'T []?) index = 
+        match subArray, wholeArray with 
+        | null, _ | _, null -> false
+        | NonNull subArray, NonNull wholeArray -> 
+        if subArray.Length = 0 then true
         elif subArray.Length > wholeArray.Length then false
         elif subArray.Length = wholeArray.Length then areEqual subArray wholeArray else
         let rec loop subidx idx =
@@ -227,10 +229,10 @@ module Exception =
     /// messages recursively.
     let flattenMessage (root: System.Exception) =
 
-        let rec flattenInner (exc: System.Exception) =
+        let rec flattenInner (exc: System.Exception?) =
             match exc with
             | null -> []
-            | _ -> [exc.Message] @ (flattenInner exc.InnerException)
+            | NonNull exc -> [exc.Message] @ (flattenInner exc.InnerException)
         
         // If an aggregate exception only has a single inner exception, use that as the root
         match root with

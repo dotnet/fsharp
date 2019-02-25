@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:5:0:0
 }
 .assembly GeneralizationOnUnions01
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.GeneralizationOnUnions01
 {
-  // Offset: 0x00000000 Length: 0x00000699
+  // Offset: 0x00000000 Length: 0x0000068D
+}
+.mresource public FSharpSignatureDataB.GeneralizationOnUnions01
+{
+  // Offset: 0x00000698 Length: 0x0000007F
 }
 .mresource public FSharpOptimizationData.GeneralizationOnUnions01
 {
-  // Offset: 0x000006A0 Length: 0x000001F4
+  // Offset: 0x00000720 Length: 0x000001F4
+}
+.mresource public FSharpOptimizationDataB.GeneralizationOnUnions01
+{
+  // Offset: 0x00000918 Length: 0x0000002A
 }
 .module GeneralizationOnUnions01.exe
-// MVID: {59B19213-4CA2-8CD1-A745-03831392B159}
+// MVID: {5C6C932A-CDC6-3158-A745-03832A936C5C}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x014C0000
+// Image base: 0x00480000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

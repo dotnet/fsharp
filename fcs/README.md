@@ -16,7 +16,6 @@ There are subtle differences between FSharp.Compiler.Service and FSharp.Compiler
 - FCS has a NuGet package
 - FCS has a .NET Standard 1.6 version in the nuget package
 - FCS testing also tests the "Project Cracker" (see below)
-- FCS doesn't add the System.ValueTuple.dll reference by default, see ``#if COMPILER_SERVICE_AS_DLL`` in compiler codebase
 
 
 ## Version Numbers

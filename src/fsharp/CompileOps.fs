@@ -193,7 +193,11 @@ let GetRangeOfDiagnostic(err:PhasedDiagnostic) =
       | NonRigidTypar(_, _, _, _, _, m)
       | ConstraintSolverTupleDiffLengths(_, _, _, m, _) 
       | ConstraintSolverInfiniteTypes(_, _, _, _, m, _) 
-      | ConstraintSolverMissingConstraint(_, _, _, m, _) 
+      | ConstraintSolverMissingConstraint(_, _, _, m, _)
+      | ConstraintSolverNullnessWarningEquivWithTypes(_, _, _, _, _, m, _)
+      | ConstraintSolverNullnessWarningWithTypes(_, _, _, _, _, m, _)
+      | ConstraintSolverNullnessWarningWithType(_, _, _, m, _)
+      | ConstraintSolverNonNullnessWarningWithType(_, _, _, m, _)
       | ConstraintSolverTypesNotInEqualityRelation(_, _, _, m, _, _)
       | ConstraintSolverError(_, m, _) 
       | ConstraintSolverTypesNotInSubsumptionRelation(_, _, _, m, _) 
@@ -371,6 +375,10 @@ let GetDiagnosticNumber(err:PhasedDiagnostic) =
       | :? TypeProviderError as e -> e.Number
 #endif
       | ErrorsFromAddingSubsumptionConstraint (_, _, _, _, _, ContextInfo.DowncastUsedInsteadOfUpcast _, _) -> fst (FSComp.SR.considerUpcast("", ""))
+      | ConstraintSolverNullnessWarningEquivWithTypes _ -> 3261
+      | ConstraintSolverNullnessWarningWithTypes _ -> 3262
+      | ConstraintSolverNullnessWarningWithType _ -> 3263
+      | ConstraintSolverNonNullnessWarningWithType _ -> 3264
       | _ -> 193
    GetFromException err.Exception
    
@@ -442,6 +450,10 @@ let ConstraintSolverTupleDiffLengthsE() = DeclareResourceString("ConstraintSolve
 let ConstraintSolverInfiniteTypesE() = DeclareResourceString("ConstraintSolverInfiniteTypes", "%s%s")
 let ConstraintSolverMissingConstraintE() = DeclareResourceString("ConstraintSolverMissingConstraint", "%s")
 let ConstraintSolverTypesNotInEqualityRelation1E() = DeclareResourceString("ConstraintSolverTypesNotInEqualityRelation1", "%s%s")
+let ConstraintSolverNullnessWarningEquivWithTypesE() = DeclareResourceString("ConstraintSolverNullnessWarningEquivWithTypes", "%s%s%s%s")
+let ConstraintSolverNullnessWarningWithTypesE() = DeclareResourceString("ConstraintSolverNullnessWarningWithTypes", "%s%s%s%s")
+let ConstraintSolverNullnessWarningWithTypeE() = DeclareResourceString("ConstraintSolverNullnessWarningWithType", "%s")
+let ConstraintSolverNonNullnessWarningWithTypeE() = DeclareResourceString("ConstraintSolverNonNullnessWarningWithType", "%s")
 let ConstraintSolverTypesNotInEqualityRelation2E() = DeclareResourceString("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
 let ConstraintSolverTypesNotInSubsumptionRelationE() = DeclareResourceString("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
 let ErrorFromAddingTypeEquation1E() = DeclareResourceString("ErrorFromAddingTypeEquation1", "%s%s%s")
@@ -631,11 +643,45 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           if m.StartLine <> m2.StartLine then 
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
 
+      | ConstraintSolverNullnessWarningEquivWithTypes(denv, ty1, ty2, nullness1, nullness2, m, m2) ->
+          
+          let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+
+          os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1 t2 (nullness1.ToString()) (nullness2.ToString())) |> ignore
+
+          if m.StartLine <> m2.StartLine then
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+
+      | ConstraintSolverNullnessWarningWithTypes(denv, ty1, ty2, nullness1, nullness2, m, m2) ->
+          
+          let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+
+          os.Append(ConstraintSolverNullnessWarningWithTypesE().Format t1 t2 (nullness1.ToString()) (nullness2.ToString())) |> ignore
+
+          if m.StartLine <> m2.StartLine then
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+
+      | ConstraintSolverNullnessWarningWithType(denv, ty, _nullness, m, m2) ->
+          
+          let t = NicePrint.minimalStringOfType denv ty
+          os.Append(ConstraintSolverNullnessWarningWithTypeE().Format (t)) |> ignore
+
+          if m.StartLine <> m2.StartLine then
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+
+      | ConstraintSolverNonNullnessWarningWithType(denv, ty, _nullness, m, m2) ->
+          
+          let t = NicePrint.minimalStringOfType denv ty
+          os.Append(ConstraintSolverNonNullnessWarningWithTypeE().Format (t)) |> ignore
+
+          if m.StartLine <> m2.StartLine then
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+
       | ConstraintSolverTypesNotInEqualityRelation(denv, (TType_measure _ as t1), (TType_measure _ as t2), m, m2, _) -> 
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           
-          os.Append(ConstraintSolverTypesNotInEqualityRelation1E().Format t1 t2 )  |> ignore
+          os.Append(ConstraintSolverTypesNotInEqualityRelation1E().Format t1 t2)  |> ignore
           
           if m.StartLine <> m2.StartLine then
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
@@ -1244,7 +1290,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
               // we need to check if unit was used as a type argument
               let rec hasUnitTType_app (types: TType list) =
                   match types with
-                  | TType_app (maybeUnit, []) :: ts -> 
+                  | TType_app (maybeUnit, [], _) :: ts -> 
                       match maybeUnit.TypeAbbrev with
                       | Some ttype when Tastops.isUnitTy g ttype -> true
                       | _ -> hasUnitTType_app ts
@@ -1252,7 +1298,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
                   | [] -> false
 
               match minfoVirt.ApparentEnclosingType with
-              | TType_app (t, types) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
+              | TType_app (t, types, _) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
                   // match abstract member with 'unit' passed as generic argument
                   os.Append(OverrideDoesntOverride4E().Format sig1) |> ignore
               | _ -> 
@@ -2093,24 +2139,35 @@ type VersionFlag =
 /// Represents a reference to an assembly. May be backed by a real assembly on disk, or a cross-project
 /// reference backed by information generated by the the compiler service.
 type IRawFSharpAssemblyData = 
+
     ///  The raw list AutoOpenAttribute attributes in the assembly
     abstract GetAutoOpenAttributes : ILGlobals -> string list
+
     ///  The raw list InternalsVisibleToAttribute attributes in the assembly
     abstract GetInternalsVisibleToAttributes : ILGlobals  -> string list
+
     ///  The raw IL module definition in the assembly, if any. This is not present for cross-project references
     /// in the language service
     abstract TryGetILModuleDef : unit -> ILModuleDef option
+
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData : range * ilShortAssemName: string * fileName: string -> (string * (unit -> byte[])) list
+    abstract GetRawFSharpSignatureData : range * ilShortAssemName: string * fileName: string -> (string * ((unit -> byte[]) * (unit -> byte[]) option)) list
+
     ///  The raw F# optimization data in the assembly, if any
-    abstract GetRawFSharpOptimizationData : range * ilShortAssemName: string * fileName: string -> (string * (unit -> byte[])) list
+    abstract GetRawFSharpOptimizationData : range * ilShortAssemName: string * fileName: string -> (string * ((unit -> byte[]) * (unit -> byte[]) option)) list
+
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders : unit -> ILExportedTypesAndForwarders
+
     /// The identity of the module
     abstract ILScopeRef : ILScopeRef
+
     abstract ILAssemblyRefs : ILAssemblyRef list
+
     abstract ShortAssemblyName : string
+
     abstract HasAnyFSharpSignatureDataAttribute : bool
+
     abstract HasMatchingFSharpSignatureDataAttribute : ILGlobals -> bool
 
 /// Cache of time stamps as we traverse a project description
@@ -2234,6 +2291,9 @@ type TcConfigBuilder =
       mutable embedResources : string list
       mutable errorSeverityOptions: FSharpErrorSeverityOptions
       mutable mlCompatibility: bool
+      mutable assumeNullOnImport: bool
+      mutable checkNullness: bool
+      mutable langVersion: double
       mutable checkOverflow: bool
       mutable showReferenceResolutions:bool
       mutable outputFile : string option
@@ -2287,7 +2347,7 @@ type TcConfigBuilder =
       mutable win32manifest : string
       mutable includewin32manifest : bool
       mutable linkResources : string list
-      mutable legacyReferenceResolver: ReferenceResolver.Resolver 
+      mutable legacyReferenceResolver: ReferenceResolver.Resolver
 
       mutable showFullPaths : bool
       mutable errorStyle : ErrorStyle
@@ -2359,7 +2419,7 @@ type TcConfigBuilder =
       mutable noConditionalErasure : bool
       }
 
-    static member Initial =
+    static member Initial(legacyReferenceResolver) =
         {
 #if COMPILER_SERVICE_ASSUMES_DOTNETCORE_COMPILATION
           primaryAssembly = PrimaryAssembly.System_Runtime // defaut value, can be overridden using the command line switch
@@ -2396,6 +2456,9 @@ type TcConfigBuilder =
           subsystemVersion = 4, 0 // per spec for 357994
           useHighEntropyVA = false
           mlCompatibility = false
+          assumeNullOnImport = false
+          checkNullness = false
+          langVersion = 5.0
           checkOverflow = false
           showReferenceResolutions = false
           outputFile = None
@@ -2452,7 +2515,7 @@ type TcConfigBuilder =
           win32manifest = ""
           includewin32manifest = true
           linkResources = []
-          legacyReferenceResolver = null
+          legacyReferenceResolver = legacyReferenceResolver
           showFullPaths = false
           errorStyle = ErrorStyle.DefaultErrors
 
@@ -2505,7 +2568,7 @@ type TcConfigBuilder =
         if (String.IsNullOrEmpty(defaultFSharpBinariesDir)) then
             failwith "Expected a valid defaultFSharpBinariesDir"
 
-        { TcConfigBuilder.Initial with 
+        { TcConfigBuilder.Initial(legacyReferenceResolver) with 
             implicitIncludeDir = implicitIncludeDir
             defaultFSharpBinariesDir = defaultFSharpBinariesDir
             reduceMemoryUsage = reduceMemoryUsage
@@ -2874,6 +2937,9 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     member x.embedResources  = data.embedResources
     member x.errorSeverityOptions = data.errorSeverityOptions
     member x.mlCompatibility = data.mlCompatibility
+    member x.assumeNullOnImport = data.assumeNullOnImport
+    member x.checkNullness = data.checkNullness
+    member x.langVersion = data.langVersion
     member x.checkOverflow = data.checkOverflow
     member x.showReferenceResolutions = data.showReferenceResolutions
     member x.outputFile  = data.outputFile
@@ -3778,13 +3844,21 @@ let IsSignatureDataResource         (r: ILResource) =
     r.Name.StartsWithOrdinal(FSharpSignatureDataResourceName) ||
     r.Name.StartsWithOrdinal(FSharpSignatureDataResourceName2)
 
+let IsSignatureDataResourceB (r: ILResource) = 
+    r.Name.StartsWithOrdinal(FSharpSignatureDataResourceNameB)
+
 let IsOptimizationDataResource      (r: ILResource) = 
     r.Name.StartsWithOrdinal(FSharpOptimizationDataResourceName)|| 
     r.Name.StartsWithOrdinal(FSharpOptimizationDataResourceName2)
 
-let GetSignatureDataResourceName    (r: ILResource) = 
+let IsOptimizationDataResourceB (r: ILResource) = 
+    r.Name.StartsWithOrdinal(FSharpOptimizationDataResourceNameB)
+
+let GetSignatureDataResourceName (r: ILResource) = 
     if r.Name.StartsWithOrdinal(FSharpSignatureDataResourceName) then 
         String.dropPrefix r.Name FSharpSignatureDataResourceName
+    elif r.Name.StartsWithOrdinal(FSharpSignatureDataResourceNameB) then 
+        String.dropPrefix r.Name FSharpSignatureDataResourceNameB
     elif r.Name.StartsWithOrdinal(FSharpSignatureDataResourceName2) then 
         String.dropPrefix r.Name FSharpSignatureDataResourceName2
     else failwith "GetSignatureDataResourceName"
@@ -3792,6 +3866,8 @@ let GetSignatureDataResourceName    (r: ILResource) =
 let GetOptimizationDataResourceName (r: ILResource) = 
     if r.Name.StartsWithOrdinal(FSharpOptimizationDataResourceName) then 
         String.dropPrefix r.Name FSharpOptimizationDataResourceName
+    elif r.Name.StartsWithOrdinal(FSharpOptimizationDataResourceNameB) then 
+        String.dropPrefix r.Name FSharpOptimizationDataResourceNameB
     elif r.Name.StartsWithOrdinal(FSharpOptimizationDataResourceName2) then 
         String.dropPrefix r.Name FSharpOptimizationDataResourceName2
     else failwith "GetOptimizationDataResourceName"
@@ -3806,35 +3882,43 @@ let MakeILResource rname bytes =
       CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
       MetadataIndex = NoMetadataIdx }
 
-let PickleToResource inMem file g scope rname p x = 
+let PickleToResource inMem file g scope rname rnameB p x = 
+    let bytes, bytesB = pickleObjWithDanglingCcus inMem file g scope p x 
     { Name = rname
-      Location = (let bytes = pickleObjWithDanglingCcus inMem file g scope p x in ILResourceLocation.LocalOut bytes)
+      Location = ILResourceLocation.LocalOut bytes
+      Access = ILResourceAccess.Public
+      CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
+      MetadataIndex = NoMetadataIdx },
+    { Name = rnameB
+      Location = ILResourceLocation.LocalOut bytesB
       Access = ILResourceAccess.Public
       CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
       MetadataIndex = NoMetadataIdx }
 
-let GetSignatureData (file, ilScopeRef, ilModule, byteReader) : PickledDataWithReferences<PickledCcuInfo> = 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo (byteReader())
+let GetSignatureData (file, ilScopeRef, ilModule, byteReader, byteReaderB) : PickledDataWithReferences<PickledCcuInfo> = 
+    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo (byteReader()) (match byteReaderB with None -> [| |] | Some br -> br())
 
-let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: CcuThunk, file, inMem) : ILResource = 
+let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: CcuThunk, file, inMem) : ILResource * ILResource = 
     let mspec = ccu.Contents
     let mspec = ApplyExportRemappingToEntity tcGlobals exportRemapping mspec
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
     // don't complain when they see the resource.
     let rname = if ccu.AssemblyName = GetFSharpCoreLibraryName() then FSharpSignatureDataResourceName2 else FSharpSignatureDataResourceName 
-    PickleToResource inMem file tcGlobals ccu (rname+ccu.AssemblyName) pickleCcuInfo 
+    let rnameB = FSharpSignatureDataResourceNameB
+    PickleToResource inMem file tcGlobals ccu (rname+ccu.AssemblyName)  (rnameB+ccu.AssemblyName) pickleCcuInfo 
         { mspec=mspec 
           compileTimeWorkingDir=tcConfig.implicitIncludeDir
           usesQuotations = ccu.UsesFSharp20PlusQuotations }
 
-let GetOptimizationData (file, ilScopeRef, ilModule, byteReader) = 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule Optimizer.u_CcuOptimizationInfo (byteReader())
+let GetOptimizationData (file, ilScopeRef, ilModule, byteReader, byteReaderB) = 
+    unpickleObjWithDanglingCcus file ilScopeRef ilModule Optimizer.u_CcuOptimizationInfo (byteReader()) (match byteReaderB with None -> [| |] | Some br -> br())
 
 let WriteOptimizationData (tcGlobals, file, inMem, ccu: CcuThunk, modulInfo) = 
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
     // don't complain when they see the resource.
     let rname = if ccu.AssemblyName = GetFSharpCoreLibraryName() then FSharpOptimizationDataResourceName2 else FSharpOptimizationDataResourceName 
-    PickleToResource inMem file tcGlobals ccu (rname+ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
+    let rnameB = FSharpOptimizationDataResourceNameB 
+    PickleToResource inMem file tcGlobals ccu (rname+ccu.AssemblyName) (rnameB+ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
 
 //----------------------------------------------------------------------------
 // Abstraction for project reference
@@ -3842,30 +3926,60 @@ let WriteOptimizationData (tcGlobals, file, inMem, ccu: CcuThunk, modulInfo) =
 type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyRefs) = 
     let externalSigAndOptData = ["FSharp.Core"]
     interface IRawFSharpAssemblyData with 
+
          member __.GetAutoOpenAttributes(ilg) = GetAutoOpenAttributes ilg ilModule 
+
          member __.GetInternalsVisibleToAttributes(ilg) = GetInternalsVisibleToAttributes ilg ilModule 
+
          member __.TryGetILModuleDef() = Some ilModule 
+
          member __.GetRawFSharpSignatureData(m, ilShortAssemName, filename) = 
             let resources = ilModule.Resources.AsList
+
             let sigDataReaders = 
                 [ for iresource in resources do
                     if IsSignatureDataResource iresource then 
                         let ccuName = GetSignatureDataResourceName iresource
-                        yield (ccuName, fun () -> iresource.GetBytes()) ]
-                        
+                        let readerA = fun () -> iresource.GetBytes()
+                        let readerB = 
+                            resources |> List.tryPick (fun iresourceB -> 
+                                if IsSignatureDataResourceB iresourceB then 
+                                    let ccuNameB = GetSignatureDataResourceName iresourceB
+                                    if ccuName = ccuNameB then
+                                        Some (fun () -> iresourceB.GetBytes() )
+                                    else None
+                                else None)
+                        yield (ccuName, (readerA, readerB)) ]
+
             let sigDataReaders = 
                 if sigDataReaders.IsEmpty && List.contains ilShortAssemName externalSigAndOptData then 
                     let sigFileName = Path.ChangeExtension(filename, "sigdata")
                     if not (FileSystem.SafeExists sigFileName) then 
                         error(Error(FSComp.SR.buildExpectedSigdataFile (FileSystem.GetFullPathShim sigFileName), m))
-                    [ (ilShortAssemName, fun () -> FileSystem.ReadAllBytesShim sigFileName)]
+                    [ (ilShortAssemName, ((fun () -> FileSystem.ReadAllBytesShim sigFileName), None))]
                 else
                     sigDataReaders
             sigDataReaders
+
          member __.GetRawFSharpOptimizationData(m, ilShortAssemName, filename) =             
+            let resources = ilModule.Resources.AsList
             let optDataReaders = 
-                ilModule.Resources.AsList
-                |> List.choose (fun r -> if IsOptimizationDataResource r then Some(GetOptimizationDataResourceName r, (fun () -> r.GetBytes())) else None)
+                resources
+                |> List.choose (fun r -> 
+                    if IsOptimizationDataResource r then 
+                        let ccuName = GetOptimizationDataResourceName r
+                        let readerA = (fun () -> r.GetBytes())
+                        let readerB = 
+                            resources |> List.tryPick (fun iresourceB -> 
+                                if IsOptimizationDataResourceB iresourceB then 
+                                    let ccuNameB = GetOptimizationDataResourceName iresourceB
+                                    if ccuName = ccuNameB then
+                                        Some (fun () -> iresourceB.GetBytes() )
+                                    else None
+                                else None)
+                        Some(ccuName, (readerA, readerB)) 
+                    else 
+                        None)
 
             // Look for optimization data in a file 
             let optDataReaders = 
@@ -3873,14 +3987,16 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                     let optDataFile = Path.ChangeExtension(filename, "optdata")
                     if not (FileSystem.SafeExists optDataFile)  then 
                         error(Error(FSComp.SR.buildExpectedFileAlongSideFSharpCore(optDataFile, FileSystem.GetFullPathShim optDataFile), m))
-                    [ (ilShortAssemName, (fun () -> FileSystem.ReadAllBytesShim optDataFile))]
+                    [ (ilShortAssemName, ((fun () -> FileSystem.ReadAllBytesShim optDataFile), None))]
                 else
                     optDataReaders
             optDataReaders
+
          member __.GetRawTypeForwarders() =
             match ilModule.Manifest with 
             | Some manifest -> manifest.ExportedTypes
             | None -> mkILExportedTypes []
+
          member __.ShortAssemblyName = GetNameOfILModule ilModule 
          member __.ILScopeRef = MakeScopeRefForILModule ilModule
          member __.ILAssemblyRefs = ilAssemblyRefs
@@ -4058,11 +4174,19 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
 
 #if !NO_EXTENSIONTYPING
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly>) = 
-        let anameOpt = assembly.PUntaint((fun assembly -> match assembly with null -> None | a -> Some (a.GetName())), m)
-        match anameOpt with 
-        | None -> false, None
-        | Some aname -> 
+#else
+    member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly?>) = 
+#endif
+        match assembly with 
+        | Tainted.Null -> false,None
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        | assembly -> 
+#else
+        | Tainted.NonNull assembly -> 
+#endif
+        let aname = assembly.PUntaint((fun a -> a.GetName()), m)
         let ilShortAssemName = aname.Name
         match tcImports.FindCcu (ctok, m, ilShortAssemName, lookupOnly=true) with 
         | ResolvedCcu ccu -> 
@@ -4297,7 +4421,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
     member tcImports.ImportTypeProviderExtensions 
                (ctok, tcConfig:TcConfig, 
-                fileNameOfRuntimeAssembly, 
+                fileNameOfRuntimeAssembly:string, 
                 ilScopeRefOfRuntimeAssembly, 
                 runtimeAssemblyAttributes:ILAttribute list, 
                 entityToInjectInto, invalidateCcu:Event<_>, m) = 
@@ -4310,7 +4434,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             runtimeAssemblyAttributes 
             |> List.choose (TryDecodeTypeProviderAssemblyAttr (defaultArg ilGlobalsOpt EcmaMscorlibILGlobals))
             // If no design-time assembly is specified, use the runtime assembly
-            |> List.map (function null -> fileNameOfRuntimeAssembly | s -> s)
+            |> List.map (function null -> fileNameOfRuntimeAssembly | NonNull s -> s)
             // For each simple name of a design-time assembly, we take the first matching one in the order they are 
             // specified in the attributes
             |> List.distinctBy (fun s -> try Path.GetFileNameWithoutExtension(s) with _ -> s)
@@ -4473,8 +4597,8 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
         let ccuRawDataAndInfos = 
             ilModule.GetRawFSharpSignatureData(m, ilShortAssemName, filename)
-            |> List.map (fun (ccuName, sigDataReader) -> 
-                let data = GetSignatureData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), sigDataReader)
+            |> List.map (fun (ccuName, (sigDataReader, sigDataReaderB)) -> 
+                let data = GetSignatureData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), sigDataReader, sigDataReaderB)
 
                 let optDatas = Map.ofList optDataReaders
 
@@ -4512,8 +4636,8 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                          | None -> 
                             if verbose then dprintf "*** no optimization data for CCU %s, was DLL compiled with --no-optimization-data??\n" ccuName 
                             None
-                         | Some info -> 
-                            let data = GetOptimizationData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), info)
+                         | Some (readerA, readerB) -> 
+                            let data = GetOptimizationData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), readerA, readerB)
                             let res = data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok, m, nm, lookupOnly=false))) 
                             if verbose then dprintf "found optimization data for CCU %s\n" ccuName 
                             Some res)
@@ -4795,7 +4919,8 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
         let tcGlobals = TcGlobals(tcConfig.compilingFslib, ilGlobals, fslibCcu, 
                                     tcConfig.implicitIncludeDir, tcConfig.mlCompatibility, 
-                                    tcConfig.isInteractive, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations, tcConfig.noDebugData )
+                                    tcConfig.isInteractive, tcConfig.assumeNullOnImport, tcConfig.checkNullness, tcConfig.langVersion, 
+                                    tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations, tcConfig.noDebugData )
 
 #if DEBUG
         // the global_g reference cell is used only for debug printing

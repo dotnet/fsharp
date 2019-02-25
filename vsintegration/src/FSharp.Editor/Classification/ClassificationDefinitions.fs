@@ -118,19 +118,19 @@ module internal ClassificationDefinitions =
 
 
     [<Export; Name(FSharpClassificationTypes.Function); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpFunctionClassificationType : ClassificationTypeDefinition = null
+    let FSharpFunctionClassificationType : ClassificationTypeDefinition? = null
 
     [<Export; Name(FSharpClassificationTypes.MutableVar); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpMutableVarClassificationType : ClassificationTypeDefinition = null
+    let FSharpMutableVarClassificationType : ClassificationTypeDefinition? = null
 
     [<Export; Name(FSharpClassificationTypes.Printf); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpPrintfClassificationType : ClassificationTypeDefinition = null
+    let FSharpPrintfClassificationType : ClassificationTypeDefinition? = null
 
     [<Export; Name(FSharpClassificationTypes.Property); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpPropertyClassificationType : ClassificationTypeDefinition = null
+    let FSharpPropertyClassificationType : ClassificationTypeDefinition? = null
 
     [<Export; Name(FSharpClassificationTypes.Disposable); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpDisposableClassificationType : ClassificationTypeDefinition = null
+    let FSharpDisposableClassificationType : ClassificationTypeDefinition? = null
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Function)>]

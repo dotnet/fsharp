@@ -68,8 +68,15 @@ module QuickParse =
       | true, _, true when name.Length > 2 -> isValidStrippedName (name.Substring(1, name.Length - 2)) 0
       | _ -> false
     
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     let GetCompleteIdentifierIslandImpl (lineStr: string) (index: int) : (string * int * bool) option =
-        if index < 0 || isNull lineStr || index >= lineStr.Length then None 
+#else
+    let GetCompleteIdentifierIslandImpl (lineStr: string?) (index: int) : (string * int * bool) option =
+#endif
+        match lineStr with 
+        | null -> None
+        | NonNull lineStr -> 
+        if index < 0 || index >= lineStr.Length then None 
         else
             let fixup =
                 match () with
@@ -176,9 +183,15 @@ module QuickParse =
     let private defaultName = [], ""
 
     /// Get the partial long name of the identifier to the left of index.
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     let GetPartialLongName(lineStr: string, index: int) =
-        if isNull lineStr then defaultName
-        elif index < 0 then defaultName
+#else
+    let GetPartialLongName(lineStr: string?, index: int) =
+#endif
+        match lineStr with
+        | null -> defaultName
+        | NonNull lineStr ->
+        if index < 0 then defaultName
         elif index >= lineStr.Length then defaultName
         else
             let IsIdentifierPartCharacter pos = IsIdentifierPartCharacter lineStr.[pos]
@@ -215,9 +228,15 @@ module QuickParse =
 
     /// Get the partial long name of the identifier to the left of index.
     /// For example, for `System.DateTime.Now` it returns PartialLongName ([|"System"; "DateTime"|], "Now", Some 32), where "32" pos of the last dot.
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     let GetPartialLongNameEx(lineStr: string, index: int) : PartialLongName =
-        if isNull lineStr then PartialLongName.Empty(index)
-        elif index < 0 then PartialLongName.Empty(index)
+#else
+    let GetPartialLongNameEx(lineStr: string?, index: int) : PartialLongName =
+#endif
+        match lineStr with
+        | null -> PartialLongName.Empty(index)
+        | NonNull lineStr ->
+        if index < 0 then PartialLongName.Empty(index)
         elif index >= lineStr.Length then PartialLongName.Empty(index)
         else
             let IsIdentifierPartCharacter pos = IsIdentifierPartCharacter lineStr.[pos]

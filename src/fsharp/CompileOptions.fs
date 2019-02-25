@@ -607,6 +607,10 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
         CompilerOption("warnon", tagWarnList, OptionStringList (fun n ->
             tcConfigB.TurnWarningOn(rangeCmdArgs, trimFS n)), None, Some (FSComp.SR.optsWarnOn()))
         
+        CompilerOption("checknulls", tagNone, OptionSwitch (fun switch -> tcConfigB.checkNullness <- (switch = OptionSwitch.On)), None, Some (FSComp.SR.optsCheckNulls()))
+
+        CompilerOption("langversion", tagNone, OptionString (fun switch -> tcConfigB.langVersion <- double switch), None, Some (FSComp.SR.optsLangVersion()))
+
         CompilerOption("consolecolors", tagNone, OptionSwitch (fun switch ->
             enableConsoleColoring <- switch = OptionSwitch.On), None, Some (FSComp.SR.optsConsoleColors()))
     ]
@@ -979,6 +983,7 @@ let testFlag tcConfigB =
             ("test", tagString, 
              OptionString (fun s -> 
                 match s with
+                | "AssumeNullOnImport" -> tcConfigB.assumeNullOnImport <- true
                 | "StackSpan"        -> tcConfigB.internalTestSpanStackReferring <- true
                 | "ErrorRanges"      -> tcConfigB.errorStyle <- ErrorStyle.TestErrors
                 | "MemberBodyRanges" -> PostTypeCheckSemanticChecks.testFlagMemberBody := true
