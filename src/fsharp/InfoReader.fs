@@ -2,23 +2,23 @@
 
 
 /// Select members from a type by name, searching the type hierarchy if needed
-module internal Microsoft.FSharp.Compiler.InfoReader
+module internal FSharp.Compiler.InfoReader
 
 open System.Collections.Generic
 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Internal.Library
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AccessibilityLogic
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.AttributeChecking
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
+open FSharp.Compiler 
+open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.Ast
+open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Infos
+open FSharp.Compiler.Range
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
 
 /// Use the given function to select some of the member values from the members of an F# type
 let private SelectImmediateMemberVals g optFilter f (tcref:TyconRef) = 
@@ -624,11 +624,25 @@ let private FilterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverri
     
 /// Filter the overrides of methods, either keeping the overrides or keeping the dispatch slots.
 let private FilterOverridesOfMethInfos findFlag g amap m minfos = 
-    FilterOverrides findFlag ((fun (minfo:MethInfo) -> minfo.IsVirtual),(fun minfo -> minfo.IsNewSlot),(fun minfo -> minfo.IsDefiniteFSharpOverride),(fun minfo -> minfo.IsFinal),MethInfosEquivByNameAndSig EraseNone true g amap m,(fun minfo -> minfo.LogicalName)) minfos
+    minfos 
+    |> FilterOverrides findFlag 
+        ((fun (minfo:MethInfo) -> minfo.IsVirtual),
+         (fun minfo -> minfo.IsNewSlot),
+         (fun minfo -> minfo.IsDefiniteFSharpOverride),
+         (fun minfo -> minfo.IsFinal),
+         MethInfosEquivByNameAndSig EraseNone true g amap m,
+         (fun minfo -> minfo.LogicalName)) 
 
 /// Filter the overrides of properties, either keeping the overrides or keeping the dispatch slots.
 let private FilterOverridesOfPropInfos findFlag g amap m props = 
-    FilterOverrides findFlag ((fun (pinfo:PropInfo) -> pinfo.IsVirtualProperty),(fun pinfo -> pinfo.IsNewSlot),(fun pinfo -> pinfo.IsDefiniteFSharpOverride),(fun _ -> false),PropInfosEquivByNameAndSig EraseNone g amap m, (fun pinfo -> pinfo.PropertyName)) props
+    props 
+    |> FilterOverrides findFlag 
+          ((fun (pinfo:PropInfo) -> pinfo.IsVirtualProperty),
+           (fun pinfo -> pinfo.IsNewSlot),
+           (fun pinfo -> pinfo.IsDefiniteFSharpOverride),
+           (fun _ -> false),
+           PropInfosEquivByNameAndSig EraseNone g amap m, 
+           (fun pinfo -> pinfo.PropertyName)) 
 
 /// Exclude methods from super types which have the same signature as a method in a more specific type.
 let ExcludeHiddenOfMethInfos g amap m (minfos:MethInfo list list) = 

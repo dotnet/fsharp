@@ -11,10 +11,17 @@ module AssemblyResolver =
     let vsInstallDir =
         // use the environment variable to find the VS installdir
         let vsvar = 
-            let var = Environment.GetEnvironmentVariable("VS150COMNTOOLS")
-            if String.IsNullOrEmpty var then Environment.GetEnvironmentVariable("VSAPPIDDIR") 
-            else var
-        if String.IsNullOrEmpty vsvar then failwith "VS150COMNTOOLS and VSAPPIDDIR environment variables not found."
+            let var =
+                let vs16 = Environment.GetEnvironmentVariable("VS160COMNTOOLS")
+                if String.IsNullOrEmpty vs16 then
+                    Environment.GetEnvironmentVariable("VS150COMNTOOLS")
+                else
+                    vs16
+            if String.IsNullOrEmpty var then
+                Environment.GetEnvironmentVariable("VSAPPIDDIR") 
+            else
+                var
+        if String.IsNullOrEmpty vsvar then failwith "VS160COMNTOOLS, VS15COMNTOOLS and VSAPPIDDIR environment variables not found."
         Path.Combine(vsvar, "..")
 
     let probingPaths = [|
@@ -29,7 +36,7 @@ module AssemblyResolver =
     let addResolver () =
         AppDomain.CurrentDomain.add_AssemblyResolve(fun h args ->
         let found () =
-            (probingPaths ) |> Seq.tryPick(fun p -> 
+            (probingPaths ) |> Seq.tryPick(fun p ->
                 try
                     let name = AssemblyName(args.Name)
                     let codebase = Path.GetFullPath(Path.Combine(p, name.Name) + ".dll")

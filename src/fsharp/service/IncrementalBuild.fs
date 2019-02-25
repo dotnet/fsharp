@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler
+namespace FSharp.Compiler
 
 
 open System
@@ -8,23 +8,23 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
 open System.Threading
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.NameResolution
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.CompileOptions
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.TypeChecker
-open Microsoft.FSharp.Compiler.Tast 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.Lib
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CompileOptions
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.Tast 
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open Internal.Utilities.Collections
 
 [<AutoOpen>]
@@ -714,7 +714,6 @@ module internal IncrementalBuild =
                 | None -> acc
 
         | _ -> failwith "expected a VectorStamp"
-    
 
     /// Given the result of a single action, apply that action to the Build
     let ApplyResult(actionResult:ActionResult, bt:PartialBuild) = 
@@ -1015,7 +1014,7 @@ module IncrementalBuilderEventTesting =
     let GetMostRecentIncrementalBuildEvents(n) = MRU.MostRecentList(n)
     let GetCurrentIncrementalBuildEventNum() = MRU.CurrentEventNum 
 
-module Tc = Microsoft.FSharp.Compiler.TypeChecker
+module Tc = FSharp.Compiler.TypeChecker
 
 
 /// Accumulated results of type checking.
@@ -1493,10 +1492,14 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 
                     let tcAssemblyDataOpt = 
                         try
+
                           // Assemblies containing type provider components can not successfully be used via cross-assembly references.
                           // We return 'None' for the assembly portion of the cross-assembly reference 
                           let hasTypeProviderAssemblyAttrib = 
-                              topAttrs.assemblyAttrs |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) -> tcref.CompiledRepresentationForNamedType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
+                              topAttrs.assemblyAttrs |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) -> 
+                                  let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName 
+                                  nm = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
+
                           if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
                             None
                           else
@@ -1674,7 +1677,11 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         | None -> 
             // helpers to diagnose https://github.com/Microsoft/visualfsharp/pull/2460/
             let brname = match GetTopLevelExprByName(build, finalizedTypeCheckNode.Name) with  ScalarBuildRule se ->se.Id | _ -> Id 0xdeadbeef
-            let data = (finalizedTypeCheckNode.Name, ((build.Results :> IDictionary<_, _>).Keys |> Seq.toArray), brname, build.Results.ContainsKey brname, build.Results.TryFind brname |> Option.map (function ScalarResult(sr) -> Some(sr.TryGetAvailable().IsSome) | _ -> None))
+            let data = (finalizedTypeCheckNode.Name, 
+                        ((build.Results :> IDictionary<_, _>).Keys |> Seq.toArray), 
+                        brname, 
+                        build.Results.ContainsKey brname, 
+                        build.Results.TryFind brname |> Option.map (function ScalarResult(sr) -> Some(sr.TryGetAvailable().IsSome) | _ -> None))
             let msg = sprintf "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsAndImplementationsForProject, data = %A)." data
             return! failwith  msg
       }
@@ -1723,7 +1730,17 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
-    static member TryCreateBackgroundBuilderForProjectOptions (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, frameworkTcImportsCache: FrameworkImportsCache, loadClosureOpt:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds, tryGetMetadataSnapshot, suggestNamesForErrors) =
+    static member TryCreateBackgroundBuilderForProjectOptions
+                      (ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
+                       frameworkTcImportsCache: FrameworkImportsCache,
+                       loadClosureOpt:LoadClosure option,
+                       sourceFiles:string list,
+                       commandLineArgs:string list,
+                       projectReferences, projectDirectory,
+                       useScriptResolutionRules, keepAssemblyContents,
+                       keepAllBackgroundResolutions, maxTimeShareMilliseconds,
+                       tryGetMetadataSnapshot, suggestNamesForErrors) =
+
       let useSimpleResolutionSwitch = "--simpleresolution"
 
       cancellable {

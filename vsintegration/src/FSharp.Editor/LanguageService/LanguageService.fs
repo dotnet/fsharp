@@ -20,8 +20,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Options
-open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.FSharp.Editor

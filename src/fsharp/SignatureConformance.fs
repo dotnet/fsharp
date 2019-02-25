@@ -2,23 +2,23 @@
 
 /// Primary relations on types and signatures, with the exception of
 /// constraint solving and method overload resolution.
-module internal Microsoft.FSharp.Compiler.SignatureConformance
+module internal FSharp.Compiler.SignatureConformance
 
 open System.Text
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Infos
+open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.Range
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Infos
 
 #if !NO_EXTENSIONTYPING
-open Microsoft.FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.ExtensionTyping
 #endif
 
 
@@ -151,14 +151,26 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
 
         and checkTypeDef (aenv: TypeEquivEnv) (implTycon:Tycon) (sigTycon:Tycon) =
             let m = implTycon.Range
+            
             // Propagate defn location information from implementation to signature . 
             sigTycon.SetOtherRange (implTycon.Range, true)
             implTycon.SetOtherRange (sigTycon.Range, false)
-            if implTycon.LogicalName <> sigTycon.LogicalName then (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer(implTycon.TypeOrMeasureKind.ToString(),sigTycon.LogicalName,implTycon.LogicalName),m)); false) else
-            if implTycon.CompiledName <> sigTycon.CompiledName then (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer(implTycon.TypeOrMeasureKind.ToString(),sigTycon.CompiledName,implTycon.CompiledName),m)); false) else
+            
+            if implTycon.LogicalName <> sigTycon.LogicalName then 
+                errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer(implTycon.TypeOrMeasureKind.ToString(),sigTycon.LogicalName,implTycon.LogicalName),m))
+                false 
+            else
+            
+            if implTycon.CompiledName <> sigTycon.CompiledName then 
+                errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer(implTycon.TypeOrMeasureKind.ToString(),sigTycon.CompiledName,implTycon.CompiledName),m))
+                false 
+            else
+            
             checkExnInfo  (fun f -> ExnconstrNotContained(denv,implTycon,sigTycon,f)) aenv implTycon.ExceptionInfo sigTycon.ExceptionInfo &&
+            
             let implTypars = implTycon.Typars m
             let sigTypars = sigTycon.Typars m
+            
             if implTypars.Length <> sigTypars.Length then  
                 errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleParameterCountsDiffer(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m)) 
                 false
@@ -430,8 +442,15 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
         and checkVirtualSlots denv m (implTycon:Tycon) implAbstractSlots sigAbstractSlots =
             let m1 = NameMap.ofKeyedList (fun (v:ValRef) -> v.DisplayName) implAbstractSlots
             let m2 = NameMap.ofKeyedList (fun (v:ValRef) -> v.DisplayName) sigAbstractSlots
-            (m1,m2) ||> NameMap.suball2 (fun _s vref -> errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInImpl(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, NicePrint.stringValOrMember denv vref.Deref),m)); false) (fun _x _y -> true)  &&
-            (m2,m1) ||> NameMap.suball2 (fun _s vref -> errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInSig(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, NicePrint.stringValOrMember denv vref.Deref),m)); false) (fun _x _y -> true)  
+            (m1,m2) ||> NameMap.suball2 (fun _s vref -> 
+                let kindText = implTycon.TypeOrMeasureKind.ToString()
+                let valText = NicePrint.stringValOrMember denv vref.Deref
+                errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInImpl(kindText, implTycon.DisplayName, valText),m)); false) (fun _x _y -> true)  &&
+
+            (m2,m1) ||> NameMap.suball2 (fun _s vref -> 
+                let kindText = implTycon.TypeOrMeasureKind.ToString()
+                let valText = NicePrint.stringValOrMember denv vref.Deref
+                errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInSig(kindText, implTycon.DisplayName, valText),m)); false) (fun _x _y -> true)  
 
         and checkClassFields isStruct m aenv (implTycon:Tycon) (implFields:TyconRecdFields) (sigFields:TyconRecdFields) =
             let implFields = implFields.TrueFieldsAsList
@@ -590,11 +609,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                              // for each formal requirement, try to find a precisely matching actual requirement
                              let matchingPairs = 
                                  fvs |> List.choose (fun fv -> 
-                                     match avs |> List.tryFind (fun av -> 
-                                                         let res = valLinkageAEquiv g aenv av fv
-                                                         //if res then printfn "%s" (bufs (fun buf -> Printf.bprintf buf "YES MATCH: fv '%a', av '%a'" (NicePrint.outputQualifiedValOrMember denv) fv (NicePrint.outputQualifiedValOrMember denv) av))
-                                                         //else printfn "%s" (bufs (fun buf -> Printf.bprintf buf "NO MATCH: fv '%a', av '%a'" (NicePrint.outputQualifiedValOrMember denv) fv (NicePrint.outputQualifiedValOrMember denv) av))  
-                                                         res) with 
+                                     match avs |> List.tryFind (fun av -> valLinkageAEquiv g aenv av fv) with
                                       | None -> None
                                       | Some av -> Some(fv,av))
                              

@@ -310,7 +310,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
 
                 // Add error to task list
-                var taskText = Microsoft.FSharp.Compiler.ErrorLogger.NewlineifyErrorString(errorEvent.Message);
+                var taskText = global::FSharp.Compiler.ErrorLogger.NewlineifyErrorString(errorEvent.Message);
 
                 if (errorReporter != null)
                 {

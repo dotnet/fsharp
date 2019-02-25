@@ -6833,8 +6833,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that implement IDisposable"</source>
-        <target state="translated">IDisposable을 구현하는 값에 대해 let 대신 사용됩니다."</target>
+        <source>Used instead of let for values that implement IDisposable</source>
+        <target state="needs-review-translation">무료 리소스로 호출하기 위해 Dispose가 필요한 값에 대해 let 대신 사용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">

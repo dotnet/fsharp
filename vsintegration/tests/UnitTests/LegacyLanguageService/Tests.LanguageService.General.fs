@@ -7,8 +7,8 @@ open System
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Salsa.Salsa
 open Salsa
@@ -109,7 +109,7 @@ type UsingMSBuild() =
         let ls = publicTypesInAsm @"FSharp.LanguageService.dll"
         Assert.AreEqual(0, ls)
         let compis = publicTypesInAsm @"FSharp.Compiler.Interactive.Settings.dll"
-        Assert.AreEqual(4, compis)
+        Assert.AreEqual(5, compis)
         let compserver = publicTypesInAsm @"FSharp.Compiler.Server.Shared.dll"
         Assert.AreEqual(0, compserver)
         let lsbase = publicTypesInAsm @"FSharp.LanguageService.Base.dll"

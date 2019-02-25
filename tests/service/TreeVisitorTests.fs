@@ -1,8 +1,8 @@
 module Tests.Service.TreeVisitorTests
 
 open FSharp.Compiler.Service.Tests.Common
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices.AstTraversal
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.AstTraversal
 open NUnit.Framework
 
 [<Test>]

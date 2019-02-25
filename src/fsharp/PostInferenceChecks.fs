@@ -2,28 +2,28 @@
 
 /// Implements a set of checks on the TAST for a file that can only be performed after type inference
 /// is complete.
-module internal Microsoft.FSharp.Compiler.PostTypeCheckSemanticChecks
+module internal FSharp.Compiler.PostTypeCheckSemanticChecks
 
 open System
 open System.Collections.Generic
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.Library
 
-open Microsoft.FSharp.Compiler.AccessibilityLogic
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.TypeRelations
+open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Range
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Infos
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.TypeRelations
 
 //--------------------------------------------------------------------------
 // TestHooks - for dumping range to support source transforms
@@ -2103,8 +2103,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                     let m = (match minfo.ArbitraryValRef with None -> m | Some vref -> vref.DefinitionRange)
                     let parentMethsOfSameName = getHash hashOfAllVirtualMethsInParent nm 
                     let checkForDup erasureFlag minfo2 = MethInfosEquivByNameAndSig erasureFlag true g cenv.amap m minfo minfo2
-                    //if minfo.NumArgs.Length > 1 then 
-                    //    warning(Error(sprintf "Abstract methods taking curried arguments Duplicate method. The method '%s' has curried arguments but has the same name as another method in this type. Methods with curried arguments may not be overloaded" nm,(match minfo.ArbitraryValRef with None -> m | Some vref -> vref.DefinitionRange)))
+                    
                     if parentMethsOfSameName |> List.exists (checkForDup EraseAll) then
                         if parentMethsOfSameName |> List.exists (checkForDup EraseNone) then 
                             errorR(Error(FSComp.SR.chkDuplicateMethodInheritedType(nm),m))

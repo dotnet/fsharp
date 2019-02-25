@@ -106,7 +106,7 @@ type LanguagePrimitivesModule() =
         Assert.AreEqual(1, resultRef)
 
 
-#if NETSTANDARD1_6
+#if NETSTANDARD1_6 || NETCOREAPP
 // TODO named #define ?
 #else  
     [<Test>]
@@ -602,9 +602,8 @@ type UnitType() =
     member this.ObjectEquals() =
         let u:Unit = ()
         CheckThrowsNullRefException(fun() ->u.Equals(null) |>ignore) 
-        
 
-#if NETSTANDARD1_6
+#if NETSTANDARD1_6 || NETCOREAPP
 // TODO named #define ?
 #else     
 [<TestFixture>]

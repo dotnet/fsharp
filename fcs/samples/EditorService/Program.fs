@@ -1,8 +1,8 @@
 ﻿// Open the namespace with InteractiveChecker type
 open System
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.QuickParse
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.QuickParse
 
 // Create an interactive checker instance (ignore notifications)
 let checker = FSharpChecker.Create()

@@ -10,8 +10,8 @@ open System.ComponentModel.Composition
 open System.IO
 open System.Linq
 open Microsoft.CodeAnalysis
-open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.LanguageServices

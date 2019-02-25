@@ -12,16 +12,16 @@ open Salsa.VsOpsUtils
 open Salsa.VsMocks
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
 open System.Text.RegularExpressions 
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp
 
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 
 [<AutoOpen>]
 module internal Globals =
-    let checker = FSharpChecker.Create(legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
+    let checker = FSharpChecker.Create(legacyReferenceResolver=FSharp.Compiler.MSBuildReferenceResolver.Resolver)
 
 
 //open Internal.Utilities

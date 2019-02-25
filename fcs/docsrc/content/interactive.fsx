@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin/v4.5/"
+#I "../../../artifacts/bin/fcs/net45"
 (**
 Interactive Service: Embedding F# Interactive
 =============================================
@@ -31,8 +31,8 @@ First, we need to reference the libraries that contain F# interactive service:
 *)
 
 #r "FSharp.Compiler.Service.dll"
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Interactive.Shell
 
 (**
 To communicate with F# interactive, we need to create streams that represent input and
@@ -211,7 +211,9 @@ fsiSession.EvalInteraction "let xxx = 1 + 1"
 Now you want to typecheck the partially complete code `xxx + xx`
 *)
 
-let parseResults, checkResults, checkProjectResults = fsiSession.ParseAndCheckInteraction("xxx + xx")
+let parseResults, checkResults, checkProjectResults = 
+    fsiSession.ParseAndCheckInteraction("xxx + xx")
+    |> Async.RunSynchronously
 
 (** 
 The `parseResults` and `checkResults` have types `ParseFileResults` and `CheckFileResults`
@@ -225,10 +227,10 @@ based on the declarations executed so far.
 
 You can also request declaration list information, tooltip text and symbol resolution:
 *)
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
 
 // get a tooltip
-checkResults.GetToolTipTextAlternate(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT) 
+checkResults.GetToolTipText(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT) 
 
 checkResults.GetSymbolUseAtLocation(1, 2, "xxx + xx", ["xxx"]) // symbol xxx
   

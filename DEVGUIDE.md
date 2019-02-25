@@ -26,7 +26,7 @@ Follow the instructions below to build and develop the F# Compiler, Core Library
 
 Install
 
-- [.NET 4.6](https://www.microsoft.com/en-gb/download/details.aspx?id=48130)
+- [.NET Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework/net472)
 
 **NOTE on Windows:**
 
