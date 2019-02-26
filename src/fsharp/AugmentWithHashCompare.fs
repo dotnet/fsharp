@@ -704,7 +704,7 @@ let getAugmentationAttribs g (tycon:Tycon) =
     TryFindFSharpBoolAttribute g g.attrib_CustomComparisonAttribute tycon.Attribs,
     TryFindFSharpBoolAttribute g g.attrib_StructuralComparisonAttribute tycon.Attribs 
 
-let CheckAugmentationAttribs isImplementation g amap (tycon:Tycon)= 
+let CheckAugmentationAttribs isImplementation g amap (tycon:Tycon) = 
     let m = tycon.Range
     let attribs = getAugmentationAttribs g tycon
     match attribs with 

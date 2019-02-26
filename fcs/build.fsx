@@ -24,13 +24,14 @@ let isMono = false
 // Utilities
 // --------------------------------------------------------------------------------------
 
-let dotnetSdkVersion = "2.1.403"
-
-printfn "Desired .NET SDK version = %s" dotnetSdkVersion
-printfn "DotNetCli.isInstalled() = %b" (DotNetCli.isInstalled())
-if DotNetCli.isInstalled() then printfn "DotNetCli.getVersion() = %s" (DotNetCli.getVersion())
-
-let dotnetExePath = DotNetCli.InstallDotNetSDK dotnetSdkVersion
+let dotnetExePath =
+    // Build.cmd normally downloads a dotnet cli to: <repo-root>\artifacts\toolset\dotnet
+    // check if there is one there to avoid downloading an additional one here
+    let pathToCli = Path.Combine(__SOURCE_DIRECTORY__, @"..\artifacts\toolset\dotnet\dotnet.exe")
+    if File.Exists(pathToCli) then
+        pathToCli
+    else
+        DotNetCli.InstallDotNetSDK "2.1.504"
 
 let runDotnet workingDir args =
     let result =
@@ -96,8 +97,7 @@ Target "Build" (fun _ ->
 
 Target "Test" (fun _ ->
     // This project file is used for the netcoreapp2.0 tests to work out reference sets
-    runDotnet __SOURCE_DIRECTORY__ "restore ../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -v n"
-    runDotnet __SOURCE_DIRECTORY__ "build ../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -v n"
+    runDotnet __SOURCE_DIRECTORY__ "build ../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -v n /restore /p:DisableCompilerRedirection=true"
 
     // Now run the tests
     runDotnet __SOURCE_DIRECTORY__ "test FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --no-restore --no-build -v n -c release"

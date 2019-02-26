@@ -2230,7 +2230,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
                   | IEEE32(v)            -> delayMergedToken(IEEE32(if plus then v else -v))
                   | IEEE64(v)            -> delayMergedToken(IEEE64(if plus then v else -v))
                   | DECIMAL(v)           -> delayMergedToken(DECIMAL(if plus then v else System.Decimal.op_UnaryNegation v))
-                  | BIGNUM(v,s)          -> delayMergedToken(BIGNUM((if plus then v else "-"^v),s))
+                  | BIGNUM(v,s)          -> delayMergedToken(BIGNUM((if plus then v else "-" + v),s))
                   | _ -> noMerge()
               else
                   noMerge()
