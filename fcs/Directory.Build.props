@@ -9,17 +9,11 @@
     <ArtifactsObjDir>$(ArtifactsDir)\obj</ArtifactsObjDir>
     <OutputPath>$(ArtifactsBinDir)\fcs</OutputPath>
     <IntermediateOutputPath>$(ArtifactsObjDir)\fcs</IntermediateOutputPath>
+    <DisableCompilerRedirection>true</DisableCompilerRedirection>
   </PropertyGroup>
 
   <!-- SDK targets override -->
   <PropertyGroup>
     <ProtoOutputPath>$(ArtifactsBinDir)\FSharp.Build\Proto\net46</ProtoOutputPath>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="Exists('$(ProtoOutputPath)')">
-    <FSharpTargetsPath>$(ProtoOutputPath)\Microsoft.FSharp.Targets</FSharpTargetsPath>
-    <FSharpPropsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
-    <FSharpTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
-    <FSharpOverridesTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
   </PropertyGroup>
 </Project>

@@ -170,7 +170,7 @@ let splitTypeNameRight nm =
 /// This is used to store event, property and field maps.
 type LazyOrderedMultiMap<'Key, 'Data when 'Key : equality>(keyf : 'Data -> 'Key, lazyItems : Lazy<'Data list>) = 
 
-    let quickMap= 
+    let quickMap = 
         lazyItems |> lazyMap (fun entries -> 
             let t = new Dictionary<_, _>(entries.Length, HashIdentity.Structural)
             do entries |> List.iter (fun y ->

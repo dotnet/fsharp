@@ -4649,7 +4649,7 @@ let underlyingTypeOfEnumTy (g: TcGlobals) ty =
         let tycon = (tcrefOfAppTy g ty).Deref
         match tycon.GetFieldByName "value__" with 
         | Some rf -> rf.FormalType
-        | None ->  error(InternalError("no 'value__' field found for enumeration type "^tycon.LogicalName, tycon.Range))
+        | None ->  error(InternalError("no 'value__' field found for enumeration type " + tycon.LogicalName, tycon.Range))
 
 
 // CLEANUP NOTE: Get rid of this mutation. 
@@ -5138,7 +5138,7 @@ and renameTycon tyenv x =
             let res = tyenv.tyconRefRemap.[mkLocalTyconRef x]
             res
         with :? KeyNotFoundException -> 
-            errorR(InternalError("couldn't remap internal tycon "^showL(DebugPrint.tyconL x), x.Range)); 
+            errorR(InternalError("couldn't remap internal tycon " + showL(DebugPrint.tyconL x), x.Range)); 
             mkLocalTyconRef x 
     tcref.Deref
 
@@ -5180,7 +5180,7 @@ and copyAndRemapAndBindTyconsAndVals g compgen tmenv tycons vs =
                 let res = tmenvinner.tyconRefRemap.[mkLocalTyconRef tycon]
                 res
             with :? KeyNotFoundException -> 
-                errorR(InternalError("couldn't remap internal tycon "^showL(DebugPrint.tyconL tycon), tycon.Range));
+                errorR(InternalError("couldn't remap internal tycon " + showL(DebugPrint.tyconL tycon), tycon.Range));
                 mkLocalTyconRef tycon
         tcref.Deref
              
@@ -5684,7 +5684,7 @@ let rec simplifyTrivialMatch spBind exprm matchm ty tree (targets : _[]) =
         if n >= targets.Length then failwith "simplifyTrivialMatch: target out of range";
         // REVIEW: should we use _spTarget here?
         let (TTarget(vs, rhs, _spTarget)) = targets.[n]
-        if vs.Length <> es.Length then failwith ("simplifyTrivialMatch: invalid argument, n = "^string n^", List.length targets = "^string targets.Length);
+        if vs.Length <> es.Length then failwith ("simplifyTrivialMatch: invalid argument, n = " + string n + ", List.length targets = " + string targets.Length);
         // These are non-sticky - any sequence point for 'rhs' goes on 'rhs' _after_ the bindings have been made
         mkInvisibleLetsFromBindings rhs.Range vs es rhs
     | _ -> 
@@ -6813,7 +6813,7 @@ let AdjustArityOfLambdaBody g arity (vs:Val list) body =
         if  (untupledTys.Length <> arity) then failwith "length untupledTys <> arity";
         let dummyvs, dummyes = 
             untupledTys 
-            |> List.mapi (fun i ty -> mkCompGenLocal v.Range (v.LogicalName ^"_"^string i) ty) 
+            |> List.mapi (fun i ty -> mkCompGenLocal v.Range (v.LogicalName + "_" + string i) ty) 
             |> List.unzip 
         // These are non-sticky - any sequence point for 'body' goes on 'body' _after_ the binding has been made
         let body = mkInvisibleLet v.Range v (mkRefTupled g v.Range dummyes untupledTys) body
@@ -7036,7 +7036,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                     argtysl |> List.mapi (fun i argtys -> 
                         argtys |> List.mapi (fun j (_, argInfo) -> 
                              match argInfo.Name with 
-                             | None -> CompilerGeneratedName ("arg" + string i ^string j)
+                             | None -> CompilerGeneratedName ("arg" + string i + string j)
                              | Some id -> id.idText))
                 | _ -> 
                     []
@@ -7166,11 +7166,11 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
 
                         assert (inpArgTys.Length = actualArgTys.Length)
                         
-                        let inpsAsVars, inpsAsExprs = inpArgTys |> List.mapi (fun j ty -> mkCompGenLocal appm ("arg"^string i^string j) ty)  |> List.unzip
+                        let inpsAsVars, inpsAsExprs = inpArgTys |> List.mapi (fun j ty -> mkCompGenLocal appm ("arg" + string i + string j) ty)  |> List.unzip
                         let inpsAsActualArg = CoerceDetupled inpArgTys inpsAsExprs actualArgTys
                         let inpCloVarType = (mkFunTy (mkRefTupledTy g actualArgTys) cloVar.Type)
                         let newResTy = mkFunTy inpArgTy resTy
-                        let inpCloVar, inpCloVarAsExpr = mkCompGenLocal appm ("clo"^string i) inpCloVarType
+                        let inpCloVar, inpCloVarAsExpr = mkCompGenLocal appm ("clo" + string i) inpCloVarType
                         let newRes = 
                             // For the final arg we can skip introducing the dummy variable
                             if i = N - 1 then 
@@ -7210,7 +7210,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                                 let niceNames = 
                                     match niceNames with 
                                     | nms when nms.Length = inpArgTys.Length -> nms
-                                    | [nm] -> inpArgTys |> List.mapi (fun i _ -> (nm^string i))
+                                    | [nm] -> inpArgTys |> List.mapi (fun i _ -> (nm + string i))
                                     | nms -> nms
                                 match suppliedArg with 
                                 | Some arg -> 
