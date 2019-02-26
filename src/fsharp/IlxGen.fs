@@ -185,7 +185,7 @@ type cenv =
       amap: ImportMap
       intraAssemblyInfo : IlxGenIntraAssemblyInfo
       /// Cache methods with SecurityAttribute applied to them, to prevent unnecessary calls to ExistsInEntireHierarchyOfType
-      casApplied : Dictionary<Stamp,bool> 
+      casApplied : Dictionary<Stamp,bool>
       /// Used to apply forced inlining optimizations to witnesses generated late during codegen
       mutable optimizeDuringCodeGen : (Expr -> Expr) }
 

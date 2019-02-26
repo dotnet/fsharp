@@ -305,6 +305,23 @@ let ImportReturnTypeFromMetadata amap m ilty cattrs scoref tinst minst =
     | retTy -> Some(ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst retTy cattrs)
 
 
+
+/// Search for the relevant extension values again if a name resolution environment is provided
+/// Basically, if you use a generic thing, then the extension members in scope at the point of _use_
+/// are the ones available to solve the constraint
+let FreshenTrait traitFreshner traitInfo =
+    let (TTrait(typs, nm, mf, argtys, rty, slnCell, extSlns, ad)) = traitInfo
+
+    // Call the trait freshner if it is provided
+    let extSlns2, ad2 = 
+        match traitFreshner with 
+        | None -> extSlns, ad
+        | Some f -> 
+            let extSlns2, ad2 = f traitInfo
+            extSlns2, Some ad2
+
+    TTrait(typs, nm, mf, argtys, rty, slnCell, extSlns2, ad2)
+
 /// Copy constraints.  If the constraint comes from a type parameter associated
 /// with a type constructor then we are simply renaming type variables.  If it comes
 /// from a generic method in a generic class (e.g. ty.M<_>) then we may be both substituting the
@@ -313,7 +330,7 @@ let ImportReturnTypeFromMetadata amap m ilty cattrs scoref tinst minst =
 ///
 /// Note: this now looks identical to constraint instantiation.
 
-let CopyTyparConstraints m tprefInst (tporig:Typar) =
+let CopyTyparConstraints traitFreshner m tprefInst (tporig:Typar) =
     tporig.Constraints 
     |>  List.map (fun tpc -> 
            match tpc with 
@@ -341,12 +358,13 @@ let CopyTyparConstraints m tprefInst (tporig:Typar) =
                TyparConstraint.SimpleChoice (List.map (instType tprefInst) tys,m)
            | TyparConstraint.RequiresDefaultConstructor _ -> 
                TyparConstraint.RequiresDefaultConstructor m
-           | TyparConstraint.MayResolveMember(traitInfo,_) -> 
-               TyparConstraint.MayResolveMember (instTrait tprefInst traitInfo,m))
+           | TyparConstraint.MayResolveMember(traitInfo, _) -> 
+               let traitInfo2 = FreshenTrait traitFreshner traitInfo 
+               TyparConstraint.MayResolveMember (instTrait tprefInst traitInfo2, m))
 
 /// The constraints for each typar copied from another typar can only be fixed up once 
 /// we have generated all the new constraints, e.g. f<A :> List<B>, B :> List<A>> ... 
-let FixupNewTypars m (formalEnclosingTypars:Typars) (tinst: TType list) (tpsorig: Typars) (tps: Typars) =
+let FixupNewTypars traitFreshner m (formalEnclosingTypars:Typars) (tinst: TType list) (tpsorig: Typars) (tps: Typars) =
     // Checks.. These are defensive programming against early reported errors.
     let n0 = formalEnclosingTypars.Length
     let n1 = tinst.Length
@@ -358,7 +376,7 @@ let FixupNewTypars m (formalEnclosingTypars:Typars) (tinst: TType list) (tpsorig
     // The real code.. 
     let renaming,tptys = mkTyparToTyparRenaming tpsorig tps
     let tprefInst = mkTyparInst formalEnclosingTypars tinst @ renaming
-    (tpsorig,tps) ||> List.iter2 (fun tporig tp -> tp.SetConstraints (CopyTyparConstraints  m tprefInst tporig)) 
+    (tpsorig,tps) ||> List.iter2 (fun tporig tp -> tp.SetConstraints (CopyTyparConstraints traitFreshner m tprefInst tporig)) 
     renaming,tptys
 
 
@@ -871,9 +889,7 @@ type ILMethInfo =
 // MethInfo
 
 
-#if DEBUG
 [<System.Diagnostics.DebuggerDisplayAttribute("{DebuggerDisplayName}")>]
-#endif
 /// Describes an F# use of a method
 [<NoComparison; NoEquality>]
 type MethInfo = 
@@ -956,7 +972,6 @@ type MethInfo =
      /// over extension members.
     member x.ExtensionMemberPriority = defaultArg x.ExtensionMemberPriorityOption System.UInt64.MaxValue 
 
-#if DEBUG
      /// Get the method name in DebuggerDisplayForm
     member x.DebuggerDisplayName = 
         match x with 
@@ -966,7 +981,6 @@ type MethInfo =
         | ProvidedMeth(_,mi,_,m) -> "ProvidedMeth: " + mi.PUntaint((fun mi -> mi.Name),m)
 #endif
         | DefaultStructCtor _ -> ".ctor"
-#endif
 
      /// Get the method name in LogicalName form, i.e. the name as it would be stored in .NET metadata
     member x.LogicalName = 
@@ -1510,9 +1524,9 @@ type MethInfo =
             let tcref =  tcrefOfAppTy g x.ApparentEnclosingAppType
             let formalEnclosingTyparsOrig = tcref.Typars(m)
             let formalEnclosingTypars = copyTypars formalEnclosingTyparsOrig
-            let _,formalEnclosingTyparTys = FixupNewTypars m [] [] formalEnclosingTyparsOrig formalEnclosingTypars
+            let _,formalEnclosingTyparTys = FixupNewTypars None m [] [] formalEnclosingTyparsOrig formalEnclosingTypars
             let formalMethTypars = copyTypars x.FormalMethodTypars
-            let _,formalMethTyparTys = FixupNewTypars m formalEnclosingTypars formalEnclosingTyparTys x.FormalMethodTypars formalMethTypars
+            let _,formalMethTyparTys = FixupNewTypars None m formalEnclosingTypars formalEnclosingTyparTys x.FormalMethodTypars formalMethTypars
             let formalRetTy, formalParams = 
                 match x with
                 | ILMeth(_,ilminfo,_) -> 
@@ -2227,6 +2241,8 @@ type PropInfo =
         | ProvidedProp(_,pi,_) -> ProvidedPropertyInfo.TaintedGetHashCode(pi)
 #endif
 
+    override x.ToString() = "property " + x.PropertyName
+
 //-------------------------------------------------------------------------
 // ILEventInfo
 
@@ -2474,6 +2490,7 @@ type EventInfo =
 #if !NO_EXTENSIONTYPING
         | ProvidedEvent (_,ei,_) -> ProvidedEventInfo.TaintedGetHashCode(ei)
 #endif
+    override x.ToString() = "event " + x.EventName
 
 //-------------------------------------------------------------------------
 // Helpers associated with getting and comparing method signatures

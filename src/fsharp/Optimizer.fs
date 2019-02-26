@@ -1005,6 +1005,12 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
              Zset.exists hiddenRecdField fvs.FreeRecdFields        ||
              Zset.exists hiddenUnionCase fvs.FreeUnionCases ) ->
                 UnknownValue
+
+                // TODO: consider what happens when the expression refers to extSlns that have become hidden
+                // At the moment it feels like this may lead to remap failures, where the optimization information
+                // for a module contains dangling references to extSlns that are no longer needed (because they have been solved).
+                // However, we don't save extSlns into actual pickled optimization information, so maybe this is not a problem.
+
         // Check for escape in constant 
         | ConstValue(_, ty) when 
             (let ftyvs = freeInType CollectAll ty
@@ -2342,7 +2348,7 @@ and OptimizeWhileLoop cenv env  (spWhile, marker, e1, e2, m) =
 //------------------------------------------------------------------------- 
  
 
-and OptimizeTraitCall cenv env   (traitInfo, args, m) =
+and OptimizeTraitCall cenv env (traitInfo, args, m) =
 
     // Resolve the static overloading early (during the compulsory rewrite phase) so we can inline. 
     match ConstraintSolver.CodegenWitnessThatTypeSupportsTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
@@ -3374,7 +3380,7 @@ let OptimizeImplFile(settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncre
           optimizing=true
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
-          casApplied=new Dictionary<Stamp, bool>() }
+          casApplied=new Dictionary<Stamp,bool>() }
     let (optEnvNew, _, _, _ as results) = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
     let optimizeDuringCodeGen expr = OptimizeExpr cenv optEnvNew expr |> fst
     results, optimizeDuringCodeGen

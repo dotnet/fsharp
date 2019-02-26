@@ -1688,7 +1688,6 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
     let optSettings = tcConfig.optSettings 
     let optSettings = { optSettings with abstractBigTargets = tcConfig.doTLR }
     let optSettings = { optSettings with reportingPhase = true }
-            
     let results,(optEnvFirstLoop,_,_,_) = 
         ((optEnv0,optEnv0,optEnv0,SignatureHidingInfo.Empty),implFiles) 
         
@@ -1800,7 +1799,7 @@ let GenerateIlxCode
           isInteractiveItExpr = isInteractiveItExpr
           alwaysCallVirt = tcConfig.alwaysCallVirt }
 
-    ilxGenerator.GenerateCode (ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs,topAttrs.netModuleAttrs) 
+    ilxGenerator.GenerateCode (ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs, topAttrs.netModuleAttrs) 
 
 //----------------------------------------------------------------------------
 // Assembly ref normalization: make sure all assemblies are referred to
