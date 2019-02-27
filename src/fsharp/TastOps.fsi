@@ -2261,6 +2261,10 @@ val (|LinearMatchExpr|_|) : Expr -> (SequencePointInfoForBinding * range * Decis
 
 val rebuildLinearMatchExpr : (SequencePointInfoForBinding * range * DecisionTree * DecisionTreeTarget * Expr * SequencePointInfoForTarget * range * TType) -> Expr
 
+val (|LinearOpExpr|_|) : Expr -> (TOp * TypeInst * Expr list * Expr * range) option
+
+val rebuildLinearOpExpr : (TOp * TypeInst * Expr list * Expr * range) -> Expr
+
 val mkCoerceIfNeeded : TcGlobals -> tgtTy: TType -> srcTy: TType -> Expr -> Expr
 
 val (|InnerExprPat|) : Expr -> Expr

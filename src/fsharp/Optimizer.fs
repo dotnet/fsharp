@@ -1274,9 +1274,13 @@ let rec ExprHasEffect g expr =
     | Expr.Let(bind, body, _, _) -> BindingHasEffect g bind || ExprHasEffect g body
     // REVIEW: could add Expr.Obj on an interface type - these are similar to records of lambda expressions 
     | _ -> true
+
 and ExprsHaveEffect g exprs = List.exists (ExprHasEffect g) exprs
+
 and BindingsHaveEffect g binds = List.exists (BindingHasEffect g) binds
+
 and BindingHasEffect g bind = bind.Expr |> ExprHasEffect g
+
 and OpHasEffect g m op = 
     match op with 
     | TOp.Tuple _ -> false
@@ -1788,10 +1792,18 @@ let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
 
     match expr with
     // treat the common linear cases to avoid stack overflows, using an explicit continuation 
-    | Expr.Sequential _ | Expr.Let _ ->  OptimizeLinearExpr cenv env expr (fun x -> x)
+    | LinearOpExpr _
+    | LinearMatchExpr _
+    | Expr.Sequential _ 
+    | Expr.Let _ ->  
+        OptimizeLinearExpr cenv env expr (fun x -> x)
 
-    | Expr.Const (c, m, ty) -> OptimizeConst cenv env expr (c, m, ty)
-    | Expr.Val (v, _vFlags, m) -> OptimizeVal cenv env expr (v, m)
+    | Expr.Const (c, m, ty) -> 
+        OptimizeConst cenv env expr (c, m, ty)
+
+    | Expr.Val (v, _vFlags, m) -> 
+        OptimizeVal cenv env expr (v, m)
+
     | Expr.Quote(ast, splices, isFromQueryExpression, m, ty) -> 
           let splices = ref (splices.Value |> Option.map (map3Of4 (List.map (OptimizeExpr cenv env >> fst))))
           Expr.Quote(ast, splices, isFromQueryExpression, m, ty), 
@@ -1800,34 +1812,48 @@ let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
             HasEffect = false  
             MightMakeCriticalTailcall=false
             Info=UnknownValue }
-    | Expr.Obj (_, ty, basev, expr, overrides, iimpls, m) -> OptimizeObjectExpr cenv env (ty, basev, expr, overrides, iimpls, m)
-    | Expr.Op (c, tyargs, args, m) -> OptimizeExprOp cenv env (c, tyargs, args, m)
+
+    | Expr.Obj (_, ty, basev, createExpr, overrides, iimpls, m) -> 
+        OptimizeObjectExpr cenv env (ty, basev, createExpr, overrides, iimpls, m)
+
+    | Expr.Op (op, tyargs, args, m) -> 
+        OptimizeExprOp cenv env (op, tyargs, args, m)
+
     | Expr.App(f, fty, tyargs, argsl, m) -> 
         // eliminate uses of query
         match TryDetectQueryQuoteAndRun cenv expr with 
         | Some newExpr -> OptimizeExpr cenv env newExpr
         | None -> OptimizeApplication cenv env (f, fty, tyargs, argsl, m) 
-    (* REVIEW: fold the next two cases together *)
+
     | Expr.Lambda(_lambdaId, _, _, argvs, _body, m, rty) -> 
         let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
         let ty = mkMultiLambdaTy m argvs rty
         OptimizeLambdas None cenv env topValInfo expr ty
+
     | Expr.TyLambda(_lambdaId, tps, _body, _m, rty)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal)
         let ty = mkForallTyIfNeeded tps rty
         OptimizeLambdas None cenv env topValInfo expr ty
-    | Expr.TyChoose _  -> OptimizeExpr cenv env (TypeRelations.ChooseTyparSolutionsForFreeChoiceTypars cenv.g cenv.amap expr)
-    | Expr.Match(spMatch, exprm, dtree, targets, m, ty) -> OptimizeMatch cenv env (spMatch, exprm, dtree, targets, m, ty)
-    | Expr.LetRec (binds, e, m, _) ->  OptimizeLetRec cenv env (binds, e, m)
-    | Expr.StaticOptimization (constraints, e2, e3, m) ->
-        let e2', e2info = OptimizeExpr cenv env e2
-        let e3', e3info = OptimizeExpr cenv env e3
-        Expr.StaticOptimization(constraints, e2', e3', m), 
+
+    | Expr.TyChoose _  -> 
+        OptimizeExpr cenv env (TypeRelations.ChooseTyparSolutionsForFreeChoiceTypars cenv.g cenv.amap expr)
+
+    | Expr.Match(spMatch, exprm, dtree, targets, m, ty) -> 
+        OptimizeMatch cenv env (spMatch, exprm, dtree, targets, m, ty)
+
+    | Expr.LetRec (binds, bodyExpr, m, _) ->  
+        OptimizeLetRec cenv env (binds, bodyExpr, m)
+
+    | Expr.StaticOptimization (constraints, expr2, expr3, m) ->
+        let expr2R, e2info = OptimizeExpr cenv env expr2
+        let expr3R, e3info = OptimizeExpr cenv env expr3
+        Expr.StaticOptimization(constraints, expr2R, expr3R, m), 
         { TotalSize = min e2info.TotalSize e3info.TotalSize
           FunctionSize = min e2info.FunctionSize e3info.FunctionSize
           HasEffect = e2info.HasEffect || e3info.HasEffect
           MightMakeCriticalTailcall=e2info.MightMakeCriticalTailcall || e3info.MightMakeCriticalTailcall // seems conservative
           Info= UnknownValue }
+
     | Expr.Link _eref -> 
         assert ("unexpected reclink" = "")
         failwith "Unexpected reclink"
@@ -1851,7 +1877,9 @@ and OptimizeObjectExpr cenv env (ty, baseValOpt, basecall, overrides, iimpls, m)
 // Optimize/analyze the methods that make up an object expression
 //------------------------------------------------------------------------- 
 
-and OptimizeMethods cenv env baseValOpt l = OptimizeList (OptimizeMethod cenv env baseValOpt) l
+and OptimizeMethods cenv env baseValOpt methods = 
+    OptimizeList (OptimizeMethod cenv env baseValOpt) methods
+
 and OptimizeMethod cenv env baseValOpt (TObjExprMethod(slotsig, attribs, tps, vs, e, m) as tmethod) = 
     let env = {env with latestBoundId=Some tmethod.Id; functionVal = None}
     let env = BindTypeVarsToUnknown tps env
@@ -1866,11 +1894,11 @@ and OptimizeMethod cenv env baseValOpt (TObjExprMethod(slotsig, attribs, tps, vs
       MightMakeCriticalTailcall=false
       Info=UnknownValue}
 
-//-------------------------------------------------------------------------
-// Optimize/analyze the interface implementations that form part of an object expression
-//------------------------------------------------------------------------- 
+/// Optimize/analyze the interface implementations that form part of an object expression
+and OptimizeInterfaceImpls cenv env baseValOpt iimpls = 
+    OptimizeList (OptimizeInterfaceImpl cenv env baseValOpt) iimpls
 
-and OptimizeInterfaceImpls cenv env baseValOpt l = OptimizeList (OptimizeInterfaceImpl cenv env baseValOpt) l
+/// Optimize/analyze the interface implementations that form part of an object expression
 and OptimizeInterfaceImpl cenv env baseValOpt (ty, overrides) = 
     let overrides', overridesinfos = OptimizeMethods cenv env baseValOpt overrides
     (ty, overrides'), 
@@ -1880,13 +1908,10 @@ and OptimizeInterfaceImpl cenv env baseValOpt (ty, overrides) =
       MightMakeCriticalTailcall=false
       Info=UnknownValue}
 
-//-------------------------------------------------------------------------
-// Make and optimize String.Concat calls
-//------------------------------------------------------------------------- 
-
+/// Make and optimize String.Concat calls
 and MakeOptimizedSystemStringConcatCall cenv env m args =
-    let rec optimizeArg e accArgs =
-        match e, accArgs with
+    let rec optimizeArg argExpr accArgs =
+        match argExpr, accArgs with
         | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ], _), _ when IsSystemStringConcatArray methRef ->
             optimizeArgs args accArgs
 
@@ -1905,7 +1930,7 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
 
     let args = optimizeArgs args []
 
-    let e =
+    let expr =
         match args with
         | [ arg ] ->
             arg
@@ -1919,11 +1944,11 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
             let arg = mkArray (cenv.g.string_ty, args, m)
             mkStaticCall_String_Concat_Array cenv.g m arg
 
-    match e with
+    match expr with
     | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _) as op, tyargs, args, m) when IsSystemStringConcatOverload methRef || IsSystemStringConcatArray methRef ->
         OptimizeExprOpReductions cenv env (op, tyargs, args, m)
     | _ ->
-        OptimizeExpr cenv env e
+        OptimizeExpr cenv env expr
 
 //-------------------------------------------------------------------------
 // Optimize/analyze an application of an intrinsic operator to arguments
@@ -1933,11 +1958,11 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
 
     // Special cases 
     match op, tyargs, args with 
-    | TOp.Coerce, [toty;fromty], [e] -> 
-        let e', einfo = OptimizeExpr cenv env e
-        if typeEquiv cenv.g toty fromty then e', einfo 
+    | TOp.Coerce, [toty;fromty], [arg] -> 
+        let argR, einfo = OptimizeExpr cenv env arg
+        if typeEquiv cenv.g toty fromty then argR, einfo 
         else 
-          mkCoerceExpr(e', toty, m, fromty), 
+          mkCoerceExpr(argR, toty, m, fromty), 
           { TotalSize=einfo.TotalSize + 1
             FunctionSize=einfo.FunctionSize + 1
             HasEffect = true  
@@ -2004,6 +2029,9 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
 
 and OptimizeExprOpReductions cenv env (op, tyargs, args, m) =
     let args', arginfos = OptimizeExprsThenConsiderSplits cenv env args
+    OptimizeExprOpReductionsAfter cenv env (op, tyargs, args', arginfos, m)
+
+and OptimizeExprOpReductionsAfter cenv env (op, tyargs, args', arginfos, m) =
     let knownValue = 
         match op, arginfos with 
         | TOp.ValFieldGet (rf), [e1info] -> TryOptimizeRecordFieldGet cenv env (e1info, rf, tyargs, m) 
@@ -2252,10 +2280,10 @@ and OptimizeLinearExpr cenv env expr contf =
               MightMakeCriticalTailcall = bodyInfo.MightMakeCriticalTailcall // discard tailcall info from binding - not in tailcall position
               Info = UnknownValue }
         else 
-            (* On the way back up: Trim out any optimization info that involves escaping values on the way back up *)
+            // On the way back up: Trim out any optimization info that involves escaping values on the way back up
             let evalue' = AbstractExprInfoByVars ([bind'.Var], []) bodyInfo.Info 
             body', 
-            { TotalSize = bindingInfo.TotalSize + bodyInfo.TotalSize - localVarSize (* eliminated a local var *) 
+            { TotalSize = bindingInfo.TotalSize + bodyInfo.TotalSize - localVarSize // eliminated a local var
               FunctionSize = bindingInfo.FunctionSize + bodyInfo.FunctionSize - localVarSize (* eliminated a local var *) 
               HasEffect=bindingInfo.HasEffect || bodyInfo.HasEffect
               MightMakeCriticalTailcall = bodyInfo.MightMakeCriticalTailcall // discard tailcall info from binding - not in tailcall position
@@ -2270,6 +2298,12 @@ and OptimizeLinearExpr cenv env expr contf =
              let tinfos = [tg1info; e2info]
              let tgs = [tg1; TTarget([], e2, spTarget2)]
              RebuildOptimizedMatch (spMatch, exprm, m, ty, dtree, tgs, dinfo, tinfos)))
+
+    | LinearOpExpr (op, tyargs, argsHead, argLast, m) ->
+         let argsHead', argsHeadInfos' = OptimizeList (OptimizeExprThenConsiderSplit cenv env) argsHead
+         // tailcall
+         OptimizeLinearExpr cenv env argLast (contf << (fun (argLast', argLastInfo) ->
+             OptimizeExprOpReductionsAfter cenv env (op, tyargs, argsHead' @ [argLast'], argsHeadInfos' @ [argLastInfo], m)))
 
     | _ -> contf (OptimizeExpr cenv env expr)
 
@@ -2915,7 +2949,6 @@ and OptimizeExprsThenConsiderSplits cenv env exprs =
     match exprs with 
     | [] -> NoExprs 
     | _ -> OptimizeList (OptimizeExprThenConsiderSplit cenv env) exprs
-
 
 and OptimizeExprThenReshapeAndConsiderSplit cenv env (shape, e) = 
     OptimizeExprThenConsiderSplit cenv env (ReshapeExpr cenv (shape, e))

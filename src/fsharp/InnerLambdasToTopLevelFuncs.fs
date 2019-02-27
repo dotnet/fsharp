@@ -1073,9 +1073,14 @@ module Pass4_RewriteAssembly =
     /// At free vals,    fixup 0-call if it is an arity-met constant.
     /// Other cases rewrite structurally.
     let rec TransExpr (penv: RewriteContext) (z:RewriteState) expr : Expr * RewriteState =
+
         match expr with
-        // Use TransLinearExpr with a rebuild-continuation for some forms to avoid stack overflows on large terms *)
-        | Expr.LetRec _ | Expr.Let    _ | Expr.Sequential _ -> 
+        // Use TransLinearExpr with a rebuild-continuation for some forms to avoid stack overflows on large terms 
+        | LinearOpExpr _
+        | LinearMatchExpr _ 
+        | Expr.LetRec _ // note, Expr.LetRec not normally considered linear, but keeping it here as it's always been here
+        | Expr.Let    _ 
+        | Expr.Sequential _ -> 
              TransLinearExpr penv z expr (fun res -> res)
 
         // app - call sites may require z.
@@ -1138,19 +1143,25 @@ module Pass4_RewriteAssembly =
             MakePreDecs m pds (mkAndSimplifyMatch spBind exprm m ty dtree targets),z
 
         // all others - below - rewrite structurally - so boiler plate code after this point... 
-        | Expr.Const _ -> expr,z (* constant wrt Val *)
+        | Expr.Const _ -> 
+            expr,z 
+
         | Expr.Quote (a,{contents=Some(typeDefs,argTypes,argExprs,data)},isFromQueryExpression,m,ty) -> 
             let argExprs,z = List.mapFold (TransExpr penv) z argExprs
             Expr.Quote(a,{contents=Some(typeDefs,argTypes,argExprs,data)},isFromQueryExpression,m,ty),z
+
         | Expr.Quote (a,{contents=None},isFromQueryExpression,m,ty) -> 
             Expr.Quote(a,{contents=None},isFromQueryExpression,m,ty),z
+
         | Expr.Op (c,tyargs,args,m) -> 
             let args,z = List.mapFold (TransExpr penv) z args
             Expr.Op(c,tyargs,args,m),z
+
         | Expr.StaticOptimization (constraints,e2,e3,m) ->
             let e2,z = TransExpr penv z e2
             let e3,z = TransExpr penv z e3
             Expr.StaticOptimization(constraints,e2,e3,m),z
+
         | Expr.TyChoose (_,_,m) -> 
             error(Error(FSComp.SR.tlrUnexpectedTExpr(),m))
 
@@ -1203,9 +1214,16 @@ module Pass4_RewriteAssembly =
              let tg1,z = TransDecisionTreeTarget penv z tg1
              // tailcall
              TransLinearExpr penv z e2 (contf << (fun (e2,z) ->
-                 rebuildLinearMatchExpr (spBind,exprm,dtree,tg1,e2,sp2,m2,ty),z))
+                 rebuildLinearMatchExpr (spBind,exprm,dtree,tg1,e2,sp2,m2,ty), z))
+
+         | LinearOpExpr (op, tyargs, argsHead, argLast, m) ->
+             let argsHead,z = List.mapFold (TransExpr penv) z argsHead
+             // tailcall
+             TransLinearExpr penv z argLast (contf << (fun (argLast, z) ->
+                 rebuildLinearOpExpr (op, tyargs, argsHead, argLast, m), z))
 
          | _ -> 
+            // not a linear expression
             contf (TransExpr penv z expr)
       
     and TransMethod penv (z:RewriteState) (TObjExprMethod(slotsig,attribs,tps,vs,e,m)) =
