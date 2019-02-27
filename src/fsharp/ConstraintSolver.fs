@@ -1033,7 +1033,7 @@ and SolveDimensionlessNumericType (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
 ///    only one of the two type variables is known
 ///    
 and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload permitWeakResolution ndeep m2 trace traitInfo : OperationResult<bool> = trackErrors {
-    let (TTrait(tys, nm, memFlags, argtys, rty, sln, extSlns, traitAD)) = traitInfo
+    let (TTrait(tys, nm, memFlags, traitObjAndArgTys, rty, sln, extSlns, traitAD)) = traitInfo
     // Do not re-solve if already solved
     if sln.Value.IsSome then return true else
     let g = csenv.g
@@ -1048,20 +1048,21 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
     let tys = ListSet.setify (typeAEquiv g aenv) tys
 
     // Rebuild the trait info after removing duplicates 
-    let traitInfo = TTrait(tys, nm, memFlags, argtys, rty, sln, extSlns, traitAD)
+    let traitInfo = TTrait(tys, nm, memFlags, traitObjAndArgTys, rty, sln, extSlns, traitAD)
     let rty = GetFSharpViewOfReturnType g rty    
     let traitAD = match traitAD with None -> AccessibilityLogic.AccessibleFromEverywhere | Some ad -> (ad :?> AccessorDomain)
     
     // Assert the object type if the constraint is for an instance member    
     if memFlags.IsInstance then 
-        match tys, argtys with 
+        match tys, traitObjAndArgTys with 
         | [ty], (h :: _) -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace h ty 
         | _ -> do! ErrorD (ConstraintSolverError(FSComp.SR.csExpectedArguments(), m, m2))
+
     // Trait calls are only supported on pseudo type (variables) 
     for e in tys do
       do! SolveTypStaticReq csenv trace HeadTypeStaticReq e
     
-    let argtys = if memFlags.IsInstance then List.tail argtys else argtys
+    let argtys = if memFlags.IsInstance then List.tail traitObjAndArgTys else traitObjAndArgTys 
     let minfos = GetRelevantMethodsForTrait csenv permitWeakResolution nm traitInfo
         
     let! res = 
@@ -1377,8 +1378,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                           if minfo.IsCurried then None else
                           let callerArgs = argtys |> List.map (fun argty -> CallerArg(argty, m, false, dummyExpr))
                           let minst = FreshenMethInfo None m minfo
-                          //let objtys = minfo.GetObjArgTypes(amap, m, minst)
-                          let callerObjTys = if memFlags.IsInstance then [ List.head argtys ] else []
+                          let callerObjTys = if memFlags.IsInstance then [ List.head traitObjAndArgTys  ] else []
                           Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo None, m, traitAD, minfo, minst, minst, None, callerObjTys, [(callerArgs, [])], false, false, None)))
               
               let methOverloadResult, errors = 

@@ -2245,9 +2245,10 @@ and accExtSlnsInType acc ty  =
     // NOTE: Unlike almost everywhere else, we do NOT strip ANY equations here.  
     // We _must_ traverse the solved typar containing the new extSlns for the grounded typar constraint, that's the whole point
     match ty with 
-    | TType_tuple (_tupInfo, l) -> accExtSlnsInTypes acc l 
-    | TType_app (_, tinst) -> accExtSlnsInTypes acc tinst 
-    | TType_ucase (_, tinst) -> accExtSlnsInTypes acc tinst 
+    | TType_tuple (_, tys) 
+    | TType_anon (_, tys) 
+    | TType_app (_, tys)  
+    | TType_ucase (_, tys) -> accExtSlnsInTypes acc tys
     | TType_fun (d, r) -> accExtSlnsInType (accExtSlnsInType acc d) r
     | TType_var r -> accExtSlnsTyparRef acc r 
     | TType_forall (_tps, r) -> accExtSlnsInType acc r
