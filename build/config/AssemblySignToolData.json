@@ -55,6 +55,7 @@
   ],
   "exclude": [
     "e_sqlite3.dll",
+    "FSharp.Core.UnitTests.dll",
     "FSharp.Data.TypeProviders.dll",
     "Microsoft.Build.dll",
     "Microsoft.Build.Framework.dll",
