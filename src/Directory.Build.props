@@ -1,3 +1,6 @@
 <Project>
   <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <PropertyGroup>
+    <WarningsAsErrors>1182;0025;$(WarningsAsErrors)</WarningsAsErrors>
+  </PropertyGroup>
 </Project>
