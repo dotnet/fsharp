@@ -273,11 +273,6 @@ module CoreTests =
 
         testOkFile.CheckExists()
 
-#endif
-
-    [<Test>]
-    let control () = singleTestBuildAndRun "core/control" FSC_BASIC
-
     [<Test>]
     let ``lots-of-conditionals``() = 
         let cfg = testConfig "core/large/conditionals"
@@ -365,6 +360,11 @@ module CoreTests =
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequential-maxtested.fs"]
         exec cfg ("." ++ "test.exe") ""
         testOkFile.CheckExists()
+
+#endif
+
+    [<Test>]
+    let control () = singleTestBuildAndRun "core/control" FSC_BASIC
 
     [<Test>]
     let ``control --tailcalls`` () = 
