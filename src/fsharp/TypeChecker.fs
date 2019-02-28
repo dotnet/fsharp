@@ -10438,7 +10438,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
             TcLinearExprs bodyChecker cenv envinner overallTy tpenv isCompExpr body (fun (x, tpenv) -> 
                 cont (fst (mkf (x, overallTy)), tpenv))
 
-    | SynExpr.IfThenElse (synBoolExpr, synThenExpr, synElseExprOpt, spIfToThen, isRecovery, mIfToThen, m) ->
+    | SynExpr.IfThenElse (synBoolExpr, synThenExpr, synElseExprOpt, spIfToThen, isRecovery, mIfToThen, m) when not isCompExpr ->
         let boolExpr, tpenv = TcExprThatCantBeCtorBody cenv cenv.g.bool_ty env tpenv synBoolExpr
         let thenExpr, tpenv =
             let env =
