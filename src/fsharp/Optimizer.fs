@@ -293,25 +293,37 @@ type OptimizationSettings =
         }
 
     member x.jitOpt() = match x.jitOptUser with Some f -> f | None -> jitOptDefault
+
     member x.localOpt () = match x.localOptUser with Some f -> f | None -> localOptDefault
+
     member x.crossModuleOpt () = x.localOpt () && (match x.crossModuleOptUser with Some f -> f | None -> crossModuleOptDefault)
 
     member x.KeepOptimizationValues() = x.crossModuleOpt ()
+
     /// inline calls *
     member x.InlineLambdas () = x.localOpt ()  
+
     /// eliminate unused bindings with no effect 
     member x.EliminateUnusedBindings () = x.localOpt () 
+
     /// eliminate try around expr with no effect 
     member x.EliminateTryCatchAndTryFinally () = false // deemed too risky, given tiny overhead of including try/catch. See https://github.com/Microsoft/visualfsharp/pull/376
+
     /// eliminate first part of seq if no effect 
     member x.EliminateSequential () = x.localOpt () 
+
     /// determine branches in pattern matching
     member x.EliminateSwitch () = x.localOpt () 
+
     member x.EliminateRecdFieldGet () = x.localOpt () 
+
     member x.EliminateTupleFieldGet () = x.localOpt () 
+
     member x.EliminatUnionCaseFieldGet () = x.localOpt () 
+
     /// eliminate non-compiler generated immediate bindings 
     member x.EliminateImmediatelyConsumedLocals() = x.localOpt () 
+
     /// expand "let x = (exp1, exp2, ...)" bind fields as prior tmps 
     member x.ExpandStructrualValues() = x.localOpt () 
 
@@ -2238,15 +2250,15 @@ and OptimizeLetRec cenv env (binds, bodyExpr, m) =
     let info = CombineValueInfos (einfo :: bindinfos) evalue' 
     bodyExpr', info
 
-//-------------------------------------------------------------------------
-// Optimize/analyze a linear sequence of sequentioanl execution or 'let' bindings.
-//------------------------------------------------------------------------- 
-
+/// Optimize/analyze a linear sequence of sequential execution or 'let' bindings.
 and OptimizeLinearExpr cenv env expr contf =
 
+    // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
+    // complete inference types.
     let expr = DetectAndOptimizeForExpression cenv.g OptimizeAllForExpressions expr
-
     let expr = if cenv.settings.ExpandStructrualValues() then ExpandStructuralBinding cenv expr else expr 
+    let expr = stripExpr expr
+
     match expr with 
     | Expr.Sequential (e1, e2, flag, spSeq, m) -> 
       let e1', e1info = OptimizeExpr cenv env e1 
@@ -2290,14 +2302,15 @@ and OptimizeLinearExpr cenv env expr contf =
               Info = evalue' } ))
 
     | LinearMatchExpr (spMatch, exprm, dtree, tg1, e2, spTarget2, m, ty) ->
-         let dtree, dinfo = OptimizeDecisionTree cenv env m dtree
+         let dtree', dinfo = OptimizeDecisionTree cenv env m dtree
          let tg1, tg1info = OptimizeDecisionTreeTarget cenv env m tg1
          // tailcall
          OptimizeLinearExpr cenv env e2 (contf << (fun (e2, e2info) ->
+             // This ConsiderSplitToMethod is performed because it is present in OptimizeDecisionTreeTarget
              let e2, e2info = ConsiderSplitToMethod cenv.settings.abstractBigTargets cenv.settings.bigTargetSize cenv env (e2, e2info) 
              let tinfos = [tg1info; e2info]
-             let tgs = [tg1; TTarget([], e2, spTarget2)]
-             RebuildOptimizedMatch (spMatch, exprm, m, ty, dtree, tgs, dinfo, tinfos)))
+             let targets' = [tg1; TTarget([], e2, spTarget2)]
+             OptimizeMatchPart2 cenv (spMatch, exprm, dtree', targets', dinfo, tinfos, m, ty)))
 
     | LinearOpExpr (op, tyargs, argsHead, argLast, m) ->
          let argsHead', argsHeadInfos' = OptimizeList (OptimizeExprThenConsiderSplit cenv env) argsHead
@@ -3027,6 +3040,9 @@ and OptimizeMatch cenv env (spMatch, exprm, dtree, targets, m, ty) =
     // REVIEW: consider collecting, merging and using information flowing through each line of the decision tree to each target 
     let dtree', dinfo = OptimizeDecisionTree cenv env m dtree 
     let targets', tinfos = OptimizeDecisionTreeTargets cenv env m targets 
+    OptimizeMatchPart2 cenv (spMatch, exprm, dtree', targets', dinfo, tinfos, m, ty)
+
+and OptimizeMatchPart2 cenv (spMatch, exprm, dtree', targets', dinfo, tinfos, m, ty) =
     let newExpr, newInfo = RebuildOptimizedMatch (spMatch, exprm, m, ty, dtree', targets', dinfo, tinfos)
     let newExpr2 = if not (cenv.settings.localOpt()) then newExpr else CombineBoolLogic newExpr
     newExpr2, newInfo
@@ -3044,27 +3060,20 @@ and RebuildOptimizedMatch (spMatch, exprm, m, ty, dtree, tgs, dinfo, tinfos) =
      let einfo = CombineMatchInfos dinfo tinfo
      expr, einfo
 
-//-------------------------------------------------------------------------
-// Optimize/analyze a target of a decision tree
-//------------------------------------------------------------------------- 
-
-and OptimizeDecisionTreeTarget cenv env _m (TTarget(vs, e, spTarget)) = 
-    (* REVIEW: this is where we should be using information collected for each target *)
+/// Optimize/analyze a target of a decision tree
+and OptimizeDecisionTreeTarget cenv env _m (TTarget(vs, expr, spTarget)) = 
     let env = BindInternalValsToUnknown cenv vs env 
-    let e', einfo = OptimizeExpr cenv env e 
-    let e', einfo = ConsiderSplitToMethod cenv.settings.abstractBigTargets cenv.settings.bigTargetSize cenv env (e', einfo) 
+    let expr', einfo = OptimizeExpr cenv env expr 
+    let expr', einfo = ConsiderSplitToMethod cenv.settings.abstractBigTargets cenv.settings.bigTargetSize cenv env (expr', einfo) 
     let evalue' = AbstractExprInfoByVars (vs, []) einfo.Info 
-    TTarget(vs, e', spTarget), 
+    TTarget(vs, expr', spTarget), 
     { TotalSize=einfo.TotalSize 
       FunctionSize=einfo.FunctionSize
       HasEffect=einfo.HasEffect
       MightMakeCriticalTailcall = einfo.MightMakeCriticalTailcall 
       Info=evalue' }
 
-//-------------------------------------------------------------------------
-// Optimize/analyze a decision tree
-//------------------------------------------------------------------------- 
-
+/// Optimize/analyze a decision tree
 and OptimizeDecisionTree cenv env m x =
     match x with 
     | TDSuccess (es, n) -> 
