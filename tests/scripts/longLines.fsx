@@ -35,3 +35,18 @@ let numHumungous = lines |> Array.filter (fun (_, (line, lineText)) -> lineText.
 printfn "%d long lines = %2.2f%%" numLong (double numLong / double totalLines)
 printfn "%d huge lines = %2.2f%%" numHuge (double numHuge / double totalLines)
 printfn "%d humungous lines = %2.2f%%" numHumungous (double numHumungous / double totalLines)
+
+
+let commas =
+    lines
+    |> Array.groupBy fst 
+    |> Array.map (fun (file, lines) -> 
+        file,
+        lines 
+        |> Array.sumBy (fun (_,(_,line)) ->
+              line |> Seq.pairwise |> Seq.filter (fun (c1, c2) -> c1 = ',' && c2 <> ' ') |> Seq.length)) 
+    |> Array.sortByDescending snd
+
+printfn "Top files that have commas without spaces: %A" (Seq.truncate 10 commas)
+
+
