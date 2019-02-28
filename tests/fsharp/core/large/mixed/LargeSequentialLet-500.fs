@@ -1007,3 +1007,5 @@ let expectedValues() =
     x <- x + rnd.Next(3) 
     let mutable x = x + 1
     x
+printfn "expectedValues() = %A" (expectedValues())
+System.IO.File.WriteAllLines("test.ok", ["ok"])

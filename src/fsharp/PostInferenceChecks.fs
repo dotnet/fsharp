@@ -879,7 +879,7 @@ and CheckCallWithReceiver cenv env m returnTy args contexts context =
                 limitArgs
         CheckCallLimitArgs cenv env m returnTy limitArgs context
 
-and CheckExprLinear (cenv:cenv) (env:env) expr (context:PermitByRefExpr) contf =    
+and CheckExprLinear (cenv:cenv) (env:env) expr (context:PermitByRefExpr) (contf : Limit -> Limit) =    
     match expr with
     | Expr.Sequential (e1,e2,NormalSeq,_,_) -> 
         CheckExprNoByrefs cenv env e1
@@ -905,7 +905,7 @@ and CheckExprLinear (cenv:cenv) (env:env) expr (context:PermitByRefExpr) contf =
         CheckTypeInstNoByrefs cenv env m tyargs
         argsHead |> List.iter (CheckExprNoByrefs cenv env) 
         // tailcall
-        CheckExprLinear cenv env argLast PermitByRefExpr.No (fun _ -> NoLimit)
+        CheckExprLinear cenv env argLast PermitByRefExpr.No (fun _ -> contf NoLimit)
 
     | LinearMatchExpr (_spMatch, _exprm, dtree, tg1, e2, _spTarget2, m, ty) ->
         CheckTypeNoInnerByrefs cenv env m ty 

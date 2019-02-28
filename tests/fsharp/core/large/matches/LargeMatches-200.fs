@@ -305,3 +305,5 @@ let expectedValues() =
     | Some x -> x 
     | None ->  
     4
+printfn "expectedValues() = %A" (expectedValues())
+System.IO.File.WriteAllLines("test.ok", ["ok"])

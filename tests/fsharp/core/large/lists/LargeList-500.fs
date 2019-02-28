@@ -503,3 +503,5 @@ let expectedValues =
         1 
         1 
     ]
+printfn "length = %d" expectedValues.Length
+System.IO.File.WriteAllLines("test.ok", ["ok"])

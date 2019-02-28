@@ -505,3 +505,5 @@ let expectedValues() =
     x <- x + rnd.Next(3) 
     x <- x + rnd.Next(3) 
     x
+printfn "expectedValues() = %A" (expectedValues())
+System.IO.File.WriteAllLines("test.ok", ["ok"])

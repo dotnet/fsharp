@@ -6157,8 +6157,16 @@ type ExprFolders<'State> (folders : ExprFolder<'State>) =
 
     and exprNoInterceptF (z: 'State) (x: Expr) = 
         match x with
+        
         | Expr.Const _  -> z
+
         | Expr.Val _ -> z
+
+        | LinearOpExpr (_op, _tyargs, argsHead, argLast, _m) ->
+            let z = exprsF z argsHead
+            // tailcall 
+            exprF z argLast
+        
         | Expr.Op (_c, _tyargs, args, _) -> 
             exprsF z args
 
@@ -6191,7 +6199,9 @@ type ExprFolders<'State> (folders : ExprFolder<'State>) =
 
         | Expr.Match (_spBind, _exprm, dtree, targets, _m, _ty)                 -> 
             let z = dtreeF z dtree
-            Array.fold targetF z targets
+            let z = Array.fold targetF z targets.[0..targets.Length - 2]
+            // tailcall
+            targetF z targets.[targets.Length - 1]
                 
         | Expr.Quote(e, {contents=Some(_typeDefs, _argTypes, argExprs, _)}, _, _, _)  -> 
             let z = exprF z e
