@@ -10458,13 +10458,13 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
         | None ->
             let elseExpr = mkUnit cenv.g mIfToThen
             let spElse = SuppressSequencePointAtTarget  // the fake 'unit' value gets exactly the same range as spIfToThen
-            let overallExpr = primMkCond spIfToThen SequencePointAtTarget spElse m overallTy boolExpr thenExpr elseExpr, tpenv
-            cont overallExpr
+            let overallExpr = primMkCond spIfToThen SequencePointAtTarget spElse m overallTy boolExpr thenExpr elseExpr
+            cont (overallExpr, tpenv)
 
         | Some synElseExpr ->
             let env = { env with eContextInfo = ContextInfo.ElseBranchResult synElseExpr.Range }
             // tailcall
-            TcLinearExprs bodyChecker cenv env overallTy tpenv false synElseExpr (fun (elseExpr, tpenv) -> 
+            TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synElseExpr (fun (elseExpr, tpenv) -> 
                 let resExpr = primMkCond spIfToThen SequencePointAtTarget SequencePointAtTarget m overallTy boolExpr thenExpr elseExpr
                 cont (resExpr, tpenv))
 
