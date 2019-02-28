@@ -52,7 +52,7 @@ let CheckThrowsFormatException       f = CheckThrowsExn<FormatException>        
 
 // Verifies two sequences are equal (same length, equiv elements)
 let VerifySeqsEqual (seq1 : seq<'T>) (seq2 : seq<'T>) =
-    CollectionAssert.AreEqual (seq1, seq2)
+    CollectionAssert.AreEqual(seq1, seq2)
 
 let sleep(n : int32) =        
 #if FX_NO_THREAD
@@ -61,6 +61,7 @@ let sleep(n : int32) =
     System.Threading.Thread.Sleep(n)
 #endif
 
+#if VERIFY_SURFACEAREA
 module SurfaceArea =
     open System.Reflection
     open System
@@ -172,3 +173,4 @@ module SurfaceArea =
             sb.ToString ()
 
         Assert.Fail msg
+#endif

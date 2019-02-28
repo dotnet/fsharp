@@ -650,7 +650,10 @@ module internal SymbolHelpers =
     let mutable ToolTipFault  = None
     
     let GetXmlCommentForMethInfoItem infoReader m d (minfo: MethInfo) = 
-        GetXmlCommentForItemAux (if minfo.HasDirectXmlComment || minfo.XmlDoc.NonEmpty then Some minfo.XmlDoc else None) infoReader m d 
+        if minfo.HasDirectXmlComment || minfo.XmlDoc.NonEmpty then
+            GetXmlCommentForItemAux (Some minfo.XmlDoc) infoReader m d 
+        else
+            mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
 
     let FormatTyparMapping denv (prettyTyparInst: TyparInst) = 
         [ for (tp, ty) in prettyTyparInst -> 

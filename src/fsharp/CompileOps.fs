@@ -1854,8 +1854,7 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location), "mscorlib.dll")    // mscorlib
           yield typeof<System.Console>.Assembly.Location                                                        // System.Console
           yield typeof<System.Collections.BitArray>.Assembly.Location                                           // System.Collections
-          yield typeof<System.Data.SqlClient.SqlCommand>.Assembly.Location                                      // System.Data.SqlClient
-          yield typeof<System.ComponentModel.PropertyChangedEventArgs>.Assembly.Location                        // System.ObjectModel             
+          yield typeof<System.ComponentModel.PropertyChangedEventArgs>.Assembly.Location                        // System.ObjectModel
           yield typeof<System.IO.File>.Assembly.Location                                                        // System.IO.FileSystem
           yield typeof<System.IO.TextWriter>.Assembly.Location                                                  // System.IO
           yield typeof<System.Linq.Enumerable>.Assembly.Location                                                // System.Linq

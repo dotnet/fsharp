@@ -392,7 +392,7 @@ let emEnv0 =
       emEntryPts = []
       delayedFieldInits = [] }
 
-let envBindTypeRef emEnv (tref:ILTypeRef) (typT, typB, typeDef)= 
+let envBindTypeRef emEnv (tref:ILTypeRef) (typT, typB, typeDef) = 
     match typT with 
     | null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name;
     | _ -> {emEnv with emTypMap = Zmap.add tref (typT, typB, typeDef, None) emEnv.emTypMap}

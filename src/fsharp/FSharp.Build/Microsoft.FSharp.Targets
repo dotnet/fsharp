@@ -285,7 +285,7 @@ this file.
               DocumentationFile="$(DocumentationFile)"
               DotnetFscCompilerPath="$(DotnetFscCompilerPath)"
               EmbedAllSources="$(EmbedAllSources)"
-              EmbeddedFiles="@(EmbeddedFiles)"
+              Embed="@(EmbeddedFiles)"
               GenerateInterfaceFile="$(GenerateInterfaceFile)"
               HighEntropyVA="$(HighEntropyVA)"
               KeyFile="$(KeyOriginatorFile)"
@@ -340,7 +340,7 @@ this file.
             fragment into a temporary source file for the compiler.
 
             ============================================================
-        -->
+    -->
 
     <!--
     ============================================================
