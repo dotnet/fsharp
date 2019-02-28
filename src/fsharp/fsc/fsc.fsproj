@@ -13,6 +13,7 @@
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
     <UseAssetTargetFallback>true</UseAssetTargetFallback>
     <NGenBinary>true</NGenBinary>
+    <PlatformTarget Condition=" '$(TargetDotnetProfile)'!='coreclr'">x86</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
