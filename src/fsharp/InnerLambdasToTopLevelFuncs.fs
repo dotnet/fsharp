@@ -480,9 +480,10 @@ module Pass2_DetermineReqdItems =
     ///   "val v"                                        - free occurrence
     ///   "app (f,tps,args)"                             - occurrence
     ///
-    /// On intercepted nodes, must exprF fold to collect from subexpressions.
-    let ExprEnvIntercept (tlrS,arityM) exprF z expr = 
-         let accInstance z (fvref:ValRef,tps,args) (* f known local *) = 
+    /// On intercepted nodes, must recurseF fold to collect from subexpressions.
+    let ExprEnvIntercept (tlrS,arityM) recurseF noInterceptF z expr = 
+
+         let accInstance z (fvref:ValRef,tps,args) = 
              let f = fvref.Deref
              match Zmap.tryFind f arityM with
              
@@ -508,48 +509,51 @@ module Pass2_DetermineReqdItems =
              let fclass = BindingGroupSharingSameReqdItems tlrBs
              // what determines env? 
              let frees        = FreeInBindings tlrBs
-             let reqdTypars0  = frees.FreeTyvars.FreeTypars   |> Zset.elements      (* put in env *)
+             // put in env
+             let reqdTypars0  = frees.FreeTyvars.FreeTypars   |> Zset.elements     
              // occurrences contribute to env 
              let reqdVals0 = frees.FreeLocals |> Zset.elements
              // tlrBs are not reqdVals0 for themselves 
              let reqdVals0 = reqdVals0 |> List.filter (fun gv -> not (fclass.Contains gv)) 
              let reqdVals0 = reqdVals0 |> Zset.ofList valOrder 
              // collect into env over bodies 
-             let z          = PushFrame fclass (reqdTypars0,reqdVals0,m) z
-             let z          = (z,tlrBs) ||> List.fold (foldOn (fun b -> b.Expr) exprF) 
-             let z          = SaveFrame     fclass z
-             (* for bindings not marked TRL, collect *)
-             let z          = (z,nonTlrBs) ||> List.fold (foldOn (fun b -> b.Expr) exprF) 
+             let z = PushFrame fclass (reqdTypars0,reqdVals0,m) z
+             let z = (z,tlrBs) ||> List.fold (foldOn (fun b -> b.Expr) recurseF) 
+             let z = SaveFrame fclass z
+             // for bindings not marked TRL, collect 
+             let z = (z,nonTlrBs) ||> List.fold (foldOn (fun b -> b.Expr) recurseF) 
              z
         
          match expr with
          | Expr.Val (v,_,_) -> 
-             let z = accInstance z (v,[],[])
-             Some z
+             accInstance z (v,[],[])
+
          | Expr.Op (TOp.LValueOp (_,v),_tys,args,_) -> 
              let z = accInstance z (v,[],[])
-             let z = List.fold exprF z args
-             Some z
+             List.fold recurseF z args
+
          | Expr.App (f,fty,tys,args,m) -> 
              let f,_fty,tys,args,_m = destApp (f,fty,tys,args,m)
              match f with
              | Expr.Val (f,_,_) ->
-                  // // YES: APP vspec tps args - log 
+                 // YES: APP vspec tps args - log 
                  let z = accInstance z (f,tys,args)
-                 let z = List.fold exprF z args
-                 Some z
+                 List.fold recurseF z args
              | _ ->
-                 (* NO: app, but function is not val - no log *)
-                 None
-         | Expr.LetRec (binds,body,m,_) -> 
+                 // NO: app, but function is not val - no log 
+                 noInterceptF z expr
+
+         | Expr.LetRec (binds, body, m, _) -> 
              let z = accBinds m z binds
-             let z = exprF z body
-             Some z
-         | Expr.Let    (bind,body,m,_) -> 
+             recurseF z body
+
+         | Expr.Let (bind,body,m,_) -> 
              let z = accBinds m z [bind]
-             let z = exprF z body
-             Some z
-         | _ -> None (* NO: no intercept *)
+             // tailcall for linear sequences
+             recurseF z body
+
+         | _ -> 
+             noInterceptF z expr
         
 
     /// Initially, reqdTypars(fclass) = freetps(bodies).

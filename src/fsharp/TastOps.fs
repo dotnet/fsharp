@@ -4536,9 +4536,11 @@ and accFreeInFlatExprs opts (exprs:Exprs) acc = List.foldBack (accFreeInExpr opt
 and accFreeInExprs opts (exprs: Exprs) acc = 
     match exprs with 
     | [] -> acc 
+    | [h]-> 
+        // tailcall - e.g. Cons(x, Cons(x2, .......Cons(x1000000, Nil))) and [| x1; .... ; x1000000 |]
+        accFreeInExpr opts h acc
     | h::t -> 
         let acc = accFreeInExpr opts h acc
-        // tailcall - e.g. Cons(x, Cons(x2, .......Cons(x1000000, Nil))) and [| x1; .... ; x1000000 |]
         accFreeInExprs opts t acc
 
 and accFreeInSlotSig opts (TSlotSig(_, ty, _, _, _, _)) acc = 
@@ -6114,20 +6116,20 @@ let JoinTyparStaticReq r1 r2 =
 // ExprFolder - fold steps
 //-------------------------------------------------------------------------
 
-type ExprFolder<'T> = 
-    { exprIntercept    : ('T -> Expr -> 'T) -> 'T -> Expr  -> 'T option;   
+type ExprFolder<'State> = 
+    { exprIntercept    : (* recurseF *) ('State -> Expr -> 'State) -> (* noInterceptF *) ('State -> Expr -> 'State) -> 'State -> Expr  -> 'State
       // the bool is 'bound in dtree' 
-      valBindingSiteIntercept          : 'T -> bool * Val  -> 'T;                     
+      valBindingSiteIntercept          : 'State -> bool * Val  -> 'State               
       // these values are always bound to these expressions. bool indicates 'recursively' 
-      nonRecBindingsIntercept         : 'T -> Binding -> 'T;         
-      recBindingsIntercept         : 'T -> Bindings -> 'T;         
-      dtreeIntercept         : 'T -> DecisionTree -> 'T;                     
-      targetIntercept  : ('T -> Expr -> 'T) -> 'T -> DecisionTreeTarget  -> 'T option; 
-      tmethodIntercept : ('T -> Expr -> 'T) -> 'T -> ObjExprMethod -> 'T option; 
+      nonRecBindingsIntercept         : 'State -> Binding -> 'State   
+      recBindingsIntercept         : 'State -> Bindings -> 'State        
+      dtreeIntercept         : 'State -> DecisionTree -> 'State                    
+      targetIntercept  : (* recurseF *) ('State -> Expr -> 'State) -> 'State -> DecisionTreeTarget  -> 'State option 
+      tmethodIntercept : (* recurseF *) ('State -> Expr -> 'State) -> 'State -> ObjExprMethod -> 'State option
     }
 
 let ExprFolder0 =
-    { exprIntercept    = (fun _exprF _z _x -> None);
+    { exprIntercept    = (fun _recurseF noInterceptF z x -> noInterceptF z x);
       valBindingSiteIntercept          = (fun z _b  -> z);
       nonRecBindingsIntercept         = (fun z _bs -> z);
       recBindingsIntercept         = (fun z _bs -> z);
@@ -6143,54 +6145,68 @@ let ExprFolder0 =
 /// Adapted from usage info folding.
 /// Collecting from exprs at moment.
 /// To collect ids etc some additional folding needed, over formals etc.
-type ExprFolders<'State> (folders : _ ExprFolder) =
-    let mutable exprFClosure = Unchecked.defaultof<_> // prevent reallocation of closure
-    let rec exprsF z xs = List.fold exprFClosure z xs
-    and exprF (z: 'State) x =
-        match folders.exprIntercept exprFClosure z x with // fold this node, then recurse 
-        | Some z -> z // intercepted 
-        | None ->     // structurally recurse 
-            match x with
-            | Expr.Const _  -> z
-            | Expr.Val _ -> z
-            | Expr.Op (_c, _tyargs, args, _) -> exprsF z args
-            | Expr.Sequential (x0, x1, _dir, _, _)  -> exprsF z [x0;x1]
-            | Expr.Lambda(_lambdaId , _ctorThisValOpt, _baseValOpt, _argvs, body, _m, _rty) -> exprF  z body
-            | Expr.TyLambda(_lambdaId, _argtyvs, body, _m, _rty) -> exprF  z body
-            | Expr.TyChoose(_, body, _) -> exprF  z body
+type ExprFolders<'State> (folders : ExprFolder<'State>) =
+    let mutable exprFClosure = Unchecked.defaultof<'State -> Expr -> 'State> // prevent reallocation of closure
+    let mutable exprNoInterceptFClosure = Unchecked.defaultof<'State -> Expr -> 'State> // prevent reallocation of closure
 
-            | Expr.App (f, _fty, _tys, argtys, _) -> 
-                let z = exprF z f
-                let z = exprsF z argtys
-                z
-            | Expr.LetRec (binds, body, _, _) -> 
-                let z = valBindsF false z binds
-                let z = exprF z body
-                z
-            | Expr.Let    (bind, body, _, _)  -> 
-                let z = valBindF false z bind
-                let z = exprF z body
-                z
-            | Expr.Link rX -> exprF z (!rX)
+    let rec exprsF z xs = 
+        List.fold exprFClosure z xs
 
-            | Expr.Match (_spBind, _exprm, dtree, targets, _m, _ty)                 -> 
-                let z = dtreeF z dtree
-                let z = Array.fold targetF z targets
-                z
-            | Expr.Quote(e, {contents=Some(_typeDefs, _argTypes, argExprs, _)}, _, _, _)  -> 
-                let z = exprF z e
-                exprsF z argExprs
+    and exprF (z: 'State) (x: Expr) =
+        folders.exprIntercept exprFClosure exprNoInterceptFClosure z x 
 
-            | Expr.Quote(e, {contents=None}, _, _m, _) -> 
-                exprF z e
+    and exprNoInterceptF (z: 'State) (x: Expr) = 
+        match x with
+        | Expr.Const _  -> z
+        | Expr.Val _ -> z
+        | Expr.Op (_c, _tyargs, args, _) -> 
+            exprsF z args
 
-            | Expr.Obj (_n, _typ, _basev, basecall, overrides, iimpls, _m)    -> 
-                let z = exprF z basecall
-                let z = List.fold tmethodF z overrides
-                let z = List.fold (foldOn snd (List.fold tmethodF)) z iimpls
-                z
+        | Expr.Sequential (x0, x1, _dir, _, _)  -> 
+            let z = exprF z x0
+            exprF z x1
 
-            | Expr.StaticOptimization (_tcs, csx, x, _) -> exprsF z [csx;x]
+        | Expr.Lambda(_lambdaId , _ctorThisValOpt, _baseValOpt, _argvs, body, _m, _rty) -> 
+            exprF z body
+
+        | Expr.TyLambda(_lambdaId, _argtyvs, body, _m, _rty) -> 
+            exprF z body
+
+        | Expr.TyChoose(_, body, _) -> 
+            exprF z body
+
+        | Expr.App (f, _fty, _tys, argtys, _) -> 
+            let z = exprF z f
+            exprsF z argtys
+                
+        | Expr.LetRec (binds, body, _, _) -> 
+            let z = valBindsF false z binds
+            exprF z body
+                
+        | Expr.Let (bind, body, _, _)  -> 
+            let z = valBindF false z bind
+            exprF z body
+                
+        | Expr.Link rX -> exprF z (!rX)
+
+        | Expr.Match (_spBind, _exprm, dtree, targets, _m, _ty)                 -> 
+            let z = dtreeF z dtree
+            Array.fold targetF z targets
+                
+        | Expr.Quote(e, {contents=Some(_typeDefs, _argTypes, argExprs, _)}, _, _, _)  -> 
+            let z = exprF z e
+            exprsF z argExprs
+
+        | Expr.Quote(e, {contents=None}, _, _m, _) -> 
+            exprF z e
+
+        | Expr.Obj (_n, _typ, _basev, basecall, overrides, iimpls, _m)    -> 
+            let z = exprF z basecall
+            let z = List.fold tmethodF z overrides
+            List.fold (foldOn snd (List.fold tmethodF)) z iimpls
+
+        | Expr.StaticOptimization (_tcs, csx, x, _) -> 
+            exprsF z [csx;x]
 
     and valBindF dtree z bind =
         let z = folders.nonRecBindingsIntercept z bind
@@ -6257,6 +6273,7 @@ type ExprFolders<'State> (folders : _ ExprFolder) =
     and implF z x = foldTImplFile mexprF z x
 
     do exprFClosure <- exprF // allocate one instance of this closure
+    do exprNoInterceptFClosure <- exprNoInterceptF // allocate one instance of this closure
     member x.FoldExpr = exprF
     member x.FoldImplFile = implF
 
@@ -6270,7 +6287,7 @@ let FoldImplFile folders state implFile = ExprFolders(folders).FoldImplFile stat
 
 let ExprStats x =
   let count = ref 0
-  let folders = {ExprFolder0 with exprIntercept = (fun _ _ _ -> (count := !count + 1; None))}
+  let folders = {ExprFolder0 with exprIntercept = (fun _ noInterceptF z x -> (count := !count + 1; noInterceptF z x))}
   let () = FoldExpr folders () x
   string !count + " TExpr nodes"
 #endif
@@ -7935,6 +7952,8 @@ and rewriteBinds env binds = List.map (rewriteBind env) binds
 
 and RewriteExpr env expr =
   match expr with 
+  | LinearOpExpr _ 
+  | LinearMatchExpr _ 
   | Expr.Let _ 
   | Expr.Sequential _ ->
       rewriteLinearExpr env expr (fun e -> e)
@@ -8020,11 +8039,11 @@ and rewriteLinearExpr env expr contf =
     | Some expr -> contf expr
     | None -> 
         match expr with 
-        | Expr.Let (bind, body, m, _) ->  
+        | Expr.Let (bind, bodyExpr, m, _) ->  
             let bind = rewriteBind env bind
             // tailcall
-            rewriteLinearExpr env body (contf << (fun body' ->
-                mkLetBind m bind body'))
+            rewriteLinearExpr env bodyExpr (contf << (fun bodyExpr' ->
+                mkLetBind m bind bodyExpr'))
         
         | Expr.Sequential  (expr1, expr2, dir, spSeq, m) ->
             let expr1' = RewriteExpr env expr1
@@ -8040,12 +8059,12 @@ and rewriteLinearExpr env expr contf =
                 if argsFront === argsFront' && argLast === argLast' then expr 
                 else rebuildLinearOpExpr (op, tyargs, argsFront', argLast', m)))
 
-        | LinearMatchExpr (spBind, exprm, dtree, tg1, e2, sp2, m2, ty) ->
+        | LinearMatchExpr (spBind, exprm, dtree, tg1, expr2, sp2, m2, ty) ->
             let dtree = rewriteDecisionTree env dtree
-            let tg1 = rewriteTarget env tg1
+            let tg1' = rewriteTarget env tg1
             // tailcall
-            rewriteLinearExpr env e2 (contf << (fun e2 ->
-                rebuildLinearMatchExpr (spBind, exprm, dtree, tg1, e2, sp2, m2, ty)))
+            rewriteLinearExpr env expr2 (contf << (fun expr2' ->
+                rebuildLinearMatchExpr (spBind, exprm, dtree, tg1', expr2', sp2, m2, ty)))
         | _ -> 
             // no longer linear, no tailcall
             contf (RewriteExpr env expr) 
