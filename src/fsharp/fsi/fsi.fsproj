@@ -17,7 +17,6 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net46'">
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
     <PlatformTarget>x86</PlatformTarget>
     <DefineConstants>$(DefineConstants);FSI_SHADOW_COPY_REFERENCES;FSI_SERVER</DefineConstants>
   </PropertyGroup>
