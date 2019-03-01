@@ -68,6 +68,6 @@
 
         <!-- resources -->
         <file src="$artifactsbindir$\FSharp.Core\$configuration$\netstandard1.6\**\FSharp.Core.resources.dll" target="lib\netstandard1.6" />
-        <file src="$artifactsbindir$\FSharp.Core\$configuration$\**\FSharp.Core.resources.dll"                target="lib\net45" />
+        <file src="$artifactsbindir$\FSharp.Core\$configuration$\net45\**\FSharp.Core.resources.dll"          target="lib\net45" />
     </files>
 </package>

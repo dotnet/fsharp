@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PackageId>Microsoft.FSharp.Compiler</PackageId>
-    <PreRelease>false</PreRelease>
+    <PreRelease>true</PreRelease>
   </PropertyGroup>
 
 </Project>

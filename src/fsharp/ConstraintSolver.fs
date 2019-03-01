@@ -75,9 +75,13 @@ let NewNamedInferenceMeasureVar (_m, rigid, var, id) =
 let NewInferenceMeasurePar () = NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, false)
 
 let NewErrorTypar () = NewCompGenTypar (TyparKind.Type, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, true)
+
 let NewErrorMeasureVar () = NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, true)
+
 let NewInferenceType () = mkTyparTy (NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
+
 let NewErrorType () = mkTyparTy (NewErrorTypar ())
+
 let NewErrorMeasure () = Measure.Var (NewErrorMeasureVar ())
 
 let NewByRefKindInferenceType (g: TcGlobals) m = 
@@ -787,8 +791,12 @@ and SolveAnonInfoEqualsAnonInfo (csenv:ConstraintSolverEnv) m2 (anonInfo1: AnonR
     (match anonInfo1.Assembly, anonInfo2.Assembly with 
         | ccu1, ccu2 -> if not (ccuEq ccu1 ccu2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch(ccu1.AssemblyName, ccu2.AssemblyName), csenv.m,m2)) else ResultD ()
         ) ++ (fun () -> 
-    if not (anonInfo1.SortedNames = anonInfo2.SortedNames) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdFieldNameMismatch(sprintf "%A" (Array.toList anonInfo1.SortedNames), sprintf "%A" (Array.toList anonInfo2.SortedNames)), csenv.m,m2)) else 
-    ResultD ())
+    if not (anonInfo1.SortedNames = anonInfo2.SortedNames) then 
+        let namesText1 = sprintf "%A" (Array.toList anonInfo1.SortedNames)
+        let namesText2 = sprintf "%A" (Array.toList anonInfo2.SortedNames)
+        ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdFieldNameMismatch(namesText1, namesText2), csenv.m,m2)) 
+    else 
+        ResultD ())
 
 /// Add the constraint "ty1 = ty2" to the constraint problem. 
 /// Propagate all effects of adding this constraint, e.g. to solve type variables 

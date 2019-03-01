@@ -295,6 +295,10 @@ type public Fsc () as this =
         with get() = embedAllSources
         and  set(s) = embedAllSources <- s
 
+    member fsc.Embed
+        with get() = embeddedFiles
+        and set(e) = embeddedFiles <- e
+
     member fsc.EmbeddedFiles
         with get() = embeddedFiles
         and set(e) = embeddedFiles <- e
