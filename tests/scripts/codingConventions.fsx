@@ -50,6 +50,6 @@ let commas =
               line |> Seq.pairwise |> Seq.filter (fun (c1, c2) -> c1 = ',' && c2 <> ' ') |> Seq.length)) 
     |> Array.sortByDescending snd
 
-printfn "Top files that have commas without spaces: %A" (Seq.truncate 10 commas)
+printfn "Top files that have commas without spaces: %A" (Array.truncate 10 commas)
 
 
