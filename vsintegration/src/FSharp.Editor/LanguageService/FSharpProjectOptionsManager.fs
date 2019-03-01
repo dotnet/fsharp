@@ -119,11 +119,11 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
 
     let rec tryComputeOptionsByFile (document: Document) cancellationToken =
         async {
-            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-            let! fileStamp = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-            let! scriptProjectOptions, _ = checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, sourceText.ToFSharpSourceText(), DateTime.Now)
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
+                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let! fileStamp = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+                let! scriptProjectOptions, _ = checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, sourceText.ToFSharpSourceText(), DateTime.Now)
                 let projectOptions =
                     if isScriptFile document.FilePath then
                         scriptProjectOptions
@@ -144,8 +144,6 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                         }
 
                 cancellationToken.ThrowIfCancellationRequested()
-
-                checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = true, userOpName = "computeOptions")
 
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
