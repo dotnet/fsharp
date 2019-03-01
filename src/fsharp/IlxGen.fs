@@ -6581,7 +6581,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
         let ilDebugDisplayAttributes =
             [ yield! GenAttrs cenv eenv debugDisplayAttrs
               if generateDebugDisplayAttribute then
-                  yield cenv.g.mkDebuggerDisplayAttribute ("{" + debugDisplayMethodName + "(), nq}")  ]
+                  yield cenv.g.mkDebuggerDisplayAttribute ("{" + debugDisplayMethodName + "(),nq}")  ]
 
 
         let ilCustomAttrs =
