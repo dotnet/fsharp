@@ -16,9 +16,9 @@
         NGen for both 32 and 64 bit product.
         If compiling use the app config file, if present.
     -->
-    <Exec Command='"$(PathToNGen64)" install "$(TargetPath)" /ExeConfig:$(TargetPath)' Condition = "Exists('$(PathToNGen64)') AND Exists('$(TargetPath).config') AND '$(IsAdministrator)' == 'true'"/>
+    <Exec Command='"$(PathToNGen64)" install "$(TargetPath)" /ExeConfig:$(TargetPath)' Condition = "Exists('$(PathToNGen64)') AND Exists('$(TargetPath).config') AND '$(IsAdministrator)' == 'true' AND '$(PlatformTarget)' != 'x86'"/>
     <Exec Command='"$(PathToNGen32)" install "$(TargetPath)" /ExeConfig:$(TargetPath)' Condition = "Exists('$(PathToNGen32)') AND Exists('$(TargetPath).config') AND '$(IsAdministrator)' == 'true'"/>
-    <Exec Command='"$(PathToNGen64)" install "$(TargetPath)"' Condition = " Exists('$(PathToNGen64)') AND (!Exists('$(TargetPath).config')) AND '$(IsAdministrator)' == 'true' "/>
+    <Exec Command='"$(PathToNGen64)" install "$(TargetPath)"' Condition = " Exists('$(PathToNGen64)') AND (!Exists('$(TargetPath).config')) AND '$(IsAdministrator)' == 'true' AND '$(PlatformTarget)' != 'x86' "/>
     <Exec Command='"$(PathToNGen32)" install "$(TargetPath)"' Condition = " Exists('$(PathToNGen32)') AND (!Exists('$(TargetPath).config')) AND '$(IsAdministrator)' == 'true' "/>
   </Target>
 

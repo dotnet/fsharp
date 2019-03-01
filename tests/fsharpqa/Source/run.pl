@@ -424,7 +424,9 @@ sub RunCompilerCommand {
         @CommandOutput = <$remote>;
 
         print "--------------------------------------------------------\n";
-        print "Error from hosted compiler\n";
+        print "Results from hosted compiler\n";
+        print "msg: $msg\n";
+        print "cmd: $cmd\n";
         print "Exit code: $ExitCode\n";
         print "Error:     $Type\n";
         print @CommandOutput;
