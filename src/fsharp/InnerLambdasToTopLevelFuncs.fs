@@ -480,9 +480,10 @@ module Pass2_DetermineReqdItems =
     ///   "val v"                                        - free occurrence
     ///   "app (f, tps, args)"                             - occurrence
     ///
-    /// On intercepted nodes, must exprF fold to collect from subexpressions.
-    let ExprEnvIntercept (tlrS, arityM) exprF z expr =
-         let accInstance z (fvref:ValRef, tps, args) (* f known local *) =
+    /// On intercepted nodes, must recurseF fold to collect from subexpressions.
+    let ExprEnvIntercept (tlrS, arityM) recurseF noInterceptF z expr = 
+
+         let accInstance z (fvref:ValRef, tps, args) = 
              let f = fvref.Deref
              match Zmap.tryFind f arityM with
 
@@ -507,50 +508,53 @@ module Pass2_DetermineReqdItems =
              // For bindings marked TLR, collect implied env
              let fclass = BindingGroupSharingSameReqdItems tlrBs
              // what determines env?
-             let frees        = FreeInBindings tlrBs
-             let reqdTypars0  = frees.FreeTyvars.FreeTypars   |> Zset.elements      (* put in env *)
-             // occurrences contribute to env
+             let frees = FreeInBindings tlrBs
+             // put in env
+             let reqdTypars0  = frees.FreeTyvars.FreeTypars |> Zset.elements     
+             // occurrences contribute to env 
              let reqdVals0 = frees.FreeLocals |> Zset.elements
-             // tlrBs are not reqdVals0 for themselves
-             let reqdVals0 = reqdVals0 |> List.filter (fun gv -> not (fclass.Contains gv))
-             let reqdVals0 = reqdVals0 |> Zset.ofList valOrder
-             // collect into env over bodies
-             let z          = PushFrame fclass (reqdTypars0, reqdVals0, m) z
-             let z          = (z, tlrBs) ||> List.fold (foldOn (fun b -> b.Expr) exprF)
-             let z          = SaveFrame     fclass z
-             (* for bindings not marked TRL, collect *)
-             let z          = (z, nonTlrBs) ||> List.fold (foldOn (fun b -> b.Expr) exprF)
+             // tlrBs are not reqdVals0 for themselves 
+             let reqdVals0 = reqdVals0 |> List.filter (fun gv -> not (fclass.Contains gv)) 
+             let reqdVals0 = reqdVals0 |> Zset.ofList valOrder 
+             // collect into env over bodies 
+             let z = PushFrame fclass (reqdTypars0, reqdVals0,m) z
+             let z = (z, tlrBs) ||> List.fold (foldOn (fun b -> b.Expr) recurseF) 
+             let z = SaveFrame fclass z
+             // for bindings not marked TRL, collect 
+             let z = (z, nonTlrBs) ||> List.fold (foldOn (fun b -> b.Expr) recurseF) 
              z
 
          match expr with
-         | Expr.Val (v, _, _) ->
+         | Expr.Val (v, _, _) -> 
+             accInstance z (v, [], [])
+
+         | Expr.Op (TOp.LValueOp (_, v), _tys, args, _) -> 
              let z = accInstance z (v, [], [])
-             Some z
-         | Expr.Op (TOp.LValueOp (_, v), _tys, args, _) ->
-             let z = accInstance z (v, [], [])
-             let z = List.fold exprF z args
-             Some z
-         | Expr.App (f, fty, tys, args, m) ->
+             List.fold recurseF z args
+
+         | Expr.App (f, fty, tys, args, m) -> 
              let f, _fty, tys, args, _m = destApp (f, fty, tys, args, m)
              match f with
              | Expr.Val (f, _, _) ->
-                  // // YES: APP vspec tps args - log
+                 // YES: APP vspec tps args - log 
                  let z = accInstance z (f, tys, args)
-                 let z = List.fold exprF z args
-                 Some z
+                 List.fold recurseF z args
              | _ ->
-                 (* NO: app, but function is not val - no log *)
-                 None
-         | Expr.LetRec (binds, body, m, _) ->
-             let z = accBinds m z binds
-             let z = exprF z body
-             Some z
-         | Expr.Let    (bind, body, m, _) ->
-             let z = accBinds m z [bind]
-             let z = exprF z body
-             Some z
-         | _ -> None (* NO: no intercept *)
+                 // NO: app, but function is not val - no log 
+                 noInterceptF z expr
 
+         | Expr.LetRec (binds, body, m, _) -> 
+             let z = accBinds m z binds
+             recurseF z body
+
+         | Expr.Let (bind,body,m,_) -> 
+             let z = accBinds m z [bind]
+             // tailcall for linear sequences
+             recurseF z body
+
+         | _ -> 
+             noInterceptF z expr
+        
 
     /// Initially, reqdTypars(fclass) = freetps(bodies).
     /// For each direct call to a gv, a generator for fclass,
@@ -1073,9 +1077,14 @@ module Pass4_RewriteAssembly =
     /// At free vals, fixup 0-call if it is an arity-met constant.
     /// Other cases rewrite structurally.
     let rec TransExpr (penv: RewriteContext) (z:RewriteState) expr : Expr * RewriteState =
+
         match expr with
-        // Use TransLinearExpr with a rebuild-continuation for some forms to avoid stack overflows on large terms *)
-        | Expr.LetRec _ | Expr.Let    _ | Expr.Sequential _ ->
+        // Use TransLinearExpr with a rebuild-continuation for some forms to avoid stack overflows on large terms 
+        | LinearOpExpr _
+        | LinearMatchExpr _ 
+        | Expr.LetRec _ // note, Expr.LetRec not normally considered linear, but keeping it here as it's always been here
+        | Expr.Let    _ 
+        | Expr.Sequential _ -> 
              TransLinearExpr penv z expr (fun res -> res)
 
         // app - call sites may require z.
@@ -1133,29 +1142,35 @@ module Pass4_RewriteAssembly =
             let targets = Array.toList targets
             let dtree, z   = TransDecisionTree penv z dtree
             let targets, z = List.mapFold (TransDecisionTreeTarget penv) z targets
-            // TransDecisionTreeTarget wraps EnterInner/exitInnter, so need to collect any top decs
-            let pds, z = ExtractPreDecs z
+            // TransDecisionTreeTarget wraps EnterInner/exitInnter, so need to collect any top decs 
+            let pds,z = ExtractPreDecs z
             MakePreDecs m pds (mkAndSimplifyMatch spBind exprm m ty dtree targets), z
 
-        // all others - below - rewrite structurally - so boiler plate code after this point...
-        | Expr.Const _ -> expr, z (* constant wrt Val *)
-        | Expr.Quote (a, {contents=Some(typeDefs, argTypes, argExprs, data)}, isFromQueryExpression, m, ty) ->
-            let argExprs, z = List.mapFold (TransExpr penv) z argExprs
-            Expr.Quote(a, {contents=Some(typeDefs, argTypes, argExprs, data)}, isFromQueryExpression, m, ty), z
-        | Expr.Quote (a, {contents=None}, isFromQueryExpression, m, ty) ->
-            Expr.Quote(a, {contents=None}, isFromQueryExpression, m, ty), z
-        | Expr.Op (c, tyargs, args, m) ->
-            let args, z = List.mapFold (TransExpr penv) z args
-            Expr.Op(c, tyargs, args, m), z
-        | Expr.StaticOptimization (constraints, e2, e3, m) ->
-            let e2, z = TransExpr penv z e2
-            let e3, z = TransExpr penv z e3
-            Expr.StaticOptimization(constraints, e2, e3, m), z
-        | Expr.TyChoose (_, _, m) ->
-            error(Error(FSComp.SR.tlrUnexpectedTExpr(), m))
+        // all others - below - rewrite structurally - so boiler plate code after this point... 
+        | Expr.Const _ -> 
+            expr,z 
 
-    /// Walk over linear structured terms in tail-recursive loop, using a continuation
-    /// to represent the rebuild-the-term stack
+        | Expr.Quote (a,{contents=Some(typeDefs,argTypes,argExprs,data)},isFromQueryExpression,m,ty) -> 
+            let argExprs,z = List.mapFold (TransExpr penv) z argExprs
+            Expr.Quote(a,{contents=Some(typeDefs,argTypes,argExprs,data)},isFromQueryExpression,m,ty),z
+
+        | Expr.Quote (a,{contents=None},isFromQueryExpression,m,ty) -> 
+            Expr.Quote(a,{contents=None},isFromQueryExpression,m,ty),z
+
+        | Expr.Op (c,tyargs,args,m) -> 
+            let args,z = List.mapFold (TransExpr penv) z args
+            Expr.Op(c,tyargs,args,m),z
+
+        | Expr.StaticOptimization (constraints,e2,e3,m) ->
+            let e2,z = TransExpr penv z e2
+            let e3,z = TransExpr penv z e3
+            Expr.StaticOptimization(constraints,e2,e3,m),z
+
+        | Expr.TyChoose (_,_,m) -> 
+            error(Error(FSComp.SR.tlrUnexpectedTExpr(),m))
+
+    /// Walk over linear structured terms in tail-recursive loop, using a continuation 
+    /// to represent the rebuild-the-term stack 
     and TransLinearExpr penv z expr (contf: Expr * RewriteState -> Expr * RewriteState) =
         match expr with
         | Expr.Sequential (e1, e2, dir, spSeq, m) ->
@@ -1205,7 +1220,14 @@ module Pass4_RewriteAssembly =
              TransLinearExpr penv z e2 (contf << (fun (e2, z) ->
                  rebuildLinearMatchExpr (spBind, exprm, dtree, tg1, e2, sp2, m2, ty), z))
 
-         | _ ->
+         | LinearOpExpr (op, tyargs, argsHead, argLast, m) ->
+             let argsHead,z = List.mapFold (TransExpr penv) z argsHead
+             // tailcall
+             TransLinearExpr penv z argLast (contf << (fun (argLast, z) ->
+                 rebuildLinearOpExpr (op, tyargs, argsHead, argLast, m), z))
+
+         | _ -> 
+            // not a linear expression
             contf (TransExpr penv z expr)
 
     and TransMethod penv (z:RewriteState) (TObjExprMethod(slotsig, attribs, tps, vs, e, m)) =

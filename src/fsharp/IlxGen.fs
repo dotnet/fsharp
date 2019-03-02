@@ -141,7 +141,9 @@ type IlxGenIntraAssemblyInfo =
       /// that come from both the signature and the implementation.
       StaticFieldInfo : Dictionary<ILMethodRef, ILFieldSpec> }
 
-//--------------------------------------------------------------------------
+type FakeUnit = | Fake
+
+//-------------------------------------------------------------------------- 
 
 /// Indicates how the generated IL code is ultimately emitted
 type IlxGenBackend =
@@ -2040,75 +2042,82 @@ let rec GenExpr (cenv:cenv) (cgbuf:CodeGenBuffer) eenv sp expr sequel =
         )   ->
       // application of local type functions with type parameters = measure types and body = local value - inine the body
       GenExpr cenv cgbuf eenv sp v sequel
-  | Expr.App(f, fty, tyargs, args, m) ->
-      GenApp cenv cgbuf eenv (f, fty, tyargs, args, m) sequel
-  | Expr.Val(v, _, m) ->
-      GenGetVal cenv cgbuf eenv (v, m) sequel
-  | Expr.Op(op, tyargs, args, m) ->
-      match op, args, tyargs with
-      | TOp.ExnConstr(c), _, _      ->
-          GenAllocExn cenv cgbuf eenv (c, args, m) sequel
-      | TOp.UnionCase(c), _, _        ->
-          GenAllocUnionCase cenv cgbuf eenv (c, tyargs, args, m) sequel
-      | TOp.Recd(isCtor, tycon), _, _ ->
-          GenAllocRecd cenv cgbuf eenv isCtor (tycon, tyargs, args, m) sequel
-      | TOp.AnonRecd(anonInfo), _, _ ->
-          GenAllocAnonRecd cenv cgbuf eenv (anonInfo, tyargs, args, m) sequel
-      | TOp.AnonRecdGet (anonInfo, n), [e], _ ->
-          GenGetAnonRecdField cenv cgbuf eenv (anonInfo, e, tyargs, n, m) sequel
-      | TOp.TupleFieldGet (tupInfo, n), [e], _ ->
-          GenGetTupleField cenv cgbuf eenv (tupInfo, e, tyargs, n, m) sequel
-      | TOp.ExnFieldGet(ecref, n), [e], _ ->
-          GenGetExnField cenv cgbuf eenv (e, ecref, n, m) sequel
-      | TOp.UnionCaseFieldGet(ucref, n), [e], _ ->
-          GenGetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel
-      | TOp.UnionCaseFieldGetAddr(ucref, n, _readonly), [e], _ ->
-          GenGetUnionCaseFieldAddr cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel
-      | TOp.UnionCaseTagGet ucref, [e], _ ->
-          GenGetUnionCaseTag cenv cgbuf eenv (e, ucref, tyargs, m) sequel
-      | TOp.UnionCaseProof ucref, [e], _ ->
-          GenUnionCaseProof cenv cgbuf eenv (e, ucref, tyargs, m) sequel
-      | TOp.ExnFieldSet(ecref, n), [e;e2], _ ->
-          GenSetExnField cenv cgbuf eenv (e, ecref, n, e2, m) sequel
-      | TOp.UnionCaseFieldSet(ucref, n), [e;e2], _ ->
-          GenSetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, e2, m) sequel
-      | TOp.ValFieldGet f, [e], _ ->
-         GenGetRecdField cenv cgbuf eenv (e, f, tyargs, m) sequel
-      | TOp.ValFieldGet f, [], _ ->
-         GenGetStaticField cenv cgbuf eenv (f, tyargs, m) sequel
-      | TOp.ValFieldGetAddr (f, _readonly), [e], _ ->
-         GenGetRecdFieldAddr cenv cgbuf eenv (e, f, tyargs, m) sequel
-      | TOp.ValFieldGetAddr (f, _readonly), [], _ ->
-         GenGetStaticFieldAddr cenv cgbuf eenv (f, tyargs, m) sequel
-      | TOp.ValFieldSet f, [e1;e2], _ ->
-         GenSetRecdField cenv cgbuf eenv (e1, f, tyargs, e2, m) sequel
-      | TOp.ValFieldSet f, [e2], _ ->
-         GenSetStaticField cenv cgbuf eenv (f, tyargs, e2, m) sequel
-      | TOp.Tuple tupInfo, _, _ ->
-         GenAllocTuple cenv cgbuf eenv (tupInfo, args, tyargs, m) sequel
-      | TOp.ILAsm(code, returnTys), _, _ ->
-         GenAsmCode cenv cgbuf eenv (code, tyargs, args, returnTys, m) sequel
-      | TOp.While (sp, _), [Expr.Lambda(_, _, _, [_], e1, _, _);Expr.Lambda(_, _, _, [_], e2, _, _)], []  ->
-         GenWhileLoop cenv cgbuf eenv (sp, e1, e2, m) sequel
-      | TOp.For(spStart, dir), [Expr.Lambda(_, _, _, [_], e1, _, _);Expr.Lambda(_, _, _, [_], e2, _, _);Expr.Lambda(_, _, _, [v], e3, _, _)], []  ->
-         GenForLoop cenv cgbuf eenv (spStart, v, e1, dir, e2, e3, m) sequel
-      | TOp.TryFinally(spTry, spFinally), [Expr.Lambda(_, _, _, [_], e1, _, _); Expr.Lambda(_, _, _, [_], e2, _, _)], [resty] ->
-         GenTryFinally cenv cgbuf eenv (e1, e2, m, resty, spTry, spFinally) sequel
-      | TOp.TryCatch(spTry, spWith), [Expr.Lambda(_, _, _, [_], e1, _, _); Expr.Lambda(_, _, _, [vf], ef, _, _);Expr.Lambda(_, _, _, [vh], eh, _, _)], [resty] ->
-         GenTryCatch cenv cgbuf eenv (e1, vf, ef, vh, eh, m, resty, spTry, spWith) sequel
-      | TOp.ILCall(virt, _, valu, newobj, valUseFlags, _, isDllImport, ilMethRef, enclArgTys, methArgTys, returnTys), args, [] ->
-         GenILCall cenv cgbuf eenv (virt, valu, newobj, valUseFlags, isDllImport, ilMethRef, enclArgTys, methArgTys, args, returnTys, m) sequel
-      | TOp.RefAddrGet _readonly, [e], [ty]       -> GenGetAddrOfRefCellField cenv cgbuf eenv (e, ty, m) sequel
-      | TOp.Coerce, [e], [tgty;srcty]    -> GenCoerce cenv cgbuf eenv (e, tgty, m, srcty) sequel
-      | TOp.Reraise, [], [rtnty]         -> GenReraise cenv cgbuf eenv (rtnty, m) sequel
-      | TOp.TraitCall(ss), args, [] -> GenTraitCall cenv cgbuf eenv (ss, args, m) expr sequel
-      | TOp.LValueOp(LSet, v), [e], []      -> GenSetVal cenv cgbuf eenv (v, e, m) sequel
-      | TOp.LValueOp(LByrefGet, v), [], []  -> GenGetByref cenv cgbuf eenv (v, m) sequel
-      | TOp.LValueOp(LByrefSet, v), [e], [] -> GenSetByref cenv cgbuf eenv (v, e, m) sequel
-      | TOp.LValueOp(LAddrOf _, v), [], []   -> GenGetValAddr cenv cgbuf eenv (v, m) sequel
-      | TOp.Array, elems, [elemTy] ->  GenNewArray cenv cgbuf eenv (elems, elemTy, m) sequel
-      | TOp.Bytes bytes, [], [] ->
-          if cenv.opts.emitConstantArraysUsingStaticDataBlobs then
+  | Expr.App(f,fty,tyargs,args,m) -> 
+      GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel
+  | Expr.Val(v,_,m) -> 
+      GenGetVal cenv cgbuf eenv (v,m) sequel
+
+  // Most generation of linear expressions is implemented routinely using tailcalls and the correct sequels.
+  // This is because the element of expansion happens to be the final thing generated in most cases. However
+  // for large lists we have to process the linearity separately
+  | LinearOpExpr _ -> 
+      GenLinearExpr cenv cgbuf eenv expr sequel id |> ignore<FakeUnit>
+
+  | Expr.Op(op,tyargs,args,m) -> 
+      match op,args,tyargs with 
+      | TOp.ExnConstr(c),_,_      -> 
+          GenAllocExn cenv cgbuf eenv (c,args,m) sequel
+      | TOp.UnionCase(c),_,_        -> 
+          GenAllocUnionCase cenv cgbuf eenv (c,tyargs,args,m) sequel
+      | TOp.Recd(isCtor,tycon),_,_ -> 
+          GenAllocRecd cenv cgbuf eenv isCtor (tycon,tyargs,args,m) sequel
+      | TOp.AnonRecd(anonInfo),_,_ -> 
+          GenAllocAnonRecd cenv cgbuf eenv (anonInfo,tyargs,args,m) sequel
+      | TOp.AnonRecdGet (anonInfo,n),[e],_ -> 
+          GenGetAnonRecdField cenv cgbuf eenv (anonInfo,e,tyargs,n,m) sequel
+      | TOp.TupleFieldGet (tupInfo,n),[e],_ -> 
+          GenGetTupleField cenv cgbuf eenv (tupInfo,e,tyargs,n,m) sequel
+      | TOp.ExnFieldGet(ecref,n),[e],_ -> 
+          GenGetExnField cenv cgbuf eenv (e,ecref,n,m) sequel
+      | TOp.UnionCaseFieldGet(ucref,n),[e],_ -> 
+          GenGetUnionCaseField cenv cgbuf eenv (e,ucref,tyargs,n,m) sequel
+      | TOp.UnionCaseFieldGetAddr(ucref,n,_readonly),[e],_ -> 
+          GenGetUnionCaseFieldAddr cenv cgbuf eenv (e,ucref,tyargs,n,m) sequel
+      | TOp.UnionCaseTagGet ucref,[e],_ -> 
+          GenGetUnionCaseTag cenv cgbuf eenv (e,ucref,tyargs,m) sequel
+      | TOp.UnionCaseProof ucref,[e],_ -> 
+          GenUnionCaseProof cenv cgbuf eenv (e,ucref,tyargs,m) sequel
+      | TOp.ExnFieldSet(ecref,n),[e;e2],_ -> 
+          GenSetExnField cenv cgbuf eenv (e,ecref,n,e2,m) sequel 
+      | TOp.UnionCaseFieldSet(ucref,n),[e;e2],_ -> 
+          GenSetUnionCaseField cenv cgbuf eenv (e,ucref,tyargs,n,e2,m) sequel
+      | TOp.ValFieldGet f,[e],_ -> 
+         GenGetRecdField cenv cgbuf eenv (e,f,tyargs,m) sequel
+      | TOp.ValFieldGet f,[],_ -> 
+         GenGetStaticField cenv cgbuf eenv (f,tyargs,m) sequel
+      | TOp.ValFieldGetAddr (f, _readonly),[e],_ -> 
+         GenGetRecdFieldAddr cenv cgbuf eenv (e,f,tyargs,m) sequel
+      | TOp.ValFieldGetAddr (f, _readonly),[],_ -> 
+         GenGetStaticFieldAddr cenv cgbuf eenv (f,tyargs,m) sequel
+      | TOp.ValFieldSet f,[e1;e2],_ -> 
+         GenSetRecdField cenv cgbuf eenv (e1,f,tyargs,e2,m) sequel
+      | TOp.ValFieldSet f,[e2],_ -> 
+         GenSetStaticField cenv cgbuf eenv (f,tyargs,e2,m) sequel
+      | TOp.Tuple tupInfo,_,_ -> 
+         GenAllocTuple cenv cgbuf eenv (tupInfo,args,tyargs,m) sequel
+      | TOp.ILAsm(code,returnTys),_,_ ->  
+         GenAsmCode cenv cgbuf eenv (code,tyargs,args,returnTys,m) sequel 
+      | TOp.While (sp,_),[Expr.Lambda(_,_,_,[_],e1,_,_);Expr.Lambda(_,_,_,[_],e2,_,_)],[]  -> 
+         GenWhileLoop cenv cgbuf eenv (sp,e1,e2,m) sequel 
+      | TOp.For(spStart,dir),[Expr.Lambda(_,_,_,[_],e1,_,_);Expr.Lambda(_,_,_,[_],e2,_,_);Expr.Lambda(_,_,_,[v],e3,_,_)],[]  -> 
+         GenForLoop cenv cgbuf eenv (spStart,v,e1,dir,e2,e3,m) sequel
+      | TOp.TryFinally(spTry,spFinally),[Expr.Lambda(_,_,_,[_],e1,_,_); Expr.Lambda(_,_,_,[_],e2,_,_)],[resty] -> 
+         GenTryFinally cenv cgbuf eenv (e1,e2,m,resty,spTry,spFinally) sequel
+      | TOp.TryCatch(spTry,spWith),[Expr.Lambda(_,_,_,[_],e1,_,_); Expr.Lambda(_,_,_,[vf],ef,_,_);Expr.Lambda(_,_,_,[vh],eh,_,_)],[resty] -> 
+         GenTryCatch cenv cgbuf eenv (e1,vf,ef,vh,eh,m,resty,spTry,spWith) sequel
+      | TOp.ILCall(virt,_,valu,newobj,valUseFlags,_,isDllImport,ilMethRef,enclArgTys,methArgTys,returnTys),args,[] -> 
+         GenILCall cenv cgbuf eenv (virt,valu,newobj,valUseFlags,isDllImport,ilMethRef,enclArgTys,methArgTys,args,returnTys,m) sequel
+      | TOp.RefAddrGet _readonly,[e],[ty]       -> GenGetAddrOfRefCellField cenv cgbuf eenv (e,ty,m) sequel
+      | TOp.Coerce,[e],[tgty;srcty]    -> GenCoerce cenv cgbuf eenv (e,tgty,m,srcty) sequel
+      | TOp.Reraise,[],[rtnty]         -> GenReraise cenv cgbuf eenv (rtnty,m) sequel
+      | TOp.TraitCall(ss),args,[] -> GenTraitCall cenv cgbuf eenv (ss,args, m) expr sequel
+      | TOp.LValueOp(LSet,v),[e],[]      -> GenSetVal cenv cgbuf eenv (v,e,m) sequel
+      | TOp.LValueOp(LByrefGet,v),[],[]  -> GenGetByref cenv cgbuf eenv (v,m) sequel
+      | TOp.LValueOp(LByrefSet,v),[e],[] -> GenSetByref cenv cgbuf eenv (v,e,m) sequel
+      | TOp.LValueOp(LAddrOf _,v),[],[]   -> GenGetValAddr cenv cgbuf eenv (v,m) sequel
+      | TOp.Array,elems,[elemTy] ->  GenNewArray cenv cgbuf eenv (elems,elemTy,m) sequel
+      | TOp.Bytes bytes,[],[] -> 
+          if cenv.opts.emitConstantArraysUsingStaticDataBlobs then 
               GenConstArray cenv cgbuf eenv cenv.g.ilg.typ_Byte bytes (fun buf b -> buf.EmitByte b)
               GenSequel cenv eenv.cloc cgbuf sequel
           else
@@ -2346,13 +2355,28 @@ and GenAllocExn cenv cgbuf eenv (c, args, m) sequel =
       (mkNormalNewobj mspec)
     GenSequel cenv eenv.cloc cgbuf sequel
 
-and GenAllocUnionCase cenv cgbuf eenv  (c, tyargs, args, m) sequel =
+and GenAllocUnionCaseCore cenv cgbuf eenv (c,tyargs,n,m) =
+    let cuspec,idx = GenUnionCaseSpec cenv.amap m eenv.tyenv c tyargs
+    CG.EmitInstrs cgbuf (pop n) (Push [cuspec.DeclaringType]) (EraseUnions.mkNewData cenv.g.ilg (cuspec, idx))
+
+and GenAllocUnionCase cenv cgbuf eenv  (c,tyargs,args,m) sequel =
     GenExprs cenv cgbuf eenv args
-    let cuspec, idx = GenUnionCaseSpec cenv.amap m eenv.tyenv c tyargs
-    CG.EmitInstrs cgbuf (pop args.Length) (Push [cuspec.DeclaringType]) (EraseUnions.mkNewData cenv.g.ilg (cuspec, idx))
+    GenAllocUnionCaseCore cenv cgbuf eenv (c,tyargs,args.Length,m)
     GenSequel cenv eenv.cloc cgbuf sequel
 
-and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref, argtys, args, m) sequel =
+and GenLinearExpr cenv cgbuf eenv expr sequel (contf: FakeUnit -> FakeUnit) =
+    match expr with 
+    | LinearOpExpr (TOp.UnionCase c, tyargs, argsFront, argLast, m) -> 
+        GenExprs cenv cgbuf eenv argsFront
+        GenLinearExpr cenv cgbuf eenv argLast Continue (contf << (fun (Fake) -> 
+            GenAllocUnionCaseCore cenv cgbuf eenv (c, tyargs, argsFront.Length + 1, m)
+            GenSequel cenv eenv.cloc cgbuf sequel
+            Fake))
+    | _ -> 
+        GenExpr cenv cgbuf eenv SPSuppress expr sequel
+        contf Fake
+
+and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref,argtys,args,m) sequel =
     let ty = GenNamedTyApp cenv.amap m eenv.tyenv tcref argtys
 
     // Filter out fields with default initialization
