@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Build
+namespace FSharp.Build
 
 open System
 open System.Diagnostics
@@ -294,6 +294,10 @@ type public Fsc () as this =
     member fsc.EmbedAllSources
         with get() = embedAllSources
         and  set(s) = embedAllSources <- s
+
+    member fsc.Embed
+        with get() = embeddedFiles
+        and set(e) = embeddedFiles <- e
 
     member fsc.EmbeddedFiles
         with get() = embeddedFiles

@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin/v4.5/"
+#I "../../../artifacts/bin/fcs/net45"
 (**
 Compiler Services: Project Analysis
 ==================================
@@ -27,7 +27,7 @@ of `InteractiveChecker`:
 
 open System
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 // Create an interactive checker instance 
 let checker = FSharpChecker.Create()
@@ -306,22 +306,27 @@ correctly and then analyze each project in turn.
 *)
 
 (**
-Cracking a project file
+Cracking a legacy project file
 -----------------------------
 
 F# projects normally use the '.fsproj' project file format.
-A project cracking facility is provided as a separate NuGet package:
-FSharp.Compiler.Service.ProjectCracker. This NuGet package contains a
-library FSharp.Compiler.Service.ProjectCracker.dll, which should be
+A project cracking facility for legacy old-style .fsproj is provided as a separate NuGet package:
+FSharp.Compiler.Service.ProjectCracker. 
+
+Projecet cracking for modern project files should be done using a library such as DotNetProjInfo.
+See FsAutoComplete for example code.
+
+The legacy NuGet package `FSharp.Compiler.Service.ProjectCracker` contains a
+library `FSharp.Compiler.Service.ProjectCracker.dll`, which should be
 referenced by your application directly, and an executable
-FSharp.Compiler.Service.ProjectCrackerTool.exe, which should be copied
+`FSharp.Compiler.Service.ProjectCrackerTool.exe`, which should be copied
 into the output folder of your application by the build process. If
 you install using Paket or NuGet, then this will be configured for you
 automatically. If not, you should reference the provided `.targets`
 file manually in your application. This can be found in the NuGet
 package at `build/net45/FSharp.Compiler.Service.ProjectCrackerTool.targets`.
 
-The reason for this split is so that the analysis of an F# project
+The reason for this split was so the analysis of an F# project
 file is performed out of process, in order that the necessary assembly
 binding redirects can be applied without requiring the caller to
 arrange this. In this way MSBuild versions from 4 up to 14 can be

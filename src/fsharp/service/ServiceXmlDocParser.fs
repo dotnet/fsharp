@@ -1,16 +1,16 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Internal.Library 
 
 /// Represent an Xml documentation block in source code
 type XmlDocable =
     | XmlDocable of line:int * indent:int * paramNames:string list
 
 module XmlDocParsing =
-    open Microsoft.FSharp.Compiler.Range
-    open Microsoft.FSharp.Compiler.Ast
+    open FSharp.Compiler.Range
+    open FSharp.Compiler.Ast
         
     let (|ConstructorPats|) = function
         | Pats ps -> ps

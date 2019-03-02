@@ -1,26 +1,26 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.ILBinaryWriter 
+module internal FSharp.Compiler.AbstractIL.ILBinaryWriter 
 
 open System.Collections.Generic 
 open System.IO
 
 open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.ILAsciiWriter 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types  
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Support 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter
-open Microsoft.FSharp.Compiler.DiagnosticMessage
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.ILAsciiWriter 
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Diagnostics 
+open FSharp.Compiler.AbstractIL.Extensions.ILX.Types  
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
+open FSharp.Compiler.AbstractIL.Internal.Support 
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.ILPdbWriter
+open FSharp.Compiler.DiagnosticMessage
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Range
 #if FX_NO_CORHOST_SIGNER
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.StrongNameSign
+open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 #endif
 
 
@@ -2857,9 +2857,8 @@ and newGuid (modul: ILModuleDef) =
 
 and deterministicGuid (modul: ILModuleDef) =
     let n = 16909060
-    let m = hash n
-    let m2 = hash modul.Name
-    [| b0 m; b1 m; b2 m; b3 m; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
+    let m2 = Seq.sum (Seq.mapi (fun i  x -> i + int x) modul.Name) // use a stable hash
+    [| b0 n; b1 n; b2 n; b3 n; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
 
 and GetModuleAsRow (cenv:cenv) (modul: ILModuleDef) = 
     // Store the generated MVID in the environment (needed for generating debug information)
@@ -3441,7 +3440,8 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
    // uses of strings in the code 
     for (codeStartAddr, l) in requiredStringFixups do
         for (codeOffset, userStringIndex) in l do 
-              if codeStartAddr < codep.addr || codeStartAddr >= codep.addr + codep.size  then failwith "strings-in-code fixup: a group of fixups is located outside the code array";
+              if codeStartAddr < codep.addr || codeStartAddr >= codep.addr + codep.size  then 
+                  failwith "strings-in-code fixup: a group of fixups is located outside the code array";
               let locInCode =  ((codeStartAddr + codeOffset) - codep.addr)
               checkFixup32 code locInCode 0xdeadbeef;
               let token = getUncodedToken TableNames.UserStrings (userStringAddress userStringIndex)
@@ -3665,10 +3665,14 @@ let writeBinaryAndReportMappings (outfile,
           let pdbOpt =
             match portablePDB with
             | true  -> 
-                let (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb embedAllSource embedSourceList sourceLink showTimes pdbData deterministic
+                let (uncompressedLength, contentId, stream) as pdbStream = 
+                    generatePortablePdb embedAllSource embedSourceList sourceLink showTimes pdbData deterministic
+
                 if embeddedPDB then Some (compressPortablePdbStream uncompressedLength contentId stream)
                 else Some (pdbStream)
+
             | _ -> None
+
           let debugDirectoryChunk, next = 
             chunk (if pdbfile = None then 
                        0x0
@@ -3773,7 +3777,9 @@ let writeBinaryAndReportMappings (outfile,
                   else 
                       let res = rawdataChunk.addr + dataOffset
                       if res < rawdataChunk.addr then dprintn ("data rva before data section");
-                      if res >= rawdataChunk.addr + rawdataChunk.size then dprintn ("data rva after end of data section, dataRva = "+string res+", rawdataChunk.addr = "+string rawdataChunk.addr+", rawdataChunk.size = "+string rawdataChunk.size);
+                      if res >= rawdataChunk.addr + rawdataChunk.size then 
+                          dprintn ("data rva after end of data section, dataRva = "+string res+", rawdataChunk.addr = "+string rawdataChunk.addr
+                                   + ", rawdataChunk.size = "+string rawdataChunk.size);
                       res
                 applyFixup32 metadata metadataOffset dataRva);
           end;
@@ -3868,9 +3874,9 @@ let writeBinaryAndReportMappings (outfile,
           writeInt32AsUInt16 os peOptionalHeaderByte; // ECMA spec says 6, some binaries, e.g. fscmanaged.exe say 7, Whidbey binaries say 8 
           writeInt32 os textSectionPhysSize;          // Size of the code (text) section, or the sum of all code sections if there are multiple sections. 
         // 000000a0 
-          writeInt32 os dataSectionPhysSize;          // Size of the initialized data section, or the sum of all such sections if there are multiple data sections. 
-          writeInt32 os 0x00;                         // Size of the uninitialized data section, or the sum of all such sections if there are multiple uninitialized data sections. 
-          writeInt32 os entrypointCodeChunk.addr;     // RVA of entry point , needs to point to bytes 0xFF 0x25 followed by the RVA+!0x4000000 in a section marked execute/read for EXEs or 0 for DLLs e.g. 0x0000b57e 
+          writeInt32 os dataSectionPhysSize;          // Size of the initialized data section
+          writeInt32 os 0x00;                         // Size of the uninitialized data section
+          writeInt32 os entrypointCodeChunk.addr;     // RVA of entry point , needs to point to bytes 0xFF 0x25 followed by the RVA+!0x4000000 
           writeInt32 os textSectionAddr;              // e.g. 0x0002000 
        // 000000b0 
           if modul.Is64Bit then
@@ -3892,10 +3898,10 @@ let writeBinaryAndReportMappings (outfile,
             writeInt32AsUInt16 os minor;
           writeInt32 os 0x00; // Reserved Always 0 (see Section 23.1). 
        // 000000d0  
-          writeInt32 os imageEndAddr; // Image Size: Size, in bytes, of image, including all headers and padding; shall be a multiple of Section Alignment. e.g. 0x0000e000 
-          writeInt32 os headerSectionPhysSize; // Header Size Combined size of MS-DOS Header, PE Header, PE Optional Header and padding; shall be a multiple of the file alignment. 
+          writeInt32 os imageEndAddr; // Image Size: Size, in bytes, of image, including all headers and padding; 
+          writeInt32 os headerSectionPhysSize; // Header Size Combined size of MS-DOS Header, PE Header, PE Optional Header and padding; 
           writeInt32 os 0x00; // File Checksum Always 0 (see Section 23.1). QUERY: NOT ALWAYS ZERO 
-          writeInt32AsUInt16 os modul.SubSystemFlags; // SubSystem Subsystem required to run this image. Shall be either IMAGE_SUBSYSTEM_WINDOWS_CE_GUI (0x3) or IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2). QUERY: Why is this 3 on the images ILASM produces 
+          writeInt32AsUInt16 os modul.SubSystemFlags; // SubSystem Subsystem required to run this image.
           // DLL Flags Always 0x400 (no unmanaged windows exception handling - see Section 23.1).
           //  Itanium: see notes at end of file 
           //  IMAGE_DLLCHARACTERISTICS_NX_COMPAT: See FSharp 1.0 bug 5019 and http://blogs.msdn.com/ed_maurer/archive/2007/12/14/nxcompat-and-the-c-compiler.aspx 
@@ -3930,7 +3936,7 @@ let writeBinaryAndReportMappings (outfile,
           writeInt32 os 0x00 // Export Table Always 0 (see Section 23.1). 
        // 00000100  
           writeDirectory os importTableChunk // Import Table RVA of Import Table, (see clause 24.3.1). e.g. 0000b530  
-          // Native Resource Table: ECMA says Always 0 (see Section 23.1), but mscorlib and other files with resources bound into executable do not.  For the moment assume the resources table is always the first resource in the file. 
+          // Native Resource Table: ECMA says Always 0 (see Section 23.1), but mscorlib and other files with resources bound into executable do not. 
           writeDirectory os nativeResourcesChunk
 
        // 00000110  
@@ -3968,28 +3974,28 @@ let writeBinaryAndReportMappings (outfile,
        // 00000178  
           writeBytes os  [| 0x2euy; 0x74uy; 0x65uy; 0x78uy; 0x74uy; 0x00uy; 0x00uy; 0x00uy; |] // ".text\000\000\000" 
        // 00000180  
-          writeInt32 os textSectionSize // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment. If this value is greater than Size of Raw Data, the section is zero-padded. e.g. 0x00009584 
-          writeInt32 os textSectionAddr //  VirtualAddress For executable images this is the address of the first byte of the section, when loaded into memory, relative to the image base. e.g. 0x00020000 
-          writeInt32 os textSectionPhysSize //  SizeOfRawData Size of the initialized data on disk in bytes, shall be a multiple of FileAlignment from the PE header. If this is less than VirtualSize the remainder of the section is zero filled. Because this field is rounded while the VirtualSize field is not it is possible for this to be greater than VirtualSize as well. When a section contains only uninitialized data, this field should be 0. 0x00009600 
-          writeInt32 os textSectionPhysLoc // PointerToRawData RVA to section's first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized data, this field should be 0. e.g. 00000200 
+          writeInt32 os textSectionSize // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment. 
+          writeInt32 os textSectionAddr //  VirtualAddress For executable images this is the address of the first byte of the section
+          writeInt32 os textSectionPhysSize //  SizeOfRawData Size of the initialized data on disk in bytes
+          writeInt32 os textSectionPhysLoc // PointerToRawData RVA to section's first page within the PE file. 
        // 00000190  
           writeInt32 os 0x00 // PointerToRelocations RVA of Relocation section. 
           writeInt32 os 0x00 // PointerToLineNumbers Always 0 (see Section 23.1). 
        // 00000198  
           writeInt32AsUInt16 os 0x00// NumberOfRelocations Number of relocations, set to 0 if unused. 
           writeInt32AsUInt16 os 0x00  //  NumberOfLinenumbers Always 0 (see Section 23.1). 
-          writeBytes os [| 0x20uy; 0x00uy; 0x00uy; 0x60uy |] //  Characteristics Flags describing section's characteristics, see below. IMAGE_SCN_CNT_CODE || IMAGE_SCN_MEM_EXECUTE || IMAGE_SCN_MEM_READ 
+          writeBytes os [| 0x20uy; 0x00uy; 0x00uy; 0x60uy |] //  Characteristics Flags IMAGE_SCN_CNT_CODE || IMAGE_SCN_MEM_EXECUTE || IMAGE_SCN_MEM_READ 
           
           write (Some dataSectionHeaderChunk.addr) os "data section header" [| |]
           
        // 000001a0  
           writeBytes os [| 0x2euy; 0x72uy; 0x73uy; 0x72uy; 0x63uy; 0x00uy; 0x00uy; 0x00uy; |] // ".rsrc\000\000\000" 
     //  writeBytes os [| 0x2e; 0x73; 0x64; 0x61; 0x74; 0x61; 0x00; 0x00; |] // ".sdata\000\000"  
-          writeInt32 os dataSectionSize // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment. If this value is greater than Size of Raw Data, the section is zero-padded. e.g. 0x0000000c 
-          writeInt32 os dataSectionAddr //  VirtualAddress For executable images this is the address of the first byte of the section, when loaded into memory, relative to the image base. e.g. 0x0000c000
+          writeInt32 os dataSectionSize // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment. 
+          writeInt32 os dataSectionAddr //  VirtualAddress For executable images this is the address of the first byte of the section.
        // 000001b0  
-          writeInt32 os dataSectionPhysSize //  SizeOfRawData Size of the initialized data on disk in bytes, shall be a multiple of FileAlignment from the PE header. If this is less than VirtualSize the remainder of the section is zero filled. Because this field is rounded while the VirtualSize field is not it is possible for this to be greater than VirtualSize as well. When a section contains only uninitialized data, this field should be 0. e.g. 0x00000200 
-          writeInt32 os dataSectionPhysLoc // PointerToRawData QUERY: Why does ECMA say "RVA" here? Offset to section's first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized data, this field should be 0. e.g. 0x00009800 
+          writeInt32 os dataSectionPhysSize //  SizeOfRawData Size of the initialized data on disk in bytes, 
+          writeInt32 os dataSectionPhysLoc // PointerToRawData QUERY: Why does ECMA say "RVA" here? Offset to section's first page within the PE file. 
        // 000001b8  
           writeInt32 os 0x00 // PointerToRelocations RVA of Relocation section. 
           writeInt32 os 0x00 // PointerToLineNumbers Always 0 (see Section 23.1). 
@@ -4001,11 +4007,11 @@ let writeBinaryAndReportMappings (outfile,
           write (Some relocSectionHeaderChunk.addr) os "reloc section header" [| |]
        // 000001a0  
           writeBytes os [| 0x2euy; 0x72uy; 0x65uy; 0x6cuy; 0x6fuy; 0x63uy; 0x00uy; 0x00uy; |] // ".reloc\000\000" 
-          writeInt32 os relocSectionSize // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment. If this value is greater than Size of Raw Data, the section is zero-padded. e.g. 0x0000000c 
-          writeInt32 os relocSectionAddr //  VirtualAddress For executable images this is the address of the first byte of the section, when loaded into memory, relative to the image base. e.g. 0x0000c000
+          writeInt32 os relocSectionSize // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment. 
+          writeInt32 os relocSectionAddr //  VirtualAddress For executable images this is the address of the first byte of the section.
        // 000001b0  
-          writeInt32 os relocSectionPhysSize //  SizeOfRawData Size of the initialized reloc on disk in bytes, shall be a multiple of FileAlignment from the PE header. If this is less than VirtualSize the remainder of the section is zero filled. Because this field is rounded while the VirtualSize field is not it is possible for this to be greater than VirtualSize as well. When a section contains only uninitialized reloc, this field should be 0. e.g. 0x00000200 
-          writeInt32 os relocSectionPhysLoc // PointerToRawData QUERY: Why does ECMA say "RVA" here? Offset to section's first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized reloc, this field should be 0. e.g. 0x00009800 
+          writeInt32 os relocSectionPhysSize //  SizeOfRawData Size of the initialized reloc on disk in bytes
+          writeInt32 os relocSectionPhysLoc // PointerToRawData QUERY: Why does ECMA say "RVA" here? Offset to section's first page within the PE file.
        // 000001b8  
           writeInt32 os 0x00 // PointerToRelocations RVA of Relocation section. 
           writeInt32 os 0x00 // PointerToLineNumbers Always 0 (see Section 23.1). 

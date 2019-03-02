@@ -5,7 +5,7 @@
 //
 //---------------------------------------------------------------------
 
-module Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader 
+module FSharp.Compiler.AbstractIL.ILBinaryReader 
 
 #nowarn "42" // This construct is deprecated: it is only for use in the F# library
 
@@ -17,17 +17,17 @@ open System.Runtime.InteropServices
 open System.Text
 open Internal.Utilities
 open Internal.Utilities.Collections
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.Internal 
 #if !FX_NO_PDB_READER
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Support 
+open FSharp.Compiler.AbstractIL.Internal.Support 
 #endif
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
-open Microsoft.FSharp.Compiler.AbstractIL.IL  
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.AbstractIL.Diagnostics 
+open FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
+open FSharp.Compiler.AbstractIL.IL  
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Range
 open Microsoft.FSharp.NativeInterop
 open System.Reflection
 
@@ -1671,7 +1671,7 @@ and seekReadAssemblyManifest (ctxt: ILMetadataReader) pectxt idx =
       Locale= readStringHeapOption ctxt localeIdx
       CustomAttrsStored = ctxt.customAttrsReader_Assembly
       MetadataIndex = idx
-      AssemblyLongevity= 
+      AssemblyLongevity = 
         let masked = flags &&& 0x000e
         if masked = 0x0000 then ILAssemblyLongevity.Unspecified
         elif masked = 0x0002 then ILAssemblyLongevity.Library
@@ -3751,20 +3751,20 @@ let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath, noFileOnDisk) =
     let dataSegmentAddr       = seekReadInt32 pev (peOptionalHeaderPhysLoc + 24) (* e.g. 0x0000c000 *)
     (*  REVIEW: For now, we'll use the DWORD at offset 24 for x64.  This currently ok since fsc doesn't support true 64-bit image bases, 
         but we'll have to fix this up when such support is added. *)    
-    let imageBaseReal = if only64 then dataSegmentAddr else seekReadInt32 pev (peOptionalHeaderPhysLoc + 28)  (* Image Base Always 0x400000 (see Section 23.1). - QUERY : no it's not always 0x400000, e.g. 0x034f0000 *)
-    let alignVirt      = seekReadInt32 pev (peOptionalHeaderPhysLoc + 32)   (*  Section Alignment Always 0x2000 (see Section 23.1). *)
-    let alignPhys      = seekReadInt32 pev (peOptionalHeaderPhysLoc + 36)  (* File Alignment Either 0x200 or 0x1000. *)
+    let imageBaseReal = if only64 then dataSegmentAddr else seekReadInt32 pev (peOptionalHeaderPhysLoc + 28)  // Image Base Always 0x400000 (see Section 23.1).
+    let alignVirt      = seekReadInt32 pev (peOptionalHeaderPhysLoc + 32)   //  Section Alignment Always 0x2000 (see Section 23.1). 
+    let alignPhys      = seekReadInt32 pev (peOptionalHeaderPhysLoc + 36)  // File Alignment Either 0x200 or 0x1000. 
      (* x86: 000000c0 *) 
-    let _osMajor     = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 40)   (*  OS Major Always 4 (see Section 23.1). *)
-    let _osMinor     = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 42)   (* OS Minor Always 0 (see Section 23.1). *)
-    let _userMajor   = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 44)   (* User Major Always 0 (see Section 23.1). *)
-    let _userMinor   = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 46)   (* User Minor Always 0 (see Section 23.1). *)
-    let subsysMajor = seekReadUInt16AsInt32 pev (peOptionalHeaderPhysLoc + 48)   (* SubSys Major Always 4 (see Section 23.1). *)
-    let subsysMinor = seekReadUInt16AsInt32 pev (peOptionalHeaderPhysLoc + 50)   (* SubSys Minor Always 0 (see Section 23.1). *)
+    let _osMajor     = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 40)   //  OS Major Always 4 (see Section 23.1). 
+    let _osMinor     = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 42)   // OS Minor Always 0 (see Section 23.1). 
+    let _userMajor   = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 44)   // User Major Always 0 (see Section 23.1). 
+    let _userMinor   = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 46)   // User Minor Always 0 (see Section 23.1). 
+    let subsysMajor = seekReadUInt16AsInt32 pev (peOptionalHeaderPhysLoc + 48)   // SubSys Major Always 4 (see Section 23.1). 
+    let subsysMinor = seekReadUInt16AsInt32 pev (peOptionalHeaderPhysLoc + 50)   // SubSys Minor Always 0 (see Section 23.1). 
      (* x86: 000000d0 *) 
-    let _imageEndAddr   = seekReadInt32 pev (peOptionalHeaderPhysLoc + 56)  (* Image Size: Size, in bytes, of image, including all headers and padding; shall be a multiple of Section Alignment. e.g. 0x0000e000 *)
-    let _headerPhysSize = seekReadInt32 pev (peOptionalHeaderPhysLoc + 60)  (* Header Size Combined size of MS-DOS Header, PE Header, PE Optional Header and padding; shall be a multiple of the file alignment. *)
-    let subsys           = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 68)   (* SubSystem Subsystem required to run this image. Shall be either IMAGE_SUBSYSTEM_WINDOWS_CE_GUI (!0x3) or IMAGE_SUBSYSTEM_WINDOWS_GUI (!0x2). QUERY: Why is this 3 on the images ILASM produces??? *)
+    let _imageEndAddr   = seekReadInt32 pev (peOptionalHeaderPhysLoc + 56)  // Image Size: Size, in bytes, of image, including all headers and padding; 
+    let _headerPhysSize = seekReadInt32 pev (peOptionalHeaderPhysLoc + 60)  // Header Size Combined size of MS-DOS Header, PE Header, PE Optional Header and padding; 
+    let subsys           = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 68)   // SubSystem Subsystem required to run this image. 
     let useHighEnthropyVA = 
         let n = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 70)
         let highEnthropyVA = 0x20us
@@ -4099,7 +4099,7 @@ let OpenILModuleReader fileName opts =
 
 [<AutoOpen>]
 module Shim =
-    open Microsoft.FSharp.Compiler.Lib
+    open FSharp.Compiler.Lib
 
     type IAssemblyReader =
         abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> ILModuleReader

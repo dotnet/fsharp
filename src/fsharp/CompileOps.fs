@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Coordinating compiler operations - configuration, loading initial context, reporting errors etc.
-module internal Microsoft.FSharp.Compiler.CompileOps
+module internal FSharp.Compiler.CompileOps
 
 open System
 open System.Collections.Generic
@@ -14,39 +14,39 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Filename
 open Internal.Utilities.Text
 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Extensions.ILX
+open FSharp.Compiler.AbstractIL.Diagnostics 
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.AttributeChecking
-open Microsoft.FSharp.Compiler.ConstraintSolver
-open Microsoft.FSharp.Compiler.DiagnosticMessage
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Import
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.Lexhelp
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.MethodCalls
-open Microsoft.FSharp.Compiler.MethodOverrides
-open Microsoft.FSharp.Compiler.NameResolution
-open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.ReferenceResolver
-open Microsoft.FSharp.Compiler.SignatureConformance
-open Microsoft.FSharp.Compiler.TastPickle
-open Microsoft.FSharp.Compiler.TypeChecker
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
+open FSharp.Compiler 
+open FSharp.Compiler.Ast
+open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.ConstraintSolver
+open FSharp.Compiler.DiagnosticMessage
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Import
+open FSharp.Compiler.Infos
+open FSharp.Compiler.Lexhelp
+open FSharp.Compiler.Lib
+open FSharp.Compiler.MethodCalls
+open FSharp.Compiler.MethodOverrides
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Range
+open FSharp.Compiler.ReferenceResolver
+open FSharp.Compiler.SignatureConformance
+open FSharp.Compiler.TastPickle
+open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
 
 #if !NO_EXTENSIONTYPING
-open Microsoft.FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
 
@@ -384,10 +384,10 @@ let GetWarningLevel err =
   | NumberedError((n, _), _) 
   | ErrorWithSuggestions((n, _), _, _, _) 
   | Error((n, _), _) -> 
-      // 1178, tcNoComparisonNeeded1, "The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to this type to clarify that the type is not comparable"
-      // 1178, tcNoComparisonNeeded2, "The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to this type to clarify that the type is not comparable" 
-      // 1178, tcNoEqualityNeeded1, "The struct, record or union type '%s' does not support structural equality because the type parameter %s does not satisfy the 'equality' constraint. Consider adding the 'NoEquality' attribute to this type to clarify that the type does not support structural equality"
-      // 1178, tcNoEqualityNeeded2, "The struct, record or union type '%s' does not support structural equality because the type '%s' does not satisfy the 'equality' constraint. Consider adding the 'NoEquality' attribute to this type to clarify that the type does not support structural equality"
+      // 1178, tcNoComparisonNeeded1, "The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint..."
+      // 1178, tcNoComparisonNeeded2, "The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint...."
+      // 1178, tcNoEqualityNeeded1, "The struct, record or union type '%s' does not support structural equality because the type parameter %s does not satisfy the 'equality' constraint..."
+      // 1178, tcNoEqualityNeeded2, "The struct, record or union type '%s' does not support structural equality because the type '%s' does not satisfy the 'equality' constraint...."
       if (n = 1178) then 5 else 2
   // Level 2 
   | _ ->  2
@@ -434,7 +434,7 @@ let SplitRelatedDiagnostics(err:PhasedDiagnostic) =
     SplitRelatedException(err.Exception)
 
 
-let DeclareMesssage = Microsoft.FSharp.Compiler.DiagnosticMessage.DeclareResourceString
+let DeclareMesssage = FSharp.Compiler.DiagnosticMessage.DeclareResourceString
 
 do FSComp.SR.RunStartupValidation()
 let SeeAlsoE() = DeclareResourceString("SeeAlso", "%s")
@@ -1854,8 +1854,7 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location), "mscorlib.dll")    // mscorlib
           yield typeof<System.Console>.Assembly.Location                                                        // System.Console
           yield typeof<System.Collections.BitArray>.Assembly.Location                                           // System.Collections
-          yield typeof<System.Data.SqlClient.SqlCommand>.Assembly.Location                                      // System.Data.SqlClient
-          yield typeof<System.ComponentModel.PropertyChangedEventArgs>.Assembly.Location                        // System.ObjectModel             
+          yield typeof<System.ComponentModel.PropertyChangedEventArgs>.Assembly.Location                        // System.ObjectModel
           yield typeof<System.IO.File>.Assembly.Location                                                        // System.IO.FileSystem
           yield typeof<System.IO.TextWriter>.Assembly.Location                                                  // System.IO
           yield typeof<System.Linq.Enumerable>.Assembly.Location                                                // System.Linq
@@ -2542,12 +2541,12 @@ type TcConfigBuilder =
         let pdbfile = 
             if tcConfigB.debuginfo then
               Some (match tcConfigB.debugSymbolFile with 
-                    | None -> Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile tcConfigB.portablePDB
+                    | None -> FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile tcConfigB.portablePDB
 #if ENABLE_MONO_SUPPORT
                     | Some _ when runningOnMono ->
                         // On Mono, the name of the debug file has to be "<assemblyname>.mdb" so specifying it explicitly is an error
                         warning(Error(FSComp.SR.ilwriteMDBFileNameCannotBeChangedWarning(), rangeCmdArgs))
-                        Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile tcConfigB.portablePDB
+                        FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile tcConfigB.portablePDB
 #endif
                     | Some f -> f)   
             elif (tcConfigB.debugSymbolFile <> None) && (not (tcConfigB.debuginfo)) then
@@ -2792,22 +2791,26 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
             error(Error(FSComp.SR.buildExplicitCoreLibRequiresNoFramework("--noframework"), rangeStartup))
 
     let ilGlobals = mkILGlobals ILScopeRef.Local
+
+    // clrRoot: the location of the primary assembly (mscorlib.dll or netstandard.dll or System.Runtime.dll)
+    //
+    // targetFrameworkVersionValue: Normally just HighestInstalledNetFrameworkVersion()
+    //
+    // Note, when mscorlib.dll has been given explicitly the actual value of
+    // targetFrameworkVersion shouldn't matter since resolution has already happened.
+    // In those cases where it does matter (e.g. --noframework is not being used or we are processing further
+    // resolutions for a script) then it is correct to just use HighestInstalledNetFrameworkVersion().
     let clrRootValue, targetFrameworkVersionValue  = 
         match primaryAssemblyExplicitFilenameOpt with
-        | Some(primaryAssemblyFilename) ->
+        | Some primaryAssemblyFilename ->
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir primaryAssemblyFilename
             try 
-                use ilReader = OpenILBinary(filename, data.reduceMemoryUsage, ilGlobals, None, data.shadowCopyReferences, data.tryGetMetadataSnapshot)
-                let ilModule = ilReader.ILModuleDef
-                match ilModule.ManifestOfAssembly.Version with 
-                | Some(v1, v2, _, _) -> 
-                    let clrRoot = Some(Path.GetDirectoryName(FileSystem.GetFullPathShim(filename)))
-                    clrRoot, (sprintf "v%d.%d" v1 v2)
-                | _ -> 
-                    failwith (FSComp.SR.buildCouldNotReadVersionInfoFromMscorlib())
+                let clrRoot = Some(Path.GetDirectoryName(FileSystem.GetFullPathShim(filename)))
+                clrRoot, data.legacyReferenceResolver.HighestInstalledNetFrameworkVersion()
             with e ->
+                // We no longer expect the above to fail but leaving this just in case
                 error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
-        | _ ->
+        | None ->
 #if !ENABLE_MONO_SUPPORT
             // TODO:  we have to get msbuild out of this
             if data.useSimpleResolution then
@@ -2823,6 +2826,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     let fsharpBinariesDirValue = 
 // NOTE: It's not clear why this behaviour has been changed for the NETSTANDARD compilations of the F# compiler
 #if NETSTANDARD1_6 || NETSTANDARD2_0
+        ignore ilGlobals
         data.defaultFSharpBinariesDir
 #else
         match fslibExplicitFilenameOpt with
@@ -4801,7 +4805,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 #endif
         // do this prior to parsing, since parsing IL assembly code may refer to mscorlib
 #if !NO_INLINE_IL_PARSER
-        Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiConstants.parseILGlobals := tcGlobals.ilg 
+        FSharp.Compiler.AbstractIL.Internal.AsciiConstants.parseILGlobals := tcGlobals.ilg 
 #endif
         frameworkTcImports.SetTcGlobals(tcGlobals)
         return tcGlobals, frameworkTcImports
@@ -5084,7 +5088,9 @@ module private ScriptPreprocessClosure =
             seen.ContainsKey(check)
     
     /// Parse a script from source.
-    let ParseScriptText(filename:string, source:string, tcConfig:TcConfig, codeContext, lexResourceManager:Lexhelp.LexResourceManager, errorLogger:ErrorLogger) =    
+    let ParseScriptText
+           (filename:string, source:string, tcConfig:TcConfig, codeContext, 
+            lexResourceManager:Lexhelp.LexResourceManager, errorLogger:ErrorLogger) =    
 
         // fsc.exe -- COMPILED\!INTERACTIVE
         // fsi.exe -- !COMPILED\INTERACTIVE
@@ -5102,12 +5108,26 @@ module private ScriptPreprocessClosure =
         ParseOneInputLexbuf (tcConfig, lexResourceManager, defines, lexbuf, filename, isLastCompiland, errorLogger) 
           
     /// Create a TcConfig for load closure starting from a single .fsx file
-    let CreateScriptTextTcConfig (legacyReferenceResolver, defaultFSharpBinariesDir, filename:string, codeContext, useSimpleResolution, useFsiAuxLib, basicReferences, applyCommandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage) =  
+    let CreateScriptTextTcConfig 
+           (legacyReferenceResolver, defaultFSharpBinariesDir, 
+            filename:string, codeContext, 
+            useSimpleResolution, useFsiAuxLib, 
+            basicReferences, applyCommandLineArgs, 
+            assumeDotNetFramework, tryGetMetadataSnapshot, 
+            reduceMemoryUsage) =  
+
         let projectDir = Path.GetDirectoryName(filename)
         let isInteractive = true                            //(codeContext = CodeContext.CompilationAndEvaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
-        let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, projectDir, isInteractive, isInvalidationSupported, defaultCopyFSharpCore=CopyFSharpCoreFlag.No, tryGetMetadataSnapshot=tryGetMetadataSnapshot) 
+
+        let tcConfigB = 
+            TcConfigBuilder.CreateNew
+                (legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, projectDir, 
+                 isInteractive, isInvalidationSupported, defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
+                 tryGetMetadataSnapshot=tryGetMetadataSnapshot) 
+
         applyCommandLineArgs tcConfigB
+
         match basicReferences with 
         | None -> BasicReferencesForScriptLoadClosure(useFsiAuxLib, assumeDotNetFramework) |> List.iter(fun f->tcConfigB.AddReferencedAssemblyByPath(range0, f)) // Add script references
         | Some rs -> for m, r in rs do tcConfigB.AddReferencedAssemblyByPath(m, r)
@@ -5138,7 +5158,9 @@ module private ScriptPreprocessClosure =
             errorRecovery e m 
             []
             
-    let ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn (tcConfig:TcConfig, inp:ParsedInput, pathOfMetaCommandSource) = 
+    let ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn
+           (tcConfig:TcConfig, inp:ParsedInput, pathOfMetaCommandSource) = 
+
         let tcConfigB = tcConfig.CloneOfOriginalBuilder 
         let nowarns = ref [] 
         let getWarningNumber = fun () (m, s) -> nowarns := (s, m) :: !nowarns
@@ -5157,7 +5179,10 @@ module private ScriptPreprocessClosure =
             let tcConfigB = tcConfig.CloneOfOriginalBuilder 
             TcConfig.Create(tcConfigB, validate=false), nowarns
     
-    let FindClosureFiles(closureSources, tcConfig:TcConfig, codeContext, lexResourceManager:Lexhelp.LexResourceManager) =
+    let FindClosureFiles
+           (closureSources, tcConfig:TcConfig, codeContext, 
+            lexResourceManager:Lexhelp.LexResourceManager) =
+
         let tcConfig = ref tcConfig
         
         let observedSources = Observed()
@@ -5217,13 +5242,29 @@ module private ScriptPreprocessClosure =
                 closureFiles 
             else 
                 match List.frontAndBack closureFiles with
-                | rest, ClosureFile(filename, m, Some(ParsedInput.ImplFile(ParsedImplFileInput(name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, _))), parseDiagnostics, metaDiagnostics, nowarns) -> 
-                    rest @ [ClosureFile(filename, m, Some(ParsedInput.ImplFile(ParsedImplFileInput(name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, (true, tcConfig.target.IsExe)))), parseDiagnostics, metaDiagnostics, nowarns)]
+                | rest, ClosureFile
+                           (filename, m, 
+                            Some(ParsedInput.ImplFile(ParsedImplFileInput(name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, _))), 
+                            parseDiagnostics, metaDiagnostics, nowarns) -> 
+
+                    let isLastCompiland = (true, tcConfig.target.IsExe)
+                    rest @ [ClosureFile
+                                (filename, m, 
+                                 Some(ParsedInput.ImplFile(ParsedImplFileInput(name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, isLastCompiland))), 
+                                 parseDiagnostics, metaDiagnostics, nowarns)]
+
                 | _ -> closureFiles
 
         // Get all source files.
         let sourceFiles = [  for (ClosureFile(filename, m, _, _, _, _)) in closureFiles -> (filename, m) ]
-        let sourceInputs = [  for (ClosureFile(filename, _, input, parseDiagnostics, metaDiagnostics, _nowarns)) in closureFiles -> ({ FileName=filename; SyntaxTree=input; ParseDiagnostics=parseDiagnostics; MetaCommandDiagnostics=metaDiagnostics }: LoadClosureInput)  ]
+
+        let sourceInputs = 
+            [  for (ClosureFile(filename, _, input, parseDiagnostics, metaDiagnostics, _nowarns)) in closureFiles ->
+                   ({ FileName=filename
+                      SyntaxTree=input
+                      ParseDiagnostics=parseDiagnostics
+                      MetaCommandDiagnostics=metaDiagnostics } : LoadClosureInput) ]
+
         let globalNoWarns = closureFiles |> List.collect (fun (ClosureFile(_, _, _, _, _, noWarns)) -> noWarns)
 
         // Resolve all references.
@@ -5269,18 +5310,33 @@ module private ScriptPreprocessClosure =
         result
 
     /// Given source text, find the full load closure. Used from service.fs, when editing a script file
-    let GetFullClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage) = 
+    let GetFullClosureOfScriptText
+           (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
+            filename, source, 
+            codeContext, useSimpleResolution, useFsiAuxLib, 
+            lexResourceManager:Lexhelp.LexResourceManager, 
+            applyCommmandLineArgs, assumeDotNetFramework, 
+            tryGetMetadataSnapshot, reduceMemoryUsage) = 
+
         // Resolve the basic references such as FSharp.Core.dll first, before processing any #I directives in the script
         //
         // This is tries to mimic the action of running the script in F# Interactive - the initial context for scripting is created
         // first, then #I and other directives are processed.
         let references0 = 
-            let tcConfig = CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, filename, codeContext, useSimpleResolution, useFsiAuxLib, None, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage)
+            let tcConfig = 
+                CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, 
+                    filename, codeContext, useSimpleResolution, 
+                    useFsiAuxLib, None, applyCommmandLineArgs, assumeDotNetFramework, 
+                    tryGetMetadataSnapshot, reduceMemoryUsage)
+
             let resolutions0, _unresolvedReferences = GetAssemblyResolutionInformation(ctok, tcConfig)
             let references0 =  resolutions0 |> List.map (fun r->r.originalReference.Range, r.resolvedPath) |> Seq.distinct |> List.ofSeq
             references0
 
-        let tcConfig = CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, filename, codeContext, useSimpleResolution, useFsiAuxLib, Some references0, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage)
+        let tcConfig = 
+            CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, filename, 
+                 codeContext, useSimpleResolution, useFsiAuxLib, Some references0, 
+                 applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage)
 
         let closureSources = [ClosureSource(filename, range0, source, true)]
         let closureFiles, tcConfig = FindClosureFiles(closureSources, tcConfig, codeContext, lexResourceManager)
@@ -5288,7 +5344,12 @@ module private ScriptPreprocessClosure =
         
     /// Given source filename, find the full load closure
     /// Used from fsi.fs and fsc.fs, for #load and command line
-    let GetFullClosureOfScriptFiles(ctok, tcConfig:TcConfig, files:(string*range) list, codeContext, lexResourceManager:Lexhelp.LexResourceManager) = 
+    let GetFullClosureOfScriptFiles
+           (ctok, tcConfig:TcConfig, 
+            files:(string*range) list, 
+            codeContext, 
+            lexResourceManager:Lexhelp.LexResourceManager) = 
+
         let mainFile = fst (List.last files)
         let closureSources = files |> List.collect (fun (filename, m) -> ClosureSourceOfFilename(filename, m, tcConfig.inputCodePage, true))
         let closureFiles, tcConfig = FindClosureFiles(closureSources, tcConfig, codeContext, lexResourceManager)
@@ -5296,17 +5357,23 @@ module private ScriptPreprocessClosure =
 
 type LoadClosure with
     /// Analyze a script text and find the closure of its references. 
-    /// Used from FCS, when editing a script file.  
-    //
-    /// A temporary TcConfig is created along the way, is why this routine takes so many arguments. We want to be sure to use exactly the
-    /// same arguments as the rest of the application.
-    static member ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename:string, source:string, codeContext, useSimpleResolution:bool, useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage) : LoadClosure = 
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        ScriptPreprocessClosure.GetFullClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage)
+    static member ComputeClosureOfScriptText
+                     (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
+                      filename:string, source:string, codeContext, useSimpleResolution:bool, 
+                      useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, 
+                      applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage) = 
 
-    /// Analyze a set of script files and find the closure of their references. The resulting references are then added to the given TcConfig.
-    /// Used from fsi.fs and fsc.fs, for #load and command line. 
-    static member ComputeClosureOfScriptFiles (ctok, tcConfig:TcConfig, files:(string*range) list, codeContext, lexResourceManager:Lexhelp.LexResourceManager) = 
+        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
+        ScriptPreprocessClosure.GetFullClosureOfScriptText
+            (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, 
+             codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager, 
+             applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage)
+
+    /// Analyze a set of script files and find the closure of their references.
+    static member ComputeClosureOfScriptFiles 
+                     (ctok, tcConfig:TcConfig, files:(string*range) list, codeContext, 
+                      lexResourceManager:Lexhelp.LexResourceManager) = 
+
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         ScriptPreprocessClosure.GetFullClosureOfScriptFiles (ctok, tcConfig, files, codeContext, lexResourceManager)
         

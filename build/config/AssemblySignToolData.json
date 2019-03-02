@@ -39,16 +39,23 @@
       "certificate": "VsixSHA2",
       "strongName": null,
       "values": [
-        "bin\\VisualFSharpFull\\*\\*VisualFSharpFull.vsix",
+        "bin\\VisualFSharpFull\\*\\*\\VisualFSharpFull.vsix",
         "bin\\VisualFSharpTemplates\\*\\*\\VisualFSharpTemplate.vsix",
         "VSSetup\\*\\Insertion\\Microsoft.FSharp.Dependencies.vsix",
         "VSSetup\\*\\Insertion\\Microsoft.FSharp.VSIX.Full.Resources.*.vsix"
+      ]
+    },
+    {
+      "certificate": "NuGet",
+      "strongName": null,
+      "values": [
+        "packages\\*\\*.nupkg"
       ]
     }
   ],
   "exclude": [
     "e_sqlite3.dll",
-    "FSharp.Core.4.5.2.nupkg",
+    "FSharp.Core.UnitTests.dll",
     "FSharp.Data.TypeProviders.dll",
     "Microsoft.Build.dll",
     "Microsoft.Build.Framework.dll",

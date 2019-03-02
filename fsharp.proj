@@ -32,6 +32,7 @@
     <TestCompiler Condition="'$(TEST_NET40_COMPILERUNIT_SUITE)' == '1'">true</TestCompiler>
     <TestCompiler Condition="'$(TEST_CORECLR_COREUNIT_SUITE)' == '1'">true</TestCompiler>
     <TestFSharpSuite Condition="'$(TEST_NET40_FSHARP_SUITE)' == '1'">true</TestFSharpSuite>
+    <TestFSharpCoreUnitTest Condition="'$(TEST_NET40_COREUNIT_SUITE)' == '1'">true</TestFSharpCoreUnitTest>
     <TestFSharpSuite Condition="'$(TEST_CORECLR_FSHARP_SUITE)' == '1'">true</TestFSharpSuite>
     <TestFSharpQASuite Condition="'$(TEST_NET40_FSHARPQA_SUITE)' == '1'">true</TestFSharpQASuite>
     <TestFCS Condition="'$(TEST_FCS)' == '1'">true</TestFCS>
@@ -90,7 +91,12 @@
       <Projects Include="$(MSBuildThisFileDirectory)vsintegration\Utils\LanguageServiceProfiling\LanguageServiceProfiling.fsproj" />
       <Projects Include="$(MSBuildThisFileDirectory)vsintegration\fsharp-vsintegration-item-templates-build.proj" />
       <Projects Include="$(MSBuildThisFileDirectory)vsintegration\fsharp-vsintegration-project-templates-build.proj" />
-      <Projects Include="$(MSBuildThisFileDirectory)vsintegration\fsharp-vsintegration-vsix-build.proj" />
+      <VsixProjects Include="$(MSBuildThisFileDirectory)\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj" />
+      <VsixProjects Include="$(MSBuildThisFileDirectory)\vsintegration\Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(BuildCompiler)' == 'true' OR '$(BuildNuget)' == 'true' OR '$(BuildVS)' == 'true' OR '$(_RunningRestore)' == 'true'">
+      <NugetProjects Include="src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(BuildFCS)' == 'true' OR '$(_RunningRestore)' == 'true'">
@@ -102,16 +108,15 @@
 
     <ItemGroup Condition="'$(BuildNuget)' == 'true' OR '$(_RunningRestore)' == 'true'">
       <NugetProjects Include="$(MSBuildThisFileDirectory)src\fsharp\FSharp.Compiler.nuget\Microsoft.FSharp.Compiler.csproj" />
-      <NugetProjects Include="$(MSBuildThisFileDirectory)src\fsharp\FSharp.Compiler.nuget\Microsoft.FSharp.Compiler.Prerelease.csproj" />
+      <NugetProjects Include="$(MSBuildThisFileDirectory)tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(BuildSetup)' == 'true' OR '$(_RunningRestore)' == 'true'">
-      <Projects Include="$(MSBuildThisFileDirectory)setup\fsharp-setup-build.csproj" />
+    <SetupProjects Include="$(MSBuildThisFileDirectory)setup\fsharp-setup-build.csproj" />
     </ItemGroup>
 
     <!-- test binaries -->
-
-    <ItemGroup Condition="'$(TestCompiler)' == 'true' OR '$(_RunningRestore)' == 'true'">
+    <ItemGroup Condition="'$(TestCompiler)' == 'true' OR '$(BuildNuget)' == 'true' OR '$(_RunningRestore)' == 'true'">
       <Projects Include="$(MSBuildThisFileDirectory)tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" />
       <Projects Include="$(MSBuildThisFileDirectory)tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" />
       <Projects Include="$(MSBuildThisFileDirectory)tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" />
@@ -122,7 +127,6 @@
       <Projects Include="$(MSBuildThisFileDirectory)tests\fsharp\SDKTests\AllSdkTargetsTests.proj" />
       <Projects Include="$(MSBuildThisFileDirectory)tests\fsharpqa\testenv\src\PEVerify\PEVerify.csproj" />
       <Projects Include="$(MSBuildThisFileDirectory)src\fsharp\FSharp.Compiler.nuget\Testing.FSharp.Compiler.csproj" />
-
       <NugetProjects Include="$(MSBuildThisFileDirectory)src\fsharp\FSharp.Compiler.nuget\Testing.FSharp.Compiler.csproj" />
     </ItemGroup>
 
@@ -135,7 +139,6 @@
     <ItemGroup Condition="'$(TestFCS)' == 'true' OR '$(_RunningRestore)' == 'true'">
       <Projects Include="$(MSBuildThisFileDirectory)fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" />
       <Projects Include="$(MSBuildThisFileDirectory)tests\projects\Sample_NETCoreSDK_FSharp_Library_netstandard2_0\Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj" />
-      <Projects Include="$(MSBuildThisFileDirectory)fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TestIDE)' == 'true' OR '$(_RunningRestore)' == 'true'">
@@ -151,20 +154,25 @@
   </Target>
 
   <Target Name="Build" DependsOnTargets="CollectProjects">
-    <MSBuild Projects="@(Projects);@(NugetProjects)" Targets="Build" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(NugetProjects);@(Projects)" Targets="Build" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
     <MSBuild Projects="@(NugetProjects)" Targets="Pack" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(VsixProjects)" Targets="Build" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(SetupProjects)" Targets="Build" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
 
   <Target Name="Rebuild" DependsOnTargets="CollectProjects">
-    <MSBuild Projects="@(Projects);@(NugetProjects)" Targets="Rebuild" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(NugetProjects);@(Projects)" Targets="Rebuild" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(NugetProjects)" Targets="Pack" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(VsixProjects)" Targets="Rebuild" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(SetupProjects)" Targets="Rebuild" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
 
   <Target Name="Clean" DependsOnTargets="CollectProjects">
-    <MSBuild Projects="@(Projects);@(NugetProjects)" Targets="Clean" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(Projects);@(NugetProjects);@(VsixProjects);@(SetupProjects)" Targets="Clean" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
 
   <Target Name="Restore" DependsOnTargets="_BeforeRestore;CollectProjects">
-    <MSBuild Projects="@(Projects);@(NugetProjects)" Targets="Restore" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(Projects);@(NugetProjects);@(VsixProjects);@(SetupProjects)" Targets="Restore" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
 
 </Project>

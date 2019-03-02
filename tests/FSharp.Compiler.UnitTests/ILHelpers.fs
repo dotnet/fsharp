@@ -8,7 +8,7 @@ open System.Diagnostics
 
 open NUnit.Framework
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 module ILChecker =
 
@@ -39,7 +39,14 @@ module ILChecker =
     /// Compile the source and check to see if the expected IL exists.
     /// The first line of each expected IL string is found first.
     let check source expectedIL =
-        let packagesDir = Environment.GetEnvironmentVariable("USERPROFILE") ++ ".nuget" ++ "packages"
+        let packagesDir = 
+            // On Unix the user profile directory is in the variable HOME
+            // On windows it's called USERPROFILE
+            let userProfile =
+                let profile = Environment.GetEnvironmentVariable("USERPROFILE")
+                if not (String.IsNullOrEmpty(profile)) then profile
+                else Environment.GetEnvironmentVariable("HOME")
+            userProfile ++ ".nuget" ++ "packages"
         let Is64BitOperatingSystem = sizeof<nativeint> = 8
         let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
         let ildasmExe = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")

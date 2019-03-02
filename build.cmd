@@ -1,6 +1,6 @@
 rem Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 @if "%_echo%"=="" echo off
-setlocal enableDelayedExpansion
+setlocal enableDelayedExpansion 
 
 :ARGUMENTS_VALIDATION
 if /I "%1" == "--help"  (goto :USAGE)
@@ -108,10 +108,12 @@ if /i "%_autoselect%" == "1" (
 
 if /i "%_autoselect_tests%" == "1" (
     if /i "%BUILD_NET40_FSHARP_CORE%" == "1" (
+        set BUILD_NUGET=1
         set TEST_NET40_COREUNIT_SUITE=1
     )
 
     if /i "%BUILD_NET40%" == "1" (
+        set BUILD_NUGET=1
         set TEST_NET40_COMPILERUNIT_SUITE=1
         set TEST_NET40_COREUNIT_SUITE=1
         set TEST_NET40_FSHARP_SUITE=1
@@ -264,6 +266,7 @@ if /i "%ARG%" == "ci_part2" (
     set BUILD_PROTO=1
     set BUILD_NET40=1
     set BUILD_NET40_FSHARP_CORE=1
+    set BUILD_NUGET=1
     set TEST_NET40_COMPILERUNIT_SUITE=1
     set TEST_NET40_COREUNIT_SUITE=1
     set TEST_NET40_FSHARPQA_SUITE=1
@@ -294,6 +297,7 @@ if /i "%ARG%" == "ci_part4" (
     set BUILD_CORECLR=1
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_NET40=1
+    set BUILD_NUGET=1
     set BUILD_FCS=1
     set TEST_FCS=1
     set CI=1
@@ -393,6 +397,7 @@ if /i "%ARG%" == "test-net40-ideunit" (
 if /i "%ARG%" == "test-net40-coreunit" (
     set _autoselect=0
     set BUILD_NET40_FSHARP_CORE=1
+    set BUILD_NUGET=1
     set TEST_NET40_COREUNIT_SUITE=1
 )
 
@@ -400,6 +405,7 @@ if /i "%ARG%" == "test-coreclr-coreunit" (
     set _autoselect=0
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_CORECLR=1
+    set BUILD_NUGET=1
     set TEST_CORECLR_COREUNIT_SUITE=1
 )
 
@@ -613,10 +619,6 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
 echo ---------------- Done with prepare, starting package restore ----------------
 
-:: create a global.json
-set /p DOTNET_TOOLS_VERSION=<"%~dp0DotnetCLIToolsVersion.txt"
-echo { "sdk": { "version": "%DOTNET_TOOLS_VERSION%" } }>global.json
-
 :: Restore the Tools directory
 call "%~dp0init-tools.cmd"
 set _dotnetexe=%~dp0artifacts\toolset\dotnet\dotnet.exe
@@ -703,12 +705,6 @@ if not "%SIGN_TYPE%" == "" (
     if ERRORLEVEL 1 echo Error running sign tool && goto :failure
 )
 
-echo ---------------- Done with assembly signing, start package creation ---------------
-
-echo %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG% /t:Pack /bl:!logdir!\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
-     %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG% /t:Pack /bl:!logdir!\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
-if ERRORLEVEL 1 echo Error building NuGet packages && goto :failure
-
 if not "%SIGN_TYPE%" == "" (
     echo %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:BinaryBasepath=%~dp0artifacts\packages\%BUILD_CONFIG% /p:ConfigFile=%~dp0build\config\PackageSignToolData.json
          %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:BinaryBasepath=%~dp0artifacts\packages\%BUILD_CONFIG% /p:ConfigFile=%~dp0build\config\PackageSignToolData.json
@@ -783,8 +779,12 @@ if not exist "%link_exe%" (
 if /I not "%single_threaded%" == "true" (set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%) else set PARALLEL_ARG=-procs:0
 
 set FSCBINPATH=%~dp0artifacts\bin\fsc\%BUILD_CONFIG%\net46
+set FSIANYCPUBINPATH=%~dp0artifacts\bin\fsiAnyCpu\%BUILD_CONFIG%\net46
+set FSIBINPATH=%~dp0artifacts\bin\fsi\%BUILD_CONFIG%\net46
 
 ECHO FSCBINPATH=%FSCBINPATH%
+ECHO FSIANYCPUBINPATH=%FSIANYCPUBINPATH%
+ECHO FSIBINPATH=%FSIBINPATH%
 ECHO link_exe=%link_exe%
 
 REM ---------------- test-net40-fsharp  -----------------------
@@ -816,8 +816,8 @@ REM ---------------- test-fcs  -----------------------
 if "%TEST_FCS%" == "1" (
 
     set LOGFILE=%TESTLOGDIR%\FSharp.Compiler.Service.Tests_net46.trx
-    echo "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
-         "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+    echo "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -s "%~dp0fcs\FSharp.Compiler.Service.Tests\app.runsettings"  --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -s "%~dp0fcs\FSharp.Compiler.Service.Tests\app.runsettings" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
 
     if errorlevel 1 (
         echo --------------------------------------------------------------
@@ -834,8 +834,8 @@ if "%TEST_FCS%" == "1" (
     )
 
     set LOGFILE=%TESTLOGDIR%\FSharp.Compiler.Service.Tests_netcoreapp2.0.trx
-    echo "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!"
-         "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!"
+    echo "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -s "%~dp0fcs\FSharp.Compiler.Service.Tests\app.runsettings" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -s "%~dp0fcs\FSharp.Compiler.Service.Tests\app.runsettings" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!"
 
     if errorlevel 1 (
         echo --------------------------------------------------------------
@@ -880,8 +880,10 @@ if "%TEST_NET40_FSHARPQA_SUITE%" == "1" (
 
     set CSC_PIPE=%USERPROFILE%\.nuget\packages\Microsoft.Net.Compilers\2.7.0\tools\csc.exe
     set FSC=!FSCBINPATH!\fsc.exe
+    set FSI=!FSIBINPATH!\fsi.exe
+    set FSIANYCPU=!FSIANYCPUBINPATH!\fsi.exe
     set FSCOREDLLPATH=!FSCBinPath!\FSharp.Core.dll
-    set PATH=!FSCBINPATH!;!PATH!
+    set PATH=!FSCBINPATH!;!FSIBINPATH!;!FSIANYCPUBINPATH!;!PATH!
     set perlexe=%USERPROFILE%\.nuget\packages\StrawberryPerl64\5.22.2.1\Tools\perl\bin\perl.exe
     if not exist !perlexe! (echo Error: perl was not downloaded from check the packages directory: !perlexe! && goto :failure )
 
@@ -1056,8 +1058,8 @@ if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
     )
 
     set LOGFILE=%TESTLOGDIR%\VisualFSharp.UnitTests_net46.trx
-    echo "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
-         "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+    echo "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -s "%~dp0vsintegration\tests\UnitTests\app.runsettings" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -s "%~dp0vsintegration\tests\UnitTests\app.runsettings" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
     if errorlevel 1 (
         echo ------------------------------------------------------------
         echo Error: Running tests vs-ideunit failed, see file `!LOGFILE!`

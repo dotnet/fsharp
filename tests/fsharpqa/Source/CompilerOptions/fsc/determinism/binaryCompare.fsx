@@ -13,8 +13,10 @@ let filePairsToCheck =
     |> Seq.map (fun f -> f, f.Replace("dummy","dummy2"))
 
 let compareFiles pair =
-    let correct = areSame pair = shouldBeSame
-    if not correct then 
+    let correct = (areSame pair = shouldBeSame)
+    if correct then 
+        printfn "Good, %s and %s were %s" (fst pair) (snd pair) (if shouldBeSame then "same" else "different")
+    else
         printfn "Expected %s and %s to be %s" (fst pair) (snd pair) (if shouldBeSame then "same" else "different")
     correct
 

@@ -89,7 +89,7 @@ let generateOverrides =
 </Project>"
     template
 
-let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework =
+let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework configuration =
     let computeSourceItems addDirectory addCondition (compileItem:CompileItem) sources =
         let computeInclude src =
             let fileName = if addDirectory then Path.Combine(pc.SourceDirectory, src) else src
@@ -130,6 +130,8 @@ let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework =
     <DefineConstants>FX_RESHAPED_REFLECTION</DefineConstants>
     <DefineConstants Condition=""'$(OutputType)' == 'Script' and '$(FSharpTestCompilerVersion)' == 'coreclr'"">NETCOREAPP</DefineConstants>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' == ''"">$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
+    <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' != ''"">$(RestoreAdditionalProjectSources);$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
   </PropertyGroup>
 
   <!-- Utility sources -->
@@ -170,6 +172,8 @@ let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework =
         |> replaceTokens "$(OPTIMIZE)" optimize
         |> replaceTokens "$(DEBUG)" debug
         |> replaceTokens "$(TARGETFRAMEWORK)" targetFramework
+        |> replaceTokens "$(RestoreFromArtifactsPath)" (Path.GetFullPath(__SOURCE_DIRECTORY__) + "/../../artifacts/packages/" + configuration)
+
     generateProjBody
 
 let singleTestBuildAndRunCore cfg copyFiles p =
@@ -212,7 +216,7 @@ let singleTestBuildAndRunCore cfg copyFiles p =
                 let executeFsc testCompilerVersion targetFramework =
                     let propsBody = generateProps testCompilerVersion
                     emitFile propsFileName propsBody
-                    let projectBody = generateProjectArtifacts pc targetFramework 
+                    let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
                     emitFile projectFileName projectBody
                     use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
                     exec { cfg with Directory = directory }  cfg.DotNetExe (sprintf "run -f %s" targetFramework)
@@ -222,7 +226,7 @@ let singleTestBuildAndRunCore cfg copyFiles p =
                 let executeFsi testCompilerVersion targetFramework =
                     let propsBody = generateProps testCompilerVersion
                     emitFile propsFileName propsBody
-                    let projectBody = generateProjectArtifacts pc targetFramework 
+                    let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
                     emitFile projectFileName projectBody
                     use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
                     exec { cfg with Directory = directory }  cfg.DotNetExe "build /t:RunFSharpScript"

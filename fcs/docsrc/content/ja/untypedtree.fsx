@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../../debug/bin/net45/"
+#I "../../../../artifacts/bin/fcs/net45"
 (**
 コンパイラサービス：型無し構文木の処理
 ======================================
@@ -41,7 +41,7 @@
 *)
 #r "FSharp.Compiler.Service.dll"
 open System
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 (**
 
 ### 型無しパースの実行
@@ -69,7 +69,7 @@ ASTを取得するために、ファイル名とソースコードを受け取�
 let getUntypedTree (file, input) = 
   // 1つのスクリプトファイルから推測される「プロジェクト」用の
   // コンパイラオプションを取得する
-  let projectOptions =
+  let projOptions, errors =
       checker.GetProjectOptionsFromScript(file, input) 
       |> Async.RunSynchronously
 
@@ -101,7 +101,7 @@ ASTを理解するには
 
 ASTに関連する要素は以下の名前空間に含まれています:
 *)
-open Microsoft.FSharp.Compiler.Ast
+open FSharp.Compiler.Ast
 (**
 
 ASTを処理する場合、異なる文法的要素に対するパターンマッチを行うような

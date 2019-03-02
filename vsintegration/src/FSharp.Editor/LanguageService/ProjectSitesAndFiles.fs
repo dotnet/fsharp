@@ -7,7 +7,7 @@ open System.IO
 open System.Collections.Concurrent
 open System.Diagnostics
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.LanguageServices

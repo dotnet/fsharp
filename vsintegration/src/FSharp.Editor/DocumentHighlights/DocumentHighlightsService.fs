@@ -12,8 +12,8 @@ open Microsoft.CodeAnalysis.DocumentHighlighting
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
 
 type internal FSharpHighlightSpan =
     { IsDefinition: bool

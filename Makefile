@@ -8,10 +8,7 @@ all: proto restore build test
 tools:
 	$(CURDIR)/scripts/dotnet-install.sh --version $(DotNetVersion) --install-dir "$(DotNetToolPath)"
 
-global.json: tools
-	echo { \"sdk\": { \"version\": \"$(DotNetVersion)\" } }>global.json
-
-proto: global.json
+proto: tools
 	$(DotNetExe) build-server shutdown
 	$(DotNetExe) restore src/buildtools/buildtools.proj
 	$(DotNetExe) restore src/fsharp/FSharp.Build/FSharp.Build.fsproj
@@ -20,7 +17,7 @@ proto: global.json
 	$(DotNetExe) build src/fsharp/FSharp.Build/FSharp.Build.fsproj -f netstandard2.0 -c Proto
 	$(DotNetExe) build src/fsharp/fsc/fsc.fsproj -f netcoreapp2.1 -c Proto
 
-restore: global.json
+restore:
 	$(DotNetExe) restore src/fsharp/FSharp.Core/FSharp.Core.fsproj
 	$(DotNetExe) restore src/fsharp/FSharp.Build/FSharp.Build.fsproj
 	$(DotNetExe) restore src/fsharp/FSharp.Compiler.Private/FSharp.Compiler.Private.fsproj
@@ -42,8 +39,8 @@ build: proto restore
 	$(DotNetExe) build -c $(Configuration) -f netcoreapp2.0 tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj
 
 test: build
-	$(DotNetExe) test -f netcoreapp2.1 -c $(Configuration) --no-restore --no-build tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj -l "trx;LogFileName=$(CURDIR)/tests/TestResults/FSharp.Core.UnitTests.coreclr.trx"
-	$(DotNetExe) test -f netcoreapp2.1 -c $(Configuration) --no-restore --no-build tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj -l "trx;LogFileName=$(CURDIR)/tests/TestResults/FSharp.Build.UnitTests.coreclr.trx"
+	$(DotNetExe) test -f netcoreapp2.0 -c $(Configuration) --no-restore --no-build tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj -l "trx;LogFileName=$(CURDIR)/tests/TestResults/FSharp.Core.UnitTests.coreclr.trx"
+	$(DotNetExe) test -f netcoreapp2.0 -c $(Configuration) --no-restore --no-build tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj -l "trx;LogFileName=$(CURDIR)/tests/TestResults/FSharp.Build.UnitTests.coreclr.trx"
 
 clean:
 	rm -rf $(CURDIR)/artifacts

@@ -4,26 +4,26 @@
 // Print Signatures/Types, for signatures, intellisense, quick info, FSI responses
 //-------------------------------------------------------------------------- 
 
-module internal Microsoft.FSharp.Compiler.NicePrint
+module internal FSharp.Compiler.NicePrint
 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Rational
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.AttributeChecking
-open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
-open Microsoft.FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler 
+open FSharp.Compiler.Rational
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Infos
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.Layout
+open FSharp.Compiler.Layout.TaggedTextOps
+open FSharp.Compiler.PrettyNaming
 
 open Microsoft.FSharp.Core.Printf
 
@@ -100,7 +100,7 @@ module internal PrintUtilities =
 
 module private PrintIL = 
 
-    open Microsoft.FSharp.Compiler.AbstractIL.IL
+    open FSharp.Compiler.AbstractIL.IL
         
     let fullySplitILTypeRef (tref:ILTypeRef) = 
         (List.collect IL.splitNamespace (tref.Enclosing @ [PrettyNaming.DemangleGenericTypeName tref.Name])) 
@@ -194,8 +194,13 @@ module private PrintIL =
         let args = signatur.ArgTypes |> List.map (layoutILType denv ilTyparSubst) 
         let res  = 
             match cons with
-            | Some className -> layoutILTypeRefName denv (SplitNamesForILPath (PrettyNaming.DemangleGenericTypeName className)) ^^ (pruneParms className ilTyparSubst |> paramsL) // special case for constructor return-type (viz., the class itself)
-            | None           -> signatur.ReturnType |> layoutILType denv ilTyparSubst
+            | Some className -> 
+                let names = SplitNamesForILPath (PrettyNaming.DemangleGenericTypeName className)
+                // special case for constructor return-type (viz., the class itself)
+                layoutILTypeRefName denv names ^^ (pruneParms className ilTyparSubst |> paramsL) 
+            | None -> 
+                signatur.ReturnType |> layoutILType denv ilTyparSubst
+        
         match args with
         | []   -> WordL.structUnit ^^ WordL.arrow ^^ res
         | [x]  -> x ^^ WordL.arrow ^^ res
@@ -221,14 +226,16 @@ module private PrintIL =
 
     /// Layout a function pointer signature using type-only-F#-style. No argument names are printed.
     and private layoutILParameters denv ilTyparSubst cons (parameters: ILParameters, retType: ILType) =
-        // We need a special case for
-        // constructors (Their return types are reported as `void`, but this is
+        // We need a special case for constructors (Their return types are reported as `void`, but this is
         // incorrect; so if we're dealing with a constructor we require that the
         // return type be passed along as the `cons` parameter.)
         let res  = 
             match cons with
-            | Some className -> layoutILTypeRefName denv (SplitNamesForILPath (PrettyNaming.DemangleGenericTypeName className)) ^^ (pruneParms className ilTyparSubst |> paramsL) // special case for constructor return-type (viz., the class itself)
-            | None           -> retType |> layoutILType denv ilTyparSubst
+            | Some className -> 
+                let names = SplitNamesForILPath (PrettyNaming.DemangleGenericTypeName className)
+                layoutILTypeRefName denv names ^^ (pruneParms className ilTyparSubst |> paramsL) 
+            | None -> retType |> layoutILType denv ilTyparSubst
+        
         match parameters with
         | []   -> WordL.structUnit ^^ WordL.arrow ^^ res
         | [x]  -> layoutILParameter denv ilTyparSubst x ^^ WordL.arrow ^^ res
@@ -1860,16 +1867,40 @@ module private InferredSigPrinting =
         and imdefL denv  x = 
             let filterVal    (v:Val) = not v.IsCompilerGenerated && Option.isNone v.MemberInfo
             let filterExtMem (v:Val) = v.IsExtensionMember
+
             match x with 
             | TMDefRec(_,tycons,mbinds,_) -> 
-                  TastDefinitionPrinting.layoutTyconDefns denv infoReader ad m tycons @@ 
-                  (mbinds |> List.choose (function ModuleOrNamespaceBinding.Binding bind -> Some bind | _ -> None) |> valsOfBinds |> List.filter filterExtMem |> TastDefinitionPrinting.layoutExtensionMembers denv) @@
-                  (mbinds |> List.choose (function ModuleOrNamespaceBinding.Binding bind -> Some bind | _ -> None) |> valsOfBinds |> List.filter filterVal    |> List.map (PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv)   |> aboveListL) @@
-                  (mbinds |> List.choose (function ModuleOrNamespaceBinding.Module (mspec,def) -> Some (mspec,def) | _ -> None) |> List.map (imbindL denv) |> aboveListL)
-            | TMDefLet(bind,_) -> ([bind.Var] |> List.filter filterVal    |> List.map (PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv) |> aboveListL)
+                TastDefinitionPrinting.layoutTyconDefns denv infoReader ad m tycons @@ 
+                (mbinds 
+                    |> List.choose (function ModuleOrNamespaceBinding.Binding bind -> Some bind | _ -> None) 
+                    |> valsOfBinds 
+                    |> List.filter filterExtMem
+                    |> TastDefinitionPrinting.layoutExtensionMembers denv) @@
+
+                (mbinds 
+                    |> List.choose (function ModuleOrNamespaceBinding.Binding bind -> Some bind | _ -> None) 
+                    |> valsOfBinds 
+                    |> List.filter filterVal    
+                    |> List.map (PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv)   
+                    |> aboveListL) @@
+
+                (mbinds 
+                    |> List.choose (function ModuleOrNamespaceBinding.Module (mspec,def) -> Some (mspec,def) | _ -> None) 
+                    |> List.map (imbindL denv) 
+                    |> aboveListL)
+
+            | TMDefLet(bind,_) -> 
+                ([bind.Var] 
+                    |> List.filter filterVal    
+                    |> List.map (PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv) 
+                    |> aboveListL)
+
             | TMDefs defs -> imdefsL denv defs
+
             | TMDefDo _  -> emptyL
+
             | TMAbstract mexpr -> imexprLP denv mexpr
+
         and imbindL denv  (mspec, def) = 
             let nm =  mspec.DemangledModuleOrNamespaceName
             let innerPath = (fullCompPathOfModuleOrNamespace mspec).AccessPath

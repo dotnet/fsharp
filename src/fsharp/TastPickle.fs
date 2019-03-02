@@ -1,25 +1,25 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.TastPickle 
+module internal FSharp.Compiler.TastPickle 
 
 open System.Collections.Generic
 open System.Text
 open Internal.Utilities
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Lib.Bits
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Rational
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.ErrorLogger
+open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Lib.Bits
+open FSharp.Compiler.Range
+open FSharp.Compiler.Rational
+open FSharp.Compiler.Ast
+open FSharp.Compiler.Tast
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.ErrorLogger
 
 
 let verbose = false
@@ -227,22 +227,36 @@ let p_single i st = p_int32 (bits_of_float32 i) st
 let p_double i st = p_int64 (bits_of_float i) st
 let p_ieee64 i st = p_int64 (bits_of_float i) st
 let p_char i st = p_uint16 (uint16 (int32 i)) st
-let inline p_tup2 p1 p2 (a,b) (st:WriterState) = (p1 a st : unit); (p2 b st : unit)
-let inline p_tup3 p1 p2 p3 (a,b,c) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit)
-let inline  p_tup4 p1 p2 p3 p4 (a,b,c,d) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit)
-let inline  p_tup5 p1 p2 p3 p4 p5 (a,b,c,d,e) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit)
-let inline  p_tup6 p1 p2 p3 p4 p5 p6 (a,b,c,d,e,f) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit)
-let inline  p_tup7 p1 p2 p3 p4 p5 p6 p7 (a,b,c,d,e,f,x7) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit)
-let inline  p_tup8 p1 p2 p3 p4 p5 p6 p7 p8 (a,b,c,d,e,f,x7,x8) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit)
-let inline  p_tup9 p1 p2 p3 p4 p5 p6 p7 p8 p9 (a,b,c,d,e,f,x7,x8,x9) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit)
-let inline  p_tup10 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 (a,b,c,d,e,f,x7,x8,x9,x10) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit)
-let inline  p_tup11 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 (a,b,c,d,e,f,x7,x8,x9,x10,x11) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit)
-let inline  p_tup12 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit); (p12 x12 st : unit)
-let inline  p_tup13 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit); (p12 x12 st : unit); (p13 x13 st : unit)
-let inline  p_tup14 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13,x14) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit); (p12 x12 st : unit); (p13 x13 st : unit) ; (p14 x14 st : unit)
-let inline  p_tup15 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13,x14,x15) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit); (p12 x12 st : unit); (p13 x13 st : unit) ; (p14 x14 st : unit); (p15 x15 st : unit)
-let inline  p_tup16 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit); (p12 x12 st : unit); (p13 x13 st : unit) ; (p14 x14 st : unit); (p15 x15 st : unit); (p16 x16 st : unit)
-let inline  p_tup17 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16,x17) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit); (p12 x12 st : unit); (p13 x13 st : unit) ; (p14 x14 st : unit); (p15 x15 st : unit); (p16 x16 st : unit); (p17 x17 st : unit)
+
+let inline p_tup2 p1 p2 (a,b) (st:WriterState) = 
+    (p1 a st : unit); (p2 b st : unit)
+
+let inline p_tup3 p1 p2 p3 (a,b,c) (st:WriterState) = 
+    (p1 a st : unit); (p2 b st : unit); (p3 c st : unit)
+
+let inline  p_tup4 p1 p2 p3 p4 (a,b,c,d) (st:WriterState) = 
+    (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit)
+
+let inline  p_tup5 p1 p2 p3 p4 p5 (a,b,c,d,e) (st:WriterState) = 
+    (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit)
+
+let inline  p_tup6 p1 p2 p3 p4 p5 p6 (a,b,c,d,e,f) (st:WriterState) = 
+    (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit)
+
+let inline  p_tup7 p1 p2 p3 p4 p5 p6 p7 (a,b,c,d,e,f,x7) (st:WriterState) = 
+    (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit)
+
+let inline  p_tup8 p1 p2 p3 p4 p5 p6 p7 p8 (a,b,c,d,e,f,x7,x8) (st:WriterState) = 
+    (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit)
+
+let inline  p_tup9 p1 p2 p3 p4 p5 p6 p7 p8 p9 (a,b,c,d,e,f,x7,x8,x9) (st:WriterState) = 
+    (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit)
+
+let inline  p_tup10 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 (a,b,c,d,e,f,x7,x8,x9,x10) (st:WriterState) = 
+    (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit)
+
+let inline  p_tup11 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 (a,b,c,d,e,f,x7,x8,x9,x10,x11) (st:WriterState) = 
+    (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit)
 
 let u_byte st = int (st.is.ReadByte())
 
@@ -406,7 +420,13 @@ let inline u_tup17 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 (s
 let p_osgn_ref (_ctxt:string) (outMap : NodeOutTable<_,_>) x st = 
     let idx = outMap.Table.FindOrAdd (outMap.NodeStamp x)
     //if ((idx = 0) && outMap.Name = "oentities") then 
-    //    System.Diagnostics.Debug.Assert(false, sprintf "idx %d#%d in table %s has name '%s', was defined at '%s' and is referenced from context %s\n" idx (outMap.NodeStamp x) outMap.Name (outMap.NodeName x) (stringOfRange (outMap.GetRange x)) _ctxt)
+    //    let msg = 
+    //        sprintf "idx %d#%d in table %s has name '%s', was defined at '%s' and is referenced from context %s\n" 
+    //            idx (outMap.NodeStamp x) 
+    //            outMap.Name (outMap.NodeName x) 
+    //            (stringOfRange (outMap.GetRange x)) 
+    //            _ctxt
+    //    System.Diagnostics.Debug.Assert(false, msg )
     p_int idx st
 
 let p_osgn_decl (outMap : NodeOutTable<_,_>) p x st = 
@@ -806,7 +826,10 @@ let check (ilscope:ILScopeRef) (inMap : NodeInTable<_,_>) =
       let n = inMap.Get i
       if not (inMap.IsLinked n) then 
         warning(Error(FSComp.SR.pickleMissingDefinition (i, inMap.Name, ilscope.QualifiedName), range0))
-        // Note for compiler developers: to get information about which item this index relates to, enable the conditional in Pickle.p_osgn_ref to refer to the given index number and recompile an identical copy of the source for the DLL containing the data being unpickled.  A message will then be printed indicating the name of the item.\n" 
+        // Note for compiler developers: to get information about which item this index relates to, 
+        // enable the conditional in Pickle.p_osgn_ref to refer to the given index number and recompile 
+        // an identical copy of the source for the DLL containing the data being unpickled.  A message will 
+        // then be printed indicating the name of the item.
 
 let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef option) u (phase2bytes:byte[]) =
     let st2 = 
@@ -2018,7 +2041,9 @@ and u_attribs_ext extraf st = u_list_ext extraf u_attrib st
 and u_unioncase_spec st = 
     let a = u_rfield_table  st
     let b = u_ty st
-    let c = u_string st
+
+    // The union case compiled name is now computed from Id field when needed and is not stored in UnionCase record.
+    let _c = u_string st
     let d = u_ident  st
     // The XmlDoc is only present in the extended in-memory format. We detect its presence using a marker bit here
     let xmldoc, e = u_attribs_ext u_xmldoc st
@@ -2026,7 +2051,6 @@ and u_unioncase_spec st =
     let i = u_access st
     { FieldTable=a 
       ReturnType=b 
-      CompiledName=c 
       Id=d 
       Attribs=e
       XmlDoc= defaultArg xmldoc XmlDoc.Empty
@@ -2122,7 +2146,16 @@ and u_entity_spec_data st : Entity =
       entity_opt_data=
         match x2b, x10b, x15, x8, x4a, x4b, x14 with
         | None, TyparKind.Type, None, None, TAccess [], TAccess [], TExnNone -> None
-        | _ -> Some { Entity.EmptyEntityOptData with entity_compiled_name = x2b; entity_kind = x10b; entity_xmldoc= defaultArg x15 XmlDoc.Empty; entity_xmldocsig = System.String.Empty; entity_tycon_abbrev = x8; entity_accessiblity = x4a; entity_tycon_repr_accessibility = x4b; entity_exn_info = x14 }
+        | _ -> 
+            Some { Entity.NewEmptyEntityOptData() with 
+                       entity_compiled_name = x2b
+                       entity_kind = x10b
+                       entity_xmldoc= defaultArg x15 XmlDoc.Empty
+                       entity_xmldocsig = System.String.Empty
+                       entity_tycon_abbrev = x8
+                       entity_accessiblity = x4a
+                       entity_tycon_repr_accessibility = x4b
+                       entity_exn_info = x14 }
     } 
 
 and u_tcaug st = 

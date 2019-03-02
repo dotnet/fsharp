@@ -86,11 +86,9 @@
     <Compile Include="..\..\..\tests\service\InteractiveCheckerTests.fs">
       <Link>CompilerService\InteractiveCheckerTests.fs</Link>
     </Compile>
-<!-- TODO:  Fix this test
     <Compile Include="..\..\..\tests\service\ExprTests.fs">
       <Link>CompilerService\ExprTests.fs</Link>
     </Compile>
--->
     <Compile Include="..\..\..\tests\service\CSharpProjectAnalysis.fs">
       <Link>CompilerService\CSharpProjectAnalysis.fs</Link>
     </Compile>
@@ -162,7 +160,9 @@
       <Link>Roslyn\DocumentHighlightsServiceTests.fs</Link>
     </Compile>
     <None Include="App.config" />
-    <None Include="app.runsettings" />
+    <None Include="app.runsettings">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsc\fsc.fsproj" />

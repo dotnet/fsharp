@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiConstants 
+module internal FSharp.Compiler.AbstractIL.Internal.AsciiConstants 
 
 open Internal.Utilities
 open Internal.Utilities.Collections
 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Extensions.ILX.Types 
+open FSharp.Compiler.AbstractIL.IL 
 
 // set to the proper value at CompileOps.fs (BuildFrameworkTcImports)
 let parseILGlobals = ref EcmaMscorlibILGlobals

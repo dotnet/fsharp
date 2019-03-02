@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../../debug/bin/net45/"
+#I "../../../../artifacts/bin/fcs/net45"
 (**
 コンパイラサービス: プロジェクトの分析
 ======================================
@@ -24,7 +24,7 @@
 
 open System
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 // インタラクティブチェッカーのインスタンスを作成
 let checker = FSharpChecker.Create()
