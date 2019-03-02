@@ -6054,32 +6054,8 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         UnifyTypes cenv env m overallTy cenv.g.unit_ty
         TcStmtThatCantBeCtorBody cenv env tpenv synInnerExpr
 
-    | SynExpr.IfThenElse (synBoolExpr, synThenExpr, synElseExprOpt, spIfToThen, isRecovery, mIfToThen, m) ->
-        let boolExpr, tpenv = TcExprThatCantBeCtorBody cenv cenv.g.bool_ty env tpenv synBoolExpr
-        let thenExpr, tpenv =
-            let env =
-                match env.eContextInfo with
-                | ContextInfo.ElseBranchResult _ ->  { env with eContextInfo = ContextInfo.ElseBranchResult synThenExpr.Range }
-                | _ -> 
-                    match synElseExprOpt with
-                    | None -> { env with eContextInfo = ContextInfo.OmittedElseBranch synThenExpr.Range }
-                    | _ -> { env with eContextInfo = ContextInfo.IfExpression synThenExpr.Range }
-
-            if not isRecovery && Option.isNone synElseExprOpt then
-                UnifyTypes cenv env m cenv.g.unit_ty overallTy
-
-            TcExprThatCanBeCtorBody cenv overallTy env tpenv synThenExpr
-
-        let elseExpr, spElse, tpenv = 
-            match synElseExprOpt with 
-            | None ->
-                mkUnit cenv.g mIfToThen, SuppressSequencePointAtTarget, tpenv // the fake 'unit' value gets exactly the same range as spIfToThen
-            | Some synElseExpr ->
-                let env = { env with eContextInfo = ContextInfo.ElseBranchResult synElseExpr.Range }
-                let elseExpr, tpenv = TcExprThatCanBeCtorBody cenv overallTy env tpenv synElseExpr 
-                elseExpr, SequencePointAtTarget, tpenv
-
-        primMkCond spIfToThen SequencePointAtTarget spElse m overallTy boolExpr thenExpr elseExpr, tpenv
+    | SynExpr.IfThenElse _ -> 
+        TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr (fun x -> x) 
 
     // This is for internal use in the libraries only 
     | SynExpr.LibraryOnlyStaticOptimization (constraints, e2, e3, m) ->
@@ -10449,6 +10425,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
         let e1', _ = TcStmtThatCantBeCtorBody cenv env tpenv e1
         // tailcall
         let env = ShrinkContext env m e2.Range
+        // tailcall
         TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr e2 (fun (e2', tpenv) -> 
             cont (Expr.Sequential(e1', e2', NormalSeq, sp, m), tpenv))
 
@@ -10466,8 +10443,40 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
             // TcLinearExprs processes multiple 'let' bindings in a tail recursive way
             let mkf, envinner, tpenv = TcLetBinding cenv isUse env ExprContainerInfo ExpressionBinding tpenv (binds, m, body.Range)
             let envinner = ShrinkContext envinner m body.Range
+            // tailcall
             TcLinearExprs bodyChecker cenv envinner overallTy tpenv isCompExpr body (fun (x, tpenv) -> 
                 cont (fst (mkf (x, overallTy)), tpenv))
+
+    | SynExpr.IfThenElse (synBoolExpr, synThenExpr, synElseExprOpt, spIfToThen, isRecovery, mIfToThen, m) when not isCompExpr ->
+        let boolExpr, tpenv = TcExprThatCantBeCtorBody cenv cenv.g.bool_ty env tpenv synBoolExpr
+        let thenExpr, tpenv =
+            let env =
+                match env.eContextInfo with
+                | ContextInfo.ElseBranchResult _ ->  { env with eContextInfo = ContextInfo.ElseBranchResult synThenExpr.Range }
+                | _ -> 
+                    match synElseExprOpt with
+                    | None -> { env with eContextInfo = ContextInfo.OmittedElseBranch synThenExpr.Range }
+                    | _ -> { env with eContextInfo = ContextInfo.IfExpression synThenExpr.Range }
+
+            if not isRecovery && Option.isNone synElseExprOpt then
+                UnifyTypes cenv env m cenv.g.unit_ty overallTy
+
+            TcExprThatCanBeCtorBody cenv overallTy env tpenv synThenExpr
+
+        match synElseExprOpt with 
+        | None ->
+            let elseExpr = mkUnit cenv.g mIfToThen
+            let spElse = SuppressSequencePointAtTarget  // the fake 'unit' value gets exactly the same range as spIfToThen
+            let overallExpr = primMkCond spIfToThen SequencePointAtTarget spElse m overallTy boolExpr thenExpr elseExpr
+            cont (overallExpr, tpenv)
+
+        | Some synElseExpr ->
+            let env = { env with eContextInfo = ContextInfo.ElseBranchResult synElseExpr.Range }
+            // tailcall
+            TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synElseExpr (fun (elseExpr, tpenv) -> 
+                let resExpr = primMkCond spIfToThen SequencePointAtTarget SequencePointAtTarget m overallTy boolExpr thenExpr elseExpr
+                cont (resExpr, tpenv))
+
     | _ -> 
         cont (bodyChecker overallTy env tpenv expr)
 
