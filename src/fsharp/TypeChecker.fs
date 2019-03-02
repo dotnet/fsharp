@@ -846,6 +846,10 @@ let UnifyUnitType cenv (env:TcEnv) m ty expr =
 
         false
 
+let TryUnifyUnitType cenv (env:TcEnv) m ty =
+    let denv = env.DisplayEnv
+    AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty cenv.g.unit_ty 
+
 // Logically extends System.AttributeTargets
 module AttributeTargets =
     let FieldDecl  = AttributeTargets.Field ||| AttributeTargets.Property
@@ -5661,6 +5665,12 @@ and TcStmt cenv env tpenv synExpr =
     else
         mkCompGenSequential m expr (mkUnit cenv.g m), tpenv
 
+and TryTcStmt cenv env tpenv synExpr =
+    let expr, ty, tpenv = TcExprOfUnknownType cenv env tpenv synExpr
+    let m = synExpr.Range
+    let unifiedWithUnit = TryUnifyUnitType cenv env m ty
+    unifiedWithUnit, expr, tpenv
+
 /// During checking of expressions of the form (x(y)).z(w1, w2) 
 /// keep a stack of things on the right. This lets us recognize 
 /// method applications and other item-based syntax. 
@@ -5934,18 +5944,13 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         if not !isNotNakedRefCell && not cenv.g.compilingFslib then 
             error(Error(FSComp.SR.tcInvalidSequenceExpressionSyntaxForm(), m))
         
-        TcComputationOrSequenceExpression cenv env overallTy m None tpenv comp
+        TcSequenceExpression cenv env tpenv comp overallTy m
         
     | SynExpr.ArrayOrListOfSeqExpr (isArray, comp, m)  ->
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
 
         match comp with 
-        | SynExpr.CompExpr(_, _, (SimpleSemicolonSequence true elems as body), _) -> 
-            match body with 
-            | SimpleSemicolonSequence false _ -> 
-                ()
-            | _ -> 
-                errorR(Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis(), m))
+        | SynExpr.CompExpr(_, _, SimpleSemicolonSequence true elems, _) -> 
 
             let replacementExpr = 
                 if isArray then 
@@ -7226,24 +7231,13 @@ and TcQuotationExpr cenv overallTy env tpenv (_oper, raw, ast, isFromQueryExpres
     // We serialize the quoted expression to bytes in IlxGen after type inference etc. is complete. 
     expr, tpenv
 
-//-------------------------------------------------------------------------
-// TcComputationOrSequenceExpression
-//------------------------------------------------------------------------- 
-
-and TcComputationOrSequenceExpression cenv (env: TcEnv) overallTy m interpValOpt tpenv comp = 
-    match interpValOpt with 
-    | Some (interpExpr:Expr, builderTy) -> 
-        TcComputationExpression cenv env overallTy m interpExpr builderTy tpenv comp
-    | None -> 
-        TcSequenceExpression cenv env tpenv comp overallTy m
- 
 /// Ignores an attribute
 and IgnoreAttribute _ = None
 
-// Used for all computation expressions except sequence expressions
-and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv comp = 
+/// Used for all computation expressions except sequence expressions
+and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builderTy tpenv (comp: SynExpr) = 
 
-    //dprintfn "TcComputationOrSequenceExpression, comp = \n%A\n-------------------\n" comp
+    //dprintfn "TcComputationExpression, comp = \n%A\n-------------------\n" comp
     let ad = env.eAccessRights
 
     let mkSynDelay2 (e: SynExpr) = mkSynDelay (e.Range.MakeSynthetic()) e
@@ -8354,8 +8348,6 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
             let innerExprMark = innerExpr.Range
                 
             Some(mkSeqFinally cenv env innerExprMark genOuterTy innerExpr unwindExpr, tpenv)
-        | SynExpr.Paren (_, _, _, m) -> 
-            error(Error(FSComp.SR.tcConstructIsAmbiguousInSequenceExpression(), m))
 
         | SynExpr.ImplicitZero m -> 
             Some(mkSeqEmpty cenv env m genOuterTy, tpenv )
@@ -8368,10 +8360,18 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
             // "cexpr; cexpr" is treated as append
             match tryTcSequenceExprBody env genOuterTy tpenv innerComp1 with 
             | None -> 
-                let innerExpr1, tpenv = TcStmtThatCantBeCtorBody cenv env tpenv innerComp1
-                let innerExpr2, tpenv = tcSequenceExprBody env genOuterTy tpenv innerComp2
+                let unifiedWithUnit1, innerExpr1, tpenv = TryTcStmt cenv env tpenv innerComp1
+                if unifiedWithUnit1 then 
+                    let innerExpr2, tpenv = tcSequenceExprBody env genOuterTy tpenv innerComp2
+                    Some(Expr.Sequential(innerExpr1, innerExpr2, NormalSeq, sp, m), tpenv)
+                else
+                    let genResultTy = NewInferenceType ()
+                    UnifyTypes cenv env m genOuterTy (mkSeqTy cenv.g genResultTy)
 
-                Some(Expr.Sequential(innerExpr1, innerExpr2, NormalSeq, sp, m), tpenv)
+                    let innerExpr1B, tpenv = TcExprFlex cenv flex true genResultTy env tpenv innerComp1
+                    let innerExpr2, tpenv = tcSequenceExprBody env genOuterTy tpenv innerComp2
+                    let innerExpr1C = mkCallSeqSingleton cenv.g m genResultTy innerExpr1B
+                    Some(mkSeqAppend cenv env innerComp1.Range genOuterTy innerExpr1C innerExpr2, tpenv)
 
             | Some (innerExpr1, tpenv) ->
                 let innerExpr2, tpenv = tcSequenceExprBody env genOuterTy tpenv innerComp2
@@ -8628,7 +8628,7 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
         // OK, 'expr' doesn't have function type, but perhaps 'expr' is a computation expression builder, and 'arg' is '{ ... }' 
         match synArg with 
         | SynExpr.CompExpr (false, _isNotNakedRefCell, comp, _m) -> 
-            let bodyOfCompExpr, tpenv = TcComputationOrSequenceExpression cenv env overallTy mFunExpr (Some(expr.Expr, exprty)) tpenv comp
+            let bodyOfCompExpr, tpenv = TcComputationExpression cenv env overallTy mFunExpr expr.Expr exprty tpenv comp
             TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr cenv.g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed 
         | _ -> 
             error (NotAFunction(denv, overallTy, mFunExpr, mArg)) 
