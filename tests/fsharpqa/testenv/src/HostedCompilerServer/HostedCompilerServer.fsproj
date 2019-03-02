@@ -8,6 +8,8 @@
     <DisableOutputPathCopying>true</DisableOutputPathCopying>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>$(RepoRoot)tests\fsharpqa\testenv\bin</OutputPath>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
 
   <ItemGroup>
