@@ -1,4 +1,4 @@
-
+// Print some stats about some very very basic code formatting conventions
 
 open System.IO
 
@@ -17,6 +17,8 @@ let lines =
                 
                     yield file, (line+1, lineText) |]
 
+
+printfn "------ LINE LENGTH ANALYSIS ----------"
 let totalLines = lines.Length
 let buckets = lines |> Array.groupBy (fun (_file, (_line, lineText)) -> lineText.Length / 10) |> Array.sortByDescending (fun (key, vs) -> key)
 
@@ -36,6 +38,7 @@ printfn "%d long lines = %2.2f%%" numLong (double numLong / double totalLines)
 printfn "%d huge lines = %2.2f%%" numHuge (double numHuge / double totalLines)
 printfn "%d humungous lines = %2.2f%%" numHumungous (double numHumungous / double totalLines)
 
+printfn "------ SPACE AFTER COMMA ANALYSIS ----------"
 
 let commas =
     lines
@@ -47,6 +50,6 @@ let commas =
               line |> Seq.pairwise |> Seq.filter (fun (c1, c2) -> c1 = ',' && c2 <> ' ') |> Seq.length)) 
     |> Array.sortByDescending snd
 
-printfn "Top files that have commas without spaces: %A" (Seq.truncate 10 commas)
+printfn "Top files that have commas without spaces: %A" (Array.truncate 10 commas)
 
 
