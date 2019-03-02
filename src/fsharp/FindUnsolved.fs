@@ -38,46 +38,65 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
     | Expr.Sequential (e1,e2,_,_,_) -> 
         accExpr cenv env e1 
         accExpr cenv env e2
+
     | Expr.Let (bind,body,_,_) ->  
         accBind cenv env bind  
         accExpr cenv env body
+
     | Expr.Const (_,_,ty) -> 
         accTy cenv env ty 
     
     | Expr.Val (_v,_vFlags,_m) -> ()
+
     | Expr.Quote(ast,_,_,_m,ty) -> 
         accExpr cenv env ast
         accTy cenv env ty
+
     | Expr.Obj (_,ty,basev,basecall,overrides,iimpls,_m) -> 
         accTy cenv env ty
         accExpr cenv env basecall
         accMethods cenv env basev overrides 
         accIntfImpls cenv env basev iimpls
+
+    | LinearOpExpr (_op, tyargs, argsHead, argLast, _m) ->
+        // Note, LinearOpExpr doesn't include any of the "special" cases for accOp
+        accTypeInst cenv env tyargs
+        accExprs cenv env argsHead
+        // tailcall
+        accExpr cenv env argLast
+
     | Expr.Op (c,tyargs,args,m) ->
         accOp cenv env (c,tyargs,args,m) 
+
     | Expr.App(f,fty,tyargs,argsl,_m) ->
         accTy cenv env fty
         accTypeInst cenv env tyargs
         accExpr cenv env f
         accExprs cenv env argsl
+
     | Expr.Lambda(_,_ctorThisValOpt,_baseValOpt,argvs,_body,m,rty) -> 
         let topValInfo = ValReprInfo ([],[argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)],ValReprInfo.unnamedRetVal) 
         let ty = mkMultiLambdaTy cenv.g m argvs rty 
         accLambdas cenv env topValInfo expr ty
+
     | Expr.TyLambda(_,tps,_body,_m,rty)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps,[],ValReprInfo.unnamedRetVal) 
         accTy cenv env rty
         let ty = mkForallTyIfNeeded tps rty 
         accLambdas cenv env topValInfo expr ty
+
     | Expr.TyChoose(_tps,e1,_m)  -> 
         accExpr cenv env e1 
+
     | Expr.Match(_,_exprm,dtree,targets,m,ty) -> 
         accTy cenv env ty
         accDTree cenv env dtree
         accTargets cenv env m ty targets
+
     | Expr.LetRec (binds,e,_m,_) ->  
         accBinds cenv env binds
         accExpr cenv env e
+
     | Expr.StaticOptimization (constraints,e2,e3,_m) -> 
         accExpr cenv env e2
         accExpr cenv env e3
@@ -87,14 +106,19 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
                 accTy cenv env ty2
             | TTyconIsStruct(ty1) -> 
                 accTy cenv env ty1)
+
     | Expr.Link _eref -> failwith "Unexpected reclink"
 
-and accMethods cenv env baseValOpt l = List.iter (accMethod cenv env baseValOpt) l
+and accMethods cenv env baseValOpt l = 
+    List.iter (accMethod cenv env baseValOpt) l
+
 and accMethod cenv env _baseValOpt (TObjExprMethod(_slotsig,_attribs,_tps,vs,e,_m)) = 
     vs |> List.iterSquared (accVal cenv env)
     accExpr cenv env e
 
-and accIntfImpls cenv env baseValOpt l = List.iter (accIntfImpl cenv env baseValOpt) l
+and accIntfImpls cenv env baseValOpt l = 
+    List.iter (accIntfImpl cenv env baseValOpt) l
+
 and accIntfImpl cenv env baseValOpt (ty,overrides) = 
     accTy cenv env ty
     accMethods cenv env baseValOpt overrides 
@@ -132,11 +156,14 @@ and accLambdas cenv env topValInfo e ety =
     | _ -> 
         accExpr cenv env e
 
-and accExprs            cenv env exprs = exprs |> List.iter (accExpr cenv env) 
+and accExprs cenv env exprs = 
+    exprs |> List.iter (accExpr cenv env) 
 
-and accTargets cenv env m ty targets = Array.iter (accTarget cenv env m ty) targets
+and accTargets cenv env m ty targets = 
+    Array.iter (accTarget cenv env m ty) targets
 
-and accTarget cenv env _m _ty (TTarget(_vs,e,_)) = accExpr cenv env e
+and accTarget cenv env _m _ty (TTarget(_vs,e,_)) = 
+    accExpr cenv env e
 
 and accDTree cenv env x =
     match x with 
@@ -169,7 +196,8 @@ and accAttrib cenv env (Attrib(_,_k,args,props,_,_,_m)) =
         accExpr cenv env expr2
         accTy cenv env ty)
   
-and accAttribs cenv env attribs = List.iter (accAttrib cenv env) attribs
+and accAttribs cenv env attribs = 
+    List.iter (accAttrib cenv env) attribs
 
 and accValReprInfo cenv env (ValReprInfo(_,args,ret)) =
     args |> List.iterSquared (accArgReprInfo cenv env)
@@ -188,7 +216,8 @@ and accBind cenv env (bind:Binding) =
     let topValInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData
     accLambdas cenv env topValInfo bind.Expr bind.Var.Type
 
-and accBinds cenv env xs = xs |> List.iter (accBind cenv env) 
+and accBinds cenv env xs = 
+    xs |> List.iter (accBind cenv env) 
 
 let accTyconRecdField cenv env _tycon (rfield:RecdField) = 
     accAttribs cenv env rfield.PropertyAttribs
@@ -203,13 +232,15 @@ let accTycon cenv env (tycon:Tycon) =
           accAttribs cenv env uc.Attribs
           uc.RecdFieldsArray |> Array.iter (accTyconRecdField cenv env tycon))
 
-let accTycons cenv env tycons = List.iter (accTycon cenv env) tycons
+let accTycons cenv env tycons = 
+    List.iter (accTycon cenv env) tycons
 
 let rec accModuleOrNamespaceExpr cenv env x = 
     match x with  
     | ModuleOrNamespaceExprWithSig(_mty, def, _m) -> accModuleOrNamespaceDef cenv env def
     
-and accModuleOrNamespaceDefs cenv env x = List.iter (accModuleOrNamespaceDef cenv env) x
+and accModuleOrNamespaceDefs cenv env x = 
+    List.iter (accModuleOrNamespaceDef cenv env) x
 
 and accModuleOrNamespaceDef cenv env x = 
     match x with 
@@ -221,12 +252,16 @@ and accModuleOrNamespaceDef cenv env x =
     | TMAbstract(def)  -> accModuleOrNamespaceExpr cenv env def
     | TMDefs(defs) -> accModuleOrNamespaceDefs cenv env defs 
 
-and accModuleOrNamespaceBinds cenv env xs = List.iter (accModuleOrNamespaceBind cenv env) xs
+and accModuleOrNamespaceBinds cenv env xs = 
+    List.iter (accModuleOrNamespaceBind cenv env) xs
 
 and accModuleOrNamespaceBind cenv env x = 
     match x with 
-    | ModuleOrNamespaceBinding.Binding bind -> accBind cenv env bind
-    | ModuleOrNamespaceBinding.Module(mspec, rhs) -> accTycon cenv env mspec; accModuleOrNamespaceDef cenv env rhs 
+    | ModuleOrNamespaceBinding.Binding bind -> 
+        accBind cenv env bind
+    | ModuleOrNamespaceBinding.Module(mspec, rhs) -> 
+        accTycon cenv env mspec
+        accModuleOrNamespaceDef cenv env rhs 
 
 let UnsolvedTyparsOfModuleDef g amap denv (mdef, extraAttribs) =
    let cenv = 

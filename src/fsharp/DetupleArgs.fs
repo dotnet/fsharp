@@ -256,14 +256,16 @@ module GlobalUsageAnalysis =
       let foldLocalVal f z (vref: ValRef) = 
           if valRefInThisAssembly g.compilingFslib vref then f z vref.Deref
           else z
-      let exprUsageIntercept exprF z expr =
+
+      let exprUsageIntercept exprF noInterceptF z origExpr =
+
           let rec recognise context expr = 
-            match expr with
-             | Expr.Val (v, _, _)                  -> 
+             match expr with
+             | Expr.Val (v, _, _) -> 
                  // YES: count free occurrence 
-                 let z = foldLocalVal (fun z v -> logUse v (context, [], []) z) z v
-                 Some z
-             | TyappAndApp(f, _, tys, args, _)       -> 
+                 foldLocalVal (fun z v -> logUse v (context, [], []) z) z v
+
+             | TyappAndApp(f, _, tys, args, _) -> 
                  match f with
                   | Expr.Val (fOrig, _, _) ->
                     // app where function is val 
@@ -271,27 +273,27 @@ module GlobalUsageAnalysis =
                     //      collect from args (have intercepted this node) 
                     let collect z f = logUse f (context, tys, args) z
                     let z = foldLocalVal collect z fOrig
-                    let z = List.fold exprF z args
-                    Some z
+                    List.fold exprF z args
                   | _ ->
                      // NO: app but function is not val 
-                     None
+                     noInterceptF z origExpr 
+
              | Expr.Op(TOp.TupleFieldGet (tupInfo, n), ts, [x], _) when not (evalTupInfoIsStruct tupInfo)  -> 
                  let context = TupleGet (n, ts) :: context
                  recognise context x
                  
              // lambdas end top-level status 
              | Expr.Lambda(_id, _ctorThisValOpt, _baseValOpt, _vs, body, _, _)   -> 
-                 let z = foldUnderLambda exprF z body
-                 Some z
+                 foldUnderLambda exprF z body
+
              | Expr.TyLambda(_id, _tps, body, _, _) -> 
-                 let z = foldUnderLambda exprF z body
-                 Some z
+                 foldUnderLambda exprF z body
+
              | _  -> 
-                 None // NO: no intercept 
+                 noInterceptF z origExpr
           
           let context = []
-          recognise context expr
+          recognise context origExpr
 
       let targetIntercept exprF z = function TTarget(_argvs, body, _) -> Some (foldUnderLambda exprF z body)
       let tmethodIntercept exprF z = function TObjExprMethod(_, _, _, _, e, _m) -> Some (foldUnderLambda exprF z e)

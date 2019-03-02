@@ -334,6 +334,94 @@ module CoreTests =
 
         testOkFile.CheckExists()
 
+    [<Test>]
+    let ``lots-of-conditionals``() = 
+        let cfg = testConfig "core/large/conditionals"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeConditionals-200.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-conditionals-maxtested``() = 
+        let cfg = testConfig "core/large/conditionals"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeConditionals-maxtested.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-lets``() = 
+        let cfg = testConfig "core/large/lets"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeLets-500.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-lets-maxtested``() = 
+        let cfg = testConfig "core/large/lets"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeLets-maxtested.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-lists``() = 
+        let cfg = testConfig "core/large/lists"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test-500.exe " cfg.fsc_flags ["LargeList-500.fs"]
+        exec cfg ("." ++ "test-500.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-matches``() = 
+        let cfg = testConfig "core/large/matches"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeMatches-200.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-matches-maxtested``() = 
+        let cfg = testConfig "core/large/matches"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeMatches-maxtested.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-sequential-and-let``() = 
+        let cfg = testConfig "core/large/mixed"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequentialLet-500.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-sequential-and-let-maxtested``() = 
+        let cfg = testConfig "core/large/mixed"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequentialLet-maxtested.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-sequential``() = 
+        let cfg = testConfig "core/large/sequential"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequential-500.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``lots-of-sequential-maxtested``() = 
+        let cfg = testConfig "core/large/sequential"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequential-maxtested.fs"]
+        exec cfg ("." ++ "test.exe") ""
+        testOkFile.CheckExists()
+
 #endif
 
     [<Test>]
