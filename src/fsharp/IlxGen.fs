@@ -141,6 +141,8 @@ type IlxGenIntraAssemblyInfo =
       /// that come from both the signature and the implementation.
       StaticFieldInfo : Dictionary<ILMethodRef, ILFieldSpec> }
 
+type FakeUnit = | Fake
+
 //-------------------------------------------------------------------------- 
 
 /// Indicates how the generated IL code is ultimately emitted 
@@ -2044,6 +2046,13 @@ let rec GenExpr (cenv:cenv) (cgbuf:CodeGenBuffer) eenv sp expr sequel =
       GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel
   | Expr.Val(v,_,m) -> 
       GenGetVal cenv cgbuf eenv (v,m) sequel
+
+  // Most generation of linear expressions is implemented routinely using tailcalls and the correct sequels.
+  // This is because the element of expansion happens to be the final thing generated in most cases. However
+  // for large lists we have to process the linearity separately
+  | LinearOpExpr _ -> 
+      GenLinearExpr cenv cgbuf eenv expr sequel id |> ignore<FakeUnit>
+
   | Expr.Op(op,tyargs,args,m) -> 
       match op,args,tyargs with 
       | TOp.ExnConstr(c),_,_      -> 
@@ -2346,11 +2355,26 @@ and GenAllocExn cenv cgbuf eenv (c,args,m) sequel =
       (mkNormalNewobj mspec) 
     GenSequel cenv eenv.cloc cgbuf sequel
 
+and GenAllocUnionCaseCore cenv cgbuf eenv (c,tyargs,n,m) =
+    let cuspec,idx = GenUnionCaseSpec cenv.amap m eenv.tyenv c tyargs
+    CG.EmitInstrs cgbuf (pop n) (Push [cuspec.DeclaringType]) (EraseUnions.mkNewData cenv.g.ilg (cuspec, idx))
+
 and GenAllocUnionCase cenv cgbuf eenv  (c,tyargs,args,m) sequel =
     GenExprs cenv cgbuf eenv args
-    let cuspec,idx = GenUnionCaseSpec cenv.amap m eenv.tyenv c tyargs
-    CG.EmitInstrs cgbuf (pop args.Length) (Push [cuspec.DeclaringType]) (EraseUnions.mkNewData cenv.g.ilg (cuspec, idx))
+    GenAllocUnionCaseCore cenv cgbuf eenv (c,tyargs,args.Length,m)
     GenSequel cenv eenv.cloc cgbuf sequel
+
+and GenLinearExpr cenv cgbuf eenv expr sequel (contf: FakeUnit -> FakeUnit) =
+    match expr with 
+    | LinearOpExpr (TOp.UnionCase c, tyargs, argsFront, argLast, m) -> 
+        GenExprs cenv cgbuf eenv argsFront
+        GenLinearExpr cenv cgbuf eenv argLast Continue (contf << (fun (Fake) -> 
+            GenAllocUnionCaseCore cenv cgbuf eenv (c, tyargs, argsFront.Length + 1, m)
+            GenSequel cenv eenv.cloc cgbuf sequel
+            Fake))
+    | _ -> 
+        GenExpr cenv cgbuf eenv SPSuppress expr sequel
+        contf Fake
 
 and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref,argtys,args,m) sequel =
     let ty = GenNamedTyApp cenv.amap m eenv.tyenv tcref argtys
