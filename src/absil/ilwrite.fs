@@ -2857,9 +2857,8 @@ and newGuid (modul: ILModuleDef) =
 
 and deterministicGuid (modul: ILModuleDef) =
     let n = 16909060
-    let m = hash n
-    let m2 = hash modul.Name
-    [| b0 m; b1 m; b2 m; b3 m; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
+    let m2 = Seq.sum (Seq.mapi (fun i  x -> i + int x) modul.Name) // use a stable hash
+    [| b0 n; b1 n; b2 n; b3 n; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
 
 and GetModuleAsRow (cenv:cenv) (modul: ILModuleDef) = 
     // Store the generated MVID in the environment (needed for generating debug information)
