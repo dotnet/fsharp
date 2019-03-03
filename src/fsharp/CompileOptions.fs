@@ -981,7 +981,6 @@ let testFlag tcConfigB =
                 match s with
                 | "StackSpan"        -> tcConfigB.internalTestSpanStackReferring <- true
                 | "ErrorRanges"      -> tcConfigB.errorStyle <- ErrorStyle.TestErrors
-                | "MemberBodyRanges" -> PostTypeCheckSemanticChecks.testFlagMemberBody := true
                 | "Tracking"         -> Lib.tracking := true (* general purpose on/off diagnostics flag *)
                 | "NoNeedToTailcall" -> tcConfigB.optSettings <- { tcConfigB.optSettings with reportNoNeedToTailcall = true }
                 | "FunctionSizes"    -> tcConfigB.optSettings <- { tcConfigB.optSettings with reportFunctionSizes = true }
