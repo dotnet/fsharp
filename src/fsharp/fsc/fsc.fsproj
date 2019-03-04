@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net46;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp2.1</TargetFrameworks>
     <TargetExt>.exe</TargetExt>
     <AssemblyName>fsc</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>

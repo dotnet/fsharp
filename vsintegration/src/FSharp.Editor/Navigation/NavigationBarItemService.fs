@@ -32,7 +32,7 @@ type internal FSharpNavigationBarItemService
     interface INavigationBarItemService with
         member __.GetItemsAsync(document, cancellationToken) : Task<IList<NavigationBarItem>> = 
             asyncMaybe {
-                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! parsedInput = checkerProvider.Checker.ParseDocument(document, parsingOptions, sourceText=sourceText, userOpName=userOpName)
                 let navItems = NavigationImpl.getNavigation parsedInput

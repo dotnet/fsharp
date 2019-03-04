@@ -142,13 +142,13 @@ type InProcErrorLoggerProvider() =
 
                     member this.HandleTooManyErrors(text) = warnings.Add(Diagnostic.Short(false, text))
 
-                    member this.HandleIssue(tcConfigBuilder, err, isError) = 
-                        let errs = 
+                    member this.HandleIssue(tcConfigBuilder, err, isError) =
+                        let errs =
                             CollectDiagnostic
-                                (tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths, 
-                                 tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, isError, err)
-                        let container = if isError then errors else warnings 
-                        container.AddRange(errs) } 
+                                (tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths,
+                                 tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, isError, err, true)
+                        let container = if isError then errors else warnings
+                        container.AddRange(errs) }
                 :> ErrorLogger }
 
     member __.CapturedErrors = errors.ToArray()
@@ -227,9 +227,9 @@ let AdjustForScriptCompile(ctok, tcConfigB:TcConfigBuilder, commandLineSourceFil
 
             // Record the references from the analysis of the script. The full resolutions are recorded as the corresponding #I paths used to resolve them
             // are local to the scripts and not added to the tcConfigB (they are added to localized clones of the tcConfigB).
-            let references = 
-                closure.References 
-                |> List.collect snd 
+            let references =
+                closure.References
+                |> List.collect snd
                 |> List.filter (fun r -> r.originalReference.Range<>range0 && r.originalReference.Range<>rangeStartup)
 
             references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))

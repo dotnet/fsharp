@@ -24,7 +24,7 @@ let IsInEditDistanceProximity idText suggestion =
     editDistance <= threshold
 
 /// Filters predictions based on edit distance to the given unknown identifier.
-let FilterPredictions (idText:string) (suggestionF:ErrorLogger.Suggestions) =    
+let FilterPredictions (suggestionF:ErrorLogger.Suggestions) (idText:string) =    
     let uppercaseText = idText.ToUpperInvariant()
     let allSuggestions = suggestionF()
 

@@ -671,22 +671,22 @@ let ShrinkContext env oldRange newRange =
     | ContextInfo.SequenceExpression _ ->
         env
     | ContextInfo.CollectionElement (b,m) ->
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.CollectionElement(b,newRange) }
     | ContextInfo.FollowingPatternMatchClause m -> 
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.FollowingPatternMatchClause newRange }
     | ContextInfo.PatternMatchGuard m -> 
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.PatternMatchGuard newRange }
     | ContextInfo.IfExpression m -> 
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.IfExpression newRange }
     | ContextInfo.OmittedElseBranch m -> 
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.OmittedElseBranch newRange }
     | ContextInfo.ElseBranchResult m -> 
-        if m <> oldRange then env else
+        if not (Range.equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.ElseBranchResult newRange }
 
 /// Optimized unification routine that avoids creating new inference 
@@ -1870,7 +1870,7 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
                         member this.NotifyExprHasType(_, _, _, _, _, _) = assert false // no expr typings in MakeSimpleVals
                         member this.NotifyFormatSpecifierLocation(_, _) = ()
                         member this.NotifyOpenDeclaration(_) = ()
-                        member this.CurrentSource = None 
+                        member this.CurrentSourceText = None 
                         member this.FormatStringCheckContext = None } 
 
                 use _h = WithNewTypecheckResultsSink(sink, cenv.tcSink)
@@ -6949,7 +6949,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors 
     let haveCtor = Option.isSome inherits
 
-    let optOrigExprInfo, tpenv = 
+    let optOrigExpr, tpenv = 
       match optOrigExpr with 
       | None -> None, tpenv 
       | Some (origExpr, _) -> 
@@ -6957,10 +6957,9 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
           | Some (_, _, mInherits, _, _) -> error(Error(FSComp.SR.tcInvalidRecordConstruction(), mInherits))
           | None -> 
               let olde, tpenv = TcExpr cenv overallTy env tpenv origExpr
-              let oldvaddr, oldvaddre = mkCompGenLocal mWholeExpr "inputRecord" (if isStructTy cenv.g overallTy then mkByrefTy cenv.g overallTy else overallTy)
-              Some (olde, oldvaddr, oldvaddre), tpenv
+              Some (olde), tpenv
 
-    let hasOrigExpr = optOrigExprInfo.IsSome
+    let hasOrigExpr = optOrigExpr.IsSome
 
     let fldsList = 
         let flds = 
@@ -6986,6 +6985,13 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                 match v with
                 | Some v -> yield n, v
                 | None -> () ]
+
+    let optOrigExprInfo =
+        match optOrigExpr with
+        | None -> None
+        | Some(olde) ->
+            let oldvaddr, oldvaddre = mkCompGenLocal mWholeExpr "inputRecord" (if isStructTy cenv.g overallTy then mkByrefTy cenv.g overallTy else overallTy)
+            Some(olde, oldvaddr, oldvaddre)
 
     if hasOrigExpr && not (isRecdTy cenv.g overallTy) then 
         errorR(Error(FSComp.SR.tcExpressionFormRequiresRecordTypes(), mWholeExpr))
@@ -11617,7 +11623,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue overridesOK isGeneratedEventVal cenv 
 
     // Suppress hover tip for "get" and "set" at property definitions, where toolId <> bindingId
     match toolIdOpt with 
-    | Some tid when not tid.idRange.IsSynthetic && tid.idRange <> bindingId.idRange  -> 
+    | Some tid when not tid.idRange.IsSynthetic && not (Range.equals tid.idRange bindingId.idRange) -> 
         let item = Item.Value (mkLocalValRef vspec)
         CallNameResolutionSink cenv.tcSink (tid.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.RelatedText, env.DisplayEnv, env.eAccessRights)
     | _ -> ()

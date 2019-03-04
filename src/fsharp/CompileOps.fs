@@ -45,6 +45,8 @@ open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 
+open Microsoft.FSharp.Compiler.Text
+
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
@@ -601,7 +603,7 @@ let getErrorString key = SR.GetString key
 
 let (|InvalidArgument|_|) (exn:exn) = match exn with :? ArgumentException as e -> Some e.Message | _ -> None
 
-let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
+let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) (suggestNames: bool) =
 
     let rec OutputExceptionR (os:StringBuilder) error = 
 
@@ -645,16 +647,16 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           
           match contextInfo with
-          | ContextInfo.IfExpression range when range = m -> os.Append(FSComp.SR.ifExpression(t1, t2)) |> ignore
-          | ContextInfo.CollectionElement (isArray, range) when range = m -> 
+          | ContextInfo.IfExpression range when Range.equals range m -> os.Append(FSComp.SR.ifExpression(t1, t2)) |> ignore
+          | ContextInfo.CollectionElement (isArray, range) when Range.equals range m -> 
             if isArray then
                 os.Append(FSComp.SR.arrayElementHasWrongType(t1, t2)) |> ignore
             else
                 os.Append(FSComp.SR.listElementHasWrongType(t1, t2)) |> ignore
-          | ContextInfo.OmittedElseBranch range when range = m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
-          | ContextInfo.ElseBranchResult range when range = m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1, t2)) |> ignore
-          | ContextInfo.FollowingPatternMatchClause range when range = m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1, t2)) |> ignore
-          | ContextInfo.PatternMatchGuard range when range = m -> os.Append(FSComp.SR.patternMatchGuardIsNotBool(t2)) |> ignore
+          | ContextInfo.OmittedElseBranch range when Range.equals range m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
+          | ContextInfo.ElseBranchResult range when Range.equals range m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1, t2)) |> ignore
+          | ContextInfo.FollowingPatternMatchClause range when Range.equals range m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1, t2)) |> ignore
+          | ContextInfo.PatternMatchGuard range when Range.equals range m -> os.Append(FSComp.SR.patternMatchGuardIsNotBool(t2)) |> ignore
           | _ -> os.Append(ConstraintSolverTypesNotInEqualityRelation2E().Format t1 t2) |> ignore
           if m.StartLine <> m2.StartLine then 
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
@@ -682,16 +684,16 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
          &&   typeEquiv g t2 t2' ->
           let t1, t2, tpcs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           match contextInfo with
-          | ContextInfo.IfExpression range when range = m -> os.Append(FSComp.SR.ifExpression(t1, t2)) |> ignore
-          | ContextInfo.CollectionElement (isArray, range) when range = m -> 
+          | ContextInfo.IfExpression range when Range.equals range m -> os.Append(FSComp.SR.ifExpression(t1, t2)) |> ignore
+          | ContextInfo.CollectionElement (isArray, range) when Range.equals range m -> 
             if isArray then
                 os.Append(FSComp.SR.arrayElementHasWrongType(t1, t2)) |> ignore
             else
                 os.Append(FSComp.SR.listElementHasWrongType(t1, t2)) |> ignore
-          | ContextInfo.OmittedElseBranch range when range = m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
-          | ContextInfo.ElseBranchResult range when range = m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1, t2)) |> ignore
-          | ContextInfo.FollowingPatternMatchClause range when range = m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1, t2)) |> ignore
-          | ContextInfo.PatternMatchGuard range when range = m -> os.Append(FSComp.SR.patternMatchGuardIsNotBool(t2)) |> ignore
+          | ContextInfo.OmittedElseBranch range when Range.equals range m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
+          | ContextInfo.ElseBranchResult range when Range.equals range m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1, t2)) |> ignore
+          | ContextInfo.FollowingPatternMatchClause range when Range.equals range m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1, t2)) |> ignore
+          | ContextInfo.PatternMatchGuard range when Range.equals range m -> os.Append(FSComp.SR.patternMatchGuardIsNotBool(t2)) |> ignore
           | ContextInfo.TupleInRecordFields ->
                 os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
                 os.Append(System.Environment.NewLine + FSComp.SR.commaInsteadOfSemicolonInRecord()) |> ignore
@@ -826,9 +828,10 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
 
       | UndefinedName(_, k, id, suggestionsF) ->
           os.Append(k (DecompileOpName id.idText)) |> ignore
-          let filtered = ErrorResolutionHints.FilterPredictions id.idText suggestionsF
-          if List.isEmpty filtered |> not then
-              os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
+          if suggestNames then
+              let filtered = ErrorResolutionHints.FilterPredictions suggestionsF id.idText 
+              if List.isEmpty filtered |> not then
+                  os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
           
 
       | InternalUndefinedItemRef(f, smr, ccuName, s) ->  
@@ -1366,9 +1369,10 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
 
       | ErrorWithSuggestions ((_, s), _, idText, suggestionF) -> 
           os.Append(DecompileOpName s) |> ignore
-          let filtered = ErrorResolutionHints.FilterPredictions idText suggestionF
-          if List.isEmpty filtered |> not then
-              os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
+          if suggestNames then
+              let filtered = ErrorResolutionHints.FilterPredictions suggestionF idText
+              if List.isEmpty filtered |> not then
+                  os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
 
       | NumberedError ((_, s), _) -> os.Append(s) |> ignore
 
@@ -1584,10 +1588,10 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
 
 
 // remove any newlines and tabs 
-let OutputPhasedDiagnostic (os:System.Text.StringBuilder) (err:PhasedDiagnostic) (flattenErrors:bool) = 
+let OutputPhasedDiagnostic (os:System.Text.StringBuilder) (err:PhasedDiagnostic) (flattenErrors:bool) (suggestNames: bool) = 
     let buf = new System.Text.StringBuilder()
 
-    OutputPhasedErrorR buf err
+    OutputPhasedErrorR buf err suggestNames
     let s = if flattenErrors then ErrorLogger.NormalizeErrorString (buf.ToString()) else buf.ToString()
     
     os.Append(s) |> ignore
@@ -1637,9 +1641,9 @@ type Diagnostic =
     | Long of bool * DiagnosticDetailedInfo
 
 /// returns sequence that contains Diagnostic for the given error + Diagnostic for all related errors
-let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err:PhasedDiagnostic) = 
+let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err:PhasedDiagnostic, suggestNames: bool) = 
     let outputWhere (showFullPaths, errorStyle) m : DiagnosticLocation = 
-        if m = rangeStartup || m = rangeCmdArgs then 
+        if Range.equals m rangeStartup || Range.equals m rangeCmdArgs then 
             { Range = m; TextRepresentation = ""; IsEmpty = true; File = "" }
         else
             let file = m.FileName
@@ -1674,7 +1678,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                   | ErrorStyle.VSErrors      -> 
                         // Show prefix only for real files. Otherwise, we just want a truncated error like:
                         //      parse error FS0031 : blah blah
-                        if m<>range0 && m<>rangeStartup && m<>rangeCmdArgs then 
+                        if not (Range.equals m range0) && not (Range.equals m rangeStartup) && not (Range.equals m rangeCmdArgs) then 
                             let file = file.Replace("/", "\\")
                             let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1) )
                             sprintf "%s(%d,%d,%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
@@ -1710,7 +1714,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
             let canonical = OutputCanonicalInformation(err.Subcategory(), GetDiagnosticNumber mainError)
             let message = 
                 let os = System.Text.StringBuilder()
-                OutputPhasedDiagnostic os mainError flattenErrors
+                OutputPhasedDiagnostic os mainError flattenErrors suggestNames
                 os.ToString()
             
             let entry : DiagnosticDetailedInfo = { Location = where; Canonical = canonical; Message = message }
@@ -1725,7 +1729,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                     let relCanonical = OutputCanonicalInformation(err.Subcategory(), GetDiagnosticNumber mainError) // Use main error for code
                     let relMessage = 
                         let os = System.Text.StringBuilder()
-                        OutputPhasedDiagnostic os err flattenErrors
+                        OutputPhasedDiagnostic os err flattenErrors suggestNames
                         os.ToString()
 
                     let entry : DiagnosticDetailedInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
@@ -1733,7 +1737,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
 
                 | _ -> 
                     let os = System.Text.StringBuilder()
-                    OutputPhasedDiagnostic os err flattenErrors
+                    OutputPhasedDiagnostic os err flattenErrors suggestNames
                     errors.Add( Diagnostic.Short(isError, os.ToString()) )
         
             relatedErrors |> List.iter OutputRelatedError
@@ -1754,7 +1758,8 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
 /// prints error and related errors to the specified StringBuilder
 let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError) os (err:PhasedDiagnostic) = 
     
-    let errors = CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err)
+    // 'true' for "suggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
+    let errors = CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err, true)
     for e in errors do
         Printf.bprintf os "\n"
         match e with
@@ -1791,12 +1796,11 @@ let GetDefaultFSharpCoreReference () = typeof<list<int>>.Assembly.Location
 
 type private TypeInThisAssembly = class end
 
-// Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
-// or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
+// Use the ValueTuple that is executing with the compiler.  This can come either from [mscorlib] or [System.ValueTuple.dll] alongside the compiler
 let GetDefaultSystemValueTupleReference () =
     try
         let asm = typeof<System.ValueTuple<int, int>>.Assembly 
-        if asm.FullName.StartsWithOrdinal("System.ValueTuple") then  
+        if asm.FullName.StartsWithOrdinal("System.ValueTuple") then
             Some asm.Location
         else
             let location = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
@@ -2612,12 +2616,12 @@ type TcConfigBuilder =
     member tcConfigB.AddReferencedAssemblyByPath (m, path) = 
         if FileSystem.IsInvalidPathShim(path) then
             warning(Error(FSComp.SR.buildInvalidAssemblyName(path), m))
-        elif not (tcConfigB.referencedDLLs  |> List.exists (fun ar2 -> m=ar2.Range && path=ar2.Text)) then // NOTE: We keep same paths if range is different.
+        elif not (tcConfigB.referencedDLLs  |> List.exists (fun ar2 -> Range.equals m ar2.Range && path=ar2.Text)) then // NOTE: We keep same paths if range is different.
              let projectReference = tcConfigB.projectReferences |> List.tryPick (fun pr -> if pr.FileName = path then Some pr else None)
              tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs ++ AssemblyReference(m, path, projectReference)
              
     member tcConfigB.RemoveReferencedAssemblyByPath (m, path) =
-        tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs |> List.filter (fun ar-> ar.Range <> m || ar.Text <> path)
+        tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs |> List.filter (fun ar -> not (Range.equals ar.Range m) || ar.Text <> path)
     
     static member SplitCommandLineResourceInfo (ri:string) =
         let p = ri.IndexOf ','
@@ -2762,7 +2766,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
                 r, Some(filename)
             else   
                 // If the file doesn't exist, let reference resolution logic report the error later...
-                defaultCoreLibraryReference, if r.Range =rangeStartup then Some(filename) else None
+                defaultCoreLibraryReference, if Range.equals r.Range rangeStartup then Some(filename) else None
         match data.referencedDLLs |> List.filter (fun assemblyReference -> assemblyReference.SimpleAssemblyNameIs libraryName) with
         | [r] -> nameOfDll r
         | [] -> 
@@ -3119,7 +3123,13 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
                 // file is included in the search path. This should ideally already be one of the search paths, but
                 // during some global checks it won't be.  We append to the end of the search list so that this is the last
                 // place that is checked.
-                if m <> range0 && m <> rangeStartup && m <> rangeCmdArgs && FileSystem.IsPathRootedShim m.FileName then
+                let isPoundRReference (r: range) =
+                    not (Range.equals r range0) &&
+                    not (Range.equals r rangeStartup) &&
+                    not (Range.equals r rangeCmdArgs) &&
+                    FileSystem.IsPathRootedShim r.FileName
+
+                if isPoundRReference m then
                     tcConfig.GetSearchPathsForLibraryFiles() @ [Path.GetDirectoryName(m.FileName)]
                 else    
                     tcConfig.GetSearchPathsForLibraryFiles()
@@ -5054,7 +5064,7 @@ module private ScriptPreprocessClosure =
     open Internal.Utilities.Text.Lexing
     
     /// Represents an input to the closure finding process
-    type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: string * parseRequired: bool 
+    type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: ISourceText * parseRequired: bool 
         
     /// Represents an output of the closure finding process
     type ClosureFile = ClosureFile  of string * range * ParsedInput option * (PhasedDiagnostic * bool) list * (PhasedDiagnostic * bool) list * (string * range) list // filename, range, errors, warnings, nowarns
@@ -5070,8 +5080,8 @@ module private ScriptPreprocessClosure =
     
     /// Parse a script from source.
     let ParseScriptText
-           (filename:string, source:string, tcConfig:TcConfig, codeContext, 
-            lexResourceManager:Lexhelp.LexResourceManager, errorLogger:ErrorLogger) =    
+           (filename:string, sourceText:ISourceText, tcConfig:TcConfig, codeContext,
+            lexResourceManager:Lexhelp.LexResourceManager, errorLogger:ErrorLogger) =
 
         // fsc.exe -- COMPILED\!INTERACTIVE
         // fsi.exe -- !COMPILED\INTERACTIVE
@@ -5083,7 +5093,7 @@ module private ScriptPreprocessClosure =
             | CodeContext.CompilationAndEvaluation -> ["INTERACTIVE"]
             | CodeContext.Compilation -> ["COMPILED"]
             | CodeContext.Editing -> "EDITING" :: (if IsScript filename then ["INTERACTIVE"] else ["COMPILED"])
-        let lexbuf = UnicodeLexing.StringAsLexbuf source 
+        let lexbuf = UnicodeLexing.SourceTextAsLexbuf(sourceText) 
         
         let isLastCompiland = (IsScript filename), tcConfig.target.IsExe        // The root compiland is last in the list of compilands.
         ParseOneInputLexbuf (tcConfig, lexResourceManager, defines, lexbuf, filename, isLastCompiland, errorLogger) 
@@ -5134,7 +5144,7 @@ module private ScriptPreprocessClosure =
                 | None -> new  StreamReader(stream, true)
                 | Some (n: int) -> new  StreamReader(stream, Encoding.GetEncoding(n)) 
             let source = reader.ReadToEnd()
-            [ClosureSource(filename, m, source, parseRequired)]
+            [ClosureSource(filename, m, SourceText.ofString source, parseRequired)]
         with e -> 
             errorRecovery e m 
             []
@@ -5167,7 +5177,7 @@ module private ScriptPreprocessClosure =
         let tcConfig = ref tcConfig
         
         let observedSources = Observed()
-        let rec loop (ClosureSource(filename, m, source, parseRequired)) = 
+        let rec loop (ClosureSource(filename, m, sourceText, parseRequired)) = 
           [     if not (observedSources.HaveSeen(filename)) then
                     observedSources.SetSeen(filename)
                     //printfn "visiting %s" filename
@@ -5175,7 +5185,7 @@ module private ScriptPreprocessClosure =
                         let parseResult, parseDiagnostics =
                             let errorLogger = CapturingErrorLogger("FindClosureParse")                    
                             use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                            let result = ParseScriptText (filename, source, !tcConfig, codeContext, lexResourceManager, errorLogger) 
+                            let result = ParseScriptText (filename, sourceText, !tcConfig, codeContext, lexResourceManager, errorLogger) 
                             result, errorLogger.Diagnostics
 
                         match parseResult with 
@@ -5269,7 +5279,7 @@ module private ScriptPreprocessClosure =
             match GetRangeOfDiagnostic exn with
             | Some m -> 
                 // Return true if the error was *not* from a #load-ed file.
-                let isArgParameterWhileNotEditing = (codeContext <> CodeContext.Editing) && (m = range0 || m = rangeStartup || m = rangeCmdArgs)
+                let isArgParameterWhileNotEditing = (codeContext <> CodeContext.Editing) && (Range.equals m range0 || Range.equals m rangeStartup || Range.equals m rangeCmdArgs)
                 let isThisFileName = (0 = String.Compare(rootFilename, m.FileName, StringComparison.OrdinalIgnoreCase))
                 isArgParameterWhileNotEditing || isThisFileName
             | None -> true
@@ -5292,12 +5302,12 @@ module private ScriptPreprocessClosure =
 
     /// Given source text, find the full load closure. Used from service.fs, when editing a script file
     let GetFullClosureOfScriptText
-           (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
-            filename, source, 
-            codeContext, useSimpleResolution, useFsiAuxLib, 
-            lexResourceManager:Lexhelp.LexResourceManager, 
-            applyCommmandLineArgs, assumeDotNetFramework, 
-            tryGetMetadataSnapshot, reduceMemoryUsage) = 
+           (ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
+            filename, sourceText,
+            codeContext, useSimpleResolution, useFsiAuxLib,
+            lexResourceManager:Lexhelp.LexResourceManager,
+            applyCommmandLineArgs, assumeDotNetFramework,
+            tryGetMetadataSnapshot, reduceMemoryUsage) =
 
         // Resolve the basic references such as FSharp.Core.dll first, before processing any #I directives in the script
         //
@@ -5319,7 +5329,7 @@ module private ScriptPreprocessClosure =
                  codeContext, useSimpleResolution, useFsiAuxLib, Some references0, 
                  applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage)
 
-        let closureSources = [ClosureSource(filename, range0, source, true)]
+        let closureSources = [ClosureSource(filename, range0, sourceText, true)]
         let closureFiles, tcConfig = FindClosureFiles(closureSources, tcConfig, codeContext, lexResourceManager)
         GetLoadClosure(ctok, filename, closureFiles, tcConfig, codeContext)
         
@@ -5340,14 +5350,14 @@ type LoadClosure with
     /// Analyze a script text and find the closure of its references. 
     static member ComputeClosureOfScriptText
                      (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
-                      filename:string, source:string, codeContext, useSimpleResolution:bool, 
+                      filename:string, sourceText:ISourceText, codeContext, useSimpleResolution:bool, 
                       useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, 
                       applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage) = 
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         ScriptPreprocessClosure.GetFullClosureOfScriptText
-            (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, 
-             codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager, 
+            (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText,
+             codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager,
              applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage)
 
     /// Analyze a set of script files and find the closure of their references.
