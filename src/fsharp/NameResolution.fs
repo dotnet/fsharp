@@ -488,6 +488,114 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap:Import.Import
         []
 
 
+/// Query the declared properties of a type (including inherited properties)
+let IntrinsicPropInfosOfTypeInScope (infoReader:InfoReader) (optFilter, ad) findFlag m ty =
+    let g = infoReader.g
+    let amap = infoReader.amap
+    let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (optFilter, ad, AllowMultiIntfInstantiations.Yes) findFlag m ty
+    let pinfos = pinfos |> ExcludeHiddenOfPropInfos g amap m
+    pinfos
+
+/// Select from a list of extension properties
+let SelectPropInfosFromExtMembers (infoReader:InfoReader, ad, optFilter) declaringTy m extMemInfos =
+    let g = infoReader.g
+    let amap = infoReader.amap
+    // NOTE: multiple "open"'s push multiple duplicate values into eIndexedExtensionMembers, hence setify.
+    let seen = HashSet(ExtensionMember.Comparer g)
+    let propCollector = new PropertyCollector(g, amap, m, declaringTy, optFilter, ad)
+    for emem in extMemInfos do
+        if seen.Add emem then
+            match emem with
+            | FSExtMem (vref, _pri) ->
+                match vref.MemberInfo with
+                | None -> ()
+                | Some membInfo -> propCollector.Collect(membInfo, vref)
+            | ILExtMem _ ->
+                // No extension properties coming from .NET
+                ()
+    propCollector.Close()
+
+/// Query the available extension properties of a type (including extension properties for inherited types)
+let ExtensionPropInfosOfTypeInScope (infoReader:InfoReader) (nenv: NameResolutionEnv) (optFilter, ad) m ty =
+    let g = infoReader.g
+
+    let extMemsFromHierarchy =
+        infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes, m, ty) |> List.collect (fun ty ->
+             if isAppTy g ty then
+                let tcref = tcrefOfAppTy g ty
+                let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
+                SelectPropInfosFromExtMembers (infoReader, ad, optFilter) ty m extMemInfos
+             else [])
+
+    let extMemsDangling = SelectPropInfosFromExtMembers  (infoReader, ad, optFilter) ty m nenv.eUnindexedExtensionMembers
+    extMemsDangling @ extMemsFromHierarchy
+
+
+/// Get all the available properties of a type (both intrinsic and extension)
+let AllPropInfosOfTypeInScope infoReader nenv (optFilter, ad) findFlag m ty =
+    IntrinsicPropInfosOfTypeInScope infoReader (optFilter, ad) findFlag m ty
+    @ ExtensionPropInfosOfTypeInScope infoReader nenv (optFilter, ad) m ty
+
+/// Get the available methods of a type (both declared and inherited)
+let IntrinsicMethInfosOfType (infoReader:InfoReader) (optFilter, ad, allowMultiIntfInst) findFlag m ty =
+    let g = infoReader.g
+    let amap = infoReader.amap
+    let minfos = GetIntrinsicMethInfoSetsOfType infoReader (optFilter, ad, allowMultiIntfInst) findFlag m ty
+    let minfos = minfos |> ExcludeHiddenOfMethInfos g amap m
+    minfos
+
+/// Select from a list of extension methods
+let SelectMethInfosFromExtMembers (infoReader:InfoReader) optFilter apparentTy m extMemInfos =
+    let g = infoReader.g
+    // NOTE: multiple "open"'s push multiple duplicate values into eIndexedExtensionMembers
+    let seen = HashSet(ExtensionMember.Comparer g)
+    [
+        for emem in extMemInfos do
+            if seen.Add emem then
+                match emem with
+                | FSExtMem (vref, pri) ->
+                    match vref.MemberInfo with
+                    | None -> ()
+                    | Some membInfo ->
+                        match TrySelectMemberVal g optFilter apparentTy (Some pri) membInfo vref with
+                        | Some m -> yield m
+                        | _ -> ()
+                | ILExtMem (actualParent, minfo, pri) when (match optFilter with None -> true | Some nm -> nm = minfo.LogicalName) ->
+                    // Make a reference to the type containing the extension members
+                    match minfo with
+                    | ILMeth(_, ilminfo, _) ->
+                         yield (MethInfo.CreateILExtensionMeth (infoReader.amap, m, apparentTy, actualParent, Some pri, ilminfo.RawMetadata))
+                    // F#-defined IL-style extension methods are not seen as extension methods in F# code
+                    | FSMeth(g, _, vref, _) ->
+                         yield (FSMeth(g, apparentTy, vref, Some pri))
+#if !NO_EXTENSIONTYPING
+                    // // Provided extension methods are not yet supported
+                    | ProvidedMeth(amap, providedMeth, _, m) ->
+                         yield (ProvidedMeth(amap, providedMeth, Some pri, m))
+#endif
+                    | DefaultStructCtor _ ->
+                         ()
+                | _ -> ()
+    ]
+
+/// Query the available extension properties of a methods (including extension methods for inherited types)
+let ExtensionMethInfosOfTypeInScope (infoReader:InfoReader) (nenv: NameResolutionEnv) optFilter m ty =
+    let extMemsDangling = SelectMethInfosFromExtMembers  infoReader optFilter ty  m nenv.eUnindexedExtensionMembers
+    let extMemsFromHierarchy =
+        infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes, m, ty) |> List.collect (fun ty ->
+            let g = infoReader.g
+            if isAppTy g ty then
+                let tcref = tcrefOfAppTy g ty
+                let extValRefs = nenv.eIndexedExtensionMembers.Find tcref
+                SelectMethInfosFromExtMembers infoReader optFilter ty  m extValRefs
+            else [])
+    extMemsDangling @ extMemsFromHierarchy
+
+/// Get all the available methods of a type (both intrinsic and extension)
+let AllMethInfosOfTypeInScope infoReader nenv (optFilter, ad) findFlag m ty =
+    IntrinsicMethInfosOfType infoReader (optFilter, ad, AllowMultiIntfInstantiations.Yes) findFlag m ty
+    @ ExtensionMethInfosOfTypeInScope infoReader nenv optFilter m ty
+
 //-------------------------------------------------------------------------
 // Helpers to do with building environments
 //-------------------------------------------------------------------------
@@ -635,8 +743,7 @@ let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m
     let infoReader = InfoReader(g,amap)
     let items =
         [| let methGroups = 
-               GetIntrinsicMethInfoSetsOfType infoReader (None, AccessorDomain.AccessibleFromSomeFSharpCode, AllowMultiIntfInstantiations.No) PreferOverrides m ty 
-               |> ExcludeHiddenOfMethInfos g amap m 
+               AllMethInfosOfTypeInScope infoReader nenv (None, AccessorDomain.AccessibleFromSomeFSharpCode) PreferOverrides m ty
                |> List.groupBy (fun m -> m.LogicalName)
 
            for (methName, methGroup) in methGroups do
@@ -645,8 +752,7 @@ let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m
                    yield KeyValuePair(methName, Item.MethodGroup(methName, methGroup, None)) 
            
            let propInfos = 
-               GetIntrinsicPropInfoSetsOfType infoReader (None, AccessorDomain.AccessibleFromSomeFSharpCode, AllowMultiIntfInstantiations.Yes) PreferOverrides m ty
-               |> ExcludeHiddenOfPropInfos g amap m
+               AllPropInfosOfTypeInScope infoReader nenv (None, AccessorDomain.AccessibleFromSomeFSharpCode) PreferOverrides m ty
                |> List.groupBy (fun m -> m.PropertyName)
                
            for (propName, propInfos) in propInfos do
@@ -1949,7 +2055,7 @@ let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: Resul
 
 
 let ResolveLongIndentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv:NameResolutionEnv) ad id rest isOpenDecl f =
-    match ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink ResultCollectionSettings.AllResults amap m true fullyQualified nenv ad id [] isOpenDecl with
+    match ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink ResultCollectionSettings.AllResults amap m false true fullyQualified nenv ad id [] isOpenDecl with
     | Result modrefs ->
         match rest with
         | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), id.idRange))
@@ -1996,114 +2102,6 @@ let ResolveObjectConstructor (ncenv:NameResolver) edenv m ad ty =
 //-------------------------------------------------------------------------
 // Bind the "." notation (member lookup or lookup in a type)
 //-------------------------------------------------------------------------
-
-/// Query the declared properties of a type (including inherited properties)
-let IntrinsicPropInfosOfTypeInScope (infoReader:InfoReader) (optFilter, ad) findFlag m ty =
-    let g = infoReader.g
-    let amap = infoReader.amap
-    let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (optFilter, ad, AllowMultiIntfInstantiations.Yes) findFlag m ty
-    let pinfos = pinfos |> ExcludeHiddenOfPropInfos g amap m
-    pinfos
-
-/// Select from a list of extension properties
-let SelectPropInfosFromExtMembers (infoReader:InfoReader, ad, optFilter) declaringTy m extMemInfos =
-    let g = infoReader.g
-    let amap = infoReader.amap
-    // NOTE: multiple "open"'s push multiple duplicate values into eIndexedExtensionMembers, hence setify.
-    let seen = HashSet(ExtensionMember.Comparer g)
-    let propCollector = new PropertyCollector(g, amap, m, declaringTy, optFilter, ad)
-    for emem in extMemInfos do
-        if seen.Add emem then
-            match emem with
-            | FSExtMem (vref, _pri) ->
-                match vref.MemberInfo with
-                | None -> ()
-                | Some membInfo -> propCollector.Collect(membInfo, vref)
-            | ILExtMem _ ->
-                // No extension properties coming from .NET
-                ()
-    propCollector.Close()
-
-/// Query the available extension properties of a type (including extension properties for inherited types)
-let ExtensionPropInfosOfTypeInScope (infoReader:InfoReader) (nenv: NameResolutionEnv) (optFilter, ad) m ty =
-    let g = infoReader.g
-
-    let extMemsFromHierarchy =
-        infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes, m, ty) |> List.collect (fun ty ->
-             if isAppTy g ty then
-                let tcref = tcrefOfAppTy g ty
-                let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
-                SelectPropInfosFromExtMembers (infoReader, ad, optFilter) ty m extMemInfos
-             else [])
-
-    let extMemsDangling = SelectPropInfosFromExtMembers  (infoReader, ad, optFilter) ty m nenv.eUnindexedExtensionMembers
-    extMemsDangling @ extMemsFromHierarchy
-
-
-/// Get all the available properties of a type (both intrinsic and extension)
-let AllPropInfosOfTypeInScope infoReader nenv (optFilter, ad) findFlag m ty =
-    IntrinsicPropInfosOfTypeInScope infoReader (optFilter, ad) findFlag m ty
-    @ ExtensionPropInfosOfTypeInScope infoReader nenv (optFilter, ad) m ty
-
-/// Get the available methods of a type (both declared and inherited)
-let IntrinsicMethInfosOfType (infoReader:InfoReader) (optFilter, ad, allowMultiIntfInst) findFlag m ty =
-    let g = infoReader.g
-    let amap = infoReader.amap
-    let minfos = GetIntrinsicMethInfoSetsOfType infoReader (optFilter, ad, allowMultiIntfInst) findFlag m ty
-    let minfos = minfos |> ExcludeHiddenOfMethInfos g amap m
-    minfos
-
-/// Select from a list of extension methods
-let SelectMethInfosFromExtMembers (infoReader:InfoReader) optFilter apparentTy m extMemInfos =
-    let g = infoReader.g
-    // NOTE: multiple "open"'s push multiple duplicate values into eIndexedExtensionMembers
-    let seen = HashSet(ExtensionMember.Comparer g)
-    [
-        for emem in extMemInfos do
-            if seen.Add emem then
-                match emem with
-                | FSExtMem (vref, pri) ->
-                    match vref.MemberInfo with
-                    | None -> ()
-                    | Some membInfo ->
-                        match TrySelectMemberVal g optFilter apparentTy (Some pri) membInfo vref with
-                        | Some m -> yield m
-                        | _ -> ()
-                | ILExtMem (actualParent, minfo, pri) when (match optFilter with None -> true | Some nm -> nm = minfo.LogicalName) ->
-                    // Make a reference to the type containing the extension members
-                    match minfo with
-                    | ILMeth(_, ilminfo, _) ->
-                         yield (MethInfo.CreateILExtensionMeth (infoReader.amap, m, apparentTy, actualParent, Some pri, ilminfo.RawMetadata))
-                    // F#-defined IL-style extension methods are not seen as extension methods in F# code
-                    | FSMeth(g, _, vref, _) ->
-                         yield (FSMeth(g, apparentTy, vref, Some pri))
-#if !NO_EXTENSIONTYPING
-                    // // Provided extension methods are not yet supported
-                    | ProvidedMeth(amap, providedMeth, _, m) ->
-                         yield (ProvidedMeth(amap, providedMeth, Some pri, m))
-#endif
-                    | DefaultStructCtor _ ->
-                         ()
-                | _ -> ()
-    ]
-
-/// Query the available extension properties of a methods (including extension methods for inherited types)
-let ExtensionMethInfosOfTypeInScope (infoReader:InfoReader) (nenv: NameResolutionEnv) optFilter m ty =
-    let extMemsDangling = SelectMethInfosFromExtMembers  infoReader optFilter ty  m nenv.eUnindexedExtensionMembers
-    let extMemsFromHierarchy =
-        infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes, m, ty) |> List.collect (fun ty ->
-            let g = infoReader.g
-            if isAppTy g ty then
-                let tcref = tcrefOfAppTy g ty
-                let extValRefs = nenv.eIndexedExtensionMembers.Find tcref
-                SelectMethInfosFromExtMembers infoReader optFilter ty  m extValRefs
-            else [])
-    extMemsDangling @ extMemsFromHierarchy
-
-/// Get all the available methods of a type (both intrinsic and extension)
-let AllMethInfosOfTypeInScope infoReader nenv (optFilter, ad) findFlag m ty =
-    IntrinsicMethInfosOfType infoReader (optFilter, ad, AllowMultiIntfInstantiations.Yes) findFlag m ty
-    @ ExtensionMethInfosOfTypeInScope infoReader nenv optFilter m ty
 
 
 /// Used to report an error condition where name resolution failed due to an indeterminate type
