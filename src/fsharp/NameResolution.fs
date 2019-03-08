@@ -2021,7 +2021,7 @@ let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: Resul
         let erefs = modrefs @ tcrefs 
         if not erefs.IsEmpty then 
             /// Look through the sub-namespaces and/or modules
-            let rec look depth (modref: ModuleOrNamespaceRef) (lid:Ident list) =
+            let rec look depth allowStaticClasses (modref: ModuleOrNamespaceRef) (lid:Ident list) =
                 let mty = modref.ModuleOrNamespaceType
                 match lid with
                 | [] -> success  [ (depth, modref, mty) ]
@@ -2031,11 +2031,11 @@ let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: Resul
                     let especs  = mspecs @ tspecs
                     if not especs.IsEmpty then 
                         especs 
-                        |> List.map (fun mspec ->
-                            let subref = modref.NestedTyconRef mspec
+                        |> List.map (fun espec ->
+                            let subref = modref.NestedTyconRef espec
                             if IsEntityAccessible amap m ad subref then
                                 notifyNameResolution subref id.idRange
-                                look (depth+1) subref rest
+                                look (depth+1) (allowStaticClasses && subref.IsModuleOrNamespace) subref rest
                             else
                                 moduleNotFound modref mty id depth) 
                         |> List.reduce AddResults
@@ -2043,10 +2043,10 @@ let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: Resul
                         moduleNotFound modref mty id depth
 
             erefs 
-            |> List.map (fun modref ->
-                if IsEntityAccessible amap m ad modref then
-                    notifyNameResolution modref id.idRange
-                    look 1 modref rest
+            |> List.map (fun eref ->
+                if IsEntityAccessible amap m ad eref then
+                    notifyNameResolution eref id.idRange
+                    look 1 (allowStaticClasses && eref.IsModuleOrNamespace) eref rest
                 else
                     raze (namespaceNotFound.Force()))
             |> List.reduce AddResults
