@@ -313,6 +313,7 @@ type FullyQualifiedFlag =
     | OpenQualified
 
 
+type UnqualifiedItems = LayeredMap<string, Item>
 
 [<NoEquality; NoComparison>]
 /// The environment of information used to resolve names
@@ -320,8 +321,8 @@ type NameResolutionEnv =
     { /// Display environment information for output
       eDisplayEnv: DisplayEnv
 
-      /// Values and Data Tags available by unqualified name
-      eUnqualifiedItems: LayeredMap<string, Item>
+      /// Values, functions, methods and other items available by unqualified name
+      eUnqualifiedItems: UnqualifiedItems
 
       /// Data Tags and Active Pattern Tags available by unqualified name
       ePatItems: NameMap<Item>
@@ -503,7 +504,7 @@ type BulkAdd = Yes | No
 
 /// bulkAddMode: true when adding the values from the 'open' of a namespace
 /// or module, when we collapse the value table down to a dictionary.
-let AddValRefsToItems (bulkAddMode: BulkAdd) (eUnqualifiedItems: LayeredMap<_, _>) (vrefs:ValRef[]) =
+let AddValRefsToItems (bulkAddMode: BulkAdd) (eUnqualifiedItems: UnqualifiedItems) (vrefs:ValRef[]) =
     // Object model members are not added to the unqualified name resolution environment
     let vrefs = vrefs |> Array.filter (fun vref -> not vref.IsMember)
 
@@ -615,7 +616,7 @@ let AddUnionCases1 (tab:Map<_, _>) (ucrefs:UnionCaseRef list) =
         acc.Add (ucref.CaseName, item))
 
 /// Add a set of union cases to the corresponding sub-table of the environment
-let AddUnionCases2 bulkAddMode (eUnqualifiedItems: LayeredMap<_, _>) (ucrefs :UnionCaseRef list) =
+let AddUnionCases2 bulkAddMode (eUnqualifiedItems: UnqualifiedItems) (ucrefs :UnionCaseRef list) =
     match bulkAddMode with
     | BulkAdd.Yes ->
         let items =
@@ -629,6 +630,32 @@ let AddUnionCases2 bulkAddMode (eUnqualifiedItems: LayeredMap<_, _>) (ucrefs :Un
             let item = Item.UnionCase(GeneralizeUnionCaseRef ucref, false)
             acc.Add (ucref.CaseName, item))
 
+let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) m (nenv: NameResolutionEnv)  (tcref:TyconRef) = 
+    let ty = generalizedTyconRef tcref
+    let infoReader = InfoReader(g,amap)
+    let items =
+        [| let methGroups = 
+               GetIntrinsicMethInfoSetsOfType infoReader (None, AccessorDomain.AccessibleFromSomeFSharpCode, AllowMultiIntfInstantiations.No) PreferOverrides m ty 
+               |> ExcludeHiddenOfMethInfos g amap m 
+               |> List.groupBy (fun m -> m.LogicalName)
+
+           for (methName, methGroup) in methGroups do
+               let methGroup = methGroup |> List.filter (fun m -> not m.IsInstance && not m.IsClassConstructor)
+               if not methGroup.IsEmpty then
+                   yield KeyValuePair(methName, Item.MethodGroup(methName, methGroup, None)) 
+           
+           let propInfos = 
+               GetIntrinsicPropInfoSetsOfType infoReader (None, AccessorDomain.AccessibleFromSomeFSharpCode, AllowMultiIntfInstantiations.Yes) PreferOverrides m ty
+               |> ExcludeHiddenOfPropInfos g amap m
+               |> List.groupBy (fun m -> m.PropertyName)
+               
+           for (propName, propInfos) in propInfos do
+               let propInfos = propInfos |> List.filter (fun m -> m.IsStatic)
+               for propInfo in propInfos do 
+                   yield KeyValuePair(propName , Item.Property(propName,[propInfo])) |]
+
+    { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddAndMarkAsCollapsible items }
+    
 /// Add any implied contents of a type definition to the environment.
 let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) amap m  nenv (tcref:TyconRef) =
 
@@ -678,10 +705,14 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) 
                     | _ -> Item.UnqualifiedType [tcref]))
             else
                 tab
-        if isILOrRequiredQualifiedAccess || List.isEmpty ucrefs then
-            tab
-        else
-            AddUnionCases2 bulkAddMode tab ucrefs
+
+        let tab = 
+            if isILOrRequiredQualifiedAccess || List.isEmpty ucrefs then
+                tab
+            else
+                AddUnionCases2 bulkAddMode tab ucrefs
+
+        tab
 
     let ePatItems =
         if isILOrRequiredQualifiedAccess || List.isEmpty ucrefs then
@@ -689,12 +720,21 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) 
         else
             AddUnionCases1 nenv.ePatItems ucrefs
 
-    { nenv with
-        eFieldLabels = eFieldLabels
-        eUnqualifiedItems = eUnqualifiedItems
-        ePatItems = ePatItems
-        eIndexedExtensionMembers = eIndexedExtensionMembers
-        eUnindexedExtensionMembers = eUnindexedExtensionMembers }
+    let nenv = 
+        { nenv with
+            eFieldLabels = eFieldLabels
+            eUnqualifiedItems = eUnqualifiedItems
+            ePatItems = ePatItems
+            eIndexedExtensionMembers = eIndexedExtensionMembers
+            eUnindexedExtensionMembers = eUnindexedExtensionMembers }
+
+    let nenv = 
+        if TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true && isStaticClass g tcref then
+           AddStaticContentOfTyconRefToNameEnv g amap m nenv tcref
+        else
+           nenv
+
+    nenv
 
 /// Add a set of type definitions to the name resolution environment
 let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap m root nenv tcrefs =
@@ -816,8 +856,14 @@ and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain)
 //    open M1
 //
 // The list contains [M1b; M1a]
-and AddModulesAndNamespacesContentsToNameEnv g amap ad m root nenv modrefs =
-   (modrefs, nenv) ||> List.foldBack (fun modref acc -> AddModuleOrNamespaceContentsToNameEnv g amap ad m root acc modref)
+and AddEntitiesContentsToNameEnv g amap ad m root nenv modrefs =
+   (modrefs, nenv) ||> List.foldBack (fun modref acc -> AddEntityContentsToNameEnv g amap ad m root acc modref)
+
+and AddEntityContentsToNameEnv g amap ad m root nenv (modref: EntityRef) =
+    if modref.IsModuleOrNamespace then 
+        AddModuleOrNamespaceContentsToNameEnv g amap ad m root nenv modref
+    else
+        AddStaticContentOfTyconRefToNameEnv g amap m nenv modref
 
 /// Add a single modules or namespace to the name resolution environment
 let AddModuleOrNamespaceRefToNameEnv g amap m root ad nenv (modref:EntityRef) =
@@ -1825,13 +1871,13 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
 //-------------------------------------------------------------------------
 
 /// Perform name resolution for an identifier which must resolve to be a namespace or module.
-let rec ResolveLongIndentAsModuleOrNamespace sink atMostOne amap m first fullyQualified (nenv:NameResolutionEnv) ad (id:Ident) (rest:Ident list) isOpenDecl =
+let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: ResultCollectionSettings) amap m allowStaticClasses first fullyQualified (nenv:NameResolutionEnv) ad (id:Ident) (rest:Ident list) isOpenDecl =
     if first && id.idText = MangledGlobalName then
         match rest with
         | [] ->
             error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
         | id2::rest2 ->
-            ResolveLongIndentAsModuleOrNamespace sink atMostOne amap m false FullyQualified nenv ad id2 rest2 isOpenDecl
+            ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink atMostOne amap m allowStaticClasses false FullyQualified nenv ad id2 rest2 isOpenDecl
     else
         let moduleOrNamespaces = nenv.ModulesAndNamespaces fullyQualified
         let namespaceNotFound = lazy(
@@ -1864,35 +1910,46 @@ let rec ResolveLongIndentAsModuleOrNamespace sink atMostOne amap m first fullyQu
             let occurence = if isOpenDecl then ItemOccurence.Open else ItemOccurence.Use
             CallNameResolutionSink sink (m, nenv, item, item, emptyTyparInst, occurence, nenv.DisplayEnv, ad)
 
-        match moduleOrNamespaces.TryGetValue id.idText with
-        | true, modrefs ->
+        let modrefs = match moduleOrNamespaces.TryGetValue id.idText with true, modrefs -> modrefs | _ -> []
+        let tcrefs = if allowStaticClasses then LookupTypeNameInEnvNoArity fullyQualified id.idText nenv |> List.filter (isStaticClass amap.g) else []
+        let erefs = modrefs @ tcrefs 
+        if not erefs.IsEmpty then 
             /// Look through the sub-namespaces and/or modules
-            let rec look depth (modref: ModuleOrNamespaceRef) (mty:ModuleOrNamespaceType) (lid:Ident list) =
+            let rec look depth (modref: ModuleOrNamespaceRef) (lid:Ident list) =
+                let mty = modref.ModuleOrNamespaceType
                 match lid with
-                | [] -> success (depth, modref, mty)
+                | [] -> success  [ (depth, modref, mty) ]
                 | id :: rest ->
-                    match mty.ModulesAndNamespacesByDemangledName.TryGetValue id.idText with
-                    | true, mspec ->
-                        let subref = modref.NestedTyconRef mspec
-                        if IsEntityAccessible amap m ad subref then
-                            notifyNameResolution subref id.idRange
-                            look (depth+1) subref mspec.ModuleOrNamespaceType rest
-                        else
-                            moduleNotFound modref mty id depth
-                    | _ -> moduleNotFound modref mty id depth
+                    let mspecs = match mty.ModulesAndNamespacesByDemangledName.TryGetValue id.idText with true, res -> [res] | _ -> []
+                    let tspecs = if allowStaticClasses then LookupTypeNameInEntityNoArity id.idRange id.idText mty |> List.filter (modref.NestedTyconRef >> isStaticClass amap.g) else []
+                    let especs  = mspecs @ tspecs
+                    if not especs.IsEmpty then 
+                        especs 
+                        |> List.map (fun mspec ->
+                            let subref = modref.NestedTyconRef mspec
+                            if IsEntityAccessible amap m ad subref then
+                                notifyNameResolution subref id.idRange
+                                look (depth+1) subref rest
+                            else
+                                moduleNotFound modref mty id depth) 
+                        |> List.reduce AddResults
+                    else
+                        moduleNotFound modref mty id depth
 
-
-            modrefs |> CollectResults2 atMostOne (fun modref ->
+            erefs 
+            |> List.map (fun modref ->
                 if IsEntityAccessible amap m ad modref then
                     notifyNameResolution modref id.idRange
-                    look 1 modref modref.ModuleOrNamespaceType rest
+                    look 1 modref rest
                 else
                     raze (namespaceNotFound.Force()))
-        | _ -> raze (namespaceNotFound.Force())
+            |> List.reduce AddResults
+        else
+            raze (namespaceNotFound.Force())
 
 
 let ResolveLongIndentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv:NameResolutionEnv) ad id rest isOpenDecl f =
-    match ResolveLongIndentAsModuleOrNamespace sink ResultCollectionSettings.AllResults amap m true fullyQualified nenv ad id [] isOpenDecl with
+    match ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink ResultCollectionSettings.AllResults amap m true fullyQualified nenv ad id [] isOpenDecl with
     | Result modrefs ->
         match rest with
         | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), id.idRange))
@@ -3461,7 +3518,7 @@ let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThen f plid (m
         | true, mty -> PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThen f rest (modref.NestedTyconRef mty)
         | _ -> []
 
-let PartialResolveLongIndentAsModuleOrNamespaceThen (nenv:NameResolutionEnv) plid f =
+let PartialResolveLongIndentAsoduleOrNamespaceThen (nenv:NameResolutionEnv) plid f =
     match plid with
     | id:: rest ->
         match nenv.eModulesAndNamespaces.TryGetValue id with
@@ -4010,7 +4067,7 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
 
         // Look in the namespaces 'id'
         let namespaces =
-            PartialResolveLongIndentAsModuleOrNamespaceThen nenv [id] (fun modref ->
+            PartialResolveLongIndentAsoduleOrNamespaceThen nenv [id] (fun modref ->
               let allowObsolete = rest <> [] && allowObsolete
               if EntityRefContainsSomethingAccessible ncenv m ad modref then
                 ResolvePartialLongIdentInModuleOrNamespace ncenv nenv isApplicableMeth m ad modref rest allowObsolete
@@ -4170,7 +4227,7 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
     | id::rest ->
         // Get results
         let modsOrNs =
-            PartialResolveLongIndentAsModuleOrNamespaceThen nenv [id] (fun modref ->
+            PartialResolveLongIndentAsoduleOrNamespaceThen nenv [id] (fun modref ->
               let allowObsolete = rest <> [] && allowObsolete
               if EntityRefContainsSomethingAccessible ncenv m ad modref then
                 ResolvePartialLongIdentInModuleOrNamespaceForRecordFields ncenv nenv m ad modref rest allowObsolete
@@ -4527,7 +4584,7 @@ let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f pli
             PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest (modref.NestedTyconRef mty)
         | _ -> Seq.empty
 
-let PartialResolveLongIndentAsModuleOrNamespaceThenLazy (nenv:NameResolutionEnv) plid f =
+let PartialResolveLongIndentAsoduleOrNamespaceThenLazy (nenv:NameResolutionEnv) plid f =
     seq {
         match plid with
         | id :: rest ->
@@ -4602,7 +4659,7 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
 
             // Look in the namespaces 'id'
             yield!
-                PartialResolveLongIndentAsModuleOrNamespaceThenLazy nenv [id] (fun modref ->
+                PartialResolveLongIndentAsoduleOrNamespaceThenLazy nenv [id] (fun modref ->
                     if EntityRefContainsSomethingAccessible ncenv m ad modref then
                         ResolvePartialLongIdentInModuleOrNamespaceForItem ncenv nenv m ad modref rest item
                     else Seq.empty)

@@ -370,11 +370,11 @@ let AddLocalTyconsAndReport tcSink scopem g amap m tycons env =
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
-/// Adjust the TcEnv to account for opening the set of modules and namespaces implied by an `open` declaration
-let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs openDeclaration =
+/// Adjust the TcEnv to account for opening the set of modules, namespaces or static classes implied by an `open` declaration
+let OpenEntities tcSink g amap scopem root env mvvs openDeclaration =
     let env =
         if isNil mvvs then env else
-        { env with eNameResEnv = AddModulesAndNamespacesContentsToNameEnv g amap env.eAccessRights scopem root env.eNameResEnv mvvs }
+        { env with eNameResEnv = AddEntitiesContentsToNameEnv g amap env.eAccessRights scopem root env.eNameResEnv mvvs }
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     CallOpenDeclarationSink tcSink openDeclaration
     env
@@ -644,11 +644,11 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
         match enclosingNamespacePathToOpen with
         | id::rest ->
             let ad = env.eAccessRights
-            match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap scopem true OpenQualified env.eNameResEnv ad id rest true with 
+            match ResolveLongIndentAsModuleOrNamespaceOrStaticClass tcSink ResultCollectionSettings.AllResults amap scopem true true OpenQualified env.eNameResEnv ad id rest true with 
             | Result modrefs -> 
                 let modrefs = List.map p23 modrefs
                 let openDecl = OpenDeclaration.Create (enclosingNamespacePathToOpen, modrefs, scopem, true)
-                OpenModulesOrNamespaces tcSink g amap scopem false env modrefs openDecl
+                OpenEntities tcSink g amap scopem false env modrefs openDecl
             | Exception _ -> env
         | _ -> env
 
@@ -6873,7 +6873,7 @@ and TcConstExpr cenv overallTy env m tpenv c  =
         let expr = 
             let modName = "NumericLiteral" + suffix
             let ad = env.eAccessRights
-            match ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AtMostOneResult cenv.amap m true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with 
+            match ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AtMostOneResult cenv.amap m true true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with 
             | Result []
             | Exception _ -> error(Error(FSComp.SR.tcNumericLiteralRequiresModule(modName), m))
             | Result ((_, mref, _) :: _) -> 
@@ -12422,18 +12422,18 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv (augSpfn: SynMember
 // Bind 'open' declarations
 //------------------------------------------------------------------------- 
 
-let TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap (longId : Ident list) =
+let TcOpenLidAndPermitAutoResolve tcSink env amap (longId : Ident list) =
     let ad = env.eAccessRights
     match longId with
     | [] -> Result []
     | id::rest ->
         let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
-        match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m true OpenQualified env.eNameResEnv ad id rest true with 
+        match ResolveLongIndentAsModuleOrNamespaceOrStaticClass tcSink ResultCollectionSettings.AllResults amap m true true OpenQualified env.eNameResEnv ad id rest true with 
         | Result res -> Result res
         | Exception err -> raze err
 
 let TcOpenDecl tcSink (g:TcGlobals) amap m scopem env (longId : Ident list)  = 
-    let modrefs = ForceRaise (TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap longId)
+    let modrefs = ForceRaise (TcOpenLidAndPermitAutoResolve tcSink env amap longId)
 
     // validate opened namespace names
     for id in longId do
@@ -12483,7 +12483,7 @@ let TcOpenDecl tcSink (g:TcGlobals) amap m scopem env (longId : Ident list)  =
     modrefs |> List.iter (fun modref -> CheckEntityAttributes g modref m |> CommitOperationResult)        
 
     let openDecl = OpenDeclaration.Create (longId, modrefs, scopem, false)
-    let env = OpenModulesOrNamespaces tcSink g amap scopem false env modrefs openDecl
+    let env = OpenEntities tcSink g amap scopem false env modrefs openDecl
     env    
 
 
@@ -13940,7 +13940,7 @@ module MutRecBindingChecking =
         let resolved =
             match p with
             | [] -> Result []
-            | id::rest -> ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest false
+            | id::rest -> ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest false
         let mvvs = ForceRaise resolved
         if isNil mvvs then env else
         let modrefs = mvvs |> List.map p23
@@ -16757,7 +16757,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let resolved =
                 match p with
                 | [] -> Result []
-                | id::rest -> ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest false
+                | id::rest -> ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest false
             let mvvs = ForceRaise resolved
             let scopem = unionRanges m endm
             let unfilteredModrefs = mvvs |> List.map p23
@@ -17311,7 +17311,7 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
     | ValueNone ->  warn()
     | ValueSome _ -> 
         let openDecl = OpenDeclaration.Create ([], [modref], scopem, false)
-        OpenModulesOrNamespaces TcResultsSink.NoSink g amap scopem root env [modref] openDecl
+        OpenEntities TcResultsSink.NoSink g amap scopem root env [modref] openDecl
 
 // Add the CCU and apply the "AutoOpen" attributes
 let AddCcuToTcEnv(g, amap, scopem, env, assemblyName, ccu, autoOpens, internalsVisible) = 

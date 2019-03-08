@@ -174,6 +174,8 @@ module internal ReflectionAdapters =
 
         member this.IsNestedPublic = this.GetTypeInfo().IsNestedPublic
 
+        member this.IsAbstract = this.GetTypeInfo().IsAbstract
+
         member this.IsClass = this.GetTypeInfo().IsClass
 
         member this.IsValueType = this.GetTypeInfo().IsValueType
