@@ -8688,6 +8688,7 @@ let mkUnitDelayLambda (g: TcGlobals) m e =
 
 let isStaticClass (g:TcGlobals) (x: EntityRef) =
     not x.IsModuleOrNamespace &&
+    x.TyparsNoRange.IsEmpty &&
     (x.IsILTycon && 
      x.ILTyconRawMetadata.IsSealed &&
      x.ILTyconRawMetadata.IsAbstract) 
