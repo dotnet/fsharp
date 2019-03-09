@@ -18,10 +18,6 @@ module internal ExtensionTyping =
     open FSharp.Compiler.AbstractIL.Diagnostics // dprintfn
     open FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
 
-#if FX_RESHAPED_REFLECTION
-    open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
     type TypeProviderDesignation = TypeProviderDesignation of string
 
     exception ProvidedTypeResolution of range * System.Exception 
@@ -371,20 +367,11 @@ module internal ExtensionTyping =
 
     [<AllowNullLiteral; Sealed>]
     type ProvidedType (x:System.Type, ctxt: ProvidedTypeContext) =
-#if FX_RESHAPED_REFLECTION
-        inherit ProvidedMemberInfo(x.GetTypeInfo(), ctxt)
-#if FX_NO_CUSTOMATTRIBUTEDATA
-        let provide () = ProvidedCustomAttributeProvider.Create (fun provider -> provider.GetMemberCustomAttributesData(x.GetTypeInfo()) :> _)
-#else
-        let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.GetTypeInfo().CustomAttributes)
-#endif
-#else
         inherit ProvidedMemberInfo(x, ctxt)
 #if FX_NO_CUSTOMATTRIBUTEDATA
         let provide () = ProvidedCustomAttributeProvider.Create (fun provider -> provider.GetMemberCustomAttributesData(x) :> _)
 #else
         let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.CustomAttributes)
-#endif
 #endif
         interface IProvidedCustomAttributeProvider with 
             member __.GetHasTypeProviderEditorHideMethodsAttribute(provider) = provide().GetHasTypeProviderEditorHideMethodsAttribute(provider)

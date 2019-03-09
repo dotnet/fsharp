@@ -50,10 +50,6 @@ open FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
 
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
 #if DEBUG
 [<AutoOpen>]
 module internal CompilerService =
@@ -2646,7 +2642,7 @@ let OpenILBinary(filename, reduceMemoryUsage, ilGlobals, pdbDirPath, shadowCopyR
             tryGetMetadataSnapshot = tryGetMetadataSnapshot } 
                       
       let location =
-#if !FX_RESHAPED_REFLECTION // shadow copy not supported
+#if FX_NO_APP_DOMAINS
           // In order to use memory mapped files on the shadow copied version of the Assembly, we `preload the assembly
           // We swallow all exceptions so that we do not change the exception contract of this API
           if shadowCopyReferences then 

@@ -55,11 +55,6 @@ open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.StructuredFormat
 
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
-
 //----------------------------------------------------------------------------
 // For the FSI as a service methods...
 //----------------------------------------------------------------------------
@@ -91,11 +86,7 @@ module internal Utilities =
     let ignoreAllErrors f = try f() with _ -> ()
 
     // TODO: this dotnet/core polyfill can be removed when it surfaces in Type
-#if FX_RESHAPED_REFLECTION
-    let getMember (name: string) (memberType: MemberTypes) (attr: System.Reflection.BindingFlags) (declaringType: Type) =
-#else
     let getMember (name: string) (memberType: MemberTypes) (attr: BindingFlags) (declaringType: Type) =
-#endif
         let memberType =
             if memberType &&& MemberTypes.NestedType = MemberTypes.NestedType then
                 memberType ||| MemberTypes.TypeInfo
@@ -104,11 +95,7 @@ module internal Utilities =
         declaringType.GetMembers(attr) |> Array.filter(fun m -> 0 <> (int(m.MemberType &&& memberType)) && m.Name = name)
 
     let rec tryFindMember (name: string) (memberType: MemberTypes) (declaringType: Type) =
-#if FX_RESHAPED_REFLECTION
-        let bindingFlags = System.Reflection.BindingFlags.Instance ||| System.Reflection.BindingFlags.Public ||| System.Reflection.BindingFlags.NonPublic
-#else
         let bindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic
-#endif
         match declaringType |> getMember name memberType bindingFlags with
         | [||] -> declaringType.GetInterfaces() |> Array.tryPick (tryFindMember name memberType)
         | [|m|] -> Some m
@@ -183,11 +170,6 @@ module internal Utilities =
         |> ignore
 
         outWriter.WriteLine()
-
-#if FX_RESHAPED_REFLECTION
-// restore type alias
-type BindingFlags = System.Reflection.BindingFlags
-#endif
 
 //----------------------------------------------------------------------------
 // Timing support
@@ -2410,9 +2392,7 @@ let internal DriveFsiEventLoop (fsi: FsiEvaluationSessionHostConfig, fsiConsoleO
 /// text input, writing to the given text output and error writers.
 type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter, fsiCollectible: bool, legacyReferenceResolver: ReferenceResolver.Resolver option) = 
 
-#if !FX_NO_HEAPTERMINATION
     do if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
-#endif
 
     // Explanation: When FsiEvaluationSession.Create is called we do a bunch of processing. For fsi.exe
     // and fsiAnyCpu.exe there are no other active threads at this point, so we can assume this is the

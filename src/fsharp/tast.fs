@@ -2022,9 +2022,6 @@ and Construct =
                 st.PApplyWithProvider((fun (st, provider) -> 
                     let findAttrib (ty:System.Type) (a:CustomAttributeData) = (a.Constructor.DeclaringType.FullName = ty.FullName)  
                     let ty = st.RawSystemType
-#if FX_RESHAPED_REFLECTION
-                    let ty = ty.GetTypeInfo()
-#endif
 #if FX_NO_CUSTOMATTRIBUTEDATA
                     provider.GetMemberCustomAttributesData(ty) 
 #else

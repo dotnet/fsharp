@@ -288,9 +288,7 @@ module Driver =
             for error in errors do eprintfn "%s" (error.ToString())
             exitCode
 
-#if !FX_NO_DEFAULT_DEPENDENCY_TYPE
 [<Dependency("FSharp.Compiler",LoadHint.Always)>] 
-#endif
 do ()
 
 [<EntryPoint>]
