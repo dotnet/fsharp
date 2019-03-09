@@ -53,3 +53,17 @@ let commas =
 printfn "Top files that have commas without spaces: %A" (Array.truncate 10 commas)
 
 
+printfn "------DANGLINE SEMICOLONS----------"
+
+let semis =
+    lines
+    |> Array.groupBy fst 
+    |> Array.map (fun (file, lines) -> 
+        file,
+        lines 
+        |> Array.filter (fun (_,(_,line)) -> line.Trim().EndsWith(";"))
+        |> Array.length)
+    |> Array.sortByDescending snd
+
+printfn "Top files that have semicolon at end of line: %A" (Array.truncate 10 semis)
+

@@ -2135,10 +2135,10 @@ let rec moduleOrNamespaceTypeLP (topLevel : bool) (denv: DisplayEnv) (mtype : Mo
     // REVIEW: consider a better way to keep decls in order. 
     let declSpecs : DeclSpec list =
         List.concat
-          [mtype.AllValsAndMembers |> Seq.toList |> List.filter (fun v -> not v.IsCompilerGenerated && v.MemberInfo.IsNone) |> List.map DVal;
-            mtype.TypeDefinitions |> List.map DTycon;
-            mtype.ExceptionDefinitions |> List.map DException;
-            mtype.ModuleAndNamespaceDefinitions |> List.map DModul;
+          [ mtype.AllValsAndMembers |> Seq.toList |> List.filter (fun v -> not v.IsCompilerGenerated && v.MemberInfo.IsNone) |> List.map DVal
+            mtype.TypeDefinitions |> List.map DTycon
+            mtype.ExceptionDefinitions |> List.map DException
+            mtype.ModuleAndNamespaceDefinitions |> List.map DModul
           ]
        
     let declSpecs = List.sortWithOrder (Order.orderOn rangeOfDeclSpec rangeOrder) declSpecs

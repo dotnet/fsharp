@@ -220,15 +220,15 @@ module RowElementTags =
     let [<Literal>] SimpleIndexMax = 119
 
     let [<Literal>] TypeDefOrRefOrSpecMin = 120
-    let TypeDefOrRefOrSpec  (t: TypeDefOrRefTag)        = assert (t.Tag <= 2);  TypeDefOrRefOrSpecMin + t.Tag (* + 111 + 1 = 0x70 + 1 = max TableName.Tndex  + 1 *)
+    let TypeDefOrRefOrSpec  (t: TypeDefOrRefTag)        = assert (t.Tag <= 2); TypeDefOrRefOrSpecMin + t.Tag (* + 111 + 1 = 0x70 + 1 = max TableName.Tndex  + 1 *)
     let [<Literal>] TypeDefOrRefOrSpecMax = 122
 
     let [<Literal>] TypeOrMethodDefMin = 123
-    let TypeOrMethodDef     (t: TypeOrMethodDefTag)     = assert (t.Tag <= 1);  TypeOrMethodDefMin + t.Tag  (* + 2 + 1 = max TypeDefOrRefOrSpec.Tag  + 1 *)
+    let TypeOrMethodDef     (t: TypeOrMethodDefTag)     = assert (t.Tag <= 1); TypeOrMethodDefMin + t.Tag  (* + 2 + 1 = max TypeDefOrRefOrSpec.Tag  + 1 *)
     let [<Literal>] TypeOrMethodDefMax = 124
 
     let [<Literal>] HasConstantMin = 125
-    let HasConstant         (t: HasConstantTag)         = assert (t.Tag <= 2);  HasConstantMin + t.Tag (* + 1 + 1 = max TypeOrMethodDef.Tag  + 1 *)
+    let HasConstant         (t: HasConstantTag)         = assert (t.Tag <= 2); HasConstantMin + t.Tag (* + 1 + 1 = max TypeOrMethodDef.Tag  + 1 *)
     let [<Literal>] HasConstantMax = 127
 
     let [<Literal>] HasCustomAttributeMin = 128
@@ -236,39 +236,39 @@ module RowElementTags =
     let [<Literal>] HasCustomAttributeMax = 149
 
     let [<Literal>] HasFieldMarshalMin = 150
-    let HasFieldMarshal     (t: HasFieldMarshalTag)     = assert (t.Tag <= 1);  HasFieldMarshalMin + t.Tag  (* + 21 + 1 = max HasCustomAttribute.Tag  + 1 *)
+    let HasFieldMarshal     (t: HasFieldMarshalTag)     = assert (t.Tag <= 1); HasFieldMarshalMin + t.Tag  (* + 21 + 1 = max HasCustomAttribute.Tag  + 1 *)
     let [<Literal>] HasFieldMarshalMax = 151
 
     let [<Literal>] HasDeclSecurityMin = 152
-    let HasDeclSecurity     (t: HasDeclSecurityTag)     = assert (t.Tag <= 2);  HasDeclSecurityMin + t.Tag  (* + 1 + 1 = max HasFieldMarshal.Tag  + 1 *)
+    let HasDeclSecurity     (t: HasDeclSecurityTag)     = assert (t.Tag <= 2); HasDeclSecurityMin + t.Tag  (* + 1 + 1 = max HasFieldMarshal.Tag  + 1 *)
     let [<Literal>] HasDeclSecurityMax = 154
 
     let [<Literal>] MemberRefParentMin = 155
-    let MemberRefParent     (t: MemberRefParentTag)     = assert (t.Tag <= 4);  MemberRefParentMin + t.Tag  (* + 2 + 1 = max HasDeclSecurity.Tag  + 1 *)
+    let MemberRefParent     (t: MemberRefParentTag)     = assert (t.Tag <= 4); MemberRefParentMin + t.Tag  (* + 2 + 1 = max HasDeclSecurity.Tag  + 1 *)
     let [<Literal>] MemberRefParentMax = 159
 
     let [<Literal>] HasSemanticsMin = 160
-    let HasSemantics        (t: HasSemanticsTag)        = assert (t.Tag <= 1);  HasSemanticsMin + t.Tag  (* + 4 + 1 = max MemberRefParent.Tag  + 1 *)
+    let HasSemantics        (t: HasSemanticsTag)        = assert (t.Tag <= 1); HasSemanticsMin + t.Tag  (* + 4 + 1 = max MemberRefParent.Tag  + 1 *)
     let [<Literal>] HasSemanticsMax = 161
 
     let [<Literal>] MethodDefOrRefMin = 162
-    let MethodDefOrRef      (t: MethodDefOrRefTag)      = assert (t.Tag <= 2);  MethodDefOrRefMin + t.Tag  (* + 1 + 1 = max HasSemantics.Tag  + 1 *)
+    let MethodDefOrRef      (t: MethodDefOrRefTag)      = assert (t.Tag <= 2); MethodDefOrRefMin + t.Tag  (* + 1 + 1 = max HasSemantics.Tag  + 1 *)
     let [<Literal>] MethodDefOrRefMax = 164
 
     let [<Literal>] MemberForwardedMin = 165
-    let MemberForwarded     (t: MemberForwardedTag)     = assert (t.Tag <= 1);  MemberForwardedMin + t.Tag  (* + 2 + 1 = max MethodDefOrRef.Tag  + 1 *)
+    let MemberForwarded     (t: MemberForwardedTag)     = assert (t.Tag <= 1); MemberForwardedMin + t.Tag  (* + 2 + 1 = max MethodDefOrRef.Tag  + 1 *)
     let [<Literal>] MemberForwardedMax = 166
 
     let [<Literal>] ImplementationMin = 167
-    let Implementation      (t: ImplementationTag)      = assert (t.Tag <= 2);  ImplementationMin + t.Tag  (* + 1 + 1 = max MemberForwarded.Tag  + 1 *)
+    let Implementation      (t: ImplementationTag)      = assert (t.Tag <= 2); ImplementationMin + t.Tag  (* + 1 + 1 = max MemberForwarded.Tag  + 1 *)
     let [<Literal>] ImplementationMax = 169
 
     let [<Literal>] CustomAttributeTypeMin = 170
-    let CustomAttributeType (t: CustomAttributeTypeTag) = assert (t.Tag <= 3);  CustomAttributeTypeMin + t.Tag  (* + 2 + 1 = max Implementation.Tag + 1 *)
+    let CustomAttributeType (t: CustomAttributeTypeTag) = assert (t.Tag <= 3); CustomAttributeTypeMin + t.Tag  (* + 2 + 1 = max Implementation.Tag + 1 *)
     let [<Literal>] CustomAttributeTypeMax = 173
 
     let [<Literal>] ResolutionScopeMin = 174
-    let ResolutionScope     (t: ResolutionScopeTag)     = assert (t.Tag <= 4);  ResolutionScopeMin + t.Tag  (* + 3 + 1 = max CustomAttributeType.Tag  + 1 *)
+    let ResolutionScope     (t: ResolutionScopeTag)     = assert (t.Tag <= 4); ResolutionScopeMin + t.Tag  (* + 3 + 1 = max CustomAttributeType.Tag  + 1 *)
     let [<Literal>] ResolutionScopeMax = 178
 
 [<Struct>]
@@ -1392,8 +1392,8 @@ and GetCustomAttrRow cenv hca (attr: ILAttribute) =
         | _ -> ()
 
     UnsharedRow
-            [| HasCustomAttribute (fst hca, snd hca);
-               CustomAttributeType (fst cat, snd cat);
+            [| HasCustomAttribute (fst hca, snd hca)
+               CustomAttributeType (fst cat, snd cat)
                Blob (GetCustomAttrDataAsBlobIdx cenv data)
             |]
 
@@ -3289,7 +3289,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
 
         // Now the coded tables themselves  - first the schemata header 
         tablesBuf.EmitIntsAsBytes    
-            [| 0x00; 0x00; 0x00; 0x00; 
+            [| 0x00; 0x00; 0x00; 0x00
                mdtableVersionMajor // major version of table schemata 
                mdtableVersionMinor // minor version of table schemata 
                
@@ -3366,72 +3366,72 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
     let metadata, guidStart =
       let mdbuf =  ByteBuffer.Create 500000 
       mdbuf.EmitIntsAsBytes 
-        [| 0x42; 0x53; 0x4a; 0x42; // Magic signature 
-           0x01; 0x00; // Major version 
-           0x01; 0x00; // Minor version 
-        |];
-      mdbuf.EmitInt32 0x0; // Reserved 
+        [| 0x42; 0x53; 0x4a; 0x42 // Magic signature 
+           0x01; 0x00 // Major version 
+           0x01; 0x00 // Minor version 
+        |]
+      mdbuf.EmitInt32 0x0 // Reserved 
 
-      mdbuf.EmitInt32 paddedVersionLength;
-      mdbuf.EmitBytes version;
+      mdbuf.EmitInt32 paddedVersionLength
+      mdbuf.EmitBytes version
       for i = 1 to (paddedVersionLength - Array.length version) do 
-          mdbuf.EmitIntAsByte 0x00;
+          mdbuf.EmitIntAsByte 0x00
 
       mdbuf.EmitBytes 
-        [| 0x00uy; 0x00uy; // flags, reserved 
-          b0 numStreams; b1 numStreams; |];
-      mdbuf.EmitInt32 tablesChunk.addr;
-      mdbuf.EmitInt32 tablesChunk.size;
-      mdbuf.EmitIntsAsBytes [| 0x23; 0x7e; 0x00; 0x00; (* #~00 *)|];
-      mdbuf.EmitInt32 stringsChunk.addr;
-      mdbuf.EmitInt32 stringsChunk.size;
-      mdbuf.EmitIntsAsBytes  [| 0x23; 0x53; 0x74; 0x72; 0x69; 0x6e; 0x67; 0x73; 0x00; 0x00; 0x00; 0x00 (* "#Strings0000" *)|];
-      mdbuf.EmitInt32 userStringsChunk.addr;
-      mdbuf.EmitInt32 userStringsChunk.size;
-      mdbuf.EmitIntsAsBytes [| 0x23; 0x55; 0x53; 0x00; (* #US0*) |];
-      mdbuf.EmitInt32 guidsChunk.addr;
-      mdbuf.EmitInt32 guidsChunk.size;
-      mdbuf.EmitIntsAsBytes [| 0x23; 0x47; 0x55; 0x49; 0x44; 0x00; 0x00; 0x00; (* #GUID000 *)|];
-      mdbuf.EmitInt32 blobsChunk.addr;
-      mdbuf.EmitInt32 blobsChunk.size;
-      mdbuf.EmitIntsAsBytes [| 0x23; 0x42; 0x6c; 0x6f; 0x62; 0x00; 0x00; 0x00; (* #Blob000 *)|];
+        [| 0x00uy; 0x00uy // flags, reserved 
+          b0 numStreams; b1 numStreams; |]
+      mdbuf.EmitInt32 tablesChunk.addr
+      mdbuf.EmitInt32 tablesChunk.size
+      mdbuf.EmitIntsAsBytes [| 0x23; 0x7e; 0x00; 0x00; (* #~00 *)|]
+      mdbuf.EmitInt32 stringsChunk.addr
+      mdbuf.EmitInt32 stringsChunk.size
+      mdbuf.EmitIntsAsBytes  [| 0x23; 0x53; 0x74; 0x72; 0x69; 0x6e; 0x67; 0x73; 0x00; 0x00; 0x00; 0x00 (* "#Strings0000" *)|]
+      mdbuf.EmitInt32 userStringsChunk.addr
+      mdbuf.EmitInt32 userStringsChunk.size
+      mdbuf.EmitIntsAsBytes [| 0x23; 0x55; 0x53; 0x00; (* #US0*) |]
+      mdbuf.EmitInt32 guidsChunk.addr
+      mdbuf.EmitInt32 guidsChunk.size
+      mdbuf.EmitIntsAsBytes [| 0x23; 0x47; 0x55; 0x49; 0x44; 0x00; 0x00; 0x00; (* #GUID000 *)|]
+      mdbuf.EmitInt32 blobsChunk.addr
+      mdbuf.EmitInt32 blobsChunk.size
+      mdbuf.EmitIntsAsBytes [| 0x23; 0x42; 0x6c; 0x6f; 0x62; 0x00; 0x00; 0x00; (* #Blob000 *)|]
       
-      reportTime showTimes "Write Metadata Header";
+      reportTime showTimes "Write Metadata Header"
      // Now the coded tables themselves 
-      mdbuf.EmitBytes codedTables;    
+      mdbuf.EmitBytes codedTables
       for i = 1 to tablesStreamPadding do 
-          mdbuf.EmitIntAsByte 0x00;
-      reportTime showTimes "Write Metadata Tables";
+          mdbuf.EmitIntAsByte 0x00
+      reportTime showTimes "Write Metadata Tables"
 
      // The string stream 
-      mdbuf.EmitByte 0x00uy;
+      mdbuf.EmitByte 0x00uy
       for s in strings do
-          mdbuf.EmitBytes s;
+          mdbuf.EmitBytes s
       for i = 1 to stringsStreamPadding do 
-          mdbuf.EmitIntAsByte 0x00;
-      reportTime showTimes "Write Metadata Strings";
+          mdbuf.EmitIntAsByte 0x00
+      reportTime showTimes "Write Metadata Strings"
      // The user string stream 
-      mdbuf.EmitByte  0x00uy;
+      mdbuf.EmitByte  0x00uy
       for s in userStrings do
-          mdbuf.EmitZ32 (s.Length + 1);
-          mdbuf.EmitBytes s;
+          mdbuf.EmitZ32 (s.Length + 1)
+          mdbuf.EmitBytes s
           mdbuf.EmitIntAsByte (markerForUnicodeBytes s)
       for i = 1 to userStringsStreamPadding do 
-          mdbuf.EmitIntAsByte 0x00;
+          mdbuf.EmitIntAsByte 0x00
 
-      reportTime showTimes "Write Metadata User Strings";
+      reportTime showTimes "Write Metadata User Strings"
     // The GUID stream 
       let guidStart = mdbuf.Position
-      Array.iter mdbuf.EmitBytes guids;
+      Array.iter mdbuf.EmitBytes guids
       
     // The blob stream 
-      mdbuf.EmitByte 0x00uy;
+      mdbuf.EmitByte 0x00uy
       for s in blobs do 
-          mdbuf.EmitZ32 s.Length;
+          mdbuf.EmitZ32 s.Length
           mdbuf.EmitBytes s
       for i = 1 to blobsStreamPadding do 
-          mdbuf.EmitIntAsByte 0x00;
-      reportTime showTimes "Write Blob Stream";
+          mdbuf.EmitIntAsByte 0x00
+      reportTime showTimes "Write Blob Stream"
      // Done - close the buffer and return the result. 
       mdbuf.Close(), guidStart
     
@@ -3441,13 +3441,13 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
     for (codeStartAddr, l) in requiredStringFixups do
         for (codeOffset, userStringIndex) in l do 
               if codeStartAddr < codep.addr || codeStartAddr >= codep.addr + codep.size  then 
-                  failwith "strings-in-code fixup: a group of fixups is located outside the code array";
+                  failwith "strings-in-code fixup: a group of fixups is located outside the code array"
               let locInCode =  ((codeStartAddr + codeOffset) - codep.addr)
-              checkFixup32 code locInCode 0xdeadbeef;
+              checkFixup32 code locInCode 0xdeadbeef
               let token = getUncodedToken TableNames.UserStrings (userStringAddress userStringIndex)
-              if (Bytes.get code (locInCode-1) <> i_ldstr) then failwith "strings-in-code fixup: not at ldstr instruction!";
+              if (Bytes.get code (locInCode-1) <> i_ldstr) then failwith "strings-in-code fixup: not at ldstr instruction!"
               applyFixup32 code locInCode token
-    reportTime showTimes "Fixup Metadata";
+    reportTime showTimes "Fixup Metadata"
 
     entryPointToken, code, codePadding, metadata, data, resources, !requiredDataFixups, pdbData, mappings, guidStart
 
@@ -3484,27 +3484,27 @@ let msdosHeader : byte[] =
         0x24uy; 0x00uy; 0x00uy; 0x00uy; 0x00uy; 0x00uy; 0x00uy; 0x00uy |]
 
 let writeInt64 (os: BinaryWriter) x =
-    os.Write (dw0 x);
-    os.Write (dw1 x);
-    os.Write (dw2 x);
-    os.Write (dw3 x);
-    os.Write (dw4 x);
-    os.Write (dw5 x);
-    os.Write (dw6 x);
+    os.Write (dw0 x)
+    os.Write (dw1 x)
+    os.Write (dw2 x)
+    os.Write (dw3 x)
+    os.Write (dw4 x)
+    os.Write (dw5 x)
+    os.Write (dw6 x)
     os.Write (dw7 x)
 
 let writeInt32 (os: BinaryWriter) x = 
-    os.Write  (byte (b0 x));
-    os.Write  (byte (b1 x));
-    os.Write  (byte (b2 x));
+    os.Write  (byte (b0 x))
+    os.Write  (byte (b1 x))
+    os.Write  (byte (b2 x))
     os.Write  (byte (b3 x))  
 
 let writeInt32AsUInt16 (os: BinaryWriter) x = 
-    os.Write  (byte (b0 x));
+    os.Write  (byte (b0 x))
     os.Write  (byte (b1 x))
       
 let writeDirectory os dict =
-    writeInt32 os (if dict.size = 0x0 then 0x0 else dict.addr);
+    writeInt32 os (if dict.size = 0x0 then 0x0 else dict.addr)
     writeInt32 os dict.size
 
 let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk, 0, chunk.Length)  
@@ -3516,7 +3516,7 @@ let writeBinaryAndReportMappings (outfile,
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
-    reportTime showTimes "Write Started";
+    reportTime showTimes "Write Started"
     let isDll = modul.IsDLL
     
     let signer = 
@@ -3524,13 +3524,13 @@ let writeBinaryAndReportMappings (outfile,
         | Some _, _ -> signer
         | _, None -> signer
         | None, Some {PublicKey=Some pubkey} -> 
-            (dprintn "Note: The output assembly will be delay-signed using the original public";
-             dprintn "Note: key. In order to load it you will need to either sign it with";
-             dprintn "Note: the original private key or to turn off strong-name verification";
-             dprintn "Note: (use sn.exe from the .NET Framework SDK to do this, e.g. 'sn -Vr *').";
-             dprintn "Note: Alternatively if this tool supports it you can provide the original";
-             dprintn "Note: private key when converting the assembly, assuming you have access to";
-             dprintn "Note: it.";
+            (dprintn "Note: The output assembly will be delay-signed using the original public"
+             dprintn "Note: key. In order to load it you will need to either sign it with"
+             dprintn "Note: the original private key or to turn off strong-name verification"
+             dprintn "Note: (use sn.exe from the .NET Framework SDK to do this, e.g. 'sn -Vr *')."
+             dprintn "Note: Alternatively if this tool supports it you can provide the original"
+             dprintn "Note: private key when converting the assembly, assuming you have access to"
+             dprintn "Note: it."
              Some (ILStrongNameSigner.OpenPublicKey pubkey))
         | _ -> signer
 
@@ -3541,14 +3541,14 @@ let writeBinaryAndReportMappings (outfile,
           | Some s -> 
              try Some s.PublicKey  
              with e ->     
-               failwith ("A call to StrongNameGetPublicKey failed ("+e.Message+")"); 
+               failwith ("A call to StrongNameGetPublicKey failed ("+e.Message+")")
                None
         begin match modul.Manifest with 
         | None -> () 
         | Some m -> 
            if m.PublicKey <> None && m.PublicKey <> pubkey then 
              dprintn "Warning: The output assembly is being signed or delay-signed with a strong name that is different to the original."
-        end;
+        end
         { modul with Manifest = match modul.Manifest with None -> None | Some m -> Some {m with PublicKey = pubkey} }
 
     let os = 
@@ -3631,7 +3631,7 @@ let writeBinaryAndReportMappings (outfile,
           let entryPointToken, code, codePadding, metadata, data, resources, requiredDataFixups, pdbData, mappings, guidStart =
             writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg, emitTailcalls, deterministic, showTimes) modul next normalizeAssemblyRefs
 
-          reportTime showTimes "Generated IL and metadata";
+          reportTime showTimes "Generated IL and metadata"
           let _codeChunk, next = chunk code.Length next
           let _codePaddingChunk, next = chunk codePadding.Length next
           
@@ -3767,62 +3767,62 @@ let writeBinaryAndReportMappings (outfile,
             requiredDataFixups |> List.iter
               (fun (metadataOffset32, (dataOffset, kind)) -> 
                 let metadataOffset =  metadataOffset32
-                if metadataOffset < 0 || metadataOffset >= metadata.Length - 4  then failwith "data RVA fixup: fixup located outside metadata";
-                checkFixup32 metadata metadataOffset 0xdeaddddd;
+                if metadataOffset < 0 || metadataOffset >= metadata.Length - 4  then failwith "data RVA fixup: fixup located outside metadata"
+                checkFixup32 metadata metadataOffset 0xdeaddddd
                 let dataRva = 
                   if kind then
                       let res = dataOffset
-                      if res >= resourcesChunk.size then dprintn ("resource offset bigger than resource data section");
+                      if res >= resourcesChunk.size then dprintn ("resource offset bigger than resource data section")
                       res
                   else 
                       let res = rawdataChunk.addr + dataOffset
-                      if res < rawdataChunk.addr then dprintn ("data rva before data section");
+                      if res < rawdataChunk.addr then dprintn ("data rva before data section")
                       if res >= rawdataChunk.addr + rawdataChunk.size then 
                           dprintn ("data rva after end of data section, dataRva = "+string res+", rawdataChunk.addr = "+string rawdataChunk.addr
-                                   + ", rawdataChunk.size = "+string rawdataChunk.size);
+                                   + ", rawdataChunk.size = "+string rawdataChunk.size)
                       res
-                applyFixup32 metadata metadataOffset dataRva);
-          end;
+                applyFixup32 metadata metadataOffset dataRva)
+          end
           
          // IMAGE TOTAL SIZE 
           let imageEndSectionPhysLoc =  nextPhys
           let imageEndAddr = next
 
-          reportTime showTimes "Layout image";
+          reportTime showTimes "Layout image"
 
           let write p (os: BinaryWriter) chunkName chunk = 
               match p with 
               | None -> () 
               | Some pExpected -> 
-                  os.Flush(); 
+                  os.Flush()
                   let pCurrent =  int32 os.BaseStream.Position
                   if pCurrent <> pExpected then 
                     failwith ("warning: "+chunkName+" not where expected, pCurrent = "+string pCurrent+", p.addr = "+string pExpected) 
               writeBytes os chunk 
           
           let writePadding (os: BinaryWriter) _comment sz =
-              if sz < 0 then failwith "writePadding: size < 0";
+              if sz < 0 then failwith "writePadding: size < 0"
               for i = 0 to sz - 1 do 
                   os.Write 0uy
           
           // Now we've computed all the offsets, write the image 
           
-          write (Some msdosHeaderChunk.addr) os "msdos header" msdosHeader;
+          write (Some msdosHeaderChunk.addr) os "msdos header" msdosHeader
           
-          write (Some peSignatureChunk.addr) os "pe signature" [| |];
+          write (Some peSignatureChunk.addr) os "pe signature" [| |]
           
-          writeInt32 os 0x4550;
+          writeInt32 os 0x4550
           
-          write (Some peFileHeaderChunk.addr) os "pe file header" [| |];
+          write (Some peFileHeaderChunk.addr) os "pe file header" [| |]
           
           if (modul.Platform = Some(AMD64)) then
             writeInt32AsUInt16 os 0x8664    // Machine - IMAGE_FILE_MACHINE_AMD64 
           elif isItanium then
             writeInt32AsUInt16 os 0x200
           else
-            writeInt32AsUInt16 os 0x014c;   // Machine - IMAGE_FILE_MACHINE_I386 
+            writeInt32AsUInt16 os 0x014c   // Machine - IMAGE_FILE_MACHINE_I386 
             
-          writeInt32AsUInt16 os numSections;
+          writeInt32AsUInt16 os numSections
 
           let pdbData = 
             if deterministic then
@@ -3850,58 +3850,58 @@ let writeBinaryAndReportMappings (outfile,
               writeInt32 os timestamp   // date since 1970
               pdbData
 
-          writeInt32 os 0x00; // Pointer to Symbol Table Always 0 
+          writeInt32 os 0x00 // Pointer to Symbol Table Always 0 
        // 00000090 
-          writeInt32 os 0x00; // Number of Symbols Always 0 
-          writeInt32AsUInt16 os peOptionalHeaderSize; // Size of the optional header, the format is described below. 
+          writeInt32 os 0x00 // Number of Symbols Always 0 
+          writeInt32AsUInt16 os peOptionalHeaderSize // Size of the optional header, the format is described below. 
           
           // 64bit: IMAGE_FILE_32BIT_MACHINE ||| IMAGE_FILE_LARGE_ADDRESS_AWARE
           // 32bit: IMAGE_FILE_32BIT_MACHINE
           // Yes, 32BIT_MACHINE is set for AMD64...
           let iMachineCharacteristic = match modul.Platform with | Some IA64 -> 0x20 | Some AMD64 -> 0x0120 | _ -> 0x0100
           
-          writeInt32AsUInt16 os ((if isDll then 0x2000 else 0x0000) ||| 0x0002 ||| 0x0004 ||| 0x0008 ||| iMachineCharacteristic);
+          writeInt32AsUInt16 os ((if isDll then 0x2000 else 0x0000) ||| 0x0002 ||| 0x0004 ||| 0x0008 ||| iMachineCharacteristic)
           
        // Now comes optional header 
 
           let peOptionalHeaderByte = peOptionalHeaderByteByCLRVersion desiredMetadataVersion
 
-          write (Some peOptionalHeaderChunk.addr) os "pe optional header" [| |];
+          write (Some peOptionalHeaderChunk.addr) os "pe optional header" [| |]
           if modul.Is64Bit then
             writeInt32AsUInt16 os 0x020B // Magic number is 0x020B for 64-bit 
           else
-            writeInt32AsUInt16 os 0x010b; // Always 0x10B (see Section 23.1). 
-          writeInt32AsUInt16 os peOptionalHeaderByte; // ECMA spec says 6, some binaries, e.g. fscmanaged.exe say 7, Whidbey binaries say 8 
-          writeInt32 os textSectionPhysSize;          // Size of the code (text) section, or the sum of all code sections if there are multiple sections. 
+            writeInt32AsUInt16 os 0x010b // Always 0x10B (see Section 23.1). 
+          writeInt32AsUInt16 os peOptionalHeaderByte // ECMA spec says 6, some binaries, e.g. fscmanaged.exe say 7, Whidbey binaries say 8 
+          writeInt32 os textSectionPhysSize          // Size of the code (text) section, or the sum of all code sections if there are multiple sections. 
         // 000000a0 
-          writeInt32 os dataSectionPhysSize;          // Size of the initialized data section
-          writeInt32 os 0x00;                         // Size of the uninitialized data section
-          writeInt32 os entrypointCodeChunk.addr;     // RVA of entry point , needs to point to bytes 0xFF 0x25 followed by the RVA+!0x4000000 
-          writeInt32 os textSectionAddr;              // e.g. 0x0002000 
+          writeInt32 os dataSectionPhysSize          // Size of the initialized data section
+          writeInt32 os 0x00                         // Size of the uninitialized data section
+          writeInt32 os entrypointCodeChunk.addr     // RVA of entry point , needs to point to bytes 0xFF 0x25 followed by the RVA+!0x4000000 
+          writeInt32 os textSectionAddr              // e.g. 0x0002000 
        // 000000b0 
           if modul.Is64Bit then
             writeInt64 os ((int64)imageBaseReal)    // REVIEW: For 64-bit, we should use a 64-bit image base 
           else             
-            writeInt32 os dataSectionAddr; // e.g. 0x0000c000           
-            writeInt32 os imageBaseReal; // Image Base Always 0x400000 (see Section 23.1). - QUERY : no it's not always 0x400000, e.g. 0x034f0000 
+            writeInt32 os dataSectionAddr // e.g. 0x0000c000           
+            writeInt32 os imageBaseReal // Image Base Always 0x400000 (see Section 23.1). - QUERY : no it's not always 0x400000, e.g. 0x034f0000 
             
-          writeInt32 os alignVirt;  //  Section Alignment Always 0x2000 (see Section 23.1). 
-          writeInt32 os alignPhys; // File Alignment Either 0x200 or 0x1000. 
+          writeInt32 os alignVirt //  Section Alignment Always 0x2000 (see Section 23.1). 
+          writeInt32 os alignPhys // File Alignment Either 0x200 or 0x1000. 
        // 000000c0  
-          writeInt32AsUInt16 os 0x04; //  OS Major Always 4 (see Section 23.1). 
-          writeInt32AsUInt16 os 0x00; // OS Minor Always 0 (see Section 23.1). 
-          writeInt32AsUInt16 os 0x00; // User Major Always 0 (see Section 23.1). 
-          writeInt32AsUInt16 os 0x00; // User Minor Always 0 (see Section 23.1). 
+          writeInt32AsUInt16 os 0x04 //  OS Major Always 4 (see Section 23.1). 
+          writeInt32AsUInt16 os 0x00 // OS Minor Always 0 (see Section 23.1). 
+          writeInt32AsUInt16 os 0x00 // User Major Always 0 (see Section 23.1). 
+          writeInt32AsUInt16 os 0x00 // User Minor Always 0 (see Section 23.1). 
           do
             let (major, minor) = modul.SubsystemVersion
-            writeInt32AsUInt16 os major;
-            writeInt32AsUInt16 os minor;
-          writeInt32 os 0x00; // Reserved Always 0 (see Section 23.1). 
+            writeInt32AsUInt16 os major
+            writeInt32AsUInt16 os minor
+          writeInt32 os 0x00 // Reserved Always 0 (see Section 23.1). 
        // 000000d0  
-          writeInt32 os imageEndAddr; // Image Size: Size, in bytes, of image, including all headers and padding; 
-          writeInt32 os headerSectionPhysSize; // Header Size Combined size of MS-DOS Header, PE Header, PE Optional Header and padding; 
-          writeInt32 os 0x00; // File Checksum Always 0 (see Section 23.1). QUERY: NOT ALWAYS ZERO 
-          writeInt32AsUInt16 os modul.SubSystemFlags; // SubSystem Subsystem required to run this image.
+          writeInt32 os imageEndAddr // Image Size: Size, in bytes, of image, including all headers and padding
+          writeInt32 os headerSectionPhysSize // Header Size Combined size of MS-DOS Header, PE Header, PE Optional Header and padding
+          writeInt32 os 0x00 // File Checksum Always 0 (see Section 23.1). QUERY: NOT ALWAYS ZERO 
+          writeInt32AsUInt16 os modul.SubSystemFlags // SubSystem Subsystem required to run this image.
           // DLL Flags Always 0x400 (no unmanaged windows exception handling - see Section 23.1).
           //  Itanium: see notes at end of file 
           //  IMAGE_DLLCHARACTERISTICS_NX_COMPAT: See FSharp 1.0 bug 5019 and http://blogs.msdn.com/ed_maurer/archive/2007/12/14/nxcompat-and-the-c-compiler.aspx 
@@ -4108,12 +4108,12 @@ let writeBinaryAndReportMappings (outfile,
           // Two zero bytes of hint, then Case sensitive, null-terminated ASCII string containing name to import. 
           // Shall _CorExeMain a .exe file _CorDllMain for a .dll file.
           if isDll then 
-              writeBytes os [| 0x00uy;  0x00uy;  0x5fuy;  0x43uy ;  0x6fuy;  0x72uy;  0x44uy;  0x6cuy;  0x6cuy;  0x4duy;  0x61uy;  0x69uy;  0x6euy;  0x00uy |]
+              writeBytes os [| 0x00uy; 0x00uy; 0x5fuy; 0x43uy ; 0x6fuy; 0x72uy; 0x44uy; 0x6cuy; 0x6cuy; 0x4duy; 0x61uy; 0x69uy; 0x6euy; 0x00uy |]
           else 
-              writeBytes os [| 0x00uy;  0x00uy;  0x5fuy;  0x43uy;  0x6fuy;  0x72uy;  0x45uy;  0x78uy;  0x65uy;  0x4duy;  0x61uy;  0x69uy;  0x6euy;  0x00uy |]
+              writeBytes os [| 0x00uy; 0x00uy; 0x5fuy; 0x43uy; 0x6fuy; 0x72uy; 0x45uy; 0x78uy; 0x65uy; 0x4duy; 0x61uy; 0x69uy; 0x6euy; 0x00uy |]
           
           write (Some (textV2P mscoreeStringChunk.addr)) os "mscoree string"
-            [| 0x6duy;  0x73uy;  0x63uy;  0x6fuy ;  0x72uy;  0x65uy ;  0x65uy;  0x2euy ;  0x64uy;  0x6cuy ;  0x6cuy;  0x00uy ; |]
+            [| 0x6duy; 0x73uy; 0x63uy; 0x6fuy ; 0x72uy; 0x65uy ; 0x65uy; 0x2euy ; 0x64uy; 0x6cuy ; 0x6cuy; 0x00uy ; |]
           
           writePadding os "end of import tab" importTableChunkPadding
           
@@ -4165,9 +4165,9 @@ let writeBinaryAndReportMappings (outfile,
                   0xA000 ||| (globalpointerCodeChunk.addr - ((globalpointerCodeChunk.addr / 4096) * 4096))
                
           write (Some (relocV2P baseRelocTableChunk.addr)) os "base reloc table" 
-              [| b0 entrypointFixupBlock; b1 entrypointFixupBlock; b2 entrypointFixupBlock; b3 entrypointFixupBlock;
-                 0x0cuy; 0x00uy; 0x00uy; 0x00uy;
-                 b0 reloc; b1 reloc; 
+              [| b0 entrypointFixupBlock; b1 entrypointFixupBlock; b2 entrypointFixupBlock; b3 entrypointFixupBlock
+                 0x0cuy; 0x00uy; 0x00uy; 0x00uy
+                 b0 reloc; b1 reloc
                  b0 reloc2; b1 reloc2; |]
           writePadding os "end of .reloc" (imageEndSectionPhysLoc - relocSectionPhysLoc - relocSectionSize)
 
@@ -4268,7 +4268,7 @@ let writeBinaryAndReportMappings (outfile,
     mappings
 
 type options =
-   { ilg: ILGlobals;
+   { ilg: ILGlobals
      pdbfile: string option
      portablePDB: bool
      embeddedPDB: bool

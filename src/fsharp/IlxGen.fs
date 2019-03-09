@@ -2692,8 +2692,8 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
         GenExpr cenv cgbuf eenv SPSuppress expr sequel
     elif isRefTupleExpr expr then
         let es = tryDestRefTupleExpr expr
-        if es.Length <> numRequiredExprs then error(InternalError("GenUntupledArgExpr (2)", m));
-        es |> List.iter (fun x -> GenExpr cenv cgbuf eenv SPSuppress x Continue);
+        if es.Length <> numRequiredExprs then error(InternalError("GenUntupledArgExpr (2)", m))
+        es |> List.iter (fun x -> GenExpr cenv cgbuf eenv SPSuppress x Continue)
         GenSequel cenv eenv.cloc cgbuf sequel
     else
         let ty = tyOfExpr cenv.g expr
@@ -2701,11 +2701,11 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
         let bind = mkCompGenBind locv expr
         LocalScope "untuple" cgbuf (fun scopeMarks ->
             let eenvinner = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
-            GenBinding cenv cgbuf eenvinner bind;
+            GenBinding cenv cgbuf eenvinner bind
             let tys = destRefTupleTy cenv.g ty
             assert (tys.Length = numRequiredExprs)
             // TODO - tupInfoRef
-            argInfos |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (tupInfoRef (* TODO *), loce, tys, i, m) Continue);
+            argInfos |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (tupInfoRef (* TODO *), loce, tys, i, m) Continue)
             GenSequel cenv eenv.cloc cgbuf sequel
         )
 
@@ -3630,7 +3630,7 @@ and GenGetValAddr cenv cgbuf eenv (v: ValRef, m) sequel =
 
     | Local (_, _, Some _) | StaticProperty _ | Method _ | Env _  | Null ->
         errorR(Error(FSComp.SR.ilAddressOfValueHereIsInvalid(v.DisplayName), m))
-        CG.EmitInstrs cgbuf (pop 1) (Push [ILType.Byref ilTy]) [ I_ldarga (uint16 669 (* random value for post-hoc diagnostic analysis on generated tree *) ) ] ;
+        CG.EmitInstrs cgbuf (pop 1) (Push [ILType.Byref ilTy]) [ I_ldarga (uint16 669 (* random value for post-hoc diagnostic analysis on generated tree *) ) ] 
 
     GenSequel cenv eenv.cloc cgbuf sequel
 

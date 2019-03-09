@@ -311,14 +311,14 @@ type TraitConstraintSolution =
 let BakedInTraitConstraintNames =
     [ "op_Division" ; "op_Multiply"; "op_Addition" 
       "op_Equality" ; "op_Inequality"; "op_GreaterThan" ; "op_LessThan"; "op_LessThanOrEqual"; "op_GreaterThanOrEqual"
-      "op_Subtraction"; "op_Modulus"; 
-      "get_Zero"; "get_One";
-      "DivideByInt";"get_Item"; "set_Item";
-      "op_BitwiseAnd"; "op_BitwiseOr"; "op_ExclusiveOr"; "op_LeftShift";
+      "op_Subtraction"; "op_Modulus"
+      "get_Zero"; "get_One"
+      "DivideByInt";"get_Item"; "set_Item"
+      "op_BitwiseAnd"; "op_BitwiseOr"; "op_ExclusiveOr"; "op_LeftShift"
       "op_RightShift"; "op_UnaryPlus"; "op_UnaryNegation"; "get_Sign"; "op_LogicalNot"
-      "op_OnesComplement"; "Abs"; "Sqrt"; "Sin"; "Cos"; "Tan";
-      "Sinh";  "Cosh"; "Tanh"; "Atan"; "Acos"; "Asin"; "Exp"; "Ceiling"; "Floor"; "Round"; "Log10"; "Log"; "Sqrt";
-      "Truncate"; "op_Explicit";
+      "op_OnesComplement"; "Abs"; "Sqrt"; "Sin"; "Cos"; "Tan"
+      "Sinh";  "Cosh"; "Tanh"; "Atan"; "Acos"; "Asin"; "Exp"; "Ceiling"; "Floor"; "Round"; "Log10"; "Log"; "Sqrt"
+      "Truncate"; "op_Explicit"
       "Pow"; "Atan2" ]
     |> set
     
@@ -448,12 +448,12 @@ let FindPreferredTypar vs =
     find vs
   
 let SubstMeasure (r:Typar) ms = 
-    if r.Rigidity = TyparRigidity.Rigid then error(InternalError("SubstMeasure: rigid", r.Range)); 
-    if r.Kind = TyparKind.Type then error(InternalError("SubstMeasure: kind=type", r.Range));
+    if r.Rigidity = TyparRigidity.Rigid then error(InternalError("SubstMeasure: rigid", r.Range))
+    if r.Kind = TyparKind.Type then error(InternalError("SubstMeasure: kind=type", r.Range))
 
     match r.typar_solution with
     | None -> r.typar_solution <- Some (TType_measure ms)
-    | Some _ -> error(InternalError("already solved", r.Range));
+    | Some _ -> error(InternalError("already solved", r.Range))
 
 let rec TransactStaticReq (csenv:ConstraintSolverEnv) (trace:OptionalTrace) (tpr:Typar) req = 
     let m = csenv.m
@@ -573,7 +573,7 @@ let SimplifyMeasure g vars ms =
           let remainingvars = ListSet.remove typarEq v vars
           let newvarExpr = if SignRational e < 0 then Measure.Inv (Measure.Var newvar) else Measure.Var newvar
           let newms = (ProdMeasures (List.map (fun (c, e') -> Measure.RationalPower (Measure.Con c, NegRational (DivRational e' e))) (ListMeasureConOccsWithNonZeroExponents g false ms)
-                                   @ List.map (fun (v', e') -> if typarEq v v' then newvarExpr else Measure.RationalPower (Measure.Var v', NegRational (DivRational e' e))) (ListMeasureVarOccsWithNonZeroExponents ms)));
+                                   @ List.map (fun (v', e') -> if typarEq v v' then newvarExpr else Measure.RationalPower (Measure.Var v', NegRational (DivRational e' e))) (ListMeasureVarOccsWithNonZeroExponents ms)))
           SubstMeasure v newms
           match vs with 
           | [] -> (remainingvars, Some newvar) 
@@ -1435,21 +1435,21 @@ and RecordMemberConstraintSolution css m trace traitInfo res =
 
     | TTraitSolved (minfo, minst) -> 
         let sln = MemberConstraintSolutionOfMethInfo css m minfo minst
-        TransactMemberConstraintSolution traitInfo trace sln;
+        TransactMemberConstraintSolution traitInfo trace sln
         ResultD true
 
     | TTraitBuiltIn -> 
-        TransactMemberConstraintSolution traitInfo trace BuiltInSln;
+        TransactMemberConstraintSolution traitInfo trace BuiltInSln
         ResultD true
 
     | TTraitSolvedRecdProp (rfinfo, isSet) -> 
         let sln = FSRecdFieldSln(rfinfo.TypeInst,rfinfo.RecdFieldRef,isSet)
-        TransactMemberConstraintSolution traitInfo trace sln;
+        TransactMemberConstraintSolution traitInfo trace sln
         ResultD true
 
     | TTraitSolvedAnonRecdProp (anonInfo, tinst, i) -> 
         let sln = FSAnonRecdFieldSln(anonInfo, tinst, i)
-        TransactMemberConstraintSolution traitInfo trace sln;
+        TransactMemberConstraintSolution traitInfo trace sln
         ResultD true
 
 /// Convert a MethInfo into the data we save in the TAST
