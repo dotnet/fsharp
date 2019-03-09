@@ -316,9 +316,7 @@ let evaluateSession(argv: string[]) =
 // Mark the main thread as STAThread since it is a GUI thread
 [<EntryPoint>]
 [<STAThread()>]    
-#if !FX_NO_LOADER_OPTIMIZATION
 [<LoaderOptimization(LoaderOptimization.MultiDomainHost)>]     
-#endif
 let MainMain argv = 
     ignore argv
     let argv = System.Environment.GetCommandLineArgs()
