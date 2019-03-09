@@ -6,15 +6,15 @@ let test2 (v : Expr<'a> -> Expr<'b>) = <@ fun (i: 'a) -> %v <@i@> @>
 
 let test (v : 'a -> Expr<'b>) = <@ fun (i: 'a) -> %(v i) @>
 
-// expect warning
+
 module Negative = 
-    let v1 = [ if true then 1 else 2 ]  
-    let v2 = [ if true then () else () ] 
-    let v6 = [ if true then () ] 
-    let a1 = [| if true then 1 else 2 |]  
-    let a2 = [| if true then () else () |] 
-    let a6 = [| if true then () |] 
-    let s3 = seq { (if true then 1 else 2) }
+    let v1 = [ if true then 1 else 2 ]  // no longer an error or warning
+    let v2 = [ if true then () else () ] // no longer an error or warning 
+    let v6 = [ if true then () ]   // no longer an error or warning
+    let a1 = [| if true then 1 else 2 |]   // no longer an error or warning
+    let a2 = [| if true then () else () |]  // no longer an error or warning
+    let a6 = [| if true then () |]  // no longer an error or warning
+    let s3 = seq { (if true then 1 else 2) }  // no longer an error or warning
 
 // expect no warning
 module Positive = 
@@ -69,3 +69,19 @@ type C() =
 // Check that the error for a named argument/setter that does not exist is located in a good place
 let _ = C().M(qez=3)
 
+// expect no warning
+module Positive = 
+    let v3 = [ if true then 1 else 2 ] 
+    let v4 = [ if true then 1 else yield 2 ] 
+    let v5 = [ if true then 1 ] 
+    let a3 = [| (if true then 1 else 2) |] 
+    let a4 = [| if true then 1 else yield 2 |] 
+    let a5 = [| if true then 1 |] 
+    let s2 = seq { if true then () else () } 
+    let s6 = seq { if true then () } 
+    let s4 = seq { if true then 1 else 2 }
+    let s5 = seq { if true then 1 else yield 2 }
+    let s6 = seq { if true then 1  }
+    let s7 = seq { match 1 with 1 -> 4 | 2 -> 5 | 3 -> 6 | _ -> ()  }
+    let s8 = seq { match 1 with 1 -> 4 | 2 -> 5 | 3 -> yield 6 | _ -> ()  }
+    let l9 = [ printfn "hello"; 1; 2 ] // expect ok

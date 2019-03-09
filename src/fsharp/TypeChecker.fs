@@ -3497,9 +3497,8 @@ let (|ExprAsPat|_|) (f:SynExpr) =
 
 /// Determine if a syntactic expression inside 'seq { ... }' or '[...]' counts as a "simple sequence
 /// of semicolon separated values". For example [1;2;3].
-/// 'acceptDeprecated' is true for the '[ ... ]' case, where we allow the syntax '[ if g then t else e ]' but ask it to be parenthesized
 ///
-let (|SimpleSemicolonSequence|_|) acceptDeprecated c = 
+let (|SimpleSemicolonSequence|_|) c = 
 
     let rec YieldFree expr = 
         match expr with 
@@ -3522,7 +3521,7 @@ let (|SimpleSemicolonSequence|_|) acceptDeprecated c =
 
     let rec IsSimpleSemicolonSequenceElement expr = 
         match expr with 
-        | SynExpr.IfThenElse _ when acceptDeprecated && YieldFree expr -> true
+        | SynExpr.IfThenElse _ when YieldFree expr -> true
         | SynExpr.IfThenElse _ 
         | SynExpr.TryWith _ 
         | SynExpr.Match _ 
@@ -5937,8 +5936,6 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
             match comp with 
             | SynExpr.New _ -> 
                 errorR(Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm(), m))
-            | SimpleSemicolonSequence false _ -> 
-                errorR(Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression(), m))
             | _ -> 
                 ()
         if not !isNotNakedRefCell && not cenv.g.compilingFslib then 
@@ -5950,7 +5947,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
 
         match comp with 
-        | SynExpr.CompExpr(_, _, SimpleSemicolonSequence true elems, _) -> 
+        | SynExpr.CompExpr(_, _, SimpleSemicolonSequence elems, _) -> 
 
             let replacementExpr = 
                 if isArray then 
