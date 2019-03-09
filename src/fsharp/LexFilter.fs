@@ -765,6 +765,12 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
             // 'type C = interface ... '       limited by 'type' 
             // 'type C = struct ... '       limited by 'type' 
             | _, (CtxtParen ((CLASS | STRUCT | INTERFACE), _) :: CtxtSeqBlock _ :: (CtxtTypeDefns _ as limitCtxt) ::  _)
+            // 'type C(' limited by 'type'
+            | _, (CtxtSeqBlock _ :: CtxtParen(LPAREN, _) :: (CtxtTypeDefns _ as limitCtxt) :: _ )
+            // 'static member C(' limited by 'static', likewise others
+            | _, (CtxtSeqBlock _ :: CtxtParen(LPAREN, _) :: (CtxtMemberHead _ as limitCtxt) :: _ )
+            // 'static member P with get() = ' limited by 'static', likewise others
+            | _, (CtxtWithAsLet _ :: (CtxtMemberHead _ as limitCtxt) :: _ )
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1) 
 
             // REVIEW: document these 
@@ -780,6 +786,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
             //           else expr  
             | (CtxtIf   _ | CtxtElse _ | CtxtThen _), (CtxtIf _ as limitCtxt) :: _rest  
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
+
             // Permitted inner-construct precise block alignment: 
             //           while  ... 
             //           do expr

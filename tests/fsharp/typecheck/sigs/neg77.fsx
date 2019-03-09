@@ -243,6 +243,39 @@ do Application.Run(form)
 #endif
 
 
+open System
+
+type OffsideCheck(a:int,
+        b:int, c:int, // no warning
+        d:int, e:int,
+        f:int) =
+    static member M(a:int,
+        b:int, c:int, // no warning
+        d:int, e:int,
+        f:int) = 1
+
+module M = 
+    type OffsideCheck(a:int,
+  b:int, c:int, // warning
+  d:int, e:int,
+  f:int) =
+        class end
+
+module M2 = 
+    type OffsideCheck() =
+        static member M(a:int,
+      b:int, c:int, // warning
+      d:int, e:int,
+      f:int) = 1
+
+type C() = 
+    static member P with get() = 
+      1 // no warning
+
+module M3 = 
+    type C() = 
+        static member P with get() = 
+      1 // warning
 
 
 
