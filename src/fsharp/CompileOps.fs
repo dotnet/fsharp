@@ -2819,7 +2819,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     // FUTURE: remove this, we only read the binary for the exception it raises
     let fsharpBinariesDirValue = 
 // NOTE: It's not clear why this behaviour has been changed for the NETSTANDARD compilations of the F# compiler
-#if NETSTANDARD1_6 || NETSTANDARD2_0
+#if NETSTANDARD
         ignore ilGlobals
         data.defaultFSharpBinariesDir
 #else
@@ -2983,7 +2983,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
 
             | None -> 
 // "there is no really good notion of runtime directory on .NETCore"
-#if NETSTANDARD1_6 || NETSTANDARD2_0
+#if NETSTANDARD
                 let runtimeRoot = Path.GetDirectoryName(typeof<System.Object>.Assembly.Location)
 #else
                 let runtimeRoot = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
