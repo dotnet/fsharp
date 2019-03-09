@@ -35,7 +35,6 @@ namespace FSharp.Compiler
         open Internal.Utilities.StructuredFormat
 
 #if FX_RESHAPED_REFLECTION
-        open PrimReflectionAdapters
         open ReflectionAdapters
 #endif
 

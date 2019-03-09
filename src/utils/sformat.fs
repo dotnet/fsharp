@@ -38,8 +38,10 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Primitives.Basics
 
-#if FX_RESHAPED_REFLECTION
+#if FX_RESHAPED_REFLECTION && FSHARP_CORE
     open PrimReflectionAdapters
+#endif
+#if FX_RESHAPED_REFLECTION
     open ReflectionAdapters
 #endif
 
@@ -357,11 +359,6 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     module ReflectUtils = 
         open System
         open System.Reflection
-
-#if FX_RESHAPED_REFLECTION
-        open PrimReflectionAdapters
-        open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
 
         [<NoEquality; NoComparison>]
         type TypeInfo =

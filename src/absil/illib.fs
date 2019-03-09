@@ -256,7 +256,6 @@ module List =
 
     //let item n xs = List.nth xs n
 #if FX_RESHAPED_REFLECTION
-    open PrimReflectionAdapters
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
@@ -1214,7 +1213,6 @@ type LayeredMultiMap<'Key,'Value when 'Key : equality and 'Key : comparison>(con
 module Shim =
 
 #if FX_RESHAPED_REFLECTION
-    open PrimReflectionAdapters
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 

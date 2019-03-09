@@ -1073,7 +1073,8 @@ let rec CollectResults f = function
     | [h] -> OneResult (f h)
     | h :: t -> AddResults (OneResult (f h)) (CollectResults f t)
 
-let rec CollectAtMostOneResult f = function
+let rec CollectAtMostOneResult f inputs = 
+    match inputs with 
     | [] -> NoResultsOrUsefulErrors
     | [h] -> OneResult (f h)
     | h :: t ->
@@ -1995,6 +1996,8 @@ let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: Resul
 
             UndefinedName(0, FSComp.SR.undefinedNameNamespaceOrModule, id, suggestModulesAndNamespaces))
 
+        // Avoid generating the same error and name suggestion thunk twice It's not clear this is necessary
+        // since it's just saving an allocation.
         let mutable moduleNotFoundErrorCache = None
         let moduleNotFound (modref: ModuleOrNamespaceRef) (mty:ModuleOrNamespaceType) (id:Ident) depth =
             match moduleNotFoundErrorCache with
@@ -2015,22 +2018,40 @@ let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: Resul
             let occurence = if isOpenDecl then ItemOccurence.Open else ItemOccurence.Use
             CallNameResolutionSink sink (m, nenv, item, item, emptyTyparInst, occurence, nenv.DisplayEnv, ad)
 
-        let modrefs = match moduleOrNamespaces.TryGetValue id.idText with true, modrefs -> modrefs | _ -> []
-        let tcrefs = 
-            if allowStaticClasses then 
-                LookupTypeNameInEnvNoArity fullyQualified id.idText nenv |> List.filter (isStaticClass amap.g) 
-            else []
-        let erefs = modrefs @ tcrefs 
+        let erefs = 
+            let modrefs = 
+                match moduleOrNamespaces.TryGetValue id.idText with 
+                | true, modrefs -> modrefs 
+                | _ -> []
+
+            let tcrefs = 
+                if allowStaticClasses then 
+                    LookupTypeNameInEnvNoArity fullyQualified id.idText nenv |> List.filter (isStaticClass amap.g) 
+                else []
+
+            modrefs @ tcrefs 
+
         if not erefs.IsEmpty then 
             /// Look through the sub-namespaces and/or modules
             let rec look depth allowStaticClasses (modref: ModuleOrNamespaceRef) (lid:Ident list) =
                 let mty = modref.ModuleOrNamespaceType
                 match lid with
-                | [] -> success  [ (depth, modref, mty) ]
+                | [] -> 
+                    success  [ (depth, modref, mty) ]
+
                 | id :: rest ->
-                    let mspecs = match mty.ModulesAndNamespacesByDemangledName.TryGetValue id.idText with true, res -> [res] | _ -> []
-                    let tspecs = if allowStaticClasses then LookupTypeNameInEntityNoArity id.idRange id.idText mty |> List.filter (modref.NestedTyconRef >> isStaticClass amap.g) else []
-                    let especs  = mspecs @ tspecs
+                    let especs  = 
+                        let mspecs = 
+                            match mty.ModulesAndNamespacesByDemangledName.TryGetValue id.idText with 
+                            | true, res -> [res]
+                            | _ -> []
+                        let tspecs = 
+                            if allowStaticClasses then 
+                                LookupTypeNameInEntityNoArity id.idRange id.idText mty 
+                                |> List.filter (modref.NestedTyconRef >> isStaticClass amap.g) 
+                            else []
+                        mspecs @ tspecs
+                    
                     if not especs.IsEmpty then 
                         especs 
                         |> List.map (fun espec ->
@@ -2049,13 +2070,13 @@ let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: Resul
             |> List.map (fun eref ->
                 if IsEntityAccessible amap m ad eref then
                     notifyNameResolution eref id.idRange
-                    look 1 (allowStaticClasses && eref.IsModuleOrNamespace) eref rest
+                    let allowStaticClasses = allowStaticClasses && (eref.IsModuleOrNamespace || isStaticClass amap.g eref)
+                    look 1 allowStaticClasses eref rest
                 else
                     raze (namespaceNotFound.Force()))
             |> List.reduce AddResults
         else
             raze (namespaceNotFound.Force())
-
 
 let ResolveLongIndentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv:NameResolutionEnv) ad id rest isOpenDecl f =
     match ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink ResultCollectionSettings.AllResults amap m false true fullyQualified nenv ad id [] isOpenDecl with
@@ -3519,7 +3540,7 @@ let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThen f plid (m
         | true, mty -> PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThen f rest (modref.NestedTyconRef mty)
         | _ -> []
 
-let PartialResolveLongIndentAsoduleOrNamespaceThen (nenv:NameResolutionEnv) plid f =
+let PartialResolveLongIndentAsModuleOrNamespaceThen (nenv:NameResolutionEnv) plid f =
     match plid with
     | id:: rest ->
         match nenv.eModulesAndNamespaces.TryGetValue id with
@@ -4068,12 +4089,13 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
 
         // Look in the namespaces 'id'
         let namespaces =
-            PartialResolveLongIndentAsoduleOrNamespaceThen nenv [id] (fun modref ->
+            PartialResolveLongIndentAsModuleOrNamespaceThen nenv [id] (fun modref ->
               let allowObsolete = rest <> [] && allowObsolete
               if EntityRefContainsSomethingAccessible ncenv m ad modref then
                 ResolvePartialLongIdentInModuleOrNamespace ncenv nenv isApplicableMeth m ad modref rest allowObsolete
               else
                 [])
+
         // Look for values called 'id' that accept the dot-notation
         let values, isItemVal =
             (match nenv.eUnqualifiedItems.TryGetValue id with
@@ -4228,12 +4250,13 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
     | id::rest ->
         // Get results
         let modsOrNs =
-            PartialResolveLongIndentAsoduleOrNamespaceThen nenv [id] (fun modref ->
+            PartialResolveLongIndentAsModuleOrNamespaceThen nenv [id] (fun modref ->
               let allowObsolete = rest <> [] && allowObsolete
               if EntityRefContainsSomethingAccessible ncenv m ad modref then
                 ResolvePartialLongIdentInModuleOrNamespaceForRecordFields ncenv nenv m ad modref rest allowObsolete
               else
                 [])
+
         let qualifiedFields =
             match rest with
             | [] ->
@@ -4585,7 +4608,7 @@ let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f pli
             PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest (modref.NestedTyconRef mty)
         | _ -> Seq.empty
 
-let PartialResolveLongIndentAsoduleOrNamespaceThenLazy (nenv:NameResolutionEnv) plid f =
+let PartialResolveLongIndentAsModuleOrNamespaceThenLazy (nenv:NameResolutionEnv) plid f =
     seq {
         match plid with
         | id :: rest ->
@@ -4660,7 +4683,7 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
 
             // Look in the namespaces 'id'
             yield!
-                PartialResolveLongIndentAsoduleOrNamespaceThenLazy nenv [id] (fun modref ->
+                PartialResolveLongIndentAsModuleOrNamespaceThenLazy nenv [id] (fun modref ->
                     if EntityRefContainsSomethingAccessible ncenv m ad modref then
                         ResolvePartialLongIdentInModuleOrNamespaceForItem ncenv nenv m ad modref rest item
                     else Seq.empty)

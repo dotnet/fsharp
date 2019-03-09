@@ -26,7 +26,9 @@ module internal ReflectionAdapters =
     open System
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Collections
+#if FSHARP_CORE
     open PrimReflectionAdapters
+#endif
 
     let inline hasFlag (flag : BindingFlags) f  = (f &&& flag) = flag
     let isDeclaredFlag  f    = hasFlag BindingFlags.DeclaredOnly f
