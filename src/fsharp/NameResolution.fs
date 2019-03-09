@@ -77,7 +77,6 @@ let ActivePatternElemsOfValRef vref =
     | Some apinfo -> apinfo.ActiveTags |> List.mapi (fun i _ -> APElemRef(apinfo, vref, i))
     | None -> []
 
-
 /// Try to make a reference to a value in a module.
 //
 // mkNestedValRef may fail if the assembly load set is
@@ -2017,7 +2016,10 @@ let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: Resul
             CallNameResolutionSink sink (m, nenv, item, item, emptyTyparInst, occurence, nenv.DisplayEnv, ad)
 
         let modrefs = match moduleOrNamespaces.TryGetValue id.idText with true, modrefs -> modrefs | _ -> []
-        let tcrefs = if allowStaticClasses then LookupTypeNameInEnvNoArity fullyQualified id.idText nenv |> List.filter (isStaticClass amap.g) else []
+        let tcrefs = 
+            if allowStaticClasses then 
+                LookupTypeNameInEnvNoArity fullyQualified id.idText nenv |> List.filter (isStaticClass amap.g) 
+            else []
         let erefs = modrefs @ tcrefs 
         if not erefs.IsEmpty then 
             /// Look through the sub-namespaces and/or modules
@@ -2035,7 +2037,8 @@ let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: Resul
                             let subref = modref.NestedTyconRef espec
                             if IsEntityAccessible amap m ad subref then
                                 notifyNameResolution subref id.idRange
-                                look (depth+1) (allowStaticClasses && subref.IsModuleOrNamespace) subref rest
+                                let allowStaticClasses = allowStaticClasses && (subref.IsModuleOrNamespace || isStaticClass amap.g subref)
+                                look (depth+1) allowStaticClasses subref rest
                             else
                                 moduleNotFound modref mty id depth) 
                         |> List.reduce AddResults
