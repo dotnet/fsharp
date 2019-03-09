@@ -1000,7 +1000,7 @@ let output_assemblyRef os (aref:ILAssemblyRef) =
 let output_modref os (modref:ILModuleRef) =
   output_string os (if modref.HasMetadata then " .module extern " else " .file nometadata " )
   output_sqstring os modref.Name
-  output_option output_hash) os modref.Hash
+  output_option output_hash os modref.Hash
 
 let goutput_resource env os r = 
   output_string os " .mresource "

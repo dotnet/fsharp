@@ -218,8 +218,8 @@ let NoArgInstrs =
                        (mk_ldind (["ldind";"r4"],           DT_R4))
                        (mk_ldind (["ldind";"r8"],           DT_R8))
                        (mk_ldind (["ldind";"ref"],          DT_REF))
-                        (["cpblk"], (fun () -> I_cpblk(Aligned, Nonvolatile)))
-                        (["initblk"], (fun () -> I_initblk(Aligned, Nonvolatile)))
+                       (["cpblk"], (fun () -> I_cpblk(Aligned, Nonvolatile)))
+                       (["initblk"], (fun () -> I_initblk(Aligned, Nonvolatile)))
                      ]
                    ) : NoArgInstr InstrTable)
 

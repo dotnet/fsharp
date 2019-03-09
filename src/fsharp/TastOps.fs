@@ -3697,11 +3697,14 @@ module DebugPrint = begin
                 (lvalopL lvop ^^ valRefL vr --- bracketL (commaListL (List.map atomL args))) |> wrap
             | Expr.Op (TOp.ILCall (_isVirtCall, _isProtectedCall, _valu, _isNewObjCall, _valUseFlags, _isProperty, _noTailCall, ilMethRef, tinst, minst, _tys), tyargs, args, _) ->
                 let meth = ilMethRef.Name
-                wordL(tagText "ILCall") ^^ aboveListL [wordL(tagText "meth  ") --- wordL (tagText ilMethRef.DeclaringTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth)
-                                              wordL(tagText "tinst ") --- listL typeL tinst
-                                              wordL(tagText "minst ") --- listL typeL minst
-                                              wordL(tagText "tyargs") --- listL typeL tyargs
-                                              wordL(tagText "args  ") --- listL exprL args] |> wrap
+                wordL(tagText "ILCall") ^^
+                   aboveListL 
+                      [ wordL(tagText "meth  ") --- wordL (tagText ilMethRef.DeclaringTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth)
+                        wordL(tagText "tinst ") --- listL typeL tinst
+                        wordL(tagText "minst ") --- listL typeL minst
+                        wordL(tagText "tyargs") --- listL typeL tyargs
+                        wordL(tagText "args  ") --- listL exprL args ] 
+                    |> wrap
             | Expr.Op (TOp.Array, [_], xs, _) -> 
                 leftL(tagText "[|") ^^ commaListL (List.map exprL xs) ^^ rightL(tagText "|]")
             | Expr.Op (TOp.While _, [], [x1;x2], _) -> 

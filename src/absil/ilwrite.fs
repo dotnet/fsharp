@@ -3379,7 +3379,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
 
       mdbuf.EmitBytes 
         [| 0x00uy; 0x00uy // flags, reserved 
-          b0 numStreams; b1 numStreams; |]
+           b0 numStreams; b1 numStreams; |]
       mdbuf.EmitInt32 tablesChunk.addr
       mdbuf.EmitInt32 tablesChunk.size
       mdbuf.EmitIntsAsBytes [| 0x23; 0x7e; 0x00; 0x00; (* #~00 *)|]
