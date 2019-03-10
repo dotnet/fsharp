@@ -780,7 +780,6 @@ let rec stripExnEqns (eref:TyconRef) =
     | TExnAbbrevRepr eref -> stripExnEqns eref
     | _ -> exnc
 
-
 let primDestForallTy g ty = ty |> stripTyEqns g |> (function TType_forall (tyvs, tau) -> (tyvs, tau) | _ -> failwith "primDestForallTy: not a forall type")
 let destFunTy      g ty = ty |> stripTyEqns g |> (function TType_fun (tyv, tau) -> (tyv, tau) | _ -> failwith "destFunTy: not a function type")
 let destAnyTupleTy    g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, l) -> tupInfo, l | _ -> failwith "destAnyTupleTy: not a tuple type")
@@ -1494,7 +1493,6 @@ let destForallTy g ty =
 let tryDestForallTy g ty = 
     if isForallTy g ty then destForallTy g ty else [], ty
 
-
 let rec stripFunTy g ty = 
     if isFunTy g ty then 
         let (d, r) = destFunTy g ty 
@@ -1565,9 +1563,8 @@ let destTopForallTy g (ValReprInfo (ntps, _, _)) ty =
 
 let GetTopValTypeInFSharpForm g (ValReprInfo(_, argInfos, retInfo) as topValInfo) ty m =
     let tps, tau = destTopForallTy g topValInfo ty
-    let argtysl, rty = GetTopTauTypeInFSharpForm g argInfos tau m
-    tps, argtysl, rty, retInfo
-
+    let curriedArgTys, returnTy = GetTopTauTypeInFSharpForm g argInfos tau m
+    tps, curriedArgTys, returnTy, retInfo
 
 let IsCompiledAsStaticProperty g (v:Val) =
     match v.ValReprInfo with

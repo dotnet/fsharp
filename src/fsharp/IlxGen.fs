@@ -975,7 +975,43 @@ let ComputeFieldSpecForVal(optIntraAssemblyInfo:IlxGenIntraAssemblyInfo option, 
         else
             generate()
 
-let IsValCompiledAsMethod g (v:Val) =
+/// Compute the representation information for an F#-declared value (not a member nor a function).
+/// Mutable and literal static fields must have stable names and live in the "public" location
+let ComputeStorageForFSharpValue amap g cloc optIntraAssemblyInfo optShadowLocal isInteractive returnTy (vref:ValRef) m =
+    let nm = vref.CompiledName
+    let vspec = vref.Deref
+    let ilTy = GenType amap m TypeReprEnv.Empty returnTy (* TypeReprEnv.Empty ok: not a field in a generic class *)
+    let ilTyForProperty = mkILTyForCompLoc cloc
+    let attribs = vspec.Attribs
+    let hasLiteralAttr = HasFSharpAttribute g g.attrib_LiteralAttribute attribs
+    let ilTypeRefForProperty = ilTyForProperty.TypeRef
+    let ilGetterMethRef = mkILMethRef (ilTypeRefForProperty, ILCallingConv.Static, "get_"+nm, 0, [], ilTy)
+    let ilSetterMethRef = mkILMethRef (ilTypeRefForProperty, ILCallingConv.Static, "set_"+nm, 0, [ilTy], ILType.Void)
+    let ilFieldSpec = ComputeFieldSpecForVal(optIntraAssemblyInfo, isInteractive, g, ilTyForProperty, vspec, nm, m, cloc, ilTy, ilGetterMethRef)
+    StaticField (ilFieldSpec, vref, hasLiteralAttr, ilTyForProperty, nm, ilTy, ilGetterMethRef, ilSetterMethRef, optShadowLocal)
+
+/// Compute the representation information for an F#-declared member
+let ComputeStorageForFSharpMember amap g topValInfo memberInfo (vref:ValRef) m =
+    let mspec, _, _, paramInfos, retInfo, methodArgTys = GetMethodSpecForMemberVal amap g memberInfo vref
+    Method (topValInfo, vref, mspec, m, paramInfos, methodArgTys, retInfo)
+
+/// Compute the representation information for an F#-declared function in a module or an F#-decalared extension member.
+/// Note, there is considerable overlap with ComputeStorageForFSharpMember/GetMethodSpecForMemberVal and these could be
+/// rationalized.
+let ComputeStorageForFSharpFunctionOrFSharpExtensionMember amap g cloc topValInfo (vref:ValRef) m =
+    let nm = vref.CompiledName
+    let (tps, curriedArgInfos, returnTy, retInfo) = GetTopValTypeInCompiledForm g topValInfo vref.Type m
+    let tyenvUnderTypars = TypeReprEnv.ForTypars tps
+    let (methodArgTys, paramInfos) = curriedArgInfos |> List.concat |> List.unzip
+    let ilMethodArgTys = GenParamTypes amap m tyenvUnderTypars false methodArgTys
+    let ilRetTy = GenReturnType amap m tyenvUnderTypars returnTy
+    let ilLocTy = mkILTyForCompLoc cloc
+    let ilMethodInst = GenTypeArgs amap m tyenvUnderTypars (List.map mkTyparTy tps)
+    let mspec = mkILStaticMethSpecInTy (ilLocTy, nm, ilMethodArgTys, ilRetTy, ilMethodInst)
+    Method (topValInfo, vref, mspec, m, paramInfos, methodArgTys, retInfo)
+
+/// Determine if an F#-declared value, method or function is compiled as a method.
+let IsFSharpValCompiledAsMethod g (v:Val) =
     match v.ValReprInfo with
     | None -> false
     | Some topValInfo ->
@@ -1019,62 +1055,38 @@ let ComputeStorageForTopVal (amap, g, optIntraAssemblyInfo:IlxGenIntraAssemblyIn
         // We should just look at the arity
         match GetTopValTypeInFSharpForm g topValInfo vref.Type vref.Range with
         | [], [], returnTy, _ when not vref.IsMember ->
-            // Mutable and literal static fields must have stable names and live in the "public" location
-            // See notes on GenFieldSpecForStaticField above.
-            let vspec = vref.Deref
-            let ilTy = GenType amap m TypeReprEnv.Empty returnTy (* TypeReprEnv.Empty ok: not a field in a generic class *)
-            let ilTyForProperty = mkILTyForCompLoc cloc
-            let attribs = vspec.Attribs
-            let hasLiteralAttr = HasFSharpAttribute g g.attrib_LiteralAttribute attribs
-
-            let ilTypeRefForProperty = ilTyForProperty.TypeRef
-            let ilGetterMethRef = mkILMethRef (ilTypeRefForProperty, ILCallingConv.Static, "get_"+nm, 0, [], ilTy)
-            let ilSetterMethRef = mkILMethRef (ilTypeRefForProperty, ILCallingConv.Static, "set_"+nm, 0, [ilTy], ILType.Void)
-
-            let fspec = ComputeFieldSpecForVal(optIntraAssemblyInfo, isInteractive, g, ilTyForProperty, vspec, nm, m, cloc, ilTy, ilGetterMethRef)
-
-            StaticField (fspec, vref, hasLiteralAttr, ilTyForProperty, nm, ilTy, ilGetterMethRef, ilSetterMethRef, optShadowLocal)
-          
+            ComputeStorageForFSharpValue amap g cloc optIntraAssemblyInfo optShadowLocal isInteractive returnTy vref m
         | _ ->
             match vref.MemberInfo with
             | Some memberInfo when not vref.IsExtensionMember ->
-                let mspec, _, _, paramInfos, retInfo, methodArgTys = GetMethodSpecForMemberVal amap g memberInfo vref
-                Method (topValInfo, vref, mspec, m, paramInfos, methodArgTys, retInfo)
+                ComputeStorageForFSharpMember amap g topValInfo memberInfo vref m
             | _ ->
-                let (tps, curriedArgInfos, returnTy, retInfo) = GetTopValTypeInCompiledForm g topValInfo vref.Type m
-                let tyenvUnderTypars = TypeReprEnv.ForTypars tps
-                let (methodArgTys, paramInfos) = curriedArgInfos |> List.concat |> List.unzip
-                let ilMethodArgTys = GenParamTypes amap m tyenvUnderTypars false methodArgTys
-                let ilRetTy = GenReturnType amap m tyenvUnderTypars returnTy
-                let ilLocTy = mkILTyForCompLoc cloc
-                let ilMethodInst = GenTypeArgs amap m tyenvUnderTypars (List.map mkTyparTy tps)
-                let mspec = mkILStaticMethSpecInTy (ilLocTy, nm, ilMethodArgTys, ilRetTy, ilMethodInst)
-                Method (topValInfo, vref, mspec, m, paramInfos, methodArgTys, retInfo)
+                ComputeStorageForFSharpFunctionOrFSharpExtensionMember amap g cloc topValInfo vref m
 
-/// Determine how a top level value is represented, if it is in the assembly being compiled.
+/// Determine how an F#-declared value, function or member is represented, if it is in the assembly being compiled.
 let ComputeAndAddStorageForLocalTopVal (amap, g, intraAssemblyFieldTable, isInteractive, optShadowLocal)  cloc (v:Val) eenv =
     let storage = ComputeStorageForTopVal (amap, g, Some intraAssemblyFieldTable, isInteractive, optShadowLocal, mkLocalValRef v, cloc)
     AddStorageForVal g (v, notlazy storage) eenv
 
-/// Determine how a top level value is represented, if it is an external assembly.
+/// Determine how an F#-declared value, function or member is represented, if it is an external assembly.
 let ComputeStorageForNonLocalTopVal amap g cloc modref (v:Val) =
     match v.ValReprInfo with
     | None -> error(InternalError("ComputeStorageForNonLocalTopVal, expected an arity for " + v.LogicalName, v.Range))
     | Some _ -> ComputeStorageForTopVal (amap, g, None, false, NoShadowLocal, mkNestedValRef modref v, cloc)
 
-/// Determine how all the top level value are represented, for an external module or namespace.
-let rec ComputeStorageForNonLocalModuleOrNamespaceRef amap g cloc acc (modref:ModuleOrNamespaceRef) (modul:ModuleOrNamespace)  =
+/// Determine how all the F#-decalred top level values, functions and members are represented, for an external module or namespace.
+let rec AddStorageForNonLocalModuleOrNamespaceRef amap g cloc acc (modref:ModuleOrNamespaceRef) (modul:ModuleOrNamespace)  =
     let acc =
         (acc, modul.ModuleOrNamespaceType.ModuleAndNamespaceDefinitions) ||> List.fold (fun acc smodul ->
-            ComputeStorageForNonLocalModuleOrNamespaceRef amap g (CompLocForSubModuleOrNamespace cloc smodul) acc (modref.NestedTyconRef smodul) smodul)
+            AddStorageForNonLocalModuleOrNamespaceRef amap g (CompLocForSubModuleOrNamespace cloc smodul) acc (modref.NestedTyconRef smodul) smodul)
 
     let acc =
         (acc, modul.ModuleOrNamespaceType.AllValsAndMembers) ||> Seq.fold (fun acc v ->
             AddStorageForVal g (v, lazy (ComputeStorageForNonLocalTopVal amap g cloc modref v)) acc)
     acc
 
-/// Determine how all the top level value are represented, for an external assembly.
-let ComputeStorageForExternalCcu amap g  eenv (ccu:CcuThunk) =
+/// Determine how all the F#-declared top level values, functions and members are represented, for an external assembly.
+let AddStorageForExternalCcu amap g eenv (ccu:CcuThunk) =
     if not ccu.IsFSharp then eenv else
     let cloc = CompLocForCcu ccu
     let eenv =
@@ -1082,7 +1094,7 @@ let ComputeStorageForExternalCcu amap g  eenv (ccu:CcuThunk) =
            (fun smodul acc ->
                let cloc = CompLocForSubModuleOrNamespace cloc smodul
                let modref =  mkNonLocalCcuRootEntityRef ccu smodul
-               ComputeStorageForNonLocalModuleOrNamespaceRef amap g cloc acc modref smodul)
+               AddStorageForNonLocalModuleOrNamespaceRef amap g cloc acc modref smodul)
            ccu.RootModulesAndNamespaces
            eenv
     let eenv =
@@ -1091,13 +1103,15 @@ let ComputeStorageForExternalCcu amap g  eenv (ccu:CcuThunk) =
             AddStorageForVal g (v, lazy (ComputeStorageForNonLocalTopVal amap g cloc eref v)) acc)
     eenv
 
-/// Determine how all the top level value are represented, for a local module or namespace.
+/// Record how all the top level F#-declared values, functions and members are represented, for a local module or namespace.
 let rec AddBindingsForLocalModuleType allocVal cloc eenv (mty:ModuleOrNamespaceType) =
     let eenv = List.fold (fun eenv submodul -> AddBindingsForLocalModuleType allocVal (CompLocForSubModuleOrNamespace cloc submodul) eenv submodul.ModuleOrNamespaceType) eenv mty.ModuleAndNamespaceDefinitions
     let eenv = Seq.fold (fun eenv v -> allocVal cloc v eenv) eenv mty.AllValsAndMembers
     eenv
 
-let AddExternalCcusToIlxGenEnv amap g eenv ccus = List.fold (ComputeStorageForExternalCcu amap g) eenv ccus
+/// Record how all the top level F#-declared values, functions and members are represented, for a set of referenced assemblies.
+let AddExternalCcusToIlxGenEnv amap g eenv ccus = 
+    List.fold (AddStorageForExternalCcu amap g) eenv ccus
 
 /// Record how all the unrealized abstract slots are represented, for a type definition.
 let AddBindingsForTycon allocVal (cloc:CompileLocation) (tycon:Tycon) eenv  =
@@ -1115,7 +1129,7 @@ let rec AddBindingsForModuleDefs allocVal (cloc:CompileLocation) eenv  mdefs =
 and AddBindingsForModuleDef allocVal cloc eenv x =
     match x with
     | TMDefRec(_isRec, tycons, mbinds, _) ->
-        (* Virtual don't have 'let' bindings and must be added to the environment *)
+        // Virtual don't have 'let' bindings and must be added to the environment
         let eenv = List.foldBack (AddBindingsForTycon allocVal cloc) tycons eenv
         let eenv = List.foldBack (AddBindingsForModule allocVal cloc) mbinds eenv
         eenv
@@ -1940,10 +1954,12 @@ type EmitSequencePointState =
     /// Indicates that we need a sequence point at first opportunity. Used on entrance to a method
     /// and whenever we drop into an expression within the stepping control structure.
     | SPAlways
+
+    /// Indicates we are not forced to emit a sequence point
     | SPSuppress
 
 /// Determines if any code at all will be emitted for a binding
-let BindingEmitsNoCode g (TBind(vspec, _, _)) = IsValCompiledAsMethod g vspec
+let BindingEmitsNoCode g (b: Binding) = IsFSharpValCompiledAsMethod g b.Var
 
 /// Determines what sequence point should be emitted when generating the r.h.s of a binding.
 /// For example, if the r.h.s is a lambda then no sequence point is emitted.
