@@ -2,23 +2,16 @@
 
 module internal FSharp.Compiler.AbstractIL.Internal.AsciiConstants
 
-open Internal.Utilities
 open Internal.Utilities.Collections
 
-open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open FSharp.Compiler.AbstractIL.IL
 
 // set to the proper value at CompileOps.fs (BuildFrameworkTcImports)
+// Only reelvant when compiling FSharp.Core.dll
 let parseILGlobals = ref EcmaMscorlibILGlobals
 
-// --------------------------------------------------------------------
-// Table of parsing and pretty printing data for instructions.
-//   - PP data is only used for instructions with no arguments
-// --------------------------------------------------------------------
-
+/// Table of parsing and pretty printing data for instructions.
 let noArgInstrs =
     lazy [
         ["ldc";"i4";"0"], mkLdcInt32 0
@@ -109,7 +102,7 @@ let noArgInstrs =
         ["ldelem";"u4"], I_ldelem DT_U4
         ["ldelem";"r4"], I_ldelem DT_R4
         ["ldelem";"r8"], I_ldelem DT_R8
-        ["ldelem";"u"], I_ldelem DT_I; // EQUIV
+        ["ldelem";"u"], I_ldelem DT_I // EQUIV
         ["ldelem";"i"], I_ldelem DT_I
         ["ldelem";"ref"], I_ldelem DT_REF
         ["mul"], AI_mul
@@ -173,6 +166,7 @@ type SwitchInstr = (ILCodeLabel list * ILCodeLabel ->  ILInstr)
 type InstrTable<'T> = (string list * 'T) list
 type LazyInstrTable<'T> = Lazy<InstrTable<'T>>
 
+/// Table of parsing and pretty printing data for instructions.
 let NoArgInstrs : Lazy<InstrTable<NoArgInstr>> =
     lazy [ 
         for (nm, i) in noArgInstrs.Force() do  
@@ -206,56 +200,65 @@ let NoArgInstrs : Lazy<InstrTable<NoArgInstr>> =
         yield ["initblk"], (fun () -> I_initblk(Aligned, Nonvolatile))
     ]
 
+/// Table of parsing and pretty printing data for instructions.
 let Int64Instrs : Lazy<InstrTable<Int64Instr>> =
     lazy [
         ["ldc";"i8"], (fun x -> AI_ldc (DT_I8, ILConst.I8 x)) 
     ] 
 
+/// Table of parsing and pretty printing data for instructions.
 let Int32Instrs : Lazy<InstrTable<Int32Instr>> =
     lazy [ 
-        ["ldc";"i4"], (fun x -> mkLdcInt32 x)
-        ["ldc";"i4";"s"], (fun x -> mkLdcInt32 x) 
+        ["ldc";"i4"], mkLdcInt32
+        ["ldc";"i4";"s"], mkLdcInt32 
     ] 
 
+/// Table of parsing and pretty printing data for instructions.
 let Int32Int32Instrs : Lazy<InstrTable<Int32Int32Instr>> =
     lazy [
-        ["ldlen";"multi"], (fun (x, y) -> EI_ldlen_multi (x, y))
+        ["ldlen";"multi"], EI_ldlen_multi
     ]
 
+/// Table of parsing and pretty printing data for instructions.
 let DoubleInstrs : Lazy<InstrTable<DoubleInstr>> =
     lazy [
         ["ldc";"r4"], (fun x -> (AI_ldc (DT_R4, x)))
         ["ldc";"r8"], (fun x -> (AI_ldc (DT_R8, x))) 
     ]
 
+/// Table of parsing and pretty printing data for instructions.
 let MethodSpecInstrs : Lazy<InstrTable<MethodSpecInstr>> =
     lazy [
         ["call"], (fun (mspec, y) -> I_call (Normalcall, mspec, y)) 
     ] 
 
+/// Table of parsing and pretty printing data for instructions.
 let StringInstrs : Lazy<InstrTable<StringInstr>> =
     lazy [
-        ["ldstr"], (fun x -> I_ldstr x) 
+        ["ldstr"], I_ldstr
     ] 
 
+/// Table of parsing and pretty printing data for instructions.
 let TokenInstrs : Lazy<InstrTable<TokenInstr>> =
     lazy [
-        ["ldtoken"], (fun x -> I_ldtoken x)
+        ["ldtoken"], I_ldtoken
     ]
 
+/// Table of parsing and pretty printing data for instructions.
 let TypeInstrs : Lazy<InstrTable<TypeInstr>> =
     lazy [
         ["ldelema"], (fun x -> I_ldelema (NormalAddress, false, ILArrayShape.SingleDimensional, x))
         ["ldelem";"any"], (fun x -> I_ldelem_any (ILArrayShape.SingleDimensional, x))
         ["stelem";"any"], (fun x -> I_stelem_any (ILArrayShape.SingleDimensional, x))
         ["newarr"], (fun x -> I_newarr (ILArrayShape.SingleDimensional, x))
-        ["castclass"], (fun x -> I_castclass x)
-        ["ilzero"], (fun x -> EI_ilzero x)
-        ["isinst"], (fun x -> I_isinst x)
-        ["initobj";"any"], (fun x -> I_initobj x)
-        ["unbox";"any"], (fun x -> I_unbox_any x)
+        ["castclass"], I_castclass
+        ["ilzero"], EI_ilzero
+        ["isinst"], I_isinst
+        ["initobj";"any"], I_initobj
+        ["unbox";"any"], I_unbox_any
     ] 
 
+/// Table of parsing and pretty printing data for instructions.
 let IntTypeInstrs : Lazy<InstrTable<IntTypeInstr>> =
     lazy [
         ["ldelem";"multi"], (fun (x, y) -> (I_ldelem_any (ILArrayShape.FromRank x, y)))
@@ -264,14 +267,15 @@ let IntTypeInstrs : Lazy<InstrTable<IntTypeInstr>> =
         ["ldelema";"multi"], (fun (x, y) -> (I_ldelema (NormalAddress, false, ILArrayShape.FromRank x, y))) 
     ] 
 
+/// Table of parsing and pretty printing data for instructions.
 let ValueTypeInstrs : Lazy<InstrTable<ValueTypeInstr>> =
     lazy [ 
-        ["cpobj"], (fun x -> I_cpobj x)
-        ["initobj"], (fun x -> I_initobj x)
+        ["cpobj"], I_cpobj
+        ["initobj"], I_initobj
         ["ldobj"], (fun z -> I_ldobj (Aligned, Nonvolatile, z))
         ["stobj"], (fun z -> I_stobj (Aligned, Nonvolatile, z))
-        ["sizeof"], (fun x -> I_sizeof x)
-        ["box"], (fun x -> I_box x)
-        ["unbox"], (fun x -> I_unbox x) 
+        ["sizeof"], I_sizeof
+        ["box"], I_box
+        ["unbox"], I_unbox 
     ] 
 
