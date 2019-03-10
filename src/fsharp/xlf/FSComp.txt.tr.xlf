@@ -2817,11 +2817,6 @@
         <target state="translated">Geçersiz nesne ifadesi. Geçersiz kılmaların ve arabirimlerin olmadığı nesneler küme ayraçsız 'new Type(args)' ifade biçimini kullanmalıdır.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
-        <source>Invalid object, sequence or record expression</source>
-        <target state="translated">Geçersiz nesne, dizi veya kayıt ifadesi</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="translated">Geçersiz kayıt, dizi veya hesaplama ifadesi. Dizi ifadeleri 'seq {{ ... }}' biçiminde olmalıdır</target>

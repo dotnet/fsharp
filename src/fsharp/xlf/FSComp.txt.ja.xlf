@@ -2817,11 +2817,6 @@
         <target state="translated">オブジェクト式が無効です。オーバーライドまたはインターフェイスがないオブジェクトには、かっこなしで 'new Type(args)' という形式の式を使用してください。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
-        <source>Invalid object, sequence or record expression</source>
-        <target state="translated">オブジェクト式、シーケンス式、またはレコード式が無効です</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="translated">無効なレコード、シーケンス式、またはコンピュテーション式です。シーケンス式は 'seq {{ ... }}' という形式にしてください。</target>

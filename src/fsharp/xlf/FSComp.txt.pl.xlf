@@ -2817,11 +2817,6 @@
         <target state="translated">Nieprawidłowe wyrażenie obiektu. Obiekty bez przesłonięć lub interfejsy powinny używać wyrażenia w postaci „new Typ(argumenty)” bez nawiasów.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
-        <source>Invalid object, sequence or record expression</source>
-        <target state="translated">Nieprawidłowe wyrażenie obiektu, sekwencji lub rekordu</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="translated">Nieprawidłowe wyrażenie rekordu, sekwencji lub obliczenia. Wyrażenia sekwencji powinny mieć postać „seq {{ ... }}”</target>

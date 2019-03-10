@@ -2817,11 +2817,6 @@
         <target state="translated">Espressione oggetto non valida. Gli oggetti senza override o interfacce devono usare il formato di espressione 'new Type(args)' senza parentesi graffe.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
-        <source>Invalid object, sequence or record expression</source>
-        <target state="translated">Espressione record, sequenza o oggetto non valida</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="translated">Espressione di calcolo, sequenza o record non valida. Il formato delle espressioni sequenza deve essere 'seq {{ ... }}'</target>

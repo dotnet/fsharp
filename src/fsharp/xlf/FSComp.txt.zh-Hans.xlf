@@ -2817,11 +2817,6 @@
         <target state="translated">对象表达式无效。没有重写或接口的对象应使用不带括号的表达式格式“new Type(args)”。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
-        <source>Invalid object, sequence or record expression</source>
-        <target state="translated">对象、序列或记录表达式无效</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="translated">记录、序列或计算表达式无效。序列表达式的格式应为“seq {{ ... }}”}}'</target>
