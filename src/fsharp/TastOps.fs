@@ -6025,7 +6025,9 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             None, mkArrayElemAddress g (readonly, ilInstrReadOnlyAnnotation, isNativePtr, shape, elemTy,  (aexpr::args), m), readonly, writeonly
 
         // LVALUE:  "&meth(args)" where meth has a byref or inref return.  Includes "&span.[idx]".
-        | Expr.Let(TBind(vref, e, _), Expr.Op(TOp.LValueOp (LByrefGet, vref2), _, _, _), _, _)  when (valRefEq g (mkLocalValRef vref) vref2)  && (MustTakeAddressOfByrefGet g vref2 || CanTakeAddressOfByrefGet g vref2 mut) -> 
+        | Expr.Let(TBind(vref, e, _), Expr.Op(TOp.LValueOp (LByrefGet, vref2), _, _, _), _, _)  
+             when (valRefEq g (mkLocalValRef vref) vref2)  && 
+                  (MustTakeAddressOfByrefGet g vref2 || CanTakeAddressOfByrefGet g vref2 mut) -> 
             let ty = tyOfExpr g e
             let readonly = isInByrefTy g ty
             let writeonly = isOutByrefTy g ty
@@ -6578,7 +6580,8 @@ let mspec_String_Concat_Array (g: TcGlobals) =
 let fspec_Missing_Value (g: TcGlobals) = IL.mkILFieldSpecInTy(g.iltyp_Missing, "Value", g.iltyp_Missing)
 
 let mkInitializeArrayMethSpec (g: TcGlobals) = 
-  mkILNonGenericStaticMethSpecInTy(mkILNonGenericBoxedTy(g.FindSysILTypeRef "System.Runtime.CompilerServices.RuntimeHelpers"), "InitializeArray", [g.ilg.typ_Array;g.iltyp_RuntimeFieldHandle], ILType.Void)
+  let tref = g.FindSysILTypeRef "System.Runtime.CompilerServices.RuntimeHelpers"
+  mkILNonGenericStaticMethSpecInTy(mkILNonGenericBoxedTy tref, "InitializeArray", [g.ilg.typ_Array;g.iltyp_RuntimeFieldHandle], ILType.Void)
 
 let mkInvalidCastExnNewobj (g: TcGlobals)  = 
   mkNormalNewobj (mkILCtorMethSpecForTy (mkILNonGenericBoxedTy (g.FindSysILTypeRef "System.InvalidCastException"), []))
@@ -6594,47 +6597,47 @@ let mkCallGetGenericEREqualityComparer (g:TcGlobals) m = typedExprForIntrinsic g
 
 let mkCallGetGenericPEREqualityComparer (g:TcGlobals) m = typedExprForIntrinsic g m g.get_generic_per_equality_comparer_info |> fst
 
-let mkCallUnbox                (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.unbox_info,    [[ty]], [ e1 ], m)
+let mkCallUnbox (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.unbox_info, [[ty]], [ e1 ], m)
 
-let mkCallUnboxFast            (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.unbox_fast_info, [[ty]], [ e1 ], m)
+let mkCallUnboxFast (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.unbox_fast_info, [[ty]], [ e1 ], m)
 
-let mkCallTypeTest             (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.istype_info,   [[ty]], [ e1 ], m)
+let mkCallTypeTest (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.istype_info, [[ty]], [ e1 ], m)
 
-let mkCallTypeOf               (g:TcGlobals) m ty       = mkApps g (typedExprForIntrinsic g m g.typeof_info,   [[ty]], [ ], m)
+let mkCallTypeOf (g:TcGlobals) m ty = mkApps g (typedExprForIntrinsic g m g.typeof_info, [[ty]], [ ], m)
 
-let mkCallTypeDefOf            (g:TcGlobals) m ty       = mkApps g (typedExprForIntrinsic g m g.typedefof_info, [[ty]], [ ], m)
-     
-let mkCallDispose              (g:TcGlobals) m ty e1         = mkApps g (typedExprForIntrinsic g m g.dispose_info,               [[ty]], [ e1 ], m)
+let mkCallTypeDefOf (g:TcGlobals) m ty = mkApps g (typedExprForIntrinsic g m g.typedefof_info, [[ty]], [ ], m)
+ 
+let mkCallDispose (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.dispose_info, [[ty]], [ e1 ], m)
 
-let mkCallSeq                  (g:TcGlobals) m ty e1         = mkApps g (typedExprForIntrinsic g m g.seq_info,                   [[ty]], [ e1 ], m)
+let mkCallSeq (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.seq_info, [[ty]], [ e1 ], m)
 
-let mkCallCreateInstance       (g:TcGlobals) m ty            = mkApps g (typedExprForIntrinsic g m g.create_instance_info,       [[ty]], [ mkUnit g m ], m)
+let mkCallCreateInstance (g:TcGlobals) m ty = mkApps g (typedExprForIntrinsic g m g.create_instance_info, [[ty]], [ mkUnit g m ], m)
 
-let mkCallGetQuerySourceAsEnumerable      (g:TcGlobals) m ty1 ty2 e1         = mkApps g (typedExprForIntrinsic g m g.query_source_as_enum_info,                   [[ty1;ty2]], [ e1; mkUnit g m  ], m)
+let mkCallGetQuerySourceAsEnumerable (g:TcGlobals) m ty1 ty2 e1 = mkApps g (typedExprForIntrinsic g m g.query_source_as_enum_info, [[ty1;ty2]], [ e1; mkUnit g m ], m)
 
-let mkCallNewQuerySource                  (g:TcGlobals) m ty1 ty2 e1         = mkApps g (typedExprForIntrinsic g m g.new_query_source_info,                   [[ty1;ty2]], [ e1 ], m)
+let mkCallNewQuerySource (g:TcGlobals) m ty1 ty2 e1 = mkApps g (typedExprForIntrinsic g m g.new_query_source_info, [[ty1;ty2]], [ e1 ], m)
 
-let mkCallCreateEvent                        (g:TcGlobals) m ty1 ty2 e1 e2 e3 = mkApps g (typedExprForIntrinsic g m g.create_event_info,       [[ty1;ty2]], [ e1;e2;e3 ], m)
+let mkCallCreateEvent (g:TcGlobals) m ty1 ty2 e1 e2 e3 = mkApps g (typedExprForIntrinsic g m g.create_event_info, [[ty1;ty2]], [ e1;e2;e3 ], m)
 
-let mkCallGenericComparisonWithComparerOuter (g:TcGlobals) m ty comp e1 e2    = mkApps g (typedExprForIntrinsic g m g.generic_comparison_withc_outer_info, [[ty]], [  comp;e1;e2 ], m)
+let mkCallGenericComparisonWithComparerOuter (g:TcGlobals) m ty comp e1 e2 = mkApps g (typedExprForIntrinsic g m g.generic_comparison_withc_outer_info, [[ty]], [ comp;e1;e2 ], m)
 
-let mkCallGenericEqualityEROuter             (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.generic_equality_er_outer_info,     [[ty]], [  e1;e2 ], m)
+let mkCallGenericEqualityEROuter (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.generic_equality_er_outer_info, [[ty]], [ e1;e2 ], m)
 
-let mkCallGenericEqualityWithComparerOuter   (g:TcGlobals) m ty comp e1 e2    = mkApps g (typedExprForIntrinsic g m g.generic_equality_withc_outer_info, [[ty]], [comp;e1;e2], m)
+let mkCallGenericEqualityWithComparerOuter (g:TcGlobals) m ty comp e1 e2 = mkApps g (typedExprForIntrinsic g m g.generic_equality_withc_outer_info, [[ty]], [comp;e1;e2], m)
 
-let mkCallGenericHashWithComparerOuter       (g:TcGlobals) m ty comp e1       = mkApps g (typedExprForIntrinsic g m g.generic_hash_withc_outer_info, [[ty]], [comp;e1], m)
+let mkCallGenericHashWithComparerOuter (g:TcGlobals) m ty comp e1 = mkApps g (typedExprForIntrinsic g m g.generic_hash_withc_outer_info, [[ty]], [comp;e1], m)
 
-let mkCallEqualsOperator                     (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.equals_operator_info,     [[ty]], [  e1;e2 ], m)
+let mkCallEqualsOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.equals_operator_info, [[ty]], [ e1;e2 ], m)
 
-let mkCallNotEqualsOperator                  (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.not_equals_operator,     [[ty]], [  e1;e2 ], m)
+let mkCallNotEqualsOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.not_equals_operator, [[ty]], [ e1;e2 ], m)
 
-let mkCallLessThanOperator                   (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.less_than_operator,     [[ty]], [  e1;e2 ], m)
+let mkCallLessThanOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.less_than_operator, [[ty]], [ e1;e2 ], m)
 
-let mkCallLessThanOrEqualsOperator           (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.less_than_or_equals_operator,     [[ty]], [  e1;e2 ], m)
+let mkCallLessThanOrEqualsOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.less_than_or_equals_operator, [[ty]], [ e1;e2 ], m)
 
-let mkCallGreaterThanOperator                (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.greater_than_operator,     [[ty]], [  e1;e2 ], m)
+let mkCallGreaterThanOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.greater_than_operator, [[ty]], [ e1;e2 ], m)
 
-let mkCallGreaterThanOrEqualsOperator        (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.greater_than_or_equals_operator,     [[ty]], [  e1;e2 ], m)
+let mkCallGreaterThanOrEqualsOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.greater_than_or_equals_operator, [[ty]], [ e1;e2 ], m)
 
 let mkCallAdditionOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_addition_info, [[ty; ty; ty]], [e1;e2], m)
 
@@ -6656,97 +6659,97 @@ let mkCallShiftLeftOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForInt
 
 let mkCallShiftRightOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.bitwise_shift_right_info, [[ty]], [e1;e2], m)
 
-let mkCallUnaryNegOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.unchecked_unary_minus_info, [[ty]], [e1], m)
+let mkCallUnaryNegOperator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.unchecked_unary_minus_info, [[ty]], [e1], m)
 
-let mkCallUnaryNotOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.bitwise_unary_not_info, [[ty]], [e1], m)
+let mkCallUnaryNotOperator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.bitwise_unary_not_info, [[ty]], [e1], m)
 
-let mkCallAdditionChecked   (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.checked_addition_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallAdditionChecked (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.checked_addition_info, [[ty; ty; ty]], [e1;e2], m)
 
 let mkCallSubtractionChecked (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.checked_subtraction_info, [[ty; ty; ty]], [e1;e2], m)
 
-let mkCallMultiplyChecked   (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.checked_multiply_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallMultiplyChecked (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.checked_multiply_info, [[ty; ty; ty]], [e1;e2], m)
 
-let mkCallUnaryNegChecked   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.checked_unary_minus_info, [[ty]], [e1], m)
+let mkCallUnaryNegChecked (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.checked_unary_minus_info, [[ty]], [e1], m)
 
-let mkCallToByteChecked     (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.byte_checked_info, [[ty]], [e1], m)
+let mkCallToByteChecked (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.byte_checked_info, [[ty]], [e1], m)
 
-let mkCallToSByteChecked    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.sbyte_checked_info, [[ty]], [e1], m)
+let mkCallToSByteChecked (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.sbyte_checked_info, [[ty]], [e1], m)
 
-let mkCallToInt16Checked    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int16_checked_info, [[ty]], [e1], m)
+let mkCallToInt16Checked (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int16_checked_info, [[ty]], [e1], m)
 
-let mkCallToUInt16Checked   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint16_checked_info, [[ty]], [e1], m)
+let mkCallToUInt16Checked (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint16_checked_info, [[ty]], [e1], m)
 
-let mkCallToIntChecked      (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int_checked_info, [[ty]], [e1], m)
+let mkCallToIntChecked (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int_checked_info, [[ty]], [e1], m)
 
-let mkCallToInt32Checked    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int32_checked_info, [[ty]], [e1], m)
+let mkCallToInt32Checked (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int32_checked_info, [[ty]], [e1], m)
 
-let mkCallToUInt32Checked   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint32_checked_info, [[ty]], [e1], m)
+let mkCallToUInt32Checked (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint32_checked_info, [[ty]], [e1], m)
 
-let mkCallToInt64Checked    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int64_checked_info, [[ty]], [e1], m)
+let mkCallToInt64Checked (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int64_checked_info, [[ty]], [e1], m)
 
-let mkCallToUInt64Checked   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint64_checked_info, [[ty]], [e1], m)
+let mkCallToUInt64Checked (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint64_checked_info, [[ty]], [e1], m)
 
-let mkCallToIntPtrChecked   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.nativeint_checked_info, [[ty]], [e1], m)
+let mkCallToIntPtrChecked (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.nativeint_checked_info, [[ty]], [e1], m)
 
-let mkCallToUIntPtrChecked  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.unativeint_checked_info, [[ty]], [e1], m)
+let mkCallToUIntPtrChecked (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.unativeint_checked_info, [[ty]], [e1], m)
 
-let mkCallToByteOperator    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.byte_operator_info, [[ty]], [e1], m)
+let mkCallToByteOperator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.byte_operator_info, [[ty]], [e1], m)
 
-let mkCallToSByteOperator   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.sbyte_operator_info, [[ty]], [e1], m)
+let mkCallToSByteOperator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.sbyte_operator_info, [[ty]], [e1], m)
 
-let mkCallToInt16Operator   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int16_operator_info, [[ty]], [e1], m)
+let mkCallToInt16Operator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int16_operator_info, [[ty]], [e1], m)
 
-let mkCallToUInt16Operator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint16_operator_info, [[ty]], [e1], m)
+let mkCallToUInt16Operator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint16_operator_info, [[ty]], [e1], m)
 
-let mkCallToIntOperator     (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int_operator_info, [[ty]], [e1], m)
+let mkCallToIntOperator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int_operator_info, [[ty]], [e1], m)
 
-let mkCallToInt32Operator   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int32_operator_info, [[ty]], [e1], m)
+let mkCallToInt32Operator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int32_operator_info, [[ty]], [e1], m)
 
-let mkCallToUInt32Operator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint32_operator_info, [[ty]], [e1], m)
+let mkCallToUInt32Operator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint32_operator_info, [[ty]], [e1], m)
 
-let mkCallToInt64Operator   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int64_operator_info, [[ty]], [e1], m)
+let mkCallToInt64Operator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int64_operator_info, [[ty]], [e1], m)
 
-let mkCallToUInt64Operator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint64_operator_info, [[ty]], [e1], m)
+let mkCallToUInt64Operator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint64_operator_info, [[ty]], [e1], m)
 
-let mkCallToSingleOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.float32_operator_info, [[ty]], [e1], m)
+let mkCallToSingleOperator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.float32_operator_info, [[ty]], [e1], m)
 
-let mkCallToDoubleOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.float_operator_info, [[ty]], [e1], m)
+let mkCallToDoubleOperator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.float_operator_info, [[ty]], [e1], m)
 
-let mkCallToIntPtrOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.nativeint_operator_info, [[ty]], [e1], m)
+let mkCallToIntPtrOperator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.nativeint_operator_info, [[ty]], [e1], m)
 
 let mkCallToUIntPtrOperator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.unativeint_operator_info, [[ty]], [e1], m)
 
-let mkCallToCharOperator    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.char_operator_info, [[ty]], [e1], m)
+let mkCallToCharOperator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.char_operator_info, [[ty]], [e1], m)
 
-let mkCallToEnumOperator    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.enum_operator_info, [[ty]], [e1], m)
+let mkCallToEnumOperator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.enum_operator_info, [[ty]], [e1], m)
 
-let mkCallArrayLength (g:TcGlobals) m ty e1                    = mkApps g (typedExprForIntrinsic g m g.array_length_info, [[ty]], [e1], m)
+let mkCallArrayLength (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.array_length_info, [[ty]], [e1], m)
 
-let mkCallArrayGet   (g:TcGlobals) m ty e1 idx1                = mkApps g (typedExprForIntrinsic g m g.array_get_info, [[ty]], [ e1 ; idx1 ], m)
+let mkCallArrayGet (g:TcGlobals) m ty e1 idx1 = mkApps g (typedExprForIntrinsic g m g.array_get_info, [[ty]], [ e1 ; idx1 ], m)
 
-let mkCallArray2DGet (g:TcGlobals) m ty e1 idx1 idx2           = mkApps g (typedExprForIntrinsic g m g.array2D_get_info, [[ty]], [ e1 ; idx1; idx2 ], m)
+let mkCallArray2DGet (g:TcGlobals) m ty e1 idx1 idx2 = mkApps g (typedExprForIntrinsic g m g.array2D_get_info, [[ty]], [ e1 ; idx1; idx2 ], m)
 
-let mkCallArray3DGet (g:TcGlobals) m ty e1 idx1 idx2 idx3      = mkApps g (typedExprForIntrinsic g m g.array3D_get_info, [[ty]], [ e1 ; idx1; idx2; idx3 ], m)
+let mkCallArray3DGet (g:TcGlobals) m ty e1 idx1 idx2 idx3 = mkApps g (typedExprForIntrinsic g m g.array3D_get_info, [[ty]], [ e1 ; idx1; idx2; idx3 ], m)
 
 let mkCallArray4DGet (g:TcGlobals) m ty e1 idx1 idx2 idx3 idx4 = mkApps g (typedExprForIntrinsic g m g.array4D_get_info, [[ty]], [ e1 ; idx1; idx2; idx3; idx4 ], m)
 
-let mkCallArraySet   (g:TcGlobals) m ty e1 idx1 v              = mkApps g (typedExprForIntrinsic g m g.array_set_info, [[ty]], [ e1 ; idx1; v ], m)
+let mkCallArraySet (g:TcGlobals) m ty e1 idx1 v = mkApps g (typedExprForIntrinsic g m g.array_set_info, [[ty]], [ e1 ; idx1; v ], m)
 
-let mkCallArray2DSet (g:TcGlobals) m ty e1 idx1 idx2 v         = mkApps g (typedExprForIntrinsic g m g.array2D_set_info, [[ty]], [ e1 ; idx1; idx2; v ], m)
+let mkCallArray2DSet (g:TcGlobals) m ty e1 idx1 idx2 v = mkApps g (typedExprForIntrinsic g m g.array2D_set_info, [[ty]], [ e1 ; idx1; idx2; v ], m)
 
-let mkCallArray3DSet (g:TcGlobals) m ty e1 idx1 idx2 idx3 v    = mkApps g (typedExprForIntrinsic g m g.array3D_set_info, [[ty]], [ e1 ; idx1; idx2; idx3; v ], m)
+let mkCallArray3DSet (g:TcGlobals) m ty e1 idx1 idx2 idx3 v = mkApps g (typedExprForIntrinsic g m g.array3D_set_info, [[ty]], [ e1 ; idx1; idx2; idx3; v ], m)
 
 let mkCallArray4DSet (g:TcGlobals) m ty e1 idx1 idx2 idx3 idx4 v = mkApps g (typedExprForIntrinsic g m g.array4D_set_info, [[ty]], [ e1 ; idx1; idx2; idx3; idx4; v ], m)
 
-let mkCallHash       (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.hash_info,      [[ty]], [ e1 ], m)
+let mkCallHash (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.hash_info, [[ty]], [ e1 ], m)
 
-let mkCallBox        (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.box_info,       [[ty]], [ e1 ], m)
+let mkCallBox (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.box_info, [[ty]], [ e1 ], m)
 
-let mkCallIsNull     (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.isnull_info,    [[ty]], [ e1 ], m)
+let mkCallIsNull (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.isnull_info, [[ty]], [ e1 ], m)
 
-let mkCallIsNotNull  (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.isnotnull_info, [[ty]], [ e1 ], m)
+let mkCallIsNotNull (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.isnotnull_info, [[ty]], [ e1 ], m)
 
-let mkCallRaise      (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.raise_info,     [[ty]], [ e1 ], m)
+let mkCallRaise (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.raise_info, [[ty]], [ e1 ], m)
 
 let mkCallNewDecimal (g:TcGlobals) m (e1, e2, e3, e4, e5) = mkApps g (typedExprForIntrinsic g m g.new_decimal_info, [], [ e1;e2;e3;e4;e5 ], m)
 
@@ -8753,7 +8756,7 @@ let DetectAndOptimizeForExpression g option expr =
     | _, CompiledInt32RangeForEachExpr g (startExpr, (1 | -1 as step), finishExpr, elemVar, bodyExpr, ranges) -> 
 
            let (_mEnumExpr, _mBody, spForLoop, _mForLoop, _spWhileLoop, mWholeExpr) = ranges
-           mkFastForLoop  g (spForLoop, mWholeExpr, elemVar, startExpr, (step = 1), finishExpr, bodyExpr)
+           mkFastForLoop g (spForLoop, mWholeExpr, elemVar, startExpr, (step = 1), finishExpr, bodyExpr)
 
     | OptimizeAllForExpressions, CompiledForEachExpr g (enumerableTy, enumerableExpr, elemVar, bodyExpr, ranges) ->
 
@@ -8766,18 +8769,19 @@ let DetectAndOptimizeForExpression g option expr =
             //      let elem = str.[idx]
             //      body elem
 
-            let strVar      , strExpr    = mkCompGenLocal mEnumExpr "str" enumerableTy
-            let idxVar      , idxExpr    = mkCompGenLocal elemVar.Range "idx" g.int32_ty
+            let strVar, strExpr = mkCompGenLocal mEnumExpr "str" enumerableTy
+            let idxVar, idxExpr = mkCompGenLocal elemVar.Range "idx" g.int32_ty
 
-            let lengthExpr              = mkGetStringLength g mForLoop strExpr
-            let charExpr                = mkGetStringChar g mForLoop strExpr idxExpr
+            let lengthExpr = mkGetStringLength g mForLoop strExpr
+            let charExpr = mkGetStringChar g mForLoop strExpr idxExpr
 
-            let startExpr               = mkZero g mForLoop
-            let finishExpr              = mkDecr g mForLoop lengthExpr
-            let loopItemExpr            = mkCoerceIfNeeded g elemVar.Type g.char_ty charExpr  // for compat reasons, loop item over string is sometimes object, not char
-            let bodyExpr                = mkCompGenLet mForLoop elemVar loopItemExpr bodyExpr
-            let forExpr                 = mkFastForLoop g (spForLoop, mWholeExpr, idxVar, startExpr, true, finishExpr, bodyExpr)
-            let expr                    = mkCompGenLet mEnumExpr strVar enumerableExpr forExpr
+            let startExpr = mkZero g mForLoop
+            let finishExpr = mkDecr g mForLoop lengthExpr
+            // for compat reasons, loop item over string is sometimes object, not char
+            let loopItemExpr = mkCoerceIfNeeded g elemVar.Type g.char_ty charExpr  
+            let bodyExpr = mkCompGenLet mForLoop elemVar loopItemExpr bodyExpr
+            let forExpr = mkFastForLoop g (spForLoop, mWholeExpr, idxVar, startExpr, true, finishExpr, bodyExpr)
+            let expr = mkCompGenLet mEnumExpr strVar enumerableExpr forExpr
 
             expr
 
@@ -8791,28 +8795,26 @@ let DetectAndOptimizeForExpression g option expr =
             //    $current   <- $next
             //    $next      <- $tailOrNull
 
-            let IndexHead                   = 0
-            let IndexTail                   = 1
+            let IndexHead = 0
+            let IndexTail = 1
 
-            let currentVar  , currentExpr    = mkMutableCompGenLocal mEnumExpr "current" enumerableTy
-            let nextVar     , nextExpr       = mkMutableCompGenLocal mEnumExpr "next" enumerableTy
-            let elemTy                      = destListTy g enumerableTy
+            let currentVar, currentExpr = mkMutableCompGenLocal mEnumExpr "current" enumerableTy
+            let nextVar, nextExpr = mkMutableCompGenLocal mEnumExpr "next" enumerableTy
+            let elemTy = destListTy g enumerableTy
 
-            let guardExpr                   = mkNonNullTest g mForLoop nextExpr
-            let headOrDefaultExpr           = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr, g.cons_ucref, [elemTy], IndexHead, mForLoop)
-            let tailOrNullExpr              = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr, g.cons_ucref, [elemTy], IndexTail, mForLoop)
-            let bodyExpr                    =
+            let guardExpr = mkNonNullTest g mForLoop nextExpr
+            let headOrDefaultExpr = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr, g.cons_ucref, [elemTy], IndexHead, mForLoop)
+            let tailOrNullExpr = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr, g.cons_ucref, [elemTy], IndexTail, mForLoop)
+            let bodyExpr =
                 mkCompGenLet mForLoop elemVar headOrDefaultExpr
                     (mkCompGenSequential mForLoop
                         bodyExpr
                         (mkCompGenSequential mForLoop
                             (mkValSet mForLoop (mkLocalValRef currentVar) nextExpr)
-                            (mkValSet mForLoop (mkLocalValRef nextVar) tailOrNullExpr)
-                        )
-                    )
+                            (mkValSet mForLoop (mkLocalValRef nextVar) tailOrNullExpr)))
 
             let expr =
-               // let mutable current = enumerableExpr
+                // let mutable current = enumerableExpr
                 let spBind = (match spForLoop with SequencePointAtForLoop(spStart) -> SequencePointAtBinding(spStart) | NoSequencePointAtForLoop -> NoSequencePointAtStickyBinding)
                 mkLet spBind mEnumExpr currentVar enumerableExpr
                     // let mutable next = current.TailOrNull
@@ -8824,6 +8826,7 @@ let DetectAndOptimizeForExpression g option expr =
 
          else
             expr
+
     | _ -> expr
 
 // Used to remove Expr.Link for inner expressions in pattern matches
