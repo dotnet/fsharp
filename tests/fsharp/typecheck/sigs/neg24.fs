@@ -70,7 +70,7 @@ type C() =
 let _ = C().M(qez=3)
 
 // expect no warning
-module Positive = 
+module Positive2 = 
     let v3 = [ if true then 1 else 2 ] 
     let v4 = [ if true then 1 else yield 2 ] 
     let v5 = [ if true then 1 ] 
