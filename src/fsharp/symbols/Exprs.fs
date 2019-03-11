@@ -20,9 +20,9 @@ module ExprTranslationImpl =
 
     type ExprTranslationEnv = 
         { //Map from Val to binding index
-          vs: ValMap<unit>; 
+          vs: ValMap<unit>
           //Map from typar stamps to binding index
-          tyvs: StampMap<FSharpGenericParameter>;
+          tyvs: StampMap<FSharpGenericParameter>
           // Map for values bound by the 
           //     'let v = isinst e in .... if nonnull v then ...v .... ' 
           // construct arising out the compilation of pattern matching. We decode these back to the form
@@ -31,7 +31,7 @@ module ExprTranslationImpl =
           substVals: ValMap<Expr> }
 
         static member Empty = 
-            { vs=ValMap<_>.Empty; 
+            { vs=ValMap<_>.Empty
               tyvs = Map.empty ;
               isinstVals = ValMap<_>.Empty 
               substVals = ValMap<_>.Empty }
@@ -171,11 +171,11 @@ and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m:range, 
         | E.ILFieldGet (objOpt, _ty, _fieldName) -> (match objOpt with None -> [] | Some x -> [x])
         | E.ILFieldSet (objOpt, _ty, _fieldName, d) -> (match objOpt with None -> [d] | Some x -> [x;d])
         | E.ObjectExpr (_ty, basecall, overrides, interfaceImpls) -> 
-             [ yield basecall; 
+             [ yield basecall
                for m in overrides do yield m.Body
                for (_, ms) in interfaceImpls do for m in ms do yield m.Body ]
         | E.DecisionTree (inputExpr, targetCases) -> 
-            [ yield inputExpr; 
+            [ yield inputExpr
               for (_targetVars, targetExpr) in targetCases do yield targetExpr ]
         | E.DecisionTreeSuccess (_targetNumber, targetArgs) -> targetArgs
         | E.UnionCaseSet (obj, _unionType, _unionCase, _unionField, valueExpr) -> [ yield obj; yield valueExpr ]
