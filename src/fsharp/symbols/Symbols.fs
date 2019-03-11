@@ -292,6 +292,19 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
 
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) ->
             FSharpMemberOrFunctionOrValue(cenv, V vref, item) :> _
+            
+        | Item.ImplicitOp(_id, { contents = Some(TraitConstraintSln.ILMethSln(ttype, _iltyperef, ilMethRef, _typeInst)) }) ->
+            let tcref = 
+                try
+                    Import.ImportILTypeRef cenv.amap range0 ilMethRef.DeclaringTypeRef
+                with _ ->
+                    let e = ilMethRef.DeclaringTypeRef
+                    let parent = ILTypeRef.Create(e.Scope, e.Enclosing.Tail, e.Enclosing.Head)
+                    Import.ImportILTypeRef cenv.amap range0 parent
+
+            let mdef = resolveILMethodRefWithRescope unscopeILType tcref.ILTyconRawMetadata ilMethRef
+            let minfo = MethInfo.CreateILMeth(cenv.amap, range0, ttype, mdef) 
+            FSharpMemberOrFunctionOrValue(cenv, M minfo, item) :> _
 
         // TODO: the following don't currently return any interesting subtype
         | Item.ImplicitOp _
