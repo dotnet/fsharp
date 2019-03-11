@@ -1624,8 +1624,10 @@ type UsingMSBuild() as this =
 
             // The disposals should be at least one less 
             Assert.IsTrue(countDisposals() < i, "Check1, countDisposals() < i, iteration " + string i)
-            Assert.IsTrue(countCreations() >= countDisposals(), "Check2, countCreations() >= countDisposals(), iteration " + string i)
-            Assert.IsTrue(countCreations() = i, "Check3, countCreations() = i, iteration " + string i)
+            let c = countCreations()
+            let d = countDisposals()
+            Assert.IsTrue(c >= countDisposals(), "Check2, countCreations() >= countDisposals(), iteration " + string i + ", countCreations() = " + string c + ", countDisposals() = " + string d)
+            Assert.IsTrue((c = i), "Check3, countCreations() = i, iteration " + string i + ", countCreations() = " + string c)
             if not clearing then 
                 // By default we hold 3 build incrementalBuilderCache entries and 5 typeCheckInfo entries, so if we're not clearing
                 // there should be some roots to project builds still present
