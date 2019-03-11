@@ -290,6 +290,9 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
         | Item.ArgName(id, ty, _)  ->
              FSharpParameter(cenv, ty, {Attribs=[]; Name=Some id}, Some id.idRange, isParamArrayArg=false, isInArg=false, isOutArg=false, isOptionalArg=false) :> _
 
+        | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) ->
+            FSharpMemberOrFunctionOrValue(cenv, V vref, item) :> _
+
         // TODO: the following don't currently return any interesting subtype
         | Item.ImplicitOp _
         | Item.ILField _ 
