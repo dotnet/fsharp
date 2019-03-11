@@ -1622,7 +1622,7 @@ type UsingMSBuild() as this =
 
             let file1 = OpenFile(project,fileName)   
 
-            // The disposals should be at least one less 
+            // The disposals should be at least one less <<<<<<< HEAD
             let c = countCreations()
             let d = countDisposals()
             Assert.IsTrue(d < i, "Check1, countDisposals() < i, iteration " + string i + "countDisposals() = " + string d)
