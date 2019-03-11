@@ -6,7 +6,7 @@ module internal FSharp.Compiler.Rational
 open System.Numerics
 
 type Rational = { 
-  numerator: BigInteger;
+  numerator: BigInteger
   denominator: BigInteger
 }
 
@@ -26,7 +26,7 @@ let mkRational p q =
     if q > BigInteger.Zero then p, q else -p, -q
     
   in
-    { numerator = p;
+    { numerator = p
       denominator = q 
     }
 
