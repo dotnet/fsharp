@@ -693,7 +693,7 @@ type IlxClosureInfo =
       /// The attributes that get attached to the closure class
       cloAttribs: Attribs
 
-      /// The generic paramters for the closure, i.e. the type variables it captures
+      /// The generic parameters for the closure, i.e. the type variables it captures
       cloILGenericParams: IL.ILGenericParameterDefs
 
       /// The free variables for the closure, i.e. the values it captures
@@ -714,6 +714,7 @@ type IlxClosureInfo =
       ///      callvirt clo.DirectInvoke
       localTypeFuncILGenericArgs: ILType list
 
+      /// The free type parameters for the local type function as F# TAST types
       localTypeFuncContractFreeTypars: Typar list
 
       localTypeFuncDirectILGenericParams: IL.ILGenericParameterDefs
