@@ -2273,11 +2273,7 @@ module TypecheckTests =
     let ``type check neg19`` () = singleNegTest (testConfig "typecheck/sigs") "neg19"
 
     [<Test>] 
-    let ``type check neg20`` () = 
-        let cfg = testConfig "typecheck/sigs"
-        let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
-        singleNegTest cfg "neg100"
-    singleNegTest (testConfig "typecheck/sigs") "neg20"
+    let ``type check neg20`` () = singleNegTest (testConfig "typecheck/sigs") "neg20"
 
     [<Test>] 
     let ``type check neg21`` () = singleNegTest (testConfig "typecheck/sigs") "neg21"
@@ -2289,7 +2285,11 @@ module TypecheckTests =
     let ``type check neg23`` () = singleNegTest (testConfig "typecheck/sigs") "neg23"
 
     [<Test>] 
-    let ``type check neg24`` () = singleNegTest (testConfig "typecheck/sigs") "neg24"
+    let ``type check neg24`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        // For some reason this warning is off by default in the test framework but in this case we are testing for it
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
+        singleNegTest cfg "neg24"
 
     [<Test>] 
     let ``type check neg25`` () = singleNegTest (testConfig "typecheck/sigs") "neg25"
