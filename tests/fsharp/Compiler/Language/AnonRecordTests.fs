@@ -4,6 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
 
+#if NET472
 [<TestFixture>]
 module AnonRecordsTests =
 
@@ -33,8 +34,8 @@ let sAnon = StructClass<struct {| S: int |}>()
     let NotStructConstraintFail() =
         CompilerAssert.TypeCheckSingleError
             """
-    type RefClass<'a when 'a : not struct>() = class end
-    let rAnon = RefClass<struct {| R: int |}>()
+type RefClass<'a when 'a : not struct>() = class end
+let rAnon = RefClass<struct {| R: int |}>()
             """ 
             1
             (3, 16, 3, 45)
@@ -52,4 +53,4 @@ let sAnon = StructClass<{| S: int |}>()
             1
             (3, 12, 3, 37)
             "A generic construct requires that the type '{|S : int|}' is a CLI or F# struct type"
-        
+#endif

@@ -4,6 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
 
+#if NET472
 [<TestFixture>]
 module SpanOptimizationTests =
 
@@ -122,3 +123,4 @@ let test () =
     IL_002d:  ret
   }"""
             ]
+#endif

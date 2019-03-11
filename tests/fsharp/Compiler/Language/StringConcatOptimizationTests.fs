@@ -5,6 +5,7 @@ namespace FSharp.Compiler.UnitTests
 open System
 open NUnit.Framework
 
+#if NET472
 [<TestFixture>]
 module StringConcatOptimizationTests =
 
@@ -846,3 +847,4 @@ let test9 () =
                 test8IL
                 test9IL
             ]
+#endif
