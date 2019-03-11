@@ -1312,10 +1312,10 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                             Some (rfinfo, isSetProp)
                         | _ -> None)
                   match props with 
-                  | [ prop ] -> Some prop
-                  | _ -> None
+                  | [ prop ] -> ValueSome prop
+                  | _ -> ValueNone
               else
-                  None
+                  ValueNone
 
           let anonRecdPropSearch = 
               let isGetProp = nm.StartsWith "get_" 
@@ -1324,17 +1324,17 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                   let props = 
                     tys |> List.choose (fun ty -> 
                         match NameResolution.TryFindAnonRecdFieldOfType g ty propName with
-                        | Some (NameResolution.Item.AnonRecdField(anonInfo, tinst, i, _)) -> Some (anonInfo, tinst, i)
+                        | ValueSome (NameResolution.Item.AnonRecdField(anonInfo, tinst, i, _)) -> Some (anonInfo, tinst, i)
                         | _ -> None)
                   match props with 
-                  | [ prop ] -> Some prop
-                  | _ -> None
+                  | [ prop ] -> ValueSome prop
+                  | _ -> ValueNone
               else
-                  None
+                  ValueNone
 
           // Now check if there are no feasible solutions at all
           match minfos, recdPropSearch, anonRecdPropSearch with 
-          | [], None, None when MemberConstraintIsReadyForStrongResolution csenv traitInfo ->
+          | [], ValueNone, ValueNone when MemberConstraintIsReadyForStrongResolution csenv traitInfo ->
               if tys |> List.exists (isFunTy g) then 
                   return! ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenFunction(DecompileOpName nm), m, m2)) 
               elif tys |> List.exists (isAnyTupleTy g) then 
@@ -1372,23 +1372,23 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                           let objtys = minfo.GetObjArgTypes(amap, m, minst)
                           Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo, m, AccessibleFromEverywhere, minfo, minst, minst, None, objtys, [(callerArgs, [])], false, false, None)))
               
-              let methOverloadResult, errors = 
+              let methOverloadResult, errors =
                   trace.CollectThenUndoOrCommit (fun (a, _) -> Option.isSome a) (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) (0, 0) AccessibleFromEverywhere calledMethGroup false (Some rty))
 
               match anonRecdPropSearch, recdPropSearch, methOverloadResult with 
-              | Some (anonInfo, tinst, i), None, None -> 
+              | ValueSome (anonInfo, tinst, i), ValueNone, None -> 
                   // OK, the constraint is solved by a record property. Assert that the return types match.
                   let rty2 = List.item i tinst
                   do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty rty2
                   return TTraitSolvedAnonRecdProp(anonInfo, tinst, i)
 
-              | None, Some (rfinfo, isSetProp), None -> 
+              | ValueNone, ValueSome (rfinfo, isSetProp), None -> 
                   // OK, the constraint is solved by a record property. Assert that the return types match.
                   let rty2 = if isSetProp then g.unit_ty else rfinfo.FieldType
                   do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty rty2
                   return TTraitSolvedRecdProp(rfinfo, isSetProp)
 
-              | None, None, Some (calledMeth:CalledMeth<_>) -> 
+              | ValueNone, ValueNone, Some (calledMeth:CalledMeth<_>) -> 
                   // OK, the constraint is solved.
                   let minfo = calledMeth.Method
 

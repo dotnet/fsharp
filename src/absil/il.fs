@@ -3169,10 +3169,13 @@ let mkILNestedExportedTypesLazy (l:Lazy<_>) =
 
 let mkILResources l =  ILResources l
 
-let addMethodImplToTable y tab =
+let addMethodImplToTable y (tab:Map<_,_>) =
     let key = (y.Overrides.MethodRef.Name, y.Overrides.MethodRef.ArgTypes.Length)
-    let prev = Map.tryFindMulti key tab
-    Map.add key (y::prev) tab
+    match tab.TryGetValue key with
+    | true, prev ->
+        Map.add key (y::prev) tab
+    | _ ->
+        Map.add key [y] tab
 
 let mkILMethodImpls l =  ILMethodImpls (notlazy (List.foldBack addMethodImplToTable l Map.empty))
 

@@ -734,11 +734,13 @@ let AddExceptionDeclsToNameEnv bulkAddMode nenv (ecref:TyconRef) =
 
 /// Add a module abbreviation to the name resolution environment
 let AddModuleAbbrevToNameEnv (id:Ident) nenv modrefs =
-    {nenv with
+    { nenv with
        eModulesAndNamespaces =
-         let add old nw = nw @ old
-         NameMap.layerAdditive add (Map.add id.idText modrefs Map.empty) nenv.eModulesAndNamespaces }
-
+            (Map.add id.idText modrefs Map.empty,nenv.eModulesAndNamespaces)
+            ||> Map.foldBack (fun x y (sofar:Map<_,_>) ->
+                match sofar.TryGetValue x with
+                | true, old -> Map.add x (y @ old) sofar
+                | _ -> Map.add x y sofar) }
 
 //-------------------------------------------------------------------------
 // Open a structure or an IL namespace
@@ -755,12 +757,19 @@ let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: Module
     if isNil modrefs then nenv else
     let modrefsMap = modrefs |> NameMap.ofKeyedList (fun modref -> modref.DemangledModuleOrNamespaceName)
     let addModrefs tab =
-         let add old nw =
-             if IsEntityAccessible amap m ad nw then
-                 nw :: old
-             else
-                 old
-         NameMap.layerAdditive add modrefsMap tab
+        (modrefsMap,tab)
+        ||> Map.foldBack (fun x y (sofar:Map<_,_>) ->
+                match sofar.TryGetValue x with
+                | true, prev ->
+                    if IsEntityAccessible amap m ad y then
+                        Map.add x (y :: prev) sofar
+                    else
+                        sofar
+                | _ ->
+                    if IsEntityAccessible amap m ad y then
+                        Map.add x [y] sofar
+                    else
+                        Map.add x [] sofar)
     let nenv =
         {nenv with
            eModulesAndNamespaces = addModrefs nenv.eModulesAndNamespaces
@@ -2077,9 +2086,9 @@ let TryFindAnonRecdFieldOfType g typ nm =
     match tryDestAnonRecdTy g typ with
     | ValueSome (anonInfo, tys) ->
         match anonInfo.SortedIds |> Array.tryFindIndex (fun x -> x.idText = nm) with
-        | Some i -> Some (Item.AnonRecdField(anonInfo, tys, i, anonInfo.SortedIds.[i].idRange))
-        | None -> None
-    | ValueNone -> None
+        | Some i -> ValueSome (Item.AnonRecdField(anonInfo, tys, i, anonInfo.SortedIds.[i].idRange))
+        | None -> ValueNone
+    | ValueNone -> ValueNone
 
 let CoreDisplayName(pinfo:PropInfo) =
     match pinfo with
@@ -2141,11 +2150,11 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
             let anonRecdSearch =
                 match lookupKind with
                 | LookupKind.Expr -> TryFindAnonRecdFieldOfType g ty nm
-                | _ -> None
+                | _ -> ValueNone
             match anonRecdSearch with
-            | Some item ->
+            | ValueSome item ->
                 OneResult (success(resInfo, item, rest))
-            | None ->
+            | ValueNone ->
             let isLookUpExpr = (lookupKind = LookupKind.Expr)
             match TryFindIntrinsicNamedItemOfType ncenv.InfoReader (nm, ad) findFlag m ty with
             | Some (PropertyItem psets) when isLookUpExpr ->
@@ -3729,7 +3738,7 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
       (if statics then []
        else
           match TryFindAnonRecdFieldOfType g ty id with
-          | Some (Item.AnonRecdField(_anonInfo, tys, i, _)) -> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest tys.[i]
+          | ValueSome (Item.AnonRecdField(_anonInfo, tys, i, _)) -> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest tys.[i]
           | _ -> []) @
 
       // e.g. <val-id>.<event-id>.<more>
@@ -4412,7 +4421,7 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
               yield! (fullTypeOfPinfo pinfo) |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
 
           match TryFindAnonRecdFieldOfType g ty id with
-          | Some (Item.AnonRecdField(_anonInfo, tys, i, _)) ->
+          | ValueSome (Item.AnonRecdField(_anonInfo, tys, i, _)) ->
               let tyinfo = tys.[i]
               yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item tyinfo
           | _ -> ()

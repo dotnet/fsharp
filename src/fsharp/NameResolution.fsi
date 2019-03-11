@@ -170,7 +170,7 @@ type FullyQualifiedFlag =
 type BulkAdd = Yes | No
 
 /// Find a field in anonymous record type
-val internal TryFindAnonRecdFieldOfType : TcGlobals -> TType -> string -> Item option
+val internal TryFindAnonRecdFieldOfType : TcGlobals -> TType -> string -> Item voption
 
 /// Add extra items to the environment for Visual Studio, e.g. static members 
 val internal AddFakeNamedValRefToNameEnv : string -> NameResolutionEnv -> ValRef -> NameResolutionEnv

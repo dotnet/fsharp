@@ -3942,12 +3942,18 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         if disposed then assert false
 
     static let ccuHasType (ccu : CcuThunk) (nsname : string list) (tname : string) =
-        match (Some ccu.Contents, nsname) ||> List.fold (fun entityOpt n -> match entityOpt with None -> None | Some entity -> entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind n) with
-        | Some ns ->
-                match Map.tryFind tname ns.ModuleOrNamespaceType.TypesByMangledName with
-                | Some _ -> true
-                | None -> false
-        | None -> false
+        let nsOpt =
+            (Some ccu.Contents, nsname)
+            ||> List.fold (fun entityOpt n ->
+                    match entityOpt with
+                    | None ->
+                        None
+                    | Some entity ->
+                        entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind n)
+
+        match nsOpt with
+        | Some ns when ns.ModuleOrNamespaceType.TypesByMangledName.ContainsKey tname -> true
+        | _ -> false
   
     member private tcImports.Base  = 
             CheckDisposed()

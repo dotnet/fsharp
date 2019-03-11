@@ -667,9 +667,6 @@ type Lock<'LockTokenType when 'LockTokenType :> LockToken>() =
 /// Get an initialization hole 
 let getHole r = match !r with None -> failwith "getHole" | Some x -> x
 
-module Map = 
-    let tryFindMulti k map = match Map.tryFind k map with Some res -> res | None -> []
-
 type ResultOrException<'TResult> =
     | Result of 'TResult
     | Exception of Exception
@@ -1152,10 +1149,6 @@ module NameMap =
     let toList (l: NameMap<'T>) = Map.toList l
 
     let layer (m1 : NameMap<'T>) m2 = Map.foldBack Map.add m1 m2
-
-    /// Not a very useful function - only called in one place - should be changed 
-    let layerAdditive addf m1 m2 = 
-      Map.foldBack (fun x y sofar -> Map.add x (addf (Map.tryFindMulti x sofar) y) sofar) m1 m2
 
     /// Union entries by identical key, using the provided function to union sets of values
     let union unionf (ms: NameMap<_> seq) = 
