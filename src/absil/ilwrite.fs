@@ -89,7 +89,13 @@ type ByteBuffer with
     // Emit compressed untagged integer
     member buf.EmitZUntaggedIndex nm sz big idx = 
         if big then buf.EmitInt32 idx
-        elif idx > 0xffff then failwithf "EmitZUntaggedIndex: index into table '%d' is too big for small address or simple index, idx = %d, big = %A, size of table = %d, stack = %s" nm idx big sz ((new System.Diagnostics.StackTrace()).ToString())
+        elif idx > 0xffff then 
+#if NETSTANDARD1_6
+            let trace = "no stack trace on.NET Standard 1.6"
+#else
+            let trace = (new Diagnostics.StackTrace()).ToString()
+#endif
+            failwithf "EmitZUntaggedIndex: index into table '%d' is too big for small address or simple index, idx = %d, big = %A, size of table = %d, stack = %s" nm idx big sz trace
         else buf.EmitInt32AsUInt16 idx
 
     // Emit compressed tagged integer
