@@ -2273,7 +2273,11 @@ module TypecheckTests =
     let ``type check neg19`` () = singleNegTest (testConfig "typecheck/sigs") "neg19"
 
     [<Test>] 
-    let ``type check neg20`` () = singleNegTest (testConfig "typecheck/sigs") "neg20"
+    let ``type check neg20`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
+        singleNegTest cfg "neg100"
+    singleNegTest (testConfig "typecheck/sigs") "neg20"
 
     [<Test>] 
     let ``type check neg21`` () = singleNegTest (testConfig "typecheck/sigs") "neg21"
