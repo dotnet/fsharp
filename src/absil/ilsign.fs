@@ -45,7 +45,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
             val UnderlyingArray: byte[]
 
             [<FieldOffset(0)>]val ImmutableArray: ImmutableArray<byte>
-            new (immutableArray:ImmutableArray<byte>) = { UnderlyingArray = Array.empty<byte> ; ImmutableArray = immutableArray}
+            new (immutableArray:ImmutableArray<byte>) = { UnderlyingArray = Array.empty<byte>; ImmutableArray = immutableArray}
         end
 
     let getUnderlyingArray (array:ImmutableArray<byte>) =ByteArrayUnion(array).UnderlyingArray
@@ -54,8 +54,8 @@ open FSharp.Compiler.AbstractIL.Internal.Library
     // remain static (skip checksum, Authenticode signatures and strong name signature blob)
     let hashAssembly (peReader:PEReader) (hashAlgorithm:IncrementalHash ) =
         // Hash content of all headers
-        let peHeaders = peReader.PEHeaders;
-        let peHeaderOffset = peHeaders.PEHeaderStartOffset;
+        let peHeaders = peReader.PEHeaders
+        let peHeaderOffset = peHeaders.PEHeaderStartOffset
 
         // Even though some data in OptionalHeader is different for 32 and 64,  this field is the same
         let checkSumOffset = peHeaderOffset + 0x40;                         // offsetof(IMAGE_OPTIONAL_HEADER, CheckSum)
@@ -68,7 +68,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
         let allHeadersSize = peHeaderOffset + peHeaderSize + int(peHeaders.CoffHeader.NumberOfSections) * 0x28;      // sizeof(IMAGE_SECTION_HEADER)
         let allHeaders = 
             let array:byte[] = Array.zeroCreate<byte> allHeadersSize
-            peReader.GetEntireImage().GetContent().CopyTo(0, array, 0, allHeadersSize);
+            peReader.GetEntireImage().GetContent().CopyTo(0, array, 0, allHeadersSize)
             array
 
         // Clear checksum and security data directory
@@ -118,7 +118,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
         member x.ReadBigInteger (length:int):byte[] =
             let arr:byte[] = Array.zeroCreate<byte> length
             Array.Copy(x._blob, x._offset, arr, 0, length) |> ignore
-            x._offset <- x._offset  + length;
+            x._offset <- x._offset  + length
             arr |> Array.rev
 
     let RSAParamatersFromBlob (blob:byte[]) keyType =

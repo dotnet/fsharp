@@ -253,28 +253,28 @@ type System.Reflection.Emit.ILGenerator with
         if logRefEmitCalls then printfn "ilg%d.Emit(OpCodes.%s)" (abs <| hash x) op.RefEmitName
         x.Emit(op) 
     member x.EmitAndLog (op:OpCode, v:Label) = 
-        if logRefEmitCalls then printfn "ilg%d.Emit(OpCodes.%s, label%d_%d)" (abs <| hash x) op.RefEmitName (abs <| hash x) (abs <| hash v); 
+        if logRefEmitCalls then printfn "ilg%d.Emit(OpCodes.%s, label%d_%d)" (abs <| hash x) op.RefEmitName (abs <| hash x) (abs <| hash v)
         x.Emit(op, v)
     member x.EmitAndLog (op:OpCode, v:int16) = 
-        if logRefEmitCalls then printfn "ilg%d.Emit(OpCodes.%s, int16 %d)" (abs <| hash x) op.RefEmitName v; 
+        if logRefEmitCalls then printfn "ilg%d.Emit(OpCodes.%s, int16 %d)" (abs <| hash x) op.RefEmitName v
         x.Emit(op, v)
     member x.EmitAndLog (op:OpCode, v:int32) = 
-        if logRefEmitCalls then printfn "ilg%d.Emit(OpCodes.%s, %d)" (abs <| hash x) op.RefEmitName v; 
+        if logRefEmitCalls then printfn "ilg%d.Emit(OpCodes.%s, %d)" (abs <| hash x) op.RefEmitName v
         x.Emit(op, v)
     member x.EmitAndLog (op:OpCode, v:MethodInfo) = 
-        if logRefEmitCalls then printfn "ilg%d.Emit(OpCodes.%s, methodBuilder%d) // method %s" (abs <| hash x) op.RefEmitName (abs <| hash v) v.Name; 
+        if logRefEmitCalls then printfn "ilg%d.Emit(OpCodes.%s, methodBuilder%d) // method %s" (abs <| hash x) op.RefEmitName (abs <| hash v) v.Name
         x.Emit(op, v)
     member x.EmitAndLog (op:OpCode, v:string) = 
-        if logRefEmitCalls then printfn "ilg%d.Emit(OpCodes.%s, \"@%s\")" (abs <| hash x) op.RefEmitName v; 
+        if logRefEmitCalls then printfn "ilg%d.Emit(OpCodes.%s, \"@%s\")" (abs <| hash x) op.RefEmitName v
         x.Emit(op, v)
     member x.EmitAndLog (op:OpCode, v:Type) = 
-        if logRefEmitCalls then printfn "ilg%d.Emit(OpCodes.%s, typeof<%s>)" (abs <| hash x) op.RefEmitName v.FullName; 
+        if logRefEmitCalls then printfn "ilg%d.Emit(OpCodes.%s, typeof<%s>)" (abs <| hash x) op.RefEmitName v.FullName
         x.Emit(op, v)
     member x.EmitAndLog (op:OpCode, v:FieldInfo) = 
-        if logRefEmitCalls then printfn "ilg%d.Emit(OpCodes.%s, fieldBuilder%d) // field %s" (abs <| hash x) op.RefEmitName (abs <| hash v) v.Name; 
+        if logRefEmitCalls then printfn "ilg%d.Emit(OpCodes.%s, fieldBuilder%d) // field %s" (abs <| hash x) op.RefEmitName (abs <| hash v) v.Name
         x.Emit(op, v)
     member x.EmitAndLog (op:OpCode, v:ConstructorInfo) = 
-        if logRefEmitCalls then printfn "ilg%d.Emit(OpCodes.%s, constructor_%s)" (abs <| hash x) op.RefEmitName v.DeclaringType.Name; 
+        if logRefEmitCalls then printfn "ilg%d.Emit(OpCodes.%s, constructor_%s)" (abs <| hash x) op.RefEmitName v.DeclaringType.Name
         x.Emit(op, v)
  
 
@@ -305,18 +305,18 @@ let getTypeConstructor (ty: Type) =
 
 let convAssemblyRef (aref:ILAssemblyRef) = 
     let asmName = new System.Reflection.AssemblyName()
-    asmName.Name    <- aref.Name;
+    asmName.Name    <- aref.Name
     (match aref.PublicKey with 
      | None -> ()
      | Some (PublicKey      bytes) -> asmName.SetPublicKey(bytes)
-     | Some (PublicKeyToken bytes) -> asmName.SetPublicKeyToken(bytes));
+     | Some (PublicKeyToken bytes) -> asmName.SetPublicKeyToken(bytes))
     let setVersion (major, minor, build, rev) = 
        asmName.Version <- System.Version (int32 major, int32 minor, int32 build, int32 rev)
-    Option.iter setVersion aref.Version;
-    //  asmName.ProcessorArchitecture <- System.Reflection.ProcessorArchitecture.MSIL;
+    Option.iter setVersion aref.Version
+    //  asmName.ProcessorArchitecture <- System.Reflection.ProcessorArchitecture.MSIL
 #if !FX_RESHAPED_GLOBALIZATION
-    //Option.iter (fun name -> asmName.CultureInfo <- System.Globalization.CultureInfo.CreateSpecificCulture(name)) aref.Locale;
-    asmName.CultureInfo <- System.Globalization.CultureInfo.InvariantCulture;
+    //Option.iter (fun name -> asmName.CultureInfo <- System.Globalization.CultureInfo.CreateSpecificCulture(name)) aref.Locale
+    asmName.CultureInfo <- System.Globalization.CultureInfo.InvariantCulture
 #endif
     asmName
 
@@ -364,13 +364,13 @@ let convTypeRefAux (cenv:cenv) (tref:ILTypeRef) =
 /// and could be placed as hash tables in the global environment.
 [<AutoSerializable(false)>]
 type emEnv =
-    { emTypMap   : Zmap<ILTypeRef, Type * TypeBuilder * ILTypeDef * Type option (*the created type*) > ;
-      emConsMap  : Zmap<ILMethodRef, ConstructorBuilder>;    
-      emMethMap  : Zmap<ILMethodRef, MethodBuilder>;
-      emFieldMap : Zmap<ILFieldRef, FieldBuilder>;
-      emPropMap  : Zmap<ILPropertyRef, PropertyBuilder>;
-      emLocals   : LocalBuilder[];
-      emLabels   : Zmap<IL.ILCodeLabel, Label>;
+    { emTypMap   : Zmap<ILTypeRef, Type * TypeBuilder * ILTypeDef * Type option (*the created type*) > 
+      emConsMap  : Zmap<ILMethodRef, ConstructorBuilder>
+      emMethMap  : Zmap<ILMethodRef, MethodBuilder>
+      emFieldMap : Zmap<ILFieldRef, FieldBuilder>
+      emPropMap  : Zmap<ILPropertyRef, PropertyBuilder>
+      emLocals   : LocalBuilder[]
+      emLabels   : Zmap<IL.ILCodeLabel, Label>
       emTyvars   : Type[] list; // stack
       emEntryPts : (TypeBuilder * string) list
       delayedFieldInits :  (unit -> unit) list}
@@ -381,14 +381,14 @@ let orderILFieldRef     = ComparisonIdentity.Structural<ILFieldRef>
 let orderILPropertyRef  = ComparisonIdentity.Structural<ILPropertyRef>
 
 let emEnv0 = 
-    { emTypMap   = Zmap.empty orderILTypeRef;
-      emConsMap  = Zmap.empty orderILMethodRef;
-      emMethMap  = Zmap.empty orderILMethodRef;
-      emFieldMap = Zmap.empty orderILFieldRef;
-      emPropMap = Zmap.empty orderILPropertyRef;
-      emLocals   = [| |];
-      emLabels   = Zmap.empty codeLabelOrder;
-      emTyvars   = [];
+    { emTypMap   = Zmap.empty orderILTypeRef
+      emConsMap  = Zmap.empty orderILMethodRef
+      emMethMap  = Zmap.empty orderILMethodRef
+      emFieldMap = Zmap.empty orderILFieldRef
+      emPropMap = Zmap.empty orderILPropertyRef
+      emLocals   = [| |]
+      emLabels   = Zmap.empty codeLabelOrder
+      emTyvars   = []
       emEntryPts = []
       delayedFieldInits = [] }
 
@@ -398,9 +398,14 @@ let envBindTypeRef emEnv (tref:ILTypeRef) (typT: System.Type, typB, typeDef)=
 let envBindTypeRef emEnv (tref:ILTypeRef) (typT: System.Type?, typB, typeDef)= 
 #endif
     match typT with 
+<<<<<<< HEAD
     | null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name;
     | NonNull typT ->
         {emEnv with emTypMap = Zmap.add tref (typT, typB, typeDef, None) emEnv.emTypMap}
+=======
+    | null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name
+    | _ -> {emEnv with emTypMap = Zmap.add tref (typT, typB, typeDef, None) emEnv.emTypMap}
+>>>>>>> 32c75cabcff0c9b7ee05bf67f63eea4f9259cf88
 
 let envUpdateCreatedTypeRef emEnv (tref:ILTypeRef) =
     // The tref's TypeBuilder has been created, so we have a Type proper.
@@ -424,7 +429,7 @@ let envUpdateCreatedTypeRef emEnv (tref:ILTypeRef) =
         {emEnv with emTypMap = Zmap.add tref (typT, typB, typeDef, Some ty) emEnv.emTypMap}
     else
 #if DEBUG
-        printf "envUpdateCreatedTypeRef: expected type to be created\n";
+        printf "envUpdateCreatedTypeRef: expected type to be created\n"
 #endif
         emEnv
 
@@ -471,7 +476,7 @@ let envSetLocals emEnv locs = assert (emEnv.emLocals.Length = 0); // check "loca
 let envGetLocal  emEnv i    = emEnv.emLocals.[i] // implicit bounds checking
 
 let envSetLabel emEnv name lab =
-    assert (not (Zmap.mem name emEnv.emLabels));
+    assert (not (Zmap.mem name emEnv.emLabels))
     {emEnv with emLabels = Zmap.add name lab emEnv.emLabels}
     
 let envGetLabel emEnv name = 
@@ -1129,7 +1134,7 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
     | I_br  targ -> ilG.EmitAndLog(OpCodes.Br, envGetLabel emEnv targ)
     | I_jmp mspec -> ilG.EmitAndLog(OpCodes.Jmp, convMethodSpec cenv emEnv mspec)
     | I_brcmp (comp, targ) -> emitInstrCompare emEnv ilG comp targ 
-    | I_switch labels -> ilG.Emit(OpCodes.Switch, Array.ofList (List.map (envGetLabel emEnv) labels));
+    | I_switch labels -> ilG.Emit(OpCodes.Switch, Array.ofList (List.map (envGetLabel emEnv) labels))
     | I_ret -> ilG.EmitAndLog(OpCodes.Ret)
 
     | I_call (tail, mspec, varargs)   -> 
@@ -1141,7 +1146,7 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
         emitInstrCall cenv emEnv ilG OpCodes.Callvirt tail mspec varargs
 
     | I_callconstraint (tail, ty, mspec, varargs) -> 
-        ilG.Emit(OpCodes.Constrained, convType cenv emEnv ty); 
+        ilG.Emit(OpCodes.Constrained, convType cenv emEnv ty)
         emitInstrCall cenv emEnv ilG OpCodes.Callvirt tail mspec varargs                                                     
 
     | I_calli (tail, callsig, None)             -> 
@@ -1181,7 +1186,7 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
 
     | I_stfld (align, vol, fspec)    -> 
         emitInstrAlign ilG align
-        emitInstrVolatile ilG vol; 
+        emitInstrVolatile ilG vol
         ilG.EmitAndLog(OpCodes.Stfld, convFieldSpec cenv emEnv fspec)
 
     | I_ldstr     s                  -> ilG.EmitAndLog(OpCodes.Ldstr, s)
@@ -1257,7 +1262,7 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
         | DT_REF -> ilG.EmitAndLog(OpCodes.Stelem_Ref)
 
     | I_ldelema (ro, _isNativePtr, shape, ty)     -> 
-        if (ro = ReadonlyAddress) then ilG.EmitAndLog(OpCodes.Readonly);
+        if (ro = ReadonlyAddress) then ilG.EmitAndLog(OpCodes.Readonly)
         if (shape = ILArrayShape.SingleDimensional) 
         then ilG.EmitAndLog(OpCodes.Ldelema, convType cenv emEnv  ty)
         else 
@@ -1330,12 +1335,12 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
         ilG.EmitAndLog(OpCodes.Cpblk)
 
     | I_initblk (align, vol)        -> 
-        emitInstrAlign ilG align;
+        emitInstrAlign ilG align
         emitInstrVolatile ilG vol
         ilG.EmitAndLog(OpCodes.Initblk)
 
     | EI_ldlen_multi (_, m) -> 
-        emitInstr cenv modB emEnv ilG (mkLdcInt32 m);
+        emitInstr cenv modB emEnv ilG (mkLdcInt32 m)
         emitInstr cenv modB emEnv ilG (mkNormalCall(mkILNonGenericMethSpecInTy(cenv.ilg.typ_Array, ILCallingConv.Instance, "GetLength", [cenv.ilg.typ_Int32], cenv.ilg.typ_Int32)))
 
     | i -> failwithf "the IL instruction %s cannot be emitted" (i.ToString())
@@ -1468,7 +1473,7 @@ let buildGenParamsPass1b cenv emEnv (genArgs : Type array) (gps : ILGenericParam
             [ ]      -> () // Q: should a baseType be set? It is in some samples. Should this be a failure case?
           | [ baseT ] -> gpB.SetBaseTypeConstraint(baseT)
           | _       -> failwith "buildGenParam: multiple base types"
-        );
+        )
         // set interface constraints (interfaces that instances of gp must meet)
         gpB.SetInterfaceConstraints(Array.ofList interfaceTs)
         gp.CustomAttrs |> emitCustomAttrs cenv emEnv (wrapCustomAttr gpB.SetCustomAttribute)
@@ -1491,8 +1496,8 @@ let buildGenParamsPass1b cenv emEnv (genArgs : Type array) (gps : ILGenericParam
 //----------------------------------------------------------------------------
 
 let emitParameter cenv emEnv (defineParameter : int * ParameterAttributes * string -> ParameterBuilder) i (param: ILParameter) =
-    //  -Type: ty;
-    //  -Default: ILFieldInit option;  
+    //  -Type: ty
+    //  -Default: ILFieldInit option
     //  -Marshal: NativeType option; (* Marshalling map for parameters. COM Interop only. *)
     let attrs = flagsIf param.IsIn       ParameterAttributes.In ||| 
                 flagsIf param.IsOut      ParameterAttributes.Out |||
@@ -1544,7 +1549,7 @@ let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef)
 (* p.NoMangle *)
 
         let methB = typB.DefinePInvokeMethod(mdef.Name, p.Where.Name, p.Name, attrs, cconv, rty, null, null, argtys, null, null, pcc, pcs) 
-        methB.SetImplementationFlagsAndLog(implflags);
+        methB.SetImplementationFlagsAndLog(implflags)
         envBindMethodRef emEnv mref methB
 #endif
 
@@ -1553,17 +1558,17 @@ let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef)
       | ".cctor" 
       | ".ctor" ->
           let consB = typB.DefineConstructorAndLog(attrs, cconv, convTypesToArray cenv emEnv mdef.ParameterTypes)
-          consB.SetImplementationFlagsAndLog(implflags);
+          consB.SetImplementationFlagsAndLog(implflags)
           envBindConsRef emEnv mref consB
       | _name    ->
           // The return/argument types may involve the generic parameters
           let methB = typB.DefineMethodAndLog(mdef.Name, attrs, cconv) 
         
           // Method generic type parameters         
-          buildGenParamsPass1 emEnv methB.DefineGenericParametersAndLog mdef.GenericParams;
+          buildGenParamsPass1 emEnv methB.DefineGenericParametersAndLog mdef.GenericParams
           let genArgs = getGenericArgumentsOfMethod methB 
           let emEnv = envPushTyvars emEnv (Array.append (getGenericArgumentsOfType (typB.AsType())) genArgs)
-          buildGenParamsPass1b cenv emEnv genArgs mdef.GenericParams;
+          buildGenParamsPass1b cenv emEnv genArgs mdef.GenericParams
 
           // Set parameter and return types (may depend on generic args)
           let parameterTypes = convTypesToArray cenv emEnv mdef.ParameterTypes
@@ -1576,7 +1581,7 @@ let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef)
           let returnTypeRequiredCustomModifiers, returnTypeOptionalCustomModifiers = mdef.Return |> convReturnModifiers cenv emEnv
           let returnType = convType cenv emEnv  mdef.Return.Type
 
-          methB.SetSignatureAndLog(returnType, returnTypeRequiredCustomModifiers, returnTypeOptionalCustomModifiers, parameterTypes, parameterTypeRequiredCustomModifiers,parameterTypeOptionalCustomModifiers);
+          methB.SetSignatureAndLog(returnType, returnTypeRequiredCustomModifiers, returnTypeOptionalCustomModifiers, parameterTypes, parameterTypeRequiredCustomModifiers,parameterTypeOptionalCustomModifiers)
 
           let emEnv = envPopTyvars emEnv
           methB.SetImplementationFlagsAndLog(implflags)
@@ -1600,10 +1605,10 @@ let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMetho
           assert isNil mdef.GenericParams
           // Value parameters       
           let defineParameter (i, attr, name) = consB.DefineParameterAndLog(i+1, attr, name)
-          mdef.Parameters |> List.iteri (emitParameter cenv emEnv defineParameter);
+          mdef.Parameters |> List.iteri (emitParameter cenv emEnv defineParameter)
           // Body
-          emitMethodBody cenv modB emEnv consB.GetILGenerator mdef.Name mdef.Body;
-          emitCustomAttrs cenv emEnv (wrapCustomAttr consB.SetCustomAttribute) mdef.CustomAttrs;
+          emitMethodBody cenv modB emEnv consB.GetILGenerator mdef.Name mdef.Body
+          emitCustomAttrs cenv emEnv (wrapCustomAttr consB.SetCustomAttribute) mdef.CustomAttrs
           ()
      | _name ->
        
@@ -1618,10 +1623,10 @@ let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMetho
 
           // Value parameters
           let defineParameter (i, attr, name) = methB.DefineParameterAndLog(i+1, attr, name) 
-          mdef.Parameters |> List.iteri (fun a b -> emitParameter cenv emEnv defineParameter a b);
+          mdef.Parameters |> List.iteri (fun a b -> emitParameter cenv emEnv defineParameter a b)
           // Body
           if not isPInvoke then 
-              emitMethodBody cenv modB emEnv methB.GetILGeneratorAndLog mdef.Name mdef.Body;
+              emitMethodBody cenv modB emEnv methB.GetILGeneratorAndLog mdef.Name mdef.Body
           let emEnv = envPopTyvars emEnv // case fold later...
           emitCustomAttrs cenv emEnv methB.SetCustomAttributeAndLog mdef.CustomAttrs
       
@@ -1656,7 +1661,7 @@ let buildFieldPass2 cenv tref (typB:TypeBuilder) emEnv (fdef : ILFieldDef) =
                 // => here we cannot detect if underlying type is already set so as a conservative solution we delay initialization of fields
                 // to the end of pass2 (types and members are already created but method bodies are yet not emitted)
                 { emEnv with delayedFieldInits = (fun() -> fieldB.SetConstant(convFieldInit initial))::emEnv.delayedFieldInits }
-    fdef.Offset |> Option.iter (fun offset ->  fieldB.SetOffset(offset));
+    fdef.Offset |> Option.iter (fun offset ->  fieldB.SetOffset(offset))
     // custom attributes: done on pass 3 as they may reference attribute constructors generated on
     // pass 2.
     let fref = mkILFieldRef (tref, fdef.Name, fdef.FieldType)    
@@ -1677,10 +1682,10 @@ let buildPropertyPass2 cenv tref (typB:TypeBuilder) emEnv (prop : ILPropertyDef)
 
     let propB = typB.DefinePropertyAndLog(prop.Name, attrs, convType cenv emEnv  prop.PropertyType, convTypesToArray cenv emEnv prop.Args)
    
-    prop.SetMethod |> Option.iter (fun mref -> propB.SetSetMethod(envGetMethB emEnv mref));
-    prop.GetMethod |> Option.iter (fun mref -> propB.SetGetMethod(envGetMethB emEnv mref));
+    prop.SetMethod |> Option.iter (fun mref -> propB.SetSetMethod(envGetMethB emEnv mref))
+    prop.GetMethod |> Option.iter (fun mref -> propB.SetGetMethod(envGetMethB emEnv mref))
     // set default value
-    prop.Init |> Option.iter (fun initial -> propB.SetConstant(convFieldInit initial));
+    prop.Init |> Option.iter (fun initial -> propB.SetConstant(convFieldInit initial))
     // custom attributes
     let pref = ILPropertyRef.Create (tref, prop.Name)    
     envBindPropRef emEnv pref propB
@@ -1701,10 +1706,10 @@ let buildEventPass3 cenv (typB:TypeBuilder) emEnv (eventDef : ILEventDef) =
     assert eventDef.EventType.IsSome
     let eventB = typB.DefineEventAndLog(eventDef.Name, attrs, convType cenv emEnv  eventDef.EventType.Value) 
 
-    eventDef.AddMethod |> (fun mref -> eventB.SetAddOnMethod(envGetMethB emEnv mref));
-    eventDef.RemoveMethod |> (fun mref -> eventB.SetRemoveOnMethod(envGetMethB emEnv mref));
-    eventDef.FireMethod |> Option.iter (fun mref -> eventB.SetRaiseMethod(envGetMethB emEnv mref));
-    eventDef.OtherMethods |> List.iter (fun mref -> eventB.AddOtherMethod(envGetMethB emEnv mref));
+    eventDef.AddMethod |> (fun mref -> eventB.SetAddOnMethod(envGetMethB emEnv mref))
+    eventDef.RemoveMethod |> (fun mref -> eventB.SetRemoveOnMethod(envGetMethB emEnv mref))
+    eventDef.FireMethod |> Option.iter (fun mref -> eventB.SetRaiseMethod(envGetMethB emEnv mref))
+    eventDef.OtherMethods |> List.iter (fun mref -> eventB.AddOtherMethod(envGetMethB emEnv mref))
     emitCustomAttrs cenv emEnv (wrapCustomAttr eventB.SetCustomAttribute) eventDef.CustomAttrs
 
 //----------------------------------------------------------------------------
@@ -1716,7 +1721,7 @@ let buildMethodImplsPass3 cenv _tref (typB:TypeBuilder) emEnv (mimpl : IL.ILMeth
     let (OverridesSpec (mref, dtyp)) = mimpl.Overrides
     let declMethTI = convType cenv emEnv  dtyp 
     let declMethInfo = convMethodRef cenv emEnv declMethTI mref
-    typB.DefineMethodOverride(bodyMethInfo, declMethInfo);
+    typB.DefineMethodOverride(bodyMethInfo, declMethInfo)
     emEnv
 
 //----------------------------------------------------------------------------
@@ -1779,8 +1784,8 @@ let typeAttributesOfTypeLayout cenv emEnv x =
     
 let rec buildTypeDefPass1 cenv emEnv (modB:ModuleBuilder) rootTypeBuilder nesting (tdef : ILTypeDef) =
     // -IsComInterop: bool; (* Class or interface generated for COM interop *) 
-    // -SecurityDecls: Permissions;
-    // -InitSemantics: ILTypeInit;
+    // -SecurityDecls: Permissions
+    // -InitSemantics: ILTypeInit
     // TypeAttributes
     let cattrsLayout = typeAttributesOfTypeLayout cenv emEnv tdef.Layout
      
@@ -1788,9 +1793,9 @@ let rec buildTypeDefPass1 cenv emEnv (modB:ModuleBuilder) rootTypeBuilder nestin
 
     // TypeBuilder from TypeAttributes.
     let typB : TypeBuilder = rootTypeBuilder  (tdef.Name, attrsType)
-    cattrsLayout |> Option.iter typB.SetCustomAttributeAndLog;
+    cattrsLayout |> Option.iter typB.SetCustomAttributeAndLog
 
-    buildGenParamsPass1 emEnv typB.DefineGenericParametersAndLog tdef.GenericParams; 
+    buildGenParamsPass1 emEnv typB.DefineGenericParametersAndLog tdef.GenericParams
     // bind tref -> (typT, typB)
     let tref = mkRefForNestedILTypeDef ILScopeRef.Local (nesting, tdef)    
     let typT =
@@ -1819,10 +1824,10 @@ let rec buildTypeDefPass1b cenv nesting emEnv (tdef : ILTypeDef) =
     let genArgs = getGenericArgumentsOfType (typB.AsType())
     let emEnv = envPushTyvars emEnv genArgs
     // Parent may reference types being defined, so has to come after it's Pass1 creation 
-    tdef.Extends |> Option.iter (fun ty -> typB.SetParentAndLog(convType cenv emEnv  ty));
+    tdef.Extends |> Option.iter (fun ty -> typB.SetParentAndLog(convType cenv emEnv  ty))
     // build constraints on ILGenericParameterDefs.  Constraints may reference types being defined, 
     // so have to come after all types are created
-    buildGenParamsPass1b cenv emEnv genArgs tdef.GenericParams; 
+    buildGenParamsPass1b cenv emEnv genArgs tdef.GenericParams
     let emEnv = envPopTyvars emEnv     
     let nesting = nesting @ [tdef]     
     List.iter (buildTypeDefPass1b cenv nesting emEnv) tdef.NestedTypes.AsList
@@ -1836,7 +1841,7 @@ let rec buildTypeDefPass2 cenv nesting emEnv (tdef : ILTypeDef) =
     let typB  = envGetTypB emEnv tref
     let emEnv = envPushTyvars emEnv (getGenericArgumentsOfType (typB.AsType()))
     // add interface impls
-    tdef.Implements |> convTypes cenv emEnv |> List.iter (fun implT -> typB.AddInterfaceImplementationAndLog(implT));
+    tdef.Implements |> convTypes cenv emEnv |> List.iter (fun implT -> typB.AddInterfaceImplementationAndLog(implT))
     // add methods, properties
     let emEnv = Array.fold (buildMethodPass2      cenv tref typB) emEnv tdef.Methods.AsArray 
     let emEnv = List.fold (buildFieldPass2       cenv tref typB) emEnv tdef.Fields.AsList  
@@ -1856,12 +1861,12 @@ let rec buildTypeDefPass3 cenv nesting modB emEnv (tdef : ILTypeDef) =
     let typB = envGetTypB emEnv tref
     let emEnv = envPushTyvars emEnv (getGenericArgumentsOfType (typB.AsType()))
     // add method bodies, properties, events
-    tdef.Methods |> Seq.iter (buildMethodPass3 cenv tref modB typB emEnv);
-    tdef.Properties.AsList |> List.iter (buildPropertyPass3 cenv tref typB emEnv);
-    tdef.Events.AsList |> List.iter (buildEventPass3 cenv typB emEnv);
-    tdef.Fields.AsList |> List.iter (buildFieldPass3 cenv tref typB emEnv);
+    tdef.Methods |> Seq.iter (buildMethodPass3 cenv tref modB typB emEnv)
+    tdef.Properties.AsList |> List.iter (buildPropertyPass3 cenv tref typB emEnv)
+    tdef.Events.AsList |> List.iter (buildEventPass3 cenv typB emEnv)
+    tdef.Fields.AsList |> List.iter (buildFieldPass3 cenv tref typB emEnv)
     let emEnv = List.fold (buildMethodImplsPass3 cenv tref typB) emEnv tdef.MethodImpls.AsList
-    tdef.CustomAttrs |> emitCustomAttrs cenv emEnv typB.SetCustomAttributeAndLog ;
+    tdef.CustomAttrs |> emitCustomAttrs cenv emEnv typB.SetCustomAttributeAndLog 
     // custom attributes
     let emEnv = envPopTyvars emEnv
     // nested types
@@ -2024,9 +2029,9 @@ let createTypeRef (visited : Dictionary<_, _>, created : Dictionary<_, _>) emEnv
     traverseTypeRef tref 
 
 let rec buildTypeDefPass4 (visited, created) nesting emEnv (tdef : ILTypeDef) =
-    if verbose2 then dprintf "buildTypeDefPass4 %s\n" tdef.Name; 
+    if verbose2 then dprintf "buildTypeDefPass4 %s\n" tdef.Name
     let tref = mkRefForNestedILTypeDef ILScopeRef.Local (nesting, tdef)
-    createTypeRef (visited, created) emEnv tref;
+    createTypeRef (visited, created) emEnv tref
         
     
     // nested types
@@ -2066,7 +2071,7 @@ let buildModuleFragment cenv emEnv (asmB : AssemblyBuilder) (modB : ModuleBuilde
     let created = new Dictionary<_, _>(10) 
     tdefs |> List.iter (buildModuleTypePass4  (visited, created) emEnv) 
     let emEnv = Seq.fold envUpdateCreatedTypeRef emEnv created.Keys // update typT with the created typT
-    emitCustomAttrs cenv emEnv modB.SetCustomAttributeAndLog m.CustomAttrs;    
+    emitCustomAttrs cenv emEnv modB.SetCustomAttributeAndLog m.CustomAttrs
 #if FX_RESHAPED_REFEMIT
     ignore asmB
 #else
@@ -2081,7 +2086,7 @@ let buildModuleFragment cenv emEnv (asmB : AssemblyBuilder) (modB : ModuleBuilde
         | ILResourceLocation.File (mr, _) -> 
            asmB.AddResourceFileAndLog(r.Name, mr.Name, attribs)
         | ILResourceLocation.Assembly _ -> 
-           failwith "references to resources other assemblies may not be emitted using System.Reflection");
+           failwith "references to resources other assemblies may not be emitted using System.Reflection")
 #endif
     emEnv
 
@@ -2106,7 +2111,7 @@ let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) 
     let filename = assemblyName + ".dll"
     let asmDir  = "."
     let asmName = new AssemblyName()
-    asmName.Name <- assemblyName;
+    asmName.Name <- assemblyName
     let asmAccess = 
         if collectible then AssemblyBuilderAccess.RunAndCollect 
 #if FX_RESHAPED_REFEMIT
@@ -2116,10 +2121,10 @@ let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) 
 #endif
     let asmB = defineDynamicAssemblyAndLog(asmName, asmAccess, asmDir) 
     if not optimize then 
-        let daType = typeof<System.Diagnostics.DebuggableAttribute>;
+        let daType = typeof<System.Diagnostics.DebuggableAttribute>
         let daCtor = daType.GetConstructor [| typeof<System.Diagnostics.DebuggableAttribute.DebuggingModes> |]
         let daBuilder = new CustomAttributeBuilder(daCtor, [| System.Diagnostics.DebuggableAttribute.DebuggingModes.DisableOptimizations ||| System.Diagnostics.DebuggableAttribute.DebuggingModes.Default  |])
-        asmB.SetCustomAttributeAndLog(daBuilder);
+        asmB.SetCustomAttributeAndLog(daBuilder)
 
     let modB = asmB.DefineDynamicModuleAndLog(assemblyName, filename, debugInfo)
     asmB, modB
@@ -2132,11 +2137,11 @@ let emitModuleFragment (ilg, emEnv, asmB : AssemblyBuilder, modB : ModuleBuilder
     | None -> ()
     | Some mani ->  
        // REVIEW: remainder of manifest
-       emitCustomAttrs cenv emEnv asmB.SetCustomAttributeAndLog mani.CustomAttrs;    
+       emitCustomAttrs cenv emEnv asmB.SetCustomAttributeAndLog mani.CustomAttrs
     // invoke entry point methods
     let execEntryPtFun ((typB : TypeBuilder), methodName) () =
       try        
-        ignore (typB.InvokeMemberAndLog(methodName, BindingFlags.InvokeMethod ||| BindingFlags.Public ||| BindingFlags.Static, [| |]));
+        ignore (typB.InvokeMemberAndLog(methodName, BindingFlags.InvokeMethod ||| BindingFlags.Public ||| BindingFlags.Static, [| |]))
         None
       with 
          | :? System.Reflection.TargetInvocationException as e ->

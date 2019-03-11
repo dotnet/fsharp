@@ -58,7 +58,7 @@ type PickledDataWithReferences<'rawData> =
 
 [<NoEquality; NoComparison>]
 type Table<'T> =
-    { name: string;
+    { name: string
       tbl: Dictionary<'T, int>
       mutable rows: ResizeArray<'T>
       mutable count: int }
@@ -857,6 +857,7 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef option) u (p
        { is = ByteStream.FromBytes (phase2bytes,0,phase2bytes.Length) 
          isB = ByteStream.FromBytes ([| |],0,0) 
          iilscope= ilscope
+<<<<<<< HEAD
          iccus= new_itbl "iccus (fake)" [| |] 
          ientities= NodeInTable<_,_>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ientities",0) 
          itypars= NodeInTable<_,_>.Create (Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"itypars",0) 
@@ -866,6 +867,17 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef option) u (p
          inlerefs = new_itbl "inlerefs (fake)" [| |] 
          ipubpaths = new_itbl "ipubpaths (fake)" [| |] 
          isimpletys = new_itbl "isimpletys (fake)" [| |] 
+=======
+         iccus= new_itbl "iccus (fake)" [| |]
+         ientities= NodeInTable<_, _>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", 0)
+         itypars= NodeInTable<_, _>.Create (Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", 0)
+         ivals  = NodeInTable<_, _>.Create (Val.NewUnlinked , (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", 0)
+         ianoninfos=NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", 0)
+         istrings = new_itbl "istrings (fake)" [| |]
+         inlerefs = new_itbl "inlerefs (fake)" [| |]
+         ipubpaths = new_itbl "ipubpaths (fake)" [| |]
+         isimpletys = new_itbl "isimpletys (fake)" [| |]
+>>>>>>> 32c75cabcff0c9b7ee05bf67f63eea4f9259cf88
          ifile=file
          iILModule = iILModule }
     let ccuNameTab = u_array u_encoded_ccuref st2
@@ -892,10 +904,17 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef option) u (p
              isB = ByteStream.FromBytes (phase1bytesB,0,phase1bytesB.Length) 
              iccus=  ccuTab 
              iilscope= ilscope
+<<<<<<< HEAD
              ientities= NodeInTable<_, _>.Create(Tycon.NewUnlinked,(fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked),"ientities", ntycons) 
              itypars= NodeInTable<_, _>.Create(Typar.NewUnlinked,(fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked),"itypars", ntypars) 
              ivals=   NodeInTable<_, _>.Create(Val.NewUnlinked  ,(fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked),"ivals", nvals)
              ianoninfos=NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked),"ianoninfos", nanoninfos);
+=======
+             ientities= NodeInTable<_, _>.Create(Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", ntycons)
+             itypars= NodeInTable<_, _>.Create(Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", ntypars)
+             ivals=   NodeInTable<_, _>.Create(Val.NewUnlinked  , (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", nvals)
+             ianoninfos=NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", nanoninfos)
+>>>>>>> 32c75cabcff0c9b7ee05bf67f63eea4f9259cf88
              istrings = stringTab
              ipubpaths = pubpathTab
              inlerefs = nlerefTab

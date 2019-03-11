@@ -22,10 +22,8 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.Range
 open FSharp.Compiler.Parser
 
-
-
-// The "mock" filename used by fsi.exe when reading from stdin.
-// Has special treatment by the lexer, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
+/// The "mock" filename used by fsi.exe when reading from stdin.
+/// Has special treatment by the lexer, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
 let stdinMockFilename = "stdin" 
 
 /// Lexer args: status of #light processing.  Mutated when a #light
@@ -289,10 +287,10 @@ module Keywords =
       ]
     (*------- reserved keywords which are ml-compatibility ids *) 
     @ List.map (fun s -> (FSHARP,s,RESERVED)) 
-        [ "break"; "checked"; "component"; "constraint"; "continue"; 
-          "fori";  "include";  "mixin"; 
-          "parallel"; "params";  "process"; "protected"; "pure"; 
-          "sealed"; "trait";  "tailcall"; "virtual"; ]
+        [ "break"; "checked"; "component"; "constraint"; "continue"
+          "fori";  "include";  "mixin"
+          "parallel"; "params";  "process"; "protected"; "pure"
+          "sealed"; "trait";  "tailcall"; "virtual" ]
 
     let private unreserveWords = 
         keywordList |> List.choose (function (mode, keyword, _) -> if mode = FSHARP then Some keyword else None) 

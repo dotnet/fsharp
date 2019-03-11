@@ -320,7 +320,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
 and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) = 
     inherit FSharpSymbol(cenv, 
                          (fun () -> 
-                              checkEntityIsResolved(entity); 
+                              checkEntityIsResolved(entity)
                               if entity.IsModuleOrNamespace then Item.ModuleOrNamespaces [entity] 
                               else Item.UnqualifiedType [entity]), 
                          (fun _this thisCcu2 ad -> 
@@ -1991,7 +1991,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
     member x.IsValCompiledAsMethod =
         match d with
-        | V valRef -> IlxGen.IsValCompiledAsMethod cenv.g valRef.Deref
+        | V valRef -> IlxGen.IsFSharpValCompiledAsMethod cenv.g valRef.Deref
         | _ -> false
 
     member x.IsValue =

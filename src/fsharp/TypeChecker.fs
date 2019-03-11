@@ -2862,7 +2862,7 @@ let LightweightTcValForUsingInBuildMethodCall g (vref:ValRef) vrefFlags (vrefTyp
               let tau = 
                   // If we have got an explicit instantiation then use that 
                   let _, tps, tptys, tau = FreshenPossibleForallTy g m TyparRigidity.Flexible vty 
-                  if tptys.Length <> vrefTypeInst.Length then error(Error(FSComp.SR.tcTypeParameterArityMismatch(tps.Length, vrefTypeInst.Length), m));
+                  if tptys.Length <> vrefTypeInst.Length then error(Error(FSComp.SR.tcTypeParameterArityMismatch(tps.Length, vrefTypeInst.Length), m))
                   instType (mkTyparInst tps vrefTypeInst) tau 
                       
               let exprForVal = Expr.Val (vref, vrefFlags, m) 

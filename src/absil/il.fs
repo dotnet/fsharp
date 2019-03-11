@@ -1908,7 +1908,7 @@ type ILTypeDefLayout =
     | Explicit of ILTypeDefLayoutInfo (* REVIEW: add field info here *)
 
 and ILTypeDefLayoutInfo =
-    { Size: int32 option;
+    { Size: int32 option
       Pack: uint16 option } 
 
 [<RequireQualifiedAccess>]
@@ -2752,7 +2752,7 @@ let rescopeILTypeRef scoref (tref1:ILTypeRef) =
     else ILTypeRef.Create(scoref2, tref1.Enclosing, tref1.Name)
 
 // ORIGINAL IMPLEMENTATION (too many allocations
-//         { tspecTypeRef=rescopeILTypeRef scoref tref;
+//         { tspecTypeRef=rescopeILTypeRef scoref tref
 //           tspecInst=rescopeILTypes scoref tinst } 
 let rec rescopeILTypeSpec scoref (tspec1:ILTypeSpec) = 
     let tref1 = tspec1.TypeRef
@@ -3341,7 +3341,7 @@ let mkILDelegateMethods (access) (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IA
 
 let mkCtorMethSpecForDelegate (ilg: ILGlobals) (ty:ILType, useUIntPtr) =
     let scoref = ty.TypeRef.Scope 
-    mkILInstanceMethSpecInTy (ty, ".ctor", [rescopeILType scoref ilg.typ_Object; 
+    mkILInstanceMethSpecInTy (ty, ".ctor", [rescopeILType scoref ilg.typ_Object
                                             rescopeILType scoref (if useUIntPtr then ilg.typ_UIntPtr else ilg.typ_IntPtr)], 
                               ILType.Void, emptyILGenericArgsList)
 

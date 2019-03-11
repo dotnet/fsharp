@@ -488,25 +488,25 @@ type ResFormatNode(tid:int32, nid:int32, lid:int32, dataOffset:int32, pbLinkedRe
  
     do 
         if (tid &&& 0x80000000) <> 0 then // REVIEW: Are names and types mutually exclusive?  The C++ code didn't seem to think so, but I can't find any documentation
-            resHdr.TypeID <- 0 ; 
+            resHdr.TypeID <- 0 
             let mtid = tid &&& 0x7fffffff
-            cType <- bytesToDWord(pbLinkedResource.[mtid], pbLinkedResource.[mtid+1], pbLinkedResource.[mtid+2], pbLinkedResource.[mtid+3]) ;
-            wzType <- Bytes.zeroCreate ((cType + 1) * 2) ;
+            cType <- bytesToDWord(pbLinkedResource.[mtid], pbLinkedResource.[mtid+1], pbLinkedResource.[mtid+2], pbLinkedResource.[mtid+3]) 
+            wzType <- Bytes.zeroCreate ((cType + 1) * 2) 
             Bytes.blit pbLinkedResource 4 wzType 0 (cType * 2)
         else
-            resHdr.TypeID <- (0xffff ||| ((tid &&& 0xffff) <<< 16)) ;
+            resHdr.TypeID <- (0xffff ||| ((tid &&& 0xffff) <<< 16)) 
             
         if (nid &&& 0x80000000) <> 0 then
-            resHdr.NameID <- 0 ;
+            resHdr.NameID <- 0 
             let mnid = nid &&& 0x7fffffff
-            cName <- bytesToDWord(pbLinkedResource.[mnid], pbLinkedResource.[mnid+1], pbLinkedResource.[mnid+2], pbLinkedResource.[mnid+3]) ;
-            wzName <- Bytes.zeroCreate ((cName + 1) * 2) ;
+            cName <- bytesToDWord(pbLinkedResource.[mnid], pbLinkedResource.[mnid+1], pbLinkedResource.[mnid+2], pbLinkedResource.[mnid+3]) 
+            wzName <- Bytes.zeroCreate ((cName + 1) * 2) 
             Bytes.blit pbLinkedResource 4 wzName 0 (cName * 2)
         else
             resHdr.NameID <- (0xffff ||| ((nid &&& 0xffff) <<< 16))
             
-        resHdr.LangID <- (int16)lid ;
-        dataEntry <- bytesToIRDataE pbLinkedResource dataOffset ;
+        resHdr.LangID <- (int16)lid 
+        dataEntry <- bytesToIRDataE pbLinkedResource dataOffset 
         resHdr.DataSize <- dataEntry.Size
         
     member x.ResHdr
@@ -572,7 +572,7 @@ type ResFormatNode(tid:int32, nid:int32, lid:int32, dataOffset:int32, pbLinkedRe
         let pbData = pbLinkedResource.[(dataEntry.OffsetToData - ulLinkedResourceBaseRVA) ..]
         SaveChunk(pbData, dataEntry.Size)
         
-        dwFiller <- dataEntry.Size &&& 0x3 ;
+        dwFiller <- dataEntry.Size &&& 0x3 
         if dwFiller <> 0 then
             SaveChunk(bNil, 4 - dwFiller)
             
@@ -623,7 +623,7 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
 
                 for _ulr in unlinkedResources do
                     let tempResFileName = GetUniqueRandomFileName(path)
-                    resFiles <- tempResFileName :: resFiles ; 
+                    resFiles <- tempResFileName :: resFiles 
                     cmdLineArgs <- cmdLineArgs + " \"" + tempResFileName + "\""
                 let trf = resFiles
                 let cmd = cmdLineArgs
@@ -649,7 +649,7 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
                 for ulr in unlinkedResources do
                     // REVIEW: What can go wrong here?  What happens when the various file calls fail
                     // dump the unlinked resource bytes into the temp file
-                    System.IO.File.WriteAllBytes(tempResFileNames.[iFiles], ulr) ;
+                    System.IO.File.WriteAllBytes(tempResFileNames.[iFiles], ulr) 
                     iFiles <- iFiles + 1
 
                 // call cvtres.exe using the full cmd line string we've generated
@@ -660,9 +660,9 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
 
                 // REVIEW: We really shouldn't be calling out to cvtres
                 let mutable psi = System.Diagnostics.ProcessStartInfo(cvtres)
-                psi.Arguments <- cmdLineArgs ;
+                psi.Arguments <- cmdLineArgs 
                 psi.CreateNoWindow <- true ; // REVIEW: For some reason, this still creates a window unless WindowStyle is set to hidden
-                psi.WindowStyle <- System.Diagnostics.ProcessWindowStyle.Hidden ;
+                psi.WindowStyle <- System.Diagnostics.ProcessWindowStyle.Hidden 
                 let p = System.Diagnostics.Process.Start(psi)
 
                 // Wait for the process to finish
@@ -671,7 +671,7 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
                 check "Process.Start" p.ExitCode // TODO: really need to check against 0
 
                 // Conversion was successful, so read the object file
-                objBytes <- FileSystem.ReadAllBytesShim(tempObjFileName) ; 
+                objBytes <- FileSystem.ReadAllBytesShim(tempObjFileName) 
                 //Array.Copy(objBytes, pbUnlinkedResource, pbUnlinkedResource.Length)
                 FileSystem.FileDelete(tempObjFileName)
             finally
@@ -756,7 +756,7 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
     // determine entry buffer size
     // TODO: coalesce these two loops
     for iEntry = 0 to ((int)nEntries - 1) do
-        pirdeType <- bytesToIRDE pbLinkedResource (IMAGE_RESOURCE_DIRECTORY.Width + (iEntry * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;
+        pirdeType <- bytesToIRDE pbLinkedResource (IMAGE_RESOURCE_DIRECTORY.Width + (iEntry * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) 
 
         if pirdeType.DataIsDirectory then
             let nameBase = pirdeType.OffsetToDirectory
@@ -765,25 +765,25 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
             let nEntries2 = pirdName.NumberOfNamedEntries + pirdName.NumberOfIdEntries
 
             for iEntry2 = 0 to ((int)nEntries2 - 1) do
-                pirdeName <- bytesToIRDE pbLinkedResource (nameBase + (iEntry2 * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;
+                pirdeName <- bytesToIRDE pbLinkedResource (nameBase + (iEntry2 * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) 
 
                 if pirdeName.DataIsDirectory then
                     let langBase = pirdeName.OffsetToDirectory
                     let pirdLang = bytesToIRD pbLinkedResource langBase
                     let nEntries3 = pirdLang.NumberOfNamedEntries + pirdLang.NumberOfIdEntries
                     
-                    nResNodes <- nResNodes + ((int)nEntries3) ;
+                    nResNodes <- nResNodes + ((int)nEntries3) 
                 else
-                    nResNodes <- nResNodes + 1 ;
+                    nResNodes <- nResNodes + 1 
         else
-            nResNodes <- nResNodes + 1 ;
+            nResNodes <- nResNodes + 1 
 
     let pResNodes : ResFormatNode [] = Array.zeroCreate nResNodes
-    nResNodes <- 0 ;
+    nResNodes <- 0 
 
     // fill out the entry buffer
     for iEntry = 0 to ((int)nEntries - 1) do
-        pirdeType <- bytesToIRDE pbLinkedResource (IMAGE_RESOURCE_DIRECTORY.Width + (iEntry * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;  
+        pirdeType <- bytesToIRDE pbLinkedResource (IMAGE_RESOURCE_DIRECTORY.Width + (iEntry * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) 
         let dwTypeID = pirdeType.Name
         // Need to skip VERSION and RT_MANIFEST resources
         // REVIEW: ideally we shouldn't allocate space for these, or rename properly so we don't get the naming conflict
@@ -795,7 +795,7 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
             let nEntries2 = pirdName.NumberOfNamedEntries + pirdName.NumberOfIdEntries
                 
             for iEntry2 = 0 to ((int)nEntries2 - 1) do
-                pirdeName <- bytesToIRDE pbLinkedResource (nameBase + (iEntry2 * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;
+                pirdeName <- bytesToIRDE pbLinkedResource (nameBase + (iEntry2 * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) 
                 let dwNameID = pirdeName.Name
 
                 if pirdeName.DataIsDirectory then
@@ -805,7 +805,7 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
                     let nEntries3 = pirdLang.NumberOfNamedEntries + pirdLang.NumberOfIdEntries
                         
                     for iEntry3 = 0 to ((int)nEntries3 - 1) do
-                        pirdeLang <- bytesToIRDE pbLinkedResource (langBase + (iEntry3 * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;
+                        pirdeLang <- bytesToIRDE pbLinkedResource (langBase + (iEntry3 * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) 
                         let dwLangID = pirdeLang.Name
                             
                         if pirdeLang.DataIsDirectory then
@@ -814,25 +814,25 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
                         else
                             if (not skipResource) then
                                 let rfn = ResFormatNode(dwTypeID, dwNameID, dwLangID, pirdeLang.OffsetToData, pbLinkedResource)
-                                pResNodes.[nResNodes] <- rfn ;
-                                nResNodes <- nResNodes + 1 ;
+                                pResNodes.[nResNodes] <- rfn 
+                                nResNodes <- nResNodes + 1 
                 else
                     if (not skipResource) then
                         let rfn = ResFormatNode(dwTypeID, dwNameID, 0, pirdeName.OffsetToData, pbLinkedResource)
-                        pResNodes.[nResNodes] <- rfn ;
-                        nResNodes <- nResNodes + 1 ;
+                        pResNodes.[nResNodes] <- rfn 
+                        nResNodes <- nResNodes + 1 
         else
             if (not skipResource) then
                 let rfn = ResFormatNode(dwTypeID, 0, 0, pirdeType.OffsetToData, pbLinkedResource) // REVIEW: I believe these 0s are what's causing the duplicate res naming problems
-                pResNodes.[nResNodes] <- rfn ;
-                nResNodes <- nResNodes + 1 ;
+                pResNodes.[nResNodes] <- rfn 
+                nResNodes <- nResNodes + 1 
 
     // Ok, all tree leaves are in ResFormatNode structs, and nResNodes ptrs are in pResNodes
     let mutable size = 0
     if nResNodes <> 0 then
         size <- size + ResFormatHeader.Width ; // sizeof(ResFormatHeader)
         for i = 0 to (nResNodes - 1) do
-            size <- size + pResNodes.[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, Unchecked.defaultof<byte[]>, 0) ;
+            size <- size + pResNodes.[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, Unchecked.defaultof<byte[]>, 0) 
 
     let pResBuffer = Bytes.zeroCreate size
 
@@ -1009,11 +1009,11 @@ type ISymUnmanagedWriter2 =
 type PdbWriter = { symWriter : ISymUnmanagedWriter2 }
 type PdbDocumentWriter = { symDocWriter : ISymUnmanagedDocumentWriter }  (* pointer to pDocumentWriter COM object *)
 type idd =
-    { iddCharacteristics: int32;
+    { iddCharacteristics: int32
       iddMajorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddMinorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
-      iddType: int32;
-      iddData: byte[];}
+      iddType: int32
+      iddData: byte[] }
 #endif
 
 #if !FX_NO_PDB_WRITER
@@ -1023,7 +1023,7 @@ let pdbInitialize (binaryName:string) (pdbName:string) =
   
     // get the importer pointer 
     let mdd = System.Activator.CreateInstance(CorMetaDataDispenser) :?> IMetaDataDispenser
-    let mutable IID_IMetaDataEmit = new Guid("BA3FEE4C-ECB9-4E41-83B7-183FA41CD859");
+    let mutable IID_IMetaDataEmit = new Guid("BA3FEE4C-ECB9-4E41-83B7-183FA41CD859")
     let mutable o = Object()
     mdd.OpenScope(binaryName, 0x1, &IID_IMetaDataEmit, &o) // 0x1 = ofWrite
     let emitterPtr = Marshal.GetComInterfaceForObject(o, typeof<IMetadataEmit>)
@@ -1143,10 +1143,10 @@ let pdbWriteDebugInfo (writer: PdbWriter) =
     let mutable data : byte [] = Array.zeroCreate length
     writer.symWriter.GetDebugInfo(&iDD, length, &length, data)
 
-    { iddCharacteristics = iDD.Characteristics;
-      iddMajorVersion = (int32)iDD.MajorVersion;
-      iddMinorVersion = (int32)iDD.MinorVersion;
-      iddType = iDD.Type;
+    { iddCharacteristics = iDD.Characteristics
+      iddMajorVersion = (int32)iDD.MajorVersion
+      iddMinorVersion = (int32)iDD.MinorVersion
+      iddType = iDD.Type
       iddData = data}
 #endif
 
@@ -1160,19 +1160,19 @@ type PdbVariable = { symVariable: ISymbolVariable }
 type PdbMethodScope = { symScope: ISymbolScope }
 
 type PdbSequencePoint = 
-    { pdbSeqPointOffset: int;
-      pdbSeqPointDocument: PdbDocument;
-      pdbSeqPointLine: int;
-      pdbSeqPointColumn: int;
-      pdbSeqPointEndLine: int;
-      pdbSeqPointEndColumn: int; }
+    { pdbSeqPointOffset: int
+      pdbSeqPointDocument: PdbDocument
+      pdbSeqPointLine: int
+      pdbSeqPointColumn: int
+      pdbSeqPointEndLine: int
+      pdbSeqPointEndColumn: int }
 
 let pdbReadOpen (moduleName:string) (path:string) :  PdbReader = 
     let CorMetaDataDispenser = System.Type.GetTypeFromProgID("CLRMetaData.CorMetaDataDispenser")
-    let mutable IID_IMetaDataImport = new Guid("7DAC8207-D3AE-4c75-9B67-92801A497D44");
+    let mutable IID_IMetaDataImport = new Guid("7DAC8207-D3AE-4c75-9B67-92801A497D44")
     let mdd = System.Activator.CreateInstance(CorMetaDataDispenser) :?> IMetaDataDispenser
     let mutable o : Object = new Object()
-    mdd.OpenScope(moduleName, 0, &IID_IMetaDataImport, &o) ;
+    mdd.OpenScope(moduleName, 0, &IID_IMetaDataImport, &o) 
     let importerPtr = Marshal.GetComInterfaceForObject(o, typeof<IMetadataImport>)
     try 
 #if ENABLE_MONO_SUPPORT
@@ -1243,12 +1243,12 @@ let pdbMethodGetSequencePoints (meth:PdbMethod) : PdbSequencePoint array =
     meth.symMethod.GetSequencePoints(offsets, docs, lines, cols, endLines, endColumns)
 
     Array.init pSize (fun i -> 
-        { pdbSeqPointOffset = offsets.[i];
-          pdbSeqPointDocument = { symDocument = docs.[i] };
-          pdbSeqPointLine = lines.[i];
-          pdbSeqPointColumn = cols.[i];
-          pdbSeqPointEndLine = endLines.[i];
-          pdbSeqPointEndColumn = endColumns.[i]; }) 
+        { pdbSeqPointOffset = offsets.[i]
+          pdbSeqPointDocument = { symDocument = docs.[i] }
+          pdbSeqPointLine = lines.[i]
+          pdbSeqPointColumn = cols.[i]
+          pdbSeqPointEndLine = endLines.[i]
+          pdbSeqPointEndColumn = endColumns.[i] }) 
 
 let pdbScopeGetChildren (scope:PdbMethodScope) : PdbMethodScope array = 
     let arr = scope.symScope.GetChildren()
