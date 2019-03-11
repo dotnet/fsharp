@@ -1623,16 +1623,16 @@ type UsingMSBuild() as this =
             let file1 = OpenFile(project,fileName)   
 
             // The disposals should be at least one less 
-            Assert.IsTrue(countDisposals() < i, "Check1, countDisposals() < i, iteration " + string i)
             let c = countCreations()
             let d = countDisposals()
-            Assert.IsTrue(c >= countDisposals(), "Check2, countCreations() >= countDisposals(), iteration " + string i + ", countCreations() = " + string c + ", countDisposals() = " + string d)
+            Assert.IsTrue(d < i, "Check1, countDisposals() < i, iteration " + string i + "countDisposals() = " + string d)
+            Assert.IsTrue(c >= d, "Check2, countCreations() >= countDisposals(), iteration " + string i + ", countCreations() = " + string c + ", countDisposals() = " + string d)
             Assert.IsTrue((c = i), "Check3, countCreations() = i, iteration " + string i + ", countCreations() = " + string c)
             if not clearing then 
                 // By default we hold 3 build incrementalBuilderCache entries and 5 typeCheckInfo entries, so if we're not clearing
                 // there should be some roots to project builds still present
                 if i >= 3 then 
-                    Assert.IsTrue(i >= countDisposals() + 3, "Check4a, i >= countDisposals() + 3, iteration " + string i + ", i = " + string i + ", countDisposals() = " + string (countDisposals()))
+                    Assert.IsTrue(i >= d + 3, "Check4a, i >= countDisposals() + 3, iteration " + string i + ", i = " + string i + ", countDisposals() = " + string d)
                     printfn "Check4a2, i = %d, countInvaldiationHandlersRemoved() = %d" i (countInvaldiationHandlersRemoved())
 
             // If we forcefully clear out caches and force a collection, then we can say much stronger things...
