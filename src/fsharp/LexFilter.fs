@@ -262,7 +262,7 @@ let rec isTypeContinuator token =
     //     and Y = c            <---          'and' HERE
     //     
     //     type X = {
-    //        x: int;
+    //        x: int
     //        y: int
     //     }                     <---          '}' HERE
     //     and Y = c 
@@ -698,12 +698,12 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
 
             // Permit unindentation via parentheses (or begin/end) following a 'then', 'else' or 'do':
             //        if nr > 0 then (  
-            //              nr <- nr - 1;
-            //              acc <- d;
+            //              nr <- nr - 1
+            //              acc <- d
             //              i <- i - 1
             //        ) else (
             //              i <- -1
-            //        );
+            //        )
 
             // PERMITTED UNDENTATION: Inner construct (then, with, else, do) that dangle, places no limit until we hit the corresponding leading construct CtxtIf, CtxtFor, CtxtWhile, CtxtVanilla etc... *)
             //    e.g.   if ... then ...
@@ -1439,7 +1439,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
                             // i.e.
                             //
                             //  let x =           
-                            //        stmt;
+                            //        stmt
                             //        -expr     
                             (if isInfix token then infixTokenLength token + 1 else 0)
                     (tokenStartCol + grace < offsidePos.Column)) -> 
@@ -1936,14 +1936,14 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
                         // (HOWEVER: note the above language construct is now deprecated/removed)
                         // 
                         // It also happens to detect
-                        //    { foo with m = 1;
+                        //    { foo with m = 1
                         //               n = 2 }
                         // So we're careful to set the offside column to be the minimum required *)
                         tokenStartPos
                     else
                         // This detects:
                         //    { foo with 
-                        //        m = 1;
+                        //        m = 1
                         //        n = 2 }
                         // So we're careful to set the offside column to be the minimum required *)
                         limCtxt.StartPos

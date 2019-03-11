@@ -16,14 +16,14 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 
 let internal SimulatedMSBuildResolver =
     let supportedFrameworks = [|
-        "v4.7.2";
-        "v4.7.1";
-        "v4.7";
-        "v4.6.2";
-        "v4.6.1";
-        "v4.6"; 
-        "v4.5.1";
-        "v4.5"; 
+        "v4.7.2"
+        "v4.7.1"
+        "v4.7"
+        "v4.6.2"
+        "v4.6.1"
+        "v4.6"
+        "v4.5.1"
+        "v4.5"
         "v4.0"
     |]
     { new Resolver with 
@@ -52,7 +52,7 @@ let internal SimulatedMSBuildResolver =
 
 #if !FX_NO_WIN_REGISTRY
             let registrySearchPaths() = 
-              [ let registryKey = @"Software\Microsoft\.NetFramework";
+              [ let registryKey = @"Software\Microsoft\.NetFramework"
                 use key = Registry.LocalMachine.OpenSubKey(registryKey)
                 match key with 
                 | null -> ()
