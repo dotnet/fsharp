@@ -4045,7 +4045,7 @@ and [<RequireQualifiedAccess>] AnonRecdTypeInfo =
         // Hash all the data to form a unique stamp
         let stamp  = 
             sha1HashInt64 
-                [| for c in ccu.AssemblyName do yield byte c; yield byte (int32 c >>> 8); 
+                [| for c in ccu.AssemblyName do yield byte c; yield byte (int32 c >>> 8)
                    match tupInfo with 
                    | TupInfo.Const b -> yield  (if b then 0uy else 1uy)
                    for id in sortedIds do 

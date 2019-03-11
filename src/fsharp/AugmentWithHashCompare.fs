@@ -1074,7 +1074,8 @@ let MakeBindingsForEqualsAugmentation (g: TcGlobals) (tycon:Tycon) =
 let rec TypeDefinitelyHasEquality g ty = 
     if isAppTy g ty && HasFSharpAttribute g g.attrib_NoEqualityAttribute (tcrefOfAppTy g ty).Attribs then
         false
-    elif isTyparTy g ty && (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsEquality _ -> true | _ -> false) then
+    elif isTyparTy g ty && 
+         (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsEquality _ -> true | _ -> false) then
         true
     else 
         match ty with 
