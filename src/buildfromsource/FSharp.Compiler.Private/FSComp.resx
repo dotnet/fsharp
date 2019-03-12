@@ -4401,5 +4401,19 @@
   </data>
   <data name="chkInvalidFunctionReturnType" xml:space="preserve">
     <value>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</value>
+  <data name="tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn" xml:space="preserve">
+    <value>Expecting 'and!', 'anduse!' or 'return' but saw something else. Applicative computation expressions must be of the form 'let! &lt;pat1&gt; = &lt;expr2&gt; and! &lt;pat2&gt; = &lt;expr2&gt; and! ... and! &lt;patN&gt; = &lt;exprN&gt; return &lt;exprBody&gt;'.</value>
+  </data>
+  <data name="tcInvalidAndUseBangBinding" xml:space="preserve">
+    <value>Pattern matching is not allowed on the left-hand side of the equals. 'use! ... anduse! ...' bindings must be of the form 'use! &lt;var&gt; = &lt;expr&gt;' or 'anduse! &lt;var&gt; = &lt;expr&gt;'.</value>
+  </data>
+  <data name="tcInvalidKeywordInsteadOfReturnInApplicativeComputationExpression" xml:space="preserve">
+    <value>'{0}' is not valid in this position in an applicative computation expression. Did you mean 'return' instead?</value>
+  </data>
+  <data name="parsNoBodyInApplicativeComputationExpression" xml:space="preserve">
+    <value>No body given after the applicative bindings. Expected a 'return' to terminate this applicative computation expression.</value>
+  </data>
+  <data name="tcMoreAfterReturnInApplicativeComputationExpression" xml:space="preserve">
+    <value>Saw unexpected expression sequenced after 'return'. Applicative computation expressions must be terminated with a single 'return'.</value>
   </data>
 </root>

@@ -7132,6 +7132,31 @@
         <target state="new">The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn">
+        <source>Expecting 'and!', 'anduse!' or 'return' but saw something else. Applicative computation expressions must be of the form 'let! &lt;pat1&gt; = &lt;expr2&gt; and! &lt;pat2&gt; = &lt;expr2&gt; and! ... and! &lt;patN&gt; = &lt;exprN&gt; return &lt;exprBody&gt;'.</source>
+        <target state="new">Expecting 'and!', 'anduse!' or 'return' but saw something else. Applicative computation expressions must be of the form 'let! &lt;pat1&gt; = &lt;expr2&gt; and! &lt;pat2&gt; = &lt;expr2&gt; and! ... and! &lt;patN&gt; = &lt;exprN&gt; return &lt;exprBody&gt;'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidAndUseBangBinding">
+        <source>Pattern matching is not allowed on the left-hand side of the equals. 'use! ... anduse! ...' bindings must be of the form 'use! &lt;var&gt; = &lt;expr&gt;' or 'anduse! &lt;var&gt; = &lt;expr&gt;'.</source>
+        <target state="new">Pattern matching is not allowed on the left-hand side of the equals. 'use! ... anduse! ...' bindings must be of the form 'use! &lt;var&gt; = &lt;expr&gt;' or 'anduse! &lt;var&gt; = &lt;expr&gt;'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidKeywordInsteadOfReturnInApplicativeComputationExpression">
+        <source>'{0}' is not valid in this position in an applicative computation expression. Did you mean 'return' instead?</source>
+        <target state="new">'{0}' is not valid in this position in an applicative computation expression. Did you mean 'return' instead?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsNoBodyInApplicativeComputationExpression">
+        <source>No body given after the applicative bindings. Expected a 'return' to terminate this applicative computation expression.</source>
+        <target state="new">No body given after the applicative bindings. Expected a 'return' to terminate this applicative computation expression.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcMoreAfterReturnInApplicativeComputationExpression">
+        <source>Saw unexpected expression sequenced after 'return'. Applicative computation expressions must be terminated with a single 'return'.</source>
+        <target state="new">Saw unexpected expression sequenced after 'return'. Applicative computation expressions must be terminated with a single 'return'.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

@@ -4399,6 +4399,21 @@ type internal SR private() =
     /// The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL.
     /// (Originally from ..\FSComp.txt:1457)
     static member chkInvalidFunctionReturnType(a0 : System.String) = (3301, GetStringFunc("chkInvalidFunctionReturnType",",,,%s,,,") a0)
+    /// Expecting 'and!', 'anduse!' or 'return' but saw something else. Applicative computation expressions must be of the form 'let! <pat1> = <expr2> and! <pat2> = <expr2> and! ... and! <patN> = <exprN> return <exprBody>'.
+    /// (Originally from ..\FSComp.txt:1447)
+    static member tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn() = (3243, GetStringFunc("tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn",",,,") )
+    /// Pattern matching is not allowed on the left-hand side of the equals. 'use! ... anduse! ...' bindings must be of the form 'use! <var> = <expr>' or 'anduse! <var> = <expr>'.
+    /// (Originally from ..\FSComp.txt:1448)
+    static member tcInvalidAndUseBangBinding() = (3244, GetStringFunc("tcInvalidAndUseBangBinding",",,,") )
+    /// '%s' is not valid in this position in an applicative computation expression. Did you mean 'return' instead?
+    /// (Originally from ..\FSComp.txt:1449)
+    static member tcInvalidKeywordInsteadOfReturnInApplicativeComputationExpression(a0 : System.String) = (3245, GetStringFunc("tcInvalidKeywordInsteadOfReturnInApplicativeComputationExpression",",,,%s,,,") a0)
+    /// No body given after the applicative bindings. Expected a 'return' to terminate this applicative computation expression.
+    /// (Originally from ..\FSComp.txt:1450)
+    static member parsNoBodyInApplicativeComputationExpression() = (3246, GetStringFunc("parsNoBodyInApplicativeComputationExpression",",,,") )
+    /// Saw unexpected expression sequenced after 'return'. Applicative computation expressions must be terminated with a single 'return'.
+    /// (Originally from ..\FSComp.txt:1451)
+    static member tcMoreAfterReturnInApplicativeComputationExpression() = (3247, GetStringFunc("tcMoreAfterReturnInApplicativeComputationExpression",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5830,4 +5845,9 @@ type internal SR private() =
         ignore(GetString("tcCopyAndUpdateNeedsRecordType"))
         ignore(GetString("chkInvalidFunctionParameterType"))
         ignore(GetString("chkInvalidFunctionReturnType"))
+        ignore(GetString("tcApplicativeComputationExpressionNotImmediatelyTerminatedWithReturn"))
+        ignore(GetString("tcInvalidAndUseBangBinding"))
+        ignore(GetString("tcInvalidKeywordInsteadOfReturnInApplicativeComputationExpression"))
+        ignore(GetString("parsNoBodyInApplicativeComputationExpression"))
+        ignore(GetString("tcMoreAfterReturnInApplicativeComputationExpression"))
         ()

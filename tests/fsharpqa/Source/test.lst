@@ -129,7 +129,7 @@ Conformance03			Conformance\Expressions\ControlFlowExpressions\TryCatch
 Conformance03			Conformance\Expressions\ControlFlowExpressions\TryFinally
 Conformance03			Conformance\Expressions\ControlFlowExpressions\While
 Conformance03			Conformance\Expressions\DataExpressions\AddressOf
-Conformance03			Conformance\Expressions\DataExpressions\ComputationExpressions
+Conformance03,AppCe			Conformance\Expressions\DataExpressions\ComputationExpressions
 Conformance03			Conformance\Expressions\DataExpressions\ObjectExpressions
 Conformance03			Conformance\Expressions\DataExpressions\QueryExpressions
 Conformance03			Conformance\Expressions\DataExpressions\RangeExpressions
@@ -267,6 +267,7 @@ Misc01			Warnings
 Misc01			ErrorMessages\NameResolution
 Misc01			ErrorMessages\UnitGenericAbstractType
 Misc01			ErrorMessages\ConfusingTypeName
+Misc01,AppCe	ErrorMessages\ApplicativeComputationExpressions
 
 Misc02			Libraries\Portable
 Misc02			Misc
