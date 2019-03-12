@@ -7132,6 +7132,16 @@
         <target state="new">The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</target>
         <note />
       </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="new">Expression does not have a name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>First-class uses of the 'nameof' operator is not permitted.</source>
+        <target state="new">First-class uses of the 'nameof' operator is not permitted.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
