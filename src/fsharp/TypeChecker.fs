@@ -8678,8 +8678,8 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
                      | _ -> false)
             | _ -> ()
             
-            let arg,tpenv = TcExpr cenv domainTy env tpenv synArg
-            let exprAndArg, resultTy = buildApp cenv expr exprty arg mExprAndArg
+            let arg, tpenv = TcExpr cenv domainTy env tpenv synArg
+            let exprAndArg, resultTy = buildApp cenv expr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
             
     | ValueNone -> 
