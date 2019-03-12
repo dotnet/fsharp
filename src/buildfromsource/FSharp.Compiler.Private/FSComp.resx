@@ -246,9 +246,6 @@
   <data name="buildMultipleReferencesNotAllowed" xml:space="preserve">
     <value>Multiple references to '{0}.dll' are not permitted</value>
   </data>
-  <data name="buildCouldNotReadVersionInfoFromMscorlib" xml:space="preserve">
-    <value>Could not read version from mscorlib.dll</value>
-  </data>
   <data name="buildCannotReadAssembly" xml:space="preserve">
     <value>Unable to read assembly '{0}'</value>
   </data>
@@ -4071,6 +4068,12 @@
   <data name="tcAnonRecdFieldNameMismatch" xml:space="preserve">
     <value>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</value>
   </data>
+  <data name="expressionHasNoName" xml:space="preserve">
+    <value>Expression does not have a name.</value>
+  </data>
+  <data name="chkNoFirstClassNameOf" xml:space="preserve">
+    <value>First-class uses of the 'nameof' operator is not permitted.</value>
+  </data>
   <data name="keywordDescriptionAbstract" xml:space="preserve">
     <value>Indicates a method that either has no implementation in the type in which it is declared or that is virtual and has a default implementation.</value>
   </data>
@@ -4249,7 +4252,7 @@
     <value>Used to convert to a type that is higher in the inheritance chain.</value>
   </data>
   <data name="keywordDescriptionUse" xml:space="preserve">
-    <value>Used instead of let for values that implement IDisposable"</value>
+    <value>Used instead of let for values that implement IDisposable</value>
   </data>
   <data name="keywordDescriptionUseBang" xml:space="preserve">
     <value>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</value>
