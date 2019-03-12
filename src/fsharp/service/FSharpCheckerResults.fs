@@ -40,10 +40,6 @@ open Internal.Utilities
 open Internal.Utilities.Collections
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
 [<AutoOpen>]
 module internal FSharpCheckerResultsSettings =
 
