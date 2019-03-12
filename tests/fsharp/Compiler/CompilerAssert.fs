@@ -77,20 +77,26 @@ module CompilerAssert =
             Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
         )
 
-    let RunScript (source: string) (expectedOutput: string) =
-        let tmp = Path.GetTempFileName()
-        let tmpFsx = Path.ChangeExtension(tmp, ".fsx")
+    let RunScript (source: string) (_expectedOutput: string) =
+        // Intialize output and input streams
+        let sbOut = new StringBuilder()
+        let sbErr = new StringBuilder()
+        use inStream = new StringReader("")
+        use outStream = new StringWriter(sbOut)
+        use errStream = new StringWriter(sbErr)
 
+        // Build command line arguments & start FSI session
+        let argv = [| "C:\\fsi.exe" |]
+#if NET472
+        let allArgs = Array.append argv [|"--noninteractive"|]
+#else
+        let allArgs = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
+#endif
+
+        let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
+        use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream)
+        
         try
-            File.WriteAllText(tmpFsx, source)
-            let output, errors, exitCode = exec config.FSI [tmpFsx]
-
-            if errors.Length > 0 || exitCode <> 0 then
-                Assert.Fail(sprintf "Exit Code: %i" exitCode)
-                Assert.Fail(sprintf "%A" errors)
-                
-            Assert.AreEqual(expectedOutput, output)
-
-        finally
-            try File.Delete(tmp) with | _ -> ()
-            try File.Delete(tmpFsx) with | _ -> ()
+            fsiSession.EvalInteraction source |> ignore
+        with
+        | _ -> Assert.Fail(errStream.ToString())
