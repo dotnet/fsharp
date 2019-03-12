@@ -124,7 +124,10 @@ module GlobalCounters =
     let AddConfig c = lock counterLock (fun () -> configs <- c :: configs)
     let GetConfigs() = lock counterLock (fun () -> configs)
     let CheckAllConfigsDisposed() = 
-        for c in GetConfigs() do 
+        let cs = GetConfigs()
+        lock counterLock (fun () -> 
+            configs <- [])
+        for c in cs do 
             try 
                 c.SystemRuntimeContainsType("System.Object") |> ignore
                 failwith "expected configuration object to be disposed"
