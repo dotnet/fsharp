@@ -18,10 +18,6 @@ module internal ExtensionTyping =
     open FSharp.Compiler.AbstractIL.Diagnostics // dprintfn
     open FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
 
-#if FX_RESHAPED_REFLECTION
-    open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
     type TypeProviderDesignation = TypeProviderDesignation of string
 
     exception ProvidedTypeResolution of range * System.Exception 
@@ -363,36 +359,17 @@ module internal ExtensionTyping =
                                   for KeyValue (st, tcref) in d2.Force() do dict.Add(st, f tcref)
                                   dict))
 
-#if FX_NO_CUSTOMATTRIBUTEDATA
-    type CustomAttributeData = Microsoft.FSharp.Core.CompilerServices.IProvidedCustomAttributeData
-    type CustomAttributeNamedArgument = Microsoft.FSharp.Core.CompilerServices.IProvidedCustomAttributeNamedArgument
-    type CustomAttributeTypedArgument = Microsoft.FSharp.Core.CompilerServices.IProvidedCustomAttributeTypedArgument
-#else
     type CustomAttributeData = System.Reflection.CustomAttributeData
     type CustomAttributeNamedArgument = System.Reflection.CustomAttributeNamedArgument
     type CustomAttributeTypedArgument = System.Reflection.CustomAttributeTypedArgument
-#endif
 
     [<Sealed>]
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     [<AllowNullLiteral>]
 #endif
     type ProvidedType (x:System.Type, ctxt: ProvidedTypeContext) =
-#if FX_RESHAPED_REFLECTION
-        inherit ProvidedMemberInfo(x.GetTypeInfo(), ctxt)
-#if FX_NO_CUSTOMATTRIBUTEDATA
-        let provide () = ProvidedCustomAttributeProvider.Create (fun provider -> provider.GetMemberCustomAttributesData(x.GetTypeInfo()) :> _)
-#else
-        let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.GetTypeInfo().CustomAttributes)
-#endif
-#else
         inherit ProvidedMemberInfo(x, ctxt)
-#if FX_NO_CUSTOMATTRIBUTEDATA
-        let provide () = ProvidedCustomAttributeProvider.Create (fun provider -> provider.GetMemberCustomAttributesData(x) :> _)
-#else
         let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.CustomAttributes)
-#endif
-#endif
         interface IProvidedCustomAttributeProvider with 
             member __.GetHasTypeProviderEditorHideMethodsAttribute(provider) = provide().GetHasTypeProviderEditorHideMethodsAttribute(provider)
             member __.GetDefinitionLocationAttribute(provider) = provide().GetDefinitionLocationAttribute(provider)
@@ -561,12 +538,7 @@ module internal ExtensionTyping =
         [<AllowNullLiteral>]
 #endif
         ProvidedMemberInfo (x: System.Reflection.MemberInfo, ctxt) = 
-#if FX_NO_CUSTOMATTRIBUTEDATA
-        let provide () = ProvidedCustomAttributeProvider.Create (fun provider -> provider.GetMemberCustomAttributesData(x) :> _)
-#else
         let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.CustomAttributes)
-#endif
-
         member __.Name = x.Name
         /// DeclaringType can be null if MemberInfo belongs to Module, not to Type
         member __.DeclaringType = ProvidedType.Create ctxt x.DeclaringType
@@ -581,18 +553,10 @@ module internal ExtensionTyping =
         [<AllowNullLiteral>]
 #endif
         ProvidedParameterInfo (x: System.Reflection.ParameterInfo, ctxt) = 
-#if FX_NO_CUSTOMATTRIBUTEDATA
-        let provide () = ProvidedCustomAttributeProvider.Create (fun provider -> provider.GetParameterCustomAttributesData(x) :> _)
-#else
         let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.CustomAttributes)
-#endif
         member __.Name = let nm = x.Name in match box nm with null -> "" | _ -> nm
         member __.IsOut = x.IsOut
-#if FX_NO_ISIN_ON_PARAMETER_INFO 
-        member __.IsIn = not x.IsOut
-#else
         member __.IsIn = x.IsIn
-#endif
         member __.IsOptional = x.IsOptional
         member __.RawDefaultValue = x.RawDefaultValue
         member __.HasDefaultValue = x.Attributes.HasFlag(System.Reflection.ParameterAttributes.HasDefault)

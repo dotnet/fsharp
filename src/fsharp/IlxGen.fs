@@ -515,15 +515,14 @@ and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
     ignore voidOK
 #endif
     match stripTyEqnsAndMeasureEqns g ty with
-    | TType_app (tcref, tinst, _nullness) -> GenNamedTyAppAux amap m tyenv ptrsOK tcref tinst
+    | TType_app (tcref, tinst, _nullness) ->
+        GenNamedTyAppAux amap m tyenv ptrsOK tcref tinst
     
-    | TType_tuple (tupInfo, args) -> GenTypeAux amap m tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
+    | TType_tuple (tupInfo, args) ->
+        GenTypeAux amap m tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
 
-<<<<<<< HEAD
-    | TType_fun (dty, returnTy, _nullness) -> EraseClosures.mkILFuncTy g.ilxPubCloEnv  (GenTypeArgAux amap m tyenv dty) (GenTypeArgAux amap m tyenv returnTy)
-=======
-    | TType_fun (dty, returnTy) -> EraseClosures.mkILFuncTy g.ilxPubCloEnv  (GenTypeArgAux amap m tyenv dty) (GenTypeArgAux amap m tyenv returnTy)
->>>>>>> 32c75cabcff0c9b7ee05bf67f63eea4f9259cf88
+    | TType_fun (dty, returnTy, _nullness) ->
+        EraseClosures.mkILFuncTy g.ilxPubCloEnv  (GenTypeArgAux amap m tyenv dty) (GenTypeArgAux amap m tyenv returnTy)
 
     | TType_anon (anonInfo, tinst) ->
         let tref = anonInfo.ILTypeRef
@@ -2848,12 +2847,7 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
             GenBinding cenv cgbuf eenvinner bind
             let tys = destRefTupleTy cenv.g ty
             assert (tys.Length = numRequiredExprs)
-<<<<<<< HEAD
             argInfos |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (tupInfoRef, loce, tys, i, m) Continue)
-=======
-            // TODO - tupInfoRef
-            argInfos |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (tupInfoRef (* TODO *), loce, tys, i, m) Continue)
->>>>>>> 32c75cabcff0c9b7ee05bf67f63eea4f9259cf88
             GenSequel cenv eenv.cloc cgbuf sequel
         )
 
@@ -6877,23 +6871,13 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                         .WithFieldMarshal(ilFieldMarshal)
                   yield fdef
 
-<<<<<<< HEAD
                if requiresExtraField then 
                    yield mkILInstanceField("__dummy", g.ilg.typ_Int32, None, ILMemberAccess.Assembly) ]
          
         // Generate property definitions for the fields compiled as properties 
         let ilPropertyDefsForFields = 
-             [ for (i, (useGenuineField, _, isFSharpMutable, isStatic, propAttribs, ilPropType, _, fspec)) in markup fieldSummaries do
-                 if not useGenuineField then 
-=======
-               if requiresExtraField then
-                   yield mkILInstanceField("__dummy", cenv.g.ilg.typ_Int32, None, ILMemberAccess.Assembly) ]
-     
-        // Generate property definitions for the fields compiled as properties
-        let ilPropertyDefsForFields =
              [ for (i, (useGenuineField, _, isFSharpMutable, isStatic, propAttribs, ilPropType, _, fspec)) in Seq.indexed fieldSummaries do
-                 if not useGenuineField then
->>>>>>> 32c75cabcff0c9b7ee05bf67f63eea4f9259cf88
+                 if not useGenuineField then 
                      let ilCallingConv = if isStatic then ILCallingConv.Static else ILCallingConv.Instance
                      let ilPropName = fspec.Name
                      let ilHasSetter = isCLIMutable || isFSharpMutable

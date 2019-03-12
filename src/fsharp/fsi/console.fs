@@ -14,17 +14,8 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 /// Fixes to System.Console.ReadKey may break this code around, hence the option here.
 module internal ConsoleOptions =
 
-#if FX_NO_WIN_REGISTRY
-  let fixupRequired = false
-#else
-  // Bug 4254 was fixed in Dev11 (Net4.5), so this flag tracks making this fix up version specific.
-  let fixupRequired = not FSharpEnvironment.IsRunningOnNetFx45OrAbove
-#endif
-
-  let fixNonUnicodeSystemConsoleReadKey = ref fixupRequired
   let readKeyFixup (c:char) =
 #if !FX_NO_SERVERCODEPAGES
-    if !fixNonUnicodeSystemConsoleReadKey then
       // Assumes the c:char is actually a byte in the System.Console.InputEncoding.
       // Convert it to a Unicode char through the encoding.
       if 0 <= int c && int c <= 255 then
@@ -36,10 +27,8 @@ module internal ConsoleOptions =
           c // no fix up
       else
         assert("readKeyFixHook: given char is outside the 0..255 byte range" = "")
-        c // no fix up
-    else
 #endif
-      c
+        c
 
 type internal Style = Prompt | Out | Error
 

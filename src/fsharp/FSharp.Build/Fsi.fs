@@ -11,10 +11,6 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open Internal.Utilities
 
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
 [<AutoOpen>]
 module UtilsFsi = 
@@ -33,27 +29,27 @@ type public Fsi () as this =
 
     let mutable capturedArguments : string list = []  // list of individual args, to pass to HostObject Compile()
     let mutable capturedFilenames : string list = []  // list of individual source filenames, to pass to HostObject Compile()
-    let mutable codePage : string = null
+    let mutable codePage : string? = null
     let mutable commandLineArgs : ITaskItem list = []
     let mutable defineConstants : ITaskItem[] = [||]
-    let mutable disabledWarnings : string = null
-    let mutable dotnetFsiCompilerPath : string = null
+    let mutable disabledWarnings : string? = null
+    let mutable dotnetFsiCompilerPath : string? = null
     let mutable fsiExec = false
     let mutable noFramework = false
     let mutable optimize = true
-    let mutable otherFlags : string = null
-    let mutable preferredUILang = null
+    let mutable otherFlags : string? = null
+    let mutable preferredUILang : string? = null
     let mutable provideCommandLineArgs = false
     let mutable references : ITaskItem[] = [||]
-    let mutable referencePath : string = null
+    let mutable referencePath : string? = null
     let mutable resources : ITaskItem[] = [||]
     let mutable skipCompilerExecution = false
     let mutable sources : ITaskItem[] = [||]
     let mutable loadSources : ITaskItem[] = [||]
     let mutable useSources : ITaskItem[] = [||]
     let mutable tailcalls : bool = true
-    let mutable targetProfile : string = null
-    let mutable targetType : string = null
+    let mutable targetProfile : string? = null
+    let mutable targetType : string? = null
     let mutable toolExe : string = "fsi.exe"
     let mutable toolPath : string =
         let locationOfThisDll =
@@ -63,10 +59,10 @@ type public Fsi () as this =
         | Some s -> s
         | None -> ""
     let mutable treatWarningsAsErrors : bool = false
-    let mutable warningsAsErrors : string = null
-    let mutable warningsNotAsErrors : string = null
-    let mutable warningLevel : string = null
-    let mutable vslcid : string = null
+    let mutable warningsAsErrors : string? = null
+    let mutable warningsNotAsErrors : string? = null
+    let mutable warningLevel : string? = null
+    let mutable vslcid : string? = null
     let mutable utf8output : bool = false
 
     // See bug 6483; this makes parallel build faster, and is fine to set unconditionally
@@ -79,9 +75,8 @@ type public Fsi () as this =
 
         if noFramework then builder.AppendSwitch("--noframework")
 
-        if defineConstants <> null then
-            for item in defineConstants do
-                builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
+        for item in defineConstants do
+            builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
 
         if optimize then builder.AppendSwitch("--optimize+")
         else builder.AppendSwitch("--optimize-")
@@ -89,14 +84,13 @@ type public Fsi () as this =
         if not tailcalls then
             builder.AppendSwitch("--tailcalls-")
 
-        if references <> null then 
-            for item in references do
-                builder.AppendSwitchIfNotNull("-r:", item.ItemSpec)
+        for item in references do
+            builder.AppendSwitchIfNotNull("-r:", item.ItemSpec)
 
         let referencePathArray = // create a array of strings
             match referencePath with
             | null -> null
-            | _ -> referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
+            | NonNull referencePath -> referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
         // NoWarn
         match disabledWarnings with
@@ -130,13 +124,11 @@ type public Fsi () as this =
 
         builder.AppendSwitchIfNotNull("--targetprofile:", targetProfile)
 
-        if loadSources <> null then
-            for item in loadSources do
-                builder.AppendSwitchIfNotNull("--load:", item.ItemSpec)
+        for item in loadSources do
+            builder.AppendSwitchIfNotNull("--load:", item.ItemSpec)
 
-        if useSources <> null then 
-            for item in useSources do
-                builder.AppendSwitchIfNotNull("--use:", item.ItemSpec)
+        for item in useSources do
+            builder.AppendSwitchIfNotNull("--use:", item.ItemSpec)
 
         // OtherFlags - must be second-to-last
         builder.AppendSwitchUnquotedIfNotNull("", otherFlags)

@@ -243,19 +243,9 @@ open Printf
     let StringBoilerPlate filename = @"
     // BEGIN BOILERPLATE
 
-    static let getCurrentAssembly () =
-    #if FX_RESHAPED_REFLECTION
-        typeof<SR>.GetTypeInfo().Assembly
-    #else
-        System.Reflection.Assembly.GetExecutingAssembly()
-    #endif
+    static let getCurrentAssembly () = System.Reflection.Assembly.GetExecutingAssembly()
 
-    static let getTypeInfo (t: System.Type) =
-    #if FX_RESHAPED_REFLECTION
-        t.GetTypeInfo()
-    #else
-        t
-    #endif
+    static let getTypeInfo (t: System.Type) = t
 
     static let resources = lazy (new System.Resources.ResourceManager(""" + filename + @""", getCurrentAssembly()))
 

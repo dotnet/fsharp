@@ -6914,7 +6914,6 @@ and TcConstStringExpr cenv overallTy env m tpenv (s: string)  =
 and TcConstExpr cenv overallTy env m tpenv c  =
     match c with 
 
-    // NOTE: these aren't "really" constants 
     | SynConst.Bytes (bytes, m) -> 
        UnifyTypes cenv env m overallTy (mkByteArrayTy cenv.g) 
        Expr.Op(TOp.Bytes bytes, [], [], m), tpenv

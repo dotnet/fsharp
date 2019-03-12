@@ -20,10 +20,6 @@ open Microsoft.FSharp.Core.Printf
 open FSharp.Compiler.ExtensionTyping
 #endif
 
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
 //-------------------------------------------------------------------------
 // From IL types to F# types
 //-------------------------------------------------------------------------

@@ -19,10 +19,6 @@ module public FSharp.Compiler.PrettyNaming
     open Internal.Utilities.StructuredFormat
     open Internal.Utilities.StructuredFormat.LayoutOps
 
-#if FX_RESHAPED_REFLECTION
-    open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
     //------------------------------------------------------------------------
     // Operator name compilation
     //-----------------------------------------------------------------------

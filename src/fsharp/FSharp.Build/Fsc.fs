@@ -11,10 +11,6 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open Internal.Utilities
 
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
 [<AutoOpen>]
 module Utils = 

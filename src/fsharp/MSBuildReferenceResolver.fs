@@ -6,9 +6,6 @@ module internal FSharp.Compiler.MSBuildReferenceResolver
     open System.IO
     open System.Reflection
 
-#if FX_RESHAPED_REFLECTION
-    open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
 #if FX_RESHAPED_MSBUILD
     open FSharp.Compiler.MsBuildAdapters
     open FSharp.Compiler.ToolLocationHelper
@@ -19,6 +16,11 @@ module internal FSharp.Compiler.MSBuildReferenceResolver
     open Microsoft.Build.Tasks
     open Microsoft.Build.Utilities
     open Microsoft.Build.Framework
+
+    // Reflection wrapper for properties
+    type System.Object with
+        member this.GetPropertyValue(propName) =
+            this.GetType().GetProperty(propName, BindingFlags.Public).GetValue(this, null)
 
     /// Get the Reference Assemblies directory for the .NET Framework on Window.
     let DotNetFrameworkReferenceAssembliesRootDirectory = 
@@ -97,7 +99,7 @@ module internal FSharp.Compiler.MSBuildReferenceResolver
         | _ -> []
 
     let GetPathToDotNetFrameworkReferenceAssemblies(version) = 
-#if NETSTANDARD1_6 || NETSTANDARD2_0
+#if NETSTANDARD
         ignore version
         let r : string list = []
         r
@@ -129,7 +131,7 @@ module internal FSharp.Compiler.MSBuildReferenceResolver
                 else Net45 // version is 4.5 assumed since this code is running.
             with _ -> Net45
 
-#if !FX_RESHAPED_REFLECTION
+#if !FX_RESHAPED_MSBUILD
         // 1.   First look to see if we can find the highest installed set of dotnet reference assemblies, if yes then select that framework
         // 2.   Otherwise ask msbuild for the highestinstalled framework
         let checkFrameworkForReferenceAssemblies (dotNetVersion:string) =
@@ -336,9 +338,6 @@ module internal FSharp.Compiler.MSBuildReferenceResolver
                                      FindSerializationAssemblies=false, Assemblies=assemblies, 
                                      SearchPaths=searchPaths, 
                                      AllowedAssemblyExtensions= [| ".dll" ; ".exe" |])
-#if FX_RESHAPED_REFLECTION
-        ignore targetProcessorArchitecture // Not implemented in reshapedmsbuild.fs
-#else
         rar.TargetProcessorArchitecture <- targetProcessorArchitecture
         let targetedRuntimeVersionValue = typeof<obj>.Assembly.ImageRuntimeVersion
 #if ENABLE_MONO_SUPPORT
@@ -351,7 +350,6 @@ module internal FSharp.Compiler.MSBuildReferenceResolver
         rar.TargetedRuntimeVersion <- targetedRuntimeVersionValue
         rar.CopyLocalDependenciesWhenParentReferenceInGac <- true
 #endif
-#endif        
         
         let succeeded = rar.Execute()
         

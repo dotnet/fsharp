@@ -12,10 +12,6 @@ open System.Reflection
 open System.Threading
 open System.Runtime.CompilerServices
 
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
 // Logical shift right treating int32 as unsigned integer.
 // Code that uses this should probably be adjusted to use unsigned integer types.
 let (>>>&) (x:int32) (n:int32) = int32 (uint32 x >>> n)
@@ -43,12 +39,6 @@ let inline isSingleton l =
     | _ -> false
 
 let inline isNonNull x = not (isNull x)
-<<<<<<< HEAD
-=======
-
-let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
-
->>>>>>> 32c75cabcff0c9b7ee05bf67f63eea4f9259cf88
 let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
 /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
@@ -80,13 +70,9 @@ type InlineDelayInit<'T when 'T : not struct> =
     val mutable store : 'T
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     val mutable func : Func<'T>
-<<<<<<< HEAD
 #else
     val mutable func : Func<'T> ?
 #endif
-=======
-
->>>>>>> 32c75cabcff0c9b7ee05bf67f63eea4f9259cf88
     member x.Value = 
         match x.func with 
         | null -> x.store 
@@ -269,12 +255,6 @@ module Option =
     let attempt (f: unit -> 'T) = try Some (f()) with _ -> None
         
 module List = 
-
-    //let item n xs = List.nth xs n
-#if FX_RESHAPED_REFLECTION
-    open PrimReflectionAdapters
-    open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
 
     let sortWithOrder (c: IComparer<'T>) elements = List.sortWith (Order.toFunction c) elements
     
@@ -1032,21 +1012,13 @@ type LazyWithContext<'T,'ctxt> =
 
       /// This field holds either the function to run or a LazyWithContextFailure object recording the exception raised 
       /// from running the function. It is null if the thunk has been evaluated successfully.
-<<<<<<< HEAD
       mutable funcOrException: obj 
-=======
-      mutable funcOrException: obj
->>>>>>> 32c75cabcff0c9b7ee05bf67f63eea4f9259cf88
 
       /// A helper to ensure we rethrow the "original" exception
       findOriginalException : exn -> exn }
 
     static member Create(f: ('ctxt->'T), findOriginalException) : LazyWithContext<'T,'ctxt> = 
-<<<<<<< HEAD
-        { value = Unchecked.defaultof<'T>;
-=======
         { value = Unchecked.defaultof<'T>
->>>>>>> 32c75cabcff0c9b7ee05bf67f63eea4f9259cf88
           funcOrException = box f
           findOriginalException = findOriginalException }
 
@@ -1295,11 +1267,6 @@ type LayeredMultiMap<'Key,'Value when 'Key : equality and 'Key : comparison>(con
 
 [<AutoOpen>]
 module Shim =
-
-#if FX_RESHAPED_REFLECTION
-    open PrimReflectionAdapters
-    open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
 
     type IFileSystem = 
 

@@ -2196,7 +2196,7 @@ and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty  =
         accFreeInTypesLeftToRight g cxFlag thruFlag acc anonTys 
     | TType_tuple (tupInfo, tupTys) -> 
         let acc = accFreeInTupInfoLeftToRight g cxFlag thruFlag acc tupInfo 
-        accFreeInTypesLeftToRight g cxFlag thruFlag acc l 
+        accFreeInTypesLeftToRight g cxFlag thruFlag acc tupTys 
     | TType_app (_, tinst, _nullness) ->
         accFreeInTypesLeftToRight g cxFlag thruFlag acc tinst 
     | TType_ucase (_, tinst) ->
@@ -5639,8 +5639,6 @@ let mkRefTupledVarsTy g vs = mkRefTupledTy g (typesOfVals vs)
 let mkMethodTy g argtys rty = mkIteratedFunTy g (List.map (mkRefTupledTy g) argtys) rty 
 
 let mkArrayType (g:TcGlobals) ty = TType_app (g.array_tcr_nice, [ty], g.knownWithoutNull)
-
-let mkByteArrayTy (g:TcGlobals) = mkArrayType g g.byte_ty
 
 let mkByteArrayTy (g:TcGlobals) = mkArrayType g g.byte_ty
 

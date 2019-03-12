@@ -11,13 +11,7 @@ namespace FSharp.Compiler
     open System.Reflection 
 
     module internal SR =
-#if FX_RESHAPED_REFLECTION
-        open System.Reflection
-        type private TypeInThisAssembly = class end
-        let private resources = lazy (new System.Resources.ResourceManager("fsstrings", typeof<TypeInThisAssembly>.GetTypeInfo().Assembly))
-#else
         let private resources = lazy (new System.Resources.ResourceManager("fsstrings", System.Reflection.Assembly.GetExecutingAssembly()))
-#endif
 
         let GetString(name:string) =
             let s = resources.Force().GetString(name, System.Globalization.CultureInfo.CurrentUICulture)
@@ -33,11 +27,6 @@ namespace FSharp.Compiler
         open Microsoft.FSharp.Reflection
         open System.Reflection
         open Internal.Utilities.StructuredFormat
-
-#if FX_RESHAPED_REFLECTION
-        open PrimReflectionAdapters
-        open ReflectionAdapters
-#endif
 
         let mkFunctionValue (tys: System.Type[]) (impl:obj->obj) = 
             FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys.[0],tys.[1]), impl)

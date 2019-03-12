@@ -21,8 +21,6 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
 
-open Microsoft.FSharp.Core.Printf
-
 #if FX_RESHAPED_REFLECTION
 open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
@@ -398,14 +396,9 @@ let envBindTypeRef emEnv (tref:ILTypeRef) (typT: System.Type, typB, typeDef)=
 let envBindTypeRef emEnv (tref:ILTypeRef) (typT: System.Type?, typB, typeDef)= 
 #endif
     match typT with 
-<<<<<<< HEAD
-    | null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name;
+    | null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name
     | NonNull typT ->
         {emEnv with emTypMap = Zmap.add tref (typT, typB, typeDef, None) emEnv.emTypMap}
-=======
-    | null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name
-    | _ -> {emEnv with emTypMap = Zmap.add tref (typT, typB, typeDef, None) emEnv.emTypMap}
->>>>>>> 32c75cabcff0c9b7ee05bf67f63eea4f9259cf88
 
 let envUpdateCreatedTypeRef emEnv (tref:ILTypeRef) =
     // The tref's TypeBuilder has been created, so we have a Type proper.

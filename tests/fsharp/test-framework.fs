@@ -167,7 +167,7 @@ let config configurationName envVars =
     let fsiArchitecture = "netcoreapp2.1"
     let fsharpCoreArchitecture = "netstandard1.6"
     let fsharpBuildArchitecture = "netstandard2.0"
-    let fsharpCompilerInteractiveSettingsArchitecture = "netstandard1.6"
+    let fsharpCompilerInteractiveSettingsArchitecture = "netstandard2.0"
 #endif
     let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
     let artifactsPath = repoRoot ++ "artifacts"

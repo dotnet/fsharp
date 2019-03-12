@@ -536,9 +536,6 @@ module UnmanagedProcessExecutionOptions =
     [<System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Assert,UnmanagedCode = true)>] 
 #endif
     let EnableHeapTerminationOnCorruption() =
-#if FX_NO_HEAPTERMINATION
-        ()
-#else
         if (System.Environment.OSVersion.Version.Major >= 6 && // If OS is Vista or higher
             System.Environment.Version.Major < 3) then         // and CLR not 3.0 or higher 
             // "The flag HeapSetInformation sets is available in Windows XP SP3 and later.
@@ -557,5 +554,4 @@ module UnmanagedProcessExecutionOptions =
                             "Unable to enable unmanaged process execution option TerminationOnCorruption. " + 
                             "HeapSetInformation() returned FALSE; LastError = 0x" + 
                             GetLastError().ToString("X").PadLeft(8,'0') + "."))
-#endif
 
