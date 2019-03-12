@@ -7,5 +7,5 @@
 
 
 
-let p = [ if true then printfn "hello"; () ];;
-(if p = [ ] then 0 else 1) |> exit
+let p : unit list = [ if true then printfn "hello"; () ];; // note, both unit-typed expressions interpreted as side-effecting operations
+(match p with [ ] -> 0 | _ -> 1) |> exit
