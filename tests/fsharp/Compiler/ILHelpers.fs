@@ -47,7 +47,23 @@ module ILChecker =
             File.WriteAllText(tmpFs, source)
 
             let extraReferences = extraDlls |> Array.ofList |> Array.map (fun reference -> "-r:" + reference)
-            let errors, exitCode = checker.Compile(Array.append [| "fsc.exe"; "--optimize+"; "-o"; tmpDll; "-a"; tmpFs; |] extraReferences) |> Async.RunSynchronously
+
+#if NETCOREAPP
+            // Hack: Currently a hack to get the runtime assemblies for netcore in order to compile.
+            let runtimeAssemblies =
+                typeof<obj>.Assembly.Location
+                |> Path.GetDirectoryName
+                |> Directory.EnumerateFiles
+                |> Seq.toArray
+                |> Array.filter (fun x -> x.ToLowerInvariant().Contains("system."))
+                |> Array.map (fun x -> sprintf "-r:%s" x)
+
+            let extraReferences = Array.append runtimeAssemblies extraReferences
+
+            let errors, exitCode = checker.Compile(Array.append [| "fsc.exe"; "--optimize+"; "-o"; tmpDll; "-a"; tmpFs; "--targetprofile:netcore"; "--noframework" |] extraReferences) |> Async.RunSynchronously
+#else
+            let errors, exitCode = checker.Compile(Array.append [| "fsc.exe"; "--optimize+"; "-o"; tmpDll; "-a"; tmpFs |] extraReferences) |> Async.RunSynchronously
+#endif
             let errors =
                 String.concat "\n" (errors |> Array.map (fun x -> x.Message))
 

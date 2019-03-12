@@ -27,7 +27,16 @@ module CompilerAssert =
 #if NET472
             OtherOptions = [||]
 #else
-            OtherOptions = [|"--targetprofile:netcore"|]
+            OtherOptions = 
+                // Hack: This is currently a hack to get the runtime assemblies for net core in order to compie.
+                let assemblies =
+                    typeof<obj>.Assembly.Location
+                    |> Path.GetDirectoryName
+                    |> Directory.EnumerateFiles
+                    |> Seq.toArray
+                    |> Array.filter (fun x -> x.ToLowerInvariant().Contains("system."))
+                    |> Array.map (fun x -> sprintf "-r:%s" x)
+                Array.append [|"--targetprofile:netcore"; "--noframework"|] assemblies
 #endif
             ReferencedProjects = [||]
             IsIncompleteTypeCheckEnvironment = false
@@ -38,15 +47,6 @@ module CompilerAssert =
             ExtraProjectInfo = None
             Stamp = None
         }
-
-    let private exec exe args =
-        let startInfo = ProcessStartInfo(exe, String.concat " " args)
-        startInfo.RedirectStandardError <- true
-        startInfo.RedirectStandardOutput <- true
-        startInfo.UseShellExecute <- false
-        use p = Process.Start(startInfo)
-        p.WaitForExit()
-        p.StandardOutput.ReadToEnd(), p.StandardError.ReadToEnd(), p.ExitCode
 
     let Pass (source: string) =
         let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
@@ -77,7 +77,7 @@ module CompilerAssert =
             Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
         )
 
-    let RunScript (source: string) (_expectedOutput: string) =
+    let RunScript (source: string) =
         // Intialize output and input streams
         let sbOut = new StringBuilder()
         let sbErr = new StringBuilder()
@@ -96,7 +96,11 @@ module CompilerAssert =
         let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
         use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream)
         
-        try
-            fsiSession.EvalInteraction source |> ignore
-        with
-        | _ -> Assert.Fail(errStream.ToString())
+        let ch, errors = fsiSession.EvalInteractionNonThrowing source
+
+        if errors.Length > 0 then
+            Assert.Fail(sprintf "%A" errors)
+
+        match ch with
+        | Choice2Of2 ex -> Assert.Fail(ex.Message)
+        | _ -> ()

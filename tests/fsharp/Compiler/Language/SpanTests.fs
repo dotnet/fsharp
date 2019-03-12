@@ -8,25 +8,24 @@ open NUnit.Framework
 [<TestFixture>]
 module SpanTests =
 
-    let x = 1
-
-#if NET472
-#else
+#if NETCOREAPP
     [<Test>]
     let Script_SpanForInDo() =
         let script = 
             """
 open System
 
-let test () =
+let test () : unit =
     let span = Span([|1;2;3;4|])
     let result = ResizeArray()
     for item in span do
         result.Add(item)
-    result.ToArray()
+    
+    if result.[0] <> 1 || result.[1] <> 2 || result.[2] <> 3 || result.[3] <> 4 then
+        failwith "SpanForInDo didn't work properly"
 
 test ()
             """
         
-        CompilerAssert.RunScript script ""
+        CompilerAssert.RunScript script
 #endif

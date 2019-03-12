@@ -4,7 +4,6 @@ namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
 
-#if NET472
 [<TestFixture>]
 module AnonRecordsTests =
 
@@ -53,4 +52,3 @@ let sAnon = StructClass<{| S: int |}>()
             1
             (3, 12, 3, 37)
             "A generic construct requires that the type '{|S : int|}' is a CLI or F# struct type"
-#endif
