@@ -8,4 +8,4 @@
 
 
 let p = [ if true then printfn "hello"; () ];;
-(if p = [ () ] then 0 else 1) |> exit
+(if p = [ ] then 0 else 1) |> exit
