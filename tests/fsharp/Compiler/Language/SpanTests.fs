@@ -5,10 +5,10 @@ namespace FSharp.Compiler.UnitTests
 open System
 open NUnit.Framework
 
+#if NETCOREAPP
 [<TestFixture>]
 module SpanTests =
 
-#if NETCOREAPP
     [<Test>]
     let Script_SpanForInDo() =
         let script = 

@@ -28,7 +28,7 @@ module CompilerAssert =
             OtherOptions = [||]
 #else
             OtherOptions = 
-                // Hack: This is currently a hack to get the runtime assemblies for net core in order to compie.
+                // Hack: Currently a hack to get the runtime assemblies for netcore in order to compile.
                 let assemblies =
                     typeof<obj>.Assembly.Location
                     |> Path.GetDirectoryName
