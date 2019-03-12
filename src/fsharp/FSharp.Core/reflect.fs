@@ -447,11 +447,11 @@ module internal Impl =
         //   Item1, Item2, ..., Item<maxTuple-1>
         //   Item1, Item2, ..., Item<maxTuple-1>, Rest
         // The PropertyInfo may not come back in order, so ensure ordering here.
-#if !NETSTANDARD1_6
+#if !NETSTANDARD
         assert(maxTuple < 10) // Alphasort will only works for upto 9 items: Item1, Item10, Item2, Item3, ..., Item9, Rest
 #endif
         let props = props |> Array.sortBy (fun p -> p.Name) // they are not always in alphabetic order
-#if !NETSTANDARD1_6  
+#if !NETSTANDARD
         assert(props.Length <= maxTuple)
         assert(let haveNames   = props |> Array.map (fun p -> p.Name)
                let expectNames = Array.init props.Length (fun i -> let j = i+1 // index j = 1,2,..,props.Length <= maxTuple
@@ -469,11 +469,11 @@ module internal Impl =
         //   Item1, Item2, ..., Item<maxTuple-1>
         //   Item1, Item2, ..., Item<maxTuple-1>, Rest
         // The PropertyInfo may not come back in order, so ensure ordering here.
-#if !NETSTANDARD1_6
+#if !NETSTANDARD
         assert(maxTuple < 10) // Alphasort will only works for upto 9 items: Item1, Item10, Item2, Item3, ..., Item9, Rest
 #endif
         let fields = fields |> Array.sortBy (fun fi -> fi.Name) // they are not always in alphabetic order
-#if !NETSTANDARD1_6  
+#if !NETSTANDARD
         assert(fields.Length <= maxTuple)
         assert(let haveNames   = fields |> Array.map (fun fi -> fi.Name)
                let expectNames = Array.init fields.Length (fun i -> let j = i+1 // index j = 1,2,..,fields.Length <= maxTuple
@@ -707,12 +707,11 @@ type UnionCaseInfo(typ: System.Type, tag:int) =
         props
 
     member __.GetCustomAttributes() = getMethInfo().GetCustomAttributes(false)
-    
+
     member __.GetCustomAttributes(attributeType) = getMethInfo().GetCustomAttributes(attributeType,false)
 
-#if !FX_NO_CUSTOMATTRIBUTEDATA
     member __.GetCustomAttributesData() = getMethInfo().CustomAttributes |> Seq.toArray :> System.Collections.Generic.IList<_>
-#endif    
+
     member __.Tag = tag
     override x.ToString() = typ.Name + "." + x.Name
     override x.GetHashCode() = typ.GetHashCode() + tag

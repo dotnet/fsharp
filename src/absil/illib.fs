@@ -38,7 +38,9 @@ let inline isSingleton l =
     | _ -> false
 
 let inline isNonNull x = not (isNull x)
+
 let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
+
 let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
 /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
@@ -69,6 +71,7 @@ type InlineDelayInit<'T when 'T : not struct> =
     new (f: unit -> 'T) = {store = Unchecked.defaultof<'T>; func = Func<_>(f) } 
     val mutable store : 'T
     val mutable func : Func<'T>
+
     member x.Value = 
         match x.func with 
         | null -> x.store 
@@ -109,7 +112,7 @@ module Array =
             let mutable eq = true
             let mutable i = 0 
             while eq && i < len do 
-                if not (inp.[i] === res.[i]) then eq <- false;
+                if not (inp.[i] === res.[i]) then eq <- false
                 i <- i + 1
             if eq then inp else res
 
@@ -243,6 +246,7 @@ module Array =
         isSubArray suffix whole (whole.Length-suffix.Length)
         
 module Option = 
+
     let mapFold f s opt = 
         match opt with 
         | None -> None,s 
@@ -340,9 +344,6 @@ module List =
             | [] -> None
             | h :: t -> if f h then Some (h, List.rev acc @ t) else loop (h::acc) t
         loop [] inp            
-    //tryRemove  (fun x -> x = 2) [ 1;2;3] = Some (2, [1;3])
-    //tryRemove  (fun x -> x = 3) [ 1;2;3;4;5] = Some (3, [1;2;4;5])
-    //tryRemove  (fun x -> x = 3) [] = None
             
     let headAndTail l =
         match l with 
@@ -427,13 +428,21 @@ module List =
     let collect2 f xs ys = List.concat (List.map2 f xs ys)
 
     let toArraySquared xss = xss |> List.map List.toArray |> List.toArray
+
     let iterSquared f xss = xss |> List.iter (List.iter f)
+
     let collectSquared f xss = xss |> List.collect (List.collect f)
+
     let mapSquared f xss = xss |> List.map (List.map f)
+
     let mapFoldSquared f z xss = List.mapFold (List.mapFold f) z xss
+
     let forallSquared f xss = xss |> List.forall (List.forall f)
+
     let mapiSquared f xss = xss |> List.mapi (fun i xs -> xs |> List.mapi (fun j x -> f i j x))
+
     let existsSquared f xss = xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
+
     let mapiFoldSquared f z xss =  mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i,j,x)))
 
 module ResizeArray =
@@ -483,9 +492,13 @@ module ResizeArray =
 /// we need to stick these functions in this module rather than using the module functions for ValueOption
 /// that come after FSharp.Core 4.5.2.
 module ValueOptionInternal =
+
     let inline ofOption x = match x with Some x -> ValueSome x | None -> ValueNone
+
     let inline bind f x = match x with ValueSome x -> f x | ValueNone -> ValueNone
+
     let inline isSome x = match x with ValueSome _ -> true | ValueNone -> false
+
     let inline isNone x = match x with ValueSome _ -> false | ValueNone -> true
 
 type String with
@@ -592,6 +605,7 @@ module Dictionary =
 
 [<Extension>]
 type DictionaryExtensions() =
+
     [<Extension>]
     static member inline BagAdd(dic: Dictionary<'key, 'value list>, key: 'key, value: 'value) =
         match dic.TryGetValue key with
@@ -775,7 +789,7 @@ module Cancellable =
     /// Implement try/finally for a cancellable computation
     let tryFinally e compensation =    
         catch e |> bind (fun res ->  
-            compensation();
+            compensation()
             match res with Choice1Of2 r -> ret r | Choice2Of2 err -> raise err)
 
     /// Implement try/with for a cancellable computation
@@ -800,14 +814,23 @@ module Cancellable =
     //     }
     
 type CancellableBuilder() = 
+
     member x.Bind(e,k) = Cancellable.bind k e
+
     member x.Return(v) = Cancellable.ret v
+
     member x.ReturnFrom(v) = v
+
     member x.Combine(e1,e2) = e1 |> Cancellable.bind (fun () -> e2)
+
     member x.TryWith(e,handler) = Cancellable.tryWith e handler
+
     member x.Using(resource,e) = Cancellable.tryFinally (e resource) (fun () -> (resource :> IDisposable).Dispose())
+
     member x.TryFinally(e,compensation) =  Cancellable.tryFinally e compensation
+
     member x.Delay(f) = Cancellable.delay f
+
     member x.Zero() = Cancellable.ret ()
 
 let cancellable = CancellableBuilder()
@@ -845,7 +868,6 @@ module Eventually =
             else forceWhile ctok check (work ctok) 
 
     let force ctok e = Option.get (forceWhile ctok (fun () -> true) e)
-
         
     /// Keep running the computation bit by bit until a time limit is reached.
     /// The runner gets called each time the computation is restarted
@@ -856,13 +878,13 @@ module Eventually =
         let rec runTimeShare ctok e = 
           runner ctok (fun ctok -> 
             sw.Reset()
-            sw.Start(); 
+            sw.Start()
             let rec loop ctok ev2 = 
                 match ev2 with 
                 | Done _ -> ev2
                 | NotYetDone work ->
                     if ct.IsCancellationRequested || sw.ElapsedMilliseconds > timeShareInMilliseconds then 
-                        sw.Stop();
+                        sw.Stop()
                         NotYetDone(fun ctok -> runTimeShare ctok ev2) 
                     else 
                         loop ctok (work ctok)
@@ -904,10 +926,11 @@ module Eventually =
 
     let tryFinally e compensation =    
         catch (e) 
-        |> bind (fun res ->  compensation();
-                             match res with 
-                             | Result v -> Eventually.Done v
-                             | Exception e -> raise e)
+        |> bind (fun res -> 
+            compensation()
+            match res with 
+            | Result v -> Eventually.Done v
+            | Exception e -> raise e)
 
     let tryWith e handler =    
         catch e 
@@ -918,15 +941,22 @@ module Eventually =
         NotYetDone (fun ctok -> Done ctok)
     
 type EventuallyBuilder() = 
-    member x.Bind(e,k) = Eventually.bind k e
-    member x.Return(v) = Eventually.Done v
-    member x.ReturnFrom(v) = v
-    member x.Combine(e1,e2) = e1 |> Eventually.bind (fun () -> e2)
-    member x.TryWith(e,handler) = Eventually.tryWith e handler
-    member x.TryFinally(e,compensation) =  Eventually.tryFinally e compensation
-    member x.Delay(f) = Eventually.delay f
-    member x.Zero() = Eventually.Done ()
 
+    member x.Bind(e,k) = Eventually.bind k e
+
+    member x.Return(v) = Eventually.Done v
+
+    member x.ReturnFrom(v) = v
+
+    member x.Combine(e1,e2) = e1 |> Eventually.bind (fun () -> e2)
+
+    member x.TryWith(e,handler) = Eventually.tryWith e handler
+
+    member x.TryFinally(e,compensation) =  Eventually.tryFinally e compensation
+
+    member x.Delay(f) = Eventually.delay f
+
+    member x.Zero() = Eventually.Done ()
 
 let eventually = new EventuallyBuilder()
 
@@ -938,10 +968,7 @@ let _ = eventually { try return (failwith "") with _ -> return 1 }
 let _ = eventually { use x = null in return 1 }
 *)
 
-//---------------------------------------------------------------------------
-// generate unique stamps
-//---------------------------------------------------------------------------
-
+/// Generates unique stamps
 type UniqueStampGenerator<'T when 'T : equality>() = 
     let encodeTab = new Dictionary<'T,int>(HashIdentity.Structural)
     let mutable nItems = 0
@@ -953,16 +980,16 @@ type UniqueStampGenerator<'T when 'T : equality>() =
             encodeTab.[str] <- idx
             nItems <- nItems + 1
             idx
+
     member this.Encode(str)  = encode str
+
     member this.Table = encodeTab.Keys
 
-//---------------------------------------------------------------------------
-// memoize tables (all entries cached, never collected)
-//---------------------------------------------------------------------------
-    
+/// memoize tables (all entries cached, never collected)
 type MemoizationTable<'T,'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) = 
     
     let table = new Dictionary<'T,'U>(keyComparer) 
+
     member t.Apply(x) = 
         if (match canMemoize with None -> true | Some f -> f x) then 
             let mutable res = Unchecked.defaultof<'U>
@@ -975,7 +1002,7 @@ type MemoizationTable<'T,'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'
                     if ok then res 
                     else
                         let res = compute x
-                        table.[x] <- res;
+                        table.[x] <- res
                         res)
         else compute x
 
@@ -983,8 +1010,11 @@ type MemoizationTable<'T,'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'
 exception UndefinedException
 
 type LazyWithContextFailure(exn:exn) =
+
     static let undefined = new LazyWithContextFailure(UndefinedException)
+
     member x.Exception = exn
+
     static member Undefined = undefined
         
 /// Just like "Lazy" but EVERY forcer must provide an instance of "ctxt", e.g. to help track errors
@@ -994,21 +1024,28 @@ type LazyWithContextFailure(exn:exn) =
 type LazyWithContext<'T,'ctxt> = 
     { /// This field holds the result of a successful computation. It's initial value is Unchecked.defaultof
       mutable value : 'T
+
       /// This field holds either the function to run or a LazyWithContextFailure object recording the exception raised 
       /// from running the function. It is null if the thunk has been evaluated successfully.
-      mutable funcOrException: obj;
+      mutable funcOrException: obj
+
       /// A helper to ensure we rethrow the "original" exception
       findOriginalException : exn -> exn }
+
     static member Create(f: ('ctxt->'T), findOriginalException) : LazyWithContext<'T,'ctxt> = 
-        { value = Unchecked.defaultof<'T>;
-          funcOrException = box f;
+        { value = Unchecked.defaultof<'T>
+          funcOrException = box f
           findOriginalException = findOriginalException }
+
     static member NotLazy(x:'T) : LazyWithContext<'T,'ctxt> = 
         { value = x
           funcOrException = null
           findOriginalException = id }
+
     member x.IsDelayed = (match x.funcOrException with null -> false | :? LazyWithContextFailure -> false | _ -> true)
+
     member x.IsForced = (match x.funcOrException with null -> true | _ -> false)
+
     member x.Force(ctxt:'ctxt) =  
         match x.funcOrException with 
         | null -> x.value 
@@ -1030,21 +1067,16 @@ type LazyWithContext<'T,'ctxt> =
               x.funcOrException <- box(LazyWithContextFailure.Undefined)
               try 
                   let res = f ctxt 
-                  x.value <- res; 
-                  x.funcOrException <- null; 
+                  x.value <- res
+                  x.funcOrException <- null
                   res
               with e -> 
-                  x.funcOrException <- box(new LazyWithContextFailure(e)); 
+                  x.funcOrException <- box(new LazyWithContextFailure(e))
                   reraise()
         | _ -> 
             failwith "unreachable"
 
-    
-
-// --------------------------------------------------------------------
-// Intern tables to save space.
-// -------------------------------------------------------------------- 
-
+/// Intern tables to save space.
 module Tables = 
     let memoize f = 
         let t = new Dictionary<_,_>(1000, HashIdentity.Structural)
@@ -1055,7 +1087,6 @@ module Tables =
             else
                 res <- f x; t.[x] <- res;  res
 
-
 /// Interface that defines methods for comparing objects using partial equality relation
 type IPartialEqualityComparer<'T> = 
     inherit IEqualityComparer<'T>
@@ -1063,14 +1094,13 @@ type IPartialEqualityComparer<'T> =
     abstract InEqualityRelation : 'T -> bool
 
 module IPartialEqualityComparer = 
+
     let On f (c: IPartialEqualityComparer<_>) = 
           { new IPartialEqualityComparer<_> with 
                 member __.InEqualityRelation x = c.InEqualityRelation (f x)
                 member __.Equals(x, y) = c.Equals(f x, f y)
                 member __.GetHashCode x = c.GetHashCode(f x) }
     
-
-
     // Wrapper type for use by the 'partialDistinctBy' function
     [<StructuralEquality; NoComparison>]
     type private WrapType<'T> = Wrap of 'T
@@ -1090,27 +1120,37 @@ module IPartialEqualityComparer =
                 if dict.ContainsKey(key) then false else (dict.[key] <- null; true)
             else true)
 
-
 //-------------------------------------------------------------------------
 // Library: Name maps
 //------------------------------------------------------------------------
 
 type NameMap<'T> = Map<string,'T>
+
 type NameMultiMap<'T> = NameMap<'T list>
+
 type MultiMap<'T,'U when 'T : comparison> = Map<'T,'U list>
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameMap = 
 
     let empty = Map.empty
+
     let range m = List.rev (Map.foldBack (fun _ x sofar -> x :: sofar) m [])
+
     let foldBack f (m:NameMap<'T>) z = Map.foldBack f m z
+
     let forall f m = Map.foldBack (fun x y sofar -> sofar && f x y) m true
+
     let exists f m = Map.foldBack (fun x y sofar -> sofar || f x y) m false
+
     let ofKeyedList f l = List.foldBack (fun x acc -> Map.add (f x) x acc) l Map.empty
+
     let ofList l : NameMap<'T> = Map.ofList l
+
     let ofSeq l : NameMap<'T> = Map.ofSeq l
+
     let toList (l: NameMap<'T>) = Map.toList l
+
     let layer (m1 : NameMap<'T>) m2 = Map.foldBack Map.add m1 m2
 
     /// Not a very useful function - only called in one place - should be changed 
@@ -1165,49 +1205,76 @@ module NameMap =
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameMultiMap = 
+
     let existsInRange f (m: NameMultiMap<'T>) = NameMap.exists (fun _ l -> List.exists f l) m
+
     let find v (m: NameMultiMap<'T>) = match m.TryGetValue v with true, r -> r | _ -> []
+
     let add v x (m: NameMultiMap<'T>) = NameMap.add v (x :: find v m) m
+
     let range (m: NameMultiMap<'T>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []
+
     let rangeReversingEachBucket (m: NameMultiMap<'T>) = Map.foldBack (fun _ x sofar -> List.rev x @ sofar) m []
     
     let chooseRange f (m: NameMultiMap<'T>) = Map.foldBack (fun _ x sofar -> List.choose f x @ sofar) m []
+
     let map f (m: NameMultiMap<'T>) = NameMap.map (List.map f) m 
+
     let empty : NameMultiMap<'T> = Map.empty
+
     let initBy f xs : NameMultiMap<'T> = xs |> Seq.groupBy f |> Seq.map (fun (k,v) -> (k,List.ofSeq v)) |> Map.ofSeq 
+
     let ofList (xs: (string * 'T) list) : NameMultiMap<'T> = xs |> Seq.groupBy fst |> Seq.map (fun (k,v) -> (k,List.ofSeq (Seq.map snd v))) |> Map.ofSeq 
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module MultiMap = 
+
     let existsInRange f (m: MultiMap<_,_>) = Map.exists (fun _ l -> List.exists f l) m
+
     let find v (m: MultiMap<_,_>) = match m.TryGetValue v with true, r -> r | _ -> []
+
     let add v x (m: MultiMap<_,_>) = Map.add v (x :: find v m) m
+
     let range (m: MultiMap<_,_>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []
+
     let empty : MultiMap<_,_> = Map.empty
+
     let initBy f xs : MultiMap<_,_> = xs |> Seq.groupBy f |> Seq.map (fun (k,v) -> (k,List.ofSeq v)) |> Map.ofSeq 
 
 type LayeredMap<'Key,'Value  when 'Key : comparison> = Map<'Key,'Value>
 
 type Map<'Key,'Value when 'Key : comparison> with
+
     static member Empty : Map<'Key,'Value> = Map.empty
 
     member x.Values = [ for (KeyValue(_,v)) in x -> v ]
+
     member x.AddAndMarkAsCollapsible (kvs: _[])   = (x,kvs) ||> Array.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
+
     member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
+
     member x.MarkAsCollapsible ()  = x
 
 /// Immutable map collection, with explicit flattening to a backing dictionary 
 [<Sealed>]
 type LayeredMultiMap<'Key,'Value when 'Key : equality and 'Key : comparison>(contents : LayeredMap<'Key,'Value list>) = 
+
     member x.Add (k,v) = LayeredMultiMap(contents.Add(k,v :: x.[k]))
+
     member x.Item with get k = match contents.TryGetValue k with true, l -> l | _ -> []
+
     member x.AddAndMarkAsCollapsible (kvs: _[])  = 
         let x = (x,kvs) ||> Array.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
         x.MarkAsCollapsible()
+
     member x.MarkAsCollapsible() = LayeredMultiMap(contents.MarkAsCollapsible())
+
     member x.TryFind k = contents.TryFind k
+
     member x.TryGetValue k = contents.TryGetValue k
+
     member x.Values = contents.Values |> List.concat
+
     static member Empty : LayeredMultiMap<'Key,'Value> = LayeredMultiMap LayeredMap.Empty
 
 [<AutoOpen>]
@@ -1320,6 +1387,7 @@ module Shim =
     let mutable FileSystem = DefaultFileSystem() :> IFileSystem 
 
     type File with 
+
         static member ReadBinaryChunk (fileName, start, len) = 
             use stream = FileSystem.FileStreamReadShim fileName
             stream.Seek(int64 start, SeekOrigin.Begin) |> ignore

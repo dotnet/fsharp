@@ -2022,15 +2022,8 @@ and Construct =
                 st.PApplyWithProvider((fun (st, provider) -> 
                     let findAttrib (ty:System.Type) (a:CustomAttributeData) = (a.Constructor.DeclaringType.FullName = ty.FullName)  
                     let ty = st.RawSystemType
-#if FX_RESHAPED_REFLECTION
-                    let ty = ty.GetTypeInfo()
-#endif
-#if FX_NO_CUSTOMATTRIBUTEDATA
-                    provider.GetMemberCustomAttributesData(ty) 
-#else
                     ignore provider
                     ty.CustomAttributes
-#endif
                         |> Seq.exists (findAttrib typeof<Microsoft.FSharp.Core.MeasureAttribute>)), m)
                   .PUntaintNoFailure(fun x -> x)
             if isMeasure then TyparKind.Measure else TyparKind.Type
@@ -4045,7 +4038,7 @@ and [<RequireQualifiedAccess>] AnonRecdTypeInfo =
         // Hash all the data to form a unique stamp
         let stamp  = 
             sha1HashInt64 
-                [| for c in ccu.AssemblyName do yield byte c; yield byte (int32 c >>> 8); 
+                [| for c in ccu.AssemblyName do yield byte c; yield byte (int32 c >>> 8)
                    match tupInfo with 
                    | TupInfo.Const b -> yield  (if b then 0uy else 1uy)
                    for id in sortedIds do 

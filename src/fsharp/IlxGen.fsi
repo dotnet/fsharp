@@ -100,4 +100,6 @@ type public IlxAssemblyGenerator =
 
 
 val ReportStatistics : TextWriter -> unit
-val IsValCompiledAsMethod : TcGlobals -> Val -> bool
+
+/// Determine if an F#-declared value, method or function is compiled as a method.
+val IsFSharpValCompiledAsMethod : TcGlobals -> Val -> bool

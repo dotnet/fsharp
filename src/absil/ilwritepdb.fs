@@ -117,12 +117,12 @@ type BinaryChunk =
       addr: int32 }
 
 type idd =
-    { iddCharacteristics: int32;
+    { iddCharacteristics: int32
       iddMajorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddMinorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
-      iddType: int32;
-      iddTimestamp: int32;
-      iddData: byte[];
+      iddType: int32
+      iddTimestamp: int32
+      iddData: byte[]
       iddChunk: BinaryChunk }
 
 //---------------------------------------------------------------------
@@ -143,13 +143,13 @@ let pdbGetCvDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) (cvChunk
         let (offset, size) = (offset + size, path.Length)         // Path to pdb string
         Buffer.BlockCopy(path, 0, buffer, offset, size)
         buffer
-    { iddCharacteristics = 0;                                                   // Reserved
-      iddMajorVersion = 0x0100;                                                 // VersionMajor should be 0x0100
-      iddMinorVersion = 0x504d;                                                 // VersionMinor should be 0x504d
-      iddType = 2;                                                              // IMAGE_DEBUG_TYPE_CODEVIEW
-      iddTimestamp = timestamp;
-      iddData = iddCvBuffer;                                                    // Path name to the pdb file when built
-      iddChunk = cvChunk;
+    { iddCharacteristics = 0                                                    // Reserved
+      iddMajorVersion = 0x0100                                                  // VersionMajor should be 0x0100
+      iddMinorVersion = 0x504d                                                  // VersionMinor should be 0x504d
+      iddType = 2                                                               // IMAGE_DEBUG_TYPE_CODEVIEW
+      iddTimestamp = timestamp
+      iddData = iddCvBuffer                                                     // Path name to the pdb file when built
+      iddChunk = cvChunk
     }
 
 let pdbMagicNumber= 0x4244504dL
@@ -163,19 +163,19 @@ let pdbGetPdbDebugInfo (embeddedPDBChunk:BinaryChunk) (uncompressedLength:int64)
         let (offset, size) = (offset + size, int(stream.Length))   // Uncompressed size
         Buffer.BlockCopy(stream.ToArray(), 0, buffer, offset, size)
         buffer
-    { iddCharacteristics = 0;                                                   // Reserved
-      iddMajorVersion = 0;                                                      // VersionMajor should be 0
-      iddMinorVersion = 0x0100;                                                 // VersionMinor should be 0x0100
-      iddType = 17;                                                             // IMAGE_DEBUG_TYPE_EMBEDDEDPDB
-      iddTimestamp = 0;
-      iddData = iddPdbBuffer;                                                   // Path name to the pdb file when built
-      iddChunk = embeddedPDBChunk;
+    { iddCharacteristics = 0                                                    // Reserved
+      iddMajorVersion = 0                                                       // VersionMajor should be 0
+      iddMinorVersion = 0x0100                                                  // VersionMinor should be 0x0100
+      iddType = 17                                                              // IMAGE_DEBUG_TYPE_EMBEDDEDPDB
+      iddTimestamp = 0
+      iddData = iddPdbBuffer                                                    // Path name to the pdb file when built
+      iddChunk = embeddedPDBChunk
     }
 
 let pdbGetDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) (cvChunk:BinaryChunk) (embeddedPDBChunk:BinaryChunk option) (uncompressedLength:int64) (stream:MemoryStream option) = 
     match stream, embeddedPDBChunk with
     | None, _  | _, None -> [| pdbGetCvDebugInfo mvid timestamp filepath cvChunk |]
-    | Some s, Some chunk -> [| pdbGetCvDebugInfo mvid timestamp filepath cvChunk; pdbGetPdbDebugInfo chunk uncompressedLength s; |]
+    | Some s, Some chunk -> [| pdbGetCvDebugInfo mvid timestamp filepath cvChunk; pdbGetPdbDebugInfo chunk uncompressedLength s |]
 
 // Document checksum algorithms
 let guidSourceHashMD5 = System.Guid(0x406ea660u, 0x64cfus, 0x4c82us, 0xb6uy, 0xf0uy, 0x42uy, 0xd4uy, 0x81uy, 0x72uy, 0xa7uy, 0x99uy) //406ea660-64cf-4c82-b6f0-42d48172a799
@@ -579,14 +579,14 @@ let writePdbInfo showTimes f fpdb info cvChunk =
 
     let res = pdbWriteDebugInfo !pdbw
     for pdbDoc in docs do pdbCloseDocument pdbDoc
-    pdbClose !pdbw f fpdb;
+    pdbClose !pdbw f fpdb
 
     reportTime showTimes "PDB: Closed"
-    [| { iddCharacteristics = res.iddCharacteristics;
-         iddMajorVersion = res.iddMajorVersion;
-         iddMinorVersion = res.iddMinorVersion;
-         iddType = res.iddType;
-         iddTimestamp = info.Timestamp;
+    [| { iddCharacteristics = res.iddCharacteristics
+         iddMajorVersion = res.iddMajorVersion
+         iddMinorVersion = res.iddMinorVersion
+         iddType = res.iddType
+         iddTimestamp = info.Timestamp
          iddData = res.iddData
          iddChunk = cvChunk } |]
 #endif
