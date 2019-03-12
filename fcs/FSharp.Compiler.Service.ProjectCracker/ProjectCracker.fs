@@ -1,6 +1,6 @@
 ﻿namespace FSharp.Compiler.SourceCodeServices
 
-#if !NETSTANDARD1_6
+#if !NETSTANDARD
 open System.Runtime.Serialization.Json
 open System.Runtime
 open System.Diagnostics
@@ -60,7 +60,7 @@ type ProjectCracker =
         let enableLogging = defaultArg enableLogging true
 
                 
-#if NETSTANDARD1_6
+#if NETSTANDARD
         let arguments = [|
             yield projectFileName
             yield enableLogging.ToString()

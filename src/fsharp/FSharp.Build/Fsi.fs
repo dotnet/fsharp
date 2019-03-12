@@ -11,10 +11,6 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open Internal.Utilities
 
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
 //There are a lot of flags on fsi.exe.
 //For now, not all of them are represented in the "Fsi class" object model.
 //The goal is to have the most common/important flags available via the Fsi class, and the
