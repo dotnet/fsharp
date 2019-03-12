@@ -8594,37 +8594,95 @@ and delayRest rest mPrior delayed =
         let mPriorAndLongId = unionRanges mPrior (rangeOfLid longId)
         DelayedDotLookup (rest, mPriorAndLongId) :: delayed
 
+//-------------------------------------------------------------------------
+// TcNameOfExpr: Typecheck "nameof" expressions
+//-------------------------------------------------------------------------
+and TcNameOfExpr cenv env tpenv expr = 
+    match expr with
+    | SynExpr.Ident _
+    | SynExpr.LongIdent(_, LongIdentWithDots _, _, _) as expr ->
+        ignore (TcExprOfUnknownType cenv env tpenv expr)
+    | SynExpr.TypeApp (expr, _, types, _, _, _, m) as fullExpr ->
+        let idents =
+            match expr with
+            | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) -> idents
+            | SynExpr.Ident ident -> [ident]
+            | _ -> []
+        match idents with
+        | [] -> ()
+        | idents ->
+            // try to type check it as type application, like A.B.C<D<G>>
+            match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified env.eNameResEnv env.eAccessRights idents (TypeNameResolutionStaticArgsInfo.FromTyArgs types.Length) PermitDirectReferenceToGeneratedType.No with
+            | ResultOrException.Result tcref ->
+                ignore (TcTypeApp cenv NewTyparsOK NoCheckCxs ItemOccurence.UseInType env tpenv m tcref [] types)
+            | _ ->
+                // now try to check it as generic function, like func<D<G>>
+                ignore (TcExprOfUnknownType cenv env tpenv fullExpr)
+    | _ -> ()
 
 //-------------------------------------------------------------------------
 // TcFunctionApplicationThen: Typecheck "expr x" + projections
 //------------------------------------------------------------------------- 
 
 and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (synArg: SynExpr) atomicFlag delayed = 
-    
     let denv = env.DisplayEnv
     let mArg = synArg.Range
     let mFunExpr = expr.Range
+
+    /// Finds last ident of LongIdent in SynExpr.Ident, LongIdent or TypeApp.
+    /// Type checkes the whole thing as it goes in order to:
+    ///
+    /// * ensure we pass well typed things to `nameof`
+    ///
+    /// * not to loose `FSharpSymbolUse` for `nameof` argument, because we erase it with `Expr.Const(Const.String ...)` further in this function.
+    let (|LastPartOfLongIdentStripParens|_|) expr =
+        let rec findIdents expr =
+            match expr with
+            | SynExpr.Ident ident -> Some ident
+            | SynExpr.TypeApp (expr = expr) -> findIdents expr
+            | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) -> List.tryLast idents
+            | _ -> None
+        findIdents expr
+
+    let rec stripParens expr =
+        match expr with
+        | SynExpr.Paren(expr, _, _, _) -> stripParens expr
+        | _ -> expr
+
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
     // it is an error or a computation expression
     match UnifyFunctionTypeUndoIfFailed cenv denv mFunExpr exprty with
     | ValueSome (domainTy, resultTy) -> 
-
-        // Notice the special case 'seq { ... }'. In this case 'seq' is actually a function in the F# library.
-        // Set a flag in the syntax tree to say we noticed a leading 'seq'
-        match synArg with 
-        | SynExpr.CompExpr (false, isNotNakedRefCell, _comp, _m) -> 
-            isNotNakedRefCell := 
-                !isNotNakedRefCell
-                || 
-                (match expr with 
-                 | ApplicableExpr(_, Expr.Op(TOp.Coerce, _, [Expr.App(Expr.Val(vf, _, _), _, _, _, _)], _), _) when valRefEq cenv.g vf cenv.g.seq_vref -> true 
-                 | _ -> false)
-        | _ -> ()
-
-        let arg, tpenv = TcExpr cenv domainTy env tpenv synArg
-        let exprAndArg, resultTy = buildApp cenv expr resultTy arg mExprAndArg
-        TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
-    | _ -> 
+        match expr with
+        | ApplicableExpr(_, NameOfExpr cenv.g _, _) ->
+            let cleanSynArg = stripParens synArg
+            match cleanSynArg with
+            | LastPartOfLongIdentStripParens lastIdent ->
+                TcNameOfExpr cenv env tpenv cleanSynArg
+                let r = expr.Range
+                // generate fake `range` for the constant the `nameof(..)` we are substituting
+                let constRange = mkRange r.FileName r.Start (mkPos r.StartLine (r.StartColumn + lastIdent.idText.Length + 2)) // `2` are for quotes
+                let replacementExpr = ApplicableExpr(cenv, Expr.Const(Const.String(lastIdent.idText), constRange, cenv.g.string_ty), true)
+                TcDelayed cenv overallTy env tpenv mExprAndArg replacementExpr cenv.g.string_ty ExprAtomicFlag.Atomic delayed
+            | _ -> error (Error(FSComp.SR.expressionHasNoName(), cleanSynArg.Range))
+        | _ ->
+            // Notice the special case 'seq { ... }'. In this case 'seq' is actually a function in the F# library.
+            // Set a flag in the syntax tree to say we noticed a leading 'seq'
+            match synArg with 
+            | SynExpr.CompExpr (false, isNotNakedRefCell, _comp, _m) -> 
+                isNotNakedRefCell := 
+                    !isNotNakedRefCell
+                    || 
+                    (match expr with 
+                     | ApplicableExpr(_, Expr.Op(TOp.Coerce, _, [SeqExpr cenv.g], _), _) -> true 
+                     | _ -> false)
+            | _ -> ()
+            
+            let arg,tpenv = TcExpr cenv domainTy env tpenv synArg
+            let exprAndArg, resultTy = buildApp cenv expr exprty arg mExprAndArg
+            TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
+            
+    | ValueNone -> 
         // OK, 'expr' doesn't have function type, but perhaps 'expr' is a computation expression builder, and 'arg' is '{ ... }' 
         match synArg with 
         | SynExpr.CompExpr (false, _isNotNakedRefCell, comp, _m) -> 
