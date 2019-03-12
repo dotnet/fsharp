@@ -8594,32 +8594,52 @@ and delayRest rest mPrior delayed =
         let mPriorAndLongId = unionRanges mPrior (rangeOfLid longId)
         DelayedDotLookup (rest, mPriorAndLongId) :: delayed
 
-//-------------------------------------------------------------------------
-// TcNameOfExpr: Typecheck "nameof" expressions
-//-------------------------------------------------------------------------
-and TcNameOfExpr cenv env tpenv expr = 
-    match expr with
-    | SynExpr.Ident _
-    | SynExpr.LongIdent(_, LongIdentWithDots _, _, _) as expr ->
-        ignore (TcExprOfUnknownType cenv env tpenv expr)
-    | SynExpr.TypeApp (expr, _, types, _, _, _, m) as fullExpr ->
-        let idents =
-            match expr with
-            | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) -> idents
-            | SynExpr.Ident ident -> [ident]
-            | _ -> []
-        match idents with
-        | [] -> ()
-        | idents ->
-            // try to type check it as type application, like A.B.C<D<G>>
-            match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified env.eNameResEnv env.eAccessRights idents (TypeNameResolutionStaticArgsInfo.FromTyArgs types.Length) PermitDirectReferenceToGeneratedType.No with
-            | ResultOrException.Result tcref ->
-                ignore (TcTypeApp cenv NewTyparsOK NoCheckCxs ItemOccurence.UseInType env tpenv m tcref [] types)
-            | _ ->
-                // now try to check it as generic function, like func<D<G>>
-                ignore (TcExprOfUnknownType cenv env tpenv fullExpr)
-    | _ -> ()
+/// Typecheck "nameof" expressions
+and TcNameOfExpr cenv env tpenv (synArg: SynExpr) = 
 
+    let rec stripParens expr =
+        match expr with
+        | SynExpr.Paren(expr, _, _, _) -> stripParens expr
+        | _ -> expr
+
+    let cleanSynArg = stripParens synArg
+    let m = cleanSynArg.Range
+    let rec check overallTyOpt expr (delayed: DelayedItem list) = 
+        match expr with
+        | LongOrSingleIdent (false, (LongIdentWithDots(longId, _) as lidd), _, _) when longId.Length > 0 ->
+            let ad = env.eAccessRights
+            let id, rest = List.headAndTail longId
+            match ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest true with 
+            | Result modref when delayed.IsEmpty && modref |> List.exists (p23 >> IsEntityAccessible cenv.amap m ad) -> 
+                () // resolved to a module or namespace, done with checks
+            | _ -> 
+                let (TypeNameResolutionInfo(_, staticArgsInfo)) = GetLongIdentTypeNameInfo delayed
+                match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad longId staticArgsInfo PermitDirectReferenceToGeneratedType.No with
+                | Result tcref when IsEntityAccessible cenv.amap m ad tcref -> 
+                    () // resolved to a type name, done with checks
+                | _ -> 
+                    let overallTy = match overallTyOpt with None -> NewInferenceType() | Some t -> t 
+                    let _, _ = TcLongIdentThen cenv overallTy env tpenv lidd delayed
+                    () // checked as an expression, done with checks
+            List.last longId
+
+        | SynExpr.TypeApp (hd, _, types, _, _, _, m) ->
+            check overallTyOpt hd (DelayedTypeApp(types, m, m) :: delayed)
+
+        | SynExpr.Paren(expr, _, _, _) when overallTyOpt.IsNone && delayed.IsEmpty -> 
+            check overallTyOpt expr []
+
+        | SynExpr.Typed (synBodyExpr, synType, _m) when delayed.IsEmpty && overallTyOpt.IsNone ->
+            let tgtTy, _tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType  env tpenv synType
+            check (Some tgtTy) synBodyExpr []
+
+        | _ -> 
+            error (Error(FSComp.SR.expressionHasNoName(), m))
+
+    let lastIdent = check None cleanSynArg [] 
+    let constRange = mkRange m.FileName m.Start (mkPos m.StartLine (m.StartColumn + lastIdent.idText.Length + 2)) // `2` are for quotes
+    Expr.Const(Const.String(lastIdent.idText), constRange, cenv.g.string_ty)
+    
 //-------------------------------------------------------------------------
 // TcFunctionApplicationThen: Typecheck "expr x" + projections
 //------------------------------------------------------------------------- 
@@ -8629,42 +8649,14 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
     let mArg = synArg.Range
     let mFunExpr = expr.Range
 
-    /// Finds last ident of LongIdent in SynExpr.Ident, LongIdent or TypeApp.
-    /// Type checkes the whole thing as it goes in order to:
-    ///
-    /// * ensure we pass well typed things to `nameof`
-    ///
-    /// * not to loose `FSharpSymbolUse` for `nameof` argument, because we erase it with `Expr.Const(Const.String ...)` further in this function.
-    let (|LastPartOfLongIdentStripParens|_|) expr =
-        let rec findIdents expr =
-            match expr with
-            | SynExpr.Ident ident -> Some ident
-            | SynExpr.TypeApp (expr = expr) -> findIdents expr
-            | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) -> List.tryLast idents
-            | _ -> None
-        findIdents expr
-
-    let rec stripParens expr =
-        match expr with
-        | SynExpr.Paren(expr, _, _, _) -> stripParens expr
-        | _ -> expr
-
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
     // it is an error or a computation expression
     match UnifyFunctionTypeUndoIfFailed cenv denv mFunExpr exprty with
     | ValueSome (domainTy, resultTy) -> 
         match expr with
         | ApplicableExpr(_, NameOfExpr cenv.g _, _) ->
-            let cleanSynArg = stripParens synArg
-            match cleanSynArg with
-            | LastPartOfLongIdentStripParens lastIdent ->
-                TcNameOfExpr cenv env tpenv cleanSynArg
-                let r = expr.Range
-                // generate fake `range` for the constant the `nameof(..)` we are substituting
-                let constRange = mkRange r.FileName r.Start (mkPos r.StartLine (r.StartColumn + lastIdent.idText.Length + 2)) // `2` are for quotes
-                let replacementExpr = ApplicableExpr(cenv, Expr.Const(Const.String(lastIdent.idText), constRange, cenv.g.string_ty), true)
-                TcDelayed cenv overallTy env tpenv mExprAndArg replacementExpr cenv.g.string_ty ExprAtomicFlag.Atomic delayed
-            | _ -> error (Error(FSComp.SR.expressionHasNoName(), cleanSynArg.Range))
+            let replacementExpr = TcNameOfExpr cenv env tpenv synArg
+            TcDelayed cenv overallTy env tpenv mExprAndArg (ApplicableExpr(cenv, replacementExpr, true)) cenv.g.string_ty ExprAtomicFlag.Atomic delayed
         | _ ->
             // Notice the special case 'seq { ... }'. In this case 'seq' is actually a function in the F# library.
             // Set a flag in the syntax tree to say we noticed a leading 'seq'
@@ -8695,25 +8687,26 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
 // TcLongIdentThen : Typecheck "A.B.C<D>.E.F ... " constructs
 //------------------------------------------------------------------------- 
 
+and GetLongIdentTypeNameInfo delayed =
+    // Given 'MyOverloadedType<int>.MySubType...' use arity of #given type arguments to help 
+    // resolve type name lookup of 'MyOverloadedType' 
+    // Also determine if type names should resolve to Item.Types or Item.CtorGroup 
+    match delayed with 
+    | DelayedTypeApp (tyargs, _, _) :: (DelayedDot | DelayedDotLookup _) :: _ -> 
+        // cases like 'MyType<int>.Sth' 
+        TypeNameResolutionInfo(ResolveTypeNamesToTypeRefs, TypeNameResolutionStaticArgsInfo.FromTyArgs tyargs.Length)
+
+    | DelayedTypeApp (tyargs, _, _) :: _ -> 
+        // Note, this also covers the case 'MyType<int>.' (without LValue_get), which is needed for VS (when typing)
+        TypeNameResolutionInfo(ResolveTypeNamesToCtors, TypeNameResolutionStaticArgsInfo.FromTyArgs tyargs.Length)
+
+    | _ -> 
+        TypeNameResolutionInfo.Default
+
 and TcLongIdentThen cenv overallTy env tpenv (LongIdentWithDots(longId, _)) delayed =
 
     let ad = env.eAccessRights
-    let typeNameResInfo = 
-        // Given 'MyOverloadedType<int>.MySubType...' use arity of #given type arguments to help 
-        // resolve type name lookup of 'MyOverloadedType' 
-        // Also determine if type names should resolve to Item.Types or Item.CtorGroup 
-        match delayed with 
-        | DelayedTypeApp (tyargs, _, _) :: (DelayedDot | DelayedDotLookup _) :: _ -> 
-            // cases like 'MyType<int>.Sth' 
-            TypeNameResolutionInfo(ResolveTypeNamesToTypeRefs, TypeNameResolutionStaticArgsInfo.FromTyArgs tyargs.Length)
-
-        | DelayedTypeApp (tyargs, _, _) :: _ -> 
-            // Note, this also covers the case 'MyType<int>.' (without LValue_get), which is needed for VS (when typing)
-            TypeNameResolutionInfo(ResolveTypeNamesToCtors, TypeNameResolutionStaticArgsInfo.FromTyArgs tyargs.Length)
-
-        | _ -> 
-            TypeNameResolutionInfo.Default
-
+    let typeNameResInfo = GetLongIdentTypeNameInfo delayed
     let nameResolutionResult = ResolveLongIdentAsExprAndComputeRange cenv.tcSink cenv.nameResolver (rangeOfLid longId) ad env.eNameResEnv typeNameResInfo longId
     TcItemThen cenv overallTy env tpenv nameResolutionResult delayed
 

@@ -4,7 +4,8 @@ namespace FSharp.Core.Unittests
 open System
 open NUnit.Framework
 
-[<TestFixture>]
+exception ABC
+
 type BasicNameOfTests() =    
     let localConstant = 23
     member this.MemberMethod() = 0 
@@ -69,6 +70,31 @@ type BasicNameOfTests() =
         Assert.AreEqual("MemberMethod",b)
 
     [<Test>]
+    member this.``namespace name`` () =
+        let b = nameof(FSharp.Core)
+        Assert.AreEqual("Core",b)
+
+    [<Test>]
+    member this.``module name`` () =
+        let b = nameof(FSharp.Core.Operators)
+        Assert.AreEqual("Operators",b)
+
+    [<Test>]
+    member this.``exception name`` () =
+        let b = nameof(ABC)
+        Assert.AreEqual("ABC",b)
+
+    [<Test>]
+    member this.``nested type name 1`` () =
+        let b = nameof(System.Collections.Generic.List.Enumerator<_>)
+        Assert.AreEqual("Enumerator",b)
+
+    [<Test>]
+    member this.``type name 2`` () =
+        let b = nameof(System.Action<_>)
+        Assert.AreEqual("Action",b)
+
+    [<Test>]
     member this.``member function which is defined below`` () =
         let b = nameof(this.MemberMethodDefinedBelow)
         Assert.AreEqual("MemberMethodDefinedBelow",b)
@@ -131,7 +157,7 @@ type MethodGroupTests() =
 
     [<Test>]
     member this.``multiple argument method group name lookup`` () =
-        let b = nameof(this.MethodGroup1)
+        let b = nameof(this.MethodGroup1 : (float * int64 -> _))
         Assert.AreEqual("MethodGroup1",b)
 
 [<TestFixture>]
@@ -143,8 +169,9 @@ type FrameworkMethodTests() =
 
     [<Test>]
     member this.``static class function name`` () =
-        let b = nameof(Tuple.Create)
+        let b = nameof(System.Tuple.Create)
         Assert.AreEqual("Create",b)
+
 
 type CustomUnionType =
 | OptionA of string
@@ -226,3 +253,4 @@ type Person =
         | x when x = nameof __.Name -> { __ with Name = string value }
         | x when x = nameof __.Age -> { __ with Age = value :?> int }
         | _ -> __
+
