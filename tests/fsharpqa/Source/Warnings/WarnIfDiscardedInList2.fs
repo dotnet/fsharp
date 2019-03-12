@@ -1,5 +1,5 @@
-// #Warnings
-//<Expects status="Warning" span="(15,19)" id="FS3222"></Expects>
+// This no longer gives a warning because implicit yields are now allowed
+
 
 // stupid things to make the sample compile
 let div _ _ = 1  
