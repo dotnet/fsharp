@@ -142,7 +142,7 @@ type BasicNameOfTests() =
         Assert.AreEqual("local property with encapsulated name and %.f",b)
 
 [<TestFixture>]
-type MethodGroupTests() =
+type MethodGroupNameOfTests() =
     member this.MethodGroup() = ()    
     member this.MethodGroup(i:int) = ()
 
@@ -174,11 +174,53 @@ type FrameworkMethodTests() =
 
 
 type CustomUnionType =
-| OptionA of string
+| OptionA 
 | OptionB of int * string
 
+type CustomRecordType =
+  { X: int; Y: int }
+
+[<Measure>] type Milliquacks 
+
 [<TestFixture>]
-type OperatorNameTests() =    
+type UnionAndRecordNameOfTests() =    
+
+
+    [<Test>]
+    member this.``measure 1`` () = 
+        let b = nameof(Milliquacks)
+        Assert.AreEqual("Milliquacks",b)
+
+    [<Test>]
+    member this.``record case 1`` () = 
+        let sample = Unchecked.defaultof<CustomRecordType>
+        let b = nameof(sample.X)
+        Assert.AreEqual("X",b)
+        let b = nameof(sample.Y)
+        Assert.AreEqual("Y",b)
+
+    [<Test>]
+    member this.``union case 1`` () = 
+        let b = nameof(OptionA)
+        Assert.AreEqual("OptionA",b)
+
+    [<Test>]
+    member this.``union case 2`` () = 
+        let b = nameof(OptionB)
+        Assert.AreEqual("OptionB",b)
+
+[<TestFixture>]
+type AttributeNameOfTests() =    
+
+    [<Test; System.Obsolete("test " + nameof(string))>]
+    member this.``ok in attribute`` () = 
+        let t = typeof<AttributeNameOfTests>.GetMethod("ok in attribute")
+        let attrs = t.GetCustomAttributes(typeof<ObsoleteAttribute>, false)
+        let attr = attrs.[0] :?> ObsoleteAttribute
+        Assert.AreEqual(attr.Message, "test string")
+
+[<TestFixture>]
+type OperatorNameOfTests() =    
 
     [<Test>]
     member this.``lookup name of typeof operator`` () =
@@ -253,4 +295,5 @@ type Person =
         | x when x = nameof __.Name -> { __ with Name = string value }
         | x when x = nameof __.Age -> { __ with Age = value :?> int }
         | _ -> __
+
 
