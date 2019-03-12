@@ -1625,26 +1625,42 @@ type UsingMSBuild() as this =
             // The disposals should be at least one less 
             let c = countCreations()
             let d = countDisposals()
-            Assert.IsTrue(d < i, "Check1, countDisposals() < i, iteration " + string i + "countDisposals() = " + string d)
+
+            // Creations should always be greater or equal to disposals
             Assert.IsTrue(c >= d, "Check2, countCreations() >= countDisposals(), iteration " + string i + ", countCreations() = " + string c + ", countDisposals() = " + string d)
-            Assert.IsTrue((c = i), "Check3, countCreations() = i, iteration " + string i + ", countCreations() = " + string c)
+
+            // Creations can run ahead of iterations if the background checker resurrects the builder for a project
+            // even after we've moved on from it.
+            Assert.IsTrue((c >= i), "Check3, countCreations() >= i, iteration " + string i + ", countCreations() = " + string c)
+
             if not clearing then 
                 // By default we hold 3 build incrementalBuilderCache entries and 5 typeCheckInfo entries, so if we're not clearing
                 // there should be some roots to project builds still present
                 if i >= 3 then 
-                    Assert.IsTrue(i >= d + 3, "Check4a, i >= countDisposals() + 3, iteration " + string i + ", i = " + string i + ", countDisposals() = " + string d)
+                    Assert.IsTrue(c >= d + 3, "Check4a, c >= countDisposals() + 3, iteration " + string i + ", i = " + string i + ", countDisposals() = " + string d)
                     printfn "Check4a2, i = %d, countInvaldiationHandlersRemoved() = %d" i (countInvaldiationHandlersRemoved())
 
             // If we forcefully clear out caches and force a collection, then we can say much stronger things...
             if clearing then 
                 ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients(this.VS)
-                Assert.IsTrue((i = countDisposals()), "Check4b, countCreations() = countDisposals(), iteration " + string i)
-                Assert.IsTrue(countInvaldiationHandlersAdded() - countInvaldiationHandlersRemoved() = 0, "Check4b2, all invlidation handlers removed, iteration " + string i)
+                let c = countCreations()
+                let d = countDisposals()
+
+                // Creations should be equal to disposals after a `ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients`
+                Assert.IsTrue((c = d), "Check4b, countCreations() = countDisposals(), iteration " + string i)
+                Assert.IsTrue((countInvaldiationHandlersAdded() = countInvaldiationHandlersRemoved()), "Check4b2, all invlidation handlers removed, iteration " + string i)
         
-        Assert.IsTrue(countCreations() = 50, "Check5, at end, countCreations() = 50")
+        let c = countCreations()
+        let d = countDisposals()
+        Assert.IsTrue(c >= 50, "Check5, at end, countCreations() >= 50")
+
         ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients(this.VS)
-        Assert.IsTrue(countDisposals() = 50, "Check6b, at end, countDisposals() = 50 after explicit clearing")
-        Assert.IsTrue(countInvaldiationHandlersAdded() - countInvaldiationHandlersRemoved() = 0, "Check6b2, at end, all invalidation handlers removed after explicit cleraring")
+
+        let c = countCreations()
+        let d = countDisposals()
+        // Creations should be equal to disposals after a `ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients`
+        Assert.IsTrue((c = d), "Check6b, at end, countCreations() = countDisposals() after explicit clearing")
+        Assert.IsTrue((countInvaldiationHandlersAdded() = countInvaldiationHandlersRemoved()) = 0, "Check6b2, at end, all invalidation handlers removed after explicit cleraring")
         checkConfigsDisposed()
 
     [<Test;Category("TypeProvider"); Category("Expensive")>]
