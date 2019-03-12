@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>netstandard1.6</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>FSharp.Compiler.Interactive.Settings</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1182;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>

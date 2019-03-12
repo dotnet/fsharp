@@ -85,12 +85,6 @@ module internal ExtensionTyping =
 
         /// Map the TyconRef objects, if any
         member RemapTyconRefs : (obj -> obj) -> ProvidedTypeContext 
-           
-#if FX_NO_CUSTOMATTRIBUTEDATA
-    type CustomAttributeData = Microsoft.FSharp.Core.CompilerServices.IProvidedCustomAttributeData
-    type CustomAttributeNamedArgument = Microsoft.FSharp.Core.CompilerServices.IProvidedCustomAttributeNamedArgument
-    type CustomAttributeTypedArgument = Microsoft.FSharp.Core.CompilerServices.IProvidedCustomAttributeTypedArgument
-#endif
 
     type [<AllowNullLiteral; Sealed; Class>] 
         ProvidedType =
