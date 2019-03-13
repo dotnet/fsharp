@@ -19,7 +19,7 @@ namespace System.Numerics
     // NOTE: 0 has two repns (+1,0) or (-1,0).
     [<Struct>]
     [<CustomEquality; CustomComparison>]
-#if !NETSTANDARD1_6
+#if !NETSTANDARD
     [<StructuredFormatDisplay("{StructuredDisplayString}I")>]
 #endif
     type BigInteger(signInt:int, v : BigNat) =
