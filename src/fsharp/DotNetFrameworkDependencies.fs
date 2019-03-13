@@ -65,11 +65,11 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
 
             if not (assemblies.ContainsKey(referenceName)) then
                 try
-                    let asm = System.Reflection.Assembly.LoadFrom(path)
                     assemblies.Add(referenceName, path) |> ignore
-                    for reference in asm.GetReferencedAssemblies() do
-                        // System.Private.CoreLib doesn't load with reflection
-                        if reference.Name <> "System.Private.CoreLib" then
+                    if referenceName <> "System.Private.CoreLib" then
+                        let asm = System.Reflection.Assembly.LoadFrom(path)
+                        for reference in asm.GetReferencedAssemblies() do
+                            // System.Private.CoreLib doesn't load with reflection
                             traverseDependencies reference.Name
                 with e -> ()
 
