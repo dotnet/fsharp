@@ -278,6 +278,27 @@ module M3 =
       1 // warning
 
 
+type OffsideCheck2(a:int,
+    b:int, c:int, // no warning
+    d:int, e:int,
+    f:int) =
+    static member M(a:int,
+        b:int, c:int, // no warning
+        d:int, e:int,
+        f:int) = 1
+
+type OffsideCheck3(a:int,
+ b:int, c:int, // no warning
+ d:int, e:int,
+ f:int) =
+    static member M(a:int,
+     b:int, c:int, // no warning
+     d:int, e:int,
+     f:int) = 1
+
+
+
+
 
 
 
