@@ -4068,12 +4068,6 @@
   <data name="tcAnonRecdFieldNameMismatch" xml:space="preserve">
     <value>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</value>
   </data>
-  <data name="expressionHasNoName" xml:space="preserve">
-    <value>Expression does not have a name.</value>
-  </data>
-  <data name="chkNoFirstClassNameOf" xml:space="preserve">
-    <value>First-class uses of the 'nameof' operator is not permitted.</value>
-  </data>
   <data name="keywordDescriptionAbstract" xml:space="preserve">
     <value>Indicates a method that either has no implementation in the type in which it is declared or that is virtual and has a default implementation.</value>
   </data>
@@ -4398,6 +4392,12 @@
   </data>
   <data name="tcCopyAndUpdateNeedsRecordType" xml:space="preserve">
     <value>The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</value>
+  </data>
+  <data name="expressionHasNoName" xml:space="preserve">
+    <value>Expression does not have a name.</value>
+  </data>
+  <data name="chkNoFirstClassNameOf" xml:space="preserve">
+    <value>First-class uses of the 'nameof' operator is not permitted.</value>
   </data>
   <data name="chkInvalidFunctionParameterType" xml:space="preserve">
     <value>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</value>
