@@ -4896,7 +4896,7 @@ module private ScriptPreprocessClosure =
         applyCommandLineArgs tcConfigB
 
         match basicReferences with 
-        | None -> basicReferencesForScriptLoadClosure (useFsiAuxLib assumeDotNetFramework) |> List.iter(fun f->tcConfigB.AddReferencedAssemblyByPath(range0, f)) // Add script references
+        | None -> basicReferencesForScriptLoadClosure useFsiAuxLib assumeDotNetFramework |> List.iter(fun f-> tcConfigB.AddReferencedAssemblyByPath(range0, f)) // Add script references
         | Some rs -> for m, r in rs do tcConfigB.AddReferencedAssemblyByPath(m, r)
 
         tcConfigB.resolutionEnvironment <-
