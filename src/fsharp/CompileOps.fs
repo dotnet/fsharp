@@ -3504,7 +3504,7 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
             let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
             if tcConfig.framework then 
                 for s in defaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework do
-                    yield AssemblyReference(rangeStartup, s, None)
+                    yield AssemblyReference(rangeStartup, (if s.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then s else s+".dll"), None)
 
             if tcConfig.useFsiAuxLib then
                 let name = Path.Combine(tcConfig.fsharpBinariesDir, getFsiLibraryName + ".dll")
@@ -4896,7 +4896,7 @@ module private ScriptPreprocessClosure =
         applyCommandLineArgs tcConfigB
 
         match basicReferences with 
-        | None -> basicReferencesForScriptLoadClosure useFsiAuxLib assumeDotNetFramework |> List.iter(fun f-> tcConfigB.AddReferencedAssemblyByPath(range0, f)) // Add script references
+        | None -> (basicReferencesForScriptLoadClosure useFsiAuxLib assumeDotNetFramework) |> List.iter(fun f->tcConfigB.AddReferencedAssemblyByPath(range0, f)) // Add script references
         | Some rs -> for m, r in rs do tcConfigB.AddReferencedAssemblyByPath(m, r)
 
         tcConfigB.resolutionEnvironment <-

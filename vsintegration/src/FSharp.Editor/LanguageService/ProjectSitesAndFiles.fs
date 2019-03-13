@@ -66,7 +66,7 @@ type private ProjectSiteOfSingleFile(sourceFile) =
         let assumeDotNetFramework = true
         let defaultReferences = 
                 [ for r in CompilerEnvironment.DefaultReferencesForOrphanSources(assumeDotNetFramework) do 
-                    yield sprintf "-r:%s" r ]
+                    yield sprintf "-r:%s%s" r (if r.EndsWith(".dll",StringComparison.OrdinalIgnoreCase) then "" else ".dll") ]
         (flags @ defaultReferences)
         |> List.toArray 
         |> Array.choose (fun flag -> if flag.StartsWith("-r:") then Some flag.[3..] elif flag.StartsWith("--reference:") then Some flag.[12..] else None)
