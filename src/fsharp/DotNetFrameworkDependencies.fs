@@ -125,11 +125,11 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             getDesktopDefaultReferences useFsiAuxLib
         else
             // Coreclr supports netstandard assemblies only for now
-            getDependenciesOf [
+            (getDependenciesOf [
                 yield Path.Combine(frameworkDir, "netstandard.dll");
                 yield getDefaultFSharpCoreReference;
                 if useFsiAuxLib then yield getFsiLibraryName
-            ] |> Seq.toList
+            ]).Values |> Seq.toList
 
     let defaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework =
         fetchPathsForDefaultReferencesForScriptsAndOutOfProjectSources false assumeDotNetFramework
