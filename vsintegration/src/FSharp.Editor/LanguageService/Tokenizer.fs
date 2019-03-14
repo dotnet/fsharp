@@ -20,6 +20,8 @@ open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.Core.Imaging
 open Microsoft.VisualStudio.Imaging
 
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp
+
 [<RequireQualifiedAccess>]
 type internal LexerSymbolKind = 
     | Ident = 0
