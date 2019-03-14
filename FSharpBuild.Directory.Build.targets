@@ -2,10 +2,6 @@
 
   <Import Project="FSharp.Profiles.props" />
 
-  <PropertyGroup>
-    <XlfLanguages>en;$(XlfLanguages)</XlfLanguages>
-  </PropertyGroup>
-
   <PropertyGroup Condition="'$(UseAssetTargetFallback)' == 'true'">
     <!--
     HACK: Necessary because the `netstandard1.6` version of FSharp.Compiler.Private requires a package that isn't
