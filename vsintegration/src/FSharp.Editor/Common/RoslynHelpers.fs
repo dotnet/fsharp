@@ -15,6 +15,7 @@ open FSharp.Compiler.Layout
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Range
 open Microsoft.VisualStudio.FSharp.Editor.Logging
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 [<RequireQualifiedAccess>]
 module internal RoslynHelpers =
