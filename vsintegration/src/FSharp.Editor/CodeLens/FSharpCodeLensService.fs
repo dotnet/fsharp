@@ -15,6 +15,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Classification
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 
 open FSharp.Compiler
 open FSharp.Compiler.Ast
@@ -30,6 +31,8 @@ open Microsoft.VisualStudio.Text.Classification
 open Microsoft.VisualStudio.Text.Formatting
 
 open Internal.Utilities.StructuredFormat
+
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Utilities
 
 type internal CodeLens(taggedText, computed, fullTypeSignature, uiElement) =
     member val TaggedText: Async<(ResizeArray<Layout.TaggedText> * QuickInfoNavigation) option> = taggedText

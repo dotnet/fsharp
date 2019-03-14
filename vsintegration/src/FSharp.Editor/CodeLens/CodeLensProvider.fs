@@ -19,6 +19,7 @@ open Microsoft.VisualStudio.Text.Classification
 open Microsoft.VisualStudio.ComponentModelHost
 open System.Threading
 open Microsoft.VisualStudio.FSharp.Editor.Logging
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Utilities
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
 [<Export(typeof<IViewTaggerProvider>)>]
