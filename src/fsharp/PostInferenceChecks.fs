@@ -198,7 +198,10 @@ type cenv =
       isInternalTestSpanStackReferring: bool
       // outputs
       mutable usesQuotations : bool
-      mutable entryPointGiven:bool  }
+      mutable entryPointGiven:bool 
+      
+      /// Callback required for quotation generation
+      tcVal: ConstraintSolver.TcValF }
 
 /// Check if the value is an argument of a function
 let IsValArgument env (v: Val) =
@@ -939,7 +942,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =
 
             // Translate to quotation data
             try 
-                let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, QuotationTranslator.IsReflectedDefinition.No) 
+                let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.No) 
                 let qdata = QuotationTranslator.ConvExprPublic qscope QuotationTranslator.QuotationTranslationEnv.Empty ast  
                 let typeDefs, spliceTypes, spliceExprs = qscope.Close()
                 match savedConv.Value with 
@@ -1718,7 +1721,7 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
                       | Expr.TyLambda (_, tps, b, _, _) -> tps, b, applyForallTy g ety (List.map mkTyparTy tps)
                       | _ -> [], bindRhs, ety
                     let env = QuotationTranslator.QuotationTranslationEnv.Empty.BindTypars tps
-                    let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, QuotationTranslator.IsReflectedDefinition.Yes) 
+                    let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.Yes) 
                     QuotationTranslator.ConvExprPublic qscope env taue  |> ignore
                     let _, _, argExprs = qscope.Close()
                     if not (isNil argExprs) then 
@@ -2256,7 +2259,7 @@ and CheckModuleSpec cenv env x =
         let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
         CheckDefnInModule cenv env rhs 
 
-let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, denv , mexpr, extraAttribs, (isLastCompiland:bool*bool), isInternalTestSpanStackReferring) =
+let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcVal, denv , mexpr, extraAttribs, (isLastCompiland:bool*bool), isInternalTestSpanStackReferring) =
     let cenv = 
         { g =g  
           reportErrors=reportErrors 
@@ -2272,7 +2275,8 @@ let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, vi
           viewCcu= viewCcu
           isLastCompiland=isLastCompiland
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
-          entryPointGiven=false}
+          entryPointGiven=false
+          tcVal = tcVal}
     
     // Certain type equality checks go faster if these TyconRefs are pre-resolved.
     // This is because pre-resolving allows tycon equality to be determined by pointer equality on the entities.
@@ -2295,7 +2299,7 @@ let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, vi
           reflect=false
           external=false 
           returnScope = 0
-          isInAppExpr = false }
+          isInAppExpr = false  }
 
     CheckModuleExpr cenv env mexpr
     CheckAttribs cenv env extraAttribs

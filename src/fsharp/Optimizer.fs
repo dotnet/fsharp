@@ -2919,7 +2919,6 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
                   let expr2 = mkMemberLambdas m tps ctorThisValOpt None vsl (bodyR, bodyty)
                   CurriedLambdaValue (lambdaId, arities, bsize, expr2, ety) 
                   
-
         let estimatedSize = 
             match vspec with
             | Some v when v.IsCompiledAsTopLevel -> methodDefnTotalSize

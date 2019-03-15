@@ -668,7 +668,7 @@ module private PrintTypes =
             PrintIL.layoutILTypeRef denv tref ++ argsL
         | FSAttrib vref -> 
             // REVIEW: this is not trimming "Attribute" 
-            let _,_,rty,_ = GetTypeOfMemberInMemberForm denv.g vref
+            let _, _cxs, _, rty, _ = GetTypeOfMemberInMemberForm denv.g vref
             let rty = GetFSharpViewOfReturnType denv.g rty
             let tcref = tcrefOfAppTy denv.g rty
             layoutTyconRef denv tcref ++ argsL

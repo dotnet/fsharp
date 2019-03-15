@@ -723,6 +723,8 @@ type UncurriedArgInfos = (TType * ArgReprInfo) list
 
 type CurriedArgInfos = UncurriedArgInfos list
 
+type TraitWitnessInfos = TraitWitnessInfo list
+
 val destTopForallTy : TcGlobals -> ValReprInfo -> TType -> Typars * TType 
 
 val GetTopTauTypeInFSharpForm     : TcGlobals -> ArgReprInfo list list -> TType -> range -> CurriedArgInfos * TType
@@ -733,7 +735,7 @@ val IsCompiledAsStaticProperty    : TcGlobals -> Val -> bool
 
 val IsCompiledAsStaticPropertyWithField : TcGlobals -> Val -> bool
 
-val GetTopValTypeInCompiledForm   : TcGlobals -> ValReprInfo -> TType -> range -> Typars * CurriedArgInfos * TType option * ArgReprInfo
+val GetTopValTypeInCompiledForm   : TcGlobals -> ValReprInfo -> TType -> range -> Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
 
 val GetFSharpViewOfReturnType     : TcGlobals -> TType option -> TType
 
@@ -829,6 +831,10 @@ val traitsAEquivAux           : Erasure -> TcGlobals -> TypeEquivEnv -> TraitCon
 
 val traitsAEquiv              :            TcGlobals -> TypeEquivEnv -> TraitConstraintInfo  -> TraitConstraintInfo  -> bool
 
+val traitKeysAEquivAux        : Erasure -> TcGlobals -> TypeEquivEnv -> TraitWitnessInfo  -> TraitWitnessInfo  -> bool
+
+val traitKeysAEquiv           :            TcGlobals -> TypeEquivEnv -> TraitWitnessInfo  -> TraitWitnessInfo  -> bool
+
 val typarConstraintsAEquivAux : Erasure -> TcGlobals -> TypeEquivEnv -> TyparConstraint      -> TyparConstraint      -> bool
 
 val typarConstraintsAEquiv    :            TcGlobals -> TypeEquivEnv -> TyparConstraint      -> TyparConstraint      -> bool
@@ -884,11 +890,11 @@ val normalizeMeasure : TcGlobals -> Measure -> Measure
 
 val GetTypeOfMemberInFSharpForm : TcGlobals -> ValRef -> Typars * CurriedArgInfos * TType * ArgReprInfo
 
-val GetTypeOfMemberInMemberForm : TcGlobals -> ValRef -> Typars * CurriedArgInfos * TType option * ArgReprInfo
+val GetTypeOfMemberInMemberForm : TcGlobals -> ValRef -> Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
 
-val GetTypeOfIntrinsicMemberInCompiledForm : TcGlobals -> ValRef -> Typars * CurriedArgInfos * TType option * ArgReprInfo
+val GetTypeOfIntrinsicMemberInCompiledForm : TcGlobals -> ValRef -> Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
 
-val GetMemberTypeInMemberForm : TcGlobals -> MemberFlags -> ValReprInfo -> TType -> range -> Typars * CurriedArgInfos * TType option * ArgReprInfo
+val GetMemberTypeInMemberForm : TcGlobals -> MemberFlags -> ValReprInfo -> TType -> range -> Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
 
 /// Returns (parentTypars,memberParentTypars,memberMethodTypars,memberToParentInst,tinst)
 val PartitionValTyparsForApparentEnclosingType : TcGlobals -> Val -> (Typars * Typars * Typars * TyparInst * TType list) option
@@ -2276,4 +2282,14 @@ val BindUnitVars : TcGlobals -> (Val list * ArgReprInfo list * Expr) -> Val list
 val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
 
 val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
+
+val GenWitnessArgTys: TraitWitnessInfo -> TType list list
+
+val GenWitnessTys: TcGlobals -> TraitWitnessInfos -> TType list
+
+val GenWitnessTy: TcGlobals -> TraitWitnessInfo -> TType 
+
+val GetTraitConstraintInfosOfTypars: TcGlobals -> Typars -> TraitConstraintInfo list
+
+val GetTraitWitnessInfosOfTypars: TcGlobals -> parentTypars: Typars -> typars: Typars -> TraitWitnessInfos
 

@@ -905,6 +905,13 @@ let rec traitsAEquivAux erasureFlag g aenv (TTrait(tys1, nm, mf1, argtys, rty, _
    returnTypesAEquivAux erasureFlag g aenv rty rty2 &&
    List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) argtys argtys2
 
+and traitKeysAEquivAux erasureFlag g aenv (TraitWitnessInfo(tys1, nm, mf1, argtys, rty)) (TraitWitnessInfo(tys2, nm2, mf2, argtys2, rty2)) =
+   mf1 = mf2 &&
+   nm = nm2 &&
+   ListSet.equals (typeAEquivAux erasureFlag g aenv) tys1 tys2 &&
+   returnTypesAEquivAux erasureFlag g aenv rty rty2 &&
+   List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) argtys argtys2
+
 and returnTypesAEquivAux erasureFlag g aenv rty rty2 =
     match rty, rty2 with  
     | None, None -> true
@@ -1020,6 +1027,7 @@ and typeEquivAux erasureFlag g ty1 ty2 = typeAEquivAux erasureFlag g TypeEquivEn
 let typeAEquiv g aenv ty1 ty2 = typeAEquivAux EraseNone g aenv ty1 ty2
 let typeEquiv g ty1 ty2 = typeEquivAux EraseNone g ty1 ty2
 let traitsAEquiv g aenv t1 t2 = traitsAEquivAux EraseNone g aenv t1 t2
+let traitKeysAEquiv g aenv t1 t2 = traitKeysAEquivAux EraseNone g aenv t1 t2
 let typarConstraintsAEquiv g aenv c1 c2 = typarConstraintsAEquivAux EraseNone g aenv c1 c2
 let typarsAEquiv g aenv d1 d2 = typarsAEquivAux EraseNone g aenv d1 d2
 let returnTypesAEquiv g aenv t1 t2 = returnTypesAEquivAux EraseNone g aenv t1 t2
@@ -1541,7 +1549,10 @@ let tryDestRefTupleTy g ty =
     if isRefTupleTy g ty then destRefTupleTy g ty else [ty]
 
 type UncurriedArgInfos = (TType * ArgReprInfo) list 
+
 type CurriedArgInfos = (TType * ArgReprInfo) list list
+
+type TraitWitnessInfos = TraitWitnessInfo list
 
 // A 'tau' type is one with its type parameters stripped off 
 let GetTopTauTypeInFSharpForm g (curriedArgInfos: ArgReprInfo list list) tau m =
@@ -2242,8 +2253,21 @@ let checkMemberVal membInfo arity m =
 let checkMemberValRef (vref:ValRef) =
     checkMemberVal vref.MemberInfo vref.ValReprInfo vref.Range
      
+// Get information about the as-ye-unsolved constraints for a set of typars
+let GetTraitConstraintInfosOfTypars g (tps: Typars) = 
+    let cxs = tps |> List.collect (fun tp -> tp.Constraints |> List.choose (fun cx -> match cx with TyparConstraint.MayResolveMember(traitInfo, _) -> Some traitInfo | _ -> None))
+    let cxs = cxs |> ListSet.setify (traitsAEquiv g TypeEquivEnv.Empty)
+    cxs
+
+// Get information about the runtime witnesses needed for a set of generalized typars
+let GetTraitWitnessInfosOfTypars g parentTypars tps = 
+    let tps = tps |> List.filter (fun tp -> not (parentTypars |> List.exists (typarEq tp))) 
+    let cxs = GetTraitConstraintInfosOfTypars g tps
+    cxs |> List.map (fun cx -> cx.TraitKey)
+
 let GetTopValTypeInCompiledForm g topValInfo ty m =
     let tps, paramArgInfos, rty, retInfo = GetTopValTypeInFSharpForm g topValInfo ty m
+    let witnessInfos = GetTraitWitnessInfosOfTypars g [] tps // TODO: parentTypars
     // Eliminate lone single unit arguments
     let paramArgInfos = 
         match paramArgInfos, topValInfo.ArgInfos with 
@@ -2258,7 +2282,7 @@ let GetTopValTypeInCompiledForm g topValInfo ty m =
         | _ -> 
             paramArgInfos
     let rty = if isUnitTy g rty then None else Some rty
-    (tps, paramArgInfos, rty, retInfo)
+    (tps, witnessInfos, paramArgInfos, rty, retInfo)
      
 // Pull apart the type for an F# value that represents an object model method
 // and see the "member" form for the type, i.e. 
@@ -2270,6 +2294,7 @@ let GetTopValTypeInCompiledForm g topValInfo ty m =
 // many arguments the method takes etc.
 let GetMemberTypeInMemberForm g memberFlags topValInfo ty m =
     let tps, paramArgInfos, rty, retInfo = GetMemberTypeInFSharpForm g memberFlags topValInfo ty m
+    let witnessInfos = GetTraitWitnessInfosOfTypars g [] tps // TODO: parentTypars
     // Eliminate lone single unit arguments
     let paramArgInfos = 
         match paramArgInfos, topValInfo.ArgInfos with 
@@ -2284,7 +2309,7 @@ let GetMemberTypeInMemberForm g memberFlags topValInfo ty m =
         | _ -> 
             paramArgInfos
     let rty = if isUnitTy g rty then None else Some rty
-    (tps, paramArgInfos, rty, retInfo)
+    (tps, witnessInfos, paramArgInfos, rty, retInfo)
 
 let GetTypeOfMemberInMemberForm g (vref:ValRef) =
     //assert (not vref.IsExtensionMember)
@@ -2326,7 +2351,7 @@ let PartitionValRefTypars g (vref: ValRef) = PartitionValTypars g vref.Deref
 /// Get the arguments for an F# value that represents an object model method 
 let ArgInfosOfMemberVal g (v:Val) = 
     let membInfo, topValInfo = checkMemberVal v.MemberInfo v.ValReprInfo v.Range
-    let _, arginfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo v.Type v.Range
+    let _, _cxs, arginfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo v.Type v.Range
     arginfos
 
 let ArgInfosOfMember g (vref: ValRef) = 
@@ -2344,13 +2369,13 @@ let ReturnTypeOfPropertyVal g (v:Val) =
     let membInfo, topValInfo = checkMemberVal v.MemberInfo v.ValReprInfo v.Range
     match membInfo.MemberFlags.MemberKind with 
     | MemberKind.PropertySet ->
-        let _, arginfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo v.Type v.Range
+        let _, _cxs, arginfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo v.Type v.Range
         if not arginfos.IsEmpty && not arginfos.Head.IsEmpty then
             arginfos.Head |> List.last |> fst 
         else
             error(Error(FSComp.SR.tastValueDoesNotHaveSetterType(), v.Range))
     | MemberKind.PropertyGet ->
-        let _, _, rty, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo v.Type v.Range
+        let _, _cxs, _, rty, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo v.Type v.Range
         GetFSharpViewOfReturnType g rty
     | _ -> error(InternalError("ReturnTypeOfPropertyVal", v.Range))
 
@@ -2363,7 +2388,7 @@ let ArgInfosOfPropertyVal g (v:Val) =
     | MemberKind.PropertyGet ->
         ArgInfosOfMemberVal g v |> List.concat
     | MemberKind.PropertySet ->
-        let _, arginfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo v.Type v.Range
+        let _, _cxs, arginfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo v.Type v.Range
         if not arginfos.IsEmpty && not arginfos.Head.IsEmpty then
             arginfos.Head |> List.frontAndBack |> fst 
         else
@@ -7616,9 +7641,28 @@ let LinearizeTopMatch g parent = function
 
 
 //---------------------------------------------------------------------------
-// XmlDoc signatures
+// Witnesses
 //---------------------------------------------------------------------------
 
+let GenWitnessArgTys (traitInfo: TraitWitnessInfo) =
+    let (TraitWitnessInfo(tys, _nm, memFlags, argtys, _rty)) = traitInfo
+    let argtysl = List.map List.singleton argtys
+    match tys with 
+    | _ when not memFlags.IsInstance  -> argtysl
+    | [ty] when memFlags.IsInstance   -> [ty] :: argtysl
+    | _ -> failwith "can't generate choosy instance members yet" 
+
+let GenWitnessTy (g: TcGlobals) (traitInfo: TraitWitnessInfo) =
+    let rty = match traitInfo.ReturnType with None -> g.unit_ty | Some ty -> ty
+    let argtysl = GenWitnessArgTys traitInfo
+    mkMethodTy g argtysl rty 
+
+let GenWitnessTys (g: TcGlobals) (cxs: TraitWitnessInfos) =
+    cxs |> List.map (GenWitnessTy g)
+
+//---------------------------------------------------------------------------
+// XmlDoc signatures
+//---------------------------------------------------------------------------
 
 let commaEncs strs  = String.concat "," strs
 let angleEnc  str   = "{" + str + "}" 
@@ -7700,9 +7744,9 @@ and tyargsEnc g (gtpsType, gtpsMethod) args =
      | [a] when (match (stripTyEqns g a) with TType_measure _ -> true | _ -> false) -> ""  // float<m> should appear as just "float" in the generated .XML xmldoc file
      | _ -> angleEnc (commaEncs (List.map (typeEnc g (gtpsType, gtpsMethod)) args)) 
 
-let XmlDocArgsEnc g (gtpsType, gtpsMethod) argTs =
-  if isNil argTs then "" 
-  else "(" + String.concat "," (List.map (typeEnc g (gtpsType, gtpsMethod)) argTs) + ")"
+let XmlDocArgsEnc g (gtpsType, gtpsMethod) argTys =
+  if isNil argTys then "" 
+  else "(" + String.concat "," (List.map (typeEnc g (gtpsType, gtpsMethod)) argTys) + ")"
 
 let buildAccessPath (cp : CompilationPath option) =
     match cp with
@@ -7713,16 +7757,17 @@ let buildAccessPath (cp : CompilationPath option) =
 let prependPath path name = if path = "" then name else path + "." + name
 
 let XmlDocSigOfVal g path (v:Val) =
-  let parentTypars, methTypars, argInfos, prefix, path, name = 
+  let parentTypars, methTypars, cxs, argInfos, prefix, path, name = 
 
     // CLEANUP: this is one of several code paths that treat module values and members 
     // separately when really it would be cleaner to make sure GetTopValTypeInFSharpForm, GetMemberTypeInFSharpForm etc.
     // were lined up so code paths like this could be uniform
     
+        // TODO: representation of constraint witnesses
     match v.MemberInfo with 
     | Some membInfo when not v.IsExtensionMember -> 
-        (* Methods, Properties etc. *)
-        let tps, argInfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags (Option.get v.ValReprInfo) v.Type v.Range
+        // Methods, Properties etc.
+        let tps, cxs, argInfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags (Option.get v.ValReprInfo) v.Type v.Range
         let prefix, name = 
           match membInfo.MemberFlags.MemberKind with 
           | MemberKind.ClassConstructor 
@@ -7736,18 +7781,21 @@ let XmlDocSigOfVal g path (v:Val) =
           match PartitionValTypars g v with
           | Some(_, memberParentTypars, memberMethodTypars, _, _) -> memberParentTypars, memberMethodTypars
           | None -> [], tps
-        parentTypars, methTypars, argInfos, prefix, path, name
+        parentTypars, methTypars, cxs, argInfos, prefix, path, name
     | _ ->
         // Regular F# values and extension members 
         let w = arityOfVal v
-        let tps, argInfos, _, _ = GetTopValTypeInCompiledForm g w v.Type v.Range
+        let tps, cxs, argInfos, _, _ = GetTopValTypeInCompiledForm g w v.Type v.Range
         let name = v.CompiledName
         let prefix =
           if  w.NumCurriedArgs = 0 && isNil tps then "P:"
           else "M:"
-        [], tps, argInfos, prefix, path, name
-  let argTs = argInfos |> List.concat |> List.map fst
-  let args = XmlDocArgsEnc g (parentTypars, methTypars) argTs
+        [], tps, cxs, argInfos, prefix, path, name
+
+  let witnessArgTys = GenWitnessTys g cxs
+  let argTys = argInfos |> List.concat |> List.map fst
+  let argTys = witnessArgTys @ argTys
+  let args = XmlDocArgsEnc g (parentTypars, methTypars) argTys
   let arity = List.length methTypars in (* C# XML doc adds ``<arity> to *generic* member names *)
   let genArity = if arity=0 then "" else sprintf "``%d" arity
   prefix + prependPath path name + genArity + args
@@ -8616,7 +8664,7 @@ let EvalLiteralExprOrAttribArg g x =
 let GetTypeOfIntrinsicMemberInCompiledForm g (vref:ValRef) =
     assert (not vref.IsExtensionMember)
     let membInfo, topValInfo = checkMemberValRef vref
-    let tps, argInfos, rty, retInfo = GetTypeOfMemberInMemberForm g vref
+    let tps, cxs, argInfos, rty, retInfo = GetTypeOfMemberInMemberForm g vref
     let argInfos = 
         // Check if the thing is really an instance member compiled as a static member
         // If so, the object argument counts as a normal argument in the compiled form
@@ -8628,7 +8676,7 @@ let GetTypeOfIntrinsicMemberInCompiledForm g (vref:ValRef) =
                 argInfos
             | h::_ -> h ::argInfos
         else argInfos
-    tps, argInfos, rty, retInfo
+    tps, cxs, argInfos, rty, retInfo
 
 
 //--------------------------------------------------------------------------
@@ -8851,5 +8899,3 @@ let isThreadOrContextStatic g attrs =
 let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
     mkLambda m uv (e, tyOfExpr g e) 
-
-
