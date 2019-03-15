@@ -1536,6 +1536,17 @@ and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution 
             // We merge based on whether minfos use identical metadata or not. 
             let minfos = List.reduce (ListSet.unionFavourLeft MethInfo.MethInfosUseIdenticalDefinitions) minfos
             
+            // Get the extension method that may be relevant to solving the constraint as MethInfo objects.
+            // Extension members are not used when canonicalizing prior to generalization (permitWeakResolution=true)
+            let extMInfos = 
+                if MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then 
+                    GetRelevantExtensionMethodsForTrait csenv.m csenv.amap traitInfo
+                else []
+
+            let extMInfos = extMInfos |> ListSet.setify MethInfo.MethInfosUseIdenticalDefinitions 
+
+            let minfos = minfos @ extMInfos
+
             /// Check that the available members aren't hiding a member from the parent (depth 1 only)
             let relevantMinfos = minfos |> List.filter(fun minfo -> not minfo.IsDispatchSlot && not minfo.IsVirtual && minfo.IsInstance)
             minfos
