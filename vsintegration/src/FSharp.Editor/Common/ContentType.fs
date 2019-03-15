@@ -6,6 +6,7 @@ open System.ComponentModel.Composition
 
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.VisualStudio.Utilities
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
 module FSharpStaticTypeDefinitions = 
     [<Export>]

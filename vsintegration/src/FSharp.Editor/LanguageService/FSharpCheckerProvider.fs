@@ -13,6 +13,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open FSharp.NativeInterop
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 #nowarn "9" // NativePtr.toNativeInt
@@ -23,14 +24,13 @@ type internal FSharpCheckerProvider
     [<ImportingConstructor>]
     (
         analyzerService: IDiagnosticAnalyzerService,
-        [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspaceImpl,
+        [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace,
         settings: EditorOptions
     ) =
 
     let tryGetMetadataSnapshot (path, timeStamp) = 
         try
-            let metadataReferenceProvider = workspace.Services.GetService<VisualStudioMetadataReferenceManager>()
-            let md = metadataReferenceProvider.GetMetadata(path, timeStamp)
+            let md = workspace.GetMetadata(path, timeStamp)
             let amd = (md :?> AssemblyMetadata)
             let mmd = amd.GetModules().[0]
             let mmr = mmd.GetMetadataReader()
