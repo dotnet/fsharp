@@ -7,8 +7,9 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Editor
 open FSharp.Compiler.SourceCodeServices
 open System.Runtime.InteropServices
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
-[<ExportBraceMatcher(FSharpConstants.FSharpLanguageName)>]
+[<Export(typeof<IFSharpBraceMatcher>)>]
 type internal FSharpBraceMatchingService 
     [<ImportingConstructor>]
     (
@@ -33,7 +34,7 @@ type internal FSharpBraceMatchingService
             return matchedBraces |> Array.tryFind(fun (left, right) -> isPositionInRange left || isPositionInRange right)
         }
         
-    interface IBraceMatcher with
+    interface IFSharpBraceMatcher with
         member this.FindBracesAsync(document, position, cancellationToken) = 
             asyncMaybe {
                 let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)

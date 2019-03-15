@@ -37,6 +37,7 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.ComponentModelHost
 open Microsoft.VisualStudio.Text.Outlining
 open FSharp.NativeInterop
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 
 #nowarn "9" // NativePtr.toNativeInt
 
