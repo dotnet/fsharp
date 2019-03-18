@@ -11,11 +11,11 @@ open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
 open FSharp.Compiler.SourceCodeServices
 
-[<Shared>]
-[<ExportLanguageService(typeof<ISynchronousIndentationService>, FSharpConstants.FSharpLanguageName)>]
+[<Export(typeof<IFSharpSynchronousIndentationService>)>]
 type internal FSharpIndentationService
     [<ImportingConstructor>]
     (projectInfoManager: FSharpProjectOptionsManager) =
@@ -92,7 +92,7 @@ type internal FSharpIndentationService
                     lastIndent
         }
 
-    interface ISynchronousIndentationService with
+    interface IFSharpSynchronousIndentationService with
         member this.GetDesiredIndentation(document: Document, lineNumber: int, cancellationToken: CancellationToken): Nullable<IndentationResult> =
             async {
                 let! cancellationToken = Async.CancellationToken
