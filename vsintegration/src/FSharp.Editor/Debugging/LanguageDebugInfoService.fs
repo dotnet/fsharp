@@ -13,11 +13,12 @@ open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor.Implementation.Debugging
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Implementation.Debugging
 
 open FSharp.Compiler
 
 [<Shared>]
-[<ExportLanguageService(typeof<ILanguageDebugInfoService>, FSharpConstants.FSharpLanguageName)>]
+[<ExportLanguageService(typeof<IFSharpLanguageDebugInfoService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpLanguageDebugInfoService [<ImportingConstructor>](projectInfoManager: FSharpProjectOptionsManager) =
 
     static member GetDataTipInformation(sourceText: SourceText, position: int, tokens: List<ClassifiedSpan>): TextSpan option =
@@ -44,7 +45,7 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>](projectInf
         
             | _ -> None
 
-    interface ILanguageDebugInfoService with
+    interface IFSharpLanguageDebugInfoService with
         
         // FSROSLYNTODO: This is used to get function names in breakpoint window. It should return fully qualified function name and line offset from the start of the function.
         member this.GetLocationInfoAsync(_, _, _): Task<DebugLocationInfo> =

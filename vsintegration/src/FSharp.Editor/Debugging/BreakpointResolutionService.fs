@@ -13,12 +13,12 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor.Implementation.Debugging
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Implementation.Debugging
 
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Range
 
-[<Shared>]
-[<ExportLanguageService(typeof<IBreakpointResolutionService>, FSharpConstants.FSharpLanguageName)>]
+[<Export(typeof<IFSharpBreakpointResolutionService>)>]
 type internal FSharpBreakpointResolutionService 
     [<ImportingConstructor>]
     (
@@ -41,7 +41,7 @@ type internal FSharpBreakpointResolutionService
                 return parseResults.ValidateBreakpointLocation(mkPos fcsTextLineNumber textLineColumn)
         }
 
-    interface IBreakpointResolutionService with
+    interface IFSharpBreakpointResolutionService with
         member this.ResolveBreakpointAsync(document: Document, textSpan: TextSpan, cancellationToken: CancellationToken): Task<BreakpointResolutionResult> =
             asyncMaybe {
                 let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
