@@ -12332,7 +12332,17 @@ module TcRecdUnionAndEnumDeclarations = begin
                 | _ -> assert false
             else
                 seen.Add(f.Name, sf)
-                
+
+    let mkName =
+        let names =
+            [| 1 .. 10 |]
+            |> Array.map (fun i -> "Item" + string i)
+
+        fun nFields i ->
+            match nFields with
+            | 0 | 1 -> "Item"
+            | _ -> if i < 10 then names.[i] else "Item" + string (i + 1)
+
     let TcUnionCaseDecl cenv env parent thisTy tpenv  (UnionCase (synAttrs, id, args, xmldoc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
         let vis, _ = ComputeAccessAndCompPath env None m vis None parent
@@ -12340,7 +12350,6 @@ module TcRecdUnionAndEnumDeclarations = begin
 
         CheckUnionCaseName cenv id
 
-        let mkName nFields i = if nFields <= 1 then "Item" else "Item"+string (i+1)
         let rfields, recordTy = 
             match args with
             | UnionCaseFields flds -> 
@@ -14677,12 +14686,20 @@ module TcExceptionDeclarations =
         CheckForDuplicateConcreteType env id.idText id.idRange
         NewExn cpath id vis (TExnFresh (MakeRecdFieldsTable [])) attrs (doc.ToXmlDoc())
 
+    let mkName =
+        let names =
+            [| 0 .. 9 |]
+            |> Array.map (fun i -> "Data" + string i)
+
+        fun i ->
+            if i < 10 then names.[i] else "Data" + string i
+
     let TcExnDefnCore_Phase1G_EstablishRepresentation cenv env parent (exnc: Entity) (SynExceptionDefnRepr(_, UnionCase(_, _, args, _, _, _), reprIdOpt, _, _, m)) =
         let args = match args with (UnionCaseFields args) -> args | _ -> error(Error(FSComp.SR.tcExplicitTypeSpecificationCannotBeUsedForExceptionConstructors(), m))
         let ad = env.eAccessRights
         let id = exnc.Id
         
-        let args' = List.mapi (fun i fdef -> TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent emptyUnscopedTyparEnv ("Data" + string i) fdef) args
+        let args' = List.mapi (fun i fdef -> TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent emptyUnscopedTyparEnv (mkName i) fdef) args
         TcRecdUnionAndEnumDeclarations.ValidateFieldNames(args, args')
         let repr = 
           match reprIdOpt with 
