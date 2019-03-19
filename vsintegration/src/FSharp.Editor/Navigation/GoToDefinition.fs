@@ -124,7 +124,7 @@ type internal StatusBar(statusBar: IVsStatusbar) =
         statusBar.FreezeOutput 0 |> ignore  
         statusBar.Clear() |> ignore
         
-    member __.Message(msg: string) =
+    member __.Message(_msg: string) =
         ()
         //let _, frozen = statusBar.IsFrozen()
         //// unfreeze the status bar
@@ -133,7 +133,7 @@ type internal StatusBar(statusBar: IVsStatusbar) =
         //// freeze the status bar
         //statusBar.FreezeOutput 1 |> ignore
 
-    member this.TempMessage(msg: string) =
+    member this.TempMessage(_msg: string) =
         ()
         //this.Message msg
         //async {
