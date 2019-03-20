@@ -48,10 +48,6 @@ open Internal.Utilities
 open Internal.Utilities.Collections
 open FSharp.Compiler.Layout.TaggedTextOps
 
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
 type internal Layout = StructuredFormat.Layout
 
 [<AutoOpen>]

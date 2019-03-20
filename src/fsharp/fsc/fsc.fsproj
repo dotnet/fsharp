@@ -15,7 +15,7 @@
     <NGenBinary>true</NGenBinary>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net46'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
 

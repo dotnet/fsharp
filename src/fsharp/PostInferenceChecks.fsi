@@ -10,7 +10,5 @@ open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 
-val testFlagMemberBody : bool ref
-
 /// Perform the checks on the TAST for a file after type inference is complete.
 val CheckTopImpl : TcGlobals * ImportMap * bool * InfoReader * CompilationPath list * CcuThunk * DisplayEnv * ModuleOrNamespaceExprWithSig * Attribs * (bool * bool) * isInternalTestSpanStackReferring: bool -> bool * StampMap<AnonRecdTypeInfo>

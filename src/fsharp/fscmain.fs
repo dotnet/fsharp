@@ -20,13 +20,7 @@ open FSharp.Compiler.CompileOps
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open Internal.Utilities
 
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
-#if !FX_NO_DEFAULT_DEPENDENCY_TYPE
 [<Dependency("FSharp.Compiler.Private",LoadHint.Always)>] 
-#endif
 do ()
 
 
@@ -83,10 +77,8 @@ let main(argv) =
     System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
 
-#if !FX_NO_HEAPTERMINATION
     if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
     Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
-#endif
 
     try 
         Driver.main(Array.append [| "fsc.exe" |] argv)

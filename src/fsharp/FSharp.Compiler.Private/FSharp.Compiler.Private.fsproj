@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net472;netstandard1.6</TargetFrameworks>
+    <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
     <AssemblyName>FSharp.Compiler.Private</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -235,7 +235,7 @@
     <Compile Include="..\..\absil\ilmorph.fs">
       <Link>AbsIL\ilmorph.fs</Link>
     </Compile>
-    <Compile Include="..\..\absil\ilsign.fs" Condition="'$(TargetFramework)' == 'netstandard1.6'">
+    <Compile Include="..\..\absil\ilsign.fs" Condition="$(TargetFramework.StartsWith(netstandard))">
       <Link>AbsIL\ilsign.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilsupp.fsi">
@@ -692,7 +692,7 @@
     <PackageReference Include="System.IO.Compression" Version="$(SystemIoCompressionPackageVersion)" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
+  <ItemGroup Condition="$(TargetFramework.Startswith('netstandard'))">
     <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderPackageVersion)" />
   </ItemGroup>
 

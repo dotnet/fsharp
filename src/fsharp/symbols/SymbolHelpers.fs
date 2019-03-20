@@ -637,7 +637,7 @@ module internal SymbolHelpers =
             | None | Some (XmlDoc [| |]) -> ""
             | Some (XmlDoc l) -> 
                 bufs (fun os -> 
-                    bprintf os "\n"; 
+                    bprintf os "\n"
                     l |> Array.iter (fun (s:string) -> 
                         // Note: this code runs for local/within-project xmldoc tooltips, but not for cross-project or .XML
                         bprintf os "\n%s" s))
@@ -863,11 +863,11 @@ module internal SymbolHelpers =
       items |> List.filter (fun item -> not (IsExplicitlySuppressed g item.Item))
 
     let SimplerDisplayEnv denv = 
-        { denv with suppressInlineKeyword=true; 
-                    shortConstraints=true; 
-                    showConstraintTyparAnnotations=false; 
-                    abbreviateAdditionalConstraints=false;
-                    suppressNestedTypes=true;
+        { denv with suppressInlineKeyword=true
+                    shortConstraints=true
+                    showConstraintTyparAnnotations=false
+                    abbreviateAdditionalConstraints=false
+                    suppressNestedTypes=true
                     maxMembers=Some EnvMisc2.maxMembers }
 
     let rec FullNameOfItem g item = 

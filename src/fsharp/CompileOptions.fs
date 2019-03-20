@@ -21,17 +21,11 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
 open FSharp.Compiler.IlxGen
 
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
 module Attributes = 
     open System.Runtime.CompilerServices
 
     //[<assembly: System.Security.SecurityTransparent>]
-#if !FX_NO_DEFAULT_DEPENDENCY_TYPE
     [<Dependency("FSharp.Core",LoadHint.Always)>] 
-#endif
     do()
 
 //----------------------------------------------------------------------------
@@ -332,7 +326,7 @@ let ParseCompilerOptions (collectOtherArgument : string -> unit, blocks: Compile
               reportDeprecatedOption d
               let al = getOptionArgList compilerOption argString
               if al <> [] then
-                  List.iter (fun i -> f (try int32 i with _ -> errorR(Error(FSComp.SR.buildArgInvalidInt(i),rangeCmdArgs)); 0)) al ;
+                  List.iter (fun i -> f (try int32 i with _ -> errorR(Error(FSComp.SR.buildArgInvalidInt(i),rangeCmdArgs)); 0)) al 
               t
           | (CompilerOption(s, _, OptionIntListSwitch f, d, _) as compilerOption :: _) when getSwitchOpt(optToken) = s -> 
               reportDeprecatedOption d
@@ -391,18 +385,18 @@ let SetOptimizeOff(tcConfigB : TcConfigBuilder) =
     tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some false }
     tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some false }
     tcConfigB.optSettings <- { tcConfigB.optSettings with lambdaInlineThreshold = 0 }
-    tcConfigB.doDetuple <- false; 
-    tcConfigB.doTLR <- false;
-    tcConfigB.doFinalSimplify <- false;
+    tcConfigB.doDetuple <- false
+    tcConfigB.doTLR <- false
+    tcConfigB.doFinalSimplify <- false
 
 let SetOptimizeOn(tcConfigB : TcConfigBuilder) =    
     tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some true }
     tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some true }
     tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some true }
     tcConfigB.optSettings <- { tcConfigB.optSettings with lambdaInlineThreshold = 6 }
-    tcConfigB.doDetuple <- true;  
-    tcConfigB.doTLR <- true;
-    tcConfigB.doFinalSimplify <- true;
+    tcConfigB.doDetuple <- true
+    tcConfigB.doTLR <- true
+    tcConfigB.doFinalSimplify <- true
 
 let SetOptimizeSwitch (tcConfigB : TcConfigBuilder) switch = 
     if (switch = OptionSwitch.On) then SetOptimizeOn(tcConfigB) else SetOptimizeOff(tcConfigB)
@@ -490,7 +484,7 @@ let SetDebugSwitch (tcConfigB : TcConfigBuilder) (dtype : string option) (s : Op
 #endif
 
        | _ -> error(Error(FSComp.SR.optsUnrecognizedDebugType(s), rangeCmdArgs))
-    | None ->           tcConfigB.portablePDB <- false; tcConfigB.embeddedPDB <- false; tcConfigB.jitTracking <- s = OptionSwitch.On;
+    | None ->           tcConfigB.portablePDB <- false; tcConfigB.embeddedPDB <- false; tcConfigB.jitTracking <- s = OptionSwitch.On
     tcConfigB.debuginfo <- s = OptionSwitch.On
 
 let SetEmbedAllSourceSwitch (tcConfigB : TcConfigBuilder) switch = 
@@ -552,7 +546,7 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
 
 let inputFileFlagsBoth (tcConfigB : TcConfigBuilder) =
     [   CompilerOption("reference", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup,s)), None,
-                            Some (FSComp.SR.optsReference()) );
+                            Some (FSComp.SR.optsReference()) )
     ]
 
 let referenceFlagAbbrev (tcConfigB : TcConfigBuilder) = 
@@ -622,7 +616,7 @@ let outputFileFlagsFsc (tcConfigB : TcConfigBuilder) =
         CompilerOption
            ("out", tagFile, 
             OptionString (setOutFileName tcConfigB), None,
-            Some (FSComp.SR.optsNameOfOutputFile()) ); 
+            Some (FSComp.SR.optsNameOfOutputFile()) )
 
         CompilerOption
            ("target",  tagExe, 
@@ -981,7 +975,6 @@ let testFlag tcConfigB =
                 match s with
                 | "StackSpan"        -> tcConfigB.internalTestSpanStackReferring <- true
                 | "ErrorRanges"      -> tcConfigB.errorStyle <- ErrorStyle.TestErrors
-                | "MemberBodyRanges" -> PostTypeCheckSemanticChecks.testFlagMemberBody := true
                 | "Tracking"         -> Lib.tracking := true (* general purpose on/off diagnostics flag *)
                 | "NoNeedToTailcall" -> tcConfigB.optSettings <- { tcConfigB.optSettings with reportNoNeedToTailcall = true }
                 | "FunctionSizes"    -> tcConfigB.optSettings <- { tcConfigB.optSettings with reportFunctionSizes = true }

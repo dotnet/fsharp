@@ -690,14 +690,15 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                     if isCached then lexcontInitial else LexerStateEncoding.computeNextLexState token lexcontInitial 
                 let tokenTag = tagOfToken token 
                 let fullMatchedLength = lexbuf.EndPos.AbsoluteOffset - lexbuf.StartPos.AbsoluteOffset 
-                let tokenData = { TokenName = token_to_string token; 
-                                  LeftColumn=leftc; 
-                                  RightColumn=rightc;
-                                  ColorClass=colorClass;
-                                  CharClass=charClass;
-                                  FSharpTokenTriggerClass=triggerClass;
-                                  Tag=tokenTag;
-                                  FullMatchedLength=fullMatchedLength} 
+                let tokenData =
+                    { TokenName = token_to_string token
+                      LeftColumn=leftc
+                      RightColumn=rightc
+                      ColorClass=colorClass
+                      CharClass=charClass
+                      FSharpTokenTriggerClass=triggerClass
+                      Tag=tokenTag
+                      FullMatchedLength=fullMatchedLength} 
                 Some(tokenData), lexcontFinal, tokenTag
                 
         // Get the final lex int and color state                

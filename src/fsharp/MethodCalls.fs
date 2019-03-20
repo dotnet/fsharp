@@ -659,12 +659,14 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
             match arity, args with 
             | (0|1), [] when typeEquiv g (domainOfFunTy g fty) g.unit_ty -> mkUnit g m, (args, rangeOfFunTy g fty)
             | 0, (arg::argst) -> 
-                warning(InternalError(sprintf "Unexpected zero arity, args = %s" (Layout.showL (Layout.sepListL (Layout.rightL (Layout.TaggedTextOps.tagText ";")) (List.map exprL args))), m));
+                let msg = Layout.showL (Layout.sepListL (Layout.rightL (Layout.TaggedTextOps.tagText ";")) (List.map exprL args))
+                warning(InternalError(sprintf "Unexpected zero arity, args = %s" msg, m))
                 arg, (argst, rangeOfFunTy g fty)
             | 1, (arg :: argst) -> arg, (argst, rangeOfFunTy g fty)
             | 1, [] -> error(InternalError("expected additional arguments here", m))
             | _ -> 
-                if args.Length < arity then error(InternalError("internal error in getting arguments, n = "+string arity+", #args = "+string args.Length, m));
+                if args.Length < arity then
+                    error(InternalError("internal error in getting arguments, n = "+string arity+", #args = "+string args.Length, m))
                 let tupargs, argst = List.splitAt arity args
                 let tuptys = tupargs |> List.map (tyOfExpr g) 
                 (mkRefTupled g m tupargs tuptys),

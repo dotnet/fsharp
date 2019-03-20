@@ -1665,10 +1665,6 @@ let GetStrongNameSigner signingInfo =
 // CopyFSharpCore
 //----------------------------------------------------------------------------
 
-#if FX_RESHAPED_REFLECTION
-type private TypeInThisAssembly (_dummy:obj) = class end
-#endif
-
 // If the --nocopyfsharpcore switch is not specified, this will:
 // 1) Look into the referenced assemblies, if FSharp.Core.dll is specified, it will copy it to output directory.
 // 2) If not, but FSharp.Core.dll exists beside the compiler binaries, it will copy it to output directory.
@@ -1685,11 +1681,7 @@ let CopyFSharpCore(outFile: string, referencedDlls: AssemblyReference list) =
     | Some referencedFsharpCoreDll -> copyFileIfDifferent referencedFsharpCoreDll.Text fsharpCoreDestinationPath
     | None ->
         let executionLocation =
-#if FX_RESHAPED_REFLECTION
-            TypeInThisAssembly(null).GetType().GetTypeInfo().Assembly.Location
-#else
             Assembly.GetExecutingAssembly().Location
-#endif
         let compilerLocation = Path.GetDirectoryName(executionLocation)
         let compilerFsharpCoreDllPath = Path.Combine(compilerLocation, fsharpCoreAssemblyName)
         if File.Exists(compilerFsharpCoreDllPath) then

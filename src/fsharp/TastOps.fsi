@@ -1357,7 +1357,7 @@ module DebugPrint =
 
 /// A set of function parameters (visitor) for folding over expressions
 type ExprFolder<'State> =
-    { exprIntercept            : ('State -> Expr -> 'State) -> 'State -> Expr -> 'State option
+    { exprIntercept            : (* recurseF *) ('State -> Expr -> 'State) -> (* noInterceptF *) ('State -> Expr -> 'State) -> 'State -> Expr -> 'State
       valBindingSiteIntercept  : 'State -> bool * Val -> 'State
       nonRecBindingsIntercept  : 'State -> Binding -> 'State         
       recBindingsIntercept     : 'State -> Bindings -> 'State         
@@ -2260,6 +2260,10 @@ val ValRefIsExplicitImpl : TcGlobals -> ValRef -> bool
 val (|LinearMatchExpr|_|) : Expr -> (SequencePointInfoForBinding * range * DecisionTree * DecisionTreeTarget * Expr * SequencePointInfoForTarget * range * TType) option
 
 val rebuildLinearMatchExpr : (SequencePointInfoForBinding * range * DecisionTree * DecisionTreeTarget * Expr * SequencePointInfoForTarget * range * TType) -> Expr
+
+val (|LinearOpExpr|_|) : Expr -> (TOp * TypeInst * Expr list * Expr * range) option
+
+val rebuildLinearOpExpr : (TOp * TypeInst * Expr list * Expr * range) -> Expr
 
 val mkCoerceIfNeeded : TcGlobals -> tgtTy: TType -> srcTy: TType -> Expr -> Expr
 

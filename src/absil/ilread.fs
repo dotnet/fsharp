@@ -1588,7 +1588,7 @@ let getDataEndPointsDelayed (pectxt: PEReader) ctxtH =
                      let nm = readStringHeap ctxt nameIdx
                      res := (nm, rva) :: !res
               !res
-          ([ pectxt.textSegmentPhysicalLoc + pectxt.textSegmentPhysicalSize ; 
+          ([ pectxt.textSegmentPhysicalLoc + pectxt.textSegmentPhysicalSize 
              pectxt.dataSegmentPhysicalLoc + pectxt.dataSegmentPhysicalSize ] 
            @ 
            (List.map pectxt.anyV2P 
@@ -3762,8 +3762,8 @@ let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath, noFileOnDisk) =
     let subsysMajor = seekReadUInt16AsInt32 pev (peOptionalHeaderPhysLoc + 48)   // SubSys Major Always 4 (see Section 23.1). 
     let subsysMinor = seekReadUInt16AsInt32 pev (peOptionalHeaderPhysLoc + 50)   // SubSys Minor Always 0 (see Section 23.1). 
      (* x86: 000000d0 *) 
-    let _imageEndAddr   = seekReadInt32 pev (peOptionalHeaderPhysLoc + 56)  // Image Size: Size, in bytes, of image, including all headers and padding; 
-    let _headerPhysSize = seekReadInt32 pev (peOptionalHeaderPhysLoc + 60)  // Header Size Combined size of MS-DOS Header, PE Header, PE Optional Header and padding; 
+    let _imageEndAddr   = seekReadInt32 pev (peOptionalHeaderPhysLoc + 56)  // Image Size: Size, in bytes, of image, including all headers and padding
+    let _headerPhysSize = seekReadInt32 pev (peOptionalHeaderPhysLoc + 60)  // Header Size Combined size of MS-DOS Header, PE Header, PE Optional Header and padding
     let subsys           = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 68)   // SubSystem Subsystem required to run this image. 
     let useHighEnthropyVA = 
         let n = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 70)
