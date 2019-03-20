@@ -35,7 +35,7 @@ module Scripting =
             0
 
 #if INTERACTIVE
-    let argv = Microsoft.FSharp.Compiler.Interactive.Settings.fsi.CommandLineArgs |> Seq.skip 1 |> Seq.toArray
+    let argv = FSharp.Compiler.Interactive.Settings.fsi.CommandLineArgs |> Seq.skip 1 |> Seq.toArray
 
     let getCmdLineArgOptional (switchName: string) =
         argv |> Array.filter(fun t -> t.StartsWith(switchName)) |> Array.map(fun t -> t.Remove(0, switchName.Length).Trim()) |> Array.tryHead 

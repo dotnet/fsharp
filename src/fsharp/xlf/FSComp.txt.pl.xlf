@@ -217,11 +217,6 @@
         <target state="translated">Używanie wielu odwołań do pliku „{0}.dll” jest niedozwolone</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotReadVersionInfoFromMscorlib">
-        <source>Could not read version from mscorlib.dll</source>
-        <target state="translated">Nie można odczytać wersji z pliku mscorlib.dll</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">Nie można odczytać zestawu „{0}”</target>
@@ -6838,8 +6833,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that implement IDisposable"</source>
-        <target state="translated">Używane zamiast powiązania let w przypadku wartości implementujących interfejs IDisposable</target>
+        <source>Used instead of let for values that implement IDisposable</source>
+        <target state="needs-review-translation">Używane zamiast instrukcji let na potrzeby wartości, które wymagają wywołania operacji Dispose w celu zwolnienia zasobów.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">

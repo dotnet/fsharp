@@ -13,7 +13,7 @@ open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Notification
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 type internal NavigationBarSymbolItem(text, glyph, spans, childItems) =
     inherit NavigationBarItem(text, glyph, spans, childItems)

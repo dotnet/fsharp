@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin/v4.5/"
+#I "../../../artifacts/bin/fcs/net45"
 (**
 Compiler Services: Using the F# tokenizer
 =========================================
@@ -20,7 +20,7 @@ To use the tokenizer, reference `FSharp.Compiler.Service.dll` and open the
 `SourceCodeServices` namespace:
 *)
 #r "FSharp.Compiler.Service.dll"
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 (**
 Now you can create an instance of `FSharpSourceTokenizer`. The class takes two 
 arguments - the first is the list of defined symbols and the second is the
@@ -111,7 +111,7 @@ state and `1` as the number of the first line:
 *)
 lines
 |> List.ofSeq
-|> tokenizeLines 0L 1
+|> tokenizeLines FSharpTokenizerLexState.Initial 1
 (**
 Ignoring some unimportant details (like whitespace at the beginning of each line and
 the first line which is just whitespace), the code generates the following output:

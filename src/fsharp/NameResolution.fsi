@@ -1,20 +1,20 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.NameResolution
+module internal FSharp.Compiler.NameResolution
 
-open Microsoft.FSharp.Compiler 
+open FSharp.Compiler
+open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.Ast
+open FSharp.Compiler.Infos
+open FSharp.Compiler.Range
+open FSharp.Compiler.Import
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.Text
-open Microsoft.FSharp.Compiler.AccessibilityLogic
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Import
-open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.PrettyNaming
 
 /// A NameResolver is a context for name resolution. It primarily holds an InfoReader.
 type NameResolver =

@@ -1,24 +1,26 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver 
+module internal FSharp.Compiler.MSBuildReferenceResolver 
 
     open System
     open System.IO
     open System.Reflection
 
-#if FX_RESHAPED_REFLECTION
-    open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
 #if FX_RESHAPED_MSBUILD
-    open Microsoft.FSharp.Compiler.MsBuildAdapters
-    open Microsoft.FSharp.Compiler.ToolLocationHelper
+    open FSharp.Compiler.MsBuildAdapters
+    open FSharp.Compiler.ToolLocationHelper
 #endif
 
-    open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-    open Microsoft.FSharp.Compiler.ReferenceResolver
+    open FSharp.Compiler.AbstractIL.Internal.Library 
+    open FSharp.Compiler.ReferenceResolver
     open Microsoft.Build.Tasks
     open Microsoft.Build.Utilities
     open Microsoft.Build.Framework
+
+    // Reflection wrapper for properties
+    type System.Object with
+        member this.GetPropertyValue(propName) =
+            this.GetType().GetProperty(propName, BindingFlags.Public).GetValue(this, null)
 
     /// Get the Reference Assemblies directory for the .NET Framework on Window.
     let DotNetFrameworkReferenceAssembliesRootDirectory = 
@@ -97,7 +99,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
         | _ -> []
 
     let GetPathToDotNetFrameworkReferenceAssemblies(version) = 
-#if NETSTANDARD1_6 || NETSTANDARD2_0
+#if NETSTANDARD
         ignore version
         let r : string list = []
         r
@@ -129,7 +131,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
                 else Net45 // version is 4.5 assumed since this code is running.
             with _ -> Net45
 
-#if !FX_RESHAPED_REFLECTION
+#if !FX_RESHAPED_MSBUILD
         // 1.   First look to see if we can find the highest installed set of dotnet reference assemblies, if yes then select that framework
         // 2.   Otherwise ask msbuild for the highestinstalled framework
         let checkFrameworkForReferenceAssemblies (dotNetVersion:string) =
@@ -336,22 +338,18 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
                                      FindSerializationAssemblies=false, Assemblies=assemblies, 
                                      SearchPaths=searchPaths, 
                                      AllowedAssemblyExtensions= [| ".dll" ; ".exe" |])
-#if FX_RESHAPED_REFLECTION
-        ignore targetProcessorArchitecture // Not implemented in reshapedmsbuild.fs
-#else
         rar.TargetProcessorArchitecture <- targetProcessorArchitecture
         let targetedRuntimeVersionValue = typeof<obj>.Assembly.ImageRuntimeVersion
 #if ENABLE_MONO_SUPPORT
         // The properties TargetedRuntimeVersion and CopyLocalDependenciesWhenParentReferenceInGac 
         // are not available on Mono. So we only set them if available (to avoid a compile-time dependency). 
-        if not Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono then  
+        if not FSharp.Compiler.AbstractIL.IL.runningOnMono then  
             typeof<ResolveAssemblyReference>.InvokeMember("TargetedRuntimeVersion",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box targetedRuntimeVersionValue |])  |> ignore 
             typeof<ResolveAssemblyReference>.InvokeMember("CopyLocalDependenciesWhenParentReferenceInGac",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box true |])  |> ignore 
 #else
         rar.TargetedRuntimeVersion <- targetedRuntimeVersionValue
         rar.CopyLocalDependenciesWhenParentReferenceInGac <- true
 #endif
-#endif        
         
         let succeeded = rar.Execute()
         
@@ -398,9 +396,19 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 
                 let rooted, unrooted = references |> Array.partition (fst >> FileSystem.IsPathRootedShim)
 
-                let rootedResults = ResolveCore(resolutionEnvironment, rooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, true, logMessage, logDiagnostic)
+                let rootedResults = 
+                    ResolveCore
+                       (resolutionEnvironment, rooted,  targetFrameworkVersion, 
+                        targetFrameworkDirectories, targetProcessorArchitecture, 
+                        fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, 
+                        true, logMessage, logDiagnostic)
 
-                let unrootedResults = ResolveCore(resolutionEnvironment, unrooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, false, logMessage, logDiagnostic)
+                let unrootedResults = 
+                    ResolveCore
+                       (resolutionEnvironment, unrooted,  targetFrameworkVersion, 
+                        targetFrameworkDirectories, targetProcessorArchitecture, 
+                        fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, 
+                        false, logMessage, logDiagnostic)
 
                 // now unify the two sets of results
                 Array.concat [| rootedResults; unrootedResults |]

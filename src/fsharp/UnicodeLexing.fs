@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.UnicodeLexing
+module internal FSharp.Compiler.UnicodeLexing
 
 //------------------------------------------------------------------
 // Functions for Unicode char-based lexing (new code).
 //
 
+open FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.Text
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Internal.Utilities
-open System.IO 
+open System.IO
 
 open Internal.Utilities.Text.Lexing
 

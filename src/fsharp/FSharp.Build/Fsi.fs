@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Build
+namespace FSharp.Build
 
 open System
 open System.Diagnostics
@@ -10,10 +10,6 @@ open System.Reflection
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open Internal.Utilities
-
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
 
 //There are a lot of flags on fsi.exe.
 //For now, not all of them are represented in the "Fsi class" object model.

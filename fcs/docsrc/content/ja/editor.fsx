@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../../debug/bin/net45/"
+#I "../../../../artifacts/bin/fcs/net45"
 (**
 コンパイラサービス: エディタサービス
 ====================================
@@ -28,7 +28,7 @@
 #r "FSharp.Compiler.Service.dll"
 
 open System
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 // インタラクティブチェッカーのインスタンスを作成
 let checker = FSharpChecker.Create()
@@ -44,7 +44,7 @@ let checker = FSharpChecker.Create()
 *)
 // サンプルの入力となる複数行文字列
 let input = 
-"""
+    """
 open System
 
 let foo() = 
@@ -56,9 +56,9 @@ printfn "%s" msg.
 let inputLines = input.Split('\n')
 let file = "/home/user/Test.fsx"
 
-let projOptions = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
+let projOptions, _errors1 = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
 
-let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(projOptions)
+let parsingOptions, _errors2 = checker.GetParsingOptionsFromProjectOptions(projOptions)
 
 (**
 
@@ -73,8 +73,8 @@ let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(projOp
 *)
 // パースを実行
 let parseFileResults =
-checker.ParseFile(file, input, parsingOptions)
-|> Async.RunSynchronously
+    checker.ParseFile(file, input, parsingOptions)
+    |> Async.RunSynchronously
 (**
 `TypeCheckResults` に備えられた興味深い機能の紹介に入る前に、
 サンプル入力に対して型チェッカーを実行する必要があります。
@@ -84,25 +84,25 @@ F#コードにエラーがあった場合も何らかの型チェックの結果
 
 // 型チェックを実行
 let checkFileAnswer = 
-checker.CheckFileInProject(parseFileResults, file, 0, input, projOptions) 
-|> Async.RunSynchronously
+    checker.CheckFileInProject(parseFileResults, file, 0, input, projOptions) 
+    |> Async.RunSynchronously
 
 (**
 あるいは `ParseAndCheckFileInProject` を使用すれば1つの操作で両方のチェックを行うことができます：
 *)
 
 let parseResults2, checkFileAnswer2 =
-checker.ParseAndCheckFileInProject(file, 0, input, projOptions)
-|> Async.RunSynchronously
+    checker.ParseAndCheckFileInProject(file, 0, input, projOptions)
+    |> Async.RunSynchronously
 
 (**
 この返り値は `CheckFileAnswer` 型で、この型に機能的に興味深いものが揃えられています...
 *)
 
 let checkFileResults = 
-match checkFileAnswer with
-| FSharpCheckFileAnswer.Succeeded(res) -> res
-| res -> failwithf "パースが完了していません... (%A)" res
+    match checkFileAnswer with
+    | FSharpCheckFileAnswer.Succeeded(res) -> res
+    | res -> failwithf "パースが完了していません... (%A)" res
 
 (**
 
@@ -137,11 +137,10 @@ match checkFileAnswer with
 
 *)
 // 最後の引数に指定する、IDENTトークンのタグを取得
-open Microsoft.FSharp.Compiler
-let identToken = Parser.tagOfToken(Parser.token.IDENT("")) 
+open FSharp.Compiler
 
 // 特定の位置におけるツールチップを取得
-let tip = checkFileResults.GetToolTipTextAlternate(4, 7, inputLines.[1], ["foo"], identToken)
+let tip = checkFileResults.GetToolTipText(4, 7, inputLines.[1], ["foo"], FSharpTokenTag.Identifier)
 printfn "%A" tip
 
 (**
@@ -178,13 +177,13 @@ printfn "%A" tip
 *)
 // 特定の位置における宣言(自動補完)を取得する
 let decls = 
-checkFileResults.GetDeclarationListInfo
-(Some parseFileResults, 7, 23, inputLines.[6], [], "msg", fun _ -> false)
-|> Async.RunSynchronously
+    checkFileResults.GetDeclarationListInfo
+      (Some parseFileResults, 7, inputLines.[6], PartialLongName.Empty 23, (fun _ -> []), fun _ -> false)
+      |> Async.RunSynchronously
 
 // 利用可能な項目を表示
 for item in decls.Items do
-printfn " - %s" item.Name
+    printfn " - %s" item.Name
 (**
 
 > **注意：** `GetDeclarationListInfo` は古い関数 `GetDeclarations` に代わるものです。
@@ -214,13 +213,13 @@ printfn " - %s" item.Name
 *)
 //String.Concatメソッドのオーバーロードを取得する
 let methods = 
-checkFileResults.GetMethodsAlternate(5, 27, inputLines.[4], Some ["String"; "Concat"]) |> Async.RunSynchronously
+    checkFileResults.GetMethods(5, 27, inputLines.[4], Some ["String"; "Concat"]) |> Async.RunSynchronously
 
 // 連結された引数リストを表示
 for mi in methods.Methods do
-[ for p in mi.Parameters -> p.Display ]
-|> String.concat ", " 
-|> printfn "%s(%s)" methods.MethodName
+    [ for p in mi.Parameters -> p.Display ]
+    |> String.concat ", " 
+    |> printfn "%s(%s)" methods.MethodName
 (**
 ここでは `Display` プロパティを使用することで各引数に対する
 アノテーションを取得しています。

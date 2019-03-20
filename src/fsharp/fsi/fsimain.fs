@@ -9,7 +9,7 @@
 //    3. connect the configuration to the global state programmer-settable settings in FSharp.Compiler.Interactive.Settings.dll 
 //    4. implement shadow copy of references
 
-module internal Sample.Microsoft.FSharp.Compiler.Interactive.Main
+module internal Sample.FSharp.Compiler.Interactive.Main
 
 open System
 open System.Globalization
@@ -21,28 +21,20 @@ open System.Runtime.CompilerServices
 open System.Windows.Forms
 #endif
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Interactive.Shell
-open Microsoft.FSharp.Compiler.Interactive
-open Microsoft.FSharp.Compiler.Interactive.Shell.Settings
-
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.Interactive
+open FSharp.Compiler.Interactive.Shell.Settings
 
 #nowarn "55"
 #nowarn "40" // let rec on value 'fsiConfig'
 
 
-
 // Hardbinding dependencies should we NGEN fsi.exe
-#if !FX_NO_DEFAULT_DEPENDENCY_TYPE
 [<Dependency("FSharp.Compiler.Private",LoadHint.Always)>] do ()
 [<Dependency("FSharp.Core",LoadHint.Always)>] do ()
-#endif
-
 // Standard attributes
 [<assembly: System.Runtime.InteropServices.ComVisible(false)>]
 [<assembly: System.CLSCompliant(true)>]  
@@ -177,7 +169,7 @@ let evaluateSession(argv: string[]) =
 
     try
         // Create the console reader
-        let console = new Microsoft.FSharp.Compiler.Interactive.ReadLineConsole()
+        let console = new FSharp.Compiler.Interactive.ReadLineConsole()
 
         // Define the function we pass to the FsiEvaluationSession
         let getConsoleReadLine (probeToSeeIfConsoleWorks) = 
@@ -202,7 +194,7 @@ let evaluateSession(argv: string[]) =
 //#if USE_FSharp_Compiler_Interactive_Settings
         let fsiObjOpt = 
             let defaultFSharpBinariesDir =
-#if FX_RESHAPED_REFLECTION
+#if FX_NO_APP_DOMAINS
                 System.AppContext.BaseDirectory
 #else
                 System.AppDomain.CurrentDomain.BaseDirectory
@@ -213,8 +205,8 @@ let evaluateSession(argv: string[]) =
             if isNull fsiAssembly then 
                 None
             else
-                let fsiTy = fsiAssembly.GetType("Microsoft.FSharp.Compiler.Interactive.Settings")
-                if isNull fsiAssembly then failwith "failed to find type Microsoft.FSharp.Compiler.Interactive.Settings in FSharp.Compiler.Interactive.Settings.dll"
+                let fsiTy = fsiAssembly.GetType("FSharp.Compiler.Interactive.Settings")
+                if isNull fsiAssembly then failwith "failed to find type FSharp.Compiler.Interactive.Settings in FSharp.Compiler.Interactive.Settings.dll"
                 Some (callStaticMethod fsiTy "get_fsi" [  ])
  
         let fsiConfig0 = 
@@ -317,16 +309,14 @@ let evaluateSession(argv: string[]) =
         fsiSession.Run() 
         0
     with 
-    | Microsoft.FSharp.Compiler.ErrorLogger.StopProcessingExn _ -> 1
-    | Microsoft.FSharp.Compiler.ErrorLogger.ReportedError _ -> 1
+    | FSharp.Compiler.ErrorLogger.StopProcessingExn _ -> 1
+    | FSharp.Compiler.ErrorLogger.ReportedError _ -> 1
     | e -> eprintf "Exception by fsi.exe:\n%+A\n" e; 1
 
 // Mark the main thread as STAThread since it is a GUI thread
 [<EntryPoint>]
 [<STAThread()>]    
-#if !FX_NO_LOADER_OPTIMIZATION
 [<LoaderOptimization(LoaderOptimization.MultiDomainHost)>]     
-#endif
 let MainMain argv = 
     ignore argv
     let argv = System.Environment.GetCommandLineArgs()

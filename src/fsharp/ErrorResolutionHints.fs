@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Functions to format error message details
-module internal Microsoft.FSharp.Compiler.ErrorResolutionHints
+module internal FSharp.Compiler.ErrorResolutionHints
 
 open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 let maxSuggestions = 5
 let minThresholdForSuggestions = 0.7

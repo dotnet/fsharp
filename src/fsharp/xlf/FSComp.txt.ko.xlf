@@ -217,11 +217,6 @@
         <target state="translated">'{0}.dll'에 대한 다중 참조는 허용되지 않습니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotReadVersionInfoFromMscorlib">
-        <source>Could not read version from mscorlib.dll</source>
-        <target state="translated">mscorlib.dll에서 버전을 읽을 수 없습니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">'{0}' 어셈블리를 읽을 수 없습니다.</target>
@@ -6838,8 +6833,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that implement IDisposable"</source>
-        <target state="translated">IDisposable을 구현하는 값에 대해 let 대신 사용됩니다."</target>
+        <source>Used instead of let for values that implement IDisposable</source>
+        <target state="needs-review-translation">무료 리소스로 호출하기 위해 Dispose가 필요한 값에 대해 let 대신 사용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">

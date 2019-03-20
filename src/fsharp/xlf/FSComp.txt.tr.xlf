@@ -217,11 +217,6 @@
         <target state="translated">Birden çok '{0}.dll' başvurusuna izin verilmiyor</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotReadVersionInfoFromMscorlib">
-        <source>Could not read version from mscorlib.dll</source>
-        <target state="translated">Sürüm, mscorlib.dll'den okunamadı</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">'{0}' bütünleştirilmiş kodu okunamıyor</target>
@@ -6838,8 +6833,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that implement IDisposable"</source>
-        <target state="translated">IDisposable" uygulayan değerler için let yerine kullanılır</target>
+        <source>Used instead of let for values that implement IDisposable</source>
+        <target state="needs-review-translation">Dispose'un boş kaynaklara çağrılmasını gerektiren değerler için let yerine kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">

@@ -25,6 +25,7 @@
     <FSCoreMajorVersion>$(FSLanguageVersion)</FSCoreMajorVersion>
     <FSCorePackageVersion>$(FSCoreMajorVersion).2</FSCorePackageVersion>
     <FSCoreVersion>$(FSCoreMajorVersion).0.0</FSCoreVersion>
+    <FSCoreUnitTestsPackageVersion>$(FSCorePackageVersion).0</FSCoreUnitTestsPackageVersion>
 
     <FSPackageMajorVersion>10.4</FSPackageMajorVersion>
     <FSPackageVersion>$(FSPackageMajorVersion).2</FSPackageVersion>

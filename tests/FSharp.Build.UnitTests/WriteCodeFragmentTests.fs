@@ -4,7 +4,7 @@ namespace FSharp.Build.UnitTests
 
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
-open Microsoft.FSharp.Build
+open FSharp.Build
 open NUnit.Framework
 
 [<TestFixture>]

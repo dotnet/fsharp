@@ -4,7 +4,7 @@ namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
 open System.Collections.Generic
 
-open Microsoft.FSharp.Compiler.ErrorResolutionHints
+open FSharp.Compiler.ErrorResolutionHints
 
 module ErrorResolutionHints =
     let getSuggestedNames (namesToCheck: string[]) (unresolvedIdentifier: string) =

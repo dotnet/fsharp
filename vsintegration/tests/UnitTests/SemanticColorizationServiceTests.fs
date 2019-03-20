@@ -4,8 +4,8 @@ namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 open System
 open NUnit.Framework
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
 open Microsoft.CodeAnalysis.Text
 
 [<TestFixture; Category "Roslyn Services">]

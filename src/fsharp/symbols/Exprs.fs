@@ -1,17 +1,17 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.QuotationTranslator
-open Microsoft.FSharp.Compiler.TypeRelations
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Infos
+open FSharp.Compiler.Range
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.QuotationTranslator
+open FSharp.Compiler.TypeRelations
 
 [<AutoOpen>]
 module ExprTranslationImpl = 
@@ -20,9 +20,9 @@ module ExprTranslationImpl =
 
     type ExprTranslationEnv = 
         { //Map from Val to binding index
-          vs: ValMap<unit>; 
+          vs: ValMap<unit>
           //Map from typar stamps to binding index
-          tyvs: StampMap<FSharpGenericParameter>;
+          tyvs: StampMap<FSharpGenericParameter>
           // Map for values bound by the 
           //     'let v = isinst e in .... if nonnull v then ...v .... ' 
           // construct arising out the compilation of pattern matching. We decode these back to the form
@@ -31,12 +31,12 @@ module ExprTranslationImpl =
           substVals: ValMap<Expr> }
 
         static member Empty = 
-            { vs=ValMap<_>.Empty; 
+            { vs=ValMap<_>.Empty
               tyvs = Map.empty ;
               isinstVals = ValMap<_>.Empty 
               substVals = ValMap<_>.Empty }
 
-        member env.BindTypar (v:Typar, gp) = 
+        member env.BindTypar (v: Typar, gp) = 
             { env with tyvs = env.tyvs.Add(v.Stamp, gp ) }
 
         member env.BindTypars vs = 
@@ -51,12 +51,15 @@ module ExprTranslationImpl =
         member env.BindSubstVal v e = 
             { env with substVals = env.substVals.Add v e  }
 
-        member env.BindVals vs = (env, vs) ||> List.fold (fun env v -> env.BindVal v) 
-        member env.BindCurriedVals vsl = (env, vsl) ||> List.fold (fun env vs -> env.BindVals vs) 
+        member env.BindVals vs = 
+            (env, vs) ||> List.fold (fun env v -> env.BindVal v) 
+
+        member env.BindCurriedVals vsl = 
+            (env, vsl) ||> List.fold (fun env vs -> env.BindVals vs) 
 
     exception IgnoringPartOfQuotedTermWarning of string * Range.range
 
-    let wfail (msg, m:range) = failwith (msg + sprintf " at %s" (m.ToString()))
+    let wfail (msg, m: range) = failwith (msg + sprintf " at %s" (m.ToString()))
 
 
 /// The core tree of data produced by converting F# compiler TAST expressions into the form which we make available through the compiler API
@@ -81,6 +84,8 @@ type E =
     | FSharpFieldGet of  FSharpExpr option * FSharpType * FSharpField 
     | FSharpFieldSet of  FSharpExpr option * FSharpType * FSharpField * FSharpExpr 
     | NewUnionCase of FSharpType * FSharpUnionCase * FSharpExpr list  
+    | NewAnonRecord of FSharpType * FSharpExpr list
+    | AnonRecordGet of FSharpExpr * FSharpType * int 
     | UnionCaseGet of FSharpExpr * FSharpType * FSharpUnionCase * FSharpField 
     | UnionCaseSet of FSharpExpr * FSharpType * FSharpUnionCase * FSharpField  * FSharpExpr
     | UnionCaseTag of FSharpExpr * FSharpType 
@@ -108,14 +113,14 @@ type E =
     | ILAsm of string * FSharpType list * FSharpExpr list
 
 /// Used to represent the information at an object expression member 
-and [<Sealed>]  FSharpObjectExprOverride(sgn: FSharpAbstractSignature, gps: FSharpGenericParameter list, args:FSharpMemberOrFunctionOrValue list list, body: FSharpExpr) = 
+and [<Sealed>]  FSharpObjectExprOverride(sgn: FSharpAbstractSignature, gps: FSharpGenericParameter list, args: FSharpMemberOrFunctionOrValue list list, body: FSharpExpr) = 
     member __.Signature = sgn
     member __.GenericParameters = gps
     member __.CurriedParameterGroups = args
     member __.Body = body
 
 /// The type of expressions provided through the compiler API.
-and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m:range, ty) =
+and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m: range, ty) =
 
     member x.Range = m
     member x.Type = FSharpType(cenv, ty)
@@ -134,6 +139,8 @@ and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m:range, 
         | E.Let ((_bindingVar, bindingExpr), b) -> [bindingExpr;b]
         | E.LetRec (ves, b) -> (List.map snd ves) @ [b]
         | E.NewRecord (_recordType, es) -> es
+        | E.NewAnonRecord (_recordType, es) -> es
+        | E.AnonRecordGet (e, _recordType, _n) -> [e]
         | E.NewUnionCase (_unionType, _unionCase, es) -> es
         | E.NewTuple (_tupleType, es) -> es
         | E.TupleGet (_tupleType, _itemIndex, tupleExpr) -> [tupleExpr]
@@ -164,11 +171,11 @@ and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m:range, 
         | E.ILFieldGet (objOpt, _ty, _fieldName) -> (match objOpt with None -> [] | Some x -> [x])
         | E.ILFieldSet (objOpt, _ty, _fieldName, d) -> (match objOpt with None -> [d] | Some x -> [x;d])
         | E.ObjectExpr (_ty, basecall, overrides, interfaceImpls) -> 
-             [ yield basecall; 
+             [ yield basecall
                for m in overrides do yield m.Body
                for (_, ms) in interfaceImpls do for m in ms do yield m.Body ]
         | E.DecisionTree (inputExpr, targetCases) -> 
-            [ yield inputExpr; 
+            [ yield inputExpr
               for (_targetVars, targetExpr) in targetCases do yield targetExpr ]
         | E.DecisionTreeSuccess (_targetNumber, targetArgs) -> targetArgs
         | E.UnionCaseSet (obj, _unionType, _unionCase, _unionField, valueExpr) -> [ yield obj; yield valueExpr ]
@@ -268,7 +275,7 @@ module FSharpExprConvert =
             | DT_REF -> None
         | _ -> None
 
-    let (|TTypeConvOp|_|) (cenv:SymbolEnv) ty = 
+    let (|TTypeConvOp|_|) (cenv: SymbolEnv) ty = 
         let g = cenv.g
         match ty with
         | TType_app (tcref,_) ->
@@ -291,14 +298,14 @@ module FSharpExprConvert =
 
     let ConvType cenv ty = FSharpType(cenv, ty)
     let ConvTypes cenv tys = List.map (ConvType cenv) tys
-    let ConvILTypeRefApp (cenv:SymbolEnv) m tref tyargs = 
+    let ConvILTypeRefApp (cenv: SymbolEnv) m tref tyargs = 
         let tcref = Import.ImportILTypeRef cenv.amap m tref
         ConvType cenv (mkAppTy tcref tyargs)
 
-    let ConvUnionCaseRef cenv (ucref:UnionCaseRef) = FSharpUnionCase(cenv, ucref)
-    let ConvRecdFieldRef cenv (rfref:RecdFieldRef) = FSharpField(cenv, rfref )
+    let ConvUnionCaseRef cenv (ucref: UnionCaseRef) = FSharpUnionCase(cenv, ucref)
+    let ConvRecdFieldRef cenv (rfref: RecdFieldRef) = FSharpField(cenv, rfref )
 
-    let rec exprOfExprAddr (cenv:SymbolEnv) expr = 
+    let rec exprOfExprAddr (cenv: SymbolEnv) expr = 
         match expr with 
         | Expr.Op(op, tyargs, args, m) -> 
             match op, args, tyargs  with
@@ -321,9 +328,9 @@ module FSharpExprConvert =
 
     let Mk cenv m ty e = FSharpExpr(cenv, None, e, m, ty)
 
-    let Mk2 cenv (orig:Expr) e = FSharpExpr(cenv, None, e, orig.Range, tyOfExpr cenv.g orig)
+    let Mk2 cenv (orig: Expr) e = FSharpExpr(cenv, None, e, orig.Range, tyOfExpr cenv.g orig)
 
-    let rec ConvLValueExpr (cenv:SymbolEnv) env expr = ConvExpr cenv env (exprOfExprAddr cenv expr)
+    let rec ConvLValueExpr (cenv: SymbolEnv) env expr = ConvExpr cenv env (exprOfExprAddr cenv expr)
 
     and ConvExpr cenv env expr = 
         Mk2 cenv expr (ConvExprPrim cenv env expr) 
@@ -378,7 +385,7 @@ module FSharpExprConvert =
             let dtreeR = ConvDecisionTree cenv env retTy dtree m
             // tailcall 
             ConvTargetsLinear cenv env (List.ofArray tgs) (contf << fun (targetsR: _ list) -> 
-                let (|E|) (x:FSharpExpr) = x.E
+                let (|E|) (x: FSharpExpr) = x.E
 
                 // If the match is really an "if-then-else" then return it as such.
                 match dtreeR with 
@@ -391,7 +398,7 @@ module FSharpExprConvert =
 
     /// A nasty function copied from creflect.fs. Made nastier by taking a continuation to process the 
     /// arguments to the call in a tail-recursive fashion.
-    and ConvModuleValueOrMemberUseLinear (cenv:SymbolEnv) env (expr:Expr, vref, vFlags, tyargs, curriedArgs) contf =
+    and ConvModuleValueOrMemberUseLinear (cenv: SymbolEnv) env (expr: Expr, vref, vFlags, tyargs, curriedArgs) contf =
         let m = expr.Range 
 
         let (numEnclTypeArgs, _, isNewObj, _valUseFlags, _isSelfInit, takesInstanceArg, _isPropGet, _isPropSet) = 
@@ -462,7 +469,7 @@ module FSharpExprConvert =
                 // tailcall
                 ConvObjectModelCallLinear cenv env (false, v, [], tyargs, List.concat untupledCurriedArgs) contf2
 
-    and ConvExprPrim (cenv:SymbolEnv) (env:ExprTranslationEnv) expr = 
+    and ConvExprPrim (cenv: SymbolEnv) (env: ExprTranslationEnv) expr = 
         // Eliminate integer 'for' loops 
         let expr = DetectAndOptimizeForExpression cenv.g OptimizeIntRangesOnly expr
 
@@ -559,6 +566,11 @@ module FSharpExprConvert =
                 let argsR = ConvExprs cenv env args
                 E.NewUnionCase(typR, mkR, argsR) 
 
+            | TOp.AnonRecd anonInfo, _, _ -> 
+                let typR = ConvType cenv (mkAnyAnonRecdTy cenv.g anonInfo tyargs)
+                let argsR = ConvExprs cenv env args
+                E.NewAnonRecord(typR, argsR) 
+
             | TOp.Tuple tupInfo, tyargs, _ -> 
                 let tyR = ConvType cenv (mkAnyTupledTy cenv.g tupInfo tyargs)
                 let argsR = ConvExprs cenv env args
@@ -574,6 +586,10 @@ module FSharpExprConvert =
                 let typR = ConvType cenv (mkAppTy ucref.TyconRef tyargs)
                 let projR = FSharpField(cenv, ucref, n)
                 E.UnionCaseGet(ConvExpr cenv env e1, typR, mkR, projR) 
+
+            | TOp.AnonRecdGet (anonInfo, n), tyargs, [e1] -> 
+                let typR = ConvType cenv (mkAnyAnonRecdTy cenv.g anonInfo tyargs)
+                E.AnonRecordGet(ConvExpr cenv env e1, typR, n) 
 
             | TOp.UnionCaseFieldSet (ucref, n), tyargs, [e1;e2] -> 
                 let mkR = ConvUnionCaseRef cenv ucref 
@@ -854,7 +870,7 @@ module FSharpExprConvert =
             let envinner = env.BindVal v
             Some(vR, rhsR), envinner
 
-    and ConvILCall (cenv:SymbolEnv) env (isNewObj, valUseFlags, ilMethRef, enclTypeArgs, methTypeArgs, callArgs, m) =
+    and ConvILCall (cenv: SymbolEnv) env (isNewObj, valUseFlags, ilMethRef, enclTypeArgs, methTypeArgs, callArgs, m) =
         let isNewObj = (isNewObj || (match valUseFlags with CtorValUsedAsSuperInit | CtorValUsedAsSelfInit -> true | _ -> false))
         let methName = ilMethRef.Name
         let isPropGet = methName.StartsWithOrdinal("get_")
@@ -1058,7 +1074,7 @@ module FSharpExprConvert =
           with e -> 
             failwithf "An IL call to '%s' could not be resolved: %s" (ilMethRef.ToString()) e.Message
 
-    and ConvObjectModelCallLinear cenv env (isNewObj, v:FSharpMemberOrFunctionOrValue, enclTyArgs, methTyArgs, callArgs) contf =
+    and ConvObjectModelCallLinear cenv env (isNewObj, v: FSharpMemberOrFunctionOrValue, enclTyArgs, methTyArgs, callArgs) contf =
         let enclTyArgsR = ConvTypes cenv enclTyArgs
         let methTyArgsR = ConvTypes cenv methTyArgs
         let obj, callArgs = 
@@ -1095,7 +1111,7 @@ module FSharpExprConvert =
             ConvTargetsLinear cenv env rest (fun restR -> 
             contf ((varsR, targetR) :: restR)))
 
-    and ConvValRef cenv env m (vref:ValRef) =
+    and ConvValRef cenv env m (vref: ValRef) =
         let v = vref.Deref
         if env.isinstVals.ContainsVal v then 
             let (ty, e) = env.isinstVals.[v]
@@ -1110,7 +1126,7 @@ module FSharpExprConvert =
         else 
             E.Value(FSharpMemberOrFunctionOrValue(cenv, vref)) 
 
-    and ConvVal cenv (v:Val) =  
+    and ConvVal cenv (v: Val) =  
         let vref = mkLocalValRef v 
         FSharpMemberOrFunctionOrValue(cenv, vref) 
 
@@ -1268,47 +1284,49 @@ and FSharpImplementationFileContents(cenv, mimpl) =
 
 
 module BasicPatterns = 
-    let (|Value|_|) (e:FSharpExpr) = match e.E with E.Value (v) -> Some (v) | _ -> None
-    let (|Const|_|) (e:FSharpExpr) = match e.E with E.Const (v, ty) -> Some (v, ty) | _ -> None
-    let (|TypeLambda|_|) (e:FSharpExpr) = match e.E with E.TypeLambda (v, e) -> Some (v, e) | _ -> None
-    let (|Lambda|_|) (e:FSharpExpr) = match e.E with E.Lambda (v, e) -> Some (v, e) | _ -> None
-    let (|Application|_|) (e:FSharpExpr) = match e.E with E.Application (f, tys, e) -> Some (f, tys, e) | _ -> None
-    let (|IfThenElse|_|) (e:FSharpExpr) = match e.E with E.IfThenElse (e1, e2, e3) -> Some (e1, e2, e3) | _ -> None
-    let (|Let|_|) (e:FSharpExpr) = match e.E with E.Let ((v, e), b) -> Some ((v, e), b) | _ -> None
-    let (|LetRec|_|) (e:FSharpExpr) = match e.E with E.LetRec (ves, b) -> Some (ves, b) | _ -> None
-    let (|NewRecord|_|) (e:FSharpExpr) = match e.E with E.NewRecord (ty, es) -> Some (ty, es) | _ -> None
-    let (|NewUnionCase|_|) (e:FSharpExpr) = match e.E with E.NewUnionCase (e, tys, es) -> Some (e, tys, es) | _ -> None
-    let (|NewTuple|_|) (e:FSharpExpr) = match e.E with E.NewTuple (ty, es) -> Some (ty, es) | _ -> None
-    let (|TupleGet|_|) (e:FSharpExpr) = match e.E with E.TupleGet (ty, n, es) -> Some (ty, n, es) | _ -> None
-    let (|Call|_|) (e:FSharpExpr) = match e.E with E.Call (a, b, c, d, e) -> Some (a, b, c, d, e) | _ -> None
-    let (|NewObject|_|) (e:FSharpExpr) = match e.E with E.NewObject (a, b, c) -> Some (a, b, c) | _ -> None
-    let (|FSharpFieldGet|_|) (e:FSharpExpr) = match e.E with E.FSharpFieldGet (a, b, c) -> Some (a, b, c) | _ -> None
-    let (|FSharpFieldSet|_|) (e:FSharpExpr) = match e.E with E.FSharpFieldSet (a, b, c, d) -> Some (a, b, c, d) | _ -> None
-    let (|UnionCaseGet|_|) (e:FSharpExpr) = match e.E with E.UnionCaseGet (a, b, c, d) -> Some (a, b, c, d) | _ -> None
-    let (|UnionCaseTag|_|) (e:FSharpExpr) = match e.E with E.UnionCaseTag (a, b) -> Some (a, b) | _ -> None
-    let (|UnionCaseTest|_|) (e:FSharpExpr) = match e.E with E.UnionCaseTest (a, b, c) -> Some (a, b, c) | _ -> None
-    let (|NewArray|_|) (e:FSharpExpr) = match e.E with E.NewArray (a, b) -> Some (a, b) | _ -> None
-    let (|Coerce|_|) (e:FSharpExpr) = match e.E with E.Coerce (a, b) -> Some (a, b) | _ -> None
-    let (|Quote|_|) (e:FSharpExpr) = match e.E with E.Quote (a) -> Some (a) | _ -> None
-    let (|TypeTest|_|) (e:FSharpExpr) = match e.E with E.TypeTest (a, b) -> Some (a, b) | _ -> None
-    let (|Sequential|_|) (e:FSharpExpr) = match e.E with E.Sequential (a, b) -> Some (a, b) | _ -> None
-    let (|FastIntegerForLoop|_|) (e:FSharpExpr) = match e.E with E.FastIntegerForLoop (a, b, c, d) -> Some (a, b, c, d) | _ -> None
-    let (|WhileLoop|_|) (e:FSharpExpr) = match e.E with E.WhileLoop (a, b) -> Some (a, b) | _ -> None
-    let (|TryFinally|_|) (e:FSharpExpr) = match e.E with E.TryFinally (a, b) -> Some (a, b) | _ -> None
-    let (|TryWith|_|) (e:FSharpExpr) = match e.E with E.TryWith (a, b, c, d, e) -> Some (a, b, c, d, e) | _ -> None
-    let (|NewDelegate|_|) (e:FSharpExpr) = match e.E with E.NewDelegate (ty, e) -> Some (ty, e) | _ -> None
-    let (|DefaultValue|_|) (e:FSharpExpr) = match e.E with E.DefaultValue (ty) -> Some (ty) | _ -> None
-    let (|AddressSet|_|) (e:FSharpExpr) = match e.E with E.AddressSet (a, b) -> Some (a, b) | _ -> None
-    let (|ValueSet|_|) (e:FSharpExpr) = match e.E with E.ValueSet (a, b) -> Some (a, b) | _ -> None
-    let (|AddressOf|_|) (e:FSharpExpr) = match e.E with E.AddressOf (a) -> Some (a) | _ -> None
-    let (|ThisValue|_|) (e:FSharpExpr) = match e.E with E.ThisValue (a) -> Some (a) | _ -> None
-    let (|BaseValue|_|) (e:FSharpExpr) = match e.E with E.BaseValue (a) -> Some (a) | _ -> None
-    let (|ILAsm|_|) (e:FSharpExpr) = match e.E with E.ILAsm (a, b, c) -> Some (a, b, c) | _ -> None
-    let (|ILFieldGet|_|) (e:FSharpExpr) = match e.E with E.ILFieldGet (a, b, c) -> Some (a, b, c) | _ -> None
-    let (|ILFieldSet|_|) (e:FSharpExpr) = match e.E with E.ILFieldSet (a, b, c, d) -> Some (a, b, c, d) | _ -> None
-    let (|ObjectExpr|_|) (e:FSharpExpr) = match e.E with E.ObjectExpr (a, b, c, d) -> Some (a, b, c, d) | _ -> None
-    let (|DecisionTree|_|) (e:FSharpExpr) = match e.E with E.DecisionTree (a, b) -> Some (a, b) | _ -> None
-    let (|DecisionTreeSuccess|_|) (e:FSharpExpr) = match e.E with E.DecisionTreeSuccess (a, b) -> Some (a, b) | _ -> None
-    let (|UnionCaseSet|_|) (e:FSharpExpr) = match e.E with E.UnionCaseSet (a, b, c, d, e) -> Some (a, b, c, d, e) | _ -> None
-    let (|TraitCall|_|) (e:FSharpExpr) = match e.E with E.TraitCall (a, b, c, d, e, f) -> Some (a, b, c, d, e, f) | _ -> None
+    let (|Value|_|) (e: FSharpExpr) = match e.E with E.Value (v) -> Some (v) | _ -> None
+    let (|Const|_|) (e: FSharpExpr) = match e.E with E.Const (v, ty) -> Some (v, ty) | _ -> None
+    let (|TypeLambda|_|) (e: FSharpExpr) = match e.E with E.TypeLambda (v, e) -> Some (v, e) | _ -> None
+    let (|Lambda|_|) (e: FSharpExpr) = match e.E with E.Lambda (v, e) -> Some (v, e) | _ -> None
+    let (|Application|_|) (e: FSharpExpr) = match e.E with E.Application (f, tys, e) -> Some (f, tys, e) | _ -> None
+    let (|IfThenElse|_|) (e: FSharpExpr) = match e.E with E.IfThenElse (e1, e2, e3) -> Some (e1, e2, e3) | _ -> None
+    let (|Let|_|) (e: FSharpExpr) = match e.E with E.Let ((v, e), b) -> Some ((v, e), b) | _ -> None
+    let (|LetRec|_|) (e: FSharpExpr) = match e.E with E.LetRec (ves, b) -> Some (ves, b) | _ -> None
+    let (|NewRecord|_|) (e: FSharpExpr) = match e.E with E.NewRecord (ty, es) -> Some (ty, es) | _ -> None
+    let (|NewAnonRecord|_|) (e: FSharpExpr) = match e.E with E.NewAnonRecord (ty, es) -> Some (ty, es) | _ -> None
+    let (|NewUnionCase|_|) (e: FSharpExpr) = match e.E with E.NewUnionCase (e, tys, es) -> Some (e, tys, es) | _ -> None
+    let (|NewTuple|_|) (e: FSharpExpr) = match e.E with E.NewTuple (ty, es) -> Some (ty, es) | _ -> None
+    let (|TupleGet|_|) (e: FSharpExpr) = match e.E with E.TupleGet (ty, n, es) -> Some (ty, n, es) | _ -> None
+    let (|Call|_|) (e: FSharpExpr) = match e.E with E.Call (a, b, c, d, e) -> Some (a, b, c, d, e) | _ -> None
+    let (|NewObject|_|) (e: FSharpExpr) = match e.E with E.NewObject (a, b, c) -> Some (a, b, c) | _ -> None
+    let (|FSharpFieldGet|_|) (e: FSharpExpr) = match e.E with E.FSharpFieldGet (a, b, c) -> Some (a, b, c) | _ -> None
+    let (|AnonRecordGet|_|) (e: FSharpExpr) = match e.E with E.AnonRecordGet (a, b, c) -> Some (a, b, c) | _ -> None
+    let (|FSharpFieldSet|_|) (e: FSharpExpr) = match e.E with E.FSharpFieldSet (a, b, c, d) -> Some (a, b, c, d) | _ -> None
+    let (|UnionCaseGet|_|) (e: FSharpExpr) = match e.E with E.UnionCaseGet (a, b, c, d) -> Some (a, b, c, d) | _ -> None
+    let (|UnionCaseTag|_|) (e: FSharpExpr) = match e.E with E.UnionCaseTag (a, b) -> Some (a, b) | _ -> None
+    let (|UnionCaseTest|_|) (e: FSharpExpr) = match e.E with E.UnionCaseTest (a, b, c) -> Some (a, b, c) | _ -> None
+    let (|NewArray|_|) (e: FSharpExpr) = match e.E with E.NewArray (a, b) -> Some (a, b) | _ -> None
+    let (|Coerce|_|) (e: FSharpExpr) = match e.E with E.Coerce (a, b) -> Some (a, b) | _ -> None
+    let (|Quote|_|) (e: FSharpExpr) = match e.E with E.Quote (a) -> Some (a) | _ -> None
+    let (|TypeTest|_|) (e: FSharpExpr) = match e.E with E.TypeTest (a, b) -> Some (a, b) | _ -> None
+    let (|Sequential|_|) (e: FSharpExpr) = match e.E with E.Sequential (a, b) -> Some (a, b) | _ -> None
+    let (|FastIntegerForLoop|_|) (e: FSharpExpr) = match e.E with E.FastIntegerForLoop (a, b, c, d) -> Some (a, b, c, d) | _ -> None
+    let (|WhileLoop|_|) (e: FSharpExpr) = match e.E with E.WhileLoop (a, b) -> Some (a, b) | _ -> None
+    let (|TryFinally|_|) (e: FSharpExpr) = match e.E with E.TryFinally (a, b) -> Some (a, b) | _ -> None
+    let (|TryWith|_|) (e: FSharpExpr) = match e.E with E.TryWith (a, b, c, d, e) -> Some (a, b, c, d, e) | _ -> None
+    let (|NewDelegate|_|) (e: FSharpExpr) = match e.E with E.NewDelegate (ty, e) -> Some (ty, e) | _ -> None
+    let (|DefaultValue|_|) (e: FSharpExpr) = match e.E with E.DefaultValue (ty) -> Some (ty) | _ -> None
+    let (|AddressSet|_|) (e: FSharpExpr) = match e.E with E.AddressSet (a, b) -> Some (a, b) | _ -> None
+    let (|ValueSet|_|) (e: FSharpExpr) = match e.E with E.ValueSet (a, b) -> Some (a, b) | _ -> None
+    let (|AddressOf|_|) (e: FSharpExpr) = match e.E with E.AddressOf (a) -> Some (a) | _ -> None
+    let (|ThisValue|_|) (e: FSharpExpr) = match e.E with E.ThisValue (a) -> Some (a) | _ -> None
+    let (|BaseValue|_|) (e: FSharpExpr) = match e.E with E.BaseValue (a) -> Some (a) | _ -> None
+    let (|ILAsm|_|) (e: FSharpExpr) = match e.E with E.ILAsm (a, b, c) -> Some (a, b, c) | _ -> None
+    let (|ILFieldGet|_|) (e: FSharpExpr) = match e.E with E.ILFieldGet (a, b, c) -> Some (a, b, c) | _ -> None
+    let (|ILFieldSet|_|) (e: FSharpExpr) = match e.E with E.ILFieldSet (a, b, c, d) -> Some (a, b, c, d) | _ -> None
+    let (|ObjectExpr|_|) (e: FSharpExpr) = match e.E with E.ObjectExpr (a, b, c, d) -> Some (a, b, c, d) | _ -> None
+    let (|DecisionTree|_|) (e: FSharpExpr) = match e.E with E.DecisionTree (a, b) -> Some (a, b) | _ -> None
+    let (|DecisionTreeSuccess|_|) (e: FSharpExpr) = match e.E with E.DecisionTreeSuccess (a, b) -> Some (a, b) | _ -> None
+    let (|UnionCaseSet|_|) (e: FSharpExpr) = match e.E with E.UnionCaseSet (a, b, c, d, e) -> Some (a, b, c, d, e) | _ -> None
+    let (|TraitCall|_|) (e: FSharpExpr) = match e.E with E.TraitCall (a, b, c, d, e, f) -> Some (a, b, c, d, e, f) | _ -> None
 
