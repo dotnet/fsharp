@@ -132,7 +132,7 @@ type ValInfos(entries) =
 
     let valInfoTable = 
         lazy (let t = ValHash.Create () 
-              for (vref:ValRef, x) in entries do 
+              for (vref: ValRef, x) in entries do 
                    t.Add (vref.Deref, (vref, x))
               t)
 
@@ -153,9 +153,9 @@ type ValInfos(entries) =
 
     member x.Filter f = ValInfos(Seq.filter f x.Entries)
 
-    member x.TryFind (v:ValRef) = valInfoTable.Force().TryFind v.Deref
+    member x.TryFind (v: ValRef) = valInfoTable.Force().TryFind v.Deref
 
-    member x.TryFindForFslib (v:ValRef) = valInfosForFslib.Force().TryGetValue(v.Deref.GetLinkagePartialKey())
+    member x.TryFindForFslib (v: ValRef) = valInfosForFslib.Force().TryGetValue(v.Deref.GetLinkagePartialKey())
 
 type ModuleInfo = 
     { ValInfos: ValInfos
@@ -186,12 +186,12 @@ let rec exprValueInfoL g exprVal =
 
 and exprValueInfosL g vinfos = commaListL (List.map (exprValueInfoL g) (Array.toList vinfos))
 
-and moduleInfoL g (x:LazyModuleInfo) = 
+and moduleInfoL g (x: LazyModuleInfo) = 
     let x = x.Force()
     braceL ((wordL (tagText "Modules: ") @@ (x.ModuleOrNamespaceInfos |> namemapL (fun nm x -> wordL (tagText nm) ^^ moduleInfoL g x) ) )
             @@ (wordL (tagText "Values:") @@ (x.ValInfos.Entries |> seqL (fun (vref, x) -> valRefL vref ^^ valInfoL g x) )))
 
-and valInfoL g (x:ValInfo) = 
+and valInfoL g (x: ValInfo) = 
     braceL ((wordL (tagText "ValExprInfo: ") @@ exprValueInfoL g x.ValExprInfo) 
             @@ (wordL (tagText "ValMakesNoCriticalTailcalls:") @@ wordL (tagText (if x.ValMakesNoCriticalTailcalls then "true" else "false"))))
 #endif
@@ -426,12 +426,12 @@ let rec IsPartialExprVal x =
     | ValValue (_, a) 
     | SizeValue(_, a) -> IsPartialExprVal a
 
-let CheckInlineValueIsComplete (v:Val) res =
+let CheckInlineValueIsComplete (v: Val) res =
     if v.MustInline && IsPartialExprVal res then
         errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(v.DisplayName), v.Range))
         //System.Diagnostics.Debug.Assert(false, sprintf "Break for incomplete inline value %s" v.DisplayName)
 
-let check (vref: ValRef) (res:ValInfo)  =
+let check (vref: ValRef) (res: ValInfo)  =
     CheckInlineValueIsComplete vref.Deref res.ValExprInfo
     (vref, res)
 
@@ -462,7 +462,7 @@ let FindOrCreateGlobalModuleInfo n (ss: LayeredMap<_, _>) =
     | Some res -> res
     | None -> EmptyModuleInfo
 
-let rec BindValueInSubModuleFSharpCore (mp:string[]) i (v:Val) vval ss =
+let rec BindValueInSubModuleFSharpCore (mp: string[]) i (v: Val) vval ss =
     if i < mp.Length  then 
         {ss with ModuleOrNamespaceInfos = BindValueInModuleForFslib mp.[i] mp (i+1) v vval ss.ModuleOrNamespaceInfos }
     else 
@@ -482,10 +482,10 @@ let BindValueForFslib (nlvref : NonLocalValOrMemberRef) v vval env =
 
 let UnknownValInfo = { ValExprInfo=UnknownValue; ValMakesNoCriticalTailcalls=false }
 
-let mkValInfo info (v:Val)  = { ValExprInfo=info.Info; ValMakesNoCriticalTailcalls= v.MakesNoCriticalTailcalls }
+let mkValInfo info (v: Val)  = { ValExprInfo=info.Info; ValMakesNoCriticalTailcalls= v.MakesNoCriticalTailcalls }
 
 (* Bind a value *)
-let BindInternalLocalVal cenv (v:Val) vval env = 
+let BindInternalLocalVal cenv (v: Val) vval env = 
     let vval = if v.IsMutable then UnknownValInfo else vval
 #if CHECKED
 #else
@@ -496,7 +496,7 @@ let BindInternalLocalVal cenv (v:Val) vval env =
         cenv.localInternalVals.[v.Stamp] <- vval
         env
         
-let BindExternalLocalVal cenv (v:Val) vval env = 
+let BindExternalLocalVal cenv (v: Val) vval env = 
 #if CHECKED
     CheckInlineValueIsComplete v vval
 #endif
@@ -527,11 +527,11 @@ let BindExternalLocalVal cenv (v:Val) vval env =
         else env
     env
 
-let rec BindValsInModuleOrNamespace cenv (mval:LazyModuleInfo) env =
+let rec BindValsInModuleOrNamespace cenv (mval: LazyModuleInfo) env =
     let mval = mval.Force()
     // do all the sub modules
     let env = (mval.ModuleOrNamespaceInfos, env) ||> NameMap.foldBackRange  (BindValsInModuleOrNamespace cenv) 
-    let env = (env, mval.ValInfos.Entries) ||> Seq.fold (fun env (v:ValRef, vval) -> BindExternalLocalVal cenv v.Deref vval env) 
+    let env = (env, mval.ValInfos.Entries) ||> Seq.fold (fun env (v: ValRef, vval) -> BindExternalLocalVal cenv v.Deref vval env) 
     env
 
 let inline BindInternalValToUnknown cenv v env = 
@@ -553,7 +553,7 @@ let inline BindInternalValsToUnknown cenv vs env =
 
 let BindTypeVar tyv typeinfo env = { env with typarInfos= (tyv, typeinfo)::env.typarInfos } 
 
-let BindTypeVarsToUnknown (tps:Typar list) env = 
+let BindTypeVarsToUnknown (tps: Typar list) env = 
     if isNil tps then env else
     // The optimizer doesn't use the type values it could track. 
     // However here we mutate to provide better names for generalized type parameters 
@@ -564,11 +564,11 @@ let BindTypeVarsToUnknown (tps:Typar list) env =
                 tp.typar_id <- ident (nm, tp.Range))      
     List.fold (fun sofar arg -> BindTypeVar arg UnknownTypeValue sofar) env tps 
 
-let BindCcu (ccu:Tast.CcuThunk) mval env (_g:TcGlobals) = 
+let BindCcu (ccu: Tast.CcuThunk) mval env (_g: TcGlobals) = 
     { env with globalModuleInfos=env.globalModuleInfos.Add(ccu.AssemblyName, mval)  }
 
 /// Lookup information about values 
-let GetInfoForLocalValue cenv env (v:Val) m = 
+let GetInfoForLocalValue cenv env (v: Val) m = 
     // Abstract slots do not have values 
     if v.IsDispatchSlot then UnknownValInfo 
     else
@@ -585,7 +585,7 @@ let GetInfoForLocalValue cenv env (v:Val) m =
 #endif
             UnknownValInfo 
 
-let TryGetInfoForCcu env (ccu:CcuThunk) = env.globalModuleInfos.TryFind(ccu.AssemblyName)
+let TryGetInfoForCcu env (ccu: CcuThunk) = env.globalModuleInfos.TryFind(ccu.AssemblyName)
 
 let TryGetInfoForEntity sv n = 
     match sv.ModuleOrNamespaceInfos.TryFind n with 
@@ -603,7 +603,7 @@ let TryGetInfoForNonLocalEntityRef env (nleref: NonLocalEntityRef) =
     | Some ccuinfo -> TryGetInfoForPath (ccuinfo.Force()) nleref.Path 0
     | None -> None
               
-let GetInfoForNonLocalVal cenv env (vref:ValRef) =
+let GetInfoForNonLocalVal cenv env (vref: ValRef) =
     if vref.IsDispatchSlot then 
         UnknownValInfo
     // REVIEW: optionally turn x-module on/off on per-module basis  or  
@@ -628,7 +628,7 @@ let GetInfoForNonLocalVal cenv env (vref:ValRef) =
     else 
         UnknownValInfo
 
-let GetInfoForVal cenv env m (vref:ValRef) =  
+let GetInfoForVal cenv env m (vref: ValRef) =  
     let res = 
         if vref.IsLocalRef then
             GetInfoForLocalValue cenv env vref.binding m
@@ -1107,7 +1107,7 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
                          |> Seq.filter (fun (vref, _) -> not (hiddenVal vref.Deref))
                          |> Seq.map (fun (vref, e) -> check (* "its implementation uses a binding hidden by a signature" m *)  vref (abstractValInfo e) )) } 
 
-    and abstractLazyModulInfo (ss:LazyModuleInfo) = 
+    and abstractLazyModulInfo (ss: LazyModuleInfo) = 
           ss.Force() |> abstractModulInfo |> notlazy
 
     abstractLazyModulInfo
@@ -1115,7 +1115,7 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
 /// Hide all information except what we need for "must inline". We always save this optimization information
 let AbstractOptimizationInfoToEssentials =
 
-    let rec abstractModulInfo (ss:ModuleInfo) =
+    let rec abstractModulInfo (ss: ModuleInfo) =
          { ModuleOrNamespaceInfos = NameMap.map (Lazy.force >> abstractModulInfo >> notlazy) ss.ModuleOrNamespaceInfos
            ValInfos =  ss.ValInfos.Filter (fun (v, _) -> v.MustInline) }
 
@@ -1124,7 +1124,7 @@ let AbstractOptimizationInfoToEssentials =
     abstractLazyModulInfo
 
 /// Hide information because of a "let ... in ..." or "let rec  ... in ... "
-let AbstractExprInfoByVars (boundVars:Val list, boundTyVars) ivalue =
+let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
   // Module and member bindings can be skipped when checking abstraction, since abstraction of these values has already been done when 
   // we hit the end of the module and called AbstractLazyModulInfoByHiding. If we don't skip these then we end up quadtratically retraversing  
   // the inferred optimization data, i.e. at each binding all the way up a sequences of 'lets' in a module. 
@@ -1300,7 +1300,7 @@ let IsDiscardableEffectExpr expr =
     | _ -> false
 
 /// Checks is a value binding is non-discardable
-let ValueIsUsedOrHasEffect cenv fvs (b:Binding, binfo) =
+let ValueIsUsedOrHasEffect cenv fvs (b: Binding, binfo) =
     let v = b.Var
     not (cenv.settings.EliminateUnusedBindings()) ||
     Option.isSome v.MemberInfo ||
@@ -1572,7 +1572,7 @@ let ExpandStructuralBindingRaw cenv expr =
               expr (* avoid re-expanding when recursion hits original binding *)
           else
               let argTys = destRefTupleTy cenv.g v.Type
-              let argBind i (arg:Expr) argTy =
+              let argBind i (arg: Expr) argTy =
                   let name = v.LogicalName + "_" + string i
                   let v, ve = mkCompGenLocal arg.Range name argTy
                   ve, mkCompGenBind v arg
@@ -1627,7 +1627,7 @@ let (|AnyInstanceMethodApp|_|) e =
     | Expr.App(Expr.Val (vref, _, _), _, tyargs, [obj; MaybeRefTupled args], _) -> Some (vref, tyargs, obj, args)
     | _ -> None
 
-let (|InstanceMethodApp|_|) g (expectedValRef:ValRef) e = 
+let (|InstanceMethodApp|_|) g (expectedValRef: ValRef) e = 
     match e with 
     | AnyInstanceMethodApp (vref, tyargs, obj, args) when valRefEq g vref expectedValRef -> Some (tyargs, obj, args)
     | _ ->  None
@@ -1742,7 +1742,7 @@ let rec tryRewriteToSeqCombinators g (e: Expr) =
 ///
 /// We check if the combinators are marked with tag IEnumerable - if do, we optimize the "Run" and quotation away, since RunQueryAsEnumerable simply performs
 /// an eval.
-let TryDetectQueryQuoteAndRun cenv (expr:Expr) = 
+let TryDetectQueryQuoteAndRun cenv (expr: Expr) = 
     let g = cenv.g
     match expr with
     | QueryRun g (bodyOfRun, reqdResultInfo) -> 
@@ -1757,7 +1757,7 @@ let TryDetectQueryQuoteAndRun cenv (expr:Expr) =
             // When we find the 'core' of the query expression, then if that is using IEnumerable execution, 
             // try to rewrite the core into combinators approximating the compiled form of seq { ... }, which in turn
             // are eligible for state-machine representation. If that fails, we still rewrite to combinator form.
-            let rec loopOuter (e:Expr) = 
+            let rec loopOuter (e: Expr) = 
                 match e with 
 
                 | QueryFor g (qTy, _, resultElemTy, _, _)  
@@ -1820,7 +1820,7 @@ let IsSystemStringConcatArray (methRef: ILMethodRef) =
     methRef.ArgTypes.Length = 1 && methRef.ArgTypes.Head.BasicQualifiedName = "System.String[]"
     
 /// Optimize/analyze an expression
-let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
+let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
 
     // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
     // complete inference types.
@@ -2435,7 +2435,7 @@ and TryOptimizeValInfo cenv env m vinfo =
     if vinfo.HasEffect then None else TryOptimizeVal cenv env (false, vinfo.Info , m)
 
 /// Add 'v1 = v2' information into the information stored about a value
-and AddValEqualityInfo g m (v:ValRef) info =
+and AddValEqualityInfo g m (v: ValRef) info =
     // ValValue is information that v = v2, where v2 does not change 
     // So we can't record this information for mutable values. An exception can be made
     // for "outArg" values arising from method calls since they are only temporarily mutable
@@ -2446,7 +2446,7 @@ and AddValEqualityInfo g m (v:ValRef) info =
         {info with Info= MakeValueInfoForValue g m v info.Info}
 
 /// Optimize/analyze a use of a value
-and OptimizeVal cenv env expr (v:ValRef, m) =
+and OptimizeVal cenv env expr (v: ValRef, m) =
     let valInfoForVal = GetInfoForVal cenv env m v 
 
     match TryOptimizeVal cenv env (v.MustInline, valInfoForVal.ValExprInfo, m) with
@@ -2494,7 +2494,7 @@ and CanDevirtualizeApplication cenv v vref ty args  =
      // Hence we have to actually have the object argument available to us, 
      && (not (isStructTy cenv.g ty) || not (isNil args)) 
 
-and TakeAddressOfStructArgumentIfNeeded cenv (vref:ValRef) ty args m =
+and TakeAddressOfStructArgumentIfNeeded cenv (vref: ValRef) ty args m =
     if vref.IsInstanceMember && isStructTy cenv.g ty then 
         match args with 
         | objArg::rest -> 
@@ -2510,7 +2510,7 @@ and TakeAddressOfStructArgumentIfNeeded cenv (vref:ValRef) ty args m =
     else
         id, args
 
-and DevirtualizeApplication cenv env (vref:ValRef) ty tyargs args m =
+and DevirtualizeApplication cenv env (vref: ValRef) ty tyargs args m =
     let wrap, args = TakeAddressOfStructArgumentIfNeeded cenv vref ty args m
     let transformedExpr = wrap (MakeApplicationAndBetaReduce cenv.g (exprForValRef m vref, vref.Type, (if isNil tyargs then [] else [tyargs]), args, m))
     OptimizeExpr cenv env transformedExpr
@@ -2522,8 +2522,8 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
     // to be augmented with a visible comparison value. 
     //
     // e.g rewrite 
-    //      'LanguagePrimitives.HashCompare.GenericComparisonIntrinsic (x:C) (y:C)' 
-    //  --> 'x.CompareTo(y:C)' where this is a direct call to the implementation of CompareTo, i.e.
+    //      'LanguagePrimitives.HashCompare.GenericComparisonIntrinsic (x: C) (y: C)' 
+    //  --> 'x.CompareTo(y: C)' where this is a direct call to the implementation of CompareTo, i.e.
     //        C::CompareTo(C)
     //    not C::CompareTo(obj)
     //
@@ -2965,7 +2965,7 @@ and OptimizeExprThenConsiderSplit cenv env e =
   ConsiderSplitToMethod true cenv.settings.veryBigExprSize cenv env (eR, einfo) 
 
 /// Decide whether to List.unzip a sub-expression into a new method
-and ComputeSplitToMethodCondition flag threshold cenv env (e:Expr, einfo) = 
+and ComputeSplitToMethodCondition flag threshold cenv env (e: Expr, einfo) = 
     flag &&
     // REVIEW: The method splitting optimization is completely disabled if we are not taking tailcalls.
     // REVIEW: This should only apply to methods that actually make self-tailcalls (tested further below).
@@ -3270,7 +3270,7 @@ and OptimizeModuleExpr cenv env x =
             //
             // It may be wise to move to a non-mutating implementation at some point here. Copying expressions is
             // probably more costly than copying specs anyway.
-            let rec elimModTy (mtyp:ModuleOrNamespaceType) =                  
+            let rec elimModTy (mtyp: ModuleOrNamespaceType) =                  
                 let mty = 
                     new ModuleOrNamespaceType(kind=mtyp.ModuleOrNamespaceKind, 
                                               vals= (mtyp.AllValsAndMembers |> QueueList.filter (Zset.memberOf deadSet >> not)), 
@@ -3278,7 +3278,7 @@ and OptimizeModuleExpr cenv env x =
                 mtyp.ModuleAndNamespaceDefinitions |> List.iter elimModSpec
                 mty
 
-            and elimModSpec (mspec:ModuleOrNamespace) = 
+            and elimModSpec (mspec: ModuleOrNamespace) = 
                 let mtyp = elimModTy mspec.ModuleOrNamespaceType 
                 mspec.entity_modul_contents <- MaybeLazy.Strict mtyp
 
@@ -3309,7 +3309,7 @@ and OptimizeModuleExpr cenv env x =
 
         ModuleOrNamespaceExprWithSig(mty, def, m), info 
 
-and mkValBind (bind:Binding) info =
+and mkValBind (bind: Binding) info =
     (mkLocalValRef bind.Var, info)
 
 and OptimizeModuleDef cenv (env, bindInfosColl) x = 
@@ -3435,7 +3435,7 @@ let rec p_ExprValueInfo x st =
     | SizeValue (_adepth, a) ->
         p_ExprValueInfo a st
 
-and p_ValInfo (v:ValInfo) st = 
+and p_ValInfo (v: ValInfo) st = 
     p_ExprValueInfo v.ValExprInfo st
     p_bool v.ValMakesNoCriticalTailcalls st
 
