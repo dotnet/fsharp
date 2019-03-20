@@ -7,7 +7,7 @@ open System.Net.Sockets
 open System.Text
 open System.Threading
 open System.Linq
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
 open Legacy.FSharp.Compiler.Hosted
 
 [<AutoOpen>]

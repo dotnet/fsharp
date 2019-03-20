@@ -1,26 +1,26 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Coordinating compiler operations - configuration, loading initial context, reporting errors etc.
-module internal Microsoft.FSharp.Compiler.CompileOps
+module internal FSharp.Compiler.CompileOps
 
 open System
 open System.Text
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler 
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler
+open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.Range
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Tast
+open FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Text
-open Microsoft.FSharp.Compiler.TypeChecker
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Core.CompilerServices
 #if !NO_EXTENSIONTYPING
-open Microsoft.FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.ExtensionTyping
 #endif
 
 

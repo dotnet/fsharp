@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Build
+namespace FSharp.Build
 
 open System
 open System.Diagnostics
@@ -10,10 +10,6 @@ open System.Reflection
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open Internal.Utilities
-
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
 
 //There are a lot of flags on fsc.exe.
 //For now, not all of them are represented in the "Fsc class" object model.
@@ -294,6 +290,10 @@ type public Fsc () as this =
     member fsc.EmbedAllSources
         with get() = embedAllSources
         and  set(s) = embedAllSources <- s
+
+    member fsc.Embed
+        with get() = embeddedFiles
+        and set(e) = embeddedFiles <- e
 
     member fsc.EmbeddedFiles
         with get() = embeddedFiles

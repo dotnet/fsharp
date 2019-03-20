@@ -1,16 +1,16 @@
 ﻿
 #if INTERACTIVE
-#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
 module FSharp.Compiler.Service.Tests.TokenizerTests
 #endif
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Interactive.Shell
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.SourceCodeServices
 
 open NUnit.Framework
 open FsUnit

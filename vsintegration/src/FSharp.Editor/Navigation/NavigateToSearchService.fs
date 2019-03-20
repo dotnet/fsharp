@@ -20,8 +20,8 @@ open Microsoft.CodeAnalysis.NavigateTo
 open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.PatternMatching
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 
 type internal NavigableItem(document: Document, sourceSpan: TextSpan, glyph: Glyph, name: string, kind: string, additionalInfo: string) =
     interface INavigableItem with

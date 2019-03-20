@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../../debug/bin/net45/"
+#I "../../../../artifacts/bin/fcs/net45"
 (**
 コンパイラの組み込み
 ====================
@@ -18,10 +18,10 @@
 *)
 
 #r "FSharp.Compiler.Service.dll"
-open Microsoft.FSharp.Compiler.SimpleSourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 open System.IO
 
-let scs = SimpleSourceCodeServices()
+let scs = FSharpChecker.Create()
 
 (**
 次に、一時ファイルへコンテンツを書き込みます:
@@ -44,7 +44,7 @@ let x = 3 + 4
 そしてコンパイラを呼び出します:
 *)
 
-let errors1, exitCode1 = scs.Compile([| "fsc.exe"; "-o"; fn3; "-a"; fn2 |])
+let errors1, exitCode1 = scs.Compile([| "fsc.exe"; "-o"; fn3; "-a"; fn2 |]) |> Async.RunSynchronously
 
 (** 
 
@@ -57,7 +57,7 @@ module M
 let x = 1.0 + "" // a type error
 """)
 
-let errors1b, exitCode1b = scs.Compile([| "fsc.exe"; "-o"; fn3; "-a"; fn2 |])
+let errors1b, exitCode1b = scs.Compile([| "fsc.exe"; "-o"; fn3; "-a"; fn2 |]) |> Async.RunSynchronously
 
 if exitCode1b <> 0 then
     errors1b
@@ -79,11 +79,11 @@ if exitCode1b <> 0 then
 'execute' 引数に 'None' を指定するとアセンブリ用の初期化コードが実行されません。
 *)
 let errors2, exitCode2, dynAssembly2 = 
-    scs.CompileToDynamicAssembly([| "-o"; fn3; "-a"; fn2 |], execute=None)
+    scs.CompileToDynamicAssembly([| "-o"; fn3; "-a"; fn2 |], execute=None) |> Async.RunSynchronously
 
 (**
 'Some' を指定するとアセンブリ用の初期化コードが実行されます。
 *)
 let errors3, exitCode3, dynAssembly3 = 
-    scs.CompileToDynamicAssembly([| "-o"; fn3; "-a"; fn2 |], Some(stdout,stderr))
+    scs.CompileToDynamicAssembly([| "-o"; fn3; "-a"; fn2 |], Some(stdout,stderr)) |> Async.RunSynchronously
 

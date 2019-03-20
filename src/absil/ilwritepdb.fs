@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter
+module internal FSharp.Compiler.AbstractIL.ILPdbWriter
 
 open System
 open System.Collections.Generic 
@@ -12,12 +12,12 @@ open System.Reflection.Metadata
 open System.Reflection.Metadata.Ecma335
 open System.Reflection.PortableExecutable
 open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Support 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Diagnostics 
+open FSharp.Compiler.AbstractIL.Internal.Support 
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Range
 
 
 type BlobBuildingStream () =
@@ -31,17 +31,17 @@ type BlobBuildingStream () =
     override this.CanSeek  = false
     override this.Length   = int64(builder.Count)
 
-    override this.Write(buffer:byte array, offset:int, count:int) = builder.WriteBytes(buffer, offset, count)
-    override this.WriteByte(value:byte) = builder.WriteByte(value)
-    member   this.WriteInt32(value:int) = builder.WriteInt32(value)
+    override this.Write(buffer: byte array, offset: int, count: int) = builder.WriteBytes(buffer, offset, count)
+    override this.WriteByte(value: byte) = builder.WriteByte(value)
+    member   this.WriteInt32(value: int) = builder.WriteInt32(value)
     member   this.ToImmutableArray() = builder.ToImmutableArray()
-    member   this.TryWriteBytes(stream:Stream, length:int) = builder.TryWriteBytes(stream, length)
+    member   this.TryWriteBytes(stream: Stream, length: int) = builder.TryWriteBytes(stream, length)
 
     override this.Flush() = ()
-    override this.Dispose(_disposing:bool) = ()
-    override this.Seek(_offset:int64, _origin:SeekOrigin) = raise (new NotSupportedException())
-    override this.Read(_buffer:byte array, _offset:int, _count:int) = raise (new NotSupportedException())
-    override this.SetLength(_value:int64) = raise (new NotSupportedException())
+    override this.Dispose(_disposing: bool) = ()
+    override this.Seek(_offset: int64, _origin: SeekOrigin) = raise (new NotSupportedException())
+    override this.Read(_buffer: byte array, _offset: int, _count: int) = raise (new NotSupportedException())
+    override this.SetLength(_value: int64) = raise (new NotSupportedException())
     override val Position = 0L with get, set
 
 // -------------------------------------------------------------------- 
@@ -78,7 +78,7 @@ type PdbSequencePoint =
 
 type PdbMethodData = 
     { MethToken: int32
-      MethName:string
+      MethName: string
       LocalSignatureToken: int32
       Params: PdbLocalVar array
       RootScope: PdbMethodScope option
@@ -117,19 +117,19 @@ type BinaryChunk =
       addr: int32 }
 
 type idd =
-    { iddCharacteristics: int32;
+    { iddCharacteristics: int32
       iddMajorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddMinorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
-      iddType: int32;
-      iddTimestamp: int32;
-      iddData: byte[];
+      iddType: int32
+      iddTimestamp: int32
+      iddData: byte[]
       iddChunk: BinaryChunk }
 
 //---------------------------------------------------------------------
 // Portable PDB Writer
 //---------------------------------------------------------------------
 let cvMagicNumber = 0x53445352L
-let pdbGetCvDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) (cvChunk:BinaryChunk) = 
+let pdbGetCvDebugInfo (mvid: byte[]) (timestamp: int32) (filepath: string) (cvChunk: BinaryChunk) = 
     let iddCvBuffer =
         // Debug directory entry
         let path = (System.Text.Encoding.UTF8.GetBytes filepath)
@@ -143,17 +143,17 @@ let pdbGetCvDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) (cvChunk
         let (offset, size) = (offset + size, path.Length)         // Path to pdb string
         Buffer.BlockCopy(path, 0, buffer, offset, size)
         buffer
-    { iddCharacteristics = 0;                                                   // Reserved
-      iddMajorVersion = 0x0100;                                                 // VersionMajor should be 0x0100
-      iddMinorVersion = 0x504d;                                                 // VersionMinor should be 0x504d
-      iddType = 2;                                                              // IMAGE_DEBUG_TYPE_CODEVIEW
-      iddTimestamp = timestamp;
-      iddData = iddCvBuffer;                                                    // Path name to the pdb file when built
-      iddChunk = cvChunk;
+    { iddCharacteristics = 0                                                    // Reserved
+      iddMajorVersion = 0x0100                                                  // VersionMajor should be 0x0100
+      iddMinorVersion = 0x504d                                                  // VersionMinor should be 0x504d
+      iddType = 2                                                               // IMAGE_DEBUG_TYPE_CODEVIEW
+      iddTimestamp = timestamp
+      iddData = iddCvBuffer                                                     // Path name to the pdb file when built
+      iddChunk = cvChunk
     }
 
 let pdbMagicNumber= 0x4244504dL
-let pdbGetPdbDebugInfo (embeddedPDBChunk:BinaryChunk) (uncompressedLength:int64) (stream:MemoryStream) =
+let pdbGetPdbDebugInfo (embeddedPDBChunk: BinaryChunk) (uncompressedLength: int64) (stream: MemoryStream) =
     let iddPdbBuffer =
         let buffer = Array.zeroCreate (sizeof<int32> + sizeof<int32> + int(stream.Length))
         let (offset, size) = (0, sizeof<int32>)                    // Magic Number dword: 0x4244504dL
@@ -163,19 +163,19 @@ let pdbGetPdbDebugInfo (embeddedPDBChunk:BinaryChunk) (uncompressedLength:int64)
         let (offset, size) = (offset + size, int(stream.Length))   // Uncompressed size
         Buffer.BlockCopy(stream.ToArray(), 0, buffer, offset, size)
         buffer
-    { iddCharacteristics = 0;                                                   // Reserved
-      iddMajorVersion = 0;                                                      // VersionMajor should be 0
-      iddMinorVersion = 0x0100;                                                 // VersionMinor should be 0x0100
-      iddType = 17;                                                             // IMAGE_DEBUG_TYPE_EMBEDDEDPDB
-      iddTimestamp = 0;
-      iddData = iddPdbBuffer;                                                   // Path name to the pdb file when built
-      iddChunk = embeddedPDBChunk;
+    { iddCharacteristics = 0                                                    // Reserved
+      iddMajorVersion = 0                                                       // VersionMajor should be 0
+      iddMinorVersion = 0x0100                                                  // VersionMinor should be 0x0100
+      iddType = 17                                                              // IMAGE_DEBUG_TYPE_EMBEDDEDPDB
+      iddTimestamp = 0
+      iddData = iddPdbBuffer                                                    // Path name to the pdb file when built
+      iddChunk = embeddedPDBChunk
     }
 
-let pdbGetDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) (cvChunk:BinaryChunk) (embeddedPDBChunk:BinaryChunk option) (uncompressedLength:int64) (stream:MemoryStream option)= 
+let pdbGetDebugInfo (mvid: byte[]) (timestamp: int32) (filepath: string) (cvChunk: BinaryChunk) (embeddedPDBChunk: BinaryChunk option) (uncompressedLength: int64) (stream: MemoryStream option) = 
     match stream, embeddedPDBChunk with
     | None, _  | _, None -> [| pdbGetCvDebugInfo mvid timestamp filepath cvChunk |]
-    | Some s, Some chunk -> [| pdbGetCvDebugInfo mvid timestamp filepath cvChunk; pdbGetPdbDebugInfo chunk uncompressedLength s; |]
+    | Some s, Some chunk -> [| pdbGetCvDebugInfo mvid timestamp filepath cvChunk; pdbGetPdbDebugInfo chunk uncompressedLength s |]
 
 // Document checksum algorithms
 let guidSourceHashMD5 = System.Guid(0x406ea660u, 0x64cfus, 0x4c82us, 0xb6uy, 0xf0uy, 0x42uy, 0xd4uy, 0x81uy, 0x72uy, 0xa7uy, 0x99uy) //406ea660-64cf-4c82-b6f0-42d48172a799
@@ -184,7 +184,7 @@ let hashSizeOfMD5 = 16
 // If the FIPS algorithm policy is enabled on the computer (e.g., for US government employees and contractors)
 // then obtaining the MD5 implementation in BCL will throw. 
 // In this case, catch the failure, and not set a checksum. 
-let checkSum (url:string) =
+let checkSum (url: string) =
     try
         use file = FileSystem.FileStreamReadShim(url)
         use md5 = System.Security.Cryptography.MD5.Create()
@@ -219,7 +219,7 @@ let getRowCounts tableRowCounts =
     tableRowCounts |> Seq.iter(fun x -> builder.Add(x))
     builder.MoveToImmutable()
 
-let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sourceLink:string) showTimes (info:PdbData) isDeterministic =
+let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (sourceLink: string) showTimes (info: PdbData) isDeterministic =
     sortMethods showTimes info
     let externalRowCounts = getRowCounts info.TableRowCounts
     let docs = 
@@ -228,7 +228,7 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
         | _ -> info.Documents
 
     let metadata = MetadataBuilder()
-    let serializeDocumentName (name:string) =
+    let serializeDocumentName (name: string) =
         let count s c = s |> Seq.filter(fun ch -> if c = ch then true else false) |> Seq.length
 
         let s1, s2 = '/', '\\'
@@ -407,7 +407,7 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
         // Write the scopes
         let nextHandle handle = MetadataTokens.LocalVariableHandle(MetadataTokens.GetRowNumber(LocalVariableHandle.op_Implicit(handle)) + 1)
         let writeMethodScope scope =
-            let scopeSorter (scope1:PdbMethodScope) (scope2:PdbMethodScope) =
+            let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
                 if scope1.StartOffset > scope2.StartOffset then 1
                 elif scope1.StartOffset < scope2.StartOffset then -1
                 elif (scope1.EndOffset - scope1.StartOffset) > (scope2.EndOffset - scope2.StartOffset) then -1
@@ -452,7 +452,7 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
         match isDeterministic with
         | false -> null
         | true ->
-            let convert (content:IEnumerable<Blob>) = 
+            let convert (content: IEnumerable<Blob>) = 
                 use sha = System.Security.Cryptography.SHA1.Create()    // IncrementalHash is core only
                 let hash = content 
                            |> Seq.collect (fun c -> c.GetBytes().Array |> sha.ComputeHash)
@@ -468,20 +468,20 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
     reportTime showTimes "PDB: Created"
     (portablePdbStream.Length, contentId, portablePdbStream)
 
-let compressPortablePdbStream (uncompressedLength:int64) (contentId:BlobContentId) (stream:MemoryStream) =
+let compressPortablePdbStream (uncompressedLength: int64) (contentId: BlobContentId) (stream: MemoryStream) =
     let compressedStream = new MemoryStream()
     use compressionStream = new DeflateStream(compressedStream, CompressionMode.Compress,true)
     stream.WriteTo(compressionStream)
     (uncompressedLength, contentId, compressedStream)
 
-let writePortablePdbInfo (contentId:BlobContentId) (stream:MemoryStream) showTimes fpdb cvChunk =
+let writePortablePdbInfo (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb cvChunk =
     try FileSystem.FileDelete fpdb with _ -> ()
     use pdbFile = new FileStream(fpdb, FileMode.Create, FileAccess.ReadWrite)
     stream.WriteTo(pdbFile)
     reportTime showTimes "PDB: Closed"
     pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) fpdb cvChunk None 0L None
 
-let embedPortablePdbInfo (uncompressedLength:int64)  (contentId:BlobContentId) (stream:MemoryStream) showTimes fpdb cvChunk pdbChunk =
+let embedPortablePdbInfo (uncompressedLength: int64)  (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb cvChunk pdbChunk =
     reportTime showTimes "PDB: Closed"
     let fn = Path.GetFileName(fpdb)
     pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) fn cvChunk (Some pdbChunk) uncompressedLength (Some stream)
@@ -579,14 +579,14 @@ let writePdbInfo showTimes f fpdb info cvChunk =
 
     let res = pdbWriteDebugInfo !pdbw
     for pdbDoc in docs do pdbCloseDocument pdbDoc
-    pdbClose !pdbw f fpdb;
+    pdbClose !pdbw f fpdb
 
     reportTime showTimes "PDB: Closed"
-    [| { iddCharacteristics = res.iddCharacteristics;
-         iddMajorVersion = res.iddMajorVersion;
-         iddMinorVersion = res.iddMinorVersion;
-         iddType = res.iddType;
-         iddTimestamp = info.Timestamp;
+    [| { iddCharacteristics = res.iddCharacteristics
+         iddMajorVersion = res.iddMajorVersion
+         iddMinorVersion = res.iddMinorVersion
+         iddType = res.iddType
+         iddTimestamp = info.Timestamp
          iddData = res.iddData
          iddChunk = cvChunk } |]
 #endif
@@ -622,15 +622,15 @@ let (?) this memb (args:'Args) : 'R =
 // Creating instances of needed classes from 'Mono.CompilerServices.SymbolWriter' assembly
 
 let monoCompilerSvc = new AssemblyName("Mono.CompilerServices.SymbolWriter, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
-let ctor (asmName:AssemblyName) clsName (args:obj[]) = 
+let ctor (asmName: AssemblyName) clsName (args: obj[]) = 
     let asm = Assembly.Load(asmName)
     let ty = asm.GetType(clsName)
     System.Activator.CreateInstance(ty, args)
 
-let createSourceMethodImpl (name:string) (token:int) (namespaceID:int) = 
+let createSourceMethodImpl (name: string) (token: int) (namespaceID: int) = 
     ctor monoCompilerSvc "Mono.CompilerServices.SymbolWriter.SourceMethodImpl" [| box name; box token; box namespaceID |]
 
-let createWriter (f:string) = 
+let createWriter (f: string) = 
     ctor monoCompilerSvc "Mono.CompilerServices.SymbolWriter.MonoSymbolWriter" [| box f |]
 
 //---------------------------------------------------------------------
@@ -675,7 +675,7 @@ let writeMdbInfo fmdb f info =
                 wr?MarkSequencePoint(sp.Offset, cue?get_SourceFile(), sp.Line, sp.Column, false)
 
             // Walk through the tree of scopes and write all variables
-            let rec writeScope (scope:PdbMethodScope) = 
+            let rec writeScope (scope: PdbMethodScope) = 
                 wr?OpenScope(scope.StartOffset) |> ignore
                 for local in scope.Locals do
                     wr?DefineLocalVariable(local.Index, local.Name)
@@ -701,7 +701,7 @@ let writeMdbInfo fmdb f info =
 //---------------------------------------------------------------------
 open Printf
 
-let logDebugInfo (outfile:string) (info:PdbData) = 
+let logDebugInfo (outfile: string) (info: PdbData) = 
     use sw = new StreamWriter(new FileStream(outfile + ".debuginfo", FileMode.Create))
 
     fprintfn sw "ENTRYPOINT\r\n  %b\r\n" info.EntryPoint.IsSome
@@ -727,7 +727,7 @@ let logDebugInfo (outfile:string) (info:PdbData) =
 
       // Walk through the tree of scopes and write all variables
       fprintfn sw "     Scopes:"
-      let rec writeScope offs (scope:PdbMethodScope) = 
+      let rec writeScope offs (scope: PdbMethodScope) = 
         fprintfn sw "      %s- [%d-%d]" offs scope.StartOffset scope.EndOffset
         if scope.Locals.Length > 0 then
           fprintfn sw "      %s  Locals: %A" offs [ for p in scope.Locals -> sprintf "%d: %s" p.Index p.Name ]

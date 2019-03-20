@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public Microsoft.FSharp.Compiler.ErrorLogger
+module public FSharp.Compiler.ErrorLogger
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler 
+open FSharp.Compiler.Range
 open System
 
 //------------------------------------------------------------------------

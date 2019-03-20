@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module Microsoft.FSharp.Compiler.Interactive.Shell
+module FSharp.Compiler.Interactive.Shell
 
 #nowarn "55"
 
@@ -19,47 +19,42 @@ open System.Text
 open System.Threading
 open System.Reflection
 open System.Runtime.CompilerServices
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Extensions.ILX
+open FSharp.Compiler.AbstractIL.ILRuntimeWriter
+open FSharp.Compiler.Lib
+open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.Ast
+open FSharp.Compiler.CompileOptions
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Infos
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.IlxGen
+open FSharp.Compiler.Lexhelp
+open FSharp.Compiler.Layout
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Optimizer
+open FSharp.Compiler.PostTypeCheckSemanticChecks
+open FSharp.Compiler.Range
+open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.ReferenceResolver
 open Microsoft.FSharp.Compiler.Text
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
-open Microsoft.FSharp.Compiler.AbstractIL.Internal
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
-open Microsoft.FSharp.Compiler.AbstractIL.ILRuntimeWriter 
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.AccessibilityLogic
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.CompileOptions
-open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.NameResolution
-open Microsoft.FSharp.Compiler.IlxGen
-open Microsoft.FSharp.Compiler.Lexhelp
-open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Optimizer
-open Microsoft.FSharp.Compiler.PostTypeCheckSemanticChecks
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.TypeChecker
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.ReferenceResolver
 
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.StructuredFormat
-
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
 
 //----------------------------------------------------------------------------
 // For the FSI as a service methods...
@@ -92,11 +87,7 @@ module internal Utilities =
     let ignoreAllErrors f = try f() with _ -> ()
 
     // TODO: this dotnet/core polyfill can be removed when it surfaces in Type
-#if FX_RESHAPED_REFLECTION
-    let getMember (name: string) (memberType: MemberTypes) (attr: System.Reflection.BindingFlags) (declaringType: Type) =
-#else
     let getMember (name: string) (memberType: MemberTypes) (attr: BindingFlags) (declaringType: Type) =
-#endif
         let memberType =
             if memberType &&& MemberTypes.NestedType = MemberTypes.NestedType then
                 memberType ||| MemberTypes.TypeInfo
@@ -105,11 +96,7 @@ module internal Utilities =
         declaringType.GetMembers(attr) |> Array.filter(fun m -> 0 <> (int(m.MemberType &&& memberType)) && m.Name = name)
 
     let rec tryFindMember (name: string) (memberType: MemberTypes) (declaringType: Type) =
-#if FX_RESHAPED_REFLECTION
-        let bindingFlags = System.Reflection.BindingFlags.Instance ||| System.Reflection.BindingFlags.Public ||| System.Reflection.BindingFlags.NonPublic
-#else
         let bindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic
-#endif
         match declaringType |> getMember name memberType bindingFlags with
         | [||] -> declaringType.GetInterfaces() |> Array.tryPick (tryFindMember name memberType)
         | [|m|] -> Some m
@@ -184,11 +171,6 @@ module internal Utilities =
         |> ignore
 
         outWriter.WriteLine()
-
-#if FX_RESHAPED_REFLECTION
-// restore type alias
-type BindingFlags = System.Reflection.BindingFlags
-#endif
 
 //----------------------------------------------------------------------------
 // Timing support
@@ -1589,23 +1571,17 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
 
 module internal MagicAssemblyResolution =
     // FxCop identifies Assembly.LoadFrom.
-    [<CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2001:AvoidCallingProblematicMethods", MessageId="System.Reflection.Assembly.UnsafeLoadFrom")>]
-    let private assemblyLoadFrom (path:string) = 
-
     // See bug 5501 for details on decision to use UnsafeLoadFrom here.
     // Summary:
     //  It is an explicit user trust decision to load an assembly with #r. Scripts are not run automatically (for example, by double-clicking in explorer).
     //  We considered setting loadFromRemoteSources in fsi.exe.config but this would transitively confer unsafe loading to the code in the referenced 
     //  assemblies. Better to let those assemblies decide for themselves which is safer.
-#if NETSTANDARD1_6 || NETSTANDARD2_0
-        Assembly.LoadFrom(path)
-#else
-        Assembly.UnsafeLoadFrom(path)
-#endif
+    [<CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2001:AvoidCallingProblematicMethods", MessageId="System.Reflection.Assembly.UnsafeLoadFrom")>]
+    let private assemblyLoadFrom (path:string) = Assembly.UnsafeLoadFrom(path)
 
     let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) = 
 
-#if NETSTANDARD1_6 || NETSTANDARD2_0
+#if NETSTANDARD
         ignore tcConfigB
         ignore tcImports
         ignore fsiDynamicCompiler
@@ -2411,9 +2387,7 @@ let internal DriveFsiEventLoop (fsi: FsiEvaluationSessionHostConfig, fsiConsoleO
 /// text input, writing to the given text output and error writers.
 type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter, fsiCollectible: bool, legacyReferenceResolver: ReferenceResolver.Resolver option) = 
 
-#if !FX_NO_HEAPTERMINATION
     do if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
-#endif
 
     // Explanation: When FsiEvaluationSession.Create is called we do a bunch of processing. For fsi.exe
     // and fsiAnyCpu.exe there are no other active threads at this point, so we can assume this is the
@@ -2464,7 +2438,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do tcConfigB.resolutionEnvironment <- ResolutionEnvironment.CompilationAndEvaluation // See Bug 3608
     do tcConfigB.useFsiAuxLib <- fsi.UseFsiAuxLib
 
-#if NETSTANDARD1_6 || NETSTANDARD2_0
+#if NETSTANDARD
     do tcConfigB.useSimpleResolution <- true
     do SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
 #endif
@@ -2474,7 +2448,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do SetDebugSwitch    tcConfigB (Some "pdbonly") OptionSwitch.On
     do SetTailcallSwitch tcConfigB OptionSwitch.On    
 
-#if NETSTANDARD1_6 || NETSTANDARD2_0
+#if NETSTANDARD
     // set platform depending on whether the current process is a 64-bit process.
     // BUG 429882 : FsiAnyCPU.exe issues warnings (x64 v MSIL) when referencing 64-bit assemblies
     do tcConfigB.platform <- if IntPtr.Size = 8 then Some AMD64 else Some X86
@@ -2643,8 +2617,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
                     try 
                         errorLogger.AbortOnError(fsiConsoleOutput) 
                     with StopProcessing ->
-                        // BUG 664864: Watson Clr20r3 across buckets with: Application fsiAnyCpu.exe from Dev11 RTM; Exception AE251Y0L0P2WC0QSWDZ0E2IDRYQTDSVB; FSIANYCPU.NI.EXE!Microsoft.FSharp.Compiler.Interactive.Shell+threadException
-                        // reason: some window that use System.Windows.Forms.DataVisualization types (possible FSCharts) was created in FSI.
+                        // BUG 664864 some window that use System.Windows.Forms.DataVisualization types (possible FSCharts) was created in FSI.
                         // at some moment one chart has raised InvalidArgumentException from OnPaint, this exception was intercepted by the code in higher layer and 
                         // passed to Application.OnThreadException. FSI has already attached its own ThreadException handler, inside it will log the original error
                         // and then raise StopProcessing exception to unwind the stack (and possibly shut down current Application) and get to DriveFsiEventLoop.

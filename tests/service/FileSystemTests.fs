@@ -1,6 +1,6 @@
 ﻿#if INTERACTIVE
-#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -14,9 +14,9 @@ open System
 open System.IO
 open System.Collections.Generic
 open System.Text
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Service.Tests.Common
 
 let fileName1 = @"c:\mycode\test1.fs" // note, the path doesn' exist

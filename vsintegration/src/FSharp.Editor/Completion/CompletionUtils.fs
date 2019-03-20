@@ -9,7 +9,7 @@ open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Completion
 open System.Globalization
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 module internal CompletionUtils =
 

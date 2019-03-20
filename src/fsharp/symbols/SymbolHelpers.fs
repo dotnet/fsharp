@@ -5,32 +5,32 @@
 // type checking and intellisense-like environment-reporting.
 //--------------------------------------------------------------------------
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
 open System
 open System.Collections.Generic
 open System.IO
 
 open Microsoft.FSharp.Core.Printf
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library  
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
+open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL.Internal.Library  
+open FSharp.Compiler.AbstractIL.Diagnostics 
 
-open Microsoft.FSharp.Compiler.AccessibilityLogic
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals 
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.NameResolution
-open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.CompileOps
+open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.Ast
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Layout
+open FSharp.Compiler.Layout.TaggedTextOps
+open FSharp.Compiler.Lib
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Range
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals 
+open FSharp.Compiler.Infos
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.CompileOps
 
 module EnvMisc2 =
     let maxMembers = GetEnvInteger "FCS_MaxMembersInQuickInfo" 10
@@ -60,17 +60,17 @@ type FSharpErrorInfo(fileName, s: pos, e: pos, severity: FSharpErrorSeverity, me
     override __.ToString()= sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName (int s.Line) (s.Column + 1) (int e.Line) (e.Column + 1) subcategory (if severity=FSharpErrorSeverity.Warning then "warning" else "error")  message
             
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromException(exn, isError, fallbackRange:range, suggestNames: bool) =
+    static member CreateFromException(exn, isError, fallbackRange: range, suggestNames: bool) =
         let m = match GetRangeOfDiagnostic exn with Some m -> m | None -> fallbackRange 
         let msg = bufs (fun buf -> OutputPhasedDiagnostic buf exn false suggestNames)
         let errorNum = GetDiagnosticNumber exn
         FSharpErrorInfo(m.FileName, m.Start, m.End, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning), msg, exn.Subcategory(), errorNum)
         
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromExceptionAndAdjustEof(exn, isError, fallbackRange:range, (linesCount:int, lastLength:int), suggestNames: bool) =
+    static member CreateFromExceptionAndAdjustEof(exn, isError, fallbackRange: range, (linesCount: int, lastLength: int), suggestNames: bool) =
         let r = FSharpErrorInfo.CreateFromException(exn, isError, fallbackRange, suggestNames)
-                
-        // Adjust to make sure that errors reported at Eof are shown at the linesCount        
+
+        // Adjust to make sure that errors reported at Eof are shown at the linesCount
         let startline, schange = min (r.StartLineAlternate, false) (linesCount, true)
         let endline, echange = min (r.EndLineAlternate, false)   (linesCount, true)
         
@@ -120,7 +120,7 @@ type ErrorScope()  =
     /// if there is a "msising assembly" error while formatting the text of the description of an
     /// autocomplete, then the error message is shown in replacement of the text (rather than crashing Visual
     /// Studio, or swallowing the exception completely)
-    static member Protect<'a> (m:range) (f:unit->'a) (err:string->'a): 'a = 
+    static member Protect<'a> (m: range) (f: unit->'a) (err: string->'a): 'a = 
         use errorScope = new ErrorScope()
         let res = 
             try 
@@ -163,7 +163,7 @@ type internal CompilationErrorLogger (debugName: string, options: FSharpErrorSev
 /// This represents the global state established as each task function runs as part of the build.
 ///
 /// Use to reset error and warning handlers.
-type CompilationGlobalsScope(errorLogger:ErrorLogger, phase: BuildPhase) = 
+type CompilationGlobalsScope(errorLogger: ErrorLogger, phase: BuildPhase) = 
     let unwindEL = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
     let unwindBP = PushThreadBuildPhaseUntilUnwind phase
     // Return the disposable object that cleans up
@@ -308,27 +308,27 @@ module internal SymbolHelpers =
         | Some _ -> wordL (tagText (FSComp.SR.typeInfoFullName())) ^^ RightL.colon ^^ (fnF r)
       else emptyL
           
-    let rangeOfValRef preferFlag (vref:ValRef) =
+    let rangeOfValRef preferFlag (vref: ValRef) =
         match preferFlag with 
         | None -> vref.Range 
         | Some false -> vref.DefinitionRange 
         | Some true -> vref.SigRange
 
-    let rangeOfEntityRef preferFlag (eref:EntityRef) =
+    let rangeOfEntityRef preferFlag (eref: EntityRef) =
         match preferFlag with 
         | None -> eref.Range 
         | Some false -> eref.DefinitionRange 
         | Some true -> eref.SigRange
 
    
-    let rangeOfPropInfo preferFlag (pinfo:PropInfo) =
+    let rangeOfPropInfo preferFlag (pinfo: PropInfo) =
         match pinfo with
 #if !NO_EXTENSIONTYPING 
         |   ProvidedProp(_, pi, _) -> ComputeDefinitionLocationOfProvidedItem pi
 #endif
         |   _ -> pinfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
-    let rangeOfMethInfo (g:TcGlobals) preferFlag (minfo:MethInfo) = 
+    let rangeOfMethInfo (g: TcGlobals) preferFlag (minfo: MethInfo) = 
         match minfo with
 #if !NO_EXTENSIONTYPING 
         |   ProvidedMeth(_, mi, _, _) -> ComputeDefinitionLocationOfProvidedItem mi
@@ -336,26 +336,26 @@ module internal SymbolHelpers =
         |   DefaultStructCtor(_, AppTy g (tcref, _)) -> Some(rangeOfEntityRef preferFlag tcref)
         |   _ -> minfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
-    let rangeOfEventInfo preferFlag (einfo:EventInfo) = 
+    let rangeOfEventInfo preferFlag (einfo: EventInfo) = 
         match einfo with
 #if !NO_EXTENSIONTYPING 
         | ProvidedEvent (_, ei, _) -> ComputeDefinitionLocationOfProvidedItem ei
 #endif
         | _ -> einfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
       
-    let rangeOfUnionCaseInfo preferFlag (ucinfo:UnionCaseInfo) =      
+    let rangeOfUnionCaseInfo preferFlag (ucinfo: UnionCaseInfo) =      
         match preferFlag with 
         | None -> ucinfo.UnionCase.Range 
         | Some false -> ucinfo.UnionCase.DefinitionRange 
         | Some true -> ucinfo.UnionCase.SigRange
 
-    let rangeOfRecdFieldInfo preferFlag (rfinfo:RecdFieldInfo) =      
+    let rangeOfRecdFieldInfo preferFlag (rfinfo: RecdFieldInfo) =      
         match preferFlag with 
         | None -> rfinfo.RecdField.Range 
         | Some false -> rfinfo.RecdField.DefinitionRange 
         | Some true -> rfinfo.RecdField.SigRange
 
-    let rec rangeOfItem (g:TcGlobals) preferFlag d = 
+    let rec rangeOfItem (g: TcGlobals) preferFlag d = 
         match d with
         | Item.Value vref  | Item.CustomBuilder (_, vref) -> Some (rangeOfValRef preferFlag vref)
         | Item.UnionCase(ucinfo, _)     -> Some (rangeOfUnionCaseInfo preferFlag ucinfo)
@@ -384,13 +384,13 @@ module internal SymbolHelpers =
         | Item.NewDef _ -> None
 
     // Provided type definitions do not have a useful F# CCU for the purposes of goto-definition.
-    let computeCcuOfTyconRef (tcref:TyconRef) = 
+    let computeCcuOfTyconRef (tcref: TyconRef) = 
 #if !NO_EXTENSIONTYPING
         if tcref.IsProvided then None else 
 #endif
         ccuOfTyconRef tcref
 
-    let ccuOfMethInfo (g:TcGlobals) (minfo:MethInfo) = 
+    let ccuOfMethInfo (g: TcGlobals) (minfo: MethInfo) = 
         match minfo with
         | DefaultStructCtor(_, AppTy g (tcref, _)) -> computeCcuOfTyconRef tcref
         | _ -> 
@@ -399,7 +399,7 @@ module internal SymbolHelpers =
             |> Option.orElseWith (fun () -> minfo.DeclaringTyconRef |> computeCcuOfTyconRef)
 
 
-    let rec ccuOfItem (g:TcGlobals) d = 
+    let rec ccuOfItem (g: TcGlobals) d = 
         match d with
         | Item.Value vref | Item.CustomBuilder (_, vref) -> ccuOfValRef vref 
         | Item.UnionCase(ucinfo, _)             -> computeCcuOfTyconRef ucinfo.TyconRef
@@ -433,7 +433,7 @@ module internal SymbolHelpers =
         | _ -> None
 
     /// Work out the source file for an item and fix it up relative to the CCU if it is relative.
-    let fileNameOfItem (g:TcGlobals) qualProjectDir (m:range) h =
+    let fileNameOfItem (g: TcGlobals) qualProjectDir (m: range) h =
         let file = m.FileName 
         if verbose then dprintf "file stored in metadata is '%s'\n" file
         if not (FileSystem.IsPathRootedShim file) then 
@@ -468,7 +468,7 @@ module internal SymbolHelpers =
         | _ -> []
 
     // Find the name of the metadata file for this external definition 
-    let metaInfoOfEntityRef (infoReader:InfoReader) m tcref = 
+    let metaInfoOfEntityRef (infoReader: InfoReader) m tcref = 
         let g = infoReader.g
         match tcref with 
         | ERefLocal _ -> None
@@ -487,7 +487,7 @@ module internal SymbolHelpers =
         | Some (Some(fileName), xmlDocSig) -> FSharpXmlDoc.XmlDocFileSignature(fileName, xmlDocSig)
         | _ -> FSharpXmlDoc.None
 
-    let GetXmlDocSigOfEntityRef infoReader m (eref:EntityRef) = 
+    let GetXmlDocSigOfEntityRef infoReader m (eref: EntityRef) = 
         if eref.IsILTycon then 
             match metaInfoOfEntityRef infoReader m eref  with
             | None -> None
@@ -499,7 +499,7 @@ module internal SymbolHelpers =
                 m.XmlDocSig <- XmlDocSigOfEntity eref
             Some (ccuFileName, m.XmlDocSig)
 
-    let GetXmlDocSigOfScopedValRef g (tcref:TyconRef) (vref:ValRef) = 
+    let GetXmlDocSigOfScopedValRef g (tcref: TyconRef) (vref: ValRef) = 
         let ccuFileName = libFileOfEntityRef tcref
         let v = vref.Deref
         if v.XmlDocSig = "" && v.HasDeclaringEntity then
@@ -513,21 +513,21 @@ module internal SymbolHelpers =
             v.XmlDocSig <- XmlDocSigOfVal g path v
         Some (ccuFileName, v.XmlDocSig)                
 
-    let GetXmlDocSigOfRecdFieldInfo (rfinfo:RecdFieldInfo) = 
+    let GetXmlDocSigOfRecdFieldInfo (rfinfo: RecdFieldInfo) = 
         let tcref = rfinfo.TyconRef
         let ccuFileName = libFileOfEntityRef tcref 
         if rfinfo.RecdField.XmlDocSig = "" then
             rfinfo.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfinfo.Name]
         Some (ccuFileName, rfinfo.RecdField.XmlDocSig)            
 
-    let GetXmlDocSigOfUnionCaseInfo (ucinfo:UnionCaseInfo) = 
+    let GetXmlDocSigOfUnionCaseInfo (ucinfo: UnionCaseInfo) = 
         let tcref =  ucinfo.TyconRef
         let ccuFileName = libFileOfEntityRef tcref
         if  ucinfo.UnionCase.XmlDocSig = "" then
             ucinfo.UnionCase.XmlDocSig <- XmlDocSigOfUnionCase [tcref.CompiledRepresentationForNamedType.FullName; ucinfo.Name]
         Some (ccuFileName, ucinfo.UnionCase.XmlDocSig)
 
-    let GetXmlDocSigOfMethInfo (infoReader:InfoReader)  m (minfo:MethInfo) = 
+    let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) = 
         let amap = infoReader.amap
         match minfo with
         | FSMeth (g, _, vref, _) ->
@@ -547,7 +547,9 @@ module internal SymbolHelpers =
                     | false -> filminfo.GetParamTypes(amap, m, minfo.FormalMethodInst)
 
                 // http://msdn.microsoft.com/en-us/library/fsbx0t7x.aspx
-                // If the name of the item itself has periods, they are replaced by the hash-sign ('#'). It is assumed that no item has a hash-sign directly in its name. For example, the fully qualified name of the String constructor would be "System.String.#ctor".
+                // If the name of the item itself has periods, they are replaced by the hash-sign ('#'). 
+                // It is assumed that no item has a hash-sign directly in its name. For example, the fully 
+                // qualified name of the String constructor would be "System.String.#ctor".
                 let normalizedName = ilminfo.ILName.Replace(".", "#")
 
                 Some (ccuFileName, "M:"+actualTypeName+"."+normalizedName+genArity+XmlDocArgsEnc g (formalTypars, fmtps) args)
@@ -556,7 +558,7 @@ module internal SymbolHelpers =
         | ProvidedMeth _ -> None
 #endif
 
-    let GetXmlDocSigOfValRef g (vref:ValRef) =
+    let GetXmlDocSigOfValRef g (vref: ValRef) =
         if not vref.IsLocalRef then
             let ccuFileName = vref.nlr.Ccu.FileName
             let v = vref.Deref
@@ -583,7 +585,7 @@ module internal SymbolHelpers =
                 Some (ccuFileName, "P:"+formalTypeInfo.ILTypeRef.FullName+"."+pdef.Name+XmlDocArgsEnc g (formalTypars, []) (filpinfo.GetParamTypes(infoReader.amap, m)))
             | _ -> None
 
-    let GetXmlDocSigOfEvent infoReader m (einfo:EventInfo) =
+    let GetXmlDocSigOfEvent infoReader m (einfo: EventInfo) =
         match einfo with
         | ILEvent _ ->
             match metaInfoOfEntityRef infoReader m einfo.DeclaringTyconRef with 
@@ -592,14 +594,14 @@ module internal SymbolHelpers =
             | _ -> None
         | _ -> None
 
-    let GetXmlDocSigOfILFieldInfo infoReader m (finfo:ILFieldInfo) =
+    let GetXmlDocSigOfILFieldInfo infoReader m (finfo: ILFieldInfo) =
         match metaInfoOfEntityRef infoReader m finfo.DeclaringTyconRef with
         | Some (ccuFileName, _, formalTypeInfo) ->
             Some(ccuFileName, "F:"+formalTypeInfo.ILTypeRef.FullName+"."+finfo.FieldName)
         | _ -> None
 
     /// This function gets the signature to pass to Visual Studio to use its lookup functions for .NET stuff. 
-    let GetXmlDocHelpSigOfItemForLookup (infoReader:InfoReader) m d = 
+    let GetXmlDocHelpSigOfItemForLookup (infoReader: InfoReader) m d = 
         let g = infoReader.g
                 
         match d with
@@ -629,14 +631,14 @@ module internal SymbolHelpers =
         |  _ -> FSharpXmlDoc.None
 
     /// Produce an XmlComment with a signature or raw text, given the F# comment and the item
-    let GetXmlCommentForItemAux (xmlDoc:XmlDoc option) (infoReader:InfoReader) m d = 
+    let GetXmlCommentForItemAux (xmlDoc: XmlDoc option) (infoReader: InfoReader) m d = 
         let result = 
             match xmlDoc with 
             | None | Some (XmlDoc [| |]) -> ""
             | Some (XmlDoc l) -> 
                 bufs (fun os -> 
-                    bprintf os "\n"; 
-                    l |> Array.iter (fun (s:string) -> 
+                    bprintf os "\n"
+                    l |> Array.iter (fun (s: string) -> 
                         // Note: this code runs for local/within-project xmldoc tooltips, but not for cross-project or .XML
                         bprintf os "\n%s" s))
 
@@ -658,7 +660,7 @@ module internal SymbolHelpers =
             wordL (tagTypeParameter ("'" + tp.DisplayName))  ^^ wordL (tagText (FSComp.SR.descriptionWordIs())) ^^ NicePrint.layoutType denv ty  ]
 
     /// Generate the structured tooltip for a method info
-    let FormatOverloadsToList (infoReader:InfoReader) m denv (item: ItemWithInst) minfos : FSharpStructuredToolTipElement = 
+    let FormatOverloadsToList (infoReader: InfoReader) m denv (item: ItemWithInst) minfos : FSharpStructuredToolTipElement = 
         ToolTipFault |> Option.iter (fun msg -> 
            let exn = Error((0, msg), range.Zero)
            let ph = PhasedDiagnostic.Create(exn, BuildPhase.TypeCheck)
@@ -674,8 +676,8 @@ module internal SymbolHelpers =
         FSharpStructuredToolTipElement.Group(layouts)
 
         
-    let pubpathOfValRef (v:ValRef) = v.PublicPath        
-    let pubpathOfTyconRef (x:TyconRef) = x.PublicPath
+    let pubpathOfValRef (v: ValRef) = v.PublicPath        
+    let pubpathOfTyconRef (x: TyconRef) = x.PublicPath
 
 
     let (|ItemWhereTypIsPreferred|_|) item = 
@@ -861,11 +863,11 @@ module internal SymbolHelpers =
       items |> List.filter (fun item -> not (IsExplicitlySuppressed g item.Item))
 
     let SimplerDisplayEnv denv = 
-        { denv with suppressInlineKeyword=true; 
-                    shortConstraints=true; 
-                    showConstraintTyparAnnotations=false; 
-                    abbreviateAdditionalConstraints=false;
-                    suppressNestedTypes=true;
+        { denv with suppressInlineKeyword=true
+                    shortConstraints=true
+                    showConstraintTyparAnnotations=false
+                    abbreviateAdditionalConstraints=false
+                    suppressNestedTypes=true
                     maxMembers=Some EnvMisc2.maxMembers }
 
     let rec FullNameOfItem g item = 
@@ -910,7 +912,7 @@ module internal SymbolHelpers =
         | Item.Property(_, []) -> ""
 
     /// Output a the description of a language item
-    let rec GetXmlCommentForItem (infoReader:InfoReader) m item = 
+    let rec GetXmlCommentForItem (infoReader: InfoReader) m item = 
         let g = infoReader.g
         match item with
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) -> 
@@ -990,7 +992,7 @@ module internal SymbolHelpers =
         with _ -> false
 
     /// Output the quick info information of a language item
-    let rec FormatItemDescriptionToToolTipElement isListItem (infoReader:InfoReader) m denv (item: ItemWithInst) = 
+    let rec FormatItemDescriptionToToolTipElement isListItem (infoReader: InfoReader) m denv (item: ItemWithInst) = 
         let g = infoReader.g
         let amap = infoReader.amap
         let denv = SimplerDisplayEnv denv 

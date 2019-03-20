@@ -217,11 +217,6 @@
         <target state="translated">Les références multiples à '{0}.dll' ne sont pas autorisées</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotReadVersionInfoFromMscorlib">
-        <source>Could not read version from mscorlib.dll</source>
-        <target state="translated">Impossible de lire la version à partir de mscorlib.dll</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">Impossible de lire l'assembly '{0}'</target>
@@ -6838,8 +6833,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that implement IDisposable"</source>
-        <target state="translated">Utilisé à la place de let dans les valeurs qui implémentent IDisposable"</target>
+        <source>Used instead of let for values that implement IDisposable</source>
+        <target state="needs-review-translation">Utilisé à la place de let pour les valeurs qui nécessitent l'appel de Dispose pour libérer des ressources.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">

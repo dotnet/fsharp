@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin/v4.5/"
+#I "../../../artifacts/bin/fcs/net45"
 (**
 Compiler Services: Processing untyped syntax tree
 =================================================
@@ -30,7 +30,7 @@ To use the interactive checker, reference `FSharp.Compiler.Service.dll` and open
 *)
 #r "FSharp.Compiler.Service.dll"
 open System
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 (**
 
 ### Performing untyped parse
@@ -56,7 +56,7 @@ return the `ParseTree` property:
 /// Get untyped tree for a specified input
 let getUntypedTree (file, input) = 
   // Get compiler options for the 'project' implied by a single script file
-  let projOptions = 
+  let projOptions, errors = 
       checker.GetProjectOptionsFromScript(file, input)
       |> Async.RunSynchronously
 
@@ -83,7 +83,7 @@ code](https://github.com/fsharp/fsharp/blob/master/src/fsharp/ast.fs#L464).
 
 The relevant parts are in the following namespace:
 *)
-open Microsoft.FSharp.Compiler.Ast
+open FSharp.Compiler.Ast
 (**
 
 When processing the AST, you will typically write a number of mutually recursive functions

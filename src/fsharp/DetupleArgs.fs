@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.Detuple 
+module internal FSharp.Compiler.Detuple 
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Lib
+open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.Ast
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Lib
 
 //
 // This pass has one aim.
@@ -201,7 +201,7 @@ module GlobalUsageAnalysis =
 
     /// Log the use of a value with a particular tuple chape at a callsite
     /// Note: this routine is called very frequently
-    let logUse (f:Val) tup z =
+    let logUse (f: Val) tup z =
        {z with Uses = 
                   match Zmap.tryFind f z.Uses with
                   | Some sites -> Zmap.add f (tup::sites) z.Uses
@@ -215,7 +215,7 @@ module GlobalUsageAnalysis =
         
 
     /// Log the definition of a non-recursive binding
-    let logNonRecBinding z (bind:Binding) =
+    let logNonRecBinding z (bind: Binding) =
         let v = bind.Var
         let vs = [v]
         {z with RecursiveBindings = Zmap.add v (false, vs) z.RecursiveBindings
@@ -256,14 +256,16 @@ module GlobalUsageAnalysis =
       let foldLocalVal f z (vref: ValRef) = 
           if valRefInThisAssembly g.compilingFslib vref then f z vref.Deref
           else z
-      let exprUsageIntercept exprF z expr =
+
+      let exprUsageIntercept exprF noInterceptF z origExpr =
+
           let rec recognise context expr = 
-            match expr with
-             | Expr.Val (v, _, _)                  -> 
+             match expr with
+             | Expr.Val (v, _, _) -> 
                  // YES: count free occurrence 
-                 let z = foldLocalVal (fun z v -> logUse v (context, [], []) z) z v
-                 Some z
-             | TyappAndApp(f, _, tys, args, _)       -> 
+                 foldLocalVal (fun z v -> logUse v (context, [], []) z) z v
+
+             | TyappAndApp(f, _, tys, args, _) -> 
                  match f with
                   | Expr.Val (fOrig, _, _) ->
                     // app where function is val 
@@ -271,27 +273,27 @@ module GlobalUsageAnalysis =
                     //      collect from args (have intercepted this node) 
                     let collect z f = logUse f (context, tys, args) z
                     let z = foldLocalVal collect z fOrig
-                    let z = List.fold exprF z args
-                    Some z
+                    List.fold exprF z args
                   | _ ->
                      // NO: app but function is not val 
-                     None
+                     noInterceptF z origExpr 
+
              | Expr.Op(TOp.TupleFieldGet (tupInfo, n), ts, [x], _) when not (evalTupInfoIsStruct tupInfo)  -> 
                  let context = TupleGet (n, ts) :: context
                  recognise context x
                  
              // lambdas end top-level status 
              | Expr.Lambda(_id, _ctorThisValOpt, _baseValOpt, _vs, body, _, _)   -> 
-                 let z = foldUnderLambda exprF z body
-                 Some z
+                 foldUnderLambda exprF z body
+
              | Expr.TyLambda(_id, _tps, body, _, _) -> 
-                 let z = foldUnderLambda exprF z body
-                 Some z
+                 foldUnderLambda exprF z body
+
              | _  -> 
-                 None // NO: no intercept 
+                 noInterceptF z origExpr
           
           let context = []
-          recognise context expr
+          recognise context origExpr
 
       let targetIntercept exprF z = function TTarget(_argvs, body, _) -> Some (foldUnderLambda exprF z body)
       let tmethodIntercept exprF z = function TObjExprMethod(_, _, _, _, e, _m) -> Some (foldUnderLambda exprF z e)
@@ -451,7 +453,7 @@ type Transform =
 // transform - mkTransform - decided, create necessary stuff
 //-------------------------------------------------------------------------
 
-let mkTransform g (f:Val) m tps x1Ntys rty (callPattern, tyfringes: (TType list * Val list) list) =
+let mkTransform g (f: Val) m tps x1Ntys rty (callPattern, tyfringes: (TType list * Val list) list) =
     // Create formal choices for x1...xp under callPattern  
     let transformedFormals = 
         (callPattern, tyfringes) ||>  List.map2 (fun cpi (tyfringe, vs) -> 
@@ -520,7 +522,7 @@ let zipCallPatternArgTys m g (callPattern : TupleStructure list) (vss : Val list
 // transform - vTransforms - defnSuggestedCP
 //-------------------------------------------------------------------------
 
-/// v = LAM tps. lam vs1:ty1 ... vsN:tyN. body.
+/// v = LAM tps. lam vs1: ty1 ... vsN: tyN. body.
 /// The types suggest a tuple structure CallPattern.
 /// The buildProjections of the vsi trim this down,
 /// since do not want to take as components any tuple that is required (projected to).
@@ -557,7 +559,7 @@ let decideFormalSuggestedCP g z tys vss =
 // transform - decideTransform
 //-------------------------------------------------------------------------
 
-let decideTransform g z v callPatterns (m, tps, vss:Val list list, rty) =
+let decideTransform g z v callPatterns (m, tps, vss: Val list list, rty) =
     let tys = List.map (typeOfLambdaArg m) vss       (* arg types *)
     (* NOTE: 'a in arg types may have been instanced at different tuples... *)
     (*       commonCallPattern has to handle those cases. *)
@@ -585,7 +587,7 @@ let decideTransform g z v callPatterns (m, tps, vss:Val list list, rty) =
 // Public f could be used beyond assembly.
 // For now, suppressing any transforms on these.
 // Later, could transform f and fix up local calls and provide an f wrapper for beyond. 
-let eligibleVal g m (v:Val) =
+let eligibleVal g m (v: Val) =
     let dllImportStubOrOtherNeverInline = (v.InlineInfo = ValInline.Never)
     let mutableVal = v.IsMutable
     let byrefVal = isByrefLikeTy g m v.Type
@@ -677,7 +679,7 @@ let buildProjections env bindings x xtys =
     let bindings = pushL (List.rev binds) bindings
     bindings, vixs
 
-let rec collapseArg env bindings ts (x:Expr) =
+let rec collapseArg env bindings ts (x: Expr) =
     let m = x.Range
     let env = rangeE env m
     match ts, x with
@@ -713,10 +715,10 @@ and collapseArgs env bindings n (callPattern) args =
 //-------------------------------------------------------------------------
 
 // REVIEW: use mkLet etc. 
-let mkLets binds (body:Expr) = 
+let mkLets binds (body: Expr) = 
     (binds, body) ||> List.foldBack (fun b acc -> mkLetBind acc.Range b acc) 
 
-let fixupApp (penv:penv) (fx, fty, tys, args, m) =
+let fixupApp (penv: penv) (fx, fty, tys, args, m) =
 
     // Is it a val app, where the val has a transform? 
     match fx with
@@ -818,7 +820,7 @@ let passBinds penv binds = binds |> List.map (passBind penv)
 
 let passBindRhs conv (TBind (v, repr, letSeqPtOpt)) = TBind(v, conv repr, letSeqPtOpt)
 
-let preInterceptExpr (penv:penv) conv expr =
+let preInterceptExpr (penv: penv) conv expr =
   match expr with
   | Expr.LetRec (binds, e, m, _) ->
      let binds = List.map (passBindRhs conv) binds
@@ -835,8 +837,7 @@ let preInterceptExpr (penv:penv) conv expr =
      Some (fixupApp penv (f, fty, tys, args, m) )
   | _ -> None
   
-
-let postTransformExpr (penv:penv) expr =
+let postTransformExpr (penv: penv) expr =
     match expr with
     | Expr.LetRec (binds, e, m, _) ->
         let binds = passBinds penv binds

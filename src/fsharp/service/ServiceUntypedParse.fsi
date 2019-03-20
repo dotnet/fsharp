@@ -5,13 +5,13 @@
 // type checking and intellisense-like environment-reporting.
 //----------------------------------------------------------------------------
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.ErrorLogger
+open FSharp.Compiler 
+open FSharp.Compiler.Ast
+open FSharp.Compiler.Range
+open FSharp.Compiler.ErrorLogger
 
 [<Sealed>]
 /// Represents the results of parsing an F# file

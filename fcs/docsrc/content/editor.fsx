@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin/v4.5/"
+#I "../../../artifacts/bin/fcs/net45"
 (**
 Compiler Services: Editor services
 ==================================
@@ -26,7 +26,7 @@ of `InteractiveChecker`:
 #r "FSharp.Compiler.Service.dll"
 
 open System
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 // Create an interactive checker instance 
 let checker = FSharpChecker.Create()
@@ -52,7 +52,7 @@ let input =
 let inputLines = input.Split('\n')
 let file = "/home/user/Test.fsx"
 
-let projOptions = 
+let projOptions, errors = 
     checker.GetProjectOptionsFromScript(file, input)
     |> Async.RunSynchronously
 
@@ -127,11 +127,11 @@ identifier (the other option lets you get tooltip with full assembly location wh
 
 *)
 // Get tag of the IDENT token to be used as the last argument
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
 let identToken = FSharpTokenTag.Identifier
 
 // Get tool tip at the specified location
-let tip = checkFileResults.GetToolTipTextAlternate(4, 7, inputLines.[1], ["foo"], identToken)
+let tip = checkFileResults.GetToolTipText(4, 7, inputLines.[1], ["foo"], identToken)
 printfn "%A" tip
 
 (**
@@ -165,7 +165,7 @@ where we need to perform the completion.
 // Get declarations (autocomplete) for a location
 let decls = 
     checkFileResults.GetDeclarationListInfo
-      (Some parseFileResults, 7, 23, inputLines.[6], [], "msg", fun _ -> false)
+      (Some parseFileResults, 7, inputLines.[6], PartialLongName.Empty 23, (fun () -> []), fun _ -> false)
     |> Async.RunSynchronously
 
 // Print the names of available items
@@ -197,7 +197,7 @@ changes):
 *)
 // Get overloads of the String.Concat method
 let methods = 
-    checkFileResults.GetMethodsAlternate(5, 27, inputLines.[4], Some ["String"; "Concat"])
+    checkFileResults.GetMethods(5, 27, inputLines.[4], Some ["String"; "Concat"])
     |> Async.RunSynchronously
 
 // Print concatenated parameter lists

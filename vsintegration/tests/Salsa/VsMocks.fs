@@ -1550,7 +1550,7 @@ module internal VsMocks =
                 0
         }
         
-    let MakeMockServiceProviderAndConfigChangeNotifierNoTargetFrameworkAssembliesService() = 
+    let MakeMockServiceProviderAndConfigChangeNotifierNoTargetFrameworkAssembliesService() =
         let vsSolutionBuildManager, configChangeNotifier = MakeVsSolutionBuildManagerAndConfigChangeNotifier()
         let sp = new OleServiceProvider()
 
@@ -1647,10 +1647,17 @@ module internal VsActual =
     let vsInstallDir =
         // use the environment variable to find the VS installdir
         let vsvar = 
-            let var = Environment.GetEnvironmentVariable("VS150COMNTOOLS")
-            if String.IsNullOrEmpty var then Environment.GetEnvironmentVariable("VSAPPIDDIR") 
-            else var
-        if String.IsNullOrEmpty vsvar then failwith "VS150COMNTOOLS and VSAPPIDDIR environment variables not found."
+            let var =
+                let vs16 = Environment.GetEnvironmentVariable("VS160COMNTOOLS")
+                if String.IsNullOrEmpty vs16 then
+                    Environment.GetEnvironmentVariable("VS150COMNTOOLS")
+                else
+                    vs16
+            if String.IsNullOrEmpty var then
+                Environment.GetEnvironmentVariable("VSAPPIDDIR") 
+            else
+                var
+        if String.IsNullOrEmpty vsvar then failwith "VS160COMNTOOLS, VS15COMNTOOLS and VSAPPIDDIR environment variables not found."
         Path.Combine(vsvar, "..")
 
     let CreateEditorCatalog() =
@@ -1667,10 +1674,22 @@ module internal VsActual =
                 failwith("could not find " + fullPath)
 
         let list = new ResizeArray<ComposablePartCatalog>()
+
+        let addMovedFile originalDir alternateDir file =
+            let path = Path.Combine(originalDir, file)
+            if File.Exists(path) then
+                list.Add(CreateAssemblyCatalog(originalDir,  file))
+            else
+                list.Add(CreateAssemblyCatalog(alternateDir,  file))
+
         list.Add(new AssemblyCatalog(thisAssembly))
         list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Text.Data.dll"))
         list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Text.Logic.dll"))
-        list.Add(CreateAssemblyCatalog(privateAssemblyDir, "Microsoft.VisualStudio.Text.Internal.dll"))
+
+        // "Microsoft.VisualStudio.Text.Internal.dll" moved locations between dev15 and 16
+        // This ensures we can run in both Devs 15 and 16
+        addMovedFile privateAssemblyDir editorAssemblyDir "Microsoft.VisualStudio.Text.Internal.dll"
+
         list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Text.UI.dll"))
         list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Text.UI.Wpf.dll"))
         list.Add(CreateAssemblyCatalog(privateAssemblyDir, "Microsoft.VisualStudio.Threading.dll"))

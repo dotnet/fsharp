@@ -1,7 +1,7 @@
 <Project>
 
   <ItemGroup>
-    <PackageReference Include="Pdb2Pdb" Version="$(Pdb2PdbPackageVersion)" />
+    <PackageReference Include="Pdb2Pdb" Version="$(Pdb2PdbPackageVersion)" PrivateAssets="all" />
   </ItemGroup>
 
   <Target Name="ConvertPortablePdbs"

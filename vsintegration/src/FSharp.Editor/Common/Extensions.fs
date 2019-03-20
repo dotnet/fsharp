@@ -8,10 +8,9 @@ open System.IO
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host
+open FSharp.Compiler.Ast
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Text
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.SourceCodeServices
-
 
 type Path with
     static member GetFullPathSafe path =
