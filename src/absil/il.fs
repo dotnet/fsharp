@@ -419,8 +419,8 @@ type ILAssemblyRef(data)  =
  
     member aref.QualifiedName = 
         let b = new System.Text.StringBuilder(100)
-        let add (s: string) = (b.Append(s) |> ignore)
-        let addC (s: char) = (b.Append(s) |> ignore)
+        let add (s: string) = b.Append(s) |> ignore
+        let addC (s: char) = b.Append(s) |> ignore
         add(aref.Name)
         match aref.Version with 
         | None -> ()
