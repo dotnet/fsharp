@@ -1820,12 +1820,8 @@ let IsSystemStringConcatArray (methRef: ILMethodRef) =
     methRef.ArgTypes.Length = 1 && methRef.ArgTypes.Head.BasicQualifiedName = "System.String[]"
     
 /// Optimize/analyze an expression
-<<<<<<< HEAD
-let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
-    let g = cenv.g
-=======
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+    let g = cenv.g
 
     // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
     // complete inference types.

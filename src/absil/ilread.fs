@@ -936,18 +936,12 @@ let mkCacheGeneric lowMem _inbase _nm _sz  =
     fun f (idx :'T) ->
         let cache = 
             match !cache with
-<<<<<<< HEAD
             | null -> 
                 let c = new Dictionary<_, _>(11) 
                 cache := c
                 c
             | NonNull c -> c
 
-=======
-            | null -> cache := new Dictionary<_, _>(11 (* sz: int *) ) 
-            | _ -> ()
-            !cache
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
         match cache.TryGetValue(idx) with
         | true, v ->
             incr count

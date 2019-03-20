@@ -153,8 +153,7 @@ let CanImportILTypeRef (env: ImportMap) m (tref: ILTypeRef) =
 /// 
 /// Prefer the F# abbreviation for some built-in types, e.g. 'string' rather than 
 /// 'System.String', since we prefer the F# abbreviation to the .NET equivalents. 
-<<<<<<< HEAD
-let ImportTyconRefApp (env:ImportMap) tcref tyargs nullness = 
+let ImportTyconRefApp (env: ImportMap) tcref tyargs nullness = 
     env.g.improveType tcref tyargs nullness
 
 let ImportNullness (g: TcGlobals) =
@@ -168,10 +167,6 @@ let ImportNullnessForTyconRef (g: TcGlobals) (m: range) (tcref: TyconRef) =
         KnownWithNull
     else
         KnownAmbivalentToNull
-=======
-let ImportTyconRefApp (env: ImportMap) tcref tyargs = 
-    env.g.improveType tcref tyargs 
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
 
 /// Import an IL type as an F# type.
 let rec ImportILType (env: ImportMap) m tinst ty =  
@@ -352,13 +347,8 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
 
 
 /// Import a provided method reference as an Abstract IL method reference
-<<<<<<< HEAD
-let ImportProvidedMethodBaseAsILMethodRef (env:ImportMap) (m:range) (mbase: Tainted<ProvidedMethodBase>) = 
-     let tref = ExtensionTyping.GetILTypeRefOfProvidedType (mbase.PApply((fun mbase -> nonNull<ProvidedType> mbase.DeclaringType), m), m)
-=======
 let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Tainted<ProvidedMethodBase>) = 
-     let tref = ExtensionTyping.GetILTypeRefOfProvidedType (mbase.PApply((fun mbase -> mbase.DeclaringType), m), m)
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+     let tref = ExtensionTyping.GetILTypeRefOfProvidedType (mbase.PApply((fun mbase -> nonNull<ProvidedType> mbase.DeclaringType), m), m)
 
      let mbase = 
          // Find the formal member corresponding to the called member

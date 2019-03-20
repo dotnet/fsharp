@@ -557,11 +557,7 @@ module String =
 
     /// Splits a string into substrings based on the strings in the array separators
     let split options (separator: string []) (value: string) = 
-<<<<<<< HEAD
         value.Split(separator, options)
-=======
-        if isNull value then null else value.Split(separator, options)
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
 
     let (|StartsWith|_|) pattern value =
         if String.IsNullOrWhiteSpace value then
@@ -1344,43 +1340,32 @@ module Shim =
             member __.IsPathRootedShim (path: string) = Path.IsPathRooted path
 
             member __.IsInvalidPathShim(path: string) = 
-<<<<<<< HEAD
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-                let isInvalidPath(p:string) = 
+                let isInvalidPath(p: string) = 
 #else
-                let isInvalidPath(p:string?) = 
+                let isInvalidPath(p: string?) = 
 #endif
                     match p with 
                     | null | "" -> true
                     | NonNull p -> p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-                let isInvalidFilename(p:string) = 
+                let isInvalidFilename(p: string) = 
 #else
-                let isInvalidFilename(p:string?) = 
+                let isInvalidFilename(p: string?) = 
 #endif
                     match p with 
                     | null | "" -> true
                     | NonNull p -> p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-                let isInvalidDirectory(d:string) = 
+                let isInvalidDirectory(d: string) = 
 #else
-                let isInvalidDirectory(d:string?) = 
+                let isInvalidDirectory(d: string?) = 
 #endif
                     match d with 
                     | null -> true
                     | NonNull d -> d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
-=======
-                let isInvalidPath(p: string) = 
-                    String.IsNullOrEmpty(p) || p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
-
-                let isInvalidFilename(p: string) = 
-                    String.IsNullOrEmpty(p) || p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
-
-                let isInvalidDirectory(d: string) = 
-                    d=null || d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
 
                 isInvalidPath (path) || 
                 let directory = Path.GetDirectoryName(path)

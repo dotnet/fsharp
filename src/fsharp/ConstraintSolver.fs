@@ -887,13 +887,7 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
 
 /// Add the constraint "ty1 = ty2" to the constraint problem. 
 /// Propagate all effects of adding this constraint, e.g. to solve type variables 
-<<<<<<< HEAD
-// ty1: actual
-// ty2: expected
 and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) (cxsln:(TraitConstraintInfo * TraitConstraintSln) option) ty1 ty2 = 
-=======
-and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) (cxsln:(TraitConstraintInfo * TraitConstraintSln) option) ty1 ty2 = 
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
     let ndeep = ndeep + 1
     let aenv = csenv.EquivEnv
     let g = csenv.g
@@ -1184,12 +1178,8 @@ and SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m2 trace cxsln ty1 ty2 =
 //------------------------------------------------------------------------- 
 
       
-<<<<<<< HEAD
 // 'T :> ty
 and SolveTyparSubtypeOfType (csenv:ConstraintSolverEnv) ndeep m2 trace tp ty1 = 
-=======
-and SolveTyparSubtypeOfType (csenv: ConstraintSolverEnv) ndeep m2 trace tp ty1 = 
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
     let g = csenv.g
     if isObjTy g ty1 then CompleteD
     elif typeEquiv g ty1 (mkTyparTy tp) then CompleteD
@@ -1995,11 +1985,7 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
     }
 
 
-<<<<<<< HEAD
 and SolveNullnessSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty nullness = trackErrors {
-=======
-and SolveTypeSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
     let g = csenv.g
     let m = csenv.m
     let denv = csenv.DisplayEnv

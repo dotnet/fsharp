@@ -2137,55 +2137,34 @@ type VersionFlag =
 type IRawFSharpAssemblyData = 
 
     ///  The raw list AutoOpenAttribute attributes in the assembly
-<<<<<<< HEAD
-    abstract GetAutoOpenAttributes : ILGlobals -> string list
-
-    ///  The raw list InternalsVisibleToAttribute attributes in the assembly
-    abstract GetInternalsVisibleToAttributes : ILGlobals  -> string list
-
-    ///  The raw IL module definition in the assembly, if any. This is not present for cross-project references
-    /// in the language service
-    abstract TryGetILModuleDef : unit -> ILModuleDef option
-
-    ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData : range * ilShortAssemName: string * fileName: string -> (string * ((unit -> byte[]) * (unit -> byte[]) option)) list
-
-    ///  The raw F# optimization data in the assembly, if any
-    abstract GetRawFSharpOptimizationData : range * ilShortAssemName: string * fileName: string -> (string * ((unit -> byte[]) * (unit -> byte[]) option)) list
-
-    ///  The table of type forwarders in the assembly
-    abstract GetRawTypeForwarders : unit -> ILExportedTypesAndForwarders
-
-    /// The identity of the module
-    abstract ILScopeRef : ILScopeRef
-
-    abstract ILAssemblyRefs : ILAssemblyRef list
-
-    abstract ShortAssemblyName : string
-
-    abstract HasAnyFSharpSignatureDataAttribute : bool
-
-    abstract HasMatchingFSharpSignatureDataAttribute : ILGlobals -> bool
-=======
     abstract GetAutoOpenAttributes: ILGlobals -> string list
+
     ///  The raw list InternalsVisibleToAttribute attributes in the assembly
     abstract GetInternalsVisibleToAttributes: ILGlobals  -> string list
+
     ///  The raw IL module definition in the assembly, if any. This is not present for cross-project references
     /// in the language service
     abstract TryGetILModuleDef: unit -> ILModuleDef option
+
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> byte[])) list
+    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * ((unit -> byte[]) * (unit -> byte[]) option)) list
+
     ///  The raw F# optimization data in the assembly, if any
-    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> byte[])) list
+    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * ((unit -> byte[]) * (unit -> byte[]) option)) list
+
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
+
     /// The identity of the module
     abstract ILScopeRef: ILScopeRef
+
     abstract ILAssemblyRefs: ILAssemblyRef list
+
     abstract ShortAssemblyName: string
+
     abstract HasAnyFSharpSignatureDataAttribute: bool
+
     abstract HasMatchingFSharpSignatureDataAttribute: ILGlobals -> bool
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
 
 /// Cache of time stamps as we traverse a project description
 type TimeStampCache(defaultTimeStamp: DateTime) = 
@@ -2323,50 +2302,6 @@ type TcConfigBuilder =
       mutable dumpDebugInfo: bool
       mutable debugSymbolFile: string option
       (* Backend configuration *)
-<<<<<<< HEAD
-      mutable typeCheckOnly : bool
-      mutable parseOnly : bool
-      mutable importAllReferencesOnly : bool
-      mutable simulateException : string option
-      mutable printAst : bool
-      mutable tokenizeOnly : bool
-      mutable testInteractionParser : bool
-      mutable reportNumDecls : bool
-      mutable printSignature : bool
-      mutable printSignatureFile : string
-      mutable xmlDocOutputFile : string option
-      mutable stats : bool
-      mutable generateFilterBlocks : bool (* don't generate filter blocks due to bugs on Mono *)
-
-      mutable signer : string option
-      mutable container : string option
-
-      mutable delaysign : bool
-      mutable publicsign : bool
-      mutable version : VersionFlag 
-      mutable metadataVersion : string option
-      mutable standalone : bool
-      mutable extraStaticLinkRoots : string list 
-      mutable noSignatureData : bool
-      mutable onlyEssentialOptimizationData : bool
-      mutable useOptimizationDataFile : bool
-      mutable jitTracking : bool
-      mutable portablePDB : bool
-      mutable embeddedPDB : bool
-      mutable embedAllSource : bool
-      mutable embedSourceList : string list 
-      mutable sourceLink : string
-
-      mutable ignoreSymbolStoreSequencePoints : bool
-      mutable internConstantStrings : bool
-      mutable extraOptimizationIterations : int
-
-      mutable win32res : string 
-      mutable win32manifest : string
-      mutable includewin32manifest : bool
-      mutable linkResources : string list
-      mutable legacyReferenceResolver: ReferenceResolver.Resolver
-=======
       mutable typeCheckOnly: bool
       mutable parseOnly: bool
       mutable importAllReferencesOnly: bool
@@ -2408,8 +2343,7 @@ type TcConfigBuilder =
       mutable win32manifest: string
       mutable includewin32manifest: bool
       mutable linkResources: string list
-      mutable legacyReferenceResolver: ReferenceResolver.Resolver 
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+      mutable legacyReferenceResolver: ReferenceResolver.Resolver
 
       mutable showFullPaths: bool
       mutable errorStyle: ErrorStyle
@@ -4482,13 +4416,8 @@ type TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolu
                 | _ -> failwith "Unexpected representation in namespace entity referred to by a type provider"
 
     member tcImports.ImportTypeProviderExtensions 
-<<<<<<< HEAD
-               (ctok, tcConfig:TcConfig, 
-                fileNameOfRuntimeAssembly:string, 
-=======
                (ctok, tcConfig: TcConfig, 
-                fileNameOfRuntimeAssembly, 
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+                fileNameOfRuntimeAssembly: string, 
                 ilScopeRefOfRuntimeAssembly, 
                 runtimeAssemblyAttributes: ILAttribute list, 
                 entityToInjectInto, invalidateCcu: Event<_>, m) = 

@@ -579,16 +579,9 @@ let AddActivePatternResultTagsToNameEnv (apinfo: PrettyNaming.ActivePatternInfo)
             ||> List.foldBack (fun (j, nm) acc -> acc.Add(nm, Item.ActivePatternResult(apinfo, ty, j, m))) }
 
 /// Generalize a union case, from Cons --> List<T>.Cons
-<<<<<<< HEAD
-let GeneralizeUnionCaseRef (ucref:UnionCaseRef) = 
+let GeneralizeUnionCaseRef (ucref: UnionCaseRef) = 
     UnionCaseInfo (generalTyconRefInst ucref.TyconRef, ucref)
     
-=======
-let GeneralizeUnionCaseRef (ucref: UnionCaseRef) =
-    UnionCaseInfo (fst (generalizeTyconRef ucref.TyconRef), ucref)
-
-
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
 /// Add type definitions to the sub-table of the environment indexed by name and arity
 let AddTyconsByDemangledNameAndArity (bulkAddMode: BulkAdd) (tcrefs: TyconRef[]) (tab: LayeredMap<NameArityPair, TyconRef>) =
     if tcrefs.Length = 0 then tab else
@@ -3721,20 +3714,13 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
       // e.g. <val-id>.<recdfield-id>.<more>
       (rfinfos |> List.collect (fun x -> x.FieldType |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
 
-<<<<<<< HEAD
       // e.g. <val-id>.<property-id>.<more> 
-      let FullTypeOfPinfo (pinfo:PropInfo) = 
+      let FullTypeOfPinfo (pinfo: PropInfo) = 
           let rty = pinfo.GetPropertyType(amap, m) 
           let rty = 
               if pinfo.IsIndexer then 
                   mkFunTy g (mkRefTupledTy g (pinfo.GetParamTypes(amap, m))) rty
               else rty 
-=======
-      // e.g. <val-id>.<property-id>.<more>
-      let FullTypeOfPinfo(pinfo: PropInfo) =
-          let rty = pinfo.GetPropertyType(amap, m)
-          let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else rty
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
           rty
 
       (ty

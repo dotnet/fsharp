@@ -271,12 +271,8 @@ type
     | UserNum of value: string * suffix: string
 
     /// F# syntax: verbatim or regular string, e.g. "abc"
-<<<<<<< HEAD
     /// May be null coming from parser in type provider instantiation but is always treated as an error.
-    | String of text:string * range:range
-=======
     | String of text: string * range: range
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
 
     /// F# syntax: verbatim or regular byte string, e.g. "abc"B.
     ///
@@ -458,16 +454,11 @@ and
     /// F# syntax is 'typar: null
     | WhereTyparSupportsNull of genericName: SynTypar * range: range
 
-<<<<<<< HEAD
     /// F# syntax is 'typar : null
-    | WhereTyparNotSupportsNull of genericName:SynTypar * range:range
+    | WhereTyparNotSupportsNull of genericName: SynTypar * range: range
 
     /// F# syntax is 'typar : comparison
-    | WhereTyparIsComparable of genericName:SynTypar * range:range
-=======
-    /// F# syntax is 'typar: comparison
     | WhereTyparIsComparable of genericName: SynTypar * range: range
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
 
     /// F# syntax is 'typar: equality
     | WhereTyparIsEquatable of genericName: SynTypar * range: range
@@ -542,16 +533,11 @@ and
     /// For the dimensionless units i.e. 1 , and static parameters to provided types
     | StaticConstant of constant: SynConst * range: range
 
-<<<<<<< HEAD
     /// F# syntax : nul used in parameters to type providers
-    | StaticConstantNull of range:range
+    | StaticConstantNull of range: range
 
     /// F# syntax : const expr, used in static parameters to type providers
-    | StaticConstantExpr of expr:SynExpr * range:range
-=======
-    /// F# syntax: const expr, used in static parameters to type providers
     | StaticConstantExpr of expr: SynExpr * range: range
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
 
     /// F# syntax: ident=1 etc., used in static parameters to type providers
     | StaticConstantNamed of expr: SynType * SynType * range: range

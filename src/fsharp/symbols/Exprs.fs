@@ -469,12 +469,8 @@ module FSharpExprConvert =
                 // tailcall
                 ConvObjectModelCallLinear cenv env (false, v, [], tyargs, List.concat untupledCurriedArgs) contf2
 
-<<<<<<< HEAD
-    and ConvExprPrim (cenv:SymbolEnv) (env:ExprTranslationEnv) expr = 
-        let g = cenv.g
-=======
     and ConvExprPrim (cenv: SymbolEnv) (env: ExprTranslationEnv) expr = 
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+        let g = cenv.g
         // Eliminate integer 'for' loops 
         let expr = DetectAndOptimizeForExpression g OptimizeIntRangesOnly expr
 
@@ -875,12 +871,8 @@ module FSharpExprConvert =
             let envinner = env.BindVal v
             Some(vR, rhsR), envinner
 
-<<<<<<< HEAD
-    and ConvILCall (cenv:SymbolEnv) env (isNewObj, valUseFlags, ilMethRef, enclTypeArgs, methTypeArgs, callArgs, m) =
-        let g = cenv.g
-=======
     and ConvILCall (cenv: SymbolEnv) env (isNewObj, valUseFlags, ilMethRef, enclTypeArgs, methTypeArgs, callArgs, m) =
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+        let g = cenv.g
         let isNewObj = (isNewObj || (match valUseFlags with CtorValUsedAsSuperInit | CtorValUsedAsSelfInit -> true | _ -> false))
         let methName = ilMethRef.Name
         let isPropGet = methName.StartsWithOrdinal("get_")

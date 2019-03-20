@@ -1904,11 +1904,7 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
 // to C<_> occurs then generate C<?ty> for a fresh type inference variable ?ty.
 //------------------------------------------------------------------------- 
    
-<<<<<<< HEAD
-let FreshenTyconRef (g: TcGlobals) m rigid (tcref:TyconRef) declaredTyconTypars = 
-=======
-let FreshenTyconRef m rigid (tcref: TyconRef) declaredTyconTypars = 
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+let FreshenTyconRef (g: TcGlobals) m rigid (tcref: TyconRef) declaredTyconTypars = 
     let tpsorig = declaredTyconTypars
     let tps = copyTypars tpsorig
     if rigid <> TyparRigidity.Rigid then 
@@ -1929,11 +1925,7 @@ let FreshenPossibleForallTy g m rigid ty =
         let tps, renaming, tinst = CopyAndFixupTypars m rigid tpsorig
         tpsorig, tps, tinst, instType renaming tau
 
-<<<<<<< HEAD
-let infoOfTyconRef (g:TcGlobals) m (tcref:TyconRef) = 
-=======
-let infoOfTyconRef m (tcref: TyconRef) = 
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+let infoOfTyconRef (g: TcGlobals) m (tcref: TyconRef) = 
     let tps, renaming, tinst = FreshenTypeInst m (tcref.Typars m)
     tps, renaming, tinst, TType_app (tcref, tinst, g.knownWithoutNull)
 
@@ -4588,12 +4580,8 @@ and TcTyparDecls cenv env synTypars = List.map (TcTyparDecl cenv env) synTypars
 /// If optKind=Some kind, then this is the kind we're expecting (we're in *analysis* mode)
 /// If optKind=None, we need to determine the kind (we're in *synthesis* mode)
 ///
-<<<<<<< HEAD
-and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscopedTyparEnv) ty =
-    let g = cenv.g
-=======
 and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscopedTyparEnv) ty =
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+    let g = cenv.g
 
     match ty with 
     | SynType.LongIdent(LongIdentWithDots([], _)) -> 
@@ -4867,12 +4855,8 @@ and TcTyparConstraints cenv newOk checkCxs occ env tpenv wcs =
     tpenv
 
 #if !NO_EXTENSIONTYPING
-<<<<<<< HEAD
-and TcStaticConstantParameter cenv (env:TcEnv) tpenv kind (v:SynType) idOpt container =
-    let g = cenv.g
-=======
 and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (v: SynType) idOpt container =
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+    let g = cenv.g
     let fail() = error(Error(FSComp.SR.etInvalidStaticArgument(NicePrint.minimalStringOfType env.DisplayEnv kind), v.Range)) 
     let record ttype =
         match idOpt with
@@ -4885,37 +4869,20 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (v: SynType) idOpt co
     | SynType.StaticConstant(sc, _) ->
         let v =
             match sc with
-<<<<<<< HEAD
-            | SynConst.Byte n       when typeEquiv g g.byte_ty kind    -> record(g.byte_ty); box (n:byte)
-            | SynConst.Int16 n      when typeEquiv g g.int16_ty kind   -> record(g.int16_ty); box (n:int16)
-            | SynConst.Int32 n      when typeEquiv g g.int32_ty kind   -> record(g.int32_ty); box (n:int)
-            | SynConst.Int64 n      when typeEquiv g g.int64_ty kind   -> record(g.int64_ty); box (n:int64)
-            | SynConst.SByte n      when typeEquiv g g.sbyte_ty kind   -> record(g.sbyte_ty); box (n:sbyte)
-            | SynConst.UInt16 n     when typeEquiv g g.uint16_ty kind  -> record(g.uint16_ty); box (n:uint16)
-            | SynConst.UInt32 n     when typeEquiv g g.uint32_ty kind  -> record(g.uint32_ty); box (n:uint32)
-            | SynConst.UInt64 n     when typeEquiv g g.uint64_ty kind  -> record(g.uint64_ty); box (n:uint64)
-            | SynConst.Decimal n    when typeEquiv g g.decimal_ty kind -> record(g.decimal_ty); box (n:decimal)
-            | SynConst.Single n     when typeEquiv g g.float32_ty kind -> record(g.float32_ty); box (n:single)
-            | SynConst.Double n     when typeEquiv g g.float_ty kind   -> record(g.float_ty); box (n:double)
-            | SynConst.Char n       when typeEquiv g g.char_ty kind    -> record(g.char_ty); box (n:char)
+            | SynConst.Byte n       when typeEquiv g g.byte_ty kind    -> record(g.byte_ty); box (n: byte)
+            | SynConst.Int16 n      when typeEquiv g g.int16_ty kind   -> record(g.int16_ty); box (n: int16)
+            | SynConst.Int32 n      when typeEquiv g g.int32_ty kind   -> record(g.int32_ty); box (n: int)
+            | SynConst.Int64 n      when typeEquiv g g.int64_ty kind   -> record(g.int64_ty); box (n: int64)
+            | SynConst.SByte n      when typeEquiv g g.sbyte_ty kind   -> record(g.sbyte_ty); box (n: sbyte)
+            | SynConst.UInt16 n     when typeEquiv g g.uint16_ty kind  -> record(g.uint16_ty); box (n: uint16)
+            | SynConst.UInt32 n     when typeEquiv g g.uint32_ty kind  -> record(g.uint32_ty); box (n: uint32)
+            | SynConst.UInt64 n     when typeEquiv g g.uint64_ty kind  -> record(g.uint64_ty); box (n: uint64)
+            | SynConst.Decimal n    when typeEquiv g g.decimal_ty kind -> record(g.decimal_ty); box (n: decimal)
+            | SynConst.Single n     when typeEquiv g g.float32_ty kind -> record(g.float32_ty); box (n: single)
+            | SynConst.Double n     when typeEquiv g g.float_ty kind   -> record(g.float_ty); box (n: double)
+            | SynConst.Char n       when typeEquiv g g.char_ty kind    -> record(g.char_ty); box (n: char)
             | SynConst.String (s, _) when typeEquiv g g.string_ty kind  -> record(g.string_ty); box s
-            | SynConst.Bool b       when typeEquiv g g.bool_ty kind    -> record(g.bool_ty); box (b:bool)
-=======
-            | SynConst.Byte n       when typeEquiv cenv.g cenv.g.byte_ty kind    -> record(cenv.g.byte_ty); box (n: byte)
-            | SynConst.Int16 n      when typeEquiv cenv.g cenv.g.int16_ty kind   -> record(cenv.g.int16_ty); box (n: int16)
-            | SynConst.Int32 n      when typeEquiv cenv.g cenv.g.int32_ty kind   -> record(cenv.g.int32_ty); box (n: int)
-            | SynConst.Int64 n      when typeEquiv cenv.g cenv.g.int64_ty kind   -> record(cenv.g.int64_ty); box (n: int64)
-            | SynConst.SByte n      when typeEquiv cenv.g cenv.g.sbyte_ty kind   -> record(cenv.g.sbyte_ty); box (n: sbyte)
-            | SynConst.UInt16 n     when typeEquiv cenv.g cenv.g.uint16_ty kind  -> record(cenv.g.uint16_ty); box (n: uint16)
-            | SynConst.UInt32 n     when typeEquiv cenv.g cenv.g.uint32_ty kind  -> record(cenv.g.uint32_ty); box (n: uint32)
-            | SynConst.UInt64 n     when typeEquiv cenv.g cenv.g.uint64_ty kind  -> record(cenv.g.uint64_ty); box (n: uint64)
-            | SynConst.Decimal n    when typeEquiv cenv.g cenv.g.decimal_ty kind -> record(cenv.g.decimal_ty); box (n: decimal)
-            | SynConst.Single n     when typeEquiv cenv.g cenv.g.float32_ty kind -> record(cenv.g.float32_ty); box (n: single)
-            | SynConst.Double n     when typeEquiv cenv.g cenv.g.float_ty kind   -> record(cenv.g.float_ty); box (n: double)
-            | SynConst.Char n       when typeEquiv cenv.g cenv.g.char_ty kind    -> record(cenv.g.char_ty); box (n: char)
-            | SynConst.String (s, _) when s <> null && typeEquiv cenv.g cenv.g.string_ty kind  -> record(cenv.g.string_ty); box (s: string)
-            | SynConst.Bool b       when typeEquiv cenv.g cenv.g.bool_ty kind    -> record(cenv.g.bool_ty); box (b: bool)
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+            | SynConst.Bool b       when typeEquiv g g.bool_ty kind    -> record(g.bool_ty); box (b: bool)
             | _ -> fail()
         v, tpenv
     | SynType.StaticConstantNull(_) -> fail()
@@ -4931,38 +4898,20 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (v: SynType) idOpt co
             // Check we have a residue constant. We know the type was correct because we checked the expression with this type.
             | Expr.Const(c, _, _) -> 
                 match c with
-<<<<<<< HEAD
-                | Const.Byte n     -> record(g.byte_ty); box (n:byte)
-                | Const.Int16 n    -> record(g.int16_ty); box (n:int16)
-                | Const.Int32 n    -> record(g.int32_ty); box (n:int)
-                | Const.Int64 n    -> record(g.int64_ty); box (n:int64)
-                | Const.SByte n    -> record(g.sbyte_ty); box (n:sbyte)
-                | Const.UInt16 n   -> record(g.uint16_ty); box (n:uint16)
-                | Const.UInt32 n   -> record(g.uint32_ty); box (n:uint32)
-                | Const.UInt64 n   -> record(g.uint64_ty); box (n:uint64)
-                | Const.Decimal n  -> record(g.decimal_ty); box (n:decimal)
-                | Const.Single n   -> record(g.float32_ty); box (n:single)
-                | Const.Double n   -> record(g.float_ty); box (n:double)
-                | Const.Char n     -> record(g.char_ty); box (n:char)
-                | Const.String s   -> record(g.string_ty); box (s:string)
-                | Const.Bool b     -> record(g.bool_ty); box (b:bool)
-=======
-                | Const.Byte n     -> record(cenv.g.byte_ty); box (n: byte)
-                | Const.Int16 n    -> record(cenv.g.int16_ty); box (n: int16)
-                | Const.Int32 n    -> record(cenv.g.int32_ty); box (n: int)
-                | Const.Int64 n    -> record(cenv.g.int64_ty); box (n: int64)
-                | Const.SByte n    -> record(cenv.g.sbyte_ty); box (n: sbyte)
-                | Const.UInt16 n   -> record(cenv.g.uint16_ty); box (n: uint16)
-                | Const.UInt32 n   -> record(cenv.g.uint32_ty); box (n: uint32)
-                | Const.UInt64 n   -> record(cenv.g.uint64_ty); box (n: uint64)
-                | Const.Decimal n  -> record(cenv.g.decimal_ty); box (n: decimal)
-                | Const.Single n   -> record(cenv.g.float32_ty); box (n: single)
-                | Const.Double n   -> record(cenv.g.float_ty); box (n: double)
-                | Const.Char n     -> record(cenv.g.char_ty); box (n: char)
-                | Const.String null   -> fail() 
-                | Const.String s   -> record(cenv.g.string_ty); box (s: string)
-                | Const.Bool b     -> record(cenv.g.bool_ty); box (b: bool)
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+                | Const.Byte n     -> record(g.byte_ty); box (n: byte)
+                | Const.Int16 n    -> record(g.int16_ty); box (n: int16)
+                | Const.Int32 n    -> record(g.int32_ty); box (n: int)
+                | Const.Int64 n    -> record(g.int64_ty); box (n: int64)
+                | Const.SByte n    -> record(g.sbyte_ty); box (n: sbyte)
+                | Const.UInt16 n   -> record(g.uint16_ty); box (n: uint16)
+                | Const.UInt32 n   -> record(g.uint32_ty); box (n: uint32)
+                | Const.UInt64 n   -> record(g.uint64_ty); box (n: uint64)
+                | Const.Decimal n  -> record(g.decimal_ty); box (n: decimal)
+                | Const.Single n   -> record(g.float32_ty); box (n: single)
+                | Const.Double n   -> record(g.float_ty); box (n: double)
+                | Const.Char n     -> record(g.char_ty); box (n: char)
+                | Const.String s   -> record(g.string_ty); box (s: string)
+                | Const.Bool b     -> record(g.bool_ty); box (b: bool)
                 | _ ->  fail()
             | _ -> error(Error(FSComp.SR.tcInvalidConstantExpression(), v.Range))
         v, tpenv'
@@ -5824,13 +5773,8 @@ and CheckSuperInit cenv objTy m =
 // TcExprUndelayed
 //------------------------------------------------------------------------- 
 
-<<<<<<< HEAD
 and TcExprUndelayedNoType cenv env tpenv synExpr : Expr * TType * _ =
     let overallTy = NewInferenceType cenv.g
-=======
-and TcExprUndelayedNoType cenv env tpenv synExpr: Expr * TType * _ =
-    let overallTy = NewInferenceType ()
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
     let expr, tpenv = TcExprUndelayed cenv overallTy env tpenv synExpr
     expr, overallTy, tpenv
 
@@ -10674,15 +10618,9 @@ and TcAndBuildFixedExpr cenv env (overallPatTy, fixedExpr, overallExprTy, mBindi
         let elemPtrTy = mkNativePtrTy cenv.g elemTy
         UnifyTypes cenv env mBinding elemPtrTy overallPatTy
 
-<<<<<<< HEAD
         // let ptr : nativeptr<elem> = 
         //   let tmpArray : elem[] = arr
         //   if notNull tmpArray then
-=======
-        // let ptr: nativeptr<elem> = 
-        //   let tmpArray: elem[] = arr
-        //   if nonNull tmpArray then
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
         //      if tmpArray.Length <> 0 then
         //         let pinned tmpArrayByref: byref<elem> = &arr.[0]
         //         (nativeint) tmpArrayByref
@@ -13486,12 +13424,8 @@ module MutRecBindingChecking =
 
     // Phase2A: create member prelimRecValues for "recursive" items, i.e. ctor val and member vals 
     // Phase2A: also processes their arg patterns - collecting type assertions 
-<<<<<<< HEAD
-    let TcMutRecBindings_Phase2A_CreateRecursiveValuesAndCheckArgumentPatterns cenv tpenv (envMutRec, mutRecDefns : MutRecDefnsPhase2Info) =
-        let g = cenv.g
-=======
     let TcMutRecBindings_Phase2A_CreateRecursiveValuesAndCheckArgumentPatterns cenv tpenv (envMutRec, mutRecDefns: MutRecDefnsPhase2Info) =
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+        let g = cenv.g
 
         // The basic iteration over the declarations in a single type definition
         // State:
@@ -13671,12 +13605,8 @@ module MutRecBindingChecking =
 
     /// Phase2B: check each of the bindings, convert from ast to tast and collects type assertions.
     /// Also generalize incrementally.
-<<<<<<< HEAD
-    let TcMutRecBindings_Phase2B_TypeCheckAndIncrementalGeneralization cenv tpenv envInitial (envMutRec, defnsAs:MutRecDefnsPhase2AData, uncheckedRecBinds: PreCheckingRecursiveBinding list, scopem) : MutRecDefnsPhase2BData * _ * _ =
-        let g = cenv.g
-=======
     let TcMutRecBindings_Phase2B_TypeCheckAndIncrementalGeneralization cenv tpenv envInitial (envMutRec, defnsAs: MutRecDefnsPhase2AData, uncheckedRecBinds: PreCheckingRecursiveBinding list, scopem) : MutRecDefnsPhase2BData * _ * _ =
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+        let g = cenv.g
 
         let (defnsBs: MutRecDefnsPhase2BData), (tpenv, generalizedRecBinds, preGeneralizationRecBinds, _, _) = 
 
@@ -14075,12 +14005,8 @@ module MutRecBindingChecking =
                     tyconOpt, memberBindsWithFixups, [])
 
     /// Check a "module X = A.B.C" module abbreviation declaration
-<<<<<<< HEAD
-    let TcModuleAbbrevDecl (cenv:cenv) scopem env (id, p, m) = 
-        let g = cenv.g
-=======
     let TcModuleAbbrevDecl (cenv: cenv) scopem env (id, p, m) = 
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+        let g = cenv.g
         let ad = env.eAccessRights
         let resolved =
             match p with
@@ -14408,14 +14334,9 @@ module AddAugmentationDeclarations =
             | ValueSome tcref2 when tyconRefEq g tcref2 tcref -> true
             | _ -> false)
 
-<<<<<<< HEAD
-    let AddGenericCompareDeclarations cenv (env: TcEnv) (scSet:Set<Stamp>) (tycon:Tycon) =
+    let AddGenericCompareDeclarations cenv (env: TcEnv) (scSet: Set<Stamp>) (tycon: Tycon) =
         let g = cenv.g
         if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare g tycon && scSet.Contains tycon.Stamp then 
-=======
-    let AddGenericCompareDeclarations cenv (env: TcEnv) (scSet: Set<Stamp>) (tycon: Tycon) =
-        if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare cenv.g tycon && scSet.Contains tycon.Stamp then 
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
             let tcref = mkLocalTyconRef tycon
             let tcaug = tycon.TypeContents
             let ty = if tcref.Deref.IsExceptionDecl then g.exn_ty else generalizedTyOfTyconRef g tcref
@@ -14451,14 +14372,9 @@ module AddAugmentationDeclarations =
 
                
 
-<<<<<<< HEAD
-    let AddGenericEqualityWithComparerDeclarations cenv (env: TcEnv) (seSet:Set<Stamp>) (tycon:Tycon) =
+    let AddGenericEqualityWithComparerDeclarations cenv (env: TcEnv) (seSet: Set<Stamp>) (tycon: Tycon) =
         let g = cenv.g
         if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tycon && seSet.Contains tycon.Stamp then 
-=======
-    let AddGenericEqualityWithComparerDeclarations cenv (env: TcEnv) (seSet: Set<Stamp>) (tycon: Tycon) =
-        if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals cenv.g tycon && seSet.Contains tycon.Stamp then 
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
             let tcref = mkLocalTyconRef tycon
             let tcaug = tycon.TypeContents
             let m = tycon.Range
@@ -14476,13 +14392,8 @@ module AddAugmentationDeclarations =
                 PublishValueDefn cenv env ModuleOrMemberBinding evspec3
 
                 
-<<<<<<< HEAD
-    let AddGenericCompareBindings cenv (tycon:Tycon) =
-        if (* AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare g tycon && *) Option.isSome tycon.GeneratedCompareToValues then 
-=======
     let AddGenericCompareBindings cenv (tycon: Tycon) =
-        if (* AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare cenv.g tycon && *) Option.isSome tycon.GeneratedCompareToValues then 
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+        if (* AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare g tycon && *) Option.isSome tycon.GeneratedCompareToValues then 
             AugmentWithHashCompare.MakeBindingsForCompareAugmentation cenv.g tycon
         else
             []
@@ -14698,13 +14609,8 @@ module TyconConstraintInference =
             
             // Checks if a field type supports the 'equality' constraint based on the assumptions about the type constructors
             // and type parameters.
-<<<<<<< HEAD
-            let rec checkIfFieldTypeSupportsEquality (tycon:Tycon) (ty: TType) =
-                match tryDestTyparTy g ty with
-=======
             let rec checkIfFieldTypeSupportsEquality (tycon: Tycon) (ty: TType) =
-                match tryDestTyparTy cenv.g ty with
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+                match tryDestTyparTy g ty with
                 | ValueSome tp ->
                     // Look for an explicit 'equality' constraint
                     if tp.Constraints |> List.exists (function TyparConstraint.SupportsEquality _ -> true | _ -> false) then 
@@ -16143,13 +16049,8 @@ module EstablishTypeDefinitionCores =
                     doneTypes, acc
 
             // collect edges from the fields of a given struct type.
-<<<<<<< HEAD
-            and accStructFields includeStaticFields ty (structTycon:Tycon) tinst (doneTypes, acc) =
-                if List.exists (typeEquiv g ty) doneTypes then
-=======
             and accStructFields includeStaticFields ty (structTycon: Tycon) tinst (doneTypes, acc) =
-                if List.exists (typeEquiv cenv.g ty) doneTypes then
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+                if List.exists (typeEquiv g ty) doneTypes then
                     // This type (type instance) has been seen before, so no need to collect the same edges again (and avoid loops!)
                     doneTypes, acc 
                 else
@@ -16210,12 +16111,8 @@ module EstablishTypeDefinitionCores =
                | _ -> ())
 
 
-<<<<<<< HEAD
-    let TcMutRecDefns_Phase1 mkLetInfo cenv envInitial parent typeNames inSig tpenv m scopem mutRecNSInfo (mutRecDefns:MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo, _, _>) =
-        let g = cenv.g
-=======
     let TcMutRecDefns_Phase1 mkLetInfo cenv envInitial parent typeNames inSig tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo, _, _>) =
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+        let g = cenv.g
 
         // Phase1A - build Entity for type definitions, exception definitions and module definitions.
         // Also for abbreviations of any of these.  Augmentations are skipped in this phase.
@@ -16373,12 +16270,8 @@ module TcDeclarations =
 
     /// Given a type definition, compute whether its members form an extension of an existing type, and if so if it is an 
     /// intrinsic or extrinsic extension
-<<<<<<< HEAD
-    let private ComputeTyconDeclKind cenv tyconOpt isAtOriginalTyconDefn envForDecls inSig m (synTypars:SynTyparDecl list) synTyparCxs longPath = 
+    let private ComputeTyconDeclKind cenv tyconOpt isAtOriginalTyconDefn envForDecls inSig m (synTypars: SynTyparDecl list) synTyparCxs longPath = 
         let g = cenv.g
-=======
-    let private ComputeTyconDeclKind tyconOpt isAtOriginalTyconDefn cenv envForDecls inSig m (synTypars: SynTyparDecl list) synTyparCxs longPath = 
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
         let ad = envForDecls.eAccessRights
         
         let tcref = 

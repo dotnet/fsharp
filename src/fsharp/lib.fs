@@ -376,17 +376,10 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
 //#if BUILDING_WITH_LKG
 type NonNullSlot<'T when 'T : not struct> = 'T
 //#else
-<<<<<<< HEAD
 //type NonNullSlot<'T when (* 'T : not null and *)  'T : not struct> = 'T?
 //#endif
 let nullableSlotEmpty() : NonNullSlot<'T> = Unchecked.defaultof<_>
 let nullableSlotFull (x: 'T) : NonNullSlot<'T> = x
-=======
-type NonNullSlot<'T> = 'T
-let nullableSlotEmpty() = Unchecked.defaultof<'T>
-let nullableSlotFull x = x
-//#endif
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
 
 //---------------------------------------------------------------------------
 // Caches, mainly for free variables
@@ -470,15 +463,11 @@ module internal AsyncUtil =
                         // Continuations that Async.FromContinuations provide do QUWI/SynchContext.Post,
                         // so the order is not overly relevant but still. 
                         List.rev savedConts)
-<<<<<<< HEAD
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-            let postOrQueue (sc:SynchronizationContext,cont) =
+            let postOrQueue (sc: SynchronizationContext, cont) =
 #else
-            let postOrQueue (sc:SynchronizationContext?,cont) =
+            let postOrQueue (sc: SynchronizationContext?, cont) =
 #endif
-=======
-            let postOrQueue (sc:SynchronizationContext, cont) =
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
                 match sc with
                 | null -> ThreadPool.QueueUserWorkItem(fun _ -> cont res) |> ignore
                 | NonNull sc ->

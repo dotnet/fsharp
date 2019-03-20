@@ -894,12 +894,11 @@ type ImageDebugDirectory =
 [<ComImport; Interface>]
 [<Guid("0B97726E-9E6D-4f05-9A26-424022093CAA"); InterfaceType(ComInterfaceType.InterfaceIsIUnknown)>]
 type ISymUnmanagedWriter2 =
-<<<<<<< HEAD
-    abstract DefineDocument : [<MarshalAs(UnmanagedType.LPWStr)>] url : string *
-                              language : System.Guid byref *
-                              languageVendor : System.Guid byref *
-                              documentType : System.Guid byref *
-                              [<MarshalAs(UnmanagedType.Interface)>] RetVal : ISymUnmanagedDocumentWriter byref -> unit    
+    abstract DefineDocument: [<MarshalAs(UnmanagedType.LPWStr)>] url: string *
+                             language: System.Guid byref *
+                             languageVendor: System.Guid byref *
+                             documentType: System.Guid byref *
+                             [<MarshalAs(UnmanagedType.Interface)>] RetVal: ISymUnmanagedDocumentWriter byref -> unit    
     abstract SetUserEntryPoint : entryMethod : uint32 -> unit     
     abstract OpenMethod : meth : int -> unit
     abstract CloseMethod : unit -> unit    
@@ -1009,118 +1008,6 @@ type ISymUnmanagedWriter2 =
 
 type PdbWriter = { symWriter : ISymUnmanagedWriter2 }
 type PdbDocumentWriter = { symDocWriter : ISymUnmanagedDocumentWriter }  (* pointer to pDocumentWriter COM object *)
-=======
-    abstract DefineDocument: [<MarshalAs(UnmanagedType.LPWStr)>] url: string *
-                              language: System.Guid byref *
-                              languageVendor: System.Guid byref *
-                              documentType: System.Guid byref *
-                              [<MarshalAs(UnmanagedType.Interface)>] RetVal: ISymUnmanagedDocumentWriter byref -> unit    
-    abstract SetUserEntryPoint: entryMethod: uint32 -> unit     
-    abstract OpenMethod: meth: int -> unit
-    abstract CloseMethod: unit -> unit    
-    abstract OpenScope: startOffset: int * pRetVal: int byref -> unit    
-    abstract CloseScope: endOffset: int -> unit
-    abstract SetScopeRange: scopeID: int * startOffset: int * endOffset: int -> unit    
-    abstract DefineLocalVariable: [<MarshalAs(UnmanagedType.LPWStr)>] varname: string *
-                                attributes: int *
-                                cSig: int *
-                                [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>]signature: byte[] *
-                                addressKind: int *
-                                addr1: int *
-                                addr2: int *
-                                addr3: int *
-                                startOffset: int *
-                                endOffset: int -> unit
-    abstract DefineParameter: [<MarshalAs(UnmanagedType.LPWStr)>] paramname: string *
-                            attributes: int *
-                            sequence: int *
-                            addressKind: int *
-                            addr1: int *
-                            addr2: int *
-                            addr3: int -> unit
-    abstract DefineField: parent: int *
-                      [<MarshalAs(UnmanagedType.LPWStr)>] fieldname: string *
-                      attributes: int *
-                      cSig: int *
-                      [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=3s)>]signature: byte[] *
-                      addressKind: int *
-                      addr1: int *
-                      addr2: int *
-                      addr3: int -> unit
-    abstract DefineGlobalVariable: [<MarshalAs(UnmanagedType.LPWStr)>] globalvarname: string *
-                                  attributes: int *
-                                  cSig: int *
-                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>]signature: byte[] *
-                                  addressKind: int *
-                                  addr1: int *
-                                  addr2: int *
-                                  addr3: int -> unit
-    abstract Close: unit -> unit
-    abstract SetSymAttribute: parent: int *
-                            [<MarshalAs(UnmanagedType.LPWStr)>] attname: string *
-                            cData: int *
-                            [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>]data: byte[] -> unit
-    abstract OpenNamespace: [<MarshalAs(UnmanagedType.LPWStr)>] nsname: string -> unit
-    abstract CloseNamespace: unit -> unit
-    abstract UsingNamespace: [<MarshalAs(UnmanagedType.LPWStr)>] fullName: string -> unit
-    abstract SetMethodSourceRange: startDoc: ISymUnmanagedDocumentWriter *
-                                  startLine: int *
-                                  startColumn: int *
-                                  endDoc: ISymUnmanagedDocumentWriter *
-                                  endLine: int *
-                                  endColumn: int -> unit
-    abstract Initialize: emitter: nativeint *
-                    [<MarshalAs(UnmanagedType.LPWStr)>] filename: string *
-                    stream: IStream *
-                    fullBuild: bool -> unit
-    abstract GetDebugInfo: iDD: ImageDebugDirectory byref *
-                          cData: int * 
-                          pcData: int byref *
-                          [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]data: byte[] -> unit
-    abstract DefineSequencePoints: document: ISymUnmanagedDocumentWriter *
-                                  spCount: int *
-                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]offsets: int [] *
-                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]lines: int [] *
-                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]columns: int [] *
-                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]endLines: int [] *
-                                  [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]endColumns: int [] -> unit
-    abstract RemapToken: oldToken: int * newToken: int -> unit
-    abstract Initialize2: emitter: nativeint *
-                    [<MarshalAs(UnmanagedType.LPWStr)>] tempfilename: string *
-                    stream: IStream *
-                    fullBuild: bool *
-                    [<MarshalAs(UnmanagedType.LPWStr)>] finalfilename: string -> unit
-    abstract DefineConstant: [<MarshalAs(UnmanagedType.LPWStr)>] constname: string *
-                            value: Object *
-                            cSig: int *
-                            [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>]signature: byte[] -> unit
-    abstract Abort: unit -> unit
-    abstract DefineLocalVariable2: [<MarshalAs(UnmanagedType.LPWStr)>] localvarname2: string *
-                                  attributes: int *
-                                  sigToken: int *
-                                  addressKind: int *
-                                  addr1: int *
-                                  addr2: int *
-                                  addr3: int *
-                                  startOffset: int *
-                                  endOffset: int -> unit          
-    abstract DefineGlobalVariable2: [<MarshalAs(UnmanagedType.LPWStr)>] globalvarname2: string *
-                                    attributes: int *
-                                    sigToken: int *
-                                    addressKind: int *
-                                    addr1: int *
-                                    addr2: int *
-                                    addr3: int -> unit                   
-    abstract DefineConstant2: [<MarshalAs(UnmanagedType.LPWStr)>] constantname2: string *
-                              value: Object *
-                              sigToken: int -> unit          
-    abstract OpenMethod2: method2: int *
-                          isect: int *
-                          offset: int -> unit
-
-type PdbWriter = { symWriter: ISymUnmanagedWriter2 }
-type PdbDocumentWriter = { symDocWriter: ISymUnmanagedDocumentWriter }  (* pointer to pDocumentWriter COM object *)
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
 type idd =
     { iddCharacteristics: int32
       iddMajorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)

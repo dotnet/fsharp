@@ -5437,7 +5437,6 @@ let ccuOfTyconRef eref =
 // Type parameters and inference unknowns
 //-------------------------------------------------------------------------
 
-<<<<<<< HEAD
 
 let NewNullnessVar() = Nullness.Variable (NullnessVar()) // we don't known (and if we never find out then it's non-null)
 
@@ -5446,9 +5445,6 @@ let KnownWithNull = Nullness.Known NullnessInfo.WithNull
 let KnownWithoutNull = Nullness.Known NullnessInfo.WithoutNull
 
 let mkTyparTy (tp:Typar) = 
-=======
-let mkTyparTy (tp: Typar) = 
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
     match tp.Kind with 
     | TyparKind.Type -> tp.AsType KnownWithoutNull // TODO NULLNESS: check various callers
     | TyparKind.Measure -> TType_measure (Measure.Var tp)

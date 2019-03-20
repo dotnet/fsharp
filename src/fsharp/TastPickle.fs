@@ -233,22 +233,13 @@ let p_prim_string (s: string) st =
     st.os.EmitBytes bytes
 
 let p_int c st = p_int32 c st
-<<<<<<< HEAD
 let p_intB c st = p_int32B c st
-let p_int8 (i:sbyte) st = p_int32 (int32 i) st
-let p_uint8 (i:byte) st = p_byte (int i) st
-let p_int16 (i:int16) st = p_int32 (int32 i) st
-let p_uint16 (x:uint16) st = p_int32 (int32 x) st
-let p_uint32 (x:uint32) st = p_int32 (int32 x) st
-let p_int64 (i:int64) st =
-=======
 let p_int8 (i: sbyte) st = p_int32 (int32 i) st
 let p_uint8 (i: byte) st = p_byte (int i) st
 let p_int16 (i: int16) st = p_int32 (int32 i) st
 let p_uint16 (x: uint16) st = p_int32 (int32 x) st
 let p_uint32 (x: uint32) st = p_int32 (int32 x) st
 let p_int64 (i: int64) st =
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
     p_int32 (int32 (i &&& 0xFFFFFFFFL)) st
     p_int32 (int32 (i >>> 32)) st
 
@@ -430,47 +421,13 @@ let inline u_tup11 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 (st: ReaderState) =
   let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
   let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in (a, b, c, d, e, f, x7, x8, x9, x10, x11)
 
-<<<<<<< HEAD
-let inline u_tup13 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 (st:ReaderState) =
-=======
-let inline u_tup12 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 (st: ReaderState) =
-  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
-  let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
-  let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in
-  (a, b, c, d, e, f, x7, x8, x9, x10, x11, x12)
-
 let inline u_tup13 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 (st: ReaderState) =
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
   let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
   let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in let x13 = p13 st in
   (a, b, c, d, e, f, x7, x8, x9, x10, x11, x12, x13)
 
-<<<<<<< HEAD
-let inline u_tup17 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 (st:ReaderState) =
-=======
-let inline u_tup14 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 (st: ReaderState) =
-  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
-  let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
-  let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in let x13 = p13 st in
-  let x14 = p14 st in
-  (a, b, c, d, e, f, x7, x8, x9, x10, x11, x12, x13, x14)
-let inline u_tup15 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 (st: ReaderState) =
-  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
-  let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
-  let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in let x13 = p13 st in
-  let x14 = p14 st in let x15 = p15 st in
-  (a, b, c, d, e, f, x7, x8, x9, x10, x11, x12, x13, x14, x15)
-
-let inline u_tup16 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 (st: ReaderState) =
-  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
-  let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
-  let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in let x13 = p13 st in
-  let x14 = p14 st in let x15 = p15 st in let x16 = p16 st in
-  (a, b, c, d, e, f, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16)
-
 let inline u_tup17 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 (st: ReaderState) =
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
   let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
   let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in let x13 = p13 st in
@@ -705,17 +662,7 @@ let u_option f st =
     | 1 -> Some (f st)
     | n -> ufailwith st ("u_option: found number " + string n)
 
-<<<<<<< HEAD
 let u_lazy u st = 
-=======
-// Boobytrap an OSGN node with a force of a lazy load of a bunch of pickled data
-#if LAZY_UNPICKLE
-let wire (x: osgn<_>) (res: Lazy<_>) =
-    x.osgnTripWire <- Some(fun () -> res.Force() |> ignore)
-#endif
-
-let u_lazy u st =
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
 
     // Read the number of bytes in the record
     let len         = prim_u_int32 st // fixupPos1
@@ -893,13 +840,9 @@ let pickleObjWithDanglingCcus inMem file (g: TcGlobals) scope p x =
 
   if phase2bytesB.Length <> 0 then failwith "expected phase2bytesB.Length = 0"
 
-<<<<<<< HEAD
   phase2bytes, phase1bytesB
   
-let check (ilscope:ILScopeRef) (inMap : NodeInTable<_,_>) =
-=======
-let check (ilscope: ILScopeRef) (inMap : NodeInTable<_, _>) =
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
+let check (ilscope: ILScopeRef) (inMap: NodeInTable<_,_>) =
     for i = 0 to inMap.Count - 1 do
       let n = inMap.Get i
       if not (inMap.IsLinked n) then
@@ -909,16 +852,10 @@ let check (ilscope: ILScopeRef) (inMap : NodeInTable<_, _>) =
         // an identical copy of the source for the DLL containing the data being unpickled.  A message will
         // then be printed indicating the name of the item.
 
-<<<<<<< HEAD
-let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef option) u (phase2bytes:byte[]) (phase1bytesB:byte[]) =
+let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (phase2bytes:byte[]) (phase1bytesB:byte[]) =
     let st2 = 
        { is = ByteStream.FromBytes (phase2bytes,0,phase2bytes.Length) 
          isB = ByteStream.FromBytes ([| |],0,0) 
-=======
-let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (phase2bytes: byte[]) =
-    let st2 =
-       { is = ByteStream.FromBytes (phase2bytes, 0, phase2bytes.Length)
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
          iilscope= ilscope
          iccus= new_itbl "iccus (fake)" [| |] 
          ientities= NodeInTable<_,_>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ientities",0) 

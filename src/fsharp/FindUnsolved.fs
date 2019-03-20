@@ -74,15 +74,9 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
         accExpr cenv env f
         accExprs cenv env argsl
 
-<<<<<<< HEAD
-    | Expr.Lambda(_,_ctorThisValOpt,_baseValOpt,argvs,_body,m,rty) -> 
+    | Expr.Lambda(_, _ctorThisValOpt, _baseValOpt, argvs, _body, m, rty) -> 
         let topValInfo = ValReprInfo ([],[argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)],ValReprInfo.unnamedRetVal) 
         let ty = mkMultiLambdaTy cenv.g m argvs rty 
-=======
-    | Expr.Lambda(_, _ctorThisValOpt, _baseValOpt, argvs, _body, m, rty) -> 
-        let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
-        let ty = mkMultiLambdaTy m argvs rty 
->>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
         accLambdas cenv env topValInfo expr ty
 
     | Expr.TyLambda(_, tps, _body, _m, rty)  -> 
