@@ -95,12 +95,12 @@ type env =
       /// Are we in an app expression (Expr.App)?
       isInAppExpr: bool } 
 
-let BindTypar env (tp:Typar) = 
+let BindTypar env (tp: Typar) = 
     { env with 
          boundTyparNames = tp.Name :: env.boundTyparNames
          boundTypars = env.boundTypars.Add (tp, ()) } 
 
-let BindTypars g env (tps:Typar list) = 
+let BindTypars g env (tps: Typar list) = 
     let tps = NormalizeDeclaredTyparsForEquiRecursiveInference g tps
     if isNil tps then env else
     // Here we mutate to provide better names for generalized type parameters 
@@ -197,8 +197,8 @@ type cenv =
       isLastCompiland : bool*bool
       isInternalTestSpanStackReferring: bool
       // outputs
-      mutable usesQuotations : bool
-      mutable entryPointGiven:bool 
+      mutable usesQuotations: bool
+      mutable entryPointGiven: bool 
       
       /// Callback required for quotation generation
       tcVal: ConstraintSolver.TcValF }
@@ -265,10 +265,10 @@ let GetLimitValByRef cenv env m v =
 
     { scope = scope; flags = flags }
 
-let LimitVal cenv (v:Val) limit = 
+let LimitVal cenv (v: Val) limit = 
     cenv.limitVals.[v.Stamp] <- limit
 
-let BindVal cenv env (v:Val) = 
+let BindVal cenv env (v: Val) = 
     //printfn "binding %s..." v.DisplayName
     let alreadyDone = cenv.boundVals.ContainsKey v.Stamp
     cenv.boundVals.[v.Stamp] <- 1
@@ -442,7 +442,7 @@ let AccessInternalsVisibleToAsInternal thisCompPath internalsVisibleToPaths acce
         accessSubstPaths (thisCompPath, internalsVisibleToPath) access)
     
 
-let CheckTypeForAccess (cenv:cenv) env objName valAcc m ty =
+let CheckTypeForAccess (cenv: cenv) env objName valAcc m ty =
     if cenv.reportErrors then 
 
         let visitType ty =         
@@ -458,7 +458,7 @@ let CheckTypeForAccess (cenv:cenv) env objName valAcc m ty =
 
         CheckTypeDeep cenv (visitType, None, None, None, None) cenv.g env false ty
 
-let WarnOnWrongTypeForAccess (cenv:cenv) env objName valAcc m ty =
+let WarnOnWrongTypeForAccess (cenv: cenv) env objName valAcc m ty =
     if cenv.reportErrors then 
 
         let visitType ty =         
@@ -536,7 +536,7 @@ let mkArgsPermit n =
     else PermitByRefExpr.YesTupleOfArgs n
 
 /// Work out what byref-values are allowed at input positions to named F# functions or members
-let mkArgsForAppliedVal isBaseCall (vref:ValRef) argsl = 
+let mkArgsForAppliedVal isBaseCall (vref: ValRef) argsl = 
     match vref.ValReprInfo with
     | Some topValInfo -> 
         let argArities = topValInfo.AritiesOfArgs
@@ -560,7 +560,7 @@ let rec mkArgsForAppliedExpr isBaseCall argsl x =
     | _  -> []
 
 /// Check types occurring in the TAST.
-let CheckTypeAux permitByRefLike (cenv:cenv) env m ty onInnerByrefError =
+let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
     if cenv.reportErrors then 
         let visitTyar (env, tp) = 
           if not (env.boundTypars.ContainsKey tp) then 
@@ -612,13 +612,13 @@ let CheckType permitByRefLike cenv env m ty =
 
 /// Check types occurring in TAST (like CheckType) and additionally reject any byrefs.
 /// The additional byref checks are to catch "byref instantiations" - one place were byref are not permitted.  
-let CheckTypeNoByrefs (cenv:cenv) env m ty = CheckType PermitByRefType.None cenv env m ty
+let CheckTypeNoByrefs (cenv: cenv) env m ty = CheckType PermitByRefType.None cenv env m ty
 
 /// Check types occurring in TAST but allow a Span or similar
-let CheckTypePermitSpanLike (cenv:cenv) env m ty = CheckType PermitByRefType.SpanLike cenv env m ty
+let CheckTypePermitSpanLike (cenv: cenv) env m ty = CheckType PermitByRefType.SpanLike cenv env m ty
 
 /// Check types occurring in TAST but allow all byrefs.  Only used on internally-generated types
-let CheckTypePermitAllByrefs (cenv:cenv) env m ty = CheckType PermitByRefType.All cenv env m ty
+let CheckTypePermitAllByrefs (cenv: cenv) env m ty = CheckType PermitByRefType.All cenv env m ty
 
 /// Check types ocurring in TAST but disallow inner types to be byref or byref-like types.
 let CheckTypeNoInnerByrefs cenv env m ty = CheckType PermitByRefType.NoInnerByRefLike cenv env m ty
@@ -638,7 +638,7 @@ let (|OptionalCoerce|) = function
     | x -> x
 
 /// Check an expression doesn't contain a 'reraise'
-let CheckNoReraise cenv freesOpt (body:Expr) = 
+let CheckNoReraise cenv freesOpt (body: Expr) = 
     if cenv.reportErrors then
         // Avoid recomputing the free variables 
         let fvs = match freesOpt with None -> freeInExpr CollectLocals body | Some fvs -> fvs
@@ -671,7 +671,7 @@ let rec CheckExprNoByrefs cenv env expr =
     CheckExpr cenv env expr PermitByRefExpr.No |> ignore
 
 /// Check a value
-and CheckValRef (cenv:cenv) (env:env) v m (context: PermitByRefExpr) = 
+and CheckValRef (cenv: cenv) (env: env) v m (context: PermitByRefExpr) = 
 
     if cenv.reportErrors then 
         if isSpliceOperator cenv.g v && not env.quote then errorR(Error(FSComp.SR.chkSplicingOnlyInQuotations(), m))
@@ -739,7 +739,7 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: Perm
     limit
     
 /// Check an expression, given information about the position of the expression
-and CheckForOverAppliedExceptionRaisingPrimitive (cenv:cenv) expr =    
+and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) expr =    
     let g = cenv.g
     let expr = stripExpr expr
 
@@ -866,7 +866,7 @@ and CheckCallWithReceiver cenv env m returnTy args contexts context =
                 limitArgs
         CheckCallLimitArgs cenv env m returnTy limitArgs context
 
-and CheckExprLinear (cenv:cenv) (env:env) expr (context:PermitByRefExpr) (contf : Limit -> Limit) =    
+and CheckExprLinear (cenv: cenv) (env: env) expr (context: PermitByRefExpr) (contf : Limit -> Limit) =    
     match expr with
     | Expr.Sequential (e1, e2, NormalSeq, _, _) -> 
         CheckExprNoByrefs cenv env e1
@@ -906,7 +906,7 @@ and CheckExprLinear (cenv:cenv) (env:env) expr (context:PermitByRefExpr) (contf 
         contf (CheckExpr cenv env expr context)
 
 /// Check an expression, given information about the position of the expression
-and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : Limit =    
+and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limit =    
     let g = cenv.g
 
     let origExpr = stripExpr origExpr
@@ -1629,7 +1629,7 @@ and CheckValInfo cenv env (ValReprInfo(_, args, ret)) =
 and CheckArgInfo cenv env (argInfo : ArgReprInfo)  = 
     CheckAttribs cenv env argInfo.Attribs
 
-and CheckValSpecAux permitByRefLike cenv env (v:Val) onInnerByrefError =
+and CheckValSpecAux permitByRefLike cenv env (v: Val) onInnerByrefError =
     v.Attribs |> CheckAttribs cenv env
     v.ValReprInfo |> Option.iter (CheckValInfo cenv env)
     CheckTypeAux permitByRefLike cenv env v.Range v.Type onInnerByrefError
@@ -1883,7 +1883,7 @@ let CheckModuleBindings cenv env binds =
 // check tycons
 //--------------------------------------------------------------------------
 
-let CheckRecdField isUnion cenv env (tycon:Tycon) (rfield:RecdField) = 
+let CheckRecdField isUnion cenv env (tycon: Tycon) (rfield: RecdField) = 
     let g = cenv.g
     let tcref = mkLocalTyconRef tycon
     let m = rfield.Range
@@ -1908,7 +1908,7 @@ let CheckRecdField isUnion cenv env (tycon:Tycon) (rfield:RecdField) =
     CheckAttribs cenv env rfield.PropertyAttribs
     CheckAttribs cenv env rfield.FieldAttribs
 
-let CheckEntityDefn cenv env (tycon:Entity) =
+let CheckEntityDefn cenv env (tycon: Entity) =
 #if !NO_EXTENSIONTYPING
   if not tycon.IsProvidedGeneratedTycon then
 #endif
@@ -1938,7 +1938,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
             | None -> []
 
         let namesOfMethodsThatMayDifferOnlyInReturnType = ["op_Explicit";"op_Implicit"] (* hardwired *)
-        let methodUniquenessIncludesReturnType (minfo:MethInfo) = List.contains minfo.LogicalName namesOfMethodsThatMayDifferOnlyInReturnType
+        let methodUniquenessIncludesReturnType (minfo: MethInfo) = List.contains minfo.LogicalName namesOfMethodsThatMayDifferOnlyInReturnType
         let MethInfosEquivWrtUniqueness eraseFlag m minfo minfo2 =
             if methodUniquenessIncludesReturnType minfo
             then MethInfosEquivByNameAndSig        eraseFlag true g cenv.amap m minfo minfo2
@@ -1950,7 +1950,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
         let immediateProps = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomewhere) g cenv.amap m ty
 
-        let getHash (hash:Dictionary<string, _>) nm =
+        let getHash (hash: Dictionary<string, _>) nm =
             match hash.TryGetValue(nm) with
             | true, h -> h
             | _ -> []
@@ -1981,9 +1981,9 @@ let CheckEntityDefn cenv env (tycon:Entity) =
             let m = (match minfo.ArbitraryValRef with None -> m | Some vref -> vref.DefinitionRange)
             let others = getOtherMethods minfo
             // abstract/default pairs of duplicate methods are OK
-            let IsAbstractDefaultPair (x:MethInfo) (y:MethInfo) = 
+            let IsAbstractDefaultPair (x: MethInfo) (y: MethInfo) = 
                 x.IsDispatchSlot && y.IsDefiniteFSharpOverride
-            let IsAbstractDefaultPair2 (minfo:MethInfo) (minfo2:MethInfo) = 
+            let IsAbstractDefaultPair2 (minfo: MethInfo) (minfo2: MethInfo) = 
                 IsAbstractDefaultPair minfo minfo2 || IsAbstractDefaultPair minfo2 minfo
             let checkForDup erasureFlag (minfo2: MethInfo) =
                 not (IsAbstractDefaultPair2 minfo minfo2)
@@ -2050,7 +2050,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
             let checkForDup erasureFlag pinfo2 =                         
                   // abstract/default pairs of duplicate properties are OK
-                 let IsAbstractDefaultPair (x:PropInfo) (y:PropInfo) = 
+                 let IsAbstractDefaultPair (x: PropInfo) (y: PropInfo) = 
                      x.IsDispatchSlot && y.IsDefiniteFSharpOverride
 
                  not (IsAbstractDefaultPair pinfo pinfo2 || IsAbstractDefaultPair pinfo2 pinfo)
@@ -2095,7 +2095,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                     let nm = minfo.LogicalName
                     let m = (match minfo.ArbitraryValRef with None -> m | Some vref -> vref.DefinitionRange)
                     let parentMethsOfSameName = getHash hashOfAllVirtualMethsInParent nm 
-                    let checkForDup erasureFlag (minfo2:MethInfo) = minfo2.IsDispatchSlot && MethInfosEquivByNameAndSig erasureFlag true g cenv.amap m minfo minfo2
+                    let checkForDup erasureFlag (minfo2: MethInfo) = minfo2.IsDispatchSlot && MethInfosEquivByNameAndSig erasureFlag true g cenv.amap m minfo minfo2
                     match parentMethsOfSameName |> List.tryFind (checkForDup EraseAll) with
                     | None -> ()
                     | Some minfo ->
@@ -2259,7 +2259,7 @@ and CheckModuleSpec cenv env x =
         let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
         CheckDefnInModule cenv env rhs 
 
-let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcVal, denv , mexpr, extraAttribs, (isLastCompiland:bool*bool), isInternalTestSpanStackReferring) =
+let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcVal, denv , mexpr, extraAttribs, (isLastCompiland: bool*bool), isInternalTestSpanStackReferring) =
     let cenv = 
         { g =g  
           reportErrors=reportErrors 

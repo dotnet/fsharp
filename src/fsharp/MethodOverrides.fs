@@ -78,7 +78,7 @@ module DispatchSlotChecking =
     let FormatMethInfoSig g amap m denv d = bufs (fun buf -> PrintMethInfoSigToBuffer g amap m denv buf d)
 
     /// Get the override info for an existing (inherited) method being used to implement a dispatch slot.
-    let GetInheritedMemberOverrideInfo g amap m parentType (minfo:MethInfo) = 
+    let GetInheritedMemberOverrideInfo g amap m parentType (minfo: MethInfo) = 
         let nm = minfo.LogicalName
         let (CompiledSig (argTys, retTy, fmtps, ttpinst)) = CompiledSigOfMeth g amap m minfo
 
@@ -86,7 +86,7 @@ module DispatchSlotChecking =
         Override(parentType, minfo.ApparentEnclosingTyconRef, mkSynId m nm, (fmtps, ttpinst), argTys, retTy, isFakeEventProperty, false)
 
     /// Get the override info for a value being used to implement a dispatch slot.
-    let GetTypeMemberOverrideInfo g reqdTy (overrideBy:ValRef) = 
+    let GetTypeMemberOverrideInfo g reqdTy (overrideBy: ValRef) = 
         // TODO: consider witnesses w.r.t. overriding methods as types get more specialized....
         let _, _cxs, argInfos, retTy, _ = GetTypeOfMemberInMemberForm g overrideBy
         let nm = overrideBy.LogicalName
@@ -125,7 +125,7 @@ module DispatchSlotChecking =
         Override(implKind, overrideBy.MemberApparentEntity, mkSynId overrideBy.Range nm, (memberMethodTypars, memberToParentInst), argTys, retTy, isFakeEventProperty, overrideBy.IsCompilerGenerated)
 
     /// Get the override information for an object expression method being used to implement dispatch slots
-    let GetObjectExprOverrideInfo g amap (implty, id:Ident, memberFlags, ty, arityInfo, bindingAttribs, rhsExpr) = 
+    let GetObjectExprOverrideInfo g amap (implty, id: Ident, memberFlags, ty, arityInfo, bindingAttribs, rhsExpr) = 
         // Dissect the type
         let tps, _cxs, argInfos, retTy, _ = GetMemberTypeInMemberForm g memberFlags arityInfo ty id.idRange
         let argTys = argInfos |> List.mapSquared fst
@@ -151,11 +151,11 @@ module DispatchSlotChecking =
             error(InternalError("Unexpected shape for object expression override", id.idRange))
           
     /// Check if an override matches a dispatch slot by name
-    let IsNameMatch (dispatchSlot:MethInfo) (overrideBy: OverrideInfo) = 
+    let IsNameMatch (dispatchSlot: MethInfo) (overrideBy: OverrideInfo) = 
         (overrideBy.LogicalName = dispatchSlot.LogicalName)
           
     /// Check if an override matches a dispatch slot by name
-    let IsImplMatch g (dispatchSlot:MethInfo) (overrideBy: OverrideInfo) = 
+    let IsImplMatch g (dispatchSlot: MethInfo) (overrideBy: OverrideInfo) = 
         // If the override is listed as only relevant to one type, and we're matching it against an abstract slot of an interface type,
         // then check that interface type is the right type.
         match overrideBy.CanImplement with 
@@ -166,10 +166,10 @@ module DispatchSlotChecking =
 
     /// Check if the kinds of type parameters match between a dispatch slot and an override.
     let IsTyparKindMatch (CompiledSig(_, _, fvmtps, _)) (Override(_, _, _, (mtps, _), _, _, _, _)) = 
-        List.lengthsEqAndForall2 (fun (tp1:Typar) (tp2:Typar) -> tp1.Kind = tp2.Kind) mtps fvmtps
+        List.lengthsEqAndForall2 (fun (tp1: Typar) (tp2: Typar) -> tp1.Kind = tp2.Kind) mtps fvmtps
         
     /// Check if an override is a partial match for the requirements for a dispatch slot 
-    let IsPartialMatch g (dispatchSlot:MethInfo) compiledSig (Override(_, _, _, (mtps, _), argTys, _retTy, _, _) as overrideBy) = 
+    let IsPartialMatch g (dispatchSlot: MethInfo) compiledSig (Override(_, _, _, (mtps, _), argTys, _retTy, _, _) as overrideBy) = 
         IsNameMatch dispatchSlot overrideBy &&
         let (CompiledSig (vargtys, _, fvmtps, _)) = compiledSig
         mtps.Length = fvmtps.Length &&
@@ -247,12 +247,12 @@ module DispatchSlotChecking =
 
     /// Check all dispatch slots are implemented by some override.
     let CheckDispatchSlotsAreImplemented (denv, g, amap, m,
-                                          nenv, sink:TcResultsSink,
+                                          nenv, sink: TcResultsSink,
                                           isOverallTyAbstract,
                                           reqdTy,
-                                          dispatchSlots:RequiredSlot list,
-                                          availPriorOverrides:OverrideInfo list,
-                                          overrides:OverrideInfo list) = 
+                                          dispatchSlots: RequiredSlot list,
+                                          availPriorOverrides: OverrideInfo list,
+                                          overrides: OverrideInfo list) = 
 
         let isReqdTyInterface = isInterfaceTy g reqdTy 
         let showMissingMethodsAndRaiseErrors = (isReqdTyInterface || not isOverallTyAbstract)
@@ -389,7 +389,7 @@ module DispatchSlotChecking =
     /// allReqdTys = {C;I2;I3}
     ///
     /// allReqdTys can include one class/record/union type. 
-    let GetSlotImplSets (infoReader:InfoReader) denv isObjExpr allReqdTys = 
+    let GetSlotImplSets (infoReader: InfoReader) denv isObjExpr allReqdTys = 
 
         let g = infoReader.g
         let amap = infoReader.amap
@@ -458,7 +458,7 @@ module DispatchSlotChecking =
                 isImpliedInterfaceTable.ContainsKey (tcrefOfAppTy g ty) &&
                 impliedTys |> List.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange ty)
 
-            //let isSlotImpl (minfo:MethInfo) = 
+            //let isSlotImpl (minfo: MethInfo) = 
             //    not minfo.IsAbstract && minfo.IsVirtual 
 
             // Compute the abstract slots that require implementations
@@ -506,7 +506,7 @@ module DispatchSlotChecking =
                               yield GetInheritedMemberOverrideInfo g amap reqdTyRange CanImplementAnyClassHierarchySlot minfo   ]
                      
             // We also collect up the properties. This is used for abstract slot inference when overriding properties
-            let isRelevantRequiredProperty (x:PropInfo) = 
+            let isRelevantRequiredProperty (x: PropInfo) = 
                 (x.IsVirtualProperty && not (isInterfaceTy g reqdTy)) ||
                 isImpliedInterfaceType x.ApparentEnclosingType
                 
@@ -520,7 +520,7 @@ module DispatchSlotChecking =
 
     /// Check that a type definition implements all its required interfaces after processing all declarations 
     /// within a file.
-    let CheckImplementationRelationAtEndOfInferenceScope (infoReader :InfoReader, denv, nenv, sink, tycon:Tycon, isImplementation) =
+    let CheckImplementationRelationAtEndOfInferenceScope (infoReader : InfoReader, denv, nenv, sink, tycon: Tycon, isImplementation) =
 
         let g = infoReader.g
         let amap = infoReader.amap
@@ -548,7 +548,7 @@ module DispatchSlotChecking =
                 overrideBy.IsVirtualMember &&  // exclude non virtual (e.g. keep override/default). [4469]
                 not overrideBy.IsDispatchSlotMember)
 
-        let mustOverrideSomething reqdTy (overrideBy:ValRef) =
+        let mustOverrideSomething reqdTy (overrideBy: ValRef) =
            let memberInfo = overrideBy.MemberInfo.Value
            not (overrideBy.IsFSharpEventProperty(g)) &&
            memberInfo.MemberFlags.IsOverrideOrExplicitImpl && 
@@ -642,7 +642,7 @@ module DispatchSlotChecking =
 
 
 /// "Type Completion" inference and a few other checks at the end of the inference scope
-let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader:InfoReader, nenv, sink, isImplementation, denv) (tycon:Tycon) =
+let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv, sink, isImplementation, denv) (tycon: Tycon) =
 
     let g = infoReader.g
     let amap = infoReader.amap
@@ -703,7 +703,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader:InfoReader, nenv,
     
 /// Get the methods relevant to determining if a uniquely-identified-override exists based on the syntactic information 
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does 
-let GetAbstractMethInfosForSynMethodDecl(infoReader:InfoReader, ad, memberName:Ident, bindm, typToSearchForAbstractMembers, valSynData) =
+let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName: Ident, bindm, typToSearchForAbstractMembers, valSynData) =
     let minfos = 
         match typToSearchForAbstractMembers with 
         | _, Some(SlotImplSet(_, dispatchSlotsKeyed, _, _)) -> 
@@ -718,7 +718,7 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader:InfoReader, ad, memberName:I
 
 /// Get the properties relevant to determining if a uniquely-identified-override exists based on the syntactic information 
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does 
-let GetAbstractPropInfosForSynPropertyDecl(infoReader:InfoReader, ad, memberName:Ident, bindm, typToSearchForAbstractMembers, _k, _valSynData) = 
+let GetAbstractPropInfosForSynPropertyDecl(infoReader: InfoReader, ad, memberName: Ident, bindm, typToSearchForAbstractMembers, _k, _valSynData) = 
     let pinfos = 
         match typToSearchForAbstractMembers with 
         | _, Some(SlotImplSet(_, _, _, reqdProps)) -> 

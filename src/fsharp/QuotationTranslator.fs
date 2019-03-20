@@ -100,14 +100,14 @@ type QuotationTranslationEnv =
           isinstVals = ValMap<_>.Empty
           substVals = ValMap<_>.Empty }
 
-    member env.BindTypar (v:Typar) =
+    member env.BindTypar (v: Typar) =
         let idx = env.tyvs.Count
         { env with tyvs = env.tyvs.Add(v.Stamp, idx ) }
 
     member env.BindTypars vs =
         (env, vs) ||> List.fold (fun env v -> env.BindTypar v) // fold left-to-right because indexes are left-to-right
 
-let BindFormalTypars (env:QuotationTranslationEnv) vs =
+let BindFormalTypars (env: QuotationTranslationEnv) vs =
     { env with tyvs = Map.empty }.BindTypars vs
 
 let BindVal env v =
@@ -288,7 +288,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             ConvExpr cenv env (MakeApplicationAndBetaReduce cenv.g (expr, exprty, [tyargs], curriedArgs, m))
         else
             // Too many arguments? Chop
-            let (curriedArgs:Expr list ), laterArgs = List.splitAt nCurriedArgInfos curriedArgs
+            let (curriedArgs: Expr list ), laterArgs = List.splitAt nCurriedArgInfos curriedArgs
 
             let callR =
                 // We now have the right number of arguments, w.r.t. currying and tupling.
@@ -335,7 +335,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
                 match curriedArgs, curriedArgInfos with
                 // static member and module value unit argument elimination
-                | [arg:Expr], [[]] ->
+                | [arg: Expr], [[]] ->
                     // we got here if quotation is represents a call with unit argument
                     // let f () = ()
                     // <@ f @> // => (\arg -> f arg) => arg is Expr.Val - no-effects, first case
@@ -748,13 +748,13 @@ and ConvObjectModelCallCore cenv env m (isPropGet, isPropSet, isNewObj, parentTy
 
     else
 
-        let methR : QuotationPickler.MethodData =
+        let methR: QuotationPickler.MethodData =
             { methParent   = parentTyconR
               methArgTypes = methArgTypesR
               methRetType  = methRetTypeR
               methName     = methName
               numGenericArgs = numGenericArgs }
-        let methWR : QuotationPickler.MethodData =
+        let methWR QuotationPickler.MethodData =
             { methParent   = parentTyconR
               methArgTypes = witnessArgTypesR @ methArgTypesR
               methRetType  = methRetTypeR
@@ -783,10 +783,10 @@ and ConvModuleValueAppCore cenv env m (vref:ValRef) tyargs witnessArgs (curriedA
 and ConvExprs cenv env args =
     List.map (ConvExpr cenv env) args
 
-and ConvValRef holeOk cenv env m (vref:ValRef) tyargs =
+and ConvValRef holeOk cenv env m (vref: ValRef) tyargs =
     EmitDebugInfoIfNecessary cenv env m (ConvValRefCore holeOk cenv env m vref tyargs)
 
-and private ConvValRefCore holeOk cenv env m (vref:ValRef) tyargs =
+and private ConvValRefCore holeOk cenv env m (vref: ValRef) tyargs =
     let v = vref.Deref
     if env.isinstVals.ContainsVal v then
         let (ty, e) = env.isinstVals.[v]
@@ -820,7 +820,7 @@ and private ConvValRefCore holeOk cenv env m (vref:ValRef) tyargs =
 
               ConvModuleValueApp cenv env m vref tyargs witnessArgs [] 
 
-and ConvUnionCaseRef cenv (ucref:UnionCaseRef) m =
+and ConvUnionCaseRef cenv (ucref: UnionCaseRef) m =
     let ucgtypR = ConvTyconRef cenv ucref.TyconRef m
     let nm =
         if cenv.g.unionCaseRefEq ucref cenv.g.cons_ucref then "Cons"
@@ -828,7 +828,7 @@ and ConvUnionCaseRef cenv (ucref:UnionCaseRef) m =
         else ucref.CaseName
     (ucgtypR, nm)
 
-and ConvRecdFieldRef cenv (rfref:RecdFieldRef) m =
+and ConvRecdFieldRef cenv (rfref: RecdFieldRef) m =
     let typR = ConvTyconRef cenv rfref.TyconRef m
     let nm =
         if useGenuineField rfref.TyconRef.Deref rfref.RecdField then
@@ -837,11 +837,11 @@ and ConvRecdFieldRef cenv (rfref:RecdFieldRef) m =
             rfref.FieldName
     (typR, nm)
 
-and ConvVal cenv env (v:Val) =
+and ConvVal cenv env (v: Val) =
     let tyR = ConvType cenv env v.Range v.Type
     QP.freshVar (v.CompiledName, tyR, v.IsMutable)
 
-and ConvTyparRef cenv env m (tp:Typar) =
+and ConvTyparRef cenv env m (tp: Typar) =
     match env.tyvs.TryFind tp.Stamp  with
     | Some x -> x
     | None ->
@@ -987,7 +987,7 @@ and ConvDecisionTree cenv env tgs typR x =
 
 
 // Check if this is an provider-generated assembly that will be statically linked
-and IsILTypeRefStaticLinkLocal cenv m (tr:ILTypeRef) =
+and IsILTypeRefStaticLinkLocal cenv m (tr: ILTypeRef) =
         ignore cenv; ignore m
         match tr.Scope with
 #if !NO_EXTENSIONTYPING
@@ -1007,14 +1007,14 @@ and IsILTypeRefStaticLinkLocal cenv m (tr:ILTypeRef) =
         | _ -> false
 
 // Adjust for static linking information, then convert
-and ConvILTypeRefUnadjusted cenv m (tr:ILTypeRef) =
+and ConvILTypeRefUnadjusted cenv m (tr: ILTypeRef) =
     let trefAdjusted =
         if IsILTypeRefStaticLinkLocal cenv m tr then
             ILTypeRef.Create(ILScopeRef.Local, tr.Enclosing, tr.Name)
         else tr
     ConvILTypeRef cenv trefAdjusted
 
-and ConvILTypeRef cenv (tr:ILTypeRef) =
+and ConvILTypeRef cenv (tr: ILTypeRef) =
     if cenv.quotationFormat.SupportsDeserializeEx then
         let idx =
             match cenv.referencedTypeDefsTable.TryGetValue tr with
@@ -1049,14 +1049,14 @@ and ConvILType cenv env m ty =
 
 
 #if !NO_EXTENSIONTYPING
-and TryElimErasableTyconRef cenv m (tcref:TyconRef) =
+and TryElimErasableTyconRef cenv m (tcref: TyconRef) =
     match tcref.TypeReprInfo with
     // Get the base type
     | TProvidedTypeExtensionPoint info when info.IsErased -> Some (info.BaseTypeForErased (m, cenv.g.obj_ty))
     | _ -> None
 #endif
 
-and ConvTyconRef cenv (tcref:TyconRef) m =
+and ConvTyconRef cenv (tcref: TyconRef) m =
 #if !NO_EXTENSIONTYPING
     match TryElimErasableTyconRef cenv m tcref with
     | Some baseTy -> ConvTyconRef cenv (tcrefOfAppTy cenv.g baseTy) m
@@ -1094,7 +1094,7 @@ let ConvExprPublic cenv env e =
 
     astExpr
 
-let ConvMethodBase cenv env (methName, v:Val) =
+let ConvMethodBase cenv env (methName, v: Val) =
     let m = v.Range
     let parentTyconR = ConvTyconRef cenv v.TopValDeclaringEntity m
 
