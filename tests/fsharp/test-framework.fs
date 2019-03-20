@@ -156,12 +156,12 @@ let config configurationName envVars =
 
     let SCRIPT_ROOT = __SOURCE_DIRECTORY__
     let packagesDir = Environment.GetEnvironmentVariable("USERPROFILE") ++ ".nuget" ++ "packages"
-#if NET46
-    let fscArchitecture = "net46"
-    let fsiArchitecture = "net46"
+#if NET472
+    let fscArchitecture = "net472"
+    let fsiArchitecture = "net472"
     let fsharpCoreArchitecture = "net45"
-    let fsharpBuildArchitecture = "net46"
-    let fsharpCompilerInteractiveSettingsArchitecture = "net46"
+    let fsharpBuildArchitecture = "net472"
+    let fsharpCompilerInteractiveSettingsArchitecture = "net472"
 #else
     let fscArchitecture = "netcoreapp2.1"
     let fsiArchitecture = "netcoreapp2.1"
@@ -180,7 +180,7 @@ let config configurationName envVars =
     let CSC = requireFile (packagesDir ++ "Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "csc.exe")
     let ILDASM = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
     let coreclrdll = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "coreclr.dll")
-    let PEVERIFY = requireFile (artifactsBinPath ++ "PEVerify" ++ configurationName ++ "net46" ++ "PEVerify.exe")
+    let PEVERIFY = requireFile (artifactsBinPath ++ "PEVerify" ++ configurationName ++ "net472" ++ "PEVerify.exe")
     let FSI_FOR_SCRIPTS = artifactsBinPath ++ "fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe"
     let FSharpBuild = requireFile (artifactsBinPath ++ "FSharp.Build" ++ configurationName ++ fsharpBuildArchitecture ++ "FSharp.Build.dll")
     let FSharpCompilerInteractiveSettings = requireFile (artifactsBinPath ++ "FSharp.Compiler.Interactive.Settings" ++ configurationName ++ fsharpCompilerInteractiveSettingsArchitecture ++ "FSharp.Compiler.Interactive.Settings.dll")
@@ -190,7 +190,7 @@ let config configurationName envVars =
 
     let FSI = requireFile (FSI_FOR_SCRIPTS)
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
-    let FSIANYCPU = requireFile (artifactsBinPath ++ "fsiAnyCpu" ++ configurationName ++ "net46" ++ "fsiAnyCpu.exe")
+    let FSIANYCPU = requireFile (artifactsBinPath ++ "fsiAnyCpu" ++ configurationName ++ "net472" ++ "fsiAnyCpu.exe")
 #endif
     let FSC = requireFile (artifactsBinPath ++ "fsc" ++ configurationName ++ fscArchitecture ++ "fsc.exe")
     let FSCOREDLLPATH = requireFile (artifactsBinPath ++ "FSharp.Core" ++ configurationName ++ fsharpCoreArchitecture ++ "FSharp.Core.dll")

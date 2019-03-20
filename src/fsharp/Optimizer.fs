@@ -1808,16 +1808,23 @@ let TryDetectQueryQuoteAndRun cenv (expr:Expr) =
     | _ -> 
         //printfn "Not eliminating because no Run found"
         None
-                
-let IsSystemStringConcatOverload (methRef: ILMethodRef) =
-    methRef.Name = "Concat" && methRef.DeclaringTypeRef.FullName = "System.String" && 
-    methRef.ReturnType.BasicQualifiedName = "System.String" &&
-    methRef.ArgTypes |> List.forall(fun ilty -> ilty.BasicQualifiedName = "System.String")
 
-let IsSystemStringConcatArray (methRef: ILMethodRef) =
-    methRef.Name = "Concat" && methRef.DeclaringTypeRef.FullName = "System.String" && 
-    methRef.ReturnType.BasicQualifiedName = "System.String" &&
-    methRef.ArgTypes.Length = 1 && methRef.ArgTypes.Head.BasicQualifiedName = "System.String[]"
+let IsILMethodRefDeclaringTypeSystemString (ilg: ILGlobals) (mref: ILMethodRef) =
+    mref.DeclaringTypeRef.Scope.IsAssemblyRef &&
+    mref.DeclaringTypeRef.Scope.AssemblyRef.Name = ilg.typ_String.TypeRef.Scope.AssemblyRef.Name &&
+    mref.DeclaringTypeRef.BasicQualifiedName = ilg.typ_String.BasicQualifiedName
+                
+let IsILMethodRefSystemStringConcatOverload (ilg: ILGlobals) (mref: ILMethodRef) =
+    IsILMethodRefDeclaringTypeSystemString ilg mref &&
+    mref.Name = "Concat" &&
+    mref.ReturnType.BasicQualifiedName = ilg.typ_String.BasicQualifiedName &&
+    mref.ArgCount >= 2 && mref.ArgCount <= 4 && mref.ArgTypes |> List.forall(fun ilty -> ilty.BasicQualifiedName = ilg.typ_String.BasicQualifiedName)
+
+let IsILMethodRefSystemStringConcatArray (ilg: ILGlobals) (mref: ILMethodRef) =
+    IsILMethodRefDeclaringTypeSystemString ilg mref &&
+    mref.Name = "Concat" &&
+    mref.ReturnType.BasicQualifiedName = ilg.typ_String.BasicQualifiedName &&
+    mref.ArgCount = 1 && mref.ArgTypes.Head.BasicQualifiedName = "System.String[]"
     
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
@@ -1944,10 +1951,10 @@ and OptimizeInterfaceImpl cenv env baseValOpt (ty, overrides) =
 and MakeOptimizedSystemStringConcatCall cenv env m args =
     let rec optimizeArg argExpr accArgs =
         match argExpr, accArgs with
-        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ], _), _ when IsSystemStringConcatArray methRef ->
+        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ], _), _ when IsILMethodRefSystemStringConcatArray cenv.g.ilg methRef ->
             optimizeArgs args accArgs
 
-        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, args, _), _ when IsSystemStringConcatOverload methRef ->
+        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, args, _), _ when IsILMethodRefSystemStringConcatOverload cenv.g.ilg mref ->
             optimizeArgs args accArgs
 
         // Optimize string constants, e.g. "1" + "2" will turn into "12"
@@ -1977,7 +1984,7 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
             mkStaticCall_String_Concat_Array cenv.g m arg
 
     match expr with
-    | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _) as op, tyargs, args, m) when IsSystemStringConcatOverload methRef || IsSystemStringConcatArray methRef ->
+    | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _) as op, tyargs, args, m) when IsILMethodRefSystemStringConcatOverload cenv.g.ilg methRef || IsILMethodRefSystemStringConcatArray cenv.g.ilg methRef ->
         OptimizeExprOpReductions cenv env (op, tyargs, args, m)
     | _ ->
         OptimizeExpr cenv env expr
@@ -2046,9 +2053,9 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
     | TOp.ILAsm([], [ty]), _, [a] when typeEquiv cenv.g (tyOfExpr cenv.g a) ty -> OptimizeExpr cenv env a
 
     // Optimize calls when concatenating strings, e.g. "1" + "2" + "3" + "4" .. etc.
-    | TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ] when IsSystemStringConcatArray methRef ->
+    | TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ] when IsILMethodRefSystemStringConcatArray cenv.g.ilg mref ->
         MakeOptimizedSystemStringConcatCall cenv env m args
-    | TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, args when IsSystemStringConcatOverload methRef ->
+    | TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, args when IsILMethodRefSystemStringConcatOverload cenv.g.ilg mref ->
         MakeOptimizedSystemStringConcatCall cenv env m args
 
     | _ -> 

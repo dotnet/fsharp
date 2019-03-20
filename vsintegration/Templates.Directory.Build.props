@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFramework>net472</TargetFramework>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <ImportVsSDK>true</ImportVsSDK>
     <IsPackage>true</IsPackage>
     <GeneratePkgDefFile>false</GeneratePkgDefFile>

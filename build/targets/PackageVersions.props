@@ -13,6 +13,8 @@
       https://api.nuget.org/v3/index.json;
       https://dotnet.myget.org/F/roslyn/api/v3/index.json;
       https://dotnet.myget.org/F/symreader-converter/api/v3/index.json;
+      https://myget.org/F/roslyn_concord/api/v3/index.json;
+      https://vside.myget.org/F/devcore/api/v3/index.json;
     </RestoreSources>
 
     <!-- synchronized build package sources -->
@@ -25,6 +27,7 @@
     <!-- System.* packages -->
     <SystemCollectionsImmutablePackageVersion>1.5.0</SystemCollectionsImmutablePackageVersion>
     <SystemConsolePackageVersion>4.3.0</SystemConsolePackageVersion>
+    <SystemDesignPackageVersion>4.0.0</SystemDesignPackageVersion>
     <SystemDiagnosticsProcessPackageVersion>4.3.0</SystemDiagnosticsProcessPackageVersion>
     <SystemDiagnosticsTraceSourcePackageVersion>4.3.0</SystemDiagnosticsTraceSourcePackageVersion>
     <SystemIoCompressionPackageVersion>4.3.0</SystemIoCompressionPackageVersion>
@@ -78,6 +81,7 @@
     <MicrosoftVisualStudioOLEInteropPackageVersion>7.10.6071</MicrosoftVisualStudioOLEInteropPackageVersion>
     <MicrosoftVisualStudioPackageLanguageService150PackageVersion>15.0.26201</MicrosoftVisualStudioPackageLanguageService150PackageVersion>
     <MicrosoftVisualStudioProjectAggregatorPackageVersion>8.0.50727</MicrosoftVisualStudioProjectAggregatorPackageVersion>
+    <MicrosoftVisualStudioProjectSystemVersion>16.0.201-pre-g7d366164d0</MicrosoftVisualStudioProjectSystemVersion>
     <MicrosoftVisualStudioProjectSystemManagedVersion>2.3.6152103</MicrosoftVisualStudioProjectSystemManagedVersion>
     <MicrosoftVisualStudioShell140PackageVersion>14.3.25407</MicrosoftVisualStudioShell140PackageVersion>
     <MicrosoftVisualStudioShell150PackageVersion>15.0.26201</MicrosoftVisualStudioShell150PackageVersion>
@@ -128,9 +132,9 @@
     <MicrosoftVisualFSharpTypeProvidersRedistPackageVersion>1.0.0</MicrosoftVisualFSharpTypeProvidersRedistPackageVersion>
     <MicrosoftWin32RegistryPackageVersion>4.3.0</MicrosoftWin32RegistryPackageVersion>
     <NewtonsoftJsonPackageVersion>9.0.1</NewtonsoftJsonPackageVersion>
-    <NUnitPackageVersion>3.10.1</NUnitPackageVersion>
-    <NUnit3TestAdapterPackageVersion>3.10.0</NUnit3TestAdapterPackageVersion>
-    <NUnitLitePackageVersion>3.10.1</NUnitLitePackageVersion>
+    <NUnitPackageVersion>3.11.0</NUnitPackageVersion>
+    <NUnit3TestAdapterPackageVersion>3.11.2</NUnit3TestAdapterPackageVersion>
+    <NUnitLitePackageVersion>3.11.0</NUnitLitePackageVersion>
     <RoslynToolsSignToolPackageVersion>1.0.0-beta2-dev3</RoslynToolsSignToolPackageVersion>
     <StrawberryPerl64PackageVersion>5.22.2.1</StrawberryPerl64PackageVersion>
     <XliffTasksPackageVersion>0.2.0-beta-000081</XliffTasksPackageVersion>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../MenusAndCommands.vsct">
     <body>
@@ -74,7 +74,7 @@
       </trans-unit>
       <trans-unit id="cmdidDebugSelection|ButtonText">
         <source>Debug In Interactive</source>
-        <target state="translated">대화형에서 디버그</target>
+        <target state="translated">Interactive에서 디버그</target>
         <note />
       </trans-unit>
       <trans-unit id="cmdidDebugSelection|CommandName">
@@ -99,12 +99,12 @@
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|ButtonText">
         <source>&amp;Send References to F# Interactive</source>
-        <target state="translated">F# 대화형으로 참조 보내기(&amp;S)</target>
+        <target state="translated">F# Interactive로 참조 보내기(&amp;S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|MenuText">
         <source>&amp;Send References to F# Interactive</source>
-        <target state="translated">F# 대화형으로 참조 보내기(&amp;S)</target>
+        <target state="translated">F# Interactive로 참조 보내기(&amp;S)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpSendReferencesToInteractiveCmd|CommandName">

@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="BuildAction">
         <source>Build Action</source>
-        <target state="translated">Действие при сборке</target>
+        <target state="translated">Действие сборки</target>
         <note>Project Build Property Name</note>
       </trans-unit>
       <trans-unit id="BuildActionDescription">
@@ -612,7 +612,7 @@
       </trans-unit>
       <trans-unit id="DetailsUsingTask">
         <source>A 'UsingTask' tag which registers the '{1}' task was found in the project file '{0}'.  'UsingTask' tags in the project file take precedence over those in the imported .TARGETS files, and therefore could be used to execute arbitrary code during an otherwise unmodified build process.</source>
-        <target state="translated">В файле проекта "{0}" обнаружен тег "UsingTask", регистрирующий задачу "{1}".  Метки &lt;UsingTask&gt; в файле проекта имеют превосходство перед импортированными .TARGETS-файлами, и поэтому могут быть использованы для выполнения произвольного кода во время не изменяемого другими средствами процесса сборки.</target>
+        <target state="translated">В файле проекта "{0}" обнаружен тег "UsingTask", регистрирующий задачу "{1}".  Теги "UsingTask" в файле проекта имеют превосходство перед импортированными .TARGETS-файлами, и поэтому могут быть использованы для выполнения произвольного кода во время не изменяемого другими средствами процесса сборки.</target>
         <note />
       </trans-unit>
       <trans-unit id="DetailsTarget">

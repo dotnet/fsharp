@@ -36,7 +36,7 @@ type internal FSharpSignatureHelpProvider
 
     // Unit-testable core routine
     static member internal ProvideMethodsAsyncAux(checker: FSharpChecker, documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerIsTypedChar: char option, filePath: string, textVersionHash: int) = async {
-        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options, userOpName = userOpName)
+        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToFSharpSourceText(), options, userOpName = userOpName)
         match checkFileAnswer with
         | FSharpCheckFileAnswer.Aborted -> return None
         | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
@@ -195,7 +195,7 @@ type internal FSharpSignatureHelpProvider
         member this.GetItemsAsync(document, position, triggerInfo, cancellationToken) = 
             asyncMaybe {
               try
-                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
 
