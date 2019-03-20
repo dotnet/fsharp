@@ -96,7 +96,7 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
     
 
 /// Create an error logger that counts and prints errors 
-let ConsoleErrorLoggerUpToMaxErrors (tcConfigB:TcConfigBuilder, exiter : Exiter) = 
+let ConsoleErrorLoggerUpToMaxErrors (tcConfigB: TcConfigBuilder, exiter : Exiter) = 
     { new ErrorLoggerUpToMaxErrors(tcConfigB, exiter, "ConsoleErrorLoggerUpToMaxErrors") with
             
             member __.HandleTooManyErrors(text : string) = 
@@ -114,7 +114,7 @@ let ConsoleErrorLoggerUpToMaxErrors (tcConfigB:TcConfigBuilder, exiter : Exiter)
 type DelayAndForwardErrorLogger(exiter: Exiter, errorLoggerProvider: ErrorLoggerProvider) =
     inherit CapturingErrorLogger("DelayAndForwardErrorLogger")
 
-    member x.ForwardDelayedDiagnostics(tcConfigB:TcConfigBuilder) = 
+    member x.ForwardDelayedDiagnostics(tcConfigB: TcConfigBuilder) = 
         let errorLogger =  errorLoggerProvider.CreateErrorLoggerUpToMaxErrors(tcConfigB, exiter)
         x.CommitDelayedDiagnostics(errorLogger)
 
@@ -163,7 +163,7 @@ type ConsoleLoggerProvider() =
     override this.CreateErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter) = ConsoleErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter)
 
 /// Notify the exiter if any error has occurred 
-let AbortOnError (errorLogger:ErrorLogger, exiter : Exiter) = 
+let AbortOnError (errorLogger: ErrorLogger, exiter : Exiter) = 
     if errorLogger.ErrorCount > 0 then
         exiter.Exit 1
 
@@ -187,7 +187,7 @@ type DisposablesTracker() =
                 try i.Dispose() with _ -> ()
 
 
-let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger:ErrorLogger, assemblyName, niceNameGen, tcEnv0, inputs, exiter: Exiter) =
+let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, assemblyName, niceNameGen, tcEnv0, inputs, exiter: Exiter) =
     try 
         if isNil inputs then error(Error(FSComp.SR.fscNoImplementationFiles(), Range.rangeStartup))
         let ccuName = assemblyName
@@ -198,7 +198,7 @@ let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger:ErrorLogger, as
         exiter.Exit 1
 
 /// Check for .fsx and, if present, compute the load closure for of #loaded files.
-let AdjustForScriptCompile(ctok, tcConfigB:TcConfigBuilder, commandLineSourceFiles, lexResourceManager) =
+let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFiles, lexResourceManager) =
 
     let combineFilePath file =
         try
@@ -215,7 +215,7 @@ let AdjustForScriptCompile(ctok, tcConfigB:TcConfigBuilder, commandLineSourceFil
     
     let tcConfig = TcConfig.Create(tcConfigB, validate=false) 
     
-    let AddIfNotPresent(filename:string) =
+    let AddIfNotPresent(filename: string) =
         if not(!allSources |> List.contains filename) then
             allSources := filename::!allSources
     
@@ -301,7 +301,7 @@ module InterfaceFileWriter =
               FSharpLib.ControlPath 
               (IL.splitNamespace FSharpLib.ExtraTopLevelOperatorsName) ] 
 
-    let WriteInterfaceFile (tcGlobals, tcConfig:TcConfig, infoReader, declaredImpls) =
+    let WriteInterfaceFile (tcGlobals, tcConfig: TcConfig, infoReader, declaredImpls) =
 
         /// Use a UTF-8 Encoding with no Byte Order Mark
         let os = 
@@ -332,11 +332,11 @@ module XmlDocWriter =
         | XmlDoc [| |] -> false
         | _ -> true
         
-    let computeXmlDocSigs (tcGlobals, generatedCcu:CcuThunk) =
+    let computeXmlDocSigs (tcGlobals, generatedCcu: CcuThunk) =
         (* the xmlDocSigOf* functions encode type into string to be used in "id" *)
         let g = tcGlobals
-        let doValSig ptext (v:Val)  = if (hasDoc v.XmlDoc) then v.XmlDocSig <- XmlDocSigOfVal g ptext v
-        let doTyconSig ptext (tc:Tycon) = 
+        let doValSig ptext (v: Val)  = if (hasDoc v.XmlDoc) then v.XmlDocSig <- XmlDocSigOfVal g ptext v
+        let doTyconSig ptext (tc: Tycon) = 
             if (hasDoc tc.XmlDoc) then tc.XmlDocSig <- XmlDocSigOfTycon [ptext; tc.CompiledName]
             for vref in tc.MembersOfFSharpTyconSorted do 
                 doValSig ptext vref.Deref
@@ -351,9 +351,9 @@ module XmlDocWriter =
                         else
                             XmlDocSigOfField [ptext; tc.CompiledName; rf.Id.idText]
 
-        let doModuleMemberSig path (m:ModuleOrNamespace) = m.XmlDocSig <- XmlDocSigOfSubModul [path]
+        let doModuleMemberSig path (m: ModuleOrNamespace) = m.XmlDocSig <- XmlDocSigOfSubModul [path]
         (* moduleSpec - recurses *)
-        let rec doModuleSig path (mspec:ModuleOrNamespace) = 
+        let rec doModuleSig path (mspec: ModuleOrNamespace) = 
             let mtype = mspec.ModuleOrNamespaceType
             let path = 
                 (* skip the first item in the path which is the assembly name *)
@@ -375,7 +375,7 @@ module XmlDocWriter =
        
         doModuleSig None generatedCcu.Contents          
 
-    let writeXmlDoc (assemblyName, generatedCcu:CcuThunk, xmlfile) =
+    let writeXmlDoc (assemblyName, generatedCcu: CcuThunk, xmlfile) =
         if not (Filename.hasSuffixCaseInsensitive "xml" xmlfile ) then 
             error(Error(FSComp.SR.docfileNoXmlSuffix(), Range.rangeStartup))
         (* the xmlDocSigOf* functions encode type into string to be used in "id" *)
@@ -384,10 +384,10 @@ module XmlDocWriter =
             if hasDoc xmlDoc then
                 let doc = getDoc xmlDoc
                 members := (id, doc) :: !members
-        let doVal (v:Val) = addMember v.XmlDocSig v.XmlDoc
-        let doUnionCase (uc:UnionCase) = addMember uc.XmlDocSig uc.XmlDoc
-        let doField (rf:RecdField) = addMember rf.XmlDocSig rf.XmlDoc
-        let doTycon (tc:Tycon) = 
+        let doVal (v: Val) = addMember v.XmlDocSig v.XmlDoc
+        let doUnionCase (uc: UnionCase) = addMember uc.XmlDocSig uc.XmlDoc
+        let doField (rf: RecdField) = addMember rf.XmlDocSig rf.XmlDoc
+        let doTycon (tc: Tycon) = 
             addMember tc.XmlDocSig tc.XmlDoc
             for vref in tc.MembersOfFSharpTyconSorted do 
                 doVal vref.Deref 
@@ -396,10 +396,10 @@ module XmlDocWriter =
             for rf in tc.AllFieldsArray do
                 doField rf
 
-        let modulMember (m:ModuleOrNamespace) = addMember m.XmlDocSig m.XmlDoc
+        let modulMember (m: ModuleOrNamespace) = addMember m.XmlDocSig m.XmlDoc
         
         (* moduleSpec - recurses *)
-        let rec doModule (mspec:ModuleOrNamespace) = 
+        let rec doModule (mspec: ModuleOrNamespace) = 
             let mtype = mspec.ModuleOrNamespaceType
             if mspec.IsModule then modulMember mspec
             let vals = 
@@ -430,7 +430,7 @@ module XmlDocWriter =
 
 let DefaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
-let GenerateInterfaceData(tcConfig:TcConfig) = 
+let GenerateInterfaceData(tcConfig: TcConfig) = 
     not tcConfig.standalone && not tcConfig.noSignatureData 
 
 let EncodeInterfaceData(tcConfig: TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) = 
@@ -482,11 +482,11 @@ module BinaryGenerationUtilities =
     let b2 n =  byte ((n >>> 16) &&& 0xFF)
     let b3 n =  byte ((n >>> 24) &&& 0xFF)
 
-    let i16 (i:int32) = [| b0 i; b1 i |]
-    let i32 (i:int32) = [| b0 i; b1 i; b2 i; b3 i |]
+    let i16 (i: int32) = [| b0 i; b1 i |]
+    let i32 (i: int32) = [| b0 i; b1 i; b2 i; b3 i |]
 
     // Emit the bytes and pad to a 32-bit alignment
-    let Padded initialAlignment (v:byte[]) = 
+    let Padded initialAlignment (v: byte[]) = 
         [| yield! v
            for _ in 1..(4 - (initialAlignment + v.Length) % 4) % 4 do
                yield 0x0uy |]
@@ -496,7 +496,7 @@ module BinaryGenerationUtilities =
 module ResFileFormat = 
     open BinaryGenerationUtilities
     
-    let ResFileNode(dwTypeID, dwNameID, wMemFlags, wLangID, data:byte[]) =
+    let ResFileNode(dwTypeID, dwNameID, wMemFlags, wLangID, data: byte[]) =
         [| yield! i32 data.Length  // DWORD ResHdr.dwDataSize
            yield! i32 0x00000020  // dwHeaderSize
            yield! i32 ((dwTypeID <<< 16) ||| 0x0000FFFF)  // dwTypeID, sizeof(DWORD)
@@ -516,11 +516,11 @@ module ResFileFormat =
 module VersionResourceFormat = 
     open BinaryGenerationUtilities
 
-    let VersionInfoNode(data:byte[]) =
+    let VersionInfoNode(data: byte[]) =
         [| yield! i16 (data.Length + 2) // wLength : int16 // Specifies the length, in bytes, of the VS_VERSION_INFO structure. 
            yield! data |]
 
-    let VersionInfoElement(wType, szKey, valueOpt: byte[] option, children:byte[][], isString) =
+    let VersionInfoElement(wType, szKey, valueOpt: byte[] option, children: byte[][], isString) =
         // for String structs, wValueLength represents the word count, not the byte count
         let wValueLength = (match valueOpt with None -> 0 | Some value -> (if isString then value.Length / 2 else value.Length))
         VersionInfoNode
@@ -582,12 +582,12 @@ module VersionResourceFormat =
                                                                 yield! i16 codePage |]), [| |], false) |] 
         VersionInfoElement(wType, szKey, None, children, false)
 
-    let VS_FIXEDFILEINFO(fileVersion:ILVersionInfo, 
-                         productVersion:ILVersionInfo, 
+    let VS_FIXEDFILEINFO(fileVersion: ILVersionInfo, 
+                         productVersion: ILVersionInfo, 
                          dwFileFlagsMask, 
                          dwFileFlags, dwFileOS, 
                          dwFileType, dwFileSubtype, 
-                         lwFileDate:int64) = 
+                         lwFileDate: int64) = 
         let dwStrucVersion = 0x00010000
         [| // DWORD dwSignature // Contains the value 0xFEEFO4BD. 
            yield! i32  0xFEEF04BD 
@@ -788,7 +788,7 @@ module MainModuleBuilder =
           Seq.map (fun t -> mkTypeForwarder (tcGlobals.ilg.primaryAssemblyScopeRef) t (mkILNestedExportedTypes List.empty<ILNestedExportedType>) (mkILCustomAttrs List.empty<ILAttribute>) ILTypeDefAccess.Public ) 
           |> Seq.toList
 
-    let createSystemNumericsExportList (tcConfig: TcConfig) (tcImports:TcImports) =
+    let createSystemNumericsExportList (tcConfig: TcConfig) (tcImports: TcImports) =
         let refNumericsDllName =
             if (tcConfig.primaryAssembly.Name = "mscorlib") then "System.Numerics"
             else "System.Runtime.Numerics"
@@ -845,7 +845,7 @@ module MainModuleBuilder =
 
 
     let CreateMainModule  
-            (ctok, tcConfig:TcConfig, tcGlobals, tcImports:TcImports, 
+            (ctok, tcConfig: TcConfig, tcGlobals, tcImports: TcImports, 
              pdbfile, assemblyName, outfile, topAttrs, 
              (iattrs, intfDataResources), optDataResources, 
              codegenResults, assemVerFromAttrib, metadataVersion, secDecls) =
@@ -1211,7 +1211,7 @@ module StaticLinker =
     // build new FSharp.Core for that configuration.
     //
     // Find all IL modules that are to be statically linked given the static linking roots.
-    let LegacyFindAndAddMscorlibTypesForStaticLinkingIntoFSharpCoreLibraryForNet20 (tcConfig:TcConfig, ilGlobals:ILGlobals, ilxMainModule) = 
+    let LegacyFindAndAddMscorlibTypesForStaticLinkingIntoFSharpCoreLibraryForNet20 (tcConfig: TcConfig, ilGlobals: ILGlobals, ilxMainModule) = 
         let mscorlib40 = tcConfig.compilingFslib20.Value 
               
         let ilBinaryReader = 
@@ -1274,7 +1274,7 @@ module StaticLinker =
           mutable visited: bool }
 
     // Find all IL modules that are to be statically linked given the static linking roots.
-    let FindDependentILModulesForStaticLinking (ctok, tcConfig:TcConfig, tcImports:TcImports, ilGlobals, ilxMainModule) = 
+    let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals, ilxMainModule) = 
         if not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty then 
             []
         else
@@ -1387,7 +1387,7 @@ module StaticLinker =
                     yield (n.ccu, n.data)  ]
 
     // Add all provider-generated assemblies into the static linking set
-    let FindProviderGeneratedILModules (ctok, tcImports:TcImports, providerGeneratedAssemblies: (ImportedBinary * _) list) = 
+    let FindProviderGeneratedILModules (ctok, tcImports: TcImports, providerGeneratedAssemblies: (ImportedBinary * _) list) = 
         [ for (importedBinary, provAssemStaticLinkInfo) in providerGeneratedAssemblies do 
               let ilAssemRef  = importedBinary.ILScopeRef.AssemblyRef
               if debugStaticLinking then printfn "adding provider-generated assembly '%s' into static linking set" ilAssemRef.Name
@@ -1405,13 +1405,13 @@ module StaticLinker =
     // Compute a static linker. This only captures tcImports (a large data structure) if
     // static linking is enabled. Normally this is not the case, which lets us collect tcImports
     // prior to this point.
-    let StaticLink (ctok, tcConfig:TcConfig, tcImports:TcImports, ilGlobals:ILGlobals) = 
+    let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlobals) = 
 
 #if !NO_EXTENSIONTYPING
         let providerGeneratedAssemblies = 
 
             [ // Add all EST-generated assemblies into the static linking set
-                for KeyValue(_, importedBinary:ImportedBinary) in tcImports.DllTable do
+                for KeyValue(_, importedBinary: ImportedBinary) in tcImports.DllTable do
                     if importedBinary.IsProviderGenerated then 
                         match importedBinary.ProviderGeneratedStaticLinkMap with 
                         | None -> ()
@@ -1470,7 +1470,7 @@ module StaticLinker =
 
                   // Build a dictionary of all IL type defs, mapping ilOrigTyRef --> ilTypeDef
                   let allTypeDefsInProviderGeneratedAssemblies = 
-                      let rec loop ilOrigTyRef (ilTypeDef:ILTypeDef) = 
+                      let rec loop ilOrigTyRef (ilTypeDef: ILTypeDef) = 
                           seq { yield (ilOrigTyRef, ilTypeDef) 
                                 for ntdef in ilTypeDef.NestedTypes do 
                                     yield! loop (mkILTyRefInTyRef (ilOrigTyRef, ntdef.Name)) ntdef }
@@ -1528,7 +1528,7 @@ module StaticLinker =
                           loop xs []
 
                       /// Implant the (nested) type definition 'td' at path 'enc' in 'tdefs'. 
-                      let rec implantTypeDef isNested (tdefs: ILTypeDefs) (enc:string list) (td: ILTypeDef) = 
+                      let rec implantTypeDef isNested (tdefs: ILTypeDefs) (enc: string list) (td: ILTypeDef) = 
                           match enc with 
                           | [] -> addILTypeDef td tdefs
                           | h::t -> 
@@ -1665,10 +1665,6 @@ let GetStrongNameSigner signingInfo =
 // CopyFSharpCore
 //----------------------------------------------------------------------------
 
-#if FX_RESHAPED_REFLECTION
-type private TypeInThisAssembly (_dummy:obj) = class end
-#endif
-
 // If the --nocopyfsharpcore switch is not specified, this will:
 // 1) Look into the referenced assemblies, if FSharp.Core.dll is specified, it will copy it to output directory.
 // 2) If not, but FSharp.Core.dll exists beside the compiler binaries, it will copy it to output directory.
@@ -1685,11 +1681,7 @@ let CopyFSharpCore(outFile: string, referencedDlls: AssemblyReference list) =
     | Some referencedFsharpCoreDll -> copyFileIfDifferent referencedFsharpCoreDll.Text fsharpCoreDestinationPath
     | None ->
         let executionLocation =
-#if FX_RESHAPED_REFLECTION
-            TypeInThisAssembly(null).GetType().GetTypeInfo().Assembly.Location
-#else
             Assembly.GetExecutingAssembly().Location
-#endif
         let compilerLocation = Path.GetDirectoryName(executionLocation)
         let compilerFsharpCoreDllPath = Path.Combine(compilerLocation, fsharpCoreAssemblyName)
         if File.Exists(compilerFsharpCoreDllPath) then
@@ -1705,8 +1697,8 @@ let CopyFSharpCore(outFile: string, referencedDlls: AssemblyReference list) =
 type Args<'T> = Args  of 'T
 
 let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, 
-          reduceMemoryUsage:ReduceMemoryFlag, defaultCopyFSharpCore: CopyFSharpCoreFlag, 
-          exiter:Exiter, errorLoggerProvider : ErrorLoggerProvider, disposables : DisposablesTracker) = 
+          reduceMemoryUsage: ReduceMemoryFlag, defaultCopyFSharpCore: CopyFSharpCoreFlag, 
+          exiter: Exiter, errorLoggerProvider : ErrorLoggerProvider, disposables : DisposablesTracker) = 
 
     // See Bug 735819 
     let lcidFromCodePage = 
@@ -1829,7 +1821,7 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
             let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint 
             isLastCompiland |> List.zip sourceFiles
             // PERF: consider making this parallel, once uses of global state relevant to parsing are cleaned up 
-            |> List.choose (fun (filename:string, isLastCompiland) -> 
+            |> List.choose (fun (filename: string, isLastCompiland) -> 
                 let pathOfMetaCommandSource = Path.GetDirectoryName(filename)
                 match ParseOneInputFile(tcConfig, lexResourceManager, ["COMPILED"], filename, (isLastCompiland, isExe), errorLogger, (*retryLocked*)false) with
                 | Some input -> Some (input, pathOfMetaCommandSource)
@@ -2094,7 +2086,7 @@ let main2b
     Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter)
 
 /// Phase 3: static linking
-let main3(Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter:Exiter)) = 
+let main3(Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter: Exiter)) = 
         
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
 
@@ -2124,7 +2116,7 @@ let main4 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
 
     let pdbfile = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> FileSystem.GetFullPathShim)
 
-    let normalizeAssemblyRefs (aref:ILAssemblyRef) = 
+    let normalizeAssemblyRefs (aref: ILAssemblyRef) = 
         match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, aref.Name, lookupOnly=false) with 
         | Some dllInfo ->
             match dllInfo.ILScopeRef with 
@@ -2175,7 +2167,7 @@ let main4 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
 /// Entry point typecheckAndCompile
 let typecheckAndCompile 
        (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, 
-        defaultCopyFSharpCore, exiter:Exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator) =
+        defaultCopyFSharpCore, exiter: Exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator) =
 
     use d = new DisposablesTracker()
     use e = new SaveAndRestoreConsoleEncoding()

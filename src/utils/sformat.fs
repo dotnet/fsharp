@@ -1196,7 +1196,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
                               // massively reign in deep printing of properties 
                               let nDepth = depthLim/10
-#if NETSTANDARD1_6 || NETSTANDARD2_0 
+#if NETSTANDARD
                               Array.Sort((propsAndFields),{ new IComparer<MemberInfo> with member this.Compare(p1,p2) = compare (p1.Name) (p2.Name) } );
 #else                              
                               Array.Sort((propsAndFields :> Array),{ new System.Collections.IComparer with member this.Compare(p1,p2) = compare ((p1 :?> MemberInfo).Name) ((p2 :?> MemberInfo).Name) } );

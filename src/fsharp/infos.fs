@@ -20,10 +20,6 @@ open Microsoft.FSharp.Core.Printf
 open FSharp.Compiler.ExtensionTyping
 #endif
 
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
 //-------------------------------------------------------------------------
 // From IL types to F# types
 //-------------------------------------------------------------------------
@@ -156,7 +152,7 @@ type AllowMultiIntfInstantiations = Yes | No
 /// Traverse the type hierarchy, e.g. f D (f C (f System.Object acc)).
 /// Visit base types and interfaces first.
 let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor g amap m ty acc =
-    let rec loop ndeep ty ((visitedTycon, visited:TyconRefMultiMap<_>, acc) as state) =
+    let rec loop ndeep ty ((visitedTycon, visited: TyconRefMultiMap<_>, acc) as state) =
 
         let seenThisTycon = isAppTy g ty && Set.contains (tcrefOfAppTy g ty).Stamp visitedTycon
 
@@ -326,7 +322,7 @@ let FreshenTrait traitFreshner traitInfo =
 ///
 /// Note: this now looks identical to constraint instantiation.
 
-let CopyTyparConstraints traitFreshner m tprefInst (tporig:Typar) =
+let CopyTyparConstraints traitFreshner m tprefInst (tporig: Typar) =
     tporig.Constraints 
     |>  List.map (fun tpc -> 
            match tpc with 
@@ -423,7 +419,7 @@ type ValRef with
 
 #if !NO_EXTENSIONTYPING
 /// Get the return type of a provided method, where 'void' is returned as 'None'
-let GetCompiledReturnTyOfProvidedMethodInfo amap m (mi:Tainted<ProvidedMethodBase>) =
+let GetCompiledReturnTyOfProvidedMethodInfo amap m (mi: Tainted<ProvidedMethodBase>) =
     let returnType =
         if mi.PUntaint((fun mi -> mi.IsConstructor), m) then
             mi.PApply((fun mi -> mi.DeclaringType), m)
@@ -446,7 +442,7 @@ let ReparentSlotSigToUseMethodTypars g m ovByMethValRef slotsig =
 
 
 /// Construct the data representing a parameter in the signature of an abstract method slot
-let MakeSlotParam (ty, argInfo:ArgReprInfo) = TSlotParam(Option.map textOfId argInfo.Name, ty, false, false, false, argInfo.Attribs)
+let MakeSlotParam (ty, argInfo: ArgReprInfo) = TSlotParam(Option.map textOfId argInfo.Name, ty, false, false, false, argInfo.Attribs)
 
 /// Construct the data representing the signature of an abstract method slot
 let MakeSlotSig (nm, ty, ctps, mtps, paraml, retTy) = copySlotSig (TSlotSig(nm, ty, ctps, mtps, paraml, retTy))
@@ -457,7 +453,7 @@ let MakeSlotSig (nm, ty, ctps, mtps, paraml, retTy) = copySlotSig (TSlotSig(nm, 
 ///    - the type parameters associated with a generic method
 ///    - the return type of the method
 ///    - the actual type arguments of the enclosing type.
-let private AnalyzeTypeOfMemberVal isCSharpExt g (ty, vref:ValRef) =
+let private AnalyzeTypeOfMemberVal isCSharpExt g (ty, vref: ValRef) =
     let memberAllTypars, _, retTy, _ = GetTypeOfMemberInMemberForm g vref
     if isCSharpExt || vref.IsExtensionMember then
         [], memberAllTypars, retTy, []
@@ -467,12 +463,12 @@ let private AnalyzeTypeOfMemberVal isCSharpExt g (ty, vref:ValRef) =
         memberParentTypars, memberMethodTypars, retTy, parentTyArgs
 
 /// Get the object type for a member value which is an extension method  (C#-style or F#-style)
-let private GetObjTypeOfInstanceExtensionMethod g (vref:ValRef) =
+let private GetObjTypeOfInstanceExtensionMethod g (vref: ValRef) =
     let _, curriedArgInfos, _, _ = GetTopValTypeInCompiledForm g vref.ValReprInfo.Value vref.Type vref.Range
     curriedArgInfos.Head.Head |> fst
 
 /// Get the object type for a member value which is a C#-style extension method
-let private GetArgInfosOfMember isCSharpExt g (vref:ValRef) =
+let private GetArgInfosOfMember isCSharpExt g (vref: ValRef) =
     if isCSharpExt then
         let _, curriedArgInfos, _, _ = GetTopValTypeInCompiledForm g vref.ValReprInfo.Value vref.Type vref.Range
         [ curriedArgInfos.Head.Tail ]
@@ -610,7 +606,7 @@ type ParamData =
 
 type ILFieldInit with
     /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
-    static member FromProvidedObj m (v:obj) =
+    static member FromProvidedObj m (v: obj) =
         match v with
         | null -> ILFieldInit.Null
         | _ ->
@@ -638,7 +634,7 @@ type ILFieldInit with
 /// This is the same logic as OptionalArgInfoOfILParameter except we do not apply the
 /// Visual Basic rules for IDispatchConstant and IUnknownConstant to optional
 /// provided parameters.
-let OptionalArgInfoOfProvidedParameter (amap:Import.ImportMap) m (provParam : Tainted<ProvidedParameterInfo>) =
+let OptionalArgInfoOfProvidedParameter (amap: Import.ImportMap) m (provParam : Tainted<ProvidedParameterInfo>) =
     let g = amap.g
     if provParam.PUntaint((fun p -> p.IsOptional), m) then
         match provParam.PUntaint((fun p ->  p.HasDefaultValue), m) with
@@ -666,7 +662,7 @@ let GetAndSanityCheckProviderMethod m (mi: Tainted<'T :> ProvidedMemberInfo>) (g
     | meth -> meth
 
 /// Try to get an arbitrary ProvidedMethodInfo associated with a property.
-let ArbitraryMethodInfoOfPropertyInfo (pi:Tainted<ProvidedPropertyInfo>) m =
+let ArbitraryMethodInfoOfPropertyInfo (pi: Tainted<ProvidedPropertyInfo>) m =
     if pi.PUntaint((fun pi -> pi.CanRead), m) then
         GetAndSanityCheckProviderMethod m pi (fun pi -> pi.GetGetMethod()) FSComp.SR.etPropertyCanReadButHasNoGetter
     elif pi.PUntaint((fun pi -> pi.CanWrite), m) then
@@ -1257,13 +1253,13 @@ type MethInfo =
         isStructTy x.TcGlobals x.ApparentEnclosingType
 
     /// Build IL method infos.
-    static member CreateILMeth (amap:Import.ImportMap, m, ty:TType, md: ILMethodDef) =
+    static member CreateILMeth (amap: Import.ImportMap, m, ty: TType, md: ILMethodDef) =
         let tinfo = ILTypeInfo.FromType amap.g ty
         let mtps = Import.ImportILGenericParameters (fun () -> amap) m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata md.GenericParams
         ILMeth (amap.g, ILMethInfo(amap.g, ty, None, md, mtps), None)
 
     /// Build IL method infos for a C#-style extension method
-    static member CreateILExtensionMeth (amap, m, apparentTy:TType, declaringTyconRef:TyconRef, extMethPri, md: ILMethodDef) =
+    static member CreateILExtensionMeth (amap, m, apparentTy: TType, declaringTyconRef: TyconRef, extMethPri, md: ILMethodDef) =
         let scoref =  declaringTyconRef.CompiledRepresentationForNamedType.Scope
         let mtps = Import.ImportILGenericParameters (fun () -> amap) m scoref [] md.GenericParams
         ILMeth (amap.g, ILMethInfo(amap.g, apparentTy, Some declaringTyconRef, md, mtps), extMethPri)
@@ -2504,7 +2500,7 @@ type CompiledSig = CompiledSig  of TType list list * TType option * Typars * Typ
 
 /// Get the information about the compiled form of a method signature. Used when analyzing implementation
 /// relations between members and abstract slots.
-let CompiledSigOfMeth g amap m (minfo:MethInfo) =
+let CompiledSigOfMeth g amap m (minfo: MethInfo) =
     let formalMethTypars = minfo.FormalMethodTypars
     let fminst = generalizeTypars formalMethTypars
     let vargtys = minfo.GetParamTypes(amap, m, fminst)
@@ -2522,7 +2518,7 @@ let CompiledSigOfMeth g amap m (minfo:MethInfo) =
 
 /// Used to hide/filter members from super classes based on signature
 /// Inref and outref parameter types will be treated as a byref type for equivalency.
-let MethInfosEquivByNameAndPartialSig erasureFlag ignoreFinal g amap m (minfo:MethInfo) (minfo2:MethInfo) =
+let MethInfosEquivByNameAndPartialSig erasureFlag ignoreFinal g amap m (minfo: MethInfo) (minfo2: MethInfo) =
     (minfo.LogicalName = minfo2.LogicalName) &&
     (minfo.GenericArity = minfo2.GenericArity) &&
     (ignoreFinal || minfo.IsFinal = minfo2.IsFinal) &&
@@ -2536,7 +2532,7 @@ let MethInfosEquivByNameAndPartialSig erasureFlag ignoreFinal g amap m (minfo:Me
         typeAEquivAux erasureFlag g (TypeEquivEnv.FromEquivTypars formalMethTypars formalMethTypars2) (stripByrefTy g ty1) (stripByrefTy g ty2)))
 
 /// Used to hide/filter members from super classes based on signature
-let PropInfosEquivByNameAndPartialSig erasureFlag g amap m (pinfo:PropInfo) (pinfo2:PropInfo) =
+let PropInfosEquivByNameAndPartialSig erasureFlag g amap m (pinfo: PropInfo) (pinfo2: PropInfo) =
     pinfo.PropertyName = pinfo2.PropertyName &&
     let argtys = pinfo.GetParamTypes(amap, m)
     let argtys2 = pinfo2.GetParamTypes(amap, m)
@@ -2553,12 +2549,12 @@ let MethInfosEquivByNameAndSig erasureFlag ignoreFinal g amap m minfo minfo2 =
     | _ -> false
 
 /// Used to hide/filter members from super classes based on signature
-let PropInfosEquivByNameAndSig erasureFlag g amap m (pinfo:PropInfo) (pinfo2:PropInfo) =
+let PropInfosEquivByNameAndSig erasureFlag g amap m (pinfo: PropInfo) (pinfo2: PropInfo) =
     PropInfosEquivByNameAndPartialSig erasureFlag g amap m pinfo pinfo2 &&
     let retTy = pinfo.GetPropertyType(amap, m)
     let retTy2 = pinfo2.GetPropertyType(amap, m)
     typeEquivAux erasureFlag g retTy retTy2
 
-let SettersOfPropInfos (pinfos:PropInfo list) = pinfos |> List.choose (fun pinfo -> if pinfo.HasSetter then Some(pinfo.SetterMethod, Some pinfo) else None)
-let GettersOfPropInfos (pinfos:PropInfo list) = pinfos |> List.choose (fun pinfo -> if pinfo.HasGetter then Some(pinfo.GetterMethod, Some pinfo) else None)
+let SettersOfPropInfos (pinfos: PropInfo list) = pinfos |> List.choose (fun pinfo -> if pinfo.HasSetter then Some(pinfo.SetterMethod, Some pinfo) else None)
+let GettersOfPropInfos (pinfos: PropInfo list) = pinfos |> List.choose (fun pinfo -> if pinfo.HasGetter then Some(pinfo.GetterMethod, Some pinfo) else None)
 
