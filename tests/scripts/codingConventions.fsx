@@ -67,3 +67,37 @@ let semis =
 
 printfn "Top files that have semicolon at end of line: %A" (Array.truncate 10 semis)
 
+
+printfn "------NO SPACE AFTER COLON----------"
+
+open System.Text.RegularExpressions
+
+let noSpaceAfterColons =
+    let re =  Regex(":[a-zA-Z]")
+    lines
+    |> Array.groupBy fst 
+    |> Array.map (fun (file, lines) -> 
+        file,
+        lines 
+        |> Array.filter (fun (_,(_,line)) -> re.IsMatch(line))
+        |> Array.length)
+    |> Array.sortByDescending snd
+
+printfn "Top files that have no space after colon:\n%A" (Array.truncate 10 noSpaceAfterColons)
+
+printfn "------ SPACE BEFORE COLON----------"
+
+
+let spaceBeforeColon =
+    let re =  Regex("[^\\)] : [a-zA-Z]")
+    lines
+    |> Array.groupBy fst 
+    |> Array.map (fun (file, lines) -> 
+        file,
+        lines 
+        |> Array.filter (fun (_,(_,line)) -> re.IsMatch(line))
+        |> Array.length)
+    |> Array.sortByDescending snd
+
+printfn "Top files that have extra space before colon:\n%A" (Array.truncate 10 spaceBeforeColon)
+
