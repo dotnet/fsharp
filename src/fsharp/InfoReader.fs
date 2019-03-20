@@ -24,8 +24,8 @@ open FSharp.Compiler.ExtensionTyping
 #endif
 
 /// Use the given function to select some of the member values from the members of an F# type
-let private SelectImmediateMemberVals g optFilter f (tcref:TyconRef) = 
-    let chooser (vref:ValRef) = 
+let private SelectImmediateMemberVals g optFilter f (tcref: TyconRef) = 
+    let chooser (vref: ValRef) = 
         match vref.MemberInfo with 
         // The 'when' condition is a workaround for the fact that values providing 
         // override and interface implementations are published in inferred module types 
@@ -42,10 +42,10 @@ let private SelectImmediateMemberVals g optFilter f (tcref:TyconRef) =
     | Some nm -> tcref.MembersOfFSharpTyconByName |> NameMultiMap.find nm |> List.choose chooser
 
 /// Check whether a name matches an optional filter
-let private checkFilter optFilter (nm:string) = match optFilter with None -> true | Some n2 -> nm = n2
+let private checkFilter optFilter (nm: string) = match optFilter with None -> true | Some n2 -> nm = n2
 
 /// Try to select an F# value when querying members, and if so return a MethInfo that wraps the F# value.
-let TrySelectMemberVal g optFilter ty pri _membInfo (vref:ValRef) =
+let TrySelectMemberVal g optFilter ty pri _membInfo (vref: ValRef) =
     if checkFilter optFilter vref.LogicalName then 
         Some(FSMeth(g, ty, vref, pri))
     else 
@@ -102,7 +102,7 @@ type PropertyCollector(g, amap, m, ty, optFilter, ad) =
 
     let hashIdentity = 
         HashIdentity.FromFunctions 
-            (fun (pinfo:PropInfo) -> hash pinfo.PropertyName) 
+            (fun (pinfo: PropInfo) -> hash pinfo.PropertyName) 
             (fun pinfo1 pinfo2 -> 
                 pinfo1.IsStatic = pinfo2.IsStatic &&
                 PropInfosEquivByNameAndPartialSig EraseNone g amap m pinfo1 pinfo2 &&
@@ -123,7 +123,7 @@ type PropertyCollector(g, amap, m, ty, optFilter, ad) =
         | _ ->
             props.[pinfo] <- pinfo
 
-    member x.Collect(membInfo:ValMemberInfo, vref:ValRef) = 
+    member x.Collect(membInfo: ValMemberInfo, vref: ValRef) = 
         match membInfo.MemberFlags.MemberKind with 
         | MemberKind.PropertyGet ->
             let pinfo = FSProp(g, ty, Some vref, None) 
@@ -265,7 +265,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
         infos 
 
     /// Make a reference to a record or class field
-    let MakeRecdFieldInfo g ty (tcref:TyconRef) fspec = 
+    let MakeRecdFieldInfo g ty (tcref: TyconRef) fspec = 
         RecdFieldInfo(argsOfAppTy g ty, tcref.MakeNestedRecdFieldRef fspec)
 
     /// Get the F#-declared record fields or class 'val' fields of a type
@@ -345,7 +345,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
               // Only cache closed, monomorphic types (closed = all members for the type
               // have been processed). Generic type instantiations could be processed if we had 
               // a decent hash function for these.
-              canMemoize=(fun (_flags, (_:range), ty) -> 
+              canMemoize=(fun (_flags, (_: range), ty) -> 
                                     match stripTyEqns g ty with 
                                     | TType_app(tcref, [], _nullness) -> tcref.TypeContents.tcaug_closed // TODO NULLNESS: consider whether ignoring _nullness is valid here
                                     | _ -> false),
@@ -447,7 +447,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
 
 
 /// Get the declared constructors of any F# type
-let rec GetIntrinsicConstructorInfosOfTypeAux (infoReader:InfoReader) m origTy metadataTy = 
+let rec GetIntrinsicConstructorInfosOfTypeAux (infoReader: InfoReader) m origTy metadataTy = 
   protectAssemblyExploration [] (fun () -> 
     let g = infoReader.g
     let amap = infoReader.amap 
@@ -549,7 +549,7 @@ let private FilterItemsInSubTypesBasedOnItemsInSuperTypes nmf keepTest itemLists
 
 /// Add all the items to the IndexedList, preferring the ones in the sub-types.
 let private FilterItemsInSuperTypesBasedOnItemsInSubTypes nmf keepTest itemLists  = 
-    let rec loop itemLists (indexedItemsInSubTypes:IndexedList<_>) = 
+    let rec loop itemLists (indexedItemsInSubTypes: IndexedList<_>) = 
         match itemLists with
         | [] -> List.rev indexedItemsInSubTypes.Items
         | items :: itemsInSuperTypes -> 
@@ -617,7 +617,7 @@ let private FilterOverrides findFlag (isVirt:'a->bool, isNewSlot, isDefiniteOver
           // 
           //   type PD() = 
           //       inherit PC()
-          //       override this.M(x:int) = ()
+          //       override this.M(x: int) = ()
 
           |> FilterItemsInSuperTypesBasedOnItemsInSubTypes nmf (fun item1 superTypeItems -> 
                   not (isNewSlot item1 && 
@@ -629,7 +629,7 @@ let private FilterOverrides findFlag (isVirt:'a->bool, isNewSlot, isDefiniteOver
 let private FilterOverridesOfMethInfos findFlag g amap m minfos = 
     minfos 
     |> FilterOverrides findFlag 
-        ((fun (minfo:MethInfo) -> minfo.IsVirtual),
+        ((fun (minfo: MethInfo) -> minfo.IsVirtual),
          (fun minfo -> minfo.IsNewSlot),
          (fun minfo -> minfo.IsDefiniteFSharpOverride),
          (fun minfo -> minfo.IsFinal),
@@ -640,7 +640,7 @@ let private FilterOverridesOfMethInfos findFlag g amap m minfos =
 let private FilterOverridesOfPropInfos findFlag g amap m props = 
     props 
     |> FilterOverrides findFlag 
-          ((fun (pinfo:PropInfo) -> pinfo.IsVirtualProperty),
+          ((fun (pinfo: PropInfo) -> pinfo.IsVirtualProperty),
            (fun pinfo -> pinfo.IsNewSlot),
            (fun pinfo -> pinfo.IsDefiniteFSharpOverride),
            (fun _ -> false),
@@ -648,7 +648,7 @@ let private FilterOverridesOfPropInfos findFlag g amap m props =
            (fun pinfo -> pinfo.PropertyName)) 
 
 /// Exclude methods from super types which have the same signature as a method in a more specific type.
-let ExcludeHiddenOfMethInfos g amap m (minfos:MethInfo list list) = 
+let ExcludeHiddenOfMethInfos g amap m (minfos: MethInfo list list) = 
     minfos
     |> ExcludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes 
         (fun minfo -> minfo.LogicalName)
@@ -662,16 +662,16 @@ let ExcludeHiddenOfMethInfos g amap m (minfos:MethInfo list list) =
 /// Exclude properties from super types which have the same name as a property in a more specific type.
 let ExcludeHiddenOfPropInfos g amap m pinfos = 
     pinfos 
-    |> ExcludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes (fun (pinfo:PropInfo) -> pinfo.PropertyName) (PropInfosEquivByNameAndPartialSig EraseNone g amap m) 
+    |> ExcludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes (fun (pinfo: PropInfo) -> pinfo.PropertyName) (PropInfosEquivByNameAndPartialSig EraseNone g amap m) 
     |> List.concat
 
 /// Get the sets of intrinsic methods in the hierarchy (not including extension methods)
-let GetIntrinsicMethInfoSetsOfType (infoReader:InfoReader) (optFilter, ad, allowMultiIntfInst) findFlag m ty = 
+let GetIntrinsicMethInfoSetsOfType (infoReader: InfoReader) (optFilter, ad, allowMultiIntfInst) findFlag m ty = 
     infoReader.GetRawIntrinsicMethodSetsOfType(optFilter, ad, allowMultiIntfInst, m, ty)
     |> FilterOverridesOfMethInfos findFlag infoReader.g infoReader.amap m
   
 /// Get the sets intrinsic properties in the hierarchy (not including extension properties)
-let GetIntrinsicPropInfoSetsOfType (infoReader:InfoReader) (optFilter, ad, allowMultiIntfInst) findFlag m ty = 
+let GetIntrinsicPropInfoSetsOfType (infoReader: InfoReader) (optFilter, ad, allowMultiIntfInst) findFlag m ty = 
     infoReader.GetRawIntrinsicPropertySetsOfType(optFilter, ad, allowMultiIntfInst, m, ty) 
     |> FilterOverridesOfPropInfos findFlag infoReader.g infoReader.amap m
 
@@ -684,7 +684,7 @@ let GetIntrinsicPropInfosOfType infoReader (optFilter, ad, allowMultiIntfInst)  
     GetIntrinsicPropInfoSetsOfType infoReader (optFilter, ad, allowMultiIntfInst)  findFlag m ty  |> List.concat
 
 /// Perform type-directed name resolution of a particular named member in an F# type
-let TryFindIntrinsicNamedItemOfType (infoReader:InfoReader) (nm, ad) findFlag m ty = 
+let TryFindIntrinsicNamedItemOfType (infoReader: InfoReader) (nm, ad) findFlag m ty = 
     match infoReader.TryFindNamedItemOfType(nm, ad, m, ty) with
     | Some item -> 
         match item with 
@@ -717,7 +717,7 @@ type SigOfFunctionForDelegate = SigOfFunctionForDelegate of MethInfo * TType lis
 
 /// Given a delegate type work out the minfo, argument types, return type 
 /// and F# function type by looking at the Invoke signature of the delegate. 
-let GetSigOfFunctionForDelegate (infoReader:InfoReader) delty m ad =
+let GetSigOfFunctionForDelegate (infoReader: InfoReader) delty m ad =
     let g = infoReader.g
     let amap = infoReader.amap
     let invokeMethInfo = 
@@ -741,7 +741,7 @@ let GetSigOfFunctionForDelegate (infoReader:InfoReader) delty m ad =
     SigOfFunctionForDelegate(invokeMethInfo,compiledViewOfDelArgTys, delRetTy, fty)
 
 /// Try and interpret a delegate type as a "standard" .NET delegate type associated with an event, with a "sender" parameter.
-let TryDestStandardDelegateType (infoReader:InfoReader) m ad delTy =
+let TryDestStandardDelegateType (infoReader: InfoReader) m ad delTy =
     let g = infoReader.g
     let (SigOfFunctionForDelegate(_, compiledViewOfDelArgTys, delRetTy, _)) = GetSigOfFunctionForDelegate infoReader delTy m ad
     match compiledViewOfDelArgTys with 
@@ -764,14 +764,14 @@ let TryDestStandardDelegateType (infoReader:InfoReader) m ad delTy =
 /// that do not use any additional information, the .NET Framework has
 /// already defined an appropriate delegate type: EventHandler.
 /// (from http://msdn.microsoft.com/library/default.asp?url=/library/en-us/csref/html/vcwlkEventsTutorial.asp) 
-let IsStandardEventInfo (infoReader:InfoReader) m ad (einfo:EventInfo) =
+let IsStandardEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo) =
     let dty = einfo.GetDelegateType(infoReader.amap, m)
     match TryDestStandardDelegateType infoReader m ad dty with
     | Some _ -> true
     | None -> false
 
 /// Get the (perhaps tupled) argument type accepted by an event 
-let ArgsTypOfEventInfo (infoReader:InfoReader) m ad (einfo:EventInfo)  =
+let ArgsTypOfEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo)  =
     let amap = infoReader.amap
     let dty = einfo.GetDelegateType(amap, m)
     match TryDestStandardDelegateType infoReader m ad dty with
@@ -780,7 +780,7 @@ let ArgsTypOfEventInfo (infoReader:InfoReader) m ad (einfo:EventInfo)  =
 
 /// Get the type of the event when looked at as if it is a property 
 /// Used when displaying the property in Intellisense 
-let PropTypOfEventInfo (infoReader:InfoReader) m ad (einfo:EventInfo) =  
+let PropTypOfEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo) =  
     let g = infoReader.g
     let amap = infoReader.amap
     let delTy = einfo.GetDelegateType(amap, m)

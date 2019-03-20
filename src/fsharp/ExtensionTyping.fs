@@ -62,10 +62,10 @@ module internal ExtensionTyping =
 
     /// Load a the design-time part of a type-provider into the host process, and look for types
     /// marked with the TypeProviderAttribute attribute.
-    let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m:range) =
+    let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m: range) =
 
         // Report an error, blaming the particular type provider component
-        let raiseError (e:exn) =
+        let raiseError (e: exn) =
             raise (TypeProviderError(FSComp.SR.etProviderHasWrongDesignerAssembly(typeof<TypeProviderAssemblyAttribute>.Name, designTimeAssemblyNameString, e.Message), runTimeAssemblyFileName, m))
 
         // Find and load the designer assembly for the type provider component.
@@ -141,7 +141,7 @@ module internal ExtensionTyping =
                 raiseError e
         | None -> []
 
-    let StripException (e:exn) =
+    let StripException (e: exn) =
         match e with
 #if !FX_REDUCED_EXCEPTIONS
         |   :? System.Reflection.TargetInvocationException as e -> e.InnerException
@@ -151,11 +151,11 @@ module internal ExtensionTyping =
 
     /// Create an instance of a type provider from the implementation type for the type provider in the
     /// design-time assembly by using reflection-invoke on a constructor for the type provider.
-    let CreateTypeProvider (typeProviderImplementationType:System.Type, 
+    let CreateTypeProvider (typeProviderImplementationType: System.Type, 
                             runtimeAssemblyPath, 
-                            resolutionEnvironment:ResolutionEnvironment, 
-                            isInvalidationSupported:bool, 
-                            isInteractive:bool, 
+                            resolutionEnvironment: ResolutionEnvironment, 
+                            isInvalidationSupported: bool, 
+                            isInteractive: bool, 
                             systemRuntimeContainsType, 
                             systemRuntimeAssemblyVersion, 
                             m) =
@@ -191,15 +191,15 @@ module internal ExtensionTyping =
             raise (TypeProviderError(FSComp.SR.etProviderDoesNotHaveValidConstructor(), typeProviderImplementationType.FullName, m))
 
     let GetTypeProvidersOfAssembly
-            (runTimeAssemblyFileName:string, 
-             ilScopeRefOfRuntimeAssembly:ILScopeRef, 
-             designTimeAssemblyNameString:string, 
-             resolutionEnvironment:ResolutionEnvironment, 
-             isInvalidationSupported:bool, 
-             isInteractive:bool, 
+            (runTimeAssemblyFileName: string, 
+             ilScopeRefOfRuntimeAssembly: ILScopeRef, 
+             designTimeAssemblyNameString: string, 
+             resolutionEnvironment: ResolutionEnvironment, 
+             isInvalidationSupported: bool, 
+             isInteractive: bool, 
              systemRuntimeContainsType : string -> bool, 
              systemRuntimeAssemblyVersion : System.Version, 
-             m:range) =         
+             m: range) =         
 
         let providerSpecs = 
                 try
@@ -235,10 +235,14 @@ module internal ExtensionTyping =
 
         providers
 
-    let unmarshal (t:Tainted<_>) = t.PUntaintNoFailure id
+    let unmarshal (t: Tainted<_>) = t.PUntaintNoFailure id
 
     /// Try to access a member on a provided type, catching and reporting errors
+<<<<<<< HEAD
     let TryTypeMember<'T,'U>(st:Tainted<'T>, fullName, memberName, m, recover, f: 'T -> 'U) =
+=======
+    let TryTypeMember(st: Tainted<_>, fullName, memberName, m, recover, f) =
+>>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
         try
             st.PApply (f, m)
         with :? TypeProviderError as tpe -> 
@@ -246,15 +250,29 @@ module internal ExtensionTyping =
             st.PApplyNoFailure(fun _ -> recover)
 
     /// Try to access a member on a provided type, where the result is an array of values, catching and reporting errors
+<<<<<<< HEAD
     let TryTypeMemberArray (st:Tainted<_>, fullName, memberName, m, f) =
         try
             st.PApplyArray(f, memberName, m)
         with :? TypeProviderError as tpe ->
             tpe.Iter (fun e -> error(Error(FSComp.SR.etUnexpectedExceptionFromProvidedTypeMember(fullName, memberName, e.ContextualErrorMessage), m)))
             [||]
+=======
+    let TryTypeMemberArray (st: Tainted<_>, fullName, memberName, m, f) =
+        let result =
+            try
+                st.PApplyArray(f, memberName, m)
+            with :? TypeProviderError as tpe ->
+                tpe.Iter (fun e -> error(Error(FSComp.SR.etUnexpectedExceptionFromProvidedTypeMember(fullName, memberName, e.ContextualErrorMessage), m)))
+                [||]
+
+        match result with 
+        | null -> error(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m)); [||]
+        | r -> r
+>>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
 
     /// Try to access a member on a provided type, catching and reporting errors and checking the result is non-null, 
-    let TryTypeMemberNonNull (st:Tainted<_>, fullName, memberName, m, recover, f) =
+    let TryTypeMemberNonNull (st: Tainted<_>, fullName, memberName, m, recover, f) =
         match TryTypeMember(st, fullName, memberName, m, recover, f) with 
         | Tainted.Null -> 
             errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m)); 
@@ -262,7 +280,7 @@ module internal ExtensionTyping =
         | Tainted.NonNull r -> r
 
     /// Try to access a property or method on a provided member, catching and reporting errors
-    let TryMemberMember (mi:Tainted<_>, typeName, memberName, memberMemberName, m, recover, f) = 
+    let TryMemberMember (mi: Tainted<_>, typeName, memberName, memberMemberName, m, recover, f) = 
         try
             mi.PApply (f, m)
         with :? TypeProviderError as tpe ->
@@ -270,10 +288,11 @@ module internal ExtensionTyping =
             mi.PApplyNoFailure(fun _ -> recover)
 
     /// Get the string to show for the name of a type provider
-    let DisplayNameOfTypeProvider(resolver:Tainted<ITypeProvider>, m:range) =
+    let DisplayNameOfTypeProvider(resolver: Tainted<ITypeProvider>, m: range) =
         resolver.PUntaint((fun tp -> tp.GetType().Name), m)
 
     /// Validate a provided namespace name
+<<<<<<< HEAD
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     let ValidateNamespaceName(name, typeProvider:Tainted<ITypeProvider>, m, nsp:string) =
 #else
@@ -282,6 +301,10 @@ module internal ExtensionTyping =
         match nsp with 
         | null -> ()
         | NonNull nsp -> 
+=======
+    let ValidateNamespaceName(name, typeProvider: Tainted<ITypeProvider>, m, nsp: string) =
+        if nsp<>null then // Null namespace designates the global namespace.
+>>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
             if String.IsNullOrWhiteSpace nsp then
                 // Empty namespace is not allowed
                 errorR(Error(FSComp.SR.etEmptyNamespaceOfTypeNotAllowed(name, typeProvider.PUntaint((fun tp -> tp.GetType().Name), m)), m))
@@ -308,10 +331,10 @@ module internal ExtensionTyping =
     // to preserve object identity when presenting the types to the F# compiler.
 
     let providedSystemTypeComparer = 
-        let key (ty:System.Type) = (ty.Assembly.FullName, ty.FullName)
+        let key (ty: System.Type) = (ty.Assembly.FullName, ty.FullName)
         { new IEqualityComparer<Type> with 
-            member __.GetHashCode(ty:Type) = hash (key ty)
-            member __.Equals(ty1:Type, ty2:Type) = (key ty1 = key ty2) }
+            member __.GetHashCode(ty: Type) = hash (key ty)
+            member __.Equals(ty1: Type, ty2: Type) = (key ty1 = key ty2) }
 
     /// The context used to interpret information in the closure of System.Type, System.MethodInfo and other 
     /// info objects coming from the type provider.
@@ -351,7 +374,7 @@ module internal ExtensionTyping =
                 let mutable res = Unchecked.defaultof<_>
                 if d.TryGetValue(st, &res) then Some res else None
 
-        member ctxt.RemapTyconRefs (f:obj->obj) = 
+        member ctxt.RemapTyconRefs (f: obj->obj) = 
             match ctxt with 
             | NoEntries -> NoEntries
             | Entries(d1, d2) ->
@@ -363,11 +386,16 @@ module internal ExtensionTyping =
     type CustomAttributeNamedArgument = System.Reflection.CustomAttributeNamedArgument
     type CustomAttributeTypedArgument = System.Reflection.CustomAttributeTypedArgument
 
+<<<<<<< HEAD
     [<Sealed>]
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     [<AllowNullLiteral>]
 #endif
     type ProvidedType (x:System.Type, ctxt: ProvidedTypeContext) =
+=======
+    [<AllowNullLiteral; Sealed>]
+    type ProvidedType (x: System.Type, ctxt: ProvidedTypeContext) =
+>>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
         inherit ProvidedMemberInfo(x, ctxt)
         let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.CustomAttributes)
         interface IProvidedCustomAttributeProvider with 
@@ -435,6 +463,7 @@ module internal ExtensionTyping =
         member __.GetEnumUnderlyingType() = 
             x.GetEnumUnderlyingType() 
             |> ProvidedType.CreateWithNullCheck ctxt "EnumUnderlyingType"
+<<<<<<< HEAD
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         static member Create ctxt x : ProvidedType = 
@@ -459,6 +488,12 @@ module internal ExtensionTyping =
 
         static member CreateNoContext (x:Type) = ProvidedType.Create ProvidedTypeContext.Empty x
 
+=======
+        static member Create ctxt x = match x with null -> null | t -> ProvidedType (t, ctxt)
+        static member CreateWithNullCheck ctxt name x = match x with null -> nullArg name | t -> ProvidedType (t, ctxt)
+        static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedType.Create ctxt)
+        static member CreateNoContext (x: Type) = ProvidedType.Create ProvidedTypeContext.Empty x
+>>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
         static member Void = ProvidedType.CreateNoContext typeof<System.Void>
 
         member __.Handle = x
@@ -468,8 +503,8 @@ module internal ExtensionTyping =
         member __.TryGetILTypeRef() = ctxt.TryGetILTypeRef x
         member __.TryGetTyconRef() = ctxt.TryGetTyconRef x
         member __.Context = ctxt
-        static member ApplyContext (pt:ProvidedType, ctxt) = ProvidedType(pt.Handle, ctxt)
-        static member TaintedEquals (pt1:Tainted<ProvidedType>, pt2:Tainted<ProvidedType>) = 
+        static member ApplyContext (pt: ProvidedType, ctxt) = ProvidedType(pt.Handle, ctxt)
+        static member TaintedEquals (pt1: Tainted<ProvidedType>, pt2: Tainted<ProvidedType>) = 
            Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
     and 
@@ -477,6 +512,7 @@ module internal ExtensionTyping =
         [<AllowNullLiteral>]
 #endif
         IProvidedCustomAttributeProvider =
+<<<<<<< HEAD
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         abstract GetDefinitionLocationAttribute : provider:ITypeProvider -> (string * int * int) option 
 #else
@@ -488,13 +524,19 @@ module internal ExtensionTyping =
         abstract GetHasTypeProviderEditorHideMethodsAttribute : provider:ITypeProvider -> bool
 
         abstract GetAttributeConstructorArgs: provider:ITypeProvider * attribName:string -> (obj option list * (string * obj option) list) option
+=======
+        abstract GetDefinitionLocationAttribute : provider: ITypeProvider -> (string * int * int) option 
+        abstract GetXmlDocAttributes : provider: ITypeProvider -> string[]
+        abstract GetHasTypeProviderEditorHideMethodsAttribute : provider: ITypeProvider -> bool
+        abstract GetAttributeConstructorArgs: provider: ITypeProvider * attribName: string -> (obj option list * (string * obj option) list) option
+>>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
 
     and ProvidedCustomAttributeProvider =
         static member Create (attributes :(ITypeProvider -> seq<CustomAttributeData>)) : IProvidedCustomAttributeProvider = 
-            let (|Member|_|) (s:string) (x: CustomAttributeNamedArgument) = if x.MemberName = s then Some x.TypedValue else None
+            let (|Member|_|) (s: string) (x: CustomAttributeNamedArgument) = if x.MemberName = s then Some x.TypedValue else None
             let (|Arg|_|) (x: CustomAttributeTypedArgument) = match x.Value with null -> None | v -> Some v
-            let findAttribByName tyFullName (a:CustomAttributeData) = (a.Constructor.DeclaringType.FullName = tyFullName)  
-            let findAttrib (ty:System.Type) a = findAttribByName ty.FullName a
+            let findAttribByName tyFullName (a: CustomAttributeData) = (a.Constructor.DeclaringType.FullName = tyFullName)  
+            let findAttrib (ty: System.Type) a = findAttribByName ty.FullName a
             { new IProvidedCustomAttributeProvider with 
                   member __.GetAttributeConstructorArgs (provider, attribName) = 
                       attributes(provider) 
@@ -631,6 +673,7 @@ module internal ExtensionTyping =
         member __.GetParameters() = x.GetParameters() |> ProvidedParameterInfo.CreateArray ctxt 
         member __.GetGenericArguments() = x.GetGenericArguments() |> ProvidedType.CreateArray ctxt
         member __.Handle = x
+<<<<<<< HEAD
 
         static member TaintedGetHashCode (x:Tainted<ProvidedMethodBase>) =            
            Tainted.GetHashCodeTainted 
@@ -638,6 +681,11 @@ module internal ExtensionTyping =
                                                       (nonNull<ProvidedType> st.DeclaringType).FullName))) 
 
         static member TaintedEquals (pt1:Tainted<ProvidedMethodBase>, pt2:Tainted<ProvidedMethodBase>) = 
+=======
+        static member TaintedGetHashCode (x: Tainted<ProvidedMethodBase>) =            
+           Tainted.GetHashCodeTainted (x.PApplyNoFailure(fun st -> (st.Name, st.DeclaringType.Assembly.FullName, st.DeclaringType.FullName))) 
+        static member TaintedEquals (pt1: Tainted<ProvidedMethodBase>, pt2: Tainted<ProvidedMethodBase>) = 
+>>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
            Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
         member __.GetStaticParametersForMethod(provider: ITypeProvider) = 
@@ -658,7 +706,7 @@ module internal ExtensionTyping =
 
             staticParams |> ProvidedParameterInfo.CreateArray ctxt
 
-        member __.ApplyStaticArgumentsForMethod(provider: ITypeProvider, fullNameAfterArguments:string, staticArgs: obj[]) = 
+        member __.ApplyStaticArgumentsForMethod(provider: ITypeProvider, fullNameAfterArguments: string, staticArgs: obj[]) = 
             let bindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.InvokeMethod
 
             let mb = 
@@ -722,7 +770,7 @@ module internal ExtensionTyping =
         member __.IsFamilyAndAssembly = x.IsFamilyAndAssembly
         override __.Equals y = assert false; match y with :? ProvidedFieldInfo as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = assert false; x.GetHashCode()
-        static member TaintedEquals (pt1:Tainted<ProvidedFieldInfo>, pt2:Tainted<ProvidedFieldInfo>) = 
+        static member TaintedEquals (pt1: Tainted<ProvidedFieldInfo>, pt2: Tainted<ProvidedFieldInfo>) = 
            Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
 
@@ -795,6 +843,7 @@ module internal ExtensionTyping =
         override __.Equals y = assert false; match y with :? ProvidedPropertyInfo as y -> x.Equals y.Handle | _ -> false
 
         override __.GetHashCode() = assert false; x.GetHashCode()
+<<<<<<< HEAD
 
         static member TaintedGetHashCode (x:Tainted<ProvidedPropertyInfo>) = 
            Tainted.GetHashCodeTainted
@@ -802,6 +851,11 @@ module internal ExtensionTyping =
                                                       (nonNull<ProvidedType> st.DeclaringType).FullName))) 
 
         static member TaintedEquals (pt1:Tainted<ProvidedPropertyInfo>, pt2:Tainted<ProvidedPropertyInfo>) = 
+=======
+        static member TaintedGetHashCode (x: Tainted<ProvidedPropertyInfo>) = 
+           Tainted.GetHashCodeTainted (x.PApplyNoFailure(fun st -> (st.Name, st.DeclaringType.Assembly.FullName, st.DeclaringType.FullName))) 
+        static member TaintedEquals (pt1: Tainted<ProvidedPropertyInfo>, pt2: Tainted<ProvidedPropertyInfo>) = 
+>>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
            Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
     and [<Sealed>] 
@@ -836,6 +890,7 @@ module internal ExtensionTyping =
         override __.Equals y = assert false; match y with :? ProvidedEventInfo as y -> x.Equals y.Handle | _ -> false
 
         override __.GetHashCode() = assert false; x.GetHashCode()
+<<<<<<< HEAD
 
         static member TaintedGetHashCode (x:Tainted<ProvidedEventInfo>) = 
            Tainted.GetHashCodeTainted 
@@ -843,6 +898,11 @@ module internal ExtensionTyping =
                                                       (nonNull<ProvidedType> st.DeclaringType).FullName))) 
 
         static member TaintedEquals (pt1:Tainted<ProvidedEventInfo>, pt2:Tainted<ProvidedEventInfo>) = 
+=======
+        static member TaintedGetHashCode (x: Tainted<ProvidedEventInfo>) = 
+           Tainted.GetHashCodeTainted (x.PApplyNoFailure(fun st -> (st.Name, st.DeclaringType.Assembly.FullName, st.DeclaringType.FullName))) 
+        static member TaintedEquals (pt1: Tainted<ProvidedEventInfo>, pt2: Tainted<ProvidedEventInfo>) = 
+>>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
            Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
     and [<Sealed>] 
@@ -872,11 +932,16 @@ module internal ExtensionTyping =
         override __.Equals y = assert false; match y with :? ProvidedConstructorInfo as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = assert false; x.GetHashCode()
 
+<<<<<<< HEAD
     [<RequireQualifiedAccess; Class; Sealed>]
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     [<AllowNullLiteral>]
 #endif
     type ProvidedExpr (x:Quotations.Expr, ctxt) =
+=======
+    [<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
+    type ProvidedExpr (x: Quotations.Expr, ctxt) =
+>>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
         member __.Type = x.Type |> ProvidedType.Create ctxt
         member __.Handle = x
         member __.Context = ctxt
@@ -903,16 +968,22 @@ module internal ExtensionTyping =
 
         override __.GetHashCode() = x.GetHashCode()
 
+<<<<<<< HEAD
     [<RequireQualifiedAccess; Class; Sealed>]
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     [<AllowNullLiteral>]
 #endif
     type ProvidedVar (x:Quotations.Var, ctxt) =
+=======
+    [<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
+    type ProvidedVar (x: Quotations.Var, ctxt) =
+>>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
         member __.Type = x.Type |> ProvidedType.Create ctxt
         member __.Name = x.Name
         member __.IsMutable = x.IsMutable
         member __.Handle = x
         member __.Context = ctxt
+<<<<<<< HEAD
 
         static member CreateNonNull ctxt t = 
             ProvidedVar (t, ctxt)
@@ -925,34 +996,39 @@ module internal ExtensionTyping =
             | null -> [| |]
             | _ -> xs |> Array.map (ProvidedVar.CreateNonNull ctxt)
 
+=======
+        static member Create ctxt t = match box t with null -> null | _ -> ProvidedVar (t, ctxt)
+        static member Fresh (nm, ty: ProvidedType) = ProvidedVar.Create ty.Context (new Quotations.Var(nm, ty.Handle))
+        static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedVar.Create ctxt)
+>>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
         override __.Equals y = match y with :? ProvidedVar as y -> x.Equals y.Handle | _ -> false
 
         override __.GetHashCode() = x.GetHashCode()
 
 
     /// Detect a provided new-object expression 
-    let (|ProvidedNewObjectExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedNewObjectExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.NewObject(ctor, args)  -> 
             Some (ProvidedConstructorInfo.Create x.Context ctor, [| for a in args -> ProvidedExpr.Create x.Context a |])
         | _ -> None
 
     /// Detect a provided while-loop expression 
-    let (|ProvidedWhileLoopExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedWhileLoopExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.WhileLoop(guardExpr, bodyExpr)  -> 
             Some (ProvidedExpr.Create x.Context guardExpr, ProvidedExpr.Create x.Context bodyExpr)
         | _ -> None
 
     /// Detect a provided new-delegate expression 
-    let (|ProvidedNewDelegateExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedNewDelegateExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.NewDelegate(ty, vs, expr)  -> 
             Some (ProvidedType.Create x.Context ty, ProvidedVar.CreateArray x.Context (List.toArray vs), ProvidedExpr.Create x.Context expr)
         | _ -> None
 
     /// Detect a provided call expression 
-    let (|ProvidedCallExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedCallExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.Call(objOpt, meth, args) -> 
             Some ((match objOpt with None -> None | Some obj -> Some (ProvidedExpr.Create  x.Context obj)), 
@@ -961,87 +1037,87 @@ module internal ExtensionTyping =
         | _ -> None
 
     /// Detect a provided default-value expression 
-    let (|ProvidedDefaultExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedDefaultExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.DefaultValue ty   -> Some (ProvidedType.Create x.Context ty)
         | _ -> None
 
     /// Detect a provided constant expression 
-    let (|ProvidedConstantExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedConstantExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.Value(obj, ty)   -> Some (obj, ProvidedType.Create x.Context ty)
         | _ -> None
 
     /// Detect a provided type-as expression 
-    let (|ProvidedTypeAsExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedTypeAsExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.Coerce(arg, ty) -> Some (ProvidedExpr.Create x.Context arg, ProvidedType.Create  x.Context ty)
         | _ -> None
 
     /// Detect a provided new-tuple expression 
-    let (|ProvidedNewTupleExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedNewTupleExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.NewTuple(args) -> Some (ProvidedExpr.CreateArray x.Context (Array.ofList args))
         | _ -> None
 
     /// Detect a provided tuple-get expression 
-    let (|ProvidedTupleGetExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedTupleGetExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.TupleGet(arg, n) -> Some (ProvidedExpr.Create x.Context arg, n)
         | _ -> None
 
     /// Detect a provided new-array expression 
-    let (|ProvidedNewArrayExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedNewArrayExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.NewArray(ty, args) -> Some (ProvidedType.Create  x.Context ty, ProvidedExpr.CreateArray x.Context (Array.ofList args))
         | _ -> None
 
     /// Detect a provided sequential expression 
-    let (|ProvidedSequentialExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedSequentialExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.Sequential(e1, e2) -> Some (ProvidedExpr.Create x.Context e1, ProvidedExpr.Create x.Context e2)
         | _ -> None
 
     /// Detect a provided lambda expression 
-    let (|ProvidedLambdaExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedLambdaExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.Lambda(v, body) -> Some (ProvidedVar.CreateNonNull x.Context v,  ProvidedExpr.Create x.Context body)
         | _ -> None
 
     /// Detect a provided try/finally expression 
-    let (|ProvidedTryFinallyExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedTryFinallyExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.TryFinally(b1, b2) -> Some (ProvidedExpr.Create x.Context b1, ProvidedExpr.Create x.Context b2)
         | _ -> None
 
     /// Detect a provided try/with expression 
-    let (|ProvidedTryWithExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedTryWithExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.TryWith(b, v1, e1, v2, e2) -> Some (ProvidedExpr.Create x.Context b, ProvidedVar.CreateNonNull x.Context v1, ProvidedExpr.Create x.Context e1, ProvidedVar.CreateNonNull x.Context v2, ProvidedExpr.Create x.Context e2)
         | _ -> None
 
 #if PROVIDED_ADDRESS_OF
-    let (|ProvidedAddressOfExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedAddressOfExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.AddressOf(e) -> Some (ProvidedExpr.Create x.Context e)
         | _ -> None
 #endif
 
     /// Detect a provided type-test expression 
-    let (|ProvidedTypeTestExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedTypeTestExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.TypeTest(e, ty) -> Some (ProvidedExpr.Create x.Context e, ProvidedType.Create x.Context ty)
         | _ -> None
 
     /// Detect a provided 'let' expression 
-    let (|ProvidedLetExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedLetExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.Let(v, e, b) -> Some (ProvidedVar.CreateNonNull x.Context v, ProvidedExpr.Create x.Context e, ProvidedExpr.Create x.Context b)
         | _ -> None
 
 
     /// Detect a provided expression which is a for-loop over integers
-    let (|ProvidedForIntegerRangeLoopExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedForIntegerRangeLoopExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.ForIntegerRangeLoop (v, e1, e2, e3) -> 
             Some (ProvidedVar.CreateNonNull x.Context v, 
@@ -1051,19 +1127,19 @@ module internal ExtensionTyping =
         | _ -> None
 
     /// Detect a provided 'set variable' expression 
-    let (|ProvidedVarSetExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedVarSetExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.VarSet(v, e) -> Some (ProvidedVar.CreateNonNull x.Context v, ProvidedExpr.Create x.Context e)
         | _ -> None
 
     /// Detect a provided 'IfThenElse' expression 
-    let (|ProvidedIfThenElseExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedIfThenElseExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.IfThenElse(g, t, e) ->  Some (ProvidedExpr.Create x.Context g, ProvidedExpr.Create x.Context t, ProvidedExpr.Create x.Context e)
         | _ -> None
 
     /// Detect a provided 'Var' expression 
-    let (|ProvidedVarExpr|_|) (x:ProvidedExpr) = 
+    let (|ProvidedVarExpr|_|) (x: ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.Var v  -> Some (ProvidedVar.CreateNonNull x.Context v)
         | _ -> None
@@ -1073,7 +1149,7 @@ module internal ExtensionTyping =
         provider.GetInvokerExpression(methodBase.Handle, [| for p in paramExprs -> Quotations.Expr.Var(p.Handle) |]) |> ProvidedExpr.Create methodBase.Context
 
     /// Compute the Name or FullName property of a provided type, reporting appropriate errors
-    let CheckAndComputeProvidedNameProperty(m, st:Tainted<ProvidedType>, proj, propertyString) =
+    let CheckAndComputeProvidedNameProperty(m, st: Tainted<ProvidedType>, proj, propertyString) =
         let name = 
             try st.PUntaint(proj, m) 
             with :? TypeProviderError as tpe -> 
@@ -1084,7 +1160,7 @@ module internal ExtensionTyping =
         name
 
     /// Verify that this type provider has supported attributes
-    let ValidateAttributesOfProvidedType (m, st:Tainted<ProvidedType>) =         
+    let ValidateAttributesOfProvidedType (m, st: Tainted<ProvidedType>) =         
         let fullName = CheckAndComputeProvidedNameProperty(m, st, (fun st -> st.FullName), "FullName")
         if TryTypeMember(st, fullName, "IsGenericType", m, false, fun st->st.IsGenericType) |> unmarshal then  
             errorR(Error(FSComp.SR.etMustNotBeGeneric(fullName), m))  
@@ -1101,11 +1177,15 @@ module internal ExtensionTyping =
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         let namespaceName = TryTypeMember(st, name, "Namespace", m, "", fun st -> st.Namespace) |> unmarshal
+<<<<<<< HEAD
 #else
         let namespaceName = TryTypeMember<_, string?>(st, name, "Namespace", m, "", fun st -> st.Namespace) |> unmarshal // TODO NULLNESS: why is this explicit instantiation needed?
 #endif
 
         let rec declaringTypes (st:Tainted<ProvidedType>) accu =
+=======
+        let rec declaringTypes (st: Tainted<ProvidedType>) accu =
+>>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
             match TryTypeMember(st, name, "DeclaringType", m, null, fun st -> st.DeclaringType) with
             | Tainted.Null -> accu
             | Tainted.NonNull dt -> declaringTypes dt (CheckAndComputeProvidedNameProperty(m, dt, (fun dt -> dt.Name), "Name")::accu)
@@ -1122,7 +1202,7 @@ module internal ExtensionTyping =
             errorR(Error(FSComp.SR.etProvidedTypeHasUnexpectedPath(expectedPath, path), m))
 
     /// Eagerly validate a range of conditions on a provided type, after static instantiation (if any) has occurred
-    let ValidateProvidedTypeAfterStaticInstantiation(m, st:Tainted<ProvidedType>, expectedPath : string[], expectedName : string) = 
+    let ValidateProvidedTypeAfterStaticInstantiation(m, st: Tainted<ProvidedType>, expectedPath : string[], expectedName : string) = 
         // Do all the calling into st up front with recovery
         let fullName, namespaceName, usedMembers =
             let name = CheckAndComputeProvidedNameProperty(m, st, (fun st -> st.Name), "Name")
@@ -1228,7 +1308,7 @@ module internal ExtensionTyping =
                     | None ->
                         errorR(Error(FSComp.SR.etUnsupportedMemberKind(memberName, fullName), m))   
 
-    let ValidateProvidedTypeDefinition(m, st:Tainted<ProvidedType>, expectedPath : string[], expectedName : string) = 
+    let ValidateProvidedTypeDefinition(m, st: Tainted<ProvidedType>, expectedPath : string[], expectedName : string) = 
 
         // Validate the Name, Namespace and FullName properties
         let name = CheckAndComputeProvidedNameProperty(m, st, (fun st -> st.Name), "Name")
@@ -1255,11 +1335,15 @@ module internal ExtensionTyping =
     /// Resolve a (non-nested) provided type given a full namespace name and a type name. 
     /// May throw an exception which will be turned into an error message by one of the 'Try' function below.
     /// If resolution is successful the type is then validated.
+<<<<<<< HEAD
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     let ResolveProvidedType (resolver:Tainted<ITypeProvider>, m, moduleOrNamespace:string[], typeName) : Tainted<ProvidedType> =
 #else
     let ResolveProvidedType (resolver:Tainted<ITypeProvider>, m, moduleOrNamespace:string[], typeName) : Tainted<ProvidedType?> =
 #endif
+=======
+    let ResolveProvidedType (resolver: Tainted<ITypeProvider>, m, moduleOrNamespace: string[], typeName) =
+>>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
         let displayName = String.Join(".", moduleOrNamespace)
 
         // Try to find the type in the given provided namespace
@@ -1291,7 +1375,7 @@ module internal ExtensionTyping =
         | Some res -> res
                     
     /// Try to resolve a type against the given host with the given resolution environment.
-    let TryResolveProvidedType(resolver:Tainted<ITypeProvider>, m, moduleOrNamespace, typeName) =
+    let TryResolveProvidedType(resolver: Tainted<ITypeProvider>, m, moduleOrNamespace, typeName) =
         try 
             match ResolveProvidedType(resolver, m, moduleOrNamespace, typeName) with
             | Tainted.Null -> None
@@ -1300,8 +1384,8 @@ module internal ExtensionTyping =
             errorRecovery e m
             None
 
-    let ILPathToProvidedType  (st:Tainted<ProvidedType>, m) = 
-        let nameContrib (st:Tainted<ProvidedType>) = 
+    let ILPathToProvidedType  (st: Tainted<ProvidedType>, m) = 
+        let nameContrib (st: Tainted<ProvidedType>) = 
             let typeName = st.PUntaint((fun st -> st.Name), m)
             match st.PApply((fun st -> st.DeclaringType), m) with 
             | Tainted.Null -> 
@@ -1310,7 +1394,7 @@ module internal ExtensionTyping =
                | NonNull ns -> ns + "." + typeName
             | _ -> typeName
 
-        let rec encContrib (st:Tainted<ProvidedType>) = 
+        let rec encContrib (st: Tainted<ProvidedType>) = 
             match st.PApply((fun st ->st.DeclaringType), m) with 
             | Tainted.Null -> []
             | Tainted.NonNull enc -> encContrib enc @ [ nameContrib enc ]
@@ -1325,7 +1409,7 @@ module internal ExtensionTyping =
         PrettyNaming.computeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues)
 
     /// Apply the given provided method to the given static arguments (the arguments are assumed to have been sorted into application order)
-    let TryApplyProvidedMethod(methBeforeArgs:Tainted<ProvidedMethodBase>, staticArgs:obj[], m:range) =
+    let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticArgs: obj[], m: range) =
         if staticArgs.Length = 0 then 
             Some methBeforeArgs
         else
@@ -1345,7 +1429,7 @@ module internal ExtensionTyping =
 
 
     /// Apply the given provided type to the given static arguments (the arguments are assumed to have been sorted into application order
-    let TryApplyProvidedType(typeBeforeArguments:Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs:obj[], m:range) =
+    let TryApplyProvidedType(typeBeforeArguments: Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs: obj[], m: range) =
         if staticArgs.Length = 0 then 
             Some (typeBeforeArguments , (fun () -> ()))
         else 
@@ -1374,7 +1458,7 @@ module internal ExtensionTyping =
 
     /// Given a mangled name reference to a non-nested provided type, resolve it.
     /// If necessary, demangle its static arguments before applying them.
-    let TryLinkProvidedType(resolver:Tainted<ITypeProvider>, moduleOrNamespace:string[], typeLogicalName:string, m:range) =
+    let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, moduleOrNamespace: string[], typeLogicalName: string, m: range) =
         
         // Demangle the static parameters
         let typeName, argNamesAndValues = 
@@ -1442,6 +1526,7 @@ module internal ExtensionTyping =
             | None -> None
 
     /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
+<<<<<<< HEAD
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     let GetPartsOfNamespaceRecover(namespaceName:string) = 
 #else
@@ -1465,17 +1550,34 @@ module internal ExtensionTyping =
             if namespaceName.Length = 0 then
                 errorR(Error(FSComp.SR.etEmptyNamespaceNotAllowed(DisplayNameOfTypeProvider(resolver.TypeProvider, m)), m))  
             GetPartsOfNamespaceRecover namespaceName
+=======
+    let GetPartsOfNamespaceRecover(namespaceName: string) = 
+        if namespaceName=null then []
+        elif  namespaceName.Length = 0 then ["<NonExistentNamespace>"]
+        else splitNamespace namespaceName
+
+    /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
+    let GetProvidedNamespaceAsPath (m, resolver: Tainted<ITypeProvider>, namespaceName: string) = 
+        if namespaceName<>null && namespaceName.Length = 0 then
+            errorR(Error(FSComp.SR.etEmptyNamespaceNotAllowed(DisplayNameOfTypeProvider(resolver.TypeProvider, m)), m))  
+
+        GetPartsOfNamespaceRecover namespaceName
+>>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
 
     /// Get the parts of the name that encloses the .NET type including nested types. 
-    let GetFSharpPathToProvidedType (st:Tainted<ProvidedType>, m) = 
+    let GetFSharpPathToProvidedType (st: Tainted<ProvidedType>, m) = 
         // Can't use st.Fullname because it may be like IEnumerable<Something>
         // We want [System;Collections;Generic]
         let namespaceParts = GetPartsOfNamespaceRecover(st.PUntaint((fun st -> st.Namespace), m))
+<<<<<<< HEAD
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         let rec walkUpNestedClasses(st:Tainted<ProvidedType>, soFar) =
 #else
         let rec walkUpNestedClasses(st:Tainted<ProvidedType?>, soFar) =
 #endif
+=======
+        let rec walkUpNestedClasses(st: Tainted<ProvidedType>, soFar) =
+>>>>>>> d5f5bd005aebdd20088a4be20939aea0e9da29fb
             match st with
             | Tainted.Null -> soFar
             | Tainted.NonNull st -> walkUpNestedClasses(st.PApply((fun st ->st.DeclaringType), m), soFar) @ [st.PUntaint((fun st -> st.Name), m)]
@@ -1485,13 +1587,13 @@ module internal ExtensionTyping =
 
     /// Get the ILAssemblyRef for a provided assembly. Do not take into account
     /// any type relocations or static linking for generated types.
-    let GetOriginalILAssemblyRefOfProvidedAssembly (assembly:Tainted<ProvidedAssembly>, m) =
+    let GetOriginalILAssemblyRefOfProvidedAssembly (assembly: Tainted<ProvidedAssembly>, m) =
         let aname = assembly.PUntaint((fun assembly -> assembly.GetName()), m)
         ILAssemblyRef.FromAssemblyName aname
 
     /// Get the ILTypeRef for the provided type (including for nested types). Do not take into account
     /// any type relocations or static linking for generated types.
-    let GetOriginalILTypeRefOfProvidedType (st:Tainted<ProvidedType>, m) = 
+    let GetOriginalILTypeRefOfProvidedType (st: Tainted<ProvidedType>, m) = 
         
         let aref = GetOriginalILAssemblyRefOfProvidedAssembly (st.PApply((fun st -> nonNull<ProvidedAssembly> st.Assembly), m), m) // TODO: why is explicit instantiation needed here
         let scoperef = ILScopeRef.Assembly aref
@@ -1501,7 +1603,7 @@ module internal ExtensionTyping =
 
     /// Get the ILTypeRef for the provided type (including for nested types). Take into account
     /// any type relocations or static linking for generated types.
-    let GetILTypeRefOfProvidedType (st:Tainted<ProvidedType>, m) = 
+    let GetILTypeRefOfProvidedType (st: Tainted<ProvidedType>, m) = 
         match st.PUntaint((fun st -> st.TryGetILTypeRef()), m) with 
         | Some ilTypeRef -> ilTypeRef
         | None -> GetOriginalILTypeRefOfProvidedType (st, m)

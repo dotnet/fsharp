@@ -17,13 +17,13 @@ open FSharp.Compiler.Lexhelp
 
 let debug = false
 
-let stringOfPos (p:Position) = sprintf "(%d:%d)" p.OriginalLine p.Column
-let outputPos os (p:Position) = Printf.fprintf os "(%d:%d)" p.OriginalLine p.Column
+let stringOfPos (p: Position) = sprintf "(%d:%d)" p.OriginalLine p.Column
+let outputPos os (p: Position) = Printf.fprintf os "(%d:%d)" p.OriginalLine p.Column
 
 /// Used for warning strings, which should display columns as 1-based and display 
 /// the lines after taking '# line' directives into account (i.e. do not use
 /// p.OriginalLine)
-let warningStringOfPos (p:Position) = sprintf "(%d:%d)" p.Line (p.Column + 1)
+let warningStringOfPos (p: Position) = sprintf "(%d:%d)" p.Line (p.Column + 1)
 
 type Context = 
     // Position is position of keyword.
@@ -441,7 +441,7 @@ type TokenTup =
 
 // Strip a bunch of leading '>' of a token, at the end of a typar application
 // Note: this is used in the 'service.fs' to do limited postprocessing
-let (|TyparsCloseOp|_|) (txt:string) = 
+let (|TyparsCloseOp|_|) (txt: string) = 
     let angles = txt |> Seq.takeWhile (fun c -> c = '>') |> Seq.toList
     let afterAngles = txt |> Seq.skipWhile (fun c -> c = '>') |> Seq.toList
     if List.isEmpty angles then None else
@@ -498,7 +498,7 @@ type PositionWithColumn =
 //----------------------------------------------------------------------------
 // build a LexFilter
 //--------------------------------------------------------------------------*)
-type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, lexbuf: UnicodeLexing.Lexbuf)  = 
+type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbuf: UnicodeLexing.Lexbuf)  = 
 
     //----------------------------------------------------------------------------
     // Part I. Building a new lex stream from an old
@@ -531,12 +531,12 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
     let getLexbufState() = 
         new LexbufState(lexbuf.StartPos, lexbuf.EndPos, lexbuf.IsPastEndOfStream)  
 
-    let setLexbufState (p:LexbufState) =
+    let setLexbufState (p: LexbufState) =
         lexbuf.StartPos <- p.StartPos  
         lexbuf.EndPos <- p.EndPos
         lexbuf.IsPastEndOfStream <- p.PastEOF
 
-    let startPosOfTokenTup (tokenTup:TokenTup) = 
+    let startPosOfTokenTup (tokenTup: TokenTup) = 
         match tokenTup.Token with
         // EOF token is processed as if on column -1 
         // This forces the closure of all contexts. 
@@ -604,7 +604,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
         offsideStack <- (CtxtSeqBlock(FirstInSeqBlock, startPosOfTokenTup initialLookaheadTokenTup, NoAddBlockEnd)) :: offsideStack
         initialLookaheadTokenTup 
 
-    let warn (s:TokenTup) msg = 
+    let warn (s: TokenTup) msg = 
         warning(Lexhelp.IndentationProblem(msg, mkSynRange (startPosOfTokenTup s) s.LexbufState.EndPos))
 
     // 'query { join x in ys ... }'
@@ -629,7 +629,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
     // Undentation rules
     //--------------------------------------------------------------------------
 
-    let pushCtxt tokenTup (newCtxt:Context) =
+    let pushCtxt tokenTup (newCtxt: Context) =
         let rec unindentationLimit strict stack = 
             match newCtxt, stack with 
             | _, [] -> PositionWithColumn(newCtxt.StartPos, -1) 
@@ -839,12 +839,12 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
      // Adjacency precedence rule
      //--------------------------------------------------------------------------
 
-    let isAdjacent (leftTokenTup:TokenTup) rightTokenTup =
+    let isAdjacent (leftTokenTup: TokenTup) rightTokenTup =
         let lparenStartPos = startPosOfTokenTup rightTokenTup
         let tokenEndPos = leftTokenTup.LexbufState.EndPos
         (tokenEndPos = lparenStartPos)
     
-    let nextTokenIsAdjacentLParenOrLBrack (tokenTup:TokenTup) =
+    let nextTokenIsAdjacentLParenOrLBrack (tokenTup: TokenTup) =
         let lookaheadTokenTup = peekNextTokenTup()
         match lookaheadTokenTup.Token with 
         | (LPAREN | LBRACK) -> 
@@ -856,7 +856,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
         let lookaheadTokenTup = peekNextTokenTup()
         isAdjacent firstTokenTup lookaheadTokenTup
 
-    let peekAdjacentTypars indentation (tokenTup:TokenTup) =
+    let peekAdjacentTypars indentation (tokenTup: TokenTup) =
         let lookaheadTokenTup = peekNextTokenTup()
         match lookaheadTokenTup.Token with 
         | INFIX_COMPARE_OP "</" | LESS _ -> 
@@ -1010,7 +1010,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
     // End actions
     //--------------------------------------------------------------------------
 
-    let returnToken (tokenLexbufState:LexbufState) tok = 
+    let returnToken (tokenLexbufState: LexbufState) tok = 
         setLexbufState(tokenLexbufState)
         prevWasAtomicEnd <- isAtomicExprEndToken(tok)
         tok
@@ -2146,7 +2146,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
         |  _ -> 
             returnToken tokenLexbufState token  
 
-    and rulesForBothSoftWhiteAndHardWhite(tokenTup:TokenTup) = 
+    and rulesForBothSoftWhiteAndHardWhite(tokenTup: TokenTup) = 
           match tokenTup.Token with 
           // Insert HIGH_PRECEDENCE_PAREN_APP if needed 
           |  IDENT _ when (nextTokenIsAdjacentLParenOrLBrack tokenTup).IsSome ->
@@ -2239,7 +2239,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
               false
   
     and pushCtxtSeqBlock(addBlockBegin, addBlockEnd) = pushCtxtSeqBlockAt (peekNextTokenTup(), addBlockBegin, addBlockEnd) 
-    and pushCtxtSeqBlockAt(p:TokenTup, addBlockBegin, addBlockEnd) = 
+    and pushCtxtSeqBlockAt(p: TokenTup, addBlockBegin, addBlockEnd) = 
          if addBlockBegin then
              if debug then dprintf "--> insert OBLOCKBEGIN \n"
              delayToken(p.UseLocation(OBLOCKBEGIN))
@@ -2269,7 +2269,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
 // LexFilterImpl does the majority of the work for offsides rules and other magic.
 // LexFilter just wraps it with light post-processing that introduces a few more 'coming soon' symbols, to
 // make it easier for the parser to 'look ahead' and safely shift tokens in a number of recovery scenarios.
-type LexFilter (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, lexbuf: UnicodeLexing.Lexbuf)  = 
+type LexFilter (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbuf: UnicodeLexing.Lexbuf)  = 
     let inner = new LexFilterImpl (lightSyntaxStatus, compilingFsLib, lexer, lexbuf)
 
     // We don't interact with lexbuf state at all, any inserted tokens have same state/location as the real one read, so
