@@ -2000,15 +2000,16 @@ let CheckEntityDefn cenv env (tycon: Entity) =
 
             if numCurriedArgSets > 1 && 
                (minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
-                |> List.existsSquared (fun (ParamData(isParamArrayArg, _isInArg, isOutArg, optArgInfo, callerInfo, _, reflArgInfo, ty)) -> 
-                    isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfo <> NoCallerInfo || isByrefLikeTy g m ty)) then 
+                |> List.existsSquared (fun (ParamData(_, ty, attrs)) ->
+                    attrs.IsParamArrayArg || attrs.IsOut || attrs.ReflArgInfo.AutoQuote || attrs.OptionalArgInfo.IsOptional ||
+                    attrs.CallerInfo <> NoCallerInfo || isByrefLikeTy g m ty)) then 
                 errorR(Error(FSComp.SR.chkCurriedMethodsCantHaveOutParams(), m))
 
             if numCurriedArgSets = 1 then
                 minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
-                |> List.iterSquared (fun (ParamData(_, isInArg, _, optArgInfo, callerInfo, _, _, ty)) ->
-                    ignore isInArg
-                    match (optArgInfo, callerInfo) with
+                |> List.iterSquared (fun (ParamData(_, ty, attrs)) ->
+                    let callerInfo = attrs.CallerInfo
+                    match attrs.OptionalArgInfo, callerInfo with
                     | _, NoCallerInfo -> ()
                     | NotOptional, _ -> errorR(Error(FSComp.SR.tcCallerInfoNotOptional(callerInfo.ToString()), m))
                     | CallerSide(_), CallerLineNumber ->

@@ -9,6 +9,7 @@ open FSharp.Compiler
 open FSharp.Compiler.Range
 open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Import
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.Tastops.DebugPrint
@@ -573,12 +574,6 @@ type ParamNameAndType =
     static member FromMember isCSharpExtMem g vref = GetArgInfosOfMember isCSharpExtMem g vref |> List.mapSquared ParamNameAndType.FromArgInfo
     static member Instantiate inst p = let (ParamNameAndType(nm, ty)) = p in ParamNameAndType(nm, instType inst ty)
     static member InstantiateCurried inst paramTypes = paramTypes |> List.mapSquared (ParamNameAndType.Instantiate inst)
-
-[<NoComparison; NoEquality>]
-/// Full information about a parameter returned for use by the type checker and language service.
-type ParamData =
-    /// ParamData(isParamArray, isOut, optArgInfo, callerInfo, nameOpt, reflArgInfo, ttype)
-    ParamData of bool * bool * bool * OptionalArgInfo * CallerInfo * Ident option * ReflectedArgInfo * TType
 
 
 //-------------------------------------------------------------------------
@@ -1351,121 +1346,24 @@ type MethInfo =
             else []
 #endif
 
-    /// Get the parameter attributes of a method info, which get combined with the parameter names and types
     member x.GetParamAttribs(amap, m) =
         match x with
-        | ILMeth(g, ilMethInfo, _) ->
+        | ILMeth(_, ilMethInfo, _) ->
             [ [ for p in ilMethInfo.ParamMetadata do
-                 let isParamArrayArg = TryFindILAttribute g.attrib_ParamArrayAttribute p.CustomAttrs
-                 let reflArgInfo =
-                     match TryDecodeILAttribute g g.attrib_ReflectedDefinitionAttribute.TypeRef p.CustomAttrs with
-                     | Some ([ILAttribElem.Bool b ], _) ->  ReflectedArgInfo.Quote b
-                     | Some _ -> ReflectedArgInfo.Quote false
-                     | _ -> ReflectedArgInfo.None
-                 let isOutArg = (p.IsOut && not p.IsIn)
-                 let isInArg = (p.IsIn && not p.IsOut)
-                 // Note: we get default argument values from VB and other .NET language metadata
-                 let optArgInfo =  OptionalArgInfo.FromILParameter g amap m ilMethInfo.MetadataScope ilMethInfo.DeclaringTypeInst p
-
-                 let isCallerLineNumberArg = TryFindILAttribute g.attrib_CallerLineNumberAttribute p.CustomAttrs
-                 let isCallerFilePathArg = TryFindILAttribute g.attrib_CallerFilePathAttribute p.CustomAttrs
-                 let isCallerMemberNameArg = TryFindILAttribute g.attrib_CallerMemberNameAttribute p.CustomAttrs
-
-                 let callerInfo =
-                    match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
-                    | false, false, false -> NoCallerInfo
-                    | true, false, false -> CallerLineNumber
-                    | false, true, false -> CallerFilePath
-                    | false, false, true -> CallerMemberName
-                    | _, _, _ ->
-                        // if multiple caller info attributes are specified, pick the "wrong" one here
-                        // so that we get an error later
-                        if p.Type.TypeRef.FullName = "System.Int32" then CallerFilePath
-                        else CallerLineNumber
-
-                 yield (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo) ] ]
+                 yield ParamAttributes.ILParam (amap, p, ilMethInfo, m) ] ]
 
         | FSMeth(g, _, vref, _) ->
             GetArgInfosOfMember x.IsCSharpStyleExtensionMember g vref
             |> List.mapSquared (fun (ty, argInfo) ->
-                let isParamArrayArg = HasFSharpAttribute g g.attrib_ParamArrayAttribute argInfo.Attribs
-                let reflArgInfo =
-                    match TryFindFSharpBoolAttributeAssumeFalse  g g.attrib_ReflectedDefinitionAttribute argInfo.Attribs  with
-                    | Some b -> ReflectedArgInfo.Quote b
-                    | None -> ReflectedArgInfo.None
-                let isOutArg = (HasFSharpAttribute g g.attrib_OutAttribute argInfo.Attribs && isByrefTy g ty) || isOutByrefTy g ty
-                let isInArg = (HasFSharpAttribute g g.attrib_InAttribute argInfo.Attribs && isByrefTy g ty) || isInByrefTy g ty
-                let isCalleeSideOptArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs
-                let isCallerSideOptArg = HasFSharpAttributeOpt g g.attrib_OptionalAttribute argInfo.Attribs
-                let optArgInfo =
-                    if isCalleeSideOptArg then
-                        CalleeSide
-                    elif isCallerSideOptArg then
-                        let defaultParameterValueAttribute = TryFindFSharpAttributeOpt g g.attrib_DefaultParameterValueAttribute argInfo.Attribs
-                        match defaultParameterValueAttribute with
-                        | None ->
-                            // Do a type-directed analysis of the type to determine the default value to pass.
-                            // Similar rules as OptionalArgInfo.FromILParameter are applied here, except for the COM and byref-related stuff.
-                            CallerSide (if isObjTy g ty then MissingValue else DefaultValue)
-                        | Some attr ->
-                            let defaultValue = OptionalArgInfo.ValueOfDefaultParameterValueAttrib attr
-                            match defaultValue with
-                            | Some (Expr.Const (_, m, ty2)) when not (typeEquiv g ty2 ty) ->
-                                // the type of the default value does not match the type of the argument.
-                                // Emit a warning, and ignore the DefaultParameterValue argument altogether.
-                                warning(Error(FSComp.SR.DefaultParameterValueNotAppropriateForArgument(), m))
-                                NotOptional
-                            | Some (Expr.Const((ConstToILFieldInit fi), _, _)) ->
-                                // Good case - all is well.
-                                CallerSide (Constant fi)
-                            | _ ->
-                                // Default value is not appropriate, i.e. not a constant.
-                                // Compiler already gives an error in that case, so just ignore here.
-                                NotOptional
-                    else NotOptional
-
-                let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute argInfo.Attribs
-                let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute argInfo.Attribs
-                let isCallerMemberNameArg = HasFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs
-
-                let callerInfo =
-                    match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
-                    | false, false, false -> NoCallerInfo
-                    | true, false, false -> CallerLineNumber
-                    | false, true, false -> CallerFilePath
-                    | false, false, true -> CallerMemberName
-                    | false, true, true -> 
-                        match TryFindFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs with
-                        | Some(Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
-                            warning(Error(FSComp.SR.CallerMemberNameIsOverriden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
-                            CallerFilePath
-                        | _ -> failwith "Impossible"
-                    | _, _, _ ->
-                        // if multiple caller info attributes are specified, pick the "wrong" one here
-                        // so that we get an error later
-                        match tryDestOptionTy g ty with
-                        | ValueSome optTy when typeEquiv g g.int32_ty optTy -> CallerFilePath
-                        | _ -> CallerLineNumber
-
-                (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo))
+                ParamAttributes.FSParam (g, argInfo, ty, vref))
 
         | DefaultStructCtor _ ->
             [[]]
 
 #if !NO_EXTENSIONTYPING
         | ProvidedMeth(amap, mi, _, _) ->
-            // A single group of tupled arguments
-            [ [for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
-                let isParamArrayArg = p.PUntaint((fun px -> (px :> IProvidedCustomAttributeProvider).GetAttributeConstructorArgs(p.TypeProvider.PUntaintNoFailure(id), typeof<System.ParamArrayAttribute>.FullName).IsSome), m)
-                let optArgInfo =  OptionalArgInfoOfProvidedParameter amap m p
-                let reflArgInfo =
-                    match p.PUntaint((fun px -> (px :> IProvidedCustomAttributeProvider).GetAttributeConstructorArgs(p.TypeProvider.PUntaintNoFailure(id), typeof<Microsoft.FSharp.Core.ReflectedDefinitionAttribute>.FullName)), m) with
-                    | Some ([ Some (:? bool as b) ], _) -> ReflectedArgInfo.Quote b
-                    | Some _ -> ReflectedArgInfo.Quote false
-                    | None -> ReflectedArgInfo.None
-                let isOutArg = p.PUntaint((fun p -> p.IsOut && not p.IsIn), m)
-                let isInArg = p.PUntaint((fun p -> p.IsIn && not p.IsOut), m)
-                yield (isParamArrayArg, isInArg, isOutArg, optArgInfo, NoCallerInfo, reflArgInfo)] ]
+            [ [ for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
+                   yield ParamAttributes.ProvidedParam (amap, p, m) ] ]
 #endif
 
 
@@ -1543,8 +1441,9 @@ type MethInfo =
                 [ ilminfo.GetParamNamesAndTypes(amap, m, minst)  ]
             | FSMeth(g, _, vref, _) ->
                 let ty = x.ApparentEnclosingAppType
-                let items = ParamNameAndType.FromMember x.IsCSharpStyleExtensionMember g vref
-                let inst = GetInstantiationForMemberVal g x.IsCSharpStyleExtensionMember (ty, vref, minst)
+                let isCSharpStyleExtensionMember = x.IsCSharpStyleExtensionMember
+                let items = ParamNameAndType.FromMember isCSharpStyleExtensionMember g vref
+                let inst = GetInstantiationForMemberVal g isCSharpStyleExtensionMember (ty, vref, minst)
                 items |> ParamNameAndType.InstantiateCurried inst
             | DefaultStructCtor _ ->
                 [[]]
@@ -1565,12 +1464,12 @@ type MethInfo =
 #endif
 
         let paramAttribs = x.GetParamAttribs(amap, m)
-        (paramAttribs, paramNamesAndTypes) ||> List.map2 (List.map2 (fun (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo) (ParamNameAndType(nmOpt, pty)) ->
-             ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, nmOpt, reflArgInfo, pty)))
+        (paramAttribs, paramNamesAndTypes) ||> List.map2 (List.map2 (fun attrs (ParamNameAndType(nmOpt, pty)) ->
+             ParamData(nmOpt, pty, attrs)))
 
     /// Get the ParamData objects for the parameters of a MethInfo
     member x.HasParamArrayArg(amap, m, minst) =
-        x.GetParamDatas(amap, m, minst) |> List.existsSquared (fun (ParamData(isParamArrayArg, _, _, _, _, _, _, _)) -> isParamArrayArg)
+        x.GetParamDatas(amap, m, minst) |> List.existsSquared (fun (ParamData(_, _, attrs)) -> attrs.IsParamArrayArg)
 
 
     /// Select all the type parameters of the declaring type of a method.
@@ -1596,6 +1495,177 @@ type MethInfo =
         |> Option.bind (fun ty ->
             if isByrefTy x.TcGlobals ty then Some(ty)
             else None)
+
+and [<RequireQualifiedAccess>] ParamAttributes =
+    | ILParam of ImportMap * ILParameter * ILMethInfo * range
+    | FSParam of TcGlobals * ArgReprInfo * TType * ValRef
+    | ProvidedParam of ImportMap * Tainted<ProvidedParameterInfo> * range
+    | FromCustomAttributes of TcGlobals * TType * attribs: Attrib list
+    | Empty
+
+    member x.IsIn =
+        match x with
+        | ILParam (_, p, _, _) ->
+            p.IsIn && not p.IsOut
+
+        | FSParam (g, argInfo, ty, _) ->
+            HasFSharpAttribute g g.attrib_InAttribute argInfo.Attribs && isByrefTy g ty || isInByrefTy g ty
+
+        | ProvidedParam (_, p, m) ->
+            p.PUntaint((fun p -> p.IsIn && not p.IsOut), m)
+
+        | FromCustomAttributes (g, ty, attrs) ->
+            HasFSharpAttribute g g.attrib_OutAttribute attrs && isByrefTy g ty
+
+        | Empty -> false
+
+    member x.IsOut =
+        match x with
+        | ILParam (_, p, _, _) ->
+            p.IsOut && not p.IsIn
+
+        | FSParam (g, argInfo, ty, _) ->
+            HasFSharpAttribute g g.attrib_OutAttribute argInfo.Attribs && isByrefTy g ty || isOutByrefTy g ty
+
+        | ProvidedParam (_, p, m) ->
+            p.PUntaint((fun p -> p.IsOut && not p.IsIn), m)
+
+        | FromCustomAttributes (g, ty, attrs) ->
+            HasFSharpAttribute g g.attrib_InAttribute attrs && isByrefTy g ty
+
+        | Empty -> false
+
+    member x.IsParamArrayArg =
+        match x with
+        | ILParam (amap, p, _, _) ->
+            TryFindILAttribute amap.g.attrib_ParamArrayAttribute p.CustomAttrs
+
+        | FSParam (g, argInfo, _, _) ->
+            HasFSharpAttribute g g.attrib_ParamArrayAttribute argInfo.Attribs
+
+        | FromCustomAttributes (g, ty, attrs) ->
+            HasFSharpAttribute g g.attrib_ParamArrayAttribute attrs && isByrefTy g ty
+
+        | ProvidedParam (_, p, m) ->
+            p.PUntaint((fun px ->
+                let attrProvier = px :> IProvidedCustomAttributeProvider
+                attrProvier.GetAttributeConstructorArgs(p.TypeProvider.PUntaintNoFailure(id), typeof<System.ParamArrayAttribute>.FullName).IsSome), m)
+
+        | Empty -> false
+    
+    member x.OptionalArgInfo: OptionalArgInfo =
+        match x with
+        | ILParam (amap, p, ilMethInfo, m) ->
+            OptionalArgInfo.FromILParameter amap.g amap m ilMethInfo.MetadataScope ilMethInfo.DeclaringTypeInst p
+
+        | FSParam (g, argInfo, ty, _) ->
+            let isCalleeSideOptArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs
+            let isCallerSideOptArg = HasFSharpAttributeOpt g g.attrib_OptionalAttribute argInfo.Attribs
+            if isCalleeSideOptArg then
+                CalleeSide
+            elif isCallerSideOptArg then
+                match TryFindFSharpAttributeOpt g g.attrib_DefaultParameterValueAttribute argInfo.Attribs with
+                | None ->
+                    // Do a type-directed analysis of the type to determine the default value to pass.
+                    // Similar rules as OptionalArgInfo.FromILParameter are applied here, except for the COM and byref-related stuff.
+                    CallerSide (if isObjTy g ty then MissingValue else DefaultValue)
+                | Some attr ->
+                    let defaultValue = OptionalArgInfo.ValueOfDefaultParameterValueAttrib attr
+                    match defaultValue with
+                    | Some (Expr.Const (_, m, ty2)) when not (typeEquiv g ty2 ty) ->
+                        // the type of the default value does not match the type of the argument.
+                        // Emit a warning, and ignore the DefaultParameterValue argument altogether.
+                        warning(Error(FSComp.SR.DefaultParameterValueNotAppropriateForArgument(), m))
+                        NotOptional
+                    | Some (Expr.Const((ConstToILFieldInit fi), _, _)) ->
+                        // Good case - all is well.
+                        CallerSide (Constant fi)
+                    | _ ->
+                        // Default value is not appropriate, i.e. not a constant.
+                        // Compiler already gives an error in that case, so just ignore here.
+                        NotOptional
+            else NotOptional
+
+        | ProvidedParam (amap, p, m) ->
+            OptionalArgInfoOfProvidedParameter amap m p
+
+        | FromCustomAttributes (g, _, attrs) ->
+            let isOptional = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute attrs
+            if isOptional then CalleeSide else NotOptional
+
+        | Empty -> NotOptional
+
+    member x.CallerInfo =
+        match x with
+        | ILParam (amap, p, _, _) ->
+            let g = amap.g
+            let isCallerLineNumberArg = TryFindILAttribute g.attrib_CallerLineNumberAttribute p.CustomAttrs
+            let isCallerFilePathArg = TryFindILAttribute g.attrib_CallerFilePathAttribute p.CustomAttrs
+            let isCallerMemberNameArg = TryFindILAttribute g.attrib_CallerMemberNameAttribute p.CustomAttrs
+
+            match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
+            | false, false, false -> NoCallerInfo
+            | true, false, false -> CallerLineNumber
+            | false, true, false -> CallerFilePath
+            | false, false, true -> CallerMemberName
+            | _, _, _ ->
+                // if multiple caller info attributes are specified, pick the "wrong" one here
+                // so that we get an error later
+                if p.Type.TypeRef.FullName = "System.Int32" then CallerFilePath
+                else CallerLineNumber
+ 
+        | FSParam (g, argInfo, ty, _) ->
+            let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute argInfo.Attribs
+            let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute argInfo.Attribs
+            let isCallerMemberNameArg = HasFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs
+
+            match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
+            | false, false, false -> NoCallerInfo
+            | true, false, false -> CallerLineNumber
+            | false, true, false -> CallerFilePath
+            | false, false, true -> CallerMemberName
+            | false, true, true -> 
+                match TryFindFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs with
+                | Some(Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
+                    warning(Error(FSComp.SR.CallerMemberNameIsOverriden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
+                    CallerFilePath
+                | _ -> failwith "Impossible"
+            | _, _, _ ->
+                // if multiple caller info attributes are specified, pick the "wrong" one here
+                // so that we get an error later
+                match tryDestOptionTy g ty with
+                | ValueSome optTy when typeEquiv g g.int32_ty optTy -> CallerFilePath
+                | _ -> CallerLineNumber
+
+        | _ -> NoCallerInfo
+    
+    member x.ReflArgInfo =
+        match x with
+        | ILParam (amap, p, _, _) ->
+            let g = amap.g
+            match TryDecodeILAttribute g g.attrib_ReflectedDefinitionAttribute.TypeRef p.CustomAttrs with
+            | Some ([ILAttribElem.Bool b ], _) ->  ReflectedArgInfo.Quote b
+            | Some _ -> ReflectedArgInfo.Quote false
+            | _ -> ReflectedArgInfo.None
+
+        | FSParam (g, argInfo, _, _) ->
+            match TryFindFSharpBoolAttributeAssumeFalse  g g.attrib_ReflectedDefinitionAttribute argInfo.Attribs  with
+            | Some b -> ReflectedArgInfo.Quote b
+            | None -> ReflectedArgInfo.None
+
+        | ProvidedParam (_, p, m) ->
+            match p.PUntaint((fun px -> (px :> IProvidedCustomAttributeProvider).GetAttributeConstructorArgs(p.TypeProvider.PUntaintNoFailure(id), typeof<Microsoft.FSharp.Core.ReflectedDefinitionAttribute>.FullName)), m) with
+            | Some ([ Some (:? bool as b) ], _) -> ReflectedArgInfo.Quote b
+            | Some _ -> ReflectedArgInfo.Quote false
+            | None -> ReflectedArgInfo.None
+        
+        | FromCustomAttributes _ | Empty -> ReflectedArgInfo.None
+    
+
+/// Full information about a parameter returned for use by the type checker and language service.
+and [<NoComparison; NoEquality>] ParamData =
+    ParamData of nameOpt: Ident option * TType * attrs: ParamAttributes
+
 
 //-------------------------------------------------------------------------
 // ILFieldInfo
@@ -2161,7 +2231,7 @@ type PropInfo =
     /// Get the details of the indexer parameters associated with the property
     member x.GetParamDatas(amap, m) =
         x.GetParamNamesAndTypes(amap, m)
-        |> List.map (fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
+        |> List.map (fun (ParamNameAndType(nmOpt, pty)) -> ParamData(nmOpt, pty, ParamAttributes.Empty))
 
     /// Get the types of the indexer parameters associated with the property
     member x.GetParamTypes(amap, m) =

@@ -1255,9 +1255,8 @@ module InfoMemberPrinting =
     /// Format the arguments of a method to a buffer. 
     ///
     /// This uses somewhat "old fashioned" printf-style buffer printing.
-    let layoutParamData denv (ParamData(isParamArray, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) =
-        let isOptArg = optArgInfo.IsOptional
-        match isParamArray, nmOpt, isOptArg, tryDestOptionTy denv.g pty with 
+    let layoutParamData denv (ParamData(nmOpt, pty, attrs)) =
+        match attrs.IsParamArrayArg, nmOpt, attrs.OptionalArgInfo.IsOptional, tryDestOptionTy denv.g pty with 
         // Layout an optional argument 
         | _, Some nm, true, ptyOpt -> 
             // detect parameter type, if ptyOpt is None - this is .NET style optional argument

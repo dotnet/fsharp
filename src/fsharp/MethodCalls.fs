@@ -210,16 +210,16 @@ type CalledMethArgSet<'T> =
 let MakeCalledArgs amap m (minfo: MethInfo) minst =
     // Mark up the arguments with their position, so we can sort them back into order later 
     let paramDatas = minfo.GetParamDatas(amap, m, minst)
-    paramDatas |> List.mapiSquared (fun i j (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoFlags, nmOpt, reflArgInfo, typeOfCalledArg))  -> 
-      { Position=(i,j)
-        IsParamArray=isParamArrayArg
-        OptArgInfo=optArgInfo
-        CallerInfo = callerInfoFlags
-        IsInArg=isInArg
-        IsOutArg=isOutArg
-        ReflArgInfo=reflArgInfo
-        NameOpt=nmOpt
-        CalledArgumentType=typeOfCalledArg })
+    paramDatas |> List.mapiSquared (fun i j (ParamData(nmOpt, typeOfCalledArg, attrs))  -> 
+      { Position = i, j
+        IsParamArray = attrs.IsParamArrayArg
+        OptArgInfo = attrs.OptionalArgInfo
+        CallerInfo = attrs.CallerInfo
+        IsInArg = attrs.IsIn
+        IsOutArg = attrs.IsOut
+        ReflArgInfo = attrs.ReflArgInfo
+        NameOpt = nmOpt
+        CalledArgumentType = typeOfCalledArg })
 
 /// Represents the syntactic matching between a caller of a method and the called method.
 ///

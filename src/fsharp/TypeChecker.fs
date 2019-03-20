@@ -9528,8 +9528,8 @@ and TcMethodApplication
 
     let denv = env.DisplayEnv
 
-    let isSimpleFormalArg (isParamArrayArg, _isInArg, isOutArg, optArgInfo: OptionalArgInfo, callerInfo: CallerInfo, _reflArgInfo: ReflectedArgInfo) = 
-        not isParamArrayArg && not isOutArg && not optArgInfo.IsOptional && callerInfo = NoCallerInfo
+    let isSimpleFormalArg (attrs: ParamAttributes) =
+        not attrs.IsParamArrayArg && not attrs.IsOut && not attrs.OptionalArgInfo.IsOptional && attrs.CallerInfo = NoCallerInfo
     
     let callerObjArgTys = objArgs |> List.map (tyOfExpr cenv.g)
 
@@ -9907,7 +9907,7 @@ and TcMethodApplication
         if HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_Dictionary finalCalledMethInfo.ApparentEnclosingType  &&
            finalCalledMethInfo.IsConstructor &&
            not (finalCalledMethInfo.GetParamDatas(cenv.amap, mItem, finalCalledMeth.CalledTyArgs) 
-                |> List.existsSquared (fun (ParamData(_, _, _, _, _, _, _, ty)) ->  
+                |> List.existsSquared (fun (ParamData(_, ty, _)) ->  
                     HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IEqualityComparer ty)) then 
             
             match argsOfAppTy cenv.g finalCalledMethInfo.ApparentEnclosingType with 
