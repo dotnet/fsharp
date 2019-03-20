@@ -33,12 +33,17 @@ type ppenv =
     { ilGlobals: ILGlobals
       ppenvClassFormals: int
       ppenvMethodFormals: int }
+
 let ppenv_enter_method  mgparams env = 
     {env with ppenvMethodFormals=mgparams}
+
 let ppenv_enter_tdef gparams env =
     {env with ppenvClassFormals=List.length gparams; ppenvMethodFormals=0}
+
 let mk_ppenv ilg = { ilGlobals = ilg; ppenvClassFormals = 0; ppenvMethodFormals = 0 }
+
 let debug_ppenv = mk_ppenv 
+
 let ppenv_enter_modul env = { env with  ppenvClassFormals=0; ppenvMethodFormals=0 }
 
 // -------------------------------------------------------------------- 
@@ -46,8 +51,11 @@ let ppenv_enter_modul env = { env with  ppenvClassFormals=0; ppenvMethodFormals=
 // -------------------------------------------------------------------- 
 
 let output_string (os: TextWriter) (s:string) = os.Write s 
+
 let output_char (os: TextWriter) (c:char) = os.Write c
+
 let output_int os (i:int) = output_string os (string i)
+
 let output_hex_digit os i = 
   assert (i >= 0 && i < 16)
   if i > 9 then output_char os (char (int32 'A' + (i-10))) 
@@ -106,7 +114,9 @@ let output_array sep f os (a:_ []) =
       f os (a.[a.Length - 1])
 
 let output_parens f os a = output_string os "("; f os a; output_string os ")"
+
 let output_angled f os a = output_string os "<"; f os a; output_string os ">"
+
 let output_bracks f os a = output_string os "["; f os a; output_string os "]"
 
 let output_id os n = output_sqstring os n
@@ -114,6 +124,7 @@ let output_id os n = output_sqstring os n
 let output_label os n = output_string os n
 
 let output_lid os lid = output_seq "." output_string os lid
+
 let string_of_type_name (_,n) = n
 
 let output_byte os i = 
@@ -127,17 +138,27 @@ let output_bytes os (bytes:byte[]) =
 
 
 let bits_of_float32 (x:float32) = System.BitConverter.ToInt32(System.BitConverter.GetBytes(x),0)
+
 let bits_of_float (x:float) = System.BitConverter.DoubleToInt64Bits(x)
 
 let output_u8 os (x:byte) = output_string os (string (int x))
+
 let output_i8 os (x:sbyte) = output_string os (string (int x))
+
 let output_u16 os (x:uint16) = output_string os (string (int x))
+
 let output_i16 os (x:int16) = output_string os (string (int x))
+
 let output_u32 os (x:uint32) = output_string os (string (int64 x))
+
 let output_i32 os (x:int32) = output_string os (string x) 
+
 let output_u64 os (x:uint64) = output_string os (string (int64 x))
+
 let output_i64 os (x:int64) = output_string os (string x) 
+
 let output_ieee32 os (x:float32) = output_string os "float32 ("; output_string os (string (bits_of_float32 x)); output_string os ")"
+
 let output_ieee64 os (x:float) = output_string os "float64 ("; output_string os (string (bits_of_float x)); output_string os ")"
 
 let rec goutput_scoref _env os = function 
@@ -155,8 +176,8 @@ and goutput_tref env os (x:ILTypeRef) =
 
 and goutput_typ env os ty =
   match ty with 
-  | ILType.Boxed tr ->  goutput_tspec env os tr
-  | ILType.TypeVar tv ->  
+  | ILType.Boxed tr -> goutput_tspec env os tr
+  | ILType.TypeVar tv -> 
       // Special rule to print method type variables in Generic EE preferred form 
       // when an environment is available to help us do this. 
       let cgparams = env.ppenvClassFormals 
@@ -164,36 +185,36 @@ and goutput_typ env os ty =
       if int tv < cgparams then 
         output_string os "!"
         output_tyvar os tv
-      elif int tv -  cgparams <  mgparams then 
+      elif int tv - cgparams < mgparams then 
         output_string os "!!"
-        output_int os (int tv -  cgparams)
+        output_int os (int tv - cgparams)
       else 
         output_string os "!"
         output_tyvar os tv
         output_int os (int tv)
       
   | ILType.Byref typ -> goutput_typ env os typ; output_string os "&"
-  | ILType.Ptr typ ->  goutput_typ env os typ; output_string   os "*"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_SByte.TypeSpec.Name ->  output_string os "int8" 
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Int16.TypeSpec.Name ->  output_string os "int16"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Int32.TypeSpec.Name ->  output_string os "int32"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Int64.TypeSpec.Name ->  output_string os "int64"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_IntPtr.TypeSpec.Name ->  output_string os "native int"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Byte.TypeSpec.Name ->  output_string os "unsigned int8" 
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_UInt16.TypeSpec.Name ->  output_string os "unsigned int16"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_UInt32.TypeSpec.Name ->  output_string os "unsigned int32"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_UInt64.TypeSpec.Name ->  output_string os "unsigned int64"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_UIntPtr.TypeSpec.Name ->  output_string os "native unsigned int"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Double.TypeSpec.Name ->  output_string os "float64"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Single.TypeSpec.Name ->  output_string os "float32"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Bool.TypeSpec.Name ->  output_string os "bool"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Char.TypeSpec.Name ->  output_string os "char"
+  | ILType.Ptr typ -> goutput_typ env os typ; output_string   os "*"
+  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_SByte.TypeSpec.Name -> output_string os "int8" 
+  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Int16.TypeSpec.Name -> output_string os "int16"
+  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Int32.TypeSpec.Name -> output_string os "int32"
+  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Int64.TypeSpec.Name -> output_string os "int64"
+  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_IntPtr.TypeSpec.Name -> output_string os "native int"
+  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Byte.TypeSpec.Name -> output_string os "unsigned int8" 
+  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_UInt16.TypeSpec.Name -> output_string os "unsigned int16"
+  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_UInt32.TypeSpec.Name -> output_string os "unsigned int32"
+  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_UInt64.TypeSpec.Name -> output_string os "unsigned int64"
+  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_UIntPtr.TypeSpec.Name -> output_string os "native unsigned int"
+  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Double.TypeSpec.Name -> output_string os "float64"
+  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Single.TypeSpec.Name -> output_string os "float32"
+  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Bool.TypeSpec.Name -> output_string os "bool"
+  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Char.TypeSpec.Name -> output_string os "char"
   | ILType.Value tspec ->
       output_string os "value class "
       goutput_tref env os tspec.TypeRef
       output_string os " "
       goutput_gactuals env os tspec.GenericArgs
-  | ILType.Void ->  output_string os "void"
+  | ILType.Void -> output_string os "void"
   | ILType.Array (bounds,ty) -> 
       goutput_typ env os ty
       output_string os "["
@@ -253,29 +274,27 @@ and output_arr_bounds os = function
           l
   
 and goutput_permission _env os p = 
-  let output_security_action  os x = 
+  let output_security_action os x = 
     output_string os 
       (match x with 
-        | ILSecurityAction.Request ->  "request"
-        | ILSecurityAction.Demand ->  "demand"
-        | ILSecurityAction.Assert->  "assert"
-        | ILSecurityAction.Deny->  "deny"
-        | ILSecurityAction.PermitOnly->  "permitonly"
-        | ILSecurityAction.LinkCheck->  "linkcheck"
-        | ILSecurityAction.InheritCheck->  "inheritcheck"
-        | ILSecurityAction.ReqMin->  "reqmin"
-        | ILSecurityAction.ReqOpt->  "reqopt"
-        | ILSecurityAction.ReqRefuse->  "reqrefuse"
-        | ILSecurityAction.PreJitGrant->  "prejitgrant"
-        | ILSecurityAction.PreJitDeny->  "prejitdeny"
-        | ILSecurityAction.NonCasDemand->  "noncasdemand"
-        | ILSecurityAction.NonCasLinkDemand->  "noncaslinkdemand"
-        | ILSecurityAction.NonCasInheritance->  "noncasinheritance" 
+        | ILSecurityAction.Request -> "request"
+        | ILSecurityAction.Demand -> "demand"
+        | ILSecurityAction.Assert-> "assert"
+        | ILSecurityAction.Deny-> "deny"
+        | ILSecurityAction.PermitOnly-> "permitonly"
+        | ILSecurityAction.LinkCheck-> "linkcheck"
+        | ILSecurityAction.InheritCheck-> "inheritcheck"
+        | ILSecurityAction.ReqMin-> "reqmin"
+        | ILSecurityAction.ReqOpt-> "reqopt"
+        | ILSecurityAction.ReqRefuse-> "reqrefuse"
+        | ILSecurityAction.PreJitGrant-> "prejitgrant"
+        | ILSecurityAction.PreJitDeny-> "prejitdeny"
+        | ILSecurityAction.NonCasDemand-> "noncasdemand"
+        | ILSecurityAction.NonCasLinkDemand-> "noncaslinkdemand"
+        | ILSecurityAction.NonCasInheritance-> "noncasinheritance" 
         | ILSecurityAction.LinkDemandChoice -> "linkdemandchoice"
         | ILSecurityAction.InheritanceDemandChoice -> "inheritancedemandchoice"
         | ILSecurityAction.DemandChoice -> "demandchoice") 
-
-
 
   match p with 
   | ILSecurityDecl (sa,b) -> 
@@ -459,10 +478,10 @@ let goutput_cuspec env os (IlxUnionSpec(IlxUnionRef(_,tref,_,_,_),i)) =
 let output_basic_type os x = 
   output_string os 
     (match x with
-    | DT_I1 ->  "i1"
-    | DT_U1 ->  "u1"
-    | DT_I2 ->  "i2"
-    | DT_U2 ->  "u2"
+    | DT_I1 -> "i1"
+    | DT_U1 -> "u1"
+    | DT_I2 -> "i2"
+    | DT_U2 -> "u2"
     | DT_I4 -> "i4"
     | DT_U4 -> "u4"
     | DT_I8 -> "i8"
@@ -505,7 +524,6 @@ let goutput_fdef _tref env os (fd: ILFieldDef) =
   output_string os "\n"
   goutput_custom_attrs env os fd.CustomAttrs
 
-
 let output_alignment os =  function
     Aligned -> ()
   | Unaligned1 -> output_string os "unaligned. 1 "
@@ -528,11 +546,11 @@ let rec goutput_apps env os =  function
       output_angled (goutput_gparam env) os (mkILSimpleTypar "T") 
       output_string os " "
       goutput_apps env os cs
-  | Apps_app(ty,cs) ->  
+  | Apps_app(ty,cs) -> 
       output_parens (goutput_typ env) os ty
       output_string os " "
       goutput_apps env os cs
-  | Apps_done ty ->  
+  | Apps_done ty -> 
       output_string os "--> "
       goutput_typ env os ty
 
@@ -540,6 +558,7 @@ let rec goutput_apps env os =  function
 let output_short_u16 os (x:uint16) =
      if int x < 256 then (output_string os ".s "; output_u16 os x)
      else output_string os " "; output_u16 os x
+
 let output_short_i32 os i32 =
      if  i32 < 256 && 0 >= i32 then (output_string os ".s "; output_i32 os i32)
      else output_string os " "; output_i32 os i32
@@ -553,7 +572,7 @@ let goutput_local env os (l: ILLocal) =
 
 let goutput_param env os (l: ILParameter) = 
   match l.Name with 
-      None ->  goutput_typ env os l.Type
+      None -> goutput_typ env os l.Type
     | Some n -> goutput_typ env os l.Type; output_string os " "; output_sqstring os n
 
 let goutput_params env os ps = 
@@ -624,7 +643,7 @@ let rec goutput_instr env os inst =
       output_string os "ldc."; output_basic_type os dt; output_string os " "; output_ieee32 os x
   | (AI_ldc (dt, ILConst.R8 x)) -> 
       output_string os "ldc."; output_basic_type os dt; output_string os " "; output_ieee64 os x
-  | I_ldftn mspec ->  output_string os "ldftn "; goutput_mspec env os mspec
+  | I_ldftn mspec -> output_string os "ldftn "; goutput_mspec env os mspec
   | I_ldvirtftn mspec -> output_string os "ldvirtftn "; goutput_mspec env os mspec
   | I_ldind (al,vol,dt) -> 
       output_alignment os al
@@ -779,7 +798,6 @@ let goutput_ilmbody env os (il: ILMethodBody) =
     output_seq ",\n " (goutput_local env)  os il.Locals
     output_string os ")\n"
   
-
 let goutput_mbody is_entrypoint env os (md: ILMethodDef) =
   if md.ImplAttributes &&& MethodImplAttributes.Native <> enum 0 then output_string os "native "
   elif md.ImplAttributes &&&  MethodImplAttributes.IL <> enum 0 then output_string os "cil "
@@ -892,14 +910,15 @@ let output_type_layout_info os info =
 
 let splitTypeLayout = function
   | ILTypeDefLayout.Auto -> "auto",(fun _os () -> ())
-  | ILTypeDefLayout.Sequential info ->  "sequential", (fun os () -> output_type_layout_info os info)
-  | ILTypeDefLayout.Explicit info ->  "explicit", (fun os () -> output_type_layout_info os info)
-
+  | ILTypeDefLayout.Sequential info -> "sequential", (fun os () -> output_type_layout_info os info)
+  | ILTypeDefLayout.Explicit info -> "explicit", (fun os () -> output_type_layout_info os info)
       
 let goutput_fdefs tref env os (fdefs: ILFieldDefs) = 
   List.iter (fun f -> (goutput_fdef tref env) os f; output_string os "\n" ) fdefs.AsList
+
 let goutput_mdefs env os (mdefs: ILMethodDefs) = 
   Array.iter (fun f -> (goutput_mdef env) os f; output_string os "\n" ) mdefs.AsArray
+
 let goutput_pdefs env os (pdefs: ILPropertyDefs) = 
   List.iter (fun f -> (goutput_pdef env) os f; output_string os "\n" ) pdefs.AsList
 
@@ -954,7 +973,7 @@ and goutput_lambdas env os lambdas =
        output_angled (goutput_gparam env) os gf
        output_string os " "
        (goutput_lambdas env) os l
-   | Lambdas_lambda (ps,l) ->  
+   | Lambdas_lambda (ps,l) -> 
        output_parens (goutput_param env) os ps
        output_string os " "
        (goutput_lambdas env) os l
@@ -1046,7 +1065,7 @@ let output_module_fragment_aux _refs os (ilg: ILGlobals) modul =
     let env = ppenv_enter_modul env 
     goutput_tdefs false ([]) env os modul.TypeDefs
     goutput_tdefs true ([]) env os modul.TypeDefs
-  with e ->  
+  with e -> 
     output_string os "*** Error during printing : "; output_string os (e.ToString()); os.Flush()
     reraise()
 
@@ -1078,7 +1097,7 @@ let output_module os (ilg: ILGlobals) modul =
     output_module_refs  os refs
     goutput_module_manifest env os modul
     output_module_fragment_aux refs os ilg modul
-  with e ->  
+  with e -> 
     output_string os "*** Error during printing : "; output_string os (e.ToString()); os.Flush()
     raise e
 

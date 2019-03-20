@@ -149,7 +149,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                     | _ -> ()
                     yield! walkExpr true e ]
 
-            and walkExprOpt (spAlways:bool) eOpt = [ match eOpt with Some e -> yield! walkExpr spAlways e | _ -> () ]
+            and walkExprOpt (spAlways: bool) eOpt = [ match eOpt with Some e -> yield! walkExpr spAlways e | _ -> () ]
             
             and IsBreakableExpression e =
                 match e with
@@ -162,7 +162,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
 
             // Determine the breakpoint locations for an expression. spAlways indicates we always
             // emit a breakpoint location for the expression unless it is a syntactic control flow construct
-            and walkExpr (spAlways:bool)  e =
+            and walkExpr (spAlways: bool)  e =
                 let m = e.Range
                 if not (isMatchRange m) then [] else
                 [ if spAlways && IsBreakableExpression e then 
@@ -383,7 +383,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                     []
                       
            /// Get information for implementation file        
-            let walkImplFile (modules:SynModuleOrNamespace list) = List.collect walkModule modules
+            let walkImplFile (modules: SynModuleOrNamespace list) = List.collect walkModule modules
                      
             match input with
             | Some(ParsedInput.ImplFile(ParsedImplFileInput(modules = modules))) -> walkImplFile modules 
@@ -439,7 +439,7 @@ type ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
 type EntityKind =
     | Attribute
     | Type
-    | FunctionOrValue of isActivePattern:bool
+    | FunctionOrValue of isActivePattern: bool
     | Module of ModuleKind
     override x.ToString() = sprintf "%A" x
 
@@ -449,11 +449,11 @@ module UntypedParseImpl =
     
     let emptyStringSet = HashSet<string>()
 
-    let GetRangeOfExprLeftOfDot(pos:pos, parseTreeOpt) =
+    let GetRangeOfExprLeftOfDot(pos: pos, parseTreeOpt) =
         match parseTreeOpt with 
         | None -> None 
         | Some(parseTree) ->
-        let CheckLongIdent(longIdent:LongIdent) =
+        let CheckLongIdent(longIdent: LongIdent) =
             // find the longest prefix before the "pos" dot
             let mutable r = (List.head longIdent).idRange 
             let mutable couldBeBeforeFront = true
@@ -546,7 +546,7 @@ module UntypedParseImpl =
         })
     
     /// searches for the expression island suitable for the evaluation by the debugger
-    let TryFindExpressionIslandInPosition(pos:pos, parseTreeOpt) = 
+    let TryFindExpressionIslandInPosition(pos: pos, parseTreeOpt) = 
         match parseTreeOpt with 
         | None -> None 
         | Some(parseTree) ->
@@ -791,7 +791,7 @@ module UntypedParseImpl =
         and walkType = function
             | SynType.LongIdent ident -> 
                 // we protect it with try..with because System.Exception : rangeOfLidwd may raise
-                // at FSharp.Compiler.Ast.LongIdentWithDots.get_Range() in D:\j\workspace\release_ci_pa---3f142ccc\src\fsharp\ast.fs:line 156
+                // at FSharp.Compiler.Ast.LongIdentWithDots.get_Range() in D:\j\workspace\release_ci_pa---3f142ccc\src\fsharp\ast.fs: line 156
                 try ifPosInRange ident.Range (fun _ -> Some EntityKind.Type) with _ -> None
             | SynType.App(ty, _, types, _, _, _, _) -> 
                 walkType ty |> Option.orElse (List.tryPick walkType types)
@@ -1341,7 +1341,7 @@ module UntypedParseImpl =
                  | idx when idx < str.Length -> str.[idx + 1..].TrimStart()
                  | _ -> ""   
 
-             let isLongIdent = Seq.forall (fun c -> IsIdentifierPartCharacter c || c = '.' || c = ':') // ':' may occur in "[<type:AnAttribute>]"
+             let isLongIdent = Seq.forall (fun c -> IsIdentifierPartCharacter c || c = '.' || c = ':') // ':' may occur in "[<type: AnAttribute>]"
 
              // match the most nested paired [< and >] first
              let matches = 
