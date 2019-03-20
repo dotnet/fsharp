@@ -26,9 +26,13 @@ type IsReflectedDefinition =
 
 [<RequireQualifiedAccess>]
 type QuotationSerializationFormat =
-    /// Indicates that type references are emitted as integer indexes into a supplied table
-    | FSharp_40_Plus
-    | FSharp_20_Plus
+    { 
+      /// Indicates that witness parameters are recorded
+      SupportsWitnesses: bool 
+      
+      /// Indicates that type references are emitted as integer indexes into a supplied table
+      SupportsDeserializeEx: bool 
+    }
 
 [<Sealed>]
 type QuotationGenerationScope  =

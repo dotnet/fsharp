@@ -251,6 +251,7 @@ type cenv =
       
       /// Used to apply forced inlining optimizations to witnesses generated late during codegen
       mutable optimizeDuringCodeGen : (Expr -> Expr)
+
     }
 
 
@@ -738,12 +739,12 @@ type ValStorage =
     /// Indicates the value is stored in a static field.
     | StaticField of ILFieldSpec * ValRef * (*hasLiteralAttr:*)bool * ILType * string * ILType * ILMethodRef  * ILMethodRef  * OptionalShadowLocal
 
-    /// Indicates the value is "stored" as a property that recomputes it each time it is referenced. Used for simple constants that do not cause initialization triggers
+    /// Indicates the value is represented as a property that recomputes it each time it is referenced. Used for simple constants that do not cause initialization triggers
     | StaticProperty of ILMethodSpec  * OptionalShadowLocal
 
-    /// Indicates the value is "stored" as a IL static method (in a "main" class for a F#
+    /// Indicates the value is represented as an IL method (in a "main" class for a F#
     /// compilation unit, or as a member) according to its inferred or specified arity.
-    | Method of  ValReprInfo * ValRef * ILMethodSpec * Range.range * Typars * Typars * CurriedArgInfos * ArgReprInfo list * TraitWitnessInfos * TType list * ArgReprInfo
+    | Method of  ValReprInfo * ValRef * ILMethodSpec * ILMethodSpec * Range.range * Typars * Typars * CurriedArgInfos * ArgReprInfo list * TraitWitnessInfos * TType list * ArgReprInfo
 
     /// Indicates the value is stored at the given position in the closure environment accessed via "ldarg 0"
     | Env of ILType * int * ILFieldSpec * NamedLocalIlxClosureInfo ref option
@@ -956,20 +957,30 @@ let GetMethodSpecForMemberVal amap g (memberInfo:ValMemberInfo) (vref:ValRef) =
               thisArgTys
         let methodArgTys, paramInfos = List.unzip flatArgInfos
         let isSlotSig = memberInfo.MemberFlags.IsDispatchSlot || memberInfo.MemberFlags.IsOverrideOrExplicitImpl
-        let ilWitnessArgTys = GenTypes amap m tyenvUnderTypars (GenWitnessTys g cxs)
         let ilMethodArgTys = GenParamTypes amap m tyenvUnderTypars isSlotSig methodArgTys
         let ilMethodInst = GenTypeArgs amap m tyenvUnderTypars (List.map mkTyparTy mtps)
-        let mspec = mkILInstanceMethSpecInTy (ilTy, vref.CompiledName, ilWitnessArgTys @ ilMethodArgTys, ilActualRetTy, ilMethodInst)
+        let mspec = mkILInstanceMethSpecInTy (ilTy, vref.CompiledName, ilMethodArgTys, ilActualRetTy, ilMethodInst)
+        let mspecW = 
+            if not g.generateWitnesses || cxs.IsEmpty then
+                mspec 
+            else
+                let ilWitnessArgTys = GenTypes amap m tyenvUnderTypars (GenWitnessTys g cxs)
+                mkILInstanceMethSpecInTy (ilTy, vref.CompiledName, ilWitnessArgTys @ ilMethodArgTys, ilActualRetTy, ilMethodInst)
     
-        mspec, ctps, mtps, curriedArgInfos, paramInfos, retInfo, cxs, methodArgTys
+        mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, cxs, methodArgTys
     else
         let methodArgTys, paramInfos = List.unzip flatArgInfos
-        let ilWitnessArgTys = GenTypes amap m tyenvUnderTypars (GenWitnessTys g cxs)
         let ilMethodArgTys = GenParamTypes amap m tyenvUnderTypars false methodArgTys
         let ilMethodInst = GenTypeArgs amap m tyenvUnderTypars (List.map mkTyparTy mtps)
-        let mspec = mkILStaticMethSpecInTy (ilTy, vref.CompiledName, ilWitnessArgTys @ ilMethodArgTys, ilActualRetTy, ilMethodInst)
+        let mspec = mkILStaticMethSpecInTy (ilTy, vref.CompiledName, ilMethodArgTys, ilActualRetTy, ilMethodInst)
+        let mspecW =
+            if not g.generateWitnesses || cxs.IsEmpty then
+                mspec 
+            else
+                let ilWitnessArgTys = GenTypes amap m tyenvUnderTypars (GenWitnessTys g cxs)
+                mkILStaticMethSpecInTy (ilTy, vref.CompiledName, ilWitnessArgTys @ ilMethodArgTys, ilActualRetTy, ilMethodInst)
     
-        mspec, ctps, mtps, curriedArgInfos, paramInfos, retInfo, cxs, methodArgTys
+        mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, cxs, methodArgTys
 
 /// Determine how a top-level value is represented, when representing as a field, by computing an ILFieldSpec
 let ComputeFieldSpecForVal(optIntraAssemblyInfo:IlxGenIntraAssemblyInfo option, isInteractive, g, ilTyForProperty, vspec:Val, nm, m, cloc, ilTy, ilGetterMethRef) =
@@ -1006,8 +1017,8 @@ let ComputeStorageForFSharpValue amap g cloc optIntraAssemblyInfo optShadowLocal
 
 /// Compute the representation information for an F#-declared member
 let ComputeStorageForFSharpMember amap g topValInfo memberInfo (vref:ValRef) m =
-    let mspec, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys = GetMethodSpecForMemberVal amap g memberInfo vref
-    Method (topValInfo, vref, mspec, m, ctps, mtps, curriedArgInfos, paramInfos, witnessInfos, methodArgTys, retInfo)
+    let mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys = GetMethodSpecForMemberVal amap g memberInfo vref
+    Method (topValInfo, vref, mspec, mspecW, m, ctps, mtps, curriedArgInfos, paramInfos, witnessInfos, methodArgTys, retInfo)
 
 /// Compute the representation information for an F#-declared function in a module or an F#-decalared extension member.
 /// Note, there is considerable overlap with ComputeStorageForFSharpMember/GetMethodSpecForMemberVal and these could be
@@ -1021,9 +1032,14 @@ let ComputeStorageForFSharpFunctionOrFSharpExtensionMember amap g cloc topValInf
     let ilRetTy = GenReturnType amap m tyenvUnderTypars returnTy
     let ilLocTy = mkILTyForCompLoc cloc
     let ilMethodInst = GenTypeArgs amap m tyenvUnderTypars (List.map mkTyparTy tps)
-    let ilWitnessArgTys = GenTypes amap m tyenvUnderTypars (GenWitnessTys g cxs)
-    let mspec = mkILStaticMethSpecInTy (ilLocTy, nm, (ilWitnessArgTys @ ilMethodArgTys), ilRetTy, ilMethodInst)
-    Method (topValInfo, vref, mspec, m, [], tps, curriedArgInfos, paramInfos, cxs, argTys, retInfo)
+    let mspec = mkILStaticMethSpecInTy (ilLocTy, nm, ilMethodArgTys, ilRetTy, ilMethodInst)
+    let mspecW =
+        if not g.generateWitnesses || cxs.IsEmpty then
+            mspec 
+        else
+            let ilWitnessArgTys = GenTypes amap m tyenvUnderTypars (GenWitnessTys g cxs)
+            mkILStaticMethSpecInTy (ilLocTy, nm, (ilWitnessArgTys @ ilMethodArgTys), ilRetTy, ilMethodInst)
+    Method (topValInfo, vref, mspec, mspecW, m, [], tps, curriedArgInfos, paramInfos, cxs, argTys, retInfo)
 
 /// Determine if an F#-declared value, method or function is compiled as a method.
 let IsFSharpValCompiledAsMethod g (v:Val) =
@@ -2861,8 +2877,7 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
             GenBinding cenv cgbuf eenvinner bind
             let tys = destRefTupleTy cenv.g ty
             assert (tys.Length = numRequiredExprs)
-            // TODO - tupInfoRef
-            argInfos |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (tupInfoRef (* TODO *), loce, tys, i, m) Continue)
+            argInfos |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (tupInfoRef, loce, tys, i, m) Continue)
             GenSequel cenv eenv.cloc cgbuf sequel
         )
 
@@ -2945,7 +2960,7 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
         
             let storage = StorageForValRef m vref eenv
             match storage with
-            | Method (_, _, mspec, _, _, _, _, _, _, _, _) ->
+            | Method (_, _, mspec, _, _, _, _, _, _, _, _, _) ->
                 CG.EmitInstr cgbuf (pop 0) (Push [cenv.g.iltyp_RuntimeMethodHandle]) (I_ldtoken (ILToken.ILMethod mspec))
             | _ ->
                 errorR(Error(FSComp.SR.ilxgenUnexpectedArgumentToMethodHandleOfDuringCodegen(), m))
@@ -2972,7 +2987,7 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 when
                      (let storage = StorageForValRef m vref eenv
                       match storage with
-                      | Method (topValInfo, vref, _, _, _, _, _, _, _, _, _) ->
+                      | Method (topValInfo, vref, _, _, _, _, _, _, _, _, _, _) ->
                           (let tps, argtys, _, _ = GetTopValTypeInFSharpForm cenv.g topValInfo vref.Type m
                            tps.Length = tyargs.Length &&
                            argtys.Length <= curriedArgs.Length)
@@ -2980,24 +2995,45 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
 
       let storage = StorageForValRef m vref eenv
       match storage with
-      | Method (topValInfo, vref, mspec, _, ctps, mtps, curriedArgInfos, _, _, _, _) ->
+      | Method (topValInfo, vref, mspec, mspecW, _, ctps, mtps, curriedArgInfos, _, _, _, _) ->
+
           let nowArgs, laterArgs = List.splitAt curriedArgInfos.Length curriedArgs
 
           let actualRetTy = applyTys cenv.g vref.Type (tyargs, nowArgs)
-          let _, _cxs, curriedArgInfos, returnTy, _ = GetTopValTypeInCompiledForm cenv.g topValInfo vref.Type m
+
+          let _, cxs, curriedArgInfos, returnTy, _ = GetTopValTypeInCompiledForm cenv.g topValInfo vref.Type m
+
+          let mspec = 
+              if not cenv.g.generateWitnesses || cxs.IsEmpty then
+                  mspec 
+              else 
+                  mspecW
 
           let witnessArgs = 
-              let ctyargs, mtyargs = List.splitAt ctps.Length tyargs
+              if not cenv.g.generateWitnesses || cxs.IsEmpty then
+                  []
+              else
+                  let _ctyargs, mtyargs = List.splitAt ctps.Length tyargs
 
-              // Witness for enclosing type parameters must be passed to static members and constructors
-              // For non-extension instance methods they are stored as fields.
-              let cwitnesses = 
-                  if vref.IsInstanceMember && not vref.IsExtensionMember then
-                      [] 
-                  else 
-                      ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcVal cenv.g cenv.amap m ctps ctyargs |> CommitOperationResult
-              let mwitnesses = ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcVal cenv.g cenv.amap m mtps mtyargs |> CommitOperationResult
-              cwitnesses @ mwitnesses
+                  // Witness for enclosing type parameters are not currently allowed, because these can never be 'inline'.
+                  // Regardless, even if they were they must be passed to static members and constructors
+                  // For non-extension instance methods would be stored as fields, if they were permitted.
+                  //let cwitnesses = 
+                  //    if vref.IsInstanceMember && not vref.IsExtensionMember then
+                  //        [] 
+                  //    else 
+                  //        ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcVal cenv.g cenv.amap m ctps ctyargs 
+                  //        |> CommitOperationResult 
+                  //        |> List.map snd
+
+                  // We currently should never have any class-quantified witnesses
+                  //assert cwitnesses.IsEmpty
+
+                  let mwitnesses = 
+                      ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcVal cenv.g cenv.amap m mtps mtyargs 
+                      |> CommitOperationResult
+
+                  mwitnesses
 
           let nowArgs = witnessArgs @ nowArgs
 
@@ -3020,6 +3056,7 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
               List.splitAt numEnclILTypeArgs ilTyArgs
 
           let boxity = mspec.DeclaringType.Boxity
+
           let mspec = mkILMethSpec (mspec.MethodRef, boxity, ilEnclArgTys, ilMethArgTys)
       
           // "Unit" return types on static methods become "void"
@@ -3675,15 +3712,14 @@ and GenQuotation cenv cgbuf eenv (ast, conv, m, ety) sequel =
     let bytesExpr = Expr.Op(TOp.Bytes(astSerializedBytes), [], [], m)
 
     let deserializeExpr =
-        match QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat cenv.g with
-        | QuotationTranslator.QuotationSerializationFormat.FSharp_40_Plus ->
+        let qf = QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat cenv.g 
+        if qf.SupportsDeserializeEx then 
             let referencedTypeDefExprs =  List.map (mkILNonGenericBoxedTy >> mkTypeOfExpr cenv m) referencedTypeDefs
             let referencedTypeDefsExpr = mkArray (cenv.g.system_Type_ty, referencedTypeDefExprs, m)
             let spliceTypesExpr = mkArray (cenv.g.system_Type_ty, spliceTypeExprs, m)
             let spliceArgsExpr = mkArray (rawTy, spliceArgExprs, m)
             mkCallDeserializeQuotationFSharp40Plus cenv.g m someTypeInModuleExpr referencedTypeDefsExpr spliceTypesExpr spliceArgsExpr bytesExpr
-
-        | QuotationTranslator.QuotationSerializationFormat.FSharp_20_Plus ->
+        else
             let mkList ty els = List.foldBack (mkCons cenv.g ty) els (mkNil cenv.g m ty)
             let spliceTypesExpr = mkList cenv.g.system_Type_ty spliceTypeExprs
             let spliceArgsExpr = mkList rawTy spliceArgExprs
@@ -3753,14 +3789,23 @@ and MakeNotSupportedExnExpr cenv eenv (argExpr, m) =
     Expr.Op(TOp.ILCall(false, false, false, true, NormalValUse, false, false, mref, [], [], [ety]), [], [argExpr], m)
 
 and GenTraitCall cenv cgbuf eenv (traitInfo: TraitConstraintInfo, argExprs, m) expr sequel =
-    match eenv.witnessesInScope.TryGetValue traitInfo.TraitKey with 
-    | true, storage -> 
+    let witness = 
+        if cenv.g.generateWitnesses then 
+            match eenv.witnessesInScope.TryGetValue traitInfo.TraitKey with 
+            | true, storage -> Some storage
+            | _ -> None
+        else
+            None
+
+    match witness with 
+    | Some storage -> 
         
         let ty = GenWitnessTy cenv.g traitInfo.TraitKey
         GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv.amap m eenv.tyenv ty) storage (Some([], argExprs, m, sequel))
         
-    | _ ->     
-        assert false // We should now always find trait witnesses in scope
+    | None ->     
+        // If witnesses are available, we should now always find trait witnesses in scope
+        assert not eenv.witnessesInScope.IsEmpty
         
         let minfoOpt = CommitOperationResult (ConstraintSolver.CodegenWitnessThatTypeSupportsTraitConstraint cenv.tcVal cenv.g cenv.amap m traitInfo argExprs)
         match minfoOpt with
@@ -4644,9 +4689,26 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, deleg
 
 /// Generate statically-resolved conditionals used for type-directed optimizations.
 and GenStaticOptimization cenv cgbuf eenv (constraints, e2, e3, _m) sequel =
+    // Note: during IlxGen, even if answer is StaticOptimizationAnswer.Unknown we discard the static optimization
+    // This means 'when ^T : ^T' is discarded if not resolved.
+    //
+    // This doesn't apply when witnesses are available. In that case, "when ^T : ^T" is resolved as 'Yes',
+    // this is because all the uses of "when ^T : ^T" in FSharp.Core (e.g. for are for deciding between the 
+    // witness-based implementation and the legacy dynamic implementation, e.g.
+    //
+    //    let inline ( * ) (x: ^T) (y: ^U) : ^V = 
+    //         MultiplyDynamic<(^T),(^U),(^V)>  x y 
+    //         ...
+    //         when ^T : ^T = ((^T or ^U): (static member (*) : ^T * ^U -> ^V) (x,y))
+    //
+    // When witnesses are available we use the dynamic implementation.
+
     let e =
-      if DecideStaticOptimizations cenv.g constraints = StaticOptimizationAnswer.Yes then e2
-      else e3
+        let haveWitnesses = not eenv.witnessesInScope.IsEmpty
+        if DecideStaticOptimizations cenv.g constraints haveWitnesses = StaticOptimizationAnswer.Yes then 
+            e2
+        else 
+            e3
     GenExpr cenv cgbuf eenv SPSuppress e sequel
 
 //-------------------------------------------------------------------------
@@ -5184,12 +5246,22 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
         CommitStartScope cgbuf startScopeMarkOpt
         GenExpr cenv cgbuf eenv SPSuppress cctorBody discard
     
-    | Method (topValInfo, _, mspec, _, ctps, mtps, curriedArgInfos, paramInfos, witnessInfos, argTys, retInfo)  ->
+    | Method (topValInfo, _, mspec, mspecW, _, ctps, mtps, curriedArgInfos, paramInfos, witnessInfos, argTys, retInfo)  ->
+
         let methLambdaTypars, methLambdaCtorThisValOpt, methLambdaBaseValOpt, methLambdaCurriedVars, methLambdaBody, methLambdaBodyTy =
             IteratedAdjustArityOfLambda cenv.g cenv.amap topValInfo rhsExpr
+
         let methLambdaVars = List.concat methLambdaCurriedVars
+
         CommitStartScope cgbuf startScopeMarkOpt
-        GenMethodForBinding cenv cgbuf eenv (vspec, mspec, access, ctps, mtps, witnessInfos, curriedArgInfos, paramInfos, argTys, retInfo, topValInfo, methLambdaCtorThisValOpt, methLambdaBaseValOpt, methLambdaTypars, methLambdaVars, methLambdaBody, methLambdaBodyTy)
+
+        GenMethodForBinding cenv cgbuf eenv (vspec, mspec, false, access, ctps, mtps, [], curriedArgInfos, paramInfos, argTys, retInfo, topValInfo, methLambdaCtorThisValOpt, methLambdaBaseValOpt, methLambdaTypars, methLambdaVars, methLambdaBody, methLambdaBodyTy)
+
+        // If generating witnesses, then generate the second entry point with additional arguments.
+        // Take a copy of the expression to ensure generated names are unique.
+        if cenv.g.generateWitnesses && not witnessInfos.IsEmpty then 
+            let copyOfLambdaBody = copyExpr cenv.g CloneAll methLambdaBody
+            GenMethodForBinding cenv cgbuf eenv (vspec, mspecW, true, access, ctps, mtps, witnessInfos, curriedArgInfos, paramInfos, argTys, retInfo, topValInfo, methLambdaCtorThisValOpt, methLambdaBaseValOpt, methLambdaTypars, methLambdaVars, copyOfLambdaBody, methLambdaBodyTy)
 
     | StaticProperty (ilGetterMethSpec, optShadowLocal) ->
 
@@ -5627,10 +5699,11 @@ and ComputeMethodImplAttribs cenv (_v:Val) attrs =
 
 and GenMethodForBinding
         cenv cgbuf eenv
-        (v:Val, mspec, access, ctps, mtps, witnessInfos, curriedArgInfos, paramInfos, argTys, retInfo, topValInfo,
+        (v:Val, mspec, hasWitnessArgs, access, ctps, mtps, witnessInfos, curriedArgInfos, paramInfos, argTys, retInfo, topValInfo,
          ctorThisValOpt, baseValOpt, methLambdaTypars, methLambdaVars, methLambdaBody, returnTy) =
 
     let m = v.Range
+
     let selfMethodVars, nonSelfMethodVars, compileAsInstance =
         match v.MemberInfo with
         | Some _ when ValSpecIsCompiledAsInstance cenv.g v ->
@@ -5649,14 +5722,17 @@ and GenMethodForBinding
     // for the big lambda ("tlambda") of the implementation of the method.
     let eenvUnderMethLambdaTypars = EnvForTypars methLambdaTypars eenv
     let eenvUnderMethTypeClassTypars = EnvForTypars ctps eenv
-    let eenvUnderMethTypeTypars = EnvForTypars mtps eenvUnderMethTypeClassTypars
+    let eenvUnderMethTypeTypars = AddTyparsToEnv mtps eenvUnderMethTypeClassTypars
 
     // Add the arguments to the environment.  We add an implicit 'this' argument to constructors
     let isCtor = v.IsConstructor
 
     let methLambdaWitnessInfos = 
-        let methLambdaParentTypars, methLambdaMethTypars = List.splitAt ctps.Length  methLambdaTypars
-        GetTraitWitnessInfosOfTypars cenv.g methLambdaParentTypars methLambdaMethTypars
+        if hasWitnessArgs then 
+            let methLambdaParentTypars, methLambdaMethTypars = List.splitAt ctps.Length  methLambdaTypars
+            GetTraitWitnessInfosOfTypars cenv.g methLambdaParentTypars methLambdaMethTypars
+        else
+            []
 
     // If this assert fails then there is a mismatch in the number of trait constraints on the method type and the number
     // on the method implementation.
@@ -5665,8 +5741,12 @@ and GenMethodForBinding
     let eenvForMeth =
         let eenvForMeth = eenvUnderMethLambdaTypars
         let numImplicitArgs = if isCtor then 1 else 0
-        let eenvForMeth = AddStorageForLocalWitnesses eenvForMeth (methLambdaWitnessInfos |> List.mapi (fun i w -> (w, Arg (numImplicitArgs+i)))) 
-        let numImplicitArgs = numImplicitArgs + List.length witnessInfos
+        let eenvForMeth = 
+            if hasWitnessArgs then 
+                AddStorageForLocalWitnesses eenvForMeth (methLambdaWitnessInfos |> List.mapi (fun i w -> (w, Arg (numImplicitArgs+i))))
+            else
+                eenvForMeth
+        let numImplicitArgs = numImplicitArgs + (if hasWitnessArgs then List.length witnessInfos else 0)
         let eenvForMeth = AddStorageForLocalVals cenv.g (List.mapi (fun i v -> (v, Arg (numImplicitArgs+i))) nonUnitMethodVars) eenvForMeth
         eenvForMeth
 
@@ -5691,9 +5771,12 @@ and GenMethodForBinding
 
         | _ ->
             // Replace the body of ValInline.PseudoVal "must inline" methods with a 'throw'
-            // However still generate the code for reflection etc.
+            // For witness-passing methods, don't do this is `isLegacy` flag specified
+            // on the attribute. 
             let bodyExpr =
-                if HasFSharpAttribute cenv.g cenv.g.attrib_NoDynamicInvocationAttribute v.Attribs then
+                let attr = TryFindFSharpBoolAttributeAssumeFalse cenv.g cenv.g.attrib_NoDynamicInvocationAttribute v.Attribs
+                if (not hasWitnessArgs && attr.IsSome) ||
+                   (hasWitnessArgs && attr = Some false) then
                     let exnArg = mkString cenv.g m (FSComp.SR.ilDynamicInvocationNotSupported(v.CompiledName))
                     let exnExpr = MakeNotSupportedExnExpr cenv eenv (exnArg, m)
                     mkThrow m returnTy exnExpr
@@ -5741,99 +5824,77 @@ and GenMethodForBinding
     let methName = mspec.Name
     let tref = mspec.MethodRef.DeclaringTypeRef
 
-    let EmitTheMethodDef (mdef:ILMethodDef) =
-        // Does the function have an explicit [<EntryPoint>] attribute?
-        let isExplicitEntryPoint = HasFSharpAttribute cenv.g cenv.g.attrib_EntryPointAttribute attrs
-
-        let mdef =
-            mdef
-              .WithSecurity(not (List.isEmpty securityAttributes))
-              .WithPInvoke(hasDllImport)
-              .WithPreserveSig(hasPreserveSigImplFlag || hasPreserveSigNamedArg)
-              .WithSynchronized(hasSynchronizedImplFlag)
-              .WithNoInlining(hasNoInliningFlag)
-              .WithAggressiveInlining(hasAggressiveInliningImplFlag)
-              .With(isEntryPoint=isExplicitEntryPoint, securityDecls=secDecls)
-
-        let mdef =
-            if // operator names
-               mdef.Name.StartsWithOrdinal("op_") ||
-               // active pattern names
-               mdef.Name.StartsWithOrdinal("|") ||
-               // event add/remove method
-               v.val_flags.IsGeneratedEventVal then
-                mdef.WithSpecialName
-            else
-                mdef
-        CountMethodDef()
-        cgbuf.mgbuf.AddMethodDef(tref, mdef)
-            
-
     match v.MemberInfo with
     // don't generate unimplemented abstracts
     | Some(memberInfo) when memberInfo.MemberFlags.IsDispatchSlot && not memberInfo.IsImplemented ->
          // skipping unimplemented abstract method
          ()
-    | Some(memberInfo) when not v.IsExtensionMember ->
 
-       let ilMethTypars = ilTypars |> List.drop mspec.DeclaringType.GenericArgs.Length
-       if memberInfo.MemberFlags.MemberKind = MemberKind.Constructor then
-           assert (isNil ilMethTypars)
-           let mdef = mkILCtor (access, ilParams, ilMethodBody)
-           let mdef = mdef.With(customAttrs= mkILCustomAttrs (ilAttrsThatGoOnPrimaryItem @ sourceNameAttribs @ ilAttrsCompilerGenerated))
-           EmitTheMethodDef mdef
+    | Some(memberInfo) when (match memberInfo.MemberFlags.MemberKind with (MemberKind.PropertySet | MemberKind.PropertyGet)  -> CompileAsEvent cenv.g v.Attribs  | _ -> false) ->
+         // skip method generation for compiling the property as a .NET event
+         // Emit the pseudo-property as an event (but not if its a private method impl)
+         if access <> ILMemberAccess.Private then
+             let edef = GenEventForProperty cenv eenvForMeth mspec v ilAttrsThatGoOnPrimaryItem m returnTy
+             cgbuf.mgbuf.AddEventDef(tref, edef)
+         ()
 
-       elif memberInfo.MemberFlags.MemberKind = MemberKind.ClassConstructor then
-           assert (isNil ilMethTypars)
-           let mdef = mkILClassCtor ilMethodBody
-           let mdef = mdef.With(customAttrs= mkILCustomAttrs (ilAttrsThatGoOnPrimaryItem @ sourceNameAttribs @ ilAttrsCompilerGenerated))
-           EmitTheMethodDef mdef
+    | _ -> 
+    
+    let mdef = 
+        match v.MemberInfo with 
+        | Some(memberInfo) when not v.IsExtensionMember ->
 
-       // Generate virtual/override methods + method-impl information if needed
-       else
-           let mdef =
-               if not compileAsInstance then
-                   mkILStaticMethod (ilMethTypars, v.CompiledName, access, ilParams, ilReturn, ilMethodBody)
+           let ilMethTypars = ilTypars |> List.drop mspec.DeclaringType.GenericArgs.Length
+           if memberInfo.MemberFlags.MemberKind = MemberKind.Constructor then
+               assert (isNil ilMethTypars)
+               let mdef = mkILCtor (access, ilParams, ilMethodBody)
+               let mdef = mdef.With(customAttrs= mkILCustomAttrs (ilAttrsThatGoOnPrimaryItem @ sourceNameAttribs @ ilAttrsCompilerGenerated))
+               mdef
 
-               elif (memberInfo.MemberFlags.IsDispatchSlot && memberInfo.IsImplemented) ||
-                    memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
+           elif memberInfo.MemberFlags.MemberKind = MemberKind.ClassConstructor then
+               assert (isNil ilMethTypars)
+               let mdef = mkILClassCtor ilMethodBody
+               let mdef = mdef.With(customAttrs= mkILCustomAttrs (ilAttrsThatGoOnPrimaryItem @ sourceNameAttribs @ ilAttrsCompilerGenerated))
+               mdef
 
-                   let flagFixups = ComputeFlagFixupsForMemberBinding cenv (v, memberInfo)
-                   let mdef = mkILGenericVirtualMethod (v.CompiledName, ILMemberAccess.Public, ilMethTypars, ilParams, ilReturn, ilMethodBody)
-                   let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
+           // Generate virtual/override methods + method-impl information if needed
+           else
+               let mdef =
+                   if not compileAsInstance then
+                       mkILStaticMethod (ilMethTypars, v.CompiledName, access, ilParams, ilReturn, ilMethodBody)
 
-                   // fixup can potentially change name of reflected definition that was already recorded - patch it if necessary
-                   cgbuf.mgbuf.ReplaceNameOfReflectedDefinition(v, mdef.Name)
-                   mdef
-               else
-                   mkILGenericNonVirtualMethod (v.CompiledName, access, ilMethTypars, ilParams, ilReturn, ilMethodBody)
+                   elif (memberInfo.MemberFlags.IsDispatchSlot && memberInfo.IsImplemented) ||
+                        memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
 
-           let isAbstract =
-               memberInfo.MemberFlags.IsDispatchSlot &&
-               let tcref =  v.MemberApparentEntity
-               not tcref.Deref.IsFSharpDelegateTycon
+                       let flagFixups = ComputeFlagFixupsForMemberBinding cenv (v, memberInfo)
+                       let mdef = mkILGenericVirtualMethod (v.CompiledName, ILMemberAccess.Public, ilMethTypars, ilParams, ilReturn, ilMethodBody)
+                       let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
 
-           let mdef =
-               if mdef.IsVirtual then
-                    mdef.WithFinal(memberInfo.MemberFlags.IsFinal).WithAbstract(isAbstract)
-               else mdef
+                       // fixup can potentially change name of reflected definition that was already recorded - patch it if necessary
+                       cgbuf.mgbuf.ReplaceNameOfReflectedDefinition(v, mdef.Name)
+                       mdef
+                   else
+                       mkILGenericNonVirtualMethod (v.CompiledName, access, ilMethTypars, ilParams, ilReturn, ilMethodBody)
 
-           match memberInfo.MemberFlags.MemberKind with
+               let isAbstract =
+                   memberInfo.MemberFlags.IsDispatchSlot &&
+                   let tcref =  v.MemberApparentEntity
+                   not tcref.Deref.IsFSharpDelegateTycon
+
+               let mdef =
+                   if mdef.IsVirtual then
+                        mdef.WithFinal(memberInfo.MemberFlags.IsFinal).WithAbstract(isAbstract)
+                   else mdef
+
+               match memberInfo.MemberFlags.MemberKind with
            
-           | (MemberKind.PropertySet | MemberKind.PropertyGet)  ->
-               if not (isNil ilMethTypars) then
-                   error(InternalError("A property may not be more generic than the enclosing type - constrain the polymorphism in the expression", v.Range))
+               | (MemberKind.PropertySet | MemberKind.PropertyGet)  ->
+                   if not (isNil ilMethTypars) then
+                       error(InternalError("A property may not be more generic than the enclosing type - constrain the polymorphism in the expression", v.Range))
                
-               // Check if we're compiling the property as a .NET event
-               if CompileAsEvent cenv.g v.Attribs  then
+                   // Check if we're compiling the property as a .NET event
+                   assert not (CompileAsEvent cenv.g v.Attribs)
 
-                   // Emit the pseudo-property as an event, but not if its a private method impl
-                   if mdef.Access <> ILMemberAccess.Private then
-                       let edef = GenEventForProperty cenv eenvForMeth mspec v ilAttrsThatGoOnPrimaryItem m returnTy
-                       cgbuf.mgbuf.AddEventDef(tref, edef)
-                   // The method def is dropped on the floor here
-               
-               else
                    // Emit the property, but not if its a private method impl
                    if mdef.Access <> ILMemberAccess.Private then
                        let vtyp = ReturnTypeOfPropertyVal cenv.g v
@@ -5844,26 +5905,53 @@ and GenMethodForBinding
 
                    // Add the special name flag for all properties               
                    let mdef = mdef.WithSpecialName.With(customAttrs= mkILCustomAttrs ((GenAttrs cenv eenv attrsAppliedToGetterOrSetter) @ sourceNameAttribs @ ilAttrsCompilerGenerated))
-                   EmitTheMethodDef mdef
-           | _ ->
-               let mdef = mdef.With(customAttrs= mkILCustomAttrs (ilAttrsThatGoOnPrimaryItem @ sourceNameAttribs @ ilAttrsCompilerGenerated))
-               EmitTheMethodDef mdef
+                   mdef
+               | _ ->
+                   let mdef = mdef.With(customAttrs= mkILCustomAttrs (ilAttrsThatGoOnPrimaryItem @ sourceNameAttribs @ ilAttrsCompilerGenerated))
+                   mdef
 
-    | _ ->
-        let mdef = mkILStaticMethod (ilTypars, methName, access, ilParams, ilReturn, ilMethodBody)
+        | _ ->
+            let mdef = mkILStaticMethod (ilTypars, methName, access, ilParams, ilReturn, ilMethodBody)
 
-        // For extension properties, also emit attrsAppliedToGetterOrSetter on the getter or setter method
-        let ilAttrs =
-            match v.MemberInfo with
-            | Some memberInfo when v.IsExtensionMember ->
-                 match memberInfo.MemberFlags.MemberKind with
-                 | (MemberKind.PropertySet | MemberKind.PropertyGet)  -> ilAttrsThatGoOnPrimaryItem @ GenAttrs cenv eenv attrsAppliedToGetterOrSetter
-                 | _ -> ilAttrsThatGoOnPrimaryItem
-            | _ -> ilAttrsThatGoOnPrimaryItem
+            // For extension properties, also emit attrsAppliedToGetterOrSetter on the getter or setter method
+            let ilAttrs =
+                match v.MemberInfo with
+                | Some memberInfo when v.IsExtensionMember ->
+                     match memberInfo.MemberFlags.MemberKind with
+                     | (MemberKind.PropertySet | MemberKind.PropertyGet)  -> ilAttrsThatGoOnPrimaryItem @ GenAttrs cenv eenv attrsAppliedToGetterOrSetter
+                     | _ -> ilAttrsThatGoOnPrimaryItem
+                | _ -> ilAttrsThatGoOnPrimaryItem
 
-        let ilCustomAttrs = mkILCustomAttrs (ilAttrs @ sourceNameAttribs @ ilAttrsCompilerGenerated)
-        let mdef = mdef.With(customAttrs= ilCustomAttrs)
-        EmitTheMethodDef mdef
+            let ilCustomAttrs = mkILCustomAttrs (ilAttrs @ sourceNameAttribs @ ilAttrsCompilerGenerated)
+            let mdef = mdef.With(customAttrs= ilCustomAttrs)
+            mdef
+
+    // Does the function have an explicit [<EntryPoint>] attribute?
+    let isExplicitEntryPoint = HasFSharpAttribute cenv.g cenv.g.attrib_EntryPointAttribute attrs
+
+    let mdef =
+        mdef
+          .WithSecurity(not (List.isEmpty securityAttributes))
+          .WithPInvoke(hasDllImport)
+          .WithPreserveSig(hasPreserveSigImplFlag || hasPreserveSigNamedArg)
+          .WithSynchronized(hasSynchronizedImplFlag)
+          .WithNoInlining(hasNoInliningFlag)
+          .WithAggressiveInlining(hasAggressiveInliningImplFlag)
+          .With(isEntryPoint=isExplicitEntryPoint, securityDecls=secDecls)
+
+    let mdef =
+        if // operator names
+           mdef.Name.StartsWithOrdinal("op_") ||
+           // active pattern names
+           mdef.Name.StartsWithOrdinal("|") ||
+           // event add/remove method
+           v.val_flags.IsGeneratedEventVal then
+            mdef.WithSpecialName
+        else
+            mdef
+    CountMethodDef()
+    cgbuf.mgbuf.AddMethodDef(tref, mdef)
+        
     
 and GenPInvokeMethod (nm, dll, namedArgs) =
     let decoder = AttributeDecoder namedArgs
@@ -5970,7 +6058,7 @@ and GenSetStorage m cgbuf storage =
     | StaticProperty (ilGetterMethSpec, _) ->
         error(Error(FSComp.SR.ilStaticMethodIsNotLambda(ilGetterMethSpec.Name), m))
 
-    | Method (_, _, mspec, m, _, _, _, _, _, _, _) ->
+    | Method (_, _, mspec, _, m, _, _, _, _, _, _, _) ->
         error(Error(FSComp.SR.ilStaticMethodIsNotLambda(mspec.Name), m))
 
     | Null ->
@@ -6018,7 +6106,7 @@ and GenGetStorageAndSequel cenv cgbuf eenv m (ty, ilTy) storage fetchSequel =
         CG.EmitInstr cgbuf (pop 0) (Push [ilTy])  (I_call (Normalcall, ilGetterMethSpec, None))
         CommitGetStorageSequel cenv cgbuf eenv m ty None fetchSequel
 
-    | Method (topValInfo, vref, mspec, _, _, _, _, _, _, _, _) ->
+    | Method (topValInfo, vref, _, _, _, _, _, _, _, _, _, _) ->
         // Get a toplevel value as a first-class value.
         // We generate a lambda expression and that simply calls
         // the toplevel method. However we optimize the case where we are
@@ -6034,7 +6122,7 @@ and GenGetStorageAndSequel cenv cgbuf eenv m (ty, ilTy) storage fetchSequel =
             GenLambda cenv cgbuf eenv false None expr Continue
         | Some (tyargs', args, m, sequel) ->
             let specializedExpr =
-                if isNil args && isNil tyargs' then failwith ("non-lambda at use of method " + mspec.Name)
+                if isNil args && isNil tyargs' then failwith ("non-lambda at use of method " + vref.CompiledName)
                 MakeApplicationAndBetaReduce cenv.g (expr, exprty, [tyargs'], args, m)
             GenExpr cenv cgbuf eenv SPSuppress specializedExpr sequel
 
@@ -6275,7 +6363,7 @@ and GenAttr amap g eenv (Attrib(_, k, args, props, _, _, _)) =
         | ILAttrib(mref) -> mkILMethSpec(mref, AsObject, [], [])
         | FSAttrib(vref) ->
              assert(vref.IsMember)
-             let mspec, _, _, _, _, _, _, _ = GetMethodSpecForMemberVal amap g (Option.get vref.MemberInfo) vref
+             let mspec, _, _, _, _, _, _, _, _ = GetMethodSpecForMemberVal amap g (Option.get vref.MemberInfo) vref
              mspec
     let ilArgs = List.map2 (fun (AttribExpr(_, vexpr)) ty -> GenAttribArg amap g eenv vexpr ty) args mspec.FormalArgTypes
     mkILCustomAttribMethRef g.ilg (mspec, ilArgs, props)
@@ -6598,17 +6686,22 @@ and GenFieldInit m c =
     | _ -> error(Error(FSComp.SR.ilTypeCannotBeUsedForLiteralField(), m))
 
 and GenWitnessParams cenv eenv m (witnessInfos: TraitWitnessInfos) = 
-    let witnessTys = GenWitnessTys cenv.g witnessInfos
-    witnessTys |> List.mapi (fun i ty -> 
-        { Name=Some ("_witness" + string i)
-          Type= GenType cenv.amap m eenv.tyenv ty
-          Default=None
-          Marshal=None
-          IsIn=false
-          IsOut=false
-          IsOptional=false
-          CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs [])
-          MetadataIndex = NoMetadataIdx }: ILParameter)
+    ((Set.empty, 0), witnessInfos) ||> List.mapFold (fun (used,i) witnessInfo -> 
+        let ty = GenWitnessTy cenv.g witnessInfo
+        let nm = String.uncapitalize witnessInfo.MemberName
+        let nm = if used.Contains nm then nm + string i else nm
+        let ilParam = 
+            { Name=Some nm
+              Type= GenType cenv.amap m eenv.tyenv ty
+              Default=None
+              Marshal=None
+              IsIn=false
+              IsOut=false
+              IsOptional=false
+              CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs [])
+              MetadataIndex = NoMetadataIdx }: ILParameter
+        ilParam, (used.Add nm, i + 1))
+    |> fst
 
 and GenAbstractBinding cenv eenv tref (vref:ValRef) =
     assert(vref.IsMember)
@@ -6621,11 +6714,15 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
             [ yield! GenAttrs cenv eenv attribs
               yield! GenCompilationArgumentCountsAttr cenv vref.Deref ]
     
-        let mspec, ctps, mtps, _curriedArgInfos, argInfos, retInfo, witnessInfos, methArgTys = GetMethodSpecForMemberVal cenv.amap cenv.g memberInfo vref
+        let mspec, _mspecW, ctps, mtps, _curriedArgInfos, argInfos, retInfo, witnessInfos, methArgTys =
+            GetMethodSpecForMemberVal cenv.amap cenv.g memberInfo vref
+
+        assert witnessInfos.IsEmpty
+
         let eenvForMeth = EnvForTypars (ctps@mtps) eenv
         let ilMethTypars = GenGenericParams cenv eenvForMeth mtps
         let ilReturn = GenReturnInfo cenv eenvForMeth mspec.FormalReturnType retInfo
-        let ilParams = GenParams cenv eenvForMeth m mspec witnessInfos argInfos methArgTys None
+        let ilParams = GenParams cenv eenvForMeth m mspec [] argInfos methArgTys None
     
         let compileAsInstance = ValRefIsCompiledAsInstanceMember cenv.g vref
         let mdef = mkILGenericVirtualMethod (vref.CompiledName, ILMemberAccess.Public, ilMethTypars, ilParams, ilReturn, MethodBody.Abstract)
@@ -6666,7 +6763,7 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
 and GenToStringMethod cenv eenv ilThisTy m =
     [ match (eenv.valsInScope.TryFind cenv.g.sprintf_vref.Deref,
              eenv.valsInScope.TryFind cenv.g.new_format_vref.Deref) with
-      | Some(Lazy(Method(_, _, sprintfMethSpec, _, _, _, _, _, _, _, _))), Some(Lazy(Method(_, _, newFormatMethSpec, _, _, _, _, _, _, _, _))) ->
+      | Some(Lazy(Method(_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))), Some(Lazy(Method(_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
                // The type returned by the 'sprintf' call
                let funcTy = EraseClosures.mkILFuncTy cenv.g.ilxPubCloEnv ilThisTy cenv.g.ilg.typ_String
                // Give the instantiation of the printf format object, i.e. a Format`5 object compatible with StringFormat<ilThisTy>
@@ -6995,7 +7092,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                   let (|Lazy|) (x:Lazy<_>) = x.Force()
                   match (eenv.valsInScope.TryFind cenv.g.sprintf_vref.Deref,
                          eenv.valsInScope.TryFind cenv.g.new_format_vref.Deref) with
-                  | Some(Lazy(Method(_, _, sprintfMethSpec, _, _, _, _, _, _, _, _))), Some(Lazy(Method(_, _, newFormatMethSpec, _, _, _, _, _, _, _, _))) ->
+                  | Some(Lazy(Method(_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))), Some(Lazy(Method(_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
                       // The type returned by the 'sprintf' call
                       let funcTy = EraseClosures.mkILFuncTy cenv.g.ilxPubCloEnv ilThisTy cenv.g.ilg.typ_String
                       // Give the instantiation of the printf format object, i.e. a Format`5 object compatible with StringFormat<ilThisTy>

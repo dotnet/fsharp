@@ -1424,18 +1424,9 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
     | Choice5Of5 () -> 
         None
 
-(*
-let MakeNotSupportedExnExpr amap g eenv (argExpr, m) =
-    let ety = mkAppTy (cenv.g.FindSysTyconRef ["System"] "NotSupportedException") []
-    let ilty = GenType cenv.amap m eenv.tyenv ety
-    let mref = mkILCtorMethSpecForTy(ilty, [cenv.g.ilg.typ_String]).MethodRef
-    Expr.Op(TOp.ILCall(false, false, false, true, NormalValUse, false, false, mref, [], [], [ety]), [], [argExpr], m)
-*)
-
 let GenWitnessExprLambda amap g m (traitInfo: TraitConstraintInfo) =
-    // TODO: use arg infos
-    let argtysl = GenWitnessArgTys traitInfo.TraitKey
-    let vse = argtysl |> List.mapiSquared (fun i j ty -> mkCompGenLocal m ("_warg" + string i + "_" + string j) ty) 
+    let argtysl = GenWitnessArgTys g traitInfo.TraitKey
+    let vse = argtysl |> List.mapiSquared (fun i j ty -> mkCompGenLocal m ("arg" + string i + "_" + string j) ty) 
     let vsl = List.mapSquared fst vse
     match GenWitnessExpr amap g m traitInfo (List.concat (List.mapSquared snd vse)) with 
     | Some expr -> 

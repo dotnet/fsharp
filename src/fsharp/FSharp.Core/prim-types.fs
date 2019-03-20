@@ -301,8 +301,13 @@ namespace Microsoft.FSharp.Core
 
     [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property,AllowMultiple=false)>]
     [<Sealed>]
-    type NoDynamicInvocationAttribute() =
+    type NoDynamicInvocationAttribute(legacy: bool) =
+
         inherit System.Attribute()
+
+        new () = NoDynamicInvocationAttribute(false)
+
+        member x.IsLegacy = legacy
 
     [<AttributeUsage(AttributeTargets.Parameter,AllowMultiple=false)>]
     [<Sealed>]
@@ -3450,7 +3455,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("DefaultValueArg")>]
         let defaultValueArg arg defaultValue = match arg with ValueNone -> defaultValue | ValueSome v -> v
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         let inline (~-) (n: ^T) : ^T = 
             (^T : (static member (~-) : ^T -> ^T) (n))
              when ^T : int32     = (# "neg" n  : int32 #)
@@ -3486,7 +3491,7 @@ namespace Microsoft.FSharp.Core
              // That is, not in the generic implementation of '+'
              when ^T : ^T = ((^T or ^U): (static member (+) : ^T * ^U -> ^V) (x,y))
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         let inline (-) (x: ^T) (y: ^U) : ^V = 
              ((^T or ^U): (static member (-) : ^T * ^U -> ^V) (x,y))
              when ^T : int32      and ^U : int32      = (# "sub" x y : int32 #)
@@ -3524,7 +3529,7 @@ namespace Microsoft.FSharp.Core
              // That is, not in the generic implementation of '*'
              when ^T : ^T = ((^T or ^U): (static member (*) : ^T * ^U -> ^V) (x,y))
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         let inline ( / ) (x: ^T) (y: ^U) : ^V = 
              ((^T or ^U): (static member (/) : ^T * ^U -> ^V) (x,y))
              when ^T : int32       and ^U : int32      = (# "div" x y : int32 #)
@@ -3541,7 +3546,7 @@ namespace Microsoft.FSharp.Core
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "div.un" x y : uint32 #) : byte #)
              when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Division((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
         
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         let inline ( % ) (x: ^T) (y: ^U) : ^V = 
              ((^T or ^U): (static member (%) : ^T * ^U -> ^V) (x,y))
              when ^T : int32       and ^U : int32      = (# "rem" x y : int32 #)
@@ -3558,7 +3563,7 @@ namespace Microsoft.FSharp.Core
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "rem.un" x y : uint32 #) : byte   #)
              when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Modulus((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
         
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         let inline (~+) (value: ^T) : ^T =
              (^T: (static member (~+) : ^T -> ^T) (value))
              when ^T : int32      = value
@@ -3577,7 +3582,7 @@ namespace Microsoft.FSharp.Core
 
         let inline mask (n:int) (m:int) = (# "and" n m : int #)
         
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         let inline (<<<) (value: ^T) (shift:int) : ^T = 
              (^T: (static member (<<<) : ^T * int -> ^T) (value,shift))
              when ^T : int32      = (# "shl" value (mask shift 31) : int #)
@@ -3591,7 +3596,7 @@ namespace Microsoft.FSharp.Core
              when ^T : sbyte      = (# "conv.i1" (# "shl" value (mask shift 7 ) : int32  #) : sbyte #)
              when ^T : byte       = (# "conv.u1" (# "shl" value (mask shift 7 ) : uint32 #) : byte #)
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         let inline (>>>) (value: ^T) (shift:int) : ^T = 
              (^T: (static member (>>>) : ^T * int -> ^T) (value,shift))
              when ^T : int32      = (# "shr"    value (mask shift 31) : int32 #)
@@ -3605,7 +3610,7 @@ namespace Microsoft.FSharp.Core
              when ^T : sbyte      = (# "conv.i1" (# "shr"    value (mask shift 7 ) : int32  #) : sbyte #)
              when ^T : byte       = (# "conv.u1" (# "shr.un" value (mask shift 7 ) : uint32 #) : byte #)
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         let inline (&&&) (x: ^T) (y: ^T) : ^T = 
              (^T: (static member (&&&) : ^T * ^T -> ^T) (x,y))
              when ^T : int32      = (# "and" x y : int32 #)
@@ -3619,7 +3624,7 @@ namespace Microsoft.FSharp.Core
              when ^T : sbyte      = (# "and" x y : sbyte #)
              when ^T : byte       = (# "and" x y : byte #)
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         let inline (|||) (x: ^T) (y: ^T) : ^T = 
              (^T: (static member (|||) : ^T * ^T -> ^T) (x,y))
              when ^T : int32      = (# "or" x y : int32 #)
@@ -3633,7 +3638,7 @@ namespace Microsoft.FSharp.Core
              when ^T : sbyte      = (# "or" x y : sbyte #)
              when ^T : byte       = (# "or" x y : byte #)
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         let inline (^^^) (x: ^T) (y: ^T) : ^T = 
              (^T: (static member (^^^) : ^T * ^T -> ^T) (x,y))
              when ^T : int32      = (# "xor" x y : int32 #)
@@ -3647,7 +3652,7 @@ namespace Microsoft.FSharp.Core
              when ^T : sbyte      = (# "xor" x y : sbyte #)
              when ^T : byte       = (# "xor" x y : byte #)
         
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         let inline (~~~) (value: ^T) : ^T = 
              (^T: (static member (~~~) : ^T -> ^T) (value))
              when ^T : int32      = (# "not" value : int32 #)
@@ -3698,7 +3703,7 @@ namespace Microsoft.FSharp.Core
         let inline ParseSingle (s:string) = Single.Parse(removeUnderscores s,NumberStyles.Float, CultureInfo.InvariantCulture)
             
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         [<CompiledName("ToByte")>]
         let inline byte (value: ^T) = 
             (^T : (static member op_Explicit: ^T -> byte) (value))
@@ -3717,7 +3722,7 @@ namespace Microsoft.FSharp.Core
              when ^T : unativeint = (# "conv.u1" value  : byte #)
              when ^T : byte       = (# "conv.u1" value  : byte #)
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         [<CompiledName("ToSByte")>]
         let inline sbyte (value: ^T) = 
             (^T : (static member op_Explicit: ^T -> sbyte) (value))
@@ -3736,7 +3741,7 @@ namespace Microsoft.FSharp.Core
              when ^T : unativeint = (# "conv.i1" value  : sbyte #)
              when ^T : byte     = (# "conv.i1" value  : sbyte #)
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         [<CompiledName("ToUInt16")>]
         let inline uint16 (value: ^T) = 
             (^T : (static member op_Explicit: ^T -> uint16) (value))
@@ -3755,7 +3760,7 @@ namespace Microsoft.FSharp.Core
              when ^T : unativeint = (# "conv.u2" value  : uint16 #)
              when ^T : byte     = (# "conv.u2" value  : uint16 #)
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         [<CompiledName("ToInt16")>]
         let inline int16 (value: ^T) = 
             (^T : (static member op_Explicit: ^T -> int16) (value))
@@ -3774,7 +3779,7 @@ namespace Microsoft.FSharp.Core
              when ^T : unativeint = (# "conv.i2" value  : int16 #)
              when ^T : byte     = (# "conv.i2" value  : int16 #)
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         [<CompiledName("ToUInt32")>]
         let inline uint32 (value: ^T) = 
             (^T : (static member op_Explicit: ^T -> uint32) (value))
@@ -3800,7 +3805,7 @@ namespace Microsoft.FSharp.Core
              when ^T : unativeint = (# "conv.u4" value  : uint32 #)
              when ^T : byte     = (# "conv.u4" value  : uint32 #)
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         [<CompiledName("ToInt32")>]
         let inline int32 (value: ^T) = 
             (^T : (static member op_Explicit: ^T -> int32) (value))
@@ -3844,7 +3849,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("NaNSingle")>]
         let nanf = System.Single.NaN 
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         [<CompiledName("ToUInt64")>]
         let inline uint64 (value: ^T) = 
             (^T : (static member op_Explicit: ^T -> uint64) (value))
@@ -3870,7 +3875,7 @@ namespace Microsoft.FSharp.Core
              when ^T : unativeint = (# "conv.u8" value  : uint64 #)
              when ^T : byte     = (# "conv.u8" value  : uint64 #)
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         [<CompiledName("ToInt64")>]
         let inline int64 (value: ^T) = 
             (^T : (static member op_Explicit: ^T -> int64) (value))
@@ -3893,7 +3898,7 @@ namespace Microsoft.FSharp.Core
              when ^T : unativeint = (# "conv.u8" value  : int64 #)
              when ^T : byte     = (# "conv.u8" value  : int64 #)
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         [<CompiledName("ToSingle")>]
         let inline float32 (value: ^T) = 
             (^T : (static member op_Explicit: ^T -> float32) (value))
@@ -3913,7 +3918,7 @@ namespace Microsoft.FSharp.Core
              when ^T : unativeint = (# "conv.r.un conv.r4" value  : float32 #)
              when ^T : byte     = (# "conv.r.un conv.r4" value  : float32 #)
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         [<CompiledName("ToDouble")>]
         let inline float (value: ^T) = 
             (^T : (static member op_Explicit: ^T -> float) (value))
@@ -3934,7 +3939,7 @@ namespace Microsoft.FSharp.Core
              when ^T : byte       = (# "conv.r.un conv.r8" value  : float #)
              when ^T : decimal    = (System.Convert.ToDouble((# "" value : decimal #))) 
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         [<CompiledName("ToDecimal")>]
         let inline decimal (value: ^T) = 
             (^T : (static member op_Explicit: ^T -> decimal) (value))
@@ -3958,7 +3963,7 @@ namespace Microsoft.FSharp.Core
         // C# names:            sbyte, byte,  short, ushort, int,   uint,   long,  ulong,  single,  double.
         // F# names:            sbyte, byte,  int16, uint16, int,   uint32, int64, uint64, float32, float.
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         [<CompiledName("ToUIntPtr")>]
         let inline unativeint (value: ^T) = 
             (^T : (static member op_Explicit: ^T -> unativeint) (value))
@@ -3983,7 +3988,7 @@ namespace Microsoft.FSharp.Core
              when ^T : unativeint = (# "" value  : unativeint #)
              when ^T : byte       = (# "conv.u" value  : unativeint #)
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         [<CompiledName("ToIntPtr")>]
         let inline nativeint (value: ^T) = 
             (^T : (static member op_Explicit: ^T -> nativeint) (value))
@@ -4027,7 +4032,7 @@ namespace Microsoft.FSharp.Core
              when ^T : unativeint = (# "" value : unativeint #).ToString()
              when ^T : byte       = (# "" value : byte       #).ToString("g",CultureInfo.InvariantCulture)
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(true)>]
         [<CompiledName("ToChar")>]
         let inline char (value: ^T) = 
             (^T : (static member op_Explicit: ^T -> char) (value))
@@ -4357,7 +4362,7 @@ namespace Microsoft.FSharp.Core
                  // That is, not in the generic implementation of '+'
                  when ^T : ^T = ((^T or ^U): (static member (+) : ^T * ^U -> ^V) (x,y))
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline (-) (x: ^T) (y: ^U) : ^V = 
                  ((^T or ^U): (static member (-) : ^T * ^U -> ^V) (x,y))
                  when ^T : int32      and ^U : int32      = (# "sub.ovf" x y : int32 #)
@@ -4374,7 +4379,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : byte        and ^U : byte       = (# "conv.ovf.u1.un" (# "sub.ovf.un" x y : uint32 #) : byte #)
                  when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Subtraction((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline (~-) (value: ^T) : ^T = 
                 (^T : (static member (~-) : ^T -> ^T) (value))
                  when ^T : int32     = (# "sub.ovf" 0 value  : int32 #)
@@ -4406,7 +4411,7 @@ namespace Microsoft.FSharp.Core
                  // That is, not in the generic implementation of '*'
                  when ^T : ^T = ((^T or ^U): (static member (*) : ^T * ^U -> ^V) (x,y))
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             [<CompiledName("ToByte")>]
             let inline byte (value: ^T) = 
                 (^T : (static member op_Explicit: ^T -> byte) (value))
@@ -4425,7 +4430,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : unativeint = (# "conv.ovf.u1.un" value  : byte #)
                  when ^T : byte     = (# "conv.ovf.u1.un" value  : byte #)
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             [<CompiledName("ToSByte")>]
             let inline sbyte (value: ^T) = 
                 (^T : (static member op_Explicit: ^T -> sbyte) (value))
@@ -4444,7 +4449,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : unativeint = (# "conv.ovf.i1.un" value  : sbyte #)
                  when ^T : byte     = (# "conv.ovf.i1.un" value  : sbyte #)
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             [<CompiledName("ToUInt16")>]
             let inline uint16 (value: ^T) = 
                 (^T : (static member op_Explicit: ^T -> uint16) (value))
@@ -4463,7 +4468,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : unativeint = (# "conv.ovf.u2.un" value  : uint16 #)
                  when ^T : byte       = (# "conv.ovf.u2.un" value  : uint16 #)
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             [<CompiledName("ToChar")>]
             let inline char (value: ^T) = 
                 (^T : (static member op_Explicit: ^T -> char) (value))
@@ -4482,7 +4487,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : unativeint = (# "conv.ovf.u2.un" value  : char #)
                  when ^T : byte       = (# "conv.ovf.u2.un" value  : char #)
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             [<CompiledName("ToInt16")>]
             let inline int16 (value: ^T) = 
                 (^T : (static member op_Explicit: ^T -> int16) (value))
@@ -4501,7 +4506,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : unativeint = (# "conv.ovf.i2.un" value  : int16 #)
                  when ^T : byte     = (# "conv.ovf.i2.un" value  : int16 #)
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             [<CompiledName("ToUInt32")>]
             let inline uint32 (value: ^T) = 
                 (^T : (static member op_Explicit: ^T -> uint32) (value))
@@ -4520,7 +4525,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : unativeint = (# "conv.ovf.u4.un" value  : uint32 #)
                  when ^T : byte     = (# "conv.ovf.u4.un" value  : uint32 #)
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             [<CompiledName("ToInt32")>]
             let inline int32 (value: ^T) = 
                 (^T : (static member op_Explicit: ^T -> int32) (value))
@@ -4543,7 +4548,7 @@ namespace Microsoft.FSharp.Core
             [<CompiledName("ToInt")>]
             let inline int value = int32 value
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             [<CompiledName("ToUInt64")>]
             let inline uint64 (value: ^T) = 
                 (^T : (static member op_Explicit: ^T -> uint64) (value))
@@ -4562,7 +4567,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : unativeint = (# "conv.ovf.u8.un" value  : uint64 #)
                  when ^T : byte     = (# "conv.ovf.u8.un" value  : uint64 #)
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             [<CompiledName("ToInt64")>]
             let inline int64 (value: ^T) = 
                 (^T : (static member op_Explicit: ^T -> int64) (value))
@@ -4581,7 +4586,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : unativeint = (# "conv.ovf.i8.un" value  : int64 #)
                  when ^T : byte     = (# "conv.ovf.i8.un" value  : int64 #)
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             [<CompiledName("ToUIntPtr")>]
             let inline unativeint (value: ^T) = 
                 (^T : (static member op_Explicit: ^T -> unativeint) (value))
@@ -4600,7 +4605,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : unativeint = (# "conv.ovf.u.un" value  : unativeint #)
                  when ^T : byte     = (# "conv.ovf.u.un" value  : unativeint #)
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             [<CompiledName("ToIntPtr")>]
             let inline nativeint (value: ^T) = 
                 (^T : (static member op_Explicit: ^T -> nativeint) (value))
@@ -5144,7 +5149,7 @@ namespace Microsoft.FSharp.Core
                 if len <= 0 then String.Empty
                 else source.Substring(start, len)
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline absImpl (x: ^T) : ^T = 
                  (^T: (static member Abs : ^T -> ^T) (x))
                  when ^T : int32       = let x : int32     = retype x in System.Math.Abs(x)
@@ -5161,61 +5166,61 @@ namespace Microsoft.FSharp.Core
                  when ^T : sbyte       = let x : sbyte     = retype x in System.Math.Abs(x)
                  when ^T : decimal     = System.Math.Abs(retype x : decimal) 
             
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline  acosImpl(x: ^T) : ^T = 
                  (^T: (static member Acos : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Acos(retype x)
                  when ^T : float32     = System.Math.Acos(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline  asinImpl(x: ^T) : ^T = 
                  (^T: (static member Asin : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Asin(retype x)
                  when ^T : float32     = System.Math.Asin(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline  atanImpl(x: ^T) : ^T = 
                  (^T: (static member Atan : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Atan(retype x)
                  when ^T : float32     = System.Math.Atan(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline  atan2Impl(x: ^T) (y: ^T) : 'U = 
                  (^T: (static member Atan2 : ^T * ^T -> 'U) (x,y))
                  when ^T : float       = System.Math.Atan2(retype x, retype y)
                  when ^T : float32     = System.Math.Atan2(toFloat (retype x), toFloat(retype y)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline  ceilImpl(x: ^T) : ^T = 
                  (^T: (static member Ceiling : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Ceiling(retype x : float)
                  when ^T : float32     = System.Math.Ceiling(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline  expImpl(x: ^T) : ^T = 
                  (^T: (static member Exp : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Exp(retype x)
                  when ^T : float32     = System.Math.Exp(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline floorImpl (x: ^T) : ^T = 
                  (^T: (static member Floor : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Floor(retype x : float)
                  when ^T : float32     = System.Math.Floor(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline truncateImpl (x: ^T) : ^T = 
                  (^T: (static member Truncate : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Truncate(retype x : float) 
                  when ^T : float32     = System.Math.Truncate(toFloat (retype x))  |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline roundImpl (x: ^T) : ^T = 
                  (^T: (static member Round : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Round(retype x : float)
                  when ^T : float32     = System.Math.Round(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline signImpl (x: ^T) : int = 
                  (^T: (member Sign : int) (x))
                  when ^T : int32       = System.Math.Sign(retype x : int32)
@@ -5227,61 +5232,61 @@ namespace Microsoft.FSharp.Core
                  when ^T : float32     = System.Math.Sign(toFloat (retype x)) 
                  when ^T : decimal     = System.Math.Sign(retype x : decimal) 
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline  logImpl(x: ^T) : ^T = 
                  (^T: (static member Log : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Log(retype x)
                  when ^T : float32     = System.Math.Log(toFloat (retype x)) |> toFloat32
             
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline  log10Impl(x: ^T) : ^T = 
                  (^T: (static member Log10 : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Log10(retype x)
                  when ^T : float32     = System.Math.Log10(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline  sqrtImpl(x: ^T) : ^U = 
                  (^T: (static member Sqrt : ^T -> ^U) (x))
                  when ^T : float       = System.Math.Sqrt(retype x : float)
                  when ^T : float32     = System.Math.Sqrt(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline  cosImpl(x: ^T) : ^T = 
                  (^T: (static member Cos : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Cos(retype x)
                  when ^T : float32     = System.Math.Cos(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline  coshImpl(x: ^T) : ^T = 
                  (^T: (static member Cosh : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Cosh(retype x)
                  when ^T : float32     = System.Math.Cosh(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline  sinImpl(x: ^T) : ^T = 
                  (^T: (static member Sin : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Sin(retype x)
                  when ^T : float32     = System.Math.Sin(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline  sinhImpl(x: ^T) : ^T = 
                  (^T: (static member Sinh : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Sinh(retype x)
                  when ^T : float32     = System.Math.Sinh(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline  tanImpl(x: ^T) : ^T = 
                  (^T: (static member Tan : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Tan(retype x)
                  when ^T : float32     = System.Math.Tan(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline  tanhImpl(x: ^T) : ^T = 
                  (^T: (static member Tanh : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Tanh(retype x)
                  when ^T : float32     = System.Math.Tanh(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(true)>]
             let inline  powImpl (x: ^T) (y: ^U) : ^T = 
                  (^T: (static member Pow : ^T * ^U -> ^T) (x,y))
                  when ^T : float       = System.Math.Pow((retype x : float), (retype y: float))

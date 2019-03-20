@@ -460,8 +460,7 @@ module TypedTest = begin
         test "check AddressOf rebuild"      (try rebuild <@ let mutable a = 10 in increment(&a) @> |> ignore; true with _ -> false)
         test "check AddressOf argument"     (<@ let mutable a = 10 in increment(&a) @> |> function Let(_, _, Call(None, _, [AddressOf(_)])) -> true | _ -> false)
         test "check AddressOf type"         (<@ let mutable a = 10 in increment(&a) @> |> function Let(_, _, Call(None, _, [AddressOf(_) as e])) -> (try e.Type = typeof<int>.MakeByRefType() with _ -> false) | _ -> false)
-
-
+    
     // Test basic expression splicing
     let f8383 (x:int) (y:string) = 0
     let test2 =   
@@ -553,6 +552,7 @@ module TypedTest = begin
         end
 #endif
 
+        
 end
 
 (*
@@ -3177,6 +3177,120 @@ module TestMatchBang =
 
     testSimpleMatchBang()        
     
+module WitnessTests = 
+    test "check CallWithWitness"      
+        (<@ 1 + 1  @> 
+         |> function 
+            | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) -> 
+                minfo1.Name = "op_Addition" && 
+                minfo1.GetParameters().Length = 2 && 
+                minfo2.Name = "op_Addition" &&
+                minfo2.GetParameters().Length = 3 && 
+                (printfn "checking witnessArgs.Length = %d... args.Length"; true) &&
+                witnessArgs.Length = 1 &&
+                (printfn "checking args.Length = %d... args.Length"; true) &&
+                args.Length = 2 &&
+                (printfn "checking witnessArgs is a Lambda..."; true) &&
+                (match args with [ Lambda _ ] -> true | _ -> false)
+                (printfn "checking args..."; true) &&
+                (match args with [ Int32 _; Int32 _ ] -> true | _ -> false)
+            | _ -> false)
+
+    test "check CallWithWitness (DateTime + TimeSpan)"      
+        (<@ System.DateTime.Now + System.TimeSpan.Zero  @> 
+         |> function 
+            | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) -> 
+                minfo1.Name = "op_Addition" && 
+                (printfn "checking minfo1.GetParameters().Length..."; true) &&
+                minfo1.GetParameters().Length = 2 && 
+                minfo2.Name = "op_Addition" &&
+                (printfn "checking minfo2.GetParameters().Length..."; true) &&
+                minfo2.GetParameters().Length = 3 && 
+                (printfn "checking args.Length..."; true) &&
+                witnessArgs.Length = 1 &&
+                args.Length = 2 &&
+                (printfn "checking args..."; true) &&
+                (match args with [ _; _ ] -> true | _ -> false) &&
+                (match witnessArgs with [ Lambda _ ] -> true | _ -> false)
+            | CallWithWitnesses _ -> 
+                printfn "no object"
+                false
+            | _ -> 
+                printfn "incorrect node"
+                false)
+
+    test "check CallWithWitness (DateTime + TimeSpan)"      
+        (<@ System.DateTime.Now + System.TimeSpan.Zero  @> 
+         |> function 
+            | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) -> 
+                minfo1.Name = "op_Addition" && 
+                (printfn "checking minfo1.GetParameters().Length..."; true) &&
+                minfo1.GetParameters().Length = 2 && 
+                minfo2.Name = "op_Addition" &&
+                (printfn "checking minfo2.GetParameters().Length..."; true) &&
+                minfo2.GetParameters().Length = 3 && 
+                (printfn "checking minfo2.GetParameters().[0].Name = %s..." (minfo2.GetParameters().[0].Name); true) &&
+                //minfo2.GetParameters().[0].Name = "op_Addition" && 
+                witnessArgs.Length = 1 &&
+                args.Length = 2 &&
+                (match witnessArgs with [ Lambda _ ] -> true | _ -> false) &&
+                (match args with [ _; _ ] -> true | _ -> false)
+            | _ -> false)
+
+    type C() = 
+        static member inline StaticAdd (x, y) = x + y
+        member inline __.InstanceAdd (x, y) = x + y
+
+    test "check CallWithWitness (DateTime + TimeSpan) using static member"      
+        (<@ C.StaticAdd(System.DateTime.Now, System.TimeSpan.Zero)  @> 
+         |> function 
+            | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) -> 
+                minfo1.IsStatic && 
+                minfo1.Name = "StaticAdd" && 
+                (printfn "checking minfo1.GetParameters().Length..."; true) &&
+                minfo1.GetParameters().Length = 2 && 
+                minfo2.IsStatic && 
+                minfo2.Name = "StaticAdd" &&
+                (printfn "checking minfo2.GetParameters().Length = %d..." (minfo2.GetParameters().Length); true) &&
+                minfo2.GetParameters().Length = 3 && 
+                (printfn "checking witnessArgs.Length..."; true) &&
+                witnessArgs.Length = 1 &&
+                (printfn "checking args.Length..."; true) &&
+                args.Length = 2 &&
+                (printfn "witnessArgs..."; true) &&
+                (match witnessArgs with [ Lambda _ ] -> true | _ -> false) &&
+                (printfn "args..."; true) &&
+                (match args with [ _; _ ] -> true | _ -> false)
+            | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) -> 
+                printfn "no object..."
+                false
+            | _ -> false)
+
+    test "check CallWithWitness (DateTime + TimeSpan) using instance member"      
+        (<@ C().InstanceAdd(System.DateTime.Now, System.TimeSpan.Zero)  @> 
+         |> function 
+            | CallWithWitnesses(Some _obj, minfo1, minfo2, witnessArgs, args) -> 
+                not minfo1.IsStatic && 
+                minfo1.Name = "InstanceAdd" && 
+                (printfn "checking minfo1.GetParameters().Length..."; true) &&
+                minfo1.GetParameters().Length = 2 && 
+                not minfo2.IsStatic && 
+                minfo2.Name = "InstanceAdd" &&
+                (printfn "checking minfo2.GetParameters().Length = %d..." (minfo2.GetParameters().Length); true) &&
+                minfo2.GetParameters().Length = 3 && 
+                (printfn "checking witnessArgs.Length..."; true) &&
+                witnessArgs.Length = 1 &&
+                (printfn "checking args.Length..."; true) &&
+                args.Length = 2 &&
+                (printfn "witnessArgs..."; true) &&
+                (match witnessArgs with [ Lambda _ ] -> true | _ -> false) &&
+                (printfn "args..."; true) &&
+                (match args with [ _; _ ] -> true | _ -> false)
+            | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) -> 
+                printfn "no object..."
+                false
+            | _ -> false)
+
 
 #if !FX_RESHAPED_REFLECTION
 module TestAssemblyAttributes = 

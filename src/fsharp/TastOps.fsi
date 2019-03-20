@@ -2153,7 +2153,7 @@ type StaticOptimizationAnswer =
     | No = -1y
     | Unknown = 0y
 
-val DecideStaticOptimizations : TcGlobals -> StaticOptimization list -> StaticOptimizationAnswer
+val DecideStaticOptimizations : TcGlobals -> StaticOptimization list -> haveWitnesses: bool -> StaticOptimizationAnswer
 
 val mkStaticOptimizationExpr     : TcGlobals -> StaticOptimization list * Expr * Expr * range -> Expr
 
@@ -2283,7 +2283,7 @@ val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
 
 val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
 
-val GenWitnessArgTys: TraitWitnessInfo -> TType list list
+val GenWitnessArgTys: TcGlobals -> TraitWitnessInfo -> TType list list
 
 val GenWitnessTys: TcGlobals -> TraitWitnessInfos -> TType list
 

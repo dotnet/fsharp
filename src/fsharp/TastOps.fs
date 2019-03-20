@@ -4770,8 +4770,12 @@ type StaticOptimizationAnswer =
     | No = -1y
     | Unknown = 0y
 
-let decideStaticOptimizationConstraint g c = 
+let decideStaticOptimizationConstraint g c haveWitnesses = 
     match c with 
+    // When witnesses are available in generic code during codegen, "when ^T : ^T" resolves StaticOptimizationAnswer.Yes
+    // This doesn't apply to "when 'T : 'T" use for "FastGenericEqualityComparer" and others.
+    | TTyconEqualsTycon (a, b) when haveWitnesses && typeEquiv g a b && (match tryDestTyparTy g a with ValueSome tp -> tp.StaticReq = TyparStaticReq.HeadTypeStaticReq | _ -> false) ->
+         StaticOptimizationAnswer.Yes
     | TTyconEqualsTycon (a, b) ->
         // Both types must be nominal for a definite result
        let rec checkTypes a b =
@@ -4807,17 +4811,17 @@ let decideStaticOptimizationConstraint g c =
        | ValueSome tcref1 -> if tcref1.IsStructOrEnumTycon then StaticOptimizationAnswer.Yes else StaticOptimizationAnswer.No
        | ValueNone -> StaticOptimizationAnswer.Unknown
             
-let rec DecideStaticOptimizations g cs = 
+let rec DecideStaticOptimizations g cs haveWitnesses = 
     match cs with 
     | [] -> StaticOptimizationAnswer.Yes
     | h::t -> 
-        let d = decideStaticOptimizationConstraint g h 
+        let d = decideStaticOptimizationConstraint g h haveWitnesses
         if d = StaticOptimizationAnswer.No then StaticOptimizationAnswer.No 
-        elif d = StaticOptimizationAnswer.Yes then DecideStaticOptimizations g t 
+        elif d = StaticOptimizationAnswer.Yes then DecideStaticOptimizations g t haveWitnesses
         else StaticOptimizationAnswer.Unknown
 
 let mkStaticOptimizationExpr g (cs, e1, e2, m) = 
-    let d = DecideStaticOptimizations g cs in 
+    let d = DecideStaticOptimizations g cs false
     if d = StaticOptimizationAnswer.No then e2
     elif d = StaticOptimizationAnswer.Yes then e1
     else Expr.StaticOptimization(cs, e1, e2, m)
@@ -7644,21 +7648,26 @@ let LinearizeTopMatch g parent = function
 // Witnesses
 //---------------------------------------------------------------------------
 
-let GenWitnessArgTys (traitInfo: TraitWitnessInfo) =
+let GenWitnessArgTys (g: TcGlobals) (traitInfo: TraitWitnessInfo) =
     let (TraitWitnessInfo(tys, _nm, memFlags, argtys, _rty)) = traitInfo
+    let argtys = if argtys.IsEmpty then [g.unit_ty] else argtys
     let argtysl = List.map List.singleton argtys
     match tys with 
     | _ when not memFlags.IsInstance  -> argtysl
-    | [ty] when memFlags.IsInstance   -> [ty] :: argtysl
-    | _ -> failwith "can't generate choosy instance members yet" 
+    | [ty] -> [ty] :: argtysl
+    | [_; _] -> [g.obj_ty] :: argtysl
+    | _ -> failwith "unexpected empty type support for trait constraint" 
 
 let GenWitnessTy (g: TcGlobals) (traitInfo: TraitWitnessInfo) =
     let rty = match traitInfo.ReturnType with None -> g.unit_ty | Some ty -> ty
-    let argtysl = GenWitnessArgTys traitInfo
+    let argtysl = GenWitnessArgTys g traitInfo
     mkMethodTy g argtysl rty 
 
 let GenWitnessTys (g: TcGlobals) (cxs: TraitWitnessInfos) =
-    cxs |> List.map (GenWitnessTy g)
+    if g.generateWitnesses then 
+        cxs |> List.map (GenWitnessTy g)
+    else
+        []
 
 //---------------------------------------------------------------------------
 // XmlDoc signatures
@@ -7763,7 +7772,6 @@ let XmlDocSigOfVal g path (v:Val) =
     // separately when really it would be cleaner to make sure GetTopValTypeInFSharpForm, GetMemberTypeInFSharpForm etc.
     // were lined up so code paths like this could be uniform
     
-        // TODO: representation of constraint witnesses
     match v.MemberInfo with 
     | Some membInfo when not v.IsExtensionMember -> 
         // Methods, Properties etc.

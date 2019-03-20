@@ -708,6 +708,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_new_decimal_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "MakeDecimal"                          , None                 , None                          , [],         ([[v_int_ty]; [v_int_ty]; [v_int_ty]; [v_bool_ty]; [v_byte_ty]], v_decimal_ty))
   let v_deserialize_quoted_FSharp_20_plus_info    = makeIntrinsicValRef(fslib_MFQuotations_nleref,             "Deserialize"                          , Some "Expr"          , None                          , [],          ([[v_system_Type_ty ;mkListTy v_system_Type_ty ;mkListTy mkRawQuotedExprTy ; mkArrayType 1 v_byte_ty]], mkRawQuotedExprTy ))
   let v_deserialize_quoted_FSharp_40_plus_info    = makeIntrinsicValRef(fslib_MFQuotations_nleref,             "Deserialize40"                        , Some "Expr"          , None                          , [],          ([[v_system_Type_ty ;mkArrayType 1 v_system_Type_ty; mkArrayType 1 v_system_Type_ty; mkArrayType 1 mkRawQuotedExprTy; mkArrayType 1 v_byte_ty]], mkRawQuotedExprTy ))
+  let v_call_with_witnesses_info   = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "CallWithWitnesses"                    , Some "Expr"          , None                          , [],         ([[v_system_Reflection_MethodInfo_ty; v_system_Reflection_MethodInfo_ty; mkListTy mkRawQuotedExprTy; mkListTy mkRawQuotedExprTy]], mkRawQuotedExprTy))
   let v_cast_quotation_info        = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "Cast"                                 , Some "Expr"          , None                          , [vara],      ([[mkRawQuotedExprTy]], mkQuotedExprTy varaTy))
   let v_lift_value_info            = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "Value"                                , Some "Expr"          , None                          , [vara],      ([[varaTy]], mkRawQuotedExprTy))
   let v_lift_value_with_name_info  = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "ValueWithName"                        , Some "Expr"          , None                          , [vara],      ([[varaTy; v_string_ty]], mkRawQuotedExprTy))
@@ -1407,6 +1408,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member __.deserialize_quoted_FSharp_20_plus_info       = v_deserialize_quoted_FSharp_20_plus_info
   member __.deserialize_quoted_FSharp_40_plus_info    = v_deserialize_quoted_FSharp_40_plus_info
+  member __.call_with_witnesses_info = v_call_with_witnesses_info
   member __.cast_quotation_info        = v_cast_quotation_info
   member __.lift_value_info            = v_lift_value_info
   member __.lift_value_with_name_info            = v_lift_value_with_name_info
@@ -1442,8 +1444,13 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
     // Note that the suppression checks for the precise name of the type
     // so the lowercase versions are visible
   member __.suppressed_types = v_suppressed_types
+
   /// Are we assuming all code gen is for F# interactive, with no static linking 
   member __.isInteractive=isInteractive
+
+  /// Indicates if we are generating witness arguments for SRTP constraints. Only done if the FSharp.Core
+  /// supports witness arguments.
+  member g.generateWitnesses = compilingFslib || (ValRefForIntrinsic g.call_with_witnesses_info).TryDeref.IsSome
 
   member __.FindSysTyconRef path nm = findSysTyconRef path nm
   member __.TryFindSysTyconRef path nm = tryFindSysTyconRef path nm
