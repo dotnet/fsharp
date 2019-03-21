@@ -2031,25 +2031,6 @@ We really need to rewrite some code paths here to use the real parse tree rather
             end"""
         this.VerifyNoParameterInfoAtStartOfMarker(fileContents,"(*Mark*)")
 
-    (* Project ref method for multi-parameterinfo tests ----------------------------------------------- *)
-
-    [<Test; Category("Expensive")>]
-    member public this.``Multi.ReferenceToProjectLibrary``() = 
-        use _guard = this.UsingNewVS()
-        let solution = this.CreateSolution()
-        let project1 = CreateProject(solution, "FSharpLib")
-        let project2 = CreateProject(solution, "FSharpPro")
-        AddProjectReference(project2,project1)
-        let _ = AddFileFromText(project1, "file1.fs", ["namespace Test";"type public Foo() = class";"  static member Sum(x:int,y:int) = x+y";"end"])
-        let result1 = Build(project1)
-        AddFileFromText(project2, "file2.fs", ["open Test";"Foo.Sum(12,(*Mark*)"]) |> ignore
-        let result2 = Build(project2)
-        let file = OpenFile(project2, "file2.fs")
-        MoveCursorToStartOfMarker(file, "(*Mark*)")
-
-        let methodstr = GetParameterInfoAtCursor(file)
-        AssertMethodGroupContain(methodstr,["int";"int"])
-
     (* Regression tests/negative tests for multi-parameterinfos --------------------------------------- *) 
     // To be added when the bugs are fixed...
     [<Test>]
