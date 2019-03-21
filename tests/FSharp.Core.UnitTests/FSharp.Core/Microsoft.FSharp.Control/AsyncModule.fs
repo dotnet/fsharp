@@ -626,3 +626,15 @@ type AsyncModule() =
         } |> Async.RunSynchronously
         Console.WriteLine "Checking result...."
         Assert.AreEqual(1, !x)
+
+    [<Test>]
+    member this.``Parallel with maxDegreeOfParallelism`` () =
+        let mutable i = 1
+        let action j = async {
+            Assert.AreEqual(j, i)
+            i <- i + 1
+        }
+        let computation =
+            [| for i in 1 .. 1000 -> action i |]
+            |> fun cs -> Async.Parallel(cs, 1)
+        Async.RunSynchronously(computation) |> ignore

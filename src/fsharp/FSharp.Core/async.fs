@@ -1196,7 +1196,7 @@ namespace Microsoft.FSharp.Control
             async { let! cancellationToken = cancellationTokenAsync  
                     return AsyncPrimitives.StartAsTask cancellationToken computation taskCreationOptions }
 
-        static member Parallel (computations: seq<Async<'T>>) =
+        static member Parallel (computations: seq<Async<'T>>, ?maxDegreeOfParallelism: int) =
             MakeAsync (fun ctxt ->
                 let tasks, result = 
                     try 
@@ -1219,49 +1219,91 @@ namespace Microsoft.FSharp.Control
                     let results = Array.zeroCreate tasks.Length
                     // Attempt to cancel the individual operations if an exception happens on any of the other threads
                     let innerCTS = new LinkedSubSource(ctxtWithSync.token)
-                    
-                    let finishTask(remaining) = 
-                        if (remaining = 0) then 
+
+                    let finishTask(remaining) =
+                        if (remaining = 0) then
                             innerCTS.Dispose()
-                            match firstExn with 
+                            match firstExn with
                             | None -> ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.cont results)
                             | Some (Choice1Of2 exn) -> ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.econt exn)
                             | Some (Choice2Of2 cexn) -> ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.ccont cexn)
                         else
                             fake()
 
-                    // recordSuccess and recordFailure between them decrement count to 0 and 
+                    // recordSuccess and recordFailure between them decrement count to 0 and
                     // as soon as 0 is reached dispose innerCancellationSource
-                
-                    let recordSuccess i res = 
-                        results.[i] <- res
-                        finishTask(Interlocked.Decrement &count) 
 
-                    let recordFailure exn = 
+                    let recordSuccess i res =
+                        results.[i] <- res
+                        finishTask(Interlocked.Decrement &count)
+
+                    let recordFailure exn =
                         // capture first exception and then decrement the counter to avoid race when
                         // - thread 1 decremented counter and preempted by the scheduler
                         // - thread 2 decremented counter and called finishTask
                         // since exception is not yet captured - finishtask will fall into success branch
                         match Interlocked.CompareExchange(&firstExn, Some exn, None) with
-                        | None -> 
+                        | None ->
                             // signal cancellation before decrementing the counter - this guarantees that no other thread can sneak to finishTask and dispose innerCTS
                             // NOTE: Cancel may introduce reentrancy - i.e. when handler registered for the cancellation token invokes cancel continuation that will call 'recordFailure'
                             // to correctly handle this we need to return decremented value, not the current value of 'count' otherwise we may invoke finishTask with value '0' several times
                             innerCTS.Cancel()
                         | _ -> ()
                         finishTask(Interlocked.Decrement &count)
-                
-                    tasks |> Array.iteri (fun i p ->
-                        QueueAsync
+
+                    // If maxDegreeOfParallelism is set but is higher then the number of tasks we have we set it back to None to fall into the simple
+                    // queue all items branch
+                    let maxDegreeOfParallelism =
+                        match maxDegreeOfParallelism with
+                        | None -> None
+                        | Some maxDegreeOfParallelism -> if maxDegreeOfParallelism >= tasks.Length then None else Some maxDegreeOfParallelism
+
+                    // Simple case (no maxDegreeOfParallelism) just queue all the work, if we have maxDegreeOfParallelism set we start that many workers
+                    // which will make progress on the actual computations
+                    match maxDegreeOfParallelism with
+                    | None ->
+                        tasks |> Array.iteri (fun i p ->
+                            QueueAsync
+                                    innerCTS.Token
+                                    // on success, record the result
+                                    (fun res -> recordSuccess i res)
+                                    // on exception...
+                                    (fun edi -> recordFailure (Choice1Of2 edi))
+                                    // on cancellation...
+                                    (fun cexn -> recordFailure (Choice2Of2 cexn))
+                                    p
+                                |> unfake)
+                    | Some maxDegreeOfParallelism ->
+                        let mutable i = 0
+                        let p =
+                            MakeAsync (fun _ ->
+                                while i <> tasks.Length do
+                                    let j = i
+                                    if Interlocked.CompareExchange(&i, j + 1, j) = j then
+                                        let trampolineHolder = new TrampolineHolder()
+                                        trampolineHolder.ExecuteWithTrampoline (fun () ->
+                                            let ctxt =
+                                                AsyncActivation.Create
+                                                    innerCTS.Token
+                                                    trampolineHolder
+                                                    (fun res -> recordSuccess j res)
+                                                    (fun edi -> recordFailure (Choice1Of2 edi))
+                                                    (fun cexn -> recordFailure (Choice2Of2 cexn))
+                                            tasks.[j].Invoke ctxt
+                                        )
+                                        |> unfake
+                                fake()
+                            )
+                        for x = 1 to maxDegreeOfParallelism do
+                            QueueAsync
                                 innerCTS.Token
-                                // on success, record the result
-                                (fun res -> recordSuccess i res)
-                                // on exception...
+                                (fun _ -> fake())
                                 (fun edi -> recordFailure (Choice1Of2 edi))
-                                // on cancellation...
                                 (fun cexn -> recordFailure (Choice2Of2 cexn))
                                 p
-                            |> unfake)
+                            |> unfake
+
+
                     fake()))
 
         static member Choice(computations : Async<'T option> seq) : Async<'T option> =

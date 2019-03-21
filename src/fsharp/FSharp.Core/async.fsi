@@ -159,7 +159,7 @@ namespace Microsoft.FSharp.Control
         /// for the other child computations to complete.</remarks>
         /// <param name="computations">A sequence of distinct computations to be parallelized.</param>
         /// <returns>A computation that returns an array of values from the sequence of input computations.</returns>
-        static member Parallel : computations:seq<Async<'T>> -> Async<'T[]>
+        static member Parallel : computations:seq<Async<'T>> * ?maxDegreeOfParallelism : int -> Async<'T[]>
 
         /// <summary>Creates an asynchronous computation that executes all given asynchronous computations in parallel, 
         /// returning the result of the first succeeding computation (one whose result is 'Some x').
