@@ -4,8 +4,6 @@
 
   <PropertyGroup>
     <TargetFramework>net46</TargetFramework>
-    <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
-    <UseFSharpProductVersion>true</UseFSharpProductVersion>
   </PropertyGroup>
 
   <ItemGroup>

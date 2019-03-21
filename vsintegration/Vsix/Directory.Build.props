@@ -3,20 +3,13 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <PropertyGroup>
+    <VisualStudioInsertionComponent>Microsoft.FSharp</VisualStudioInsertionComponent>
     <VSRootSuffix>RoslynDev</VSRootSuffix>
-    <DeployExtension Condition="'$(DeployExtension)' == '' and '$(CI)' != ''">false</DeployExtension>
-    <DeployExtension Condition="'$(DeployExtension)' == '' and '$(CI)' == ''">true</DeployExtension>
     <VSSDKTargetPlatformRegRootSuffix>$(VSRootSuffix)</VSSDKTargetPlatformRegRootSuffix>
     <CreateVsixContainer>true</CreateVsixContainer>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>true</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
     <GeneratePkgDefFile>false</GeneratePkgDefFile>
     <IncludeAssemblyInVSIXContainer>false</IncludeAssemblyInVSIXContainer>
@@ -31,7 +24,6 @@
     <ExtensionInstallationRoot>CommonExtensions</ExtensionInstallationRoot>
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
     <IsPackage>true</IsPackage>
-    <ImportVsSDK>true</ImportVsSDK>
   </PropertyGroup>
 
 </Project>
