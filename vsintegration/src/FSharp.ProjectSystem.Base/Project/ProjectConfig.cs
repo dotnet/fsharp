@@ -1935,7 +1935,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             if (!NotifyBuildBegin()) return;
             try
             {
-                config.ProjectMgr.BuildAsync(options, this.config.ConfigCanonicalName, output, target, (result, projectInstance) =>
+                config.ProjectMgr.Build(options, this.config.ConfigCanonicalName, output, target, (result, projectInstance) =>
                     {
                         this.BuildCoda(new BuildResult(result, projectInstance), output, shouldRepaintReferences);
                     });
