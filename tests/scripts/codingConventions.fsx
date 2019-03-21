@@ -101,3 +101,19 @@ let spaceBeforeColon =
 
 printfn "Top files that have extra space before colon:\n%A" (Array.truncate 10 spaceBeforeColon)
 
+printfn "------ Internal spacing----------"
+
+
+let internalSpacing =
+    let re =  Regex("[^ ]  [^ ]")
+    lines
+    |> Array.groupBy fst 
+    |> Array.map (fun (file, lines) -> 
+        file,
+        lines 
+        |> Array.filter (fun (_,(_,line)) -> re.IsMatch(line))
+        |> Array.length)
+    |> Array.sortByDescending snd
+
+printfn "Top files that have internal spacing in lines:\n%A" (Array.truncate 10 internalSpacing)
+

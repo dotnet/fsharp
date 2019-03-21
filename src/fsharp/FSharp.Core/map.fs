@@ -478,8 +478,10 @@ namespace Microsoft.FSharp.Collections
     
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         member internal m.Comparer = comparer
+
         //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         member internal m.Tree = tree
+
         member m.Add(key,value) : Map<'Key,'Value> = 
 #if TRACE_SETS_AND_MAPS
             MapTree.report()
@@ -494,6 +496,7 @@ namespace Microsoft.FSharp.Collections
 
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         member m.IsEmpty = MapTree.isEmpty tree
+
         member m.Item 
          with get(key : 'Key) = 
 #if TRACE_SETS_AND_MAPS
@@ -502,19 +505,24 @@ namespace Microsoft.FSharp.Collections
             MapTree.totalSizeOnMapLookup <- MapTree.totalSizeOnMapLookup + float (MapTree.size tree)
 #endif
             MapTree.find comparer key tree
+
         member m.TryPick(f) = MapTree.tryPick f tree 
+
         member m.Exists(f) = MapTree.exists f tree 
-        member m.Filter(f)  : Map<'Key,'Value> = new Map<'Key,'Value>(comparer ,MapTree.filter comparer f tree)
+
+        member m.Filter(f)  : Map<'Key,'Value> = new Map<'Key,'Value>(comparer,MapTree.filter comparer f tree)
+
         member m.ForAll(f) = MapTree.forall f tree 
+
         member m.Fold f acc = MapTree.foldBack f tree acc
 
         member m.FoldSection (lo:'Key) (hi:'Key) f (acc:'z) = MapTree.foldSection comparer lo hi f tree acc 
 
         member m.Iterate f = MapTree.iter f tree
 
-        member m.MapRange f  = new Map<'Key,'b>(comparer,MapTree.map f tree)
+        member m.MapRange f = new Map<'Key,'b>(comparer,MapTree.map f tree)
 
-        member m.Map f  = new Map<'Key,'b>(comparer,MapTree.mapi f tree)
+        member m.Map f = new Map<'Key,'b>(comparer,MapTree.mapi f tree)
 
         member m.Partition(f)  : Map<'Key,'Value> * Map<'Key,'Value> = 
             let r1,r2 = MapTree.partition comparer f tree  in 
@@ -530,7 +538,7 @@ namespace Microsoft.FSharp.Collections
 #endif
             MapTree.mem comparer key tree
 
-        member m.Remove(key)  : Map<'Key,'Value> = 
+        member m.Remove(key) : Map<'Key,'Value> = 
             new Map<'Key,'Value>(comparer,MapTree.remove comparer key tree)
 
         member m.TryGetValue(key, [<System.Runtime.InteropServices.Out>] value:byref<'Value>) = 

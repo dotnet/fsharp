@@ -622,8 +622,8 @@ module Patterns =
             | InstancePropGetOp prop,_    -> prop.PropertyType
             | StaticPropSetOp _,_   -> typeof<Unit>
             | InstancePropSetOp _,_    -> typeof<Unit>
-            | InstanceFieldGetOp fld ,_   -> fld.FieldType
-            | StaticFieldGetOp fld ,_   -> fld.FieldType
+            | InstanceFieldGetOp fld,_   -> fld.FieldType
+            | StaticFieldGetOp fld,_   -> fld.FieldType
             | InstanceFieldSetOp _,_    -> typeof<Unit>
             | StaticFieldSetOp _,_    -> typeof<Unit>
             | NewObjectOp ctor,_   -> ctor.DeclaringType
@@ -1429,7 +1429,7 @@ module Patterns =
                (fun env -> let v = a env in E(LambdaTerm(v,b (addVar env v))))
         | 3 -> let a = u_dtype st
                let idx = u_int st
-               (fun env -> E(HoleTerm(a env.typeInst , idx)))
+               (fun env -> E(HoleTerm(a env.typeInst, idx)))
         | 4 -> let a = u_Expr st
                (fun env -> mkQuote(a env, true))
         | 5 -> let a = u_Expr st
