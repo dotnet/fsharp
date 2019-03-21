@@ -1,9 +1,5 @@
 <Project>
 
-  <PropertyGroup>
-    <BUILD_IN_FSHARP_REPOSITORY>true</BUILD_IN_FSHARP_REPOSITORY>
-  </PropertyGroup>
-
   <PropertyGroup Condition="'$(FSharpTestCompilerVersion)' == 'net40'">
     <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
 

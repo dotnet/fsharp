@@ -85,13 +85,8 @@
     <Content Include="**/*"  Exclude="**/*.bak;Directory.Build.Props;Directory.Build.targets" CopyToOutputDirectory="never" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(BUILD_IN_FSHARP_REPOSITORY)' == 'true'">
+  <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
-    <PackageReference Include="FsCheck" Version="$(FsCheckPackageVersion)" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(BUILD_IN_FSHARP_REPOSITORY)' != 'true'">
-    <PackageReference Include="FSharp.Core" Version="4.6.0" />
     <PackageReference Include="FsCheck" Version="3.0.0-alpha4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" PrivateAssets="All" />
   </ItemGroup>
