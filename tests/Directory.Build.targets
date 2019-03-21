@@ -1,0 +1,12 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
+
+  <ItemGroup Condition="'$(UnitTestType)' == 'nunit'">
+    <!-- <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftNETTestSdkPackageVersion)" /> -->
+    <PackageReference Include="NUnit" Version="$(NUnitPackageVersion)" />
+    <PackageReference Include="NUnit3TestAdapter" Version="$(NUnit3TestAdapterPackageVersion)" />
+    <PackageReference Include="NunitXml.TestLogger" Version="$(NunitXmlTestLoggerPackageVersion)" />
+  </ItemGroup>
+
+</Project>

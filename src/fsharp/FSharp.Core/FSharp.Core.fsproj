@@ -5,9 +5,9 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks>net45;netstandard1.6</TargetFrameworks>
-    <AssemblyName>FSharp.Core</AssemblyName>
-    <PackageId>FSharp.Core</PackageId>
-    <PackageVersion>$(FSCorePackageVersion)</PackageVersion>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard1.6</TargetFrameworks>
+    <IsPackable Condition="$(TargetFrameworks.Contains('net45'))">true</IsPackable>
+    <PackageDescription>FSharp.Core redistributables from Visual F# Tools version $(FSPackageMajorVersion) For F# $(FSCoreMajorVersion)</PackageDescription>
     <NuspecFile>FSharp.Core.nuspec</NuspecFile>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>

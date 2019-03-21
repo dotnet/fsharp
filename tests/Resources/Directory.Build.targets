@@ -1,0 +1,3 @@
+<Project>
+  <!-- copied as part of an official build to prevent unit tests from crawling out of %TEMP% -->
+</Project>
