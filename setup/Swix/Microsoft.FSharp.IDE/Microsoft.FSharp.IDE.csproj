@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net46</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SwrProperty Include="SetupResourcesDir=$(MSBuildThisFileDirectory)..\..\resources" />
+    <SwrProperty Include="VsixVersion=$(VsixVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <SwrFile Include="Files.swr" />
+    <SwrFile Include="Dependencies.swr" />
+  </ItemGroup>
+
+</Project>

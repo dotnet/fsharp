@@ -1,6 +1,0 @@
-use vs
-
-package name=Microsoft.FSharp.VSIX.Full.Resources
-        version=$(FSharpPackageVersion)
-        vs.package.language=$(LocaleSpecificCulture)
-        vs.package.installSize=1

@@ -1,8 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <PackageId>Microsoft.FSharp.Compiler</PackageId>
-    <PreRelease>true</PreRelease>
-  </PropertyGroup>
-
-</Project>
