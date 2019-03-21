@@ -42,7 +42,7 @@ Results look like this:
 *)
 
 open FSharp.Compiler
-open Microsoft.FSharp.Compiler.Text
+open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
 open System
 open System.IO

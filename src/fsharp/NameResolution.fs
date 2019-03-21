@@ -23,7 +23,7 @@ open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.Text
+open FSharp.Compiler.Text
 open System.Collections.Generic
 
 #if !NO_EXTENSIONTYPING

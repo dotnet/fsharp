@@ -44,8 +44,7 @@ open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
-
-open Microsoft.FSharp.Compiler.Text
+open FSharp.Compiler.Text
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping

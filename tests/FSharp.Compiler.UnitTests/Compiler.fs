@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.UnitTests
 
 open System
-open Microsoft.FSharp.Compiler.Text
+open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
 
 open NUnit.Framework
