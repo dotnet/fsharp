@@ -34,97 +34,33 @@ Install
 
 2. The command prompt must have Administrator rights (`Run as Administrator`).
 
-On Windows you can build the F# compiler for .NET Framework as follows:
+On Windows you can build the F# compiler and tools as follows:
 
-    build.cmd
+    Build.cmd
 
-This is the same as
+Desktop tests can be run with:
 
-    build.cmd net40
+    Build.cmd -test
 
-There are various qualifiers:
+Additional options are available via:
 
-    build.cmd release         -- build release (the default)
-    build.cmd debug           -- build debug instead of release
-
-    build.cmd net40           -- build .NET Framework compiler (the default)
-    build.cmd coreclr         -- build .NET Core compiler 
-    build.cmd vs              -- build the Visual F# IDE Tools (see below)
-    build.cmd pcls            -- build the PCL FSharp.Core libraries
-    build.cmd all             -- build all 
-
-    build.cmd proto           -- force the rebuild of the Proto bootstrap compiler in addition to other things
-
-    build.cmd test            -- build default targets, run suitable tests
-    build.cmd net40 test      -- build net40, run suitable tests
-    build.cmd coreclr test    -- build coreclr, run suitable tests
-    build.cmd vs test         -- build Visual F# IDE Tools, run all tests (see below)
-    build.cmd all test        -- build all, run all tests
-
-    build.cmd test-smoke      -- build, run smoke tests
-    build.cmd test-net40-fsharp     -- build, run tests\fsharp suite for .NET Framework
-    build.cmd test-net40-fsharpqa   -- build, run tests\fsharpqa suite for .NET Framework
+    Build.cmd /?
 
 After you build the first time you can open and use this solution:
 
-    .\FSharp.sln
-
-or just build it directly:
-
-    msbuild FSharp.sln
+    .\VisualFSharp.sln
 
 If you are just developing the core compiler and library then building ``FSharp.sln`` will be enough.
 
-### Developing the F# Compiler (Linux)
+### Developing the F# Compiler (Linux/macOS)
 
-For Linux/Mono, follow [these instructions](http://www.mono-project.com/docs/getting-started/install/linux/). Also you may need:
+For Linux/Mac:
 
-    sudo apt-get install mono-complete make git
+    ./build.sh
 
-Then:
+Running tests:
 
-    make
-
-Then to replace your machine-wide installation:
-
-    sudo make install
-
-Full testing is not yet enabled on Linux.
-
-### Developing the F# Compiler (macOS)
-
-Install XCode command line tools (or homebrew equivalents) and Mono or Visual Studio for Mac.
-
-Then:
-
-    make
-
-Then to replace your machine-wide installation:
-
-    sudo make install
-
-Full testing is not yet enabled on macOS.
-
-### [Optional] Specifying the install path (Linux or macOS)
-
-You can specify a custom installation path using the DESTDIR shell variable
-
-    DESTDIR=/my/path/to/fsharp make install
-
-### Developing the F# Compiler (Linux or macOS - .NET Core)
-
-Install [the latest .NET SDK](https://www.microsoft.com/net/download/).  Then use
-
-    src/buildfromsource.sh
-
-Outputs are placed in
-
-    BuildFromSource/Debug/...
-    BuildFromSource/Release/...
-
-This uses an installed .NET SDK 2.0 to build the various duplicated project
-
-Testing the .NET Core version of the F# compiler on macOS and Linux is TBD.
+    ./build.sh -test
 
 ### Developing the Visual F# IDE Tools (Windows Only)
 
@@ -132,15 +68,26 @@ To build and test Visual F# IDE Tools, install these requirements:
 
 - Download [Visual Studio 2017](https://www.visualstudio.com/downloads/)
 - Launch the Visual Studio Installer
-  - Under the "Windows" workloads, select ".NET desktop development"
-    - Select "F# desktop language support" under the optional components
-  - Under the "Other Toolsets" workloads, select "Visual Studio extension development"
+  - Under the **"Windows"** workload, select **".NET desktop development"**
+    - Select the optional component **"F# desktop language support"**
+  - Under the **"Mobile & Gaming"** workload, select **"Mobile development with .NET"**
+  - Under the **"Other Toolsets"** workload, select **"Visual Studio extension development"**
+  - On the **"Individual Components"** tab, select **".NET Framework 4.7.2 SDK"** and **".NET Framework 4.7.2 targeting pack"**
 
 Steps to build:
 
-    build.cmd vs              -- build the Visual F# IDE Tools in Release configuration (see below)
-    build.cmd vs debug        -- build the Visual F# IDE Tools in Debug configuration (see below)
-    build.cmd vs test         -- build Visual F# IDE Tools, run all tests (see below)
+    Build.cmd                             -- build all F# components under the default configuration (Debug)
+    Build.cmd -configuration Release      -- build all F# components as Release
+    Build.cmd -testDesktop                -- build and test all net46 tests
+
+All test options:
+
+    -testDesktop                          -- test all net46 target frameworks
+    -testCoreClr                          -- test all netstandard and netcoreapp target frameworks
+    -testFSharpQA                         -- test all F# Cambridge tests
+    -testVs                               -- test all VS integration points
+    -testFcs                              -- test F# compiler service components
+    -testAll                              -- all of the above
 
 Use ``VisualFSharp.sln`` if you're building the Visual F# IDE Tools.
 
