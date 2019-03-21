@@ -23,13 +23,13 @@ open FSharp.Compiler
 
 open Internal.Utilities.StructuredFormat
 
-type private QuickInfo =
+type internal QuickInfo =
     { StructuredText: FSharpStructuredToolTipText
       Span: TextSpan
       Symbol: FSharpSymbol
       SymbolKind: LexerSymbolKind }
 
-module private FSharpQuickInfo =
+module internal FSharpQuickInfo =
 
     let userOpName = "QuickInfo"
 
@@ -166,6 +166,12 @@ type internal FSharpAsyncQuickInfoSource
         textBuffer:ITextBuffer
     ) =
 
+    static let joinWithLineBreaks segments =
+        let lineBreak = TaggedTextOps.Literals.lineBreak
+        match segments |> List.filter (Seq.isEmpty >> not) with
+        | [] -> Seq.empty
+        | xs -> xs |> List.reduce (fun acc elem -> seq { yield! acc; yield lineBreak; yield! elem })
+
     // test helper
     static member ProvideQuickInfo(checker:FSharpChecker, documentId:DocumentId, sourceText:SourceText, filePath:string, position:int, parsingOptions:FSharpParsingOptions, options:FSharpProjectOptions, textVersionHash:int, languageServicePerformanceOptions: LanguageServicePerformanceOptions) =
         asyncMaybe {
@@ -181,8 +187,17 @@ type internal FSharpAsyncQuickInfoSource
             | _ ->
                 let! symbolUse = checkFileResults.GetSymbolUseAtLocation (textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=FSharpQuickInfo.userOpName)
                 let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, symbol.Range)
-                return res, symbolSpan, symbolUse.Symbol, symbol.Kind
+                return { StructuredText = res
+                         Span = symbolSpan
+                         Symbol = symbolUse.Symbol
+                         SymbolKind = symbol.Kind }
         }
+
+    static member BuildSingleQuickInfoItem (documentationBuilder:IDocumentationBuilder) (quickInfo:QuickInfo) =
+        let mainDescription, documentation, typeParameterMap, usage, exceptions = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
+        XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, quickInfo.StructuredText)
+        let docs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
+        (mainDescription, docs)
 
     interface IAsyncQuickInfoSource with
         override __.Dispose() = () // no cleanup necessary
@@ -201,21 +216,14 @@ type internal FSharpAsyncQuickInfoSource
                     let! symbolUse, sigQuickInfo, targetQuickInfo = FSharpQuickInfo.getQuickInfo(checkerProvider.Checker, projectInfoManager, document, triggerPoint.Position, cancellationToken)
                     let getTrackingSpan (span:TextSpan) =
                         textBuffer.CurrentSnapshot.CreateTrackingSpan(span.Start, span.Length, SpanTrackingMode.EdgeInclusive)
-                    let lineBreak = TaggedTextOps.Literals.lineBreak
-                    let joinWithLineBreaks segments =
-                        match segments |> List.filter (Seq.isEmpty >> not) with
-                        | [] -> Seq.empty
-                        | xs -> xs |> List.reduce (fun acc elem -> seq { yield! acc; yield lineBreak; yield! elem })
 
                     match sigQuickInfo, targetQuickInfo with
                     | None, None -> return null
                     | Some quickInfo, None
                     | None, Some quickInfo->
-                        let mainDescription, documentation, typeParameterMap, usage, exceptions = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
-                        XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, quickInfo.StructuredText)
+                        let mainDescription, docs = FSharpAsyncQuickInfoSource.BuildSingleQuickInfoItem documentationBuilder quickInfo
                         let imageId = Tokenizer.GetImageIdForSymbol(quickInfo.Symbol, quickInfo.SymbolKind)
                         let navigation = QuickInfoNavigation(statusBar, checkerProvider.Checker, projectInfoManager, document, symbolUse.RangeAlternate)
-                        let docs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
                         let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)
                         let span = getTrackingSpan quickInfo.Span
                         return QuickInfoItem(span, content)

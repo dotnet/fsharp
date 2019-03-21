@@ -3,7 +3,7 @@
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
 
   <Metadata>
-    <Identity Id="VisualFSharpTemplates" Version="|%CurrentProject%;GetVsixPackageVersion|" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
+    <Identity Id="VisualFSharpTemplates" Version="|%CurrentProject%;GetVsixVersion|" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
     <DisplayName>Visual F# Templates</DisplayName>
     <Description xml:space="preserve">Deploy Visual F# Tools Desktop Project Templates to Visual Studio</Description>
     <PackageId>Microsoft.FSharp.VSIX.Templates</PackageId>

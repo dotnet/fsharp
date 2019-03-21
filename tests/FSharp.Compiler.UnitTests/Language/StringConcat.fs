@@ -8,7 +8,10 @@ open NUnit.Framework
 [<TestFixture>]
 module StringConcat =
 
+// helper methods in this test only run on the full framework
+#if !NETCOREAPP
     [<Test>]
+#endif
     let Optimizations () =
         let baseSource = """
 module Test
