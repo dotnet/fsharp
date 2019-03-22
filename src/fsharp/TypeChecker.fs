@@ -12333,16 +12333,6 @@ module TcRecdUnionAndEnumDeclarations = begin
             else
                 seen.Add(f.Name, sf)
 
-    let mkName =
-        let names =
-            [| 1 .. 10 |]
-            |> Array.map (fun i -> "Item" + string i)
-
-        fun nFields i ->
-            match nFields with
-            | 0 | 1 -> "Item"
-            | _ -> if i < 10 then names.[i] else "Item" + string (i + 1)
-
     let TcUnionCaseDecl cenv env parent thisTy tpenv  (UnionCase (synAttrs, id, args, xmldoc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
         let vis, _ = ComputeAccessAndCompPath env None m vis None parent
@@ -12354,7 +12344,7 @@ module TcRecdUnionAndEnumDeclarations = begin
             match args with
             | UnionCaseFields flds -> 
                 let nFields = flds.Length
-                let rfields = flds |> List.mapi (fun i fld -> TcAnonFieldDecl cenv env parent tpenv (mkName nFields i) fld)
+                let rfields = flds |> List.mapi (fun i fld -> TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
                 ValidateFieldNames(flds, rfields)
                 
                 rfields, thisTy
@@ -12367,7 +12357,7 @@ module TcRecdUnionAndEnumDeclarations = begin
                 let nFields = argTys.Length
                 let rfields = 
                     argTys |> List.mapi (fun i (argty, argInfo) ->
-                        let id = (match argInfo.Name with Some id -> id | None -> mkSynId m (mkName nFields i))
+                        let id = (match argInfo.Name with Some id -> id | None -> mkSynId m (mkUnionCaseFieldName nFields i))
                         MakeRecdFieldSpec cenv env parent (false, None, argty, [], [], id, argInfo.Name.IsNone, false, false, XmlDoc.Empty, None, m))
                 if not (typeEquiv cenv.g recordTy thisTy) then 
                     error(Error(FSComp.SR.tcReturnTypesForUnionMustBeSameAsType(), m))
@@ -14686,20 +14676,12 @@ module TcExceptionDeclarations =
         CheckForDuplicateConcreteType env id.idText id.idRange
         NewExn cpath id vis (TExnFresh (MakeRecdFieldsTable [])) attrs (doc.ToXmlDoc())
 
-    let mkName =
-        let names =
-            [| 0 .. 9 |]
-            |> Array.map (fun i -> "Data" + string i)
-
-        fun i ->
-            if i < 10 then names.[i] else "Data" + string i
-
     let TcExnDefnCore_Phase1G_EstablishRepresentation cenv env parent (exnc: Entity) (SynExceptionDefnRepr(_, UnionCase(_, _, args, _, _, _), reprIdOpt, _, _, m)) =
         let args = match args with (UnionCaseFields args) -> args | _ -> error(Error(FSComp.SR.tcExplicitTypeSpecificationCannotBeUsedForExceptionConstructors(), m))
         let ad = env.eAccessRights
         let id = exnc.Id
         
-        let args' = List.mapi (fun i fdef -> TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent emptyUnscopedTyparEnv (mkName i) fdef) args
+        let args' = List.mapi (fun i fdef -> TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent emptyUnscopedTyparEnv (mkExceptionFieldName i) fdef) args
         TcRecdUnionAndEnumDeclarations.ValidateFieldNames(args, args')
         let repr = 
           match reprIdOpt with 
