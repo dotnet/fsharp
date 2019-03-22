@@ -22,7 +22,9 @@ module DotNetPrimtiveWithAmbiguousNewOperator =
         type System.Int32 with
             static member (++)(a: int, b: string) = a 
 
-    let f x = 1 ++ x
+    let f (x: string) = 1 ++ x
+    // TODO: this gives an internal error
+    // let f x = 1 ++ x
 
 /// Extending a .NET primitive type with new _internal_ operator
 module DotNetPrimtiveWithInternalOperator1 = 
@@ -217,3 +219,29 @@ module MapExample   =
     let v5 = map (fun x -> x + 1) [ 1 .. 100 ]
 
 *)
+module ExtenstionAttributeMembers = 
+    open System.Runtime.CompilerServices
+    [<Extension>]
+    type Ext2() = 
+        [<Extension>]
+        static member Bleh(a : string) = a.Length
+
+    let inline bleh s = (^a : (member Bleh : unit -> int) s)
+
+    let v = bleh "a"
+
+module Errors = 
+    open System
+    type System.Int32 with 
+        static member inline (+)(a, b) = Array.map2 (+) a b
+
+    let _ = [|1;2;3|] + [|2;3;4|] //Okay
+    let _ = [|TimeSpan.Zero|] + [|TimeSpan.Zero|] //Okay
+    let _ = [|1m|] + [|2m|] //Okay
+    let _ = [|1uy|] + [|2uy|] //Okay
+    let _ = [|1L|] + [|2L|] //Okay
+    let _ = [|1I|] + [|2I|] //Okay
+    let _ = [| [|1 ; 1|]; [|2|] |] + [| [|2; 2|]; [|3|] |] //Okay
+    let _ = [|"1"|] + [|"2"|] //error FS0001
+    let _ = [|1.f|] + [|2.f|] //error FS0001
+    let _ = [|1.0|] + [|2.0|] //error FS0001

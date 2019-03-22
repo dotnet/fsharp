@@ -1067,8 +1067,8 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
         
     let! res = 
      trackErrors {
-      match minfos, tys, memFlags.IsInstance, nm, argtys with 
-      | _, _, false, ("op_Division" | "op_Multiply"), [argty1;argty2]
+      match tys, memFlags.IsInstance, nm, argtys with 
+      | _, false, ("op_Division" | "op_Multiply"), [argty1;argty2]
           when 
                // This simulates the existence of 
                //    float * float -> float
@@ -1127,7 +1127,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
               return TTraitBuiltIn
 
-      | _, _, false, ("op_Addition" | "op_Subtraction" | "op_Modulus"), [argty1;argty2] 
+      | _, false, ("op_Addition" | "op_Subtraction" | "op_Modulus"), [argty1;argty2] 
           when // Ignore any explicit +/- overloads from any basic integral types
                (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.ApparentEnclosingType ) &&
                 (   (IsNumericOrIntegralEnumType g argty1 || (nm = "op_Addition" && (isCharTy g argty1 || isStringTy g argty1))) && (permitWeakResolution || not (isTyparTy g argty2))
@@ -1136,7 +1136,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
           return TTraitBuiltIn
 
-      | _, _, false, ("op_LessThan" | "op_LessThanOrEqual" | "op_GreaterThan" | "op_GreaterThanOrEqual" | "op_Equality" | "op_Inequality" ), [argty1;argty2] 
+      | _, false, ("op_LessThan" | "op_LessThanOrEqual" | "op_GreaterThan" | "op_GreaterThanOrEqual" | "op_Equality" | "op_Inequality" ), [argty1;argty2] 
           when // Ignore any explicit overloads from any basic integral types
                (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.ApparentEnclosingType ) &&
                 (   (IsRelationalType g argty1 && (permitWeakResolution || not (isTyparTy g argty2)))
@@ -1147,32 +1147,32 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
       // We pretend for uniformity that the numeric types have a static property called Zero and One 
       // As with constants, only zero is polymorphic in its units
-      | [], [ty], false, "get_Zero", [] 
+      | [ty], false, "get_Zero", [] 
           when IsNumericType g ty -> 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty ty
           return TTraitBuiltIn
 
-      | [], [ty], false, "get_One", [] 
+      | [ty], false, "get_One", [] 
           when IsNumericType g ty || isCharTy g ty -> 
           do! SolveDimensionlessNumericType csenv ndeep m2 trace ty 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty ty
           return TTraitBuiltIn
 
-      | [], _, false, ("DivideByInt"), [argty1;argty2] 
+      | _, false, "DivideByInt", [argty1;argty2] 
           when isFpTy g argty1 || isDecimalTy g argty1 -> 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 g.int_ty 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
           return TTraitBuiltIn
 
       // We pretend for uniformity that the 'string' and 'array' types have an indexer property called 'Item' 
-      | [], [ty], true, ("get_Item"), [argty1] 
+      | [ty], true, "get_Item", [argty1] 
           when isStringTy g ty -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty1 g.int_ty 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty g.char_ty
           return TTraitBuiltIn
 
-      | [], [ty], true, ("get_Item"), argtys
+      | [ty], true, "get_Item", argtys
           when isArrayTy g ty -> 
 
           if rankOfArrayTy g ty <> argtys.Length then do! ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch((rankOfArrayTy g ty), argtys.Length), m, m2))
@@ -1182,7 +1182,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty ety
           return TTraitBuiltIn
 
-      | [], [ty], true, ("set_Item"), argtys
+      | [ty], true, "set_Item", argtys
           when isArrayTy g ty -> 
           
           if rankOfArrayTy g ty <> argtys.Length - 1 then do! ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch((rankOfArrayTy g ty), (argtys.Length - 1)), m, m2))
@@ -1193,7 +1193,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ety etys
           return TTraitBuiltIn
 
-      | [], _, false, ("op_BitwiseAnd" | "op_BitwiseOr" | "op_ExclusiveOr"), [argty1;argty2] 
+      | _, false, ("op_BitwiseAnd" | "op_BitwiseOr" | "op_ExclusiveOr"), [argty1;argty2] 
           when    (isIntegerOrIntegerEnumTy g argty1 || (isEnumTy g argty1)) && (permitWeakResolution || not (isTyparTy g argty2))
                || (isIntegerOrIntegerEnumTy g argty2 || (isEnumTy g argty2)) && (permitWeakResolution || not (isTyparTy g argty1)) -> 
 
@@ -1202,7 +1202,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveDimensionlessNumericType csenv ndeep m2 trace argty1
           return TTraitBuiltIn
 
-      | [], _, false, ("op_LeftShift" | "op_RightShift"), [argty1;argty2] 
+      | _, false, ("op_LeftShift" | "op_RightShift"), [argty1;argty2] 
           when    isIntegerOrIntegerEnumTy g argty1  -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 g.int_ty
@@ -1210,38 +1210,38 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveDimensionlessNumericType csenv ndeep m2 trace argty1
           return TTraitBuiltIn
 
-      | _, _, false, ("op_UnaryPlus"), [argty] 
+      | _, false, "op_UnaryPlus", [argty] 
           when IsNumericOrIntegralEnumType g argty -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty
           return TTraitBuiltIn
 
-      | _, _, false, ("op_UnaryNegation"), [argty] 
+      | _, false, "op_UnaryNegation", [argty] 
           when isSignedIntegerTy g argty || isFpTy g argty || isDecimalTy g argty -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty
           return TTraitBuiltIn
 
-      | _, _, true, ("get_Sign"), [] 
+      | _, true, "get_Sign", [] 
           when (let argty = tys.Head in isSignedIntegerTy g argty || isFpTy g argty || isDecimalTy g argty) -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty g.int32_ty
           return TTraitBuiltIn
 
-      | _, _, false, ("op_LogicalNot" | "op_OnesComplement"), [argty] 
+      | _, false, ("op_LogicalNot" | "op_OnesComplement"), [argty] 
           when isIntegerOrIntegerEnumTy g argty  -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty
           do! SolveDimensionlessNumericType csenv ndeep m2 trace argty
           return TTraitBuiltIn
 
-      | _, _, false, ("Abs"), [argty] 
+      | _, false, "Abs", [argty] 
           when isSignedIntegerTy g argty || isFpTy g argty || isDecimalTy g argty -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty
           return TTraitBuiltIn
 
-      | _, _, false, "Sqrt", [argty1] 
+      | _, false, "Sqrt", [argty1] 
           when isFpTy g argty1 ->
           match GetMeasureOfType g argty1 with
             | Some (tcref, _) -> 
@@ -1253,7 +1253,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
               return TTraitBuiltIn
 
-      | _, _, false, ("Sin" | "Cos" | "Tan" | "Sinh" | "Cosh" | "Tanh" | "Atan" | "Acos" | "Asin" | "Exp" | "Ceiling" | "Floor" | "Round" | "Truncate" | "Log10" | "Log" | "Sqrt"), [argty] 
+      | _, false, ("Sin" | "Cos" | "Tan" | "Sinh" | "Cosh" | "Tanh" | "Atan" | "Acos" | "Asin" | "Exp" | "Ceiling" | "Floor" | "Round" | "Truncate" | "Log10" | "Log" | "Sqrt"), [argty] 
           when isFpTy g argty -> 
 
           do! SolveDimensionlessNumericType csenv ndeep m2 trace argty
@@ -1261,7 +1261,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           return TTraitBuiltIn
 
       // Simulate solutions to op_Implicit and op_Explicit
-      | _, _, false, "op_Explicit", [argty] 
+      | _, false, "op_Explicit", [argty] 
           when (// The input type. 
                 (IsNonDecimalNumericOrIntegralEnumType g argty || isStringTy g argty || isCharTy g argty) &&
                 // The output type
@@ -1274,7 +1274,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           return TTraitBuiltIn
 
 
-      | _, _, false, "op_Explicit", [argty] 
+      | _, false, "op_Explicit", [argty] 
           when (// The input type. 
                 (IsNumericOrIntegralEnumType g argty || isStringTy g argty) &&
                 // The output type
@@ -1282,7 +1282,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
           return TTraitBuiltIn
 
-      | _, _, false, "Pow", [argty1; argty2] 
+      | _, false, "Pow", [argty1; argty2] 
           when isFpTy g argty1 -> 
           
           do! SolveDimensionlessNumericType csenv ndeep m2 trace argty1
@@ -1290,7 +1290,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1 
           return TTraitBuiltIn
 
-      | _, _, false, "Atan2", [argty1; argty2] 
+      | _, false, "Atan2", [argty1; argty2] 
           when isFpTy g argty1 -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 argty1
