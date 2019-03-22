@@ -1489,7 +1489,7 @@ module Patterns =
         let case,i = u_tup2 u_UnionCaseInfo u_int st  
         (fun tyargs -> getUnionCaseInfoField(case tyargs,i))
 
-    and u_ModuleDefn nWitnesses st = 
+    and u_ModuleDefn witnessInfo st = 
         let (ty,nm,isProp) = u_tup3 u_NamedType u_string u_bool st 
         if isProp then Unique(StaticPropGetOp(bindModuleProperty(ty,nm)))
         else 
@@ -1497,21 +1497,30 @@ module Patterns =
         match meths with 
         | [||] -> 
             raise <| System.InvalidOperationException (String.Format(SR.GetString(SR.QcannotBindFunction), nm, ty.ToString()))
-        | [| res |] ->
-            Unique(StaticMethodCallOp(res))
-        | [| res1; res2 |] when nWitnesses > 0 -> 
-            if res1.GetParameters().Length < res2.GetParameters().Length then 
-                Unique(StaticMethodCallWOp(res1, res2, nWitnesses))
-            else 
-                Unique(StaticMethodCallWOp(res2, res1, nWitnesses))
+        | [| minfo |] ->
+            match witnessInfo with 
+            | None ->
+                Unique(StaticMethodCallOp(minfo))
+            | Some (nmW, nWitnesses) -> 
+                let methsW = ty.GetMethods(staticBindingFlags) |> Array.filter (fun mi -> mi.Name = nmW)
+                match methsW with
+                | [||] -> 
+                    raise <| System.InvalidOperationException (String.Format(SR.GetString(SR.QcannotBindFunction), nmW, ty.ToString()))
+                | [| minfoW |] -> 
+                    Unique(StaticMethodCallWOp(minfo, minfoW, nWitnesses))
+                | _ -> 
+                    Ambiguous(fun argTypes tyargs -> 
+                        let minfoW = bindModuleFunctionWithCallSiteArgs(ty, nm, argTypes, tyargs)
+                        StaticMethodCallWOp(minfo, minfoW, nWitnesses))
         | _ -> 
             Ambiguous(fun argTypes tyargs -> 
-                if nWitnesses = 0 then 
+                match witnessInfo with 
+                | None ->
                     let minfo = bindModuleFunctionWithCallSiteArgs(ty, nm, argTypes, tyargs)
                     StaticMethodCallOp minfo
-                else
+                | Some (nmW, nWitnesses) -> 
                     let minfo = bindModuleFunctionWithCallSiteArgs(ty, nm, List.skip nWitnesses argTypes, tyargs)
-                    let minfoW = bindModuleFunctionWithCallSiteArgs(ty, nm, argTypes, tyargs)
+                    let minfoW = bindModuleFunctionWithCallSiteArgs(ty, nmW, argTypes, tyargs)
                     StaticMethodCallWOp(minfo, minfoW, nWitnesses))
 
     and u_MethodInfoData st = 
@@ -1527,7 +1536,7 @@ module Patterns =
         let tag = u_byte_as_int st 
         match tag with 
         | 0 -> 
-            match u_ModuleDefn 0 st with 
+            match u_ModuleDefn None st with 
             | Unique(StaticMethodCallOp(minfo)) -> (minfo :> MethodBase)
             | Unique(StaticPropGetOp(pinfo)) -> (pinfo.GetGetMethod(true) :> MethodBase)
             | Ambiguous(_) -> raise (System.Reflection.AmbiguousMatchException())
@@ -1545,8 +1554,9 @@ module Patterns =
             let cinfo = bindGenericCtor(data)
             (cinfo :> MethodBase) 
         | 3 -> 
+            let methNameW = u_string st
             let nWitnesses = u_int st
-            match u_ModuleDefn nWitnesses st with 
+            match u_ModuleDefn (Some (methNameW, nWitnesses)) st with 
             | Unique(StaticMethodCallOp(minfo)) -> (minfo :> MethodBase)
             | Unique(StaticMethodCallWOp(_minfo, minfoW, _)) -> (minfoW :> MethodBase)
             | Unique(StaticPropGetOp(pinfo)) -> (pinfo.GetGetMethod(true) :> MethodBase)
@@ -1565,12 +1575,13 @@ module Patterns =
     and u_opSpec st = 
         let tag = u_byte_as_int st 
         if tag = 1 then
-            match u_ModuleDefn 0 st with
+            match u_ModuleDefn None st with
             | Unique(r) -> Unique(instModuleDefnOp r)
             | Ambiguous(f) -> Ambiguous(fun argTypes tyargs -> instModuleDefnOp (f argTypes tyargs) tyargs) 
         elif tag = 51 then
+            let nmW = u_string st
             let nWitnesses = u_int st
-            match u_ModuleDefn nWitnesses st with
+            match u_ModuleDefn (Some (nmW, nWitnesses)) st with
             | Unique(r) -> Unique(instModuleDefnOp r)
             | Ambiguous(f) -> Ambiguous(fun argTypes tyargs -> instModuleDefnOp (f argTypes tyargs) tyargs) 
         else

@@ -47,7 +47,7 @@ type ModuleDefnData =
       IsProperty: bool }
 
 type MethodBaseData = 
-    | ModuleDefn of ModuleDefnData * int
+    | ModuleDefn of ModuleDefnData * (string * int) option
     | Method     of MethodData
     | Ctor       of CtorData
 
@@ -62,7 +62,7 @@ val mkQuote  : ExprData -> ExprData
 val mkQuoteRaw40  : ExprData -> ExprData  // only available for FSharp.Core 4.4.0.0+
 val mkCond   : ExprData * ExprData * ExprData -> ExprData 
 val mkModuleValueApp : NamedTypeData * string * bool * TypeData list * ExprData list -> ExprData 
-val mkModuleValueWApp : NamedTypeData * string * bool * int * TypeData list * ExprData list -> ExprData 
+val mkModuleValueWApp : NamedTypeData * string * bool * string * int * TypeData list * ExprData list -> ExprData 
 val mkLetRec : (VarData * ExprData) list * ExprData -> ExprData 
 val mkLet : (VarData * ExprData) * ExprData -> ExprData
 val mkRecdMk : NamedTypeData  * TypeData list * ExprData list -> ExprData

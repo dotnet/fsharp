@@ -52,7 +52,7 @@ type CombOp =
     | AppOp
     | CondOp  
     | ModuleValueOp of NamedTypeData * string * bool
-    | ModuleValueWOp of NamedTypeData * string * bool * int
+    | ModuleValueWOp of NamedTypeData * string * bool * string * int
     | LetRecOp  
     | LetRecCombOp  
     | LetOp  
@@ -129,8 +129,8 @@ let mkCond (x1, x2, x3)          = CombExpr(CondOp, [], [x1;x2;x3])
 let mkModuleValueApp (tcref, nm, isProp, tyargs, args: ExprData list) = 
     CombExpr(ModuleValueOp(tcref, nm, isProp), tyargs, args)
 
-let mkModuleValueWApp (tcref, nm, isProp, nWitnesses, tyargs, args: ExprData list) = 
-    CombExpr(ModuleValueWOp(tcref, nm, isProp, nWitnesses), tyargs, args)
+let mkModuleValueWApp (tcref, nm, isProp, nmW, nWitnesses, tyargs, args: ExprData list) = 
+    CombExpr(ModuleValueWOp(tcref, nm, isProp, nmW, nWitnesses), tyargs, args)
 
 let mkTuple (ty, x)             = CombExpr(TupleMkOp, [ty], x)
 
@@ -472,9 +472,10 @@ let p_CombOp x st =
         p_MethodData a st
         p_MethodData b st
         p_int c st
-    | ModuleValueWOp (x, y, z, n) -> 
+    | ModuleValueWOp (x, y, z, nmW, nWitnesses) -> 
         p_byte 51 st
-        p_int n st
+        p_string nmW st
+        p_int nWitnesses st
         p_NamedType x st 
         p_string y st 
         p_bool z st
@@ -496,7 +497,7 @@ type ModuleDefnData =
       IsProperty: bool }
 
 type MethodBaseData = 
-    | ModuleDefn of ModuleDefnData * int
+    | ModuleDefn of ModuleDefnData * (string * int) option
     | Method     of MethodData
     | Ctor       of CtorData
 
@@ -504,18 +505,18 @@ let pickle = pickle_obj p_expr
 
 let p_MethodBase x st = 
     match x with 
-    | ModuleDefn (md, nWitnesses) -> 
-        if nWitnesses = 0 then 
-            p_byte 0 st
-            p_NamedType md.Module st
-            p_string md.Name st
-            p_bool md.IsProperty st
-        else
-            p_byte 3 st
-            p_int nWitnesses st
-            p_NamedType md.Module st
-            p_string md.Name st
-            p_bool md.IsProperty st
+    | ModuleDefn (md, None) -> 
+        p_byte 0 st
+        p_NamedType md.Module st
+        p_string md.Name st
+        p_bool md.IsProperty st
+    | ModuleDefn (md, Some (nmW, nWitnesses)) -> 
+        p_byte 3 st
+        p_string nmW st
+        p_int nWitnesses st
+        p_NamedType md.Module st
+        p_string md.Name st
+        p_bool md.IsProperty st
     | Method md -> 
         p_byte 1 st
         p_MethodData md st

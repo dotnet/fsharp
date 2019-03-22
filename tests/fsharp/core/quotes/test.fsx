@@ -3184,7 +3184,7 @@ module WitnessTests =
             | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) -> 
                 minfo1.Name = "op_Addition" && 
                 minfo1.GetParameters().Length = 2 && 
-                minfo2.Name = "op_Addition" &&
+                minfo2.Name = "op_AdditionWithWitnesses" &&
                 minfo2.GetParameters().Length = 3 && 
                 (printfn "checking witnessArgs.Length = %d... args.Length"; true) &&
                 witnessArgs.Length = 1 &&
@@ -3203,7 +3203,7 @@ module WitnessTests =
                 minfo1.Name = "op_Addition" && 
                 (printfn "checking minfo1.GetParameters().Length..."; true) &&
                 minfo1.GetParameters().Length = 2 && 
-                minfo2.Name = "op_Addition" &&
+                minfo2.Name = "op_AdditionWithWitnesses" &&
                 (printfn "checking minfo2.GetParameters().Length..."; true) &&
                 minfo2.GetParameters().Length = 3 && 
                 (printfn "checking args.Length..."; true) &&
@@ -3219,21 +3219,15 @@ module WitnessTests =
                 printfn "incorrect node"
                 false)
 
-    test "check CallWithWitness (DateTime + TimeSpan)"      
+    test "check Call (DateTime + TimeSpan)"      
         (<@ System.DateTime.Now + System.TimeSpan.Zero  @> 
          |> function 
-            | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) -> 
+            | Call(None, minfo1, args) -> 
                 minfo1.Name = "op_Addition" && 
                 (printfn "checking minfo1.GetParameters().Length..."; true) &&
                 minfo1.GetParameters().Length = 2 && 
-                minfo2.Name = "op_Addition" &&
-                (printfn "checking minfo2.GetParameters().Length..."; true) &&
-                minfo2.GetParameters().Length = 3 && 
-                (printfn "checking minfo2.GetParameters().[0].Name = %s..." (minfo2.GetParameters().[0].Name); true) &&
                 //minfo2.GetParameters().[0].Name = "op_Addition" && 
-                witnessArgs.Length = 1 &&
                 args.Length = 2 &&
-                (match witnessArgs with [ Lambda _ ] -> true | _ -> false) &&
                 (match args with [ _; _ ] -> true | _ -> false)
             | _ -> false)
 
@@ -3250,7 +3244,7 @@ module WitnessTests =
                 (printfn "checking minfo1.GetParameters().Length..."; true) &&
                 minfo1.GetParameters().Length = 2 && 
                 minfo2.IsStatic && 
-                minfo2.Name = "StaticAdd" &&
+                minfo2.Name = "StaticAddWithWitnesses" &&
                 (printfn "checking minfo2.GetParameters().Length = %d..." (minfo2.GetParameters().Length); true) &&
                 minfo2.GetParameters().Length = 3 && 
                 (printfn "checking witnessArgs.Length..."; true) &&
@@ -3275,7 +3269,7 @@ module WitnessTests =
                 (printfn "checking minfo1.GetParameters().Length..."; true) &&
                 minfo1.GetParameters().Length = 2 && 
                 not minfo2.IsStatic && 
-                minfo2.Name = "InstanceAdd" &&
+                minfo2.Name = "InstanceAddWithWitnesses" &&
                 (printfn "checking minfo2.GetParameters().Length = %d..." (minfo2.GetParameters().Length); true) &&
                 minfo2.GetParameters().Length = 3 && 
                 (printfn "checking witnessArgs.Length..."; true) &&

@@ -744,22 +744,27 @@ and ConvObjectModelCallCore cenv env m (isPropGet, isPropSet, isNewObj, parentTy
               methRetType  = methRetTypeR
               methName     = methName
               numGenericArgs = numGenericArgs }
+
         QP.mkMethodCall(methR, tyargsR, callArgsR)
 
     else
 
+        // The old method entry point
         let methR: QuotationPickler.MethodData =
             { methParent   = parentTyconR
               methArgTypes = methArgTypesR
               methRetType  = methRetTypeR
               methName     = methName
               numGenericArgs = numGenericArgs }
-        let methWR QuotationPickler.MethodData =
+
+        // The witness-passing method entry point
+        let methWR: QuotationPickler.MethodData =
             { methParent   = parentTyconR
               methArgTypes = witnessArgTypesR @ methArgTypesR
               methRetType  = methRetTypeR
-              methName     = methName
+              methName     = ExtraWitnessMethodName methName
               numGenericArgs = numGenericArgs }
+
         QP.mkMethodCallW(methR, methWR, List.length witnessArgTypesR, tyargsR, callArgsR)
 
 and ConvModuleValueApp cenv env m (vref:ValRef) tyargs witnessArgs (args: Expr list list) =
@@ -778,7 +783,7 @@ and ConvModuleValueAppCore cenv env m (vref:ValRef) tyargs witnessArgs (curriedA
         if nWitnesses = 0 then 
             QP.mkModuleValueApp(tcrefR, nm, isProperty, tyargsR, argsR)
         else
-            QP.mkModuleValueWApp(tcrefR, nm, isProperty, nWitnesses, tyargsR, argsR)
+            QP.mkModuleValueWApp(tcrefR, nm, isProperty, ExtraWitnessMethodName nm, nWitnesses, tyargsR, argsR)
 
 and ConvExprs cenv env args =
     List.map (ConvExpr cenv env) args
@@ -1154,7 +1159,7 @@ let ConvMethodBase cenv env (methName, v: Val) =
         QP.MethodBaseData.ModuleDefn
             ({ Name = methName
                Module = parentTyconR
-               IsProperty = IsCompiledAsStaticProperty cenv.g v }, nWitnesses)
+               IsProperty = IsCompiledAsStaticProperty cenv.g v }, (if nWitnesses = 0 then None else Some (ExtraWitnessMethodName methName, nWitnesses)))
 
 // FSComp.SR.crefQuotationsCantContainLiteralByteArrays
 

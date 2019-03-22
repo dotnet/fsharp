@@ -965,7 +965,7 @@ let GetMethodSpecForMemberVal amap g (memberInfo: ValMemberInfo) (vref: ValRef) 
                 mspec 
             else
                 let ilWitnessArgTys = GenTypes amap m tyenvUnderTypars (GenWitnessTys g cxs)
-                mkILInstanceMethSpecInTy (ilTy, vref.CompiledName, ilWitnessArgTys @ ilMethodArgTys, ilActualRetTy, ilMethodInst)
+                mkILInstanceMethSpecInTy (ilTy, ExtraWitnessMethodName vref.CompiledName, ilWitnessArgTys @ ilMethodArgTys, ilActualRetTy, ilMethodInst)
     
         mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, cxs, methodArgTys
     else
@@ -978,7 +978,7 @@ let GetMethodSpecForMemberVal amap g (memberInfo: ValMemberInfo) (vref: ValRef) 
                 mspec 
             else
                 let ilWitnessArgTys = GenTypes amap m tyenvUnderTypars (GenWitnessTys g cxs)
-                mkILStaticMethSpecInTy (ilTy, vref.CompiledName, ilWitnessArgTys @ ilMethodArgTys, ilActualRetTy, ilMethodInst)
+                mkILStaticMethSpecInTy (ilTy, ExtraWitnessMethodName vref.CompiledName, ilWitnessArgTys @ ilMethodArgTys, ilActualRetTy, ilMethodInst)
     
         mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, cxs, methodArgTys
 
@@ -1038,7 +1038,7 @@ let ComputeStorageForFSharpFunctionOrFSharpExtensionMember amap g cloc topValInf
             mspec 
         else
             let ilWitnessArgTys = GenTypes amap m tyenvUnderTypars (GenWitnessTys g cxs)
-            mkILStaticMethSpecInTy (ilLocTy, nm, (ilWitnessArgTys @ ilMethodArgTys), ilRetTy, ilMethodInst)
+            mkILStaticMethSpecInTy (ilLocTy, ExtraWitnessMethodName nm, (ilWitnessArgTys @ ilMethodArgTys), ilRetTy, ilMethodInst)
     Method (topValInfo, vref, mspec, mspecW, m, [], tps, curriedArgInfos, paramInfos, cxs, argTys, retInfo)
 
 /// Determine if an F#-declared value, method or function is compiled as a method.
@@ -5634,41 +5634,52 @@ and GenEventForProperty cenv eenvForMeth (mspec: ILMethodSpec) (v: Val) ilAttrsT
                otherMethods= [],
                customAttrs = mkILCustomAttrs ilAttrsThatGoOnPrimaryItem)
 
-and ComputeFlagFixupsForMemberBinding cenv (v: Val, memberInfo: ValMemberInfo) =
+and ComputeUseMethodImpl cenv (v: Val, slotsig: SlotSig) =
+    let oty = slotsig.ImplementedType
+    let otcref = tcrefOfAppTy cenv.g oty
+    let tcref = v.MemberApparentEntity
+    // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode during code generation
+    isInterfaceTy cenv.g oty &&
+    (let isCompare =
+        Option.isSome tcref.GeneratedCompareToValues &&
+         (typeEquiv cenv.g oty cenv.g.mk_IComparable_ty ||
+          tyconRefEq cenv.g cenv.g.system_GenericIComparable_tcref otcref)
+ 
+     not isCompare) &&
+
+    (let isGenericEquals =
+        Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && tyconRefEq cenv.g cenv.g.system_GenericIEquatable_tcref otcref
+ 
+     not isGenericEquals) &&
+    (let isStructural =
+        (Option.isSome tcref.GeneratedCompareToWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralComparable_ty) ||
+        (Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralEquatable_ty)
+
+     not isStructural)
+
+and ComputeMethodImplNameFixupForMemberBinding cenv (v: Val, memberInfo: ValMemberInfo) =
      if isNil memberInfo.ImplementedSlotSigs then
-         [fixupVirtualSlotFlags]
+         None
      else
-         memberInfo.ImplementedSlotSigs |> List.map (fun slotsig ->
-             let oty = slotsig.ImplementedType
-             let otcref = tcrefOfAppTy cenv.g oty
-             let tcref = v.MemberApparentEntity
+         let slotsig = memberInfo.ImplementedSlotSigs |> List.last
+         let useMethodImpl = ComputeUseMethodImpl cenv (v, slotsig)
+         let nameOfOverridingMethod = GenNameOfOverridingMethod cenv (useMethodImpl, slotsig)
+         Some nameOfOverridingMethod
          
-             let useMethodImpl =
-                // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode during code generation
-                isInterfaceTy cenv.g oty &&
-                (let isCompare =
-                    Option.isSome tcref.GeneratedCompareToValues &&
-                     (typeEquiv cenv.g oty cenv.g.mk_IComparable_ty ||
-                      tyconRefEq cenv.g cenv.g.system_GenericIComparable_tcref otcref)
-             
-                 not isCompare) &&
-
-                (let isGenericEquals =
-                    Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && tyconRefEq cenv.g cenv.g.system_GenericIEquatable_tcref otcref
-             
-                 not isGenericEquals) &&
-                (let isStructural =
-                    (Option.isSome tcref.GeneratedCompareToWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralComparable_ty) ||
-                    (Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralEquatable_ty)
-
-                 not isStructural)
-
-             let nameOfOverridingMethod = GenNameOfOverridingMethod cenv (useMethodImpl, slotsig)
-
+and ComputeFlagFixupsForMemberBinding cenv (v: Val, memberInfo: ValMemberInfo) =
+     [ if isNil memberInfo.ImplementedSlotSigs then
+           yield fixupVirtualSlotFlags
+       else
+           for slotsig in memberInfo.ImplementedSlotSigs do
+             let useMethodImpl = ComputeUseMethodImpl cenv (v, slotsig)
+         
              if useMethodImpl then
-                fixupMethodImplFlags >> renameMethodDef nameOfOverridingMethod
+                yield fixupMethodImplFlags
              else
-                fixupVirtualSlotFlags >> renameMethodDef nameOfOverridingMethod)
+                yield fixupVirtualSlotFlags 
+           match ComputeMethodImplNameFixupForMemberBinding cenv (v, memberInfo) with 
+           | Some nm -> yield renameMethodDef nm 
+           | None -> () ]
           
 and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     let implflags =
@@ -5763,7 +5774,7 @@ and GenMethodForBinding
         match TryFindFSharpAttributeOpt cenv.g cenv.g.attrib_DllImportAttribute v.Attribs with
         | Some (Attrib(_, _, [ AttribStringArg(dll) ], namedArgs, _, _, m))  ->
             if not (isNil methLambdaTypars) then error(Error(FSComp.SR.ilSignatureForExternalFunctionContainsTypeParameters(), m))
-            let hasPreserveSigNamedArg, mbody = GenPInvokeMethod (v.CompiledName, dll, namedArgs)
+            let hasPreserveSigNamedArg, mbody = GenPInvokeMethod (mspec.Name, dll, namedArgs)
             hasPreserveSigNamedArg, mbody, true
 
         | Some (Attrib(_, _, _, _, _, _, m))  ->
@@ -5777,7 +5788,7 @@ and GenMethodForBinding
                 let attr = TryFindFSharpBoolAttributeAssumeFalse cenv.g cenv.g.attrib_NoDynamicInvocationAttribute v.Attribs
                 if (not hasWitnessArgs && attr.IsSome) ||
                    (hasWitnessArgs && attr = Some false) then
-                    let exnArg = mkString cenv.g m (FSComp.SR.ilDynamicInvocationNotSupported(v.CompiledName))
+                    let exnArg = mkString cenv.g m (FSComp.SR.ilDynamicInvocationNotSupported(mspec.Name))
                     let exnExpr = MakeNotSupportedExnExpr cenv eenv (exnArg, m)
                     mkThrow m returnTy exnExpr
                 else
@@ -5826,17 +5837,41 @@ and GenMethodForBinding
 
     match v.MemberInfo with
     // don't generate unimplemented abstracts
-    | Some(memberInfo) when memberInfo.MemberFlags.IsDispatchSlot && not memberInfo.IsImplemented ->
+    | Some memberInfo when memberInfo.MemberFlags.IsDispatchSlot && not memberInfo.IsImplemented ->
          // skipping unimplemented abstract method
          ()
 
-    | Some(memberInfo) when (match memberInfo.MemberFlags.MemberKind with (MemberKind.PropertySet | MemberKind.PropertyGet)  -> CompileAsEvent cenv.g v.Attribs  | _ -> false) ->
-         // skip method generation for compiling the property as a .NET event
-         // Emit the pseudo-property as an event (but not if its a private method impl)
-         if access <> ILMemberAccess.Private then
-             let edef = GenEventForProperty cenv eenvForMeth mspec v ilAttrsThatGoOnPrimaryItem m returnTy
-             cgbuf.mgbuf.AddEventDef(tref, edef)
-         ()
+    // compiling CLIEvent properties
+    | Some memberInfo
+         when not v.IsExtensionMember && 
+              (match memberInfo.MemberFlags.MemberKind with 
+               | (MemberKind.PropertySet | MemberKind.PropertyGet) -> CompileAsEvent cenv.g v.Attribs 
+               | _ -> false) ->
+
+        let useMethodImpl = 
+            if compileAsInstance && 
+               ((memberInfo.MemberFlags.IsDispatchSlot && memberInfo.IsImplemented) ||
+                memberInfo.MemberFlags.IsOverrideOrExplicitImpl) then
+
+                let useMethodImpl = memberInfo.ImplementedSlotSigs |> List.exists (fun slotsig -> ComputeUseMethodImpl cenv (v, slotsig))
+             
+                let nameOfOverridingMethod = 
+                    match ComputeMethodImplNameFixupForMemberBinding cenv (v, memberInfo) with 
+                    | None -> mspec.Name
+                    | Some nm -> nm
+
+                // Fixup can potentially change name of reflected definition that was already recorded - patch it if necessary
+                cgbuf.mgbuf.ReplaceNameOfReflectedDefinition(v, nameOfOverridingMethod)
+                useMethodImpl
+            else
+                false
+
+        // skip method generation for compiling the property as a .NET event
+        // Instead emit the pseudo-property as an event.
+        // on't do this if it's a private method impl.
+        if not useMethodImpl then
+            let edef = GenEventForProperty cenv eenvForMeth mspec v ilAttrsThatGoOnPrimaryItem m returnTy
+            cgbuf.mgbuf.AddEventDef(tref, edef)
 
     | _ -> 
     
@@ -5861,20 +5896,20 @@ and GenMethodForBinding
            else
                let mdef =
                    if not compileAsInstance then
-                       mkILStaticMethod (ilMethTypars, v.CompiledName, access, ilParams, ilReturn, ilMethodBody)
+                       mkILStaticMethod (ilMethTypars, mspec.Name, access, ilParams, ilReturn, ilMethodBody)
 
                    elif (memberInfo.MemberFlags.IsDispatchSlot && memberInfo.IsImplemented) ||
                         memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
 
                        let flagFixups = ComputeFlagFixupsForMemberBinding cenv (v, memberInfo)
-                       let mdef = mkILGenericVirtualMethod (v.CompiledName, ILMemberAccess.Public, ilMethTypars, ilParams, ilReturn, ilMethodBody)
+                       let mdef = mkILGenericVirtualMethod (mspec.Name, ILMemberAccess.Public, ilMethTypars, ilParams, ilReturn, ilMethodBody)
                        let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
 
                        // fixup can potentially change name of reflected definition that was already recorded - patch it if necessary
                        cgbuf.mgbuf.ReplaceNameOfReflectedDefinition(v, mdef.Name)
                        mdef
                    else
-                       mkILGenericNonVirtualMethod (v.CompiledName, access, ilMethTypars, ilParams, ilReturn, ilMethodBody)
+                       mkILGenericNonVirtualMethod (mspec.Name, access, ilMethTypars, ilParams, ilReturn, ilMethodBody)
 
                let isAbstract =
                    memberInfo.MemberFlags.IsDispatchSlot &&

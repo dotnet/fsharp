@@ -698,3 +698,5 @@ module public FSharp.Compiler.PrettyNaming
         mangleProvidedTypeName (nm, nonDefaultArgs)
 
     let outArgCompilerGeneratedName = "outArg"
+
+    let ExtraWitnessMethodName nm = nm + "WithWitnesses"
