@@ -32,6 +32,7 @@
   <!-- version number assignment -->
   <PropertyGroup>
     <VersionPrefix>$(FSCoreVersion)</VersionPrefix>
+    <VersionPrefix Condition="'$(UseFSharpPackageVersion)' == 'true'">$(FSCorePackageVersion)</VersionPrefix>
     <VersionPrefix Condition="'$(UseFSharpProductVersion)' == 'true'">$(FSProductVersion)</VersionPrefix>
     <VersionPrefix Condition="'$(UseVsMicroBuildAssemblyVersion)' == 'true'">$(VSAssemblyVersion)</VersionPrefix>
     <VsixVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VsixVersionPrefix>
