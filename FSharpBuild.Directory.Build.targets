@@ -1,5 +1,7 @@
 <Project>
 
+  <Import Project="Sdk.targets" Sdk="Microsoft.DotNet.Arcade.Sdk" />
+  <Import Project="eng\targets\NuGet.targets" />
   <Import Project="FSharp.Profiles.props" />
 
   <PropertyGroup>
@@ -13,6 +15,7 @@
     during `net46`, but for purposes of restore needs to be present.
     -->
     <AssetTargetFallback>$(AssetTargetFallback);net462</AssetTargetFallback>
+    <NoWarn>$(NoWarn);NU1605;NU1701</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -33,10 +36,5 @@
       <Output TaskParameter="Include" ItemName="FileWrites" />
     </CreateItem>
   </Target>
-
-  <Import Project="build\targets\NGenOrCrossGen.targets" />
-  <Import Project="build\targets\ConvertPortablePdbs.targets" />
-  <Import Project="build\targets\GenerateAssemblyAttributes.targets" />
-  <Import Project="build\targets\GenerateInternalsVisibleTo.targets" />
 
 </Project>
