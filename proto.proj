@@ -6,7 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Projects Include="src\buildtools\buildtools.proj" />
     <Projects Include="src\fsharp\FSharp.Build\FSharp.Build.fsproj">
       <AdditionalProperties Condition="'$(OS)' != 'Unix'">TargetFramework=net46</AdditionalProperties>
       <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=netcoreapp2.1</AdditionalProperties>

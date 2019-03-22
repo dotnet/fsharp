@@ -93,7 +93,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         Private components As System.ComponentModel.IContainer
 
         'PERF: A note about the labels used as lines.  The 3D label is being set to 1 px high,
-        '   so you’re really only using the grey part of it.  Using BorderStyle.Fixed3D seems
+        '   so youï¿½re really only using the grey part of it.  Using BorderStyle.Fixed3D seems
         '   to fire an extra resize OnHandleCreated.  The simple solution is to use BorderStyle.None
         '   and BackColor = SystemColors.ControlDark.
 
@@ -645,7 +645,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             End If
 
             ' Remove the project directory path
-            If String.Compare(BasePath, Microsoft.VisualBasic.Strings.Left(DirectoryPath, Len(BasePath)), StringComparison.OrdinalIgnoreCase) = 0 Then
+            If String.Compare(BasePath, VisualBasic.Left(DirectoryPath, Len(BasePath)), StringComparison.OrdinalIgnoreCase) = 0 Then
                 Dim ch As Char = CChar(Mid(DirectoryPath, Len(BasePath), 1))
                 If ch = System.IO.Path.DirectorySeparatorChar OrElse ch = System.IO.Path.AltDirectorySeparatorChar Then
                     RelativePath = Mid(DirectoryPath, Len(BasePath) + 1)

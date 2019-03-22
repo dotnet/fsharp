@@ -82,6 +82,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.6.0" />
     <PackageReference Include="NUnit" Version="3.9.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
+    <PackageReference Include="NunitXml.TestLogger" Version="2.1.36" />
     <PackageReference Include="Dotnet.ProjInfo" Version="0.20.0" />
     <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>

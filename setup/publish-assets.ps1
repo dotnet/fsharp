@@ -2,7 +2,7 @@
 .SYNOPSIS
 Publishes the VSIX package on MyGet.
 
-.PARAMETER binariesPath
+.PARAMETER artifactsPath
 The root directory where the build outputs are written.
 
 .PARAMETER branchName
@@ -14,7 +14,7 @@ The API key used to authenticate with MyGet.
 #>
 
 Param(
-    [string]$binariesPath = $null,
+    [string]$artifactsPath = $null,
     [string]$branchName = $null,
     [string]$apiKey = $null,
     [string]$configuration = $null
@@ -41,7 +41,7 @@ try {
     }
 
     $branchName = $branchName.Replace("/", "_") # can't have slashes in the branch name
-    $vsix = Join-Path $binariesPath "VisualFSharpFull\$configuration\net46\VisualFSharpFull.vsix"
+    $vsix = Join-Path $artifactsPath "VSSetup\$configuration\Insertion\VisualFSharpFull.vsix"
 
     Write-Host "  Uploading '$vsix' to '$requestUrl'."
 
