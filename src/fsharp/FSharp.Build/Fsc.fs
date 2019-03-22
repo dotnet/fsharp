@@ -30,6 +30,7 @@ type public Fsc () as this =
     let mutable debugType : string = null
     let mutable defineConstants : ITaskItem[] = [||]
     let mutable delaySign : bool = false
+    let mutable deterministic : bool = true
     let mutable disabledWarnings : string = null
     let mutable documentationFile : string = null
     let mutable dotnetFscCompilerPath : string = null
@@ -233,6 +234,9 @@ type public Fsc () as this =
         builder.AppendSwitchIfNotNull("--targetprofile:", targetProfile)
 
         builder.AppendSwitch("--nocopyfsharpcore")
+
+        if deterministic then
+            builder.AppendSwitch("--deterministic+")
 
         // OtherFlags - must be second-to-last
         builder.AppendSwitchUnquotedIfNotNull("", otherFlags)
