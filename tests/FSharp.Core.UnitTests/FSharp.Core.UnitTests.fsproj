@@ -94,12 +94,6 @@
     <PackageReference Include="FsCheck" Version="$(FsCheckPackageVersion)" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(BUILD_IN_FSHARP_REPOSITORY)' != 'true'">
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" PrivateAssets="All" />
-    <PackageReference Include="FSharp.Core" Version="4.6.0" />
-    <PackageReference Include="FsCheck" Version="3.0.0-alpha4" />
-  </ItemGroup>
-
   <ItemGroup Condition="'$(UnitTestType)' == 'xunit'">
     <PackageReference Include="xunit" Version="2.4.1"  PrivateAssets="All" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1"  PrivateAssets="All" />
