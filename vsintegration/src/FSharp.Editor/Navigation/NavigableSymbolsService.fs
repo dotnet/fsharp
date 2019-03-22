@@ -54,6 +54,7 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
                     try
                         // This call to Wait() is fine because we want to be able to provide the error message in the status bar.
                         gtdTask.Wait()
+                        statusBar.Clear()
 
                         if gtdTask.Status = TaskStatus.RanToCompletion && gtdTask.Result.IsSome then
                             let navigableItem, range = gtdTask.Result.Value
@@ -61,8 +62,6 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
                             let declarationTextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
                             let declarationSpan = Span(declarationTextSpan.Start, declarationTextSpan.Length)
                             let symbolSpan = SnapshotSpan(snapshot, declarationSpan)
-
-                            statusBar.Clear()
 
                             return FSharpNavigableSymbol(navigableItem, symbolSpan, gtd, statusBar) :> INavigableSymbol
                         else 
