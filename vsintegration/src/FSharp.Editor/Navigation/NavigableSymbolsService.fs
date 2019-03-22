@@ -62,6 +62,8 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
                             let declarationSpan = Span(declarationTextSpan.Start, declarationTextSpan.Length)
                             let symbolSpan = SnapshotSpan(snapshot, declarationSpan)
 
+                            statusBar.Clear()
+
                             return FSharpNavigableSymbol(navigableItem, symbolSpan, gtd, statusBar) :> INavigableSymbol
                         else 
                             statusBar.TempMessage(SR.CannotDetermineSymbol())
