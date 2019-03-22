@@ -35,7 +35,17 @@
     <VersionPrefix Condition="'$(UseFSharpPackageVersion)' == 'true'">$(FSCorePackageVersion)</VersionPrefix>
     <VersionPrefix Condition="'$(UseFSharpProductVersion)' == 'true'">$(FSProductVersion)</VersionPrefix>
     <VersionPrefix Condition="'$(UseVsMicroBuildAssemblyVersion)' == 'true'">$(VSAssemblyVersion)</VersionPrefix>
-    <VsixVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VsixVersionPrefix>
+    <!--
+    Previous nightly versions were of the form 15.9.20190322.1, but after the arcade sdk integration, that form
+    changed to 15.9.0.1917201 which breaks the nightly upgrade.  To enable this to work for 15.9 builds we re-insert
+    the build number (date) so that it's always increasing.
+
+    THIS CHANGE SHOULD NOT FLOW INTO ANY DEV16 BRANCHES.
+    -->
+    <_BuildNumber>$(OfficialBuildId)</_BuildNumber>
+    <_BuildNumber Condition="'$(OfficialBuildId)' == ''">$([System.DateTime]::Now.ToString(yyyyMMdd)).0</_BuildNumber>
+    <VsixVersionDateStampFix>$(_BuildNumber.Split('.')[0])</VsixVersionDateStampFix>
+    <VsixVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).$(VsixVersionDateStampFix)</VsixVersionPrefix>
     <AssemblyVersion Condition="'$(OfficialBuildId)' == ''">$(VersionPrefix)</AssemblyVersion>
     <!-- PR builds should explicitly specify a version number -->
   </PropertyGroup>
