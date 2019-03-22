@@ -168,7 +168,7 @@ type internal FSharpSignatureHelpProvider
                       XmlDocumentation.BuildMethodParamText(documentationBuilder, RoslynHelpers.CollectTaggedText doc, method.XmlDoc, p.ParameterName) 
                       let parts = List()
                       renderL (taggedTextListR (RoslynHelpers.CollectTaggedText parts)) p.StructuredDisplay |> ignore
-                      yield (p.ParameterName, p.IsOptional, doc, parts) 
+                      yield (p.ParameterName, p.IsOptional, p.CanonicalTypeTextForSorting, doc, parts) 
                 |]
 
             let prefixParts = 
@@ -210,7 +210,7 @@ type internal FSharpSignatureHelpProvider
                     results 
                     |> Array.map (fun (hasParamArrayArg, doc, prefixParts, separatorParts, suffixParts, parameters, descriptionParts) ->
                             let parameters = parameters 
-                                                |> Array.map (fun (paramName, isOptional, paramDoc, displayParts) -> 
+                                                |> Array.map (fun (paramName, isOptional, _typeText, paramDoc, displayParts) -> 
                                                 SignatureHelpParameter(paramName,isOptional,documentationFactory=(fun _ -> paramDoc :> seq<_>),displayParts=displayParts))
                             SignatureHelpItem(isVariadic=hasParamArrayArg, documentationFactory=(fun _ -> doc :> seq<_>),prefixParts=prefixParts,separatorParts=separatorParts,suffixParts=suffixParts,parameters=parameters,descriptionParts=descriptionParts))
 

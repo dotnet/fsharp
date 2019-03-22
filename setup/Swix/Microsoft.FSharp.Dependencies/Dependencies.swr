@@ -1,9 +1,9 @@
 use vs
 
 package name=Microsoft.FSharp.Dependencies
-        version=$(FSharpPackageVersion)
+        version=$(VsixVersion)
 
 vs.dependencies
   vs.dependency id=Microsoft.FSharp.SDK
-                version=$(FSharpPackageVersion)
+                version=$(VsixVersion)
                 type=Required
