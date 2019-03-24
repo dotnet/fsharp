@@ -158,6 +158,7 @@ module internal SR =
     let unsupportedQueryConstructKind = "unsupportedQueryConstructKind"
     let unsupportedQueryCall = "unsupportedQueryCall"
     let unsupportedQueryProperty = "unsupportedQueryProperty"
+    let maxDegreeOfParallelismNotPositive = "maxDegreeOfParallelismNotPositive"
     
     let GetString(name:System.String) : System.String = 
         resources.GetString(name, System.Globalization.CultureInfo.CurrentUICulture)

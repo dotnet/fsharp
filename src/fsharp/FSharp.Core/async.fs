@@ -1199,6 +1199,10 @@ namespace Microsoft.FSharp.Control
         static member Parallel (computations: seq<Async<'T>>) = Async.Parallel(computations, ?maxDegreeOfParallelism=None)
 
         static member Parallel (computations: seq<Async<'T>>, ?maxDegreeOfParallelism: int) =
+            match maxDegreeOfParallelism with
+            | Some x when x < 1 -> raise(System.ArgumentException(String.Format(SR.GetString(SR.maxDegreeOfParallelismNotPositive), x), "maxDegreeOfParallelism"))
+            | _ -> ()
+
             MakeAsync (fun ctxt ->
                 let tasks, result = 
                     try 
