@@ -662,3 +662,28 @@ type AsyncModule() =
         | :? System.ArgumentException as exc ->
             Assert.AreEqual("maxDegreeOfParallelism", exc.ParamName)
             Assert.True(exc.Message.Contains("maxDegreeOfParallelism must be positive, was -1"))
+
+    [<Test>]
+    member this.``RaceBetweenCancellationAndError.Parallel``() =
+        [| for i in 1 .. 1000 -> async { return i } |]
+        |> fun cs -> Async.Parallel(cs, 1)
+        |> testErrorAndCancelRace
+
+    [<Test>]
+    member this.``error on one workflow should cancel all others with maxDegreeOfParallelism``() =
+        let counter =
+            async {
+                let counter = ref 0
+                let job i = async {
+                    if i = 55 then failwith "boom"
+                    else
+                        do! Async.Sleep 1000
+                        incr counter
+                }
+
+                let! _ = Async.Parallel ([ for i in 1 .. 100 -> job i ], 2) |> Async.Catch
+                do! Async.Sleep 5000
+                return !counter
+            } |> Async.RunSynchronously
+
+        Assert.AreEqual(0, counter)
