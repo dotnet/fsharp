@@ -1,6 +1,7 @@
 Configuration ?= release
 DotNetVersion = `cat DotnetCLIToolsVersion.txt`
-DotNetToolPath = $(CURDIR)/artifacts/toolset/dotnet
+ArtifactsDir ?= $(CURDIR)/artifacts
+DotNetToolPath = $(ArtifactsDir)/toolset/dotnet
 DotNetExe = "$(DotNetToolPath)/dotnet"
 
 all: proto restore build test
@@ -8,12 +9,22 @@ all: proto restore build test
 tools:
 	$(CURDIR)/scripts/dotnet-install.sh --version $(DotNetVersion) --install-dir "$(DotNetToolPath)"
 
-proto: tools
+shutdown: tools
 	$(DotNetExe) build-server shutdown
+
+proto-restore: tools
 	$(DotNetExe) restore src/buildtools/buildtools.proj
 	$(DotNetExe) restore src/fsharp/FSharp.Build/FSharp.Build.fsproj
 	$(DotNetExe) restore src/fsharp/fsc/fsc.fsproj
+
+buildtools: proto-restore
 	$(DotNetExe) build src/buildtools/buildtools.proj -c Proto
+	#ensure destination dir
+	mkdir -p $(ArtifactsDir)/Bootstrap
+	cp $(ArtifactsDir)/bin/fslex/Proto/netcoreapp2.0/* $(ArtifactsDir)/Bootstrap
+	cp $(ArtifactsDir)/bin/fsyacc/Proto/netcoreapp2.0/* $(ArtifactsDir)/Bootstrap
+
+proto: buildtools
 	$(DotNetExe) build src/fsharp/FSharp.Build/FSharp.Build.fsproj -c Proto
 	$(DotNetExe) build src/fsharp/fsc/fsc.fsproj -c Proto
 
