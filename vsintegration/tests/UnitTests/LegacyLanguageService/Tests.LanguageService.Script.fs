@@ -1337,21 +1337,18 @@ type UsingMSBuild() as this =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
-        let fsVersion = "10.2.3.0"
         let binariesFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
         PlaceIntoProjectFileBeforeImport
             (project, sprintf @"
                 <ItemGroup>
                     <!-- Subtle: You need this reference to compile but not to get language service -->
-                    <Reference Include=""FSharp.Compiler.Interactive.Settings, Version=%s, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
-                        <SpecificVersion>True</SpecificVersion>
+                    <Reference Include=""FSharp.Compiler.Interactive.Settings"">
                         <HintPath>%s\\FSharp.Compiler.Interactive.Settings.dll</HintPath>
                     </Reference>
-                    <Reference Include=""FSharp.Compiler.Private, Version=%s, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
-                        <SpecificVersion>True</SpecificVersion>
+                    <Reference Include=""FSharp.Compiler.Private"">
                         <HintPath>%s\\FSharp.Compiler.Private.dll</HintPath>
                     </Reference>
-                </ItemGroup>" fsVersion binariesFolder fsVersion binariesFolder)
+                </ItemGroup>" binariesFolder binariesFolder)
 
         let fsx = AddFileFromTextEx(project,"Script.fsx","Script.fsx",BuildAction.Compile,
                                       ["let x = fsi.CommandLineArgs"])

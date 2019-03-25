@@ -5,10 +5,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks>net45;netstandard1.6</TargetFrameworks>
-    <AssemblyName>FSharp.Core</AssemblyName>
-    <PackageId>FSharp.Core</PackageId>
-    <PackageVersion>$(FSCorePackageVersion)</PackageVersion>
-    <NuspecFile>FSharp.Core.nuspec</NuspecFile>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard1.6</TargetFrameworks>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
