@@ -1662,6 +1662,7 @@ module internal VsActual =
 
     let CreateEditorCatalog() =
         let thisAssembly = Assembly.GetExecutingAssembly().Location
+        let thisAssemblyDir = Path.GetDirectoryName(thisAssembly)
         let editorAssemblyDir = Path.Combine(vsInstallDir, @"IDE\CommonExtensions\Microsoft\Editor")
         let privateAssemblyDir = Path.Combine(vsInstallDir, @"IDE\PrivateAssemblies")
         let publicAssemblyDir = Path.Combine(vsInstallDir, @"IDE\PublicAssemblies")
@@ -1696,6 +1697,7 @@ module internal VsActual =
         list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Platform.VSEditor.dll"))
         list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Editor.Implementation.dll"))
         list.Add(CreateAssemblyCatalog(publicAssemblyDir,  "Microsoft.VisualStudio.ComponentModelHost.dll"))
+        list.Add(CreateAssemblyCatalog(privateAssemblyDir,  "Microsoft.VisualStudio.ComponentModelHost.Implementation.dll"))
         list.Add(CreateAssemblyCatalog(publicAssemblyDir,  "Microsoft.VisualStudio.Shell.15.0.dll"))
         new AggregateCatalog(list)
 

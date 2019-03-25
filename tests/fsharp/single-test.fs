@@ -68,7 +68,7 @@ let generateProps testCompilerVersion =
     <Configuration Condition=""'$(Configuration)' == ''"">Release</Configuration>
     <FSharpTestCompilerVersion>$(TESTCOMPILERVERSION)</FSharpTestCompilerVersion>
   </PropertyGroup>
-  <Import Project=""$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.props', '$(PROJECTDIRECTORY)'))"" />
+  <Import Project=""$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(PROJECTDIRECTORY)'))"" />
 </Project>"
     template
     |> replaceTokens "$(PROJECTDIRECTORY)" (Path.GetFullPath(__SOURCE_DIRECTORY__))
@@ -76,7 +76,7 @@ let generateProps testCompilerVersion =
 
 let generateTargets =
     let template = @"<Project>
-  <Import Project=""$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.targets', '$(PROJECTDIRECTORY)'))"" />
+  <Import Project=""$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(PROJECTDIRECTORY)'))"" />
   <Import Project=""$(MSBuildThisFileDirectory)Directory.Overrides.targets"" Condition=""'$(OutputType)'=='Script'"" />
 </Project>"
     template

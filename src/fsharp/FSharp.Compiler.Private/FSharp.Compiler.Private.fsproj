@@ -5,29 +5,34 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard2.0</TargetFrameworks>
     <AssemblyName>FSharp.Compiler.Private</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);MSBUILD_AT_LEAST_15</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
-    <UseFSharpProductVersion>true</UseFSharpProductVersion>
     <UseAssetTargetFallback>true</UseAssetTargetFallback>
     <SkipPDBConversion>true</SkipPDBConversion>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
-    <SkipPDBConversion>true</SkipPDBConversion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net472' AND '$(OS)' == 'Windows_NT'">
-    <!-- portable PDBs can't be properly generated for this assembly -->
+    <!-- portable PDBs can't be properly generated for this assembly, see https://github.com/Microsoft/visualfsharp/issues/5976 -->
     <DebugType>full</DebugType>
+    <EnableSourceLink>false</EnableSourceLink>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard')) AND '$(OS)' == 'Windows_NT'">
+    <!-- portable PDBs can't be properly converted for this assembly, see https://github.com/Microsoft/visualfsharp/issues/5976 -->
+    <PublishWindowsPdb>false</PublishWindowsPdb>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net472|AnyCPU'">
     <Tailcalls>true</Tailcalls>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard1.6|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
     <Tailcalls>true</Tailcalls>
   </PropertyGroup>
 
@@ -715,7 +720,6 @@
     <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelPackageVersion)" />
     <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadPackageVersion)" />
     <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolPackageVersion)" />
-    <PackageReference Include="System.ValueTuple" Version="$(SystemValueTuplePackageVersion)" Condition="'$(TargetFramework)' == 'netstandard1.6'" />
   </ItemGroup>
 
 </Project>

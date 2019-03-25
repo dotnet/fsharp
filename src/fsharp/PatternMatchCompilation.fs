@@ -836,7 +836,7 @@ let CompilePatternBasic
     // The main recursive loop of the pattern match compiler
     let rec InvestigateFrontiers refuted frontiers =
         match frontiers with
-        | [] -> failwith "CompilePattern:compile - empty clauses: at least the final clause should always succeed"
+        | [] -> failwith "CompilePattern: compile - empty clauses: at least the final clause should always succeed"
         | (Frontier (i, active, valMap)) :: rest ->
 
             // Check to see if we've got a succeeding clause.  There may still be a 'when' condition for the clause
@@ -1315,7 +1315,7 @@ let CompilePatternBasic
 
     dtree, targets
 
-let isPartialOrWhenClause (c:TypedMatchClause) = isPatternPartial c.Pattern || c.GuardExpr.IsSome
+let isPartialOrWhenClause (c: TypedMatchClause) = isPatternPartial c.Pattern || c.GuardExpr.IsSome
 
 
 let rec CompilePattern  g denv amap exprm matchm warnOnUnused actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: TypedMatchClause list) inputTy resultTy =

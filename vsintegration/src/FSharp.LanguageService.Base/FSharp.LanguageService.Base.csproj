@@ -4,9 +4,8 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <ImportVsSDK>true</ImportVsSDK>
-    <CreateVsixContainer>false</CreateVsixContainer>
     <NoWarn>$(NoWarn);1570;1574;1587;1591;3001,3002,3003</NoWarn>
+    <NoWarn>$(NoWarn);VSTHRD010</NoWarn>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UseAssetTargetFallback>true</UseAssetTargetFallback>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>

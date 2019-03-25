@@ -348,7 +348,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             Guid emptyGuid = Guid.Empty;
             int result = 0;
+#pragma warning disable VSTHRD001 // Avoid legacy thread switching APIs
             ThreadHelper.Generic.Invoke(() =>
+#pragma warning restore VSTHRD001 // Avoid legacy thread switching APIs
             {
                 ErrorHandler.ThrowOnFailure(uiShell.ShowMessageBox(0u, ref emptyGuid, title, message, null, 0u, OLEMSGBUTTON.OLEMSGBUTTON_YESNO, OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST, icon, 0, out result));
             });
