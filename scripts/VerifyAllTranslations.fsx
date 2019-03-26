@@ -28,7 +28,6 @@ let hasUntranslatedStrings (xlfFile:string) =
 
 let filesWithMissingTranslations =
     Directory.EnumerateFiles(baseDirectory, "*.xlf", SearchOption.AllDirectories)
-    |> Seq.filter (fun (file:string) -> file.EndsWith(".en.xlf") |> not) // the english baseline files are never translated
     |> Seq.filter hasUntranslatedStrings
     |> Seq.toList
 
