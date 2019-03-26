@@ -838,7 +838,7 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (
          iccus= new_itbl "iccus (fake)" [| |]
          ientities= NodeInTable<_, _>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", 0)
          itypars= NodeInTable<_, _>.Create (Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", 0)
-         ivals  = NodeInTable<_, _>.Create (Val.NewUnlinked , (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", 0)
+         ivals  = NodeInTable<_, _>.Create (Val.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", 0)
          ianoninfos=NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", 0)
          istrings = new_itbl "istrings (fake)" [| |]
          inlerefs = new_itbl "inlerefs (fake)" [| |]
@@ -871,7 +871,7 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (
              iilscope= ilscope
              ientities= NodeInTable<_, _>.Create(Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", ntycons)
              itypars= NodeInTable<_, _>.Create(Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", ntypars)
-             ivals=   NodeInTable<_, _>.Create(Val.NewUnlinked  , (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", nvals)
+             ivals=   NodeInTable<_, _>.Create(Val.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", nvals)
              ianoninfos=NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", nanoninfos)
              istrings = stringTab
              ipubpaths = pubpathTab
@@ -1798,7 +1798,7 @@ and p_tycon_repr x st =
             p_byte 0 st; false
         else
             // Pickle generated type definitions as a TAsmRepr
-            p_byte 1 st; p_byte 2 st; p_ILType (mkILBoxedType(ILTypeSpec.Create(ExtensionTyping.GetILTypeRefOfProvidedType(info.ProvidedType , range0), []))) st; true
+            p_byte 1 st; p_byte 2 st; p_ILType (mkILBoxedType(ILTypeSpec.Create(ExtensionTyping.GetILTypeRefOfProvidedType(info.ProvidedType, range0), []))) st; true
     | TProvidedNamespaceExtensionPoint _ -> p_byte 0 st; false
 #endif
     | TILObjectRepr (TILObjectReprData (_, _, td)) -> error (Failure("Unexpected IL type definition"+td.Name))

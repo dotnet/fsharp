@@ -265,7 +265,7 @@ module internal Impl =
         if isOptionType typ then 
             match tag with 
             | 0 (* None *) -> getInstancePropertyInfos (typ,[| |],bindingFlags) 
-            | 1 (* Some *) -> getInstancePropertyInfos (typ,[| "Value" |] ,bindingFlags) 
+            | 1 (* Some *) -> getInstancePropertyInfos (typ,[| "Value" |],bindingFlags) 
             | _ -> failwith "fieldsPropsOfUnionCase"
         elif isListType typ then 
             match tag with 
@@ -737,12 +737,12 @@ type FSharpType =
     static member IsUnion(typ:Type,?bindingFlags) =  
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
         Impl.checkNonNull "typ" typ
-        let typ = Impl.getTypeOfReprType (typ ,BindingFlags.Public ||| BindingFlags.NonPublic)
+        let typ = Impl.getTypeOfReprType (typ,BindingFlags.Public ||| BindingFlags.NonPublic)
         Impl.isUnionType (typ,bindingFlags)
 
     static member IsFunction(typ:Type) =  
         Impl.checkNonNull "typ" typ
-        let typ = Impl.getTypeOfReprType (typ ,BindingFlags.Public ||| BindingFlags.NonPublic)
+        let typ = Impl.getTypeOfReprType (typ,BindingFlags.Public ||| BindingFlags.NonPublic)
         Impl.isFunctionType typ
 
     static member IsModule(typ:Type) =  
@@ -781,7 +781,7 @@ type FSharpType =
 
     static member GetFunctionElements(functionType:Type) =
         Impl.checkNonNull "functionType" functionType
-        let functionType = Impl.getTypeOfReprType (functionType ,BindingFlags.Public ||| BindingFlags.NonPublic)
+        let functionType = Impl.getTypeOfReprType (functionType,BindingFlags.Public ||| BindingFlags.NonPublic)
         Impl.getFunctionTypeInfo functionType
 
     static member GetRecordFields(recordType:Type,?bindingFlags) =
@@ -792,7 +792,7 @@ type FSharpType =
     static member GetUnionCases (unionType:Type,?bindingFlags) = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public
         Impl.checkNonNull "unionType" unionType
-        let unionType = Impl.getTypeOfReprType (unionType ,bindingFlags)
+        let unionType = Impl.getTypeOfReprType (unionType,bindingFlags)
         Impl.checkUnionType(unionType,bindingFlags);
         Impl.getUnionTypeTagNameMap(unionType,bindingFlags) |> Array.mapi (fun i _ -> UnionCaseInfo(unionType,i))
 
@@ -927,7 +927,7 @@ type FSharpValue =
         let unionType = ensureType(unionType,value) 
 
         Impl.checkNonNull "unionType" unionType
-        let unionType = Impl.getTypeOfReprType (unionType ,bindingFlags)
+        let unionType = Impl.getTypeOfReprType (unionType,bindingFlags)
 
         Impl.checkUnionType(unionType,bindingFlags)
         let tag = Impl.getUnionTagReader (unionType,bindingFlags) value
@@ -937,16 +937,16 @@ type FSharpValue =
     static member PreComputeUnionTagReader(unionType: Type,?bindingFlags) : (obj -> int) = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
         Impl.checkNonNull "unionType" unionType
-        let unionType = Impl.getTypeOfReprType (unionType ,bindingFlags)
+        let unionType = Impl.getTypeOfReprType (unionType,bindingFlags)
         Impl.checkUnionType(unionType,bindingFlags)
-        Impl.getUnionTagReader (unionType ,bindingFlags)
+        Impl.getUnionTagReader (unionType,bindingFlags)
 
     static member PreComputeUnionTagMemberInfo(unionType: Type,?bindingFlags) = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
         Impl.checkNonNull "unionType" unionType;
-        let unionType = Impl.getTypeOfReprType (unionType ,bindingFlags)
+        let unionType = Impl.getTypeOfReprType (unionType,bindingFlags)
         Impl.checkUnionType(unionType,bindingFlags)
-        Impl.getUnionTagMemberInfo(unionType ,bindingFlags)
+        Impl.getUnionTagMemberInfo(unionType,bindingFlags)
 
     static member PreComputeUnionReader(unionCase: UnionCaseInfo,?bindingFlags) : (obj -> obj[])  = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 

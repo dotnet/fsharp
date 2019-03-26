@@ -723,7 +723,7 @@ namespace Microsoft.FSharp.Collections
                 res2.[i] <- res.[downCount]        
                 downCount <- downCount - 1
         
-            res1 , res2
+            res1, res2
 
         [<CompiledName("Find")>]
         let find predicate (array: _[]) = 

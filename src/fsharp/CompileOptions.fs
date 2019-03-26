@@ -751,7 +751,7 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
     let embed =
         [ CompilerOption
             ("embed", tagNone,
-             OptionSwitch (SetEmbedAllSourceSwitch tcConfigB) , None,
+             OptionSwitch (SetEmbedAllSourceSwitch tcConfigB), None,
              Some (FSComp.SR.optsEmbedAllSource()))
           
           CompilerOption
@@ -768,7 +768,7 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
     let codegen =
         [ CompilerOption
             ("optimize", tagNone,
-             OptionSwitch (SetOptimizeSwitch tcConfigB) , None,
+             OptionSwitch (SetOptimizeSwitch tcConfigB), None,
              Some (FSComp.SR.optsOptimize()))
          
           CompilerOption
@@ -1013,12 +1013,12 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
         Some(InternalCommandLineOption("--ranges", rangeCmdArgs)), None)  
     
     CompilerOption
-       ("terms" , tagNone,
+       ("terms", tagNone,
         OptionUnit (fun () -> tcConfigB.showTerms <- true),
         Some(InternalCommandLineOption("--terms", rangeCmdArgs)), None)
 
     CompilerOption
-       ("termsfile" , tagNone,
+       ("termsfile", tagNone,
         OptionUnit (fun () -> tcConfigB.writeTermsToFiles <- true),
         Some(InternalCommandLineOption("--termsfile", rangeCmdArgs)), None)
 
@@ -1174,14 +1174,14 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
 
     // "Display timing profiles for compilation"
     CompilerOption
-       ("times" , tagNone,
+       ("times", tagNone,
         OptionUnit  (fun () -> tcConfigB.showTimes <- true),
         Some(InternalCommandLineOption("times", rangeCmdArgs)), None) 
 
 #if !NO_EXTENSIONTYPING
     // "Display information about extension type resolution")
     CompilerOption
-       ("showextensionresolution" , tagNone,
+       ("showextensionresolution", tagNone,
         OptionUnit  (fun () -> tcConfigB.showExtensionTypeMessages <- true),
         Some(InternalCommandLineOption("showextensionresolution", rangeCmdArgs)), None) 
 #endif
@@ -1392,7 +1392,7 @@ let miscFlagsFsi tcConfigB = miscFlagsBoth tcConfigB
 let abbreviatedFlagsBoth tcConfigB =
     [
         CompilerOption("d", tagString, OptionString (defineSymbol tcConfigB), None, Some(FSComp.SR.optsShortFormOf("--define")))
-        CompilerOption("O", tagNone, OptionSwitch (SetOptimizeSwitch tcConfigB) , None, Some(FSComp.SR.optsShortFormOf("--optimize[+|-]")))
+        CompilerOption("O", tagNone, OptionSwitch (SetOptimizeSwitch tcConfigB), None, Some(FSComp.SR.optsShortFormOf("--optimize[+|-]")))
         CompilerOption("g", tagNone, OptionSwitch (SetDebugSwitch tcConfigB None), None, Some(FSComp.SR.optsShortFormOf("--debug")))
         CompilerOption("i", tagString, OptionUnit (fun () -> tcConfigB.printSignature <- true), None, Some(FSComp.SR.optsShortFormOf("--sig")))
         referenceFlagAbbrev tcConfigB (* -r <dll> *)
@@ -1416,12 +1416,12 @@ let abbreviatedFlagsFsc tcConfigB =
         
         // FSC help abbreviations. FSI has it's own help options... 
         CompilerOption
-           ("?"        , tagNone,
+           ("?", tagNone,
             OptionHelp (fun blocks -> displayHelpFsc tcConfigB blocks), None,
             Some(FSComp.SR.optsShortFormOf("--help")))
         
         CompilerOption
-            ("help"     , tagNone,
+            ("help", tagNone,
              OptionHelp (fun blocks -> displayHelpFsc tcConfigB blocks), None,
              Some(FSComp.SR.optsShortFormOf("--help")))
         
@@ -1526,15 +1526,15 @@ let GetCoreServiceCompilerOptions (tcConfigB:TcConfigBuilder) =
 
 /// The core/common options used by fsi.exe. [note, some additional options are added in fsi.fs].
 let GetCoreFsiCompilerOptions (tcConfigB: TcConfigBuilder) =
-  [ PublicOptions(FSComp.SR.optsHelpBannerOutputFiles()        , outputFileFlagsFsi       tcConfigB)
-    PublicOptions(FSComp.SR.optsHelpBannerInputFiles()         , inputFileFlagsFsi        tcConfigB)
-    PublicOptions(FSComp.SR.optsHelpBannerResources()          , resourcesFlagsFsi        tcConfigB)
-    PublicOptions(FSComp.SR.optsHelpBannerCodeGen()            , codeGenerationFlags true tcConfigB)
-    PublicOptions(FSComp.SR.optsHelpBannerErrsAndWarns()       , errorsAndWarningsFlags   tcConfigB)
-    PublicOptions(FSComp.SR.optsHelpBannerLanguage()           , languageFlags            tcConfigB)
+  [ PublicOptions(FSComp.SR.optsHelpBannerOutputFiles(), outputFileFlagsFsi       tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerInputFiles(), inputFileFlagsFsi        tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerResources(), resourcesFlagsFsi        tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerCodeGen(), codeGenerationFlags true tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerErrsAndWarns(), errorsAndWarningsFlags   tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerLanguage(), languageFlags            tcConfigB)
     // Note: no HTML block for fsi.exe
-    PublicOptions(FSComp.SR.optsHelpBannerMisc()       , miscFlagsFsi            tcConfigB)
-    PublicOptions(FSComp.SR.optsHelpBannerAdvanced()   , advancedFlagsFsi        tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerMisc(), miscFlagsFsi            tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerAdvanced(), advancedFlagsFsi        tcConfigB)
     PrivateOptions(List.concat              [ internalFlags           tcConfigB
                                               abbreviatedFlagsFsi     tcConfigB
                                               deprecatedFlagsFsi      tcConfigB
