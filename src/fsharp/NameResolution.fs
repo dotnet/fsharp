@@ -3466,7 +3466,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 AfterResolution.RecordResolution (None, (fun tpinst -> callSink(item, tpinst)), callSinkWithSpecificOverload, (fun () -> callSink (unrefinedItem, emptyTyparInst)))
             | true, true  ->
                 AfterResolution.RecordResolution (Some unrefinedItem, (fun tpinst -> callSink(item, tpinst)), callSinkWithSpecificOverload, (fun () -> callSink (unrefinedItem, emptyTyparInst)))
-            | _ , false   ->
+            | _, false   ->
                 callSink (unrefinedItem, emptyTyparInst)
                 AfterResolution.DoNothing
 
