@@ -427,21 +427,10 @@ let envUpdateCreatedTypeRef emEnv (tref: ILTypeRef) =
         emEnv
 
 let convTypeRef cenv emEnv preferCreated (tref: ILTypeRef) = 
-<<<<<<< HEAD
     match Zmap.tryFind tref emEnv.emTypMap with
     | Some (_typT, _typB, _typeDef, Some createdTy) when preferCreated -> createdTy 
     | Some (typT, _typB, _typeDef, _) -> typT       
     | None -> convTypeRefAux cenv tref 
-=======
-    let res = 
-        match Zmap.tryFind tref emEnv.emTypMap with
-        | Some (_typT, _typB, _typeDef, Some createdTy) when preferCreated -> createdTy 
-        | Some (typT, _typB, _typeDef, _) -> typT       
-        | None -> convTypeRefAux cenv tref 
-    match res with 
-    | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tref.QualifiedName, tref.Scope.QualifiedName), range0))
-    | _ -> res
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
   
 let envBindConsRef emEnv (mref: ILMethodRef) consB = 
     {emEnv with emConsMap = Zmap.add mref consB emEnv.emConsMap}
@@ -873,15 +862,9 @@ let convMethodSpec cenv emEnv (mspec: ILMethodSpec) =
 // - QueryableTypeGetConstructors: get a constructor on a non-TypeBuilder type
 //----------------------------------------------------------------------------
 
-<<<<<<< HEAD
 let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) : ConstructorInfo =
     let tyargTs  = getGenericArgumentsOfType parentT
     let reqArgTs  = 
-=======
-let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) =
-    let tyargTs = getGenericArgumentsOfType parentT
-    let reqArgTs = 
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
         let emEnv = envPushTyvars emEnv tyargTs
         convTypesToArray cenv emEnv mref.ArgTypes
     let res = parentT.GetConstructor(BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance, null, reqArgTs, null)  
@@ -1006,17 +989,10 @@ let getArrayMethInfo n ty =
     
 let setArrayMethInfo n ty = 
     match n with 
-<<<<<<< HEAD
     | 2 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray2D<int> Unchecked.defaultof<_> 0 0 0 @@> ty
     | 3 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray3D<int> Unchecked.defaultof<_> 0 0 0 0 @@> ty
     | 4 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray4D<int> Unchecked.defaultof<_> 0 0 0 0 0 @@> ty
     | _ -> invalidArg "n"  "not expecting array dimension > 4"
-=======
-    | 2 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray2D<int> null 0 0 0 @@> ty
-    | 3 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray3D<int> null 0 0 0 0 @@> ty
-    | 4 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray4D<int> null 0 0 0 0 0 @@> ty
-    | _ -> invalidArg "n" "not expecting array dimension > 4"
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
 
 
 //----------------------------------------------------------------------------
@@ -1329,13 +1305,8 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
         if (shape = ILArrayShape.SingleDimensional)
         then ilG.EmitAndLog(OpCodes.Newarr, convType cenv emEnv ty)
         else 
-<<<<<<< HEAD
             let aty = convType cenv emEnv  (ILType.Array(shape, ty)) 
             let meth = modB.GetArrayMethodAndLog(aty, ".ctor", System.Reflection.CallingConventions.HasThis, null, Array.create shape.Rank (typeof<int>))
-=======
-            let aty = convType cenv emEnv (ILType.Array(shape, ty)) 
-            let meth = modB.GetArrayMethodAndLog(aty, ".ctor", System.Reflection.CallingConventions.HasThis, (null: Type), Array.create shape.Rank (typeof<int>))
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
             ilG.EmitAndLog(OpCodes.Newobj, meth)
 
     | I_ldlen -> ilG.EmitAndLog(OpCodes.Ldlen)

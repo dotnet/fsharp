@@ -1795,13 +1795,8 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
                 let resultExprAfterConvertToResultTy = 
                     match reqdResultInfo, exprIsEnumerableInfo with 
                     | Some _, Some _ | None, None -> resultExpr // the expression is a QuerySource, the result is a QuerySource, nothing to do
-<<<<<<< HEAD
                     | Some resultElemTy, None -> mkCallGetQuerySourceAsEnumerable cenv.g expr.Range resultElemTy (TType_app(cenv.g.tcref_System_Collections_IEnumerable, [], g.knownWithoutNull)) resultExpr
                     | None, Some (resultElemTy, qTy)  ->  mkCallNewQuerySource cenv.g expr.Range resultElemTy qTy resultExpr 
-=======
-                    | Some resultElemTy, None -> mkCallGetQuerySourceAsEnumerable cenv.g expr.Range resultElemTy (TType_app(cenv.g.tcref_System_Collections_IEnumerable, [])) resultExpr
-                    | None, Some (resultElemTy, qTy) -> mkCallNewQuerySource cenv.g expr.Range resultElemTy qTy resultExpr 
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
                 Some resultExprAfterConvertToResultTy
             | None -> 
                 None
@@ -1879,13 +1874,8 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
         let ty = mkForallTyIfNeeded tps rty
         OptimizeLambdas None cenv env topValInfo expr ty
 
-<<<<<<< HEAD
     | Expr.TyChoose _  -> 
         OptimizeExpr cenv env (TypeRelations.ChooseTyparSolutionsForFreeChoiceTypars g cenv.amap expr)
-=======
-    | Expr.TyChoose _ -> 
-        OptimizeExpr cenv env (TypeRelations.ChooseTyparSolutionsForFreeChoiceTypars cenv.g cenv.amap expr)
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
 
     | Expr.Match(spMatch, exprm, dtree, targets, m, ty) -> 
         OptimizeMatch cenv env (spMatch, exprm, dtree, targets, m, ty)

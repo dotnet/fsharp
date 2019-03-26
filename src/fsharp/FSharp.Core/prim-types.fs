@@ -823,12 +823,8 @@ namespace Microsoft.FSharp.Core
                     
             /// Implements generic comparison between two objects. This corresponds to the pseudo-code in the F#
             /// specification.  The treatment of NaNs is governed by "comp".
-<<<<<<< HEAD
             let rec GenericCompare (comp:GenericComparer) (xobj:obj, yobj:obj) = 
                 (*if objEq xobj yobj then 0 else *)
-=======
-            let rec GenericCompare (comp:GenericComparer) (xobj:obj,yobj:obj) = 
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
                   match xobj,yobj with 
                    | null,null -> 0
                    | null,_ -> -1

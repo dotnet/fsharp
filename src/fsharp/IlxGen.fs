@@ -521,14 +521,8 @@ and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
     | TType_tuple (tupInfo, args) ->
         GenTypeAux amap m tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
 
-<<<<<<< HEAD
     | TType_fun (dty, returnTy, _nullness) ->
         EraseClosures.mkILFuncTy g.ilxPubCloEnv  (GenTypeArgAux amap m tyenv dty) (GenTypeArgAux amap m tyenv returnTy)
-=======
-    | TType_tuple (tupInfo, args) -> GenTypeAux amap m tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
-
-    | TType_fun (dty, returnTy) -> EraseClosures.mkILFuncTy g.ilxPubCloEnv (GenTypeArgAux amap m tyenv dty) (GenTypeArgAux amap m tyenv returnTy)
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
 
     | TType_anon (anonInfo, tinst) ->
         let tref = anonInfo.ILTypeRef
@@ -6736,17 +6730,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                 let name = vref.DisplayName
                 match vref.MemberInfo with
                 | None -> None
-<<<<<<< HEAD
                 | Some memberInfo -> 
                     match name, memberInfo.MemberFlags.MemberKind with 
                     | ("Item" | "op_IndexedLookup"), (MemberKind.PropertyGet  | MemberKind.PropertySet) when not (isNil (ArgInfosOfPropertyVal g vref.Deref)) ->
                         Some( mkILCustomAttribute g.ilg (g.FindSysILTypeRef "System.Reflection.DefaultMemberAttribute", [g.ilg.typ_String], [ILAttribElem.String(Some(name))], []) ) 
-=======
-                | Some memberInfo ->
-                    match name, memberInfo.MemberFlags.MemberKind with
-                    | ("Item" | "op_IndexedLookup"), (MemberKind.PropertyGet | MemberKind.PropertySet) when not (isNil (ArgInfosOfPropertyVal cenv.g vref.Deref)) ->
-                        Some( mkILCustomAttribute cenv.g.ilg (cenv.g.FindSysILTypeRef "System.Reflection.DefaultMemberAttribute", [cenv.g.ilg.typ_String], [ILAttribElem.String(Some(name))], []) )
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
                     | _ -> None)
             |> Option.toList
 
@@ -6766,12 +6753,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
         let ilDebugDisplayAttributes =
             [ yield! GenAttrs cenv eenv debugDisplayAttrs
               if generateDebugDisplayAttribute then
-<<<<<<< HEAD
                   yield g.mkDebuggerDisplayAttribute ("{" + debugDisplayMethodName + "(),nq}")  ]
-=======
-                  yield cenv.g.mkDebuggerDisplayAttribute ("{" + debugDisplayMethodName + "(),nq}") ]
-
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
 
         let ilCustomAttrs =
           [ yield! defaultMemberAttrs
@@ -6805,11 +6787,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
             isEmptyStruct && cenv.opts.workAroundReflectionEmitBugs && not tycon.TyparsNoRange.IsEmpty
         
         // Compute a bunch of useful things for each field
-<<<<<<< HEAD
         let isCLIMutable = (TryFindFSharpBoolAttribute  g g.attrib_CLIMutableAttribute tycon.Attribs = Some true)
-=======
-        let isCLIMutable = (TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_CLIMutableAttribute tycon.Attribs = Some true)
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
         let fieldSummaries =
 
              [ for fspec in tycon.AllFieldsArray do
@@ -6836,13 +6814,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
              [ for (useGenuineField, ilFieldName, isFSharpMutable, isStatic, _, ilPropType, isPropHidden, fspec) in fieldSummaries do
 
                   let ilFieldOffset =
-<<<<<<< HEAD
                      match TryFindFSharpAttribute g g.attrib_FieldOffsetAttribute fspec.FieldAttribs with
                      | Some (Attrib(_, _, [ AttribInt32Arg(fieldOffset) ], _, _, _, _))  ->
-=======
-                     match TryFindFSharpAttribute cenv.g cenv.g.attrib_FieldOffsetAttribute fspec.FieldAttribs with
-                     | Some (Attrib(_, _, [ AttribInt32Arg(fieldOffset) ], _, _, _, _)) ->
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
                          Some fieldOffset
                      | Some (Attrib(_, _, _, _, _, _, m)) ->
                          errorR(Error(FSComp.SR.ilFieldOffsetAttributeCouldNotBeDecoded(), m))
@@ -7063,13 +7036,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                let tdef = tdef.With(customAttrs = mkILCustomAttrs ilCustomAttrs, genericParams = ilGenParams)
                tdef, None
 
-<<<<<<< HEAD
            | TRecdRepr _ | TFSharpObjectRepr _ as tyconRepr  ->
                let super = superOfTycon g tycon
-=======
-           | TRecdRepr _ | TFSharpObjectRepr _ as tyconRepr ->
-               let super = superOfTycon cenv.g tycon
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
                let ilBaseTy = GenType cenv.amap m eenvinner.tyenv super
            
                // Build a basic type definition
@@ -7109,15 +7077,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                let tdef = tdef.WithSealed(isSealedTy g thisTy || isTheSealedAttribute).WithSerializable(isSerializable).WithAbstract(isAbstract).WithImport(isComInteropTy g thisTy)
                let tdef = tdef.With(methodImpls=mkILMethodImpls methodImpls)
 
-<<<<<<< HEAD
                let tdLayout,tdEncoding = 
                     match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
                     | Some (Attrib(_, _, [ AttribInt32Arg(layoutKind) ], namedArgs, _, _, _))  -> 
-=======
-               let tdLayout, tdEncoding =
-                    match TryFindFSharpAttribute cenv.g cenv.g.attrib_StructLayoutAttribute tycon.Attribs with
-                    | Some (Attrib(_, _, [ AttribInt32Arg(layoutKind) ], namedArgs, _, _, _)) ->
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
                         let decoder = AttributeDecoder namedArgs
                         let ilPack = decoder.FindInt32 "Pack" 0x0
                         let ilSize = decoder.FindInt32 "Size" 0x0
@@ -7270,12 +7232,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
     
 /// Generate the type for an F# exception declaration.
 and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
-<<<<<<< HEAD
     let g = cenv.g
     let exncref  = mkLocalEntityRef exnc
-=======
-    let exncref = mkLocalEntityRef exnc
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
     match exnc.ExceptionInfo with
     | TExnAbbrevRepr _ | TExnAsmRepr _ | TExnNone -> ()
     | TExnFresh _ ->
@@ -7331,15 +7289,9 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
                               [ mkLdarg0
                                 mkLdarg 1us
                                 mkLdarg 2us
-<<<<<<< HEAD
                                 mkNormalCall (mkILCtorMethSpecForTy (g.iltyp_Exception, [serializationInfoType; streamingContextType])) ]
                            ,None))
                 
-=======
-                                mkNormalCall (mkILCtorMethSpecForTy (cenv.g.iltyp_Exception, [serializationInfoType; streamingContextType])) ],
-                           None))
-            
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
 //#if BE_SECURITY_TRANSPARENT
             [ilCtorDefForSerialziation]
 //#else

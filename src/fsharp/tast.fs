@@ -3158,13 +3158,8 @@ and
                 assert (j >= 0)
                 assert (j <= path.Length - 1)
                 let matched = 
-<<<<<<< HEAD
                     [ for resolver in resolvers  do
                         let moduleOrNamespace = if j = 0 then [| |] else path.[0..j-1]
-=======
-                    [ for resolver in resolvers do
-                        let moduleOrNamespace = if j = 0 then null else path.[0..j-1]
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
                         let typename = path.[j]
                         let resolution = ExtensionTyping.TryLinkProvidedType(resolver, moduleOrNamespace, typename, m)
                         match resolution with
@@ -4048,11 +4043,7 @@ and
     /// TType_fun(domainType, rangeType, nullness).
     ///
     /// Indicates the type is a function type 
-<<<<<<< HEAD
-    | TType_fun of  TType * TType * Nullness
-=======
-    | TType_fun of TType * TType
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
+    | TType_fun of TType * TType * Nullness
 
     /// TType_ucase(unionCaseRef, typeInstantiation)
     ///
@@ -4072,7 +4063,6 @@ and
     /// See https://github.com/Microsoft/visualfsharp/issues/2561
     member x.GetAssemblyName() =
         match x with
-<<<<<<< HEAD
         | TType_forall (_tps, ty)        -> ty.GetAssemblyName()
         | TType_app (tcref, _tinst, _) -> tcref.CompilationPath.ILScopeRef.QualifiedName
         | TType_tuple _ -> ""
@@ -4080,15 +4070,6 @@ and
         | TType_fun _ -> ""
         | TType_measure _ -> ""
         | TType_var (tp, _nullness) -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
-=======
-        | TType_forall (_tps, ty) -> ty.GetAssemblyName()
-        | TType_app (tcref, _tinst) -> tcref.CompilationPath.ILScopeRef.QualifiedName
-        | TType_tuple (_tupInfo, _tinst) -> ""
-        | TType_anon (anonInfo, _tinst) -> defaultArg anonInfo.Assembly.QualifiedName ""
-        | TType_fun (_d, _r) -> ""
-        | TType_measure _ms -> ""
-        | TType_var tp -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
         | TType_ucase (_uc, _tinst) ->
             let (TILObjectReprData(scope, _nesting, _definition)) = _uc.Tycon.ILTyconInfo
             scope.QualifiedName
@@ -4098,13 +4079,8 @@ and
 
     override x.ToString() =  
         match x with 
-<<<<<<< HEAD
         | TType_forall (_tps, ty) -> "forall ...  " + ty.ToString()
         | TType_app (tcref, tinst, nullness) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">") + nullness.ToString() 
-=======
-        | TType_forall (_tps, ty) -> "forall ... " + ty.ToString()
-        | TType_app (tcref, tinst) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
         | TType_tuple (tupInfo, tinst) -> 
             (match tupInfo with 
              | TupInfo.Const false -> ""

@@ -677,11 +677,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) =
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           
-<<<<<<< HEAD
           os.Append(ConstraintSolverTypesNotInEqualityRelation1E().Format t1 t2)  |> ignore
-=======
-          os.Append(ConstraintSolverTypesNotInEqualityRelation1E().Format t1 t2 ) |> ignore
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
           
           if m.StartLine <> m2.StartLine then
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
@@ -2144,12 +2140,8 @@ type IRawFSharpAssemblyData =
     abstract GetAutoOpenAttributes: ILGlobals -> string list
 
     ///  The raw list InternalsVisibleToAttribute attributes in the assembly
-<<<<<<< HEAD
     abstract GetInternalsVisibleToAttributes: ILGlobals  -> string list
 
-=======
-    abstract GetInternalsVisibleToAttributes: ILGlobals -> string list
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
     ///  The raw IL module definition in the assembly, if any. This is not present for cross-project references
     /// in the language service
     abstract TryGetILModuleDef: unit -> ILModuleDef option
@@ -3848,7 +3840,6 @@ let IsSignatureDataResource (r: ILResource) =
     r.Name.StartsWithOrdinal(FSharpSignatureDataResourceName) ||
     r.Name.StartsWithOrdinal(FSharpSignatureDataResourceName2)
 
-<<<<<<< HEAD
 let IsSignatureDataResourceB (r: ILResource) = 
     r.Name.StartsWithOrdinal(FSharpSignatureDataResourceNameB)
 
@@ -3859,12 +3850,6 @@ let IsOptimizationDataResource      (r: ILResource) =
 let IsOptimizationDataResourceB (r: ILResource) = 
     r.Name.StartsWithOrdinal(FSharpOptimizationDataResourceNameB)
 
-=======
-let IsOptimizationDataResource (r: ILResource) = 
-    r.Name.StartsWithOrdinal(FSharpOptimizationDataResourceName)|| 
-    r.Name.StartsWithOrdinal(FSharpOptimizationDataResourceName2)
-
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
 let GetSignatureDataResourceName (r: ILResource) = 
     if r.Name.StartsWithOrdinal(FSharpSignatureDataResourceName) then 
         String.dropPrefix r.Name FSharpSignatureDataResourceName

@@ -985,13 +985,7 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
 
     | TType_app _, TType_app _ ->  localAbortD
 
-<<<<<<< HEAD
     | TType_tuple (tupInfo1, l1)      , TType_tuple (tupInfo2, l2)      -> 
-=======
-    | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
-    | TType_app (_, _), TType_app (_, _)   ->  localAbortD
-    | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)      -> 
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
 
@@ -1006,12 +1000,6 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
     | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2)      -> 
         SolveAnonInfoEqualsAnonInfo csenv m2 anonInfo1 anonInfo2 ++ (fun () -> 
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2)
-<<<<<<< HEAD
-
-=======
-    | TType_fun (d1, r1), TType_fun (d2, r2)   -> SolveFunTypeEqn csenv ndeep m2 trace None d1 d2 r1 r2
-    | TType_measure ms1, TType_measure ms2   -> UnifyMeasures csenv trace ms1 ms2
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
     | TType_forall(tps1, rty1), TType_forall(tps2, rty2) -> 
         if tps1.Length <> tps2.Length then localAbortD else
         let aenv = aenv.BindEquivTypars tps1 tps2 
@@ -1019,13 +1007,9 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
         if not (typarsAEquiv g aenv tps1 tps2) then localAbortD else
         SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty1 rty2 
 
-<<<<<<< HEAD
     | TType_ucase (uc1, l1)  , TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2  -> 
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
 
-=======
-    | TType_ucase (uc1, l1), TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2  -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
     | _  -> localAbortD
 
 
@@ -1111,11 +1095,6 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
     | TType_anon (anonInfo1, l1), TType_anon (anonInfo2, l2)      -> 
         SolveAnonInfoEqualsAnonInfo csenv m2 anonInfo1 anonInfo2 ++ (fun () -> 
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2) (* nb. can unify since no variance *)
-<<<<<<< HEAD
-
-=======
-    | TType_fun (d1, r1), TType_fun (d2, r2)   -> SolveFunTypeEqn csenv ndeep m2 trace cxsln d1 d2 r1 r2 (* nb. can unify since no variance *)
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
     | TType_measure ms1, TType_measure ms2    -> UnifyMeasures csenv trace ms1 ms2
 
     // Enforce the identities float=float<1>, float32=float32<1> and decimal=decimal<1> 
@@ -1130,11 +1109,7 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
         )
 
     // Special subsumption rule for byref tags
-<<<<<<< HEAD
     | TType_app (tc1, l1, _nullness1)  , TType_app (tc2, l2, _nullness2) when tyconRefEq g tc1 tc2  && g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tc1 ->
-=======
-    | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  && g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tc1 ->
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
         match l1, l2 with 
         | [ h1; tag1 ], [ h2; tag2 ] -> trackErrors {
             do! SolveTypeEqualsType csenv ndeep m2 trace None h1 h2
@@ -1146,15 +1121,10 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
            }
         | _ -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2
 
-<<<<<<< HEAD
     | TType_app (tc1, l1, nullness1)  , TType_app (tc2, l2, nullness2) when tyconRefEq g tc1 tc2  -> 
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2 ++ (fun () -> 
            SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 nullness1 nullness2
         )
-=======
-    | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  -> 
-        SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
 
     | TType_ucase (uc1, l1), TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2  -> 
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2
@@ -1895,7 +1865,6 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
           }
 
         | TyparConstraint.SupportsComparison _, TyparConstraint.IsDelegate _  
-<<<<<<< HEAD
         | TyparConstraint.IsDelegate _ , TyparConstraint.SupportsComparison _ ->
             ErrorD (Error(FSComp.SR.csDelegateComparisonConstraintInconsistent(), m))
         
@@ -1907,9 +1876,6 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
         | TyparConstraint.IsNonNullableStruct _, TyparConstraint.SupportsNull _    ->
             ErrorD (Error(FSComp.SR.csStructNullConstraintInconsistent(), m))
         
-=======
-        | TyparConstraint.IsDelegate _, TyparConstraint.SupportsComparison _
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
         | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsReferenceType _     
         | TyparConstraint.IsReferenceType _, TyparConstraint.IsNonNullableStruct _   ->
             ErrorD (Error(FSComp.SR.csStructConstraintInconsistent(), m))

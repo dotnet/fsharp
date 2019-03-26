@@ -907,17 +907,11 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
     fun f (idx: int32) ->
         let cache = 
             match !cache with
-<<<<<<< HEAD
             | null -> 
                 let c = new Dictionary<int32, _>(11)
                 cache :=  c
                 c
             | NonNull c -> c 
-=======
-            | null -> cache := new Dictionary<int32, _>(11)
-            | _ -> ()
-            !cache
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
         let mutable res = Unchecked.defaultof<_>
         let ok = cache.TryGetValue(idx, &res)
         if ok then 
