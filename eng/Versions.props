@@ -1,9 +1,7 @@
 <Project>
-
   <PropertyGroup>
     <!-- opt-out properties -->
     <UsingToolXUnit>false</UsingToolXUnit>
-
     <!-- opt-in properties -->
     <UsingToolNetFrameworkReferenceAssemblies>true</UsingToolNetFrameworkReferenceAssemblies>
     <UsingToolNuGetRepack>true</UsingToolNuGetRepack>
@@ -11,40 +9,47 @@
     <UsingToolSymbolUploader>true</UsingToolSymbolUploader>
     <UsingToolVSSDK>true</UsingToolVSSDK>
   </PropertyGroup>
-
   <!-- Version number computation -->
   <PropertyGroup>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
-
     <FSCoreMajorVersion>4.5</FSCoreMajorVersion>
     <FSCorePackageVersion>$(FSCoreMajorVersion).5</FSCorePackageVersion>
     <FSCoreVersion>$(FSCoreMajorVersion).0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(OfficialBuildId)' == ''">$(FSCoreVersion).0</FSCoreVersion><!-- PR builds should specify a 4-part version number -->
-
+    <FSCoreVersion Condition="'$(OfficialBuildId)' == ''">$(FSCoreVersion).0</FSCoreVersion>
+    <!-- PR builds should specify a 4-part version number -->
     <FSPackageMajorVersion>10.2</FSPackageMajorVersion>
     <FSPackageVersion>$(FSPackageMajorVersion).3</FSPackageVersion>
     <FSProductVersion>$(FSPackageVersion)</FSProductVersion>
-    <FSProductVersion Condition="'$(OfficialBuildId)' == ''">$(FSProductVersion).0</FSProductVersion><!-- PR builds should specify a 4-part version number -->
-
+    <FSProductVersion Condition="'$(OfficialBuildId)' == ''">$(FSProductVersion).0</FSProductVersion>
+    <!-- PR builds should specify a 4-part version number -->
     <VSMajorVersion>15</VSMajorVersion>
     <VSMinorVersion>9</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersion>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersion>
-    <VSAssemblyVersion Condition="'$(OfficialBuildId)' == ''">$(VSAssemblyVersion).0</VSAssemblyVersion><!-- PR builds should specify a 4-part version number -->
+    <VSAssemblyVersion Condition="'$(OfficialBuildId)' == ''">$(VSAssemblyVersion).0</VSAssemblyVersion>
+    <!-- PR builds should specify a 4-part version number -->
   </PropertyGroup>
-
   <!-- version number assignment -->
   <PropertyGroup>
     <VersionPrefix>$(FSCoreVersion)</VersionPrefix>
+    <VersionPrefix Condition="'$(UseFSharpPackageVersion)' == 'true'">$(FSCorePackageVersion)</VersionPrefix>
     <VersionPrefix Condition="'$(UseFSharpProductVersion)' == 'true'">$(FSProductVersion)</VersionPrefix>
     <VersionPrefix Condition="'$(UseVsMicroBuildAssemblyVersion)' == 'true'">$(VSAssemblyVersion)</VersionPrefix>
-    <VsixVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VsixVersionPrefix>
+    <!--
+    Previous nightly versions were of the form 15.9.20190322.1, but after the arcade sdk integration, that form
+    changed to 15.9.0.1917201 which breaks the nightly upgrade.  To enable this to work for 15.9 builds we re-insert
+    the build number (date) so that it's always increasing.
 
-    <AssemblyVersion Condition="'$(OfficialBuildId)' == ''">$(VersionPrefix)</AssemblyVersion><!-- PR builds should explicitly specify a version number -->
+    THIS CHANGE SHOULD NOT FLOW INTO ANY DEV16 BRANCHES.
+    -->
+    <_BuildNumber>$(OfficialBuildId)</_BuildNumber>
+    <_BuildNumber Condition="'$(OfficialBuildId)' == ''">$([System.DateTime]::Now.ToString(yyyyMMdd)).0</_BuildNumber>
+    <VsixVersionDateStampFix>$(_BuildNumber.Split('.')[0])</VsixVersionDateStampFix>
+    <VsixVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).$(VsixVersionDateStampFix)</VsixVersionPrefix>
+    <AssemblyVersion Condition="'$(OfficialBuildId)' == ''">$(VersionPrefix)</AssemblyVersion>
+    <!-- PR builds should explicitly specify a version number -->
   </PropertyGroup>
-
   <PropertyGroup>
-
     <!-- default package sources -->
     <RestoreSources>
       $(RestoreSources);
@@ -61,10 +66,8 @@
       https://vside.myget.org/F/vssdk/api/v3/index.json;
       https://vside.myget.org/F/vs-impl/api/v3/index.json;
     </RestoreSources>
-
     <!-- version numbers from files -->
     <RoslynPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\RoslynPackageVersion.txt').Trim())</RoslynPackageVersion>
-
     <!-- System.* packages -->
     <SystemCollectionsImmutablePackageVersion>1.5.0</SystemCollectionsImmutablePackageVersion>
     <SystemConsolePackageVersion>4.3.0</SystemConsolePackageVersion>
@@ -91,21 +94,18 @@
     <SystemThreadingThreadPackageVersion>4.3.0</SystemThreadingThreadPackageVersion>
     <SystemThreadingThreadPoolPackageVersion>4.3.0</SystemThreadingThreadPoolPackageVersion>
     <SystemValueTuplePackageVersion>4.4.0</SystemValueTuplePackageVersion>
-
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
     <MicrosoftCodeAnalysisEditorFeaturesWpfPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesWpfPackageVersion>
     <MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>
     <MicrosoftVisualStudioLanguageServicesPackageVersion>$(RoslynPackageVersion)</MicrosoftVisualStudioLanguageServicesPackageVersion>
-
     <!-- Microsoft Build packages -->
     <MicrosoftBuildOverallPackagesVersion>15.8.166</MicrosoftBuildOverallPackagesVersion>
     <MicrosoftBuildPackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildPackageVersion>
     <MicrosoftBuildFrameworkPackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkPackageVersion>
     <MicrosoftBuildTasksCorePackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCorePackageVersion>
     <MicrosoftBuildUtilitiesCorePackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildUtilitiesCorePackageVersion>
-
     <!-- Visual Studio packages -->
     <EnvDTE80PackageVersion>8.0.1</EnvDTE80PackageVersion>
     <MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalPackageVersion>14.0.25420</MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalPackageVersion>
@@ -152,12 +152,10 @@
     <VSSDKVSLangProj8PackageVersion>8.0.4</VSSDKVSLangProj8PackageVersion>
     <VSSDKVSLangProj11PackageVersion>11.0.4</VSSDKVSLangProj11PackageVersion>
     <VSSDKVSHelpPackageVersion>7.0.4</VSSDKVSHelpPackageVersion>
-
     <!-- setup packages -->
     <MicroBuildCorePackageVersion>0.2.0</MicroBuildCorePackageVersion>
     <MicroBuildCoreSentinelPackageVersion>1.0.0</MicroBuildCoreSentinelPackageVersion>
     <MicroBuildPluginsSwixBuildPackageVersion>1.0.147</MicroBuildPluginsSwixBuildPackageVersion>
-
     <!-- other packages -->
     <FsCheckPackageVersion>3.0.0-alpha4</FsCheckPackageVersion>
     <MicrosoftCompositionPackageVersion>1.0.30</MicrosoftCompositionPackageVersion>
@@ -174,7 +172,5 @@
     <NunitXmlTestLoggerPackageVersion>2.1.36</NunitXmlTestLoggerPackageVersion>
     <RoslynToolsSignToolPackageVersion>1.0.0-beta2-dev3</RoslynToolsSignToolPackageVersion>
     <StrawberryPerl64PackageVersion>5.22.2.1</StrawberryPerl64PackageVersion>
-
   </PropertyGroup>
-
 </Project>

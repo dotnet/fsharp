@@ -22,6 +22,7 @@ param (
 
     # Actions
     [switch][Alias('r')]$restore,
+    [switch]$noRestore,
     [switch][Alias('b')]$build,
     [switch]$rebuild,
     [switch]$sign,
@@ -102,6 +103,10 @@ function Process-Arguments() {
         $script:testCoreClr = $True
         $script:testFSharpQA = $True
         $script:testVs = $True
+    }
+
+    if ($noRestore) {
+        $script:restore = $False;
     }
 
     foreach ($property in $properties) {

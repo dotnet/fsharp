@@ -227,7 +227,7 @@ module internal TokenClassifications =
 
         | QUOTE | UNDERSCORE 
         | INFIX_AT_HAT_OP _        
-          -> (FSharpTokenColorKind.Identifier , FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
+          -> (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
 
         | LESS  _
           -> (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.ParamStart)  // for type provider static arguments

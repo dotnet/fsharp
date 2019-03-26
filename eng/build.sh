@@ -91,6 +91,9 @@ while [[ $# > 0 ]]; do
     --restore|-r)
       restore=true
       ;;
+    --norestore)
+      restore=false
+      ;;
     --build|-b)
       build=true
       ;;
