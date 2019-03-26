@@ -1454,14 +1454,10 @@ and
       IsSealed: bool 
 
       /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
-<<<<<<< HEAD
       IsAbstract:  bool 
 
       /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
       IsInterface:  bool 
-=======
-      IsInterface: bool 
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
 
       /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
       IsStructOrEnum: bool 
