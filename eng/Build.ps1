@@ -186,16 +186,6 @@ function UpdatePath() {
     TestAndAddToPath "$ArtifactsDir\bin\fsiAnyCpu\$configuration\net46"
 }
 
-function VerifyAssemblyVersions() {
-    $fsiPath = Join-Path $ArtifactsDir "bin\fsi\$configuration\net46\fsi.exe"
-
-    # desktop fsi isn't always built
-    if (Test-Path $fsiPath) {
-        $asmVerCheckPath = "$RepoRoot\scripts"
-        Exec-Console $fsiPath """$asmVerCheckPath\AssemblyVersionCheck.fsx"" -- ""$ArtifactsDir"""
-    }
-}
-
 function TestUsingNUnit([string] $testProject, [string] $targetFramework) {
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
@@ -230,10 +220,6 @@ try {
 
     if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish) {
         BuildSolution
-    }
-
-    if ($build) {
-        VerifyAssemblyVersions
     }
 
     $desktopTargetFramework = "net46"
