@@ -230,11 +230,7 @@ type cenv =
       /// The ImportMap for reading IL
       amap: ImportMap
       
-<<<<<<< HEAD
       /// A callback for tcVal in the typechecker.  Used to generalize values when finding witnesses. 
-=======
-      /// A callback for TcVal in the typechecker. Used to generalize values when finding witnesses. 
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
       /// It is unfortunate this is needed but it is until we supply witnesses through the compiation.
       tcVal: ConstraintSolver.TcValF
       
@@ -743,21 +739,12 @@ type ValStorage =
     /// Indicates the value is stored in a static field.
     | StaticField of ILFieldSpec * ValRef * (*hasLiteralAttr:*)bool * ILType * string * ILType * ILMethodRef * ILMethodRef * OptionalShadowLocal
 
-<<<<<<< HEAD
     /// Indicates the value is represented as a property that recomputes it each time it is referenced. Used for simple constants that do not cause initialization triggers
     | StaticProperty of ILMethodSpec  * OptionalShadowLocal
-=======
-    /// Indicates the value is "stored" as a property that recomputes it each time it is referenced. Used for simple constants that do not cause initialization triggers
-    | StaticProperty of ILMethodSpec * OptionalShadowLocal
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
 
     /// Indicates the value is represented as an IL method (in a "main" class for a F#
     /// compilation unit, or as a member) according to its inferred or specified arity.
-<<<<<<< HEAD
     | Method of  ValReprInfo * ValRef * ILMethodSpec * ILMethodSpec * Range.range * Typars * Typars * CurriedArgInfos * ArgReprInfo list * TraitWitnessInfos * TType list * ArgReprInfo
-=======
-    | Method of ValReprInfo * ValRef * ILMethodSpec * Range.range * ArgReprInfo list * TType list * ArgReprInfo
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
 
     /// Indicates the value is stored at the given position in the closure environment accessed via "ldarg 0"
     | Env of ILType * int * ILFieldSpec * NamedLocalIlxClosureInfo ref option
@@ -829,14 +816,10 @@ and IlxGenEnv =
       /// All values in scope
       valsInScope: ValMap<Lazy<ValStorage>>
 
-<<<<<<< HEAD
       /// All witnesses in scope
       witnessesInScope: ImmutableDictionary<TraitWitnessInfo, ValStorage>
 
       /// For optimizing direct tail recursion to a loop - mark says where to branch to.  Length is 0 or 1.
-=======
-      /// For optimizing direct tail recursion to a loop - mark says where to branch to. Length is 0 or 1.
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
       /// REVIEW: generalize to arbitrary nested local loops??
       innerVals: (ValRef * (BranchCallItem * Mark)) list
 
@@ -2230,19 +2213,12 @@ let rec GenExpr (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
         ) ->
       // application of local type functions with type parameters = measure types and body = local value - inine the body
       GenExpr cenv cgbuf eenv sp v sequel
-<<<<<<< HEAD
 
   | Expr.App(f, fty, tyargs, curriedArgs, m) -> 
       GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel
 
   | Expr.Val(v,_,m) -> 
       GenGetVal cenv cgbuf eenv (v,m) sequel
-=======
-  | Expr.App(f,fty, tyargs, args, m) -> 
-      GenApp cenv cgbuf eenv (f, fty, tyargs, args, m) sequel
-  | Expr.Val(v, _, m) -> 
-      GenGetVal cenv cgbuf eenv (v, m) sequel
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
 
   // Most generation of linear expressions is implemented routinely using tailcalls and the correct sequels.
   // This is because the element of expansion happens to be the final thing generated in most cases. However
@@ -2926,13 +2902,8 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
             (let arityInfo =
                match kind with
                | BranchCallClosure arityInfo
-<<<<<<< HEAD
                | BranchCallMethod (arityInfo, _, _, _, _)  -> arityInfo
              arityInfo.Length = curriedArgs.Length
-=======
-               | BranchCallMethod (arityInfo, _, _, _, _) -> arityInfo
-             arityInfo.Length = args.Length
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
             ) &&
             (* no tailcall out of exception handler, etc. *)
             (match sequelIgnoringEndScopesAndDiscard sequel with Return | ReturnVoid -> true | _ -> false))
@@ -3069,13 +3040,8 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
           let ilTyArgs = GenTypeArgs cenv.amap m eenv.tyenv tyargs
 
           // For instance method calls chop off some type arguments, which are already
-<<<<<<< HEAD
           // carried by the class.  Also work out if it's a virtual call.
           let _, virtualCall, newobj, isSuperInit, isSelfInit, _, _, _ = GetMemberCallInfo cenv.g (vref, valUseFlags)
-=======
-          // carried by the class. Also work out if it's a virtual call.
-          let _, virtualCall, newobj, isSuperInit, isSelfInit, _, _, _ = GetMemberCallInfo cenv.g (vref, valUseFlags) in
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
 
           // numEnclILTypeArgs will include unit-of-measure args, unfortunately. For now, just cut-and-paste code from GetMemberCallInfo
           // @REVIEW: refactor this
@@ -3174,13 +3140,8 @@ and GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
     // However, we know the type instantiation for the value.
     // In this case we can often generate a type-specific local expression for the value.
     // This reduces the number of dynamic type applications.
-<<<<<<< HEAD
   | (Expr.Val(vref, _, _), _, _)  ->
      GenGetValRefAndSequel cenv cgbuf eenv m vref (Some (tyargs, curriedArgs, m, sequel))
-=======
-  | (Expr.Val(vref, _, _), _, _) ->
-     GenGetValRefAndSequel cenv cgbuf eenv m vref (Some (tyargs, args, m, sequel))
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
     
   | _ ->
     (* worst case: generate a first-class function value and call *)
@@ -3751,15 +3712,9 @@ and GenQuotation cenv cgbuf eenv (ast, conv, m, ety) sequel =
     let bytesExpr = Expr.Op(TOp.Bytes(astSerializedBytes), [], [], m)
 
     let deserializeExpr =
-<<<<<<< HEAD
         let qf = QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat cenv.g 
         if qf.SupportsDeserializeEx then 
             let referencedTypeDefExprs =  List.map (mkILNonGenericBoxedTy >> mkTypeOfExpr cenv m) referencedTypeDefs
-=======
-        match QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat cenv.g with
-        | QuotationTranslator.QuotationSerializationFormat.FSharp_40_Plus ->
-            let referencedTypeDefExprs = List.map (mkILNonGenericBoxedTy >> mkTypeOfExpr cenv m) referencedTypeDefs
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
             let referencedTypeDefsExpr = mkArray (cenv.g.system_Type_ty, referencedTypeDefExprs, m)
             let spliceTypesExpr = mkArray (cenv.g.system_Type_ty, spliceTypeExprs, m)
             let spliceArgsExpr = mkArray (rawTy, spliceArgExprs, m)
@@ -5291,7 +5246,6 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
         CommitStartScope cgbuf startScopeMarkOpt
         GenExpr cenv cgbuf eenv SPSuppress cctorBody discard
     
-<<<<<<< HEAD
     | Method (topValInfo, _, mspec, mspecW, _, ctps, mtps, curriedArgInfos, paramInfos, witnessInfos, argTys, retInfo)  ->
 
         let methLambdaTypars, methLambdaCtorThisValOpt, methLambdaBaseValOpt, methLambdaCurriedVars, methLambdaBody, methLambdaBodyTy =
@@ -5299,11 +5253,6 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
 
         let methLambdaVars = List.concat methLambdaCurriedVars
 
-=======
-    | Method (topValInfo, _, mspec, _, paramInfos, methodArgTys, retInfo) ->
-        let tps, ctorThisValOpt, baseValOpt, vsl, body', bodyty = IteratedAdjustArityOfLambda cenv.g cenv.amap topValInfo rhsExpr
-        let methodVars = List.concat vsl
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
         CommitStartScope cgbuf startScopeMarkOpt
 
         GenMethodForBinding cenv cgbuf eenv (vspec, mspec, false, access, ctps, mtps, [], curriedArgInfos, paramInfos, argTys, retInfo, topValInfo, methLambdaCtorThisValOpt, methLambdaBaseValOpt, methLambdaTypars, methLambdaVars, methLambdaBody, methLambdaBodyTy)
@@ -5772,11 +5721,7 @@ and GenMethodForBinding
             match methLambdaVars with
             | [] -> error(InternalError("Internal error: empty argument list for instance method", v.Range))
             | h::t -> [h], t, true
-<<<<<<< HEAD
         |  _ -> [], methLambdaVars, false
-=======
-        | _ -> [], methodVars, false
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
 
     let nonUnitNonSelfMethodVars, body = BindUnitVars cenv.g (nonSelfMethodVars, paramInfos, methLambdaBody)
     let nonUnitMethodVars = selfMethodVars@nonUnitNonSelfMethodVars
@@ -5827,15 +5772,9 @@ and GenMethodForBinding
     // Now generate the code.
     let hasPreserveSigNamedArg, ilMethodBody, hasDllImport =
         match TryFindFSharpAttributeOpt cenv.g cenv.g.attrib_DllImportAttribute v.Attribs with
-<<<<<<< HEAD
         | Some (Attrib(_, _, [ AttribStringArg(dll) ], namedArgs, _, _, m))  ->
             if not (isNil methLambdaTypars) then error(Error(FSComp.SR.ilSignatureForExternalFunctionContainsTypeParameters(), m))
             let hasPreserveSigNamedArg, mbody = GenPInvokeMethod (mspec.Name, dll, namedArgs)
-=======
-        | Some (Attrib(_, _, [ AttribStringArg(dll) ], namedArgs, _, _, m)) ->
-            if not (isNil tps) then error(Error(FSComp.SR.ilSignatureForExternalFunctionContainsTypeParameters(), m))
-            let hasPreserveSigNamedArg, mbody = GenPInvokeMethod (v.CompiledName, dll, namedArgs)
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
             hasPreserveSigNamedArg, mbody, true
 
         | Some (Attrib(_, _, _, _, _, _, m)) ->
@@ -5927,19 +5866,12 @@ and GenMethodForBinding
             else
                 false
 
-<<<<<<< HEAD
         // skip method generation for compiling the property as a .NET event
         // Instead emit the pseudo-property as an event.
         // on't do this if it's a private method impl.
         if not useMethodImpl then
             let edef = GenEventForProperty cenv eenvForMeth mspec v ilAttrsThatGoOnPrimaryItem m returnTy
             cgbuf.mgbuf.AddEventDef(tref, edef)
-=======
-           let isAbstract =
-               memberInfo.MemberFlags.IsDispatchSlot &&
-               let tcref = v.MemberApparentEntity
-               not tcref.Deref.IsFSharpDelegateTycon
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
 
     | _ -> 
     
@@ -5991,21 +5923,12 @@ and GenMethodForBinding
 
                match memberInfo.MemberFlags.MemberKind with
            
-<<<<<<< HEAD
                | (MemberKind.PropertySet | MemberKind.PropertyGet)  ->
                    if not (isNil ilMethTypars) then
                        error(InternalError("A property may not be more generic than the enclosing type - constrain the polymorphism in the expression", v.Range))
                
                    // Check if we're compiling the property as a .NET event
                    assert not (CompileAsEvent cenv.g v.Attribs)
-=======
-           | (MemberKind.PropertySet | MemberKind.PropertyGet) ->
-               if not (isNil ilMethTypars) then
-                   error(InternalError("A property may not be more generic than the enclosing type - constrain the polymorphism in the expression", v.Range))
-               
-               // Check if we're compiling the property as a .NET event
-               if CompileAsEvent cenv.g v.Attribs then
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
 
                    // Emit the property, but not if its a private method impl
                    if mdef.Access <> ILMemberAccess.Private then
@@ -6038,7 +5961,6 @@ and GenMethodForBinding
             let mdef = mdef.With(customAttrs= ilCustomAttrs)
             mdef
 
-<<<<<<< HEAD
     // Does the function have an explicit [<EntryPoint>] attribute?
     let isExplicitEntryPoint = HasFSharpAttribute cenv.g cenv.g.attrib_EntryPointAttribute attrs
 
@@ -6065,20 +5987,6 @@ and GenMethodForBinding
     CountMethodDef()
     cgbuf.mgbuf.AddMethodDef(tref, mdef)
         
-=======
-        // For extension properties, also emit attrsAppliedToGetterOrSetter on the getter or setter method
-        let ilAttrs =
-            match v.MemberInfo with
-            | Some memberInfo when v.IsExtensionMember ->
-                 match memberInfo.MemberFlags.MemberKind with
-                 | (MemberKind.PropertySet | MemberKind.PropertyGet) -> ilAttrsThatGoOnPrimaryItem @ GenAttrs cenv eenv attrsAppliedToGetterOrSetter
-                 | _ -> ilAttrsThatGoOnPrimaryItem
-            | _ -> ilAttrsThatGoOnPrimaryItem
-
-        let ilCustomAttrs = mkILCustomAttrs (ilAttrs @ sourceNameAttribs @ ilAttrsCompilerGenerated)
-        let mdef = mdef.With(customAttrs= ilCustomAttrs)
-        EmitTheMethodDef mdef
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
     
 and GenPInvokeMethod (nm, dll, namedArgs) =
     let decoder = AttributeDecoder namedArgs
@@ -6226,21 +6134,12 @@ and GenGetStorageAndSequel cenv cgbuf eenv m (ty, ilTy) storage fetchSequel =
         if hasLiteralAttr then
             EmitGetStaticField cgbuf ilTy fspec
         else
-<<<<<<< HEAD
-            CG.EmitInstr cgbuf (pop 0) (Push [ilTy])  (I_call(Normalcall, mkILMethSpecForMethRefInTy (ilGetterMethRef, ilContainerTy, []), None))
-        CommitGetStorageSequel cenv cgbuf eenv m ty None fetchSequel
-
-    | StaticProperty (ilGetterMethSpec, _) ->
-        CG.EmitInstr cgbuf (pop 0) (Push [ilTy])  (I_call (Normalcall, ilGetterMethSpec, None))
-        CommitGetStorageSequel cenv cgbuf eenv m ty None fetchSequel
-=======
             CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (I_call(Normalcall, mkILMethSpecForMethRefInTy (ilGetterMethRef, ilContainerTy, []), None))
-        CommitGetStorageSequel cenv cgbuf eenv m ty None storeSequel
+        CommitGetStorageSequel cenv cgbuf eenv m ty None fetchSequel
 
     | StaticProperty (ilGetterMethSpec, _) ->
         CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (I_call (Normalcall, ilGetterMethSpec, None))
-        CommitGetStorageSequel cenv cgbuf eenv m ty None storeSequel
->>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
+        CommitGetStorageSequel cenv cgbuf eenv m ty None fetchSequel
 
     | Method (topValInfo, vref, _, _, _, _, _, _, _, _, _, _) ->
         // Get a toplevel value as a first-class value.
