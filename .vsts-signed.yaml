@@ -86,7 +86,7 @@ jobs:
     displayName: Publish nightly package to MyGet
     inputs:
       scriptName: 'setup\publish-assets.ps1'
-      arguments: '-binariesPath artifacts\bin -configuration $(BuildConfiguration) -branchName $(Build.SourceBranch) -apiKey $(FSharp.MyGetApiKey)'
+      arguments: '-artifactsPath artifacts -configuration $(BuildConfiguration) -branchName $(Build.SourceBranch) -apiKey $(FSharp.MyGetApiKey)'
     condition: succeeded()
 
   # Package publish

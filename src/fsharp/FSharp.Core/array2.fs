@@ -139,9 +139,9 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             checkNonNull "target" target
 
-            let sourceX0, sourceY0 = source.GetLowerBound 0     , source.GetLowerBound 1
+            let sourceX0, sourceY0 = source.GetLowerBound 0, source.GetLowerBound 1
             let sourceXN, sourceYN = (length1 source) + sourceX0, (length2 source) + sourceY0  
-            let targetX0, targetY0 = target.GetLowerBound 0     , target.GetLowerBound 1
+            let targetX0, targetY0 = target.GetLowerBound 0, target.GetLowerBound 1
             let targetXN, targetYN = (length1 target) + targetX0, (length2 target) + targetY0  
 
             if sourceIndex1 < sourceX0 then invalidArgOutOfRange "sourceIndex1" sourceIndex1 "source axis-0 lower bound" sourceX0

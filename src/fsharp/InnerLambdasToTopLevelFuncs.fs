@@ -63,9 +63,9 @@ let emptyTR = TreeNode[]
 // and combined form, so this function should not be needed
 let destApp (f, fty, tys, args, m) =
     match stripExpr f with
-    | Expr.App (f2, fty2, tys2, []     , _) -> (f2, fty2, tys2 @ tys, args, m)
-    | Expr.App _                        -> (f, fty, tys, args, m) (* has args, so not combine ty args *)
-    | f                                  -> (f, fty, tys, args, m)
+    | Expr.App (f2, fty2, tys2, [], _) -> (f2, fty2, tys2 @ tys, args, m)
+    | Expr.App _ -> (f, fty, tys, args, m) (* has args, so not combine ty args *)
+    | f -> (f, fty, tys, args, m)
 
 #if DEBUG
 let showTyparSet tps = showL (commaListL (List.map typarL (Zset.elements tps)))
@@ -320,7 +320,7 @@ type ReqdItem =
 
 let reqdItemOrder =
     let rep = function
-      | ReqdSubEnv v -> true , v
+      | ReqdSubEnv v -> true, v
       | ReqdVal    v -> false, v
 
     Order.orderOn rep (Pair.order (Bool.order, valOrder))

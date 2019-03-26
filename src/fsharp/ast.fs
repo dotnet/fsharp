@@ -526,7 +526,7 @@ and
     | MeasurePower of measureType: SynType * SynRationalConst * range: range
 
     /// F# syntax: 1, "abc" etc, used in parameters to type providers
-    /// For the dimensionless units i.e. 1 , and static parameters to provided types
+    /// For the dimensionless units i.e. 1, and static parameters to provided types
     | StaticConstant of constant: SynConst * range: range
 
     /// F# syntax: const expr, used in static parameters to type providers
@@ -716,10 +716,10 @@ and
     /// F# syntax: expr.[expr, ..., expr] <- expr
     | DotIndexedSet of objectExpr: SynExpr * indexExprs: SynIndexerArg list * valueExpr: SynExpr * leftOfSetRange: range * dotRange: range * range: range
 
-    /// F# syntax: Type.Items(e1) <- e2 , rarely used named-property-setter notation, e.g. Foo.Bar.Chars(3) <- 'a'
+    /// F# syntax: Type.Items(e1) <- e2, rarely used named-property-setter notation, e.g. Foo.Bar.Chars(3) <- 'a'
     | NamedIndexedPropertySet of longDotId: LongIdentWithDots * SynExpr * SynExpr * range: range
 
-    /// F# syntax: expr.Items(e1) <- e2 , rarely used named-property-setter notation, e.g. (stringExpr).Chars(3) <- 'a'
+    /// F# syntax: expr.Items(e1) <- e2, rarely used named-property-setter notation, e.g. (stringExpr).Chars(3) <- 'a'
     | DotNamedIndexedPropertySet of SynExpr * longDotId: LongIdentWithDots * SynExpr * SynExpr * range: range
 
     /// F# syntax: expr :? type
@@ -1312,10 +1312,10 @@ and
     /// A type abbreviation, "type X = A.B.C"
     | TypeAbbrev of ParserDetail * SynType * range: range
 
-    /// An abstract definition , "type X"
+    /// An abstract definition, "type X"
     | None of range: range
 
-    /// An exception definition , "exception E = ..."
+    /// An exception definition, "exception E = ..."
     | Exception of SynExceptionDefnRepr
 
     member this.Range =
