@@ -173,7 +173,7 @@ namespace Microsoft.FSharp.Collections
 
         let rec split (comparer: IComparer<'T>) pivot t =
             // Given a pivot and a set t
-            // Return { x in t s.t. x < pivot }, pivot in t? , { x in t s.t. x > pivot } 
+            // Return { x in t s.t. x < pivot }, pivot in t?, { x in t s.t. x > pivot } 
             match t with
             | SetNode(k1,t11,t12,_) ->
                 let c = comparer.Compare(pivot,k1)
@@ -187,8 +187,8 @@ namespace Microsoft.FSharp.Collections
                     balance comparer t11 k1 t12Lo,havePivot,t12Hi
             | SetOne k1 ->
                 let c = comparer.Compare(k1,pivot)
-                if   c < 0 then t       ,false,SetEmpty // singleton under pivot 
-                elif c = 0 then SetEmpty,true ,SetEmpty // singleton is    pivot 
+                if   c < 0 then t,false,SetEmpty // singleton under pivot 
+                elif c = 0 then SetEmpty,true,SetEmpty // singleton is    pivot 
                 else            SetEmpty,false,t        // singleton over  pivot 
             | SetEmpty  -> 
                 SetEmpty,false,SetEmpty
@@ -446,7 +446,7 @@ namespace Microsoft.FSharp.Collections
             match l1,l2 with 
             | [],[] ->  0
             | [],_  -> -1
-            | _ ,[] ->  1
+            | _,[] ->  1
             | (SetEmpty  _ :: t1),(SetEmpty    :: t2) -> compareStacks comparer t1 t2
             | (SetOne(n1k) :: t1),(SetOne(n2k) :: t2) -> 
                  let c = comparer.Compare(n1k,n2k) 

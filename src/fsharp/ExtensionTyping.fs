@@ -1347,7 +1347,7 @@ module internal ExtensionTyping =
     /// Apply the given provided type to the given static arguments (the arguments are assumed to have been sorted into application order
     let TryApplyProvidedType(typeBeforeArguments: Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs: obj[], m: range) =
         if staticArgs.Length = 0 then 
-            Some (typeBeforeArguments , (fun () -> ()))
+            Some (typeBeforeArguments, (fun () -> ()))
         else 
             
             let fullTypePathAfterArguments = 

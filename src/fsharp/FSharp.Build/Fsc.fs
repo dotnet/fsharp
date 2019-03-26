@@ -180,8 +180,8 @@ type public Fsc () as this =
                 | "ANYCPU", true, "EXE"
                 | "ANYCPU", true, "WINEXE" -> "anycpu32bitpreferred"
                 | "ANYCPU",  _, _  -> "anycpu"
-                | "X86"   ,  _, _  -> "x86"
-                | "X64"   ,  _, _  -> "x64"
+                | "X86",  _, _  -> "x86"
+                | "X64",  _, _  -> "x64"
                 | _ -> null)
 
         // Resources

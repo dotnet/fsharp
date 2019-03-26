@@ -1331,9 +1331,9 @@ module Shim =
 
             member __.FileStreamReadShim (fileName: string) = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)  :> Stream
 
-            member __.FileStreamCreateShim (fileName: string) = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.Read , 0x1000, false) :> Stream
+            member __.FileStreamCreateShim (fileName: string) = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.Read, 0x1000, false) :> Stream
 
-            member __.FileStreamWriteExistingShim (fileName: string) = new FileStream(fileName, FileMode.Open, FileAccess.Write, FileShare.Read , 0x1000, false) :> Stream
+            member __.FileStreamWriteExistingShim (fileName: string) = new FileStream(fileName, FileMode.Open, FileAccess.Write, FileShare.Read, 0x1000, false) :> Stream
 
             member __.GetFullPathShim (fileName: string) = System.IO.Path.GetFullPath fileName
 

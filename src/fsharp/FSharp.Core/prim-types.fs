@@ -823,26 +823,39 @@ namespace Microsoft.FSharp.Core
                     
             /// Implements generic comparison between two objects. This corresponds to the pseudo-code in the F#
             /// specification.  The treatment of NaNs is governed by "comp".
+<<<<<<< HEAD
             let rec GenericCompare (comp:GenericComparer) (xobj:obj, yobj:obj) = 
                 (*if objEq xobj yobj then 0 else *)
+=======
+            let rec GenericCompare (comp:GenericComparer) (xobj:obj,yobj:obj) = 
+>>>>>>> 87cbf6f2faf76e0f4fbbbc4eee0a5bb6efe0786a
                   match xobj,yobj with 
                    | null,null -> 0
                    | null,_ -> -1
                    | _,null -> 1
+
                    // Use Ordinal comparison for strings
-                   | (:? string as x),(:? string as y) -> System.String.CompareOrdinal(x, y)
+                   | (:? string as x),(:? string as y) ->
+                       System.String.CompareOrdinal(x, y)
+
                    // Permit structural comparison on arrays
                    | (:? System.Array as arr1),_ -> 
                        match arr1,yobj with 
                        // Fast path
-                       | (:? (obj[]) as arr1), (:? (obj[]) as arr2)      -> GenericComparisonObjArrayWithComparer comp arr1 arr2
+                       | (:? (obj[]) as arr1), (:? (obj[]) as arr2) ->
+                           GenericComparisonObjArrayWithComparer comp arr1 arr2
                        // Fast path
-                       | (:? (byte[]) as arr1), (:? (byte[]) as arr2)     -> GenericComparisonByteArray arr1 arr2
-                       | _                   , (:? System.Array as arr2) -> GenericComparisonArbArrayWithComparer comp arr1 arr2
-                       | _ -> FailGenericComparison xobj
+                       | (:? (byte[]) as arr1), (:? (byte[]) as arr2) ->
+                           GenericComparisonByteArray arr1 arr2
+                       | _, (:? System.Array as arr2) ->
+                           GenericComparisonArbArrayWithComparer comp arr1 arr2
+                       | _ ->
+                           FailGenericComparison xobj
+
                    // Check for IStructuralComparable
                    | (:? IStructuralComparable as x),_ ->
                        x.CompareTo(yobj,comp)
+
                    // Check for IComparable
                    | (:? System.IComparable as x),_ -> 
                        if comp.ThrowsOnPER then 
@@ -855,15 +868,22 @@ namespace Microsoft.FSharp.Core
                                     raise NaNException
                            | _ -> ()
                        x.CompareTo(yobj)
-                   | (:? nativeint as x),(:? nativeint as y) -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                   | (:? unativeint as x),(:? unativeint as y) -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+
+                   | (:? nativeint as x),(:? nativeint as y) ->
+                       if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+
+                   | (:? unativeint as x),(:? unativeint as y) ->
+                       if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+
                    | _,(:? IStructuralComparable as yc) ->
                        let res = yc.CompareTo(xobj,comp)
                        if res < 0 then 1 elif res > 0 then -1 else 0
+
                    | _,(:? System.IComparable as yc) -> 
                        // Note -c doesn't work here: be careful of comparison function returning minint
-                       let c = yc.CompareTo(xobj) in 
+                       let c = yc.CompareTo(xobj)
                        if c < 0 then 1 elif c > 0 then -1 else 0
+
                    | _ -> FailGenericComparison xobj
 
             /// specialcase: Core implementation of structural comparison on arbitrary arrays.
@@ -1092,7 +1112,7 @@ namespace Microsoft.FSharp.Core
                  when 'T : string = 
                      // NOTE: we don't have to null check here because System.String.CompareOrdinal
                      // gives reliable results on null values.
-                     System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))
+                     System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))
                  when 'T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
 
 
@@ -1170,7 +1190,7 @@ namespace Microsoft.FSharp.Core
                  when 'T : string = 
                      // NOTE: we don't have to null check here because System.String.CompareOrdinal
                      // gives reliable results on null values.
-                     System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))
+                     System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))
                  when 'T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
 
             /// Generic less-than with static optimizations for some well-known cases.
@@ -1376,7 +1396,7 @@ namespace Microsoft.FSharp.Core
                      | (:? (char[]) as arr1),    (:? (char[]) as arr2)     -> GenericEqualityCharArray arr1 arr2
                      | (:? (float32[]) as arr1), (:? (float32[]) as arr2) -> GenericEqualitySingleArray er arr1 arr2
                      | (:? (float[]) as arr1),   (:? (float[]) as arr2)     -> GenericEqualityDoubleArray er arr1 arr2
-                     | _                   ,    (:? System.Array as arr2) -> GenericEqualityArbArray er iec arr1 arr2
+                     | _,    (:? System.Array as arr2) -> GenericEqualityArbArray er iec arr1 arr2
                      | _ -> xobj.Equals(yobj)
                  | (:? IStructuralEquatable as x1),_ -> x1.Equals(yobj,iec)
                  // Ensure ER NaN semantics on recursive calls
@@ -4147,7 +4167,7 @@ namespace Microsoft.FSharp.Core
                 when ^T : float32= (# "clt" x y : bool #) 
                 when ^T : char   = (# "clt" x y : bool #)
                 when ^T : decimal     = System.Decimal.op_LessThan ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = (# "clt" (System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))) 0 : bool #)             
+                when ^T : string     = (# "clt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
 
             /// Static greater-than with static optimizations for some well-known cases.
             let inline (>) (x:^T) (y:^U) = 
@@ -4167,7 +4187,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float32    = (# "cgt" x y : bool #) 
                 when 'T : char       = (# "cgt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_GreaterThan ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = (# "cgt" (System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))) 0 : bool #)             
+                when ^T : string     = (# "cgt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
 
             /// Static less-than-or-equal with static optimizations for some well-known cases.
             let inline (<=) (x:^T) (y:^U) = 
@@ -4187,7 +4207,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float32    = not (# "cgt.un" x y : bool #) 
                 when 'T : char       = not (# "cgt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_LessThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = not (# "cgt" (System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))) 0 : bool #)             
+                when ^T : string     = not (# "cgt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
 
             /// Static greater-than-or-equal with static optimizations for some well-known cases.
             let inline (>=) (x:^T) (y:^U) = 
@@ -4207,7 +4227,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float32    = not (# "clt.un" x y : bool #)
                 when 'T : char       = not (# "clt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_GreaterThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = not (# "clt" (System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))) 0 : bool #)             
+                when ^T : string     = not (# "clt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
 
 
             /// Static greater-than-or-equal with static optimizations for some well-known cases.
@@ -4279,7 +4299,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : string = 
                      // NOTE: we don't have to null check here because System.String.CompareOrdinal
                      // gives reliable results on null values.
-                     System.String.CompareOrdinal((# "" e1 : string #) ,(# "" e2 : string #))
+                     System.String.CompareOrdinal((# "" e1 : string #),(# "" e2 : string #))
                  when ^T : decimal     = System.Decimal.Compare((# "" e1:decimal #), (# "" e2:decimal #))
 
             [<CompiledName("Max")>]
@@ -5099,7 +5119,7 @@ namespace Microsoft.FSharp.Core
             let inline ComputeSlice bound start finish length =
                 match start, finish with
                 | None, None -> bound, bound + length - 1
-                | None, Some n when n >= bound  -> bound , n
+                | None, Some n when n >= bound  -> bound, n
                 | Some m, None when m <= bound + length -> m, bound + length - 1
                 | Some m, Some n -> m, n
                 | _ -> raise (System.IndexOutOfRangeException())

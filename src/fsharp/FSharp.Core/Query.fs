@@ -1341,7 +1341,7 @@ module Query =
             let source, sourceConv, v, keySelector = TransInnerApplicativeAndCommit check source (v, keySelector)
             TransInnerResult.Other(MakeTakeWhile (qTyIsIQueryable qTy, source, v, keySelector)), sourceConv
 
-        | CallGroupBy(_, [_; qTy; _] , immutSource, Lambda(immutVar, immutKeySelector)) -> 
+        | CallGroupBy(_, [_; qTy; _], immutSource, Lambda(immutVar, immutKeySelector)) -> 
             let mutSource, sourceConv = TransInnerAndCommit CanEliminate.Yes check immutSource
             let mutVar, mutKeySelector = ConvertImmutableConsumerToMutableConsumer sourceConv (immutVar, MacroExpand immutKeySelector) 
             let conv = match sourceConv with NoConv -> NoConv | _ -> GroupingConv(immutKeySelector.Type,immutVar.Type,sourceConv)

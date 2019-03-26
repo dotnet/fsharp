@@ -84,7 +84,7 @@ type AssignedCalledArg<'T> =
       CallerArg: CallerArg<'T> }
     member x.Position = x.CalledArg.Position
 
-/// Represents the possibilities for a named-setter argument (a property, field , or a record field setter)
+/// Represents the possibilities for a named-setter argument (a property, field, or a record field setter)
 type AssignedItemSetterTarget = 
     | AssignedPropSetter of PropInfo * MethInfo * TypeInst   (* the MethInfo is a non-indexer setter property *)
     | AssignedILFieldSetter of ILFieldInfo 
@@ -1259,8 +1259,8 @@ module ProvidedMethodCalls =
             | [objArg] -> 
                 let erasedThisTy = eraseSystemType (amap, m, mi.PApply((fun mi -> nonNull<ProvidedType> mi.DeclaringType), m))
                 let thisVar = erasedThisTy.PApply((fun ty -> ProvidedVar.Fresh("this", ty)), m)
-                Some objArg , Array.append [| thisVar |] paramVars
-            | [] -> None , paramVars
+                Some objArg, Array.append [| thisVar |] paramVars
+            | [] -> None, paramVars
             | _ -> failwith "multiple objArgs?"
             
         let ea = mi.PApplyWithProvider((fun (methodInfo, provider) -> ExtensionTyping.GetInvokerExpression(provider, methodInfo, [| for p in paramVars -> p.PUntaintNoFailure id |])), m)

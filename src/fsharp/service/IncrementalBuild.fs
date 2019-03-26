@@ -529,7 +529,7 @@ module internal IncrementalBuild =
                     match found with
                     | VectorResult rv ->
                         if rv.Size <> expectedWidth then 
-                            actionFunc (ResizeResultAction(ve.Id , expectedWidth)) acc
+                            actionFunc (ResizeResultAction(ve.Id, expectedWidth)) acc
                         else acc
                     | _ -> acc
                 | None -> acc        
@@ -1299,7 +1299,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
         try  
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed filename)
-            let input = ParseOneInputFile(tcConfig, lexResourceManager, [], filename , isLastCompiland, errorLogger, (*retryLocked*)true)
+            let input = ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)true)
             fileParsed.Trigger (filename)
 
             input, sourceRange, filename, errorLogger.GetErrors ()

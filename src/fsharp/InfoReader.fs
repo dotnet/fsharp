@@ -112,7 +112,7 @@ type PropertyCollector(g, amap, m, ty, optFilter, ad) =
 
     let add pinfo =
         match props.TryGetValue(pinfo), pinfo with
-        | (true, FSProp (_, ty, Some vref1 , _)), FSProp (_, _, _, Some vref2)
+        | (true, FSProp (_, ty, Some vref1, _)), FSProp (_, _, _, Some vref2)
         | (true, FSProp (_, ty, _, Some vref2)), FSProp (_, _, Some vref1, _) ->
             let pinfo = FSProp (g, ty, Some vref1, Some vref2)
             props.[pinfo] <- pinfo 
@@ -221,7 +221,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
                 let st = info.ProvidedType
                 match optFilter with
                 |   None ->
-                        [ for fi in st.PApplyArray((fun st -> st.GetFields()), "GetFields" , m) -> ProvidedField(amap, fi, m) ]
+                        [ for fi in st.PApplyArray((fun st -> st.GetFields()), "GetFields", m) -> ProvidedField(amap, fi, m) ]
                 |   Some name ->
                         match st.PApply ((fun st -> st.GetField name), m) with
                         | Tainted.Null -> []
@@ -246,7 +246,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
                 let st = info.ProvidedType
                 match optFilter with
                 |   None ->
-                        [   for ei in st.PApplyArray((fun st -> st.GetEvents()), "GetEvents" , m) -> ProvidedEvent(amap, ei, m) ]
+                        [   for ei in st.PApplyArray((fun st -> st.GetEvents()), "GetEvents", m) -> ProvidedEvent(amap, ei, m) ]
                 |   Some name ->
                         match st.PApply ((fun st -> st.GetEvent name), m) with
                         | Tainted.Null -> []

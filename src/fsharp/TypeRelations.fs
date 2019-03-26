@@ -33,9 +33,9 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
     match ty1,ty2 with 
     | TType_app (tc1, l1, _nullness1),TType_app (tc2, l2, _nullness2) when tyconRefEq g tc1 tc2  ->  // TODO NULLNESS - check it is ok to ignore nullness for this
         List.lengthsEqAndForall2 (typeEquiv g) l1 l2
-    | TType_ucase (tc1, l1)  , TType_ucase (tc2, l2) when g.unionCaseRefEq tc1 tc2  ->  
+    | TType_ucase (tc1, l1), TType_ucase (tc2, l2) when g.unionCaseRefEq tc1 tc2  ->  
         List.lengthsEqAndForall2 (typeEquiv g) l1 l2
-    | TType_tuple (tupInfo1, l1)    , TType_tuple (tupInfo2, l2)     -> 
+    | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)     -> 
         evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 && 
         List.lengthsEqAndForall2 (typeEquiv g) l1 l2 
     | TType_fun (d1, r1, _nullness1)  ,TType_fun (d2, r2, _nullness2)   ->  // TODO NULLNESS - check it is ok to ignore nullness for this
@@ -67,14 +67,14 @@ let rec TypesFeasiblyEquiv ndeep g amap m ty1 ty2 =
     let ty2 = stripTyEqns g ty2
     match ty1, ty2 with 
     // QUERY: should these be false for non-equal rigid typars? warn-if-not-rigid typars?
-    | TType_var _ , _  
+    | TType_var _, _  
     | _, TType_var _ -> true
-    | TType_app (tc1, l1, _nullness1)  ,TType_app (tc2, l2, _nullness2) when tyconRefEq g tc1 tc2  ->   // TODO NULLNESS - check it is ok to ignore nullness for this
+    | TType_app (tc1, l1, _nullness1), TType_app (tc2, l2, _nullness2) when tyconRefEq g tc1 tc2  ->   // TODO NULLNESS - check it is ok to ignore nullness for this
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
-    | TType_tuple (tupInfo1, l1)    , TType_tuple (tupInfo2, l2)     -> 
+    | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)     -> 
         evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 &&
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2 
-    | TType_fun (d1, r1, _nullness1)  ,TType_fun (d2, r2, _nullness2)   -> // TODO NULLNESS - check it is ok to ignore nullness for this
+    | TType_fun (d1, r1, _nullness1), TType_fun (d2, r2, _nullness2)   -> // TODO NULLNESS - check it is ok to ignore nullness for this
         (TypesFeasiblyEquiv ndeep g amap m) d1 d2 && (TypesFeasiblyEquiv ndeep g amap m) r1 r2
     | TType_measure _, TType_measure _ ->
         true
@@ -88,15 +88,13 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
     let ty1 = stripTyEqns g ty1
     let ty2 = stripTyEqns g ty2
     match ty1, ty2 with 
-    // QUERY: should these be false for non-equal rigid typars? warn-if-not-rigid typars?
-    | TType_var _ , _  | _, TType_var _ -> true
-
-    | TType_app (tc1, l1, _nullness1)  ,TType_app (tc2, l2, _nullness2) when tyconRefEq g tc1 tc2  ->    // TODO NULLNESS - check it is ok to ignore nullness for this
+    | TType_var _, _  | _, TType_var _ -> true
+    | TType_app (tc1, l1, _nullness1), TType_app (tc2, l2, _nullness2) when tyconRefEq g tc1 tc2  ->    // TODO NULLNESS - check it is ok to ignore nullness for this
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
-    | TType_tuple (tupInfo1, l1)    , TType_tuple (tupInfo2, l2)     -> 
+    | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)     -> 
         evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 && 
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2 
-    | TType_fun (d1, r1, _nullness1)  ,TType_fun (d2, r2, _nullness2)   ->   // TODO NULLNESS - check it is ok to ignore nullness for this
+    | TType_fun (d1, r1, _nullness1), TType_fun (d2, r2, _nullness2)   ->   // TODO NULLNESS - check it is ok to ignore nullness for this
         (TypesFeasiblyEquiv ndeep g amap m) d1 d2 && (TypesFeasiblyEquiv ndeep g amap m) r1 r2
     | TType_measure _, TType_measure _ ->
         true

@@ -45,11 +45,11 @@ let MAX_PATH = 260
 
 let E_FAIL = 0x80004005
 
-let bytesToWord ((b0: byte) , (b1: byte)) = 
+let bytesToWord ((b0: byte), (b1: byte)) = 
     (int16)b0 ||| ((int16)b1 <<< 8)
-let bytesToDWord ((b0: byte) , (b1: byte) , (b2: byte) , (b3: byte)) =  
+let bytesToDWord ((b0: byte), (b1: byte), (b2: byte), (b3: byte)) =  
     (int)b0 ||| ((int)b1 <<< 8) ||| ((int)b2 <<< 16) ||| ((int)b3 <<< 24)
-let bytesToQWord ((b0: byte) , (b1: byte) , (b2: byte) , (b3: byte) , (b4: byte) , (b5: byte) , (b6: byte) , (b7: byte)) =
+let bytesToQWord ((b0: byte), (b1: byte), (b2: byte), (b3: byte), (b4: byte), (b5: byte), (b6: byte), (b7: byte)) =
     (int64)b0 ||| ((int64)b1 <<< 8) ||| ((int64)b2 <<< 16) ||| ((int64)b3 <<< 24) ||| ((int64)b4 <<< 32) ||| ((int64)b5 <<< 40) ||| ((int64)b6 <<< 48) ||| ((int64)b7 <<< 56)
     
 let dwToBytes n = [| (byte)(n &&& 0xff) ; (byte)((n >>> 8) &&& 0xff) ; (byte)((n >>> 16) &&& 0xff) ; (byte)((n >>> 24) &&& 0xff) |], 4
