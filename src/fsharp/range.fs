@@ -325,7 +325,7 @@ let rangeCmdArgs = rangeN "commandLineArgs" 0
 
 let trimRangeToLine (r:range) =
     let startL, startC = r.StartLine, r.StartColumn
-    let endL , _endC   = r.EndLine, r.EndColumn
+    let endL, _endC   = r.EndLine, r.EndColumn
     if endL <= startL then
       r
     else

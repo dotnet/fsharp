@@ -712,38 +712,38 @@ let CheckAugmentationAttribs isImplementation g amap (tycon: Tycon) =
     // THESE ARE THE LEGITIMATE CASES 
 
     // [< >] on anything
-    | _, _   , None    , None, None      , None, None      , None     , None
+    | _, _, None, None, None, None, None, None, None
 
     // [<CustomEquality; CustomComparison>]  on union/record/struct
-    | true, _, None, Some(true), None     , None      , None      , Some(true), None
+    | true, _, None, Some(true), None, None, None, Some(true), None
 
     // [<CustomEquality; NoComparison>]  on union/record/struct
-    | true, _, None, Some(true), None     , None      , Some(true), None      , None -> 
+    | true, _, None, Some(true), None, None, Some(true), None, None -> 
         ()
 
     // [<ReferenceEquality; NoComparison>]  on union/record/struct
-    | true, _, None, None     , Some(true), None      , Some(true), None      , None
+    | true, _, None, None, Some(true), None, Some(true), None, None
 
     // [<ReferenceEquality>] on union/record/struct
-    | true, _, None, None     , Some(true), None      , None      , None      , None ->
+    | true, _, None, None, Some(true), None, None, None, None ->
         if isTrueFSharpStructTycon g tycon then 
             errorR(Error(FSComp.SR.augNoRefEqualsOnStruct(), m))
         else ()
 
     // [<StructuralEquality; StructuralComparison>]  on union/record/struct
-    | true, true, None, None     , None      , Some(true), None      , None      , Some(true) 
+    | true, true, None, None, None, Some(true), None, None, Some(true) 
 
     // [<StructuralEquality; NoComparison>] 
-    | true, _, None, None      , None     , Some(true), Some(true), None      , None
+    | true, _, None, None, None, Some(true), Some(true), None, None
 
     // [<StructuralEquality; CustomComparison>] 
-    | true, _, None, None      , None     , Some(true), None      , Some(true), None
+    | true, _, None, None, None, Some(true), None, Some(true), None
 
     // [<NoComparison>] on anything
-    | _   , _, None, None      , None     , None      , Some(true), None      , None 
+    | _, _, None, None, None, None, Some(true), None, None 
 
     // [<NoEquality; NoComparison>] on anything
-    | _   , _, Some(true), None, None     , None      , Some(true), None      , None ->
+    | _, _, Some(true), None, None, None, Some(true), None, None ->
 
         () 
 
@@ -754,18 +754,18 @@ let CheckAugmentationAttribs isImplementation g amap (tycon: Tycon) =
         errorR(Error(FSComp.SR.augNoEqualityNeedsNoComparison(), m))
 
     // [<StructuralComparison(_)>] 
-    | true, true, _, _, _         , None      , _, _, Some(true) ->
+    | true, true, _, _, _, None, _, _, Some(true) ->
         errorR(Error(FSComp.SR.augStructCompNeedsStructEquality(), m))
     // [<StructuralEquality(_)>] 
-    | true, _, _, _, _         , Some(true), None, _, None ->
+    | true, _, _, _, _, Some(true), None, _, None ->
         errorR(Error(FSComp.SR.augStructEqNeedsNoCompOrStructComp(), m))
 
     // [<StructuralEquality(_)>] 
-    | true, _, _, Some(true), _ , _, None, None, _ ->
+    | true, _, _, Some(true), _, _, None, None, _ ->
         errorR(Error(FSComp.SR.augCustomEqNeedsNoCompOrCustomComp(), m))
 
     // [<ReferenceEquality; StructuralEquality>] 
-    | true, _, _, _, Some(true)  , Some(true)    , _, _, _
+    | true, _, _, _, Some(true), Some(true), _, _, _
 
     // [<ReferenceEquality; StructuralComparison(_) >] 
     | true, _, _, _, Some(true), _, _, _, Some(true) -> 
@@ -774,9 +774,9 @@ let CheckAugmentationAttribs isImplementation g amap (tycon: Tycon) =
     // non augmented type, [<ReferenceEquality; ... >] 
     // non augmented type, [<StructuralEquality; ... >] 
     // non augmented type, [<StructuralComparison(_); ... >] 
-    | false, _, _, _, Some(true), _         , _         , _, _
-    | false, _, _, _, _         , Some(true), _         , _, _ 
-    | false, _, _, _, _         , _         , _         , _, Some(true)  ->
+    | false, _, _, _, Some(true), _, _, _, _
+    | false, _, _, _, _, Some(true), _, _, _ 
+    | false, _, _, _, _, _, _, _, Some(true)  ->
         errorR(Error(FSComp.SR.augOnlyCertainTypesCanHaveAttrs(), m))
     // All other cases
     | _  -> 
@@ -829,7 +829,7 @@ let TyconIsCandidateForAugmentationWithCompare (g: TcGlobals) (tycon: Tycon) =
     not (TyconRefHasAttribute g tycon.Range g.attrib_IsByRefLikeAttribute (mkLocalTyconRef tycon)) &&
     match getAugmentationAttribs g tycon with 
     // [< >] 
-    | true, true, None, None, None, None      , None, None, None
+    | true, true, None, None, None, None, None, None, None
     // [<StructuralEquality; StructuralComparison>] 
     | true, true, None, None, None, Some(true), None, None, Some(true) 
     // [<StructuralComparison>] 
@@ -845,7 +845,7 @@ let TyconIsCandidateForAugmentationWithEquals (g: TcGlobals) (tycon: Tycon) =
 
     match getAugmentationAttribs g tycon with 
     // [< >] 
-    | true, _, None, None, None, None      , _, _, _
+    | true, _, None, None, None, None, _, _, _
     // [<StructuralEquality; _ >] 
     // [<StructuralEquality; StructuralComparison>] 
     | true, _, None, None, None, Some(true), _, _, _ -> true

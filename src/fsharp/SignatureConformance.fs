@@ -37,8 +37,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
         // Used when checking attributes.
         let sigToImplRemap = 
             let remap = Remap.Empty 
-            let remap = (remapInfo.RepackagedEntities, remap) ||> List.foldBack (fun (implTcref , signTcref) acc -> addTyconRefRemap signTcref implTcref acc) 
-            let remap = (remapInfo.RepackagedVals    , remap) ||> List.foldBack (fun (implValRef, signValRef) acc -> addValRemap signValRef.Deref implValRef.Deref acc) 
+            let remap = (remapInfo.RepackagedEntities, remap) ||> List.foldBack (fun (implTcref, signTcref) acc -> addTyconRefRemap signTcref implTcref acc) 
+            let remap = (remapInfo.RepackagedVals, remap) ||> List.foldBack (fun (implValRef, signValRef) acc -> addValRemap signValRef.Deref implValRef.Deref acc) 
             remap
             
         // For all attributable elements (types, modules, exceptions, record fields, unions, parameters, generic type parameters)
@@ -536,7 +536,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 if typeAEquiv g aenv ty1 ty2 then true else (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m)); false)
             | TNoRepr, TNoRepr -> true
 #if !NO_EXTENSIONTYPING
-            | TProvidedTypeExtensionPoint info1 , TProvidedTypeExtensionPoint info2 ->  
+            | TProvidedTypeExtensionPoint info1, TProvidedTypeExtensionPoint info2 ->  
                 Tainted.EqTainted info1.ProvidedType.TypeProvider info2.ProvidedType.TypeProvider && ProvidedType.TaintedEquals(info1.ProvidedType, info2.ProvidedType)
             | TProvidedNamespaceExtensionPoint _, TProvidedNamespaceExtensionPoint _ -> 
                 System.Diagnostics.Debug.Assert(false, "unreachable: TProvidedNamespaceExtensionPoint only on namespaces, not types" )
@@ -567,7 +567,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             (if implModType.ModuleOrNamespaceKind <> signModType.ModuleOrNamespaceKind then errorR(Error(FSComp.SR.typrelModuleNamespaceAttributesDifferInSigAndImpl(), m)))
 
 
-            (implModType.TypesByMangledName , signModType.TypesByMangledName)
+            (implModType.TypesByMangledName, signModType.TypesByMangledName)
              ||> NameMap.suball2 
                 (fun s _fx -> errorR(RequiredButNotSpecified(denv, implModRef, "type", (fun os -> Printf.bprintf os "%s" s), m)); false) 
                 (checkTypeDef aenv)  &&
@@ -659,7 +659,7 @@ let rec CheckNamesOfModuleOrNamespaceContents denv (implModRef: ModuleOrNamespac
                 (fun s fx -> errorR(RequiredButNotSpecified(denv, implModRef, (if fx.IsModule then "module" else "namespace"), (fun os -> Printf.bprintf os "%s" s), m)); false) 
                 (fun x1 (x2: ModuleOrNamespace) -> CheckNamesOfModuleOrNamespace denv (mkLocalModRef x1) x2.ModuleOrNamespaceType)  &&
 
-        (implModType.AllValsAndMembersByLogicalNameUncached , signModType.AllValsAndMembersByLogicalNameUncached) 
+        (implModType.AllValsAndMembersByLogicalNameUncached, signModType.AllValsAndMembersByLogicalNameUncached) 
           ||> NameMap.suball2 
                 (fun _s (fxs: Val list) -> 
                     let fx = fxs.Head
