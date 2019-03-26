@@ -1218,7 +1218,7 @@ moduleDefn:
   /* 'type' definitions */
   | opt_attributes opt_declVisibility typeKeyword tyconDefn tyconDefnList
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
-        let      (TypeDefn(ComponentInfo(cas   ,a,cs,b,c,d,d2,d3),e,f,g)) = $4
+        let      (TypeDefn(ComponentInfo(cas,a,cs,b,c,d,d2,d3),e,f,g)) = $4
         let tc = (TypeDefn(ComponentInfo($1@cas,a,cs,b,c,d,d2,d3),e,f,g))
         let types = tc :: $5
         [ SynModuleDecl.Types(types, (rhs parseState 3, types) ||> unionRangeWithListBy (fun t -> t.Range) ) ] }
@@ -1288,7 +1288,7 @@ namedModuleDefnBlock:
          //    System.DateTime.Now
          // module M2 = 
          //    Microsoft.FSharp.Core.List
-         // The second is a module abbreviation , the first a module containing a single expression.
+         // The second is a module abbreviation, the first a module containing a single expression.
          // The resolution is in favour of the module abbreviation, i.e. anything of the form 
          //    module M2 = ID.ID.ID.ID
          // will be taken as a module abbreviation, regardles of the identifiers themselves.
@@ -2493,7 +2493,7 @@ cPrototype:
             let bindingId = SynPat.LongIdent (LongIdentWithDots([nm],[]), None, Some noInferredTypars, SynConstructorArgs.Pats [SynPat.Tuple(false,args,argsm)], vis, nmm)
             let binding = mkSynBinding 
                               (xmlDoc, bindingId) 
-                              (vis, false, false, mBindLhs, NoSequencePointAtInvisibleBinding, Some rty ,rhsExpr, mRhs, [], attrs, None)
+                              (vis, false, false, mBindLhs, NoSequencePointAtInvisibleBinding, Some rty, rhsExpr, mRhs, [], attrs, None)
             [], [binding]) }
 
 /* A list of arguments in an 'extern' DllImport function definition */
@@ -3038,7 +3038,7 @@ declExpr:
 
   | hardwhiteLetBindings OBLOCKSEP typedSeqExprBlock  %prec expr_let 
      { let hwlb,m = $1
-       mkLocalBindings (unionRanges m $3.Range ,hwlb,$3) }
+       mkLocalBindings (unionRanges m $3.Range, hwlb, $3) }
 
   | hardwhiteLetBindings OBLOCKSEP error        %prec expr_let
      { let hwlb,m = $1
@@ -4727,7 +4727,7 @@ measureTypeExpr:
 typar: 
   | QUOTE ident 
      {  let id = mkSynId (lhs parseState) ($2).idText
-        Typar(id ,NoStaticReq,false) }
+        Typar(id, NoStaticReq,false) }
 
   | staticallyKnownHeadTypar 
      { $1 }

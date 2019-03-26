@@ -195,7 +195,7 @@ module internal PrintfImpl =
             Utils.Write(env, g, h)
         static member inline Write (env : PrintfEnv<_, _, _>, a, b, c, d, e, f, g, h, i) =
             Utils.Write(env, a, b, c, d, e, f, g)
-            Utils.Write(env, h ,i)
+            Utils.Write(env, h, i)
         static member inline Write (env : PrintfEnv<_, _, _>, a, b, c, d, e, f, g, h, i, j) =
             Utils.Write(env, a, b, c, d, e, f, g, h)
             Utils.Write(env, i, j)
@@ -1283,7 +1283,7 @@ module internal PrintfImpl =
                 let args = [| box prefix; tail |]
                 mi.Invoke(null, args)
             else
-                System.Diagnostics.Debug.Assert(spec.IsStarPrecision || spec.IsStarWidth , "spec.IsStarPrecision || spec.IsStarWidth ")
+                System.Diagnostics.Debug.Assert(spec.IsStarPrecision || spec.IsStarWidth, "spec.IsStarPrecision || spec.IsStarWidth ")
 
                 let mi = 
                     let n = if spec.IsStarWidth = spec.IsStarPrecision then 2 else 1
@@ -1321,7 +1321,7 @@ module internal PrintfImpl =
                 let args = [| box prefix; box suffix |]
                 mi.Invoke(null, args)
             else
-                System.Diagnostics.Debug.Assert(spec.IsStarPrecision || spec.IsStarWidth , "spec.IsStarPrecision || spec.IsStarWidth ")
+                System.Diagnostics.Debug.Assert(spec.IsStarPrecision || spec.IsStarWidth, "spec.IsStarPrecision || spec.IsStarWidth ")
 
                 let mi = 
                     let n = if spec.IsStarWidth = spec.IsStarPrecision then 2 else 1
