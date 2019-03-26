@@ -734,7 +734,7 @@ namespace Microsoft.FSharp.Core
     ///
     /// <remarks>When applied to a module within an assembly, then the attribute must not be given any arguments.
     /// When the enclosing namespace is opened in user source code, the module is also implicitly opened.</remarks>
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly ,AllowMultiple=true)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly, AllowMultiple=true)>]  
     [<Sealed>]
     type AutoOpenAttribute =
         inherit Attribute

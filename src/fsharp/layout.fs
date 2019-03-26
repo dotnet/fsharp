@@ -58,8 +58,8 @@ let mkNode l r joint =
 //--------------------------------------------------------------------------
 
 let wordL  (str:TaggedText) = Leaf (false, str, false)
-let sepL   (str:TaggedText) = Leaf (true , str, true)   
-let rightL (str:TaggedText) = Leaf (true , str, false)   
+let sepL   (str:TaggedText) = Leaf (true, str, true)   
+let rightL (str:TaggedText) = Leaf (true, str, false)   
 let leftL  (str:TaggedText) = Leaf (false, str, true)
 
 module TaggedTextOps =
@@ -361,13 +361,13 @@ let squashTo maxWidth layout =
                      let breaks, r, pos, offsetr = fit breaks (pos, r) 
                      let breaks, broken = popBreak breaks 
                      if broken then
-                       breaks, Node (jl, l, jm, r, jr, Broken indent)   , pos, indent + offsetr
+                       breaks, Node (jl, l, jm, r, jr, Broken indent), pos, indent + offsetr
                      else
                        breaks, Node (jl, l, jm, r, jr, Breakable indent), pos, offsetl + mid + offsetr
                    else
                      (* actually no saving so no break *)
                      let breaks, r, pos, offsetr = fit breaks (pos, r) 
-                     breaks, Node (jl, l, jm, r, jr, Breakable indent)  , pos, offsetl + mid + offsetr
+                     breaks, Node (jl, l, jm, r, jr, Breakable indent), pos, offsetl + mid + offsetr
        (*printf "\nDone:     pos=%d offset=%d" pos offset*)
        breaks, layout, pos, offset
    let breaks = breaks0 () 

@@ -2058,9 +2058,9 @@ let CheckEntityDefn cenv env (tycon: Entity) =
 
             if others |> List.exists (checkForDup EraseAll) then
                 if others |> List.exists (checkForDup EraseNone) then 
-                    errorR(Error(FSComp.SR.chkDuplicateProperty(nm, NicePrint.minimalStringOfType cenv.denv ty) , m))
+                    errorR(Error(FSComp.SR.chkDuplicateProperty(nm, NicePrint.minimalStringOfType cenv.denv ty), m))
                 else
-                    errorR(Error(FSComp.SR.chkDuplicatePropertyWithSuffix(nm, NicePrint.minimalStringOfType cenv.denv ty) , m))
+                    errorR(Error(FSComp.SR.chkDuplicatePropertyWithSuffix(nm, NicePrint.minimalStringOfType cenv.denv ty), m))
             // Check to see if one is an indexer and one is not
 
             if ( (pinfo.HasGetter && 
@@ -2259,7 +2259,7 @@ and CheckModuleSpec cenv env x =
         let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
         CheckDefnInModule cenv env rhs 
 
-let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcVal, denv , mexpr, extraAttribs, (isLastCompiland: bool*bool), isInternalTestSpanStackReferring) =
+let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcVal, denv, mexpr, extraAttribs, (isLastCompiland: bool*bool), isInternalTestSpanStackReferring) =
     let cenv = 
         { g =g  
           reportErrors=reportErrors 

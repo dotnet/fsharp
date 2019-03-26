@@ -1510,7 +1510,7 @@ module StaticLinker =
 
                               let access = (if isNested  then ILTypeDefAccess.Nested ILMemberAccess.Public else ILTypeDefAccess.Public)
                               let tdefs = mkILTypeDefs (List.map buildRelocatedGeneratedType ch)
-                              mkILSimpleClass ilGlobals (ilTgtTyRef.Name, access, emptyILMethods, emptyILFields, tdefs , emptyILProperties, emptyILEvents, emptyILCustomAttrs, ILTypeInit.OnAny) 
+                              mkILSimpleClass ilGlobals (ilTgtTyRef.Name, access, emptyILMethods, emptyILFields, tdefs, emptyILProperties, emptyILEvents, emptyILCustomAttrs, ILTypeInit.OnAny) 
 
                       [ for (ProviderGeneratedType(_, ilTgtTyRef, _) as node) in tcImports.ProviderGeneratedTypeRoots  do
                            yield (ilTgtTyRef, buildRelocatedGeneratedType node) ]
@@ -2000,7 +2000,7 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
     // data structures involved here are so large we can't take the risk.
     Args(ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, 
          generatedCcu, outfile, typedAssembly, topAttrs, pdbFile, assemblyName, 
-         assemVerFromAttrib, signingInfo ,exiter)
+         assemVerFromAttrib, signingInfo,exiter)
 
   
 /// Phase 2a: encode signature data, optimize, encode optimization data
