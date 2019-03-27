@@ -7650,14 +7650,15 @@ let LinearizeTopMatch g parent = function
 //---------------------------------------------------------------------------
 
 let GenWitnessArgTys (g: TcGlobals) (traitInfo: TraitWitnessInfo) =
-    let (TraitWitnessInfo(tys, _nm, memFlags, argtys, _rty)) = traitInfo
+    let (TraitWitnessInfo(_tys, _nm, _memFlags, argtys, _rty)) = traitInfo
     let argtys = if argtys.IsEmpty then [g.unit_ty] else argtys
     let argtysl = List.map List.singleton argtys
-    match tys with 
-    | _ when not memFlags.IsInstance  -> argtysl
-    | [ty] -> [ty] :: argtysl
-    | [_; _] -> [g.obj_ty] :: argtysl
-    | _ -> failwith "unexpected empty type support for trait constraint" 
+    argtysl
+    //match tys with 
+    //| _ when not memFlags.IsInstance  -> argtysl
+    //| [ty] -> [ty] :: argtysl
+    //| [_; _] -> [g.obj_ty] :: argtysl
+    //| _ -> failwith "unexpected empty type support for trait constraint" 
 
 let GenWitnessTy (g: TcGlobals) (traitInfo: TraitWitnessInfo) =
     let rty = match traitInfo.ReturnType with None -> g.unit_ty | Some ty -> ty

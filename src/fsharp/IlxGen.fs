@@ -3805,7 +3805,7 @@ and GenTraitCall cenv cgbuf eenv (traitInfo: TraitConstraintInfo, argExprs, m) e
         
     | None ->     
         // If witnesses are available, we should now always find trait witnesses in scope
-        assert not eenv.witnessesInScope.IsEmpty
+        assert eenv.witnessesInScope.IsEmpty
         
         let minfoOpt = CommitOperationResult (ConstraintSolver.CodegenWitnessThatTypeSupportsTraitConstraint cenv.tcVal cenv.g cenv.amap m traitInfo argExprs)
         match minfoOpt with
