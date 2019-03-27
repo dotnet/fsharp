@@ -371,34 +371,48 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                     else
                         // Sequence-point-record
                         let offsetDelta =
-                            if i > 0 then sps.[i].Offset - sps.[i - 1].Offset                           // delta from previous offset
-                            else sps.[i].Offset                                                         // delta IL offset
+                            let offset = sps.[i].Offset
+                            if offset > 0x20000000 then 0                                               //offset out of range
+                            elif i > 0 then offset - sps.[i - 1].Offset                                 // delta from previous offset
+                            else offset                                                                 // delta IL offset
 
                         if i < 1 || offsetDelta <> 0 then                                               // ILOffset must not be 0
                             builder.WriteCompressedInteger(offsetDelta)
 
-                            if sps.[i].Line = 0xfeefee && sps.[i].EndLine = 0xfeefee then               // Hidden-sequence-point-record
+                            let capLine v = if v < 0 || v >= 0x20000000 then 0xfeefee else v
+                            let capColumn v = if v < 0 || v >= 0x10000 then true, 0 else false, v
+
+                            let startLine = capLine sps.[i].Line
+                            let endLine = capLine sps.[i].EndLine
+                            let startColumnIsCapped, startColumn = capColumn sps.[i].Column
+                            let endColumnIsCapped, endColumn = capColumn sps.[i].EndColumn
+
+                            if startLine = 0xfeefee || endLine = 0xfeefee ||                            // Hidden-sequence-point-record
+                               startLine > endLine || (startColumn = 0 && endColumn = 0) ||
+                               startColumnIsCapped || endColumnIsCapped
+                            then
                                 builder.WriteCompressedInteger(0)
                                 builder.WriteCompressedInteger(0)
                             else                                                                        // Non-hidden-sequence-point-record
-                                let deltaLines = sps.[i].EndLine - sps.[i].Line                         // lines
+                                let deltaLines = endLine - startLine                                    // lines
                                 builder.WriteCompressedInteger(deltaLines)
 
-                                let deltaColumns = sps.[i].EndColumn - sps.[i].Column                   // Columns
-                                if deltaLines = 0 then
-                                    builder.WriteCompressedInteger(deltaColumns)
-                                else
-                                    builder.WriteCompressedSignedInteger(deltaColumns)
-
+                                let deltaColumns = endColumn - startColumn                              // Columns
+                                try
+                                    if deltaLines = 0 then
+                                        builder.WriteCompressedInteger(deltaColumns)
+                                    else
+                                        builder.WriteCompressedSignedInteger(deltaColumns)
+                                with | _ -> System.Diagnostics.Debugger.Break()
                                 if previousNonHiddenStartLine < 0 then                                  // delta Start Line & Column:
-                                    builder.WriteCompressedInteger(sps.[i].Line)
-                                    builder.WriteCompressedInteger(sps.[i].Column)
+                                    builder.WriteCompressedInteger(startLine)
+                                    builder.WriteCompressedInteger(startColumn)
                                 else
-                                    builder.WriteCompressedSignedInteger(sps.[i].Line - previousNonHiddenStartLine)
-                                    builder.WriteCompressedSignedInteger(sps.[i].Column - previousNonHiddenStartColumn)
+                                    builder.WriteCompressedSignedInteger(startLine - previousNonHiddenStartLine)
+                                    builder.WriteCompressedSignedInteger(startColumn - previousNonHiddenStartColumn)
 
-                                previousNonHiddenStartLine <- sps.[i].Line
-                                previousNonHiddenStartColumn <- sps.[i].Column
+                                previousNonHiddenStartLine <- startLine
+                                previousNonHiddenStartColumn <- startColumn
 
                 getDocumentHandle singleDocumentIndex, metadata.GetOrAddBlob(builder)
 
