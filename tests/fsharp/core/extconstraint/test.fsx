@@ -309,9 +309,9 @@ module TupleOps =
         static member inline (+)(struct(a,b), struct(c,d)) = struct(a + c, b + d)
         static member inline (+)((a,b), (c,d)) = (a + c, b + d)
     let v1 = (1,2) + (3,4) 
-    do check "fmjkslo1" ((3,6)) v1
+    do check "fmjkslo1" ((4,6)) v1
     //let v2 = struct(1,2) + struct(3,4) 
-    //do check "fmjkslo2" (struct(3,6)) v2
+    //do check "fmjkslo2" (struct(4,6)) v2
     //Runtime Errors: 
     (* ---------------------
         Unhandled Exception: System.TypeInitializationException: The type initializer for 'AdditionDynamicImplTable`3' threw an exception. ---> System.NotSupportedException: Dynamic invocation of op_Addition involving coercions is not supported.
