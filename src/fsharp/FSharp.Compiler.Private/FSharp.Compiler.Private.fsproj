@@ -14,13 +14,9 @@
     <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <UseAssetTargetFallback>true</UseAssetTargetFallback>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
-    <SkipPDBConversion>true</SkipPDBConversion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net46' AND '$(OS)' == 'Windows_NT'">
-    <!-- portable PDBs can't be properly generated for this assembly, see https://github.com/Microsoft/visualfsharp/issues/5976 -->
-    <DebugType>full</DebugType>
-    <EnableSourceLink>false</EnableSourceLink>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard')) AND '$(OS)' == 'Windows_NT'">
