@@ -217,6 +217,13 @@ function BuildSolution {
   cp $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.0/* $bootstrap_dir
   cp $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp2.0/* $bootstrap_dir
 
+  MSBuild "$repo_root/proto.proj" \
+    /restore \
+    /p:Configuration=$bootstrap_config \
+    /t:Build
+
+  cp $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.0/* $bootstrap_dir
+
   # do real build
   MSBuild $toolset_build_proj \
     $bl \
@@ -230,6 +237,7 @@ function BuildSolution {
     /p:Publish=$publish \
     /p:UseRoslynAnalyzers=$enable_analyzers \
     /p:ContinuousIntegrationBuild=$ci \
+    /p:BootstrapBuildPath="$bootstrap_dir" \
     /p:QuietRestore=$quiet_restore \
     /p:QuietRestoreBinaryLog="$binary_log" \
     $properties
