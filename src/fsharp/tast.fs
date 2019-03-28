@@ -2397,6 +2397,13 @@ and
     /// Get the member name associated with the member constraint.
     member x.MemberName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
 
+    /// Get the member flags associated with the member constraint.
+    member x.MemberFlags = (let (TTrait(_, _, flags, _, _, _)) = x in flags)
+
+    /// Get the argument types recorded in the member constraint. This includes the object instance type for
+    /// instance members.
+    member x.ArgumentTypes = (let (TTrait(_, _, _, argtys, _, _)) = x in argtys)
+
     /// Get the return type recorded in the member constraint.
     member x.ReturnType = (let (TTrait(_, _, _, _, ty, _)) = x in ty)
 

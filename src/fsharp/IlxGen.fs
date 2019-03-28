@@ -3807,7 +3807,7 @@ and GenTraitCall cenv cgbuf eenv (traitInfo: TraitConstraintInfo, argExprs, m) e
         // If witnesses are available, we should now always find trait witnesses in scope
         assert eenv.witnessesInScope.IsEmpty
         
-        let minfoOpt = CommitOperationResult (ConstraintSolver.CodegenWitnessThatTypeSupportsTraitConstraint cenv.tcVal cenv.g cenv.amap m traitInfo argExprs)
+        let minfoOpt = CommitOperationResult (ConstraintSolver.CodegenWitnessForTraitConstraint cenv.tcVal cenv.g cenv.amap m traitInfo argExprs)
         match minfoOpt with
         | None ->
             let exnArg = mkString cenv.g m (FSComp.SR.ilDynamicInvocationNotSupported(traitInfo.MemberName))

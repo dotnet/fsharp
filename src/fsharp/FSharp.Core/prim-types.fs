@@ -468,6 +468,7 @@ namespace Microsoft.FSharp.Core
 
         let inline iscastPrim<'T when 'T : not struct>(x:obj) = (# "isinst !0" type ('T) x : 'T #)
 
+        let inline mask (n:int) (m:int) = (# "and" n m : int #)
 
     open BasicInlinedOperations
 
@@ -475,7 +476,6 @@ namespace Microsoft.FSharp.Core
     module TupleUtils =
     
         // adapted from System.Tuple::CombineHashCodes
-        let inline mask (n:int) (m:int) = (# "and" n m : int #)
         let inline opshl (x:int) (n:int) : int =  (# "shl" x (mask n 31) : int #)
         let inline opxor (x:int) (y:int) : int = (# "xor" x y : int32 #)
         let inline combineTupleHashes (h1 : int) (h2 : int) = (opxor ((opshl h1  5) + h1)  h2)
@@ -2454,6 +2454,601 @@ namespace Microsoft.FSharp.Core
             | 'o' -> parseOctalUInt64 s p l
             | _ -> UInt64.Parse(s.Substring(p), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture) 
 
+        type BuiltInPrimitives = 
+            static member inline op_Addition(x: int32, y: int32) = (# "add" x y : int32 #)
+            static member inline op_Addition(x: float, y: float) = (# "add" x y : float #)
+            static member inline op_Addition(x: float32, y: float32) = (# "add" x y : float32 #)
+            static member inline op_Addition(x: int64, y: int64) = (# "add" x y : int64 #)
+            static member inline op_Addition(x: uint64, y: uint64) = (# "add" x y : uint64 #)
+            static member inline op_Addition(x: uint32, y: uint32) = (# "add" x y : uint32 #)
+            static member inline op_Addition(x: nativeint, y: nativeint) = (# "add" x y : nativeint #)
+            static member inline op_Addition(x: unativeint, y: unativeint) = (# "add" x y : unativeint #)
+            static member inline op_Addition(x: int16, y: int16) = (# "conv.i2" (# "add" x y : int32 #) : int16 #)
+            static member inline op_Addition(x: uint16, y: uint16) = (# "conv.u2" (# "add" x y : uint32 #) : uint16 #)
+            static member inline op_Addition(x: char, y: char) = (# "conv.u2" (# "add" x y : uint32 #) : char #)
+            static member inline op_Addition(x: sbyte, y: sbyte) = (# "conv.i1" (# "add" x y : int32 #) : sbyte #)
+            static member inline op_Addition(x: byte, y: byte) = (# "conv.u1" (# "add" x y : uint32 #) : byte #)
+            static member inline op_Addition(x: string, y: string) = String.Concat(x, y)
+            static member inline op_Addition(x: decimal, y: decimal) = Decimal.op_Addition(x, y)
+            
+            static member inline op_Multiply(x: int32, y: int32) = (# "mul" x y : int32 #)
+            static member inline op_Multiply(x: float, y: float) = (# "mul" x y : float #)
+            static member inline op_Multiply(x: float32, y: float32) = (# "mul" x y : float32 #)
+            static member inline op_Multiply(x: int64, y: int64) = (# "mul" x y : int64 #)
+            static member inline op_Multiply(x: uint64, y: uint64) = (# "mul" x y : uint64 #)
+            static member inline op_Multiply(x: uint32, y: uint32) = (# "mul" x y : uint32 #)
+            static member inline op_Multiply(x: nativeint, y: nativeint) = (# "mul" x y : nativeint #)
+            static member inline op_Multiply(x: unativeint, y: unativeint) = (# "mul" x y : unativeint #)
+            static member inline op_Multiply(x: int16, y: int16) = (# "conv.i2" (# "mul" x y : int32 #) : int16 #)
+            static member inline op_Multiply(x: uint16, y: uint16) = (# "conv.u2" (# "mul" x y : uint32 #) : uint16 #)
+            static member inline op_Multiply(x: sbyte, y: sbyte) = (# "conv.i1" (# "mul" x y : int32 #) : sbyte #)
+            static member inline op_Multiply(x: byte, y: byte) = (# "conv.u1" (# "mul" x y : uint32 #) : byte #)
+            static member inline op_Multiply(x: decimal, y: decimal) = Decimal.op_Multiply(x, y)
+
+            static member inline op_UnaryNegation(x: int32) = (# "neg" x : int32 #)
+            static member inline op_UnaryNegation(x: float) = (# "neg" x : float #)
+            static member inline op_UnaryNegation(x: float32) = (# "neg" x : float32 #)
+            static member inline op_UnaryNegation(x: int64) = (# "neg" x : int64 #)
+            static member inline op_UnaryNegation(x: int16) = (# "neg" x : int16 #)
+            static member inline op_UnaryNegation(x: nativeint) = (# "neg" x : nativeint #)
+            static member inline op_UnaryNegation(x: sbyte) = (# "neg" x : sbyte #)
+            static member inline op_UnaryNegation(x: decimal) = Decimal.op_UnaryNegation(x)
+            
+            static member inline op_Subtraction(x: int32, y: int32) = (# "sub" x y : int32 #)
+            static member inline op_Subtraction(x: float, y: float) = (# "sub" x y : float #)
+            static member inline op_Subtraction(x: float32, y: float32) = (# "sub" x y : float32 #)
+            static member inline op_Subtraction(x: int64, y: int64) = (# "sub" x y : int64 #)
+            static member inline op_Subtraction(x: uint64, y: uint64) = (# "sub" x y : uint64 #)
+            static member inline op_Subtraction(x: uint32, y: uint32) = (# "sub" x y : uint32 #)
+            static member inline op_Subtraction(x: nativeint, y: nativeint) = (# "sub" x y : nativeint #)
+            static member inline op_Subtraction(x: unativeint, y: unativeint) = (# "sub" x y : unativeint #)
+            static member inline op_Subtraction(x: int16, y: int16) = (# "conv.i2" (# "sub" x y : int32 #) : int16 #)
+            static member inline op_Subtraction(x: uint16, y: uint16) = (# "conv.u2" (# "sub" x y : uint32 #) : uint16 #)
+            static member inline op_Subtraction(x: sbyte, y: sbyte) = (# "conv.i1" (# "sub" x y : int32 #) : sbyte #)
+            static member inline op_Subtraction(x: byte, y: byte) = (# "conv.u1" (# "sub" x y : uint32 #) : byte #)
+            static member inline op_Subtraction(x: decimal, y: decimal) = Decimal.op_Subtraction(x, y)
+            
+            static member inline op_Division(x: int32, y: int32) = (# "div" x y : int32 #)
+            static member inline op_Division(x: float, y: float) = (# "div" x y : float #)
+            static member inline op_Division(x: float32, y: float32) = (# "div" x y : float32 #)
+            static member inline op_Division(x: int64, y: int64) = (# "div" x y : int64 #)
+            static member inline op_Division(x: uint64, y: uint64) = (# "div.un" x y : uint64 #)
+            static member inline op_Division(x: uint32, y: uint32) = (# "div.un" x y : uint32 #)
+            static member inline op_Division(x: nativeint, y: nativeint) = (# "div" x y : nativeint #)
+            static member inline op_Division(x: unativeint, y: unativeint) = (# "div.un" x y : unativeint #)
+            static member inline op_Division(x: int16, y: int16) = (# "conv.i2" (# "div" x y : int32 #) : int16 #)
+            static member inline op_Division(x: uint16, y: uint16) = (# "conv.u2" (# "div.un" x y : uint32 #) : uint16 #)
+            static member inline op_Division(x: sbyte, y: sbyte) = (# "conv.i1" (# "div" x y : int32 #) : sbyte #)
+            static member inline op_Division(x: byte, y: byte) = (# "conv.u1" (# "div.un" x y : uint32 #) : byte #)
+            static member inline op_Division(x: decimal, y: decimal) = Decimal.op_Division(x, y)
+
+            static member inline op_Modulus(x: int32, y: int32) = (# "rem" x y : int32 #)
+            static member inline op_Modulus(x: float, y: float) = (# "rem" x y : float #)
+            static member inline op_Modulus(x: float32, y: float32) = (# "rem" x y : float32 #)
+            static member inline op_Modulus(x: int64, y: int64) = (# "rem" x y : int64 #)
+            static member inline op_Modulus(x: uint64, y: uint64) = (# "rem.un" x y : uint64 #)
+            static member inline op_Modulus(x: uint32, y: uint32) = (# "rem.un" x y : uint32 #)
+            static member inline op_Modulus(x: nativeint, y: nativeint) = (# "rem" x y : nativeint #)
+            static member inline op_Modulus(x: unativeint, y: unativeint) = (# "rem.un" x y : unativeint #)
+            static member inline op_Modulus(x: int16, y: int16) = (# "conv.i2" (# "rem"    x y : int32  #) : int16  #)
+            static member inline op_Modulus(x: uint16, y: uint16) = (# "conv.u2" (# "rem.un" x y : uint32 #) : uint16 #)
+            static member inline op_Modulus(x: sbyte, y: sbyte) = (# "conv.i1" (# "rem"    x y : int32  #) : sbyte  #)
+            static member inline op_Modulus(x: byte, y: byte) = (# "conv.u1" (# "rem.un" x y : uint32 #) : byte   #)
+            static member inline op_Modulus(x: decimal, y: decimal) = Decimal.op_Modulus(x, y) 
+
+            static member inline op_LeftShift(value: int32, shift: int32) = (# "shl" value (mask shift 31) : int #)
+            static member inline op_LeftShift(value: uint32, shift: int32) = (# "shl" value (mask shift 31) : uint32 #)
+            static member inline op_LeftShift(value: int64, shift: int32) = (# "shl" value (mask shift 63) : int64 #)
+            static member inline op_LeftShift(value: uint64, shift: int32) = (# "shl" value (mask shift 63) : uint64 #)
+            static member inline op_LeftShift(value: nativeint, shift: int32) = (# "shl" value shift : nativeint #)
+            static member inline op_LeftShift(value: unativeint, shift: int32) = (# "shl" value shift : unativeint #)
+            static member inline op_LeftShift(value: int16, shift: int32) = (# "conv.i2" (# "shl" value (mask shift 15) : int32  #) : int16 #)
+            static member inline op_LeftShift(value: uint16, shift: int32) = (# "conv.u2" (# "shl" value (mask shift 15) : uint32 #) : uint16 #)
+            static member inline op_LeftShift(value: sbyte, shift: int32) = (# "conv.i1" (# "shl" value (mask shift 7) : int32  #) : sbyte #)
+            static member inline op_LeftShift(value: byte, shift: int32) =  (# "conv.u1" (# "shl" value (mask shift 7) : uint32 #) : byte #)
+
+            static member inline op_RightShift(value: byte, shift: int32) = (# "shr"    value (mask shift 31) : int32 #)
+            static member inline op_RightShift(value: byte, shift: int32) = (# "shr.un" value (mask shift 31) : uint32 #)
+            static member inline op_RightShift(value: byte, shift: int32) = (# "shr"    value (mask shift 63) : int64 #)
+            static member inline op_RightShift(value: byte, shift: int32) = (# "shr.un" value (mask shift 63) : uint64 #)
+            static member inline op_RightShift(value: byte, shift: int32) = (# "shr"    value shift : nativeint #)
+            static member inline op_RightShift(value: byte, shift: int32) = (# "shr.un" value shift : unativeint #)
+            static member inline op_RightShift(value: byte, shift: int32) = (# "conv.i2" (# "shr"    value (mask shift 15) : int32  #) : int16 #)
+            static member inline op_RightShift(value: byte, shift: int32) = (# "conv.u2" (# "shr.un" value (mask shift 15) : uint32 #) : uint16 #)
+            static member inline op_RightShift(value: byte, shift: int32) = (# "conv.i1" (# "shr"    value (mask shift 7 ) : int32  #) : sbyte #)
+            static member inline op_RightShift(value: byte, shift: int32) = (# "conv.u1" (# "shr.un" value (mask shift 7 ) : uint32 #) : byte #)
+
+            static member inline op_BitwiseAnd(x: int32, y: int32) = (# "and" x y : int32 #)
+            static member inline op_BitwiseAnd(x: int64, y: int64) = (# "and" x y : int64 #)
+            static member inline op_BitwiseAnd(x: uint64, y: uint64) = (# "and" x y : uint64 #)
+            static member inline op_BitwiseAnd(x: uint32, y: uint32) = (# "and" x y : uint32 #)
+            static member inline op_BitwiseAnd(x: int16, y: int16) = (# "and" x y : int16 #)
+            static member inline op_BitwiseAnd(x: uint16, y: uint16) = (# "and" x y : uint16 #)
+            static member inline op_BitwiseAnd(x: nativeint, y: nativeint) = (# "and" x y : nativeint #)
+            static member inline op_BitwiseAnd(x: unativeint, y: unativeint) = (# "and" x y : unativeint #)
+            static member inline op_BitwiseAnd(x: sbyte, y: sbyte) = (# "and" x y : sbyte #)
+            static member inline op_BitwiseAnd(x: byte, y: byte) = (# "and" x y : byte #)
+
+            (*
+[<NoDynamicInvocation(true)>]
+let inline (|||) (x: ^T) (y: ^T) : ^T = 
+     (^T: (static member (|||) : ^T * ^T -> ^T) (x,y))
+     when ^T : int32      = (# "or" x y : int32 #)
+     when ^T : int64      = (# "or" x y : int64 #)
+     when ^T : uint64     = (# "or" x y : uint64 #)
+     when ^T : uint32     = (# "or" x y : uint32 #)
+     when ^T : int16      = (# "or" x y : int16 #)
+     when ^T : uint16     = (# "or" x y : uint16 #)
+     when ^T : nativeint  = (# "or" x y : nativeint #)
+     when ^T : unativeint = (# "or" x y : unativeint #)
+     when ^T : sbyte      = (# "or" x y : sbyte #)
+     when ^T : byte       = (# "or" x y : byte #)
+
+
+let inline (^^^) (x: ^T) (y: ^T) : ^T = 
+     (^T: (static member (^^^) : ^T * ^T -> ^T) (x,y))
+     when ^T : int32      = (# "xor" x y : int32 #)
+     when ^T : int64      = (# "xor" x y : int64 #)
+     when ^T : uint64     = (# "xor" x y : uint64 #)
+     when ^T : uint32     = (# "xor" x y : uint32 #)
+     when ^T : int16      = (# "xor" x y : int16 #)
+     when ^T : uint16     = (# "xor" x y : uint16 #)
+     when ^T : nativeint  = (# "xor" x y : nativeint #)
+     when ^T : unativeint = (# "xor" x y : unativeint #)
+     when ^T : sbyte      = (# "xor" x y : sbyte #)
+     when ^T : byte       = (# "xor" x y : byte #)
+
+
+let inline (~~~) (value: ^T) : ^T = 
+     (^T: (static member (~~~) : ^T -> ^T) (value))
+     when ^T : int32      = (# "not" value : int32 #)
+     when ^T : int64      = (# "not" value : int64 #)
+     when ^T : uint64     = (# "not" value : uint64 #)
+     when ^T : uint32     = (# "not" value : uint32 #)
+     when ^T : nativeint  = (# "not" value : nativeint #)
+     when ^T : unativeint = (# "not" value : unativeint #)
+     when ^T : int16      = (# "conv.i2" (# "not" value : int32  #) : int16 #)
+     when ^T : uint16     = (# "conv.u2" (# "not" value : uint32 #) : uint16 #)
+     when ^T : sbyte      = (# "conv.i1" (# "not" value : int32  #) : sbyte #)
+     when ^T : byte       = (# "conv.u1" (# "not" value : uint32 #) : byte #)
+
+
+let inline byte (value: ^T) = 
+    (^T : (static member op_Explicit: ^T -> byte) (value))
+     when ^T : string     = parseByte (castToString value)
+     when ^T : float      = (# "conv.u1" value  : byte #)
+     when ^T : float32    = (# "conv.u1" value  : byte #)
+     when ^T : int64      = (# "conv.u1" value  : byte #)
+     when ^T : int32      = (# "conv.u1" value  : byte #)
+     when ^T : int16      = (# "conv.u1" value  : byte #)
+     when ^T : nativeint  = (# "conv.u1" value  : byte #)
+     when ^T : sbyte      = (# "conv.u1" value  : byte #)
+     when ^T : uint64     = (# "conv.u1" value  : byte #)
+     when ^T : uint32     = (# "conv.u1" value  : byte #)
+     when ^T : uint16     = (# "conv.u1" value  : byte #)
+     when ^T : char       = (# "conv.u1" value  : byte #)
+     when ^T : unativeint = (# "conv.u1" value  : byte #)
+     when ^T : byte       = (# "conv.u1" value  : byte #)
+
+
+let inline sbyte (value: ^T) = 
+    (^T : (static member op_Explicit: ^T -> sbyte) (value))
+     when ^T : string     = ParseSByte (castToString value)
+     when ^T : float     = (# "conv.i1" value  : sbyte #)
+     when ^T : float32   = (# "conv.i1" value  : sbyte #)
+     when ^T : int64     = (# "conv.i1" value  : sbyte #)
+     when ^T : int32     = (# "conv.i1" value  : sbyte #)
+     when ^T : int16     = (# "conv.i1" value  : sbyte #)
+     when ^T : nativeint = (# "conv.i1" value  : sbyte #)
+     when ^T : sbyte     = (# "conv.i1" value  : sbyte #)
+     when ^T : uint64     = (# "conv.i1" value  : sbyte #)
+     when ^T : uint32     = (# "conv.i1" value  : sbyte #)
+     when ^T : uint16     = (# "conv.i1" value  : sbyte #)
+     when ^T : char       = (# "conv.i1" value  : sbyte #)
+     when ^T : unativeint = (# "conv.i1" value  : sbyte #)
+     when ^T : byte     = (# "conv.i1" value  : sbyte #)
+
+
+let inline uint16 (value: ^T) = 
+    (^T : (static member op_Explicit: ^T -> uint16) (value))
+     when ^T : string     = ParseUInt16 (castToString value)
+     when ^T : float     = (# "conv.u2" value  : uint16 #)
+     when ^T : float32   = (# "conv.u2" value  : uint16 #)
+     when ^T : int64     = (# "conv.u2" value  : uint16 #)
+     when ^T : int32     = (# "conv.u2" value  : uint16 #)
+     when ^T : int16     = (# "conv.u2" value  : uint16 #)
+     when ^T : nativeint = (# "conv.u2" value  : uint16 #)
+     when ^T : sbyte     = (# "conv.u2" value  : uint16 #)
+     when ^T : uint64     = (# "conv.u2" value  : uint16 #)
+     when ^T : uint32     = (# "conv.u2" value  : uint16 #)
+     when ^T : uint16     = (# "conv.u2" value  : uint16 #)
+     when ^T : char       = (# "conv.u2" value  : uint16 #)
+     when ^T : unativeint = (# "conv.u2" value  : uint16 #)
+     when ^T : byte     = (# "conv.u2" value  : uint16 #)
+
+
+            (^T : (static member op_Explicit: ^T -> int16) (value))
+             when ^T : string     = ParseInt16 (castToString value)
+             when ^T : float     = (# "conv.i2" value  : int16 #)
+             when ^T : float32   = (# "conv.i2" value  : int16 #)
+             when ^T : int64     = (# "conv.i2" value  : int16 #)
+             when ^T : int32     = (# "conv.i2" value  : int16 #)
+             when ^T : int16     = (# "conv.i2" value  : int16 #)
+             when ^T : nativeint = (# "conv.i2" value  : int16 #)
+             when ^T : sbyte     = (# "conv.i2" value  : int16 #)
+             when ^T : uint64     = (# "conv.i2" value  : int16 #)
+             when ^T : uint32     = (# "conv.i2" value  : int16 #)
+             when ^T : uint16     = (# "conv.i2" value  : int16 #)
+             when ^T : char       = (# "conv.i2" value  : int16 #)
+             when ^T : unativeint = (# "conv.i2" value  : int16 #)
+             when ^T : byte     = (# "conv.i2" value  : int16 #)
+
+
+let inline uint32 (value: ^T) = 
+    (^T : (static member op_Explicit: ^T -> uint32) (value))
+     when ^T : string     = ParseUInt32 (castToString value)
+     when ^T : float     = (# "conv.u4" value  : uint32 #)
+     when ^T : float32   = (# "conv.u4" value  : uint32 #)
+
+     when ^T : int64     = (# "conv.u4" value  : uint32 #)
+     when ^T : nativeint = (# "conv.u4" value  : uint32 #)
+     
+     // For integers shorter that 32 bits, we must first 
+     // sign-widen the signed integer to 32 bits, and then 
+     // "convert" from signed int32 to unsigned int32
+     // This is a no-op on IL stack (ECMA 335 Part III 1.5 Tables 8 & 9)
+     when ^T : int32     = (# "" value : uint32 #)
+     when ^T : int16     = (# "" value : uint32 #)
+     when ^T : sbyte     = (# "" value : uint32 #)             
+     
+     when ^T : uint64     = (# "conv.u4" value  : uint32 #)
+     when ^T : uint32     = (# "conv.u4" value  : uint32 #)
+     when ^T : uint16     = (# "conv.u4" value  : uint32 #)
+     when ^T : char       = (# "conv.u4" value  : uint32 #)
+     when ^T : unativeint = (# "conv.u4" value  : uint32 #)
+     when ^T : byte     = (# "conv.u4" value  : uint32 #)
+
+
+let inline int32 (value: ^T) = 
+    (^T : (static member op_Explicit: ^T -> int32) (value))
+     when ^T : string     = ParseInt32 (castToString value)
+     when ^T : float     = (# "conv.i4" value  : int32 #)
+     when ^T : float32   = (# "conv.i4" value  : int32 #)
+     when ^T : int64     = (# "conv.i4" value  : int32 #)
+     when ^T : nativeint = (# "conv.i4" value  : int32 #)
+     
+     // For integers shorter that 32 bits, we sign-widen the signed integer to 32 bits
+     // This is a no-op on IL stack (ECMA 335 Part III 1.5 Tables 8 & 9)
+     when ^T : int32     = (# "" value  : int32 #)
+     when ^T : int16     = (# "" value  : int32 #)
+     when ^T : sbyte     = (# "" value  : int32 #)
+     
+     when ^T : uint64     = (# "conv.i4" value  : int32 #)             
+     when ^T : uint32     = (# "" value  : int32 #) // Signed<->Unsigned conversion is a no-op on IL stack
+     when ^T : uint16     = (# "conv.i4" value  : int32 #)
+     when ^T : char       = (# "conv.i4" value  : int32 #)
+     when ^T : unativeint = (# "conv.i4" value  : int32 #)
+     when ^T : byte     = (# "conv.i4" value  : int32 #)
+
+
+let inline uint64 (value: ^T) = 
+    (^T : (static member op_Explicit: ^T -> uint64) (value))
+     when ^T : string     = ParseUInt64 (castToString value)
+     when ^T : float     = (# "conv.u8" value  : uint64 #)
+     when ^T : float32   = (# "conv.u8" value  : uint64 #)
+                  
+     // we must first sign-widen the signed integer to 64 bits, and then 
+     // "convert" from signed int64 to unsigned int64             
+     // conv.i8 sign-widens the input, and on IL stack, 
+     // conversion from signed to unsigned is a no-op (ECMA 335 Part III 1.5 Table 8)
+     when ^T : int64     = (# "" value  : uint64 #)
+     when ^T : int32     = (# "conv.i8" value  : uint64 #)
+     when ^T : int16     = (# "conv.i8" value  : uint64 #)
+     when ^T : nativeint = (# "conv.i8" value  : uint64 #)
+     when ^T : sbyte     = (# "conv.i8" value  : uint64 #)
+     
+     
+     when ^T : uint64     = (# "" value  : uint64 #)
+     when ^T : uint32     = (# "conv.u8" value  : uint64 #)
+     when ^T : uint16     = (# "conv.u8" value  : uint64 #)
+     when ^T : char       = (# "conv.u8" value  : uint64 #)
+     when ^T : unativeint = (# "conv.u8" value  : uint64 #)
+     when ^T : byte     = (# "conv.u8" value  : uint64 #)
+
+
+[<NoDynamicInvocation(true)>]
+[<CompiledName("ToInt64")>]
+let inline int64 (value: ^T) = 
+    (^T : (static member op_Explicit: ^T -> int64) (value))
+     when ^T : string     = ParseInt64 (castToString value)
+     when ^T : float     = (# "conv.i8" value  : int64 #)
+     when ^T : float32   = (# "conv.i8" value  : int64 #)
+     when ^T : int64     = (# "conv.i8" value  : int64 #)
+     when ^T : int32     = (# "conv.i8" value  : int64 #)
+     when ^T : int16     = (# "conv.i8" value  : int64 #)
+     when ^T : nativeint = (# "conv.i8" value  : int64 #)
+     when ^T : sbyte     = (# "conv.i8" value  : int64 #)
+     
+     // When converting unsigned integer, we should zero-widen them, NOT sign-widen 
+     // No-op for uint64, conv.u8 for uint32, for smaller types conv.u8 and conv.i8 are identical.
+     // For nativeint, conv.u8 works correctly both in 32 bit and 64 bit case.
+     when ^T : uint64     = (# "" value  : int64 #)             
+     when ^T : uint32     = (# "conv.u8" value  : int64 #)
+     when ^T : uint16     = (# "conv.u8" value  : int64 #)
+     when ^T : char       = (# "conv.u8" value  : int64 #)
+     when ^T : unativeint = (# "conv.u8" value  : int64 #)
+     when ^T : byte     = (# "conv.u8" value  : int64 #)
+
+
+[<NoDynamicInvocation(true)>]
+[<CompiledName("ToSingle")>]
+let inline float32 (value: ^T) = 
+    (^T : (static member op_Explicit: ^T -> float32) (value))
+     when ^T : string     = ParseSingle (castToString value)
+     when ^T : float     = (# "conv.r4" value  : float32 #)
+     // NOTE: float32 should convert its argument to 32-bit float even when applied to a higher precision float stored in a register. See devdiv2#49888.
+     when ^T : float32   = (# "conv.r4" value  : float32 #)
+     when ^T : int64     = (# "conv.r4" value  : float32 #)
+     when ^T : int32     = (# "conv.r4" value  : float32 #)
+     when ^T : int16     = (# "conv.r4" value  : float32 #)
+     when ^T : nativeint = (# "conv.r4" value  : float32 #)
+     when ^T : sbyte     = (# "conv.r4" value  : float32 #)
+     when ^T : uint64     = (# "conv.r.un conv.r4" value  : float32 #)
+     when ^T : uint32     = (# "conv.r.un conv.r4" value  : float32 #)
+     when ^T : uint16     = (# "conv.r.un conv.r4" value  : float32 #)
+     when ^T : char       = (# "conv.r.un conv.r4" value  : float32 #)
+     when ^T : unativeint = (# "conv.r.un conv.r4" value  : float32 #)
+     when ^T : byte     = (# "conv.r.un conv.r4" value  : float32 #)
+
+
+let inline float (value: ^T) = 
+    (^T : (static member op_Explicit: ^T -> float) (value))
+     when ^T : string     = ParseDouble (castToString value)
+     // NOTE: float should convert its argument to 64-bit float even when applied to a higher precision float stored in a register. See devdiv2#49888.
+     when ^T : float     = (# "conv.r8" value  : float #)
+     when ^T : float32   = (# "conv.r8" value  : float #)
+     when ^T : int64     = (# "conv.r8" value  : float #)
+     when ^T : int32     = (# "conv.r8" value  : float #)
+     when ^T : int16     = (# "conv.r8" value  : float #)
+     when ^T : nativeint = (# "conv.r8" value  : float #)
+     when ^T : sbyte     = (# "conv.r8" value  : float #)
+     when ^T : uint64     = (# "conv.r.un conv.r8" value  : float #)
+     when ^T : uint32     = (# "conv.r.un conv.r8" value  : float #)
+     when ^T : uint16     = (# "conv.r.un conv.r8" value  : float #)
+     when ^T : char       = (# "conv.r.un conv.r8" value  : float #)
+     when ^T : unativeint = (# "conv.r.un conv.r8" value  : float #)
+     when ^T : byte       = (# "conv.r.un conv.r8" value  : float #)
+     when ^T : decimal    = (System.Convert.ToDouble((# "" value : decimal #))) 
+
+
+let inline decimal (value: ^T) = 
+    (^T : (static member op_Explicit: ^T -> decimal) (value))
+     when ^T : string     = (System.Decimal.Parse(castToString value,NumberStyles.Float,CultureInfo.InvariantCulture))
+     when ^T : float      = (System.Convert.ToDecimal((# "" value : float #))) 
+     when ^T : float32    = (System.Convert.ToDecimal((# "" value : float32 #))) 
+     when ^T : int64      = (System.Convert.ToDecimal((# "" value : int64 #))) 
+     when ^T : int32      = (System.Convert.ToDecimal((# "" value : int32 #))) 
+     when ^T : int16      = (System.Convert.ToDecimal((# "" value : int16 #))) 
+     when ^T : nativeint  = (System.Convert.ToDecimal(int64 (# "" value : nativeint #))) 
+     when ^T : sbyte      = (System.Convert.ToDecimal((# "" value : sbyte #))) 
+     when ^T : uint64     = (System.Convert.ToDecimal((# "" value : uint64 #))) 
+     when ^T : uint32     = (System.Convert.ToDecimal((# "" value : uint32 #))) 
+     when ^T : uint16     = (System.Convert.ToDecimal((# "" value : uint16 #))) 
+     when ^T : unativeint = (System.Convert.ToDecimal(uint64 (# "" value : unativeint #))) 
+     when ^T : byte       = (System.Convert.ToDecimal((# "" value : byte #))) 
+     when ^T : decimal    = (# "" value : decimal #)
+
+
+let inline unativeint (value: ^T) = 
+    (^T : (static member op_Explicit: ^T -> unativeint) (value))
+     when ^T : string     = ParseUIntPtr (castToString value)
+     when ^T : float     = (# "conv.u" value  : unativeint #)
+     when ^T : float32   = (# "conv.u" value  : unativeint #)
+     
+     // Narrower signed types we sign-extend.
+     // Same length signed types we leave as such (so -1 gets reinterpreted as unsigned MaxValue).
+     // Wider signed types we truncate.
+     // conv.i does just that for both 32 and 64 bit case of nativeint, and conversion from nativeint is no-op.
+     when ^T : int64     = (# "conv.i" value  : unativeint #)
+     when ^T : int32     = (# "conv.i" value  : unativeint #)
+     when ^T : int16     = (# "conv.i" value  : unativeint #)
+     when ^T : nativeint = (# "" value  : unativeint #)
+     when ^T : sbyte     = (# "conv.i" value  : unativeint #)
+     
+     when ^T : uint64     = (# "conv.u" value  : unativeint #)
+     when ^T : uint32     = (# "conv.u" value  : unativeint #)
+     when ^T : uint16     = (# "conv.u" value  : unativeint #)
+     when ^T : char       = (# "conv.u" value  : unativeint #)
+     when ^T : unativeint = (# "" value  : unativeint #)
+     when ^T : byte       = (# "conv.u" value  : unativeint #)
+
+
+let inline nativeint (value: ^T) = 
+    (^T : (static member op_Explicit: ^T -> nativeint) (value))
+     when ^T : string     = ParseIntPtr (castToString value)
+     when ^T : float      = (# "conv.i" value  : nativeint #)
+     when ^T : float32    = (# "conv.i" value  : nativeint #)
+                 
+     when ^T : int64      = (# "conv.i" value  : nativeint #)
+     when ^T : int32      = (# "conv.i" value  : nativeint #)
+     when ^T : int16      = (# "conv.i" value  : nativeint #)
+     when ^T : nativeint  = (# "conv.i" value  : nativeint #)
+     when ^T : sbyte      = (# "conv.i" value  : nativeint #)
+
+     // Narrower unsigned types we zero-extend.
+     // Same length unsigned types we leave as such (so unsigned MaxValue (all-bits-set) gets reinterpreted as -1).
+     // Wider unsigned types we truncate.
+     // conv.u does just that for both 32- and 64-bit-wide nativeint, and conversion from unativeint is no-op.
+     when ^T : uint64     = (# "conv.u" value  : nativeint #)
+     when ^T : uint32     = (# "conv.u" value  : nativeint #)
+     when ^T : uint16     = (# "conv.u" value  : nativeint #)
+     when ^T : char       = (# "conv.u" value  : nativeint #)
+     when ^T : unativeint = (# "" value  : nativeint #)
+     when ^T : byte       = (# "conv.i" value  : nativeint #)
+
+let inline string (value: ^T) = 
+     anyToString "" value
+     // since we have static optimization conditionals for ints below, we need to special-case Enums.
+     // This way we'll print their symbolic value, as opposed to their integral one (Eg., "A", rather than "1")
+     when ^T struct = anyToString "" value
+     when ^T : float      = (# "" value : float      #).ToString("g",CultureInfo.InvariantCulture)
+     when ^T : float32    = (# "" value : float32    #).ToString("g",CultureInfo.InvariantCulture)
+     when ^T : int64      = (# "" value : int64      #).ToString("g",CultureInfo.InvariantCulture)
+     when ^T : int32      = (# "" value : int32      #).ToString("g",CultureInfo.InvariantCulture)
+     when ^T : int16      = (# "" value : int16      #).ToString("g",CultureInfo.InvariantCulture)
+     when ^T : nativeint  = (# "" value : nativeint  #).ToString()
+     when ^T : sbyte      = (# "" value : sbyte      #).ToString("g",CultureInfo.InvariantCulture)
+     when ^T : uint64     = (# "" value : uint64     #).ToString("g",CultureInfo.InvariantCulture)
+     when ^T : uint32     = (# "" value : uint32     #).ToString("g",CultureInfo.InvariantCulture)
+     when ^T : int16      = (# "" value : int16      #).ToString("g",CultureInfo.InvariantCulture)
+     when ^T : unativeint = (# "" value : unativeint #).ToString()
+     when ^T : byte       = (# "" value : byte       #).ToString("g",CultureInfo.InvariantCulture)
+
+let inline char (value: ^T) = 
+    (^T : (static member op_Explicit: ^T -> char) (value))
+     when ^T : string     = (System.Char.Parse(castToString value))
+     when ^T : float      = (# "conv.u2" value  : char #)
+     when ^T : float32    = (# "conv.u2" value  : char #)
+     when ^T : int64      = (# "conv.u2" value  : char #)
+     when ^T : int32      = (# "conv.u2" value  : char #)
+     when ^T : int16      = (# "conv.u2" value  : char #)
+     when ^T : nativeint  = (# "conv.u2" value  : char #)
+     when ^T : sbyte      = (# "conv.u2" value  : char #)
+     when ^T : uint64     = (# "conv.u2" value  : char #)
+     when ^T : uint32     = (# "conv.u2" value  : char #)
+     when ^T : uint16     = (# "conv.u2" value  : char #)
+     when ^T : char       = (# "conv.u2" value  : char #)
+     when ^T : unativeint = (# "conv.u2" value  : char #)
+     when ^T : byte       = (# "conv.u2" value  : char #)
+
+
+let inline (<) (x:^T) (y:^U) = 
+    ((^T or ^U): (static member (<) : ^T * ^U -> bool) (x,y))
+    when ^T : bool   = (# "clt" x y : bool #)
+    when ^T : sbyte  = (# "clt" x y : bool #)
+    when ^T : int16  = (# "clt" x y : bool #)
+    when ^T : int32  = (# "clt" x y : bool #)
+    when ^T : int64  = (# "clt" x y : bool #)
+    when ^T : byte   = (# "clt.un" x y : bool #)
+    when ^T : uint16 = (# "clt.un" x y : bool #)
+    when ^T : uint32 = (# "clt.un" x y : bool #)
+    when ^T : uint64 = (# "clt.un" x y : bool #)
+    when ^T : unativeint = (# "clt.un" x y : bool #)
+    when ^T : nativeint  = (# "clt" x y : bool #)
+    when ^T : float  = (# "clt" x y : bool #) 
+    when ^T : float32= (# "clt" x y : bool #) 
+    when ^T : char   = (# "clt" x y : bool #)
+    when ^T : decimal     = System.Decimal.op_LessThan ((# "" x:decimal #), (# "" y:decimal #))
+    when ^T : string     = (# "clt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
+
+
+let inline (>) (x:^T) (y:^U) = 
+    ((^T or ^U): (static member (>) : ^T * ^U -> bool) (x,y))
+    when 'T : bool       = (# "cgt" x y : bool #)
+    when 'T : sbyte      = (# "cgt" x y : bool #)
+    when 'T : int16      = (# "cgt" x y : bool #)
+    when 'T : int32      = (# "cgt" x y : bool #)
+    when 'T : int64      = (# "cgt" x y : bool #)
+    when 'T : nativeint  = (# "cgt" x y : bool #)
+    when 'T : byte       = (# "cgt.un" x y : bool #)
+    when 'T : uint16     = (# "cgt.un" x y : bool #)
+    when 'T : uint32     = (# "cgt.un" x y : bool #)
+    when 'T : uint64     = (# "cgt.un" x y : bool #)
+    when 'T : unativeint = (# "cgt.un" x y : bool #)
+    when 'T : float      = (# "cgt" x y : bool #) 
+    when 'T : float32    = (# "cgt" x y : bool #) 
+    when 'T : char       = (# "cgt" x y : bool #)
+    when 'T : decimal     = System.Decimal.op_GreaterThan ((# "" x:decimal #), (# "" y:decimal #))
+    when ^T : string     = (# "cgt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
+
+
+let inline (<=) (x:^T) (y:^U) = 
+    ((^T or ^U): (static member (<=) : ^T * ^U -> bool) (x,y))
+    when 'T : bool       = not (# "cgt" x y : bool #)
+    when 'T : sbyte      = not (# "cgt" x y : bool #)
+    when 'T : int16      = not (# "cgt" x y : bool #)
+    when 'T : int32      = not (# "cgt" x y : bool #)
+    when 'T : int64      = not (# "cgt" x y : bool #)
+    when 'T : nativeint  = not (# "cgt" x y : bool #)
+    when 'T : byte       = not (# "cgt.un" x y : bool #)
+    when 'T : uint16     = not (# "cgt.un" x y : bool #)
+    when 'T : uint32     = not (# "cgt.un" x y : bool #)
+    when 'T : uint64     = not (# "cgt.un" x y : bool #)
+    when 'T : unativeint = not (# "cgt.un" x y : bool #)
+    when 'T : float      = not (# "cgt.un" x y : bool #) 
+    when 'T : float32    = not (# "cgt.un" x y : bool #) 
+    when 'T : char       = not (# "cgt" x y : bool #)
+    when 'T : decimal     = System.Decimal.op_LessThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
+    when ^T : string     = not (# "cgt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
+
+
+let inline (>=) (x:^T) (y:^U) = 
+    ((^T or ^U): (static member (>=) : ^T * ^U -> bool) (x,y))
+    when 'T : bool       = not (# "clt" x y : bool #)
+    when 'T : sbyte      = not (# "clt" x y : bool #)
+    when 'T : int16      = not (# "clt" x y : bool #)
+    when 'T : int32      = not (# "clt" x y : bool #)
+    when 'T : int64      = not (# "clt" x y : bool #)
+    when 'T : nativeint  = not (# "clt" x y : bool #)
+    when 'T : byte       = not (# "clt.un" x y : bool #)
+    when 'T : uint16     = not (# "clt.un" x y : bool #)
+    when 'T : uint32     = not (# "clt.un" x y : bool #)
+    when 'T : uint64     = not (# "clt.un" x y : bool #)
+    when 'T : unativeint = not (# "clt.un" x y : bool #)
+    when 'T : float      = not (# "clt.un" x y : bool #) 
+    when 'T : float32    = not (# "clt.un" x y : bool #)
+    when 'T : char       = not (# "clt" x y : bool #)
+    when 'T : decimal     = System.Decimal.op_GreaterThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
+    when ^T : string     = not (# "clt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
+
+
+let inline (=) (x:^T) (y:^T) = 
+    (^T : (static member (=) : ^T * ^T -> bool) (x,y))
+    when ^T : bool    = (# "ceq" x y : bool #)
+    when ^T : sbyte   = (# "ceq" x y : bool #)
+    when ^T : int16   = (# "ceq" x y : bool #)
+    when ^T : int32   = (# "ceq" x y : bool #)
+    when ^T : int64   = (# "ceq" x y : bool #)
+    when ^T : byte    = (# "ceq" x y : bool #)
+    when ^T : uint16  = (# "ceq" x y : bool #)
+    when ^T : uint32  = (# "ceq" x y : bool #)
+    when ^T : uint64  = (# "ceq" x y : bool #)
+    when ^T : float   = (# "ceq" x y : bool #)
+    when ^T : float32 = (# "ceq" x y : bool #)
+    when ^T : char    = (# "ceq" x y : bool #)
+    when ^T : nativeint  = (# "ceq" x y : bool #)
+    when ^T : unativeint  = (# "ceq" x y : bool #)
+    when ^T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
+    when ^T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
+
+
+let inline (<>) (x:^T) (y:^T) = 
+    (^T : (static member (<>) : ^T * ^T -> bool) (x,y))
+    when ^T : bool    = not (# "ceq" x y : bool #)
+    when ^T : sbyte   = not (# "ceq" x y : bool #)
+    when ^T : int16   = not (# "ceq" x y : bool #)
+    when ^T : int32   = not (# "ceq" x y : bool #)
+    when ^T : int64   = not (# "ceq" x y : bool #)
+    when ^T : byte    = not (# "ceq" x y : bool #)
+    when ^T : uint16  = not (# "ceq" x y : bool #)
+    when ^T : uint32  = not (# "ceq" x y : bool #)
+    when ^T : uint64  = not (# "ceq" x y : bool #)
+    when ^T : float   = not (# "ceq" x y : bool #)
+    when ^T : float32 = not (# "ceq" x y : bool #)
+    when ^T : char    = not (# "ceq" x y : bool #)
+    when ^T : nativeint  = not (# "ceq" x y : bool #)
+    when ^T : unativeint  = not (# "ceq" x y : bool #)
+    when ^T : string  = not (System.String.Equals((# "" x : string #),(# "" y : string #)))
+    when ^T : decimal     = System.Decimal.op_Inequality((# "" x:decimal #), (# "" y:decimal #))
+
+let inline DivideByInt< ^T when ^T : (static member DivideByInt : ^T * int -> ^T) > (x:^T) (y:int) : ^T =
+    DivideByIntDynamic<'T> x y
+    when ^T : float       = (# "div" x ((# "conv.r8" (y:int)  : float #)) : float #)
+    when ^T : float32     = (# "div" x ((# "conv.r4" (y:int)  : float32 #)) : float32 #)
+    when ^T : decimal     = System.Decimal.Divide((retype x:decimal), System.Convert.ToDecimal(y))
+
+*)
+
 
         [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
         type GenericZeroDynamicImplTable<'T>() = 
@@ -2571,9 +3166,7 @@ namespace Microsoft.FSharp.Core
             when ^T : decimal     = System.Decimal.Divide((retype x:decimal), System.Convert.ToDecimal(y))
             when ^T : ^T = (^T : (static member DivideByInt : ^T * int -> ^T) (x, y))
 
-
         // Dynamic implementation of addition operator resolution
-        [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
         type AdditionDynamicImplTable<'T,'U,'V>() = 
             static let impl : ('T -> 'U -> 'V) = 
                 // The dynamic implementation
@@ -2589,19 +3182,19 @@ namespace Microsoft.FSharp.Core
                     | _ -> raise (NotSupportedException (SR.GetString(SR.dyInvOpAddOverload)))
                         
                 if aty.Equals(bty) && bty.Equals(cty) then
-                    if aty.Equals(typeof<sbyte>)        then unboxPrim<_> (box (fun (x:sbyte)      (y:sbyte)      -> (# "conv.i1" (# "add" x y : int32 #) : sbyte #)))
-                    elif aty.Equals(typeof<int16>)      then unboxPrim<_> (box (fun (x:int16)      (y:int16)      -> (# "conv.i2" (# "add" x y : int32 #) : int16 #)))
-                    elif aty.Equals(typeof<int32>)      then unboxPrim<_> (box (fun (x:int32)      (y:int32)      -> (# "add" x y : int32 #)))
-                    elif aty.Equals(typeof<int64>)      then unboxPrim<_> (box (fun (x:int64)      (y:int64)      -> (# "add" x y : int64 #)))
-                    elif aty.Equals(typeof<nativeint>)  then unboxPrim<_> (box (fun (x:nativeint)  (y:nativeint)  -> (# "add" x y : nativeint #)))
-                    elif aty.Equals(typeof<byte>)       then unboxPrim<_> (box (fun (x:byte)       (y:byte)       -> (# "conv.u1" (# "add" x y : uint32 #) : byte #)))
-                    elif aty.Equals(typeof<uint16>)     then unboxPrim<_> (box (fun (x:uint16)     (y:uint16)     -> (# "conv.u2" (# "add" x y : uint32 #) : uint16 #)))
-                    elif aty.Equals(typeof<uint32>)     then unboxPrim<_> (box (fun (x:uint32)     (y:uint32)     -> (# "add" x y : uint32 #)))
-                    elif aty.Equals(typeof<uint64>)     then unboxPrim<_> (box (fun (x:uint64)     (y:uint64)     -> (# "add" x y : uint64 #)))
-                    elif aty.Equals(typeof<unativeint>) then unboxPrim<_> (box (fun (x:unativeint) (y:unativeint) -> (# "add" x y : unativeint #)))
-                    elif aty.Equals(typeof<float>)      then unboxPrim<_> (box (fun (x:float)      (y:float)      -> (# "add" x y : float #)))
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_> (box (fun (x:float32)    (y:float32)    -> (# "add" x y : float32 #)))
-                    elif aty.Equals(typeof<string>)     then unboxPrim<_> (box (fun (x:string)     (y:string)     -> System.String.Concat(x,y)))
+                    if aty.Equals(typeof<sbyte>)        then unboxPrim<_> (box (fun (x:sbyte) (y:sbyte) -> BuiltInPrimitives.op_Addition(x,y)))
+                    elif aty.Equals(typeof<int16>)      then unboxPrim<_> (box (fun (x:int16) (y:int16) -> BuiltInPrimitives.op_Addition(x,y)))
+                    elif aty.Equals(typeof<int32>)      then unboxPrim<_> (box (fun (x:int32) (y:int32) -> BuiltInPrimitives.op_Addition(x,y)))
+                    elif aty.Equals(typeof<int64>)      then unboxPrim<_> (box (fun (x:int64) (y:int64) -> BuiltInPrimitives.op_Addition(x,y)))
+                    elif aty.Equals(typeof<nativeint>)  then unboxPrim<_> (box (fun (x:nativeint) (y:nativeint) -> BuiltInPrimitives.op_Addition(x,y)))
+                    elif aty.Equals(typeof<byte>)       then unboxPrim<_> (box (fun (x:byte) (y:byte) -> BuiltInPrimitives.op_Addition(x,y)))
+                    elif aty.Equals(typeof<uint16>)     then unboxPrim<_> (box (fun (x:uint16) (y:uint16) -> BuiltInPrimitives.op_Addition(x,y)))
+                    elif aty.Equals(typeof<uint32>)     then unboxPrim<_> (box (fun (x:uint32) (y:uint32) -> BuiltInPrimitives.op_Addition(x,y)))
+                    elif aty.Equals(typeof<uint64>)     then unboxPrim<_> (box (fun (x:uint64) (y:uint64) -> BuiltInPrimitives.op_Addition(x,y)))
+                    elif aty.Equals(typeof<unativeint>) then unboxPrim<_> (box (fun (x:unativeint) (y:unativeint) -> BuiltInPrimitives.op_Addition(x,y)))
+                    elif aty.Equals(typeof<float>)      then unboxPrim<_> (box (fun (x:float) (y:float) -> BuiltInPrimitives.op_Addition(x,y)))
+                    elif aty.Equals(typeof<float32>)    then unboxPrim<_> (box (fun (x:float32) (y:float32) -> BuiltInPrimitives.op_Addition(x,y)))
+                    elif aty.Equals(typeof<string>)     then unboxPrim<_> (box (fun (x:string) (y:string) -> BuiltInPrimitives.op_Addition(x,y)))
                     else dyn()
                 else dyn()
 
@@ -2666,19 +3259,18 @@ namespace Microsoft.FSharp.Core
                     | _ -> raise (NotSupportedException (SR.GetString(SR.dyInvOpMultOverload)))
                         
                 if aty.Equals(bty) && bty.Equals(cty) then
-                    if aty.Equals(typeof<sbyte>)        then unboxPrim<_> (box (fun (x:sbyte)      (y:sbyte)      -> (# "conv.i1" (# "mul" x y : int32 #) : sbyte #)))
-                    elif aty.Equals(typeof<int16>)      then unboxPrim<_> (box (fun (x:int16)      (y:int16)      -> (# "conv.i2" (# "mul" x y : int32 #) : int16 #)))
-                    elif aty.Equals(typeof<int32>)      then unboxPrim<_> (box (fun (x:int32)      (y:int32)      -> (# "mul" x y : int32 #)))
-                    elif aty.Equals(typeof<int64>)      then unboxPrim<_> (box (fun (x:int64)      (y:int64)      -> (# "mul" x y : int64 #)))
-                    elif aty.Equals(typeof<nativeint>)  then unboxPrim<_> (box (fun (x:nativeint)  (y:nativeint)  -> (# "mul" x y : nativeint #)))
-                    elif aty.Equals(typeof<byte>)       then unboxPrim<_> (box (fun (x:byte)       (y:byte)       -> (# "conv.u1" (# "mul" x y : uint32 #) : byte #)))
-                    elif aty.Equals(typeof<uint16>)     then unboxPrim<_> (box (fun (x:uint16)     (y:uint16)     -> (# "conv.u2" (# "mul" x y : uint32 #) : uint16 #)))
-                    elif aty.Equals(typeof<uint32>)     then unboxPrim<_> (box (fun (x:uint32)     (y:uint32)     -> (# "mul" x y : uint32 #)))
-                    elif aty.Equals(typeof<uint64>)     then unboxPrim<_> (box (fun (x:uint64)     (y:uint64)     -> (# "mul" x y : uint64 #)))
-                    elif aty.Equals(typeof<unativeint>) then unboxPrim<_> (box (fun (x:unativeint) (y:unativeint) -> (# "mul" x y : unativeint #)))
-                    elif aty.Equals(typeof<float>)      then unboxPrim<_> (box (fun (x:float)      (y:float)      -> (# "mul" x y : float #)))
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_> (box (fun (x:float32)    (y:float32)    -> (# "mul" x y : float32 #)))
-                    elif aty.Equals(typeof<string>)     then unboxPrim<_> (box (fun (x:string)     (y:string)     -> System.String.Concat(x,y)))
+                    if aty.Equals(typeof<sbyte>)        then unboxPrim<_> (box (fun (x:sbyte) (y:sbyte) -> BuiltInPrimitives.op_Multiply(x,y)))
+                    elif aty.Equals(typeof<int16>)      then unboxPrim<_> (box (fun (x:int16) (y:int16) -> BuiltInPrimitives.op_Multiply(x,y)))
+                    elif aty.Equals(typeof<int32>)      then unboxPrim<_> (box (fun (x:int32) (y:int32) -> BuiltInPrimitives.op_Multiply(x,y)))
+                    elif aty.Equals(typeof<int64>)      then unboxPrim<_> (box (fun (x:int64) (y:int64) -> BuiltInPrimitives.op_Multiply(x,y)))
+                    elif aty.Equals(typeof<nativeint>)  then unboxPrim<_> (box (fun (x:nativeint) (y:nativeint) -> BuiltInPrimitives.op_Multiply(x,y)))
+                    elif aty.Equals(typeof<byte>)       then unboxPrim<_> (box (fun (x:byte) (y:byte) -> BuiltInPrimitives.op_Multiply(x,y)))
+                    elif aty.Equals(typeof<uint16>)     then unboxPrim<_> (box (fun (x:uint16) (y:uint16) -> BuiltInPrimitives.op_Multiply(x,y)))
+                    elif aty.Equals(typeof<uint32>)     then unboxPrim<_> (box (fun (x:uint32) (y:uint32) -> BuiltInPrimitives.op_Multiply(x,y)))
+                    elif aty.Equals(typeof<uint64>)     then unboxPrim<_> (box (fun (x:uint64) (y:uint64) -> BuiltInPrimitives.op_Multiply(x,y)))
+                    elif aty.Equals(typeof<unativeint>) then unboxPrim<_> (box (fun (x:unativeint) (y:unativeint) -> BuiltInPrimitives.op_Multiply(x,y)))
+                    elif aty.Equals(typeof<float>)      then unboxPrim<_> (box (fun (x:float) (y:float) -> BuiltInPrimitives.op_Multiply(x,y)))
+                    elif aty.Equals(typeof<float32>)    then unboxPrim<_> (box (fun (x:float32) (y:float32) -> BuiltInPrimitives.op_Multiply(x,y)))
                     else dyn()
                 else dyn()
 
@@ -2715,29 +3307,12 @@ namespace Microsoft.FSharp.Core
                     elif aty.Equals(typeof<unativeint>) then unboxPrim<_> (box (fun (x:unativeint) (y:unativeint) -> (# "mul.ovf.un" x y : unativeint #)))
                     elif aty.Equals(typeof<float>)      then unboxPrim<_> (box (fun (x:float)      (y:float)      -> (# "mul" x y : float #)))
                     elif aty.Equals(typeof<float32>)    then unboxPrim<_> (box (fun (x:float32)    (y:float32)    -> (# "mul" x y : float32 #)))
-                    elif aty.Equals(typeof<string>)     then unboxPrim<_> (box (fun (x:string)     (y:string)     -> System.String.Concat(x,y)))
                     else dyn()
                 else dyn()
 
             static member Impl : ('T -> 'U -> 'V) = impl
 
         let CheckedMultiplyDynamic<'T,'U,'V> x y  = CheckedMultiplyDynamicImplTable<'T,'U,'V>.Impl x y
-
-
-namespace System
-
-    open System
-    open System.Collections
-    open System.Collections.Generic
-    open System.Diagnostics
-    open System.Globalization
-    open System.Text
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.BasicInlinedOperations
-    open Microsoft.FSharp.Core.LanguagePrimitives
-    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions
-
 
 namespace Microsoft.FSharp.Core
 
@@ -3595,8 +4170,6 @@ namespace Microsoft.FSharp.Core
              when ^T : byte       = value
              when ^T : decimal    = value
 
-        let inline mask (n:int) (m:int) = (# "and" n m : int #)
-        
         [<NoDynamicInvocation(true)>]
         let inline (<<<) (value: ^T) (shift:int) : ^T = 
              (^T: (static member (<<<) : ^T * int -> ^T) (value,shift))
@@ -3972,11 +4545,6 @@ namespace Microsoft.FSharp.Core
              when ^T : unativeint = (System.Convert.ToDecimal(uint64 (# "" value : unativeint #))) 
              when ^T : byte       = (System.Convert.ToDecimal((# "" value : byte #))) 
              when ^T : decimal    = (# "" value : decimal #)
-
-        // Recall type names.
-        // Framework names:     sbyte, byte,  int16, uint16, int32, uint32, int64, uint64, single,  double.
-        // C# names:            sbyte, byte,  short, ushort, int,   uint,   long,  ulong,  single,  double.
-        // F# names:            sbyte, byte,  int16, uint16, int,   uint32, int64, uint64, float32, float.
 
         [<NoDynamicInvocation(true)>]
         [<CompiledName("ToUIntPtr")>]

@@ -212,7 +212,7 @@ module FSharpExprConvert =
 
     let (|ILBinaryOp|_|) e = 
         match e with 
-        | AI_add        -> Some mkCallAdditionOperator
+        | AI_add        -> Some (fun g m ty -> mkCallAdditionOperator g m ty ty ty)
         | AI_add_ovf
         | AI_add_ovf_un -> Some mkCallAdditionChecked
         | AI_sub        -> Some mkCallSubtractionOperator
@@ -222,7 +222,7 @@ module FSharpExprConvert =
         | AI_mul_ovf
         | AI_mul_ovf_un -> Some mkCallMultiplyChecked
         | AI_div
-        | AI_div_un     -> Some mkCallDivisionOperator
+        | AI_div_un     -> Some (fun g m ty -> mkCallDivisionOperator g m ty ty ty)
         | AI_rem
         | AI_rem_un     -> Some mkCallModulusOperator
         | AI_ceq        -> Some mkCallEqualsOperator

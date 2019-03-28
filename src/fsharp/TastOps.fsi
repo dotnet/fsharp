@@ -1825,13 +1825,13 @@ val mkCallGreaterThanOperator                : TcGlobals -> range -> TType -> Ex
 
 val mkCallGreaterThanOrEqualsOperator        : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallAdditionOperator                   : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallAdditionOperator                   : TcGlobals -> range -> TType -> TType -> TType -> Expr -> Expr -> Expr
 
 val mkCallSubtractionOperator                : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallMultiplyOperator                   : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallDivisionOperator                   : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallDivisionOperator                   : TcGlobals -> range -> TType -> TType -> TType -> Expr -> Expr -> Expr
 
 val mkCallModulusOperator                    : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
