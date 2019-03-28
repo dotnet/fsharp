@@ -1,7 +1,14 @@
 <Project>
+
+  <!-- Windows permissions means that users can't even see the directory $(SystemRoot)System32\config -->
+  <PropertyGroup Condition="'$(OS)' != 'Unix' AND Exists('$(SystemRoot)\System32\config\system')">
+    <IsAdministrator>true</IsAdministrator>
+    <DelaySign>true</DelaySign>
+    <PublicSign>false</PublicSign>
+  </PropertyGroup>
+
   <Target Name="NGenWindowsBinaries"
           AfterTargets="AfterBuild"
-          DependsOnTargets="CheckAdministratorPrivilege"
           Condition="'$(OS)' != 'Unix' AND
                      $(TargetFramework.StartsWith('net4')) AND 
                      '$(NGenBinary)' == 'true' AND
@@ -22,20 +29,5 @@
     <Exec Command='"$(PathToNGen32)" install "$(TargetPath)" /ExeConfig:$(TargetPath)' Condition = "Exists('$(PathToNGen32)') AND '$(PlatformTarget)' != 'x64' AND Exists('$(TargetPath).config') AND '$(IsAdministrator)' == 'true'"/>
     <Exec Command='"$(PathToNGen64)" install "$(TargetPath)"' Condition = " Exists('$(PathToNGen64)') AND '$(PlatformTarget)' != 'x86' AND (!Exists('$(TargetPath).config')) AND '$(IsAdministrator)' == 'true' "/>
     <Exec Command='"$(PathToNGen32)" install "$(TargetPath)"' Condition = " Exists('$(PathToNGen32)') AND '$(PlatformTarget)' != 'x64' AND (!Exists('$(TargetPath).config')) AND '$(IsAdministrator)' == 'true' "/>
-  </Target>
-
-  <!-- Amazingly the net session command returns 0 if in an administrator session and > 0 if not --> 
-  <Target Name="CheckAdministratorPrivilege" 
-          BeforeTargets="CoreCompile"
-          Condition="'$(OS)' != 'Unix'">
-    <Exec Command="NET SESSION  &lt;nul 2&lt;nul" ContinueOnError="true" IgnoreExitCode="true">
-      <Output TaskParameter="ExitCode" PropertyName="ErrorCode"/>
-     </Exec>
-    <PropertyGroup>
-      <IsAdministrator Condition="'$(ErrorCode)' == '0'">true</IsAdministrator>
-      <IsAdministrator Condition="'$(ErrorCode)' != '0'">false</IsAdministrator>
-      <DelaySign Condition="'$(IsAdministrator)' == 'true'">true</DelaySign>
-      <PublicSign Condition="'$(IsAdministrator)' == 'true'">false</PublicSign>
-    </PropertyGroup>
   </Target>
 </Project>
