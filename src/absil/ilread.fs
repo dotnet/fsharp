@@ -3969,7 +3969,11 @@ type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * DateTime * ILSc
 
 // Cache to extend the lifetime of a limited number of readers that are otherwise eligible for GC
 type ILModuleReaderCache1LockToken() = interface LockToken
-let ilModuleReaderCache1 = new AgedLookup<ILModuleReaderCache1LockToken, ILModuleReaderCacheKey, ILModuleReader>(stronglyHeldReaderCacheSize, areSimilar=(fun (x, y) -> x = y))
+let ilModuleReaderCache1 =
+    new AgedLookup<ILModuleReaderCache1LockToken, ILModuleReaderCacheKey, ILModuleReader>
+           (stronglyHeldReaderCacheSize, 
+            keepMax=stronglyHeldReaderCacheSize, // only strong entries
+            areSimilar=(fun (x, y) -> x = y))
 let ilModuleReaderCache1Lock = Lock()
 
 // // Cache to reuse readers that have already been created and are not yet GC'd
