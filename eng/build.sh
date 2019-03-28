@@ -211,6 +211,7 @@ function BuildSolution {
   bootstrap_config=Proto
   MSBuild "$repo_root/src/buildtools/buildtools.proj" \
     /restore \
+    /v:$verbosity \
     /p:Configuration=$bootstrap_config \
     /t:Build
 
@@ -221,6 +222,7 @@ function BuildSolution {
 
   MSBuild "$repo_root/proto.proj" \
     /restore \
+    /v:$verbosity \
     /p:Configuration=$bootstrap_config \
     /t:Build
 
@@ -229,6 +231,7 @@ function BuildSolution {
   # do real build
   MSBuild $toolset_build_proj \
     $bl \
+    /v:$verbosity \
     /p:Configuration=$configuration \
     /p:Projects="$projects" \
     /p:RepoRoot="$repo_root" \
