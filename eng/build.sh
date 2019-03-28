@@ -205,6 +205,8 @@ function BuildSolution {
     quiet_restore=true
   fi
 
+  coreclr_target_framework=netcoreapp2.0
+
   # build bootstrap tools
   bootstrap_config=Proto
   MSBuild "$repo_root/src/buildtools/buildtools.proj" \
@@ -214,8 +216,15 @@ function BuildSolution {
 
   bootstrap_dir=$artifacts_dir/Bootstrap
   mkdir -p "$bootstrap_dir"
-  cp $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.0/* $bootstrap_dir
-  cp $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp2.0/* $bootstrap_dir
+  cp $artifacts_dir/bin/fslex/$bootstrap_config/$coreclr_target_framework/* $bootstrap_dir
+  cp $artifacts_dir/bin/fsyacc/$bootstrap_config/$coreclr_target_framework/* $bootstrap_dir
+
+  MSBuild "$repo_root/proto.proj" \
+    /restore \
+    /p:Configuration=$bootstrap_config \
+    /t:Build
+
+  cp $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
 
   # do real build
   MSBuild $toolset_build_proj \
@@ -230,6 +239,7 @@ function BuildSolution {
     /p:Publish=$publish \
     /p:UseRoslynAnalyzers=$enable_analyzers \
     /p:ContinuousIntegrationBuild=$ci \
+    /p:BootstrapBuildPath="$bootstrap_dir" \
     /p:QuietRestore=$quiet_restore \
     /p:QuietRestoreBinaryLog="$binary_log" \
     $properties
@@ -240,9 +250,9 @@ InitializeDotNetCli $restore
 BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
-  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework netcoreapp2.0
-  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework netcoreapp2.0
-  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework netcoreapp2.0
+  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclr_target_framework
+  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclr_target_framework
+  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclr_target_framework
 fi
 
 ExitWithExitCode 0
