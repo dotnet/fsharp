@@ -19,7 +19,7 @@ referenced DLLs may change on disk, or referenced files may change.
 The ``FSharpChecker`` component from FSharp.Compiler.Service does _not_ actively "listen"
 to changes in the file system.  However ``FSharpChecker`` _does_ repeatedly ask for
 time stamps from the file system which it uses to decide if recomputation is needed.
-FCS doesn�t listen for changes directly - for example, it creates no ``FileWatcher`` object (and the
+FCS doesn't listen for changes directly - for example, it creates no ``FileWatcher`` object (and the
 ``IFileSystem`` API has no ability to create such objects).  This is partly for legacy reasons,
 and partly because some hosts forbid the creation of FileWatcher objects.
 
