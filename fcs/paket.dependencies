@@ -2,5 +2,5 @@ framework: net461
 
 source https://www.nuget.org/api/v2/
 
-nuget FAKE
+nuget FAKE 4.64.6
 nuget FSharp.Formatting
