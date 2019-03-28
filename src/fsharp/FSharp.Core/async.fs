@@ -1281,34 +1281,32 @@ namespace Microsoft.FSharp.Control
                                 |> unfake)
                     | Some maxDegreeOfParallelism ->
                         let mutable i = 0
-                        let p =
-                            MakeAsync (fun _ ->
-                                while i <> tasks.Length do
-                                    let j = i
-                                    if Interlocked.CompareExchange(&i, j + 1, j) = j then
-                                        let trampolineHolder = new TrampolineHolder()
-                                        trampolineHolder.ExecuteWithTrampoline (fun () ->
-                                            let ctxt =
-                                                AsyncActivation.Create
-                                                    innerCTS.Token
-                                                    trampolineHolder
-                                                    (fun res -> recordSuccess j res)
-                                                    (fun edi -> recordFailure (Choice1Of2 edi))
-                                                    (fun cexn -> recordFailure (Choice2Of2 cexn))
-                                            tasks.[j].Invoke ctxt
-                                        )
-                                        |> unfake
-                                fake()
-                            )
+                        let worker = MakeAsync (fun _ ->
+                            while i < tasks.Length do
+                                let j = Interlocked.Increment &i - 1
+                                if j < tasks.Length then
+                                    let trampolineHolder = new TrampolineHolder()
+                                    trampolineHolder.ExecuteWithTrampoline (fun () ->
+                                        let ctxt =
+                                            AsyncActivation.Create
+                                                innerCTS.Token
+                                                trampolineHolder
+                                                (fun res -> recordSuccess j res)
+                                                (fun edi -> recordFailure (Choice1Of2 edi))
+                                                (fun cexn -> recordFailure (Choice2Of2 cexn))
+                                        tasks.[j].Invoke ctxt
+                                    )
+                                    |> unfake
+                            fake()
+                        )
                         for x = 1 to maxDegreeOfParallelism do
                             QueueAsync
                                 innerCTS.Token
                                 (fun _ -> fake())
                                 (fun edi -> recordFailure (Choice1Of2 edi))
                                 (fun cexn -> recordFailure (Choice2Of2 cexn))
-                                p
+                                worker
                             |> unfake
-
 
                     fake()))
 
