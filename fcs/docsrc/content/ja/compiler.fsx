@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../../artifacts/bin/fcs/net45"
+#I "../../../../artifacts/bin/fcs/net461"
 (**
 コンパイラの組み込み
 ====================
