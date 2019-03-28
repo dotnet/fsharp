@@ -1,4 +1,4 @@
-framework: net45, net46
+framework: net461
 
 source https://www.nuget.org/api/v2/
 
