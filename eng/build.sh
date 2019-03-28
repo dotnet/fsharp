@@ -242,7 +242,6 @@ function BuildSolution {
     /p:Publish=$publish \
     /p:UseRoslynAnalyzers=$enable_analyzers \
     /p:ContinuousIntegrationBuild=$ci \
-    /p:BootstrapBuildPath="$bootstrap_dir" \
     /p:QuietRestore=$quiet_restore \
     /p:QuietRestoreBinaryLog="$binary_log" \
     $properties
