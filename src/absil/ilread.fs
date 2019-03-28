@@ -10,6 +10,7 @@ module FSharp.Compiler.AbstractIL.ILBinaryReader
 #nowarn "42" // This construct is deprecated: it is only for use in the F# library
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
@@ -3601,11 +3602,11 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
     let inbase = Filename.fileNameOfPath fileName + ": "
 
     // All the caches. The sizes are guesstimates for the rough sharing-density of the assembly 
-    let cacheAssemblyRef = mkCacheInt32 reduceMemoryUsage inbase "ILAssemblyRef" (getNumRows TableNames.AssemblyRef)
+    let cacheAssemblyRef = mkCacheInt32 false inbase "ILAssemblyRef" (getNumRows TableNames.AssemblyRef)
     let cacheMethodSpecAsMethodData = mkCacheGeneric reduceMemoryUsage inbase "MethodSpecAsMethodData" (getNumRows TableNames.MethodSpec / 20 + 1)
     let cacheMemberRefAsMemberData = mkCacheGeneric reduceMemoryUsage inbase "MemberRefAsMemberData" (getNumRows TableNames.MemberRef / 20 + 1)
     let cacheCustomAttr = mkCacheGeneric reduceMemoryUsage inbase "CustomAttr" (getNumRows TableNames.CustomAttribute / 50 + 1)
-    let cacheTypeRef = mkCacheInt32 reduceMemoryUsage inbase "ILTypeRef" (getNumRows TableNames.TypeRef / 20 + 1)
+    let cacheTypeRef = mkCacheInt32 false inbase "ILTypeRef" (getNumRows TableNames.TypeRef / 20 + 1)
     let cacheTypeRefAsType = mkCacheGeneric reduceMemoryUsage inbase "TypeRefAsType" (getNumRows TableNames.TypeRef / 20 + 1)
     let cacheBlobHeapAsPropertySig = mkCacheGeneric reduceMemoryUsage inbase "BlobHeapAsPropertySig" (getNumRows TableNames.Property / 20 + 1)
     let cacheBlobHeapAsFieldSig = mkCacheGeneric reduceMemoryUsage inbase "BlobHeapAsFieldSig" (getNumRows TableNames.Field / 20 + 1)
@@ -3964,10 +3965,15 @@ type ILModuleReaderImpl(ilModule: ILModuleDef, ilAssemblyRefs: Lazy<ILAssemblyRe
         member x.Dispose() = dispose()
     
 // ++GLOBAL MUTABLE STATE (concurrency safe via locking)
-type ILModuleReaderCacheLockToken() = interface LockToken
 type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * DateTime * ILScopeRef * bool * ReduceMemoryFlag * MetadataOnlyFlag
-let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, ILModuleReaderCacheKey, ILModuleReader>(stronglyHeldReaderCacheSize, areSimilar=(fun (x, y) -> x = y))
-let ilModuleReaderCacheLock = Lock()
+
+// // Cache to extend the lifetime of readers that are eligible for GC
+// let ilModuleReaderCache1 = new ConcurrentDictionary<ILModuleReaderCacheKey, ILModuleReader>(HashIdentity.Structural)
+// let ilModuleReaderCache1Lock = Lock()
+
+// // Cache to reuse readers that have already been created and are not yet GC'd
+let ilModuleReaderCache2 = new ConcurrentDictionary<ILModuleReaderCacheKey, System.WeakReference<ILModuleReader>>(HashIdentity.Structural)
+let ilModuleReaderCache2Lock = Lock()
 
 let stableFileHeuristicApplies fileName = 
     not noStableFileHeuristic && try FileSystem.IsStableFileHeuristic fileName with _ -> false
@@ -4016,16 +4022,28 @@ let OpenILModuleReader fileName opts =
             let fakeKey = ILModuleReaderCacheKey(fileName, System.DateTime.UtcNow, ILScopeRef.Local, false, ReduceMemoryFlag.Yes, MetadataOnlyFlag.Yes)
             fakeKey, false
 
-    let cacheResult = 
-        if keyOk then 
-            if opts.pdbDirPath.IsSome then None // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
-            else ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.TryGet(ltok, key))
-        else 
-            None
+    //let cacheResult1 = 
+    //    // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
+    //    if keyOk && opts.pdbDirPath.IsNone then 
+    //        ilModuleReaderCache1.TryGetValue(key)
+    //    else 
+    //        false, Unchecked.defaultof<_>
+    //
+    //match cacheResult1 with 
+    //| true, ilModuleReader -> ilModuleReader
+    //| false, _ -> 
 
-    match cacheResult with 
-    | Some ilModuleReader -> ilModuleReader
-    | None -> 
+    let cacheResult2 = 
+        // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
+        if keyOk && opts.pdbDirPath.IsNone then 
+            ilModuleReaderCache2.TryGetValue(key)
+        else 
+            false, Unchecked.defaultof<_>
+
+    let mutable res = Unchecked.defaultof<_> 
+    match cacheResult2 with 
+    | true, weak when weak.TryGetTarget(&res) -> res
+    | _ -> 
 
     let reduceMemoryUsage = (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes)
     let metadataOnly = (opts.metadataOnly = MetadataOnlyFlag.Yes) 
@@ -4065,10 +4083,12 @@ let OpenILModuleReader fileName opts =
                 let ilModule, ilAssemblyRefs, _pdb = openPE (fullPath, pefile, None, reduceMemoryUsage, opts.ilGlobals, false) 
                 new ILModuleReaderImpl(ilModule, ilAssemblyRefs, ignore)
 
+        let ilModuleReader = ilModuleReader :> ILModuleReader 
         if keyOk then 
-            ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.Put(ltok, key, ilModuleReader))
-
-        ilModuleReader :> ILModuleReader
+            //ilModuleReaderCache1.[key] <- ilModuleReader
+            ilModuleReaderCache2.[key] <- System.WeakReference<_>(ilModuleReader)
+        ilModuleReader
+        
                 
     else
         // This case is primarily used in fsc.exe. 
@@ -4092,11 +4112,14 @@ let OpenILModuleReader fileName opts =
         let ilModule, ilAssemblyRefs, pdb = openPE (fullPath, pefile, opts.pdbDirPath, reduceMemoryUsage, opts.ilGlobals, false)
         let ilModuleReader = new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb))
 
+        let ilModuleReader = ilModuleReader :> ILModuleReader 
+
         // Readers with PDB reader disposal logic don't go in the cache. Note the PDB reader is only used in static linking.
         if keyOk && opts.pdbDirPath.IsNone then 
-            ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.Put(ltok, key, ilModuleReader))
+            //ilModuleReaderCache1.[key] <- ilModuleReader
+            ilModuleReaderCache2.[key] <- WeakReference<_>(ilModuleReader)
 
-        ilModuleReader :> ILModuleReader
+        ilModuleReader
 
 [<AutoOpen>]
 module Shim =
