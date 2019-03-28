@@ -24,6 +24,8 @@ let isMono = false
 // Utilities
 // --------------------------------------------------------------------------------------
 
+let coreclrTargetFramework = "netcoreapp2.0"
+ 
 let dotnetExePath =
     // Build.cmd normally downloads a dotnet cli to: <repo-root>\artifacts\toolset\dotnet
     // check if there is one there to avoid downloading an additional one here
@@ -92,13 +94,13 @@ Target "BuildVersion" (fun _ ->
 
 Target "Build" (fun _ ->
     runDotnet __SOURCE_DIRECTORY__ "build ../src/buildtools/buildtools.proj -v n -c Proto"
-    let fslexPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fslex/Proto/netcoreapp2.0/fslex.dll"
-    let fsyaccPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fsyacc/Proto/netcoreapp2.0/fsyacc.dll"
+    let fslexPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fslex/Proto/" + coreclrTargetFramework + "/fslex.dll"
+    let fsyaccPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fsyacc/Proto/" + coreclrTargetFramework + "/fsyacc.dll"
     runDotnet __SOURCE_DIRECTORY__ (sprintf "build FSharp.Compiler.Service.sln -v n -c Release /p:FsLexPath=%s /p:FsYaccPath=%s" fslexPath fsyaccPath)
 )
 
 Target "Test" (fun _ ->
-    // This project file is used for the netcoreapp2.0 tests to work out reference sets
+    // This project file is used for the tests to work out reference sets
     runDotnet __SOURCE_DIRECTORY__ "build ../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -v n /restore /p:DisableCompilerRedirection=true"
 
     // Now run the tests
