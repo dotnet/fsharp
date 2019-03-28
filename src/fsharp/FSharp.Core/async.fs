@@ -1280,10 +1280,10 @@ namespace Microsoft.FSharp.Control
                                     p
                                 |> unfake)
                     | Some maxDegreeOfParallelism ->
-                        let mutable i = 0
+                        let mutable i = -1
                         let worker = MakeAsync (fun _ ->
                             while i < tasks.Length do
-                                let j = Interlocked.Increment &i - 1
+                                let j = Interlocked.Increment &i
                                 if j < tasks.Length then
                                     let trampolineHolder = new TrampolineHolder()
                                     trampolineHolder.ExecuteWithTrampoline (fun () ->
