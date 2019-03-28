@@ -216,17 +216,19 @@ function BuildSolution {
     /t:Build
 
   bootstrap_dir=$artifacts_dir/Bootstrap
-  mkdir -p "$bootstrap_dir"
-  cp $artifacts_dir/bin/fslex/$bootstrap_config/$coreclr_target_framework/* $bootstrap_dir
-  cp $artifacts_dir/bin/fsyacc/$bootstrap_config/$coreclr_target_framework/* $bootstrap_dir
+  if [ ! -d "$bootstrap_dir" ]; then
+    mkdir -p "$bootstrap_dir"
+    cp $artifacts_dir/bin/fslex/$bootstrap_config/$coreclr_target_framework/* $bootstrap_dir
+    cp $artifacts_dir/bin/fsyacc/$bootstrap_config/$coreclr_target_framework/* $bootstrap_dir
 
-  MSBuild "$repo_root/proto.proj" \
-    /restore \
-    /v:$verbosity \
-    /p:Configuration=$bootstrap_config \
-    /t:Build
+    MSBuild "$repo_root/proto.proj" \
+      /restore \
+      /v:$verbosity \
+      /p:Configuration=$bootstrap_config \
+      /t:Build
 
-  cp $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+    cp $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+  fi
 
   # do real build
   MSBuild $toolset_build_proj \
