@@ -1310,6 +1310,8 @@ namespace Microsoft.FSharp.Control
 
                     fake()))
 
+        static member Sequential (computations: seq<Async<'T>>) = Async.Parallel(computations, maxDegreeOfParallelism=1)
+
         static member Choice(computations : Async<'T option> seq) : Async<'T option> =
             MakeAsync (fun ctxt ->
                 let result =
