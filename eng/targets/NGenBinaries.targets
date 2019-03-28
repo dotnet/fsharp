@@ -26,7 +26,7 @@
 
   <!-- Amazingly the net session command returns 0 if in an administrator session and > 0 if not --> 
   <Target Name="CheckAdministratorPrivilege" 
-          BeforeTargets="BeforeCompile"
+          BeforeTargets="CoreCompile"
           Condition="'$(OS)' != 'Unix'">
     <Exec Command="NET SESSION  &lt;nul 2&lt;nul" ContinueOnError="true" IgnoreExitCode="true">
       <Output TaskParameter="ExitCode" PropertyName="ErrorCode"/>
