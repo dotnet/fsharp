@@ -963,15 +963,15 @@ and goutput_lambdas env os lambdas =
 and goutput_tdefs contents enc env os (td: ILTypeDefs) =
   List.iter (goutput_tdef enc env contents os) td.AsList
 
-let output_ver os (a,b,c,d) =
+let output_ver os (version: ILVersionInfo) =
     output_string os " .ver "
-    output_u16 os a
+    output_u16 os version.Major
     output_string os " : "
-    output_u16 os b
+    output_u16 os version.Minor
     output_string os " : "
-    output_u16 os c
+    output_u16 os version.Build
     output_string os " : "
-    output_u16 os d
+    output_u16 os version.Revision
 
 let output_locale os s = output_string os " .Locale "; output_qstring os s
 
