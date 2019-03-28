@@ -17,7 +17,7 @@
     <ArtifactsObjDir>$(ArtifactsDir)\obj</ArtifactsObjDir>
     <OutputPath>$(ArtifactsBinDir)\fcs</OutputPath>
     <IntermediateOutputPath>$(ArtifactsObjDir)\fcs</IntermediateOutputPath>
-    <DisableCompilerRedirection>true</DisableCompilerRedirection>
+    <DisableProtoCompiler>true</DisableProtoCompiler>
   </PropertyGroup>
 
 </Project>

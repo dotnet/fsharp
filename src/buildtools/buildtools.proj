@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <DisableProtoCompiler>true</DisableProtoCompiler>
   </PropertyGroup>
 
   <ItemGroup>

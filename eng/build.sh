@@ -209,18 +209,19 @@ function BuildSolution {
 
   # build bootstrap tools
   bootstrap_config=Proto
-  MSBuild "$repo_root/src/buildtools/buildtools.proj" \
-    /restore \
-    /v:$verbosity \
-    /p:Configuration=$bootstrap_config \
-    /t:Build
-
   bootstrap_dir=$artifacts_dir/Bootstrap
-  if [ ! -d "$bootstrap_dir" ]; then
+  if [ ! -d "$bootstrap_dir/fslex.dll" ]; then
+    MSBuild "$repo_root/src/buildtools/buildtools.proj" \
+      /restore \
+      /v:$verbosity \
+      /p:Configuration=$bootstrap_config \
+      /t:Build
+
     mkdir -p "$bootstrap_dir"
     cp $artifacts_dir/bin/fslex/$bootstrap_config/$coreclr_target_framework/* $bootstrap_dir
     cp $artifacts_dir/bin/fsyacc/$bootstrap_config/$coreclr_target_framework/* $bootstrap_dir
-
+  fi
+  if [ ! -d "$bootstrap_dir/fsc.exe" ]; then
     MSBuild "$repo_root/proto.proj" \
       /restore \
       /v:$verbosity \

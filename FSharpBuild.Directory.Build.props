@@ -80,7 +80,7 @@
   </PropertyGroup>
 
   <!-- SDK targets override -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true'">
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(DisableProtoCompiler)'!='true'">
     <FSharpTargetsPath>$(ProtoOutputPath)\Microsoft.FSharp.Targets</FSharpTargetsPath>
     <FSharpPropsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
     <FSharpTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
