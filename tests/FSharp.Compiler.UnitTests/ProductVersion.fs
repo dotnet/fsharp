@@ -95,7 +95,7 @@ module TypeProviderDesignTimeComponentLoading =
           [
 #if NET46 
             // only searched when executing on .NET Framework
-            for tfm in ["net48"; "net472"; "net471"; "net47"; "net462"; "net461"; "net452"; "net451"; "net45"] do
+            for tfm in ["net471"; "net47"; "net462"; "net461"; "net452"; "net451"; "net45"] do
                 yield Path.Combine("typeproviders", "fsharp41", tfm)
                 yield Path.Combine("tools", "fsharp41", tfm)
 #else 
