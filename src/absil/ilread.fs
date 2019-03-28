@@ -3967,13 +3967,13 @@ type ILModuleReaderImpl(ilModule: ILModuleDef, ilAssemblyRefs: Lazy<ILAssemblyRe
 // ++GLOBAL MUTABLE STATE (concurrency safe via locking)
 type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * DateTime * ILScopeRef * bool * ReduceMemoryFlag * MetadataOnlyFlag
 
-// // Cache to extend the lifetime of readers that are eligible for GC
-// let ilModuleReaderCache1 = new ConcurrentDictionary<ILModuleReaderCacheKey, ILModuleReader>(HashIdentity.Structural)
-// let ilModuleReaderCache1Lock = Lock()
+// Cache to extend the lifetime of a limited number of readers that are otherwise eligible for GC
+type ILModuleReaderCache1LockToken() = interface LockToken
+let ilModuleReaderCache1 = new AgedLookup<ILModuleReaderCache1LockToken, ILModuleReaderCacheKey, ILModuleReader>(stronglyHeldReaderCacheSize, areSimilar=(fun (x, y) -> x = y))
+let ilModuleReaderCache1Lock = Lock()
 
 // // Cache to reuse readers that have already been created and are not yet GC'd
 let ilModuleReaderCache2 = new ConcurrentDictionary<ILModuleReaderCacheKey, System.WeakReference<ILModuleReader>>(HashIdentity.Structural)
-let ilModuleReaderCache2Lock = Lock()
 
 let stableFileHeuristicApplies fileName = 
     not noStableFileHeuristic && try FileSystem.IsStableFileHeuristic fileName with _ -> false
@@ -4022,16 +4022,16 @@ let OpenILModuleReader fileName opts =
             let fakeKey = ILModuleReaderCacheKey(fileName, System.DateTime.UtcNow, ILScopeRef.Local, false, ReduceMemoryFlag.Yes, MetadataOnlyFlag.Yes)
             fakeKey, false
 
-    //let cacheResult1 = 
-    //    // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
-    //    if keyOk && opts.pdbDirPath.IsNone then 
-    //        ilModuleReaderCache1.TryGetValue(key)
-    //    else 
-    //        false, Unchecked.defaultof<_>
-    //
-    //match cacheResult1 with 
-    //| true, ilModuleReader -> ilModuleReader
-    //| false, _ -> 
+    let cacheResult1 = 
+        // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
+        if keyOk && opts.pdbDirPath.IsNone then 
+            ilModuleReaderCache1Lock.AcquireLock (fun ltok -> ilModuleReaderCache1.TryGet(ltok, key))
+        else 
+            None
+    
+    match cacheResult1 with 
+    | Some ilModuleReader -> ilModuleReader
+    | None -> 
 
     let cacheResult2 = 
         // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
@@ -4085,7 +4085,7 @@ let OpenILModuleReader fileName opts =
 
         let ilModuleReader = ilModuleReader :> ILModuleReader 
         if keyOk then 
-            //ilModuleReaderCache1.[key] <- ilModuleReader
+            ilModuleReaderCache1Lock.AcquireLock (fun ltok -> ilModuleReaderCache1.Put(ltok, key, ilModuleReader))
             ilModuleReaderCache2.[key] <- System.WeakReference<_>(ilModuleReader)
         ilModuleReader
         
@@ -4116,7 +4116,7 @@ let OpenILModuleReader fileName opts =
 
         // Readers with PDB reader disposal logic don't go in the cache. Note the PDB reader is only used in static linking.
         if keyOk && opts.pdbDirPath.IsNone then 
-            //ilModuleReaderCache1.[key] <- ilModuleReader
+            ilModuleReaderCache1Lock.AcquireLock (fun ltok -> ilModuleReaderCache1.Put(ltok, key, ilModuleReader))
             ilModuleReaderCache2.[key] <- WeakReference<_>(ilModuleReader)
 
         ilModuleReader
