@@ -8,7 +8,7 @@ open System.IO
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host
-open Microsoft.FSharp.Compiler.Text
+open FSharp.Compiler.Text
 open FSharp.Compiler.Ast
 open FSharp.Compiler.SourceCodeServices
 

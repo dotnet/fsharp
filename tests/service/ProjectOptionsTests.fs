@@ -508,7 +508,7 @@ let ``Test SourceFiles order for GetProjectOptionsFromScript`` () = // See #594
         let scriptPath = __SOURCE_DIRECTORY__ + @"/data/ScriptProject/" + scriptName + ".fsx"
         let scriptSource = File.ReadAllText scriptPath
         let projOpts, _diagnostics =
-            checker.GetProjectOptionsFromScript(scriptPath, Microsoft.FSharp.Compiler.Text.SourceText.ofString scriptSource)
+            checker.GetProjectOptionsFromScript(scriptPath, FSharp.Compiler.Text.SourceText.ofString scriptSource)
             |> Async.RunSynchronously
         projOpts.SourceFiles
         |> Array.map Path.GetFileNameWithoutExtension
@@ -534,12 +534,12 @@ module ImplFile
 let x = 42
 #endif
 """
-    let fileSource1 = Microsoft.FSharp.Compiler.Text.SourceText.ofString fileSource1Text
+    let fileSource1 = FSharp.Compiler.Text.SourceText.ofString fileSource1Text
     let fileSource2Text = """
 #load "Impl.fs"
 ImplFile.x
 """
-    let fileSource2 = Microsoft.FSharp.Compiler.Text.SourceText.ofString fileSource2Text
+    let fileSource2 = FSharp.Compiler.Text.SourceText.ofString fileSource2Text
     File.WriteAllText(fileName1, fileSource1Text)
     File.WriteAllText(fileName2, fileSource2Text)
 

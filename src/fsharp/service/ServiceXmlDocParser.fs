@@ -4,7 +4,7 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.Text
+open FSharp.Compiler.Text
 
 /// Represent an Xml documentation block in source code
 type XmlDocable =
