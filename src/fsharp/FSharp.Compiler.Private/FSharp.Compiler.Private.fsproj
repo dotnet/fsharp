@@ -19,6 +19,7 @@
     <UseAssetTargetFallback>true</UseAssetTargetFallback>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <SkipPDBConversion>true</SkipPDBConversion>
+    <NGenBinary>true</NGenBinary>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net46' AND '$(OS)' == 'Windows_NT'">

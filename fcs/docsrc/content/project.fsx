@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../artifacts/bin/fcs/net45"
+#I "../../../artifacts/bin/fcs/net461"
 (**
 Compiler Services: Project Analysis
 ==================================
@@ -324,7 +324,7 @@ into the output folder of your application by the build process. If
 you install using Paket or NuGet, then this will be configured for you
 automatically. If not, you should reference the provided `.targets`
 file manually in your application. This can be found in the NuGet
-package at `build/net45/FSharp.Compiler.Service.ProjectCrackerTool.targets`.
+package at `build/net461/FSharp.Compiler.Service.ProjectCrackerTool.targets`.
 
 The reason for this split was so the analysis of an F# project
 file is performed out of process, in order that the necessary assembly

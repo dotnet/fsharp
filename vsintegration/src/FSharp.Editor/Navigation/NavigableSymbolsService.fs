@@ -53,6 +53,7 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
                     try
                         // This call to Wait() is fine because we want to be able to provide the error message in the status bar.
                         gtdTask.Wait()
+                        statusBar.Clear()
 
                         if gtdTask.Status = TaskStatus.RanToCompletion && gtdTask.Result.IsSome then
                             let navigableItem, range = gtdTask.Result.Value

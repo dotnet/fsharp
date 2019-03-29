@@ -33,7 +33,7 @@ let dotnetExePath =
     if File.Exists(pathToCli) then
         pathToCli
     else
-        DotNetCli.InstallDotNetSDK "2.1.504"
+        DotNetCli.InstallDotNetSDK "2.2.105"
 
 let runDotnet workingDir args =
     let result =

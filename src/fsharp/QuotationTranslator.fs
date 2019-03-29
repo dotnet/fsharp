@@ -66,7 +66,7 @@ type QuotationGenerationScope =
 
     static member ComputeQuotationFormat g =
         let deserializeExValRef = ValRefForIntrinsic g.deserialize_quoted_FSharp_40_plus_info
-        if ValueOptionInternal.isSome deserializeExValRef.TryDeref then
+        if deserializeExValRef.TryDeref.IsSome then
             QuotationSerializationFormat.FSharp_40_Plus
         else
             QuotationSerializationFormat.FSharp_20_Plus

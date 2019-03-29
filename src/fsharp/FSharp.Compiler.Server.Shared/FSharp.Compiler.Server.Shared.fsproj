@@ -8,6 +8,7 @@
     <TargetFrameworkVersion Condition="'$(TargetDotnetProfile)' != 'coreclr'">v4.6</TargetFrameworkVersion>
     <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --checknulls</OtherFlags>
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
+    <NGenBinary>true</NGenBinary>
   </PropertyGroup>
 
   <ItemGroup>
