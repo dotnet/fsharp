@@ -209,8 +209,10 @@ function BuildSolution {
   if [[ "$ci" != true ]]; then
     quiet_restore=true
   fi
-
   coreclr_target_framework=netcoreapp2.0
+
+  # Node reuse fails because multiple different versions of FSharp.Build.dll get loaded into MSBuild nodes
+  node_reuse=false
 
   # build bootstrap tools
   bootstrap_config=Proto
