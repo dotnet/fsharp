@@ -1,0 +1,7 @@
+<Project>
+
+  <PropertyGroup>
+    <DisableProtoCompiler>true</DisableProtoCompiler>
+  </PropertyGroup>
+
+</Project>
