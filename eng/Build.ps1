@@ -155,10 +155,10 @@ function BuildSolution() {
         /p:Publish=$publish `
         /p:ContinuousIntegrationBuild=$ci `
         /p:OfficialBuildId=$officialBuildId `
-        /p:BootstrapBuildPath=$bootstrapDir `
         /p:QuietRestore=$quietRestore `
         /p:QuietRestoreBinaryLog=$binaryLog `
         /p:TestTargetFrameworks=$testTargetFrameworks `
+        /v:$verbosity `
         $suppressExtensionDeployment `
         @properties
 }

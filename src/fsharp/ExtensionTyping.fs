@@ -45,7 +45,7 @@ module internal ExtensionTyping =
     // Detect the host tooling context
     let toolingCompatibleVersions() = 
         if typeof<obj>.Assembly.GetName().Name = "mscorlib" then 
-            [ "net48"; "net472"; "net471"; "net47"; "net462"; "net461"; "net452"; "net451"; "net45"; "netstandard2.0"]
+            [ "net471"; "net47"; "net462"; "net461"; "net452"; "net451"; "net45"; "netstandard2.0"]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then 
             [ "netcoreapp2.1"; "netcoreapp2.0"; "netstandard2.0"]
         else
