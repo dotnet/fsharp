@@ -2487,21 +2487,6 @@ namespace Microsoft.FSharp.Core
             static member inline op_Addition(x: string, y: string) = String.Concat(x, y)
             static member inline op_Addition(x: decimal, y: decimal) = Decimal.op_Addition(x, y)
             
-            static member inline op_CheckedAddition(x: int32, y: int32) = (# "add.ovf" x y : int32 #)
-            static member inline op_CheckedAddition(x: float, y: float) = (# "add" x y : float #)
-            static member inline op_CheckedAddition(x: float32, y: float32) = (# "add" x y : float32 #)
-            static member inline op_CheckedAddition(x: int64, y: int64) = (# "add.ovf" x y : int64 #)
-            static member inline op_CheckedAddition(x: uint64, y: uint64) = (# "add.ovf.un" x y : uint64 #)
-            static member inline op_CheckedAddition(x: uint32, y: uint32) = (# "add.ovf.un" x y : uint32 #)
-            static member inline op_CheckedAddition(x: nativeint, y: nativeint) = (# "add.ovf" x y : nativeint #)
-            static member inline op_CheckedAddition(x: unativeint, y: unativeint) = (# "add.ovf.un" x y : unativeint #)
-            static member inline op_CheckedAddition(x: int16, y: int16) = (# "conv.ovf.i2" (# "add.ovf" x y : int32 #) : int16 #)
-            static member inline op_CheckedAddition(x: uint16, y: uint16) =  (# "conv.ovf.u2.un" (# "add.ovf.un" x y : uint32 #) : uint16 #)
-            static member inline op_CheckedAddition(x: char, y: char) = (# "conv.ovf.u2.un" (# "add.ovf.un" x y : uint32 #) : char #)
-            static member inline op_CheckedAddition(x: sbyte, y: sbyte) = (# "conv.ovf.i1" (# "add.ovf" x y : int32 #) : sbyte #)
-            static member inline op_CheckedAddition(x: byte, y: byte) = (# "conv.ovf.u1.un" (# "add.ovf.un" x y : uint32 #) : byte #)
-            static member inline op_CheckedAddition(x: string, y: string) = String.Concat(x, y)
-
             static member inline op_Multiply(x: int32, y: int32) = (# "mul" x y : int32 #)
             static member inline op_Multiply(x: float, y: float) = (# "mul" x y : float #)
             static member inline op_Multiply(x: float32, y: float32) = (# "mul" x y : float32 #)
@@ -2515,26 +2500,13 @@ namespace Microsoft.FSharp.Core
             static member inline op_Multiply(x: sbyte, y: sbyte) = (# "conv.i1" (# "mul" x y : int32 #) : sbyte #)
             static member inline op_Multiply(x: byte, y: byte) = (# "conv.u1" (# "mul" x y : uint32 #) : byte #)
 
-            static member inline op_CheckedMultiply(x: int32, y: int32) = (# "mul.ovf" x y : int32 #)
-            static member inline op_CheckedMultiply(x: float, y: float) = (# "mul" x y : float #)
-            static member inline op_CheckedMultiply(x: float32, y: float32) = (# "mul" x y : float32 #)
-            static member inline op_CheckedMultiply(x: int64, y: int64) = (# "mul.ovf" x y : int64 #)
-            static member inline op_CheckedMultiply(x: uint64, y: uint64) = (# "mul.ovf.un" x y : uint64 #)
-            static member inline op_CheckedMultiply(x: uint32, y: uint32) = (# "mul.ovf.un" x y : uint32 #)
-            static member inline op_CheckedMultiply(x: nativeint, y: nativeint) = (# "mul.ovf" x y : nativeint #)
-            static member inline op_CheckedMultiply(x: unativeint, y: unativeint) = (# "mul.ovf.un" x y : unativeint #)
-            static member inline op_CheckedMultiply(x: int16, y: int16) = (# "conv.ovf.i2" (# "mul.ovf" x y : int32 #) : int16 #)
-            static member inline op_CheckedMultiply(x: uint16, y: uint16) = (# "conv.ovf.u2.un" (# "mul.ovf.un" x y : uint16 #) : uint16 #)
-            static member inline op_CheckedMultiply(x: sbyte, y: sbyte) = (# "conv.ovf.i1" (# "mul.ovf" x y : int32 #) : sbyte #)
-            static member inline op_CheckedMultiply(x: byte, y: byte) = (# "conv.ovf.u1.un" (# "mul.ovf.un" x y : uint32 #) : byte #)
-
-            static member inline op_UnaryNegation(x: int32) = (# "neg" x : int32 #)
-            static member inline op_UnaryNegation(x: float) = (# "neg" x : float #)
-            static member inline op_UnaryNegation(x: float32) = (# "neg" x : float32 #)
-            static member inline op_UnaryNegation(x: int64) = (# "neg" x : int64 #)
-            static member inline op_UnaryNegation(x: int16) = (# "neg" x : int16 #)
-            static member inline op_UnaryNegation(x: nativeint) = (# "neg" x : nativeint #)
-            static member inline op_UnaryNegation(x: sbyte) = (# "neg" x : sbyte #)
+            static member inline op_UnaryNegation(value: int32) = (# "neg" value : int32 #)
+            static member inline op_UnaryNegation(value: float) = (# "neg" value : float #)
+            static member inline op_UnaryNegation(value: float32) = (# "neg" value : float32 #)
+            static member inline op_UnaryNegation(value: int64) = (# "neg" value : int64 #)
+            static member inline op_UnaryNegation(value: int16) = (# "neg" value : int16 #)
+            static member inline op_UnaryNegation(value: nativeint) = (# "neg" value : nativeint #)
+            static member inline op_UnaryNegation(value: sbyte) = (# "neg" value : sbyte #)
             
             static member inline op_Subtraction(x: int32, y: int32) = (# "sub" x y : int32 #)
             static member inline op_Subtraction(x: float, y: float) = (# "sub" x y : float #)
@@ -2578,6 +2550,55 @@ namespace Microsoft.FSharp.Core
             static member inline op_Modulus(x: byte, y: byte) = (# "conv.u1" (# "rem.un" x y : uint32 #) : byte   #)
             static member inline op_Modulus(x: decimal, y: decimal) = Decimal.op_Modulus(x, y) 
 
+            static member inline op_CheckedAddition(x: int32, y: int32) = (# "add.ovf" x y : int32 #)
+            static member inline op_CheckedAddition(x: float, y: float) = (# "add" x y : float #)
+            static member inline op_CheckedAddition(x: float32, y: float32) = (# "add" x y : float32 #)
+            static member inline op_CheckedAddition(x: int64, y: int64) = (# "add.ovf" x y : int64 #)
+            static member inline op_CheckedAddition(x: uint64, y: uint64) = (# "add.ovf.un" x y : uint64 #)
+            static member inline op_CheckedAddition(x: uint32, y: uint32) = (# "add.ovf.un" x y : uint32 #)
+            static member inline op_CheckedAddition(x: nativeint, y: nativeint) = (# "add.ovf" x y : nativeint #)
+            static member inline op_CheckedAddition(x: unativeint, y: unativeint) = (# "add.ovf.un" x y : unativeint #)
+            static member inline op_CheckedAddition(x: int16, y: int16) = (# "conv.ovf.i2" (# "add.ovf" x y : int32 #) : int16 #)
+            static member inline op_CheckedAddition(x: uint16, y: uint16) =  (# "conv.ovf.u2.un" (# "add.ovf.un" x y : uint32 #) : uint16 #)
+            static member inline op_CheckedAddition(x: char, y: char) = (# "conv.ovf.u2.un" (# "add.ovf.un" x y : uint32 #) : char #)
+            static member inline op_CheckedAddition(x: sbyte, y: sbyte) = (# "conv.ovf.i1" (# "add.ovf" x y : int32 #) : sbyte #)
+            static member inline op_CheckedAddition(x: byte, y: byte) = (# "conv.ovf.u1.un" (# "add.ovf.un" x y : uint32 #) : byte #)
+            static member inline op_CheckedAddition(x: string, y: string) = String.Concat(x, y)
+
+            static member inline op_CheckedSubtraction(x: int32, y: int32) = (# "sub.ovf" x y : int32 #)
+            static member inline op_CheckedSubtraction(x: float, y: float) = (# "sub" x y : float #)
+            static member inline op_CheckedSubtraction(x: float32, y: float32) = (# "sub" x y : float32 #)
+            static member inline op_CheckedSubtraction(x: int64, y: int64) = (# "sub.ovf" x y : int64 #)
+            static member inline op_CheckedSubtraction(x: uint64, y: uint64) = (# "sub.ovf.un" x y : uint64 #)
+            static member inline op_CheckedSubtraction(x: uint32, y: uint32) = (# "sub.ovf.un" x y : uint32 #)
+            static member inline op_CheckedSubtraction(x: nativeint, y: nativeint) = (# "sub.ovf" x y : nativeint #)
+            static member inline op_CheckedSubtraction(x: unativeint, y: unativeint) = (# "sub.ovf.un" x y : unativeint #)
+            static member inline op_CheckedSubtraction(x: int16, y: int16) = (# "conv.ovf.i2" (# "sub.ovf" x y : int32 #) : int16 #)
+            static member inline op_CheckedSubtraction(x: uint16, y: uint16) =  (# "conv.ovf.u2.un" (# "sub.ovf.un" x y : uint32 #) : uint16 #)
+            static member inline op_CheckedSubtraction(x: sbyte, y: sbyte) = (# "conv.ovf.i1" (# "sub.ovf" x y : int32 #) : sbyte #)
+            static member inline op_CheckedSubtraction(x: byte, y: byte) = (# "conv.ovf.u1.un" (# "sub.ovf.un" x y : uint32 #) : byte #)
+
+            static member inline op_CheckedMultiply(x: int32, y: int32) = (# "mul.ovf" x y : int32 #)
+            static member inline op_CheckedMultiply(x: float, y: float) = (# "mul" x y : float #)
+            static member inline op_CheckedMultiply(x: float32, y: float32) = (# "mul" x y : float32 #)
+            static member inline op_CheckedMultiply(x: int64, y: int64) = (# "mul.ovf" x y : int64 #)
+            static member inline op_CheckedMultiply(x: uint64, y: uint64) = (# "mul.ovf.un" x y : uint64 #)
+            static member inline op_CheckedMultiply(x: uint32, y: uint32) = (# "mul.ovf.un" x y : uint32 #)
+            static member inline op_CheckedMultiply(x: nativeint, y: nativeint) = (# "mul.ovf" x y : nativeint #)
+            static member inline op_CheckedMultiply(x: unativeint, y: unativeint) = (# "mul.ovf.un" x y : unativeint #)
+            static member inline op_CheckedMultiply(x: int16, y: int16) = (# "conv.ovf.i2" (# "mul.ovf" x y : int32 #) : int16 #)
+            static member inline op_CheckedMultiply(x: uint16, y: uint16) = (# "conv.ovf.u2.un" (# "mul.ovf.un" x y : uint16 #) : uint16 #)
+            static member inline op_CheckedMultiply(x: sbyte, y: sbyte) = (# "conv.ovf.i1" (# "mul.ovf" x y : int32 #) : sbyte #)
+            static member inline op_CheckedMultiply(x: byte, y: byte) = (# "conv.ovf.u1.un" (# "mul.ovf.un" x y : uint32 #) : byte #)
+
+            static member inline op_CheckedUnaryNegation(value: int32) = (# "sub.ovf" 0 value  : int32 #)
+            static member inline op_CheckedUnaryNegation(value: float) = (# "neg" value  : float #)
+            static member inline op_CheckedUnaryNegation(value: float32) = (# "neg" value  : float32 #)
+            static member inline op_CheckedUnaryNegation(value: int64) = (# "sub.ovf" 0L value  : int64 #)
+            static member inline op_CheckedUnaryNegation(value: int16) = (# "sub.ovf" 0s value  : int16 #)
+            static member inline op_CheckedUnaryNegation(value: nativeint) = (# "sub.ovf" 0n value  : nativeint #)
+            static member inline op_CheckedUnaryNegation(value: sbyte) = (# "sub.ovf" 0y value  : sbyte #)
+            
             static member inline op_LeftShift(value: int32, shift: int32) = (# "shl" value (mask shift 31) : int #)
             static member inline op_LeftShift(value: uint32, shift: int32) = (# "shl" value (mask shift 31) : uint32 #)
             static member inline op_LeftShift(value: int64, shift: int32) = (# "shl" value (mask shift 63) : int64 #)
@@ -2659,7 +2680,7 @@ namespace Microsoft.FSharp.Core
             static member inline op_Explicit(value: unativeint) : byte = (# "conv.u1" value  : byte #)
             static member inline op_Explicit(value: byte) : byte = (# "conv.u1" value  : byte #)
 
-            static member inline op_Explicit(value: byte) : sbyte = ParseSByte value
+            static member inline op_Explicit(value: string) : sbyte = ParseSByte value
             static member inline op_Explicit(value: float) : sbyte = (# "conv.i1" value  : sbyte #)
             static member inline op_Explicit(value: float32) : sbyte = (# "conv.i1" value  : sbyte #)
             static member inline op_Explicit(value: int64) : sbyte = (# "conv.i1" value  : sbyte #)
@@ -2750,7 +2771,7 @@ namespace Microsoft.FSharp.Core
             static member inline op_Explicit(value: byte) : uint64 = (# "conv.u8" value  : uint64 #)
 
             static member inline op_Explicit(value: string) : int64 = ParseInt64 value
-            static member inline op_Explicit(value: string) : int64 = (# "conv.i8" value  : int64 #)
+            static member inline op_Explicit(value: float) : int64 = (# "conv.i8" value  : int64 #)
             static member inline op_Explicit(value: float32) : int64 = (# "conv.i8" value  : int64 #)
             static member inline op_Explicit(value: int64) : int64 = (# "conv.i8" value  : int64 #)
             static member inline op_Explicit(value: int32) : int64 = (# "conv.i8" value  : int64 #)
@@ -2795,19 +2816,19 @@ namespace Microsoft.FSharp.Core
             static member inline op_Explicit(value: byte) : float = (# "conv.r.un conv.r8" value  : float #)
             static member inline op_Explicit(value: decimal) : float = Convert.ToDouble(value) 
 
-            static member inline op_Explicit(value: string) : decimal = Decimal.Parse(value,NumberStyles.Float,CultureInfo.InvariantCulture))
+            static member inline op_Explicit(value: string) : decimal = Decimal.Parse(value,NumberStyles.Float,CultureInfo.InvariantCulture)
             static member inline op_Explicit(value: float) : decimal = Convert.ToDecimal(value) 
             static member inline op_Explicit(value: float32) : decimal = Convert.ToDecimal(value) 
             static member inline op_Explicit(value: int64) : decimal = Convert.ToDecimal(value)
             static member inline op_Explicit(value: int32) : decimal = Convert.ToDecimal(value)
             static member inline op_Explicit(value: int16) : decimal = Convert.ToDecimal(value)
-            static member inline op_Explicit(value: nativeint) : decimal = Convert.ToDecimal(int64 value)
+            static member inline op_Explicit(value: nativeint) : decimal = Convert.ToDecimal(BuiltInWitnesses.op_Explicit value : int64)
             static member inline op_Explicit(value: sbyte) : decimal = Convert.ToDecimal(value) 
             static member inline op_Explicit(value: uint64) : decimal = Convert.ToDecimal(value) 
             static member inline op_Explicit(value: uint32) : decimal = Convert.ToDecimal(value) 
             static member inline op_Explicit(value: uint16) : decimal = Convert.ToDecimal(value) 
-            static member inline op_Explicit(value: unativeint) : decimal = Convert.ToDecimal(uint64 value) 
-            static member inline op_Explicit(value: byte) : decimal = Convert.ToDecimal(value decimal #))) 
+            static member inline op_Explicit(value: unativeint) : decimal = Convert.ToDecimal(BuiltInWitnesses.op_Explicit value : uint64) 
+            static member inline op_Explicit(value: byte) : decimal = Convert.ToDecimal(value) 
             static member inline op_Explicit(value: decimal) : decimal = value
 
             static member inline op_Explicit(value: string) : unativeint = ParseUIntPtr value
@@ -2938,7 +2959,7 @@ namespace Microsoft.FSharp.Core
             static member inline op_Equality(x: nativeint, y: nativeint) = (# "ceq" x y : bool #)
             static member inline op_Equality(x: unativeint, y: unativeint) = (# "ceq" x y : bool #)
             static member inline op_Equality(x: string, y: string) = String.Equals(x, y)
-            static member inline op_Equality(x: decimal, y: v) = Decimal.op_Equality(x, y)
+            static member inline op_Equality(x: decimal, y: decimal) = Decimal.op_Equality(x, y)
 
             static member inline op_Inequality(x: bool, y: bool) = not (# "ceq" x y : bool #)
             static member inline op_Inequality(x: sbyte, y: sbyte) = not (# "ceq" x y : bool #)
@@ -2957,6 +2978,7 @@ namespace Microsoft.FSharp.Core
             static member inline op_Inequality(x: string, y: string) = not (String.Equals(x, y))
             static member inline op_Inequality(x: decimal, y: decimal) = Decimal.op_Inequality(x, y)
 
+        // TODO: rationalise these
         type GenericZeroDynamicImplTable<'T>() = 
             static let result : 'T = 
                 // The dynamic implementation
@@ -2979,6 +3001,7 @@ namespace Microsoft.FSharp.Core
                    unboxPrim<'T> (pinfo.GetValue(null,null))
             static member Result : 'T = result
                    
+        // TODO: rationalise these
         type GenericOneDynamicImplTable<'T>() = 
             static let result : 'T = 
                 // The dynamic implementation
@@ -3006,6 +3029,7 @@ namespace Microsoft.FSharp.Core
         let GenericZeroDynamic<'T>() : 'T = GenericZeroDynamicImplTable<'T>.Result
         let GenericOneDynamic<'T>() : 'T = GenericOneDynamicImplTable<'T>.Result
 
+        // TODO: rationalise these
         let inline GenericZero< ^T when ^T : (static member Zero : ^T) > : ^T =
             GenericZeroDynamic<(^T)>()
             when ^T : int32       = 0
@@ -3025,6 +3049,7 @@ namespace Microsoft.FSharp.Core
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
             when ^T : ^T = (^T : (static member Zero : ^T) ())
 
+        // TODO: rationalise these
         let inline GenericOne< ^T when ^T : (static member One : ^T) > : ^T =
             GenericOneDynamic<(^T)>()
             when ^T : int32       = 1
@@ -3046,6 +3071,7 @@ namespace Microsoft.FSharp.Core
              // That is, not in the generic implementation of '+'
             when ^T : ^T = (^T : (static member One : ^T) ())
 
+        // TODO: rationalise these
         type GenericDivideByIntDynamicImplTable<'T>() = 
             static let result : ('T -> int -> 'T) = 
                 // The dynamic implementation
@@ -3054,20 +3080,35 @@ namespace Microsoft.FSharp.Core
                 elif aty.Equals(typeof<float>) then unboxPrim<_> (box (fun (x:float) (n:int) -> (# "div" x ((# "conv.r8" n  : float #)) : float #)))
                 elif aty.Equals(typeof<float32>) then unboxPrim<_> (box (fun (x:float32) (n:int) -> (# "div" x ((# "conv.r4" n  : float32 #)) : float32 #)))
                 else 
-                    match aty.GetMethod("DivideByInt",[| aty; typeof<int> |]) with 
+                    match aty.GetRuntimeMethod("DivideByInt",[| aty; typeof<int> |]) with 
                     | null -> raise (NotSupportedException (SR.GetString(SR.dyInvDivByIntCoerce)))
                     | m -> (fun x n -> unboxPrim<_> (m.Invoke(null,[| box x; box n |])))
 
             static member Result : ('T -> int -> 'T) = result
 
+        // TODO: rationalise these
         let DivideByIntDynamic<'T> x y = GenericDivideByIntDynamicImplTable<('T)>.Result x y
 
+        // TODO: rationalise these
         let inline DivideByInt< ^T when ^T : (static member DivideByInt : ^T * int -> ^T) > (x:^T) (y:int) : ^T =
             DivideByIntDynamic<'T> x y
             when ^T : float       = (# "div" x ((# "conv.r8" (y:int)  : float #)) : float #)
             when ^T : float32     = (# "div" x ((# "conv.r4" (y:int)  : float32 #)) : float32 #)
             when ^T : decimal     = Decimal.Divide((retype x:decimal), Convert.ToDecimal(y))
             when ^T : ^T = (^T : (static member DivideByInt : ^T * int -> ^T) (x, y))
+
+        // TODO: rationalise these
+        let UnaryDynamicImpl nm : ('T -> 'U) =
+             let aty = typeof<'T>
+             let minfo = aty.GetRuntimeMethod(nm, [| aty |])
+             (fun x -> unboxPrim<_>(minfo.Invoke(null,[| box x|])))
+
+        // TODO: rationalise these
+        let BinaryDynamicImpl nm : ('T -> 'U -> 'V) =
+             let aty = typeof<'T>
+             let bty = typeof<'U>
+             let minfo = aty.GetRuntimeMethod(nm,[| aty;bty |])
+             (fun x y -> unboxPrim<_>(minfo.Invoke(null,[| box x; box y|])))
 
         // Dynamic implementation of operator resolution, using  BuiltInWitnesses as backing data
         type UnaryOpDynamicImplTable<'OpInfo,'T,'U>() = 
@@ -3077,30 +3118,30 @@ namespace Microsoft.FSharp.Core
                 let bty = typeof<'U>
 
                 // Find the operator name
-                let staticBindingFlags = (BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
-                let opNameMeth = typeof<'OpInfo>.GetMethod("get_Name", staticBindingFlags, [| |], null)
-                let opName = opNameMeth.Invoke(null) :?> string
-                let builtinNameMeth = typeof<'OpInfo>.GetMethod("get_BuiltInName", staticBindingFlags, [| |], null)
-                let builtinName = match builtinNameMeth with null -> opName | _ -> builtinNameMeth.Invoke(null) :?> string
+                //let staticBindingFlags = (BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+                let opNameMeth = typeof<'OpInfo>.GetRuntimeMethod("get_Name", [| |] (*, staticBindingFlags, [| |], null*)  )
+                let opName = opNameMeth.Invoke(null, [| |]) :?> string
+                let builtinNameMeth = typeof<'OpInfo>.GetRuntimeMethod("get_BuiltInName", (* staticBindingFlags, *) [| |] (*, null *) )
+                let builtinName = match builtinNameMeth with null -> opName | _ -> builtinNameMeth.Invoke(null, [| |]) :?> string
 
                 let meth = 
                     let witnessesTy = typeof<BuiltInWitnesses>
                     let cmeth = 
-                        if builtinName = "op_Explicit" then 
-                            let meths = witnessesTy.GetMethods(staticBindingFlags)
+                        if builtinName.Equals("op_Explicit") then 
+                            let meths = witnessesTy.GetRuntimeMethods( (* staticBindingFlags *) )
                             let mutable res = null
                             for meth in meths do
-                                if meth.Name = builtinName 
-                                    && meth.GetParameters().[0].ParameterType.Equals(aty) && 
-                                    && meth.ReturnType.Equals(bty) then
-                                    res <- meth
+                                if meth.Name.Equals(builtinName) then
+                                    if (IntrinsicFunctions.GetArray (meth.GetParameters()) 0).ParameterType.Equals(aty) then
+                                        if meth.ReturnType.Equals(bty) then
+                                            res <- meth
                             res
                         else
-                            witnessesTy.GetMethod(builtinName, staticBindingFlags, [| aty |], null)
+                            witnessesTy.GetRuntimeMethod(builtinName, (* , staticBindingFlags *) [| aty |] (* , null *) )
 
                     match cmeth with 
                     | null -> 
-                        let ameth = aty.GetMethod(opName,[| aty |])
+                        let ameth = aty.GetRuntimeMethod(opName, [| aty |])
                         match ameth with
                         | null -> raise (NotSupportedException (SR.GetString(SR.dyInvOpAddCoerce)))
                         | res -> res
@@ -3115,100 +3156,106 @@ namespace Microsoft.FSharp.Core
                 // The dynamic implementation
                 let aty = typeof<'T>
                 let bty = typeof<'U>
-                let cty = typeof<'V> 
 
                 // Find the operator name
-                let staticBindingFlags = (BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
-                let opNameMeth = typeof<'OpInfo>.GetMethod("get_Name", staticBindingFlags, [| |], null)
-                let opName = opNameMeth.Invoke(null) :?> string
-                let builtinNameMeth = typeof<'OpInfo>.GetMethod("get_BuiltInName", staticBindingFlags, [| |], null)
-                let builtinName = match builtinNameMeth with null -> opName | _ -> builtinNameMeth.Invoke(null) :?> string
+                //let staticBindingFlags = (BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+                let opNameMeth = typeof<'OpInfo>.GetRuntimeMethod("get_Name" (* , staticBindingFlags *) , [| |] (*, null *) )
+                let opName = opNameMeth.Invoke(null, [| |]) :?> string
+                let builtinNameMeth = typeof<'OpInfo>.GetRuntimeMethod("get_BuiltInName" (*, staticBindingFlags *) , [| |] (*, null *) )
+                let builtinName = match builtinNameMeth with null -> opName | _ -> builtinNameMeth.Invoke(null, [| |]) :?> string
 
                 let meth = 
                     let witnessesTy = typeof<BuiltInWitnesses>
-                    let cmeth = witnessesTy.GetMethod(builtinName, staticBindingFlags, [| aty; bty |], null)
+                    let cmeth = witnessesTy.GetRuntimeMethod(builtinName (*, staticBindingFlags *) , [| aty; bty |] (*, null *) )
                     match cmeth with 
-                    | res -> res
                     | null -> 
-                        let ameth = aty.GetMethod(opName,[| aty; bty |])
-                        let bmeth = if aty.Equals(bty) then null else bty.GetMethod(opName,[| aty; bty |])
+                        let ameth = aty.GetRuntimeMethod(opName, [| aty; bty |])
+                        let bmeth = if aty.Equals(bty) then null else bty.GetRuntimeMethod(opName, [| aty; bty |])
                         match ameth, bmeth with
                         | null, null -> raise (NotSupportedException (SR.GetString(SR.dyInvOpAddCoerce)))
                         | m, null | null, m -> m
                         | _ ->  raise (NotSupportedException (SR.GetString(SR.dyInvOpAddOverload)))
+                    | res -> res
                 (fun x y -> unboxPrim<_> (meth.Invoke(null,[| box x; box y |])))
 
             static member Impl : ('T -> 'U -> 'V) = impl
 
-        type OpAdditionLabel = static member Name = "op_Addition"
-        let AdditionDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpAdditionLabel,'T,'U,'V>.Impl x y
+        type OpAdditionInfo = static member Name = "op_Addition"
+        let AdditionDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpAdditionInfo,'T,'U,'V>.Impl x y
 
-        type OpCheckedAdditionLabel = 
+        type OpSubtractionInfo = static member Name = "op_Subtraction"
+        let SubtractionDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpSubtractionInfo,'T,'U,'V>.Impl x y
+
+        type OpMultiplyInfo = static member Name = "op_Multiply"
+        let MultiplyDynamic<'T,'U,'V> x y  = BinaryOpDynamicImplTable<OpMultiplyInfo,'T,'U,'V>.Impl x y
+
+        type OpDivisionInfo = static member Name = "op_Division"
+        let DivisionDynamic<'T,'U,'V> x y  = BinaryOpDynamicImplTable<OpDivisionInfo,'T,'U,'V>.Impl x y
+
+        type OpModulusInfo = static member Name = "op_Modulus"
+        let ModulusDynamic<'T,'U,'V> x y  = BinaryOpDynamicImplTable<OpModulusInfo,'T,'U,'V>.Impl x y
+
+        type OpUnaryNegationInfo = static member Name = "op_UnaryNegation"
+        let UnaryNegationDynamic<'T,'U> value = UnaryOpDynamicImplTable<OpUnaryNegationInfo,'T,'U>.Impl value
+
+        type OpCheckedAdditionInfo = 
             static member Name = "op_Addition"
             static member BuiltInName = "op_CheckedAddition"
-        let CheckedAdditionDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpCheckedAdditionLabel,'T,'U,'V>.Impl x y
+        let CheckedAdditionDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpCheckedAdditionInfo,'T,'U,'V>.Impl x y
 
-        type OpSubtractionLabel = static member Name = "op_Subtraction"
-        let SubtractionDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpSubtractionLabel,'T,'U,'V>.Impl x y
+        type OpCheckedSubtractionInfo = 
+            static member Name = "op_Subtraction"
+            static member BuiltInName = "op_CheckedSubtraction"
+        let CheckedSubtractionDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpCheckedSubtractionInfo,'T,'U,'V>.Impl x y
 
-        type OpMultiplyLabel = static member Name = "op_Multiply"
-        let MultiplyDynamic<'T,'U,'V> x y  = BinaryOpDynamicImplTable<OpMultiplyLabel,'T,'U,'V>.Impl x y
-
-        type OpCheckedMultiplyLabel = 
+        type OpCheckedMultiplyInfo = 
             static member Name = "op_Multiply"
             static member BuiltInName = "op_CheckedMultiply"
-        let CheckedMultiplyDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpCheckedMultiplyLabel,'T,'U,'V>.Impl x y
+        let CheckedMultiplyDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpCheckedMultiplyInfo,'T,'U,'V>.Impl x y
 
-        type OpDivisionLabel = static member Name = "op_Division"
-        let DivisionDynamic<'T,'U,'V> x y  = BinaryOpDynamicImplTable<OpDivisionLabel,'T,'U,'V>.Impl x y
+        type OpCheckedUnaryNegationInfo =
+            static member Name = "op_UnaryNegation"
+            static member BuiltInName = "op_CheckedUnaryNegation"
+        let CheckedUnaryNegationDynamic<'T,'U> value = UnaryOpDynamicImplTable<OpCheckedUnaryNegationInfo,'T,'U>.Impl value
 
-        type OpModulusLabel = static member Name = "op_Modulus"
-        let ModulusDynamic<'T,'U,'V> x y  = BinaryOpDynamicImplTable<OpModulusLabel,'T,'U,'V>.Impl x y
+        type OpLeftShiftInfo = static member Name = "op_LeftShift"
+        let OpLeftShiftDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpLeftShiftInfo,'T,'U,'V>.Impl x y
 
-        type OpLeftShiftLabel = static member Name = "op_LeftShift"
-        let LeftShiftDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpLeftShiftLabel,'T,'U,'V>.Impl x y
+        type OpRightShiftInfo = static member Name = "op_RightShift"
+        let OpRightShiftDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpRightShiftInfo,'T,'U,'V>.Impl x y
 
-        type OpRightShiftLabel = static member Name = "op_RightShift"
-        let RightShiftDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpRightShiftLabel,'T,'U,'V>.Impl x y
+        type OpBitwiseAndInfo = static member Name = "op_BitwiseAnd"
+        let OpBitwiseAndDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpBitwiseAndInfo,'T,'U,'V>.Impl x y
 
-        type OpBitwiseAndLabel = static member Name = "op_BitwiseAnd"
-        let BitwiseAndDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpBitwiseAndLabel,'T,'U,'V>.Impl x y
+        type OpBitwiseOrInfo = static member Name = "op_BitwiseOr"
+        let OpBitwiseOrDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpBitwiseOrInfo,'T,'U,'V>.Impl x y
 
-        type OpBitwiseOrLabel = static member Name = "op_BitwiseOr"
-        let BitwiseOrDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpBitwiseOrLabel,'T,'U,'V>.Impl x y
+        type OpBitwiseExclusiveOrInfo = static member Name = "op_BitwiseExclusiveOr"
+        let OpBitwiseExclusiveOrDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpBitwiseExclusiveOrInfo,'T,'U,'V>.Impl x y
 
-        type OpBitwiseAndLabel = static member Name = "op_BitwiseAnd"
-        let BitwiseAndDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpBitwiseAndLabel,'T,'U,'V>.Impl x y
+        type OpLogicalNotInfo = static member Name = "op_LogicalNot"
+        let OpLogicalNotDynamic<'T,'U> x = UnaryOpDynamicImplTable<OpLogicalNotInfo,'T,'U>.Impl x
 
-        type OpBitwiseExclusiveOrLabel = static member Name = "op_BitwiseExclusiveOr"
-        let BitwiseExclusiveOrDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpBitwiseExclusiveOrLabel,'T,'U,'V>.Impl x y
+        type OpExplicitInfo = static member Name = "op_Explicit"
+        let OpExplicitDynamic<'T,'U> x = UnaryOpDynamicImplTable<OpExplicitInfo,'T,'U>.Impl x
 
-        type OpLogicalNotLabel = static member Name = "op_LogicalNot"
-        let LogicalNotDynamic<'T,'U> x = UnaryOpDynamicImplTable<OpLogicalNotLabel,'T,'U>.Impl x
+        type OpLessThanInfo = static member Name = "op_LessThan"
+        let OpLessThanDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpLessThanInfo,'T,'U,'V>.Impl x y
 
-        type OpExplicitLabel = static member Name = "op_Explicit"
-        let OpExplicitDynamic<'T,'U> x y = UnaryOpDynamicImplTable<OpExplicitLabel,'T,'U>.Impl x y
+        type OpGreaterThanInfo = static member Name = "op_GreaterThan"
+        let OpGreaterThanDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpGreaterThanInfo,'T,'U,'V>.Impl x y
 
-        type OpLessThanLabel = static member Name = "op_LessThan"
-        let OpLessThanDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpLessThanLabel,'T,'U,'V>.Impl x y
+        type OpLessThanOrEqualInfo = static member Name = "op_LessThanOrEqual"
+        let OpLessThanOrEqualDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpLessThanOrEqualInfo,'T,'U,'V>.Impl x y
 
-        type OpGreaterThanLabel = static member Name = "op_GreaterThan"
-        let OpGreaterThanDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpGreaterThanLabel,'T,'U,'V>.Impl x y
+        type OpGreaterThanOrEqualInfo = static member Name = "op_GreaterThanOrEqual"
+        let OpGreaterThanOrEqualDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpGreaterThanOrEqualInfo,'T,'U,'V>.Impl x y
 
-        type OpLessThanOrEqualLabel = static member Name = "op_LessThanOrEqual"
-        let OpLessThanOrEqualDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpLessThanOrEqualLabel,'T,'U,'V>.Impl x y
+        type OpEqualityInfo = static member Name = "op_Equality"
+        let OpEqualityDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpEqualityInfo,'T,'U,'V>.Impl x y
 
-        type OpGreaterThanOrEqualLabel = static member Name = "op_GreaterThanOrEqual"
-        let OpGreaterThanOrEqualDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpGreaterThanOrEqualLabel,'T,'U,'V>.Impl x y
-
-        type OpEqualityLabel = static member Name = "op_Equality"
-        let OpEqualityDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpEqualityLabel,'T,'U,'V>.Impl x y
-
-        type OpInequalityLabel = static member Name = "op_Inequality"
-        let InequalityDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpInequalityLabel,'T,'U,'V>.Impl x y
-
-        type OpBitwiseAndLabel = static member Name = "op_BitwiseAnd"
-        let BitwiseAndDynamic<'T,'U,'V> x y = BitwiseAndDynamicImplTable<OpBitwiseAndLabel,'T,'U,'V>.Impl x y
+        type OpInequalityInfo = static member Name = "op_Inequality"
+        let OpInequalityDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpInequalityInfo,'T,'U,'V>.Impl x y
 
 namespace Microsoft.FSharp.Core
 
@@ -3573,10 +3620,7 @@ namespace Microsoft.FSharp.Core
 
 namespace Microsoft.FSharp.Collections
 
-    //-------------------------------------------------------------------------
-    // Lists
-    //-------------------------------------------------------------------------
-
+    open System
     open System.Collections.Generic
     open System.Diagnostics
     open Microsoft.FSharp.Core
@@ -3635,10 +3679,6 @@ namespace Microsoft.FSharp.Collections
            member x._FullList = items (count l 0 ListDebugViewMaxFullLength)
 
     type ResizeArray<'T> = System.Collections.Generic.List<'T>
-
-    //-------------------------------------------------------------------------
-    // List (augmentation)
-    //-------------------------------------------------------------------------
 
     module PrivateListHelpers = 
 
@@ -4071,7 +4111,7 @@ namespace Microsoft.FSharp.Core
              when ^T : ^T = (^T: (static member (~+) : ^T -> ^T) (value))
 
         let inline (<<<) (value: ^T) (shift:int) : ^T = 
-             LeftShiftDynamic<(^T),int,(^T)> value shift
+             OpLeftShiftDynamic<(^T),int,(^T)> value shift
              when ^T : int32      = (# "shl" value (mask shift 31) : int #)
              when ^T : uint32     = (# "shl" value (mask shift 31) : uint32 #)
              when ^T : int64      = (# "shl" value (mask shift 63) : int64 #)
@@ -4087,7 +4127,7 @@ namespace Microsoft.FSharp.Core
              when ^T : ^T = (^T: (static member (<<<) : ^T * int -> ^T) (value,shift))
 
         let inline (>>>) (value: ^T) (shift:int) : ^T = 
-             RightShiftDynamic<(^T),int,(^T)> value shift
+             OpRightShiftDynamic<(^T),int,(^T)> value shift
              when ^T : int32      = (# "shr"    value (mask shift 31) : int32 #)
              when ^T : uint32     = (# "shr.un" value (mask shift 31) : uint32 #)
              when ^T : int64      = (# "shr"    value (mask shift 63) : int64 #)
@@ -4103,7 +4143,7 @@ namespace Microsoft.FSharp.Core
              when ^T : ^T = (^T: (static member (>>>) : ^T * int -> ^T) (value, shift))
 
         let inline (&&&) (x: ^T) (y: ^T) : ^T = 
-             BitwiseAndDynamic<(^T),(^T),(^T)> x y
+             OpBitwiseAndDynamic<(^T),(^T),(^T)> x y
              when ^T : int32      = (# "and" x y : int32 #)
              when ^T : int64      = (# "and" x y : int64 #)
              when ^T : uint64     = (# "and" x y : uint64 #)
@@ -4119,7 +4159,7 @@ namespace Microsoft.FSharp.Core
              when ^T : ^T = (^T: (static member (&&&) : ^T * ^T -> ^T) (x, y))
 
         let inline (|||) (x: ^T) (y: ^T) : ^T = 
-             BitwiseOrDynamic<(^T),(^T),(^T)> x y
+             OpBitwiseOrDynamic<(^T),(^T),(^T)> x y
              when ^T : int32      = (# "or" x y : int32 #)
              when ^T : int64      = (# "or" x y : int64 #)
              when ^T : uint64     = (# "or" x y : uint64 #)
@@ -4135,7 +4175,7 @@ namespace Microsoft.FSharp.Core
              when ^T : ^T = (^T: (static member (|||) : ^T * ^T -> ^T) (x, y))
 
         let inline (^^^) (x: ^T) (y: ^T) : ^T = 
-             BitwiseExclusiveOrDynamic<(^T),(^T),(^T)> x y
+             OpBitwiseExclusiveOrDynamic<(^T),(^T),(^T)> x y
              when ^T : int32      = (# "xor" x y : int32 #)
              when ^T : int64      = (# "xor" x y : int64 #)
              when ^T : uint64     = (# "xor" x y : uint64 #)
@@ -4151,7 +4191,7 @@ namespace Microsoft.FSharp.Core
              when ^T : ^T = (^T: (static member (^^^) : ^T * ^T -> ^T) (x, y))
         
         let inline (~~~) (value: ^T) : ^T = 
-             LogicalNotDynamic<(^T),(^T)> x y
+             OpLogicalNotDynamic<(^T),(^T)> value
              when ^T : int32      = (# "not" value : int32 #)
              when ^T : int64      = (# "not" value : int64 #)
              when ^T : uint64     = (# "not" value : uint64 #)
@@ -4554,7 +4594,7 @@ namespace Microsoft.FSharp.Core
         module NonStructuralComparison = 
             /// Static less-than with static optimizations for some well-known cases.
             let inline (<) (x:^T) (y:^U) = 
-                OpLessThanDynamic<(^T), (^U), bool> value
+                OpLessThanDynamic<(^T), (^U), bool> x y
                 when ^T : bool   = (# "clt" x y : bool #)
                 when ^T : sbyte  = (# "clt" x y : bool #)
                 when ^T : int16  = (# "clt" x y : bool #)
@@ -4577,7 +4617,7 @@ namespace Microsoft.FSharp.Core
 
             /// Static greater-than with static optimizations for some well-known cases.
             let inline (>) (x:^T) (y:^U) = 
-                OpGreaterThanDynamic<(^T), (^U), bool> value
+                OpGreaterThanDynamic<(^T), (^U), bool> x y
                 when 'T : bool       = (# "cgt" x y : bool #)
                 when 'T : sbyte      = (# "cgt" x y : bool #)
                 when 'T : int16      = (# "cgt" x y : bool #)
@@ -4600,7 +4640,7 @@ namespace Microsoft.FSharp.Core
 
             /// Static less-than-or-equal with static optimizations for some well-known cases.
             let inline (<=) (x:^T) (y:^U) = 
-                OpLessThanOrEqualDynamic<(^T), (^U), bool> value
+                OpLessThanOrEqualDynamic<(^T), (^U), bool> x y
                 when 'T : bool       = not (# "cgt" x y : bool #)
                 when 'T : sbyte      = not (# "cgt" x y : bool #)
                 when 'T : int16      = not (# "cgt" x y : bool #)
@@ -4623,7 +4663,7 @@ namespace Microsoft.FSharp.Core
 
             /// Static greater-than-or-equal with static optimizations for some well-known cases.
             let inline (>=) (x:^T) (y:^U) = 
-                OpGreaterThanOrEqualDynamic<(^T), (^U), bool> value
+                OpGreaterThanOrEqualDynamic<(^T), (^U), bool> x y
                 when 'T : bool       = not (# "clt" x y : bool #)
                 when 'T : sbyte      = not (# "clt" x y : bool #)
                 when 'T : int16      = not (# "clt" x y : bool #)
@@ -4646,7 +4686,7 @@ namespace Microsoft.FSharp.Core
 
             /// Static greater-than-or-equal with static optimizations for some well-known cases.
             let inline (=) (x:^T) (y:^T) = 
-                OpEqualityDynamic<(^T), (^T), bool> value
+                OpEqualityDynamic<(^T), (^T), bool> x y
                 when ^T : bool    = (# "ceq" x y : bool #)
                 when ^T : sbyte   = (# "ceq" x y : bool #)
                 when ^T : int16   = (# "ceq" x y : bool #)
@@ -4666,7 +4706,7 @@ namespace Microsoft.FSharp.Core
                 when ^T : ^T = (^T : (static member (=) : ^T * ^T -> bool) (x,y))
 
             let inline (<>) (x:^T) (y:^T) = 
-                InequalityDynamic<(^T), (^T), bool> value
+                OpInequalityDynamic<(^T), (^T), bool> x y
                 when ^T : bool    = not (# "ceq" x y : bool #)
                 when ^T : sbyte   = not (# "ceq" x y : bool #)
                 when ^T : int16   = not (# "ceq" x y : bool #)
@@ -4989,7 +5029,7 @@ namespace Microsoft.FSharp.Core
                  // According to the somewhat subtle rules of static optimizations,
                  // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
                  // That is, not in the generic implementation of '*'
-                 when ^T : ^T = (^T : (static member op_Explicit: ^T -> byte) (value))
+                 when ^T : ^T = (^T : (static member op_Explicit: ^T -> uint16) (value))
 
             [<CompiledName("ToChar")>]
             let inline char (value: ^T) = 
@@ -5816,17 +5856,6 @@ namespace Microsoft.FSharp.Core
                  (^T: (static member Pow : ^T * ^U -> ^T) (x,y))
                  when ^T : float       = System.Math.Pow((retype x : float), (retype y: float))
                  when ^T : float32     = System.Math.Pow(toFloat (retype x), toFloat(retype y)) |> toFloat32
-
-            let UnaryDynamicImpl nm : ('T -> 'U) =
-                 let aty = typeof<'T>
-                 let minfo = aty.GetMethod(nm, [| aty |])
-                 (fun x -> unboxPrim<_>(minfo.Invoke(null,[| box x|])))
-
-            let BinaryDynamicImpl nm : ('T -> 'U -> 'V) =
-                 let aty = typeof<'T>
-                 let bty = typeof<'U>
-                 let minfo = aty.GetMethod(nm,[| aty;bty |])
-                 (fun x y -> unboxPrim<_>(minfo.Invoke(null,[| box x; box y|])))
 
             type AbsDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
