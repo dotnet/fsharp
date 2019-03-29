@@ -14,6 +14,10 @@
       <AdditionalProperties Condition="'$(OS)' != 'Unix'">TargetFramework=net46</AdditionalProperties>
       <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=netcoreapp2.1</AdditionalProperties>
     </Projects>
+    <Projects Include="src\fsharp\fsi\fsi.fsproj">
+      <AdditionalProperties Condition="'$(OS)' != 'Unix'">TargetFramework=net46</AdditionalProperties>
+      <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=netcoreapp2.1</AdditionalProperties>
+    </Projects>
   </ItemGroup>
 
   <Target Name="Build">
