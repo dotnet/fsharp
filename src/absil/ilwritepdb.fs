@@ -373,27 +373,37 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                         // Sequence-point-record
                         // Validate these with magic numbers according to the portable pdb spec Sequence point dexcription:
                         // https://github.com/dotnet/corefx/blob/master/src/System.Reflection.Metadata/specs/PortablePdb-Metadata.md#methoddebuginformation-table-0x31
+                        //
+                        // So the spec is actually bit iffy!!!!! (More like guidelines really.  )
+                        //  It uses code similar to this to validate the values
+                        //    if (result < 0 || result >= ushort.MaxValue)  // be errorfull
+                        // Spec Says 0x10000 and value max = 0xFFFF but it can't even be = to maxvalue, and so the range is 0 .. 0xfffe inclusive
                         //=============================================================================================================================================
-                        let validateOffset v = v >= 0 && v < 0x20000000
-                        let validateLine v = (v >= 0 && v < 0x20000000) || v = 0xfeefee
-                        let validateColumn v = v >= 0 && v < 0x10000
 
-                        let offset = sps.[i].Offset
-                        let startLine = sps.[i].Line
-                        let endLine = sps.[i].EndLine
-                        let startColumn = sps.[i].Column
-                        let endColumn = sps.[i].EndColumn
+                        let capValue v maxValue =
+                            if v < 0 then 0
+                            elif v > maxValue then maxValue
+                            else v
 
-                        let offsetDelta =
-                            if i > 0 then offset - sps.[i - 1].Offset                                   // delta from previous offset
+                        let capOffset v = capValue v 0xfffe
+                        let capLine v =  capValue v 0x1ffffffe
+                        let capColumn v = capValue v 0xfffe
+
+                        let offset = capOffset sps.[i].Offset
+                        let startLine = capLine sps.[i].Line
+                        let endLine = capLine sps.[i].EndLine
+                        let startColumn = capColumn sps.[i].Column
+                        let endColumn = capColumn sps.[i].EndColumn
+
+                        let offsetDelta =                                                               // delta from previous offset
+                            if i > 0 then offset - capOffset sps.[i - 1].Offset
                             else offset
 
-                        if i < 1 || (offsetDelta <> 0 && (validateOffset offset) && (validateLine startLine) && (validateLine endLine) && (validateColumn startColumn) && (validateColumn endColumn)) then
-
+                        if i < 1 || offsetDelta > 0 then
                             builder.WriteCompressedInteger(offsetDelta)
 
-                            if startLine = 0xfeefee || endLine = 0xfeefee ||                            // Hidden-sequence-point-record
-                               startLine > endLine || (startColumn = 0 && endColumn = 0)
+                                                                                                        // Hidden-sequence-point-record
+                            if startLine = 0xfeefee || endLine = 0xfeefee || (startColumn = 0 && endColumn = 0)
                             then
                                 builder.WriteCompressedInteger(0)
                                 builder.WriteCompressedInteger(0)
