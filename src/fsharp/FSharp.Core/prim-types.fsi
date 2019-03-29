@@ -1099,6 +1099,471 @@ namespace Microsoft.FSharp.Core
         /// <returns>The division result.</returns>
         val inline DivideByInt< ^T >  : x:^T -> y:int -> ^T when ^T : (static member DivideByInt : ^T * int -> ^T) 
 
+        type BuiltInWitnesses = 
+            static member inline op_Addition: x: int32 * y: int32 -> int32 
+            static member inline op_Addition: x: float * y: float -> float 
+            static member inline op_Addition: x: float32 * y: float32 -> float32 
+            static member inline op_Addition: x: int64 * y: int64 -> int64 
+            static member inline op_Addition: x: uint64 * y: uint64 -> uint64 
+            static member inline op_Addition: x: uint32 * y: uint32 -> uint32 
+            static member inline op_Addition: x: nativeint * y: nativeint -> nativeint 
+            static member inline op_Addition: x: unativeint * y: unativeint -> unativeint 
+            static member inline op_Addition: x: int16 * y: int16 -> int16 
+            static member inline op_Addition: x: uint16 * y: uint16 -> uint16 
+            static member inline op_Addition: x: char * y: char -> char 
+            static member inline op_Addition: x: sbyte * y: sbyte -> sbyte 
+            static member inline op_Addition: x: byte * y: byte -> byte 
+            static member inline op_Addition: x: string * y: string -> string 
+            static member inline op_Addition: x: decimal * y: decimal -> decimal 
+            
+            static member inline op_Multiply: x: int32 * y: int32 -> int32 
+            static member inline op_Multiply: x: float * y: float -> float 
+            static member inline op_Multiply: x: float32 * y: float32 -> float32 
+            static member inline op_Multiply: x: int64 * y: int64 -> int64 
+            static member inline op_Multiply: x: uint64 * y: uint64 -> uint64 
+            static member inline op_Multiply: x: uint32 * y: uint32 -> uint32 
+            static member inline op_Multiply: x: nativeint * y: nativeint -> nativeint 
+            static member inline op_Multiply: x: unativeint * y: unativeint -> unativeint 
+            static member inline op_Multiply: x: int16 * y: int16 -> int16 
+            static member inline op_Multiply: x: uint16 * y: uint16 -> uint16 
+            static member inline op_Multiply: x: sbyte * y: sbyte -> sbyte 
+            static member inline op_Multiply: x: byte * y: byte -> byte 
+            static member inline op_Multiply: x: decimal * y: decimal -> decimal 
+
+            static member inline op_UnaryNegation: x: int32 -> int32
+            static member inline op_UnaryNegation: x: float -> float
+            static member inline op_UnaryNegation: x: float32 -> float32
+            static member inline op_UnaryNegation: x: int64 -> int64
+            static member inline op_UnaryNegation: x: int16 -> int16
+            static member inline op_UnaryNegation: x: nativeint -> nativeint
+            static member inline op_UnaryNegation: x: sbyte -> sbyte
+            static member inline op_UnaryNegation: x: decimal -> decimal
+            
+            static member inline op_Subtraction: x: int32 * y: int32 -> int32 
+            static member inline op_Subtraction: x: float * y: float -> float 
+            static member inline op_Subtraction: x: float32 * y: float32 -> float32 
+            static member inline op_Subtraction: x: int64 * y: int64 -> int64 
+            static member inline op_Subtraction: x: uint64 * y: uint64 -> uint64 
+            static member inline op_Subtraction: x: uint32 * y: uint32 -> uint32 
+            static member inline op_Subtraction: x: nativeint * y: nativeint -> nativeint 
+            static member inline op_Subtraction: x: unativeint * y: unativeint -> unativeint 
+            static member inline op_Subtraction: x: int16 * y: int16 -> int16 
+            static member inline op_Subtraction: x: uint16 * y: uint16 -> uint16 
+            static member inline op_Subtraction: x: sbyte * y: sbyte -> sbyte 
+            static member inline op_Subtraction: x: byte * y: byte -> byte 
+            static member inline op_Subtraction: x: decimal * y: decimal -> decimal 
+            
+            static member inline op_Division: x: int32 * y: int32 -> int32 
+            static member inline op_Division: x: float * y: float -> float 
+            static member inline op_Division: x: float32 * y: float32 -> float32 
+            static member inline op_Division: x: int64 * y: int64 -> int64 
+            static member inline op_Division: x: uint64 * y: uint64 -> uint64 
+            static member inline op_Division: x: uint32 * y: uint32 -> uint32 
+            static member inline op_Division: x: nativeint * y: nativeint -> nativeint 
+            static member inline op_Division: x: unativeint * y: unativeint -> unativeint 
+            static member inline op_Division: x: int16 * y: int16 -> int16 
+            static member inline op_Division: x: uint16 * y: uint16 -> uint16 
+            static member inline op_Division: x: sbyte * y: sbyte -> sbyte 
+            static member inline op_Division: x: byte * y: byte -> byte 
+            static member inline op_Division: x: decimal * y: decimal -> decimal 
+
+            static member inline op_Modulus: x: int32 * y: int32 -> int32 
+            static member inline op_Modulus: x: float * y: float -> float 
+            static member inline op_Modulus: x: float32 * y: float32 -> float32 
+            static member inline op_Modulus: x: int64 * y: int64 -> int64 
+            static member inline op_Modulus: x: uint64 * y: uint64 -> uint64 
+            static member inline op_Modulus: x: uint32 * y: uint32 -> uint32 
+            static member inline op_Modulus: x: nativeint * y: nativeint -> nativeint 
+            static member inline op_Modulus: x: unativeint * y: unativeint -> unativeint 
+            static member inline op_Modulus: x: int16 * y: int16 -> int16 
+            static member inline op_Modulus: x: uint16 * y: uint16 -> uint16 
+            static member inline op_Modulus: x: sbyte * y: sbyte -> sbyte 
+            static member inline op_Modulus: x: byte * y: byte -> byte 
+            static member inline op_Modulus: x: decimal * y: decimal -> decimal 
+
+            static member inline op_LeftShift: value: int32 * shift: int32 -> int32 
+            static member inline op_LeftShift: value: uint32 * shift: int32 -> uint32 
+            static member inline op_LeftShift: value: int64 * shift: int32 -> int64 
+            static member inline op_LeftShift: value: uint64 * shift: int32 -> uint64 
+            static member inline op_LeftShift: value: nativeint * shift: int32 -> nativeint 
+            static member inline op_LeftShift: value: unativeint * shift: int32 -> unativeint 
+            static member inline op_LeftShift: value: int16 * shift: int32 -> int16 
+            static member inline op_LeftShift: value: uint16 * shift: int32 -> uint16 
+            static member inline op_LeftShift: value: sbyte * shift: int32 -> sbyte 
+            static member inline op_LeftShift: value: byte * shift: int32 -> byte 
+
+            static member inline op_RightShift: value: byte * shift: int32 -> byte 
+            static member inline op_RightShift: value: uint32 * shift: int32 -> uint32 
+            static member inline op_RightShift: value: int64 * shift: int32 -> int64 
+            static member inline op_RightShift: value: uint64 * shift: int32 -> uint64 
+            static member inline op_RightShift: value: nativeint * shift: int32 -> nativeint 
+            static member inline op_RightShift: value: unativeint * shift: int32 -> unativeint 
+            static member inline op_RightShift: value: int16 * shift: int32 -> int16 
+            static member inline op_RightShift: value: uint16 * shift: int32 -> uint16 
+            static member inline op_RightShift: value: sbyte * shift: int32 -> sbyte 
+            static member inline op_RightShift: value: byte * shift: int32 -> byte 
+
+            static member inline op_BitwiseAnd: x: int32 * y: int32 -> int32 
+            static member inline op_BitwiseAnd: x: int64 * y: int64 -> int64 
+            static member inline op_BitwiseAnd: x: uint64 * y: uint64 -> uint64 
+            static member inline op_BitwiseAnd: x: uint32 * y: uint32 -> uint32 
+            static member inline op_BitwiseAnd: x: int16 * y: int16 -> int16 
+            static member inline op_BitwiseAnd: x: uint16 * y: uint16 -> uint16 
+            static member inline op_BitwiseAnd: x: nativeint * y: nativeint -> nativeint 
+            static member inline op_BitwiseAnd: x: unativeint * y: unativeint -> unativeint 
+            static member inline op_BitwiseAnd: x: sbyte * y: sbyte -> sbyte 
+            static member inline op_BitwiseAnd: x: byte * y: byte -> byte 
+
+            static member inline op_BitwiseOr: x: int32 * y: int32 -> int32 
+            static member inline op_BitwiseOr: x: int64 * y: int64 -> int64 
+            static member inline op_BitwiseOr: x: uint64 * y: uint64 -> uint64 
+            static member inline op_BitwiseOr: x: uint32 * y: uint32 -> uint32 
+            static member inline op_BitwiseOr: x: int16 * y: int16 -> int16 
+            static member inline op_BitwiseOr: x: uint16 * y: uint16 -> uint16 
+            static member inline op_BitwiseOr: x: nativeint * y: nativeint -> nativeint 
+            static member inline op_BitwiseOr: x: unativeint * y: unativeint -> unativeint 
+            static member inline op_BitwiseOr: x: sbyte * y: sbyte -> sbyte 
+            static member inline op_BitwiseOr: x: byte * y: byte -> byte 
+
+            static member inline op_BitwiseExclusiveOr: x: int32 * y: int32 -> int32 
+            static member inline op_BitwiseExclusiveOr: x: int64 * y: int64 -> int64 
+            static member inline op_BitwiseExclusiveOr: x: uint64 * y: uint64 -> uint64 
+            static member inline op_BitwiseExclusiveOr: x: uint32 * y: uint32 -> uint32 
+            static member inline op_BitwiseExclusiveOr: x: int16 * y: int16 -> int16 
+            static member inline op_BitwiseExclusiveOr: x: uint16 * y: uint16 -> uint16 
+            static member inline op_BitwiseExclusiveOr: x: nativeint * y: nativeint -> nativeint 
+            static member inline op_BitwiseExclusiveOr: x: unativeint * y: unativeint -> unativeint 
+            static member inline op_BitwiseExclusiveOr: x: sbyte * y: sbyte -> sbyte 
+            static member inline op_BitwiseExclusiveOr: x: byte * y: byte -> byte
+
+            static member inline op_LogicalNot: value: int32 -> int32 
+            static member inline op_LogicalNot: value: int64 -> int64 
+            static member inline op_LogicalNot: value: uint64 -> uint64 
+            static member inline op_LogicalNot: value: uint32 -> uint32 
+            static member inline op_LogicalNot: value: nativeint -> nativeint 
+            static member inline op_LogicalNot: value: unativeint -> unativeint 
+            static member inline op_LogicalNot: value: int16 -> int16 
+            static member inline op_LogicalNot: value: uint16 -> uint16 
+            static member inline op_LogicalNot: value: sbyte -> sbyte 
+            static member inline op_LogicalNot: value: byte -> byte 
+
+            static member inline op_Explicit: value: string -> byte 
+            static member inline op_Explicit: value: float -> byte 
+            static member inline op_Explicit: value: float32 -> byte 
+            static member inline op_Explicit: value: int64 -> byte 
+            static member inline op_Explicit: value: int32 -> byte 
+            static member inline op_Explicit: value: int16 -> byte 
+            static member inline op_Explicit: value: nativeint -> byte 
+            static member inline op_Explicit: value: sbyte -> byte 
+            static member inline op_Explicit: value: uint64 -> byte 
+            static member inline op_Explicit: value: uint32 -> byte 
+            static member inline op_Explicit: value: uint16 -> byte 
+            static member inline op_Explicit: value: char -> byte 
+            static member inline op_Explicit: value: unativeint -> byte 
+            static member inline op_Explicit: value: byte -> byte 
+
+            static member inline op_Explicit: value: byte -> sbyte 
+            static member inline op_Explicit: value: float -> sbyte 
+            static member inline op_Explicit: value: float32 -> sbyte 
+            static member inline op_Explicit: value: int64 -> sbyte 
+            static member inline op_Explicit: value: int32 -> sbyte 
+            static member inline op_Explicit: value: int16 -> sbyte 
+            static member inline op_Explicit: value: nativeint -> sbyte 
+            static member inline op_Explicit: value: sbyte -> sbyte 
+            static member inline op_Explicit: value: uint64 -> sbyte 
+            static member inline op_Explicit: value: uint32 -> sbyte 
+            static member inline op_Explicit: value: uint16 -> sbyte 
+            static member inline op_Explicit: value: char -> sbyte 
+            static member inline op_Explicit: value: unativeint -> sbyte 
+            static member inline op_Explicit: value: byte -> sbyte 
+
+            static member inline op_Explicit: value: string -> uint16 
+            static member inline op_Explicit: value: float -> uint16 
+            static member inline op_Explicit: value: float32 -> uint16 
+            static member inline op_Explicit: value: int64 -> uint16 
+            static member inline op_Explicit: value: int32 -> uint16 
+            static member inline op_Explicit: value: int16 -> uint16 
+            static member inline op_Explicit: value: nativeint -> uint16 
+            static member inline op_Explicit: value: sbyte -> uint16 
+            static member inline op_Explicit: value: uint64 -> uint16 
+            static member inline op_Explicit: value: uint32 -> uint16 
+            static member inline op_Explicit: value: uint16 -> uint16 
+            static member inline op_Explicit: value: char -> uint16 
+            static member inline op_Explicit: value: unativeint -> uint16 
+            static member inline op_Explicit: value: byte -> uint16 
+
+            static member inline op_Explicit: value: string -> int16 
+            static member inline op_Explicit: value: float -> int16 
+            static member inline op_Explicit: value: float32 -> int16 
+            static member inline op_Explicit: value: int64 -> int16 
+            static member inline op_Explicit: value: int32 -> int16 
+            static member inline op_Explicit: value: int16 -> int16 
+            static member inline op_Explicit: value: nativeint -> int16 
+            static member inline op_Explicit: value: sbyte -> int16 
+            static member inline op_Explicit: value: uint64 -> int16 
+            static member inline op_Explicit: value: uint32 -> int16 
+            static member inline op_Explicit: value: uint16 -> int16 
+            static member inline op_Explicit: value: char -> int16 
+            static member inline op_Explicit: value: unativeint -> int16 
+            static member inline op_Explicit: value: byte -> int16 
+
+            static member inline op_Explicit: value: string -> uint32 
+            static member inline op_Explicit: value: float -> uint32 
+            static member inline op_Explicit: value: float32 -> uint32 
+            static member inline op_Explicit: value: int64 -> uint32 
+            static member inline op_Explicit: value: nativeint -> uint32 
+            static member inline op_Explicit: value: int32 -> uint32 
+            static member inline op_Explicit: value: int16 -> uint32 
+            static member inline op_Explicit: value: sbyte -> uint32 
+            static member inline op_Explicit: value: uint64 -> uint32 
+            static member inline op_Explicit: value: uint32 -> uint32 
+            static member inline op_Explicit: value: uint16 -> uint32 
+            static member inline op_Explicit: value: char -> uint32 
+            static member inline op_Explicit: value: unativeint -> uint32 
+            static member inline op_Explicit: value: byte -> uint32 
+
+            static member inline op_Explicit: value: string -> int32 
+            static member inline op_Explicit: value: float -> int32 
+            static member inline op_Explicit: value: float32 -> int32 
+            static member inline op_Explicit: value: int64 -> int32 
+            static member inline op_Explicit: value: nativeint -> int32 
+            static member inline op_Explicit: value: int32 -> int32 
+            static member inline op_Explicit: value: int16 -> int32 
+            static member inline op_Explicit: value: sbyte -> int32 
+            static member inline op_Explicit: value: uint64 -> int32 
+            static member inline op_Explicit: value: uint32 -> int32 
+            static member inline op_Explicit: value: uint16 -> int32 
+            static member inline op_Explicit: value: char -> int32 
+            static member inline op_Explicit: value: unativeint -> int32 
+            static member inline op_Explicit: value: byte -> int32 
+
+            static member inline op_Explicit: value: string -> uint64 
+            static member inline op_Explicit: value: float -> uint64 
+            static member inline op_Explicit: value: float32 -> uint64 
+            static member inline op_Explicit: value: int64 -> uint64 
+            static member inline op_Explicit: value: int32 -> uint64 
+            static member inline op_Explicit: value: int16 -> uint64 
+            static member inline op_Explicit: value: nativeint -> uint64 
+            static member inline op_Explicit: value: sbyte -> uint64 
+            static member inline op_Explicit: value: uint64 -> uint64 
+            static member inline op_Explicit: value: uint32 -> uint64 
+            static member inline op_Explicit: value: uint16 -> uint64 
+            static member inline op_Explicit: value: char -> uint64 
+            static member inline op_Explicit: value: unativeint -> uint64 
+            static member inline op_Explicit: value: byte -> uint64 
+
+            static member inline op_Explicit: value: string -> int64 
+            static member inline op_Explicit: value: string -> int64 
+            static member inline op_Explicit: value: float32 -> int64 
+            static member inline op_Explicit: value: int64 -> int64 
+            static member inline op_Explicit: value: int32 -> int64 
+            static member inline op_Explicit: value: int16 -> int64 
+            static member inline op_Explicit: value: nativeint -> int64 
+            static member inline op_Explicit: value: sbyte -> int64 
+            static member inline op_Explicit: value: uint64 -> int64 
+            static member inline op_Explicit: value: uint32 -> int64 
+            static member inline op_Explicit: value: uint16 -> int64 
+            static member inline op_Explicit: value: char -> int64 
+            static member inline op_Explicit: value: unativeint -> int64 
+            static member inline op_Explicit: value: byte -> int64 
+
+            static member inline op_Explicit: value: string -> float32 
+            static member inline op_Explicit: value: float -> float32 
+            static member inline op_Explicit: value: float32 -> float32 
+            static member inline op_Explicit: value: int64 -> float32 
+            static member inline op_Explicit: value: int32 -> float32 
+            static member inline op_Explicit: value: int16 -> float32 
+            static member inline op_Explicit: value: nativeint -> float32 
+            static member inline op_Explicit: value: sbyte -> float32 
+            static member inline op_Explicit: value: uint64 -> float32 
+            static member inline op_Explicit: value: uint32 -> float32 
+            static member inline op_Explicit: value: uint16 -> float32 
+            static member inline op_Explicit: value: char -> float32 
+            static member inline op_Explicit: value: unativeint -> float32 
+            static member inline op_Explicit: value: byte -> float32 
+
+            static member inline op_Explicit: value: string -> float 
+            static member inline op_Explicit: value: float -> float 
+            static member inline op_Explicit: value: float32 -> float 
+            static member inline op_Explicit: value: int64 -> float 
+            static member inline op_Explicit: value: int32 -> float 
+            static member inline op_Explicit: value: int16 -> float 
+            static member inline op_Explicit: value: nativeint -> float 
+            static member inline op_Explicit: value: sbyte -> float 
+            static member inline op_Explicit: value: uint64 -> float 
+            static member inline op_Explicit: value: uint32 -> float 
+            static member inline op_Explicit: value: uint16 -> float 
+            static member inline op_Explicit: value: char -> float 
+            static member inline op_Explicit: value: unativeint -> float 
+            static member inline op_Explicit: value: byte -> float 
+            static member inline op_Explicit: value: decimal -> float 
+
+            static member inline op_Explicit: value: string -> decimal 
+            static member inline op_Explicit: value: float -> decimal 
+            static member inline op_Explicit: value: float32 -> decimal 
+            static member inline op_Explicit: value: int64 -> decimal 
+            static member inline op_Explicit: value: int32 -> decimal 
+            static member inline op_Explicit: value: int16 -> decimal 
+            static member inline op_Explicit: value: nativeint -> decimal 
+            static member inline op_Explicit: value: sbyte -> decimal 
+            static member inline op_Explicit: value: uint64 -> decimal 
+            static member inline op_Explicit: value: uint32 -> decimal 
+            static member inline op_Explicit: value: uint16 -> decimal 
+            static member inline op_Explicit: value: unativeint -> decimal 
+            static member inline op_Explicit: value: byte -> decimal 
+            static member inline op_Explicit: value: decimal -> decimal 
+
+            static member inline op_Explicit: value: string -> unativeint 
+            static member inline op_Explicit: value: float -> unativeint 
+            static member inline op_Explicit: value: float32 -> unativeint 
+            static member inline op_Explicit: value: int64 -> unativeint 
+            static member inline op_Explicit: value: int32 -> unativeint 
+            static member inline op_Explicit: value: int16 -> unativeint 
+            static member inline op_Explicit: value: nativeint -> unativeint 
+            static member inline op_Explicit: value: sbyte -> unativeint 
+            static member inline op_Explicit: value: uint64 -> unativeint 
+            static member inline op_Explicit: value: uint32 -> unativeint 
+            static member inline op_Explicit: value: uint16 -> unativeint 
+            static member inline op_Explicit: value: char -> unativeint 
+            static member inline op_Explicit: value: unativeint -> unativeint 
+            static member inline op_Explicit: value: byte -> unativeint 
+
+            static member inline op_Explicit: value: string -> nativeint 
+            static member inline op_Explicit: value: float -> nativeint 
+            static member inline op_Explicit: value: float32 -> nativeint 
+            static member inline op_Explicit: value: int64 -> nativeint 
+            static member inline op_Explicit: value: int32 -> nativeint 
+            static member inline op_Explicit: value: int16 -> nativeint 
+            static member inline op_Explicit: value: nativeint -> nativeint 
+            static member inline op_Explicit: value: sbyte -> nativeint 
+            static member inline op_Explicit: value: uint64 -> nativeint 
+            static member inline op_Explicit: value: uint32 -> nativeint 
+            static member inline op_Explicit: value: uint16 -> nativeint 
+            static member inline op_Explicit: value: char -> nativeint 
+            static member inline op_Explicit: value: unativeint -> nativeint 
+            static member inline op_Explicit: value: byte -> nativeint 
+
+            static member inline op_Explicit: value: string -> char 
+            static member inline op_Explicit: value: float -> char 
+            static member inline op_Explicit: value: float32 -> char 
+            static member inline op_Explicit: value: int64 -> char 
+            static member inline op_Explicit: value: int32 -> char 
+            static member inline op_Explicit: value: int16 -> char 
+            static member inline op_Explicit: value: nativeint -> char 
+            static member inline op_Explicit: value: sbyte -> char 
+            static member inline op_Explicit: value: uint64 -> char 
+            static member inline op_Explicit: value: uint32 -> char 
+            static member inline op_Explicit: value: uint16 -> char 
+            static member inline op_Explicit: value: char -> char 
+            static member inline op_Explicit: value: unativeint -> char 
+            static member inline op_Explicit: value: byte -> char 
+
+            static member inline op_LessThan: x: bool * y: bool -> bool
+            static member inline op_LessThan: x: sbyte * y: sbyte -> bool
+            static member inline op_LessThan: x: int16 * y: int16 -> bool
+            static member inline op_LessThan: x: int32 * y: int32 -> bool
+            static member inline op_LessThan: x: int64 * y: int64 -> bool
+            static member inline op_LessThan: x: byte * y: byte -> bool
+            static member inline op_LessThan: x: uint16 * y: uint16 -> bool
+            static member inline op_LessThan: x: uint32 * y: uint32 -> bool
+            static member inline op_LessThan: x: uint64 * y: uint64 -> bool
+            static member inline op_LessThan: x: unativeint * y: unativeint -> bool
+            static member inline op_LessThan: x: nativeint * y: nativeint -> bool
+            static member inline op_LessThan: x: float * y: float -> bool
+            static member inline op_LessThan: x: float32 * y: float32 -> bool
+            static member inline op_LessThan: x: char * y: char -> bool
+            static member inline op_LessThan: x: decimal * y: decimal -> bool
+            static member inline op_LessThan: x: string * y: string -> bool
+
+            static member inline op_GreaterThan: x: bool * y: bool -> bool
+            static member inline op_GreaterThan: x: sbyte * y: sbyte -> bool
+            static member inline op_GreaterThan: x: int16 * y: int16 -> bool
+            static member inline op_GreaterThan: x: int32 * y: int32 -> bool
+            static member inline op_GreaterThan: x: int64 * y: int64 -> bool
+            static member inline op_GreaterThan: x: nativeint * y: nativeint -> bool
+            static member inline op_GreaterThan: x: byte * y: byte -> bool
+            static member inline op_GreaterThan: x: uint16 * y: uint16 -> bool
+            static member inline op_GreaterThan: x: uint32 * y: uint32 -> bool
+            static member inline op_GreaterThan: x: uint64 * y: uint64 -> bool
+            static member inline op_GreaterThan: x: unativeint * y: unativeint -> bool
+            static member inline op_GreaterThan: x: float * y: float -> bool
+            static member inline op_GreaterThan: x: float32 * y: float32 -> bool
+            static member inline op_GreaterThan: x: char * y: char -> bool
+            static member inline op_GreaterThan: x: decimal * y: decimal -> bool
+            static member inline op_GreaterThan: x: string * y: string -> bool
+
+            static member inline op_LessThanOrEqual: x: bool * y: bool -> bool
+            static member inline op_LessThanOrEqual: x: sbyte * y: sbyte -> bool
+            static member inline op_LessThanOrEqual: x: int16 * y: int16 -> bool
+            static member inline op_LessThanOrEqual: x: int32 * y: int32 -> bool
+            static member inline op_LessThanOrEqual: x: int64 * y: int64 -> bool
+            static member inline op_LessThanOrEqual: x: nativeint * y: nativeint -> bool
+            static member inline op_LessThanOrEqual: x: byte * y: byte -> bool
+            static member inline op_LessThanOrEqual: x: uint16 * y: uint16 -> bool
+            static member inline op_LessThanOrEqual: x: uint32 * y: uint32 -> bool
+            static member inline op_LessThanOrEqual: x: uint64 * y: uint64 -> bool
+            static member inline op_LessThanOrEqual: x: unativeint * y: unativeint -> bool
+            static member inline op_LessThanOrEqual: x: float * y: unativeint -> bool
+            static member inline op_LessThanOrEqual: x: float32 * y: float32 -> bool
+            static member inline op_LessThanOrEqual: x: char * y: char -> bool
+            static member inline op_LessThanOrEqual: x: decimal * y: decimal -> bool
+            static member inline op_LessThanOrEqual: x: string * y: string -> bool
+
+            static member inline op_GreaterThanOrEqual: x: bool * y: bool -> bool
+            static member inline op_GreaterThanOrEqual: x: sbyte * y: sbyte -> bool
+            static member inline op_GreaterThanOrEqual: x: int16 * y: int16 -> bool
+            static member inline op_GreaterThanOrEqual: x: int32 * y: int32 -> bool
+            static member inline op_GreaterThanOrEqual: x: int64 * y: int64 -> bool
+            static member inline op_GreaterThanOrEqual: x: nativeint * y: nativeint -> bool
+            static member inline op_GreaterThanOrEqual: x: byte * y: byte -> bool
+            static member inline op_GreaterThanOrEqual: x: uint16 * y: uint16 -> bool
+            static member inline op_GreaterThanOrEqual: x: uint32 * y: uint32 -> bool
+            static member inline op_GreaterThanOrEqual: x: uint64 * y: uint64 -> bool
+            static member inline op_GreaterThanOrEqual: x: unativeint * y: unativeint -> bool
+            static member inline op_GreaterThanOrEqual: x: float * y: float -> bool
+            static member inline op_GreaterThanOrEqual: x: float32 * y: float32 -> bool
+            static member inline op_GreaterThanOrEqual: x: char * y: char -> bool
+            static member inline op_GreaterThanOrEqual: x: decimal * y: decimal -> bool
+            static member inline op_GreaterThanOrEqual: x: string * y: string -> bool
+
+            static member inline op_Equality: x: bool * y: bool -> bool
+            static member inline op_Equality: x: sbyte * y: sbyte -> bool
+            static member inline op_Equality: x: int16 * y: int16 -> bool
+            static member inline op_Equality: x: int32 * y: int32 -> bool
+            static member inline op_Equality: x: int64 * y: int64 -> bool
+            static member inline op_Equality: x: byte * y: byte -> bool
+            static member inline op_Equality: x: uint16 * y: uint16 -> bool
+            static member inline op_Equality: x: uint32 * y: uint32 -> bool
+            static member inline op_Equality: x: uint64 * y: uint64 -> bool
+            static member inline op_Equality: x: float * y: float -> bool
+            static member inline op_Equality: x: float32 * y: float32 -> bool
+            static member inline op_Equality: x: char * y: char -> bool
+            static member inline op_Equality: x: nativeint * y: nativeint -> bool
+            static member inline op_Equality: x: unativeint * y: unativeint -> bool
+            static member inline op_Equality: x: string * y: string -> bool
+            static member inline op_Equality: x: decimal * y: v -> bool
+
+            static member inline op_Inequality: x: bool * y: bool -> bool
+            static member inline op_Inequality: x: sbyte * y: sbyte -> bool
+            static member inline op_Inequality: x: int16 * y: int16 -> bool
+            static member inline op_Inequality: x: int32 * y: int32 -> bool
+            static member inline op_Inequality: x: int64 * y: int64 -> bool
+            static member inline op_Inequality: x: byte * y: byte -> bool
+            static member inline op_Inequality: x: uint16 * y: uint16 -> bool
+            static member inline op_Inequality: x: uint32 * y: uint32 -> bool
+            static member inline op_Inequality: x: uint64 * y: uint64 -> bool
+            static member inline op_Inequality: x: float * y: float -> bool
+            static member inline op_Inequality: x: float32 * y: float32 -> bool
+            static member inline op_Inequality: x: char * y: char -> bool
+            static member inline op_Inequality: x: nativeint * y: nativeint -> bool
+            static member inline op_Inequality: x: unativeint * y: unativeint -> bool
+            static member inline op_Inequality: x: string * y: string -> bool
+            static member inline op_Inequality: x: decimal * y: decimal -> bool
+
+            static member inline DivideByInt: x: float * y: int -> float
+            static member inline DivideByInt: x: float32 * y: int -> float32
+            static member inline DivideByInt: x: decimal * y: int -> decimal
+
         /// <summary>For compiler use only</summary>
         module (* internal *) ErrorStrings = 
 
@@ -2745,7 +3210,7 @@ namespace Microsoft.FSharp.Core
         /// input types the operation requires an appropriate static conversion method on the input type.</summary>
         /// <param name="value">The input value.</param>
         /// <returns>The converted char.</returns>
-        [<NoDynamicInvocation(true)>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToChar")>]
         val inline char        : value:^T -> char      when ^T : (static member op_Explicit : ^T -> char)        and default ^T : int
 
@@ -3184,14 +3649,14 @@ namespace Microsoft.FSharp.Core
             /// <summary>Overloaded unary negation (checks for overflow)</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The negated value.</returns>
-            [<NoDynamicInvocation(true)>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline ( ~- ) : value:^T -> ^T when ^T : (static member ( ~- ) : ^T -> ^T) and default ^T : int
 
             /// <summary>Overloaded subtraction operator (checks for overflow)</summary>
             /// <param name="x">The first value.</param>
             /// <param name="y">The second value.</param>
             /// <returns>The first value minus the second value.</returns>
-            [<NoDynamicInvocation(true)>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline ( - ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( - ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
 
             /// <summary>Overloaded addition operator (checks for overflow)</summary>
@@ -3204,7 +3669,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="x">The first value.</param>
             /// <param name="y">The second value.</param>
             /// <returns>The product of the two input values.</returns>
-            [<NoDynamicInvocation(true)>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline ( * ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( * ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
 
             /// <summary>Converts the argument to <c>byte</c>. This is a direct, checked conversion for all 
@@ -3213,7 +3678,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted byte</returns>
-            [<NoDynamicInvocation(true)>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToByte")>]
             val inline byte       : value:^T -> byte       when ^T : (static member op_Explicit : ^T -> byte)       and default ^T : int
 
@@ -3223,7 +3688,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted sbyte</returns>
-            [<NoDynamicInvocation(true)>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToSByte")>]
             val inline sbyte      : value:^T -> sbyte      when ^T : (static member op_Explicit : ^T -> sbyte)      and default ^T : int
 
@@ -3233,7 +3698,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted int16</returns>
-            [<NoDynamicInvocation(true)>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToInt16")>]
             val inline int16      : value:^T -> int16      when ^T : (static member op_Explicit : ^T -> int16)      and default ^T : int
 
@@ -3243,7 +3708,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted uint16</returns>
-            [<NoDynamicInvocation(true)>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUInt16")>]
             val inline uint16     : value:^T -> uint16     when ^T : (static member op_Explicit : ^T -> uint16)     and default ^T : int
 
@@ -3253,7 +3718,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted int</returns>
-            [<NoDynamicInvocation(true)>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToInt")>]
             val inline int        : value:^T -> int        when ^T : (static member op_Explicit : ^T -> int)        and default ^T : int
 
@@ -3263,7 +3728,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted int32</returns>
-            [<NoDynamicInvocation(true)>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToInt32")>]
             val inline int32      : value:^T -> int32      when ^T : (static member op_Explicit : ^T -> int32)      and default ^T : int
 
@@ -3273,7 +3738,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted uint32</returns>
-            [<NoDynamicInvocation(true)>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUInt32")>]
             val inline uint32     : value:^T -> uint32     when ^T : (static member op_Explicit : ^T -> uint32)     and default ^T : int
 
@@ -3283,7 +3748,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted int64</returns>
-            [<NoDynamicInvocation(true)>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToInt64")>]
             val inline int64      : value:^T -> int64      when ^T : (static member op_Explicit : ^T -> int64)      and default ^T : int
 
@@ -3293,7 +3758,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted uint64</returns>
-            [<NoDynamicInvocation(true)>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUInt64")>]
             val inline uint64     : value:^T -> uint64     when ^T : (static member op_Explicit : ^T -> uint64)     and default ^T : int
 
@@ -3302,7 +3767,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted nativeint</returns>
-            [<NoDynamicInvocation(true)>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToIntPtr")>]
             val inline nativeint  : value:^T -> nativeint  when ^T : (static member op_Explicit : ^T -> nativeint)  and default ^T : int
 
@@ -3311,7 +3776,7 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted unativeint</returns>
-            [<NoDynamicInvocation(true)>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUIntPtr")>]
             val inline unativeint : value:^T -> unativeint when ^T : (static member op_Explicit : ^T -> unativeint) and default ^T : int
 
@@ -3321,7 +3786,7 @@ namespace Microsoft.FSharp.Core
             /// appropriate static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted char</returns>
-            [<NoDynamicInvocation(true)>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToChar")>]
             val inline char        : value:^T -> char      when ^T : (static member op_Explicit : ^T -> char)        and default ^T : int
 
