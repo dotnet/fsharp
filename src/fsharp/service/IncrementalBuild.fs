@@ -1338,9 +1338,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     //
                     // In the invalidation handler we use a weak reference to allow the IncrementalBuilder to 
                     // be collected if, for some reason, a TP instance is not disposed or not GC'd.
-                    let weak = WeakReference<_>(importsInvalidated)
+                    let capturedImportsInvalidated = WeakReference<_>(importsInvalidated)
                     ccu.Deref.InvalidateEvent.Add(fun msg -> 
-                        match importsInvalidated.TryGetTarget() with 
+                        match capturedImportsInvalidated.TryGetTarget() with 
                         | true, tg -> tg.Trigger msg
                         | _ -> ()))
 #endif
