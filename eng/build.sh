@@ -215,7 +215,7 @@ function BuildSolution {
   # build bootstrap tools
   bootstrap_config=Proto
   bootstrap_dir=$artifacts_dir/Bootstrap
-  if [ $force_bootstrap == "true" ]; then
+  if [[ "$force_bootstrap" == true ]]; then
      rm -fr $bootstrap_dir
   fi
   if [ ! -f "$bootstrap_dir/fslex.dll" ]; then
