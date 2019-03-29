@@ -216,10 +216,6 @@ function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]
         $args += " /p:ContinuousIntegrationBuild=true"
     }
 
-    if ($bootstrapDir -ne "") {
-        $args += " /p:BootstrapBuildPath=$bootstrapDir"
-    }
-
     $args += " $buildArgs"
     $args += " $projectFilePath"
     $args += " $properties"

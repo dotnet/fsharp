@@ -13,6 +13,7 @@ usage()
   echo "  --binaryLog                Create MSBuild binary log (short: -bl)"
   echo ""
   echo "Actions:"
+  echo "  --bootstrap                Force the build of the bootstrap compiler"
   echo "  --restore                  Restore projects required to build (short: -r)"
   echo "  --build                    Build all projects (short: -b)"
   echo "  --rebuild                  Rebuild all projects"
@@ -44,7 +45,7 @@ while [[ -h "$source" ]]; do
 done
 scriptroot="$( cd -P "$( dirname "$source" )" && pwd )"
 
-restore=false
+restore=true
 build=false
 rebuild=false
 pack=false
@@ -54,6 +55,7 @@ test_core_clr=false
 configuration="Debug"
 verbosity='minimal'
 binary_log=false
+force_bootstrap=false
 ci=false
 skip_analyzers=false
 prepare_machine=false
@@ -87,6 +89,9 @@ while [[ $# > 0 ]]; do
       ;;
     --binarylog|-bl)
       binary_log=true
+      ;;
+    --bootstrap)
+      force_bootstrap=true
       ;;
     --restore|-r)
       restore=true
@@ -204,22 +209,42 @@ function BuildSolution {
   if [[ "$ci" != true ]]; then
     quiet_restore=true
   fi
+  fslexyacc_target_framework=netcoreapp2.0
+
+  # Node reuse fails because multiple different versions of FSharp.Build.dll get loaded into MSBuild nodes
+  node_reuse=false
 
   # build bootstrap tools
   bootstrap_config=Proto
-  MSBuild "$repo_root/src/buildtools/buildtools.proj" \
-    /restore \
-    /p:Configuration=$bootstrap_config \
-    /t:Build
-
   bootstrap_dir=$artifacts_dir/Bootstrap
-  mkdir -p "$bootstrap_dir"
-  cp $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.0/* $bootstrap_dir
-  cp $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp2.0/* $bootstrap_dir
+  if [[ "$force_bootstrap" == true ]]; then
+     rm -fr $bootstrap_dir
+  fi
+  if [ ! -f "$bootstrap_dir/fslex.dll" ]; then
+    MSBuild "$repo_root/src/buildtools/buildtools.proj" \
+      /restore \
+      /v:$verbosity \
+      /p:Configuration=$bootstrap_config \
+      /t:Build
+
+    mkdir -p "$bootstrap_dir"
+    cp $artifacts_dir/bin/fslex/$bootstrap_config/$fslexyacc_target_framework/* $bootstrap_dir
+    cp $artifacts_dir/bin/fsyacc/$bootstrap_config/$fslexyacc_target_framework/* $bootstrap_dir
+  fi
+  if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
+    MSBuild "$repo_root/proto.proj" \
+      /restore \
+      /v:$verbosity \
+      /p:Configuration=$bootstrap_config \
+      /t:Build
+
+    cp $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+  fi
 
   # do real build
   MSBuild $toolset_build_proj \
     $bl \
+    /v:$verbosity \
     /p:Configuration=$configuration \
     /p:Projects="$projects" \
     /p:RepoRoot="$repo_root" \
