@@ -805,7 +805,7 @@ and
     /// Get the syntactic range of source code covered by this construct.
     member e.Range =
         match e with
-        | SynExpr.Paren (_,leftParenRange:range,rightParenRange:range option,r:range) ->
+        | SynExpr.Paren (_, leftParenRange, rightParenRange, r) ->
             match rightParenRange with
             | Some rightParenRange when leftParenRange.FileIndex <> rightParenRange.FileIndex -> leftParenRange
             | _ -> r

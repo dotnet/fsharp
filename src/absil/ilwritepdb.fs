@@ -369,27 +369,31 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                         builder.WriteCompressedInteger( 0 )
                         builder.WriteCompressedInteger( MetadataTokens.GetRowNumber(DocumentHandle.op_Implicit(getDocumentHandle (sps.[i].Document))) )
                     else
+                        //=============================================================================================================================================
                         // Sequence-point-record
-                        let offsetDelta =
-                            let offset = sps.[i].Offset
-                            if offset > 0x20000000 then 0                                               //offset out of range
-                            elif i > 0 then offset - sps.[i - 1].Offset                                 // delta from previous offset
-                            else offset                                                                 // delta IL offset
+                        // Validate these with magic numbers according to the portable pdb spec Sequence point dexcription:
+                        // https://github.com/dotnet/corefx/blob/master/src/System.Reflection.Metadata/specs/PortablePdb-Metadata.md#methoddebuginformation-table-0x31
+                        //=============================================================================================================================================
+                        let validateOffset v = v >= 0 && v < 0x20000000
+                        let validateLine v = (v >= 0 && v < 0x20000000) || v = 0xfeefee
+                        let validateColumn v = v >= 0 && v < 0x10000
 
-                        if i < 1 || offsetDelta <> 0 then                                               // ILOffset must not be 0
+                        let offset = sps.[i].Offset
+                        let startLine = sps.[i].Line
+                        let endLine = sps.[i].EndLine
+                        let startColumn = sps.[i].Column
+                        let endColumn = sps.[i].EndColumn
+
+                        let offsetDelta =
+                            if i > 0 then offset - sps.[i - 1].Offset                                   // delta from previous offset
+                            else offset
+
+                        if i < 1 || (offsetDelta <> 0 && (validateOffset offset) && (validateLine startLine) && (validateLine endLine) && (validateColumn startColumn) && (validateColumn endColumn)) then
+
                             builder.WriteCompressedInteger(offsetDelta)
 
-                            let capLine v = if v < 0 || v >= 0x20000000 then 0xfeefee else v
-                            let capColumn v = if v < 0 || v >= 0x10000 then true, 0 else false, v
-
-                            let startLine = capLine sps.[i].Line
-                            let endLine = capLine sps.[i].EndLine
-                            let startColumnIsCapped, startColumn = capColumn sps.[i].Column
-                            let endColumnIsCapped, endColumn = capColumn sps.[i].EndColumn
-
                             if startLine = 0xfeefee || endLine = 0xfeefee ||                            // Hidden-sequence-point-record
-                               startLine > endLine || (startColumn = 0 && endColumn = 0) ||
-                               startColumnIsCapped || endColumnIsCapped
+                               startLine > endLine || (startColumn = 0 && endColumn = 0)
                             then
                                 builder.WriteCompressedInteger(0)
                                 builder.WriteCompressedInteger(0)
@@ -398,12 +402,11 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                                 builder.WriteCompressedInteger(deltaLines)
 
                                 let deltaColumns = endColumn - startColumn                              // Columns
-                                try
-                                    if deltaLines = 0 then
-                                        builder.WriteCompressedInteger(deltaColumns)
-                                    else
-                                        builder.WriteCompressedSignedInteger(deltaColumns)
-                                with | _ -> System.Diagnostics.Debugger.Break()
+                                if deltaLines = 0 then
+                                    builder.WriteCompressedInteger(deltaColumns)
+                                else
+                                    builder.WriteCompressedSignedInteger(deltaColumns)
+
                                 if previousNonHiddenStartLine < 0 then                                  // delta Start Line & Column:
                                     builder.WriteCompressedInteger(startLine)
                                     builder.WriteCompressedInteger(startColumn)
