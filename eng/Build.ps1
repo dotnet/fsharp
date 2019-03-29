@@ -46,6 +46,7 @@ param (
     [switch][Alias('test')]$testDesktop,
     [switch]$testCoreClr,
     [switch]$testFSharpQA,
+    [switch]$testFSharpCore,
     [switch]$testVs,
     [switch]$testAll,
 
@@ -76,6 +77,7 @@ function Print-Usage() {
     Write-Host "  -testDesktop              Run tests against full .NET Framework"
     Write-Host "  -testCoreClr              Run tests against CoreCLR"
     Write-Host "  -testFSharpQA             Run F# Cambridge tests"
+    Write-Host "  -testFSharpCore           Run FSharpCore unit tests"
     Write-Host "  -testVs                   Run F# editor unit tests"
     Write-Host ""
     Write-Host "Advanced settings:"
@@ -187,10 +189,10 @@ function UpdatePath() {
 }
 
 function VerifyAssemblyVersions() {
-    $fsiPath = Join-Path $ArtifactsDir "bin\fsi\$configuration\net46\fsi.exe"
+    $fsiPath = Join-Path $ArtifactsDir "bin\fsi\Proto\net46\fsi.exe"
 
-    # desktop fsi isn't always built
-    if (Test-Path $fsiPath) {
+    # Only verify versions on CI or official build
+    if ($ci -or $official) {
         $asmVerCheckPath = "$RepoRoot\scripts"
         Exec-Console $fsiPath """$asmVerCheckPath\AssemblyVersionCheck.fsx"" -- ""$ArtifactsDir"""
     }
@@ -270,6 +272,14 @@ try {
         Exec-Console $perlExe """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
         Pop-Location
     }
+
+    if ($testFSharpCore) {
+        Write-Host "Environment Variables"
+        Get-Childitem Env:
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
+    }
+
 
     if ($testVs) {
         Write-Host "Environment Variables"

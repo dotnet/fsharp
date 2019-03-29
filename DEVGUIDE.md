@@ -114,12 +114,12 @@ components installed in that VS installation.  You can revert this step by disab
 For **Debug**, uninstall then reinstall:
 
     VSIXInstaller.exe /u:"VisualFSharp"
-    VSIXInstaller.exe artifacts\bin\VisualFSharpFull\Debug\net46\VisualFSharpFull.vsix
+    VSIXInstaller.exe artifacts\VSSetup\Debug\VisualFSharpFull.vsix
 
 For **Release**, uninstall then reinstall:
 
     VSIXInstaller.exe /u:"VisualFSharp"
-    VSIXInstaller.exe artifacts\bin\VisualFSharpFull\Release\net46\VisualFSharpFull.vsix
+    VSIXInstaller.exe artifacts\VSSetup\Release\VisualFSharpFull.vsix
 
 Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools with updated F# Interactive.
 
