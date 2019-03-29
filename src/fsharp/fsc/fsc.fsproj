@@ -30,7 +30,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Condition="'$(Configuration)' != 'Proto'" Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+    <PackageReference Condition="'$(Configuration)' == 'Proto'" Include="FSharp.Core" Version="4.6.2" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Build\FSharp.Build.fsproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
   </ItemGroup>

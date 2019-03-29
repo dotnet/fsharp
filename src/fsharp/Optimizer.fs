@@ -136,16 +136,24 @@ type ValInfos(entries) =
                    t.Add (vref.Deref, (vref, x))
               t)
 
-    // The compiler ValRef's into fslib stored in env.fs break certain invariants that hold elsewhere, 
+    // The compiler ValRef's in TcGLobals.fs break certain invariants that hold elsewhere, 
     // because they dereference to point to Val's from signatures rather than Val's from implementations.
     // Thus a backup alternative resolution technique is needed for these.
     let valInfosForFslib = 
-        lazy (
-            let dict = Dictionary<_, _>()
+        LazyWithContext<_, TcGlobals>.Create ((fun g -> 
+            let dict = 
+                Dictionary<ValLinkageFullKey, (ValRef * ValInfo)>
+                    (HashIdentity.FromFunctions
+                         (fun (k: ValLinkageFullKey) -> hash k.PartialKey) 
+                         (fun k1 k2 -> 
+                             k1.PartialKey = k2.PartialKey && 
+                             match k1.TypeForLinkage, k2.TypeForLinkage with
+                             | Some ty1, Some ty2 -> typeEquiv g ty1 ty2
+                             | _ -> false))
             for (vref, _x) as p in entries do 
-                let vkey = vref.Deref.GetLinkagePartialKey()
+                let vkey = vref.Deref.GetLinkageFullKey()
                 dict.Add(vkey, p) |> ignore
-            dict)
+            dict), id)
 
     member x.Entries = valInfoTable.Force().Values
 
@@ -155,7 +163,7 @@ type ValInfos(entries) =
 
     member x.TryFind (v: ValRef) = valInfoTable.Force().TryFind v.Deref
 
-    member x.TryFindForFslib (v: ValRef) = valInfosForFslib.Force().TryGetValue(v.Deref.GetLinkagePartialKey())
+    member x.TryFindForFslib (g, v: ValRef) = valInfosForFslib.Force(g).TryGetValue(v.Deref.GetLinkageFullKey())
 
 type ModuleInfo = 
     { ValInfos: ValInfos
@@ -616,7 +624,7 @@ let GetInfoForNonLocalVal cenv env (vref: ValRef) =
                   //dprintn ("\n\n*** Optimization info for value "+n+" from module "+(full_name_of_nlpath smv)+" not found, module contains values: "+String.concat ", " (NameMap.domainL structInfo.ValInfos))  
                   //System.Diagnostics.Debug.Assert(false, sprintf "Break for module %s, value %s" (full_name_of_nlpath smv) n)
                   if cenv.g.compilingFslib then 
-                      match structInfo.ValInfos.TryFindForFslib(vref) with 
+                      match structInfo.ValInfos.TryFindForFslib(cenv.g, vref) with 
                       | true, ninfo -> snd ninfo
                       | _ -> UnknownValInfo
                   else
