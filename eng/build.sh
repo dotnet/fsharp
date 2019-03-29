@@ -13,6 +13,7 @@ usage()
   echo "  --binaryLog                Create MSBuild binary log (short: -bl)"
   echo ""
   echo "Actions:"
+  echo "  --bootstrap                Force the build of the bootstrap compiler"
   echo "  --restore                  Restore projects required to build (short: -r)"
   echo "  --build                    Build all projects (short: -b)"
   echo "  --rebuild                  Rebuild all projects"
@@ -54,6 +55,7 @@ test_core_clr=false
 configuration="Debug"
 verbosity='minimal'
 binary_log=false
+force_bootstrap=false
 ci=false
 skip_analyzers=false
 prepare_machine=false
@@ -87,6 +89,9 @@ while [[ $# > 0 ]]; do
       ;;
     --binarylog|-bl)
       binary_log=true
+      ;;
+    --bootstrap)
+      force_bootstrap=true
       ;;
     --restore|-r)
       restore=true
@@ -209,26 +214,35 @@ function BuildSolution {
 
   # build bootstrap tools
   bootstrap_config=Proto
-  MSBuild "$repo_root/src/buildtools/buildtools.proj" \
-    /restore \
-    /p:Configuration=$bootstrap_config \
-    /t:Build
-
   bootstrap_dir=$artifacts_dir/Bootstrap
-  mkdir -p "$bootstrap_dir"
-  cp $artifacts_dir/bin/fslex/$bootstrap_config/$coreclr_target_framework/* $bootstrap_dir
-  cp $artifacts_dir/bin/fsyacc/$bootstrap_config/$coreclr_target_framework/* $bootstrap_dir
+  if [ $force_bootstrap == "true" ]; then
+     rm -fr $bootstrap_dir
+  fi
+  if [ ! -f "$bootstrap_dir/fslex.dll" ]; then
+    MSBuild "$repo_root/src/buildtools/buildtools.proj" \
+      /restore \
+      /v:$verbosity \
+      /p:Configuration=$bootstrap_config \
+      /t:Build
 
-  MSBuild "$repo_root/proto.proj" \
-    /restore \
-    /p:Configuration=$bootstrap_config \
-    /t:Build
+    mkdir -p "$bootstrap_dir"
+    cp $artifacts_dir/bin/fslex/$bootstrap_config/$coreclr_target_framework/* $bootstrap_dir
+    cp $artifacts_dir/bin/fsyacc/$bootstrap_config/$coreclr_target_framework/* $bootstrap_dir
+  fi
+  if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
+    MSBuild "$repo_root/proto.proj" \
+      /restore \
+      /v:$verbosity \
+      /p:Configuration=$bootstrap_config \
+      /t:Build
 
-  cp $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+    cp $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+  fi
 
   # do real build
   MSBuild $toolset_build_proj \
     $bl \
+    /v:$verbosity \
     /p:Configuration=$configuration \
     /p:Projects="$projects" \
     /p:RepoRoot="$repo_root" \
@@ -239,7 +253,6 @@ function BuildSolution {
     /p:Publish=$publish \
     /p:UseRoslynAnalyzers=$enable_analyzers \
     /p:ContinuousIntegrationBuild=$ci \
-    /p:BootstrapBuildPath="$bootstrap_dir" \
     /p:QuietRestore=$quiet_restore \
     /p:QuietRestoreBinaryLog="$binary_log" \
     $properties
