@@ -2130,7 +2130,7 @@ val buildAccessPath : CompilationPath option -> string
 
 val XmlDocArgsEnc : TcGlobals -> Typars * Typars -> TType list -> string
 
-val XmlDocSigOfVal : TcGlobals -> string -> Val -> string
+val XmlDocSigOfVal : TcGlobals -> full: bool ->  string -> Val -> string
 
 val XmlDocSigOfUnionCase : (string list -> string)
 

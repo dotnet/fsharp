@@ -1422,10 +1422,13 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
         Some (MakeApplicationAndBetaReduce g (expr, tyOfExpr g expr, [], argExprs, m))
 
     | Choice5Of5 () -> 
+        match traitInfo.Solution with 
+        | None -> None // the trait has been generalized
+        | Some _->
         let rty = match traitInfo.ReturnType with None -> g.unit_ty | Some ty -> ty
         match traitInfo.MemberName, traitInfo.MemberFlags.IsInstance, traitInfo.ArgumentTypes, argExprs with 
-        | "op_Division", false, [argty1;argty2], [arg1; arg2] -> mkCallDivisionOperator g m  argty1 argty2 rty arg1 arg2 |> Some
-        | "op_Addition", false, [argty1;argty2], [arg1; arg2] -> mkCallAdditionOperator g m  argty1 argty2 rty arg1 arg2 |> Some
+        | "op_Division", false, [argty1;argty2], [arg1; arg2] -> mkCallDivisionOperator g m argty1 argty2 rty arg1 arg2 |> Some
+        | "op_Addition", false, [argty1;argty2], [arg1; arg2] -> mkCallAdditionOperator g m argty1 argty2 rty arg1 arg2 |> Some
 (*
         | "op_Multiply", [argty1;argty2], [arg1; arg2]
         | "op_Subtraction", [argty1;argty2], [arg1; arg2]

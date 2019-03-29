@@ -7766,8 +7766,8 @@ let buildAccessPath (cp: CompilationPath option) =
     | None -> "Extension Type"
 let prependPath path name = if path = "" then name else path + "." + name
 
-let XmlDocSigOfVal g path (v: Val) =
-  let parentTypars, methTypars, cxs, argInfos, prefix, path, name = 
+let XmlDocSigOfVal g full path (v: Val) =
+  let parentTypars, methTypars, cxs, argInfos, rty, prefix, path, name = 
 
     // CLEANUP: this is one of several code paths that treat module values and members 
     // separately when really it would be cleaner to make sure GetTopValTypeInFSharpForm, GetMemberTypeInFSharpForm etc.
@@ -7776,7 +7776,7 @@ let XmlDocSigOfVal g path (v: Val) =
     match v.MemberInfo with 
     | Some membInfo when not v.IsExtensionMember -> 
         // Methods, Properties etc.
-        let tps, cxs, argInfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags (Option.get v.ValReprInfo) v.Type v.Range
+        let tps, cxs, argInfos, rty, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags (Option.get v.ValReprInfo) v.Type v.Range
         let prefix, name = 
           match membInfo.MemberFlags.MemberKind with 
           | MemberKind.ClassConstructor 
@@ -7790,20 +7790,20 @@ let XmlDocSigOfVal g path (v: Val) =
           match PartitionValTypars g v with
           | Some(_, memberParentTypars, memberMethodTypars, _, _) -> memberParentTypars, memberMethodTypars
           | None -> [], tps
-        parentTypars, methTypars, cxs, argInfos, prefix, path, name
+        parentTypars, methTypars, cxs, argInfos, rty, prefix, path, name
     | _ ->
         // Regular F# values and extension members 
         let w = arityOfVal v
-        let tps, cxs, argInfos, _, _ = GetTopValTypeInCompiledForm g w v.Type v.Range
+        let tps, cxs, argInfos, rty, _ = GetTopValTypeInCompiledForm g w v.Type v.Range
         let name = v.CompiledName
         let prefix =
           if w.NumCurriedArgs = 0 && isNil tps then "P:"
           else "M:"
-        [], tps, cxs, argInfos, prefix, path, name
+        [], tps, cxs, argInfos, rty, prefix, path, name
 
   let witnessArgTys = GenWitnessTys g cxs
   let argTys = argInfos |> List.concat |> List.map fst
-  let argTys = witnessArgTys @ argTys
+  let argTys = witnessArgTys @ argTys @ (match rty with Some t when full -> [t] | _ -> []) 
   let args = XmlDocArgsEnc g (parentTypars, methTypars) argTys
   let arity = List.length methTypars in (* C# XML doc adds ``<arity> to *generic* member names *)
   let genArity = if arity=0 then "" else sprintf "``%d" arity

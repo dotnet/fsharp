@@ -136,22 +136,31 @@ type ValInfos(entries) =
                    t.Add (vref.Deref, (vref, x))
               t)
 
-    // The compiler ValRef's in TcGLobals.fs break certain invariants that hold elsewhere, 
+    // The compiler's ValRef's in TcGlobals.fs that refer to things in FSharp.Core break certain invariants that hold elsewhere, 
     // because they dereference to point to Val's from signatures rather than Val's from implementations.
-    // Thus a backup alternative resolution technique is needed for these.
+    // Thus a backup alternative resolution technique is needed for these when processing the FSharp.Core implementation files
+    // holding these items. This resolution must be able to distinguish between overloaded methods, so we use
+    // XmlDocSigOfVal as a cheap hack to get a unique item of data for a value.
     let valInfosForFslib = 
         LazyWithContext<_, TcGlobals>.Create ((fun g -> 
             let dict = 
-                Dictionary<ValLinkageFullKey, (ValRef * ValInfo)>
+                Dictionary<(ValRef * ValLinkageFullKey), (ValRef * ValInfo)>
                     (HashIdentity.FromFunctions
-                         (fun (k: ValLinkageFullKey) -> hash k.PartialKey) 
-                         (fun k1 k2 -> 
+                         (fun (_: ValRef, k: ValLinkageFullKey) -> hash k.PartialKey)
+                         (fun (v1, k1) (v2, k2) -> 
                              k1.PartialKey = k2.PartialKey && 
+                             // dismbiguate overloads, somewhat low-perf but only use for a handful of overloads in FSharp.Core
                              match k1.TypeForLinkage, k2.TypeForLinkage with
-                             | Some ty1, Some ty2 -> typeEquiv g ty1 ty2
+                             | Some _, Some _ -> 
+                                 let sig1 = XmlDocSigOfVal g true "" v1.Deref 
+                                 let sig2 = XmlDocSigOfVal g true "" v2.Deref
+                                 (sig1 = sig2) 
+                             | None, None -> true
                              | _ -> false))
             for (vref, _x) as p in entries do 
-                let vkey = vref.Deref.GetLinkageFullKey()
+                let vkey = (vref, vref.Deref.GetLinkageFullKey())
+                if dict.ContainsKey vkey then 
+                    failwithf "dictionary already contains key %A" vkey
                 dict.Add(vkey, p) |> ignore
             dict), id)
 
@@ -163,7 +172,8 @@ type ValInfos(entries) =
 
     member x.TryFind (v: ValRef) = valInfoTable.Force().TryFind v.Deref
 
-    member x.TryFindForFslib (g, v: ValRef) = valInfosForFslib.Force(g).TryGetValue(v.Deref.GetLinkageFullKey())
+    member x.TryFindForFslib (g, vref: ValRef) =
+        valInfosForFslib.Force(g).TryGetValue((vref, vref.Deref.GetLinkageFullKey()))
 
 type ModuleInfo = 
     { ValInfos: ValInfos
