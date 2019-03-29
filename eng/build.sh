@@ -45,7 +45,7 @@ while [[ -h "$source" ]]; do
 done
 scriptroot="$( cd -P "$( dirname "$source" )" && pwd )"
 
-restore=false
+restore=true
 build=false
 rebuild=false
 pack=false
@@ -209,13 +209,15 @@ function BuildSolution {
   if [[ "$ci" != true ]]; then
     quiet_restore=true
   fi
-
   coreclr_target_framework=netcoreapp2.0
+
+  # Node reuse fails because multiple different versions of FSharp.Build.dll get loaded into MSBuild nodes
+  node_reuse=false
 
   # build bootstrap tools
   bootstrap_config=Proto
   bootstrap_dir=$artifacts_dir/Bootstrap
-  if [ $force_bootstrap == "true" ]; then
+  if [[ "$force_bootstrap" == true ]]; then
      rm -fr $bootstrap_dir
   fi
   if [ ! -f "$bootstrap_dir/fslex.dll" ]; then
