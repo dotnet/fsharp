@@ -13,6 +13,7 @@ usage()
   echo "  --binaryLog                Create MSBuild binary log (short: -bl)"
   echo ""
   echo "Actions:"
+  echo "  --bootstrap                Force the build of the bootstrap compiler"
   echo "  --restore                  Restore projects required to build (short: -r)"
   echo "  --build                    Build all projects (short: -b)"
   echo "  --rebuild                  Rebuild all projects"
@@ -54,6 +55,7 @@ test_core_clr=false
 configuration="Debug"
 verbosity='minimal'
 binary_log=false
+force_bootstrap=false
 ci=false
 skip_analyzers=false
 prepare_machine=false
@@ -87,6 +89,9 @@ while [[ $# > 0 ]]; do
       ;;
     --binarylog|-bl)
       binary_log=true
+      ;;
+    --bootstrap)
+      force_bootstrap=true
       ;;
     --restore|-r)
       restore=true
@@ -210,6 +215,9 @@ function BuildSolution {
   # build bootstrap tools
   bootstrap_config=Proto
   bootstrap_dir=$artifacts_dir/Bootstrap
+  if [ $force_bootstrap == "true" ]; then
+     rm -fr $bootstrap_dir
+  fi
   if [ ! -f "$bootstrap_dir/fslex.dll" ]; then
     MSBuild "$repo_root/src/buildtools/buildtools.proj" \
       /restore \
