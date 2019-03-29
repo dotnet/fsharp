@@ -209,7 +209,7 @@ function BuildSolution {
   if [[ "$ci" != true ]]; then
     quiet_restore=true
   fi
-  coreclr_target_framework=netcoreapp2.0
+  fslexyacc_target_framework=netcoreapp2.0
 
   # Node reuse fails because multiple different versions of FSharp.Build.dll get loaded into MSBuild nodes
   node_reuse=false
@@ -228,8 +228,8 @@ function BuildSolution {
       /t:Build
 
     mkdir -p "$bootstrap_dir"
-    cp $artifacts_dir/bin/fslex/$bootstrap_config/$coreclr_target_framework/* $bootstrap_dir
-    cp $artifacts_dir/bin/fsyacc/$bootstrap_config/$coreclr_target_framework/* $bootstrap_dir
+    cp $artifacts_dir/bin/fslex/$bootstrap_config/$fslexyacc_target_framework/* $bootstrap_dir
+    cp $artifacts_dir/bin/fsyacc/$bootstrap_config/$fslexyacc_target_framework/* $bootstrap_dir
   fi
   if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
     MSBuild "$repo_root/proto.proj" \
@@ -265,9 +265,9 @@ InitializeDotNetCli $restore
 BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
-  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclr_target_framework
-  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclr_target_framework
-  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclr_target_framework
+  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework netcoreapp2.0
+  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework netcoreapp2.0
+  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework netcoreapp2.0
 fi
 
 ExitWithExitCode 0
