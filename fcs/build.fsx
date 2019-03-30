@@ -24,8 +24,6 @@ let isMono = false
 // Utilities
 // --------------------------------------------------------------------------------------
 
-let fslexyaccTargetFramework = "netcoreapp2.0"
- 
 let dotnetExePath =
     // Build.cmd normally downloads a dotnet cli to: <repo-root>\artifacts\toolset\dotnet
     // check if there is one there to avoid downloading an additional one here
@@ -94,8 +92,8 @@ Target "BuildVersion" (fun _ ->
 
 Target "Build" (fun _ ->
     runDotnet __SOURCE_DIRECTORY__ "build ../src/buildtools/buildtools.proj -v n -c Proto"
-    let fslexPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fslex/Proto/" + fslexyaccTargetFramework + "/fslex.dll"
-    let fsyaccPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fsyacc/Proto/" + fslexyaccTargetFramework + "/fsyacc.dll"
+    let fslexPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fslex/Proto/netcoreapp2.0/fslex.dll"
+    let fsyaccPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fsyacc/Proto/netcoreapp2.0/fsyacc.dll"
     runDotnet __SOURCE_DIRECTORY__ (sprintf "build FSharp.Compiler.Service.sln -v n -c Release /p:FsLexPath=%s /p:FsYaccPath=%s" fslexPath fsyaccPath)
 )
 
