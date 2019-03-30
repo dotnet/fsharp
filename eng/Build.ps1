@@ -99,6 +99,7 @@ function Process-Arguments() {
        Print-Usage
        exit 0
     }
+    $script:nodeReuse = $False;
 
     if ($testAll) {
         $script:testDesktop = $True
@@ -189,10 +190,10 @@ function UpdatePath() {
 }
 
 function VerifyAssemblyVersions() {
-    $fsiPath = Join-Path $ArtifactsDir "bin\fsi\$configuration\net46\fsi.exe"
+    $fsiPath = Join-Path $ArtifactsDir "bin\fsi\Proto\net46\fsi.exe"
 
-    # desktop fsi isn't always built
-    if (Test-Path $fsiPath) {
+    # Only verify versions on CI or official build
+    if ($ci -or $official) {
         $asmVerCheckPath = "$RepoRoot\scripts"
         Exec-Console $fsiPath """$asmVerCheckPath\AssemblyVersionCheck.fsx"" -- ""$ArtifactsDir"""
     }

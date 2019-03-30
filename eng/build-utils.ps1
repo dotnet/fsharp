@@ -245,9 +245,7 @@ function Make-BootstrapBuild() {
     $projectPath = "$RepoRoot\proto.proj"
     Run-MSBuild $projectPath "/restore /t:Build" -logFileName "Bootstrap" -configuration $bootstrapConfiguration
     Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm\*" -Destination $dir
-
-    Write-Host "Cleaning Bootstrap compiler artifacts"
-    Run-MSBuild $projectPath "/t:Clean" -logFileName "BootstrapClean" -configuration $bootstrapConfiguration
+    Copy-Item "$ArtifactsDir\bin\fsi\$bootstrapConfiguration\$bootstrapTfm\*" -Destination $dir
 
     return $dir
 }
