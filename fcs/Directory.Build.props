@@ -17,7 +17,11 @@
     <ArtifactsObjDir>$(ArtifactsDir)\obj</ArtifactsObjDir>
     <OutputPath>$(ArtifactsBinDir)\fcs</OutputPath>
     <IntermediateOutputPath>$(ArtifactsObjDir)\fcs</IntermediateOutputPath>
-    <DisableProtoCompiler>true</DisableProtoCompiler>
+    <DisableCompilerRedirection>true</DisableCompilerRedirection>
   </PropertyGroup>
 
+  <!-- SDK targets override -->
+  <PropertyGroup>
+    <ProtoOutputPath>$(ArtifactsBinDir)\FSharp.Build\Proto\net46</ProtoOutputPath>
+  </PropertyGroup>
 </Project>
