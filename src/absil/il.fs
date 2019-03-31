@@ -319,7 +319,16 @@ let sha1HashInt64 s = SHA1.sha1HashInt64 s
 // 
 // -------------------------------------------------------------------- 
 
-type ILVersionInfo = uint16 * uint16 * uint16 * uint16
+[<Struct>]
+type ILVersionInfo =
+
+    val Major: uint16
+    val Minor: uint16
+    val Build: uint16
+    val Revision: uint16
+
+    new(major, minor, build, revision) = 
+        { Major = major; Minor = minor; Build = build; Revision = revision }
 
 type Locale = string
 
@@ -410,7 +419,7 @@ type ILAssemblyRef(data) =
         let version = 
            match aname.Version with 
            | null -> None
-           | v -> Some (uint16 v.Major, uint16 v.Minor, uint16 v.Build, uint16 v.Revision)
+           | v -> Some (ILVersionInfo (uint16 v.Major, uint16 v.Minor, uint16 v.Build, uint16 v.Revision))
            
         let retargetable = aname.Flags = System.Reflection.AssemblyNameFlags.Retargetable
 
@@ -423,15 +432,15 @@ type ILAssemblyRef(data) =
         add(aref.Name)
         match aref.Version with 
         | None -> ()
-        | Some (a, b, c, d) -> 
+        | Some (version) -> 
             add ", Version="
-            add (string (int a))
+            add (string (int version.Major))
             add "."
-            add (string (int b))
+            add (string (int version.Minor))
             add "."
-            add (string (int c))
+            add (string (int version.Build))
             add "."
-            add (string (int d))
+            add (string (int version.Revision))
             add ", Culture="
             match aref.Locale with 
             | None -> add "neutral"
@@ -3559,7 +3568,7 @@ let et_MVAR = 0x1Euy
 let et_CMOD_REQD = 0x1Fuy
 let et_CMOD_OPT = 0x20uy
 
-let formatILVersion ((a, b, c, d):ILVersionInfo) = sprintf "%d.%d.%d.%d" (int a) (int b) (int c) (int d)
+let formatILVersion (version: ILVersionInfo) = sprintf "%d.%d.%d.%d" (int version.Major) (int version.Minor) (int version.Build) (int version.Revision)
 
 let encodeCustomAttrString s = 
     let arr = string_as_utf8_bytes s
@@ -4249,17 +4258,17 @@ let parseILVersion (vstr : string) =
     let zero32 n = if n < 0 then 0us else uint16(n)
     // since the minor revision will be -1 if none is specified, we need to truncate to 0 to not break existing code
     let minorRevision = if version.Revision = -1 then 0us else uint16(version.MinorRevision)   
-    (zero32 version.Major, zero32 version.Minor, zero32 version.Build, minorRevision)
+    ILVersionInfo(zero32 version.Major, zero32 version.Minor, zero32 version.Build, minorRevision)
 
 
-let compareILVersions (a1, a2, a3, a4) ((b1, b2, b3, b4) : ILVersionInfo) = 
-    let c = compare a1 b1
+let compareILVersions (version1 : ILVersionInfo) (version2 : ILVersionInfo) = 
+    let c = compare version1.Major version2.Major
     if c <> 0 then c else
-    let c = compare a2 b2
+    let c = compare version1.Minor version2.Minor
     if c <> 0 then c else
-    let c = compare a3 b3
+    let c = compare version1.Build version2.Build
     if c <> 0 then c else
-    let c = compare a4 b4
+    let c = compare version1.Revision version2.Revision
     if c <> 0 then c else
     0
 
