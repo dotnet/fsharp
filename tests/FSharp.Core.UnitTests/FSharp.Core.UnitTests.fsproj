@@ -89,10 +89,15 @@
     <Content Include="**/*"  Exclude="**/*.bak;Directory.Build.Props;Directory.Build.targets" CopyToOutputDirectory="never" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(BUILD_IN_FSHARP_REPOSITORY)' == 'true'">
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <PackageReference Include="FsCheck" Version="$(FsCheckPackageVersion)" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(BUILD_IN_FSHARP_REPOSITORY)' != 'true'">
+   <PackageReference Include="FSharp.Core" Version="4.6.0" />
+   <PackageReference Include="FsCheck" Version="3.0.0-alpha4" />
+ </ItemGroup>
 
   <ItemGroup Condition="'$(UnitTestType)' == 'xunit'">
     <PackageReference Include="xunit" Version="2.4.1"  PrivateAssets="All" />
