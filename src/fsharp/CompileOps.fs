@@ -3683,7 +3683,7 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
     let mspec = ApplyExportRemappingToEntity tcGlobals exportRemapping mspec
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
     // don't complain when they see the resource.
-    let rname = if ccu.AssemblyName = GetFSharpCoreLibraryName() then FSharpSignatureDataResourceName2 else FSharpSignatureDataResourceName 
+    let rname = if ccu.AssemblyName = getFSharpCoreLibraryName then FSharpSignatureDataResourceName2 else FSharpSignatureDataResourceName 
     let rnameB = FSharpSignatureDataResourceNameB
     PickleToResource inMem file tcGlobals ccu (rname+ccu.AssemblyName)  (rnameB+ccu.AssemblyName) pickleCcuInfo 
         { mspec=mspec 
@@ -3696,7 +3696,7 @@ let GetOptimizationData (file, ilScopeRef, ilModule, byteReader, byteReaderB) =
 let WriteOptimizationData (tcGlobals, file, inMem, ccu: CcuThunk, modulInfo) = 
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
     // don't complain when they see the resource.
-    let rname = if ccu.AssemblyName = GetFSharpCoreLibraryName() then FSharpOptimizationDataResourceName2 else FSharpOptimizationDataResourceName 
+    let rname = if ccu.AssemblyName = getFSharpCoreLibraryName then FSharpOptimizationDataResourceName2 else FSharpOptimizationDataResourceName 
     let rnameB = FSharpOptimizationDataResourceNameB 
     PickleToResource inMem file tcGlobals ccu (rname+ccu.AssemblyName) (rnameB+ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
 
