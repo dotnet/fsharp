@@ -271,9 +271,9 @@ namespace Microsoft.FSharp.Collections
             match list with
             | [] -> state
             | [h] -> f.Invoke(h, state)
-            | [h1;h2] -> f.Invoke(h1, f.Invoke(h2, state))
-            | [h1;h2;h3] -> f.Invoke(h1, f.Invoke(h2, f.Invoke(h3, state)))
-            | [h1;h2;h3;h4] -> f.Invoke(h1, f.Invoke(h2, f.Invoke(h3, f.Invoke(h4, state))))
+            | [h1; h2] -> f.Invoke(h1, f.Invoke(h2, state))
+            | [h1; h2; h3] -> f.Invoke(h1, f.Invoke(h2, f.Invoke(h3, state)))
+            | [h1; h2; h3; h4] -> f.Invoke(h1, f.Invoke(h2, f.Invoke(h3, f.Invoke(h4, state))))
             | _ ->
                 // It is faster to allocate and iterate an array than to create all those
                 // highly nested stacks.  It also means we won't get stack overflows here.
@@ -295,7 +295,7 @@ namespace Microsoft.FSharp.Collections
             let mutable state = initState
             let mutable res = [state]
             for i = fin downto start do
-                state <- f.Invoke(arr.[i], state);
+                state <- f.Invoke(arr.[i], state)
                 res <- state :: res
             res
 
@@ -336,8 +336,8 @@ namespace Microsoft.FSharp.Collections
                 match rest1, rest2 with
                 | [], [] -> f.Invoke(h1, k1, state)
                 | [h2], [k2] -> f.Invoke(h1, k1, f.Invoke(h2, k2, state))
-                | [h2;h3], [k2;k3] -> f.Invoke(h1, k1, f.Invoke(h2, k2, f.Invoke(h3, k3, state)))
-                | [h2;h3;h4], [k2;k3;k4] -> f.Invoke(h1, k1, f.Invoke(h2, k2, f.Invoke(h3, k3, f.Invoke(h4, k4, state))))
+                | [h2; h3], [k2; k3] -> f.Invoke(h1, k1, f.Invoke(h2, k2, f.Invoke(h3, k3, state)))
+                | [h2; h3; h4], [k2; k3; k4] -> f.Invoke(h1, k1, f.Invoke(h2, k2, f.Invoke(h3, k3, f.Invoke(h4, k4, state))))
                 | _ -> foldBack2UsingArrays f list1 list2 state
             | [], xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
             | xs1, [] -> invalidArgDifferentListLength "list2" "list1" xs1.Length

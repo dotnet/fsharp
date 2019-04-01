@@ -658,10 +658,7 @@ module internal Impl =
             ctor.Invoke(BindingFlags.InvokeMethod  ||| BindingFlags.Instance ||| bindingFlags, null, args, null))
 #endif
 
-    //-----------------------------------------------------------------
-    // EXCEPTION DECOMPILATION
-
-
+    /// EXCEPTION DECOMPILATION
     // Check the base type - if it is also an F# type then
     // for the moment we know it is a Discriminated Union
     let isExceptionRepr (typ: Type, bindingFlags) =
