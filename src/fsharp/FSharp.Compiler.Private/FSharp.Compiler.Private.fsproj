@@ -16,11 +16,6 @@
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
   </PropertyGroup>
 
-  <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard')) AND '$(OS)' == 'Windows_NT'">
-    <!-- portable PDBs can't be properly converted for this assembly, see https://github.com/Microsoft/visualfsharp/issues/5976 -->
-    <PublishWindowsPdb>false</PublishWindowsPdb>
-  </PropertyGroup>
-
   <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
     <PropertyGroup>
       <BuildOutputGroupLocation>$(BaseOutputPath)\$(Configuration)\$(TargetFramework)</BuildOutputGroupLocation>
@@ -494,6 +489,9 @@
     </Compile>
 
     <!-- includes the core of the F# Compiler fsc.exe implementation -->
+    <Compile Include="..\DotNetFrameworkDependencies.fs">
+      <Link>Driver\DotNetFrameworkDependencies.fs</Link>
+    </Compile>
     <Compile Include="..\CompileOps.fsi">
       <Link>Driver\CompileOps.fsi</Link>
     </Compile>
