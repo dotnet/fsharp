@@ -483,6 +483,9 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/IlxGen.fs">
       <Link>CodeGen/IlxGen.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/DotNetFrameworkDependencies.fs">
+      <Link>Driver\DotNetFrameworkDependencies.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/CompileOps.fsi">
       <Link>Driver/CompileOps.fsi</Link>
     </Compile>
