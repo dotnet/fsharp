@@ -3683,14 +3683,9 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
     let mspec = ApplyExportRemappingToEntity tcGlobals exportRemapping mspec
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
     // don't complain when they see the resource.
-<<<<<<< HEAD
     let rname = if ccu.AssemblyName = GetFSharpCoreLibraryName() then FSharpSignatureDataResourceName2 else FSharpSignatureDataResourceName 
     let rnameB = FSharpSignatureDataResourceNameB
     PickleToResource inMem file tcGlobals ccu (rname+ccu.AssemblyName)  (rnameB+ccu.AssemblyName) pickleCcuInfo 
-=======
-    let rname = if ccu.AssemblyName = getFSharpCoreLibraryName then FSharpSignatureDataResourceName2 else FSharpSignatureDataResourceName 
-    PickleToResource inMem file tcGlobals ccu (rname+ccu.AssemblyName) pickleCcuInfo 
->>>>>>> 92ffe0ce2611a17134a8cef57df99bf9f81a7a6f
         { mspec=mspec 
           compileTimeWorkingDir=tcConfig.implicitIncludeDir
           usesQuotations = ccu.UsesFSharp20PlusQuotations }
@@ -3701,14 +3696,9 @@ let GetOptimizationData (file, ilScopeRef, ilModule, byteReader, byteReaderB) =
 let WriteOptimizationData (tcGlobals, file, inMem, ccu: CcuThunk, modulInfo) = 
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
     // don't complain when they see the resource.
-<<<<<<< HEAD
     let rname = if ccu.AssemblyName = GetFSharpCoreLibraryName() then FSharpOptimizationDataResourceName2 else FSharpOptimizationDataResourceName 
     let rnameB = FSharpOptimizationDataResourceNameB 
     PickleToResource inMem file tcGlobals ccu (rname+ccu.AssemblyName) (rnameB+ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
-=======
-    let rname = if ccu.AssemblyName = getFSharpCoreLibraryName then FSharpOptimizationDataResourceName2 else FSharpOptimizationDataResourceName 
-    PickleToResource inMem file tcGlobals ccu (rname+ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
->>>>>>> 92ffe0ce2611a17134a8cef57df99bf9f81a7a6f
 
 //----------------------------------------------------------------------------
 // Abstraction for project reference
