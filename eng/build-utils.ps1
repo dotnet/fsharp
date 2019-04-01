@@ -13,7 +13,7 @@ $binaryLog = if (Test-Path variable:binaryLog) { $binaryLog } else { $false }
 $nodeReuse = if (Test-Path variable:nodeReuse) { $nodeReuse } else { $false }
 $bootstrapDir = if (Test-Path variable:bootstrapDir) { $bootstrapDir } else { "" }
 $bootstrapConfiguration = if (Test-Path variable:bootstrapConfiguration) { $bootstrapConfiguration } else { "Proto" }
-$bootstrapTrm = if (Test-Path variable:bootstrapTfm) { $bootstrapConfiguration } else { "net46" }
+$bootstrapTfm = if (Test-Path variable:bootstrapTfm) { $bootstrapTfm } else { "net46" }
 $properties = if (Test-Path variable:properties) { $properties } else { @() }
 
 function GetProjectOutputBinary([string]$fileName, [string]$projectName = "", [string]$configuration = $script:configuration, [string]$tfm = "net46", [string]$rid = "", [bool]$published = $false) {
@@ -249,9 +249,7 @@ function Make-BootstrapBuild() {
     $projectPath = "$RepoRoot\proto.proj"
     Run-MSBuild $projectPath "/restore /t:Build" -logFileName "Bootstrap" -configuration $bootstrapConfiguration
     Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm\*" -Destination $dir
-
-    Write-Host "Cleaning Bootstrap compiler artifacts"
-    Run-MSBuild $projectPath "/t:Clean" -logFileName "BootstrapClean" -configuration $bootstrapConfiguration
+    Copy-Item "$ArtifactsDir\bin\fsi\$bootstrapConfiguration\$bootstrapTfm\*" -Destination $dir
 
     return $dir
 }
