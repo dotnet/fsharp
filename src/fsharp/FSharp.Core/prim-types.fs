@@ -6,8 +6,8 @@
 #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
 #nowarn "60" // Override implementations in augmentations are now deprecated. Override implementations should be given as part of the initial declaration of a type.
 #nowarn "61" // The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.
-#nowarn "69" // Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.
-#nowarn "77" // Member constraints with the name 'Exp' are given special status by the F# compiler as certain .NET types are implicitly augmented with this member. This may result in compilation failures if you attempt to invoke the member constraint from your own code.
+#nowarn "69" // Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration...
+#nowarn "77" // Member constraints with the name 'Exp' are given special status by the F# compiler...
 #nowarn "3218" // mismatch of parameter name for 'fst' and 'snd'
 #nowarn "3244" // no nullness checking
 #nowarn "3245" // no nullness checking
@@ -55,152 +55,152 @@ namespace Microsoft.FSharp.Core
        | UseNullAsTrueValue = 8
        | Event = 16
 
-    [<AttributeUsage(AttributeTargets.Class,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class, AllowMultiple=false)>]
     type SealedAttribute(value:bool) =
         inherit System.Attribute()
         member x.Value = value
         new() = new SealedAttribute(true)
       
-    [<AttributeUsage(AttributeTargets.Class,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class, AllowMultiple=false)>]
     [<Sealed>]
     type AbstractClassAttribute() =
         inherit System.Attribute()
       
-    [<AttributeUsage(AttributeTargets.GenericParameter,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.GenericParameter, AllowMultiple=false)>]
     [<Sealed>]
     type EqualityConditionalOnAttribute() =
         inherit System.Attribute()
       
-    [<AttributeUsage(AttributeTargets.GenericParameter,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.GenericParameter, AllowMultiple=false)>]
     [<Sealed>]
     type ComparisonConditionalOnAttribute() =
         inherit System.Attribute()
       
-    [<AttributeUsage(AttributeTargets.Class,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class, AllowMultiple=false)>]
     [<Sealed>]
     type AllowNullLiteralAttribute(value: bool) =
         inherit System.Attribute()
         member x.Value = value
         new () = new AllowNullLiteralAttribute(true)
       
-    [<AttributeUsage(AttributeTargets.Field,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Field, AllowMultiple=false)>]
     [<Sealed>]
     type VolatileFieldAttribute() =
         inherit System.Attribute()
       
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultAugmentationAttribute(value:bool) = 
         inherit System.Attribute()
         member x.Value = value
 
-    [<AttributeUsage (AttributeTargets.Property,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Property, AllowMultiple=false)>]  
     [<Sealed>]
     type CLIEventAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type CLIMutableAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type AutoSerializableAttribute(value:bool) = 
         inherit System.Attribute()
         member x.Value = value
 
-    [<AttributeUsage (AttributeTargets.Field,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Field, AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultValueAttribute(check:bool) = 
         inherit System.Attribute()
         member x.Check = check
         new() = new DefaultValueAttribute(true)
 
-    [<AttributeUsage (AttributeTargets.Method,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Method, AllowMultiple=false)>]  
     [<Sealed>]
     type EntryPointAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type ReferenceEqualityAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type StructuralComparisonAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type StructuralEqualityAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum, AllowMultiple=false)>]  
     [<Sealed>]
     type NoEqualityAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type CustomEqualityAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type CustomComparisonAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum, AllowMultiple=false)>]  
     [<Sealed>]
     type NoComparisonAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Parameter ||| AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.Constructor,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Parameter ||| AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.Constructor, AllowMultiple=false)>]  
     [<Sealed>]
     type ReflectedDefinitionAttribute(includeValue: bool) =
         inherit System.Attribute()
         new() = ReflectedDefinitionAttribute(false)
         member x.IncludeValue = includeValue
 
-    [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Class ||| AttributeTargets.Field ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum ||| AttributeTargets.Property,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Class ||| AttributeTargets.Field ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum ||| AttributeTargets.Property, AllowMultiple=false)>]  
     [<Sealed>]
     type CompiledNameAttribute(compiledName:string) =
         inherit System.Attribute()
         member x.CompiledName = compiledName
 
-    [<AttributeUsage (AttributeTargets.Struct,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type StructAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.GenericParameter ||| AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.GenericParameter ||| AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type MeasureAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type MeasureAnnotatedAbbreviationAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Interface,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Interface, AllowMultiple=false)>]  
     [<Sealed>]
     type InterfaceAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
     [<Sealed>]
     type ClassAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Field,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Field, AllowMultiple=false)>]
     [<Sealed>]
     type LiteralAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Assembly,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Assembly, AllowMultiple=false)>]
     [<Sealed>]
     type FSharpInterfaceDataVersionAttribute(major:int,minor:int,release:int)  =
         inherit System.Attribute()
@@ -208,7 +208,7 @@ namespace Microsoft.FSharp.Core
         member x.Minor = minor
         member x.Release = release
 
-    [<AttributeUsage(AttributeTargets.All,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type CompilationMappingAttribute(sourceConstructFlags:SourceConstructFlags,
                                      variantNumber:int,
@@ -226,26 +226,26 @@ namespace Microsoft.FSharp.Core
         member x.TypeDefinitions = typeDefinitions
         member x.ResourceName = resourceName
 
-    [<AttributeUsage(AttributeTargets.All,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type CompilationSourceNameAttribute(sourceName:string)  =
         inherit System.Attribute()
         member x.SourceName = sourceName
 
     //-------------------------------------------------------------------------
-    [<AttributeUsage(AttributeTargets.All,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type CompilationRepresentationAttribute (flags : CompilationRepresentationFlags) =
         inherit System.Attribute()
         member x.Flags = flags
 
-    [<AttributeUsage(AttributeTargets.All,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type ExperimentalAttribute(message:string) =
         inherit System.Attribute()
         member x.Message = message    
 
-    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
     type CompilationArgumentCountsAttribute(counts:int[]) =
         inherit System.Attribute()
@@ -253,7 +253,7 @@ namespace Microsoft.FSharp.Core
            let unboxPrim(x:obj) = (# "unbox.any !0" type ('T) x : 'T #)
            (unboxPrim(counts.Clone()) : System.Collections.Generic.IEnumerable<int>)
 
-    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
     type CustomOperationAttribute(name:string) =
         inherit System.Attribute()
@@ -274,18 +274,18 @@ namespace Microsoft.FSharp.Core
         member x.MaintainsVariableSpace with get() = maintainsVarSpace and set v = maintainsVarSpace <- v
         member x.MaintainsVariableSpaceUsingBind with get() = maintainsVarSpaceWithBind and set v = maintainsVarSpaceWithBind <- v
 
-    [<AttributeUsage(AttributeTargets.Parameter,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple=false)>]
     [<Sealed>]
     type ProjectionParameterAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum, AllowMultiple=false)>]
     [<Sealed>]
     type StructuredFormatDisplayAttribute(value:string) =
         inherit System.Attribute()
         member x.Value = value
 
-    [<AttributeUsage(AttributeTargets.All,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type CompilerMessageAttribute(message:string, messageNumber : int) =
         inherit System.Attribute()
@@ -296,37 +296,37 @@ namespace Microsoft.FSharp.Core
         member x.IsError with get() = isError and set v = isError <- v
         member x.IsHidden with get() = isHidden and set v = isHidden <- v
 
-    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property, AllowMultiple=false)>]
     [<Sealed>]
     type UnverifiableAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property, AllowMultiple=false)>]
     [<Sealed>]
     type NoDynamicInvocationAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Parameter,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple=false)>]
     [<Sealed>]
     type OptionalArgumentAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
     type GeneralizableValueAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
     type RequiresExplicitTypeArgumentsAttribute() =
         inherit System.Attribute()
       
-    [<AttributeUsage(AttributeTargets.Class,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Class, AllowMultiple=false)>]
     [<Sealed>]
     type RequireQualifiedAccessAttribute() =
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly,AllowMultiple=true)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly, AllowMultiple=true)>]  
     [<Sealed>]
     type AutoOpenAttribute(path:string) =
         inherit System.Attribute()
@@ -336,7 +336,7 @@ namespace Microsoft.FSharp.Core
     /// This Attribute is used to make Value bindings like
     ///      let x = some code
     /// operate like static properties.
-    [<AttributeUsage(AttributeTargets.Property,AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.Property, AllowMultiple=false)>]
     [<Sealed>]
     type ValueAsStaticPropertyAttribute() =
         inherit System.Attribute()
@@ -1903,7 +1903,9 @@ namespace Microsoft.FSharp.Core
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
             let inline FastHashTuple2 (comparer:System.Collections.IEqualityComparer) (x1,x2) = 
-                TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)
+                TupleUtils.combineTupleHashes
+                    (GenericHashWithComparerFast comparer x1)
+                    (GenericHashWithComparerFast comparer x2)
 
             /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
             //
@@ -1913,7 +1915,11 @@ namespace Microsoft.FSharp.Core
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
             let inline FastHashTuple3 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3) =
-                TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (GenericHashWithComparerFast comparer x3)
+                TupleUtils.combineTupleHashes
+                    (TupleUtils.combineTupleHashes
+                        (GenericHashWithComparerFast comparer x1)
+                        (GenericHashWithComparerFast comparer x2))
+                    (GenericHashWithComparerFast comparer x3)
 
             /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
             //
@@ -1923,7 +1929,13 @@ namespace Microsoft.FSharp.Core
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
             let inline FastHashTuple4 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4) = 
-                TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x3) (GenericHashWithComparerFast comparer x4))
+                TupleUtils.combineTupleHashes
+                    (TupleUtils.combineTupleHashes
+                        (GenericHashWithComparerFast comparer x1)
+                        (GenericHashWithComparerFast comparer x2))
+                    (TupleUtils.combineTupleHashes
+                        (GenericHashWithComparerFast comparer x3)
+                        (GenericHashWithComparerFast comparer x4))
 
             /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
             //
@@ -1933,7 +1945,15 @@ namespace Microsoft.FSharp.Core
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
             let inline FastHashTuple5 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4,x5) = 
-                TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x3) (GenericHashWithComparerFast comparer x4))) (GenericHashWithComparerFast comparer x5)
+                TupleUtils.combineTupleHashes 
+                    (TupleUtils.combineTupleHashes 
+                        (TupleUtils.combineTupleHashes 
+                            (GenericHashWithComparerFast comparer x1)
+                            (GenericHashWithComparerFast comparer x2))
+                        (TupleUtils.combineTupleHashes
+                            (GenericHashWithComparerFast comparer x3)
+                            (GenericHashWithComparerFast comparer x4)))
+                    (GenericHashWithComparerFast comparer x5)
 
             /// Compiler intrinsic generated for devirtualized calls to PER-semantic structural equality on tuples
             //

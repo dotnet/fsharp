@@ -329,16 +329,24 @@ type internal CompileThreadStatic =
 module ErrorLoggerExtensions = 
     open System.Reflection
 
+    // Dev15.0 shipped with a bug in diasymreader in the portable pdb symbol reader which causes an AV
+    // This uses a simple heuristic to detect it (the vsversion is < 16.0)
+    let tryAndDetectDev15 =
+        let vsVersion = Environment.GetEnvironmentVariable("VisualStudioVersion")
+        match Double.TryParse(vsVersion) with
+        | true, v -> v < 16.0
+        | _ -> false
+
     /// Instruct the exception not to reset itself when thrown again.
     let PreserveStackTrace(exn) =
-        try 
-            let preserveStackTrace = typeof<System.Exception>.GetMethod("InternalPreserveStackTrace", BindingFlags.Instance ||| BindingFlags.NonPublic)
-            preserveStackTrace.Invoke(exn, null) |> ignore
+        try
+            if not(tryAndDetectDev15) then
+                let preserveStackTrace = typeof<System.Exception>.GetMethod("InternalPreserveStackTrace", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                preserveStackTrace.Invoke(exn, null) |> ignore
         with _ ->
            // This is probably only the mono case.
            System.Diagnostics.Debug.Assert(false, "Could not preserve stack trace for watson exception.")
            ()
-
 
     /// Reraise an exception if it is one we want to report to Watson.
     let ReraiseIfWatsonable(exn:exn) =
