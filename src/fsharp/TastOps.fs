@@ -2255,7 +2255,11 @@ let checkMemberValRef (vref: ValRef) =
      
 // Get information about the as-ye-unsolved constraints for a set of typars
 let GetTraitConstraintInfosOfTypars g (tps: Typars) = 
-    let cxs = tps |> List.collect (fun tp -> tp.Constraints |> List.choose (fun cx -> match cx with TyparConstraint.MayResolveMember(traitInfo, _) -> Some traitInfo | _ -> None))
+    let cxs =
+        tps |> List.collect (fun tp -> 
+            tp.Constraints 
+            |> List.choose (fun cx -> match cx with TyparConstraint.MayResolveMember(traitInfo, _) -> Some traitInfo | _ -> None)
+            |> List.sortBy (fun traitInfo -> traitInfo.MemberName, traitInfo.ArgumentTypes.Length))
     let cxs = cxs |> ListSet.setify (traitsAEquiv g TypeEquivEnv.Empty)
     cxs
 

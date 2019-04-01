@@ -3788,9 +3788,10 @@ and MakeNotSupportedExnExpr cenv eenv (argExpr, m) =
     let mref = mkILCtorMethSpecForTy(ilty, [cenv.g.ilg.typ_String]).MethodRef
     Expr.Op(TOp.ILCall(false, false, false, true, NormalValUse, false, false, mref, [], [], [ety]), [], [argExpr], m)
 
-and GenTraitCall cenv cgbuf eenv (traitInfo: TraitConstraintInfo, argExprs, m) expr sequel =
+and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExprs, m) expr sequel =
+    let g = cenv.g
     let witness = 
-        if cenv.g.generateWitnesses then 
+        if g.generateWitnesses then 
             match eenv.witnessesInScope.TryGetValue traitInfo.TraitKey with 
             | true, storage -> Some storage
             | _ -> None
@@ -3800,19 +3801,20 @@ and GenTraitCall cenv cgbuf eenv (traitInfo: TraitConstraintInfo, argExprs, m) e
     match witness with 
     | Some storage -> 
         
-        let ty = GenWitnessTy cenv.g traitInfo.TraitKey
+        let ty = GenWitnessTy g traitInfo.TraitKey
+        let argExprs = if argExprs.Length = 0 then [ mkUnit g m ] else argExprs 
         GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv.amap m eenv.tyenv ty) storage (Some([], argExprs, m, sequel))
         
     | None ->     
         // If witnesses are available, we should now always find trait witnesses in scope
         assert eenv.witnessesInScope.IsEmpty
         
-        let minfoOpt = CommitOperationResult (ConstraintSolver.CodegenWitnessForTraitConstraint cenv.tcVal cenv.g cenv.amap m traitInfo argExprs)
+        let minfoOpt = CommitOperationResult (ConstraintSolver.CodegenWitnessForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs)
         match minfoOpt with
         | None ->
-            let exnArg = mkString cenv.g m (FSComp.SR.ilDynamicInvocationNotSupported(traitInfo.MemberName))
+            let exnArg = mkString g m (FSComp.SR.ilDynamicInvocationNotSupported(traitInfo.MemberName))
             let exnExpr = MakeNotSupportedExnExpr cenv eenv (exnArg, m)
-            let replacementExpr = mkThrow m (tyOfExpr cenv.g expr) exnExpr
+            let replacementExpr = mkThrow m (tyOfExpr g expr) exnExpr
             GenExpr cenv cgbuf eenv SPSuppress replacementExpr sequel
         | Some expr ->
             let expr = cenv.optimizeDuringCodeGen expr

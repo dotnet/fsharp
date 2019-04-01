@@ -355,7 +355,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       // A table of all intrinsics that the compiler cares about
   let v_knownIntrinsics = Dictionary<(string*string), ValRef>(HashIdentity.Structural)
 
-  let makeIntrinsicValRefGeneral overloaded (enclosingEntity, logicalName, memberParentName, compiledNameOpt, typars, (argtys, rty))  =
+  let makeIntrinsicValRefGeneral isKnown (enclosingEntity, logicalName, memberParentName, compiledNameOpt, typars, (argtys, rty))  =
       let ty = mkForallTyIfNeeded typars (mkIteratedFunTy (List.map mkSmallRefTupledTy argtys) rty)
       let isMember = Option.isSome memberParentName
       let argCount = if isMember then List.sum (List.map List.length argtys) else 0
@@ -363,12 +363,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       let key = ValLinkageFullKey({ MemberParentMangledName=memberParentName; MemberIsOverride=false; LogicalName=logicalName; TotalArgCount= argCount }, linkageType)
       let vref = IntrinsicValRef(enclosingEntity, logicalName, isMember, ty, key)
       let compiledName = defaultArg compiledNameOpt logicalName
-      if not overloaded then
+      if isKnown then
           v_knownIntrinsics.Add((enclosingEntity.LastItemMangledName, compiledName), ValRefForIntrinsic vref)
       vref
 
-  let makeIntrinsicValRef info = makeIntrinsicValRefGeneral false info
-  let makeOverloadedIntrinsicValRef info = makeIntrinsicValRefGeneral true info
+  let makeIntrinsicValRef info = makeIntrinsicValRefGeneral true info
+  let makeOtherIntrinsicValRef info = makeIntrinsicValRefGeneral false info
 
   let v_IComparer_ty = mkSysNonGenericTy sysCollections "IComparer"
   let v_IEqualityComparer_ty = mkSysNonGenericTy sysCollections "IEqualityComparer"
@@ -1493,54 +1493,54 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   /// Find an FSharp.Core BuiltInWitness that corresponds to a trait witness
   member g.makeBuiltInWitnessInfo (t: TraitConstraintInfo) =
-      makeOverloadedIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, t.MemberName, Some "BuiltInWitnesses", None, [], ([t.ArgumentTypes], defaultArg t.ReturnType g.unit_ty))
+      makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, t.MemberName, Some "BuiltInWitnesses", None, [], ([t.ArgumentTypes], defaultArg t.ReturnType g.unit_ty))
 
   /// Find an FSharp.Core operator that corresponds to a trait witness
-  member g.tryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy (t: TraitConstraintInfo) =
+  member g.tryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy (t: TraitConstraintInfo) argExprs =
 
-    match t.MemberName, t.ArgumentTypes, t.ReturnType with 
-    | "Sign", [aty], _ -> 
+    match t.MemberName, t.ArgumentTypes, t.ReturnType, argExprs with 
+    | "get_Sign", [aty], _, (objExpr :: _) -> 
         // Call Operators.sign
-        let info = makeIntrinsicValRef (fslib_MFOperators_nleref, "sign", None, Some "Sign", [vara], ([[varaTy]], v_int32_ty))
+        let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "sign", None, Some "Sign", [vara], ([[varaTy]], v_int32_ty))
         let tyargs = [aty]
-        Some (info, tyargs)
-    | "Sqrt", [aty], Some bty ->
+        Some (info, tyargs, [objExpr])
+    | "Sqrt", [aty], Some bty, [_] ->
         // Call Operators.sqrt
-        let info = makeIntrinsicValRef (fslib_MFOperators_nleref, "sqrt", None, Some "Sqrt", [vara; varb], ([[varaTy]], varbTy))
+        let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "sqrt", None, Some "Sqrt", [vara; varb], ([[varaTy]], varbTy))
         let tyargs = [aty; bty]
-        Some (info, tyargs)
-    | "Pow", [aty;bty], _ ->
+        Some (info, tyargs, argExprs)
+    | "Pow", [aty;bty], _, [_;_] ->
         // Call Operators.(**)
-        let info = makeIntrinsicValRef (fslib_MFOperators_nleref, "op_Exponentiation", None, None, [vara; varb], ([[varaTy]; [varbTy]], varaTy))
+        let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "op_Exponentiation", None, None, [vara; varb], ([[varaTy]; [varbTy]], varaTy))
         let tyargs = [aty;bty]
-        Some (info, tyargs)
-    | "Atan2", [aty;_], Some bty ->
+        Some (info, tyargs, argExprs)
+    | "Atan2", [aty;_], Some bty, [_;_] ->
         // Call Operators.atan2
-        let info = makeIntrinsicValRef (fslib_MFOperators_nleref, "atan2", None, Some "Atan2", [vara; varb], ([[varaTy]; [varaTy]], varbTy))
+        let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "atan2", None, Some "Atan2", [vara; varb], ([[varaTy]; [varaTy]], varbTy))
         let tyargs = [aty;bty]
-        Some (info, tyargs)
-    | "get_Zero", _, Some aty ->
+        Some (info, tyargs, argExprs)
+    | "get_Zero", _, Some aty, [_] ->
         // Call LanguagePrimitives.GenericZero
-        let info = makeIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, "GenericZero", None, None, [vara], ([], varaTy))
+        let info = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, "GenericZero", None, None, [vara], ([], varaTy))
         let tyargs = [aty]
-        Some (info, tyargs)
-    | "get_One", _, Some aty ->
+        Some (info, tyargs, [])
+    | "get_One", _, Some aty, [_] ->
         // Call LanguagePrimitives.GenericOne
-        let info = makeIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, "GenericOne", None, None, [vara], ([], varaTy))
+        let info = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, "GenericOne", None, None, [vara], ([], varaTy))
         let tyargs = [aty]
-        Some (info, tyargs)
-    | ("Abs" | "Sin" | "Cos" | "Tan" | "Sinh" | "Cosh" | "Tanh" | "Atan" | "Acos" | "Asin" | "Exp" | "Ceiling" | "Floor" | "Round" | "Truncate" | "Log10"| "Log"), [aty], _ -> 
+        Some (info, tyargs, [])
+    | ("Abs" | "Sin" | "Cos" | "Tan" | "Sinh" | "Cosh" | "Tanh" | "Atan" | "Acos" | "Asin" | "Exp" | "Ceiling" | "Floor" | "Round" | "Truncate" | "Log10"| "Log"), [aty], _, [_] -> 
         // Call corresponding Operators.*
         let nm = t.MemberName
-        let info = makeIntrinsicValRef (fslib_MFOperators_nleref, nm.ToLowerInvariant(), None, Some nm, [vara], ([[varaTy]], varaTy))
+        let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, nm.ToLowerInvariant(), None, Some nm, [vara], ([[varaTy]], varaTy))
         let tyargs = [aty]
-        Some (info, tyargs)
-    | "get_Item", [arrTy; _], Some rty when isArrayTy g arrTy -> 
-        Some (g.array_get_info, [rty])
-    | "set_Item", [arrTy; _; ety], _ when isArrayTy g arrTy -> 
-        Some (g.array_set_info, [ety])
-    | "get_Item", [sty; _; _], _ when isStringTy g sty -> 
-        Some (g.getstring_info, [] )
+        Some (info, tyargs, argExprs)
+    | "get_Item", [arrTy; _], Some rty, [_; _] when isArrayTy g arrTy -> 
+        Some (g.array_get_info, [rty], argExprs)
+    | "set_Item", [arrTy; _; ety], _, [_; _; _] when isArrayTy g arrTy -> 
+        Some (g.array_set_info, [ety], argExprs)
+    | "get_Item", [sty; _; _], _, [_; _] when isStringTy g sty -> 
+        Some (g.getstring_info, [], argExprs)
     | _ ->
         None
 

@@ -3178,6 +3178,8 @@ module TestMatchBang =
     testSimpleMatchBang()        
     
 module WitnessTests = 
+    open FSharp.Data.UnitSystems.SI.UnitSymbols
+
     test "check CallWithWitness"      
         (<@ 1 + 1  @> 
          |> function 
@@ -3300,6 +3302,286 @@ module WitnessTests =
                 false
             | _ -> false)
 
+    test "check CallWithWitnesses all operators)"      
+      (let tests = 
+            [ <@@ sin 1.0  @@>, true
+              <@@ sin 1.0f  @@>, true
+              <@@ sign 1.0f  @@>, true
+              <@@ sqrt 1.0f<m>  @@>, true
+              <@@ 2.0f ** 2.0f  @@>, true
+              <@@ atan2 3.0 4.0  @@>, true
+              <@@ 1.0f + 4.0f  @@>, true
+              <@@ 1.0f - 4.0f  @@>, true
+              <@@ 1.0f * 4.0f  @@>, true
+              <@@ 1.0M * 4.0M  @@>, true
+              <@@ 1.0f / 4.0f  @@>, true
+              <@@ 1 % 4  @@>, true
+              <@@ -(4.0M)  @@>, true
+
+              <@@ 1y <<< 3  @@>, true
+              <@@ 1uy <<< 3  @@>, true
+              <@@ 1s <<< 3  @@>, true
+              <@@ 1us <<< 3  @@>, true
+              <@@ 1 <<< 3  @@>, true
+              <@@ 1u <<< 3  @@>, true
+              <@@ 1L <<< 3  @@>, true
+              <@@ 1UL <<< 3  @@>, true
+              <@@ LanguagePrimitives.GenericOne<nativeint> <<< 3  @@>, false
+              <@@ LanguagePrimitives.GenericOne<unativeint> <<< 3  @@>, false
+
+              <@@ 1y >>> 3  @@>, true
+              <@@ 1uy >>> 3  @@>, true
+              <@@ 1s >>> 3  @@>, true
+              <@@ 1us >>> 3  @@>, true
+              <@@ 1 >>> 3  @@>, true
+              <@@ 1u >>> 3  @@>, true
+              <@@ 1L >>> 3  @@>, true
+              <@@ 1UL >>> 3  @@>, true
+              <@@ LanguagePrimitives.GenericOne<nativeint> >>> 3  @@>, false
+              <@@ LanguagePrimitives.GenericOne<unativeint> >>> 3  @@>, false
+              
+              <@@ 1y &&& 3y  @@>, true
+              <@@ 1uy &&& 3uy  @@>, true
+              <@@ 1s &&& 3s  @@>, true
+              <@@ 1us &&& 3us  @@>, true
+              <@@ 1 &&& 3  @@>, true
+              <@@ 1u &&& 3u  @@>, true
+              <@@ 1L &&& 3L  @@>, true
+              <@@ 1UL &&& 3UL  @@>, true
+              <@@ LanguagePrimitives.GenericOne<nativeint> &&& LanguagePrimitives.GenericOne<nativeint>  @@>, false
+              <@@ LanguagePrimitives.GenericOne<unativeint> &&& LanguagePrimitives.GenericOne<unativeint>  @@>, false
+
+              <@@ 1y ||| 3y  @@>, true
+              <@@ 1uy ||| 3uy  @@>, true
+              <@@ 1s ||| 3s  @@>, true
+              <@@ 1us ||| 3us  @@>, true
+              <@@ 1 ||| 3  @@>, true
+              <@@ 1u ||| 3u  @@>, true
+              <@@ 1L ||| 3L  @@>, true
+              <@@ 1UL ||| 3UL  @@>, true
+              <@@ LanguagePrimitives.GenericOne<nativeint> ||| LanguagePrimitives.GenericOne<nativeint>  @@>, false
+              <@@ LanguagePrimitives.GenericOne<unativeint> ||| LanguagePrimitives.GenericOne<unativeint>  @@>, false
+
+              <@@ 1y ^^^ 3y  @@>, true
+              <@@ 1uy ^^^ 3uy  @@>, true
+              <@@ 1s ^^^ 3s  @@>, true
+              <@@ 1us ^^^ 3us  @@>, true
+              <@@ 1 ^^^ 3  @@>, true
+              <@@ 1u ^^^ 3u  @@>, true
+              <@@ 1L ^^^ 3L  @@>, true
+              <@@ 1UL ^^^ 3UL  @@>, true
+              <@@ LanguagePrimitives.GenericOne<nativeint> ^^^ LanguagePrimitives.GenericOne<nativeint>  @@>, false
+              <@@ LanguagePrimitives.GenericOne<unativeint> ^^^ LanguagePrimitives.GenericOne<unativeint>  @@>, false
+
+              <@@ ~~~3y  @@>, true
+              <@@ ~~~3uy  @@>, true
+              <@@ ~~~3s  @@>, true
+              <@@ ~~~3us  @@>, true
+              <@@ ~~~3  @@>, true
+              <@@ ~~~3u  @@>, true
+              <@@ ~~~3L  @@>, true
+              <@@ ~~~3UL  @@>, true
+              <@@ ~~~LanguagePrimitives.GenericOne<nativeint>  @@>, false
+              <@@ ~~~LanguagePrimitives.GenericOne<unativeint>  @@>, false
+
+              <@@ byte 3uy  @@>, true
+              <@@ byte 3y  @@>, true
+              <@@ byte 3s  @@>, true
+              <@@ byte 3us  @@>, true
+              <@@ byte 3  @@>, true
+              <@@ byte 3u  @@>, true
+              <@@ byte 3L  @@>, true
+              <@@ byte 3UL  @@>, true
+              <@@ byte 3.0f  @@>, true
+              <@@ byte 3.0  @@>, true
+              <@@ byte LanguagePrimitives.GenericOne<nativeint>  @@>, false
+              <@@ byte LanguagePrimitives.GenericOne<unativeint>  @@>, false
+              <@@ byte 3.0M  @@>, true
+              <@@ byte "3"  @@>, false
+
+              <@@ sbyte 3uy  @@>, true
+              <@@ sbyte 3y  @@>, true
+              <@@ sbyte 3s  @@>, true
+              <@@ sbyte 3us  @@>, true
+              <@@ sbyte 3  @@>, true
+              <@@ sbyte 3u  @@>, true
+              <@@ sbyte 3L  @@>, true
+              <@@ sbyte 3UL  @@>, true
+              <@@ sbyte 3.0f  @@>, true
+              <@@ sbyte 3.0  @@>, true
+              <@@ sbyte LanguagePrimitives.GenericOne<nativeint>  @@>, false
+              <@@ sbyte LanguagePrimitives.GenericOne<unativeint>  @@>, false
+              <@@ sbyte 3.0M  @@>, true
+              <@@ sbyte "3"  @@>, false
+
+              <@@ int16 3uy  @@>, true
+              <@@ int16 3y  @@>, true
+              <@@ int16 3s  @@>, true
+              <@@ int16 3us  @@>, true
+              <@@ int16 3  @@>, true
+              <@@ int16 3u  @@>, true
+              <@@ int16 3L  @@>, true
+              <@@ int16 3UL  @@>, true
+              <@@ int16 3.0f  @@>, true
+              <@@ int16 3.0  @@>, true
+              <@@ int16 LanguagePrimitives.GenericOne<nativeint>  @@>, false
+              <@@ int16 LanguagePrimitives.GenericOne<unativeint>  @@>, false
+              <@@ int16 3.0M  @@>, true
+              <@@ int16 "3"  @@>, false
+
+              <@@ uint16 3uy  @@>, true
+              <@@ uint16 3y  @@>, true
+              <@@ uint16 3s  @@>, true
+              <@@ uint16 3us  @@>, true
+              <@@ uint16 3  @@>, true
+              <@@ uint16 3u  @@>, true
+              <@@ uint16 3L  @@>, true
+              <@@ uint16 3UL  @@>, true
+              <@@ uint16 3.0f  @@>, true
+              <@@ uint16 3.0  @@>, true
+              <@@ uint16 LanguagePrimitives.GenericOne<nativeint>  @@>, false
+              <@@ uint16 LanguagePrimitives.GenericOne<unativeint>  @@>, false
+              <@@ uint16 3.0M  @@>, true
+              <@@ uint16 "3"  @@>, false
+
+              <@@ int32 3uy  @@>, true
+              <@@ int32 3y  @@>, true
+              <@@ int32 3s  @@>, true
+              <@@ int32 3us  @@>, true
+              <@@ int32 3  @@>, true
+              <@@ int32 3u  @@>, true
+              <@@ int32 3L  @@>, true
+              <@@ int32 3UL  @@>, true
+              <@@ int32 3.0f  @@>, true
+              <@@ int32 3.0  @@>, true
+              <@@ int32 LanguagePrimitives.GenericOne<nativeint>  @@>, false
+              <@@ int32 LanguagePrimitives.GenericOne<unativeint>  @@>, false
+              <@@ int32 3.0M  @@>, true
+              <@@ int32 "3"  @@>, false
+
+              <@@ uint32 3uy  @@>, true
+              <@@ uint32 3y  @@>, true
+              <@@ uint32 3s  @@>, true
+              <@@ uint32 3us  @@>, true
+              <@@ uint32 3  @@>, true
+              <@@ uint32 3u  @@>, true
+              <@@ uint32 3L  @@>, true
+              <@@ uint32 3UL  @@>, true
+              <@@ uint32 3.0f  @@>, true
+              <@@ uint32 3.0  @@>, true
+              <@@ uint32 LanguagePrimitives.GenericOne<nativeint>  @@>, false
+              <@@ uint32 LanguagePrimitives.GenericOne<unativeint>  @@>, false
+              <@@ uint32 3.0M  @@>, true
+              <@@ uint32 "3"  @@>, false
+
+              <@@ int64 3uy  @@>, true
+              <@@ int64 3y  @@>, true
+              <@@ int64 3s  @@>, true
+              <@@ int64 3us  @@>, true
+              <@@ int64 3  @@>, true
+              <@@ int64 3u  @@>, true
+              <@@ int64 3L  @@>, true
+              <@@ int64 3UL  @@>, true
+              <@@ int64 3.0f  @@>, true
+              <@@ int64 3.0  @@>, true
+              <@@ int64 LanguagePrimitives.GenericOne<nativeint>  @@>, false
+              <@@ int64 LanguagePrimitives.GenericOne<unativeint>  @@>, false
+              <@@ int64 3.0M  @@>, true
+              <@@ int64 "3"  @@>, false
+              
+              <@@ uint64 3uy  @@>, true
+              <@@ uint64 3y  @@>, true
+              <@@ uint64 3s  @@>, true
+              <@@ uint64 3us  @@>, true
+              <@@ uint64 3  @@>, true
+              <@@ uint64 3u  @@>, true
+              <@@ uint64 3L  @@>, true
+              <@@ uint64 3UL  @@>, true
+              <@@ uint64 3.0f  @@>, true
+              <@@ uint64 3.0  @@>, true
+              <@@ uint64 LanguagePrimitives.GenericOne<nativeint>  @@>, false
+              <@@ uint64 LanguagePrimitives.GenericOne<unativeint>  @@>, false
+              <@@ uint64 3.0M  @@>, true
+              <@@ uint64 "3"  @@>, false
+
+              <@@ nativeint 3uy  @@>, true
+              <@@ nativeint 3y  @@>, true
+              <@@ nativeint 3s  @@>, true
+              <@@ nativeint 3us  @@>, true
+              <@@ nativeint 3  @@>, true
+              <@@ nativeint 3u  @@>, true
+              <@@ nativeint 3L  @@>, true
+              <@@ nativeint 3UL  @@>, true
+              <@@ nativeint 3.0f  @@>, true
+              <@@ nativeint 3.0  @@>, true
+              <@@ nativeint LanguagePrimitives.GenericOne<nativeint>  @@>, false
+              <@@ nativeint LanguagePrimitives.GenericOne<unativeint>  @@>, false
+              //<@@ nativeint 3.0M  @@>, false
+              //<@@ nativeint "3"  @@>, false
+
+              <@@ unativeint 3uy  @@>, true
+              <@@ unativeint 3y  @@>, true
+              <@@ unativeint 3s  @@>, true
+              <@@ unativeint 3us  @@>, true
+              <@@ unativeint 3  @@>, true
+              <@@ unativeint 3u  @@>, true
+              <@@ unativeint 3L  @@>, true
+              <@@ unativeint 3UL  @@>, true
+              <@@ unativeint 3.0f  @@>, true
+              <@@ unativeint 3.0  @@>, true
+              <@@ unativeint LanguagePrimitives.GenericOne<nativeint>  @@>, false
+              <@@ unativeint LanguagePrimitives.GenericOne<unativeint>  @@>, false
+              //<@@ unativeint 3.0M  @@>, true
+              //<@@ unativeint "3"  @@>, true
+
+              <@@ LanguagePrimitives.GenericZero<float>  @@>, true
+              <@@ LanguagePrimitives.GenericZero<float32>  @@>, true
+              <@@ LanguagePrimitives.GenericZero<int>  @@>, true
+              <@@ LanguagePrimitives.GenericZero<int64>  @@>, true
+              <@@ LanguagePrimitives.GenericZero<uint64>  @@>, true
+              <@@ LanguagePrimitives.GenericZero<nativeint>  @@>, true
+              <@@ LanguagePrimitives.GenericOne<float>  @@>, true
+              <@@ LanguagePrimitives.GenericOne<float32>  @@>, true
+              <@@ LanguagePrimitives.GenericOne<int>  @@>, true
+              <@@ LanguagePrimitives.GenericOne<int64>  @@>, true
+              <@@ LanguagePrimitives.GenericOne<uint64>  @@>, true
+              <@@ LanguagePrimitives.GenericOne<nativeint>  @@>, true
+              <@@ List.sum [ 1; 2 ]  @@>, true
+              <@@ List.sum [ 1.0f; 2.0f ]  @@>, true
+              <@@ List.sum [ 1.0; 2.0 ]  @@>, true
+              <@@ List.sum [ 1.0M; 2.0M ]  @@>, true
+              <@@ List.average [ 1.0; 2.0 ]  @@>, true
+              <@@ List.average [ 1.0f; 2.0f ]  @@>, true
+              <@@ List.average [ 1.0M; 2.0M ]  @@>, true 
+            ]
+
+       tests |> List.forall (fun (test, canEval) -> 
+           if canEval then 
+               printfn "--> checking we can evaluate %A" test
+               FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation test |> ignore
+               printfn "<-- evaluated!"
+           else
+               printfn "skipping evaluation of %A because LinqExpressionConverter can't handle it" test
+           printfn "checking %A" test
+           match test with
+            | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) -> 
+                minfo1.IsStatic && 
+                minfo2.IsStatic && 
+                minfo2.Name = minfo1.Name + "WithWitnesses" &&
+    (*
+                (printfn "checking minfo2.GetParameters().Length = %d..." (minfo2.GetParameters().Length); true) &&
+                minfo2.GetParameters().Length = 3 && 
+                (printfn "checking witnessArgs.Length..."; true) &&
+                witnessArgs.Length = 1 &&
+                (printfn "checking args.Length..."; true) &&
+                args.Length = 2 &&
+                (printfn "witnessArgs..."; true) &&
+                (match witnessArgs with [ Lambda _ ] -> true | _ -> false) &&
+                (printfn "args..."; true) &&
+                (match args with [ _; _ ] -> true | _ -> false)
+                *)
+                true
+            | _ -> false))
 
 #if !FX_RESHAPED_REFLECTION
 module TestAssemblyAttributes = 

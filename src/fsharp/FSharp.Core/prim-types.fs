@@ -393,8 +393,8 @@ namespace Microsoft.FSharp.Core
             member inline this.IsSealed = this.GetTypeInfo().IsSealed
             member inline this.IsAssignableFrom(otherType: Type) = this.GetTypeInfo().IsAssignableFrom(otherType.GetTypeInfo())
             member inline this.GetGenericArguments() = this.GetTypeInfo().GenericTypeArguments
-            member inline this.GetProperty(name) = this.GetRuntimeProperty(name)
-            member inline this.GetMethod(name, parameterTypes) = this.GetRuntimeMethod(name, parameterTypes)
+            member inline this.GetProperty(name) = this.GetTypeInfo().GetProperty(name)
+            member inline this.GetMethod(name:string, parameterTypes: Type[]) = this.GetTypeInfo().GetMethod(name, parameterTypes)
             member inline this.GetCustomAttributes(attributeType: Type, inherits: bool) : obj[] = 
                 unboxPrim<_> (box (CustomAttributeExtensions.GetCustomAttributes(this.GetTypeInfo(), attributeType, inherits).ToArray()))
 
@@ -2612,75 +2612,75 @@ namespace Microsoft.FSharp.Core
             static member inline op_LeftShift(value: sbyte, shift: int32) = (# "conv.i1" (# "shl" value (mask shift 7) : int32  #) : sbyte #)
             static member inline op_LeftShift(value: byte, shift: int32) =  (# "conv.u1" (# "shl" value (mask shift 7) : uint32 #) : byte #)
 
+            static member inline op_RightShift(value: sbyte, shift: int32) = (# "conv.i1" (# "shr"    value (mask shift 7 ) : int32  #) : sbyte #)
+            static member inline op_RightShift(value: byte, shift: int32) = (# "conv.u1" (# "shr.un" value (mask shift 7 ) : uint32 #) : byte #)
+            static member inline op_RightShift(value: int16, shift: int32) = (# "conv.i2" (# "shr"    value (mask shift 15) : int32  #) : int16 #)
+            static member inline op_RightShift(value: uint16, shift: int32) = (# "conv.u2" (# "shr.un" value (mask shift 15) : uint32 #) : uint16 #)
             static member inline op_RightShift(value: int32, shift: int32) = (# "shr"    value (mask shift 31) : int32 #)
             static member inline op_RightShift(value: uint32, shift: int32) = (# "shr.un" value (mask shift 31) : uint32 #)
             static member inline op_RightShift(value: int64, shift: int32) = (# "shr"    value (mask shift 63) : int64 #)
             static member inline op_RightShift(value: uint64, shift: int32) = (# "shr.un" value (mask shift 63) : uint64 #)
             static member inline op_RightShift(value: nativeint, shift: int32) = (# "shr"    value shift : nativeint #)
             static member inline op_RightShift(value: unativeint, shift: int32) = (# "shr.un" value shift : unativeint #)
-            static member inline op_RightShift(value: int16, shift: int32) = (# "conv.i2" (# "shr"    value (mask shift 15) : int32  #) : int16 #)
-            static member inline op_RightShift(value: uint16, shift: int32) = (# "conv.u2" (# "shr.un" value (mask shift 15) : uint32 #) : uint16 #)
-            static member inline op_RightShift(value: sbyte, shift: int32) = (# "conv.i1" (# "shr"    value (mask shift 7 ) : int32  #) : sbyte #)
-            static member inline op_RightShift(value: byte, shift: int32) = (# "conv.u1" (# "shr.un" value (mask shift 7 ) : uint32 #) : byte #)
 
-            static member inline op_BitwiseAnd(x: int32, y: int32) = (# "and" x y : int32 #)
-            static member inline op_BitwiseAnd(x: int64, y: int64) = (# "and" x y : int64 #)
-            static member inline op_BitwiseAnd(x: uint64, y: uint64) = (# "and" x y : uint64 #)
-            static member inline op_BitwiseAnd(x: uint32, y: uint32) = (# "and" x y : uint32 #)
-            static member inline op_BitwiseAnd(x: int16, y: int16) = (# "and" x y : int16 #)
-            static member inline op_BitwiseAnd(x: uint16, y: uint16) = (# "and" x y : uint16 #)
-            static member inline op_BitwiseAnd(x: nativeint, y: nativeint) = (# "and" x y : nativeint #)
-            static member inline op_BitwiseAnd(x: unativeint, y: unativeint) = (# "and" x y : unativeint #)
             static member inline op_BitwiseAnd(x: sbyte, y: sbyte) = (# "and" x y : sbyte #)
             static member inline op_BitwiseAnd(x: byte, y: byte) = (# "and" x y : byte #)
+            static member inline op_BitwiseAnd(x: int16, y: int16) = (# "and" x y : int16 #)
+            static member inline op_BitwiseAnd(x: uint16, y: uint16) = (# "and" x y : uint16 #)
+            static member inline op_BitwiseAnd(x: int32, y: int32) = (# "and" x y : int32 #)
+            static member inline op_BitwiseAnd(x: uint32, y: uint32) = (# "and" x y : uint32 #)
+            static member inline op_BitwiseAnd(x: int64, y: int64) = (# "and" x y : int64 #)
+            static member inline op_BitwiseAnd(x: uint64, y: uint64) = (# "and" x y : uint64 #)
+            static member inline op_BitwiseAnd(x: nativeint, y: nativeint) = (# "and" x y : nativeint #)
+            static member inline op_BitwiseAnd(x: unativeint, y: unativeint) = (# "and" x y : unativeint #)
 
-            static member inline op_BitwiseOr(x: int32, y: int32) = (# "or" x y : int32 #)
-            static member inline op_BitwiseOr(x: int64, y: int64) = (# "or" x y : int64 #)
-            static member inline op_BitwiseOr(x: uint64, y: uint64) = (# "or" x y : uint64 #)
-            static member inline op_BitwiseOr(x: uint32, y: uint32) = (# "or" x y : uint32 #)
-            static member inline op_BitwiseOr(x: int16, y: int16) = (# "or" x y : int16 #)
-            static member inline op_BitwiseOr(x: uint16, y: uint16) = (# "or" x y : uint16 #)
-            static member inline op_BitwiseOr(x: nativeint, y: nativeint) = (# "or" x y : nativeint #)
-            static member inline op_BitwiseOr(x: unativeint, y: unativeint) = (# "or" x y : unativeint #)
             static member inline op_BitwiseOr(x: sbyte, y: sbyte) = (# "or" x y : sbyte #)
             static member inline op_BitwiseOr(x: byte, y: byte) = (# "or" x y : byte #)
+            static member inline op_BitwiseOr(x: int16, y: int16) = (# "or" x y : int16 #)
+            static member inline op_BitwiseOr(x: uint16, y: uint16) = (# "or" x y : uint16 #)
+            static member inline op_BitwiseOr(x: int32, y: int32) = (# "or" x y : int32 #)
+            static member inline op_BitwiseOr(x: uint32, y: uint32) = (# "or" x y : uint32 #)
+            static member inline op_BitwiseOr(x: int64, y: int64) = (# "or" x y : int64 #)
+            static member inline op_BitwiseOr(x: uint64, y: uint64) = (# "or" x y : uint64 #)
+            static member inline op_BitwiseOr(x: nativeint, y: nativeint) = (# "or" x y : nativeint #)
+            static member inline op_BitwiseOr(x: unativeint, y: unativeint) = (# "or" x y : unativeint #)
 
-            static member inline op_BitwiseExclusiveOr(x: int32, y: int32) = (# "xor" x y : int32 #)
-            static member inline op_BitwiseExclusiveOr(x: int64, y: int64) = (# "xor" x y : int64 #)
-            static member inline op_BitwiseExclusiveOr(x: uint64, y: uint64) = (# "xor" x y : uint64 #)
-            static member inline op_BitwiseExclusiveOr(x: uint32, y: uint32) = (# "xor" x y : uint32 #)
-            static member inline op_BitwiseExclusiveOr(x: int16, y: int16) = (# "xor" x y : int16 #)
-            static member inline op_BitwiseExclusiveOr(x: uint16, y: uint16) = (# "xor" x y : uint16 #)
-            static member inline op_BitwiseExclusiveOr(x: nativeint, y: nativeint) = (# "xor" x y : nativeint #)
-            static member inline op_BitwiseExclusiveOr(x: unativeint, y: unativeint) = (# "xor" x y : unativeint #)
-            static member inline op_BitwiseExclusiveOr(x: sbyte, y: sbyte) = (# "xor" x y : sbyte #)
-            static member inline op_BitwiseExclusiveOr(x: byte, y: byte) = (# "xor" x y : byte #)
+            static member inline op_ExclusiveOr(x: sbyte, y: sbyte) = (# "xor" x y : sbyte #)
+            static member inline op_ExclusiveOr(x: byte, y: byte) = (# "xor" x y : byte #)
+            static member inline op_ExclusiveOr(x: int16, y: int16) = (# "xor" x y : int16 #)
+            static member inline op_ExclusiveOr(x: uint16, y: uint16) = (# "xor" x y : uint16 #)
+            static member inline op_ExclusiveOr(x: int32, y: int32) = (# "xor" x y : int32 #)
+            static member inline op_ExclusiveOr(x: uint32, y: uint32) = (# "xor" x y : uint32 #)
+            static member inline op_ExclusiveOr(x: int64, y: int64) = (# "xor" x y : int64 #)
+            static member inline op_ExclusiveOr(x: uint64, y: uint64) = (# "xor" x y : uint64 #)
+            static member inline op_ExclusiveOr(x: nativeint, y: nativeint) = (# "xor" x y : nativeint #)
+            static member inline op_ExclusiveOr(x: unativeint, y: unativeint) = (# "xor" x y : unativeint #)
 
-            static member inline op_LogicalNot(value: int32) = (# "not" value : int32 #)
-            static member inline op_LogicalNot(value: int64) = (# "not" value : int64 #)
-            static member inline op_LogicalNot(value: uint64) = (# "not" value : uint64 #)
-            static member inline op_LogicalNot(value: uint32) = (# "not" value : uint32 #)
-            static member inline op_LogicalNot(value: nativeint) = (# "not" value : nativeint #)
-            static member inline op_LogicalNot(value: unativeint) = (# "not" value : unativeint #)
-            static member inline op_LogicalNot(value: int16) = (# "conv.i2" (# "not" value : int32  #) : int16 #)
-            static member inline op_LogicalNot(value: uint16) = (# "conv.u2" (# "not" value : uint32 #) : uint16 #)
             static member inline op_LogicalNot(value: sbyte) = (# "conv.i1" (# "not" value : int32  #) : sbyte #)
             static member inline op_LogicalNot(value: byte) = (# "conv.u1" (# "not" value : uint32 #) : byte #)
+            static member inline op_LogicalNot(value: int16) = (# "conv.i2" (# "not" value : int32  #) : int16 #)
+            static member inline op_LogicalNot(value: uint16) = (# "conv.u2" (# "not" value : uint32 #) : uint16 #)
+            static member inline op_LogicalNot(value: int32) = (# "not" value : int32 #)
+            static member inline op_LogicalNot(value: uint32) = (# "not" value : uint32 #)
+            static member inline op_LogicalNot(value: int64) = (# "not" value : int64 #)
+            static member inline op_LogicalNot(value: uint64) = (# "not" value : uint64 #)
+            static member inline op_LogicalNot(value: nativeint) = (# "not" value : nativeint #)
+            static member inline op_LogicalNot(value: unativeint) = (# "not" value : unativeint #)
 
-            static member inline op_Explicit(value: string) : byte = ParseByte value
+            static member inline op_Explicit(value: sbyte) : byte = (# "conv.u1" value  : byte #)
+            static member inline op_Explicit(value: byte) : byte = (# "conv.u1" value  : byte #)
+            static member inline op_Explicit(value: int16) : byte = (# "conv.u1" value  : byte #)
+            static member inline op_Explicit(value: uint16) : byte = (# "conv.u1" value  : byte #)
+            static member inline op_Explicit(value: int32) : byte = (# "conv.u1" value  : byte #)
+            static member inline op_Explicit(value: uint32) : byte = (# "conv.u1" value  : byte #)
+            static member inline op_Explicit(value: int64) : byte = (# "conv.u1" value  : byte #)
+            static member inline op_Explicit(value: uint64) : byte = (# "conv.u1" value  : byte #)
+            static member inline op_Explicit(value: nativeint) : byte = (# "conv.u1" value  : byte #)
+            static member inline op_Explicit(value: unativeint) : byte = (# "conv.u1" value  : byte #)
             static member inline op_Explicit(value: float) : byte = (# "conv.u1" value  : byte #)
             static member inline op_Explicit(value: float32) : byte = (# "conv.u1" value  : byte #)
-            static member inline op_Explicit(value: int64) : byte = (# "conv.u1" value  : byte #)
-            static member inline op_Explicit(value: int32) : byte = (# "conv.u1" value  : byte #)
-            static member inline op_Explicit(value: int16) : byte = (# "conv.u1" value  : byte #)
-            static member inline op_Explicit(value: nativeint) : byte = (# "conv.u1" value  : byte #)
-            static member inline op_Explicit(value: sbyte) : byte = (# "conv.u1" value  : byte #)
-            static member inline op_Explicit(value: uint64) : byte = (# "conv.u1" value  : byte #)
-            static member inline op_Explicit(value: uint32) : byte = (# "conv.u1" value  : byte #)
-            static member inline op_Explicit(value: uint16) : byte = (# "conv.u1" value  : byte #)
             static member inline op_Explicit(value: char) : byte = (# "conv.u1" value  : byte #)
-            static member inline op_Explicit(value: unativeint) : byte = (# "conv.u1" value  : byte #)
-            static member inline op_Explicit(value: byte) : byte = (# "conv.u1" value  : byte #)
+            static member inline op_Explicit(value: string) : byte = ParseByte value
 
             static member inline op_Explicit(value: string) : sbyte = ParseSByte value
             static member inline op_Explicit(value: float) : sbyte = (# "conv.i1" value  : sbyte #)
@@ -3002,7 +3002,7 @@ namespace Microsoft.FSharp.Core
                 elif aty.Equals(typeof<float>)      then unboxPrim<'T> (box 0.0)
                 elif aty.Equals(typeof<float32>)    then unboxPrim<'T> (box 0.0f)
                 else 
-                   let pinfo = aty.GetProperty("Zero")
+                   let pinfo = aty.GetTypeInfo().GetProperty("Zero")
                    unboxPrim<'T> (pinfo.GetValue(null,null))
             static member Result : 'T = result
                    
@@ -3026,7 +3026,7 @@ namespace Microsoft.FSharp.Core
                 elif aty.Equals(typeof<float>)      then unboxPrim<'T> (box 1.0)
                 elif aty.Equals(typeof<float32>)    then unboxPrim<'T> (box 1.0f)
                 else 
-                   let pinfo = aty.GetProperty("One")
+                   let pinfo = aty.GetTypeInfo().GetProperty("One")
                    unboxPrim<'T> (pinfo.GetValue(null,null))
 
             static member Result : 'T = result
@@ -3098,7 +3098,7 @@ namespace Microsoft.FSharp.Core
                 //let staticBindingFlags = (BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
                 let opNameMeth = typeof<'OpInfo>.GetRuntimeMethod("get_Name", [| |] (*, staticBindingFlags, [| |], null*)  )
                 let opName = opNameMeth.Invoke(null, [| |]) :?> string
-                let builtinNameMeth = typeof<'OpInfo>.GetRuntimeMethod("get_BuiltInName", (* staticBindingFlags, *) [| |] (*, null *) )
+                let builtinNameMeth = typeof<'OpInfo>.GetTypeInfo().GetMethod("get_BuiltInName", (* staticBindingFlags, *) [| |] (*, null *) )
                 let builtinName = match builtinNameMeth with null -> opName | _ -> builtinNameMeth.Invoke(null, [| |]) :?> string
 
                 let meth = 
@@ -3207,7 +3207,7 @@ namespace Microsoft.FSharp.Core
         type OpBitwiseOrInfo = static member Name = "op_BitwiseOr"
         let OpBitwiseOrDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpBitwiseOrInfo,'T,'U,'V>.Impl x y
 
-        type OpBitwiseExclusiveOrInfo = static member Name = "op_BitwiseExclusiveOr"
+        type OpBitwiseExclusiveOrInfo = static member Name = "op_ExclusiveOr"
         let OpBitwiseExclusiveOrDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpBitwiseExclusiveOrInfo,'T,'U,'V>.Impl x y
 
         type OpLogicalNotInfo = static member Name = "op_LogicalNot"

@@ -1405,64 +1405,64 @@ namespace Microsoft.FSharp.Core
             static member inline op_Modulus: x: decimal * y: decimal -> decimal 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_LeftShift: value: int32 * shift: int32 -> int32 
+            static member inline op_LeftShift: value: int32 * shift: int -> int32 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_LeftShift: value: uint32 * shift: int32 -> uint32 
+            static member inline op_LeftShift: value: uint32 * shift: int -> uint32 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_LeftShift: value: int64 * shift: int32 -> int64 
+            static member inline op_LeftShift: value: int64 * shift: int -> int64 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_LeftShift: value: uint64 * shift: int32 -> uint64 
+            static member inline op_LeftShift: value: uint64 * shift: int -> uint64 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_LeftShift: value: nativeint * shift: int32 -> nativeint 
+            static member inline op_LeftShift: value: nativeint * shift: int -> nativeint 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_LeftShift: value: unativeint * shift: int32 -> unativeint 
+            static member inline op_LeftShift: value: unativeint * shift: int -> unativeint 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_LeftShift: value: int16 * shift: int32 -> int16 
+            static member inline op_LeftShift: value: int16 * shift: int -> int16 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_LeftShift: value: uint16 * shift: int32 -> uint16 
+            static member inline op_LeftShift: value: uint16 * shift: int -> uint16 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_LeftShift: value: sbyte * shift: int32 -> sbyte 
+            static member inline op_LeftShift: value: sbyte * shift: int -> sbyte 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_LeftShift: value: byte * shift: int32 -> byte 
+            static member inline op_LeftShift: value: byte * shift: int -> byte 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_RightShift: value: byte * shift: int32 -> byte 
+            static member inline op_RightShift: value: byte * shift: int -> byte 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_RightShift: value: uint32 * shift: int32 -> uint32 
+            static member inline op_RightShift: value: sbyte * shift: int -> sbyte 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_RightShift: value: int64 * shift: int32 -> int64 
+            static member inline op_RightShift: value: int16 * shift: int -> int16 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_RightShift: value: uint64 * shift: int32 -> uint64 
+            static member inline op_RightShift: value: uint16 * shift: int -> uint16 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_RightShift: value: nativeint * shift: int32 -> nativeint 
+            static member inline op_RightShift: value: int32 * shift: int -> int32
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_RightShift: value: unativeint * shift: int32 -> unativeint 
+            static member inline op_RightShift: value: uint32 * shift: int -> uint32 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_RightShift: value: int16 * shift: int32 -> int16 
+            static member inline op_RightShift: value: int64 * shift: int -> int64 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_RightShift: value: uint16 * shift: int32 -> uint16 
+            static member inline op_RightShift: value: uint64 * shift: int -> uint64 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_RightShift: value: sbyte * shift: int32 -> sbyte 
+            static member inline op_RightShift: value: nativeint * shift: int -> nativeint 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_RightShift: value: byte * shift: int32 -> byte 
+            static member inline op_RightShift: value: unativeint * shift: int -> unativeint 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
             static member inline op_BitwiseAnd: x: int32 * y: int32 -> int32 
@@ -1525,34 +1525,34 @@ namespace Microsoft.FSharp.Core
             static member inline op_BitwiseOr: x: byte * y: byte -> byte 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_BitwiseExclusiveOr: x: int32 * y: int32 -> int32 
+            static member inline op_ExclusiveOr: x: int32 * y: int32 -> int32 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_BitwiseExclusiveOr: x: int64 * y: int64 -> int64 
+            static member inline op_ExclusiveOr: x: int64 * y: int64 -> int64 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_BitwiseExclusiveOr: x: uint64 * y: uint64 -> uint64 
+            static member inline op_ExclusiveOr: x: uint64 * y: uint64 -> uint64 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_BitwiseExclusiveOr: x: uint32 * y: uint32 -> uint32 
+            static member inline op_ExclusiveOr: x: uint32 * y: uint32 -> uint32 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_BitwiseExclusiveOr: x: int16 * y: int16 -> int16 
+            static member inline op_ExclusiveOr: x: int16 * y: int16 -> int16 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_BitwiseExclusiveOr: x: uint16 * y: uint16 -> uint16 
+            static member inline op_ExclusiveOr: x: uint16 * y: uint16 -> uint16 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_BitwiseExclusiveOr: x: nativeint * y: nativeint -> nativeint 
+            static member inline op_ExclusiveOr: x: nativeint * y: nativeint -> nativeint 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_BitwiseExclusiveOr: x: unativeint * y: unativeint -> unativeint 
+            static member inline op_ExclusiveOr: x: unativeint * y: unativeint -> unativeint 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_BitwiseExclusiveOr: x: sbyte * y: sbyte -> sbyte 
+            static member inline op_ExclusiveOr: x: sbyte * y: sbyte -> sbyte 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_BitwiseExclusiveOr: x: byte * y: byte -> byte
+            static member inline op_ExclusiveOr: x: byte * y: byte -> byte
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
             static member inline op_LogicalNot: value: int32 -> int32 
@@ -1622,9 +1622,12 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
             static member inline op_Explicit: value: unativeint -> byte 
-
+            
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
             static member inline op_Explicit: value: byte -> byte 
+
+            /// <summary>A representative witness for traits solved by the F# compiler</summary>
+            static member inline op_Explicit: value: string -> sbyte 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
             static member inline op_Explicit: value: byte -> sbyte 
@@ -1882,7 +1885,7 @@ namespace Microsoft.FSharp.Core
             static member inline op_Explicit: value: string -> int64 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member inline op_Explicit: value: string -> int64 
+            static member inline op_Explicit: value: float -> int64 
 
             /// <summary>A representative witness for traits solved by the F# compiler</summary>
             static member inline op_Explicit: value: float32 -> int64 
