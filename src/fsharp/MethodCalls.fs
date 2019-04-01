@@ -1424,64 +1424,16 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
     | Choice5Of5 () -> 
         match traitInfo.Solution with 
         | None -> None // the trait has been generalized
-        | Some _->
-        let rty = match traitInfo.ReturnType with None -> g.unit_ty | Some ty -> ty
-        match traitInfo.MemberName, traitInfo.MemberFlags.IsInstance, traitInfo.ArgumentTypes, argExprs with 
-        | "op_Division", false, [argty1;argty2], [arg1; arg2] -> mkCallDivisionOperator g m argty1 argty2 rty arg1 arg2 |> Some
-        | "op_Addition", false, [argty1;argty2], [arg1; arg2] -> mkCallAdditionOperator g m argty1 argty2 rty arg1 arg2 |> Some
-(*
-        | "op_Multiply", [argty1;argty2], [arg1; arg2]
-        | "op_Subtraction", [argty1;argty2], [arg1; arg2]
-        | "op_Modulus", [argty1;argty2], [arg1; arg2]
-        | "op_LessThan", [argty1;argty2], [arg1; arg2]
-        | "op_LessThanOrEqual", [argty1;argty2], [arg1; arg2]
-        | "op_GreaterThan", [argty1;argty2], [arg1; arg2]
-        | "op_GreaterThanOrEqual", [argty1;argty2], [arg1; arg2]
-        | "op_Inequality", [argty1;argty2], [arg1; arg2]
-        | "get_Zero", [argty1;argty2], [arg1; arg2]
-        | "get_One", [argty1;argty2], [arg1; arg2]
-        | "DivideByInt", [argty1;argty2], [arg1; arg2]
-        | "get_Item", true, [argty1], [arg1] when isStringTy g ty
-        | "get_Item", true, argtys, [arg1] when isArrayTy g ty
-        | "set_Item", true, argtys, [arg1] when isArrayTy g ty
-        | "op_BitwiseAnd", [argty1;argty2], [arg1; arg2]
-        | "op_BitwiseOr", [argty1;argty2], [arg1; arg2]
-        | "op_ExclusiveOr", [argty1;argty2], [arg1; arg2]
-        | "op_LeftShift", [argty1;argty2], [arg1; arg2]
-        | "op_RightShift", [argty1;argty2], [arg1; arg2]
-        | "op_UnaryPlus", [argty1], [arg1]
-*)
-        //| "op_UnaryNegation", false, [argty1], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-(*
-        | "get_Sign", [], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "op_LogicalNot", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "op_OnesComplement", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Abs", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Sqrt", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Sin", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Cos", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Tan", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Sinh", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Cosh", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Tanh", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Atan", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Acos", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Asin", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Exp", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Ceiling", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Floor", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Round", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Truncate", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Log10", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Log", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Sqrt", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "op_Explicit", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Pow", [argty1; argty2], [arg1; arg2] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Atan2", [argty1; argty2], [arg1; arg2] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-        | "Sqrt", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
-*)
-        | _ -> None
-
+        | Some _-> 
+        // For these operators, the witness is just a call to the coresponding FSharp.Core operator
+        match g.tryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy traitInfo with
+        | Some (info, tyargs) -> 
+            tryMkCallCoreFunctionAsBuiltInWitness g info tyargs argExprs m
+        | None -> 
+            // For all other built-in operators, the witness is a call to the coresponding BuiltInWitnesses operator
+            // These are called as F# methods not F# functions
+            tryMkCallBuiltInWitness g traitInfo argExprs m
+        
 let GenWitnessExprLambda amap g m (traitInfo: TraitConstraintInfo) =
     let argtysl = GenWitnessArgTys g traitInfo.TraitKey
     let vse = argtysl |> List.mapiSquared (fun i j ty -> mkCompGenLocal m ("arg" + string i + "_" + string j) ty) 
@@ -1490,6 +1442,7 @@ let GenWitnessExprLambda amap g m (traitInfo: TraitConstraintInfo) =
     | Some expr -> 
         mkMemberLambdas m [] None None vsl (expr, tyOfExpr g expr)
     | None -> 
+        assert ("A constraint witness could not be found for a built-in constraint solution" |> ignore; false)
         mkOne g m
 
 let GenWitnessArgs amap g m (traitInfos: TraitConstraintInfo list) =

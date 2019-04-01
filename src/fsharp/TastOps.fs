@@ -6669,13 +6669,13 @@ let mkCallGreaterThanOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprFor
 
 let mkCallGreaterThanOrEqualsOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.greater_than_or_equals_operator, [[ty]], [ e1;e2 ], m)
 
-let mkCallAdditionOperator (g: TcGlobals) m ty1 ty2 ty3 e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_addition_info, [[ty1; ty2; ty3]], [e1;e2], m)
+let mkCallAdditionOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_addition_info, [[ty; ty; ty]], [e1;e2], m)
 
 let mkCallSubtractionOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_subtraction_info, [[ty; ty; ty]], [e1;e2], m)
 
 let mkCallMultiplyOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_multiply_info, [[ty; ty; ty]], [e1;e2], m)
 
-let mkCallDivisionOperator (g: TcGlobals) m ty1 ty2 ty3 e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_division_info, [[ty1; ty2; ty3]], [e1;e2], m)
+let mkCallDivisionOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_division_info, [[ty; ty; ty]], [e1;e2], m)
 
 let mkCallModulusOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_modulus_info, [[ty; ty; ty]], [e1;e2], m)
 
@@ -6784,6 +6784,25 @@ let mkCallRaise (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.r
 let mkCallNewDecimal (g: TcGlobals) m (e1, e2, e3, e4, e5) = mkApps g (typedExprForIntrinsic g m g.new_decimal_info, [], [ e1;e2;e3;e4;e5 ], m)
 
 let mkCallNewFormat (g: TcGlobals) m aty bty cty dty ety e1 = mkApps g (typedExprForIntrinsic g m g.new_format_info, [[aty;bty;cty;dty;ety]], [ e1 ], m)
+
+let tryMkCallBuiltInWitness (g: TcGlobals) traitInfo argExprs m =
+    let info = g.makeBuiltInWitnessInfo traitInfo
+    let vref = ValRefForIntrinsic info
+    match vref.TryDeref with
+    | ValueSome v -> 
+        let f = exprForValRef m vref
+        mkApps g ((f, v.Type), [], [ mkRefTupledNoTypes g m argExprs ], m) |> Some
+    | ValueNone -> 
+        None
+
+let tryMkCallCoreFunctionAsBuiltInWitness (g: TcGlobals) info tyargs argExprs m =
+    let vref = ValRefForIntrinsic info
+    match vref.TryDeref with
+    | ValueSome v -> 
+        let f = exprForValRef m vref
+        mkApps g ((f, v.Type), [tyargs], argExprs, m) |> Some
+    | ValueNone -> 
+        None
 
 let TryEliminateDesugaredConstants g m c = 
     match c with 

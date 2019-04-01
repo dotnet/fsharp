@@ -197,7 +197,7 @@ and
     | WithValueOp of obj * Type 
     | DefaultValueOp of Type
     
-and [<CompiledName("FSharpExpr")>]
+and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>]
     Expr(term:Tree,attribs:Expr list) =
     member x.Tree = term
     member x.CustomAttributes = attribs 
@@ -209,6 +209,27 @@ and [<CompiledName("FSharpExpr")>]
                 match t1, t2 with 
                 // We special-case ValueOp to ensure that ValueWithName = Value
                 | CombTerm(ValueOp(v1,ty1,_),[]),CombTerm(ValueOp(v2,ty2,_),[]) -> (v1 = v2) && (ty1 = ty2)
+
+                // We strip off InstanceMethodCallWOp to ensure that CallWithWitness = Call
+                | CombTerm(InstanceMethodCallWOp(minfo1, _minfoW1, nWitnesses1), args1), _ -> 
+                    let argsWithoutWitnesses1 = List.skip nWitnesses1 args1
+                    eq (CombTerm(InstanceMethodCallOp(minfo1), argsWithoutWitnesses1)) t2
+                    
+                // We strip off InstanceMethodCallWOp to ensure that CallWithWitness = Call
+                | _, CombTerm(InstanceMethodCallWOp(minfo2, _minfoW2, nWitnesses2), args2) -> 
+                    let argsWithoutWitnesses2 = List.skip nWitnesses2 args2
+                    eq t1 (CombTerm(InstanceMethodCallOp(minfo2), argsWithoutWitnesses2)) 
+                    
+                // We strip off StaticMethodCallWOp to ensure that CallWithWitness = Call
+                | CombTerm(StaticMethodCallWOp(minfo1, _minfoW1, nWitnesses1), args1), _ -> 
+                    let argsWithoutWitnesses1 = List.skip nWitnesses1 args1
+                    eq (CombTerm(StaticMethodCallOp(minfo1), argsWithoutWitnesses1)) t2
+                    
+                // We strip off StaticMethodCallWOp to ensure that CallWithWitness = Call
+                | _, CombTerm(StaticMethodCallWOp(minfo2, _minfoW2, nWitnesses2), args2) -> 
+                    let argsWithoutWitnesses2 = List.skip nWitnesses2 args2
+                    eq t1 (CombTerm(StaticMethodCallOp(minfo2), argsWithoutWitnesses2)) 
+                    
                 | CombTerm(c1, es1), CombTerm(c2,es2) -> c1 = c2 && es1.Length = es2.Length && (es1 = es2)
                 | VarTerm v1, VarTerm v2 -> (v1 = v2)
                 | LambdaTerm (v1,e1), LambdaTerm(v2,e2) -> (v1 = v2) && (e1 = e2)
@@ -223,10 +244,12 @@ and [<CompiledName("FSharpExpr")>]
     override x.ToString() = x.ToString(false)
 
     member x.ToString(full) = 
-        Microsoft.FSharp.Text.StructuredPrintfImpl.Display.layout_to_string Microsoft.FSharp.Text.StructuredPrintfImpl.FormatOptions.Default (x.GetLayout(full))
+        Display.layout_to_string FormatOptions.Default (x.GetLayout(full))
+        
+    member x.DebugText = x.ToString(false)
         
     member x.GetLayout(long) = 
-        let expr (e:Expr ) = e.GetLayout(long)
+        let expr (e:Expr) = e.GetLayout(long)
         let exprs (es:Expr list) = es |> List.map expr
         let parens ls = bracketL (commaListL ls)
         let pairL l1 l2 = bracketL (l1 ^^ sepL Literals.comma ^^ l2)
@@ -315,8 +338,6 @@ and [<CompiledName("FSharpExpr")>]
         | HoleTerm _  -> wordL (tagLocal "_")
         | CombTerm(QuoteOp _,args) -> combL "Quote" (exprs args)
         | _ -> failwithf "Unexpected term in layout %A" x.Tree
-
-     
 
 and [<CompiledName("FSharpExpr`1")>]
     Expr<'T>(term:Tree,attribs) = 
@@ -548,8 +569,6 @@ module Patterns =
     [<CompiledName("CallWithWitnessesPattern")>]
     let (|CallWithWitnesses|_|)          input = 
         match input with 
-        | E(CombTerm(StaticMethodCallOp minfo,args)) -> Some(None,minfo,minfo,[],args) 
-        | E(CombTerm(InstanceMethodCallOp minfo,(obj::args))) -> Some(Some(obj),minfo,minfo,[],args) 
         | E(CombTerm(StaticMethodCallWOp (minfo, minfoW, nWitnesses),args)) -> Some(None,minfo,minfoW,List.take nWitnesses args, List.skip nWitnesses args) 
         | E(CombTerm(InstanceMethodCallWOp (minfo, minfoW, nWitnesses), args)) ->
             if args.Length >= nWitnesses then 
@@ -2026,12 +2045,12 @@ type Expr with
 
     static member CallWithWitnesses (methodInfo:MethodInfo, methodInfoWithWitnesses:MethodInfo, witnessArguments, arguments) = 
         checkNonNull "methodInfo" methodInfo
-        checkNonNull "methodInfo" methodInfoWithWitnesses
+        checkNonNull "methodInfoWithWitnesses" methodInfoWithWitnesses
         mkStaticMethodCallW (methodInfo, methodInfoWithWitnesses, List.length witnessArguments, witnessArguments@arguments)
 
     static member CallWithWitnesses (obj:Expr, methodInfo:MethodInfo, methodInfoWithWitnesses:MethodInfo, witnessArguments, arguments) = 
         checkNonNull "methodInfo" methodInfo
-        checkNonNull "methodInfo" methodInfoWithWitnesses
+        checkNonNull "methodInfoWithWitnesses" methodInfoWithWitnesses
         mkInstanceMethodCallW (obj, methodInfo, methodInfoWithWitnesses, List.length witnessArguments, witnessArguments@arguments)
 
     static member Coerce (source:Expr, target:Type) = 

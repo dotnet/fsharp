@@ -1825,13 +1825,13 @@ val mkCallGreaterThanOperator                : TcGlobals -> range -> TType -> Ex
 
 val mkCallGreaterThanOrEqualsOperator        : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallAdditionOperator                   : TcGlobals -> range -> TType -> TType -> TType -> Expr -> Expr -> Expr
+val mkCallAdditionOperator                   : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallSubtractionOperator                : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallMultiplyOperator                   : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallDivisionOperator                   : TcGlobals -> range -> TType -> TType -> TType -> Expr -> Expr -> Expr
+val mkCallDivisionOperator                   : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallModulusOperator                    : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
@@ -1970,6 +1970,12 @@ val mkStaticCall_String_Concat3 : TcGlobals -> range -> Expr -> Expr -> Expr -> 
 val mkStaticCall_String_Concat4 : TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr
 
 val mkStaticCall_String_Concat_Array : TcGlobals -> range -> Expr -> Expr
+
+/// Use a witness in BuiltInWitnesses
+val tryMkCallBuiltInWitness : TcGlobals -> TraitConstraintInfo -> Expr list -> range -> Expr option
+
+/// Use an operator as a witness 
+val tryMkCallCoreFunctionAsBuiltInWitness : TcGlobals -> IntrinsicValRef -> TType list -> Expr list -> range -> Expr option
 
 //-------------------------------------------------------------------------
 // operations primarily associated with the optimization to fix

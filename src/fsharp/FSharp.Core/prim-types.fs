@@ -2499,6 +2499,7 @@ namespace Microsoft.FSharp.Core
             static member inline op_Multiply(x: uint16, y: uint16) = (# "conv.u2" (# "mul" x y : uint32 #) : uint16 #)
             static member inline op_Multiply(x: sbyte, y: sbyte) = (# "conv.i1" (# "mul" x y : int32 #) : sbyte #)
             static member inline op_Multiply(x: byte, y: byte) = (# "conv.u1" (# "mul" x y : uint32 #) : byte #)
+            static member inline op_Multiply(x: decimal, y: decimal) = Decimal.op_Multiply(x, y)
 
             static member inline op_UnaryNegation(value: int32) = (# "neg" value : int32 #)
             static member inline op_UnaryNegation(value: float) = (# "neg" value : float #)
@@ -2507,6 +2508,7 @@ namespace Microsoft.FSharp.Core
             static member inline op_UnaryNegation(value: int16) = (# "neg" value : int16 #)
             static member inline op_UnaryNegation(value: nativeint) = (# "neg" value : nativeint #)
             static member inline op_UnaryNegation(value: sbyte) = (# "neg" value : sbyte #)
+            static member inline op_UnaryNegation(value: decimal) = Decimal.op_UnaryNegation(value)
             
             static member inline op_Subtraction(x: int32, y: int32) = (# "sub" x y : int32 #)
             static member inline op_Subtraction(x: float, y: float) = (# "sub" x y : float #)
@@ -2978,7 +2980,10 @@ namespace Microsoft.FSharp.Core
             static member inline op_Inequality(x: string, y: string) = not (String.Equals(x, y))
             static member inline op_Inequality(x: decimal, y: decimal) = Decimal.op_Inequality(x, y)
 
-        // TODO: rationalise these
+            static member inline DivideByInt (x: decimal, n: int) = Decimal.Divide(x, Convert.ToDecimal(n))
+            static member inline DivideByInt (x: float, n: int) = (# "div" x ((# "conv.r8" n  : float #)) : float #)
+            static member inline DivideByInt (x: float32, n:int) = (# "div" x ((# "conv.r4" n  : float32 #)) : float32 #)
+
         type GenericZeroDynamicImplTable<'T>() = 
             static let result : 'T = 
                 // The dynamic implementation
@@ -3071,39 +3076,11 @@ namespace Microsoft.FSharp.Core
              // That is, not in the generic implementation of '+'
             when ^T : ^T = (^T : (static member One : ^T) ())
 
-        // TODO: rationalise these
-        type GenericDivideByIntDynamicImplTable<'T>() = 
-            static let result : ('T -> int -> 'T) = 
-                // The dynamic implementation
-                let aty = typeof<'T>
-                if aty.Equals(typeof<decimal>) then unboxPrim<_> (box (fun (x:decimal) (n:int) -> Decimal.Divide(x, Convert.ToDecimal(n))))
-                elif aty.Equals(typeof<float>) then unboxPrim<_> (box (fun (x:float) (n:int) -> (# "div" x ((# "conv.r8" n  : float #)) : float #)))
-                elif aty.Equals(typeof<float32>) then unboxPrim<_> (box (fun (x:float32) (n:int) -> (# "div" x ((# "conv.r4" n  : float32 #)) : float32 #)))
-                else 
-                    match aty.GetRuntimeMethod("DivideByInt",[| aty; typeof<int> |]) with 
-                    | null -> raise (NotSupportedException (SR.GetString(SR.dyInvDivByIntCoerce)))
-                    | m -> (fun x n -> unboxPrim<_> (m.Invoke(null,[| box x; box n |])))
-
-            static member Result : ('T -> int -> 'T) = result
-
-        // TODO: rationalise these
-        let DivideByIntDynamic<'T> x y = GenericDivideByIntDynamicImplTable<('T)>.Result x y
-
-        // TODO: rationalise these
-        let inline DivideByInt< ^T when ^T : (static member DivideByInt : ^T * int -> ^T) > (x:^T) (y:int) : ^T =
-            DivideByIntDynamic<'T> x y
-            when ^T : float       = (# "div" x ((# "conv.r8" (y:int)  : float #)) : float #)
-            when ^T : float32     = (# "div" x ((# "conv.r4" (y:int)  : float32 #)) : float32 #)
-            when ^T : decimal     = Decimal.Divide((retype x:decimal), Convert.ToDecimal(y))
-            when ^T : ^T = (^T : (static member DivideByInt : ^T * int -> ^T) (x, y))
-
-        // TODO: rationalise these
         let UnaryDynamicImpl nm : ('T -> 'U) =
              let aty = typeof<'T>
              let minfo = aty.GetRuntimeMethod(nm, [| aty |])
              (fun x -> unboxPrim<_>(minfo.Invoke(null,[| box x|])))
 
-        // TODO: rationalise these
         let BinaryDynamicImpl nm : ('T -> 'U -> 'V) =
              let aty = typeof<'T>
              let bty = typeof<'U>
@@ -3256,6 +3233,16 @@ namespace Microsoft.FSharp.Core
 
         type OpInequalityInfo = static member Name = "op_Inequality"
         let OpInequalityDynamic<'T,'U,'V> x y = BinaryOpDynamicImplTable<OpInequalityInfo,'T,'U,'V>.Impl x y
+
+        type DivideByIntInfo = static member Name = "DivideByInt"
+        let DivideByIntDynamic<'T> x y = BinaryOpDynamicImplTable<DivideByIntInfo,'T,int,'T>.Impl x y
+
+        let inline DivideByInt< ^T when ^T : (static member DivideByInt : ^T * int -> ^T) > (x: ^T) (y: int) : ^T =
+            DivideByIntDynamic<'T> x y
+            when ^T : float = BuiltInWitnesses.DivideByInt ((retype x: float), y)
+            when ^T : float32 = BuiltInWitnesses.DivideByInt ((retype x: float32), y)
+            when ^T : decimal = BuiltInWitnesses.DivideByInt ((retype x: decimal), y)
+            when ^T : ^T = (^T : (static member DivideByInt : ^T * int -> ^T) (x, y))
 
 namespace Microsoft.FSharp.Core
 
@@ -5742,11 +5729,13 @@ namespace Microsoft.FSharp.Core
                  when ^T : float32     = let x : float32   = retype x in System.Math.Abs(x)
                  when ^T : int64       = let x : int64     = retype x in System.Math.Abs(x)
                  when ^T : nativeint   = 
-                    let x : nativeint = retype x in 
-                    if x >= 0n then x else 
-                    let res = -x in 
-                    if res < 0n then raise (System.OverflowException(ErrorStrings.NoNegateMinValueString))
-                    res
+                   (let x : nativeint = retype x 
+                    if x >= 0n then 
+                        x 
+                    else 
+                        let res = -x 
+                        if res < 0n then raise (System.OverflowException(ErrorStrings.NoNegateMinValueString))
+                        res)
                  when ^T : int16       = let x : int16     = retype x in System.Math.Abs(x)
                  when ^T : sbyte       = let x : sbyte     = retype x in System.Math.Abs(x)
                  when ^T : decimal     = System.Math.Abs(retype x : decimal) 

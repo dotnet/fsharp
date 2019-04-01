@@ -3191,7 +3191,11 @@ module WitnessTests =
                 (printfn "checking args.Length = %d... args.Length"; true) &&
                 args.Length = 2 &&
                 (printfn "checking witnessArgs is a Lambda..."; true) &&
-                (match args with [ Lambda _ ] -> true | _ -> false)
+                (match witnessArgs with [ Lambda _ ] -> true | _ -> false) &&
+                (printfn "checking witnessArg is the expected call..."; true) &&
+                (match witnessArgs with [ Lambda (v1A, Lambda (v2A, Call(None, m, [ Patterns.Var v1B; Patterns.Var v2B]))) ] when m.Name = "op_Addition" && v1A = v1B && v2A = v2B -> true | _ -> false)
+                (printfn "checking witnessArg is not a CalWithWitnesses..."; true) &&
+                (match witnessArgs with [ Lambda (v1A, Lambda (v2A, CallWithWitnesses _)) ] -> false | _ -> true) &&
                 (printfn "checking args..."; true) &&
                 (match args with [ Int32 _; Int32 _ ] -> true | _ -> false)
             | _ -> false)
@@ -3206,8 +3210,19 @@ module WitnessTests =
                 minfo2.Name = "op_AdditionWithWitnesses" &&
                 (printfn "checking minfo2.GetParameters().Length..."; true) &&
                 minfo2.GetParameters().Length = 3 && 
-                (printfn "checking args.Length..."; true) &&
+                (printfn "checking witnessArgs.Length..."; true) &&
                 witnessArgs.Length = 1 &&
+                (printfn "checking witnessArg is the expected call, witnessArgs = %A" witnessArgs; true) &&
+                (match witnessArgs with 
+                  | [ Lambda (v1A, Lambda (v2A, Call(None, m, [Patterns.Var v1B; Patterns.Var v2B]))) ]  
+                       when m.Name = "op_Addition" 
+                            && m.GetParameters().[0].ParameterType.Name = "DateTime" 
+                            && m.GetParameters().[1].ParameterType.Name = "TimeSpan" 
+                            && v1A = v1B 
+                            && v2A = v2B -> true 
+                  | _ -> false)
+                (printfn "checking witnessArg is not a CallWithWitnesses, witnessArgs = %A" witnessArgs; true) &&
+                (match witnessArgs with [ Lambda (v1A, Lambda (v2A, CallWithWitnesses args)) ] -> printfn "unexpected! %A" args; false | _ -> true) &&
                 args.Length = 2 &&
                 (printfn "checking args..."; true) &&
                 (match args with [ _; _ ] -> true | _ -> false) &&
@@ -3300,8 +3315,8 @@ let aa =
       stdout.WriteLine "Test Passed"
       System.IO.File.WriteAllText("test.ok","ok")
       exit 0
-  | _ -> 
-      stdout.WriteLine "Test Failed"
+  | errs -> 
+      printfn "Test Failed, errors = %A" errs
       exit 1
 #endif
 
