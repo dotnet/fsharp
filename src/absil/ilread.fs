@@ -1668,7 +1668,7 @@ and seekReadAssemblyManifest (ctxt: ILMetadataReader) pectxt idx =
       AuxModuleHashAlgorithm=hash
       SecurityDeclsStored= ctxt.securityDeclsReader_Assembly
       PublicKey= pubkey  
-      Version= Some (v1, v2, v3, v4)
+      Version= Some (ILVersionInfo (v1, v2, v3, v4))
       Locale= readStringHeapOption ctxt localeIdx
       CustomAttrsStored = ctxt.customAttrsReader_Assembly
       MetadataIndex = idx
@@ -1701,12 +1701,12 @@ and seekReadAssemblyRefUncached ctxtH idx =
           | Some blob -> Some (if (flags &&& 0x0001) <> 0x0 then PublicKey blob else PublicKeyToken blob)
           
     ILAssemblyRef.Create
-        (name=nm, 
-         hash=readBlobHeapOption ctxt hashValueIdx, 
-         publicKey=publicKey, 
-         retargetable=((flags &&& 0x0100) <> 0x0), 
-         version=Some(v1, v2, v3, v4), 
-         locale=readStringHeapOption ctxt localeIdx)
+        (name = nm, 
+         hash = readBlobHeapOption ctxt hashValueIdx, 
+         publicKey = publicKey, 
+         retargetable = ((flags &&& 0x0100) <> 0x0), 
+         version = Some (ILVersionInfo (v1, v2, v3, v4)), 
+         locale = readStringHeapOption ctxt localeIdx)
 
 and seekReadModuleRef (ctxt: ILMetadataReader) mdv idx =
     let (nameIdx) = seekReadModuleRefRow ctxt mdv idx

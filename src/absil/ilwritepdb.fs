@@ -369,36 +369,63 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                         builder.WriteCompressedInteger( 0 )
                         builder.WriteCompressedInteger( MetadataTokens.GetRowNumber(DocumentHandle.op_Implicit(getDocumentHandle (sps.[i].Document))) )
                     else
+                        //=============================================================================================================================================
                         // Sequence-point-record
-                        let offsetDelta =
-                            if i > 0 then sps.[i].Offset - sps.[i - 1].Offset                           // delta from previous offset
-                            else sps.[i].Offset                                                         // delta IL offset
+                        // Validate these with magic numbers according to the portable pdb spec Sequence point dexcription:
+                        // https://github.com/dotnet/corefx/blob/master/src/System.Reflection.Metadata/specs/PortablePdb-Metadata.md#methoddebuginformation-table-0x31
+                        //
+                        // So the spec is actually bit iffy!!!!! (More like guidelines really.  )
+                        //  It uses code similar to this to validate the values
+                        //    if (result < 0 || result >= ushort.MaxValue)  // be errorfull
+                        // Spec Says 0x10000 and value max = 0xFFFF but it can't even be = to maxvalue, and so the range is 0 .. 0xfffe inclusive
+                        //=============================================================================================================================================
 
-                        if i < 1 || offsetDelta <> 0 then                                               // ILOffset must not be 0
+                        let capValue v maxValue =
+                            if v < 0 then 0
+                            elif v > maxValue then maxValue
+                            else v
+
+                        let capOffset v = capValue v 0xfffe
+                        let capLine v =  capValue v 0x1ffffffe
+                        let capColumn v = capValue v 0xfffe
+
+                        let offset = capOffset sps.[i].Offset
+                        let startLine = capLine sps.[i].Line
+                        let endLine = capLine sps.[i].EndLine
+                        let startColumn = capColumn sps.[i].Column
+                        let endColumn = capColumn sps.[i].EndColumn
+
+                        let offsetDelta =                                                               // delta from previous offset
+                            if i > 0 then offset - capOffset sps.[i - 1].Offset
+                            else offset
+
+                        if i < 1 || offsetDelta > 0 then
                             builder.WriteCompressedInteger(offsetDelta)
 
-                            if sps.[i].Line = 0xfeefee && sps.[i].EndLine = 0xfeefee then               // Hidden-sequence-point-record
+                                                                                                        // Hidden-sequence-point-record
+                            if startLine = 0xfeefee || endLine = 0xfeefee || (startColumn = 0 && endColumn = 0)
+                            then
                                 builder.WriteCompressedInteger(0)
                                 builder.WriteCompressedInteger(0)
                             else                                                                        // Non-hidden-sequence-point-record
-                                let deltaLines = sps.[i].EndLine - sps.[i].Line                         // lines
+                                let deltaLines = endLine - startLine                                    // lines
                                 builder.WriteCompressedInteger(deltaLines)
 
-                                let deltaColumns = sps.[i].EndColumn - sps.[i].Column                   // Columns
+                                let deltaColumns = endColumn - startColumn                              // Columns
                                 if deltaLines = 0 then
                                     builder.WriteCompressedInteger(deltaColumns)
                                 else
                                     builder.WriteCompressedSignedInteger(deltaColumns)
 
                                 if previousNonHiddenStartLine < 0 then                                  // delta Start Line & Column:
-                                    builder.WriteCompressedInteger(sps.[i].Line)
-                                    builder.WriteCompressedInteger(sps.[i].Column)
+                                    builder.WriteCompressedInteger(startLine)
+                                    builder.WriteCompressedInteger(startColumn)
                                 else
-                                    builder.WriteCompressedSignedInteger(sps.[i].Line - previousNonHiddenStartLine)
-                                    builder.WriteCompressedSignedInteger(sps.[i].Column - previousNonHiddenStartColumn)
+                                    builder.WriteCompressedSignedInteger(startLine - previousNonHiddenStartLine)
+                                    builder.WriteCompressedSignedInteger(startColumn - previousNonHiddenStartColumn)
 
-                                previousNonHiddenStartLine <- sps.[i].Line
-                                previousNonHiddenStartColumn <- sps.[i].Column
+                                previousNonHiddenStartLine <- startLine
+                                previousNonHiddenStartColumn <- startColumn
 
                 getDocumentHandle singleDocumentIndex, metadata.GetOrAddBlob(builder)
 

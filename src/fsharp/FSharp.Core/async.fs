@@ -714,7 +714,7 @@ namespace Microsoft.FSharp.Control
             member x.GetWaitHandle() =
                 lock syncRoot (fun () -> 
                     if disposed then 
-                        raise (System.ObjectDisposedException("ResultCell"));
+                        raise (System.ObjectDisposedException("ResultCell"))
                     match resEvent with 
                     | null ->
                         // Start in signalled state if a result is already present.
@@ -727,7 +727,7 @@ namespace Microsoft.FSharp.Control
             member x.Close() =
                 lock syncRoot (fun () ->
                     if not disposed then 
-                        disposed <- true;
+                        disposed <- true
                         match resEvent with
                         | null -> ()
                         | ev -> 
@@ -735,7 +735,7 @@ namespace Microsoft.FSharp.Control
                             ev.Dispose()                            
                             System.GC.SuppressFinalize(ev)
 #else                        
-                            ev.Close();
+                            ev.Close()
 #endif                            
                             resEvent <- null)
 
@@ -760,7 +760,7 @@ namespace Microsoft.FSharp.Control
                             if disposed then 
                                 []
                             else
-                                result <- Some res;
+                                result <- Some res
                                 // If the resEvent exists then set it. If not we can skip setting it altogether and it won't be
                                 // created
                                 match resEvent with
@@ -1426,7 +1426,7 @@ namespace Microsoft.FSharp.Control
                                                             ctxt.trampolineHolder.ExecuteWithTrampoline (fun () -> savedCont (not timeOut)) |> unfake),
                                            state=null,
                                            millisecondsTimeOutInterval=millisecondsTimeout,
-                                           executeOnlyOnce=true));
+                                           executeOnlyOnce=true))
                             fake())
                     with _ -> 
                         if latch.Enter() then
