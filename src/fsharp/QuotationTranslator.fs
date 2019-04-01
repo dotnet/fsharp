@@ -84,6 +84,9 @@ type QuotationTranslationEnv =
       /// Map from typar stamps to binding index
       tyvs: StampMap<int>
 
+      /// Indicates this is a witness arg we we disable further generation of witnesses
+      isWitness: bool
+
       // Map for values bound by the
       //     'let v = isinst e in .... if nonnull v then ...v .... '
       // construct arising out the compilation of pattern matching. We decode these back to the form
@@ -97,6 +100,7 @@ type QuotationTranslationEnv =
         { vs = ValMap<_>.Empty
           nvs = 0
           tyvs = Map.empty
+          isWitness = false
           isinstVals = ValMap<_>.Empty
           substVals = ValMap<_>.Empty }
 
@@ -307,7 +311,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
                 let witnessArgTys = GenWitnessTys cenv.g cxs
                 let witnessArgs = 
-                    if cenv.g.generateWitnesses then 
+                    if cenv.g.generateWitnesses && not env.isWitness then 
                         ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcVal cenv.g cenv.amap m tps tyargs 
                         |> CommitOperationResult
                     else
@@ -315,8 +319,6 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
                 let subCall =
                     if isMember then
-
-                        let callArgs = (objArgs::witnessArgs::untupledCurriedArgs) |> List.concat
 
                         let parentTyconR = ConvTyconRef cenv vref.TopValDeclaringEntity m
                         let isNewObj = isNewObj || valUseFlags || isSelfInit
@@ -328,7 +330,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                         let methRetTypeR = ConvReturnType cenv envinner m retTy
                         let methName = vref.CompiledName
                         let numGenericArgs = tyargs.Length - numEnclTypeArgs
-                        ConvObjectModelCall cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, witnessArgTypesR, methArgTypesR, methRetTypeR, methName, tyargs, numGenericArgs, callArgs)
+                        ConvObjectModelCall cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, witnessArgTypesR, methArgTypesR, methRetTypeR, methName, tyargs, numGenericArgs, objArgs, witnessArgs, untupledCurriedArgs)
                     else
                         // This is an application of the module value.
                         ConvModuleValueApp cenv env m vref tyargs witnessArgs untupledCurriedArgs
@@ -598,7 +600,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
              let isPropGet = isProp && methName.StartsWithOrdinal("get_")
              let isPropSet = isProp && methName.StartsWithOrdinal("set_")
              let tyargs = (enclTypeArgs@methTypeArgs)
-             ConvObjectModelCall cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, [], methArgTypesR, methRetTypeR, methName, tyargs, methTypeArgs.Length, callArgs)
+             ConvObjectModelCall cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, [], methArgTypesR, methRetTypeR, methName, tyargs, methTypeArgs.Length, [], [], [callArgs])
 
         | TOp.TryFinally _, [_resty], [Expr.Lambda(_, _, _, [_], e1, _, _); Expr.Lambda(_, _, _, [_], e2, _, _)] ->
             QP.mkTryFinally(ConvExpr cenv env e1, ConvExpr cenv env e2)
@@ -690,6 +692,9 @@ and ConvLValueArgs cenv env args =
     | obj::rest -> ConvLValueExpr cenv env obj :: ConvExprs cenv env rest
     | [] -> []
 
+and ConvWitnessArgs cenv env witnessArgs =
+    ConvExprs cenv { env with isWitness = true } witnessArgs
+
 and ConvLValueExpr cenv env expr =
     EmitDebugInfoIfNecessary cenv env expr.Range (ConvLValueExprCore cenv env expr)
 
@@ -716,25 +721,28 @@ and ConvLValueExprCore cenv env expr =
 and ConvObjectModelCall cenv env m callInfo =
     EmitDebugInfoIfNecessary cenv env m (ConvObjectModelCallCore cenv env m callInfo)
 
-and ConvObjectModelCallCore cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, witnessArgTypesR, methArgTypesR, methRetTypeR, methName, tyargs, numGenericArgs, callArgs) =
+and ConvObjectModelCallCore cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, witnessArgTypesR, methArgTypesR, methRetTypeR, methName, tyargs, numGenericArgs, objArgs, witnessArgs, untupledCurriedArgs) =
     let tyargsR = ConvTypes cenv env m tyargs
+    let callArgs = (objArgs::untupledCurriedArgs) |> List.concat
     let callArgsR = ConvLValueArgs cenv env callArgs
-
+    let witnessArgsR = ConvWitnessArgs cenv env witnessArgs
+    let allArgsR = witnessArgsR @ callArgsR
+    
     if isPropGet || isPropSet then
         assert witnessArgTypesR.IsEmpty
         let propName = ChopPropertyName methName
         if isPropGet then
-            QP.mkPropGet( (parentTyconR, propName, methRetTypeR, methArgTypesR), tyargsR, callArgsR)
+            QP.mkPropGet( (parentTyconR, propName, methRetTypeR, methArgTypesR), tyargsR, allArgsR)
         else
             let args, propTy = List.frontAndBack methArgTypesR
-            QP.mkPropSet( (parentTyconR, propName, propTy, args), tyargsR, callArgsR)
+            QP.mkPropSet( (parentTyconR, propName, propTy, args), tyargsR, allArgsR)
 
     elif isNewObj then
         assert witnessArgTypesR.IsEmpty
         let ctorR : QuotationPickler.CtorData =
             { ctorParent   = parentTyconR
               ctorArgTypes = methArgTypesR }
-        QP.mkCtorCall(ctorR, tyargsR, callArgsR)
+        QP.mkCtorCall(ctorR, tyargsR, allArgsR)
 
     elif witnessArgTypesR.IsEmpty then
 
@@ -745,7 +753,7 @@ and ConvObjectModelCallCore cenv env m (isPropGet, isPropSet, isNewObj, parentTy
               methName     = methName
               numGenericArgs = numGenericArgs }
 
-        QP.mkMethodCall(methR, tyargsR, callArgsR)
+        QP.mkMethodCall(methR, tyargsR, allArgsR)
 
     else
 
@@ -765,7 +773,7 @@ and ConvObjectModelCallCore cenv env m (isPropGet, isPropSet, isNewObj, parentTy
               methName     = ExtraWitnessMethodName methName
               numGenericArgs = numGenericArgs }
 
-        QP.mkMethodCallW(methR, methWR, List.length witnessArgTypesR, tyargsR, callArgsR)
+        QP.mkMethodCallW(methR, methWR, List.length witnessArgTypesR, tyargsR, allArgsR)
 
 and ConvModuleValueApp cenv env m (vref:ValRef) tyargs witnessArgs (args: Expr list list) =
     EmitDebugInfoIfNecessary cenv env m (ConvModuleValueAppCore cenv env m vref tyargs witnessArgs args)
@@ -778,12 +786,14 @@ and ConvModuleValueAppCore cenv env m (vref:ValRef) tyargs witnessArgs (curriedA
         let tcrefR = ConvTyconRef cenv tcref m
         let tyargsR = ConvTypes cenv env m tyargs
         let nm = vref.CompiledName
-        let argsR = ConvExprs cenv env (List.concat (witnessArgs::curriedArgs))
+        let witnessArgsR = ConvWitnessArgs cenv env witnessArgs
+        let uncurriedArgsR = ConvExprs cenv env (List.concat curriedArgs)
+        let allArgsR = witnessArgsR @ uncurriedArgsR
         let nWitnesses = witnessArgs.Length
         if nWitnesses = 0 then 
-            QP.mkModuleValueApp(tcrefR, nm, isProperty, tyargsR, argsR)
+            QP.mkModuleValueApp(tcrefR, nm, isProperty, tyargsR, allArgsR)
         else
-            QP.mkModuleValueWApp(tcrefR, nm, isProperty, ExtraWitnessMethodName nm, nWitnesses, tyargsR, argsR)
+            QP.mkModuleValueWApp(tcrefR, nm, isProperty, ExtraWitnessMethodName nm, nWitnesses, tyargsR, allArgsR)
 
 and ConvExprs cenv env args =
     List.map (ConvExpr cenv env) args
@@ -818,7 +828,7 @@ and private ConvValRefCore holeOk cenv env m (vref: ValRef) tyargs =
         | Parent _ ->
 
               let witnessArgs = 
-                  if cenv.g.generateWitnesses then 
+                  if cenv.g.generateWitnesses && not env.isWitness then 
                       ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcVal cenv.g cenv.amap m vref.Typars tyargs 
                       |> CommitOperationResult
                   else []

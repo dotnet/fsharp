@@ -1451,7 +1451,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
         | "op_RightShift", [argty1;argty2], [arg1; arg2]
         | "op_UnaryPlus", [argty1], [arg1]
 *)
-        | "op_UnaryNegation", false, [argty1], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
+        //| "op_UnaryNegation", false, [argty1], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
 (*
         | "get_Sign", [], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some
         | "op_LogicalNot", [argty], [arg1] -> mkCallUnaryNegOperator g m argty1 arg1 |> Some

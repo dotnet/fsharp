@@ -175,7 +175,9 @@ and
     | NewObjectOp   of ConstructorInfo 
     | InstanceMethodCallOp of MethodInfo 
     | StaticMethodCallOp of MethodInfo 
+    /// A new Call node type in F# 5.0, storing extra information about witnesses
     | InstanceMethodCallWOp of MethodInfo * MethodInfo * int
+    /// A new Call node type in F# 5.0, storing extra information about witnesses
     | StaticMethodCallWOp of MethodInfo * MethodInfo * int
     | CoerceOp     of Type
     | NewArrayOp    of Type
@@ -264,9 +266,17 @@ and [<CompiledName("FSharpExpr")>]
         | CombTerm(ValueOp(v,_,None),[])               -> combL "Value" [objL v]
         | CombTerm(WithValueOp(v,_),[defn])               -> combL "WithValue" [objL v; expr defn]
         | CombTerm(InstanceMethodCallOp(minfo),obj::args) -> combL "Call"     [someL obj; minfoL minfo; listL (exprs args)]
-        | CombTerm(StaticMethodCallOp(minfo),args)        -> combL "Call"     [noneL;     minfoL minfo; listL (exprs args)]
-        | CombTerm(InstanceMethodCallWOp(minfo, _minfoW, nWitnesses),obj::args) -> combL "Call"     [someL obj; minfoL minfo; listL (exprs (List.skip nWitnesses args))]
-        | CombTerm(StaticMethodCallWOp(minfo, _minfoW, nWitnesses),args)        -> combL "Call"     [noneL;     minfoL minfo; listL (exprs (List.skip nWitnesses args))]
+        | CombTerm(StaticMethodCallOp(minfo),args) -> combL "Call" [noneL; minfoL minfo; listL (exprs args)]
+
+        | CombTerm(InstanceMethodCallWOp(minfo, _minfoW, nWitnesses),args) -> 
+            let argsWithoutWitnesses = List.skip nWitnesses args
+            match argsWithoutWitnesses with 
+            | objArg :: argsWithoutObj -> combL "Call" [someL objArg; minfoL minfo; listL (exprs argsWithoutObj)]
+            | _ -> failwithf "Unexpected term in layout %A" x.Tree
+
+        | CombTerm(StaticMethodCallWOp(minfo, _minfoW, nWitnesses),args) ->
+            combL "Call" [noneL; minfoL minfo; listL (exprs (List.skip nWitnesses args))]
+
         | CombTerm(InstancePropGetOp(pinfo),(obj::args))  -> combL "PropertyGet"  [someL obj; pinfoL pinfo; listL (exprs args)]
         | CombTerm(StaticPropGetOp(pinfo),args)           -> combL "PropertyGet"  [noneL;     pinfoL pinfo; listL (exprs args)]
         | CombTerm(InstancePropSetOp(pinfo),(obj::args))  -> combL "PropertySet"  [someL obj; pinfoL pinfo; listL (exprs args)]
@@ -523,8 +533,16 @@ module Patterns =
         match input with 
         | E(CombTerm(StaticMethodCallOp minfo,args)) -> Some(None,minfo,args) 
         | E(CombTerm(InstanceMethodCallOp minfo,(obj::args))) -> Some(Some(obj),minfo,args) 
-        | E(CombTerm(StaticMethodCallWOp (minfo, _minfoW, nWitnesses),args)) -> Some(None,minfo,List.skip nWitnesses args) 
-        | E(CombTerm(InstanceMethodCallWOp (minfo, _minfoW, nWitnesses),(obj::args))) -> Some(Some(obj),minfo,List.skip nWitnesses args) 
+
+        | E(CombTerm(StaticMethodCallWOp (minfo, _minfoW, nWitnesses), args)) ->
+            Some(None,minfo,List.skip nWitnesses args) 
+
+        | E(CombTerm(InstanceMethodCallWOp (minfo, _minfoW, nWitnesses), args)) ->
+            let argsWithoutWitnesses = List.skip nWitnesses args
+            match argsWithoutWitnesses with 
+            | obj :: argsWithoutObj -> Some (Some obj, minfo, argsWithoutObj) 
+            | _ -> None
+
         | _ -> None
 
     [<CompiledName("CallWithWitnessesPattern")>]
@@ -533,7 +551,14 @@ module Patterns =
         | E(CombTerm(StaticMethodCallOp minfo,args)) -> Some(None,minfo,minfo,[],args) 
         | E(CombTerm(InstanceMethodCallOp minfo,(obj::args))) -> Some(Some(obj),minfo,minfo,[],args) 
         | E(CombTerm(StaticMethodCallWOp (minfo, minfoW, nWitnesses),args)) -> Some(None,minfo,minfoW,List.take nWitnesses args, List.skip nWitnesses args) 
-        | E(CombTerm(InstanceMethodCallWOp (minfo, minfoW, nWitnesses),(obj::args))) -> Some(Some(obj),minfo,minfoW,List.take nWitnesses args, List.skip nWitnesses args) 
+        | E(CombTerm(InstanceMethodCallWOp (minfo, minfoW, nWitnesses), args)) ->
+            if args.Length >= nWitnesses then 
+                let witnessArgs, argsWithoutWitnesses = List.splitAt nWitnesses args
+                match argsWithoutWitnesses with 
+                | objArgs :: argsWithoutObjectArg -> Some (Some objArgs, minfo, minfoW, witnessArgs, argsWithoutObjectArg) 
+                | _ -> None
+            else
+                None
         | _ -> None
 
     let (|LetRaw|_|) input = 
@@ -644,8 +669,8 @@ module Patterns =
             | NewObjectOp ctor,_   -> ctor.DeclaringType
             | InstanceMethodCallOp minfo,_   -> minfo.ReturnType |> removeVoid
             | StaticMethodCallOp minfo,_   -> minfo.ReturnType |> removeVoid
-            | InstanceMethodCallWOp (_,minfoW,_),_   -> minfoW.ReturnType |> removeVoid
-            | StaticMethodCallWOp (_,minfoW,_),_   -> minfoW.ReturnType |> removeVoid
+            | InstanceMethodCallWOp (_, minfoW, _),_   -> minfoW.ReturnType |> removeVoid
+            | StaticMethodCallWOp (_, minfoW, _), _   -> minfoW.ReturnType |> removeVoid
             | CoerceOp ty,_       -> ty
             | SequentialOp,[_;b]      -> typeOf b 
             | ForIntegerRangeLoopOp,_  -> typeof<Unit>
@@ -2331,8 +2356,8 @@ module ExprShape =
             | DefaultValueOp(ty),_  -> mkDefaultValue(ty)
             | StaticMethodCallOp(minfo),_ -> mkStaticMethodCall(minfo,arguments)
             | InstanceMethodCallOp(minfo),obj::args -> mkInstanceMethodCall(obj,minfo,args)
-            | StaticMethodCallWOp(minfo, minfoW, n),_ -> mkStaticMethodCallW(minfo,minfoW,n,arguments)
-            | InstanceMethodCallWOp(minfo, minfoW, n),obj::args -> mkInstanceMethodCallW(obj,minfo,minfoW,n,args)
+            | StaticMethodCallWOp(minfo, minfoW, n),_ -> mkStaticMethodCallW(minfo, minfoW, n, arguments)
+            | InstanceMethodCallWOp(minfo, minfoW, n),obj::args -> mkInstanceMethodCallW(obj, minfo, minfoW, n, args)
             | CoerceOp(ty),[arg]   -> mkCoerce(ty,arg)
             | NewArrayOp(ty),_    -> mkNewArray(ty,arguments)
             | NewDelegateOp(ty),[arg]   -> mkNewDelegate(ty,arg)

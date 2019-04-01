@@ -26,7 +26,6 @@ module AssemblyVersionCheck =
             |> List.map (fun p -> Directory.EnumerateFiles(binariesPath, p, SearchOption.AllDirectories))
             |> Seq.concat
             |> List.ofSeq
-            |> List.filter (fun p -> not (p.Contains("Proto")))
             |> List.filter (fun p -> (Set.contains (Path.GetFileName(p)) excludedAssemblies) |> not)
 
         // verify that all assemblies have a version number other than 0.0.0.0 or 1.0.0.0
