@@ -12,7 +12,7 @@ open FsLexYacc.FsYacc
 open FsLexYacc.FsYacc.AST
 
 //------------------------------------------------------------------
-// This code is duplicated from FSharp.Compiler.UnicodeLexing
+// This code is duplicated from Microsoft.FSharp.Compiler.UnicodeLexing
 
 type Lexbuf =  LexBuffer<char>
 
@@ -47,8 +47,8 @@ let compat = ref false
 let log = ref false
 let light = ref None
 let inputCodePage = ref None
-let mutable lexlib = "Microsoft.FSharp.Text.Lexing"
-let mutable parslib = "Microsoft.FSharp.Text.Parsing"
+let mutable lexlib = "FSharp.Text.Lexing"
+let mutable parslib = "FSharp.Text.Parsing"
 
 let usage =
   [ ArgInfo("-o", ArgType.String (fun s -> out := Some s), "Name the output file.");
@@ -60,8 +60,8 @@ let usage =
     ArgInfo("--light-off", ArgType.Unit (fun () ->  light := Some false), "Add #light \"off\" to the top of the generated file");
     ArgInfo("--ml-compatibility", ArgType.Set compat, "Support the use of the global state from the 'Parsing' module in FSharp.PowerPack.dll."); 
     ArgInfo("--tokens", ArgType.Set tokenize, "Simply tokenize the specification file itself."); 
-    ArgInfo("--lexlib", ArgType.String (fun s ->  lexlib <- s), "Specify the namespace for the implementation of the lexer (default: Microsoft.FSharp.Text.Lexing)");
-    ArgInfo("--parslib", ArgType.String (fun s ->  parslib <- s), "Specify the namespace for the implementation of the parser table interpreter (default: Microsoft.FSharp.Text.Parsing)");
+    ArgInfo("--lexlib", ArgType.String (fun s ->  lexlib <- s), "Specify the namespace for the implementation of the lexer (default: FSharp.Text.Lexing)");
+    ArgInfo("--parslib", ArgType.String (fun s ->  parslib <- s), "Specify the namespace for the implementation of the parser table interpreter (default: FSharp.Text.Parsing)");
     ArgInfo("--codepage", ArgType.Int (fun i -> inputCodePage := Some i), "Assume input lexer specification file is encoded with the given codepage.");  ]
 
 let _ = ArgParser.Parse(usage,(fun x -> match !input with Some _ -> failwith "more than one input given" | None -> input := Some x),"fsyacc <filename>")
@@ -523,11 +523,9 @@ let main() =
 
   logf (fun oso -> oso.Close())
 
-[<EntryPoint>]
-let result(args: string[]) =
-    try
-        main()
-        0
+let result = 
+    try main()
     with e -> 
-        eprintf "FSYACC: error FSY000: %s" (match e with Failure s -> s | e -> e.Message);
-        1
+      eprintf "FSYACC: error FSY000: %s" (match e with Failure s -> s | e -> e.Message);
+      exit 1
+
